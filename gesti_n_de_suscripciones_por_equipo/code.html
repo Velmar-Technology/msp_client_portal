@@ -1,0 +1,342 @@
+<!DOCTYPE html><html lang="es" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Planes y Pagos - MSP Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#d3e4fe",
+                        "outline": "#76777d",
+                        "secondary-container": "#6063ee",
+                        "on-tertiary-container": "#98805d",
+                        "inverse-surface": "#213145",
+                        "primary-container": "#131b2e",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#dce9ff",
+                        "error-container": "#ffdad6",
+                        "background": "#f8f9ff",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed-dim": "#dec29a",
+                        "on-background": "#0b1c30",
+                        "on-error-container": "#93000a",
+                        "surface": "#f8f9ff",
+                        "surface-container": "#e5eeff",
+                        "inverse-primary": "#bec6e0",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed-dim": "#bec6e0",
+                        "surface-variant": "#d3e4fe",
+                        "surface-container-low": "#eff4ff",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed-variant": "#3f465c",
+                        "on-primary-fixed": "#131b2e",
+                        "primary": "#000000",
+                        "tertiary-container": "#271901",
+                        "tertiary": "#000000",
+                        "surface-tint": "#565e74",
+                        "on-error": "#ffffff",
+                        "surface-dim": "#cbdbf5",
+                        "tertiary-fixed": "#fcdeb5",
+                        "on-primary-container": "#7c839b",
+                        "on-surface-variant": "#45464d",
+                        "on-tertiary-fixed-variant": "#574425",
+                        "on-secondary-container": "#fffbff",
+                        "secondary-fixed-dim": "#c0c1ff",
+                        "secondary": "#4648d4",
+                        "outline-variant": "#c6c6cd",
+                        "on-surface": "#0b1c30",
+                        "on-secondary-fixed": "#07006c",
+                        "surface-bright": "#f8f9ff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "primary-fixed": "#dae2fd",
+                        "on-secondary-fixed-variant": "#2f2ebe",
+                        "on-tertiary-fixed": "#271901",
+                        "secondary-fixed": "#e1e0ff",
+                        "error": "#ba1a1a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "1rem",
+                        "unit": "4px",
+                        "stack-md": "1rem",
+                        "stack-lg": "1.5rem",
+                        "container-margin": "2rem",
+                        "stack-sm": "0.5rem"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Geist", "sans-serif"],
+                        "h3": ["Geist", "sans-serif"],
+                        "h2": ["Geist", "sans-serif"],
+                        "h1-mobile": ["Geist", "sans-serif"],
+                        "h1": ["Geist", "sans-serif"],
+                        "body-md": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"],
+                        "body-lg": ["Inter", "sans-serif"],
+                        "label-sm": ["Geist", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "h3": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "h2": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "h1-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "h1": ["30px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "mono": ["13px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-lg min-h-screen flex antialiased">
+<!-- SideNavBar -->
+<aside class="bg-surface-container-low dark:bg-primary-container text-primary dark:text-primary-fixed-dim font-label-md text-label-md h-screen w-64 fixed left-0 top-0 border-r border-outline-variant dark:border-outline z-20 flex flex-col py-stack-lg px-gutter hidden md:flex">
+<div class="mb-stack-lg flex items-center gap-sm px-sm">
+<span class="material-symbols-outlined text-h3 text-on-surface dark:text-on-primary-container">dns</span>
+<div>
+<h1 class="text-h2 font-h2 font-bold text-on-surface dark:text-on-primary-container leading-tight">Client Portal</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant dark:text-on-primary-container opacity-70 leading-tight">Manage your IT</p>
+</div>
+</div>
+<nav class="flex-1 space-y-stack-sm">
+<a class="flex items-center gap-sm px-sm py-sm text-on-surface-variant dark:text-on-primary-container opacity-70 hover:bg-surface-container dark:hover:bg-surface-container-highest transition-all rounded-lg hover:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="">Dashboard</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-sm text-on-surface-variant dark:text-on-primary-container opacity-70 hover:bg-surface-container dark:hover:bg-surface-container-highest transition-all rounded-lg hover:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">category</span>
+<span class="">Servicios</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-sm bg-surface-container-high dark:bg-secondary-container text-primary dark:text-on-secondary-container border-l-2 border-secondary font-bold rounded-lg hover:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined fill">assignment</span>
+<span class="">Planes</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-sm text-on-surface-variant dark:text-on-primary-container opacity-70 hover:bg-surface-container dark:hover:bg-surface-container-highest transition-all rounded-lg hover:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="">Facturación</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-sm text-on-surface-variant dark:text-on-primary-container opacity-70 hover:bg-surface-container dark:hover:bg-surface-container-highest transition-all rounded-lg hover:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="">Perfil</span>
+</a>
+</nav>
+<div class="mt-auto border-t border-outline-variant pt-stack-md px-sm">
+<button class="w-full py-sm px-sm flex items-center justify-center gap-sm bg-primary text-on-primary font-label-md rounded hover:opacity-90 transition-opacity mb-stack-md">
+<span class="material-symbols-outlined text-[18px]">support_agent</span>
+                Support Ticket
+            </button>
+<div class="flex items-center gap-sm">
+<img alt="User profile" class="w-8 h-8 rounded-full border border-outline-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZY6WbvLvT0MA78YAuyTR1zlmfE6idIEJ0MlPL8cQGykRudDVG8dkszW2ZMGA9x_Ni0_oGtZsdSlr1SJEHmufX5PrHFgQo8fLZAvpPtyxhOiP74IwJMxaL8WCBIgtQhe0QEJ3Jaf-m8SkSoikAw9pvp17aRFVRJjfOmIqEVX5Y4jpjoMsw12-yfoKq8pt2x5IFxOrlF2UoX_vBvXmzK0tD3lD8dgUkvKjk-Hdl_ntwKXh52ojQ0iA6BqsCpd3_Blo698zNX6ooeQ">
+<div class="flex-col flex">
+<span class="font-label-md text-label-md font-semibold">Admin User</span>
+<span class="font-mono text-mono text-on-surface-variant">ID: MSP-882</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Wrapper -->
+<div class="flex-1 md:ml-64 flex flex-col min-h-screen">
+<!-- TopNavBar -->
+<header class="bg-surface-container-lowest dark:bg-inverse-surface text-primary dark:text-primary-fixed font-h3 text-h3 font-label-md text-label-md w-full top-0 sticky border-b border-outline-variant dark:border-outline z-10 hidden md:flex justify-between items-center px-container-margin h-16 max-w-[calc(1440px-256px)]">
+<div class="flex items-center gap-stack-lg w-1/3">
+<span class="text-h3 font-h3 text-primary dark:text-primary-fixed font-bold">Velmar Tech Logo</span>
+<div class="relative w-full max-w-xs hidden lg:block">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
+<input class="w-full pl-stack-lg pr-sm py-[6px] border border-outline-variant rounded-md bg-surface focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all font-body-md text-body-md" placeholder="Buscar recursos..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-stack-sm">
+<button class="p-unit text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors rounded-full cursor-pointer active:opacity-80 flex items-center justify-center h-8 w-8">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<button class="p-unit text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors rounded-full cursor-pointer active:opacity-80 flex items-center justify-center h-8 w-8">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+</button>
+<button class="ml-sm rounded-full overflow-hidden border border-outline-variant hover:opacity-80 transition-opacity">
+<img alt="User profile" class="w-8 h-8" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZY6WbvLvT0MA78YAuyTR1zlmfE6idIEJ0MlPL8cQGykRudDVG8dkszW2ZMGA9x_Ni0_oGtZsdSlr1SJEHmufX5PrHFgQo8fLZAvpPtyxhOiP74IwJMxaL8WCBIgtQhe0QEJ3Jaf-m8SkSoikAw9pvp17aRFVRJjfOmIqEVX5Y4jpjoMsw12-yfoKq8pt2x5IFxOrlF2UoX_vBvXmzK0tD3lD8dgUkvKjk-Hdl_ntwKXh52ojQ0iA6BqsCpd3_Blo698zNX6ooeQ">
+</button>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 p-gutter md:p-container-margin max-w-[1440px] w-full mx-auto pb-stack-lg">
+<div class="mb-stack-lg"><h2 class="font-h1-mobile md:font-h1 text-h1-mobile md:text-h1 text-on-surface mb-stack-sm">Suscripciones por Equipo</h2><p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">Gestione y asigne planes de servicio para cada uno de sus equipos de infraestructura.</p></div>
+<!-- Bento Grid Layout for Pricing -->
+<div class="mb-stack-lg bg-surface-container-lowest border border-outline-variant rounded-xl p-stack-md shadow-sm"><div class="flex items-center justify-between mb-stack-md"><h3 class="font-h3 text-h3 text-on-surface">Seleccionar Equipo</h3><button class="flex items-center gap-unit text-primary font-label-md hover:opacity-80 transition-opacity"><span class="material-symbols-outlined text-[20px]">add_circle</span><span class="">Nuevo Equipo</span></button></div><div class="flex flex-wrap gap-stack-sm"><button class="px-4 py-2 rounded-full border-2 border-primary bg-primary/5 text-primary font-label-md">Equipo de IT</button><button class="px-4 py-2 rounded-full border border-outline-variant text-on-surface-variant hover:bg-surface-container-low transition-colors font-label-md">Departamento de Ventas</button><button class="px-4 py-2 rounded-full border border-outline-variant text-on-surface-variant hover:bg-surface-container-low transition-colors font-label-md">Servidores Core</button></div></div><div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter mb-stack-lg">
+<!-- Basic Plan Card -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-stack-lg flex flex-col relative group">
+<div class="mb-stack-md">
+<span class="inline-block px-[8px] py-[2px] bg-surface-container text-on-surface font-mono text-label-sm rounded mb-stack-sm">NIVEL 1</span>
+<h3 class="font-h2 text-h2 text-on-surface">Básico</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mt-unit h-10">Soporte remoto reactivo para infraestructura no crítica.</p>
+</div>
+<div class="mb-stack-lg flex items-baseline gap-unit">
+<span class="font-h1 text-h1 text-on-surface text-[48px] leading-[48px]">$299</span>
+<span class="font-body-md text-body-md text-on-surface-variant">/mes</span>
+</div>
+<ul class="space-y-stack-sm mb-stack-lg flex-1">
+<li class="flex items-start gap-stack-sm">
+<span class="material-symbols-outlined text-[18px] text-on-surface mt-[2px]">check</span>
+<span class="font-body-md text-body-md text-on-surface">Soporte Remoto 8x5</span>
+</li>
+<li class="flex items-start gap-stack-sm">
+<span class="material-symbols-outlined text-[18px] text-on-surface mt-[2px]">check</span>
+<span class="font-body-md text-body-md text-on-surface">Monitoreo Básico (Ping/Port)</span>
+</li>
+<li class="flex items-start gap-stack-sm">
+<span class="material-symbols-outlined text-[18px] text-on-surface mt-[2px]">check</span>
+<span class="font-body-md text-body-md text-on-surface">Gestión de Tickets Estándar</span>
+</li>
+<li class="flex items-start gap-stack-sm text-outline">
+<span class="material-symbols-outlined text-[18px] mt-[2px]">close</span>
+<span class="font-body-md text-body-md">Mantenimiento Preventivo</span>
+</li>
+</ul>
+<div class="flex items-center justify-between mb-stack-md p-2 bg-surface-container-low rounded-lg"><span class="text-label-sm font-label-sm text-on-surface-variant">Cantidad de Equipos</span><div class="flex items-center gap-stack-sm"><button class="w-6 h-6 flex items-center justify-center border border-outline-variant rounded hover:bg-surface-container">-</button><span class="font-mono text-label-md">1</span><button class="w-6 h-6 flex items-center justify-center border border-outline-variant rounded hover:bg-surface-container">+</button></div></div><button class="w-full py-2 border border-outline-variant text-on-surface font-label-md text-label-md rounded-md hover:bg-surface-container-low transition-colors">Seleccionar Básico</button>
+</div>
+<!-- Standard Plan Card (Highlighted) -->
+<div class="bg-surface-container-lowest border-2 border-primary rounded-xl p-stack-lg flex flex-col relative transform lg:-translate-y-2 shadow-sm">
+<div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-on-primary font-mono text-[10px] px-3 py-1 rounded-full uppercase tracking-wider font-semibold">Recomendado</div>
+<div class="mb-stack-md mt-stack-sm">
+<span class="inline-block px-[8px] py-[2px] bg-secondary-container/20 text-secondary font-mono text-label-sm rounded mb-stack-sm">NIVEL 2</span>
+<h3 class="font-h2 text-h2 text-on-surface">Estándar</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mt-unit h-10">Soporte proactivo y mantenimiento regular de sistemas.</p>
+</div>
+<div class="mb-stack-lg flex items-baseline gap-unit">
+<span class="font-h1 text-h1 text-on-surface text-[48px] leading-[48px]">$599</span>
+<span class="font-body-md text-body-md text-on-surface-variant">/mes</span>
+</div>
+<ul class="space-y-stack-sm mb-stack-lg flex-1">
+<li class="flex items-start gap-stack-sm">
+<span class="material-symbols-outlined text-[18px] text-on-surface mt-[2px]">check</span>
+<span class="font-body-md text-body-md text-on-surface">Todo lo del plan Básico</span>
+</li>
+<li class="flex items-start gap-stack-sm">
+<span class="material-symbols-outlined text-[18px] text-on-surface mt-[2px]">check</span>
+<span class="font-body-md text-body-md text-on-surface">Mantenimiento Preventivo Mensual</span>
+</li>
+<li class="flex items-start gap-stack-sm">
+<span class="material-symbols-outlined text-[18px] text-on-surface mt-[2px]">check</span>
+<span class="font-body-md text-body-md text-on-surface">Monitoreo Avanzado de Rendimiento</span>
+</li>
+<li class="flex items-start gap-stack-sm">
+<span class="material-symbols-outlined text-[18px] text-on-surface mt-[2px]">check</span>
+<span class="font-body-md text-body-md text-on-surface">Gestión de Parches OS</span>
+</li>
+</ul>
+<div class="flex items-center justify-between mb-stack-md p-2 bg-surface-container-low rounded-lg"><span class="text-label-sm font-label-sm text-on-surface-variant">Cantidad de Equipos</span><div class="flex items-center gap-stack-sm"><button class="w-6 h-6 flex items-center justify-center border border-outline-variant rounded hover:bg-surface-container">-</button><span class="font-mono text-label-md">5</span><button class="w-6 h-6 flex items-center justify-center border border-outline-variant rounded hover:bg-surface-container">+</button></div></div><button class="w-full py-2 bg-zinc-900 text-white font-label-md text-label-md rounded-md hover:bg-zinc-800 transition-colors">Seleccionar Estándar</button>
+</div>
+<!-- Premium Plan Card -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-stack-lg flex flex-col relative">
+<div class="mb-stack-md">
+<span class="inline-block px-[8px] py-[2px] bg-tertiary-container/20 text-tertiary-container font-mono text-label-sm rounded mb-stack-sm">NIVEL 3</span>
+<h3 class="font-h2 text-h2 text-on-surface">Premium</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mt-unit h-10">Cobertura total, mitigación de riesgos y continuidad de negocio.</p>
+</div>
+<div class="mb-stack-lg flex items-baseline gap-unit">
+<span class="font-h1 text-h1 text-on-surface text-[48px] leading-[48px]">$1299</span>
+<span class="font-body-md text-body-md text-on-surface-variant">/mes</span>
+</div>
+<ul class="space-y-stack-sm mb-stack-lg flex-1">
+<li class="flex items-start gap-stack-sm">
+<span class="material-symbols-outlined text-[18px] text-on-surface mt-[2px]">check</span>
+<span class="font-body-md text-body-md text-on-surface">Todo lo del plan Estándar</span>
+</li>
+<li class="flex items-start gap-stack-sm">
+<span class="material-symbols-outlined text-[18px] text-on-surface mt-[2px]">check</span>
+<span class="font-body-md text-body-md text-on-surface">Backups Gestionados y Recuperación</span>
+</li>
+<li class="flex items-start gap-stack-sm">
+<span class="material-symbols-outlined text-[18px] text-on-surface mt-[2px]">check</span>
+<span class="font-body-md text-body-md text-on-surface">Soporte 24/7 Crítico</span>
+</li>
+<li class="flex items-start gap-stack-sm">
+<span class="material-symbols-outlined text-[18px] text-on-surface mt-[2px]">check</span>
+<span class="font-body-md text-body-md text-on-surface">Auditoría de Seguridad Trimestral</span>
+</li>
+</ul>
+<div class="flex items-center justify-between mb-stack-md p-2 bg-surface-container-low rounded-lg"><span class="text-label-sm font-label-sm text-on-surface-variant">Cantidad de Equipos</span><div class="flex items-center gap-stack-sm"><button class="w-6 h-6 flex items-center justify-center border border-outline-variant rounded hover:bg-surface-container">-</button><span class="font-mono text-label-md">0</span><button class="w-6 h-6 flex items-center justify-center border border-outline-variant rounded hover:bg-surface-container">+</button></div></div><button class="w-full py-2 border border-outline-variant text-on-surface font-label-md text-label-md rounded-md hover:bg-surface-container-low transition-colors">Seleccionar Premium</button>
+</div>
+</div>
+<!-- Payment Section Layout -->
+<div class="mt-stack-lg pt-stack-lg border-t border-outline-variant grid grid-cols-1 lg:grid-cols-2 gap-stack-lg">
+<!-- Payment Methods -->
+<div>
+<h3 class="font-h3 text-h3 text-on-surface mb-stack-md">Método de Pago</h3>
+<!-- Tabs -->
+<div class="flex border-b border-outline-variant mb-stack-md">
+<button class="px-4 py-2 font-label-md text-label-md text-primary border-b-2 border-primary -mb-[1px]">Pago con Tarjeta</button>
+<button class="px-4 py-2 font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors">Transferencia Bancaria</button>
+</div>
+<!-- Card Form -->
+<form class="space-y-stack-md bg-surface-container-lowest p-stack-md border border-outline-variant rounded-xl shadow-sm">
+<div class="space-y-unit">
+<label class="block font-label-sm text-label-sm text-on-surface">Nombre en la tarjeta</label>
+<input class="w-full px-3 py-2 border border-outline-variant rounded-md font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none bg-surface-container-lowest placeholder:text-outline-variant" placeholder="Ej. Juan Pérez" type="text">
+</div>
+<div class="space-y-unit">
+<label class="block font-label-sm text-label-sm text-on-surface">Número de tarjeta</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant text-[20px]">credit_card</span>
+<input class="w-full pl-10 pr-3 py-2 border border-outline-variant rounded-md font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none bg-surface-container-lowest placeholder:text-outline-variant" placeholder="0000 0000 0000 0000" type="text">
+</div>
+</div>
+<div class="flex gap-stack-md">
+<div class="w-1/2 space-y-unit">
+<label class="block font-label-sm text-label-sm text-on-surface">Expiración</label>
+<input class="w-full px-3 py-2 border border-outline-variant rounded-md font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none bg-surface-container-lowest placeholder:text-outline-variant" placeholder="MM/YY" type="text">
+</div>
+<div class="w-1/2 space-y-unit">
+<label class="block font-label-sm text-label-sm text-on-surface">CVV</label>
+<input class="w-full px-3 py-2 border border-outline-variant rounded-md font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none bg-surface-container-lowest placeholder:text-outline-variant" placeholder="123" type="password">
+</div>
+</div>
+<div class="pt-stack-sm">
+<button class="w-full py-2 bg-zinc-900 text-white font-label-md text-label-md rounded-md hover:bg-zinc-800 transition-colors flex justify-center items-center gap-unit" type="button">
+<span class="material-symbols-outlined text-[16px]">lock</span>
+                                Procesar Pago Seguro
+                            </button>
+</div>
+</form>
+</div>
+<!-- Order Summary -->
+<div>
+<h3 class="font-h3 text-h3 text-on-surface mb-stack-md">Resumen del Pedido</h3>
+<div class="bg-surface-container-lowest p-stack-md border border-outline-variant rounded-xl shadow-sm flex flex-col gap-stack-sm"><div class="flex justify-between items-start mb-unit"><div class="flex flex-col"><span class="font-body-md text-body-md text-on-surface font-medium">Equipo de IT</span><span class="text-label-sm text-on-surface-variant">5x Plan Estándar</span></div><span class="font-body-md text-body-md text-on-surface font-semibold">$2,995.00</span></div><div class="flex justify-between items-start mb-unit"><div class="flex flex-col"><span class="font-body-md text-body-md text-on-surface font-medium">Servidores Core</span><span class="text-label-sm text-on-surface-variant">1x Plan Premium</span></div><span class="font-body-md text-body-md text-on-surface font-semibold">$1,299.00</span></div><div class="flex justify-between items-center text-on-surface-variant mt-stack-sm"><span class="font-body-md text-body-md">Impuestos (IVA 16%)</span><span class="font-body-md text-body-md">$687.04</span></div><div class="border-t border-outline-variant pt-stack-sm flex justify-between items-center mt-unit"><span class="font-h3 text-h3 text-on-surface">Total Mensual</span><span class="font-h3 text-h3 text-on-surface">$4,981.04</span></div><div class="mt-stack-md flex items-center gap-stack-sm p-3 bg-surface-container-low rounded-lg border border-outline-variant/50"><span class="material-symbols-outlined text-primary text-[20px]">verified_user</span><div><h4 class="font-label-sm text-label-sm text-on-surface font-semibold">Transacción Encriptada</h4><p class="font-body-md text-[13px] leading-snug text-on-surface-variant mt-[2px]">Sus datos están protegidos con seguridad SSL de grado militar.</p></div></div></div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-lowest dark:bg-inverse-surface text-on-surface-variant dark:text-surface-variant font-label-sm text-label-sm w-full border-t border-outline-variant dark:border-outline flex justify-between items-center px-container-margin py-stack-md mt-auto max-w-[calc(1440px-256px)] hidden md:flex">
+<span class="font-label-md text-label-md font-bold">© 2026 Velmar Technology. All rights reserved.</span>
+<div class="flex gap-stack-lg">
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">Terms of Service</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">Status Page</a>
+</div>
+</footer>
+</div>
+
+
+</body></html>

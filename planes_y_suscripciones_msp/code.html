@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Planes y Pagos - MSP Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed-variant": "#005236",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "secondary-fixed": "#d5e3fd",
+                        "on-tertiary-fixed": "#002113",
+                        "on-primary-fixed-variant": "#3f465c",
+                        "surface": "#f7f9fb",
+                        "surface-container-highest": "#e0e3e5",
+                        "tertiary-container": "#002113",
+                        "background": "#f7f9fb",
+                        "surface-variant": "#e0e3e5",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-primary": "#bec6e0",
+                        "on-primary-fixed": "#131b2e",
+                        "on-error-container": "#93000a",
+                        "surface-tint": "#565e74",
+                        "inverse-on-surface": "#eff1f3",
+                        "surface-dim": "#d8dadc",
+                        "primary": "#000000",
+                        "secondary-container": "#d5e3fd",
+                        "on-secondary-fixed-variant": "#3a485c",
+                        "outline": "#76777d",
+                        "surface-container-high": "#e6e8ea",
+                        "secondary": "#515f74",
+                        "surface-container": "#eceef0",
+                        "inverse-surface": "#2d3133",
+                        "on-primary-container": "#7c839b",
+                        "surface-container-low": "#f2f4f6",
+                        "primary-fixed-dim": "#bec6e0",
+                        "error": "#ba1a1a",
+                        "secondary-fixed-dim": "#b9c7e0",
+                        "outline-variant": "#c6c6cd",
+                        "on-secondary-container": "#57657b",
+                        "surface-bright": "#f7f9fb",
+                        "primary-container": "#131b2e",
+                        "error-container": "#ffdad6",
+                        "on-tertiary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "on-background": "#191c1e",
+                        "on-primary": "#ffffff",
+                        "primary-fixed": "#dae2fd",
+                        "on-secondary-fixed": "#0d1c2f",
+                        "tertiary-fixed": "#6ffbbe",
+                        "tertiary": "#000000",
+                        "on-surface": "#191c1e",
+                        "on-surface-variant": "#45464d",
+                        "on-tertiary-container": "#009668"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "sm": "8px",
+                        "margin-mobile": "16px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "container-max": "1440px",
+                        "xs": "4px",
+                        "base": "4px",
+                        "gutter": "20px",
+                        "margin-desktop": "32px"
+                    },
+                    "fontFamily": {
+                        "title-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "table-header": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "label-mono": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "title-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "table-header": ["12px", { "lineHeight": "16px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-mono": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-lg min-h-screen flex antialiased">
+<!-- SideNavBar -->
+<aside class="bg-surface dark:bg-inverse-surface text-primary dark:text-primary-fixed font-body-lg text-body-lg h-screen w-64 fixed left-0 top-0 border-r border-outline-variant dark:border-outline z-20 flex flex-col py-lg px-md hidden md:flex">
+<div class="mb-xl flex items-center gap-sm px-sm">
+<span class="material-symbols-outlined text-title-md text-primary">dns</span>
+<div>
+<h1 class="text-title-md font-title-md font-bold text-primary dark:text-primary-fixed leading-tight">MSP Portal</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-tight">Gestión de Infraestructura</p>
+</div>
+</div>
+<nav class="flex-1 space-y-sm">
+<a class="flex items-center gap-md px-sm py-sm text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:scale-95 duration-150">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-md px-sm py-sm text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:scale-95 duration-150">settings_suggest</span>
+<span>Servicios</span>
+</a>
+<a class="flex items-center gap-md px-sm py-sm bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary font-bold rounded-lg group" href="#">
+<span class="material-symbols-outlined fill group-hover:scale-95 duration-150">auto_awesome_motion</span>
+<span>Planes</span>
+</a>
+<a class="flex items-center gap-md px-sm py-sm text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:scale-95 duration-150">receipt_long</span>
+<span>Facturación</span>
+</a>
+<a class="flex items-center gap-md px-sm py-sm text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:scale-95 duration-150">person</span>
+<span>Perfil</span>
+</a>
+</nav>
+<div class="mt-auto border-t border-outline-variant pt-md px-sm">
+<div class="flex items-center gap-md">
+<img alt="User Avatar" class="w-8 h-8 rounded-full border border-outline-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZY6WbvLvT0MA78YAuyTR1zlmfE6idIEJ0MlPL8cQGykRudDVG8dkszW2ZMGA9x_Ni0_oGtZsdSlr1SJEHmufX5PrHFgQo8fLZAvpPtyxhOiP74IwJMxaL8WCBIgtQhe0QEJ3Jaf-m8SkSoikAw9pvp17aRFVRJjfOmIqEVX5Y4jpjoMsw12-yfoKq8pt2x5IFxOrlF2UoX_vBvXmzK0tD3lD8dgUkvKjk-Hdl_ntwKXh52ojQ0iA6BqsCpd3_Blo698zNX6ooeQ"/>
+<div class="flex-col flex">
+<span class="font-body-sm text-body-sm font-semibold">Admin User</span>
+<span class="font-label-mono text-label-mono text-on-surface-variant">ID: MSP-882</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Wrapper -->
+<div class="flex-1 md:ml-64 flex flex-col min-h-screen">
+<!-- TopNavBar -->
+<header class="bg-surface-container-lowest dark:bg-surface-container-lowest text-primary dark:text-primary-fixed font-body-sm text-body-sm w-full top-0 sticky border-b border-outline-variant dark:border-outline z-10 hidden md:flex justify-between items-center px-margin-desktop py-base max-w-[calc(1440px-256px)]">
+<div class="flex items-center gap-lg w-1/3">
+<span class="text-title-md font-title-md font-black text-primary dark:text-primary-fixed">MSP Client Portal</span>
+<div class="relative w-full max-w-xs hidden lg:block">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full pl-xl pr-sm py-sm border border-outline-variant rounded bg-surface focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all font-body-sm text-body-sm" placeholder="Buscar recursos..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="p-xs text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed opacity-80 hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-xs text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed opacity-80 hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 p-margin-mobile md:p-margin-desktop max-w-[1440px] w-full mx-auto pb-xl">
+<div class="mb-xl">
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-sm">Selección de Planes</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">Elija el nivel de servicio gestionado que mejor se adapte a las necesidades de su infraestructura. Actualice o cambie su plan en cualquier momento.</p>
+</div>
+<!-- Bento Grid Layout for Pricing -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter mb-xl">
+<!-- Basic Plan Card -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-lg hover:shadow-[0_12px_24px_-12px_rgba(15,23,42,0.08)] transition-all duration-300 flex flex-col relative group">
+<div class="mb-md">
+<span class="inline-block px-sm py-xs bg-surface-container text-on-surface font-label-mono text-label-mono rounded mb-sm">NIVEL 1</span>
+<h3 class="font-title-md text-title-md text-on-surface">Básico</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs h-10">Soporte remoto reactivo para infraestructura no crítica.</p>
+</div>
+<div class="mb-lg">
+<span class="font-display-lg text-display-lg text-on-surface">$299</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">/mes</span>
+</div>
+<ul class="space-y-sm mb-lg flex-1">
+<li class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-[16px] text-[#10B981] mt-1">check_circle</span>
+<span class="font-body-sm text-body-sm text-on-surface">Soporte Remoto 8x5</span>
+</li>
+<li class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-[16px] text-[#10B981] mt-1">check_circle</span>
+<span class="font-body-sm text-body-sm text-on-surface">Monitoreo Básico (Ping/Port)</span>
+</li>
+<li class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-[16px] text-[#10B981] mt-1">check_circle</span>
+<span class="font-body-sm text-body-sm text-on-surface">Gestión de Tickets Estándar</span>
+</li>
+<li class="flex items-start gap-sm opacity-50">
+<span class="material-symbols-outlined text-[16px] text-outline mt-1">cancel</span>
+<span class="font-body-sm text-body-sm text-on-surface">Mantenimiento Preventivo</span>
+</li>
+</ul>
+<button class="w-full py-sm border border-[#334155] text-[#334155] font-body-sm text-body-sm rounded hover:bg-surface-container transition-colors">Seleccionar Básico</button>
+</div>
+<!-- Standard Plan Card (Highlighted) -->
+<div class="bg-surface-container-lowest border-2 border-primary rounded-lg p-lg hover:shadow-[0_16px_32px_-16px_rgba(15,23,42,0.12)] transition-all duration-300 flex flex-col relative transform lg:-translate-y-2">
+<div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-on-primary font-label-mono text-label-mono px-md py-xs rounded-full">RECOMENDADO</div>
+<div class="mb-md mt-sm">
+<span class="inline-block px-sm py-xs bg-secondary-container text-on-secondary-container font-label-mono text-label-mono rounded mb-sm">NIVEL 2</span>
+<h3 class="font-title-md text-title-md text-on-surface">Estándar</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs h-10">Soporte proactivo y mantenimiento regular de sistemas.</p>
+</div>
+<div class="mb-lg">
+<span class="font-display-lg text-display-lg text-on-surface">$599</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">/mes</span>
+</div>
+<ul class="space-y-sm mb-lg flex-1">
+<li class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-[16px] text-[#10B981] mt-1">check_circle</span>
+<span class="font-body-sm text-body-sm text-on-surface">Todo lo del plan Básico</span>
+</li>
+<li class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-[16px] text-[#10B981] mt-1">check_circle</span>
+<span class="font-body-sm text-body-sm text-on-surface">Mantenimiento Preventivo Mensual</span>
+</li>
+<li class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-[16px] text-[#10B981] mt-1">check_circle</span>
+<span class="font-body-sm text-body-sm text-on-surface">Monitoreo Avanzado de Rendimiento</span>
+</li>
+<li class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-[16px] text-[#10B981] mt-1">check_circle</span>
+<span class="font-body-sm text-body-sm text-on-surface">Gestión de Parches OS</span>
+</li>
+</ul>
+<button class="w-full py-sm bg-[#0F172A] text-white font-body-sm text-body-sm rounded hover:bg-opacity-90 transition-colors">Seleccionar Estándar</button>
+</div>
+<!-- Premium Plan Card -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-lg hover:shadow-[0_12px_24px_-12px_rgba(15,23,42,0.08)] transition-all duration-300 flex flex-col relative">
+<div class="mb-md">
+<span class="inline-block px-sm py-xs bg-tertiary-container text-on-tertiary-container font-label-mono text-label-mono rounded mb-sm">NIVEL 3</span>
+<h3 class="font-title-md text-title-md text-on-surface">Premium</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs h-10">Cobertura total, mitigación de riesgos y continuidad de negocio.</p>
+</div>
+<div class="mb-lg">
+<span class="font-display-lg text-display-lg text-on-surface">$1299</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">/mes</span>
+</div>
+<ul class="space-y-sm mb-lg flex-1">
+<li class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-[16px] text-[#10B981] mt-1">check_circle</span>
+<span class="font-body-sm text-body-sm text-on-surface">Todo lo del plan Estándar</span>
+</li>
+<li class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-[16px] text-[#10B981] mt-1">check_circle</span>
+<span class="font-body-sm text-body-sm text-on-surface">Backups Gestionados y Recuperación</span>
+</li>
+<li class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-[16px] text-[#10B981] mt-1">check_circle</span>
+<span class="font-body-sm text-body-sm text-on-surface">Soporte 24/7 Crítico</span>
+</li>
+<li class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-[16px] text-[#10B981] mt-1">check_circle</span>
+<span class="font-body-sm text-body-sm text-on-surface">Auditoría de Seguridad Trimestral</span>
+</li>
+</ul>
+<button class="w-full py-sm border border-[#334155] text-[#334155] font-body-sm text-body-sm rounded hover:bg-surface-container transition-colors">Seleccionar Premium</button>
+</div>
+</div>
+<!-- Payment Section Layout -->
+<div class="mt-xl pt-lg border-t border-outline-variant grid grid-cols-1 lg:grid-cols-2 gap-xl">
+<!-- Payment Methods -->
+<div>
+<h3 class="font-title-md text-title-md text-on-surface mb-md">Método de Pago</h3>
+<!-- Tabs -->
+<div class="flex border-b border-outline-variant mb-lg">
+<button class="px-md py-sm font-body-sm text-body-sm font-semibold text-primary border-b-2 border-primary mr-sm">Pago con Tarjeta</button>
+<button class="px-md py-sm font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">Transferencia Bancaria</button>
+</div>
+<!-- Card Form -->
+<form class="space-y-md bg-surface-container-lowest p-lg border border-outline-variant rounded-lg">
+<div>
+<label class="block font-body-sm text-body-sm text-on-surface-variant mb-xs">Nombre en la tarjeta</label>
+<input class="w-full px-sm py-sm border border-[#CBD5E1] rounded font-body-sm text-body-sm focus:border-[#0F172A] focus:ring-2 focus:ring-[rgba(15,23,42,0.1)] focus:outline-none bg-white" placeholder="Ej. Juan Pérez" type="text"/>
+</div>
+<div>
+<label class="block font-body-sm text-body-sm text-on-surface-variant mb-xs">Número de tarjeta</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-outline">credit_card</span>
+<input class="w-full pl-xl pr-sm py-sm border border-[#CBD5E1] rounded font-body-sm text-body-sm focus:border-[#0F172A] focus:ring-2 focus:ring-[rgba(15,23,42,0.1)] focus:outline-none bg-white" placeholder="0000 0000 0000 0000" type="text"/>
+</div>
+</div>
+<div class="flex gap-md">
+<div class="w-1/2">
+<label class="block font-body-sm text-body-sm text-on-surface-variant mb-xs">Expiración</label>
+<input class="w-full px-sm py-sm border border-[#CBD5E1] rounded font-body-sm text-body-sm focus:border-[#0F172A] focus:ring-2 focus:ring-[rgba(15,23,42,0.1)] focus:outline-none bg-white" placeholder="MM/YY" type="text"/>
+</div>
+<div class="w-1/2">
+<label class="block font-body-sm text-body-sm text-on-surface-variant mb-xs">CVV</label>
+<input class="w-full px-sm py-sm border border-[#CBD5E1] rounded font-body-sm text-body-sm focus:border-[#0F172A] focus:ring-2 focus:ring-[rgba(15,23,42,0.1)] focus:outline-none bg-white" placeholder="123" type="text"/>
+</div>
+</div>
+<div class="pt-sm">
+<button class="w-full py-sm bg-[#0F172A] text-white font-body-sm text-body-sm rounded hover:bg-opacity-90 transition-colors flex justify-center items-center gap-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">lock</span>
+                                Procesar Pago Seguro
+                            </button>
+</div>
+</form>
+</div>
+<!-- Order Summary -->
+<div>
+<h3 class="font-title-md text-title-md text-on-surface mb-md">Resumen del Pedido</h3>
+<div class="bg-surface-container-lowest p-lg border border-outline-variant rounded-lg">
+<div class="flex justify-between items-center mb-sm">
+<span class="font-body-lg text-body-lg text-on-surface">Plan Estándar (Mensual)</span>
+<span class="font-body-lg text-body-lg text-on-surface font-semibold">$599.00</span>
+</div>
+<div class="flex justify-between items-center mb-md text-on-surface-variant">
+<span class="font-body-sm text-body-sm">Impuestos (IVA 16%)</span>
+<span class="font-body-sm text-body-sm">$95.84</span>
+</div>
+<div class="border-t border-outline-variant pt-md flex justify-between items-center mb-md">
+<span class="font-title-md text-title-md text-on-surface">Total a pagar</span>
+<span class="font-title-md text-title-md text-on-surface">$694.84</span>
+</div>
+<!-- Trust Badges -->
+<div class="mt-lg flex items-center gap-md p-md bg-surface-container-low rounded">
+<span class="material-symbols-outlined text-primary text-[24px]">verified_user</span>
+<div>
+<h4 class="font-table-header text-table-header text-on-surface">Transacción Encriptada</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant text-xs">Sus datos están protegidos con seguridad SSL de grado militar.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface dark:bg-surface-dim text-secondary dark:text-secondary-fixed-dim font-body-sm text-body-sm w-full border-t border-outline-variant dark:border-outline flex justify-between items-center py-lg px-margin-desktop mt-auto max-w-[calc(1440px-256px)] hidden md:flex">
+<span class="font-bold text-on-surface">© 2024 MSP Managed Services. Todos los derechos reservados.</span>
+<div class="flex gap-lg">
+<a class="text-on-surface-variant dark:text-surface-variant hover:underline" href="#">Ayuda</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:underline" href="#">Términos Legales</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:underline" href="#">Privacidad</a>
+</div>
+</footer>
+</div>
+</body></html>

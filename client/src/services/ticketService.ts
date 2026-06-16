@@ -1,0 +1,79 @@
+import api from './api';
+
+export interface Ticket {
+  id: string;
+  title: string;
+  description: string;
+  category: 'REPAIR' | 'WARRANTY' | 'SERVICE_OUTAGE';
+  status: 'OPEN' | 'IN_PROGRESS' | 'AWAITING_PAYMENT' | 'RESOLVED' | 'CLOSED' | 'CANCELLED';
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  client_id: string;
+  assigned_tech_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TicketEvent {
+  id: string;
+  ticket_id: string;
+  old_status: string | null;
+  new_status: string;
+  changed_by: string;
+  changed_by_name?: string;
+  changed_by_role?: string;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface CreateTicketPayload {
+  title: string;
+  description: string;
+  category: string;
+  priority?: string;
+}
+
+export const ticketService = {
+  async getAll(params?: Record<string, string | number>): Promise<{ data: Ticket[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> {
+    const response = await api.get('/tickets', { params });
+    return response.data;
+  },
+
+  async getById(id: string): Promise<Ticket> {
+    const response = await api.get(`/tickets/${id}`);
+    return response.data.data;
+  },
+
+  async create(data: CreateTicketPayload): Promise<Ticket> {
+    const response = await api.post('/tickets', data);
+    return response.data.data;
+  },
+
+  async updateStatus(id: string, status: string, notes?: string): Promise<Ticket> {
+    const response = await api.patch(`/tickets/${id}/status`, { status, notes });
+    return response.data.data;
+  },
+
+  async getTimeline(id: string): Promise<TicketEvent[]> {
+    const response = await api.get(`/tickets/${id}/timeline`);
+    return response.data.data;
+  },
+
+  async getAttachments(id: string): Promise<unknown[]> {
+    const response = await api.get(`/tickets/${id}/attachments`);
+    return response.data.data;
+  },
+
+  async uploadAttachment(id: string, file: File): Promise<unknown> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post(`/tickets/${id}/attachments`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data.data;
+  },
+
+  async getStatusSummary(): Promise<Record<string, number>> {
+    const response = await api.get('/tickets/summary');
+    return response.data.data;
+  },
+};
