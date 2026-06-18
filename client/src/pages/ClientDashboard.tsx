@@ -65,7 +65,7 @@ export function ClientDashboard() {
   return (
     <div className="animate-fade-in max-w-7xl mx-auto">
       {/* Welcome Area */}
-      <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-h1 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
             System Overview
@@ -84,9 +84,9 @@ export function ClientDashboard() {
       </div>
 
       {/* Bento Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-5 mb-6">
         {/* Status Cards — spans 8 cols */}
-        <div className="md:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-5">
           {/* Support Status */}
           <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl flex flex-col shadow-sm hover:shadow-md transition-shadow">
             <div className="flex justify-between items-start mb-4">

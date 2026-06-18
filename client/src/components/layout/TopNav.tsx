@@ -11,7 +11,7 @@ export function TopNav({ onMenuClick }: TopNavProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   return (
-    <header className="flex justify-between items-center w-full px-6 h-16 bg-surface-container-lowest border-b border-outline-variant sticky top-0 z-10">
+    <header className="flex justify-between items-center w-full px-5 md:px-10 h-16 bg-surface-container-lowest border-b border-outline-variant sticky top-0 z-10">
       <div className="flex items-center gap-3">
         {/* Mobile menu button */}
         <button
@@ -21,8 +21,8 @@ export function TopNav({ onMenuClick }: TopNavProps) {
           <Menu className="h-5 w-5" />
         </button>
 
-        <h2 className="text-h3 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
-          MSP Client Portal
+        <h2 className="text-h3 text-primary md:hidden" style={{ fontFamily: 'var(--font-heading)' }}>
+          MSP Portal
         </h2>
       </div>
 

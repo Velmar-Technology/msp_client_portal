@@ -46,8 +46,8 @@ export function Sidebar() {
   return (
     <aside className="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 border-r border-outline-variant bg-surface-container-low z-20">
       {/* Brand */}
-      <div className="mb-6 flex items-center gap-2 px-4 pt-6">
-        <CloudCog className="h-8 w-8 text-primary" />
+      <div className="mb-6 flex items-center gap-3 px-5 pt-6 pb-2">
+        <CloudCog className="h-8 w-8 text-primary flex-shrink-0" />
         <div>
           <h1 className="text-h2 text-on-surface" style={{ fontFamily: 'var(--font-heading)' }}>
             MSP Portal
@@ -59,7 +59,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 flex flex-col gap-1 px-3">
+      <nav className="flex-1 flex flex-col gap-1 px-3 overflow-y-auto">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
@@ -79,7 +79,7 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-3 pb-6">
+      <div className="px-3 pb-6 pt-3 border-t border-outline-variant mt-2">
         <NavLink
           to="/help"
           className="flex items-center gap-3 px-3 py-2 rounded-lg text-label-md text-on-surface-variant opacity-70 hover:bg-surface-container transition-all"

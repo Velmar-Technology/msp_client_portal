@@ -25,8 +25,8 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="animate-fade-in max-w-2xl mx-auto">
-      <div className="mb-6">
+    <div className="animate-fade-in max-w-3xl mx-auto">
+      <div className="mb-8">
         <h1 className="text-h1 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>Profile</h1>
         <p className="text-body-lg text-on-surface-variant mt-1">Manage your account settings</p>
       </div>

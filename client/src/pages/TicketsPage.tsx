@@ -95,7 +95,7 @@ export function TicketsPage() {
   return (
     <div className="animate-fade-in max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-h1 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
             Support Tickets
@@ -114,7 +114,7 @@ export function TicketsPage() {
       </div>
 
       {/* Filters */}
-      <div className="mb-4 flex flex-col md:flex-row gap-3">
+      <div className="mb-6 flex flex-col md:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant opacity-50" />
           <input

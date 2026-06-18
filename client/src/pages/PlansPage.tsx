@@ -68,11 +68,11 @@ export function PlansPage() {
       </div>
 
       {/* Plan Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
         {plans.map((plan) => (
           <div
             key={plan.id}
-            className={`relative bg-surface-container-lowest border rounded-xl p-6 flex flex-col transition-all cursor-pointer ${
+            className={`relative bg-surface-container-lowest border rounded-xl p-6 pt-8 flex flex-col transition-all cursor-pointer ${
               selectedPlan === plan.id
                 ? 'border-primary shadow-md ring-1 ring-primary'
                 : 'border-outline-variant shadow-sm hover:shadow-md'
@@ -152,7 +152,7 @@ export function PlansPage() {
       </div>
 
       {/* Payment Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Payment Method */}
         <div>
           <h2 className="text-h2 text-primary mb-4" style={{ fontFamily: 'var(--font-heading)' }}>

@@ -36,7 +36,7 @@ export function BillingPage() {
 
   return (
     <div className="animate-fade-in max-w-7xl mx-auto">
-      <div className="mb-6">
+      <div className="mb-8">
         <h1 className="text-h1 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
           Billing History
         </h1>

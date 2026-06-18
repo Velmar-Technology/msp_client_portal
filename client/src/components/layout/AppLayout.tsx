@@ -25,15 +25,15 @@ export function AppLayout() {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col md:ml-64 w-full min-h-screen">
+      <div className="flex-1 flex flex-col md:ml-64 min-h-screen">
         <TopNav onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)} />
 
-        <main className="flex-1 p-4 md:p-8 bg-background">
+        <main className="flex-1 p-5 md:px-10 md:py-8 bg-background overflow-x-hidden">
           <Outlet />
         </main>
 
         {/* Footer */}
-        <footer className="flex flex-col md:flex-row justify-between items-center px-6 py-4 mt-auto bg-surface-container-lowest border-t border-outline-variant w-full gap-2">
+        <footer className="flex flex-col md:flex-row justify-between items-center px-5 md:px-10 py-4 mt-auto bg-surface-container-lowest border-t border-outline-variant w-full gap-2">
           <span className="text-label-sm text-on-surface-variant">
             © 2024 MSP Managed Services. All rights reserved.
           </span>

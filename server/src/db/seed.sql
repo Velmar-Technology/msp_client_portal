@@ -4,11 +4,11 @@
 -- Passwords are bcrypt hash of 'password123'
 
 INSERT INTO users (id, email, name, password_hash, role, specialty, is_active, email_verified) VALUES
-  ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'admin@msp-helpdesk.com', 'System Administrator', '$2b$12$LJ3IarGPvDHrFX5Zzv8yfuVPmVqEFsRCdOMJsAw9n5fWHIbQ1yLWO', 'ADMIN', NULL, true, true),
-  ('b2c3d4e5-f6a7-8901-bcde-f12345678901', 'john.client@example.com', 'John Mitchell', '$2b$12$LJ3IarGPvDHrFX5Zzv8yfuVPmVqEFsRCdOMJsAw9n5fWHIbQ1yLWO', 'CLIENT', NULL, true, true),
-  ('c3d4e5f6-a7b8-9012-cdef-123456789012', 'sarah.tech@msp-helpdesk.com', 'Sarah Chen', '$2b$12$LJ3IarGPvDHrFX5Zzv8yfuVPmVqEFsRCdOMJsAw9n5fWHIbQ1yLWO', 'TECHNICIAN', 'Networking', true, true),
-  ('d4e5f6a7-b8c9-0123-defa-234567890123', 'mike.tech@msp-helpdesk.com', 'Mike Rodriguez', '$2b$12$LJ3IarGPvDHrFX5Zzv8yfuVPmVqEFsRCdOMJsAw9n5fWHIbQ1yLWO', 'TECHNICIAN', 'TV', true, true),
-  ('e5f6a7b8-c9d0-1234-efab-345678901234', 'lisa.client@example.com', 'Lisa Park', '$2b$12$LJ3IarGPvDHrFX5Zzv8yfuVPmVqEFsRCdOMJsAw9n5fWHIbQ1yLWO', 'CLIENT', NULL, true, true);
+  ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'admin@msp-helpdesk.com', 'System Administrator', '$2b$12$vYNizLsJireozMId6GOMuucvVnHVmJBHmTqAABUxLpI2OXB7lWLfO', 'ADMIN', NULL, true, true),
+  ('b2c3d4e5-f6a7-8901-bcde-f12345678901', 'john.client@example.com', 'John Mitchell', '$2b$12$vYNizLsJireozMId6GOMuucvVnHVmJBHmTqAABUxLpI2OXB7lWLfO', 'CLIENT', NULL, true, true),
+  ('c3d4e5f6-a7b8-9012-cdef-123456789012', 'sarah.tech@msp-helpdesk.com', 'Sarah Chen', '$2b$12$vYNizLsJireozMId6GOMuucvVnHVmJBHmTqAABUxLpI2OXB7lWLfO', 'TECHNICIAN', 'Networking', true, true),
+  ('d4e5f6a7-b8c9-0123-defa-234567890123', 'mike.tech@msp-helpdesk.com', 'Mike Rodriguez', '$2b$12$vYNizLsJireozMId6GOMuucvVnHVmJBHmTqAABUxLpI2OXB7lWLfO', 'TECHNICIAN', 'TV', true, true),
+  ('e5f6a7b8-c9d0-1234-efab-345678901234', 'lisa.client@example.com', 'Lisa Park', '$2b$12$vYNizLsJireozMId6GOMuucvVnHVmJBHmTqAABUxLpI2OXB7lWLfO', 'CLIENT', NULL, true, true);
 
 INSERT INTO tickets (id, title, description, category, status, priority, client_id, assigned_tech_id) VALUES
   ('11111111-1111-1111-1111-111111111111', 'Network connectivity issues in office', 'Our office network drops every 30 minutes. All workstations affected. Router model: Cisco ISR 4321.', 'SERVICE_OUTAGE', 'IN_PROGRESS', 'HIGH', 'b2c3d4e5-f6a7-8901-bcde-f12345678901', 'c3d4e5f6-a7b8-9012-cdef-123456789012'),
