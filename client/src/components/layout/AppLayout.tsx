@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 import { AppSidebar } from './app-sidebar';
 import { TopNav } from './TopNav';
 import { SidebarProvider, SidebarInset } from '../ui/sidebar';
@@ -19,15 +19,15 @@ export function AppLayout() {
             © 2026 Velmar Technology SRL. All rights reserved.
           </span>
           <div className="flex gap-6">
-            <a href="#" className="text-label-sm text-on-surface-variant hover:text-primary transition-colors">
+            <Link to="/help" className="text-label-sm text-on-surface-variant hover:text-primary transition-colors">
               Help
-            </a>
-            <a href="#" className="text-label-sm text-on-surface-variant hover:text-primary transition-colors">
+            </Link>
+            <Link to="/terms" className="text-label-sm text-on-surface-variant hover:text-primary transition-colors">
               Terms of Service
-            </a>
-            <a href="#" className="text-label-sm text-on-surface-variant hover:text-primary transition-colors">
+            </Link>
+            <Link to="/privacy" className="text-label-sm text-on-surface-variant hover:text-primary transition-colors">
               Privacy
-            </a>
+            </Link>
           </div>
         </footer>
       </SidebarInset>
