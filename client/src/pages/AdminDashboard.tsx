@@ -23,13 +23,13 @@ export function AdminDashboard() {
             All systems operational and secure.
           </p>
         </div>
-        <button
+        {/* <button
           onClick={() => navigate('/tickets?action=new')}
           className="bg-primary text-on-primary px-5 py-2.5 rounded-lg flex items-center gap-2 hover:opacity-90 transition-opacity text-label-md cursor-pointer"
         >
           <Plus className="h-4 w-4" />
           <span>New Ticket</span>
-        </button>
+        </button> */}
       </div>
 
       {/* Bento Grid Layout */}

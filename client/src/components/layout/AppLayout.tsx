@@ -16,7 +16,7 @@ export function AppLayout() {
         {/* Footer */}
         <footer className="flex flex-col md:flex-row justify-between items-center px-5 md:px-10 py-4 mt-auto bg-surface-container-lowest border-t border-outline-variant w-full gap-2">
           <span className="text-label-sm text-on-surface-variant">
-            © 2024 MSP Managed Services. All rights reserved.
+            © 2026 Velmar Technology SRL. All rights reserved.
           </span>
           <div className="flex gap-6">
             <a href="#" className="text-label-sm text-on-surface-variant hover:text-primary transition-colors">
