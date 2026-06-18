@@ -2,12 +2,12 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Ticket,
-  CreditCard,
-  Package,
   User,
   HelpCircle,
   CloudCog,
   Shield,
+  ChevronRight,
+  Settings,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import {
@@ -20,30 +20,60 @@ import {
   SidebarMenuButton,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from '../ui/sidebar';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '../ui/collapsible';
 
 import { useTranslation } from 'react-i18next';
 
-const clientNavItems = [
+interface NavSubItem {
+  to: string;
+  labelKey: string;
+}
+
+interface NavItem {
+  to: string;
+  icon: any;
+  labelKey: string;
+  items?: NavSubItem[];
+}
+
+const clientNavItems: NavItem[] = [
   { to: '/dashboard', icon: LayoutDashboard, labelKey: 'dashboard' },
   { to: '/tickets', icon: Ticket, labelKey: 'tickets' },
-  { to: '/plans', icon: Package, labelKey: 'plans' },
-  { to: '/billing', icon: CreditCard, labelKey: 'billing' },
-  { to: '/profile', icon: User, labelKey: 'profile' },
+  {
+    to: '/profile-group',
+    icon: User,
+    labelKey: 'profile',
+    items: [
+      { to: '/profile', labelKey: 'profile' },
+      { to: '/plans', labelKey: 'plans' },
+      { to: '/billing', labelKey: 'billing' },
+    ],
+  },
 ];
 
-const techNavItems = [
+const techNavItems: NavItem[] = [
   { to: '/tech/dashboard', icon: LayoutDashboard, labelKey: 'dashboard' },
   { to: '/tickets', icon: Ticket, labelKey: 'myTickets' },
   { to: '/profile', icon: User, labelKey: 'profile' },
 ];
 
-const adminNavItems = [
+const adminNavItems: NavItem[] = [
   { to: '/admin/dashboard', icon: Shield, labelKey: 'adminDashboard' },
   { to: '/tickets', icon: Ticket, labelKey: 'allTickets' },
-  { to: '/plans', icon: Package, labelKey: 'plans' },
-  { to: '/billing', icon: CreditCard, labelKey: 'billing' },
-  { to: '/profile', icon: User, labelKey: 'profile' },
+  {
+    to: '/settings-group',
+    icon: Settings,
+    labelKey: 'settings',
+    items: [
+      { to: '/profile', labelKey: 'profile' },
+      { to: '/plans', labelKey: 'plans' },
+      { to: '/billing', labelKey: 'billing' },
+    ],
+  },
 ];
 
 export function AppSidebar() {
@@ -81,6 +111,48 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => {
+                if (item.items) {
+                  const isGroupActive = item.items.some((sub) =>
+                    location.pathname.startsWith(sub.to)
+                  );
+                  const translatedLabel = t(`nav.${item.labelKey}`);
+
+                  return (
+                    <Collapsible
+                      key={item.labelKey}
+                      asChild
+                      defaultOpen={isGroupActive}
+                      className="group/collapsible"
+                    >
+                      <SidebarMenuItem>
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton tooltip={translatedLabel} isActive={isGroupActive}>
+                            <item.icon className="h-4 w-4 flex-shrink-0" />
+                            <span className="group-data-[collapsible=icon]:hidden">{translatedLabel}</span>
+                            <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden" />
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <SidebarMenuSub>
+                            {item.items.map((sub) => {
+                              const isSubActive = location.pathname.startsWith(sub.to);
+                              return (
+                                <SidebarMenuSubItem key={sub.to}>
+                                  <SidebarMenuSubButton asChild isActive={isSubActive}>
+                                    <NavLink to={sub.to}>
+                                      <span>{t(`nav.${sub.labelKey}`)}</span>
+                                    </NavLink>
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                              );
+                            })}
+                          </SidebarMenuSub>
+                        </CollapsibleContent>
+                      </SidebarMenuItem>
+                    </Collapsible>
+                  );
+                }
+
                 const isActive = item.to === '/dashboard' || item.to === '/tech/dashboard' || item.to === '/admin/dashboard'
                   ? location.pathname === item.to
                   : location.pathname.startsWith(item.to);
