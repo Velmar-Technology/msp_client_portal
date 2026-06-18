@@ -11,8 +11,16 @@ export function validate(schema: ZodSchema, source: 'body' | 'query' | 'params' 
   return (req: Request, res: Response, next: NextFunction): void => {
     try {
       const data = schema.parse(req[source]);
-      // Replace with parsed/coerced data
-      (req as Record<string, unknown>)[source] = data;
+      // Replace with parsed/coerced data (mutate in-place for query/params as they are read-only properties in Express 5)
+      if (source === 'body') {
+        req.body = data;
+      } else {
+        const target = req[source] as Record<string, unknown>;
+        for (const key in target) {
+          delete target[key];
+        }
+        Object.assign(target, data);
+      }
       next();
     } catch (error) {
       if (error instanceof ZodError) {

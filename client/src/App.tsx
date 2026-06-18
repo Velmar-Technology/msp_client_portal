@@ -9,6 +9,7 @@ import { TicketDetailPage } from './pages/TicketDetailPage';
 import { PlansPage } from './pages/PlansPage';
 import { BillingPage } from './pages/BillingPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { AdminDashboard } from './pages/AdminDashboard';
 
 // Protected Route Component
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) {
@@ -69,7 +70,7 @@ export function App() {
 
             {/* Tech/Admin Routes (Placeholders for now) */}
             <Route path="/tech/dashboard" element={<ProtectedRoute allowedRoles={['TECHNICIAN']}><div>Tech Dashboard (Coming Soon)</div></ProtectedRoute>} />
-            <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['ADMIN']}><div>Admin Dashboard (Coming Soon)</div></ProtectedRoute>} />
+            <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['ADMIN']}><AdminDashboard /></ProtectedRoute>} />
 
             {/* Shared Routes */}
             <Route path="/tickets" element={<TicketsPage />} />
