@@ -92,24 +92,20 @@
 
 
 /* ---- Base Styles ---- */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+@layer base {
+  html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-html {
-  font-size: 16px;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-body {
-  font-family: var(--font-sans);
-  background-color: var(--color-background);
-  color: var(--color-on-surface);
-  line-height: 1.5;
-  min-height: 100vh;
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-background);
+    color: var(--color-on-surface);
+    line-height: 1.5;
+    min-height: 100vh;
+  }
 }
 
 /* ---- Typography Utilities ---- */
