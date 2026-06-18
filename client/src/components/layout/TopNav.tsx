@@ -1,25 +1,16 @@
-import { Bell, Settings, LogOut, Menu, Search } from 'lucide-react';
+import { Bell, Settings, LogOut, Search } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useState } from 'react';
+import { SidebarTrigger } from '../ui/sidebar';
 
-interface TopNavProps {
-  onMenuClick?: () => void;
-}
-
-export function TopNav({ onMenuClick }: TopNavProps) {
+export function TopNav() {
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   return (
     <header className="flex justify-between items-center w-full px-5 md:px-10 h-16 bg-surface-container-lowest border-b border-outline-variant sticky top-0 z-10">
       <div className="flex items-center gap-3">
-        {/* Mobile menu button */}
-        <button
-          onClick={onMenuClick}
-          className="md:hidden text-primary p-1 rounded hover:bg-surface-container-low transition-colors"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
+        <SidebarTrigger className="text-primary hover:bg-surface-container-low cursor-pointer" />
 
         <h2 className="text-h3 text-primary md:hidden" style={{ fontFamily: 'var(--font-heading)' }}>
           MSP Portal
