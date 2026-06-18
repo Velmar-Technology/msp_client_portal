@@ -15,48 +15,48 @@
 
 /* ---- CSS Custom Properties (Design Tokens) ---- */
 @theme {
-  /* Colors — From Stitch DESIGN.md */
-  --color-surface: #f8f9ff;
-  --color-surface-dim: #cbdbf5;
-  --color-surface-bright: #f8f9ff;
-  --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #eff4ff;
-  --color-surface-container: #e5eeff;
-  --color-surface-container-high: #dce9ff;
-  --color-surface-container-highest: #d3e4fe;
-  --color-on-surface: #0b1c30;
-  --color-on-surface-variant: #45464d;
-  --color-inverse-surface: #213145;
-  --color-inverse-on-surface: #eaf1ff;
-  --color-outline: #76777d;
-  --color-outline-variant: #e2e8f0;
-  --color-surface-tint: #565e74;
+  /* Colors — From Stitch DESIGN.md (mapped to CSS variables for dark mode support) */
+  --color-surface: var(--surface);
+  --color-surface-dim: var(--surface-dim);
+  --color-surface-bright: var(--surface-bright);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-inverse-surface: var(--inverse-surface);
+  --color-inverse-on-surface: var(--inverse-on-surface);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+  --color-surface-tint: var(--surface-tint);
 
-  --color-primary: #0f172a;
-  --color-on-primary: #ffffff;
-  --color-primary-container: #131b2e;
-  --color-on-primary-container: #7c839b;
-  --color-inverse-primary: #bec6e0;
+  --color-primary: var(--primary);
+  --color-on-primary: var(--primary-foreground);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary-container: var(--on-primary-container);
+  --color-inverse-primary: var(--inverse-primary);
 
-  --color-secondary: #4648d4;
-  --color-on-secondary: #ffffff;
-  --color-secondary-container: #6063ee;
-  --color-on-secondary-container: #fffbff;
+  --color-secondary: var(--secondary);
+  --color-on-secondary: var(--secondary-foreground);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary-container: var(--on-secondary-container);
 
-  --color-tertiary: #10B981;
-  --color-on-tertiary: #ffffff;
+  --color-tertiary: var(--tertiary);
+  --color-on-tertiary: var(--on-tertiary);
 
-  --color-error: #EF4444;
-  --color-on-error: #ffffff;
-  --color-error-container: #ffdad6;
-  --color-on-error-container: #93000a;
+  --color-error: var(--error);
+  --color-on-error: var(--on-error);
+  --color-error-container: var(--error-container);
+  --color-on-error-container: var(--on-error-container);
 
-  --color-warning: #F59E0B;
-  --color-success: #10B981;
-  --color-info: #6366f1;
+  --color-warning: var(--warning);
+  --color-success: var(--success);
+  --color-info: var(--info);
 
-  --color-background: #f8f9ff;
-  --color-on-background: #0b1c30;
+  --color-background: var(--background);
+  --color-on-background: var(--foreground);
 
   /* Spacing — 4px base unit */
   --spacing-unit: 4px;
@@ -80,14 +80,14 @@
   --font-mono: 'JetBrains Mono', monospace;
 
   /* Sidebar Colors (mapped to Stitch design system tokens) */
-  --color-sidebar: var(--color-surface-container-low);
-  --color-sidebar-foreground: var(--color-on-surface);
-  --color-sidebar-primary: var(--color-primary);
-  --color-sidebar-primary-foreground: var(--color-on-primary);
-  --color-sidebar-accent: var(--color-surface-container);
-  --color-sidebar-accent-foreground: var(--color-primary);
-  --color-sidebar-border: var(--color-outline-variant);
-  --color-sidebar-ring: var(--color-secondary);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 }
 
 
@@ -258,72 +258,142 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.005 285.823);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.21 0.006 285.885);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.21 0.006 285.885);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.705 0.015 286.067);
+  --background: oklch(0.99 0.005 250);
+  --foreground: #0b1c30;
+  --card: #ffffff;
+  --card-foreground: #0b1c30;
+  --popover: #ffffff;
+  --popover-foreground: #0b1c30;
+  --primary: #0f172a;
+  --primary-foreground: #ffffff;
+  --secondary: #4648d4;
+  --secondary-foreground: #ffffff;
+  --muted: #eff4ff;
+  --muted-foreground: #45464d;
+  --accent: #e5eeff;
+  --accent-foreground: #0f172a;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #4648d4;
   --chart-1: oklch(0.871 0.006 286.286);
   --chart-2: oklch(0.552 0.016 285.938);
   --chart-3: oklch(0.442 0.017 285.786);
   --chart-4: oklch(0.37 0.013 285.805);
   --chart-5: oklch(0.274 0.006 286.033);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-primary: oklch(0.21 0.006 285.885);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.705 0.015 286.067);
+  --sidebar: #eff4ff;
+  --sidebar-foreground: #0b1c30;
+  --sidebar-primary: #0f172a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e5eeff;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #4648d4;
+
+  /* Stitch Custom design system tokens */
+  --surface: #f8f9ff;
+  --surface-dim: #cbdbf5;
+  --surface-bright: #f8f9ff;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #eff4ff;
+  --surface-container: #e5eeff;
+  --surface-container-high: #dce9ff;
+  --surface-container-highest: #d3e4fe;
+  --on-surface: #0b1c30;
+  --on-surface-variant: #45464d;
+  --inverse-surface: #213145;
+  --inverse-on-surface: #eaf1ff;
+  --outline: #76777d;
+  --outline-variant: #e2e8f0;
+  --surface-tint: #565e74;
+
+  --primary-container: #131b2e;
+  --on-primary-container: #7c839b;
+  --inverse-primary: #bec6e0;
+
+  --secondary-container: #e5eeff;
+  --on-secondary-container: #4648d4;
+
+  --tertiary: #10B981;
+  --on-tertiary: #ffffff;
+  --error: #EF4444;
+  --on-error: #ffffff;
+  --error-container: #ffdad6;
+  --on-error-container: #93000a;
+  --warning: #F59E0B;
+  --success: #10B981;
+  --info: #6366f1;
 }
 
 .dark {
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.92 0.004 286.32);
-  --primary-foreground: oklch(0.21 0.006 285.885);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.552 0.016 285.938);
+  --background: #080c14;
+  --foreground: #f1f5f9;
+  --card: #0b111e;
+  --card-foreground: #f1f5f9;
+  --popover: #0b111e;
+  --popover-foreground: #f1f5f9;
+  --primary: #f8fafc;
+  --primary-foreground: #080c14;
+  --secondary: #6063ee;
+  --secondary-foreground: #ffffff;
+  --muted: #111a2e;
+  --muted-foreground: #94a3b8;
+  --accent: #1e293b;
+  --accent-foreground: #f8fafc;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #1e293b;
+  --input: #1e293b;
+  --ring: #6063ee;
   --chart-1: oklch(0.871 0.006 286.286);
   --chart-2: oklch(0.552 0.016 285.938);
   --chart-3: oklch(0.442 0.017 285.786);
   --chart-4: oklch(0.37 0.013 285.805);
   --chart-5: oklch(0.274 0.006 286.033);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.552 0.016 285.938);
+  --sidebar: #0b111e;
+  --sidebar-foreground: #f1f5f9;
+  --sidebar-primary: #6063ee;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1e293b;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: #1e293b;
+  --sidebar-ring: #6063ee;
+
+  /* Stitch Custom design system tokens - Premium Dark Mode */
+  --surface: #080c14;
+  --surface-dim: #04060b;
+  --surface-bright: #121826;
+  --surface-container-lowest: #0b111e;
+  --surface-container-low: #121a2c;
+  --surface-container: #1b263f;
+  --surface-container-high: #243354;
+  --surface-container-highest: #2d3f69;
+  --on-surface: #f1f5f9;
+  --on-surface-variant: #94a3b8;
+  --inverse-surface: #eff4ff;
+  --inverse-on-surface: #080c14;
+  --outline: #475569;
+  --outline-variant: #1e293b;
+  --surface-tint: #6063ee;
+
+  --primary-container: #1b263f;
+  --on-primary-container: #94a3b8;
+  --inverse-primary: #bec6e0;
+
+  --secondary-container: #111a2e;
+  --on-secondary-container: #6063ee;
+
+  --tertiary: #34d399;
+  --on-tertiary: #064e3b;
+  --error: #f87171;
+  --on-error: #7f1d1d;
+  --error-container: #450a0a;
+  --on-error-container: #fca5a5;
+  --warning: #fbbf24;
+  --success: #34d399;
+  --info: #818cf8;
 }
 
 @layer base {

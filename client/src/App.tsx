@@ -13,6 +13,7 @@ import { AdminDashboard } from './pages/AdminDashboard';
 import { HelpPage } from './pages/HelpPage';
 import { TermsPage } from './pages/TermsPage';
 import { PrivacyPage } from './pages/PrivacyPage';
+import { ThemeProvider } from './components/theme-provider';
 
 // Protected Route Component
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) {
@@ -54,37 +55,39 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
 export function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-          <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
-          
-          {/* Default redirect */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+    <ThemeProvider defaultTheme="system" storageKey="msp-portal-theme">
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+            <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+            
+            {/* Default redirect */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-          {/* Protected Routes inside Layout */}
-          <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-            {/* Client Routes */}
-            <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['CLIENT']}><ClientDashboard /></ProtectedRoute>} />
-            <Route path="/plans" element={<ProtectedRoute allowedRoles={['CLIENT', 'ADMIN']}><PlansPage /></ProtectedRoute>} />
-            <Route path="/billing" element={<ProtectedRoute allowedRoles={['CLIENT', 'ADMIN']}><BillingPage /></ProtectedRoute>} />
+            {/* Protected Routes inside Layout */}
+            <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+              {/* Client Routes */}
+              <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['CLIENT']}><ClientDashboard /></ProtectedRoute>} />
+              <Route path="/plans" element={<ProtectedRoute allowedRoles={['CLIENT', 'ADMIN']}><PlansPage /></ProtectedRoute>} />
+              <Route path="/billing" element={<ProtectedRoute allowedRoles={['CLIENT', 'ADMIN']}><BillingPage /></ProtectedRoute>} />
 
-            {/* Tech/Admin Routes (Placeholders for now) */}
-            <Route path="/tech/dashboard" element={<ProtectedRoute allowedRoles={['TECHNICIAN']}><div>Tech Dashboard (Coming Soon)</div></ProtectedRoute>} />
-            <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['ADMIN']}><AdminDashboard /></ProtectedRoute>} />
+              {/* Tech/Admin Routes (Placeholders for now) */}
+              <Route path="/tech/dashboard" element={<ProtectedRoute allowedRoles={['TECHNICIAN']}><div>Tech Dashboard (Coming Soon)</div></ProtectedRoute>} />
+              <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['ADMIN']}><AdminDashboard /></ProtectedRoute>} />
 
-            {/* Shared Routes */}
-            <Route path="/tickets" element={<TicketsPage />} />
-            <Route path="/tickets/:id" element={<TicketDetailPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/help" element={<HelpPage />} />
-            <Route path="/terms" element={<TermsPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+              {/* Shared Routes */}
+              <Route path="/tickets" element={<TicketsPage />} />
+              <Route path="/tickets/:id" element={<TicketDetailPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/help" element={<HelpPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

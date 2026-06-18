@@ -2,6 +2,7 @@ import { Bell, Settings, LogOut, Search } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useState } from 'react';
 import { SidebarTrigger } from '../ui/sidebar';
+import { ThemeToggle } from './ThemeToggle';
 
 export function TopNav() {
   const { user, logout } = useAuth();
@@ -30,6 +31,9 @@ export function TopNav() {
       </div>
 
       <div className="flex items-center gap-2">
+        {/* Theme Toggle */}
+        <ThemeToggle />
+
         {/* Notifications */}
         <button className="relative p-2 text-on-surface-variant hover:bg-surface-container-low transition-colors rounded-lg">
           <Bell className="h-5 w-5" />
