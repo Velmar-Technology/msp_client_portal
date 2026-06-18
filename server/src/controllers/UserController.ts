@@ -14,7 +14,7 @@ export class UserController {
     res.json({ success: true, data: profile });
   }
 
-  async getTechnicians(req: Request, res: Response): Promise<void> {
+  async getTechnicians(_req: Request, res: Response): Promise<void> {
     const technicians = await userService.getTechnicians();
     res.json({ success: true, data: technicians });
   }

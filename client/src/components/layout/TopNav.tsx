@@ -3,8 +3,10 @@ import { useAuth } from '../../hooks/useAuth';
 import { useState } from 'react';
 import { SidebarTrigger } from '../ui/sidebar';
 import { ThemeToggle } from './ThemeToggle';
+import { useTranslation } from 'react-i18next';
 
 export function TopNav() {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
@@ -14,7 +16,7 @@ export function TopNav() {
         <SidebarTrigger className="text-primary hover:bg-surface-container-low cursor-pointer" />
 
         <h2 className="text-h3 text-primary md:hidden" style={{ fontFamily: 'var(--font-heading)' }}>
-          MSP Portal
+          {t('topNav.portal')}
         </h2>
       </div>
 
@@ -24,8 +26,8 @@ export function TopNav() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant opacity-50" />
           <input
             type="text"
-            placeholder="Search resources..."
-            className="w-full pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant rounded-lg text-body-md placeholder:text-on-surface-variant placeholder:opacity-50 focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all"
+            placeholder={t('topNav.search')}
+            className="w-full pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant rounded-lg text-body-md placeholder:text-on-surface-variant placeholder:opacity-50 focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all text-on-surface"
           />
         </div>
       </div>
@@ -35,13 +37,13 @@ export function TopNav() {
         <ThemeToggle />
 
         {/* Notifications */}
-        <button className="relative p-2 text-on-surface-variant hover:bg-surface-container-low transition-colors rounded-lg">
+        <button className="relative p-2 text-on-surface-variant hover:bg-surface-container-low transition-colors rounded-lg cursor-pointer">
           <Bell className="h-5 w-5" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full" />
         </button>
 
         {/* Settings */}
-        <button className="p-2 text-on-surface-variant hover:bg-surface-container-low transition-colors rounded-lg">
+        <button className="p-2 text-on-surface-variant hover:bg-surface-container-low transition-colors rounded-lg cursor-pointer">
           <Settings className="h-5 w-5" />
         </button>
 
@@ -49,7 +51,7 @@ export function TopNav() {
         <div className="relative">
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-surface-container-low transition-colors"
+            className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer"
           >
             <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
               <span className="text-on-primary text-label-sm font-bold">
@@ -60,7 +62,7 @@ export function TopNav() {
 
           {/* Dropdown */}
           {showUserMenu && (
-            <div className="absolute right-0 top-12 w-56 bg-surface-container-lowest border border-outline-variant rounded-lg shadow-lg py-1 animate-fade-in">
+            <div className="absolute right-0 top-12 w-56 bg-surface-container-lowest border border-outline-variant rounded-lg shadow-lg py-1 animate-fade-in z-50">
               <div className="px-4 py-3 border-b border-outline-variant">
                 <p className="text-label-md text-on-surface font-medium">{user?.name}</p>
                 <p className="text-label-sm text-on-surface-variant">{user?.email}</p>
@@ -70,10 +72,10 @@ export function TopNav() {
               </div>
               <button
                 onClick={logout}
-                className="w-full flex items-center gap-2 px-4 py-2.5 text-error hover:bg-error/5 transition-colors text-label-md"
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-error hover:bg-error/5 transition-colors text-label-md cursor-pointer"
               >
                 <LogOut className="h-4 w-4" />
-                <span>Sign Out</span>
+                <span>{t('topNav.signOut')}</span>
               </button>
             </div>
           )}

@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { Shield, Lock, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface PrivacySection {
   id: string;
@@ -8,13 +9,14 @@ interface PrivacySection {
 }
 
 export function PrivacyPage() {
+  const { t, i18n } = useTranslation();
   const sectionsRef = useRef<Record<string, HTMLDivElement | null>>({});
 
   const scrollToSection = (id: string) => {
     sectionsRef.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const privacySections: PrivacySection[] = [
+  const privacyEn: PrivacySection[] = [
     {
       id: "introduction",
       title: "1. Introduction",
@@ -157,21 +159,166 @@ export function PrivacyPage() {
     }
   ];
 
+  const privacyEs: PrivacySection[] = [
+    {
+      id: "introduction",
+      title: "1. Introducción",
+      content: (
+        <>
+          <p>
+            Velmar Technology SRL (&quot;nosotros&quot;, &quot;nos&quot; o &quot;nuestro&quot;) respeta su privacidad y se compromete a proteger los datos personales y operativos de nuestros clientes. Esta Política de Privacidad explica cómo recopilamos, usamos, divulgamos y salvaguardamos su información cuando utiliza nuestro Portal del Cliente MSP.
+          </p>
+          <p className="mt-3">
+            Lea esta política detenidamente. Al acceder o utilizar el portal, usted acepta nuestras prácticas con respecto a su información tal como se describe en el presente documento.
+          </p>
+        </>
+      )
+    },
+    {
+      id: "collection",
+      title: "2. Información que Recopilamos",
+      content: (
+        <>
+          <p>
+            Para proporcionar servicios eficientes de administración y soporte de TI, recopilamos información que entra en las siguientes categorías:
+          </p>
+          <ul className="list-disc pl-5 mt-2 space-y-1">
+            <li><strong>Detalles de la Cuenta:</strong> Información de contacto, incluidos nombres, direcciones de correo electrónico comerciales, números de teléfono y roles laborales.</li>
+            <li><strong>Telemetría del Sistema:</strong> Uso de CPU, asignación de memoria, direcciones IP, topología de red, nombres de dispositivos y especificaciones de hardware recopiladas a través de nuestros agentes de monitoreo local.</li>
+            <li><strong>Registros de Soporte:</strong> Descripciones de tickets, transcripciones de chat, archivos adjuntos de correo electrónico e historiales de resolución de problemas.</li>
+            <li><strong>Datos de Facturación:</strong> Metadatos de transacciones, identificadores de impuestos, direcciones de facturación y detalles del estado de pago (no almacenamos números de tarjetas de crédito sin procesar directamente en nuestros servidores).</li>
+          </ul>
+        </>
+      )
+    },
+    {
+      id: "usage",
+      title: "3. Cómo Utilizamos su Información",
+      content: (
+        <>
+          <p>
+            Procesamos los datos de los clientes únicamente para cumplir con nuestros acuerdos de servicio. Específicamente, utilizamos la información recopilada para:
+          </p>
+          <ul className="list-disc pl-5 mt-2 space-y-1">
+            <li>Diagnosticar, solucionar y resolver problemas de infraestructura registrados en los tickets.</li>
+            <li>Activar la creación automática de tickets cuando los dispositivos monitoreados superen los límites de capacidad o salud establecidos.</li>
+            <li>Procesar pagos y calcular los impuestos correspondientes en las facturas.</li>
+            <li>Enviar notificaciones de servicio críticas, como actualizaciones del estado de los tickets (por ejemplo, a través de integraciones de correo electrónico o WhatsApp) y advertencias de escalación de SLA.</li>
+            <li>Hacer cumplir nuestros Términos de Servicio y proteger la seguridad de nuestros servicios.</li>
+          </ul>
+        </>
+      )
+    },
+    {
+      id: "security",
+      title: "4. Almacenamiento y Protección de Datos",
+      content: (
+        <>
+          <p>
+            Implementamos estrictas medidas físicas, técnicas y administrativas para proteger la información del cliente.
+          </p>
+          <p className="mt-3">
+            Nuestro marco de protección incluye:
+          </p>
+          <ul className="list-disc pl-5 mt-2 space-y-1">
+            <li><strong>Encriptación:</strong> Los datos se encriptan tanto en tránsito (utilizando protocolos HTTPS/TLS) como en reposo dentro de nuestras bases de datos PostgreSQL.</li>
+            <li><strong>Controles de Acceso:</strong> Las configuraciones del sistema y los detalles del portal del cliente están particionados. Los técnicos solo obtienen acceso a los datos de los clientes asignados a sus tickets abiertos.</li>
+            <li><strong>Monitoreo:</strong> Auditoría de seguridad las 24 horas del día, los 7 días de la semana, de los registros del portal para detectar intentos de acceso no autorizados o actividades sospechosas.</li>
+          </ul>
+        </>
+      )
+    },
+    {
+      id: "sharing",
+      title: "5. Intercambio de Información",
+      content: (
+        <>
+          <p>
+            No vendemos, comercializamos ni alquilamos datos personales o configuraciones técnicas de los clientes a terceros. Podremos compartir información únicamente en los siguientes casos:
+          </p>
+          <ul className="list-disc pl-5 mt-2 space-y-1">
+            <li><strong>Proveedores de Servicios:</strong> Integraciones de terceros (por ejemplo, remitentes de notificaciones por correo electrónico, pasarelas de facturación, motores de SMS/WhatsApp) que realizan operaciones en nuestro nombre bajo estrictos acuerdos de confidencialidad.</li>
+            <li><strong>Requisitos Legales:</strong> Cuando sea requerido por ley, citación o regulación para proteger nuestros derechos, la seguridad del cliente o cooperar con las autoridades públicas.</li>
+          </ul>
+        </>
+      )
+    },
+    {
+      id: "cookies",
+      title: "6. Cookies y Sesiones",
+      content: (
+        <>
+          <p>
+            El Portal MSP utiliza cookies esenciales y tokens de sesión para mantenerlo autenticado mientras navega por las páginas.
+          </p>
+          <p className="mt-3">
+            Estas cookies permiten al sistema:
+          </p>
+          <ul className="list-disc pl-5 mt-2 space-y-1">
+            <li>Mantener el estado de inicio de sesión activo (para que no tenga que volver a ingresar las credenciales en cada acción).</li>
+            <li>Recordar las preferencias de la interfaz de usuario, como la configuración de expansión de la barra lateral.</li>
+          </ul>
+          <p className="mt-3">
+            Puede desactivar las cookies en la configuración de su navegador, pero tenga en cuenta que el portal no funcionará correctamente sin el seguimiento de sesión habilitado.
+          </p>
+        </>
+      )
+    },
+    {
+      id: "rights",
+      title: "7. Derechos del Cliente (GDPR y CCPA)",
+      content: (
+        <>
+          <p>
+            Según su jurisdicción, es posible que tenga derechos legales específicos con respecto a su información personal, que incluyen:
+          </p>
+          <ul className="list-disc pl-5 mt-2 space-y-1">
+            <li>El derecho a acceder a los datos que poseemos sobre su negocio.</li>
+            <li>El derecho a solicitar la corrección de registros inexactos.</li>
+            <li>El derecho a solicitar la eliminación de cuentas no esenciales e historiales asociados (sujeto a requisitos reglamentarios de retención para documentos de facturación).</li>
+          </ul>
+          <p className="mt-3">
+            Para ejercer cualquiera de estos derechos, póngase en contacto con nuestro oficial de cumplimiento de privacidad.
+          </p>
+        </>
+      )
+    },
+    {
+      id: "contact",
+      title: "8. Contacto de Cumplimiento",
+      content: (
+        <>
+          <p>
+            Si tiene preguntas sobre esta Política de Privacidad o desea solicitar la corrección/eliminación de datos, comuníquese con nosotros:
+          </p>
+          <div className="mt-3 p-4 bg-surface-container rounded-lg border border-outline-variant text-body-md space-y-1">
+            <p className="font-semibold text-primary">Velmar Technology SRL</p>
+            <p>Atn: Oficial de Privacidad de Datos</p>
+            <p>Correo: privacy@velmartech.com</p>
+            <p>Teléfono: +1 (800) 555-0199 ext. 4</p>
+          </div>
+        </>
+      )
+    }
+  ];
+
+  const privacySections = i18n.language === 'es_DO' ? privacyEs : privacyEn;
+
   return (
-    <div className="animate-fade-in max-w-7xl mx-auto pb-12 space-y-8">
+    <div className="animate-fade-in max-w-7xl mx-auto pb-12 space-y-8 text-on-surface">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-outline-variant pb-6">
         <div>
           <h1 className="text-h1 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
-            Privacy Policy
+            {t('legal.privacyTitle')}
           </h1>
           <p className="text-body-lg text-on-surface-variant mt-1">
-            Last updated: June 18, 2026. This policy describes how we protect your operational and account data.
+            {t('legal.lastUpdated')}: {i18n.language === 'es_DO' ? '18 de Junio, 2026' : 'June 18, 2026'}. {i18n.language === 'es_DO' ? 'Esta política describe cómo protegemos sus datos operativos y de cuenta.' : 'This policy describes how we protect your operational and account data.'}
           </p>
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-lg border border-outline-variant text-label-sm text-on-surface-variant">
           <Shield className="h-4 w-4 text-secondary" />
-          <span>Compliant Standard</span>
+          <span>{t('legal.compliantText')}</span>
         </div>
       </div>
 
@@ -180,7 +327,7 @@ export function PrivacyPage() {
         {/* Sticky Left Sidebar Navigation */}
         <div className="lg:col-span-1 lg:sticky lg:top-24 bg-surface-container-lowest border border-outline-variant rounded-xl p-4 shadow-sm hidden lg:block">
           <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider px-3 mb-3">
-            Table of Contents
+            {t('legal.tableOfContents')}
           </h2>
           <nav className="space-y-1">
             {privacySections.map((sec) => (
@@ -202,7 +349,7 @@ export function PrivacyPage() {
           <div className="flex gap-3 bg-success/5 border border-success/20 rounded-xl p-4 text-body-md text-on-surface-variant">
             <Lock className="h-5 w-5 text-success flex-shrink-0 mt-0.5" />
             <div>
-              <span className="font-semibold text-primary">Secure Infrastructure:</span> We encrypt all server monitoring credentials, log files, and tickets using industry standard AES-256 protocols.
+              <span className="font-semibold text-primary">{t('legal.privacyAlertTitle')}</span> {t('legal.privacyAlertText')}
             </div>
           </div>
 

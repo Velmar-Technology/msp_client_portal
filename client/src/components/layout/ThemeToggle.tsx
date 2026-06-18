@@ -1,11 +1,13 @@
 import { Sun, Moon, Laptop } from 'lucide-react';
 import { useTheme } from '../theme-provider';
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -22,7 +24,7 @@ export function ThemeToggle() {
       <button
         onClick={() => setOpen(!open)}
         className="p-2 text-on-surface-variant hover:bg-surface-container-low transition-colors rounded-lg flex items-center justify-center cursor-pointer"
-        aria-label="Toggle theme"
+        aria-label={t('theme.toggleTheme')}
       >
         <div className="relative h-5 w-5 flex items-center justify-center">
           {/* Light Theme Active */}
@@ -55,7 +57,7 @@ export function ThemeToggle() {
             }`}
           >
             <Sun className="h-4 w-4" />
-            <span>Light</span>
+            <span>{t('theme.light')}</span>
           </button>
           <button
             onClick={() => {
@@ -67,7 +69,7 @@ export function ThemeToggle() {
             }`}
           >
             <Moon className="h-4 w-4" />
-            <span>Dark</span>
+            <span>{t('theme.dark')}</span>
           </button>
           <button
             onClick={() => {
@@ -79,7 +81,7 @@ export function ThemeToggle() {
             }`}
           >
             <Laptop className="h-4 w-4 text-on-surface-variant opacity-70" />
-            <span>System</span>
+            <span>{t('theme.system')}</span>
           </button>
         </div>
       )}

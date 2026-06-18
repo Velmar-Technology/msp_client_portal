@@ -40,17 +40,18 @@ export class UserRepository extends BaseRepository<User> {
     name: string;
     password_hash: string;
     role?: UserRole;
+    language?: string;
   }): Promise<User> {
     const result = await this.queryOne<User>(
-      `INSERT INTO users (email, name, password_hash, role)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO users (email, name, password_hash, role, language)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [data.email, data.name, data.password_hash, data.role || UserRole.CLIENT],
+      [data.email, data.name, data.password_hash, data.role || UserRole.CLIENT, data.language || 'en_US'],
     );
     return result!;
   }
 
-  async updateProfile(id: string, data: Partial<Pick<User, 'name' | 'email'>>): Promise<User | null> {
+  async updateProfile(id: string, data: Partial<Pick<User, 'name' | 'email' | 'language'>>): Promise<User | null> {
     const fields: string[] = [];
     const values: unknown[] = [];
     let paramIndex = 1;
@@ -62,6 +63,10 @@ export class UserRepository extends BaseRepository<User> {
     if (data.email !== undefined) {
       fields.push(`email = $${paramIndex++}`);
       values.push(data.email);
+    }
+    if (data.language !== undefined) {
+      fields.push(`language = $${paramIndex++}`);
+      values.push(data.language);
     }
 
     if (fields.length === 0) return this.findById(id);

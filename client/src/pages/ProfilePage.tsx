@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { userService } from '../services/userService';
-import { Save, User, Mail, Shield } from 'lucide-react';
+import { Save, User, Mail, Shield, Globe } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export function ProfilePage() {
-  const { user } = useAuth();
+  const { t, i18n } = useTranslation();
+  const { user, updateUser } = useAuth();
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
+  const [language, setLanguage] = useState(user?.language || 'en_US');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -15,10 +18,12 @@ export function ProfilePage() {
     setSaving(true);
     setMessage('');
     try {
-      await userService.updateProfile({ name, email });
-      setMessage('Profile updated successfully');
+      await userService.updateProfile({ name, email, language });
+      updateUser({ name, email, language });
+      await i18n.changeLanguage(language);
+      setMessage(t('profile.success'));
     } catch {
-      setMessage('Failed to update profile');
+      setMessage(t('profile.error'));
     } finally {
       setSaving(false);
     }
@@ -27,8 +32,12 @@ export function ProfilePage() {
   return (
     <div className="animate-fade-in max-w-3xl">
       <div className="mb-8">
-        <h1 className="text-h1 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>Profile</h1>
-        <p className="text-body-lg text-on-surface-variant mt-1">Manage your account settings</p>
+        <h1 className="text-h1 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
+          {t('profile.title')}
+        </h1>
+        <p className="text-body-lg text-on-surface-variant mt-1">
+          {t('profile.subtitle')}
+        </p>
       </div>
 
       {/* Avatar */}
@@ -49,10 +58,12 @@ export function ProfilePage() {
 
       {/* Edit Form */}
       <form onSubmit={handleSave} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
-        <h3 className="text-h3 text-primary mb-4" style={{ fontFamily: 'var(--font-heading)' }}>Account Details</h3>
+        <h3 className="text-h3 text-primary mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
+          {t('profile.accountDetails')}
+        </h3>
 
         {message && (
-          <div className={`mb-4 p-3 rounded-lg text-body-md ${message.includes('success') ? 'bg-success/10 text-success' : 'bg-error/10 text-error'}`}>
+          <div className={`mb-4 p-3 rounded-lg text-body-md ${message === t('profile.success') ? 'bg-success/10 text-success' : 'bg-error/10 text-error'}`}>
             {message}
           </div>
         )}
@@ -60,35 +71,49 @@ export function ProfilePage() {
         <div className="space-y-4">
           <div>
             <label className="flex items-center gap-2 text-label-md text-on-surface mb-1.5">
-              <User className="h-4 w-4" /> Full Name
+              <User className="h-4 w-4" /> {t('profile.fullName')}
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20"
+              className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
             />
           </div>
 
           <div>
             <label className="flex items-center gap-2 text-label-md text-on-surface mb-1.5">
-              <Mail className="h-4 w-4" /> Email
+              <Mail className="h-4 w-4" /> {t('profile.email')}
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20"
+              className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
             />
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-label-md text-on-surface mb-1.5">
+              <Globe className="h-4 w-4" /> {t('profile.languageSetting')}
+            </label>
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              className="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 cursor-pointer text-on-surface"
+            >
+              <option value="en_US">{t('profile.languages.en_US')}</option>
+              <option value="es_DO">{t('profile.languages.es_DO')}</option>
+            </select>
           </div>
 
           <button
             type="submit"
             disabled={saving}
-            className="bg-primary text-on-primary px-6 py-2.5 rounded-lg text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+            className="bg-primary text-on-primary px-6 py-2.5 rounded-lg text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2 cursor-pointer"
           >
             <Save className="h-4 w-4" />
-            {saving ? 'Saving...' : 'Save Changes'}
+            {saving ? t('profile.saving') : t('profile.saveChanges')}
           </button>
         </div>
       </form>

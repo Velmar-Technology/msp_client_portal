@@ -4,6 +4,7 @@ import { ArrowLeft, Clock, AlertTriangle } from 'lucide-react';
 import { ticketService } from '../services/ticketService';
 import type { Ticket, TicketEvent } from '../services/ticketService';
 import { useSLATimer } from '../hooks/useSLATimer';
+import { useTranslation } from 'react-i18next';
 
 const statusColor: Record<string, string> = {
   OPEN: 'bg-info/10 text-info',
@@ -15,11 +16,43 @@ const statusColor: Record<string, string> = {
 };
 
 export function TicketDetailPage() {
+  const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [timeline, setTimeline] = useState<(TicketEvent & { changed_by_name?: string })[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const getCategoryLabel = (cat: string) => {
+    const map: Record<string, string> = {
+      REPAIR: t('tickets.categories.REPAIR'),
+      WARRANTY: t('tickets.categories.WARRANTY'),
+      SERVICE_OUTAGE: t('tickets.categories.SERVICE_OUTAGE'),
+    };
+    return map[cat] || cat;
+  };
+
+  const getPriorityLabel = (pri: string) => {
+    const map: Record<string, string> = {
+      LOW: t('tickets.priorities.LOW'),
+      MEDIUM: t('tickets.priorities.MEDIUM'),
+      HIGH: t('tickets.priorities.HIGH'),
+      CRITICAL: t('tickets.priorities.CRITICAL'),
+    };
+    return map[pri] || pri;
+  };
+
+  const getStatusLabel = (status: string) => {
+    const map: Record<string, string> = {
+      OPEN: t('tickets.filterOpen'),
+      IN_PROGRESS: t('tickets.filterInProgress'),
+      AWAITING_PAYMENT: t('tickets.filterAwaitingPayment'),
+      RESOLVED: t('tickets.filterResolved'),
+      CLOSED: t('tickets.filterClosed'),
+      CANCELLED: t('tickets.filterCancelled'),
+    };
+    return map[status] || status;
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -58,14 +91,14 @@ export function TicketDetailPage() {
       {/* Back button */}
       <button
         onClick={() => navigate('/tickets')}
-        className="flex items-center gap-2 text-label-md text-on-surface-variant hover:text-primary transition-colors mb-4"
+        className="flex items-center gap-2 text-label-md text-on-surface-variant hover:text-primary transition-colors mb-4 cursor-pointer"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to Tickets
+        {t('ticketDetail.backToTickets')}
       </button>
 
       {/* Ticket Header */}
-      <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 mb-6 shadow-sm">
+      <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 mb-6 shadow-sm text-on-surface">
         <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-4">
           <div className="flex-1">
             <h1 className="text-h1 text-primary mb-2" style={{ fontFamily: 'var(--font-heading)' }}>
@@ -73,18 +106,18 @@ export function TicketDetailPage() {
             </h1>
             <div className="flex flex-wrap gap-2 items-center">
               <span className={`px-2 py-0.5 rounded text-label-sm font-bold ${statusColor[ticket.status]}`}>
-                {ticket.status.replace('_', ' ')}
+                {getStatusLabel(ticket.status)}
               </span>
               <span className="text-label-sm text-on-surface-variant">
-                {ticket.category.replace('_', ' ')}
-              </span>
-              <span className="text-label-sm text-on-surface-variant opacity-50">•</span>
-              <span className="text-label-sm text-on-surface-variant">
-                Priority: <strong>{ticket.priority}</strong>
+                {getCategoryLabel(ticket.category)}
               </span>
               <span className="text-label-sm text-on-surface-variant opacity-50">•</span>
               <span className="text-label-sm text-on-surface-variant">
-                Created: {new Date(ticket.created_at).toLocaleString('en-US')}
+                {t('ticketDetail.priority')}: <strong>{getPriorityLabel(ticket.priority)}</strong>
+              </span>
+              <span className="text-label-sm text-on-surface-variant opacity-50">•</span>
+              <span className="text-label-sm text-on-surface-variant">
+                {t('ticketDetail.created')}: {new Date(ticket.created_at).toLocaleString(i18n.language === 'es_DO' ? 'es-DO' : 'en-US')}
               </span>
             </div>
           </div>
@@ -94,7 +127,7 @@ export function TicketDetailPage() {
             <div className="flex items-center gap-2 px-3 py-2 bg-warning/10 border border-warning/30 rounded-lg">
               <AlertTriangle className="h-4 w-4 text-warning" />
               <div>
-                <p className="text-label-sm font-bold text-warning">SLA Window</p>
+                <p className="text-label-sm font-bold text-warning">{t('ticketDetail.slaWindow')}</p>
                 <p className="text-h3 text-warning font-mono" style={{ fontFamily: 'var(--font-mono)' }}>
                   {sla.formattedTime}
                 </p>
@@ -108,19 +141,19 @@ export function TicketDetailPage() {
         </div>
 
         <p className="text-label-sm text-on-surface-variant">
-          Ticket ID: <span className="text-mono">{ticket.id}</span>
+          {t('ticketDetail.ticketId')}: <span className="text-mono">{ticket.id}</span>
         </p>
       </div>
 
       {/* Timeline */}
-      <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
+      <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm text-on-surface">
         <h2 className="text-h2 text-primary mb-6" style={{ fontFamily: 'var(--font-heading)' }}>
-          Activity Timeline
+          {t('ticketDetail.timelineTitle')}
         </h2>
 
         {timeline.length === 0 ? (
           <p className="text-body-md text-on-surface-variant py-8 text-center">
-            No activity recorded yet.
+            {t('ticketDetail.noActivity')}
           </p>
         ) : (
           <div className="space-y-0">
@@ -140,13 +173,13 @@ export function TicketDetailPage() {
                 <div className="pb-6 flex-1">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
                     <span className="text-label-md font-medium text-on-surface">
-                      {event.changed_by_name || 'System'}
+                      {event.changed_by_name || t('ticketDetail.system')}
                     </span>
                     <span className="text-label-sm text-on-surface-variant">
-                      changed status to
+                      {t('ticketDetail.changedStatusTo')}
                     </span>
                     <span className={`px-1.5 py-0.5 rounded text-label-sm font-bold ${statusColor[event.new_status] || 'bg-surface-container text-on-surface-variant'}`}>
-                      {event.new_status.replace('_', ' ')}
+                      {getStatusLabel(event.new_status)}
                     </span>
                   </div>
                   {event.notes && (
@@ -155,7 +188,7 @@ export function TicketDetailPage() {
                     </p>
                   )}
                   <span className="text-label-sm text-on-surface-variant opacity-60 mt-1 inline-block">
-                    {new Date(event.created_at).toLocaleString('en-US')}
+                    {new Date(event.created_at).toLocaleString(i18n.language === 'es_DO' ? 'es-DO' : 'en-US')}
                   </span>
                 </div>
               </div>

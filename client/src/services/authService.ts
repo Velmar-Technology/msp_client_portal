@@ -18,6 +18,7 @@ export interface AuthResponse {
     email: string;
     name: string;
     role: 'CLIENT' | 'TECHNICIAN' | 'ADMIN';
+    language: string;
   };
   tokens: {
     accessToken: string;

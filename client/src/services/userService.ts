@@ -6,7 +6,7 @@ export const userService = {
     return response.data.data;
   },
 
-  async updateProfile(data: { name?: string; email?: string }): Promise<Record<string, unknown>> {
+  async updateProfile(data: { name?: string; email?: string; language?: string }): Promise<Record<string, unknown>> {
     const response = await api.patch('/users/me', data);
     return response.data.data;
   },

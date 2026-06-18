@@ -19,33 +19,35 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarGroupContent,
 } from '../ui/sidebar';
 
+import { useTranslation } from 'react-i18next';
+
 const clientNavItems = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/tickets', icon: Ticket, label: 'Tickets' },
-  { to: '/plans', icon: Package, label: 'Plans' },
-  { to: '/billing', icon: CreditCard, label: 'Billing' },
-  { to: '/profile', icon: User, label: 'Profile' },
+  { to: '/dashboard', icon: LayoutDashboard, labelKey: 'dashboard' },
+  { to: '/tickets', icon: Ticket, labelKey: 'tickets' },
+  { to: '/plans', icon: Package, labelKey: 'plans' },
+  { to: '/billing', icon: CreditCard, labelKey: 'billing' },
+  { to: '/profile', icon: User, labelKey: 'profile' },
 ];
 
 const techNavItems = [
-  { to: '/tech/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/tickets', icon: Ticket, label: 'My Tickets' },
-  { to: '/profile', icon: User, label: 'Profile' },
+  { to: '/tech/dashboard', icon: LayoutDashboard, labelKey: 'dashboard' },
+  { to: '/tickets', icon: Ticket, labelKey: 'myTickets' },
+  { to: '/profile', icon: User, labelKey: 'profile' },
 ];
 
 const adminNavItems = [
-  { to: '/admin/dashboard', icon: Shield, label: 'Admin Dashboard' },
-  { to: '/tickets', icon: Ticket, label: 'All Tickets' },
-  { to: '/plans', icon: Package, label: 'Plans' },
-  { to: '/billing', icon: CreditCard, label: 'Billing' },
-  { to: '/profile', icon: User, label: 'Profile' },
+  { to: '/admin/dashboard', icon: Shield, labelKey: 'adminDashboard' },
+  { to: '/tickets', icon: Ticket, labelKey: 'allTickets' },
+  { to: '/plans', icon: Package, labelKey: 'plans' },
+  { to: '/billing', icon: CreditCard, labelKey: 'billing' },
+  { to: '/profile', icon: User, labelKey: 'profile' },
 ];
 
 export function AppSidebar() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const location = useLocation();
 
@@ -64,10 +66,10 @@ export function AppSidebar() {
           <CloudCog className="h-6 w-6 text-primary flex-shrink-0" />
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
             <h1 className="text-label-md font-bold text-on-surface leading-none" style={{ fontFamily: 'var(--font-heading)' }}>
-              MSP Portal
+              {t('topNav.portal')}
             </h1>
             <span className="text-[10px] text-on-surface-variant opacity-70 mt-0.5">
-              Infrastructure Management
+              {t('nav.infrastructure')}
             </span>
           </div>
         </div>
@@ -76,9 +78,6 @@ export function AppSidebar() {
       {/* Main Navigation */}
       <SidebarContent className="py-2">
         <SidebarGroup>
-          <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden">
-            Navigation
-          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => {
@@ -86,16 +85,18 @@ export function AppSidebar() {
                   ? location.pathname === item.to
                   : location.pathname.startsWith(item.to);
                 
+                const translatedLabel = t(`nav.${item.labelKey}`);
+                
                 return (
                   <SidebarMenuItem key={item.to}>
                     <SidebarMenuButton
                       asChild
                       isActive={isActive}
-                      tooltip={item.label}
+                      tooltip={translatedLabel}
                     >
                       <NavLink to={item.to} className="flex items-center gap-3">
                         <item.icon className="h-4 w-4 flex-shrink-0" />
-                        <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+                        <span className="group-data-[collapsible=icon]:hidden">{translatedLabel}</span>
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -113,11 +114,11 @@ export function AppSidebar() {
             <SidebarMenuButton
               asChild
               isActive={location.pathname === '/help'}
-              tooltip="Help Center"
+              tooltip={t('nav.help')}
             >
               <NavLink to="/help" className="flex items-center gap-3">
                 <HelpCircle className="h-4 w-4 flex-shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden">Help Center</span>
+                <span className="group-data-[collapsible=icon]:hidden">{t('nav.help')}</span>
               </NavLink>
             </SidebarMenuButton>
           </SidebarMenuItem>

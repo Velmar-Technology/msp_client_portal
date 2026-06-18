@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { CloudCog, Eye, EyeOff } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export function LoginPage() {
+  const { t, i18n } = useTranslation();
   const { login } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -21,7 +23,10 @@ export function LoginPage() {
       navigate('/dashboard');
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      setError(error.response?.data?.message || 'Invalid email or password');
+      setError(
+        error.response?.data?.message || 
+        (i18n.language === 'es_DO' ? 'Correo o contraseña incorrectos' : 'Invalid email or password')
+      );
     } finally {
       setLoading(false);
     }
@@ -35,10 +40,10 @@ export function LoginPage() {
           <CloudCog className="h-10 w-10 text-primary" />
           <div>
             <h1 className="text-h1 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
-              MSP Portal
+              {t('topNav.portal')}
             </h1>
             <p className="text-label-sm text-on-surface-variant opacity-70">
-              Infrastructure Management
+              {t('nav.infrastructure')}
             </p>
           </div>
         </div>
@@ -46,10 +51,10 @@ export function LoginPage() {
         {/* Card */}
         <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-8 shadow-sm">
           <h2 className="text-h2 text-primary mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
-            Welcome back
+            {t('login.welcome')}
           </h2>
           <p className="text-body-md text-on-surface-variant mb-6">
-            Sign in to your help desk portal
+            {t('login.signInToPortal')}
           </p>
 
           {error && (
@@ -61,22 +66,22 @@ export function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="login-email" className="block text-label-md text-on-surface mb-1.5">
-                Email Address
+                {t('login.emailAddress')}
               </label>
               <input
                 id="login-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
+                placeholder={t('login.emailPlaceholder')}
                 required
-                className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 transition-all placeholder:text-on-surface-variant/50"
+                className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 transition-all placeholder:text-on-surface-variant/50 text-on-surface"
               />
             </div>
 
             <div>
               <label htmlFor="login-password" className="block text-label-md text-on-surface mb-1.5">
-                Password
+                {t('login.password')}
               </label>
               <div className="relative">
                 <input
@@ -84,14 +89,14 @@ export function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder={t('login.enterPasswordPlaceholder')}
                   required
-                  className="w-full px-4 py-2.5 pr-12 border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 transition-all placeholder:text-on-surface-variant/50"
+                  className="w-full px-4 py-2.5 pr-12 border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 transition-all placeholder:text-on-surface-variant/50 text-on-surface"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
@@ -101,33 +106,33 @@ export function LoginPage() {
             <div className="flex justify-between items-center">
               <label className="flex items-center gap-2 text-body-md text-on-surface-variant cursor-pointer">
                 <input type="checkbox" className="rounded border-outline-variant" />
-                <span>Remember me</span>
+                <span>{t('login.rememberMe')}</span>
               </label>
               <Link
                 to="/forgot-password"
                 className="text-label-md text-secondary hover:underline"
               >
-                Forgot password?
+                {t('login.forgotPassword')}
               </Link>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary text-on-primary py-2.5 rounded-lg text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-primary text-on-primary py-2.5 rounded-lg text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-on-primary/30 border-t-on-primary rounded-full animate-spin" />
               ) : (
-                'Sign In'
+                t('login.signIn')
               )}
             </button>
           </form>
 
           <p className="mt-6 text-center text-body-md text-on-surface-variant">
-            Don&apos;t have an account?{' '}
+            {t('login.dontHaveAccount')}{' '}
             <Link to="/register" className="text-secondary font-medium hover:underline">
-              Create account
+              {t('login.createAccount')}
             </Link>
           </p>
         </div>

@@ -62,6 +62,7 @@ export interface User {
   specialty: string | null;
   is_active: boolean;
   email_verified: boolean;
+  language: string;
   created_at: Date;
   updated_at: Date;
 }

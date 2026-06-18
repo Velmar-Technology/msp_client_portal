@@ -6,6 +6,7 @@ interface AuthUser {
   email: string;
   name: string;
   role: 'CLIENT' | 'TECHNICIAN' | 'ADMIN';
+  language: string;
 }
 
 interface AuthContextType {
@@ -15,6 +16,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, name: string, password: string, confirmPassword: string) => Promise<void>;
   logout: () => void;
+  updateUser: (updatedFields: Partial<AuthUser>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -41,6 +43,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     authService.logout();
   }, []);
 
+  const updateUser = useCallback((updatedFields: Partial<AuthUser>) => {
+    setUser((prev) => {
+      if (!prev) return null;
+      const updated = { ...prev, ...updatedFields };
+      localStorage.setItem('user', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -50,6 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         register,
         logout,
+        updateUser,
       }}
     >
       {children}

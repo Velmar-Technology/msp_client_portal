@@ -14,6 +14,7 @@ import {
   Lock,
   CreditCard
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface FAQ {
   id: number;
@@ -22,7 +23,7 @@ interface FAQ {
   category: 'general' | 'tickets' | 'billing' | 'technical';
 }
 
-const faqs: FAQ[] = [
+const faqsEn: FAQ[] = [
   {
     id: 1,
     question: "How do I create a new support ticket?",
@@ -73,7 +74,59 @@ const faqs: FAQ[] = [
   }
 ];
 
+const faqsEs: FAQ[] = [
+  {
+    id: 1,
+    question: "¿Cómo creo un nuevo ticket de soporte?",
+    answer: "Para crear un ticket de soporte, navegue a la sección de 'Tickets' en el menú lateral y haga clic en el botón 'Nuevo Ticket'. Complete el formulario con los detalles del problema, seleccione una categoría y prioridad, y envíelo. También puede realizar el seguimiento de actualizaciones y añadir comentarios en ese mismo ticket.",
+    category: "tickets"
+  },
+  {
+    id: 2,
+    question: "¿Qué es la garantía de SLA de 1 hora?",
+    answer: "Para problemas críticos de infraestructura y garantías de hardware específicas bajo nuestros planes premium, garantizamos un primer esfuerzo de respuesta o evaluación dentro de 1 hora. Si no respondemos en este plazo, el ticket se escala automáticamente a ingenieros de nivel 2 y se pueden aplicar créditos de servicio.",
+    category: "general"
+  },
+  {
+    id: 3,
+    question: "¿Cómo puedo ver y pagar mis facturas?",
+    answer: "Puede ver su historial de facturación haciendo clic en el enlace 'Facturación' en la barra lateral o en el pie de página. Allí verá el historial de todas las facturas, desglose de impuestos y estados de pago. Los pagos se procesan de forma segura mediante protocolos institucionales estándar configurados en su cuenta.",
+    category: "billing"
+  },
+  {
+    id: 4,
+    question: "¿Cómo se monitorea la configuración de mi servidor/sistema?",
+    answer: "Nuestros agentes de monitoreo verifican la salud del servidor, la carga de la CPU, el espacio en disco y la latencia de la red cada 60 segundos. Si alguna métrica supera un umbral crítico, nuestro sistema genera automáticamente un ticket de alta prioridad y alerta a su administrador de red dedicado.",
+    category: "technical"
+  },
+  {
+    id: 5,
+    question: "¿Puedo actualizar o bajar de categoría mi plan de soporte?",
+    answer: "Sí, puede explorar los planes disponibles en la pestaña 'Planes' en la barra lateral. Para solicitar un cambio de plan, puede enviar un ticket en la categoría 'Facturación / Actualización de Plan', y nuestros gerentes de cuenta realizarán la transición al final del ciclo de facturación.",
+    category: "billing"
+  },
+  {
+    id: 6,
+    question: "¿Qué sucede si un ticket se marca como resuelto pero el problema persiste?",
+    answer: "Si el problema vuelve a ocurrir, puede reabrir el ticket dentro de las 72 horas comentando directamente en él. Después de 72 horas, los tickets se cierran permanentemente para mantener un registro preciso; en ese caso, cree un nuevo ticket y haga referencia al número del ticket anterior.",
+    category: "tickets"
+  },
+  {
+    id: 7,
+    question: "¿Se admite la autenticación de múltiples factores (MFA)?",
+    answer: "Absolutamente. La seguridad es nuestra prioridad. Puede configurar la autenticación de múltiples factores (MFA) desde su página de Perfil para agregar una capa adicional de protección a su cuenta de portal de cliente.",
+    category: "technical"
+  },
+  {
+    id: 8,
+    question: "¿Cómo actualizo los detalles de mi perfil?",
+    answer: "Vaya a la sección 'Perfil' a través de la barra lateral o haciendo clic en su avatar en el menú superior derecho. Puede actualizar su nombre para mostrar, correo electrónico y configuración de seguridad allí.",
+    category: "general"
+  }
+];
+
 export function HelpPage() {
+  const { t, i18n } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [openFaqId, setOpenFaqId] = useState<number | null>(null);
@@ -81,6 +134,8 @@ export function HelpPage() {
   const toggleFaq = (id: number) => {
     setOpenFaqId(openFaqId === id ? null : id);
   };
+
+  const faqs = i18n.language === 'es_DO' ? faqsEs : faqsEn;
 
   const filteredFaqs = faqs.filter(faq => {
     const matchesSearch = 
@@ -93,33 +148,33 @@ export function HelpPage() {
   });
 
   const categories = [
-    { id: 'all', label: 'All FAQs', icon: HelpCircle },
-    { id: 'general', label: 'General', icon: BookOpen },
-    { id: 'tickets', label: 'Tickets & Support', icon: MessageSquare },
-    { id: 'billing', label: 'Billing & Plans', icon: CreditCard },
-    { id: 'technical', label: 'Technical', icon: Lock },
+    { id: 'all', label: i18n.language === 'es_DO' ? 'Faq Completas' : 'All FAQs', icon: HelpCircle },
+    { id: 'general', label: i18n.language === 'es_DO' ? 'General' : 'General', icon: BookOpen },
+    { id: 'tickets', label: i18n.language === 'es_DO' ? 'Tickets y Soporte' : 'Tickets & Support', icon: MessageSquare },
+    { id: 'billing', label: i18n.language === 'es_DO' ? 'Facturación y Planes' : 'Billing & Plans', icon: CreditCard },
+    { id: 'technical', label: i18n.language === 'es_DO' ? 'Técnico' : 'Technical', icon: Lock },
   ];
 
   return (
-    <div className="animate-fade-in max-w-7xl mx-auto space-y-8 pb-12">
+    <div className="animate-fade-in max-w-7xl mx-auto space-y-8 pb-12 text-on-surface">
       {/* Header & Search */}
       <div className="text-center py-8 px-4 bg-surface-container rounded-2xl border border-outline-variant relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-tr from-secondary/5 to-transparent pointer-events-none" />
         <div className="relative z-10 max-w-2xl mx-auto space-y-4">
           <h1 className="text-h1 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
-            Help & Documentation
+            {t('help.title')}
           </h1>
           <p className="text-body-lg text-on-surface-variant">
-            Find answers to common questions, learn about our service level agreements, or contact support directly.
+            {t('help.subtitle')}
           </p>
           <div className="relative max-w-lg mx-auto mt-6">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-on-surface-variant/60" />
             <input
               type="text"
-              placeholder="Search help topics, FAQs, and more..."
+              placeholder={t('help.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-xl text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 transition-all shadow-sm placeholder:text-on-surface-variant/50"
+              className="w-full pl-12 pr-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-xl text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 transition-all shadow-sm placeholder:text-on-surface-variant/50 text-on-surface"
             />
           </div>
         </div>
@@ -158,9 +213,9 @@ export function HelpPage() {
             {filteredFaqs.length === 0 ? (
               <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-8 text-center text-on-surface-variant">
                 <HelpCircle className="h-12 w-12 mx-auto text-on-surface-variant/40 mb-3" />
-                <p className="text-body-lg font-medium">No results found</p>
+                <p className="text-body-lg font-medium">{t('help.noResults')}</p>
                 <p className="text-body-md text-on-surface-variant/70 mt-1">
-                  Try adjusting your search terms or selecting another category.
+                  {t('help.noResultsDesc')}
                 </p>
               </div>
             ) : (
@@ -200,55 +255,55 @@ export function HelpPage() {
         </div>
 
         {/* Right Column: Support & Contact Details */}
-        <div className="space-y-6">
+        <div className="space-y-6 text-on-surface">
           {/* Create ticket shortcut */}
           <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm space-y-4">
             <h3 className="text-h3 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
-              Still need assistance?
+              {t('help.stillNeedAssistance')}
             </h3>
             <p className="text-body-md text-on-surface-variant">
-              If you can't find what you are looking for in our documentation, you can create a direct support ticket.
+              {t('help.stillNeedAssistanceDesc')}
             </p>
             <Link 
               to="/tickets" 
               className="inline-flex items-center justify-center gap-2 w-full bg-secondary text-on-secondary py-3 px-4 rounded-xl text-label-md font-semibold hover:opacity-90 transition-opacity"
             >
               <PlusCircle className="h-4 w-4" />
-              Create Support Ticket
+              {t('help.createSupportTicket')}
             </Link>
           </div>
 
           {/* Business Support info */}
           <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm space-y-5">
             <h4 className="text-label-md font-semibold text-on-surface uppercase tracking-wider">
-              Emergency & Direct Support
+              {t('help.emergencySupport')}
             </h4>
             
             <div className="space-y-4">
               <div className="flex items-start gap-3">
                 <Phone className="h-5 w-5 text-secondary mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-label-md text-on-surface font-semibold">Phone Support</p>
-                  <p className="text-body-md text-on-surface-variant">+1 (800) 555-0199</p>
-                  <p className="text-label-sm text-on-surface-variant/70">Toll-free emergency hotline</p>
+                  <p className="text-label-md text-on-surface font-semibold">{t('help.phoneSupport')}</p>
+                  <p className="text-body-md text-on-surface-variant">{t('help.phoneValue')}</p>
+                  <p className="text-label-sm text-on-surface-variant/70">{t('help.phoneDesc')}</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
                 <Mail className="h-5 w-5 text-secondary mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-label-md text-on-surface font-semibold">Email Support</p>
-                  <p className="text-body-md text-on-surface-variant">support@velmartech.com</p>
-                  <p className="text-label-sm text-on-surface-variant/70">Responses within 24 hours</p>
+                  <p className="text-label-md text-on-surface font-semibold">{t('help.emailSupport')}</p>
+                  <p className="text-body-md text-on-surface-variant">{t('help.emailValue')}</p>
+                  <p className="text-label-sm text-on-surface-variant/70">{t('help.emailDesc')}</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
                 <Clock className="h-5 w-5 text-secondary mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-label-md text-on-surface font-semibold">Support Hours</p>
-                  <p className="text-body-md text-on-surface-variant">Mon - Fri: 8:00 AM - 6:00 PM EST</p>
-                  <p className="text-label-sm text-on-surface-variant/70">24/7 Monitoring & Critical Incident response</p>
+                  <p className="text-label-md text-on-surface font-semibold">{t('help.supportHours')}</p>
+                  <p className="text-body-md text-on-surface-variant">{t('help.hoursValue')}</p>
+                  <p className="text-label-sm text-on-surface-variant/70">{t('help.hoursDesc')}</p>
                 </div>
               </div>
             </div>

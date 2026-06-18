@@ -17,7 +17,7 @@ export class InvoiceController {
 
   async getById(req: Request, res: Response): Promise<void> {
     const invoice = await invoiceService.getInvoiceById(
-      req.params.id,
+      req.params.id as string,
       req.user!.userId,
       req.user!.role as UserRole,
     );

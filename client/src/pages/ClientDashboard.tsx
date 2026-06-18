@@ -13,8 +13,10 @@ import { subscriptionService } from '../services/subscriptionService';
 import type { Subscription } from '../services/subscriptionService';
 import { invoiceService } from '../services/invoiceService';
 import type { Invoice } from '../services/invoiceService';
+import { useTranslation } from 'react-i18next';
 
 export function ClientDashboard() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [statusSummary, setStatusSummary] = useState<Record<string, number>>({});
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
@@ -68,18 +70,18 @@ export function ClientDashboard() {
       <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-h1 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
-            System Overview
+            {t('dashboard.systemOverview')}
           </h1>
           <p className="text-body-lg text-on-surface-variant mt-1">
-            All systems operational and secure.
+            {t('dashboard.systemStatus')}
           </p>
         </div>
         <button
           onClick={() => navigate('/tickets?action=new')}
-          className="bg-primary text-on-primary px-5 py-2.5 rounded-lg flex items-center gap-2 hover:opacity-90 transition-opacity text-label-md"
+          className="bg-primary text-on-primary px-5 py-2.5 rounded-lg flex items-center gap-2 hover:opacity-90 transition-opacity text-label-md cursor-pointer"
         >
           <Plus className="h-4 w-4" />
-          New Ticket
+          {t('dashboard.newTicket')}
         </button>
       </div>
 
@@ -92,19 +94,19 @@ export function ClientDashboard() {
             <div className="flex justify-between items-start mb-4">
               <Headphones className="h-6 w-6 text-secondary" />
               <span className={`px-2 py-0.5 rounded text-label-sm font-bold ${openTickets > 0 ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}>
-                {openTickets > 0 ? `${openTickets} OPEN` : 'ALL CLEAR'}
+                {openTickets > 0 ? `${openTickets} ${t('dashboard.tableStatus') === 'Estado' ? 'ABIERTOS' : 'OPEN'}` : (t('dashboard.tableStatus') === 'Estado' ? 'TODO LIMPIO' : 'ALL CLEAR')}
               </span>
             </div>
-            <h3 className="text-label-md text-on-surface-variant">Technical Support</h3>
+            <h3 className="text-label-md text-on-surface-variant">{t('dashboard.technicalSupport')}</h3>
             <p className="text-h3 mt-1" style={{ fontFamily: 'var(--font-heading)' }}>
-              Active Tickets
+              {t('dashboard.activeTickets')}
             </p>
             <div className="mt-auto pt-3 border-t border-outline-variant mt-4">
               <Link
                 to="/tickets"
                 className="text-label-md text-primary hover:underline flex items-center gap-1"
               >
-                View details <ArrowRight className="h-4 w-4" />
+                {t('dashboard.viewDetails')} <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           </div>
@@ -114,13 +116,13 @@ export function ClientDashboard() {
             <div className="flex justify-between items-start mb-4">
               <Wrench className="h-6 w-6 text-secondary" />
               <span className="bg-success/10 text-success px-2 py-0.5 rounded text-label-sm font-bold">
-                SCHEDULED
+                {t('dashboard.scheduled')}
               </span>
             </div>
-            <h3 className="text-label-md text-on-surface-variant">Maintenance</h3>
+            <h3 className="text-label-md text-on-surface-variant">{t('dashboard.maintenance')}</h3>
             <p className="text-h3 mt-1" style={{ fontFamily: 'var(--font-heading)' }}>15 Oct 2024</p>
             <div className="mt-auto pt-3 border-t border-outline-variant mt-4">
-              <span className="text-label-md text-on-surface-variant">Preventive network review</span>
+              <span className="text-label-md text-on-surface-variant">{t('dashboard.preventiveNetworkReview')}</span>
             </div>
           </div>
 
@@ -129,13 +131,13 @@ export function ClientDashboard() {
             <div className="flex justify-between items-start mb-4">
               <CloudUpload className="h-6 w-6 text-secondary" />
               <span className="bg-success/10 text-success px-2 py-0.5 rounded text-label-sm font-bold">
-                SUCCESSFUL
+                {t('dashboard.successful')}
               </span>
             </div>
-            <h3 className="text-label-md text-on-surface-variant">Last Backup</h3>
-            <p className="text-h3 mt-1" style={{ fontFamily: 'var(--font-heading)' }}>2 hours ago</p>
+            <h3 className="text-label-md text-on-surface-variant">{t('dashboard.lastBackup')}</h3>
+            <p className="text-h3 mt-1" style={{ fontFamily: 'var(--font-heading)' }}>{t('dashboard.tableStatus') === 'Estado' ? 'Hace 2 horas' : '2 hours ago'}</p>
             <div className="mt-auto pt-3 border-t border-outline-variant mt-4">
-              <span className="text-label-md text-on-surface-variant">Main DB Server</span>
+              <span className="text-label-md text-on-surface-variant">{t('dashboard.mainDbServer')}</span>
             </div>
           </div>
         </div>
@@ -144,7 +146,7 @@ export function ClientDashboard() {
         <div className="md:col-span-4 bg-surface-container-lowest border border-outline-variant p-6 rounded-xl flex flex-col shadow-sm">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-h3" style={{ fontFamily: 'var(--font-heading)' }}>
-              Cloud Storage
+              {t('dashboard.cloudStorage')}
             </h3>
             <Cloud className="h-5 w-5 text-on-surface-variant" />
           </div>
@@ -166,8 +168,8 @@ export function ClientDashboard() {
           </div>
           <div className="mt-auto">
             <div className="flex justify-between text-label-md mb-1">
-              <span className="text-on-surface-variant">Used: 3.6 TB</span>
-              <span className="text-on-surface-variant">Total: 5.0 TB</span>
+              <span className="text-on-surface-variant">{t('dashboard.used')}: 3.6 TB</span>
+              <span className="text-on-surface-variant">{t('dashboard.total')}: 5.0 TB</span>
             </div>
             <div className="w-full bg-surface-container-high rounded-full h-2">
               <div className="bg-primary h-2 rounded-full transition-all" style={{ width: '72%' }} />
@@ -180,20 +182,20 @@ export function ClientDashboard() {
           <div className="md:col-span-8 bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
             <div className="p-4 border-b border-outline-variant flex justify-between items-center">
               <h3 className="text-h3" style={{ fontFamily: 'var(--font-heading)' }}>
-                Active Subscriptions
+                {t('dashboard.activeSubscriptions')}
               </h3>
               <Link to="/plans" className="text-label-md text-primary hover:underline">
-                Manage
+                {t('dashboard.manage')}
               </Link>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-surface border-b border-outline-variant">
-                    <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">Service</th>
-                    <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">Plan</th>
-                    <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">Status</th>
-                    <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">Renewal</th>
+                    <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">{t('dashboard.tableService')}</th>
+                    <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">{t('dashboard.tablePlan')}</th>
+                    <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">{t('dashboard.tableStatus')}</th>
+                    <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">{t('dashboard.tableRenewal')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -207,7 +209,7 @@ export function ClientDashboard() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-body-md text-on-surface-variant">
-                        {new Date(sub.renewal_date).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        {new Date(sub.renewal_date).toLocaleDateString(t('dashboard.tableStatus') === 'Estado' ? 'es-DO' : 'en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
                       </td>
                     </tr>
                   ))}
@@ -221,20 +223,20 @@ export function ClientDashboard() {
         <div className={`${subscriptions.length > 0 ? 'md:col-span-8' : 'md:col-span-8'} bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm`}>
           <div className="p-4 border-b border-outline-variant flex justify-between items-center">
             <h3 className="text-h3" style={{ fontFamily: 'var(--font-heading)' }}>
-              Recent Invoices
+              {t('dashboard.recentInvoices')}
             </h3>
             <Link to="/billing" className="text-label-md text-primary hover:underline">
-              View all
+              {t('dashboard.viewAll')}
             </Link>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-surface border-b border-outline-variant">
-                  <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">Invoice No.</th>
-                  <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">Date</th>
-                  <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">Amount</th>
-                  <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">Status</th>
+                  <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">{t('dashboard.tableInvoiceNo')}</th>
+                  <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">{t('dashboard.tableDate')}</th>
+                  <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">{t('dashboard.tableAmount')}</th>
+                  <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">{t('dashboard.tableStatus')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -242,7 +244,7 @@ export function ClientDashboard() {
                   <tr key={inv.id} className="border-b border-surface-container-high hover:bg-surface-container-low transition-colors h-12">
                     <td className="px-4 py-3 text-mono">{inv.invoice_number}</td>
                     <td className="px-4 py-3 text-body-md text-on-surface-variant">
-                      {new Date(inv.invoice_date).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      {new Date(inv.invoice_date).toLocaleDateString(t('dashboard.tableStatus') === 'Estado' ? 'es-DO' : 'en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </td>
                     <td className="px-4 py-3 text-body-md font-medium">${inv.total.toFixed(2)}</td>
                     <td className="px-4 py-3">
@@ -255,7 +257,7 @@ export function ClientDashboard() {
                 {invoices.length === 0 && (
                   <tr>
                     <td colSpan={4} className="px-4 py-8 text-center text-body-md text-on-surface-variant">
-                      No invoices found
+                      {t('dashboard.noInvoices')}
                     </td>
                   </tr>
                 )}
@@ -271,19 +273,19 @@ export function ClientDashboard() {
           <div className="absolute bottom-0 left-0 -ml-10 -mb-10 w-32 h-32 bg-secondary/20 rounded-full blur-2xl z-0 pointer-events-none" />
           <div className="relative z-10 p-6 h-full flex flex-col">
             <span className="inline-block mb-4 bg-inverse-primary/20 text-inverse-primary px-2 py-0.5 rounded text-label-sm border border-inverse-primary/30 self-start">
-              RECOMMENDED UPGRADE
+              {t('dashboard.recommendedUpgrade')}
             </span>
             <h3 className="text-h3 text-on-primary mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
-              Enterprise MSP Plan
+              {t('dashboard.enterprisePlan')}
             </h3>
             <p className="text-body-md text-surface-container-highest mb-6 flex-1">
-              Secure your infrastructure with 24/7 monitoring, immediate response, advanced DDoS mitigation, and daily geo-redundant backups.
+              {t('dashboard.enterpriseDesc')}
             </p>
             <Link
               to="/plans"
               className="bg-on-primary text-primary w-full py-2.5 rounded-lg text-label-md hover:bg-surface-container-low transition-colors flex items-center justify-center gap-1"
             >
-              View plan details
+              {t('dashboard.viewPlanDetails')}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>

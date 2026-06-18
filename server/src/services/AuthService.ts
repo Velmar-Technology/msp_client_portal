@@ -11,7 +11,7 @@ export class AuthService {
   /**
    * Register a new user account.
    */
-  async register(data: RegisterInput): Promise<{ user: { id: string; email: string; name: string; role: UserRole }; tokens: AuthTokens }> {
+  async register(data: RegisterInput): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string }; tokens: AuthTokens }> {
     // Check for existing user
     const existing = await userRepository.findByEmail(data.email);
     if (existing) {
@@ -36,7 +36,7 @@ export class AuthService {
     });
 
     return {
-      user: { id: user.id, email: user.email, name: user.name, role: user.role },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language },
       tokens,
     };
   }
@@ -44,7 +44,7 @@ export class AuthService {
   /**
    * Authenticate user with email and password.
    */
-  async login(data: LoginInput): Promise<{ user: { id: string; email: string; name: string; role: UserRole }; tokens: AuthTokens }> {
+  async login(data: LoginInput): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string }; tokens: AuthTokens }> {
     const user = await userRepository.findByEmail(data.email);
     if (!user) {
       throw AppError.unauthorized('Invalid email or password');
@@ -68,7 +68,7 @@ export class AuthService {
     });
 
     return {
-      user: { id: user.id, email: user.email, name: user.name, role: user.role },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language },
       tokens,
     };
   }

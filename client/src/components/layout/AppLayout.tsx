@@ -1,9 +1,12 @@
 import { Outlet, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AppSidebar } from './app-sidebar';
 import { TopNav } from './TopNav';
 import { SidebarProvider, SidebarInset } from '../ui/sidebar';
 
 export function AppLayout() {
+  const { t } = useTranslation();
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -16,17 +19,17 @@ export function AppLayout() {
         {/* Footer */}
         <footer className="flex flex-col md:flex-row justify-between items-center px-5 md:px-10 py-4 mt-auto bg-surface-container-lowest border-t border-outline-variant w-full gap-2">
           <span className="text-label-sm text-on-surface-variant">
-            © 2026 Velmar Technology SRL. All rights reserved.
+            {t('footer.copyright')}
           </span>
           <div className="flex gap-6">
             <Link to="/help" className="text-label-sm text-on-surface-variant hover:text-primary transition-colors">
-              Help
+              {t('footer.help')}
             </Link>
             <Link to="/terms" className="text-label-sm text-on-surface-variant hover:text-primary transition-colors">
-              Terms of Service
+              {t('footer.terms')}
             </Link>
             <Link to="/privacy" className="text-label-sm text-on-surface-variant hover:text-primary transition-colors">
-              Privacy
+              {t('footer.privacy')}
             </Link>
           </div>
         </footer>

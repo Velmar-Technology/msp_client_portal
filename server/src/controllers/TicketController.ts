@@ -35,7 +35,7 @@ export class TicketController {
 
   async getById(req: Request, res: Response): Promise<void> {
     const ticket = await ticketService.getTicketById(
-      req.params.id,
+      req.params.id as string,
       req.user!.userId,
       req.user!.role as UserRole,
     );
@@ -45,7 +45,7 @@ export class TicketController {
   async updateStatus(req: Request, res: Response): Promise<void> {
     const data = req.body as UpdateTicketStatusInput;
     const ticket = await ticketService.updateTicketStatus(
-      req.params.id,
+      req.params.id as string,
       data,
       req.user!.userId,
       req.user!.role as UserRole,
@@ -55,7 +55,7 @@ export class TicketController {
 
   async getTimeline(req: Request, res: Response): Promise<void> {
     const events = await ticketService.getTicketTimeline(
-      req.params.id,
+      req.params.id as string,
       req.user!.userId,
       req.user!.role as UserRole,
     );
@@ -64,7 +64,7 @@ export class TicketController {
 
   async getAttachments(req: Request, res: Response): Promise<void> {
     const attachments = await ticketService.getTicketAttachments(
-      req.params.id,
+      req.params.id as string,
       req.user!.userId,
       req.user!.role as UserRole,
     );
@@ -78,7 +78,7 @@ export class TicketController {
     }
 
     const attachment = await ticketService.addAttachment(
-      req.params.id,
+      req.params.id as string,
       {
         filename: req.file.originalname,
         path: req.file.path,

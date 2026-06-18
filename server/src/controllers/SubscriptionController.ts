@@ -9,7 +9,7 @@ export class SubscriptionController {
   }
 
   async getById(req: Request, res: Response): Promise<void> {
-    const subscription = await subscriptionService.getSubscriptionById(req.params.id, req.user!.userId);
+    const subscription = await subscriptionService.getSubscriptionById(req.params.id as string, req.user!.userId);
     res.json({ success: true, data: subscription });
   }
 
@@ -21,7 +21,7 @@ export class SubscriptionController {
 
   async update(req: Request, res: Response): Promise<void> {
     const data = req.body as UpdateSubscriptionInput;
-    const subscription = await subscriptionService.updateSubscription(req.params.id, data, req.user!.userId);
+    const subscription = await subscriptionService.updateSubscription(req.params.id as string, data, req.user!.userId);
     res.json({ success: true, data: subscription });
   }
 }

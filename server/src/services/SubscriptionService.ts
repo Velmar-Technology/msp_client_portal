@@ -1,6 +1,6 @@
 import { subscriptionRepository } from '../repositories/SubscriptionRepository';
 import { AppError } from '../utils/AppError';
-import { Subscription, SubscriptionPlan } from '../types';
+import { Subscription } from '../types';
 import { CreateSubscriptionInput, UpdateSubscriptionInput } from '../dtos/subscription.dto';
 
 export class SubscriptionService {
