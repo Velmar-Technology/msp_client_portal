@@ -126,6 +126,9 @@
     "modalCancel": "Cancelar",
     "modalCreate": "Crear Ticket",
     "modalCreating": "Creando...",
+    "attachmentsLabel": "Adjuntos (Opcional)",
+    "selectFiles": "Seleccionar Archivos",
+    "filesSelected": "archivos seleccionados",
     "categories": {
       "REPAIR": "Reparación",
       "WARRANTY": "Garantía",
@@ -153,7 +156,17 @@
     "assignTechnician": "Asignar Técnico",
     "assigning": "Asignando...",
     "assignSuccess": "Técnico asignado con éxito",
-    "assignError": "Error al asignar técnico"
+    "assignError": "Error al asignar técnico",
+    "attachmentsTitle": "Archivos Adjuntos",
+    "noAttachments": "No se han subido archivos adjuntos aún.",
+    "uploadAttachment": "Subir Archivo",
+    "uploading": "Subiendo...",
+    "uploadSuccess": "Archivo subido con éxito",
+    "uploadError": "Error al subir el archivo",
+    "dragAndDrop": "Arrastre y suelte o haga clic para subir",
+    "allowedTypes": "Formatos permitidos: JPG, PNG, GIF, WEBP, PDF, DOC(X), XLS(X), TXT, MP4 (Máx. 10MB)",
+    "fileTooLarge": "El archivo es demasiado grande. El tamaño máximo es 10MB.",
+    "invalidFileType": "Formato de archivo no soportado."
   },
   "techDashboard": {
     "subtitle": "Gestione sus tickets asignados, controle los SLA y actualice los estados de los tickets.",

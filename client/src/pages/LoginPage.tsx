@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { CloudCog, Eye, EyeOff } from 'lucide-react';
+import { CloudCog, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export function LoginPage() {
   const { t, i18n } = useTranslation();
@@ -58,9 +59,11 @@ export function LoginPage() {
           </p>
 
           {error && (
-            <div className="mb-4 p-3 bg-error/10 border border-error/20 text-error text-body-md rounded-lg">
-              {error}
-            </div>
+            <Alert variant="destructive" className="mb-4 animate-fade-in">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">

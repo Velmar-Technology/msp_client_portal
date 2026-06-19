@@ -10,12 +10,14 @@ import {
   AlertTriangle,
   ClipboardList,
   ArrowRight,
+  AlertCircle,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useSLATimer } from '../hooks/useSLATimer';
 import { ticketService } from '../services/ticketService';
 import { userService } from '../services/userService';
 import type { Ticket } from '../services/ticketService';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const statusColor: Record<string, string> = {
   OPEN: 'bg-info/10 text-info',
@@ -287,8 +289,16 @@ export function TechDashboard() {
         <div className="lg:col-span-8 bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm flex flex-col">
           {/* Action Message Alert */}
           {actionMessage && (
-            <div className={`text-label-md px-4 py-3 border-b ${actionMessage.isError ? 'bg-error/10 text-error border-error/20' : 'bg-success/10 text-success border-success/20'}`}>
-              {actionMessage.text}
+            <div className="p-4 border-b border-outline-variant">
+              <Alert variant={actionMessage.isError ? 'destructive' : 'default'} className="animate-fade-in">
+                {actionMessage.isError ? (
+                  <AlertCircle className="h-4 w-4" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                )}
+                <AlertTitle>{actionMessage.isError ? 'Error' : 'Success'}</AlertTitle>
+                <AlertDescription>{actionMessage.text}</AlertDescription>
+              </Alert>
             </div>
           )}
 

@@ -17,6 +17,16 @@ export interface Ticket {
   updated_at: string;
 }
 
+export interface TicketAttachment {
+  id: string;
+  ticket_id: string;
+  filename: string;
+  path: string;
+  mime_type: string;
+  size_bytes: number;
+  uploaded_at: string;
+}
+
 export interface TicketEvent {
   id: string;
   ticket_id: string;
@@ -62,12 +72,12 @@ export const ticketService = {
     return response.data.data;
   },
 
-  async getAttachments(id: string): Promise<unknown[]> {
+  async getAttachments(id: string): Promise<TicketAttachment[]> {
     const response = await api.get(`/tickets/${id}/attachments`);
     return response.data.data;
   },
 
-  async uploadAttachment(id: string, file: File): Promise<unknown> {
+  async uploadAttachment(id: string, file: File): Promise<TicketAttachment> {
     const formData = new FormData();
     formData.append('file', file);
     const response = await api.post(`/tickets/${id}/attachments`, formData, {

@@ -126,6 +126,9 @@
     "modalCancel": "Cancel",
     "modalCreate": "Create Ticket",
     "modalCreating": "Creating...",
+    "attachmentsLabel": "Attachments (Optional)",
+    "selectFiles": "Select Files",
+    "filesSelected": "files selected",
     "categories": {
       "REPAIR": "Repair",
       "WARRANTY": "Warranty",
@@ -153,7 +156,17 @@
     "assignTechnician": "Assign Technician",
     "assigning": "Assigning...",
     "assignSuccess": "Technician assigned successfully",
-    "assignError": "Failed to assign technician"
+    "assignError": "Failed to assign technician",
+    "attachmentsTitle": "Attachments",
+    "noAttachments": "No attachments uploaded yet.",
+    "uploadAttachment": "Upload File",
+    "uploading": "Uploading...",
+    "uploadSuccess": "File uploaded successfully",
+    "uploadError": "Failed to upload file",
+    "dragAndDrop": "Drag & drop or click to upload",
+    "allowedTypes": "Allowed formats: JPG, PNG, GIF, WEBP, PDF, DOC(X), XLS(X), TXT, MP4 (Max 10MB)",
+    "fileTooLarge": "File is too large. Maximum size is 10MB.",
+    "invalidFileType": "Unsupported file format."
   },
   "techDashboard": {
     "subtitle": "Manage your assigned tickets, track SLAs, and update ticket statuses.",

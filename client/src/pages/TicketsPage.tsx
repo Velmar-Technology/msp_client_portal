@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Search, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { ticketService } from '../services/ticketService';
 import { useCallback } from 'react';
 import type { Ticket } from '../services/ticketService';
@@ -92,21 +92,46 @@ export function TicketsPage() {
   const [newDesc, setNewDesc] = useState('');
   const [newCategory, setNewCategory] = useState('REPAIR');
   const [newPriority, setNewPriority] = useState('MEDIUM');
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
+      setSelectedFiles((prev) => [...prev, ...filesArray]);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
 
   async function handleCreateTicket(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await ticketService.create({
+      const ticket = await ticketService.create({
         title: newTitle,
         description: newDesc,
         category: newCategory,
         priority: newPriority,
       });
+
+      // Upload selected attachments if any
+      if (selectedFiles.length > 0) {
+        for (const file of selectedFiles) {
+          try {
+            await ticketService.uploadAttachment(ticket.id, file);
+          } catch (uploadErr) {
+            console.error(`Failed to upload file ${file.name}`, uploadErr);
+          }
+        }
+      }
+
       setShowNewTicket(false);
       setNewTitle('');
       setNewDesc('');
+      setSelectedFiles([]);
       setPage(1);
       loadTickets();
     } catch (err) {
@@ -310,6 +335,52 @@ export function TicketsPage() {
                     <option value="HIGH">{t('tickets.priorities.HIGH')}</option>
                     <option value="CRITICAL">{t('tickets.priorities.CRITICAL')}</option>
                   </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-label-md text-on-surface mb-1.5">{t('tickets.attachmentsLabel')}</label>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('modal-file-input')?.click()}
+                      className="px-4 py-2 border border-outline-variant rounded-lg text-label-md text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer bg-surface-container-low"
+                    >
+                      {t('tickets.selectFiles')}
+                    </button>
+                    <input
+                      id="modal-file-input"
+                      type="file"
+                      multiple
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                    {selectedFiles.length > 0 && (
+                      <span className="text-label-sm text-on-surface-variant font-medium">
+                        {selectedFiles.length} {t('tickets.filesSelected')}
+                      </span>
+                    )}
+                  </div>
+                  {/* Selected files list */}
+                  {selectedFiles.length > 0 && (
+                    <div className="max-h-24 overflow-y-auto border border-outline-variant/50 rounded-lg p-2 space-y-1.5 bg-surface-container/50">
+                      {selectedFiles.map((file, idx) => (
+                        <div key={idx} className="flex justify-between items-center text-label-sm bg-surface-container-lowest px-2 py-1 rounded border border-outline-variant/30">
+                          <span className="truncate max-w-[220px]" title={file.name}>
+                            {file.name}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeFile(idx)}
+                            className="text-error hover:text-error/80 cursor-pointer p-0.5"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="flex gap-3 pt-2">

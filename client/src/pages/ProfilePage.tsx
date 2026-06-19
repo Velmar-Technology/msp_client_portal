@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { userService } from '../services/userService';
-import { Save, User, Mail, Shield, Globe } from 'lucide-react';
+import { Save, User, Mail, Shield, Globe, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export function ProfilePage() {
   const { t, i18n } = useTranslation();
@@ -63,9 +64,15 @@ export function ProfilePage() {
         </h3>
 
         {message && (
-          <div className={`mb-4 p-3 rounded-lg text-body-md ${message === t('profile.success') ? 'bg-success/10 text-success' : 'bg-error/10 text-error'}`}>
-            {message}
-          </div>
+          <Alert variant={message === t('profile.success') ? 'default' : 'destructive'} className="mb-4 animate-fade-in">
+            {message === t('profile.success') ? (
+              <CheckCircle2 className="h-4 w-4 text-success" />
+            ) : (
+              <AlertCircle className="h-4 w-4" />
+            )}
+            <AlertTitle>{message === t('profile.success') ? 'Success' : 'Error'}</AlertTitle>
+            <AlertDescription>{message}</AlertDescription>
+          </Alert>
         )}
 
         <div className="space-y-4">
