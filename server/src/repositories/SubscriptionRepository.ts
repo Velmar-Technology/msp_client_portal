@@ -1,16 +1,20 @@
 import { BaseRepository } from './BaseRepository';
 import { Subscription, SubscriptionPlan, SubscriptionStatus } from '../types';
+import { db, subscriptions } from '../db';
+import { eq, desc } from 'drizzle-orm';
 
 export class SubscriptionRepository extends BaseRepository<Subscription> {
   constructor() {
-    super('subscriptions');
+    super(subscriptions, 'subscriptions');
   }
 
   async findByTenant(tenantId: string): Promise<Subscription[]> {
-    return this.query<Subscription>(
-      'SELECT * FROM subscriptions WHERE tenant_id = $1 ORDER BY created_at DESC',
-      [tenantId],
-    );
+    const results = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.tenant_id, tenantId))
+      .orderBy(desc(subscriptions.created_at));
+    return results as Subscription[];
   }
 
   async create(data: {
@@ -21,40 +25,41 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     renewal_date: Date;
     tenant_id: string;
   }): Promise<Subscription> {
-    const result = await this.queryOne<Subscription>(
-      `INSERT INTO subscriptions (client_id, service_name, plan, equipment_count, renewal_date, tenant_id)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING *`,
-      [
-        data.client_id,
-        data.service_name,
-        data.plan,
-        data.equipment_count,
-        data.renewal_date,
-        data.tenant_id,
-      ],
-    );
-    return result!;
+    const results = await db
+      .insert(subscriptions)
+      .values({
+        client_id: data.client_id,
+        service_name: data.service_name,
+        plan: data.plan,
+        equipment_count: data.equipment_count,
+        renewal_date: data.renewal_date,
+        tenant_id: data.tenant_id,
+      })
+      .returning();
+    return results[0] as Subscription;
   }
 
   async updatePlan(id: string, plan: SubscriptionPlan, equipmentCount?: number): Promise<Subscription | null> {
+    const updateData: any = { plan };
     if (equipmentCount !== undefined) {
-      return this.queryOne<Subscription>(
-        'UPDATE subscriptions SET plan = $1, equipment_count = $2 WHERE id = $3 RETURNING *',
-        [plan, equipmentCount, id],
-      );
+      updateData.equipment_count = equipmentCount;
     }
-    return this.queryOne<Subscription>(
-      'UPDATE subscriptions SET plan = $1 WHERE id = $2 RETURNING *',
-      [plan, id],
-    );
+
+    const results = await db
+      .update(subscriptions)
+      .set(updateData)
+      .where(eq(subscriptions.id, id))
+      .returning();
+    return (results[0] as Subscription) || null;
   }
 
   async updateStatus(id: string, status: SubscriptionStatus): Promise<Subscription | null> {
-    return this.queryOne<Subscription>(
-      'UPDATE subscriptions SET status = $1 WHERE id = $2 RETURNING *',
-      [status, id],
-    );
+    const results = await db
+      .update(subscriptions)
+      .set({ status })
+      .where(eq(subscriptions.id, id))
+      .returning();
+    return (results[0] as Subscription) || null;
   }
 }
 

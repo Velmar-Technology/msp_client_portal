@@ -1,38 +1,49 @@
 import { BaseRepository } from './BaseRepository';
 import { User, UserRole } from '../types';
+import { db, users } from '../db';
+import { eq, and, ilike, asc } from 'drizzle-orm';
 
 export class UserRepository extends BaseRepository<User> {
   constructor() {
-    super('users');
+    super(users, 'users');
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.queryOne<User>(
-      'SELECT * FROM users WHERE email = $1',
-      [email],
-    );
+    const results = await db.select().from(users).where(eq(users.email, email));
+    return (results[0] as User) || null;
   }
 
   async findByRole(role: UserRole): Promise<User[]> {
-    return this.query<User>(
-      'SELECT * FROM users WHERE role = $1 AND is_active = true ORDER BY name',
-      [role],
-    );
+    const results = await db
+      .select()
+      .from(users)
+      .where(and(eq(users.role, role), eq(users.is_active, true)))
+      .orderBy(asc(users.name));
+    return results as User[];
   }
 
   async findTechniciansBySpecialty(specialty: string): Promise<User[]> {
-    return this.query<User>(
-      `SELECT * FROM users 
-       WHERE role = 'TECHNICIAN' AND is_active = true AND specialty ILIKE $1 
-       ORDER BY name`,
-      [`%${specialty}%`],
-    );
+    const results = await db
+      .select()
+      .from(users)
+      .where(
+        and(
+          eq(users.role, UserRole.TECHNICIAN),
+          eq(users.is_active, true),
+          ilike(users.specialty, `%${specialty}%`)
+        )
+      )
+      .orderBy(asc(users.name));
+    return results as User[];
   }
 
   async findActiveTechnicians(): Promise<User[]> {
-    return this.query<User>(
-      `SELECT * FROM users WHERE role = 'TECHNICIAN' AND is_active = true ORDER BY name`,
-    );
+    const results = await db
+      .select()
+      .from(users)
+      .where(and(eq(users.role, UserRole.TECHNICIAN), eq(users.is_active, true)))
+      .orderBy(asc(users.name));
+    return results as User[];
   }
 
   async create(data: {
@@ -43,55 +54,42 @@ export class UserRepository extends BaseRepository<User> {
     language?: string;
     tenant_id: string;
   }): Promise<User> {
-    const result = await this.queryOne<User>(
-      `INSERT INTO users (email, name, password_hash, role, language, tenant_id)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING *`,
-      [
-        data.email,
-        data.name,
-        data.password_hash,
-        data.role || UserRole.CLIENT,
-        data.language || 'en_US',
-        data.tenant_id,
-      ],
-    );
-    return result!;
+    const results = await db
+      .insert(users)
+      .values({
+        email: data.email,
+        name: data.name,
+        password_hash: data.password_hash,
+        role: data.role || UserRole.CLIENT,
+        language: data.language || 'en_US',
+        tenant_id: data.tenant_id,
+      })
+      .returning();
+    return results[0] as User;
   }
 
   async updateProfile(id: string, data: Partial<Pick<User, 'name' | 'email' | 'language'>>): Promise<User | null> {
-    const fields: string[] = [];
-    const values: unknown[] = [];
-    let paramIndex = 1;
+    const updateData: any = {};
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.email !== undefined) updateData.email = data.email;
+    if (data.language !== undefined) updateData.language = data.language;
 
-    if (data.name !== undefined) {
-      fields.push(`name = $${paramIndex++}`);
-      values.push(data.name);
-    }
-    if (data.email !== undefined) {
-      fields.push(`email = $${paramIndex++}`);
-      values.push(data.email);
-    }
-    if (data.language !== undefined) {
-      fields.push(`language = $${paramIndex++}`);
-      values.push(data.language);
-    }
+    if (Object.keys(updateData).length === 0) return this.findById(id);
 
-    if (fields.length === 0) return this.findById(id);
-
-    values.push(id);
-    return this.queryOne<User>(
-      `UPDATE users SET ${fields.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
-      values,
-    );
+    const results = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, id))
+      .returning();
+    return (results[0] as User) || null;
   }
 
   async verifyEmail(id: string): Promise<void> {
-    await this.query('UPDATE users SET email_verified = true WHERE id = $1', [id]);
+    await db.update(users).set({ email_verified: true }).where(eq(users.id, id));
   }
 
   async updatePassword(id: string, passwordHash: string): Promise<void> {
-    await this.query('UPDATE users SET password_hash = $1 WHERE id = $2', [passwordHash, id]);
+    await db.update(users).set({ password_hash: passwordHash }).where(eq(users.id, id));
   }
 }
 

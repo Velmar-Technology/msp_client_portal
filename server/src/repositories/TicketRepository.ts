@@ -1,22 +1,42 @@
 import { BaseRepository } from './BaseRepository';
 import { Ticket, TicketAttachment, TicketFilters, TicketStatus, TicketCategory, TicketPriority } from '../types';
+import { db, tickets, users, ticketAttachments } from '../db';
+import { eq, and, or, ilike, desc, asc, count, SQL } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 
 export class TicketRepository extends BaseRepository<Ticket> {
   constructor() {
-    super('tickets');
+    super(tickets, 'tickets');
   }
 
   override async findById(id: string): Promise<Ticket | null> {
-    return this.queryOne<Ticket>(
-      `SELECT t.*, 
-              c.name as client_name, c.email as client_email,
-              tech.name as assigned_tech_name, tech.email as assigned_tech_email
-       FROM tickets t
-       JOIN users c ON t.client_id = c.id
-       LEFT JOIN users tech ON t.assigned_tech_id = tech.id
-       WHERE t.id = $1`,
-      [id],
-    );
+    const clientAlias = alias(users, 'client');
+    const techAlias = alias(users, 'tech');
+
+    const results = await db
+      .select({
+        id: tickets.id,
+        title: tickets.title,
+        description: tickets.description,
+        category: tickets.category,
+        status: tickets.status,
+        priority: tickets.priority,
+        client_id: tickets.client_id,
+        assigned_tech_id: tickets.assigned_tech_id,
+        tenant_id: tickets.tenant_id,
+        created_at: tickets.created_at,
+        updated_at: tickets.updated_at,
+        client_name: clientAlias.name,
+        client_email: clientAlias.email,
+        assigned_tech_name: techAlias.name,
+        assigned_tech_email: techAlias.email,
+      })
+      .from(tickets)
+      .innerJoin(clientAlias, eq(tickets.client_id, clientAlias.id))
+      .leftJoin(techAlias, eq(tickets.assigned_tech_id, techAlias.id))
+      .where(eq(tickets.id, id));
+
+    return (results[0] as unknown as Ticket) || null;
   }
 
   async create(data: {
@@ -27,132 +47,160 @@ export class TicketRepository extends BaseRepository<Ticket> {
     client_id: string;
     tenant_id: string;
   }): Promise<Ticket> {
-    const result = await this.queryOne<Ticket>(
-      `INSERT INTO tickets (title, description, category, priority, client_id, tenant_id)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING *`,
-      [data.title, data.description, data.category, data.priority, data.client_id, data.tenant_id],
-    );
-    return result!;
+    const results = await db
+      .insert(tickets)
+      .values({
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        priority: data.priority,
+        client_id: data.client_id,
+        tenant_id: data.tenant_id,
+      })
+      .returning();
+    return results[0] as Ticket;
   }
 
   async findByClient(clientId: string, limit = 20, offset = 0): Promise<Ticket[]> {
-    return this.query<Ticket>(
-      `SELECT * FROM tickets WHERE client_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
-      [clientId, limit, offset],
-    );
+    const results = await db
+      .select()
+      .from(tickets)
+      .where(eq(tickets.client_id, clientId))
+      .orderBy(desc(tickets.created_at))
+      .limit(limit)
+      .offset(offset);
+    return results as Ticket[];
   }
 
   async findByTechnician(techId: string, limit = 20, offset = 0): Promise<Ticket[]> {
-    return this.query<Ticket>(
-      `SELECT * FROM tickets WHERE assigned_tech_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
-      [techId, limit, offset],
-    );
+    const results = await db
+      .select()
+      .from(tickets)
+      .where(eq(tickets.assigned_tech_id, techId))
+      .orderBy(desc(tickets.created_at))
+      .limit(limit)
+      .offset(offset);
+    return results as Ticket[];
   }
 
   async findWithFilters(filters: TicketFilters): Promise<{ tickets: Ticket[]; total: number }> {
-    const conditions: string[] = [];
-    const params: unknown[] = [];
-    let paramIndex = 1;
+    const conditions: (SQL | undefined)[] = [];
 
     if (filters.status) {
-      conditions.push(`t.status = $${paramIndex++}`);
-      params.push(filters.status);
+      conditions.push(eq(tickets.status, filters.status));
     }
     if (filters.category) {
-      conditions.push(`t.category = $${paramIndex++}`);
-      params.push(filters.category);
+      conditions.push(eq(tickets.category, filters.category));
     }
     if (filters.priority) {
-      conditions.push(`t.priority = $${paramIndex++}`);
-      params.push(filters.priority);
+      conditions.push(eq(tickets.priority, filters.priority));
     }
     if (filters.clientId) {
-      conditions.push(`t.client_id = $${paramIndex++}`);
-      params.push(filters.clientId);
+      conditions.push(eq(tickets.client_id, filters.clientId));
     }
     if (filters.assignedTechId) {
-      conditions.push(`t.assigned_tech_id = $${paramIndex++}`);
-      params.push(filters.assignedTechId);
+      conditions.push(eq(tickets.assigned_tech_id, filters.assignedTechId));
     }
     if (filters.tenantId) {
-      conditions.push(`t.tenant_id = $${paramIndex++}`);
-      params.push(filters.tenantId);
+      conditions.push(eq(tickets.tenant_id, filters.tenantId));
     }
     if (filters.search) {
-      conditions.push(`(t.title ILIKE $${paramIndex} OR t.description ILIKE $${paramIndex})`);
-      params.push(`%${filters.search}%`);
-      paramIndex++;
+      conditions.push(
+        or(
+          ilike(tickets.title, `%${filters.search}%`),
+          ilike(tickets.description, `%${filters.search}%`)
+        )
+      );
     }
 
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const page = filters.page || 1;
     const limit = filters.limit || 20;
     const offset = (page - 1) * limit;
 
-    const countResult = await this.queryOne<{ count: string }>(
-      `SELECT COUNT(*) FROM tickets t ${whereClause}`,
-      params,
-    );
-    const total = parseInt(countResult?.count || '0', 10);
+    const countResult = await db
+      .select({ val: count() })
+      .from(tickets)
+      .where(whereClause);
+    const total = countResult[0]?.val ?? 0;
 
-    params.push(limit, offset);
-    const tickets = await this.query<Ticket>(
-      `SELECT t.*, 
-              c.name as client_name, c.email as client_email,
-              tech.name as assigned_tech_name, tech.email as assigned_tech_email
-       FROM tickets t
-       JOIN users c ON t.client_id = c.id
-       LEFT JOIN users tech ON t.assigned_tech_id = tech.id
-       ${whereClause} 
-       ORDER BY t.created_at DESC 
-       LIMIT $${paramIndex++} OFFSET $${paramIndex}`,
-      params,
-    );
+    const clientAlias = alias(users, 'client');
+    const techAlias = alias(users, 'tech');
 
-    return { tickets, total };
+    const results = await db
+      .select({
+        id: tickets.id,
+        title: tickets.title,
+        description: tickets.description,
+        category: tickets.category,
+        status: tickets.status,
+        priority: tickets.priority,
+        client_id: tickets.client_id,
+        assigned_tech_id: tickets.assigned_tech_id,
+        tenant_id: tickets.tenant_id,
+        created_at: tickets.created_at,
+        updated_at: tickets.updated_at,
+        client_name: clientAlias.name,
+        client_email: clientAlias.email,
+        assigned_tech_name: techAlias.name,
+        assigned_tech_email: techAlias.email,
+      })
+      .from(tickets)
+      .innerJoin(clientAlias, eq(tickets.client_id, clientAlias.id))
+      .leftJoin(techAlias, eq(tickets.assigned_tech_id, techAlias.id))
+      .where(whereClause)
+      .orderBy(desc(tickets.created_at))
+      .limit(limit)
+      .offset(offset);
+
+    return { tickets: results as unknown as Ticket[], total };
   }
 
   async updateStatus(id: string, status: TicketStatus): Promise<Ticket | null> {
-    return this.queryOne<Ticket>(
-      'UPDATE tickets SET status = $1 WHERE id = $2 RETURNING *',
-      [status, id],
-    );
+    const results = await db
+      .update(tickets)
+      .set({ status })
+      .where(eq(tickets.id, id))
+      .returning();
+    return (results[0] as Ticket) || null;
   }
 
   async assignTechnician(id: string, techId: string): Promise<Ticket | null> {
-    return this.queryOne<Ticket>(
-      'UPDATE tickets SET assigned_tech_id = $1 WHERE id = $2 RETURNING *',
-      [techId, id],
-    );
+    const results = await db
+      .update(tickets)
+      .set({ assigned_tech_id: techId })
+      .where(eq(tickets.id, id))
+      .returning();
+    return (results[0] as Ticket) || null;
   }
 
   async countByStatus(clientId?: string, assignedTechId?: string, tenantId?: string): Promise<Record<string, number>> {
-    const conditions: string[] = [];
-    const params: unknown[] = [];
-    let paramIndex = 1;
+    const conditions: (SQL | undefined)[] = [];
 
     if (clientId) {
-      conditions.push(`client_id = $${paramIndex++}`);
-      params.push(clientId);
+      conditions.push(eq(tickets.client_id, clientId));
     }
     if (assignedTechId) {
-      conditions.push(`assigned_tech_id = $${paramIndex++}`);
-      params.push(assignedTechId);
+      conditions.push(eq(tickets.assigned_tech_id, assignedTechId));
     }
     if (tenantId) {
-      conditions.push(`tenant_id = $${paramIndex++}`);
-      params.push(tenantId);
+      conditions.push(eq(tickets.tenant_id, tenantId));
     }
 
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-    const result = await this.query<{ status: string; count: string }>(
-      `SELECT status, COUNT(*) FROM tickets ${whereClause} GROUP BY status`,
-      params,
-    );
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const result = await db
+      .select({
+        status: tickets.status,
+        count: count(),
+      })
+      .from(tickets)
+      .where(whereClause)
+      .groupBy(tickets.status);
+
     const counts: Record<string, number> = {};
     result.forEach((row) => {
-      counts[row.status] = parseInt(row.count, 10);
+      counts[row.status] = row.count;
     });
     return counts;
   }
@@ -167,20 +215,27 @@ export class TicketRepository extends BaseRepository<Ticket> {
     size_bytes: number;
     tenant_id: string;
   }): Promise<TicketAttachment> {
-    const result = await this.queryOne<TicketAttachment>(
-      `INSERT INTO ticket_attachments (ticket_id, filename, path, mime_type, size_bytes, tenant_id)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING *`,
-      [data.ticket_id, data.filename, data.path, data.mime_type, data.size_bytes, data.tenant_id],
-    );
-    return result!;
+    const results = await db
+      .insert(ticketAttachments)
+      .values({
+        ticket_id: data.ticket_id,
+        filename: data.filename,
+        path: data.path,
+        mime_type: data.mime_type,
+        size_bytes: data.size_bytes,
+        tenant_id: data.tenant_id,
+      })
+      .returning();
+    return results[0] as TicketAttachment;
   }
 
   async getAttachments(ticketId: string): Promise<TicketAttachment[]> {
-    return this.query<TicketAttachment>(
-      'SELECT * FROM ticket_attachments WHERE ticket_id = $1 ORDER BY uploaded_at',
-      [ticketId],
-    );
+    const results = await db
+      .select()
+      .from(ticketAttachments)
+      .where(eq(ticketAttachments.ticket_id, ticketId))
+      .orderBy(asc(ticketAttachments.uploaded_at));
+    return results as TicketAttachment[];
   }
 }
 

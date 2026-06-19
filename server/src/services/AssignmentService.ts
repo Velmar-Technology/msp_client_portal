@@ -1,7 +1,8 @@
-import { pool } from '../config/database';
+import { db, roundRobinState } from '../db';
 import { userRepository } from '../repositories/UserRepository';
 import { logger } from '../utils/logger';
 import { User, TicketCategory } from '../types';
+import { eq } from 'drizzle-orm';
 
 /**
  * Assignment Service — Implements Round-Robin distribution
@@ -38,12 +39,12 @@ export class AssignmentService {
     }
 
     // Get the last assigned tech for this category
-    const stateResult = await pool.query(
-      'SELECT last_assigned_tech_id FROM round_robin_state WHERE category = $1',
-      [category],
-    );
+    const stateResult = await db
+      .select({ last_assigned_tech_id: roundRobinState.last_assigned_tech_id })
+      .from(roundRobinState)
+      .where(eq(roundRobinState.category, category));
 
-    const lastAssignedId = stateResult.rows[0]?.last_assigned_tech_id;
+    const lastAssignedId = stateResult[0]?.last_assigned_tech_id;
 
     // Find the next technician in rotation
     let nextTech: User;
@@ -60,12 +61,20 @@ export class AssignmentService {
     }
 
     // Update the round-robin state
-    await pool.query(
-      `INSERT INTO round_robin_state (category, last_assigned_tech_id, updated_at)
-       VALUES ($1, $2, NOW())
-       ON CONFLICT (category) DO UPDATE SET last_assigned_tech_id = $2, updated_at = NOW()`,
-      [category, nextTech.id],
-    );
+    await db
+      .insert(roundRobinState)
+      .values({
+        category,
+        last_assigned_tech_id: nextTech.id,
+        updated_at: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: roundRobinState.category,
+        set: {
+          last_assigned_tech_id: nextTech.id,
+          updated_at: new Date(),
+        },
+      });
 
     logger.info('Technician assigned via Round-Robin', {
       techId: nextTech.id,

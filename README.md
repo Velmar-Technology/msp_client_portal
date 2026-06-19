@@ -32,6 +32,31 @@ Every tenant-scoped table has a `tenant_id` foreign key referencing `tenants(id)
 
 ---
 
+## Drizzle ORM Integration
+
+The backend server uses **Drizzle ORM** for type-safe database queries.
+- **Schema Definition:** Configured in [schema.ts](file:///c:/Users/Public/Workspace/msp_client_portal/server/src/db/schema.ts) mapping all Postgres tables and enums.
+- **Client Instance:** Exports the `db` client from [index.ts](file:///c:/Users/Public/Workspace/msp_client_portal/server/src/db/index.ts) wrapping the pg connection pool.
+- **Drizzle Config:** Configured in [drizzle.config.ts](file:///c:/Users/Public/Workspace/msp_client_portal/server/drizzle.config.ts).
+
+### Drizzle Kit CLI Commands
+
+From the `server` directory, you can run:
+- **Open Drizzle Studio:** Opens a browser-based database inspector:
+  ```bash
+  npx drizzle-kit studio
+  ```
+- **Generate Migrations:** Scans `schema.ts` and generates corresponding SQL migration scripts:
+  ```bash
+  npx drizzle-kit generate
+  ```
+- **Push Schema changes:** Directly updates the database schema to match `schema.ts` without generating a migration (recommended for quick development cycles):
+  ```bash
+  npx drizzle-kit push
+  ```
+
+---
+
 ## Getting Started
 
 ### Database Setup

@@ -1,31 +1,38 @@
 import { BaseRepository } from './BaseRepository';
 import { Tenant } from '../types';
+import { db, tenants } from '../db';
+import { eq } from 'drizzle-orm';
 
 export class TenantRepository extends BaseRepository<Tenant> {
   constructor() {
-    super('tenants');
+    super(tenants, 'tenants');
   }
 
   async create(name: string, subdomain?: string): Promise<Tenant> {
-    const result = await this.queryOne<Tenant>(
-      `INSERT INTO tenants (name, subdomain) VALUES ($1, $2) RETURNING *`,
-      [name, subdomain || null],
-    );
-    return result!;
+    const results = await db
+      .insert(tenants)
+      .values({
+        name,
+        subdomain: subdomain || null,
+      })
+      .returning();
+    return results[0] as Tenant;
   }
 
   async findByName(name: string): Promise<Tenant | null> {
-    return this.queryOne<Tenant>(
-      'SELECT * FROM tenants WHERE name = $1',
-      [name],
-    );
+    const results = await db
+      .select()
+      .from(tenants)
+      .where(eq(tenants.name, name));
+    return (results[0] as Tenant) || null;
   }
 
   async findBySubdomain(subdomain: string): Promise<Tenant | null> {
-    return this.queryOne<Tenant>(
-      'SELECT * FROM tenants WHERE subdomain = $1',
-      [subdomain],
-    );
+    const results = await db
+      .select()
+      .from(tenants)
+      .where(eq(tenants.subdomain, subdomain));
+    return (results[0] as Tenant) || null;
   }
 }
 

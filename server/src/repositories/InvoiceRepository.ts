@@ -1,23 +1,30 @@
 import { BaseRepository } from './BaseRepository';
 import { Invoice, InvoiceStatus } from '../types';
+import { db, invoices } from '../db';
+import { eq, desc, count } from 'drizzle-orm';
 
 export class InvoiceRepository extends BaseRepository<Invoice> {
   constructor() {
-    super('invoices');
+    super(invoices, 'invoices');
   }
 
   async findByTenant(tenantId: string, limit = 20, offset = 0): Promise<Invoice[]> {
-    return this.query<Invoice>(
-      'SELECT * FROM invoices WHERE tenant_id = $1 ORDER BY invoice_date DESC LIMIT $2 OFFSET $3',
-      [tenantId, limit, offset],
-    );
+    const results = await db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.tenant_id, tenantId))
+      .orderBy(desc(invoices.invoice_date))
+      .limit(limit)
+      .offset(offset);
+    return results as Invoice[];
   }
 
   async findByInvoiceNumber(invoiceNumber: string): Promise<Invoice | null> {
-    return this.queryOne<Invoice>(
-      'SELECT * FROM invoices WHERE invoice_number = $1',
-      [invoiceNumber],
-    );
+    const results = await db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.invoice_number, invoiceNumber));
+    return (results[0] as Invoice) || null;
   }
 
   async create(data: {
@@ -29,32 +36,36 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
     due_date: Date;
     tenant_id: string;
   }): Promise<Invoice> {
-    const result = await this.queryOne<Invoice>(
-      `INSERT INTO invoices (invoice_number, client_id, amount, tax_amount, total, due_date, tenant_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING *`,
-      [
-        data.invoice_number,
-        data.client_id,
-        data.amount,
-        data.tax_amount,
-        data.total,
-        data.due_date,
-        data.tenant_id,
-      ],
-    );
-    return result!;
+    const results = await db
+      .insert(invoices)
+      .values({
+        invoice_number: data.invoice_number,
+        client_id: data.client_id,
+        amount: data.amount,
+        tax_amount: data.tax_amount,
+        total: data.total,
+        due_date: data.due_date,
+        tenant_id: data.tenant_id,
+      })
+      .returning();
+    return results[0] as Invoice;
   }
 
   async updateStatus(id: string, status: InvoiceStatus): Promise<Invoice | null> {
-    return this.queryOne<Invoice>(
-      'UPDATE invoices SET status = $1 WHERE id = $2 RETURNING *',
-      [status, id],
-    );
+    const results = await db
+      .update(invoices)
+      .set({ status })
+      .where(eq(invoices.id, id))
+      .returning();
+    return (results[0] as Invoice) || null;
   }
 
   async countByTenant(tenantId: string): Promise<number> {
-    return this.count('tenant_id = $1', [tenantId]);
+    const results = await db
+      .select({ val: count() })
+      .from(invoices)
+      .where(eq(invoices.tenant_id, tenantId));
+    return results[0]?.val ?? 0;
   }
 }
 

@@ -1,27 +1,29 @@
-import { pool } from '../config/database';
-import { QueryResult } from 'pg';
+import { db, pool } from '../db';
+import { eq, desc } from 'drizzle-orm';
 
 /**
  * Generic base repository providing reusable CRUD operations.
  * All repositories extend this to inherit common data access patterns.
  */
 export abstract class BaseRepository<T> {
-  constructor(protected readonly tableName: string) {}
+  constructor(
+    protected readonly table: any,
+    protected readonly tableName: string
+  ) {}
 
   async findById(id: string): Promise<T | null> {
-    const result: QueryResult = await pool.query(
-      `SELECT * FROM ${this.tableName} WHERE id = $1`,
-      [id],
-    );
-    return (result.rows[0] as T) || null;
+    const result = await db.select().from(this.table).where(eq(this.table.id, id));
+    return (result[0] as T) || null;
   }
 
   async findAll(limit = 20, offset = 0): Promise<T[]> {
-    const result: QueryResult = await pool.query(
-      `SELECT * FROM ${this.tableName} ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
-      [limit, offset],
-    );
-    return result.rows as T[];
+    const orderBy = 'created_at' in this.table ? desc(this.table.created_at) : undefined;
+    const query = db.select().from(this.table).limit(limit).offset(offset);
+    if (orderBy) {
+      query.orderBy(orderBy);
+    }
+    const result = await query;
+    return result as T[];
   }
 
   async count(whereClause = '', params: unknown[] = []): Promise<number> {
@@ -33,10 +35,7 @@ export abstract class BaseRepository<T> {
   }
 
   async deleteById(id: string): Promise<boolean> {
-    const result = await pool.query(
-      `DELETE FROM ${this.tableName} WHERE id = $1`,
-      [id],
-    );
+    const result = await db.delete(this.table).where(eq(this.table.id, id));
     return (result.rowCount ?? 0) > 0;
   }
 
