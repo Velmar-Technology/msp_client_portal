@@ -43,6 +43,6 @@ router.post('/:id/attachments', upload.single('file'), (req, res) => ticketContr
 router.get('/:id/responses', (req, res) => ticketController.getResponses(req, res));
 
 /** POST /api/v1/tickets/:id/responses — Add response to ticket */
-router.post('/:id/responses', validate(CreateTicketResponseDTO), (req, res) => ticketController.createResponse(req, res));
+router.post('/:id/responses', upload.array('files', 5), validate(CreateTicketResponseDTO), (req, res) => ticketController.createResponse(req, res));
 
 export default router;

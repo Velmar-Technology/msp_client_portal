@@ -309,7 +309,26 @@ export class TicketService {
   ): Promise<TicketResponse[]> {
     // Verify access
     await this.getTicketById(ticketId, userId, userRole, tenantId);
-    return ticketResponseRepository.findByTicket(ticketId);
+    
+    const responses = await ticketResponseRepository.findByTicket(ticketId);
+    const attachments = await ticketRepository.getAttachmentsByResponses(ticketId);
+    
+    // Group attachments by response_id
+    const responseAttachmentsMap = new Map<string, TicketAttachment[]>();
+    for (const att of attachments) {
+      if (att.response_id) {
+        if (!responseAttachmentsMap.has(att.response_id)) {
+          responseAttachmentsMap.set(att.response_id, []);
+        }
+        responseAttachmentsMap.get(att.response_id)!.push(att);
+      }
+    }
+    
+    // Map attachments to responses
+    return responses.map((resp) => ({
+      ...resp,
+      attachments: responseAttachmentsMap.get(resp.id) || [],
+    }));
   }
 
   /**
@@ -321,6 +340,7 @@ export class TicketService {
     userId: string,
     userRole: UserRole,
     tenantId: string,
+    files: { filename: string; path: string; mimetype: string; size: number }[] = [],
   ): Promise<TicketResponse> {
     const ticket = await this.getTicketById(ticketId, userId, userRole, tenantId);
 
@@ -330,6 +350,22 @@ export class TicketService {
       message,
       tenant_id: ticket.tenant_id,
     });
+
+    const responseAttachments: TicketAttachment[] = [];
+
+    // Save attachments if any
+    for (const file of files) {
+      const att = await ticketRepository.addAttachment({
+        ticket_id: ticketId,
+        response_id: response.id,
+        filename: file.filename,
+        path: file.path,
+        mime_type: file.mimetype,
+        size_bytes: file.size,
+        tenant_id: ticket.tenant_id,
+      });
+      responseAttachments.push(att);
+    }
 
     // Notify the other party
     try {
@@ -360,6 +396,7 @@ export class TicketService {
       ...response,
       user_name: user?.name,
       user_role: user?.role,
+      attachments: responseAttachments,
     };
   }
 }

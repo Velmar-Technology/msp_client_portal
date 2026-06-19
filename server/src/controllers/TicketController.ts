@@ -129,12 +129,19 @@ export class TicketController {
 
   async createResponse(req: Request, res: Response): Promise<void> {
     const data = req.body as CreateTicketResponseInput;
+    const files = (req.files as Express.Multer.File[]) || [];
     const response = await ticketService.addTicketResponse(
       req.params.id as string,
       data.message,
       req.user!.userId,
       req.user!.role as UserRole,
       req.user!.tenantId,
+      files.map((f) => ({
+        filename: f.originalname,
+        path: f.path,
+        mimetype: f.mimetype,
+        size: f.size,
+      })),
     );
     res.status(201).json({ success: true, data: response });
   }

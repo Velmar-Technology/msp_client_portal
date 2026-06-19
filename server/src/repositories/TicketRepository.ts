@@ -1,7 +1,7 @@
 import { BaseRepository } from './BaseRepository';
 import { Ticket, TicketAttachment, TicketFilters, TicketStatus, TicketCategory, TicketPriority } from '../types';
 import { db, tickets, users, ticketAttachments } from '../db';
-import { eq, and, or, ilike, desc, asc, count, SQL } from 'drizzle-orm';
+import { eq, and, or, ilike, desc, asc, count, SQL, isNull, isNotNull } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
 export class TicketRepository extends BaseRepository<Ticket> {
@@ -209,6 +209,7 @@ export class TicketRepository extends BaseRepository<Ticket> {
 
   async addAttachment(data: {
     ticket_id: string;
+    response_id?: string | null;
     filename: string;
     path: string;
     mime_type: string;
@@ -219,6 +220,7 @@ export class TicketRepository extends BaseRepository<Ticket> {
       .insert(ticketAttachments)
       .values({
         ticket_id: data.ticket_id,
+        response_id: data.response_id || null,
         filename: data.filename,
         path: data.path,
         mime_type: data.mime_type,
@@ -233,7 +235,16 @@ export class TicketRepository extends BaseRepository<Ticket> {
     const results = await db
       .select()
       .from(ticketAttachments)
-      .where(eq(ticketAttachments.ticket_id, ticketId))
+      .where(and(eq(ticketAttachments.ticket_id, ticketId), isNull(ticketAttachments.response_id)))
+      .orderBy(asc(ticketAttachments.uploaded_at));
+    return results as TicketAttachment[];
+  }
+
+  async getAttachmentsByResponses(ticketId: string): Promise<TicketAttachment[]> {
+    const results = await db
+      .select()
+      .from(ticketAttachments)
+      .where(and(eq(ticketAttachments.ticket_id, ticketId), isNotNull(ticketAttachments.response_id)))
       .orderBy(asc(ticketAttachments.uploaded_at));
     return results as TicketAttachment[];
   }

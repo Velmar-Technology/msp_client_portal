@@ -20,6 +20,7 @@ export interface Ticket {
 export interface TicketAttachment {
   id: string;
   ticket_id: string;
+  response_id?: string | null;
   filename: string;
   path: string;
   mime_type: string;
@@ -48,6 +49,7 @@ export interface TicketResponse {
   created_at: string;
   user_name?: string;
   user_role?: string;
+  attachments?: TicketAttachment[];
 }
 
 export interface CreateTicketPayload {
@@ -112,8 +114,17 @@ export const ticketService = {
     return response.data.data;
   },
 
-  async createResponse(id: string, message: string): Promise<TicketResponse> {
-    const response = await api.post(`/tickets/${id}/responses`, { message });
+  async createResponse(id: string, message: string, files?: File[]): Promise<TicketResponse> {
+    const formData = new FormData();
+    formData.append('message', message);
+    if (files && files.length > 0) {
+      files.forEach((file) => {
+        formData.append('files', file);
+      });
+    }
+    const response = await api.post(`/tickets/${id}/responses`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
     return response.data.data;
   },
 };

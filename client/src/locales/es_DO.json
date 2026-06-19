@@ -175,7 +175,9 @@
     "sendResponse": "Enviar Respuesta",
     "sendingResponse": "Enviando...",
     "responseSuccess": "Respuesta enviada con éxito",
-    "responseError": "Error al enviar la respuesta"
+    "responseError": "Error al enviar la respuesta",
+    "previewNotAvailable": "Vista previa no disponible para este tipo de archivo.",
+    "downloadFile": "Descargar Archivo"
   },
   "techDashboard": {
     "subtitle": "Gestione sus tickets asignados, controle los SLA y actualice los estados de los tickets.",

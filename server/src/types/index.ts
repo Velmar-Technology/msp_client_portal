@@ -97,6 +97,7 @@ export interface Ticket {
 export interface TicketAttachment {
   id: string;
   ticket_id: string;
+  response_id?: string | null;
   filename: string;
   path: string;
   mime_type: string;
@@ -125,6 +126,7 @@ export interface TicketResponse {
   created_at: Date;
   user_name?: string;
   user_role?: string;
+  attachments?: TicketAttachment[];
 }
 
 export interface Subscription {

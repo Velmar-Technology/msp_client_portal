@@ -175,7 +175,9 @@
     "sendResponse": "Send Response",
     "sendingResponse": "Sending...",
     "responseSuccess": "Response sent successfully",
-    "responseError": "Failed to send response"
+    "responseError": "Failed to send response",
+    "previewNotAvailable": "Preview not available for this file type.",
+    "downloadFile": "Download File"
   },
   "techDashboard": {
     "subtitle": "Manage your assigned tickets, track SLAs, and update ticket statuses.",

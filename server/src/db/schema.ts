@@ -103,6 +103,7 @@ export const ticketAttachments = pgTable(
     ticket_id: uuid('ticket_id')
       .references(() => tickets.id, { onDelete: 'cascade' })
       .notNull(),
+    response_id: uuid('response_id').references(() => ticketResponses.id, { onDelete: 'cascade' }),
     filename: varchar('filename', { length: 500 }).notNull(),
     path: varchar('path', { length: 1000 }).notNull(),
     mime_type: varchar('mime_type', { length: 100 }).notNull(),
@@ -115,6 +116,7 @@ export const ticketAttachments = pgTable(
   (table) => [
     index('idx_attachments_ticket').on(table.ticket_id),
     index('idx_attachments_tenant').on(table.tenant_id),
+    index('idx_attachments_response').on(table.response_id),
   ]
 );
 

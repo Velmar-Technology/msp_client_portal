@@ -42,8 +42,12 @@ export function TicketDetailPage() {
   // Ticket responses state
   const [responses, setResponses] = useState<TicketResponse[]>([]);
   const [responseText, setResponseText] = useState('');
+  const [responseFiles, setResponseFiles] = useState<File[]>([]);
   const [sendingResponse, setSendingResponse] = useState(false);
   const [responseFeedback, setResponseFeedback] = useState<{ text: string; isError: boolean } | null>(null);
+
+  // File preview state
+  const [previewFile, setPreviewFile] = useState<{ filename: string; url: string; mimeType: string } | null>(null);
 
   const canAssign = user?.role === 'ADMIN' || user?.role === 'TECHNICIAN';
 
@@ -104,13 +108,14 @@ export function TicketDetailPage() {
 
   const handleSendResponse = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!id || !responseText.trim()) return;
+    if (!id || (!responseText.trim() && responseFiles.length === 0)) return;
     setSendingResponse(true);
     setResponseFeedback(null);
     try {
-      const newResponse = await ticketService.createResponse(id, responseText.trim());
+      const newResponse = await ticketService.createResponse(id, responseText.trim(), responseFiles);
       setResponses((prev) => [...prev, newResponse]);
       setResponseText('');
+      setResponseFiles([]);
       setResponseFeedback({ text: t('ticketDetail.responseSuccess'), isError: false });
       setTimeout(() => setResponseFeedback(null), 3000);
     } catch (err) {
@@ -342,7 +347,10 @@ export function TicketDetailPage() {
                       </div>
                     )}
 
-                    <div className="flex items-start gap-3 relative z-10">
+                    <div
+                      className="flex items-start gap-3 relative z-10 cursor-pointer hover:opacity-85 transition-opacity"
+                      onClick={() => setPreviewFile({ filename: att.filename, url: downloadUrl, mimeType: att.mime_type })}
+                    >
                       <div className="p-2 bg-surface-container-lowest rounded-md shrink-0 border border-outline-variant/30">
                         {getAttachmentIcon(att.mime_type)}
                       </div>
@@ -553,7 +561,48 @@ export function TicketDetailPage() {
                         ? 'bg-primary text-on-primary rounded-tr-none'
                         : 'bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant/30 rounded-tl-none'
                     }`}>
-                      {resp.message}
+                      {resp.message && <div>{resp.message}</div>}
+                      {resp.attachments && resp.attachments.length > 0 && (
+                        <div className={`mt-3 pt-3 border-t space-y-2 ${isSelf ? 'border-on-primary/25' : 'border-outline-variant/25'}`}>
+                          {resp.attachments.map((att) => {
+                            const downloadUrl = getAttachmentUrl(att.path);
+                            return (
+                              <div
+                                key={att.id}
+                                className={`flex items-center justify-between p-2 rounded-lg text-body-md border transition-all ${
+                                  isSelf
+                                    ? 'bg-primary-container/10 border-primary-container/20 text-on-primary'
+                                    : 'bg-surface-container-lowest border-outline-variant/30 text-on-surface'
+                                }`}
+                              >
+                                <div
+                                  className="flex items-center gap-2 min-w-0 cursor-pointer hover:opacity-85 transition-opacity"
+                                  onClick={() => setPreviewFile({ filename: att.filename, url: downloadUrl, mimeType: att.mime_type })}
+                                >
+                                  {getAttachmentIcon(att.mime_type)}
+                                  <span className="truncate max-w-[180px] font-medium" title={att.filename}>
+                                    {att.filename}
+                                  </span>
+                                  <span className="text-[10px] opacity-60">
+                                    ({formatFileSize(att.size_bytes)})
+                                  </span>
+                                </div>
+                                <a
+                                  href={downloadUrl}
+                                  download={att.filename}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className={`p-1 rounded-full transition-colors cursor-pointer shrink-0 ${
+                                    isSelf ? 'hover:bg-primary-container/30 text-on-primary' : 'hover:bg-primary/10 text-primary'
+                                  }`}
+                                >
+                                  <Download className="h-3.5 w-3.5" />
+                                </a>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
 
                     {/* Timestamp */}
@@ -569,6 +618,26 @@ export function TicketDetailPage() {
 
         {/* Reply Form */}
         <form onSubmit={handleSendResponse} className="border-t border-outline-variant/30 pt-4">
+          {/* File attachment preview */}
+          {responseFiles.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3 mt-1">
+              {responseFiles.map((file, idx) => (
+                <div key={idx} className="flex items-center gap-1.5 px-3 py-1 bg-surface-container-high border border-outline-variant/50 rounded-lg text-body-md text-on-surface">
+                  <Paperclip className="h-3.5 w-3.5 text-primary" />
+                  <span className="truncate max-w-[150px] font-medium">{file.name}</span>
+                  <span className="text-[10px] text-on-surface-variant opacity-60">({formatFileSize(file.size)})</span>
+                  <button
+                    type="button"
+                    onClick={() => setResponseFiles(prev => prev.filter((_, i) => i !== idx))}
+                    className="p-0.5 rounded-full hover:bg-error/10 text-on-surface-variant hover:text-error transition-colors cursor-pointer"
+                  >
+                    <span className="text-[14px] leading-none font-bold">×</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="flex gap-3 items-end">
             <div className="flex-1 relative">
               <textarea
@@ -580,9 +649,31 @@ export function TicketDetailPage() {
                 className="w-full px-4 py-3 bg-surface-container-high border border-outline-variant/60 rounded-xl text-body-md text-on-surface focus:outline-none focus:border-primary placeholder:text-on-surface-variant/40 resize-none pr-12 transition-all duration-200"
               />
             </div>
+            
+            {/* Attach button */}
+            <button
+              type="button"
+              onClick={() => document.getElementById('response-file-input')?.click()}
+              className="bg-surface-container border border-outline-variant/60 text-on-surface p-3 rounded-xl hover:bg-surface-container-high transition-colors flex items-center justify-center shrink-0 cursor-pointer shadow-sm"
+              title={t('ticketDetail.uploadAttachment')}
+            >
+              <Paperclip className="h-5 w-5" />
+            </button>
+            <input
+              id="response-file-input"
+              type="file"
+              multiple
+              onChange={(e) => {
+                if (e.target.files) {
+                  setResponseFiles(prev => [...prev, ...Array.from(e.target.files || [])]);
+                }
+              }}
+              className="hidden"
+            />
+
             <button
               type="submit"
-              disabled={sendingResponse || !responseText.trim()}
+              disabled={sendingResponse || (!responseText.trim() && responseFiles.length === 0)}
               className="bg-primary text-on-primary p-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center shrink-0 cursor-pointer shadow-md"
             >
               {sendingResponse ? (
@@ -660,6 +751,60 @@ export function TicketDetailPage() {
           </div>
         )}
       </div>
+      {/* Attachment Preview Modal */}
+      {previewFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 animate-fade-in" onClick={() => setPreviewFile(null)}>
+          <div className="bg-surface-container border border-outline-variant rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl relative" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="p-4 border-b border-outline-variant flex items-center justify-between">
+              <h3 className="text-h3 text-primary truncate max-w-[80%] font-semibold">{previewFile.filename}</h3>
+              <button
+                onClick={() => setPreviewFile(null)}
+                className="p-1 text-[24px] leading-none font-bold rounded-full hover:bg-surface-container-high text-on-surface-variant cursor-pointer"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 flex items-center justify-center p-6 overflow-auto bg-surface-container-lowest min-h-[300px]">
+              {previewFile.mimeType.startsWith('image/') ? (
+                <img
+                  src={previewFile.url}
+                  alt={previewFile.filename}
+                  className="max-w-full max-h-[70vh] object-contain rounded"
+                />
+              ) : previewFile.mimeType.startsWith('video/') ? (
+                <video
+                  src={previewFile.url}
+                  controls
+                  className="max-w-full max-h-[70vh] rounded"
+                />
+              ) : previewFile.mimeType === 'application/pdf' ? (
+                <iframe
+                  src={previewFile.url}
+                  title={previewFile.filename}
+                  className="w-full h-[70vh] border-0 rounded"
+                />
+              ) : (
+                <div className="text-center py-12">
+                  <FileText className="h-16 w-16 text-primary mx-auto mb-4" />
+                  <p className="text-body-lg font-semibold text-on-surface mb-2">{previewFile.filename}</p>
+                  <p className="text-body-md text-on-surface-variant opacity-60 mb-6">{t('ticketDetail.previewNotAvailable')}</p>
+                  <a
+                    href={previewFile.url}
+                    download={previewFile.filename}
+                    className="bg-primary text-on-primary px-6 py-2.5 rounded-xl text-label-md font-semibold hover:opacity-90 transition-opacity cursor-pointer inline-flex items-center gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    {t('ticketDetail.downloadFile')}
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
