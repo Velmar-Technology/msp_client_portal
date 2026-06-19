@@ -77,7 +77,7 @@ function TicketTitleWithHoverCard({ ticket }: { ticket: Ticket }) {
   return (
     <HoverCard onOpenChange={handleOpenChange}>
       <HoverCardTrigger asChild>
-        <span className="text-body-md font-medium text-on-surface truncate max-w-xs block cursor-help hover:text-primary transition-colors">
+        <span className="text-body-md font-medium text-on-surface truncate max-w-xs block cursor-pointer hover:text-primary font-medium hover:underline transition-colors">
           {ticket.title}
         </span>
       </HoverCardTrigger>
