@@ -5,37 +5,41 @@ import { TopNav } from './TopNav';
 import { SidebarProvider, SidebarInset } from '../ui/sidebar';
 
 
-export function AppLayout() {
+export function Footer() {
   const { t } = useTranslation();
 
+  return (
+    <footer className="flex flex-col md:flex-row justify-between items-center px-5 md:px-10 py-2 mt-auto bg-surface-container-lowest border-t border-outline-variant w-full gap-2">
+      <span className="text-label-sm text-on-surface-variant">
+        {t('footer.copyright')}
+      </span>
+      <div className="flex gap-6">
+        <Link to="/help" className="text-label-sm text-on-surface-variant hover:text-primary transition-colors">
+          {t('footer.help')}
+        </Link>
+        <Link to="/terms" className="text-label-sm text-on-surface-variant hover:text-primary transition-colors">
+          {t('footer.terms')}
+        </Link>
+        <Link to="/privacy" className="text-label-sm text-on-surface-variant hover:text-primary transition-colors">
+          {t('footer.privacy')}
+        </Link>
+      </div>
+    </footer>
+  );
+}
+
+export function AppLayout() {
   return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset className="flex flex-col min-h-screen">
         <TopNav />
         <main className="flex-1 p-5 md:px-10 md:py-5 bg-background overflow-x-hidden">
-
           <Outlet />
         </main>
-
-        {/* Footer */}
-        <footer className="flex flex-col md:flex-row justify-between items-center px-5 md:px-10 py-2 mt-auto bg-surface-container-lowest border-t border-outline-variant w-full gap-2">
-          <span className="text-label-sm text-on-surface-variant">
-            {t('footer.copyright')}
-          </span>
-          <div className="flex gap-6">
-            <Link to="/help" className="text-label-sm text-on-surface-variant hover:text-primary transition-colors">
-              {t('footer.help')}
-            </Link>
-            <Link to="/terms" className="text-label-sm text-on-surface-variant hover:text-primary transition-colors">
-              {t('footer.terms')}
-            </Link>
-            <Link to="/privacy" className="text-label-sm text-on-surface-variant hover:text-primary transition-colors">
-              {t('footer.privacy')}
-            </Link>
-          </div>
-        </footer>
+        <Footer />
       </SidebarInset>
     </SidebarProvider>
   );
 }
+

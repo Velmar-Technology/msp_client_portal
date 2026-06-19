@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Page } from '@/components/Page';
+import type { ColumnDef } from '@tanstack/react-table';
+import { DataTable } from '@/components/ui/data-table';
 import {
   Search,
   User,
@@ -102,7 +104,7 @@ export function TechDashboard() {
   }, [loadDashboardData]);
 
   // Handle Quick Status Transition Actions
-  const handleStatusTransition = async (ticketId: string, newStatus: string) => {
+  const handleStatusTransition = useCallback(async (ticketId: string, newStatus: string) => {
     setUpdatingId(ticketId);
     setActionMessage(null);
     try {
@@ -119,7 +121,7 @@ export function TechDashboard() {
       // Auto-hide messages after 4 seconds
       setTimeout(() => setActionMessage(null), 4000);
     }
-  };
+  }, [t, loadDashboardData]);
 
   const getCategoryLabel = (cat: string) => {
     const map: Record<string, string> = {
@@ -151,6 +153,86 @@ export function TechDashboard() {
     };
     return map[status] || status;
   };
+
+  const columns = useMemo<ColumnDef<Ticket>[]>(() => [
+    {
+      accessorKey: 'title',
+      header: () => <span className="uppercase text-label-sm text-on-surface-variant font-bold">{t('tickets.tableTitle')}</span>,
+      cell: ({ row }) => (
+        <span className="text-body-md font-semibold text-on-surface truncate max-w-[200px] block">
+          {row.original.title}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'category',
+      header: () => <span className="uppercase text-label-sm text-on-surface-variant font-bold">{t('tickets.tableCategory')}</span>,
+      cell: ({ row }) => <span className="text-body-md text-on-surface-variant">{getCategoryLabel(row.original.category)}</span>,
+    },
+    {
+      accessorKey: 'priority',
+      header: () => <span className="uppercase text-label-sm text-on-surface-variant font-bold">{t('tickets.tablePriority')}</span>,
+      cell: ({ row }) => (
+        <span className={`text-label-sm ${priorityColor[row.original.priority]}`}>
+          {getPriorityLabel(row.original.priority)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'status',
+      header: () => <span className="uppercase text-label-sm text-on-surface-variant font-bold">{t('tickets.tableStatus')}</span>,
+      cell: ({ row }) => (
+        <span className={`px-2 py-0.5 rounded text-label-sm font-bold ${statusColor[row.original.status]}`}>
+          {getStatusLabel(row.original.status)}
+        </span>
+      ),
+    },
+    {
+      id: 'actions',
+      header: () => <span className="uppercase text-label-sm text-on-surface-variant font-bold block text-right">{t('techDashboard.tableStatus') === 'Estado' ? 'Acciones' : 'Actions'}</span>,
+      cell: ({ row }) => {
+        const ticket = row.original;
+        return (
+          <div className="flex gap-2 justify-end" onClick={(e) => e.stopPropagation()}>
+            {ticket.status === 'OPEN' && (
+              <button
+                onClick={() => handleStatusTransition(ticket.id, 'IN_PROGRESS')}
+                disabled={updatingId === ticket.id}
+                className="px-2.5 py-1 bg-warning text-[#0F172A] hover:bg-warning/90 transition-colors text-[11px] font-bold rounded cursor-pointer disabled:opacity-50"
+              >
+                {t('techDashboard.startWork')}
+              </button>
+            )}
+            {ticket.status === 'IN_PROGRESS' && (
+              <>
+                <button
+                  onClick={() => handleStatusTransition(ticket.id, 'AWAITING_PAYMENT')}
+                  disabled={updatingId === ticket.id}
+                  className="px-2.5 py-1 bg-surface-container-high border border-outline hover:bg-surface-container-highest text-on-surface-variant transition-colors text-[11px] font-semibold rounded cursor-pointer disabled:opacity-50"
+                >
+                  {t('techDashboard.awaitingPayment')}
+                </button>
+                <button
+                  onClick={() => handleStatusTransition(ticket.id, 'RESOLVED')}
+                  disabled={updatingId === ticket.id}
+                  className="px-2.5 py-1 bg-success text-on-success hover:bg-success/90 transition-colors text-[11px] font-bold rounded cursor-pointer disabled:opacity-50"
+                >
+                  {t('techDashboard.resolveTicket')}
+                </button>
+              </>
+            )}
+            <button
+              onClick={() => navigate(`/tickets/${ticket.id}`)}
+              className="p-1 text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+              title={t('dashboard.viewDetails')}
+            >
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+        );
+      },
+    },
+  ], [t, updatingId, handleStatusTransition, navigate, priorityColor, statusColor, getCategoryLabel, getPriorityLabel, getStatusLabel]);
 
   // Filtered tickets list for display
   const filteredTickets = tickets.filter((ticket) => {
@@ -338,92 +420,14 @@ export function TechDashboard() {
           </div>
 
           {/* Tickets Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-surface border-b border-outline-variant">
-                  <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">{t('tickets.tableTitle')}</th>
-                  <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">{t('tickets.tableCategory')}</th>
-                  <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">{t('tickets.tablePriority')}</th>
-                  <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">{t('tickets.tableStatus')}</th>
-                  <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredTickets.map((ticket) => (
-                  <tr
-                    key={ticket.id}
-                    className="border-b border-surface-container-high hover:bg-surface-container-low/35 transition-colors h-14"
-                  >
-                    <td className="px-4 py-3 cursor-pointer" onClick={() => navigate(`/tickets/${ticket.id}`)}>
-                      <p className="text-body-md font-semibold text-on-surface truncate max-w-[200px] hover:text-primary transition-colors">
-                        {ticket.title}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3 text-body-md text-on-surface-variant">
-                      {getCategoryLabel(ticket.category)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`text-label-sm ${priorityColor[ticket.priority]}`}>
-                        {getPriorityLabel(ticket.priority)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded text-label-sm font-bold ${statusColor[ticket.status]}`}>
-                        {getStatusLabel(ticket.status)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {/* Inline status transition actions */}
-                      <div className="flex gap-2 justify-end">
-                        {ticket.status === 'OPEN' && (
-                          <button
-                            onClick={() => handleStatusTransition(ticket.id, 'IN_PROGRESS')}
-                            disabled={updatingId === ticket.id}
-                            className="px-2.5 py-1 bg-warning text-[#0F172A] hover:bg-warning/90 transition-colors text-[11px] font-bold rounded cursor-pointer disabled:opacity-50"
-                          >
-                            {t('techDashboard.startWork')}
-                          </button>
-                        )}
-                        {ticket.status === 'IN_PROGRESS' && (
-                          <>
-                            <button
-                              onClick={() => handleStatusTransition(ticket.id, 'AWAITING_PAYMENT')}
-                              disabled={updatingId === ticket.id}
-                              className="px-2.5 py-1 bg-surface-container-high border border-outline hover:bg-surface-container-highest text-on-surface-variant transition-colors text-[11px] font-semibold rounded cursor-pointer disabled:opacity-50"
-                            >
-                              {t('techDashboard.awaitingPayment')}
-                            </button>
-                            <button
-                              onClick={() => handleStatusTransition(ticket.id, 'RESOLVED')}
-                              disabled={updatingId === ticket.id}
-                              className="px-2.5 py-1 bg-success text-on-success hover:bg-success/90 transition-colors text-[11px] font-bold rounded cursor-pointer disabled:opacity-50"
-                            >
-                              {t('techDashboard.resolveTicket')}
-                            </button>
-                          </>
-                        )}
-                        <button
-                          onClick={() => navigate(`/tickets/${ticket.id}`)}
-                          className="p-1 text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
-                          title={t('dashboard.viewDetails')}
-                        >
-                          <ArrowRight className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {filteredTickets.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-12 text-center text-body-md text-on-surface-variant">
-                      {t('tickets.noTicketsFound')}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={columns}
+            data={filteredTickets}
+            loading={false}
+            noDataMessage={t('tickets.noTicketsFound')}
+            onRowClick={(ticket) => navigate(`/tickets/${ticket.id}`)}
+            className="border-none rounded-none"
+          />
         </div>
       </div>
     </Page>

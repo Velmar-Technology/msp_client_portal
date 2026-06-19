@@ -145,7 +145,12 @@
       "MEDIUM": "Media",
       "HIGH": "Alta",
       "CRITICAL": "Crítica"
-    }
+    },
+    "copiedId": "¡ID del ticket copiado al portapapeles!",
+    "copyId": "Copiar ID de Ticket",
+    "cancelTicket": "Cancelar Ticket",
+    "confirmCancel": "¿Está seguro de que desea cancelar este ticket?",
+    "actionsLabel": "Acciones"
   },
   "ticketDetail": {
     "backToTickets": "Volver a Tickets",

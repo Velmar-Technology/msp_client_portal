@@ -1,11 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Plus, Search, ChevronLeft, ChevronRight, X, MoreHorizontal } from 'lucide-react';
 import { ticketService } from '../services/ticketService';
-import { useCallback } from 'react';
 import type { Ticket } from '../services/ticketService';
 import { useTranslation } from 'react-i18next';
 import { Page } from '@/components/Page';
+import type { ColumnDef } from '@tanstack/react-table';
+import { DataTable } from '@/components/ui/data-table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const statusColor: Record<string, string> = {
   OPEN: 'bg-info/10 text-info',
@@ -87,6 +96,111 @@ export function TicketsPage() {
   }, [loadTickets]);
 
   const totalPages = Math.ceil(total / limit);
+
+  const columns = useMemo<ColumnDef<Ticket>[]>(() => [
+    {
+      accessorKey: 'title',
+      header: () => <span className="uppercase text-label-sm text-on-surface-variant font-bold">{t('tickets.tableTitle')}</span>,
+      cell: ({ row }) => (
+        <span className="text-body-md font-medium text-on-surface truncate max-w-xs block">
+          {row.original.title}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'category',
+      header: () => <span className="uppercase text-label-sm text-on-surface-variant font-bold">{t('tickets.tableCategory')}</span>,
+      cell: ({ row }) => <span className="text-body-md text-on-surface-variant">{getCategoryLabel(row.original.category)}</span>,
+    },
+    {
+      accessorKey: 'priority',
+      header: () => <span className="uppercase text-label-sm text-on-surface-variant font-bold">{t('tickets.tablePriority')}</span>,
+      cell: ({ row }) => (
+        <span className={`text-label-sm ${priorityColor[row.original.priority]}`}>
+          {getPriorityLabel(row.original.priority)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'status',
+      header: () => <span className="uppercase text-label-sm text-on-surface-variant font-bold">{t('tickets.tableStatus')}</span>,
+      cell: ({ row }) => (
+        <span className={`px-2 py-0.5 rounded text-label-sm font-bold ${statusColor[row.original.status]}`}>
+          {getStatusLabel(row.original.status)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'created_at',
+      header: () => <span className="uppercase text-label-sm text-on-surface-variant font-bold">{t('tickets.tableCreated')}</span>,
+      cell: ({ row }) => (
+        <span className="text-body-md text-on-surface-variant">
+          {new Date(row.original.created_at).toLocaleDateString(
+            i18n.language === 'es_DO' ? 'es-DO' : 'en-US',
+            { day: '2-digit', month: 'short', year: 'numeric' }
+          )}
+        </span>
+      ),
+    },
+    {
+      id: 'actions',
+      header: () => <span className="uppercase text-label-sm text-on-surface-variant font-bold block text-right">{t('techDashboard.tableStatus') === 'Estado' ? 'Acciones' : 'Actions'}</span>,
+      cell: ({ row }) => {
+        const ticket = row.original;
+        const canCancel = ['OPEN', 'IN_PROGRESS', 'AWAITING_PAYMENT'].includes(ticket.status);
+
+        const handleCancel = async (e: React.MouseEvent) => {
+          e.stopPropagation();
+          if (confirm(t('tickets.confirmCancel') || 'Are you sure you want to cancel this ticket?')) {
+            try {
+              await ticketService.updateStatus(ticket.id, 'CANCELLED', 'Cancelled by client.');
+              loadTickets();
+            } catch (err) {
+              console.error('Failed to cancel ticket', err);
+            }
+          }
+        };
+
+        const handleCopyId = (e: React.MouseEvent) => {
+          e.stopPropagation();
+          navigator.clipboard.writeText(ticket.id);
+        };
+
+        return (
+          <div className="text-right" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-2 hover:bg-surface-container-high rounded-lg cursor-pointer transition-colors">
+                  <MoreHorizontal className="h-4 w-4 text-on-surface-variant" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-surface-container-lowest border border-outline-variant">
+                <DropdownMenuLabel>{t('tickets.actionsLabel') || 'Actions'}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate(`/tickets/${ticket.id}`)}>
+                  {t('dashboard.viewDetails') || 'View Details'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleCopyId}>
+                  {t('tickets.copyId') || 'Copy Ticket ID'}
+                </DropdownMenuItem>
+                {canCancel && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={handleCancel}
+                    >
+                      {t('tickets.cancelTicket') || 'Cancel Ticket'}
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        );
+      },
+    },
+  ], [t, i18n.language, navigate, loadTickets, priorityColor, statusColor, getCategoryLabel, getPriorityLabel, getStatusLabel]);
 
   // New ticket form state
   const [newTitle, setNewTitle] = useState('');
@@ -186,91 +300,38 @@ export function TicketsPage() {
       </div>
 
       {/* Tickets Table */}
-      <div className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-surface border-b border-outline-variant">
-                <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">{t('tickets.tableTitle')}</th>
-                <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">{t('tickets.tableCategory')}</th>
-                <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">{t('tickets.tablePriority')}</th>
-                <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">{t('tickets.tableStatus')}</th>
-                <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">{t('tickets.tableCreated')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center">
-                    <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
-                  </td>
-                </tr>
-              ) : tickets.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center text-body-md text-on-surface-variant">
-                    {t('tickets.noTicketsFound')}
-                  </td>
-                </tr>
-              ) : (
-                tickets.map((ticket) => (
-                  <tr
-                    key={ticket.id}
-                    onClick={() => navigate(`/tickets/${ticket.id}`)}
-                    className="border-b border-surface-container-high hover:bg-surface-container-low transition-colors h-14 cursor-pointer"
-                  >
-                    <td className="px-4 py-3">
-                      <p className="text-body-md font-medium text-on-surface truncate max-w-xs">
-                        {ticket.title}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3 text-body-md text-on-surface-variant">
-                      {getCategoryLabel(ticket.category)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`text-label-sm ${priorityColor[ticket.priority]}`}>
-                        {getPriorityLabel(ticket.priority)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded text-label-sm font-bold ${statusColor[ticket.status]}`}>
-                        {getStatusLabel(ticket.status)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-body-md text-on-surface-variant">
-                      {new Date(ticket.created_at).toLocaleDateString(i18n.language === 'es_DO' ? 'es-DO' : 'en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      <DataTable
+        columns={columns}
+        data={tickets}
+        loading={loading}
+        noDataMessage={t('tickets.noTicketsFound')}
+        onRowClick={(ticket) => navigate(`/tickets/${ticket.id}`)}
+      />
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-between items-center px-4 py-3 border-t border-outline-variant">
-            <span className="text-label-sm text-on-surface-variant">
-              {t('tickets.showing')} {(page - 1) * limit + 1}–{Math.min(page * limit, total)} {t('tickets.of')} {total}
-            </span>
-            <div className="flex gap-1">
-              <button
-                onClick={() => setPage(Math.max(1, page - 1))}
-                disabled={page === 1}
-                className="p-2 rounded-lg hover:bg-surface-container-low disabled:opacity-30 transition-colors cursor-pointer"
-              >
-                <ChevronLeft className="h-4 w-4 text-on-surface" />
-              </button>
-              <button
-                onClick={() => setPage(Math.min(totalPages, page + 1))}
-                disabled={page === totalPages}
-                className="p-2 rounded-lg hover:bg-surface-container-low disabled:opacity-30 transition-colors cursor-pointer"
-              >
-                <ChevronRight className="h-4 w-4 text-on-surface" />
-              </button>
-            </div>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-between items-center px-4 py-3 mt-4 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm">
+          <span className="text-label-sm text-on-surface-variant">
+            {t('tickets.showing')} {(page - 1) * limit + 1}–{Math.min(page * limit, total)} {t('tickets.of')} {total}
+          </span>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setPage(Math.max(1, page - 1))}
+              disabled={page === 1}
+              className="p-2 rounded-lg hover:bg-surface-container-low disabled:opacity-30 transition-colors cursor-pointer"
+            >
+              <ChevronLeft className="h-4 w-4 text-on-surface" />
+            </button>
+            <button
+              onClick={() => setPage(Math.min(totalPages, page + 1))}
+              disabled={page === totalPages}
+              className="p-2 rounded-lg hover:bg-surface-container-low disabled:opacity-30 transition-colors cursor-pointer"
+            >
+              <ChevronRight className="h-4 w-4 text-on-surface" />
+            </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* New Ticket Modal */}
       {showNewTicket && (

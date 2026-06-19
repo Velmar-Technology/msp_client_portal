@@ -145,7 +145,12 @@
       "MEDIUM": "Medium",
       "HIGH": "High",
       "CRITICAL": "Critical"
-    }
+    },
+    "copiedId": "Ticket ID copied to clipboard!",
+    "copyId": "Copy Ticket ID",
+    "cancelTicket": "Cancel Ticket",
+    "confirmCancel": "Are you sure you want to cancel this ticket?",
+    "actionsLabel": "Actions"
   },
   "ticketDetail": {
     "backToTickets": "Back to Tickets",
