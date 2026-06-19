@@ -145,14 +145,14 @@ export function TicketsPage() {
     <div className="animate-fade-in max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
+        {/* <div>
           <h1 className="text-h1 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
             {t('tickets.title')}
           </h1>
           <p className="text-body-lg text-on-surface-variant mt-1">
             {t('tickets.subtitle')}
           </p>
-        </div>
+        </div> */}
         <button
           onClick={() => setShowNewTicket(true)}
           className="bg-primary text-on-primary px-5 py-2.5 rounded-lg flex items-center gap-2 hover:opacity-90 transition-opacity text-label-md cursor-pointer"
