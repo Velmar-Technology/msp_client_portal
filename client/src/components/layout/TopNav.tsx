@@ -1,9 +1,10 @@
-import { Bell, Settings, LogOut, Search } from 'lucide-react';
+import { Settings, LogOut, Search } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useState } from 'react';
 import { SidebarTrigger } from '../ui/sidebar';
 import { ThemeToggle } from './ThemeToggle';
 import { useTranslation } from 'react-i18next';
+import { NotificationBell } from './NotificationBell';
 
 export function TopNav() {
   const { t } = useTranslation();
@@ -37,10 +38,7 @@ export function TopNav() {
         <ThemeToggle />
 
         {/* Notifications */}
-        <button className="relative p-2 text-on-surface-variant hover:bg-surface-container-low transition-colors rounded-lg cursor-pointer">
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full" />
-        </button>
+        <NotificationBell />
 
         {/* Settings */}
         <button className="p-2 text-on-surface-variant hover:bg-surface-container-low transition-colors rounded-lg cursor-pointer">

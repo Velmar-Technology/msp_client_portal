@@ -10,7 +10,8 @@
     "myTickets": "My Tickets",
     "allTickets": "All Tickets",
     "adminDashboard": "Dashboard",
-    "infrastructure": "Infrastructure Management"
+    "infrastructure": "Infrastructure Management",
+    "notificationPreferences": "Notifications"
   },
   "topNav": {
     "search": "Search resources...",

@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { AppSidebar } from './app-sidebar';
 import { TopNav } from './TopNav';
 import { SidebarProvider, SidebarInset } from '../ui/sidebar';
-
+import { useEffect } from 'react';
+import { useNotificationStore } from '../../store/useNotificationStore';
+import { ToastContainer } from './ToastContainer';
 
 export function Footer() {
   const { t } = useTranslation();
@@ -29,6 +31,23 @@ export function Footer() {
 }
 
 export function AppLayout() {
+  const fetchNotifications = useNotificationStore((state) => state.fetchNotifications);
+  const startStream = useNotificationStore((state) => state.startStream);
+  const stopStream = useNotificationStore((state) => state.stopStream);
+
+  useEffect(() => {
+    // Initial fetch of historical notifications
+    fetchNotifications();
+
+    // Start listening to real-time events via SSE
+    startStream();
+
+    // Clean up SSE connection when layout unmounts or user logs out
+    return () => {
+      stopStream();
+    };
+  }, [fetchNotifications, startStream, stopStream]);
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -39,7 +58,9 @@ export function AppLayout() {
         </main>
         <Footer />
       </SidebarInset>
+      <ToastContainer />
     </SidebarProvider>
   );
 }
+
 

@@ -1,4 +1,5 @@
-import { Ticket, User } from '../types';
+import { Response } from 'express';
+import { Ticket, User, Notification, NotificationEventType } from '../types';
 import { 
   sendTicketCreatedEmail, 
   sendTicketStatusChangedEmail, 
@@ -7,21 +8,159 @@ import {
 } from '../utils/emailService';
 import { sendTicketStatusWhatsApp } from '../utils/whatsappService';
 import { logger } from '../utils/logger';
+import { notificationRepository } from '../repositories/NotificationRepository';
+import { notificationPreferenceService } from './NotificationPreferenceService';
 
 /**
- * Notification Service — Orchestrates multi-channel notifications.
- * Delegates to email and WhatsApp utility services.
+ * Notification Service — Orchestrates multi-channel and in-app notifications.
+ * Delegates to email, WhatsApp, and handles in-app SSE streaming.
+ * Respects per-user notification preferences before dispatching to each channel.
  * Notifications are fire-and-forget: they should never break the main flow.
  */
 export class NotificationService {
+  // In-memory registry of active SSE connections: userId -> Response[]
+  private sseClients = new Map<string, Response[]>();
+
+  /**
+   * Register a user's SSE connection.
+   */
+  registerSSEClient(userId: string, res: Response): void {
+    // Configure headers for SSE
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no', // Disable buffering in Nginx if applicable
+    });
+
+    // Send initial handshake
+    res.write('retry: 10000\n');
+    res.write('event: connected\ndata: {"status":"ok"}\n\n');
+
+    // Add to active clients list
+    if (!this.sseClients.has(userId)) {
+      this.sseClients.set(userId, []);
+    }
+    this.sseClients.get(userId)!.push(res);
+
+    logger.debug(`SSE Client registered for user ${userId}. Total active streams: ${this.sseClients.get(userId)!.length}`);
+
+    // Ping heartbeat every 30 seconds to keep connection alive
+    const heartbeat = setInterval(() => {
+      res.write(': ping\n\n');
+    }, 30000);
+
+    // Clean up on disconnect
+    res.on('close', () => {
+      clearInterval(heartbeat);
+      const userResList = this.sseClients.get(userId);
+      if (userResList) {
+        const filtered = userResList.filter((client) => client !== res);
+        if (filtered.length === 0) {
+          this.sseClients.delete(userId);
+          logger.debug(`SSE Client completely disconnected for user ${userId}`);
+        } else {
+          this.sseClients.set(userId, filtered);
+          logger.debug(`SSE Client closed one tab for user ${userId}. Remaining tabs: ${filtered.length}`);
+        }
+      }
+    });
+  }
+
+  /**
+   * Push real-time event to connected user tabs.
+   */
+  private sendRealTimeUpdate(userId: string, event: string, data: any): void {
+    const clients = this.sseClients.get(userId);
+    if (clients && clients.length > 0) {
+      const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+      clients.forEach((client) => {
+        try {
+          client.write(payload);
+        } catch (err) {
+          logger.error(`Error writing to SSE stream for user ${userId}`, err);
+        }
+      });
+    }
+  }
+
+  /**
+   * Create an in-app notification and broadcast it in real time.
+   */
+  async createInAppNotification(data: {
+    userId: string;
+    title: string;
+    message: string;
+    link?: string;
+    ticketId?: string;
+    type: string;
+    metadata?: Record<string, any>;
+    tenantId: string;
+  }): Promise<Notification | null> {
+    try {
+      const notification = await notificationRepository.create({
+        user_id: data.userId,
+        title: data.title,
+        message: data.message,
+        link: data.link,
+        ticket_id: data.ticketId,
+        type: data.type,
+        metadata: data.metadata,
+        tenant_id: data.tenantId,
+      });
+
+      // Stream the notification event to the client if online
+      this.sendRealTimeUpdate(data.userId, 'notification', notification);
+
+      return notification;
+    } catch (error) {
+      logger.error('Failed to create in-app notification', { userId: data.userId, error });
+      return null;
+    }
+  }
+
   /**
    * Notify client when a new ticket is created.
    */
   async onTicketCreated(ticket: Ticket, client: User): Promise<void> {
-    try {
-      await sendTicketCreatedEmail(client.email, client.name, ticket);
-    } catch (error) {
-      logger.error('Failed to send ticket creation notification', { ticketId: ticket.id, error });
+    const eventType: NotificationEventType = 'TICKET_CREATED';
+
+    // 1. Send Email Notification (if user allows it)
+    if (await notificationPreferenceService.shouldNotify(client.id, eventType, 'email')) {
+      try {
+        await sendTicketCreatedEmail(client.email, client.name, ticket);
+      } catch (error) {
+        logger.error('Failed to send ticket creation notification email', { ticketId: ticket.id, error });
+      }
+    }
+
+    // 2. Send In-App Notification to the client (if user allows it)
+    if (await notificationPreferenceService.shouldNotify(client.id, eventType, 'in_app')) {
+      await this.createInAppNotification({
+        userId: client.id,
+        title: 'Ticket Created successfully',
+        message: `Your ticket "${ticket.title}" has been opened. Ref: ${ticket.id.substring(0, 8)}`,
+        link: `/tickets/${ticket.id}`,
+        ticketId: ticket.id,
+        type: 'TICKET_CREATED',
+        tenantId: ticket.tenant_id,
+      });
+    }
+
+    // 3. Send In-App Notification to the assigned technician (if auto-assigned)
+    if (ticket.assigned_tech_id) {
+      const assignEventType: NotificationEventType = 'TICKET_ASSIGNED';
+      if (await notificationPreferenceService.shouldNotify(ticket.assigned_tech_id, assignEventType, 'in_app')) {
+        await this.createInAppNotification({
+          userId: ticket.assigned_tech_id,
+          title: 'New Ticket Auto-Assigned',
+          message: `Ticket "${ticket.title}" (Priority: ${ticket.priority}) has been auto-assigned to you.`,
+          link: `/tickets/${ticket.id}`,
+          ticketId: ticket.id,
+          type: 'TICKET_ASSIGNED',
+          tenantId: ticket.tenant_id,
+        });
+      }
     }
   }
 
@@ -29,6 +168,7 @@ export class NotificationService {
    * Notify client when ticket status changes.
    */
   async onTicketStatusChanged(ticket: Ticket, client: User, notes?: string): Promise<void> {
+    const eventType: NotificationEventType = 'TICKET_STATUS_CHANGED';
     const statusMessages: Record<string, string> = {
       IN_PROGRESS: 'Your device is now being processed by our team.',
       AWAITING_PAYMENT: 'Your device is awaiting payment before we can proceed.',
@@ -40,18 +180,58 @@ export class NotificationService {
     const defaultMsg = statusMessages[ticket.status] || `Status updated to: ${ticket.status}`;
     const combinedNotes = notes ? `${defaultMsg}\n\nNotes: ${notes}` : defaultMsg;
 
-    try {
-      // Send email notification
-      await sendTicketStatusChangedEmail(client.email, client.name, ticket, combinedNotes);
+    // 1. Email & WhatsApp (check preferences per channel)
+    if (await notificationPreferenceService.shouldNotify(client.id, eventType, 'email')) {
+      try {
+        await sendTicketStatusChangedEmail(client.email, client.name, ticket, combinedNotes);
+      } catch (error) {
+        logger.error('Failed to send status change email notification', {
+          ticketId: ticket.id,
+          status: ticket.status,
+          error,
+        });
+      }
+    }
 
-      // Send WhatsApp notification (stub)
-      await sendTicketStatusWhatsApp(client.email, ticket.id, ticket.status, combinedNotes);
-    } catch (error) {
-      logger.error('Failed to send status change notification', {
+    if (await notificationPreferenceService.shouldNotify(client.id, eventType, 'whatsapp')) {
+      try {
+        await sendTicketStatusWhatsApp(client.email, ticket.id, ticket.status, combinedNotes);
+      } catch (error) {
+        logger.error('Failed to send status change whatsapp notification', {
+          ticketId: ticket.id,
+          status: ticket.status,
+          error,
+        });
+      }
+    }
+
+    // 2. In-App Notification to Client
+    if (await notificationPreferenceService.shouldNotify(client.id, eventType, 'in_app')) {
+      await this.createInAppNotification({
+        userId: client.id,
+        title: `Ticket Status: ${ticket.status}`,
+        message: `Your ticket "${ticket.title}" status is now ${ticket.status}. ${notes ? `(${notes})` : ''}`,
+        link: `/tickets/${ticket.id}`,
         ticketId: ticket.id,
-        status: ticket.status,
-        error,
+        type: 'TICKET_STATUS_CHANGED',
+        tenantId: ticket.tenant_id,
       });
+    }
+
+    // 3. In-App Notification to Assigned Technician (if ticket was cancelled by client)
+    if (ticket.status === 'CANCELLED' && ticket.assigned_tech_id) {
+      const cancelEventType: NotificationEventType = 'TICKET_CANCELLED';
+      if (await notificationPreferenceService.shouldNotify(ticket.assigned_tech_id, cancelEventType, 'in_app')) {
+        await this.createInAppNotification({
+          userId: ticket.assigned_tech_id,
+          title: 'Ticket Cancelled by Client',
+          message: `Ticket "${ticket.title}" assigned to you has been cancelled by the customer.`,
+          link: `/tickets/${ticket.id}`,
+          ticketId: ticket.id,
+          type: 'TICKET_CANCELLED',
+          tenantId: ticket.tenant_id,
+        });
+      }
     }
   }
 
@@ -59,10 +239,28 @@ export class NotificationService {
    * Notify technician when a ticket is assigned to them.
    */
   async onTicketAssigned(ticket: Ticket, technician: User): Promise<void> {
-    try {
-      await sendTicketAssignedEmail(technician.email, technician.name, ticket);
-    } catch (error) {
-      logger.error('Failed to send assignment notification', { ticketId: ticket.id, error });
+    const eventType: NotificationEventType = 'TICKET_ASSIGNED';
+
+    // 1. Email
+    if (await notificationPreferenceService.shouldNotify(technician.id, eventType, 'email')) {
+      try {
+        await sendTicketAssignedEmail(technician.email, technician.name, ticket);
+      } catch (error) {
+        logger.error('Failed to send assignment notification email', { ticketId: ticket.id, error });
+      }
+    }
+
+    // 2. In-App Notification
+    if (await notificationPreferenceService.shouldNotify(technician.id, eventType, 'in_app')) {
+      await this.createInAppNotification({
+        userId: technician.id,
+        title: 'Ticket Assigned',
+        message: `Ticket "${ticket.title}" (Priority: ${ticket.priority}) has been assigned to you.`,
+        link: `/tickets/${ticket.id}`,
+        ticketId: ticket.id,
+        type: 'TICKET_ASSIGNED',
+        tenantId: ticket.tenant_id,
+      });
     }
   }
 
@@ -70,13 +268,31 @@ export class NotificationService {
    * Notify party when a new response is posted on a ticket.
    */
   async onTicketResponseCreated(ticket: Ticket, recipient: User, senderName: string, message: string): Promise<void> {
-    try {
-      await sendTicketResponseEmail(recipient.email, recipient.name, senderName, ticket, message);
-    } catch (error) {
-      logger.error('Failed to send ticket response notification email', { ticketId: ticket.id, error });
+    const eventType: NotificationEventType = 'NEW_REPLY';
+
+    // 1. Email
+    if (await notificationPreferenceService.shouldNotify(recipient.id, eventType, 'email')) {
+      try {
+        await sendTicketResponseEmail(recipient.email, recipient.name, senderName, ticket, message);
+      } catch (error) {
+        logger.error('Failed to send ticket response notification email', { ticketId: ticket.id, error });
+      }
+    }
+
+    // 2. In-App Notification
+    if (await notificationPreferenceService.shouldNotify(recipient.id, eventType, 'in_app')) {
+      const shortMessage = message.length > 80 ? message.substring(0, 80) + '...' : message;
+      await this.createInAppNotification({
+        userId: recipient.id,
+        title: `New Reply from ${senderName}`,
+        message: `"${shortMessage}" on ticket: ${ticket.title}`,
+        link: `/tickets/${ticket.id}`,
+        ticketId: ticket.id,
+        type: 'NEW_REPLY',
+        tenantId: ticket.tenant_id,
+      });
     }
   }
 }
 
 export const notificationService = new NotificationService();
-

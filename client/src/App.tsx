@@ -14,6 +14,7 @@ import { TechDashboard } from './pages/TechDashboard';
 import { HelpPage } from './pages/HelpPage';
 import { TermsPage } from './pages/TermsPage';
 import { PrivacyPage } from './pages/PrivacyPage';
+import { NotificationPreferencesPage } from './pages/NotificationPreferencesPage';
 import { ThemeProvider } from './components/theme-provider';
 
 // Protected Route Component
@@ -81,6 +82,7 @@ export function App() {
             <Route path="/tickets" element={<TicketsPage />} />
             <Route path="/tickets/:id" element={<TicketDetailPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/notifications/preferences" element={<NotificationPreferencesPage />} />
             <Route path="/help" element={<HelpPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />

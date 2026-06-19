@@ -10,7 +10,8 @@
     "myTickets": "Mis Tickets",
     "allTickets": "Todos los Tickets",
     "adminDashboard": "Panel de Administración",
-    "infrastructure": "Gestión de Infraestructura"
+    "infrastructure": "Gestión de Infraestructura",
+    "notificationPreferences": "Notificaciones"
   },
   "topNav": {
     "search": "Buscar recursos...",
@@ -295,13 +296,13 @@
     "createSupportTicket": "Crear Ticket de Soporte",
     "emergencySupport": "Soporte Directo y Emergencias",
     "phoneSupport": "Soporte Telefónico",
-    "phoneValue": "+1 (800) 555-0199",
-    "phoneDesc": "Línea directa de emergencias sin costo",
+    "phoneValue": "+1 (849) 420-8484",
+    "phoneDesc": "Llamadas con costo de su proveedor",
     "emailSupport": "Soporte por Correo",
-    "emailValue": "support@velmartech.com",
+    "emailValue": "soporte@velmartech.com.do",
     "emailDesc": "Respuestas en menos de 24 horas",
     "supportHours": "Horas de Soporte",
-    "hoursValue": "Lun - Vie: 8:00 AM - 6:00 PM EST",
+    "hoursValue": "Lun - Vie: 9:00 AM - 4:00 PM EST",
     "hoursDesc": "Monitoreo 24/7 y respuesta a incidentes críticos"
   },
   "legal": {

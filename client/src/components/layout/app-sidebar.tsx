@@ -49,6 +49,7 @@ const clientNavItems: NavItem[] = [
     labelKey: 'profile',
     items: [
       { to: '/profile', labelKey: 'profile' },
+      { to: '/notifications/preferences', labelKey: 'notificationPreferences' },
       { to: '/plans', labelKey: 'plans' },
       { to: '/billing', labelKey: 'billing' },
     ],
@@ -58,7 +59,15 @@ const clientNavItems: NavItem[] = [
 const techNavItems: NavItem[] = [
   { to: '/tech/dashboard', icon: LayoutDashboard, labelKey: 'dashboard' },
   { to: '/tickets', icon: Ticket, labelKey: 'myTickets' },
-  { to: '/profile', icon: User, labelKey: 'profile' },
+  {
+    to: '/profile-group',
+    icon: User,
+    labelKey: 'profile',
+    items: [
+      { to: '/profile', labelKey: 'profile' },
+      { to: '/notifications/preferences', labelKey: 'notificationPreferences' },
+    ],
+  },
 ];
 
 const adminNavItems: NavItem[] = [
@@ -70,6 +79,7 @@ const adminNavItems: NavItem[] = [
     labelKey: 'settings',
     items: [
       { to: '/profile', labelKey: 'profile' },
+      { to: '/notifications/preferences', labelKey: 'notificationPreferences' },
       { to: '/plans', labelKey: 'plans' },
       { to: '/billing', labelKey: 'billing' },
     ],

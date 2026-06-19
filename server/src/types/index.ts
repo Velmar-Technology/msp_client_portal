@@ -222,3 +222,44 @@ export interface NotificationPayload {
   ticketId?: string;
   type: 'EMAIL' | 'WHATSAPP';
 }
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  link: string | null;
+  ticket_id: string | null;
+  type: string;
+  read: boolean;
+  metadata: Record<string, any> | null;
+  tenant_id: string;
+  created_at: Date;
+}
+
+// ---- Notification Preference Types ----
+
+export interface ChannelPreference {
+  in_app: boolean;
+  email: boolean;
+  whatsapp: boolean;
+}
+
+export type NotificationEventType =
+  | 'TICKET_CREATED'
+  | 'TICKET_ASSIGNED'
+  | 'TICKET_STATUS_CHANGED'
+  | 'TICKET_CANCELLED'
+  | 'NEW_REPLY';
+
+export type NotificationPreferencesMap = Record<NotificationEventType, ChannelPreference>;
+
+export interface NotificationPreference {
+  id: string;
+  user_id: string;
+  tenant_id: string;
+  preferences: NotificationPreferencesMap;
+  created_at: Date;
+  updated_at: Date;
+}
+
