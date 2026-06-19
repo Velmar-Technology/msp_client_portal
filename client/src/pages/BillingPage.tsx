@@ -3,6 +3,7 @@ import { invoiceService } from '../services/invoiceService';
 import type { Invoice } from '../services/invoiceService';
 import { Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Page } from '@/components/Page';
 
 const statusColor: Record<string, string> = {
   PENDING: 'bg-warning/10 text-warning',
@@ -46,15 +47,10 @@ export function BillingPage() {
   };
 
   return (
-    <div className="animate-fade-in max-w-7xl mx-auto">
-      <div className="mb-8 border-b border-outline-variant pb-6">
-        <h1 className="text-h1 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
-          {t('billing.title')}
-        </h1>
-        <p className="text-body-lg text-on-surface-variant mt-1">
-          {t('billing.subtitle')}
-        </p>
-      </div>
+    <Page
+      title={t('billing.title')}
+      subtitle={t('billing.subtitle')}
+    >
 
       <div className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm text-on-surface">
         <div className="overflow-x-auto">
@@ -141,6 +137,6 @@ export function BillingPage() {
           </div>
         )}
       </div>
-    </div>
+    </Page>
   );
 }

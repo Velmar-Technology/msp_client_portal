@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Check, X, Lock, Shield } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Page } from '@/components/Page';
 
 export function PlansPage() {
   const { t } = useTranslation();
@@ -58,16 +59,10 @@ export function PlansPage() {
   const total = subtotal + tax;
 
   return (
-    <div className="animate-fade-in max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-8 border-b border-outline-variant pb-6">
-        <h1 className="text-h1 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
-          {t('plans.title')}
-        </h1>
-        <p className="text-body-lg text-on-surface-variant mt-1">
-          {t('plans.subtitle')}
-        </p>
-      </div>
+    <Page
+      title={t('plans.title')}
+      subtitle={t('plans.subtitle')}
+    >
 
       {/* Plan Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
@@ -256,6 +251,6 @@ export function PlansPage() {
           </div>
         </div>
       </div>
-    </div>
+    </Page>
   );
 }

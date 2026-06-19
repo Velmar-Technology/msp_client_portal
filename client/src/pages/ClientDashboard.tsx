@@ -14,6 +14,7 @@ import type { Subscription } from '../services/subscriptionService';
 import { invoiceService } from '../services/invoiceService';
 import type { Invoice } from '../services/invoiceService';
 import { useTranslation } from 'react-i18next';
+import { Page } from '@/components/Page';
 
 export function ClientDashboard() {
   const { t } = useTranslation();
@@ -65,17 +66,10 @@ export function ClientDashboard() {
   }
 
   return (
-    <div className="animate-fade-in max-w-7xl mx-auto">
-      {/* Welcome Area */}
-      <div className="mb-8 flex flex-col md:flex-row justify-end items-start md:items-center gap-4">
-        {/* <div>
-          <h1 className="text-h1 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
-            {t('dashboard.systemOverview')}
-          </h1>
-          <p className="text-body-lg text-on-surface-variant mt-1">
-            {t('dashboard.systemStatus')}
-          </p>
-        </div> */}
+    <Page
+      title={t('dashboard.systemOverview')}
+      subtitle={t('dashboard.systemStatus')}
+      actions={
         <button
           onClick={() => navigate('/tickets?action=new')}
           className="bg-primary text-on-primary px-5 py-2.5 rounded-lg flex items-center gap-2 hover:opacity-90 transition-opacity text-label-md cursor-pointer"
@@ -83,7 +77,8 @@ export function ClientDashboard() {
           <Plus className="h-4 w-4" />
           {t('dashboard.newTicket')}
         </button>
-      </div>
+      }
+    >
 
       {/* Bento Grid */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-5 mb-6">
@@ -291,6 +286,6 @@ export function ClientDashboard() {
           </div>
         </div>
       </div>
-    </div>
+    </Page>
   );
 }

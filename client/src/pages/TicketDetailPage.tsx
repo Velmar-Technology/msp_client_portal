@@ -5,6 +5,7 @@ import { ticketService } from '../services/ticketService';
 import type { Ticket, TicketEvent, TicketAttachment, TicketResponse } from '../services/ticketService';
 import { useSLATimer } from '../hooks/useSLATimer';
 import { useTranslation } from 'react-i18next';
+import { Page } from '@/components/Page';
 import { useAuth } from '../hooks/useAuth';
 import { userService } from '../services/userService';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -264,15 +265,7 @@ export function TicketDetailPage() {
   }
 
   return (
-    <div className="animate-fade-in max-w-5xl">
-      {/* Back button */}
-      {/* <button
-        onClick={() => navigate('/tickets')}
-        className="flex items-center gap-2 text-label-md text-on-surface-variant hover:text-primary transition-colors mb-4 cursor-pointer"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        {t('ticketDetail.backToTickets')}
-      </button> */}
+    <Page className="max-w-5xl">
 
       {/* Ticket Header */}
       <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 mb-6 shadow-sm text-on-surface">
@@ -805,6 +798,6 @@ export function TicketDetailPage() {
           </div>
         </div>
       )}
-    </div>
+    </Page>
   );
 }

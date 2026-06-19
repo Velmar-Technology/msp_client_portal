@@ -1,5 +1,6 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Page } from '@/components/Page';
 import {
   Headphones,
   Wrench,
@@ -21,18 +22,10 @@ export function AdminDashboard() {
   };
 
   return (
-    <div className="animate-fade-in max-w-7xl mx-auto">
-      {/* Welcome Area */}
-      {/* <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-h1 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
-            {t('dashboard.systemOverview')}
-          </h1>
-          <p className="text-body-lg text-on-surface-variant mt-1">
-            {t('dashboard.systemStatus')}
-          </p>
-        </div>
-      </div> */}
+    <Page
+      title={t('dashboard.systemOverview')}
+      subtitle={t('dashboard.systemStatus')}
+    >
 
       {/* Bento Grid Layout */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-5 mb-6">
@@ -212,7 +205,7 @@ export function AdminDashboard() {
         </div>
 
       </div>
-    </div>
+    </Page>
   );
 }
 

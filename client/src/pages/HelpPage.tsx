@@ -15,6 +15,7 @@ import {
   CreditCard
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Page } from '@/components/Page';
 
 interface FAQ {
   id: number;
@@ -156,7 +157,7 @@ export function HelpPage() {
   ];
 
   return (
-    <div className="animate-fade-in max-w-7xl mx-auto space-y-8 pb-12 text-on-surface">
+    <Page className="space-y-8 pb-12 text-on-surface">
       {/* Header & Search */}
       <div className="text-center py-8 px-4 bg-surface-container rounded-2xl border border-outline-variant relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-tr from-secondary/5 to-transparent pointer-events-none" />
@@ -310,6 +311,6 @@ export function HelpPage() {
           </div>
         </div>
       </div>
-    </div>
+    </Page>
   );
 }

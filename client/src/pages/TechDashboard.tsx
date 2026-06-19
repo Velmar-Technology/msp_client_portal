@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Page } from '@/components/Page';
 import {
   Search,
   User,
@@ -182,20 +183,11 @@ export function TechDashboard() {
   }
 
   return (
-    <div className="animate-fade-in max-w-7xl mx-auto">
-      {/* Welcome Area */}
-      <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        {/* <div>
-          <h1 className="text-h1 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
-            {t('login.welcome')}, {user?.name}
-          </h1>
-          <p className="text-body-lg text-on-surface-variant mt-1">
-            {t('techDashboard.subtitle')}
-          </p>
-        </div> */}
-
-        {/* Profile Card / Specialty badge */}
-        <div className="flex items-center gap-3 bg-surface-container-high p-4 rounded-xl border border-outline-variant/60 shadow-sm">
+    <Page
+      title={`${t('login.welcome')}, ${user?.name}`}
+      subtitle={t('techDashboard.subtitle')}
+      actions={
+        <div className="flex items-center gap-3 bg-surface-container-high p-4 rounded-xl border border-outline-variant/60 shadow-sm animate-fade-in">
           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
             <User className="h-5 w-5 text-primary" />
           </div>
@@ -206,7 +198,8 @@ export function TechDashboard() {
             </span>
           </div>
         </div>
-      </div>
+      }
+    >
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-6">
@@ -433,6 +426,6 @@ export function TechDashboard() {
           </div>
         </div>
       </div>
-    </div>
+    </Page>
   );
 }

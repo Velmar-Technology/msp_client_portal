@@ -5,6 +5,7 @@ import { ticketService } from '../services/ticketService';
 import { useCallback } from 'react';
 import type { Ticket } from '../services/ticketService';
 import { useTranslation } from 'react-i18next';
+import { Page } from '@/components/Page';
 
 const statusColor: Record<string, string> = {
   OPEN: 'bg-info/10 text-info',
@@ -142,17 +143,10 @@ export function TicketsPage() {
   }
 
   return (
-    <div className="animate-fade-in max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        {/* <div>
-          <h1 className="text-h1 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
-            {t('tickets.title')}
-          </h1>
-          <p className="text-body-lg text-on-surface-variant mt-1">
-            {t('tickets.subtitle')}
-          </p>
-        </div> */}
+    <Page
+      title={t('tickets.title')}
+      subtitle={t('tickets.subtitle')}
+      actions={
         <button
           onClick={() => setShowNewTicket(true)}
           className="bg-primary text-on-primary px-5 py-2.5 rounded-lg flex items-center gap-2 hover:opacity-90 transition-opacity text-label-md cursor-pointer"
@@ -160,7 +154,8 @@ export function TicketsPage() {
           <Plus className="h-4 w-4" />
           {t('tickets.newTicket')}
         </button>
-      </div>
+      }
+    >
 
       {/* Filters */}
       <div className="mb-6 flex flex-col md:flex-row gap-3">
@@ -403,6 +398,6 @@ export function TicketsPage() {
           </div>
         </div>
       )}
-    </div>
+    </Page>
   );
 }

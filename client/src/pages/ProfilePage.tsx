@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { userService } from '../services/userService';
 import { Save, User, Mail, Shield, Globe, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Page } from '@/components/Page';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export function ProfilePage() {
@@ -35,15 +36,11 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="animate-fade-in max-w-3xl">
-      <div className="mb-8">
-        <h1 className="text-h1 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
-          {t('profile.title')}
-        </h1>
-        <p className="text-body-lg text-on-surface-variant mt-1">
-          {t('profile.subtitle')}
-        </p>
-      </div>
+    <Page
+      className="max-w-3xl"
+      title={t('profile.title')}
+      subtitle={t('profile.subtitle')}
+    >
 
       {/* Avatar */}
       <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 mb-6 shadow-sm">
@@ -128,6 +125,6 @@ export function ProfilePage() {
           </button>
         </div>
       </form>
-    </div>
+    </Page>
   );
 }
