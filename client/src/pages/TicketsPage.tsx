@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, ChevronLeft, ChevronRight, X, MoreHorizontal } from 'lucide-react';
 import { ticketService } from '../services/ticketService';
-import type { Ticket } from '../services/ticketService';
+import type { Ticket, TicketResponse } from '../services/ticketService';
 import { useTranslation } from 'react-i18next';
 import { Page } from '@/components/Page';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -25,6 +25,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  HoverCard,
+  HoverCardTrigger,
+  HoverCardContent,
+} from '@/components/ui/hover-card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const statusColor: Record<string, string> = {
   OPEN: 'bg-info/10 text-info',
@@ -41,6 +47,73 @@ const priorityColor: Record<string, string> = {
   HIGH: 'text-error',
   CRITICAL: 'text-error font-bold',
 };
+
+function TicketTitleWithHoverCard({ ticket }: { ticket: Ticket }) {
+  const { t } = useTranslation();
+  const [lastResponse, setLastResponse] = useState<TicketResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
+
+  const handleOpenChange = async (open: boolean) => {
+    if (open && !hasLoaded && !loading) {
+      setLoading(true);
+      try {
+        const responses = await ticketService.getResponses(ticket.id);
+        if (responses.length > 0) {
+          const sorted = [...responses].sort(
+            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
+          setLastResponse(sorted[0]);
+        }
+        setHasLoaded(true);
+      } catch (err) {
+        console.error('Failed to load last response', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  return (
+    <HoverCard onOpenChange={handleOpenChange}>
+      <HoverCardTrigger asChild>
+        <span className="text-body-md font-medium text-on-surface truncate max-w-xs block cursor-help hover:text-primary transition-colors">
+          {ticket.title}
+        </span>
+      </HoverCardTrigger>
+      <HoverCardContent className="w-80 bg-surface-container-lowest border border-outline-variant p-4">
+        <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+          <h4 className="text-label-md font-bold text-primary">
+            {t('ticketDetail.responsesTitle') || 'Last Response'}
+          </h4>
+          {loading ? (
+            <div className="flex justify-center py-2">
+              <div className="w-4 h-4 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+            </div>
+          ) : lastResponse ? (
+            <div className="space-y-1">
+              <div className="flex justify-between items-center text-[10px] text-on-surface-variant font-medium">
+                <span>{lastResponse.user_name} ({lastResponse.user_role})</span>
+                <span>
+                  {new Date(lastResponse.created_at).toLocaleDateString()}
+                </span>
+              </div>
+              <ScrollArea className="h-20 bg-surface-container-low p-2 rounded border border-outline-variant/30">
+                <p className="text-[11px] text-on-surface text-left font-normal whitespace-pre-wrap">
+                  {lastResponse.message}
+                </p>
+              </ScrollArea>
+            </div>
+          ) : (
+            <p className="text-[11px] text-on-surface-variant italic">
+              {t('ticketDetail.noResponses') || 'No responses yet.'}
+            </p>
+          )}
+        </div>
+      </HoverCardContent>
+    </HoverCard>
+  );
+}
 
 export function TicketsPage() {
   const { t, i18n } = useTranslation();
@@ -158,11 +231,7 @@ export function TicketsPage() {
     {
       accessorKey: 'title',
       header: () => <span className="uppercase text-label-sm text-on-surface-variant font-bold">{t('tickets.tableTitle')}</span>,
-      cell: ({ row }) => (
-        <span className="text-body-md font-medium text-on-surface truncate max-w-xs block">
-          {row.original.title}
-        </span>
-      ),
+      cell: ({ row }) => <TicketTitleWithHoverCard ticket={row.original} />,
     },
     {
       accessorKey: 'category',
@@ -489,22 +558,24 @@ export function TicketsPage() {
                   </div>
                   {/* Selected files list */}
                   {selectedFiles.length > 0 && (
-                    <div className="max-h-24 overflow-y-auto border border-outline-variant/50 rounded-lg p-2 space-y-1.5 bg-surface-container/50">
-                      {selectedFiles.map((file, idx) => (
-                        <div key={idx} className="flex justify-between items-center text-label-sm bg-surface-container-lowest px-2 py-1 rounded border border-outline-variant/30">
-                          <span className="truncate max-w-[220px]" title={file.name}>
-                            {file.name}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => removeFile(idx)}
-                            className="text-error hover:text-error/80 cursor-pointer p-0.5"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+                    <ScrollArea className="h-24 border border-outline-variant/50 rounded-lg p-2 bg-surface-container/50">
+                      <div className="space-y-1.5 pr-2">
+                        {selectedFiles.map((file, idx) => (
+                          <div key={idx} className="flex justify-between items-center text-label-sm bg-surface-container-lowest px-2 py-1 rounded border border-outline-variant/30">
+                            <span className="truncate max-w-[220px]" title={file.name}>
+                              {file.name}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => removeFile(idx)}
+                              className="text-error hover:text-error/80 cursor-pointer p-0.5"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
                   )}
                 </div>
               </div>
