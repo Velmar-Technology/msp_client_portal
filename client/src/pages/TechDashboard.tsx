@@ -290,7 +290,7 @@ export function TechDashboard() {
           {/* Action Message Alert */}
           {actionMessage && (
             <div className="p-4 border-b border-outline-variant">
-              <Alert variant={actionMessage.isError ? 'destructive' : 'default'} className="animate-fade-in">
+              <Alert variant={actionMessage.isError ? 'destructive' : 'success'} className="animate-fade-in">
                 {actionMessage.isError ? (
                   <AlertCircle className="h-4 w-4" />
                 ) : (

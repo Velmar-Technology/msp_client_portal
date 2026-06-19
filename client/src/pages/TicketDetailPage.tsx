@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Clock, AlertTriangle, UserCheck, FileText, Image, Video, FileSpreadsheet, Download, Paperclip, UploadCloud, CheckCircle2, AlertCircle, Send, MessageSquare } from 'lucide-react';
+import { Clock, AlertTriangle, UserCheck, FileText, Image, Video, FileSpreadsheet, Download, Paperclip, CheckCircle2, AlertCircle, Send, MessageSquare } from 'lucide-react';
 import { ticketService } from '../services/ticketService';
 import type { Ticket, TicketEvent, TicketAttachment, TicketResponse } from '../services/ticketService';
 import { useSLATimer } from '../hooks/useSLATimer';
@@ -35,9 +35,9 @@ export function TicketDetailPage() {
 
   // Attachments state
   const [attachments, setAttachments] = useState<TicketAttachment[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [isDragOver, setIsDragOver] = useState(false);
+  // const [uploading, setUploading] = useState(false);
+  // const [uploadError, setUploadError] = useState<string | null>(null);
+  // const [isDragOver, setIsDragOver] = useState(false);
 
   // Ticket responses state
   const [responses, setResponses] = useState<TicketResponse[]>([]);
@@ -150,68 +150,68 @@ export function TicketDetailPage() {
     return normalized;
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  };
+  // const handleDragOver = (e: React.DragEvent) => {
+  //   e.preventDefault();
+  //   setIsDragOver(true);
+  // };
 
-  const handleDragLeave = () => {
-    setIsDragOver(false);
-  };
+  // const handleDragLeave = () => {
+  //   setIsDragOver(false);
+  // };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    handleFileUpload(e.dataTransfer.files);
-  };
+  // const handleDrop = (e: React.DragEvent) => {
+  //   e.preventDefault();
+  //   setIsDragOver(false);
+  //   handleFileUpload(e.dataTransfer.files);
+  // };
 
-  const handleFileUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0 || !id) return;
-    setUploadError(null);
-    setUploading(true);
+  // const handleFileUpload = async (files: FileList | null) => {
+  //   if (!files || files.length === 0 || !id) return;
+  //   setUploadError(null);
+  //   // setUploading(true);
 
-    const allowedMimeTypes = [
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'image/webp',
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'text/plain',
-      'video/mp4',
-    ];
+  //   const allowedMimeTypes = [
+  //     'image/jpeg',
+  //     'image/png',
+  //     'image/gif',
+  //     'image/webp',
+  //     'application/pdf',
+  //     'application/msword',
+  //     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  //     'application/vnd.ms-excel',
+  //     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  //     'text/plain',
+  //     'video/mp4',
+  //   ];
 
-    const maxFileSize = 10 * 1024 * 1024; // 10MB
+  //   const maxFileSize = 10 * 1024 * 1024; // 10MB
 
-    try {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        if (!allowedMimeTypes.includes(file.type)) {
-          setUploadError(t('ticketDetail.invalidFileType'));
-          continue;
-        }
-        if (file.size > maxFileSize) {
-          setUploadError(t('ticketDetail.fileTooLarge'));
-          continue;
-        }
+  //   try {
+  //     for (let i = 0; i < files.length; i++) {
+  //       const file = files[i];
+  //       if (!allowedMimeTypes.includes(file.type)) {
+  //         setUploadError(t('ticketDetail.invalidFileType'));
+  //         continue;
+  //       }
+  //       if (file.size > maxFileSize) {
+  //         setUploadError(t('ticketDetail.fileTooLarge'));
+  //         continue;
+  //       }
 
-        const newAttachment = await ticketService.uploadAttachment(id, file);
-        setAttachments((prev) => [...prev, newAttachment]);
+  //       const newAttachment = await ticketService.uploadAttachment(id, file);
+  //       setAttachments((prev) => [...prev, newAttachment]);
 
-        // Refresh timeline
-        const events = await ticketService.getTimeline(id);
-        setTimeline(events as (TicketEvent & { changed_by_name?: string })[]);
-      }
-    } catch (err) {
-      console.error('Failed to upload file', err);
-      setUploadError(t('ticketDetail.uploadError'));
-    } finally {
-      setUploading(false);
-    }
-  };
+  //       // Refresh timeline
+  //       const events = await ticketService.getTimeline(id);
+  //       setTimeline(events as (TicketEvent & { changed_by_name?: string })[]);
+  //     }
+  //   } catch (err) {
+  //     console.error('Failed to upload file', err);
+  //     setUploadError(t('ticketDetail.uploadError'));
+  //   } finally {
+  //     // setUploading(false);
+  //   }
+  // };
 
   useEffect(() => {
     if (!canAssign) return;
@@ -391,7 +391,7 @@ export function TicketDetailPage() {
           )}
 
           {/* Upload Drop Zone */}
-          <div
+          {/* <div
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
@@ -416,15 +416,15 @@ export function TicketDetailPage() {
             <p className="text-label-sm text-on-surface-variant opacity-60">
               {t('ticketDetail.allowedTypes')}
             </p>
-          </div>
+          </div> */}
 
-          {uploadError && (
+          {/* {uploadError && (
             <Alert variant="destructive" className="mt-2 animate-fade-in">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Error</AlertTitle>
               <AlertDescription>{uploadError}</AlertDescription>
             </Alert>
-          )}
+          )} */}
         </div>
 
         {/* Client & Assignment Section */}
@@ -484,7 +484,7 @@ export function TicketDetailPage() {
           
           {/* Assignment feedback message */}
           {assignMessage && (
-            <Alert variant={assignMessage.isError ? 'destructive' : 'default'} className="animate-fade-in">
+            <Alert variant={assignMessage.isError ? 'destructive' : 'success'} className="animate-fade-in">
               {assignMessage.isError ? (
                 <AlertCircle className="h-4 w-4" />
               ) : (

@@ -13,18 +13,22 @@ export function ProfilePage() {
   const [language, setLanguage] = useState(user?.language || 'en_US');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     setMessage('');
+    setMessageType('');
     try {
       await userService.updateProfile({ name, email, language });
       updateUser({ name, email, language });
       await i18n.changeLanguage(language);
       setMessage(t('profile.success'));
+      setMessageType('success');
     } catch {
       setMessage(t('profile.error'));
+      setMessageType('error');
     } finally {
       setSaving(false);
     }
@@ -63,14 +67,14 @@ export function ProfilePage() {
           {t('profile.accountDetails')}
         </h3>
 
-        {message && (
-          <Alert variant={message === t('profile.success') ? 'default' : 'destructive'} className="mb-4 animate-fade-in">
-            {message === t('profile.success') ? (
+        {message && messageType && (
+          <Alert variant={messageType === 'success' ? 'success' : 'destructive'} className="mb-4 animate-fade-in">
+            {messageType === 'success' ? (
               <CheckCircle2 className="h-4 w-4 text-success" />
             ) : (
               <AlertCircle className="h-4 w-4" />
             )}
-            <AlertTitle>{message === t('profile.success') ? 'Success' : 'Error'}</AlertTitle>
+            <AlertTitle>{messageType === 'success' ? 'Success' : 'Error'}</AlertTitle>
             <AlertDescription>{message}</AlertDescription>
           </Alert>
         )}
