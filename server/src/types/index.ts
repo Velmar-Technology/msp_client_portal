@@ -76,6 +76,10 @@ export interface Ticket {
   priority: TicketPriority;
   client_id: string;
   assigned_tech_id: string | null;
+  client_name?: string;
+  client_email?: string;
+  assigned_tech_name?: string | null;
+  assigned_tech_email?: string | null;
   created_at: Date;
   updated_at: Date;
 }

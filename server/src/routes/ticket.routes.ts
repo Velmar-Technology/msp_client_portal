@@ -2,8 +2,10 @@ import { Router } from 'express';
 import { ticketController } from '../controllers/TicketController';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { validate } from '../middleware/validationMiddleware';
-import { CreateTicketDTO, UpdateTicketStatusDTO, TicketQueryDTO } from '../dtos/ticket.dto';
+import { CreateTicketDTO, UpdateTicketStatusDTO, TicketQueryDTO, AssignTicketDTO } from '../dtos/ticket.dto';
 import { upload } from '../middleware/uploadMiddleware';
+import { rbacMiddleware } from '../middleware/rbacMiddleware';
+import { UserRole } from '../types';
 
 const router = Router();
 
@@ -24,6 +26,9 @@ router.get('/:id', (req, res) => ticketController.getById(req, res));
 
 /** PATCH /api/v1/tickets/:id/status — Update ticket status */
 router.patch('/:id/status', validate(UpdateTicketStatusDTO), (req, res) => ticketController.updateStatus(req, res));
+
+/** PATCH /api/v1/tickets/:id/assign — Assign technician to a ticket */
+router.patch('/:id/assign', rbacMiddleware(UserRole.ADMIN, UserRole.TECHNICIAN), validate(AssignTicketDTO), (req, res) => ticketController.assign(req, res));
 
 /** GET /api/v1/tickets/:id/timeline — Get ticket event timeline */
 router.get('/:id/timeline', (req, res) => ticketController.getTimeline(req, res));

@@ -9,6 +9,10 @@ export interface Ticket {
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   client_id: string;
   assigned_tech_id: string | null;
+  client_name?: string;
+  client_email?: string;
+  assigned_tech_name?: string | null;
+  assigned_tech_email?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -74,6 +78,11 @@ export const ticketService = {
 
   async getStatusSummary(): Promise<Record<string, number>> {
     const response = await api.get('/tickets/summary');
+    return response.data.data;
+  },
+
+  async assign(id: string, technicianId: string): Promise<Ticket> {
+    const response = await api.patch(`/tickets/${id}/assign`, { technicianId });
     return response.data.data;
   },
 };

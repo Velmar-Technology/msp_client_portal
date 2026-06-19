@@ -147,7 +147,13 @@
     "timelineTitle": "Activity Timeline",
     "noActivity": "No activity recorded yet.",
     "changedStatusTo": "changed status to",
-    "system": "System"
+    "system": "System",
+    "assignedTechnician": "Assigned Technician",
+    "unassigned": "Unassigned",
+    "assignTechnician": "Assign Technician",
+    "assigning": "Assigning...",
+    "assignSuccess": "Technician assigned successfully",
+    "assignError": "Failed to assign technician"
   },
   "plans": {
     "title": "Plan Selection",

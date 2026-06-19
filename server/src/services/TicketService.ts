@@ -217,6 +217,54 @@ export class TicketService {
   }
 
   /**
+   * Assign a technician/agent to a ticket.
+   */
+  async assignTicket(
+    ticketId: string,
+    techId: string,
+    userId: string,
+  ): Promise<Ticket> {
+    const ticket = await ticketRepository.findById(ticketId);
+    if (!ticket) {
+      throw AppError.notFound('Ticket not found');
+    }
+
+    const technician = await userRepository.findById(techId);
+    if (!technician) {
+      throw AppError.notFound('Technician not found');
+    }
+
+    if (technician.role !== UserRole.TECHNICIAN) {
+      throw AppError.badRequest('Assigned user must be a technician');
+    }
+
+    const updated = await ticketRepository.assignTechnician(ticketId, techId);
+    if (!updated) {
+      throw AppError.internal('Failed to assign technician');
+    }
+
+    // Log the assignment event
+    await ticketEventRepository.create({
+      ticket_id: ticketId,
+      old_status: ticket.status,
+      new_status: ticket.status,
+      changed_by: userId,
+      notes: `Ticket assigned to technician: ${technician.name}`,
+    });
+
+    // Notify the technician
+    await notificationService.onTicketAssigned(updated, technician);
+
+    // Fetch the updated ticket with the joined names/emails so that the response matches the structure
+    const fullUpdatedTicket = await ticketRepository.findById(ticketId);
+    if (!fullUpdatedTicket) {
+      throw AppError.internal('Failed to retrieve updated ticket details');
+    }
+
+    return fullUpdatedTicket;
+  }
+
+  /**
    * Enforce the 1-hour SLA window for warranty/service ticket modifications.
    * Throws if the ticket was created more than 1 hour ago.
    */

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Clock, AlertTriangle, UserCheck } from 'lucide-react';
 import { ticketService } from '../services/ticketService';
 import type { Ticket, TicketEvent } from '../services/ticketService';
 import { useSLATimer } from '../hooks/useSLATimer';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../hooks/useAuth';
+import { userService } from '../services/userService';
 
 const statusColor: Record<string, string> = {
   OPEN: 'bg-info/10 text-info',
@@ -19,9 +21,19 @@ export function TicketDetailPage() {
   const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [timeline, setTimeline] = useState<(TicketEvent & { changed_by_name?: string })[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Technician assignment state
+  const [technicians, setTechnicians] = useState<any[]>([]);
+  const [loadingTechs, setLoadingTechs] = useState(false);
+  const [assigning, setAssigning] = useState(false);
+  const [assignMessage, setAssignMessage] = useState<{ text: string; isError: boolean } | null>(null);
+  const [selectedTechId, setSelectedTechId] = useState<string>('');
+
+  const canAssign = user?.role === 'ADMIN' || user?.role === 'TECHNICIAN';
 
   const getCategoryLabel = (cat: string) => {
     const map: Record<string, string> = {
@@ -63,6 +75,7 @@ export function TicketDetailPage() {
           ticketService.getTimeline(id!),
         ]);
         setTicket(t);
+        setSelectedTechId(t.assigned_tech_id || '');
         setTimeline(events as (TicketEvent & { changed_by_name?: string })[]);
       } catch (err) {
         console.error('Failed to load ticket', err);
@@ -72,6 +85,43 @@ export function TicketDetailPage() {
     }
     load();
   }, [id]);
+
+  useEffect(() => {
+    if (!canAssign) return;
+    async function loadTechs() {
+      setLoadingTechs(true);
+      try {
+        const techs = await userService.getTechnicians();
+        setTechnicians(techs);
+      } catch (err) {
+        console.error('Failed to load technicians', err);
+      } finally {
+        setLoadingTechs(false);
+      }
+    }
+    loadTechs();
+  }, [canAssign]);
+
+  const handleAssign = async (techId: string) => {
+    if (!id) return;
+    setAssigning(true);
+    setAssignMessage(null);
+    try {
+      const updatedTicket = await ticketService.assign(id, techId);
+      setTicket(updatedTicket);
+      setSelectedTechId(techId);
+      setAssignMessage({ text: t('ticketDetail.assignSuccess'), isError: false });
+      
+      // Reload timeline to show assignment event
+      const events = await ticketService.getTimeline(id);
+      setTimeline(events as (TicketEvent & { changed_by_name?: string })[]);
+    } catch (err) {
+      console.error('Failed to assign technician', err);
+      setAssignMessage({ text: t('ticketDetail.assignError'), isError: true });
+    } finally {
+      setAssigning(false);
+    }
+  };
 
   const sla = useSLATimer(
     ticket?.created_at || new Date().toISOString(),
@@ -140,7 +190,70 @@ export function TicketDetailPage() {
           <p className="text-body-lg text-on-surface whitespace-pre-wrap">{ticket.description}</p>
         </div>
 
-        <p className="text-label-sm text-on-surface-variant">
+        {/* Client & Assignment Section */}
+        <div className="border-t border-outline-variant/30 pt-4 mt-4 flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col gap-1">
+              {/* Display Assigned Tech */}
+              <div className="flex items-center gap-2">
+                <UserCheck className="h-4.5 w-4.5 text-primary" />
+                <span className="text-body-md text-on-surface">
+                  {t('ticketDetail.assignedTechnician')}:{' '}
+                  <strong className="text-primary font-semibold">
+                    {ticket.assigned_tech_name
+                      ? `${ticket.assigned_tech_name} (${ticket.assigned_tech_email})`
+                      : t('ticketDetail.unassigned')}
+                  </strong>
+                </span>
+              </div>
+              
+              {/* Display Client Info (Admin/Tech only) */}
+              {canAssign && ticket.client_name && (
+                <div className="flex items-center gap-2 text-label-sm text-on-surface-variant opacity-80 pl-6.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
+                  <span>Client: <strong>{ticket.client_name} ({ticket.client_email})</strong></span>
+                </div>
+              )}
+            </div>
+
+            {/* Assignment Dropdown Control for Admin/Tech */}
+            {canAssign && (
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-surface-container-high p-2 rounded-lg border border-outline-variant/50 w-full md:w-auto">
+                <div className="flex-1 min-w-[200px]">
+                  <select
+                    value={selectedTechId}
+                    onChange={(e) => setSelectedTechId(e.target.value)}
+                    disabled={loadingTechs || assigning}
+                    className="w-full px-3 py-1.5 bg-surface-container-lowest border border-outline-variant rounded-md text-body-md focus:outline-none focus:border-primary disabled:opacity-50 text-on-surface cursor-pointer"
+                  >
+                    <option value="" disabled>{t('ticketDetail.assignTechnician')}...</option>
+                    {technicians.map((tech) => (
+                      <option key={tech.id} value={tech.id}>
+                        {tech.name} {tech.specialty ? `(${tech.specialty})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  onClick={() => handleAssign(selectedTechId)}
+                  disabled={!selectedTechId || selectedTechId === ticket.assigned_tech_id || assigning}
+                  className="bg-primary text-on-primary px-4 py-1.5 rounded-md text-label-md font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
+                >
+                  {assigning ? t('ticketDetail.assigning') : t('ticketDetail.assignTechnician')}
+                </button>
+              </div>
+            )}
+          </div>
+          
+          {/* Assignment feedback message */}
+          {assignMessage && (
+            <div className={`text-label-md px-3 py-1.5 rounded-md ${assignMessage.isError ? 'bg-error/10 text-error border border-error/20' : 'bg-success/10 text-success border border-success/20'}`}>
+              {assignMessage.text}
+            </div>
+          )}
+        </div>
+
+        <p className="text-label-sm text-on-surface-variant mt-4">
           {t('ticketDetail.ticketId')}: <span className="text-mono">{ticket.id}</span>
         </p>
       </div>
@@ -165,7 +278,7 @@ export function TicketDetailPage() {
                 )}
 
                 {/* Dot */}
-                <div className="relative z-10 w-7 h-7 rounded-full bg-surface-container border-2 border-primary flex items-center justify-center flex-shrink-0 mt-1">
+                <div className="relative z-10 w-7 h-7 rounded-full bg-surface-container border-2 border-primary flex items-center justify-center shrink-0 mt-1">
                   <Clock className="h-3.5 w-3.5 text-primary" />
                 </div>
 

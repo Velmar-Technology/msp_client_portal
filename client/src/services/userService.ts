@@ -10,4 +10,9 @@ export const userService = {
     const response = await api.patch('/users/me', data);
     return response.data.data;
   },
+
+  async getTechnicians(): Promise<any[]> {
+    const response = await api.get('/users/technicians');
+    return response.data.data;
+  },
 };

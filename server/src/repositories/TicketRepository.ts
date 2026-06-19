@@ -6,6 +6,19 @@ export class TicketRepository extends BaseRepository<Ticket> {
     super('tickets');
   }
 
+  override async findById(id: string): Promise<Ticket | null> {
+    return this.queryOne<Ticket>(
+      `SELECT t.*, 
+              c.name as client_name, c.email as client_email,
+              tech.name as assigned_tech_name, tech.email as assigned_tech_email
+       FROM tickets t
+       JOIN users c ON t.client_id = c.id
+       LEFT JOIN users tech ON t.assigned_tech_id = tech.id
+       WHERE t.id = $1`,
+      [id],
+    );
+  }
+
   async create(data: {
     title: string;
     description: string;
@@ -42,27 +55,27 @@ export class TicketRepository extends BaseRepository<Ticket> {
     let paramIndex = 1;
 
     if (filters.status) {
-      conditions.push(`status = $${paramIndex++}`);
+      conditions.push(`t.status = $${paramIndex++}`);
       params.push(filters.status);
     }
     if (filters.category) {
-      conditions.push(`category = $${paramIndex++}`);
+      conditions.push(`t.category = $${paramIndex++}`);
       params.push(filters.category);
     }
     if (filters.priority) {
-      conditions.push(`priority = $${paramIndex++}`);
+      conditions.push(`t.priority = $${paramIndex++}`);
       params.push(filters.priority);
     }
     if (filters.clientId) {
-      conditions.push(`client_id = $${paramIndex++}`);
+      conditions.push(`t.client_id = $${paramIndex++}`);
       params.push(filters.clientId);
     }
     if (filters.assignedTechId) {
-      conditions.push(`assigned_tech_id = $${paramIndex++}`);
+      conditions.push(`t.assigned_tech_id = $${paramIndex++}`);
       params.push(filters.assignedTechId);
     }
     if (filters.search) {
-      conditions.push(`(title ILIKE $${paramIndex} OR description ILIKE $${paramIndex})`);
+      conditions.push(`(t.title ILIKE $${paramIndex} OR t.description ILIKE $${paramIndex})`);
       params.push(`%${filters.search}%`);
       paramIndex++;
     }
@@ -73,14 +86,22 @@ export class TicketRepository extends BaseRepository<Ticket> {
     const offset = (page - 1) * limit;
 
     const countResult = await this.queryOne<{ count: string }>(
-      `SELECT COUNT(*) FROM tickets ${whereClause}`,
+      `SELECT COUNT(*) FROM tickets t ${whereClause}`,
       params,
     );
     const total = parseInt(countResult?.count || '0', 10);
 
     params.push(limit, offset);
     const tickets = await this.query<Ticket>(
-      `SELECT * FROM tickets ${whereClause} ORDER BY created_at DESC LIMIT $${paramIndex++} OFFSET $${paramIndex}`,
+      `SELECT t.*, 
+              c.name as client_name, c.email as client_email,
+              tech.name as assigned_tech_name, tech.email as assigned_tech_email
+       FROM tickets t
+       JOIN users c ON t.client_id = c.id
+       LEFT JOIN users tech ON t.assigned_tech_id = tech.id
+       ${whereClause} 
+       ORDER BY t.created_at DESC 
+       LIMIT $${paramIndex++} OFFSET $${paramIndex}`,
       params,
     );
 

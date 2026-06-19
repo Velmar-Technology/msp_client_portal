@@ -99,6 +99,16 @@ export class TicketController {
     );
     res.json({ success: true, data: summary });
   }
+
+  async assign(req: Request, res: Response): Promise<void> {
+    const { technicianId } = req.body as { technicianId: string };
+    const ticket = await ticketService.assignTicket(
+      req.params.id as string,
+      technicianId,
+      req.user!.userId,
+    );
+    res.json({ success: true, data: ticket });
+  }
 }
 
 export const ticketController = new TicketController();

@@ -147,7 +147,13 @@
     "timelineTitle": "Historial de Actividad",
     "noActivity": "Aún no se ha registrado actividad.",
     "changedStatusTo": "cambió el estado a",
-    "system": "Sistema"
+    "system": "Sistema",
+    "assignedTechnician": "Técnico Asignado",
+    "unassigned": "Sin asignar",
+    "assignTechnician": "Asignar Técnico",
+    "assigning": "Asignando...",
+    "assignSuccess": "Técnico asignado con éxito",
+    "assignError": "Error al asignar técnico"
   },
   "plans": {
     "title": "Selección de Plan",
