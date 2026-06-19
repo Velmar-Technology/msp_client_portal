@@ -150,7 +150,11 @@
     "copyId": "Copiar ID de Ticket",
     "cancelTicket": "Cancelar Ticket",
     "confirmCancel": "¿Está seguro de que desea cancelar este ticket?",
-    "actionsLabel": "Acciones"
+    "actionsLabel": "Acciones",
+    "selectedCount": "seleccionado(s)",
+    "bulkCancel": "Cancelar en Lote",
+    "noCancelableTickets": "Ninguno de los tickets seleccionados puede ser cancelado.",
+    "confirmBulkCancel": "¿Está seguro de que desea cancelar los tickets seleccionados?"
   },
   "ticketDetail": {
     "backToTickets": "Volver a Tickets",

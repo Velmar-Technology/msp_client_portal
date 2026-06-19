@@ -150,7 +150,11 @@
     "copyId": "Copy Ticket ID",
     "cancelTicket": "Cancel Ticket",
     "confirmCancel": "Are you sure you want to cancel this ticket?",
-    "actionsLabel": "Actions"
+    "actionsLabel": "Actions",
+    "selectedCount": "selected",
+    "bulkCancel": "Bulk Cancel",
+    "noCancelableTickets": "None of the selected tickets can be cancelled.",
+    "confirmBulkCancel": "Are you sure you want to cancel the selected tickets?"
   },
   "ticketDetail": {
     "backToTickets": "Back to Tickets",

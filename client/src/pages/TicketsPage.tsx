@@ -15,6 +15,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const statusColor: Record<string, string> = {
   OPEN: 'bg-info/10 text-info',
@@ -42,6 +52,10 @@ export function TicketsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [showNewTicket, setShowNewTicket] = useState(false);
+  const [selectedTickets, setSelectedTickets] = useState<Ticket[]>([]);
+  const [ticketToCancel, setTicketToCancel] = useState<Ticket | null>(null);
+  const [showBulkCancelAlert, setShowBulkCancelAlert] = useState(false);
+  const [alertWarningMessage, setAlertWarningMessage] = useState<string | null>(null);
   const limit = 10;
 
   const getCategoryLabel = (cat: string) => {
@@ -97,6 +111,49 @@ export function TicketsPage() {
 
   const totalPages = Math.ceil(total / limit);
 
+  const handleBulkCancelClick = useCallback(() => {
+    const cancelableTickets = selectedTickets.filter(t => ['OPEN', 'IN_PROGRESS', 'AWAITING_PAYMENT'].includes(t.status));
+    if (cancelableTickets.length === 0) {
+      setAlertWarningMessage(t('tickets.noCancelableTickets') || 'None of the selected tickets can be cancelled.');
+      return;
+    }
+    setShowBulkCancelAlert(true);
+  }, [selectedTickets, t]);
+
+  const confirmBulkCancel = useCallback(async () => {
+    const cancelableTickets = selectedTickets.filter(t => ['OPEN', 'IN_PROGRESS', 'AWAITING_PAYMENT'].includes(t.status));
+    setShowBulkCancelAlert(false);
+    setLoading(true);
+    try {
+      await Promise.all(
+        cancelableTickets.map(t =>
+          ticketService.updateStatus(t.id, 'CANCELLED', 'Cancelled by client via bulk action.')
+        )
+      );
+      setSelectedTickets([]);
+      loadTickets();
+    } catch (err) {
+      console.error('Failed bulk cancel', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedTickets, loadTickets]);
+
+  const confirmCancelIndividual = useCallback(async () => {
+    if (!ticketToCancel) return;
+    const ticketId = ticketToCancel.id;
+    setTicketToCancel(null);
+    setLoading(true);
+    try {
+      await ticketService.updateStatus(ticketId, 'CANCELLED', 'Cancelled by client.');
+      loadTickets();
+    } catch (err) {
+      console.error('Failed to cancel ticket', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [ticketToCancel, loadTickets]);
+
   const columns = useMemo<ColumnDef<Ticket>[]>(() => [
     {
       accessorKey: 'title',
@@ -149,16 +206,9 @@ export function TicketsPage() {
         const ticket = row.original;
         const canCancel = ['OPEN', 'IN_PROGRESS', 'AWAITING_PAYMENT'].includes(ticket.status);
 
-        const handleCancel = async (e: React.MouseEvent) => {
+        const handleCancelClick = (e: React.MouseEvent) => {
           e.stopPropagation();
-          if (confirm(t('tickets.confirmCancel') || 'Are you sure you want to cancel this ticket?')) {
-            try {
-              await ticketService.updateStatus(ticket.id, 'CANCELLED', 'Cancelled by client.');
-              loadTickets();
-            } catch (err) {
-              console.error('Failed to cancel ticket', err);
-            }
-          }
+          setTicketToCancel(ticket);
         };
 
         const handleCopyId = (e: React.MouseEvent) => {
@@ -188,7 +238,7 @@ export function TicketsPage() {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       variant="destructive"
-                      onClick={handleCancel}
+                      onClick={handleCancelClick}
                     >
                       {t('tickets.cancelTicket') || 'Cancel Ticket'}
                     </DropdownMenuItem>
@@ -200,7 +250,7 @@ export function TicketsPage() {
         );
       },
     },
-  ], [t, i18n.language, navigate, loadTickets, priorityColor, statusColor, getCategoryLabel, getPriorityLabel, getStatusLabel]);
+  ], [t, i18n.language, navigate, priorityColor, statusColor, getCategoryLabel, getPriorityLabel, getStatusLabel]);
 
   // New ticket form state
   const [newTitle, setNewTitle] = useState('');
@@ -299,6 +349,23 @@ export function TicketsPage() {
         </select>
       </div>
 
+      {/* Bulk Actions Bar */}
+      {selectedTickets.length > 0 && (
+        <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-between animate-fade-in">
+          <span className="text-label-md font-semibold text-primary">
+            {selectedTickets.length} {t('tickets.selectedCount') || 'selected'}
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={handleBulkCancelClick}
+              className="bg-error text-on-error px-4 py-2 rounded-lg text-label-md hover:bg-error/90 transition-colors cursor-pointer font-bold"
+            >
+              {t('tickets.bulkCancel') || 'Bulk Cancel'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Tickets Table */}
       <DataTable
         columns={columns}
@@ -306,6 +373,8 @@ export function TicketsPage() {
         loading={loading}
         noDataMessage={t('tickets.noTicketsFound')}
         onRowClick={(ticket) => navigate(`/tickets/${ticket.id}`)}
+        enableRowSelection={true}
+        onSelectedRowsChange={setSelectedTickets}
       />
 
       {/* Pagination */}
@@ -459,6 +528,67 @@ export function TicketsPage() {
           </div>
         </div>
       )}
+
+      {/* Individual Cancel Alert Dialog */}
+      <AlertDialog open={!!ticketToCancel} onOpenChange={(open) => !open && setTicketToCancel(null)}>
+        <AlertDialogContent className="bg-surface-container-lowest border border-outline-variant">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-on-surface">{t('tickets.cancelTicket')}</AlertDialogTitle>
+            <AlertDialogDescription className="text-on-surface-variant">
+              {t('tickets.confirmCancel')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer">{t('tickets.modalCancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              className="cursor-pointer"
+              onClick={confirmCancelIndividual}
+            >
+              {t('tickets.cancelTicket')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Cancel Alert Dialog */}
+      <AlertDialog open={showBulkCancelAlert} onOpenChange={setShowBulkCancelAlert}>
+        <AlertDialogContent className="bg-surface-container-lowest border border-outline-variant">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-on-surface">{t('tickets.bulkCancel')}</AlertDialogTitle>
+            <AlertDialogDescription className="text-on-surface-variant">
+              {t('tickets.confirmBulkCancel')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer">{t('tickets.modalCancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              className="cursor-pointer"
+              onClick={confirmBulkCancel}
+            >
+              {t('tickets.bulkCancel')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Warning Info Alert Dialog */}
+      <AlertDialog open={!!alertWarningMessage} onOpenChange={(open) => !open && setAlertWarningMessage(null)}>
+        <AlertDialogContent className="bg-surface-container-lowest border border-outline-variant">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-on-surface">{t('dashboard.technicalSupport') || 'Warning'}</AlertDialogTitle>
+            <AlertDialogDescription className="text-on-surface-variant">
+              {alertWarningMessage}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction className="cursor-pointer" onClick={() => setAlertWarningMessage(null)}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Page>
   );
 }
