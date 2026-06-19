@@ -158,7 +158,8 @@ export class TicketService {
     // Trigger notifications
     const client = await userRepository.findById(ticket.client_id);
     if (client) {
-      await notificationService.onTicketStatusChanged(updated, client, data.notes);
+      const fullUpdatedTicket = await ticketRepository.findById(ticketId) || updated;
+      await notificationService.onTicketStatusChanged(fullUpdatedTicket, client, data.notes);
     }
 
     logger.info('Ticket status updated', {
@@ -253,14 +254,14 @@ export class TicketService {
       notes: `Ticket assigned to technician: ${technician.name}`,
     });
 
-    // Notify the technician
-    await notificationService.onTicketAssigned(updated, technician);
-
     // Fetch the updated ticket with the joined names/emails so that the response matches the structure
     const fullUpdatedTicket = await ticketRepository.findById(ticketId);
     if (!fullUpdatedTicket) {
       throw AppError.internal('Failed to retrieve updated ticket details');
     }
+
+    // Notify the technician
+    await notificationService.onTicketAssigned(fullUpdatedTicket, technician);
 
     return fullUpdatedTicket;
   }

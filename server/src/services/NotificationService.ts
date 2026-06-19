@@ -1,5 +1,9 @@
 import { Ticket, User } from '../types';
-import { sendTicketStatusEmail } from '../utils/emailService';
+import { 
+  sendTicketCreatedEmail, 
+  sendTicketStatusChangedEmail, 
+  sendTicketAssignedEmail 
+} from '../utils/emailService';
 import { sendTicketStatusWhatsApp } from '../utils/whatsappService';
 import { logger } from '../utils/logger';
 
@@ -14,12 +18,7 @@ export class NotificationService {
    */
   async onTicketCreated(ticket: Ticket, client: User): Promise<void> {
     try {
-      await sendTicketStatusEmail(
-        client.email,
-        ticket.id,
-        'OPEN',
-        `Your ticket "${ticket.title}" has been received and is being processed.`,
-      );
+      await sendTicketCreatedEmail(client.email, client.name, ticket);
     } catch (error) {
       logger.error('Failed to send ticket creation notification', { ticketId: ticket.id, error });
     }
@@ -37,15 +36,15 @@ export class NotificationService {
       CANCELLED: 'Your ticket has been cancelled.',
     };
 
-    const message = statusMessages[ticket.status] || `Status updated to: ${ticket.status}`;
-    const fullNotes = notes ? `${message}\n\nNotes: ${notes}` : message;
+    const defaultMsg = statusMessages[ticket.status] || `Status updated to: ${ticket.status}`;
+    const combinedNotes = notes ? `${defaultMsg}\n\nNotes: ${notes}` : defaultMsg;
 
     try {
       // Send email notification
-      await sendTicketStatusEmail(client.email, ticket.id, ticket.status, fullNotes);
+      await sendTicketStatusChangedEmail(client.email, client.name, ticket, combinedNotes);
 
       // Send WhatsApp notification (stub)
-      await sendTicketStatusWhatsApp(client.email, ticket.id, ticket.status, fullNotes);
+      await sendTicketStatusWhatsApp(client.email, ticket.id, ticket.status, combinedNotes);
     } catch (error) {
       logger.error('Failed to send status change notification', {
         ticketId: ticket.id,
@@ -60,12 +59,7 @@ export class NotificationService {
    */
   async onTicketAssigned(ticket: Ticket, technician: User): Promise<void> {
     try {
-      await sendTicketStatusEmail(
-        technician.email,
-        ticket.id,
-        'ASSIGNED',
-        `A new ticket "${ticket.title}" has been assigned to you. Category: ${ticket.category}, Priority: ${ticket.priority}.`,
-      );
+      await sendTicketAssignedEmail(technician.email, technician.name, ticket);
     } catch (error) {
       logger.error('Failed to send assignment notification', { ticketId: ticket.id, error });
     }
