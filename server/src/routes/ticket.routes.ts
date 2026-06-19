@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { ticketController } from '../controllers/TicketController';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { validate } from '../middleware/validationMiddleware';
-import { CreateTicketDTO, UpdateTicketStatusDTO, TicketQueryDTO, AssignTicketDTO } from '../dtos/ticket.dto';
+import { CreateTicketDTO, UpdateTicketStatusDTO, TicketQueryDTO, AssignTicketDTO, CreateTicketResponseDTO } from '../dtos/ticket.dto';
 import { upload } from '../middleware/uploadMiddleware';
 import { rbacMiddleware } from '../middleware/rbacMiddleware';
 import { UserRole } from '../types';
@@ -38,5 +38,11 @@ router.get('/:id/attachments', (req, res) => ticketController.getAttachments(req
 
 /** POST /api/v1/tickets/:id/attachments — Upload attachment */
 router.post('/:id/attachments', upload.single('file'), (req, res) => ticketController.uploadAttachment(req, res));
+
+/** GET /api/v1/tickets/:id/responses — Get ticket responses */
+router.get('/:id/responses', (req, res) => ticketController.getResponses(req, res));
+
+/** POST /api/v1/tickets/:id/responses — Add response to ticket */
+router.post('/:id/responses', validate(CreateTicketResponseDTO), (req, res) => ticketController.createResponse(req, res));
 
 export default router;

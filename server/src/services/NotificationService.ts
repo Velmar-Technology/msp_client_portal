@@ -2,7 +2,8 @@ import { Ticket, User } from '../types';
 import { 
   sendTicketCreatedEmail, 
   sendTicketStatusChangedEmail, 
-  sendTicketAssignedEmail 
+  sendTicketAssignedEmail,
+  sendTicketResponseEmail
 } from '../utils/emailService';
 import { sendTicketStatusWhatsApp } from '../utils/whatsappService';
 import { logger } from '../utils/logger';
@@ -64,6 +65,18 @@ export class NotificationService {
       logger.error('Failed to send assignment notification', { ticketId: ticket.id, error });
     }
   }
+
+  /**
+   * Notify party when a new response is posted on a ticket.
+   */
+  async onTicketResponseCreated(ticket: Ticket, recipient: User, senderName: string, message: string): Promise<void> {
+    try {
+      await sendTicketResponseEmail(recipient.email, recipient.name, senderName, ticket, message);
+    } catch (error) {
+      logger.error('Failed to send ticket response notification email', { ticketId: ticket.id, error });
+    }
+  }
 }
 
 export const notificationService = new NotificationService();
+

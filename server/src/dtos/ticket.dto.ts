@@ -35,3 +35,9 @@ export const AssignTicketDTO = z.object({
   technicianId: z.string().uuid('Invalid technician ID'),
 });
 export type AssignTicketInput = z.infer<typeof AssignTicketDTO>;
+
+export const CreateTicketResponseDTO = z.object({
+  message: z.string().min(1, 'Message cannot be empty').max(5000),
+});
+export type CreateTicketResponseInput = z.infer<typeof CreateTicketResponseDTO>;
+

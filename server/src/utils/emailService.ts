@@ -438,3 +438,52 @@ export async function sendTicketStatusEmail(
     type: 'EMAIL',
   });
 }
+
+/**
+ * Send a notification when a new response is added to a ticket.
+ */
+export async function sendTicketResponseEmail(
+  recipientEmail: string,
+  recipientName: string,
+  senderName: string,
+  ticket: Ticket,
+  message: string,
+): Promise<void> {
+  const portalUrl = `${env.CORS_ORIGIN || 'http://localhost:5173'}/tickets/${ticket.id}`;
+  const preheader = `${senderName} replied to ticket "${ticket.title}".`;
+
+  const contentHtml = `
+    <h2 style="color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">Hello ${recipientName},</h2>
+    <p style="font-size: 15px; color: #475569; margin-top: 0; margin-bottom: 24px;">
+      A new response has been added to your support ticket by <strong>${senderName}</strong>.
+    </p>
+
+    <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 16px;">
+        <tr>
+          <td style="padding: 6px 0; color: #64748B; width: 120px; font-weight: 500;">Ticket Title:</td>
+          <td style="padding: 6px 0; color: #0F172A; font-weight: 600;">${ticket.title}</td>
+        </tr>
+      </table>
+      <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #E2E8F0;">
+        <p style="margin: 0 0 8px 0; color: #475569; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">
+          New Message:
+        </p>
+        <div style="background-color: #ffffff; border-left: 4px solid #4F46E5; padding: 14px 18px; border-radius: 0 8px 8px 0; color: #334155; font-size: 14px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02); border-top: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; border-bottom: 1px solid #F1F5F9;">
+          ${message.replace(/\n/g, '<br />')}
+        </div>
+      </div>
+    </div>
+  `;
+
+  const body = getEmailLayout(preheader, `New Reply on Ticket`, contentHtml, portalUrl, 'View Ticket & Reply');
+
+  await sendEmail({
+    to: recipientEmail,
+    subject: `[New Reply] ${ticket.title} (Ref: ${ticket.id.substring(0, 8)})`,
+    body,
+    ticketId: ticket.id,
+    type: 'EMAIL',
+  });
+}
+

@@ -116,6 +116,17 @@ export interface TicketEvent {
   created_at: Date;
 }
 
+export interface TicketResponse {
+  id: string;
+  ticket_id: string;
+  user_id: string;
+  message: string;
+  tenant_id: string;
+  created_at: Date;
+  user_name?: string;
+  user_role?: string;
+}
+
 export interface Subscription {
   id: string;
   client_id: string;

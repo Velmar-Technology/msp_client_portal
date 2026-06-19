@@ -153,7 +153,7 @@
     "noActivity": "No activity recorded yet.",
     "changedStatusTo": "changed status to",
     "system": "System",
-    "assignedTechnician": "Assigned Technician",
+    "assignedTo": "Assigned",
     "unassigned": "Unassigned",
     "assignTechnician": "Assign Technician",
     "assigning": "Assigning...",
@@ -168,7 +168,14 @@
     "dragAndDrop": "Drag & drop or click to upload",
     "allowedTypes": "Allowed formats: JPG, PNG, GIF, WEBP, PDF, DOC(X), XLS(X), TXT, MP4 (Max 10MB)",
     "fileTooLarge": "File is too large. Maximum size is 10MB.",
-    "invalidFileType": "Unsupported file format."
+    "invalidFileType": "Unsupported file format.",
+    "responsesTitle": "Responses",
+    "noResponses": "No responses yet. Send a response below.",
+    "placeholderResponse": "Type your response here...",
+    "sendResponse": "Send Response",
+    "sendingResponse": "Sending...",
+    "responseSuccess": "Response sent successfully",
+    "responseError": "Failed to send response"
   },
   "techDashboard": {
     "subtitle": "Manage your assigned tickets, track SLAs, and update ticket statuses.",

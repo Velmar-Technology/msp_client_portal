@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { ticketService } from '../services/TicketService';
-import { CreateTicketInput, UpdateTicketStatusInput, TicketQueryInput } from '../dtos/ticket.dto';
+import { CreateTicketInput, UpdateTicketStatusInput, TicketQueryInput, CreateTicketResponseInput } from '../dtos/ticket.dto';
 import { UserRole } from '../types';
 
 export class TicketController {
@@ -115,6 +115,28 @@ export class TicketController {
       req.user!.userId,
     );
     res.json({ success: true, data: ticket });
+  }
+
+  async getResponses(req: Request, res: Response): Promise<void> {
+    const responses = await ticketService.getTicketResponses(
+      req.params.id as string,
+      req.user!.userId,
+      req.user!.role as UserRole,
+      req.user!.tenantId,
+    );
+    res.json({ success: true, data: responses });
+  }
+
+  async createResponse(req: Request, res: Response): Promise<void> {
+    const data = req.body as CreateTicketResponseInput;
+    const response = await ticketService.addTicketResponse(
+      req.params.id as string,
+      data.message,
+      req.user!.userId,
+      req.user!.role as UserRole,
+      req.user!.tenantId,
+    );
+    res.status(201).json({ success: true, data: response });
   }
 }
 

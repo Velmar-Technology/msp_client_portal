@@ -1,5 +1,6 @@
 import { ticketRepository } from '../repositories/TicketRepository';
 import { ticketEventRepository } from '../repositories/TicketEventRepository';
+import { ticketResponseRepository } from '../repositories/TicketResponseRepository';
 import { userRepository } from '../repositories/UserRepository';
 import { assignmentService } from './AssignmentService';
 import { notificationService } from './NotificationService';
@@ -10,6 +11,7 @@ import {
   Ticket,
   TicketAttachment,
   TicketEvent,
+  TicketResponse,
   TicketStatus,
   TicketCategory,
   TicketFilters,
@@ -294,6 +296,71 @@ export class TicketService {
         `Warranty and service outage tickets can only be cancelled within 60 minutes of creation.`,
       );
     }
+  }
+
+  /**
+   * Get responses associated with a ticket.
+   */
+  async getTicketResponses(
+    ticketId: string,
+    userId: string,
+    userRole: UserRole,
+    tenantId: string,
+  ): Promise<TicketResponse[]> {
+    // Verify access
+    await this.getTicketById(ticketId, userId, userRole, tenantId);
+    return ticketResponseRepository.findByTicket(ticketId);
+  }
+
+  /**
+   * Add a response to a ticket.
+   */
+  async addTicketResponse(
+    ticketId: string,
+    message: string,
+    userId: string,
+    userRole: UserRole,
+    tenantId: string,
+  ): Promise<TicketResponse> {
+    const ticket = await this.getTicketById(ticketId, userId, userRole, tenantId);
+
+    const response = await ticketResponseRepository.create({
+      ticket_id: ticketId,
+      user_id: userId,
+      message,
+      tenant_id: ticket.tenant_id,
+    });
+
+    // Notify the other party
+    try {
+      const sender = await userRepository.findById(userId);
+      if (sender) {
+        if (userRole === UserRole.CLIENT) {
+          if (ticket.assigned_tech_id) {
+            const tech = await userRepository.findById(ticket.assigned_tech_id);
+            if (tech) {
+              await notificationService.onTicketResponseCreated(ticket, tech, sender.name, message);
+            }
+          } else {
+            logger.info('No tech assigned to ticket, notification skipped', { ticketId });
+          }
+        } else {
+          const client = await userRepository.findById(ticket.client_id);
+          if (client) {
+            await notificationService.onTicketResponseCreated(ticket, client, sender.name, message);
+          }
+        }
+      }
+    } catch (err) {
+      logger.error('Failed to send ticket response notification', { ticketId, error: err });
+    }
+
+    const user = await userRepository.findById(userId);
+    return {
+      ...response,
+      user_name: user?.name,
+      user_role: user?.role,
+    };
   }
 }
 

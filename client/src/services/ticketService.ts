@@ -39,6 +39,17 @@ export interface TicketEvent {
   created_at: string;
 }
 
+export interface TicketResponse {
+  id: string;
+  ticket_id: string;
+  user_id: string;
+  message: string;
+  tenant_id: string;
+  created_at: string;
+  user_name?: string;
+  user_role?: string;
+}
+
 export interface CreateTicketPayload {
   title: string;
   description: string;
@@ -93,6 +104,16 @@ export const ticketService = {
 
   async assign(id: string, technicianId: string): Promise<Ticket> {
     const response = await api.patch(`/tickets/${id}/assign`, { technicianId });
+    return response.data.data;
+  },
+
+  async getResponses(id: string): Promise<TicketResponse[]> {
+    const response = await api.get(`/tickets/${id}/responses`);
+    return response.data.data;
+  },
+
+  async createResponse(id: string, message: string): Promise<TicketResponse> {
+    const response = await api.post(`/tickets/${id}/responses`, { message });
     return response.data.data;
   },
 };

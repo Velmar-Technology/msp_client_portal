@@ -144,6 +144,31 @@ export const ticketEvents = pgTable(
   ]
 );
 
+// ---- Ticket Responses ----
+export const ticketResponses = pgTable(
+  'ticket_responses',
+  {
+    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    ticket_id: uuid('ticket_id')
+      .references(() => tickets.id, { onDelete: 'cascade' })
+      .notNull(),
+    user_id: uuid('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    message: text('message').notNull(),
+    tenant_id: uuid('tenant_id')
+      .references(() => tenants.id, { onDelete: 'cascade' })
+      .notNull(),
+    created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    index('idx_responses_ticket').on(table.ticket_id),
+    index('idx_responses_user').on(table.user_id),
+    index('idx_responses_tenant').on(table.tenant_id),
+  ]
+);
+
+
 // ---- Subscriptions ----
 export const subscriptions = pgTable(
   'subscriptions',

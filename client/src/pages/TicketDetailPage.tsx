@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Clock, AlertTriangle, UserCheck, FileText, Image, Video, FileSpreadsheet, Download, Paperclip, UploadCloud, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Clock, AlertTriangle, UserCheck, FileText, Image, Video, FileSpreadsheet, Download, Paperclip, UploadCloud, CheckCircle2, AlertCircle, Send, MessageSquare } from 'lucide-react';
 import { ticketService } from '../services/ticketService';
-import type { Ticket, TicketEvent, TicketAttachment } from '../services/ticketService';
+import type { Ticket, TicketEvent, TicketAttachment, TicketResponse } from '../services/ticketService';
 import { useSLATimer } from '../hooks/useSLATimer';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth';
@@ -38,6 +38,12 @@ export function TicketDetailPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+
+  // Ticket responses state
+  const [responses, setResponses] = useState<TicketResponse[]>([]);
+  const [responseText, setResponseText] = useState('');
+  const [sendingResponse, setSendingResponse] = useState(false);
+  const [responseFeedback, setResponseFeedback] = useState<{ text: string; isError: boolean } | null>(null);
 
   const canAssign = user?.role === 'ADMIN' || user?.role === 'TECHNICIAN';
 
@@ -76,15 +82,17 @@ export function TicketDetailPage() {
     if (!id) return;
     async function load() {
       try {
-        const [t, events, atts] = await Promise.all([
+        const [t, events, atts, resps] = await Promise.all([
           ticketService.getById(id!),
           ticketService.getTimeline(id!),
           ticketService.getAttachments(id!),
+          ticketService.getResponses(id!),
         ]);
         setTicket(t);
         setSelectedTechId(t.assigned_tech_id || '');
         setTimeline(events as (TicketEvent & { changed_by_name?: string })[]);
         setAttachments(atts);
+        setResponses(resps);
       } catch (err) {
         console.error('Failed to load ticket', err);
       } finally {
@@ -93,6 +101,25 @@ export function TicketDetailPage() {
     }
     load();
   }, [id]);
+
+  const handleSendResponse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id || !responseText.trim()) return;
+    setSendingResponse(true);
+    setResponseFeedback(null);
+    try {
+      const newResponse = await ticketService.createResponse(id, responseText.trim());
+      setResponses((prev) => [...prev, newResponse]);
+      setResponseText('');
+      setResponseFeedback({ text: t('ticketDetail.responseSuccess'), isError: false });
+      setTimeout(() => setResponseFeedback(null), 3000);
+    } catch (err) {
+      console.error('Failed to send response', err);
+      setResponseFeedback({ text: t('ticketDetail.responseError'), isError: true });
+    } finally {
+      setSendingResponse(false);
+    }
+  };
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -400,7 +427,7 @@ export function TicketDetailPage() {
               <div className="flex items-center gap-2">
                 <UserCheck className="h-4.5 w-4.5 text-primary" />
                 <span className="text-body-md text-on-surface">
-                  {t('ticketDetail.assignedTechnician')}:{' '}
+                  {t('ticketDetail.assignedTo')}:{' '}
                   <strong className="text-primary font-semibold">
                     {ticket.assigned_tech_name
                       ? `${ticket.assigned_tech_name} (${ticket.assigned_tech_email})`
@@ -464,6 +491,122 @@ export function TicketDetailPage() {
         <p className="text-label-sm text-on-surface-variant mt-4">
           {t('ticketDetail.ticketId')}: <span className="text-mono">{ticket.id}</span>
         </p>
+      </div>
+      {/* Ticket Responses / Comments Section */}
+      <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 mb-6 shadow-sm text-on-surface animate-fade-in">
+        <h2 className="text-h2 text-primary mb-6 flex items-center gap-2" style={{ fontFamily: 'var(--font-heading)' }}>
+          <MessageSquare className="h-5 w-5 text-primary" />
+          {t('ticketDetail.responsesTitle')}
+        </h2>
+
+        {/* Responses Feed */}
+        <div className="space-y-4 mb-6 max-h-[450px] overflow-y-auto pr-2 scrollbar-thin flex flex-col">
+          {responses.length === 0 ? (
+            <p className="text-body-md text-on-surface-variant opacity-60 py-4 italic">
+              {t('ticketDetail.noResponses')}
+            </p>
+          ) : (
+            responses.map((resp) => {
+              const isClient = resp.user_role === 'CLIENT';
+              const isTech = resp.user_role === 'TECHNICIAN';
+              const isSelf = resp.user_id === user?.id;
+
+              return (
+                <div
+                  key={resp.id}
+                  className={`flex gap-3 max-w-[85%] ${
+                    isSelf ? 'ml-auto flex-row-reverse' : ''
+                  }`}
+                >
+                  {/* Initials Circle */}
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-label-md font-bold ${
+                    isClient
+                      ? 'bg-secondary/20 text-secondary border border-secondary/30'
+                      : isTech
+                      ? 'bg-warning/20 text-warning border border-warning/30'
+                      : 'bg-primary/20 text-primary border border-primary/30'
+                  }`}>
+                    {(resp.user_name || 'U').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                  </div>
+
+                  {/* Bubble */}
+                  <div className="flex flex-col">
+                    {/* Header info */}
+                    <div className={`flex items-center gap-2 mb-1 px-1 text-label-sm ${isSelf ? 'justify-end' : ''}`}>
+                      <span className="font-semibold text-on-surface">
+                        {resp.user_name}
+                      </span>
+                      <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold uppercase tracking-wider ${
+                        isClient
+                          ? 'bg-secondary/15 text-secondary border border-secondary/20'
+                          : isTech
+                          ? 'bg-warning/15 text-warning border border-warning/20'
+                          : 'bg-primary/15 text-primary border border-primary/20'
+                      }`}>
+                        {resp.user_role}
+                      </span>
+                    </div>
+
+                    {/* Message body */}
+                    <div className={`p-4 rounded-2xl shadow-sm text-body-md whitespace-pre-wrap ${
+                      isSelf
+                        ? 'bg-primary text-on-primary rounded-tr-none'
+                        : 'bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant/30 rounded-tl-none'
+                    }`}>
+                      {resp.message}
+                    </div>
+
+                    {/* Timestamp */}
+                    <span className={`text-[10px] text-on-surface-variant opacity-60 mt-1 px-1 ${isSelf ? 'text-right' : ''}`}>
+                      {new Date(resp.created_at).toLocaleString(i18n.language === 'es_DO' ? 'es-DO' : 'en-US')}
+                    </span>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Reply Form */}
+        <form onSubmit={handleSendResponse} className="border-t border-outline-variant/30 pt-4">
+          <div className="flex gap-3 items-end">
+            <div className="flex-1 relative">
+              <textarea
+                value={responseText}
+                onChange={(e) => setResponseText(e.target.value)}
+                placeholder={t('ticketDetail.placeholderResponse')}
+                rows={2}
+                maxLength={5000}
+                className="w-full px-4 py-3 bg-surface-container-high border border-outline-variant/60 rounded-xl text-body-md text-on-surface focus:outline-none focus:border-primary placeholder:text-on-surface-variant/40 resize-none pr-12 transition-all duration-200"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={sendingResponse || !responseText.trim()}
+              className="bg-primary text-on-primary p-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center shrink-0 cursor-pointer shadow-md"
+            >
+              {sendingResponse ? (
+                <div className="w-5 h-5 border-2 border-on-primary/20 border-t-on-primary rounded-full animate-spin" />
+              ) : (
+                <Send className="h-5 w-5" />
+              )}
+            </button>
+          </div>
+
+          {/* Feedback messages */}
+          {responseFeedback && (
+            <div className={`mt-2 text-label-sm font-semibold flex items-center gap-1.5 animate-fade-in ${
+              responseFeedback.isError ? 'text-error' : 'text-success'
+            }`}>
+              {responseFeedback.isError ? (
+                <AlertCircle className="h-4 w-4" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4" />
+              )}
+              {responseFeedback.text}
+            </div>
+          )}
+        </form>
       </div>
 
       {/* Timeline */}

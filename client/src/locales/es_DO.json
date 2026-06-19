@@ -153,7 +153,7 @@
     "noActivity": "Aún no se ha registrado actividad.",
     "changedStatusTo": "cambió el estado a",
     "system": "Sistema",
-    "assignedTechnician": "Técnico Asignado",
+    "assignedTo": "Asignado a",
     "unassigned": "Sin asignar",
     "assignTechnician": "Asignar Técnico",
     "assigning": "Asignando...",
@@ -168,7 +168,14 @@
     "dragAndDrop": "Arrastre y suelte o haga clic para subir",
     "allowedTypes": "Formatos permitidos: JPG, PNG, GIF, WEBP, PDF, DOC(X), XLS(X), TXT, MP4 (Máx. 10MB)",
     "fileTooLarge": "El archivo es demasiado grande. El tamaño máximo es 10MB.",
-    "invalidFileType": "Formato de archivo no soportado."
+    "invalidFileType": "Formato de archivo no soportado.",
+    "responsesTitle": "Respuestas",
+    "noResponses": "No hay respuestas todavía. Envía una respuesta a continuación.",
+    "placeholderResponse": "Escribe tu respuesta aquí...",
+    "sendResponse": "Enviar Respuesta",
+    "sendingResponse": "Enviando...",
+    "responseSuccess": "Respuesta enviada con éxito",
+    "responseError": "Error al enviar la respuesta"
   },
   "techDashboard": {
     "subtitle": "Gestione sus tickets asignados, controle los SLA y actualice los estados de los tickets.",
