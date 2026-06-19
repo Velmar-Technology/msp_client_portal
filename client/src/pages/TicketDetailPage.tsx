@@ -233,15 +233,15 @@ export function TicketDetailPage() {
   }
 
   return (
-    <div className="animate-fade-in max-w-5xl mx-auto">
+    <div className="animate-fade-in max-w-5xl">
       {/* Back button */}
-      <button
+      {/* <button
         onClick={() => navigate('/tickets')}
         className="flex items-center gap-2 text-label-md text-on-surface-variant hover:text-primary transition-colors mb-4 cursor-pointer"
       >
         <ArrowLeft className="h-4 w-4" />
         {t('ticketDetail.backToTickets')}
-      </button>
+      </button> */}
 
       {/* Ticket Header */}
       <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 mb-6 shadow-sm text-on-surface">
