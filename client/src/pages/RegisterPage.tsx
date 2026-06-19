@@ -1,29 +1,58 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { CloudCog, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { GoogleLoginButton } from '../components/auth/GoogleLoginButton';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Field, FieldLabel, FieldError } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 
 export function RegisterPage() {
   const { t, i18n } = useTranslation();
   const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
-  const [name, setName] = useState('');
-  const [tenantName, setTenantName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const schema = useMemo(() => z.object({
+    name: z.string().min(2, t('register.nameMin') || 'Name must be at least 2 characters'),
+    tenantName: z.string().min(2, t('register.tenantMin') || 'Company name must be at least 2 characters'),
+    email: z.string().email(t('register.emailInvalid') || 'Invalid email address'),
+    password: z.string().min(8, t('register.passwordMin') || 'Password must be at least 8 characters'),
+    confirmPassword: z.string()
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: t('register.passwordsMismatch') || 'Passwords do not match',
+    path: ['confirmPassword']
+  }), [t]);
+
+  type RegisterFormData = z.infer<typeof schema>;
+
+  const {
+    control,
+    handleSubmit,
+    getValues,
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      name: '',
+      tenantName: '',
+      email: '',
+      password: '',
+      confirmPassword: ''
+    }
+  });
 
   const handleGoogleSuccess = async (idToken: string) => {
     setError('');
     setLoading(true);
     try {
-      await loginWithGoogle(idToken, tenantName || undefined);
+      const tenantNameValue = getValues('tenantName');
+      await loginWithGoogle(idToken, tenantNameValue || undefined);
       navigate('/dashboard');
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
@@ -40,23 +69,33 @@ export function RegisterPage() {
     setError(errMsg || (i18n.language === 'es_DO' ? 'Error al registrar la cuenta con Google' : 'Google registration failed'));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password !== confirmPassword) {
-      setError(t('register.passwordsMismatch'));
-      return;
-    }
+  const onSubmit = async (data: RegisterFormData) => {
     setError('');
     setLoading(true);
     try {
-      await register(email, name, tenantName, password, confirmPassword);
+      await register(data.email, data.name, data.tenantName, data.password, data.confirmPassword);
       navigate('/dashboard');
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } };
-      setError(
-        error.response?.data?.message || 
-        (i18n.language === 'es_DO' ? 'Error al registrar la cuenta' : 'Registration failed')
-      );
+      const error = err as {
+        response?: {
+          data?: {
+            message?: string;
+            errors?: Array<{ field: string; message: string }>;
+          };
+        };
+      };
+      const errorData = error.response?.data;
+      if (errorData?.errors && errorData.errors.length > 0) {
+        // Concatenate detailed validation errors
+        const detailedErrors = errorData.errors.map((e) => e.message).join('. ');
+        setError(detailedErrors);
+        console.log(detailedErrors);
+      } else {
+        setError(
+          errorData?.message ||
+          (i18n.language === 'es_DO' ? 'Error al registrar la cuenta' : 'Registration failed')
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -93,89 +132,126 @@ export function RegisterPage() {
             </Alert>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="reg-name" className="block text-label-md text-on-surface mb-1.5">
-                {t('register.fullName')}
-              </label>
-              <input
-                id="reg-name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="John Mitchell"
-                required
-                minLength={2}
-                className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 transition-all text-on-surface"
-              />
-            </div>
-            <div>
-              <label htmlFor="reg-tenant" className="block text-label-md text-on-surface mb-1.5">
-                {t('register.companyName')}
-              </label>
-              <input
-                id="reg-tenant"
-                type="text"
-                value={tenantName}
-                onChange={(e) => setTenantName(e.target.value)}
-                placeholder={t('register.companyNamePlaceholder')}
-                required
-                minLength={2}
-                className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 transition-all text-on-surface"
-              />
-            </div>
-            <div>
-              <label htmlFor="reg-email" className="block text-label-md text-on-surface mb-1.5">
-                {t('login.emailAddress')}
-              </label>
-              <input
-                id="reg-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={t('login.emailPlaceholder')}
-                required
-                className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 transition-all text-on-surface"
-              />
-            </div>
-            <div>
-              <label htmlFor="reg-password" className="block text-label-md text-on-surface mb-1.5">
-                {t('login.password')}
-              </label>
-              <div className="relative">
-                <input
-                  id="reg-password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={t('register.passwordPlaceholder')}
-                  required
-                  minLength={8}
-                  className="w-full px-4 py-2.5 pr-12 border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 transition-all text-on-surface"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
-                >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
-              </div>
-            </div>
-            <div>
-              <label htmlFor="reg-confirm" className="block text-label-md text-on-surface mb-1.5">
-                {t('register.confirmPassword')}
-              </label>
-              <input
-                id="reg-confirm"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder={t('register.confirmPasswordPlaceholder')}
-                required
-                className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 transition-all text-on-surface"
-              />
-            </div>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <Controller
+              name="name"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="reg-name">
+                    {t('register.fullName')}
+                  </FieldLabel>
+                  <Input
+                    {...field}
+                    id="reg-name"
+                    type="text"
+                    placeholder="John Mitchell"
+                    className="w-full h-10 px-4 py-2.5 border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 transition-all text-on-surface"
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+
+            <Controller
+              name="tenantName"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="reg-tenant">
+                    {t('register.companyName')}
+                  </FieldLabel>
+                  <Input
+                    {...field}
+                    id="reg-tenant"
+                    type="text"
+                    placeholder={t('register.companyNamePlaceholder')}
+                    className="w-full h-10 px-4 py-2.5 border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 transition-all text-on-surface"
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+
+            <Controller
+              name="email"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="reg-email">
+                    {t('login.emailAddress')}
+                  </FieldLabel>
+                  <Input
+                    {...field}
+                    id="reg-email"
+                    type="email"
+                    placeholder={t('login.emailPlaceholder')}
+                    className="w-full h-10 px-4 py-2.5 border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 transition-all text-on-surface"
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+
+            <Controller
+              name="password"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="reg-password">
+                    {t('login.password')}
+                  </FieldLabel>
+                  <div className="relative w-full">
+                    <Input
+                      {...field}
+                      id="reg-password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder={t('register.passwordPlaceholder')}
+                      className="w-full h-10 px-4 py-2.5 pr-12 border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 transition-all text-on-surface"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+
+            <Controller
+              name="confirmPassword"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="reg-confirm">
+                    {t('register.confirmPassword')}
+                  </FieldLabel>
+                  <Input
+                    {...field}
+                    id="reg-confirm"
+                    type="password"
+                    placeholder={t('register.confirmPasswordPlaceholder')}
+                    className="w-full h-10 px-4 py-2.5 border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 transition-all text-on-surface"
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+
             <button
               type="submit"
               disabled={loading}

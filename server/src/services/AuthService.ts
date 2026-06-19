@@ -22,11 +22,28 @@ export class AuthService {
       throw AppError.conflict('An account with this email already exists');
     }
 
-    // Create a new Tenant
+    // Generate and validate subdomain
     const subdomain = data.tenantName
       .toLowerCase()
       .replace(/[^a-z0-9]/g, '')
       .substring(0, 100);
+
+    if (!subdomain) {
+      throw AppError.badRequest('Company name must contain at least one alphanumeric character');
+    }
+
+    // Check for existing tenant name or subdomain
+    const existingTenantBySubdomain = await tenantRepository.findBySubdomain(subdomain);
+    if (existingTenantBySubdomain) {
+      throw AppError.conflict('A company with this name or subdomain is already registered');
+    }
+
+    const existingTenantByName = await tenantRepository.findByName(data.tenantName);
+    if (existingTenantByName) {
+      throw AppError.conflict('A company with this name or subdomain is already registered');
+    }
+
+    // Create a new Tenant
     const tenant = await tenantRepository.create(data.tenantName, subdomain);
 
     // Hash password and create user linked to the new tenant
@@ -136,10 +153,20 @@ export class AuthService {
       isNewUser = true;
       // Register new user: create tenant and user
       const rawTenantName = data.tenantName || `${name}'s Workspace`;
-      const subdomain = rawTenantName
+      const baseSubdomain = rawTenantName
         .toLowerCase()
         .replace(/[^a-z0-9]/g, '')
-        .substring(0, 100) || `tenant-${Date.now()}`;
+        .substring(0, 90) || `tenant-${Date.now()}`;
+
+      // Automatically resolve subdomain collisions
+      let subdomain = baseSubdomain;
+      let existingTenant = await tenantRepository.findBySubdomain(subdomain);
+      let suffix = 1;
+      while (existingTenant) {
+        subdomain = `${baseSubdomain}-${suffix}`;
+        existingTenant = await tenantRepository.findBySubdomain(subdomain);
+        suffix++;
+      }
 
       const tenant = await tenantRepository.create(rawTenantName, subdomain);
 

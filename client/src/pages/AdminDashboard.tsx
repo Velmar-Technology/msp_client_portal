@@ -23,7 +23,7 @@ export function AdminDashboard() {
   return (
     <div className="animate-fade-in max-w-7xl mx-auto">
       {/* Welcome Area */}
-      <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      {/* <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-h1 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
             {t('dashboard.systemOverview')}
@@ -32,7 +32,7 @@ export function AdminDashboard() {
             {t('dashboard.systemStatus')}
           </p>
         </div>
-      </div>
+      </div> */}
 
       {/* Bento Grid Layout */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-5 mb-6">

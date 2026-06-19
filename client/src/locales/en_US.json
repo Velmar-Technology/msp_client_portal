@@ -9,7 +9,7 @@
     "help": "Help Center",
     "myTickets": "My Tickets",
     "allTickets": "All Tickets",
-    "adminDashboard": "Admin Dashboard",
+    "adminDashboard": "Dashboard",
     "infrastructure": "Infrastructure Management"
   },
   "topNav": {
@@ -96,7 +96,11 @@
     "alreadyHaveAccount": "Already have an account?",
     "signInLink": "Sign in",
     "creating": "Creating...",
-    "passwordsMismatch": "Passwords do not match"
+    "passwordsMismatch": "Passwords do not match",
+    "nameMin": "Name must be at least 2 characters",
+    "tenantMin": "Company name must be at least 2 characters",
+    "emailInvalid": "Invalid email address",
+    "passwordMin": "Password must be at least 8 characters"
   },
   "tickets": {
     "title": "Support Tickets",

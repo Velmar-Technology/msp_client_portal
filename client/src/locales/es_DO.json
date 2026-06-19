@@ -96,7 +96,11 @@
     "alreadyHaveAccount": "¿Ya tiene una cuenta?",
     "signInLink": "Iniciar sesión",
     "creating": "Creando...",
-    "passwordsMismatch": "Las contraseñas no coinciden"
+    "passwordsMismatch": "Las contraseñas no coinciden",
+    "nameMin": "El nombre debe tener al menos 2 caracteres",
+    "tenantMin": "El nombre de la empresa debe tener al menos 2 caracteres",
+    "emailInvalid": "Correo electrónico no válido",
+    "passwordMin": "La contraseña debe tener al menos 8 caracteres"
   },
   "tickets": {
     "title": "Tickets de Soporte",

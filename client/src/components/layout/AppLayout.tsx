@@ -13,13 +13,13 @@ export function AppLayout() {
       <AppSidebar />
       <SidebarInset className="flex flex-col min-h-screen">
         <TopNav />
-        <main className="flex-1 p-5 md:px-10 md:py-8 bg-background overflow-x-hidden">
+        <main className="flex-1 p-5 md:px-10 md:py-5 bg-background overflow-x-hidden">
           <Breadcrumbs className="mb-6" />
           <Outlet />
         </main>
 
         {/* Footer */}
-        <footer className="flex flex-col md:flex-row justify-between items-center px-5 md:px-10 py-4 mt-auto bg-surface-container-lowest border-t border-outline-variant w-full gap-2">
+        <footer className="flex flex-col md:flex-row justify-between items-center px-5 md:px-10 py-2 mt-auto bg-surface-container-lowest border-t border-outline-variant w-full gap-2">
           <span className="text-label-sm text-on-surface-variant">
             {t('footer.copyright')}
           </span>
