@@ -3,6 +3,8 @@
 -- ============================================
 -- Passwords are bcrypt hash of 'password123'
 
+TRUNCATE TABLE ticket_events, ticket_attachments, tickets, subscriptions, invoices, round_robin_state, users CASCADE;
+
 INSERT INTO users (id, email, name, password_hash, role, specialty, is_active, email_verified) VALUES
   ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'admin@msp-helpdesk.com', 'System Administrator', '$2b$12$vYNizLsJireozMId6GOMuucvVnHVmJBHmTqAABUxLpI2OXB7lWLfO', 'ADMIN', NULL, true, true),
   ('b2c3d4e5-f6a7-8901-bcde-f12345678901', 'john.client@example.com', 'John Mitchell', '$2b$12$vYNizLsJireozMId6GOMuucvVnHVmJBHmTqAABUxLpI2OXB7lWLfO', 'CLIENT', NULL, true, true),

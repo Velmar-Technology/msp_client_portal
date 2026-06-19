@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: msp_postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      # You can change the password to match your local .env configuration
+      POSTGRES_PASSWORD: msp_password
+      POSTGRES_DB: msp_helpdesk
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d msp_helpdesk"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+    driver: local
