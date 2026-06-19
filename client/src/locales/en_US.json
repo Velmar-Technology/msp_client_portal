@@ -88,6 +88,8 @@
     "createAccountHeader": "Create Account",
     "registerToPortal": "Register for your help desk portal",
     "fullName": "Full Name",
+    "companyName": "Company Name",
+    "companyNamePlaceholder": "e.g. Acme Corporation",
     "confirmPassword": "Confirm Password",
     "passwordPlaceholder": "Min. 8 characters",
     "confirmPasswordPlaceholder": "Repeat your password",

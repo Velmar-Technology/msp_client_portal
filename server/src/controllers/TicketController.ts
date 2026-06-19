@@ -6,7 +6,7 @@ import { UserRole } from '../types';
 export class TicketController {
   async create(req: Request, res: Response): Promise<void> {
     const data = req.body as CreateTicketInput;
-    const ticket = await ticketService.createTicket(data, req.user!.userId);
+    const ticket = await ticketService.createTicket(data, req.user!.userId, req.user!.tenantId);
     res.status(201).json({ success: true, data: ticket });
   }
 
@@ -16,6 +16,7 @@ export class TicketController {
       filters,
       req.user!.userId,
       req.user!.role as UserRole,
+      req.user!.tenantId,
     );
 
     const page = filters.page || 1;
@@ -38,6 +39,7 @@ export class TicketController {
       req.params.id as string,
       req.user!.userId,
       req.user!.role as UserRole,
+      req.user!.tenantId,
     );
     res.json({ success: true, data: ticket });
   }
@@ -49,6 +51,7 @@ export class TicketController {
       data,
       req.user!.userId,
       req.user!.role as UserRole,
+      req.user!.tenantId,
     );
     res.json({ success: true, data: ticket });
   }
@@ -58,6 +61,7 @@ export class TicketController {
       req.params.id as string,
       req.user!.userId,
       req.user!.role as UserRole,
+      req.user!.tenantId,
     );
     res.json({ success: true, data: events });
   }
@@ -67,6 +71,7 @@ export class TicketController {
       req.params.id as string,
       req.user!.userId,
       req.user!.role as UserRole,
+      req.user!.tenantId,
     );
     res.json({ success: true, data: attachments });
   }
@@ -87,6 +92,7 @@ export class TicketController {
       },
       req.user!.userId,
       req.user!.role as UserRole,
+      req.user!.tenantId,
     );
 
     res.status(201).json({ success: true, data: attachment });
@@ -96,6 +102,7 @@ export class TicketController {
     const summary = await ticketService.getStatusSummary(
       req.user!.userId,
       req.user!.role as UserRole,
+      req.user!.tenantId,
     );
     res.json({ success: true, data: summary });
   }

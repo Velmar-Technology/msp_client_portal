@@ -10,6 +10,7 @@ export function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState('');
+  const [tenantName, setTenantName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -26,7 +27,7 @@ export function RegisterPage() {
     setError('');
     setLoading(true);
     try {
-      await register(email, name, password, confirmPassword);
+      await register(email, name, tenantName, password, confirmPassword);
       navigate('/dashboard');
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
@@ -81,6 +82,21 @@ export function RegisterPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="John Mitchell"
+                required
+                minLength={2}
+                className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 transition-all text-on-surface"
+              />
+            </div>
+            <div>
+              <label htmlFor="reg-tenant" className="block text-label-md text-on-surface mb-1.5">
+                {t('register.companyName')}
+              </label>
+              <input
+                id="reg-tenant"
+                type="text"
+                value={tenantName}
+                onChange={(e) => setTenantName(e.target.value)}
+                placeholder={t('register.companyNamePlaceholder')}
                 required
                 minLength={2}
                 className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 transition-all text-on-surface"

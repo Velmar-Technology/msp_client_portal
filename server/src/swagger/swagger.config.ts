@@ -35,6 +35,7 @@ const options: swaggerJsdoc.Options = {
             role: { type: 'string', enum: ['CLIENT', 'TECHNICIAN', 'ADMIN'] },
             specialty: { type: 'string', nullable: true },
             is_active: { type: 'boolean' },
+            tenant_id: { type: 'string', format: 'uuid' },
             created_at: { type: 'string', format: 'date-time' },
           },
         },
@@ -49,6 +50,7 @@ const options: swaggerJsdoc.Options = {
             priority: { type: 'string', enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] },
             client_id: { type: 'string', format: 'uuid' },
             assigned_tech_id: { type: 'string', format: 'uuid', nullable: true },
+            tenant_id: { type: 'string', format: 'uuid' },
             created_at: { type: 'string', format: 'date-time' },
             updated_at: { type: 'string', format: 'date-time' },
           },
@@ -63,6 +65,7 @@ const options: swaggerJsdoc.Options = {
             status: { type: 'string', enum: ['ACTIVE', 'EXPIRING', 'EXPIRED', 'CANCELLED'] },
             renewal_date: { type: 'string', format: 'date-time' },
             equipment_count: { type: 'integer' },
+            tenant_id: { type: 'string', format: 'uuid' },
           },
         },
         Invoice: {
@@ -76,6 +79,7 @@ const options: swaggerJsdoc.Options = {
             status: { type: 'string', enum: ['PENDING', 'PAID', 'OVERDUE'] },
             invoice_date: { type: 'string', format: 'date' },
             due_date: { type: 'string', format: 'date' },
+            tenant_id: { type: 'string', format: 'uuid' },
           },
         },
         ApiResponse: {
@@ -119,10 +123,11 @@ const options: swaggerJsdoc.Options = {
               'application/json': {
                 schema: {
                   type: 'object',
-                  required: ['email', 'name', 'password', 'confirmPassword'],
+                  required: ['email', 'name', 'tenantName', 'password', 'confirmPassword'],
                   properties: {
                     email: { type: 'string', format: 'email' },
                     name: { type: 'string', minLength: 2 },
+                    tenantName: { type: 'string', minLength: 2 },
                     password: { type: 'string', minLength: 8 },
                     confirmPassword: { type: 'string' },
                   },

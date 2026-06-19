@@ -6,10 +6,10 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     super('subscriptions');
   }
 
-  async findByClient(clientId: string): Promise<Subscription[]> {
+  async findByTenant(tenantId: string): Promise<Subscription[]> {
     return this.query<Subscription>(
-      'SELECT * FROM subscriptions WHERE client_id = $1 ORDER BY created_at DESC',
-      [clientId],
+      'SELECT * FROM subscriptions WHERE tenant_id = $1 ORDER BY created_at DESC',
+      [tenantId],
     );
   }
 
@@ -19,12 +19,20 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     plan: SubscriptionPlan;
     equipment_count: number;
     renewal_date: Date;
+    tenant_id: string;
   }): Promise<Subscription> {
     const result = await this.queryOne<Subscription>(
-      `INSERT INTO subscriptions (client_id, service_name, plan, equipment_count, renewal_date)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO subscriptions (client_id, service_name, plan, equipment_count, renewal_date, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [data.client_id, data.service_name, data.plan, data.equipment_count, data.renewal_date],
+      [
+        data.client_id,
+        data.service_name,
+        data.plan,
+        data.equipment_count,
+        data.renewal_date,
+        data.tenant_id,
+      ],
     );
     return result!;
   }

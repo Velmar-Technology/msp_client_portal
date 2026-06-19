@@ -7,6 +7,7 @@ interface AuthUser {
   name: string;
   role: 'CLIENT' | 'TECHNICIAN' | 'ADMIN';
   language: string;
+  tenantId: string;
 }
 
 interface AuthContextType {
@@ -14,7 +15,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, name: string, password: string, confirmPassword: string) => Promise<void>;
+  register: (email: string, name: string, tenantName: string, password: string, confirmPassword: string) => Promise<void>;
   logout: () => void;
   updateUser: (updatedFields: Partial<AuthUser>) => void;
 }
@@ -33,8 +34,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(result.user);
   }, []);
 
-  const register = useCallback(async (email: string, name: string, password: string, confirmPassword: string) => {
-    const result = await authService.register({ email, name, password, confirmPassword });
+  const register = useCallback(async (email: string, name: string, tenantName: string, password: string, confirmPassword: string) => {
+    const result = await authService.register({ email, name, tenantName, password, confirmPassword });
     setUser(result.user);
   }, []);
 

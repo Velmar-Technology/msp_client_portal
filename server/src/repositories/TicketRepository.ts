@@ -25,12 +25,13 @@ export class TicketRepository extends BaseRepository<Ticket> {
     category: TicketCategory;
     priority: TicketPriority;
     client_id: string;
+    tenant_id: string;
   }): Promise<Ticket> {
     const result = await this.queryOne<Ticket>(
-      `INSERT INTO tickets (title, description, category, priority, client_id)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO tickets (title, description, category, priority, client_id, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [data.title, data.description, data.category, data.priority, data.client_id],
+      [data.title, data.description, data.category, data.priority, data.client_id, data.tenant_id],
     );
     return result!;
   }
@@ -73,6 +74,10 @@ export class TicketRepository extends BaseRepository<Ticket> {
     if (filters.assignedTechId) {
       conditions.push(`t.assigned_tech_id = $${paramIndex++}`);
       params.push(filters.assignedTechId);
+    }
+    if (filters.tenantId) {
+      conditions.push(`t.tenant_id = $${paramIndex++}`);
+      params.push(filters.tenantId);
     }
     if (filters.search) {
       conditions.push(`(t.title ILIKE $${paramIndex} OR t.description ILIKE $${paramIndex})`);
@@ -122,7 +127,7 @@ export class TicketRepository extends BaseRepository<Ticket> {
     );
   }
 
-  async countByStatus(clientId?: string, assignedTechId?: string): Promise<Record<string, number>> {
+  async countByStatus(clientId?: string, assignedTechId?: string, tenantId?: string): Promise<Record<string, number>> {
     const conditions: string[] = [];
     const params: unknown[] = [];
     let paramIndex = 1;
@@ -134,6 +139,10 @@ export class TicketRepository extends BaseRepository<Ticket> {
     if (assignedTechId) {
       conditions.push(`assigned_tech_id = $${paramIndex++}`);
       params.push(assignedTechId);
+    }
+    if (tenantId) {
+      conditions.push(`tenant_id = $${paramIndex++}`);
+      params.push(tenantId);
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -156,12 +165,13 @@ export class TicketRepository extends BaseRepository<Ticket> {
     path: string;
     mime_type: string;
     size_bytes: number;
+    tenant_id: string;
   }): Promise<TicketAttachment> {
     const result = await this.queryOne<TicketAttachment>(
-      `INSERT INTO ticket_attachments (ticket_id, filename, path, mime_type, size_bytes)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO ticket_attachments (ticket_id, filename, path, mime_type, size_bytes, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [data.ticket_id, data.filename, data.path, data.mime_type, data.size_bytes],
+      [data.ticket_id, data.filename, data.path, data.mime_type, data.size_bytes, data.tenant_id],
     );
     return result!;
   }

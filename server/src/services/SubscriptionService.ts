@@ -4,18 +4,18 @@ import { Subscription } from '../types';
 import { CreateSubscriptionInput, UpdateSubscriptionInput } from '../dtos/subscription.dto';
 
 export class SubscriptionService {
-  async getClientSubscriptions(clientId: string): Promise<Subscription[]> {
-    return subscriptionRepository.findByClient(clientId);
+  async getClientSubscriptions(tenantId: string): Promise<Subscription[]> {
+    return subscriptionRepository.findByTenant(tenantId);
   }
 
-  async getSubscriptionById(id: string, clientId: string): Promise<Subscription> {
+  async getSubscriptionById(id: string, tenantId: string): Promise<Subscription> {
     const sub = await subscriptionRepository.findById(id);
     if (!sub) throw AppError.notFound('Subscription not found');
-    if (sub.client_id !== clientId) throw AppError.forbidden('Access denied');
+    if (sub.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
     return sub;
   }
 
-  async createSubscription(data: CreateSubscriptionInput, clientId: string): Promise<Subscription> {
+  async createSubscription(data: CreateSubscriptionInput, clientId: string, tenantId: string): Promise<Subscription> {
     const renewalDate = new Date();
     renewalDate.setMonth(renewalDate.getMonth() + 1);
 
@@ -25,11 +25,12 @@ export class SubscriptionService {
       plan: data.plan,
       equipment_count: data.equipmentCount,
       renewal_date: renewalDate,
+      tenant_id: tenantId,
     });
   }
 
-  async updateSubscription(id: string, data: UpdateSubscriptionInput, clientId: string): Promise<Subscription> {
-    const sub = await this.getSubscriptionById(id, clientId);
+  async updateSubscription(id: string, data: UpdateSubscriptionInput, tenantId: string): Promise<Subscription> {
+    const sub = await this.getSubscriptionById(id, tenantId);
 
     if (data.plan) {
       const updated = await subscriptionRepository.updatePlan(sub.id, data.plan, data.equipmentCount);

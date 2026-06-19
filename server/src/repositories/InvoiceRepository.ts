@@ -6,10 +6,10 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
     super('invoices');
   }
 
-  async findByClient(clientId: string, limit = 20, offset = 0): Promise<Invoice[]> {
+  async findByTenant(tenantId: string, limit = 20, offset = 0): Promise<Invoice[]> {
     return this.query<Invoice>(
-      'SELECT * FROM invoices WHERE client_id = $1 ORDER BY invoice_date DESC LIMIT $2 OFFSET $3',
-      [clientId, limit, offset],
+      'SELECT * FROM invoices WHERE tenant_id = $1 ORDER BY invoice_date DESC LIMIT $2 OFFSET $3',
+      [tenantId, limit, offset],
     );
   }
 
@@ -27,12 +27,21 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
     tax_amount: number;
     total: number;
     due_date: Date;
+    tenant_id: string;
   }): Promise<Invoice> {
     const result = await this.queryOne<Invoice>(
-      `INSERT INTO invoices (invoice_number, client_id, amount, tax_amount, total, due_date)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO invoices (invoice_number, client_id, amount, tax_amount, total, due_date, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
-      [data.invoice_number, data.client_id, data.amount, data.tax_amount, data.total, data.due_date],
+      [
+        data.invoice_number,
+        data.client_id,
+        data.amount,
+        data.tax_amount,
+        data.total,
+        data.due_date,
+        data.tenant_id,
+      ],
     );
     return result!;
   }
@@ -44,8 +53,8 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
     );
   }
 
-  async countByClient(clientId: string): Promise<number> {
-    return this.count('client_id = $1', [clientId]);
+  async countByTenant(tenantId: string): Promise<number> {
+    return this.count('tenant_id = $1', [tenantId]);
   }
 }
 

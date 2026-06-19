@@ -21,14 +21,15 @@ export class TicketService {
   /**
    * Create a new ticket and auto-assign a technician via Round-Robin.
    */
-  async createTicket(data: CreateTicketInput, clientId: string): Promise<Ticket> {
-    // Create the ticket
+  async createTicket(data: CreateTicketInput, clientId: string, tenantId: string): Promise<Ticket> {
+    // Create the ticket linked to the tenant
     const ticket = await ticketRepository.create({
       title: data.title,
       description: data.description,
       category: data.category,
       priority: data.priority,
       client_id: clientId,
+      tenant_id: tenantId,
     });
 
     // Log the creation event
@@ -38,6 +39,7 @@ export class TicketService {
       new_status: TicketStatus.OPEN,
       changed_by: clientId,
       notes: 'Ticket created by client',
+      tenant_id: tenantId,
     });
 
     // Auto-assign technician via Round-Robin
@@ -65,14 +67,14 @@ export class TicketService {
   /**
    * Get a ticket by ID with access control.
    */
-  async getTicketById(ticketId: string, userId: string, userRole: UserRole): Promise<Ticket> {
+  async getTicketById(ticketId: string, _userId: string, userRole: UserRole, tenantId: string): Promise<Ticket> {
     const ticket = await ticketRepository.findById(ticketId);
     if (!ticket) {
       throw AppError.notFound('Ticket not found');
     }
 
-    // Access control: Clients can only see their own tickets
-    if (userRole === UserRole.CLIENT && ticket.client_id !== userId) {
+    // Access control: Clients can only see their own tenant's tickets
+    if (userRole === UserRole.CLIENT && ticket.tenant_id !== tenantId) {
       throw AppError.forbidden('You do not have access to this ticket');
     }
 
@@ -86,10 +88,12 @@ export class TicketService {
     filters: TicketFilters,
     userId: string,
     userRole: UserRole,
+    tenantId: string,
   ): Promise<{ tickets: Ticket[]; total: number }> {
     // Scope queries based on role
     if (userRole === UserRole.CLIENT) {
-      filters.clientId = userId;
+      // Clients see all tickets belonging to their tenant
+      filters.tenantId = tenantId;
     } else if (userRole === UserRole.TECHNICIAN) {
       filters.assignedTechId = userId;
     }
@@ -106,10 +110,16 @@ export class TicketService {
     data: UpdateTicketStatusInput,
     userId: string,
     userRole: UserRole,
+    tenantId: string,
   ): Promise<Ticket> {
     const ticket = await ticketRepository.findById(ticketId);
     if (!ticket) {
       throw AppError.notFound('Ticket not found');
+    }
+
+    // Access control: Verify client belongs to the ticket's tenant
+    if (userRole === UserRole.CLIENT && ticket.tenant_id !== tenantId) {
+      throw AppError.forbidden('You do not have access to this ticket');
     }
 
     // Validate status transition
@@ -153,6 +163,7 @@ export class TicketService {
       new_status: data.status,
       changed_by: userId,
       notes: data.notes,
+      tenant_id: ticket.tenant_id,
     });
 
     // Trigger notifications
@@ -175,17 +186,17 @@ export class TicketService {
   /**
    * Get ticket event timeline.
    */
-  async getTicketTimeline(ticketId: string, userId: string, userRole: UserRole): Promise<TicketEvent[]> {
+  async getTicketTimeline(ticketId: string, userId: string, userRole: UserRole, tenantId: string): Promise<TicketEvent[]> {
     // Verify access
-    await this.getTicketById(ticketId, userId, userRole);
+    await this.getTicketById(ticketId, userId, userRole, tenantId);
     return ticketEventRepository.findByTicket(ticketId);
   }
 
   /**
    * Get ticket attachments.
    */
-  async getTicketAttachments(ticketId: string, userId: string, userRole: UserRole): Promise<TicketAttachment[]> {
-    await this.getTicketById(ticketId, userId, userRole);
+  async getTicketAttachments(ticketId: string, userId: string, userRole: UserRole, tenantId: string): Promise<TicketAttachment[]> {
+    await this.getTicketById(ticketId, userId, userRole, tenantId);
     return ticketRepository.getAttachments(ticketId);
   }
 
@@ -197,8 +208,9 @@ export class TicketService {
     file: { filename: string; path: string; mimetype: string; size: number },
     userId: string,
     userRole: UserRole,
+    tenantId: string,
   ): Promise<TicketAttachment> {
-    await this.getTicketById(ticketId, userId, userRole);
+    const ticket = await this.getTicketById(ticketId, userId, userRole, tenantId);
 
     return ticketRepository.addAttachment({
       ticket_id: ticketId,
@@ -206,16 +218,18 @@ export class TicketService {
       path: file.path,
       mime_type: file.mimetype,
       size_bytes: file.size,
+      tenant_id: ticket.tenant_id,
     });
   }
 
   /**
    * Get ticket count summary by status.
    */
-  async getStatusSummary(userId: string, userRole: UserRole): Promise<Record<string, number>> {
+  async getStatusSummary(userId: string, userRole: UserRole, tenantId: string): Promise<Record<string, number>> {
     const clientId = userRole === UserRole.CLIENT ? userId : undefined;
     const assignedTechId = userRole === UserRole.TECHNICIAN ? userId : undefined;
-    return ticketRepository.countByStatus(clientId, assignedTechId);
+    const targetTenantId = userRole === UserRole.CLIENT ? tenantId : undefined;
+    return ticketRepository.countByStatus(clientId, assignedTechId, targetTenantId);
   }
 
   /**
@@ -252,6 +266,7 @@ export class TicketService {
       new_status: ticket.status,
       changed_by: userId,
       notes: `Ticket assigned to technician: ${technician.name}`,
+      tenant_id: ticket.tenant_id,
     });
 
     // Fetch the updated ticket with the joined names/emails so that the response matches the structure

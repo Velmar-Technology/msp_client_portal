@@ -88,6 +88,8 @@
     "createAccountHeader": "Crear Cuenta",
     "registerToPortal": "Regístrese en su portal de soporte",
     "fullName": "Nombre Completo",
+    "companyName": "Nombre de la Empresa",
+    "companyNamePlaceholder": "ej. Acme Corporation",
     "confirmPassword": "Confirmar Contraseña",
     "passwordPlaceholder": "Mínimo 8 caracteres",
     "confirmPasswordPlaceholder": "Repita su contraseña",

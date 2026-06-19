@@ -41,12 +41,20 @@ export class UserRepository extends BaseRepository<User> {
     password_hash: string;
     role?: UserRole;
     language?: string;
+    tenant_id: string;
   }): Promise<User> {
     const result = await this.queryOne<User>(
-      `INSERT INTO users (email, name, password_hash, role, language)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO users (email, name, password_hash, role, language, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [data.email, data.name, data.password_hash, data.role || UserRole.CLIENT, data.language || 'en_US'],
+      [
+        data.email,
+        data.name,
+        data.password_hash,
+        data.role || UserRole.CLIENT,
+        data.language || 'en_US',
+        data.tenant_id,
+      ],
     );
     return result!;
   }

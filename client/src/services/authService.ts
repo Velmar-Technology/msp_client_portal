@@ -8,6 +8,7 @@ export interface LoginPayload {
 export interface RegisterPayload {
   email: string;
   name: string;
+  tenantName: string;
   password: string;
   confirmPassword: string;
 }
@@ -19,6 +20,7 @@ export interface AuthResponse {
     name: string;
     role: 'CLIENT' | 'TECHNICIAN' | 'ADMIN';
     language: string;
+    tenantId: string;
   };
   tokens: {
     accessToken: string;

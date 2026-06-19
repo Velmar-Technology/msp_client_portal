@@ -12,12 +12,20 @@ export class TicketEventRepository extends BaseRepository<TicketEvent> {
     new_status: TicketStatus;
     changed_by: string;
     notes?: string;
+    tenant_id: string;
   }): Promise<TicketEvent> {
     const result = await this.queryOne<TicketEvent>(
-      `INSERT INTO ticket_events (ticket_id, old_status, new_status, changed_by, notes)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO ticket_events (ticket_id, old_status, new_status, changed_by, notes, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [data.ticket_id, data.old_status, data.new_status, data.changed_by, data.notes || null],
+      [
+        data.ticket_id,
+        data.old_status,
+        data.new_status,
+        data.changed_by,
+        data.notes || null,
+        data.tenant_id,
+      ],
     );
     return result!;
   }

@@ -53,6 +53,14 @@ export enum InvoiceStatus {
 
 // ---- Entity Interfaces ----
 
+export interface Tenant {
+  id: string;
+  name: string;
+  subdomain: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -63,6 +71,7 @@ export interface User {
   is_active: boolean;
   email_verified: boolean;
   language: string;
+  tenant_id: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -76,6 +85,7 @@ export interface Ticket {
   priority: TicketPriority;
   client_id: string;
   assigned_tech_id: string | null;
+  tenant_id: string;
   client_name?: string;
   client_email?: string;
   assigned_tech_name?: string | null;
@@ -91,6 +101,7 @@ export interface TicketAttachment {
   path: string;
   mime_type: string;
   size_bytes: number;
+  tenant_id: string;
   uploaded_at: Date;
 }
 
@@ -101,6 +112,7 @@ export interface TicketEvent {
   new_status: TicketStatus;
   changed_by: string;
   notes: string | null;
+  tenant_id: string;
   created_at: Date;
 }
 
@@ -112,6 +124,7 @@ export interface Subscription {
   status: SubscriptionStatus;
   renewal_date: Date;
   equipment_count: number;
+  tenant_id: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -126,6 +139,7 @@ export interface Invoice {
   status: InvoiceStatus;
   invoice_date: Date;
   due_date: Date;
+  tenant_id: string;
   created_at: Date;
 }
 
@@ -164,6 +178,7 @@ export interface JwtPayload {
   userId: string;
   email: string;
   role: UserRole;
+  tenantId: string;
 }
 
 export interface AuthTokens {
@@ -179,6 +194,7 @@ export interface TicketFilters {
   priority?: TicketPriority;
   assignedTechId?: string;
   clientId?: string;
+  tenantId?: string;
   search?: string;
   page?: number;
   limit?: number;

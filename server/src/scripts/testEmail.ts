@@ -39,6 +39,7 @@ async function run() {
     priority: TicketPriority.HIGH,
     client_id: 'mock-client-id',
     assigned_tech_id: null,
+    tenant_id: 'mock-tenant-id',
     created_at: new Date(),
     updated_at: new Date(),
   };

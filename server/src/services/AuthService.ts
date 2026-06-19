@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env';
 import { userRepository } from '../repositories/UserRepository';
+import { tenantRepository } from '../repositories/TenantRepository';
 import { hashPassword, comparePassword } from '../utils/passwordUtils';
 import { AppError } from '../utils/AppError';
 import { logger } from '../utils/logger';
@@ -11,32 +12,42 @@ export class AuthService {
   /**
    * Register a new user account.
    */
-  async register(data: RegisterInput): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string }; tokens: AuthTokens }> {
+  async register(data: RegisterInput): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string }; tokens: AuthTokens }> {
     // Check for existing user
     const existing = await userRepository.findByEmail(data.email);
     if (existing) {
       throw AppError.conflict('An account with this email already exists');
     }
 
-    // Hash password and create user
+    // Create a new Tenant
+    const subdomain = data.tenantName
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '')
+      .substring(0, 100);
+    const tenant = await tenantRepository.create(data.tenantName, subdomain);
+
+    // Hash password and create user linked to the new tenant
     const password_hash = await hashPassword(data.password);
     const user = await userRepository.create({
       email: data.email,
       name: data.name,
       password_hash,
+      role: UserRole.CLIENT,
+      tenant_id: tenant.id,
     });
 
-    logger.info('New user registered', { userId: user.id, email: user.email });
+    logger.info('New user and tenant registered', { userId: user.id, email: user.email, tenantId: tenant.id });
 
-    // Generate tokens
+    // Generate tokens including tenantId
     const tokens = this.generateTokens({
       userId: user.id,
       email: user.email,
       role: user.role,
+      tenantId: user.tenant_id,
     });
 
     return {
-      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id },
       tokens,
     };
   }
@@ -44,7 +55,7 @@ export class AuthService {
   /**
    * Authenticate user with email and password.
    */
-  async login(data: LoginInput): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string }; tokens: AuthTokens }> {
+  async login(data: LoginInput): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string }; tokens: AuthTokens }> {
     const user = await userRepository.findByEmail(data.email);
     if (!user) {
       throw AppError.unauthorized('Invalid email or password');
@@ -59,16 +70,17 @@ export class AuthService {
       throw AppError.unauthorized('Invalid email or password');
     }
 
-    logger.info('User logged in', { userId: user.id, email: user.email });
+    logger.info('User logged in', { userId: user.id, email: user.email, tenantId: user.tenant_id });
 
     const tokens = this.generateTokens({
       userId: user.id,
       email: user.email,
       role: user.role,
+      tenantId: user.tenant_id,
     });
 
     return {
-      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id },
       tokens,
     };
   }
@@ -88,6 +100,7 @@ export class AuthService {
         userId: user.id,
         email: user.email,
         role: user.role,
+        tenantId: user.tenant_id,
       });
     } catch {
       throw AppError.unauthorized('Invalid or expired refresh token');
