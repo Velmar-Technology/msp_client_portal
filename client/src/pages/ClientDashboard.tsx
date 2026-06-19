@@ -246,7 +246,7 @@ export function ClientDashboard() {
                     <td className="px-4 py-3 text-body-md text-on-surface-variant">
                       {new Date(inv.invoice_date).toLocaleDateString(t('dashboard.tableStatus') === 'Estado' ? 'es-DO' : 'en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </td>
-                    <td className="px-4 py-3 text-body-md font-medium">${inv.total.toFixed(2)}</td>
+                    <td className="px-4 py-3 text-body-md font-medium">${Number(inv.total).toFixed(2)}</td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-0.5 rounded text-label-sm font-bold ${statusColor(inv.status)}`}>
                         {inv.status}

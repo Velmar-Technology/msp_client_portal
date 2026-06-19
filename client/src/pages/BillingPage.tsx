@@ -94,9 +94,9 @@ export function BillingPage() {
                     <td className="px-4 py-3 text-body-md text-on-surface-variant">
                       {new Date(inv.due_date).toLocaleDateString(i18n.language === 'es_DO' ? 'es-DO' : 'en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </td>
-                    <td className="px-4 py-3 text-body-md">${inv.amount.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-body-md text-on-surface-variant">${inv.tax_amount.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-body-md font-medium">${inv.total.toFixed(2)}</td>
+                    <td className="px-4 py-3 text-body-md">${Number(inv.amount).toFixed(2)}</td>
+                    <td className="px-4 py-3 text-body-md text-on-surface-variant">${Number(inv.tax_amount).toFixed(2)}</td>
+                    <td className="px-4 py-3 text-body-md font-medium">${Number(inv.total).toFixed(2)}</td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-0.5 rounded text-label-sm font-bold ${statusColor[inv.status]}`}>
                         {getStatusLabel(inv.status)}

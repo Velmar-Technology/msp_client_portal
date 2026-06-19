@@ -10,6 +10,7 @@ import { PlansPage } from './pages/PlansPage';
 import { BillingPage } from './pages/BillingPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { TechDashboard } from './pages/TechDashboard';
 import { HelpPage } from './pages/HelpPage';
 import { TermsPage } from './pages/TermsPage';
 import { PrivacyPage } from './pages/PrivacyPage';
@@ -73,8 +74,8 @@ export function App() {
               <Route path="/plans" element={<ProtectedRoute allowedRoles={['CLIENT', 'ADMIN']}><PlansPage /></ProtectedRoute>} />
               <Route path="/billing" element={<ProtectedRoute allowedRoles={['CLIENT', 'ADMIN']}><BillingPage /></ProtectedRoute>} />
 
-              {/* Tech/Admin Routes (Placeholders for now) */}
-              <Route path="/tech/dashboard" element={<ProtectedRoute allowedRoles={['TECHNICIAN']}><div>Tech Dashboard (Coming Soon)</div></ProtectedRoute>} />
+              {/* Tech/Admin Routes */}
+              <Route path="/tech/dashboard" element={<ProtectedRoute allowedRoles={['TECHNICIAN']}><TechDashboard /></ProtectedRoute>} />
               <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['ADMIN']}><AdminDashboard /></ProtectedRoute>} />
 
               {/* Shared Routes */}

@@ -155,6 +155,22 @@
     "assignSuccess": "Technician assigned successfully",
     "assignError": "Failed to assign technician"
   },
+  "techDashboard": {
+    "subtitle": "Manage your assigned tickets, track SLAs, and update ticket statuses.",
+    "mySpecialty": "My Specialty",
+    "assignedTickets": "Assigned Tickets",
+    "openTickets": "Open Tickets",
+    "inProgressTickets": "In Progress",
+    "resolvedTickets": "Resolved/Closed",
+    "slaAttention": "Requires SLA Attention",
+    "slaDescription": "Warranty & Service Outage tickets created within the last hour. Act quickly!",
+    "noSlaAttention": "No tickets currently require urgent SLA attention.",
+    "startWork": "Start Work",
+    "resolveTicket": "Resolve",
+    "awaitingPayment": "Awaiting Payment",
+    "statusUpdateSuccess": "Status updated successfully",
+    "statusUpdateError": "Failed to update status"
+  },
   "plans": {
     "title": "Plan Selection",
     "subtitle": "Choose the managed service level that best fits your infrastructure needs. Upgrade or change your plan at any time.",

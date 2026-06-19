@@ -155,6 +155,22 @@
     "assignSuccess": "Técnico asignado con éxito",
     "assignError": "Error al asignar técnico"
   },
+  "techDashboard": {
+    "subtitle": "Gestione sus tickets asignados, controle los SLA y actualice los estados de los tickets.",
+    "mySpecialty": "Mi Especialidad",
+    "assignedTickets": "Tickets Asignados",
+    "openTickets": "Tickets Abiertos",
+    "inProgressTickets": "En Progreso",
+    "resolvedTickets": "Resueltos/Cerrados",
+    "slaAttention": "Requiere Atención de SLA",
+    "slaDescription": "Tickets de garantía y caída de servicio creados en la última hora. ¡Actúe rápido!",
+    "noSlaAttention": "Ningún ticket requiere atención de SLA urgente en este momento.",
+    "startWork": "Iniciar Trabajo",
+    "resolveTicket": "Resolver",
+    "awaitingPayment": "Esperar Pago",
+    "statusUpdateSuccess": "Estado actualizado con éxito",
+    "statusUpdateError": "Error al actualizar el estado"
+  },
   "plans": {
     "title": "Selección de Plan",
     "subtitle": "Elija el nivel de servicio gestionado que mejor se adapte a sus necesidades de infraestructura. Actualice o cambie su plan en cualquier momento.",

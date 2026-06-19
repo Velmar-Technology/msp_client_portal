@@ -122,9 +122,21 @@ export class TicketRepository extends BaseRepository<Ticket> {
     );
   }
 
-  async countByStatus(clientId?: string): Promise<Record<string, number>> {
-    const whereClause = clientId ? 'WHERE client_id = $1' : '';
-    const params = clientId ? [clientId] : [];
+  async countByStatus(clientId?: string, assignedTechId?: string): Promise<Record<string, number>> {
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+    let paramIndex = 1;
+
+    if (clientId) {
+      conditions.push(`client_id = $${paramIndex++}`);
+      params.push(clientId);
+    }
+    if (assignedTechId) {
+      conditions.push(`assigned_tech_id = $${paramIndex++}`);
+      params.push(assignedTechId);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     const result = await this.query<{ status: string; count: string }>(
       `SELECT status, COUNT(*) FROM tickets ${whereClause} GROUP BY status`,
       params,

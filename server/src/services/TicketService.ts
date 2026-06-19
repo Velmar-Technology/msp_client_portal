@@ -213,7 +213,8 @@ export class TicketService {
    */
   async getStatusSummary(userId: string, userRole: UserRole): Promise<Record<string, number>> {
     const clientId = userRole === UserRole.CLIENT ? userId : undefined;
-    return ticketRepository.countByStatus(clientId);
+    const assignedTechId = userRole === UserRole.TECHNICIAN ? userId : undefined;
+    return ticketRepository.countByStatus(clientId, assignedTechId);
   }
 
   /**
