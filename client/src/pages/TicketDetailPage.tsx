@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, AlertTriangle, UserCheck, FileText, Image, Video, FileSpreadsheet, Download, Paperclip, UploadCloud, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { Clock, AlertTriangle, UserCheck, FileText, Image, Video, FileSpreadsheet, Download, Paperclip, UploadCloud, CheckCircle2, AlertCircle } from 'lucide-react';
 import { ticketService } from '../services/ticketService';
 import type { Ticket, TicketEvent, TicketAttachment } from '../services/ticketService';
 import { useSLATimer } from '../hooks/useSLATimer';
@@ -21,7 +21,6 @@ const statusColor: Record<string, string> = {
 export function TicketDetailPage() {
   const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [timeline, setTimeline] = useState<(TicketEvent & { changed_by_name?: string })[]>([]);

@@ -13,6 +13,11 @@ export interface RegisterPayload {
   confirmPassword: string;
 }
 
+export interface GoogleAuthPayload {
+  idToken: string;
+  tenantName?: string;
+}
+
 export interface AuthResponse {
   user: {
     id: string;
@@ -40,6 +45,15 @@ export const authService = {
 
   async register(data: RegisterPayload): Promise<AuthResponse> {
     const response = await api.post('/auth/register', data);
+    const result = response.data.data as AuthResponse;
+    localStorage.setItem('accessToken', result.tokens.accessToken);
+    localStorage.setItem('refreshToken', result.tokens.refreshToken);
+    localStorage.setItem('user', JSON.stringify(result.user));
+    return result;
+  },
+
+  async loginWithGoogle(data: GoogleAuthPayload): Promise<AuthResponse> {
+    const response = await api.post('/auth/google', data);
     const result = response.data.data as AuthResponse;
     localStorage.setItem('accessToken', result.tokens.accessToken);
     localStorage.setItem('refreshToken', result.tokens.refreshToken);

@@ -6,7 +6,10 @@ import { hashPassword, comparePassword } from '../utils/passwordUtils';
 import { AppError } from '../utils/AppError';
 import { logger } from '../utils/logger';
 import { AuthTokens, JwtPayload, UserRole } from '../types';
-import { LoginInput, RegisterInput } from '../dtos/auth.dto';
+import { LoginInput, RegisterInput, GoogleAuthInput } from '../dtos/auth.dto';
+import { OAuth2Client } from 'google-auth-library';
+import crypto from 'crypto';
+
 
 export class AuthService {
   /**
@@ -84,6 +87,96 @@ export class AuthService {
       tokens,
     };
   }
+
+  /**
+   * Authenticate or register a user with Google OAuth.
+   */
+  async googleAuth(data: GoogleAuthInput): Promise<{
+    user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string };
+    tokens: AuthTokens;
+    isNewUser: boolean;
+  }> {
+    let email: string;
+    let name: string;
+
+    if (data.idToken.startsWith('mock-google-token-')) {
+      if (env.NODE_ENV === 'production') {
+        throw AppError.badRequest('Mock Google login is only allowed in development');
+      }
+      const parts = data.idToken.split('-');
+      email = parts[3] || 'mock@example.com';
+      name = parts[4] || 'Mock User';
+    } else {
+      if (!env.GOOGLE_CLIENT_ID) {
+        throw AppError.internal('Google client ID is not configured');
+      }
+      const client = new OAuth2Client(env.GOOGLE_CLIENT_ID);
+      try {
+        const ticket = await client.verifyIdToken({
+          idToken: data.idToken,
+          audience: env.GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        if (!payload || !payload.email || !payload.name) {
+          throw AppError.unauthorized('Invalid Google ID Token payload');
+        }
+        email = payload.email;
+        name = payload.name;
+      } catch (error: any) {
+        logger.error('Google token verification failed', { error: error.message });
+        throw AppError.unauthorized('Invalid Google ID Token');
+      }
+    }
+
+    // Check if user exists
+    let user = await userRepository.findByEmail(email);
+    let isNewUser = false;
+
+    if (!user) {
+      isNewUser = true;
+      // Register new user: create tenant and user
+      const rawTenantName = data.tenantName || `${name}'s Workspace`;
+      const subdomain = rawTenantName
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
+        .substring(0, 100) || `tenant-${Date.now()}`;
+
+      const tenant = await tenantRepository.create(rawTenantName, subdomain);
+
+      // Generate a secure random password
+      const randomPassword = crypto.randomBytes(32).toString('hex');
+      const password_hash = await hashPassword(randomPassword);
+
+      user = await userRepository.create({
+        email,
+        name,
+        password_hash,
+        role: UserRole.CLIENT,
+        tenant_id: tenant.id,
+      });
+
+      logger.info('New user registered via Google OAuth', { userId: user.id, email: user.email, tenantId: tenant.id });
+    } else {
+      if (!user.is_active) {
+        throw AppError.forbidden('Account has been deactivated');
+      }
+      logger.info('User logged in via Google OAuth', { userId: user.id, email: user.email, tenantId: user.tenant_id });
+    }
+
+    const tokens = this.generateTokens({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      tenantId: user.tenant_id,
+    });
+
+    return {
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id },
+      tokens,
+      isNewUser,
+    };
+  }
+
 
   /**
    * Refresh access token using a valid refresh token.

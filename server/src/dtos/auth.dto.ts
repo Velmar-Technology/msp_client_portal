@@ -47,3 +47,10 @@ export const RefreshTokenDTO = z.object({
   refreshToken: z.string().min(1, 'Refresh token is required'),
 });
 export type RefreshTokenInput = z.infer<typeof RefreshTokenDTO>;
+
+export const GoogleAuthDTO = z.object({
+  idToken: z.string().min(1, 'ID Token is required'),
+  tenantName: z.string().min(2, 'Company name must be at least 2 characters').max(255).optional(),
+});
+export type GoogleAuthInput = z.infer<typeof GoogleAuthDTO>;
+

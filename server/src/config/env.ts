@@ -37,6 +37,9 @@ const envSchema = z.object({
   // File Uploads
   UPLOAD_DIR: z.string().default('./uploads'),
   MAX_FILE_SIZE_MB: z.coerce.number().default(10),
+
+  // Google OAuth
+  GOOGLE_CLIENT_ID: z.string().default(''),
 });
 
 const parsed = envSchema.safeParse(process.env);

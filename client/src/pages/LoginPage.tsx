@@ -4,16 +4,38 @@ import { useAuth } from '../hooks/useAuth';
 import { CloudCog, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { GoogleLoginButton } from '../components/auth/GoogleLoginButton';
 
 export function LoginPage() {
   const { t, i18n } = useTranslation();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const handleGoogleSuccess = async (idToken: string) => {
+    setError('');
+    setLoading(true);
+    try {
+      await loginWithGoogle(idToken);
+      navigate('/dashboard');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      setError(
+        error.response?.data?.message || 
+        (i18n.language === 'es_DO' ? 'Error al autenticar con Google' : 'Google authentication failed')
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleError = (errMsg?: string) => {
+    setError(errMsg || (i18n.language === 'es_DO' ? 'Error al autenticar con Google' : 'Google authentication failed'));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,6 +153,23 @@ export function LoginPage() {
               )}
             </button>
           </form>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-outline-variant" />
+            </div>
+            <div className="relative flex justify-center text-label-sm uppercase">
+              <span className="bg-surface-container-lowest px-2 text-on-surface-variant/70">
+                {t('login.or') || 'Or continue with'}
+              </span>
+            </div>
+          </div>
+
+          <GoogleLoginButton
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            text="signin_with"
+          />
 
           <p className="mt-6 text-center text-body-md text-on-surface-variant">
             {t('login.dontHaveAccount')}{' '}

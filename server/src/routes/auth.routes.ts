@@ -1,12 +1,15 @@
 import { Router } from 'express';
 import { authController } from '../controllers/AuthController';
 import { validate } from '../middleware/validationMiddleware';
-import { LoginDTO, RegisterDTO, ForgotPasswordDTO, ResetPasswordDTO, RefreshTokenDTO } from '../dtos/auth.dto';
+import { LoginDTO, RegisterDTO, ForgotPasswordDTO, ResetPasswordDTO, RefreshTokenDTO, GoogleAuthDTO } from '../dtos/auth.dto';
 
 const router = Router();
 
 /** POST /api/v1/auth/register — Create a new account */
 router.post('/register', validate(RegisterDTO), (req, res) => authController.register(req, res));
+
+/** POST /api/v1/auth/google — Authenticate/register via Google OAuth */
+router.post('/google', validate(GoogleAuthDTO), (req, res) => authController.googleAuth(req, res));
 
 /** POST /api/v1/auth/login — Authenticate and get tokens */
 router.post('/login', validate(LoginDTO), (req, res) => authController.login(req, res));

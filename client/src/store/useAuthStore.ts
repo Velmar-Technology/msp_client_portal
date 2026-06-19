@@ -23,6 +23,7 @@ export interface AuthState {
     password: string,
     confirmPassword: string
   ) => Promise<void>;
+  loginWithGoogle: (idToken: string, tenantName?: string) => Promise<void>;
   logout: () => void;
   updateUser: (updatedFields: Partial<AuthUser>) => void;
 }
@@ -84,6 +85,25 @@ export const useAuthStore = create<AuthState>()(
           );
         } catch (error) {
           set({ isLoading: false }, false, 'auth/register_failure');
+          throw error;
+        }
+      },
+
+      loginWithGoogle: async (idToken, tenantName) => {
+        set({ isLoading: true }, false, 'auth/google_login_request');
+        try {
+          const result = await authService.loginWithGoogle({ idToken, tenantName });
+          set(
+            {
+              user: result.user,
+              isAuthenticated: true,
+              isLoading: false,
+            },
+            false,
+            'auth/google_login_success'
+          );
+        } catch (error) {
+          set({ isLoading: false }, false, 'auth/google_login_failure');
           throw error;
         }
       },

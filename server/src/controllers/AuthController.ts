@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { authService } from '../services/AuthService';
-import { LoginInput, RegisterInput, ForgotPasswordInput, ResetPasswordInput, RefreshTokenInput } from '../dtos/auth.dto';
+import { LoginInput, RegisterInput, ForgotPasswordInput, ResetPasswordInput, RefreshTokenInput, GoogleAuthInput } from '../dtos/auth.dto';
+
 
 export class AuthController {
   async register(req: Request, res: Response): Promise<void> {
@@ -10,6 +11,15 @@ export class AuthController {
       success: true,
       data: result,
       message: 'Account created successfully',
+    });
+  }
+
+  async googleAuth(req: Request, res: Response): Promise<void> {
+    const data = req.body as GoogleAuthInput;
+    const result = await authService.googleAuth(data);
+    res.json({
+      success: true,
+      data: result,
     });
   }
 
