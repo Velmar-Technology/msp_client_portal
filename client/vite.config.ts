@@ -10,6 +10,9 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  optimizeDeps: {
+    include: ['@shared/errors'],
+  },
   server: {
     port: 5173,
     proxy: {
