@@ -8,5 +8,10 @@
   ],
   "scripts": {
     "build:packages": "npm -w packages/errors run build"
+  },
+  "devDependencies": {
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "typescript": "6.0.3"
   }
 }

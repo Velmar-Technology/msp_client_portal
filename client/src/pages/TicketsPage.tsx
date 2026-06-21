@@ -31,6 +31,8 @@ import {
   HoverCardTrigger,
   HoverCardContent,
 } from '@/components/ui/hover-card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
 
 
 const statusColor: Record<string, string> = {
