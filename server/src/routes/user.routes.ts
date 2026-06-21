@@ -3,7 +3,7 @@ import { userController } from '../controllers/UserController';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { rbacMiddleware } from '../middleware/rbacMiddleware';
 import { validate } from '../middleware/validationMiddleware';
-import { UpdateProfileDTO } from '../dtos/user.dto';
+import { UpdateProfileDTO, ChangePasswordDTO } from '../dtos/user.dto';
 import { UserRole } from '../types';
 
 const router = Router();
@@ -15,6 +15,9 @@ router.get('/me', (req, res) => userController.getProfile(req, res));
 
 /** PATCH /api/v1/users/me — Update current user profile */
 router.patch('/me', validate(UpdateProfileDTO), (req, res) => userController.updateProfile(req, res));
+
+/** PUT /api/v1/users/me/password — Change current user password */
+router.put('/me/password', validate(ChangePasswordDTO), (req, res) => userController.changePassword(req, res));
 
 /** GET /api/v1/users/technicians — List technicians (Admin/Tech only) */
 router.get(

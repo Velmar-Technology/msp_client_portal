@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { userService } from '../services/UserService';
-import { UpdateProfileInput } from '../dtos/user.dto';
+import { UpdateProfileInput, ChangePasswordInput } from '../dtos/user.dto';
 
 export class UserController {
   async getProfile(req: Request, res: Response): Promise<void> {
@@ -12,6 +12,12 @@ export class UserController {
     const data = req.body as UpdateProfileInput;
     const profile = await userService.updateProfile(req.user!.userId, data);
     res.json({ success: true, data: profile });
+  }
+
+  async changePassword(req: Request, res: Response): Promise<void> {
+    const data = req.body as ChangePasswordInput;
+    await userService.changePassword(req.user!.userId, data);
+    res.json({ success: true, message: 'Password updated successfully' });
   }
 
   async getTechnicians(_req: Request, res: Response): Promise<void> {

@@ -1,7 +1,8 @@
 import { userRepository } from '../repositories/UserRepository';
 import { AppError } from '../utils/AppError';
 import { User, UserRole } from '../types';
-import { UpdateProfileInput } from '../dtos/user.dto';
+import { UpdateProfileInput, ChangePasswordInput } from '../dtos/user.dto';
+import { hashPassword, comparePassword } from '../utils/passwordUtils';
 
 export class UserService {
   async getProfile(userId: string): Promise<Omit<User, 'password_hash'>> {
@@ -23,6 +24,19 @@ export class UserService {
     if (!updated) throw AppError.internal('Failed to update profile');
     const { password_hash, ...profile } = updated;
     return profile;
+  }
+
+  async changePassword(userId: string, data: ChangePasswordInput): Promise<void> {
+    const user = await userRepository.findById(userId);
+    if (!user) throw AppError.notFound('User not found');
+
+    const isValid = await comparePassword(data.currentPassword, user.password_hash);
+    if (!isValid) {
+      throw AppError.unauthorized('Invalid current password');
+    }
+
+    const hashed = await hashPassword(data.newPassword);
+    await userRepository.updatePassword(userId, hashed);
   }
 
   async getTechnicians(): Promise<Omit<User, 'password_hash'>[]> {

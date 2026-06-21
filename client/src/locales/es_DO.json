@@ -34,7 +34,15 @@
     "languages": {
       "en_US": "English (Estados Unidos)",
       "es_DO": "Español (República Dominicana)"
-    }
+    },
+    "changePassword": "Cambiar Contraseña",
+    "currentPassword": "Contraseña Actual",
+    "newPassword": "Nueva Contraseña",
+    "confirmPassword": "Confirmar Nueva Contraseña",
+    "passwordSuccess": "Contraseña actualizada exitosamente",
+    "passwordError": "Error al actualizar la contraseña",
+    "passwordsMismatch": "Las nuevas contraseñas no coinciden",
+    "passwordMin": "La contraseña debe tener al menos 8 caracteres"
   },
   "dashboard": {
     "systemOverview": "Resumen del Sistema",

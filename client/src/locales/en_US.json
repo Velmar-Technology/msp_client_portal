@@ -34,7 +34,15 @@
     "languages": {
       "en_US": "English (United States)",
       "es_DO": "Español (República Dominicana)"
-    }
+    },
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm New Password",
+    "passwordSuccess": "Password updated successfully",
+    "passwordError": "Failed to update password",
+    "passwordsMismatch": "New passwords do not match",
+    "passwordMin": "Password must be at least 8 characters"
   },
   "dashboard": {
     "systemOverview": "System Overview",
