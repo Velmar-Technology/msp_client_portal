@@ -35,6 +35,7 @@ export abstract class AppError extends Error {
     
     // Set standard Javascript prototype inheritance correctly
     Object.setPrototypeOf(this, new.target.prototype);
+    this.name = this.constructor.name;
 
     this.isOperational = options.isOperational ?? true;
     this.details = options.details ?? {};

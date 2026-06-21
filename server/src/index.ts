@@ -7,7 +7,7 @@ import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env';
 import { testConnection } from './config/database';
 import { logger } from './utils/logger';
-import { errorHandler } from './middleware/errorHandler';
+import { createExpressErrorMiddleware } from '@shared/errors';
 import routes from './routes';
 import { swaggerSpec } from './swagger/swagger.config';
 
@@ -50,7 +50,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 app.use('/api/v1', routes);
 
 // ---- Global Error Handler (must be last) ----
-app.use(errorHandler);
+app.use(createExpressErrorMiddleware({ logger, isProduction: env.NODE_ENV === 'production' }));
 
 // ---- Start Server ----
 async function startServer(): Promise<void> {

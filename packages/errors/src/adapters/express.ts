@@ -7,13 +7,22 @@ interface LoggerInterface {
   warn: (msg: string, ...meta: any[]) => void;
 }
 
+interface ExpressErrorMiddlewareOptions {
+  logger?: LoggerInterface;
+  isProduction?: boolean;
+}
+
 /**
  * Creates an Express global error-handling middleware.
  * Accepts an optional logger (e.g. Winston logger) to record structured trace logs.
  *
- * @param logger Optional logging interface
+ * @param options.logger Optional logging interface
+ * @param options.isProduction Controls output masking; defaults to NODE_ENV check
  */
-export function createExpressErrorMiddleware(logger?: LoggerInterface): ErrorRequestHandler {
+export function createExpressErrorMiddleware(options?: ExpressErrorMiddlewareOptions): ErrorRequestHandler {
+  const isProduction = options?.isProduction ?? process.env.NODE_ENV === 'production';
+  const logger = options?.logger;
+
   return (
     err: unknown,
     req: Request,
@@ -21,7 +30,6 @@ export function createExpressErrorMiddleware(logger?: LoggerInterface): ErrorReq
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     next: NextFunction
   ): void => {
-    const isProduction = process.env.NODE_ENV === 'production';
     const serialized = serializeError(err, isProduction);
     const statusCode = err instanceof AppError ? err.statusCode : 500;
 
@@ -54,4 +62,3 @@ export function createExpressErrorMiddleware(logger?: LoggerInterface): ErrorReq
     res.status(statusCode).json(serialized);
   };
 }
-export const expressErrorAdapter = createExpressErrorMiddleware();

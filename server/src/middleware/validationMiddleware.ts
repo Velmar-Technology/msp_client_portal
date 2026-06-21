@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodSchema, ZodError } from 'zod';
+import { ValidationError } from '@shared/errors';
 
 /**
  * Generic Zod validation middleware factory.
@@ -8,7 +9,7 @@ import { ZodSchema, ZodError } from 'zod';
  * Usage: validate(CreateTicketDTO, 'body')
  */
 export function validate(schema: ZodSchema, source: 'body' | 'query' | 'params' = 'body') {
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return (req: Request, _res: Response, next: NextFunction): void => {
     try {
       const data = schema.parse(req[source]);
       // Replace with parsed/coerced data (mutate in-place for query/params as they are read-only properties in Express 5)
@@ -24,17 +25,12 @@ export function validate(schema: ZodSchema, source: 'body' | 'query' | 'params' 
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        const errors = error.errors.map((e) => ({
+        const fields = error.errors.map((e) => ({
           field: e.path.join('.'),
           message: e.message,
         }));
 
-        res.status(400).json({
-          success: false,
-          message: 'Validation failed',
-          errors,
-        });
-        return;
+        throw new ValidationError('Validation failed', { fields });
       }
       next(error);
     }

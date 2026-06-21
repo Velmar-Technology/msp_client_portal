@@ -5,5 +5,8 @@
     "client",
     "server",
     "packages/*"
-  ]
+  ],
+  "scripts": {
+    "build:packages": "npm -w packages/errors run build"
+  }
 }
