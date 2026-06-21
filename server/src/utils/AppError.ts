@@ -1,11 +1,13 @@
+import { AppError as SharedAppError } from '@shared/errors';
+
 /**
  * Custom application error class with HTTP status code.
+ * Inherits from the centralized @shared/errors base class.
  * Used throughout the service layer to throw typed errors
  * that the global error handler middleware can process.
  */
-export class AppError extends Error {
+export class AppError extends SharedAppError {
   public readonly statusCode: number;
-  public readonly isOperational: boolean;
   public readonly code: string;
 
   constructor(
@@ -13,13 +15,17 @@ export class AppError extends Error {
     statusCode: number = 500,
     code: string = 'INTERNAL_ERROR',
     isOperational: boolean = true,
+    details?: Record<string, any>,
+    originalError?: unknown
   ) {
-    super(message);
+    super({
+      message,
+      isOperational,
+      details,
+      originalError
+    });
     this.statusCode = statusCode;
-    this.isOperational = isOperational;
     this.code = code;
-    Object.setPrototypeOf(this, AppError.prototype);
-    Error.captureStackTrace(this, this.constructor);
   }
 
   // ---- Factory Methods ----
@@ -52,3 +58,4 @@ export class AppError extends Error {
     return new AppError(message, 500, 'INTERNAL_ERROR', false);
   }
 }
+

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { ClientError, SerializedErrorSchema } from '@shared/errors';
 
 const api = axios.create({
   baseURL: '/api/v1',
@@ -19,12 +20,13 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// Response interceptor — handle token refresh on 401
+// Response interceptor — handle token refresh on 401 and normalize error output
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
+    // 1. Attempt token refresh on 401 Unauthorized
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
@@ -45,8 +47,54 @@ api.interceptors.response.use(
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
         window.location.href = '/login';
-        return Promise.reject(error);
+        
+        // Return a standardized ClientError for authentication failure
+        const clientError = new ClientError(
+          'Session expired. Please log in again.',
+          'UNAUTHORIZED_ERROR',
+          'N/A',
+          false
+        );
+        return Promise.reject(clientError);
       }
+    }
+
+    // 2. Parse and normalize any other errors to standardized ClientError
+    if (error && typeof error === 'object' && 'isAxiosError' in error && error.isAxiosError) {
+      const axiosError = error as any;
+      let clientError: ClientError;
+
+      if (axiosError.response && axiosError.response.data) {
+        const parseResult = SerializedErrorSchema.safeParse(axiosError.response.data);
+
+        if (parseResult.success) {
+          const apiError = parseResult.data;
+          clientError = new ClientError(
+            apiError.message,
+            apiError.code,
+            apiError.correlationId,
+            false,
+            apiError.details
+          );
+        } else {
+          clientError = new ClientError(
+            axiosError.message || 'An unexpected API error occurred',
+            'UNKNOWN_API_ERROR',
+            'N/A',
+            false,
+            { rawData: axiosError.response.data }
+          );
+        }
+      } else {
+        clientError = new ClientError(
+          'Could not connect to the server. Check your connection.',
+          'NETWORK_ERROR',
+          'N/A',
+          true
+        );
+      }
+
+      return Promise.reject(clientError);
     }
 
     return Promise.reject(error);
@@ -54,3 +102,4 @@ api.interceptors.response.use(
 );
 
 export default api;
+

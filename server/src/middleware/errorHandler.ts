@@ -2,60 +2,44 @@ import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/AppError';
 import { logger } from '../utils/logger';
 import { env } from '../config/env';
+import { serializeError } from '@shared/errors';
 
 /**
  * Global centralized error handler middleware.
- * Catches all errors, formats them consistently, and logs appropriately.
+ * Catches all errors, formats them consistently using @shared/errors serialization, and logs appropriately.
  * Must be registered LAST in the middleware chain.
  */
 export function errorHandler(
   err: Error,
   req: Request,
   res: Response,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _next: NextFunction,
 ): void {
-  // Default values
-  let statusCode = 500;
-  let message = 'Internal server error';
-  let code = 'INTERNAL_ERROR';
-  let isOperational = false;
+  const isProduction = env.NODE_ENV === 'production';
+  const serialized = serializeError(err, isProduction);
+  const statusCode = err instanceof AppError ? err.statusCode : 500;
+  const isOperational = err instanceof AppError ? err.isOperational : false;
 
-  if (err instanceof AppError) {
-    statusCode = err.statusCode;
-    message = err.message;
-    code = err.code;
-    isOperational = err.isOperational;
-  }
-
-  // Log the error
-  if (isOperational) {
-    logger.warn('Operational error', {
-      code,
-      message,
-      statusCode,
-      path: req.path,
-      method: req.method,
-    });
-  } else {
-    logger.error('Unexpected error', {
-      message: err.message,
-      stack: err.stack,
-      path: req.path,
-      method: req.method,
-    });
-  }
-
-  // Send response
-  const response: Record<string, unknown> = {
-    success: false,
-    message,
-    code,
+  const logDetails = {
+    code: serialized.code,
+    message: err.message,
+    statusCode,
+    path: req.path,
+    method: req.method,
+    correlationId: serialized.correlationId,
+    stack: err.stack,
+    originalError: err instanceof AppError ? err.originalError : undefined,
+    details: err instanceof AppError ? err.details : undefined
   };
 
-  // Include stack trace in development
-  if (env.NODE_ENV === 'development') {
-    response.stack = err.stack;
+  // Log the error using existing Winston logger
+  if (isOperational) {
+    logger.warn(`Operational request warning: ${serialized.message}`, logDetails);
+  } else {
+    logger.error(`Critical server error: ${serialized.message}`, logDetails);
   }
 
-  res.status(statusCode).json(response);
+  res.status(statusCode).json(serialized);
 }
+
