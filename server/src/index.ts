@@ -43,7 +43,7 @@ app.use('/uploads', express.static(uploadsDir));
 // ---- API Documentation ----
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'MSP Help Desk API Documentation',
+  customSiteTitle: 'Velmar Technology SRL MSP API Documentation',
 }));
 
 // ---- API Routes ----
@@ -59,7 +59,7 @@ async function startServer(): Promise<void> {
     await testConnection();
 
     app.listen(env.PORT, () => {
-      logger.info(`🚀 MSP Help Desk API Server running on port ${env.PORT}`);
+      logger.info(`🚀 Velmar Technology SRL MSP API Server running on port ${env.PORT}`);
       logger.info(`📚 API Docs available at http://localhost:${env.PORT}/api-docs`);
       logger.info(`🌐 Environment: ${env.NODE_ENV}`);
     });

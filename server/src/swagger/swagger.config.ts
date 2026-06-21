@@ -4,11 +4,11 @@ const options: swaggerJsdoc.Options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'MSP Help Desk API',
+      title: 'Velmar Technology SRL MSP API',
       version: '1.0.0',
-      description: 'REST API for the MSP Help Desk System — a Managed Service Provider ticketing and subscription management platform.',
+      description: 'REST API for the Velmar Technology SRL MSP System — a Managed Service Provider ticketing and subscription management platform.',
       contact: {
-        name: 'MSP Help Desk Team',
+        name: 'Velmar Technology SRL Support Team',
       },
     },
     servers: [

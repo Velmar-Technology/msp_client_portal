@@ -266,55 +266,55 @@
   --popover-foreground: #0b1c30;
   --primary: #0f172a;
   --primary-foreground: #ffffff;
-  --secondary: #4648d4;
+  --secondary: #188bfe;
   --secondary-foreground: #ffffff;
-  --muted: #eff4ff;
+  --muted: #f0f6fc;
   --muted-foreground: #45464d;
-  --accent: #e5eeff;
-  --accent-foreground: #0f172a;
+  --accent: #e3f0fe;
+  --accent-foreground: #188bfe;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
   --border: #e2e8f0;
   --input: #e2e8f0;
-  --ring: #4648d4;
+  --ring: #188bfe;
   --chart-1: oklch(0.871 0.006 286.286);
   --chart-2: oklch(0.552 0.016 285.938);
   --chart-3: oklch(0.442 0.017 285.786);
   --chart-4: oklch(0.37 0.013 285.805);
   --chart-5: oklch(0.274 0.006 286.033);
   --radius: 0.625rem;
-  --sidebar: #eff4ff;
+  --sidebar: #f4f8fd;
   --sidebar-foreground: #0b1c30;
-  --sidebar-primary: #0f172a;
+  --sidebar-primary: #188bfe;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e5eeff;
-  --sidebar-accent-foreground: #0f172a;
+  --sidebar-accent: #e3f0fe;
+  --sidebar-accent-foreground: #188bfe;
   --sidebar-border: #e2e8f0;
-  --sidebar-ring: #4648d4;
+  --sidebar-ring: #188bfe;
 
   /* Stitch Custom design system tokens */
-  --surface: #f8f9ff;
-  --surface-dim: #cbdbf5;
+  --surface: #f4f8fd;
+  --surface-dim: #bcd8fd;
   --surface-bright: #f8f9ff;
   --surface-container-lowest: #ffffff;
-  --surface-container-low: #eff4ff;
-  --surface-container: #e5eeff;
-  --surface-container-high: #dce9ff;
-  --surface-container-highest: #d3e4fe;
+  --surface-container-low: #f0f6fc;
+  --surface-container: #e3f0fe;
+  --surface-container-high: #d7e8fc;
+  --surface-container-highest: #cbe1fb;
   --on-surface: #0b1c30;
   --on-surface-variant: #45464d;
   --inverse-surface: #213145;
   --inverse-on-surface: #eaf1ff;
   --outline: #76777d;
   --outline-variant: #e2e8f0;
-  --surface-tint: #565e74;
+  --surface-tint: #188bfe;
 
   --primary-container: #131b2e;
   --on-primary-container: #7c839b;
   --inverse-primary: #bec6e0;
 
-  --secondary-container: #e5eeff;
-  --on-secondary-container: #4648d4;
+  --secondary-container: #e3f0fe;
+  --on-secondary-container: #188bfe;
 
   --tertiary: #10B981;
   --on-tertiary: #ffffff;
@@ -322,68 +322,68 @@
   --on-error: #ffffff;
   --error-container: #ffdad6;
   --on-error-container: #93000a;
-  --warning: #F59E0B;
+  --warning: #ff6602;
   --success: #10B981;
-  --info: #6366f1;
+  --info: #188bfe;
 }
 
 .dark {
-  --background: #080c14;
+  --background: #090e18;
   --foreground: #f1f5f9;
-  --card: #0b111e;
+  --card: #0d1424;
   --card-foreground: #f1f5f9;
-  --popover: #0b111e;
+  --popover: #0d1424;
   --popover-foreground: #f1f5f9;
   --primary: #f8fafc;
-  --primary-foreground: #080c14;
-  --secondary: #6063ee;
+  --primary-foreground: #090e18;
+  --secondary: #3fa3ff;
   --secondary-foreground: #ffffff;
-  --muted: #111a2e;
+  --muted: #0f1726;
   --muted-foreground: #94a3b8;
-  --accent: #1e293b;
-  --accent-foreground: #f8fafc;
+  --accent: #121b2d;
+  --accent-foreground: #3fa3ff;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
   --border: #1e293b;
   --input: #1e293b;
-  --ring: #6063ee;
+  --ring: #3fa3ff;
   --chart-1: oklch(0.871 0.006 286.286);
   --chart-2: oklch(0.552 0.016 285.938);
   --chart-3: oklch(0.442 0.017 285.786);
   --chart-4: oklch(0.37 0.013 285.805);
   --chart-5: oklch(0.274 0.006 286.033);
-  --sidebar: #0b111e;
+  --sidebar: #090e18;
   --sidebar-foreground: #f1f5f9;
-  --sidebar-primary: #6063ee;
+  --sidebar-primary: #3fa3ff;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1e293b;
-  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-accent: #121b2d;
+  --sidebar-accent-foreground: #3fa3ff;
   --sidebar-border: #1e293b;
-  --sidebar-ring: #6063ee;
+  --sidebar-ring: #3fa3ff;
 
   /* Stitch Custom design system tokens - Premium Dark Mode */
-  --surface: #080c14;
+  --surface: #090e18;
   --surface-dim: #04060b;
   --surface-bright: #121826;
-  --surface-container-lowest: #0b111e;
-  --surface-container-low: #121a2c;
-  --surface-container: #1b263f;
-  --surface-container-high: #243354;
-  --surface-container-highest: #2d3f69;
+  --surface-container-lowest: #0d1424;
+  --surface-container-low: #121b2d;
+  --surface-container: #17233a;
+  --surface-container-high: #1d2c47;
+  --surface-container-highest: #233454;
   --on-surface: #f1f5f9;
   --on-surface-variant: #94a3b8;
   --inverse-surface: #eff4ff;
-  --inverse-on-surface: #080c14;
+  --inverse-on-surface: #090e18;
   --outline: #475569;
   --outline-variant: #1e293b;
-  --surface-tint: #6063ee;
+  --surface-tint: #3fa3ff;
 
   --primary-container: #1b263f;
   --on-primary-container: #94a3b8;
   --inverse-primary: #bec6e0;
 
-  --secondary-container: #111a2e;
-  --on-secondary-container: #6063ee;
+  --secondary-container: #121b2d;
+  --on-secondary-container: #3fa3ff;
 
   --tertiary: #34d399;
   --on-tertiary: #064e3b;
@@ -391,9 +391,22 @@
   --on-error: #7f1d1d;
   --error-container: #450a0a;
   --on-error-container: #fca5a5;
-  --warning: #fbbf24;
+  --warning: #ff7a22;
   --success: #34d399;
-  --info: #818cf8;
+  --info: #3fa3ff;
+}
+
+/* ---- Velmar Custom Brand Utilities ---- */
+.bg-brand-gradient {
+  background: linear-gradient(135deg, #188bfe 0%, #ff6602 100%);
+}
+.text-brand-gradient {
+  background: linear-gradient(135deg, #188bfe 0%, #ff6602 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.border-brand-gradient {
+  border-image: linear-gradient(135deg, #188bfe 0%, #ff6602 100%) 1;
 }
 
 @layer base {

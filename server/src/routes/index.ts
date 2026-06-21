@@ -22,7 +22,7 @@ router.use('/notification-preferences', notificationPreferenceRoutes);
 router.get('/health', (_req, res) => {
   res.json({
     success: true,
-    message: 'MSP Help Desk API is running',
+    message: 'Velmar Technology SRL MSP API is running',
     timestamp: new Date().toISOString(),
   });
 });

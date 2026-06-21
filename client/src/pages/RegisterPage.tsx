@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { CloudCog, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle } from 'lucide-react';
+import logoUrl from '../assets/logo.png';
 import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { GoogleLoginButton } from '../components/auth/GoogleLoginButton';
@@ -104,15 +105,12 @@ export function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md animate-fade-in">
-        <div className="flex items-center gap-3 justify-center mb-8">
-          <CloudCog className="h-10 w-10 text-primary" />
-          <div>
-            <h1 className="text-h1 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
+        <div className="flex flex-col items-center justify-center mb-8 gap-3">
+          <img src={logoUrl} alt="Velmar Technology SRL" className="h-24 w-auto object-contain dark:brightness-110" />
+          <div className="text-center">
+            <span className="text-xs uppercase tracking-widest text-brand-gradient font-bold bg-muted dark:bg-muted/30 px-3 py-1 rounded-full">
               {t('topNav.portal')}
-            </h1>
-            <p className="text-label-sm text-on-surface-variant opacity-70">
-              {t('nav.infrastructure')}
-            </p>
+            </span>
           </div>
         </div>
 
