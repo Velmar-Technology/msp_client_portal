@@ -1,5 +1,10 @@
 # Directrices de Desarrollo para IA (Mesa de Ayuda)
 
+# AI Agent Workflow Rules
+- Always initiate `sequential-thinking` before implementing features.
+- Cross-reference new framework code via `context7` to stop hallucinations.
+- Query `stitch` for layout specs and use `shadcn` MCP tools for UI components.
+
 ## 1. Arquitectura del Proyecto
 Este proyecto es un **Monolito en Capas (Layered Monolith)** utilizando el **Stack PERN** (PostgreSQL, Express, React, Node.js). Todo el código (Frontend y Backend) residirá en este repositorio monorepo, pero con una separación estricta de responsabilidades.
 

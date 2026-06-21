@@ -42,7 +42,7 @@ export async function sendTicketStatusWhatsApp(
   notes?: string,
 ): Promise<void> {
   const message = [
-    `🔔 *MSP Help Desk — Ticket Update*`,
+    `🔔 *Velmar Technology SRL — Ticket Update*`,
     ``,
     `Ticket: *${ticketId}*`,
     `New Status: *${newStatus}*`,

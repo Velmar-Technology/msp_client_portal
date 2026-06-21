@@ -4,11 +4,11 @@ import {
   Ticket,
   User,
   HelpCircle,
-  CloudCog,
   Shield,
   ChevronRight,
   Settings,
 } from 'lucide-react';
+import logoUrl from '../../assets/logo.png';
 import { useAuth } from '../../hooks/useAuth';
 import {
   Sidebar as ShadcnSidebar,
@@ -103,7 +103,7 @@ export function AppSidebar() {
       {/* Brand / Header */}
       <SidebarHeader className="border-b border-sidebar-border px-4 py-3">
         <div className="flex items-center gap-3">
-          <CloudCog className="h-6 w-6 text-primary flex-shrink-0" />
+          <img src={logoUrl} alt="Velmar Logo" className="h-6 w-auto max-w-full flex-shrink-0 object-contain dark:brightness-110" />
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
             <h1 className="text-label-md font-bold text-on-surface leading-none" style={{ fontFamily: 'var(--font-heading)' }}>
               {t('topNav.portal')}

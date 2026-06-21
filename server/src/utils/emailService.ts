@@ -64,7 +64,7 @@ export async function sendEmail(payload: NotificationPayload): Promise<void> {
 
   try {
     const info = await transport.sendMail({
-      from: `"MSP Help Desk" <${usingSMTP ? env.SMTP_USER : 'noreply@msp-helpdesk.com'}>`,
+      from: `"Velmar Technology SRL" <${usingSMTP ? env.SMTP_USER : 'noreply@velmartech.com.do'}>`,
       to: payload.to,
       subject: payload.subject,
       html: payload.body,
@@ -152,7 +152,7 @@ function getEmailLayout(
               <!-- Header Banner -->
               <tr>
                 <td style="background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%); padding: 36px 32px; text-align: center;">
-                  <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.025em; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">MSP Help Desk</h1>
+                  <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.025em; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">Velmar Technology SRL</h1>
                   <p style="color: #94A3B8; margin: 6px 0 0 0; font-size: 14px; font-weight: 500; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">${title}</p>
                 </td>
               </tr>
@@ -166,9 +166,9 @@ function getEmailLayout(
               <!-- Footer Section -->
               <tr>
                 <td style="background-color: #F1F5F9; padding: 24px 32px; text-align: center; border-top: 1px solid #E2E8F0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-                  <p style="margin: 0; color: #64748B; font-size: 12px; font-weight: 500;">This is an automated notification from the MSP Client Portal.</p>
+                  <p style="margin: 0; color: #64748B; font-size: 12px; font-weight: 500;">This is an automated notification from the Velmar MSP Portal.</p>
                   <p style="margin: 4px 0 0 0; color: #94A3B8; font-size: 11px;">Do not reply directly to this email.</p>
-                  <p style="margin: 12px 0 0 0; color: #64748B; font-size: 12px; font-weight: 500;">© ${new Date().getFullYear()} MSP Help Desk. All rights reserved.</p>
+                  <p style="margin: 12px 0 0 0; color: #64748B; font-size: 12px; font-weight: 500;">© ${new Date().getFullYear()} Velmar Technology SRL. All rights reserved.</p>
                 </td>
               </tr>
             </table>
