@@ -10,7 +10,7 @@
     "paths": {
       "@/*": ["./*"]
     },
-    "types": ["node", "jest"],
+    "types": ["node", "vitest/globals"],
     "declaration": true,
     "sourceMap": true
   },

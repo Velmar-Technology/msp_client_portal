@@ -8,7 +8,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "lint": "eslint src/ --ext .ts",
-    "test": "jest --passWithNoTests",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
     "test:email": "tsx src/scripts/testEmail.ts",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:seed": "tsx src/db/seed.ts"
@@ -35,7 +36,6 @@
     "@types/bcrypt": "^5.0.2",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.2",
-    "@types/jest": "^29.5.14",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/multer": "^1.4.12",
     "@types/node": "^22.15.0",
@@ -48,9 +48,8 @@
     "@typescript-eslint/parser": "^8.30.0",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9.24.0",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.2.5",
     "tsx": "^4.19.3",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.0"
   }
 }
