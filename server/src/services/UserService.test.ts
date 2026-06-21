@@ -110,6 +110,36 @@ describe('UserService', () => {
       });
     });
 
+    it('should update profile and include avatar_url if provided', async () => {
+      const mockUser = {
+        id: 'user-1',
+        email: 'user@example.com',
+        name: 'John Doe',
+        role: UserRole.CLIENT,
+        language: 'en_US',
+        avatar_url: '/uploads/new-avatar.png',
+        password_hash: 'hashed-password',
+      };
+      mocks.findByEmail.mockResolvedValue(null);
+      mocks.updateProfile.mockResolvedValue(mockUser);
+
+      const result = await userService.updateProfile('user-1', {
+        avatar_url: '/uploads/new-avatar.png',
+      });
+
+      expect(mocks.updateProfile).toHaveBeenCalledWith('user-1', {
+        avatar_url: '/uploads/new-avatar.png',
+      });
+      expect(result).toEqual({
+        id: 'user-1',
+        email: 'user@example.com',
+        name: 'John Doe',
+        role: UserRole.CLIENT,
+        language: 'en_US',
+        avatar_url: '/uploads/new-avatar.png',
+      });
+    });
+
     it('should throw conflict AppError if email is already in use by another user', async () => {
       const existingUser = {
         id: 'user-2',

@@ -9,6 +9,7 @@ export interface AuthUser {
   role: 'CLIENT' | 'TECHNICIAN' | 'ADMIN';
   language: string;
   tenantId: string;
+  avatarUrl?: string | null;
 }
 
 export interface AuthState {

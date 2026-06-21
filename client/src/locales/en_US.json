@@ -42,7 +42,12 @@
     "passwordSuccess": "Password updated successfully",
     "passwordError": "Failed to update password",
     "passwordsMismatch": "New passwords do not match",
-    "passwordMin": "Password must be at least 8 characters"
+    "passwordMin": "Password must be at least 8 characters",
+    "lastLogin": "Last login: 2 hours ago from 192.168.1.45",
+    "passwordRequirements": "Password must include symbols and numbers.",
+    "updatePassword": "Update Password",
+    "avatarSuccess": "Profile picture updated successfully",
+    "avatarError": "Failed to upload profile picture"
   },
   "dashboard": {
     "systemOverview": "System Overview",

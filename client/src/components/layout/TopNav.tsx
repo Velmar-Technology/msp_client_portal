@@ -51,11 +51,19 @@ export function TopNav() {
             onClick={() => setShowUserMenu(!showUserMenu)}
             className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer"
           >
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-              <span className="text-on-primary text-label-sm font-bold">
-                {user?.name?.charAt(0).toUpperCase() || 'U'}
-              </span>
-            </div>
+            {user?.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt={user.name}
+                className="w-8 h-8 rounded-full object-cover border border-outline-variant"
+              />
+            ) : (
+              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                <span className="text-on-primary text-label-sm font-bold">
+                  {user?.name?.charAt(0).toUpperCase() || 'U'}
+                </span>
+              </div>
+            )}
           </button>
 
           {/* Dropdown */}

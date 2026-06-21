@@ -68,11 +68,12 @@ export class UserRepository extends BaseRepository<User> {
     return results[0] as User;
   }
 
-  async updateProfile(id: string, data: Partial<Pick<User, 'name' | 'email' | 'language'>>): Promise<User | null> {
+  async updateProfile(id: string, data: Partial<Pick<User, 'name' | 'email' | 'language' | 'avatar_url'>>): Promise<User | null> {
     const updateData: any = {};
     if (data.name !== undefined) updateData.name = data.name;
     if (data.email !== undefined) updateData.email = data.email;
     if (data.language !== undefined) updateData.language = data.language;
+    if (data.avatar_url !== undefined) updateData.avatar_url = data.avatar_url;
 
     if (Object.keys(updateData).length === 0) return this.findById(id);
 

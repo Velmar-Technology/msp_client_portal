@@ -24,6 +24,16 @@ export class UserController {
     const technicians = await userService.getTechnicians();
     res.json({ success: true, data: technicians });
   }
+
+  async uploadAvatar(req: Request, res: Response): Promise<void> {
+    if (!req.file) {
+      res.status(400).json({ success: false, message: 'No file uploaded' });
+      return;
+    }
+    const avatarUrl = `/uploads/${req.file.filename}`;
+    await userService.updateProfile(req.user!.userId, { avatar_url: avatarUrl });
+    res.json({ success: true, data: { avatarUrl } });
+  }
 }
 
 export const userController = new UserController();

@@ -26,6 +26,7 @@ export interface AuthResponse {
     role: 'CLIENT' | 'TECHNICIAN' | 'ADMIN';
     language: string;
     tenantId: string;
+    avatarUrl?: string | null;
   };
   tokens: {
     accessToken: string;

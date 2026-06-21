@@ -42,7 +42,12 @@
     "passwordSuccess": "Contraseña actualizada exitosamente",
     "passwordError": "Error al actualizar la contraseña",
     "passwordsMismatch": "Las nuevas contraseñas no coinciden",
-    "passwordMin": "La contraseña debe tener al menos 8 caracteres"
+    "passwordMin": "La contraseña debe tener al menos 8 caracteres",
+    "lastLogin": "Último inicio de sesión: hace 2 horas desde 192.168.1.45",
+    "passwordRequirements": "La contraseña debe incluir símbolos y números.",
+    "updatePassword": "Actualizar Contraseña",
+    "avatarSuccess": "Foto de perfil actualizada exitosamente",
+    "avatarError": "Error al subir la foto de perfil"
   },
   "dashboard": {
     "systemOverview": "Resumen del Sistema",

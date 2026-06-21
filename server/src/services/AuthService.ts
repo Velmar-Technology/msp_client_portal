@@ -15,7 +15,7 @@ export class AuthService {
   /**
    * Register a new user account.
    */
-  async register(data: RegisterInput): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string }; tokens: AuthTokens }> {
+  async register(data: RegisterInput): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null }; tokens: AuthTokens }> {
     // Check for existing user
     const existing = await userRepository.findByEmail(data.email);
     if (existing) {
@@ -67,7 +67,7 @@ export class AuthService {
     });
 
     return {
-      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id, avatarUrl: user.avatar_url },
       tokens,
     };
   }
@@ -75,7 +75,7 @@ export class AuthService {
   /**
    * Authenticate user with email and password.
    */
-  async login(data: LoginInput): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string }; tokens: AuthTokens }> {
+  async login(data: LoginInput): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null }; tokens: AuthTokens }> {
     const user = await userRepository.findByEmail(data.email);
     if (!user) {
       throw AppError.unauthorized('Invalid email or password');
@@ -100,7 +100,7 @@ export class AuthService {
     });
 
     return {
-      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id, avatarUrl: user.avatar_url },
       tokens,
     };
   }
@@ -109,7 +109,7 @@ export class AuthService {
    * Authenticate or register a user with Google OAuth.
    */
   async googleAuth(data: GoogleAuthInput): Promise<{
-    user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string };
+    user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null };
     tokens: AuthTokens;
     isNewUser: boolean;
   }> {
@@ -198,7 +198,7 @@ export class AuthService {
     });
 
     return {
-      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id, avatarUrl: user.avatar_url },
       tokens,
       isNewUser,
     };
