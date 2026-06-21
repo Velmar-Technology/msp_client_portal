@@ -54,6 +54,8 @@ export const users = pgTable(
     email_verified: boolean('email_verified').default(false),
     language: varchar('language', { length: 10 }).default('en_US'),
     avatar_url: varchar('avatar_url', { length: 1000 }),
+    last_login_at: timestamp('last_login_at', { withTimezone: true }),
+    last_login_ip: varchar('last_login_ip', { length: 45 }),
     tenant_id: uuid('tenant_id')
       .references(() => tenants.id, { onDelete: 'cascade' })
       .notNull(),

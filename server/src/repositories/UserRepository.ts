@@ -1,7 +1,7 @@
 import { BaseRepository } from './BaseRepository';
 import { User, UserRole } from '../types';
 import { db, users } from '../db';
-import { eq, and, ilike, asc } from 'drizzle-orm';
+import { eq, and, ilike, asc, sql } from 'drizzle-orm';
 
 export class UserRepository extends BaseRepository<User> {
   constructor() {
@@ -91,6 +91,16 @@ export class UserRepository extends BaseRepository<User> {
 
   async updatePassword(id: string, passwordHash: string): Promise<void> {
     await db.update(users).set({ password_hash: passwordHash }).where(eq(users.id, id));
+  }
+
+  async updateLastLogin(id: string, ip: string): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        last_login_at: sql`NOW()`,
+        last_login_ip: ip,
+      })
+      .where(eq(users.id, id));
   }
 }
 

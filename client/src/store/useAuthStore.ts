@@ -10,6 +10,8 @@ export interface AuthUser {
   language: string;
   tenantId: string;
   avatarUrl?: string | null;
+  lastLoginAt?: string | null;
+  lastLoginIp?: string | null;
 }
 
 export interface AuthState {

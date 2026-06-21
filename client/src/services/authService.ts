@@ -27,6 +27,8 @@ export interface AuthResponse {
     language: string;
     tenantId: string;
     avatarUrl?: string | null;
+    lastLoginAt?: string | null;
+    lastLoginIp?: string | null;
   };
   tokens: {
     accessToken: string;

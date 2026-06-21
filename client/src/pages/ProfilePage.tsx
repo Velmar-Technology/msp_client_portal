@@ -51,6 +51,52 @@ export function ProfilePage() {
   const [pwMessage, setPwMessage] = useState('');
   const [pwMessageType, setPwMessageType] = useState<'success' | 'error' | ''>('');
 
+  function formatRelativeTime(isoDate: string): string {
+    const now = Date.now();
+    const then = new Date(isoDate).getTime();
+    const diffMs = now - then;
+
+    const seconds = Math.floor(diffMs / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+    const weeks = Math.floor(days / 7);
+    const months = Math.floor(days / 30);
+
+    if (i18n.language?.startsWith('es')) {
+      if (seconds < 60) return 'hace unos segundos';
+      if (minutes === 1) return 'hace 1 minuto';
+      if (minutes < 60) return `hace ${minutes} minutos`;
+      if (hours === 1) return 'hace 1 hora';
+      if (hours < 24) return `hace ${hours} horas`;
+      if (days === 1) return 'hace 1 día';
+      if (days < 7) return `hace ${days} días`;
+      if (weeks === 1) return 'hace 1 semana';
+      if (weeks < 4) return `hace ${weeks} semanas`;
+      if (months === 1) return 'hace 1 mes';
+      return `hace ${months} meses`;
+    }
+
+    if (seconds < 60) return 'just now';
+    if (minutes === 1) return '1 minute ago';
+    if (minutes < 60) return `${minutes} minutes ago`;
+    if (hours === 1) return '1 hour ago';
+    if (hours < 24) return `${hours} hours ago`;
+    if (days === 1) return '1 day ago';
+    if (days < 7) return `${days} days ago`;
+    if (weeks === 1) return '1 week ago';
+    if (weeks < 4) return `${weeks} weeks ago`;
+    if (months === 1) return '1 month ago';
+    return `${months} months ago`;
+  }
+
+  const lastLoginText = user?.lastLoginAt
+    ? t('profile.lastLogin', {
+        time: formatRelativeTime(user.lastLoginAt),
+        ip: user.lastLoginIp || 'unknown',
+      })
+    : t('profile.lastLoginNever');
+
   async function handlePasswordChange(e: React.FormEvent) {
     e.preventDefault();
     if (newPassword.length < 8) {
@@ -149,7 +195,7 @@ export function ProfilePage() {
             </div>
             <p className="text-on-surface-variant font-label-sm text-label-sm mt-3 flex items-center justify-center sm:justify-start gap-2 opacity-80">
               <Clock className="h-3.5 w-3.5" />
-              {t('profile.lastLogin')}
+              {lastLoginText}
             </p>
           </div>
         </section>

@@ -16,7 +16,8 @@ export class AuthController {
 
   async googleAuth(req: Request, res: Response): Promise<void> {
     const data = req.body as GoogleAuthInput;
-    const result = await authService.googleAuth(data);
+    const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown';
+    const result = await authService.googleAuth(data, ipAddress);
     res.json({
       success: true,
       data: result,
@@ -25,7 +26,8 @@ export class AuthController {
 
   async login(req: Request, res: Response): Promise<void> {
     const data = req.body as LoginInput;
-    const result = await authService.login(data);
+    const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown';
+    const result = await authService.login(data, ipAddress);
     res.json({
       success: true,
       data: result,

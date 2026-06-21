@@ -72,6 +72,8 @@ export interface User {
   email_verified: boolean;
   language: string;
   avatar_url: string | null;
+  last_login_at: Date | null;
+  last_login_ip: string | null;
   tenant_id: string;
   created_at: Date;
   updated_at: Date;
