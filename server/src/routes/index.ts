@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { NotFoundError } from '@shared/errors';
 import authRoutes from './auth.routes';
 import ticketRoutes from './ticket.routes';
 import userRoutes from './user.routes';
@@ -25,6 +26,11 @@ router.get('/health', (_req, res) => {
     message: 'Velmar Technology SRL MSP API is running',
     timestamp: new Date().toISOString(),
   });
+});
+
+// Catch-all 404 for unknown API routes
+router.use((_req, _res, next) => {
+  next(new NotFoundError('The requested API endpoint was not found'));
 });
 
 export default router;
