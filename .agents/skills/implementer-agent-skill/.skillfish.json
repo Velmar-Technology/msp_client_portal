@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "implementer-agent-skill",
+  "owner": "fercracix33",
+  "repo": "poli2-clean-architecture",
+  "path": ".claude/skills/implementer-agent-skill",
+  "branch": "main",
+  "sha": "c6955fd2988360fcd960dc435775ad6183eff273",
+  "source": "manual"
+}

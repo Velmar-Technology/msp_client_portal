@@ -1,0 +1,25 @@
+{
+  "name": "implementer-agent-skill",
+  "version": "1.0.0",
+  "description": "Technical workflow and best practices for implementer-agent: TDD use case implementation and API endpoint orchestration",
+  "agent": "implementer-agent",
+  "technologies": [
+    "TypeScript",
+    "Zod",
+    "Vitest",
+    "Next.js App Router",
+    "TDD",
+    "Clean Architecture"
+  ],
+  "mcps_required": [
+    "context7"
+  ],
+  "references_count": 4,
+  "references": [
+    "use-case-patterns.md",
+    "zod-validation-patterns.md",
+    "api-endpoint-patterns.md",
+    "error-handling-guide.md"
+  ],
+  "last_updated": "2025-10-25"
+}
