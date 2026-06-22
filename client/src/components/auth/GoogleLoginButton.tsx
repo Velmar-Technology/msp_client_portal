@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Input } from '@/components/ui/input';
 
 interface GoogleLoginButtonProps {
   onSuccess: (idToken: string) => void;
@@ -118,10 +119,11 @@ export function GoogleLoginButton({ onSuccess, onError, text = 'signin_with' }: 
             </p>
             <form onSubmit={handleMockSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                <label htmlFor="google-sandbox-email" className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
                   Mock Email Address
                 </label>
-                <input
+                <Input
+                  id="google-sandbox-email"
                   type="email"
                   value={mockEmail}
                   onChange={(e) => setMockEmail(e.target.value)}
@@ -131,10 +133,11 @@ export function GoogleLoginButton({ onSuccess, onError, text = 'signin_with' }: 
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                <label htmlFor="google-sandbox-name" className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
                   Full Name
                 </label>
-                <input
+                <Input
+                  id="google-sandbox-name"
                   type="text"
                   value={mockName}
                   onChange={(e) => setMockName(e.target.value)}

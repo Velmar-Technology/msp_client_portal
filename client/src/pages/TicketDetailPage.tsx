@@ -10,6 +10,7 @@ import { useAuth } from '../hooks/useAuth';
 import { userService } from '../services/userService';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
 
 const statusColor: Record<string, string> = {
   OPEN: 'bg-info/10 text-info',
@@ -604,7 +605,7 @@ export function TicketDetailPage() {
                   if (isSelf) {
                     return (
                       <div key={resp.id} className="flex gap-4 ml-auto flex-row-reverse max-w-[80%]">
-                        <div className="w-8 h-8 rounded-full bg-primary border border-outline-variant flex-shrink-0 flex items-center justify-center text-on-primary font-bold text-[12px]">
+                        <div className="w-8 h-8 rounded-full bg-primary border border-outline-variant shrink-0 flex items-center justify-center text-on-primary font-bold text-[12px]">
                           {(resp.user_name || 'U').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
                         </div>
                         <div className="flex flex-col gap-1 items-end">
@@ -662,7 +663,7 @@ export function TicketDetailPage() {
 
                   return (
                     <div key={resp.id} className="flex gap-4 max-w-[80%]">
-                      <div className="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant flex-shrink-0 flex items-center justify-center text-primary font-bold text-[12px]">
+                      <div className="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant shrink-0 flex items-center justify-center text-primary font-bold text-[12px]">
                         {(resp.user_name || 'U').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
                       </div>
                       <div className="flex flex-col gap-1">
@@ -763,7 +764,7 @@ export function TicketDetailPage() {
                   >
                     <Paperclip className="h-5 w-5" />
                   </button>
-                  <input
+                  <Input
                     id="response-file-input"
                     type="file"
                     multiple
@@ -824,7 +825,7 @@ export function TicketDetailPage() {
                       <div className="absolute left-[11px] top-6 bottom-[-24px] w-px bg-outline-variant" />
                     )}
                     
-                    <div className="w-6 h-6 rounded-full bg-surface-container border border-outline-variant flex items-center justify-center flex-shrink-0 z-10">
+                    <div className="w-6 h-6 rounded-full bg-surface-container border border-outline-variant flex items-center justify-center shrink-0 z-10">
                       {getTimelineIcon(event.new_status)}
                     </div>
                     
@@ -1063,7 +1064,7 @@ export function TicketDetailPage() {
                   : 'border-outline-variant/60 hover:border-outline-variant hover:bg-surface-container-low/40'
               }`}
             >
-              <input
+              <Input
                 id="sidebar-file-input"
                 type="file"
                 multiple

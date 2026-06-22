@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Page } from '@/components/Page';
+import { Input } from '@/components/ui/input';
 
 interface FAQ {
   id: number;
@@ -160,7 +161,7 @@ export function HelpPage() {
     <Page className="space-y-8 pb-12 text-on-surface">
       {/* Header & Search */}
       <div className="text-center py-8 px-4 bg-surface-container rounded-2xl border border-outline-variant relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-tr from-secondary/5 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-linear-to-tr from-secondary/5 to-transparent pointer-events-none" />
         <div className="relative z-10 max-w-2xl mx-auto space-y-4">
           <h1 className="text-h1 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
             {t('help.title')}
@@ -170,7 +171,8 @@ export function HelpPage() {
           </p>
           <div className="relative max-w-lg mx-auto mt-6">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-on-surface-variant/60" />
-            <input
+            <Input
+              id="help-faq-search"
               type="text"
               placeholder={t('help.searchPlaceholder')}
               value={searchQuery}
@@ -234,7 +236,7 @@ export function HelpPage() {
                       <span className="text-label-md md:text-body-lg font-semibold text-on-surface select-none">
                         {faq.question}
                       </span>
-                      <span className="ml-4 flex-shrink-0 text-on-surface-variant">
+                      <span className="ml-4 shrink-0 text-on-surface-variant">
                         {isOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                       </span>
                     </button>
@@ -282,7 +284,7 @@ export function HelpPage() {
             
             <div className="space-y-4">
               <div className="flex items-start gap-3">
-                <Phone className="h-5 w-5 text-secondary mt-0.5 flex-shrink-0" />
+                <Phone className="h-5 w-5 text-secondary mt-0.5 shrink-0" />
                 <div>
                   <p className="text-label-md text-on-surface font-semibold">{t('help.phoneSupport')}</p>
                   <p className="text-body-md text-on-surface-variant">{t('help.phoneValue')}</p>
@@ -291,7 +293,7 @@ export function HelpPage() {
               </div>
 
               <div className="flex items-start gap-3">
-                <Mail className="h-5 w-5 text-secondary mt-0.5 flex-shrink-0" />
+                <Mail className="h-5 w-5 text-secondary mt-0.5 shrink-0" />
                 <div>
                   <p className="text-label-md text-on-surface font-semibold">{t('help.emailSupport')}</p>
                   <p className="text-body-md text-on-surface-variant">{t('help.emailValue')}</p>
@@ -300,7 +302,7 @@ export function HelpPage() {
               </div>
 
               <div className="flex items-start gap-3">
-                <Clock className="h-5 w-5 text-secondary mt-0.5 flex-shrink-0" />
+                <Clock className="h-5 w-5 text-secondary mt-0.5 shrink-0" />
                 <div>
                   <p className="text-label-md text-on-surface font-semibold">{t('help.supportHours')}</p>
                   <p className="text-body-md text-on-surface-variant">{t('help.hoursValue')}</p>

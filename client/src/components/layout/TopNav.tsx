@@ -5,6 +5,7 @@ import { SidebarTrigger } from '../ui/sidebar';
 import { ThemeToggle } from './ThemeToggle';
 import { useTranslation } from 'react-i18next';
 import { NotificationBell } from './NotificationBell';
+import { Input } from '../ui/input';
 
 export function TopNav() {
   const { t } = useTranslation();
@@ -25,10 +26,11 @@ export function TopNav() {
       <div className="hidden md:flex items-center flex-1 max-w-md mx-8">
         <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant opacity-50" />
-          <input
+          <Input
+            id="topnav-search"
             type="text"
             placeholder={t('topNav.search')}
-            className="w-full pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant rounded-lg text-body-md placeholder:text-on-surface-variant placeholder:opacity-50 focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all text-on-surface"
+            className="w-full pl-10 pr-4 py-4 bg-surface-container-low border border-outline-variant rounded-lg text-body-md placeholder:text-on-surface-variant placeholder:opacity-50 focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all text-on-surface"
           />
         </div>
       </div>

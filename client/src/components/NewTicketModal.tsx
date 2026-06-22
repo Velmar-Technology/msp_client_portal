@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { ticketService } from '../services/ticketService';
 import { useTranslation } from 'react-i18next';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
 
 interface NewTicketModalProps {
   onClose: () => void;
@@ -68,8 +69,9 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
         </h2>
         <form onSubmit={handleCreateTicket} className="space-y-4">
           <div>
-            <label className="block text-label-md text-on-surface mb-1.5">{t('tickets.modalTitleLabel')}</label>
-            <input
+            <label htmlFor="new-ticket-title" className="block text-label-md text-on-surface mb-1.5">{t('tickets.modalTitleLabel')}</label>
+            <Input
+              id="new-ticket-title"
               type="text"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
@@ -130,7 +132,7 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
                 >
                   {t('tickets.selectFiles')}
                 </button>
-                <input
+                <Input
                   id="modal-file-input"
                   type="file"
                   multiple

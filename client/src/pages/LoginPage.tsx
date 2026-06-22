@@ -6,6 +6,7 @@ import logoUrl from '../assets/logo.png';
 import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { GoogleLoginButton } from '../components/auth/GoogleLoginButton';
+import { Input } from '@/components/ui/input';
 
 export function LoginPage() {
   const { t, i18n } = useTranslation();
@@ -91,7 +92,7 @@ export function LoginPage() {
               <label htmlFor="login-email" className="block text-label-md text-on-surface mb-1.5">
                 {t('login.emailAddress')}
               </label>
-              <input
+              <Input
                 id="login-email"
                 type="email"
                 value={email}
@@ -107,7 +108,7 @@ export function LoginPage() {
                 {t('login.password')}
               </label>
               <div className="relative">
-                <input
+                <Input
                   id="login-password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}

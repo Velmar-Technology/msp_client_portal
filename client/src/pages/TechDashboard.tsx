@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Page } from '@/components/Page';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/ui/data-table';
+import { Input } from '@/components/ui/input';
 import {
   Search,
   User,
@@ -381,7 +382,8 @@ export function TechDashboard() {
           <div className="p-4 border-b border-outline-variant bg-surface-container-low/40 flex flex-col sm:flex-row gap-3 items-center justify-between">
             <div className="relative w-full sm:max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant opacity-60" />
-              <input
+              <Input
+                id="tech-tickets-search"
                 type="text"
                 placeholder={t('tickets.searchPlaceholder')}
                 value={search}

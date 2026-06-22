@@ -5,6 +5,7 @@ import { Save, User, Mail, ShieldCheck, Globe, CheckCircle2, AlertCircle, Lock, 
 import { useTranslation } from 'react-i18next';
 import { Page } from '@/components/Page';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
 
 export function ProfilePage() {
   const { t, i18n } = useTranslation();
@@ -177,7 +178,8 @@ export function ProfilePage() {
             >
               <Edit className="h-4 w-4 text-primary" />
             </button>
-            <input
+            <Input
+              id="profile-avatar-upload"
               type="file"
               ref={fileInputRef}
               onChange={handleAvatarChange}
@@ -222,10 +224,11 @@ export function ProfilePage() {
 
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5">
+                <label htmlFor="profile-name" className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5">
                   <User className="h-4 w-4" /> {t('profile.fullName')}
                 </label>
-                <input
+                <Input
+                  id="profile-name"
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -235,10 +238,11 @@ export function ProfilePage() {
               </div>
 
               <div>
-                <label className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5">
+                <label htmlFor="profile-email" className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5">
                   <Mail className="h-4 w-4" /> {t('profile.email')}
                 </label>
-                <input
+                <Input
+                  id="profile-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -297,10 +301,11 @@ export function ProfilePage() {
 
             <div className="space-y-4">
               <div>
-                <label className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5">
+                <label htmlFor="profile-current-password" className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5">
                   <Lock className="h-4 w-4" /> {t('profile.currentPassword')}
                 </label>
-                <input
+                <Input
+                  id="profile-current-password"
                   type="password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
@@ -312,10 +317,11 @@ export function ProfilePage() {
 
               <div className="grid md:grid-cols-2 gap-6 pt-2">
                 <div>
-                  <label className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5">
+                  <label htmlFor="profile-new-password" className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5">
                     <Key className="h-4 w-4" /> {t('profile.newPassword')}
                   </label>
-                  <input
+                  <Input
+                    id="profile-new-password"
                     type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
@@ -326,10 +332,11 @@ export function ProfilePage() {
                 </div>
 
                 <div>
-                  <label className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5">
+                  <label htmlFor="profile-confirm-password" className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5">
                     <Key className="h-4 w-4" /> {t('profile.confirmPassword')}
                   </label>
-                  <input
+                  <Input
+                    id="profile-confirm-password"
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}

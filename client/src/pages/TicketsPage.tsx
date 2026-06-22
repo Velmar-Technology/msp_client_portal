@@ -5,6 +5,7 @@ import { ticketService } from '../services/ticketService';
 import type { Ticket, TicketResponse } from '../services/ticketService';
 import { useTranslation } from 'react-i18next';
 import { Page } from '@/components/Page';
+import { Input } from '@/components/ui/input';
 import { NewTicketModal } from '@/components/NewTicketModal';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/ui/data-table';
@@ -80,7 +81,7 @@ function TicketTitleWithHoverCard({ ticket }: { ticket: Ticket }) {
   return (
     <HoverCard onOpenChange={handleOpenChange}>
       <HoverCardTrigger asChild>
-        <span className="text-body-md font-medium text-on-surface truncate max-w-xs block cursor-pointer hover:text-primary font-medium hover:underline transition-colors">
+        <span className="text-body-md font-medium text-on-surface truncate max-w-xs block cursor-pointer hover:text-primary hover:underline transition-colors">
           {ticket.title}
         </span>
       </HoverCardTrigger>
@@ -352,13 +353,14 @@ export function TicketsPage() {
       <div className="mb-6 flex flex-col md:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant opacity-50" />
-          <input
+          <Input
+            id="tickets-search"
             type="text"
             placeholder={t('tickets.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && loadTickets()}
-            className="w-full pl-10 pr-4 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 transition-all text-on-surface"
+            className="w-full pl-10 pr-4 py-5 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 transition-all text-on-surface"
           />
         </div>
         <select

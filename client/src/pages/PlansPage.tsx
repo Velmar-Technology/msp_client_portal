@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Check, X, Lock, Shield } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Page } from '@/components/Page';
+import { Input } from '@/components/ui/input';
 
 export function PlansPage() {
   const { t } = useTranslation();
@@ -104,9 +105,9 @@ export function PlansPage() {
               {plan.features.map((feature, i) => (
                 <div key={i} className="flex items-start gap-2">
                   {feature.included ? (
-                    <Check className="h-5 w-5 text-success flex-shrink-0 mt-0.5" />
+                    <Check className="h-5 w-5 text-success shrink-0 mt-0.5" />
                   ) : (
-                    <X className="h-5 w-5 text-on-surface-variant opacity-40 flex-shrink-0 mt-0.5" />
+                    <X className="h-5 w-5 text-on-surface-variant opacity-40 shrink-0 mt-0.5" />
                   )}
                   <span className={`text-body-md ${feature.included ? 'text-on-surface' : 'text-on-surface-variant opacity-50'}`}>
                     {feature.text}
@@ -182,21 +183,21 @@ export function PlansPage() {
             {paymentMethod === 'card' ? (
               <>
                 <div>
-                  <label className="block text-label-md text-on-surface mb-1.5">{t('plans.nameOnCard')}</label>
-                  <input type="text" placeholder={t('plans.nameOnCardPlaceholder')} className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface" />
+                  <label htmlFor="card-name" className="block text-label-md text-on-surface mb-1.5">{t('plans.nameOnCard')}</label>
+                  <Input id="card-name" type="text" placeholder={t('plans.nameOnCardPlaceholder')} className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface" />
                 </div>
                 <div>
-                  <label className="block text-label-md text-on-surface mb-1.5">{t('plans.cardNumber')}</label>
-                  <input type="text" placeholder={t('plans.cardNumberPlaceholder')} className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface" />
+                  <label htmlFor="card-number" className="block text-label-md text-on-surface mb-1.5">{t('plans.cardNumber')}</label>
+                  <Input id="card-number" type="text" placeholder={t('plans.cardNumberPlaceholder')} className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-label-md text-on-surface mb-1.5">{t('plans.expiration')}</label>
-                    <input type="text" placeholder={t('plans.expirationPlaceholder')} className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface" />
+                    <label htmlFor="card-expiration" className="block text-label-md text-on-surface mb-1.5">{t('plans.expiration')}</label>
+                    <Input id="card-expiration" type="text" placeholder={t('plans.expirationPlaceholder')} className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface" />
                   </div>
                   <div>
-                    <label className="block text-label-md text-on-surface mb-1.5">{t('plans.cvv')}</label>
-                    <input type="text" placeholder={t('plans.cvvPlaceholder')} className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface" />
+                    <label htmlFor="card-cvv" className="block text-label-md text-on-surface mb-1.5">{t('plans.cvv')}</label>
+                    <Input id="card-cvv" type="text" placeholder={t('plans.cvvPlaceholder')} className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface" />
                   </div>
                 </div>
                 <button className="w-full bg-primary text-on-primary py-3 rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer">
@@ -240,7 +241,7 @@ export function PlansPage() {
             </div>
 
             <div className="mt-6 bg-surface-container rounded-lg p-4 flex items-start gap-3">
-              <Shield className="h-5 w-5 text-success flex-shrink-0 mt-0.5" />
+              <Shield className="h-5 w-5 text-success shrink-0 mt-0.5" />
               <div>
                 <p className="text-label-md font-medium">{t('plans.encryptedTx')}</p>
                 <p className="text-label-sm text-on-surface-variant">
