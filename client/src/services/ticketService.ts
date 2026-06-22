@@ -1,4 +1,5 @@
 import api from './api';
+import { AxiosRequestConfig } from 'axios';
 
 export interface Ticket {
   id: string;
@@ -60,8 +61,8 @@ export interface CreateTicketPayload {
 }
 
 export const ticketService = {
-  async getAll(params?: Record<string, string | number>): Promise<{ data: Ticket[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> {
-    const response = await api.get('/tickets', { params });
+  async getAll(params?: Record<string, string | number>, config?: AxiosRequestConfig): Promise<{ data: Ticket[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> {
+    const response = await api.get('/tickets', { params, ...config });
     return response.data;
   },
 

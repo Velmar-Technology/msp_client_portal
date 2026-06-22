@@ -70,6 +70,29 @@ export function TopNav() {
   });
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const invoicesCacheRef = useRef<any[] | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const faqSearchIndexRef = useRef<Array<{ id: number; question: string; answer: string; category: string; searchText: string }>>([]);
+
+  // Pre-index FAQs when language changes for instant O(1)/O(N) local search
+  useEffect(() => {
+    const faqsList = i18n.language === 'es_DO' ? faqsEs : faqsEn;
+    faqSearchIndexRef.current = faqsList.map(f => ({
+      ...f,
+      searchText: (f.question + ' ' + f.answer).toLowerCase()
+    }));
+  }, [i18n.language]);
+
+  // Prefetch invoices once on search activation to cache them locally
+  const prefetchInvoices = async () => {
+    if (invoicesCacheRef.current || !(user?.role === 'CLIENT' || user?.role === 'ADMIN')) return;
+    try {
+      const res = await invoiceService.getAll(1, 100);
+      invoicesCacheRef.current = res.data;
+    } catch (err) {
+      console.error('Failed to prefetch invoices:', err);
+    }
+  };
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -80,6 +103,15 @@ export function TopNav() {
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Abort controller cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, []);
 
   // Reset selection index when search query or dropdown open state changes
@@ -125,7 +157,7 @@ export function TopNav() {
     return pages;
   };
 
-  // Search logic (debounced)
+  // Search logic (debounced with request cancellation and local indexes/caches)
   useEffect(() => {
     if (!searchQuery.trim()) {
       setResults({ pages: [], tickets: [], invoices: [], faqs: [] });
@@ -134,48 +166,53 @@ export function TopNav() {
     }
 
     setIsLoading(true);
+
+    // Cancel the previous ticket search request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     const delayDebounceFn = setTimeout(async () => {
       try {
         const query = searchQuery.trim();
-        const activeLang = i18n.language;
-        const faqsList = activeLang === 'es_DO' ? faqsEs : faqsEn;
+        const queryLower = query.toLowerCase();
 
-        // Local search for FAQs
-        const matchedFaqs = faqsList
-          .filter(
-            (f) =>
-              f.question.toLowerCase().includes(query.toLowerCase()) ||
-              f.answer.toLowerCase().includes(query.toLowerCase())
-          )
+        // Local search for FAQs using the pre-computed index
+        const matchedFaqs = faqSearchIndexRef.current
+          .filter((f) => f.searchText.includes(queryLower))
           .slice(0, 4);
 
         // Local search for Pages
         const allPages = getPagesForRole();
         const matchedPages = allPages.filter((p) =>
-          p.title.toLowerCase().includes(query.toLowerCase())
+          p.title.toLowerCase().includes(queryLower)
         );
 
-        // API search for Tickets
+        // API search for Tickets with abort signal
         let matchedTickets: any[] = [];
         try {
-          const ticketRes = await ticketService.getAll({ search: query, limit: 5 });
+          const ticketRes = await ticketService.getAll(
+            { search: query, limit: 5 },
+            { signal: controller.signal }
+          );
           matchedTickets = ticketRes.data;
-        } catch (err) {
-          console.error('Error searching tickets:', err);
+        } catch (err: any) {
+          if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
+            console.error('Error searching tickets:', err);
+          }
         }
 
-        // API search / Filter for Invoices (only if role is CLIENT or ADMIN)
+        // Local search for Invoices using the cached list (instant lookup)
         let matchedInvoices: any[] = [];
         if (user?.role === 'CLIENT' || user?.role === 'ADMIN') {
-          try {
-            const invoiceRes = await invoiceService.getAll(1, 50);
-            matchedInvoices = invoiceRes.data.filter(
+          if (invoicesCacheRef.current) {
+            matchedInvoices = invoicesCacheRef.current.filter(
               (inv) =>
-                inv.invoice_number.toLowerCase().includes(query.toLowerCase()) ||
+                inv.invoice_number.toLowerCase().includes(queryLower) ||
                 inv.total.toString().includes(query)
             );
-          } catch (err) {
-            console.error('Error searching invoices:', err);
           }
         }
 
@@ -192,8 +229,10 @@ export function TopNav() {
       }
     }, 300);
 
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery, i18n.language, user?.role]);
+    return () => {
+      clearTimeout(delayDebounceFn);
+    };
+  }, [searchQuery, user?.role]);
 
   // Flattened list for keyboard navigation and rendering
   const getFlatItems = () => {
@@ -338,8 +377,12 @@ export function TopNav() {
             onChange={(e) => {
               setSearchQuery(e.target.value);
               setIsOpen(true);
+              prefetchInvoices();
             }}
-            onFocus={() => setIsOpen(true)}
+            onFocus={() => {
+              setIsOpen(true);
+              prefetchInvoices();
+            }}
             onKeyDown={handleKeyDown}
             className="w-full pl-10 pr-4 py-4 bg-surface-container-low border border-outline-variant rounded-lg text-body-md placeholder:text-on-surface-variant placeholder:opacity-50 focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all text-on-surface"
           />
