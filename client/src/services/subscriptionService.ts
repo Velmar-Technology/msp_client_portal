@@ -17,12 +17,12 @@ export const subscriptionService = {
     return response.data.data;
   },
 
-  async create(data: { serviceName: string; plan: string; equipmentCount: number }): Promise<Subscription> {
+  async create(data: { serviceName: string; plan: string; equipmentCount: number; clientId?: string; billingCycle?: 'monthly' | 'annual' }): Promise<Subscription> {
     const response = await api.post('/subscriptions', data);
     return response.data.data;
   },
 
-  async update(id: string, data: { plan?: string; equipmentCount?: number }): Promise<Subscription> {
+  async update(id: string, data: { plan?: string; equipmentCount?: number; status?: string }): Promise<Subscription> {
     const response = await api.patch(`/subscriptions/${id}`, data);
     return response.data.data;
   },

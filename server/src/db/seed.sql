@@ -3,7 +3,13 @@
 -- ============================================
 -- Passwords are bcrypt hash of 'password123'
 
-TRUNCATE TABLE ticket_responses, ticket_events, ticket_attachments, tickets, subscriptions, invoices, round_robin_state, users, tenants CASCADE;
+TRUNCATE TABLE ticket_responses, ticket_events, ticket_attachments, tickets, subscriptions, invoices, round_robin_state, users, tenants, plans CASCADE;
+
+-- Seed plans
+INSERT INTO plans (id, name, description, price, features, recommended) VALUES
+  ('BASIC', 'Basic', 'Reactive remote support for non-critical infrastructure.', 299, '[{"text": "Remote Support 8×5", "included": true}, {"text": "Basic Monitoring (Ping/Port)", "included": true}, {"text": "Standard Ticket Management", "included": true}, {"text": "Preventive Maintenance", "included": false}]'::jsonb, false),
+  ('STANDARD', 'Standard', 'Proactive support and regular system maintenance.', 599, '[{"text": "Everything in Basic", "included": true}, {"text": "Monthly Preventive Maintenance", "included": true}, {"text": "Advanced Performance Monitoring", "included": true}, {"text": "OS Patch Management", "included": true}]'::jsonb, true),
+  ('PREMIUM', 'Premium', 'Full coverage, risk mitigation, and business continuity.', 1299, '[{"text": "Everything in Standard", "included": true}, {"text": "Managed Backups & Recovery", "included": true}, {"text": "24/7 Critical Support", "included": true}, {"text": "Quarterly Security Audit", "included": true}]'::jsonb, false);
 
 -- Seed tenants
 INSERT INTO tenants (id, name, subdomain) VALUES

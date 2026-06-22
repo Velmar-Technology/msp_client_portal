@@ -1,3 +1,4 @@
+import type { AuthUser } from '../store/useAuthStore';
 import api from './api';
 
 export interface ChangePasswordPayload {
@@ -40,6 +41,11 @@ export const userService = {
 
   async getTechnicians(): Promise<unknown[]> {
     const response = await api.get('/users/technicians');
+    return response.data.data;
+  },
+
+  async getClients(): Promise<AuthUser[]> {
+    const response = await api.get('/users/clients');
     return response.data.data;
   },
 };

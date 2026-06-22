@@ -1,5 +1,5 @@
 import api from './api';
-import { AxiosRequestConfig } from 'axios';
+import type { AxiosRequestConfig } from 'axios';
 
 export interface Ticket {
   id: string;

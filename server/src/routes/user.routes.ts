@@ -30,4 +30,11 @@ router.get(
   (req, res) => userController.getTechnicians(req, res),
 );
 
+/** GET /api/v1/users/clients — List clients (Admin only) */
+router.get(
+  '/clients',
+  rbacMiddleware(UserRole.ADMIN),
+  (req, res) => userController.getClients(req, res),
+);
+
 export default router;

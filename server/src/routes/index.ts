@@ -7,6 +7,7 @@ import subscriptionRoutes from './subscription.routes';
 import invoiceRoutes from './invoice.routes';
 import notificationRoutes from './notification.routes';
 import notificationPreferenceRoutes from './notificationPreference.routes';
+import planRoutes from './plan.routes';
 
 const router = Router();
 
@@ -18,6 +19,7 @@ router.use('/subscriptions', subscriptionRoutes);
 router.use('/invoices', invoiceRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/notification-preferences', notificationPreferenceRoutes);
+router.use('/plans', planRoutes);
 
 // Health check
 router.get('/health', (_req, res) => {

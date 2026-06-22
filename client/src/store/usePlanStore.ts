@@ -1,0 +1,65 @@
+import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
+import { planService } from '../services/planService';
+import type { Plan } from '../services/planService';
+
+export interface PlanState {
+  plans: Plan[];
+  loading: boolean;
+  error: string | null;
+  fetchPlans: () => Promise<void>;
+  updatePlan: (
+    id: string,
+    data: Partial<Omit<Plan, 'id' | 'created_at' | 'updated_at'>>
+  ) => Promise<void>;
+}
+
+export const usePlanStore = create<PlanState>()(
+  devtools(
+    (set) => ({
+      plans: [],
+      loading: false,
+      error: null,
+
+      fetchPlans: async () => {
+        set({ loading: true, error: null }, false, 'plans/fetch_request');
+        try {
+          const plans = await planService.getAll();
+          set({ plans, loading: false }, false, 'plans/fetch_success');
+        } catch (err) {
+          const error = err as Error;
+          set(
+            { loading: false, error: error.message || 'Failed to fetch plans' },
+            false,
+            'plans/fetch_failure'
+          );
+          throw err;
+        }
+      },
+
+      updatePlan: async (id, data) => {
+        set({ loading: true, error: null }, false, 'plans/update_request');
+        try {
+          const updatedPlan = await planService.update(id, data);
+          set(
+            (state) => ({
+              plans: state.plans.map((p) => (p.id === id ? updatedPlan : p)),
+              loading: false,
+            }),
+            false,
+            'plans/update_success'
+          );
+        } catch (err) {
+          const error = err as Error;
+          set(
+            { loading: false, error: error.message || 'Failed to update plan' },
+            false,
+            'plans/update_failure'
+          );
+          throw err;
+        }
+      },
+    }),
+    { name: 'PlanStore' }
+  )
+);

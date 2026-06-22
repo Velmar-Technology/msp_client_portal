@@ -34,6 +34,11 @@ export class UserController {
     await userService.updateProfile(req.user!.userId, { avatar_url: avatarUrl });
     res.json({ success: true, data: { avatarUrl } });
   }
+
+  async getClients(_req: Request, res: Response): Promise<void> {
+    const clients = await userService.getClients();
+    res.json({ success: true, data: clients });
+  }
 }
 
 export const userController = new UserController();

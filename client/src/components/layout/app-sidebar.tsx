@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -10,6 +11,8 @@ import {
 } from 'lucide-react';
 import logoUrl from '../../assets/logo.png';
 import { useAuth } from '../../hooks/useAuth';
+import { subscriptionService } from '../../services/subscriptionService';
+import type { Subscription } from '../../services/subscriptionService';
 import {
   Sidebar as ShadcnSidebar,
   SidebarContent,
@@ -90,6 +93,31 @@ export function AppSidebar() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const location = useLocation();
+  const [activeSubscription, setActiveSubscription] = useState<Subscription | null>(null);
+
+  useEffect(() => {
+    if (user?.role !== 'CLIENT') {
+      setActiveSubscription(null);
+      return;
+    }
+
+    let isMounted = true;
+    async function loadActiveSub() {
+      try {
+        const subs = await subscriptionService.getAll();
+        if (isMounted) {
+          const active = subs.find((sub) => sub.status === 'ACTIVE');
+          setActiveSubscription(active || null);
+        }
+      } catch (err) {
+        console.error('Failed to load active subscription for sidebar', err);
+      }
+    }
+    loadActiveSub();
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   const navItems =
     user?.role === 'ADMIN'
@@ -187,6 +215,23 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {user?.role === 'CLIENT' && activeSubscription && (
+          <div className="mx-3 my-4 p-4 rounded-xl bg-primary/10 border border-primary/20 backdrop-blur-sm shadow-sm group-data-[collapsible=icon]:hidden">
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
+              <span className="text-label-sm font-bold text-primary uppercase tracking-wider">
+                {activeSubscription.plan} Plan
+              </span>
+            </div>
+            <p className="text-body-md font-semibold text-on-surface truncate">
+              {activeSubscription.service_name}
+            </p>
+            <p className="text-[11px] text-on-surface-variant/80 mt-1">
+              {t('dashboard.tableRenewal')}: {new Date(activeSubscription.renewal_date).toLocaleDateString(t('dashboard.tableStatus') === 'Estado' ? 'es-DO' : 'en-US', { day: '2-digit', month: 'short' })}
+            </p>
+          </div>
+        )}
       </SidebarContent>
 
       {/* Footer Support/Help */}

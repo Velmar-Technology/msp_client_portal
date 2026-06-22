@@ -266,3 +266,21 @@ export interface NotificationPreference {
   updated_at: Date;
 }
 
+// ---- Plan Types ----
+
+export interface PlanFeature {
+  text: string;
+  included: boolean;
+}
+
+export interface Plan {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  features: PlanFeature[];
+  recommended: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+

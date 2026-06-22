@@ -175,6 +175,18 @@ export const ticketResponses = pgTable(
 );
 
 
+// ---- Plans ----
+export const plans = pgTable('plans', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  price: integer('price').notNull(),
+  features: jsonb('features').notNull(),
+  recommended: boolean('recommended').default(false).notNull(),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+});
+
 // ---- Subscriptions ----
 export const subscriptions = pgTable(
   'subscriptions',

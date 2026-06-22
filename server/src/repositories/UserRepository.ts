@@ -22,6 +22,30 @@ export class UserRepository extends BaseRepository<User> {
     return results as User[];
   }
 
+  async findClientsByTenant(tenantId: string): Promise<User[]> {
+    const results = await db
+      .select()
+      .from(users)
+      .where(
+        and(
+          eq(users.role, UserRole.CLIENT),
+          eq(users.tenant_id, tenantId),
+          eq(users.is_active, true)
+        )
+      )
+      .orderBy(asc(users.name));
+    return results as User[];
+  }
+
+  async findAllClients(): Promise<User[]> {
+    const results = await db
+      .select()
+      .from(users)
+      .where(and(eq(users.role, UserRole.CLIENT), eq(users.is_active, true)))
+      .orderBy(asc(users.name));
+    return results as User[];
+  }
+
   async findTechniciansBySpecialty(specialty: string): Promise<User[]> {
     const results = await db
       .select()

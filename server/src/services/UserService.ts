@@ -43,6 +43,11 @@ export class UserService {
     const techs = await userRepository.findByRole(UserRole.TECHNICIAN);
     return techs.map(({ password_hash, ...t }) => t);
   }
+
+  async getClients(): Promise<Omit<User, 'password_hash'>[]> {
+    const clients = await userRepository.findAllClients();
+    return clients.map(({ password_hash, ...c }) => c);
+  }
 }
 
 export const userService = new UserService();

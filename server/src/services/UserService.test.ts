@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => {
     findById: vi.fn(),
     findByEmail: vi.fn(),
     findByRole: vi.fn(),
+    findAllClients: vi.fn(),
     updateProfile: vi.fn(),
     updatePassword: vi.fn(),
     hashPassword: vi.fn(),
@@ -18,6 +19,7 @@ vi.mock('../repositories/UserRepository', () => {
       findById: mocks.findById,
       findByEmail: mocks.findByEmail,
       findByRole: mocks.findByRole,
+      findAllClients: mocks.findAllClients,
       updateProfile: mocks.updateProfile,
       updatePassword: mocks.updatePassword,
     },
@@ -217,6 +219,25 @@ describe('UserService', () => {
       });
 
       expect(mocks.updatePassword).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getClients', () => {
+    it('should return all clients omitting password_hash', async () => {
+      const mockClients = [
+        { id: 'c-1', name: 'Alice', role: UserRole.CLIENT, password_hash: 'hash1' },
+        { id: 'c-2', name: 'Bob', role: UserRole.CLIENT, password_hash: 'hash2' },
+      ];
+      mocks.findAllClients.mockResolvedValue(mockClients);
+
+      const result = await userService.getClients();
+
+      expect(mocks.findAllClients).toHaveBeenCalled();
+      expect(result).toEqual([
+        { id: 'c-1', name: 'Alice', role: UserRole.CLIENT },
+        { id: 'c-2', name: 'Bob', role: UserRole.CLIENT },
+      ]);
+      expect((result[0] as any).password_hash).toBeUndefined();
     });
   });
 });
