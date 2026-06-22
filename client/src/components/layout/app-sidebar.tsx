@@ -131,7 +131,7 @@ export function AppSidebar() {
       {/* Brand / Header */}
       <SidebarHeader className="border-b border-sidebar-border px-4 py-3">
         <div className="flex items-center gap-3">
-          <img src={logoUrl} alt="Velmar Logo" className="h-6 w-auto max-w-full flex-shrink-0 object-contain dark:brightness-110" />
+          <img src={logoUrl} alt="Velmar Logo" className="h-6 w-auto max-w-full shrink-0 object-contain dark:brightness-110" />
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
             <h1 className="text-label-md font-bold text-on-surface leading-none" style={{ fontFamily: 'var(--font-heading)' }}>
               {t('topNav.portal')}
@@ -165,7 +165,7 @@ export function AppSidebar() {
                       <SidebarMenuItem>
                         <CollapsibleTrigger asChild>
                           <SidebarMenuButton tooltip={translatedLabel} isActive={isGroupActive}>
-                            <item.icon className="h-4 w-4 flex-shrink-0" />
+                            <item.icon className="h-4 w-4 shrink-0" />
                             <span className="group-data-[collapsible=icon]:hidden">{translatedLabel}</span>
                             <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden" />
                           </SidebarMenuButton>
@@ -205,7 +205,7 @@ export function AppSidebar() {
                       tooltip={translatedLabel}
                     >
                       <NavLink to={item.to} className="flex items-center gap-3">
-                        <item.icon className="h-4 w-4 flex-shrink-0" />
+                        <item.icon className="h-4 w-4 shrink-0" />
                         <span className="group-data-[collapsible=icon]:hidden">{translatedLabel}</span>
                       </NavLink>
                     </SidebarMenuButton>
@@ -244,7 +244,7 @@ export function AppSidebar() {
               tooltip={t('nav.help')}
             >
               <NavLink to="/help" className="flex items-center gap-3">
-                <HelpCircle className="h-4 w-4 flex-shrink-0" />
+                <HelpCircle className="h-4 w-4 shrink-0" />
                 <span className="group-data-[collapsible=icon]:hidden">{t('nav.help')}</span>
               </NavLink>
             </SidebarMenuButton>

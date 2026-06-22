@@ -529,7 +529,7 @@ export function PlansPage() {
                   ) : (
                     <div className="space-y-4">
                       <div className="bg-error/5 border border-error/10 rounded-lg p-4">
-                        <p className="text-body-md font-semibold text-error text-red-600">Cancellation Warning</p>
+                        <p className="text-body-md font-semibold text-error">Cancellation Warning</p>
                         <p className="text-body-sm text-on-surface-variant mt-1">
                           Cancelling your subscription will take effect immediately. You will lose access to premium support services.
                         </p>
