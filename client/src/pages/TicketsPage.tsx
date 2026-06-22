@@ -336,6 +336,7 @@ export function TicketsPage() {
     <Page
       title={t('tickets.title')}
       subtitle={t('tickets.subtitle')}
+      isLoading={loading}
       actions={
         <button
           onClick={() => setShowNewTicket(true)}

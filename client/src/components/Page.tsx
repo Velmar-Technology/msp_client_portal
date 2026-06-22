@@ -1,12 +1,14 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { Breadcrumbs } from './layout/Breadcrumbs';
+import { Skeleton } from './ui/skeleton';
 
 export interface PageProps extends Omit<React.ComponentPropsWithoutRef<'div'>, 'title'> {
   title?: React.ReactNode;
   subtitle?: React.ReactNode;
   actions?: React.ReactNode;
   showBreadcrumbs?: boolean;
+  isLoading?: boolean;
 }
 
 export function Page({
@@ -16,6 +18,7 @@ export function Page({
   showBreadcrumbs = true,
   children,
   className,
+  isLoading,
   ...props
 }: PageProps) {
   return (
@@ -43,11 +46,11 @@ export function Page({
               )}
             </div>
           )}
-          {actions && (
+          {actions ? isLoading ? (<Skeleton className={cn('animate-fade-in shrink-0 w-36 h-10')} />) : (
             <div className="flex items-center gap-3 animate-fade-in shrink-0">
               {actions}
             </div>
-          )}
+          ) : (null)}
         </div>
       )}
       {children}
