@@ -18,11 +18,20 @@ async function resetDatabase(): Promise<void> {
     const files = fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql')).sort();
     logger.info(`Found ${files.length} migration file(s)`);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS _migrations (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) UNIQUE NOT NULL,
+        applied_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+
     for (const file of files) {
       const filePath = path.join(migrationsDir, file);
       const sql = fs.readFileSync(filePath, 'utf-8');
       logger.info(`Running migration: ${file}`);
       await client.query(sql);
+      await client.query('INSERT INTO _migrations (name) VALUES ($1) ON CONFLICT DO NOTHING', [file]);
       logger.info(`✅ Migration complete: ${file}`);
     }
 
