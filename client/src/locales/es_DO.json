@@ -14,9 +14,17 @@
     "notificationPreferences": "Notificaciones"
   },
   "topNav": {
-    "search": "Buscar recursos...",
+    "search": "Buscar tickets, facturas, FAQs...",
     "signOut": "Cerrar Sesión",
-    "portal": "Portal MSP Velmar Tech"
+    "portal": "Portal MSP Velmar Tech",
+    "quickLinks": "Acciones Rápidas",
+    "pages": "Páginas y Acciones",
+    "tickets": "Tickets",
+    "invoices": "Facturas",
+    "faqs": "Preguntas Frecuentes",
+    "noResults": "No se encontraron resultados para",
+    "navigation": "Página de Navegación",
+    "quickLink": "Acción Rápida"
   },
   "profile": {
     "title": "Perfil",

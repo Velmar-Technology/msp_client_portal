@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Plus, Search, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { ticketService } from '../services/ticketService';
 import type { Ticket, TicketResponse } from '../services/ticketService';
@@ -122,6 +122,7 @@ function TicketTitleWithHoverCard({ ticket }: { ticket: Ticket }) {
 export function TicketsPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -134,6 +135,16 @@ export function TicketsPage() {
   const [showBulkCancelAlert, setShowBulkCancelAlert] = useState(false);
   const [alertWarningMessage, setAlertWarningMessage] = useState<string | null>(null);
   const limit = 10;
+
+  useEffect(() => {
+    if (location.state?.openCreateModal) {
+      const timer = setTimeout(() => {
+        setShowNewTicket(true);
+        window.history.replaceState({}, document.title);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [location.state]);
 
   const getCategoryLabel = (cat: string) => {
     const map: Record<string, string> = {
@@ -183,7 +194,10 @@ export function TicketsPage() {
   }, [page, statusFilter, search]);
 
   useEffect(() => {
-    loadTickets();
+    const timer = setTimeout(() => {
+      loadTickets();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [loadTickets]);
 
   const totalPages = Math.ceil(total / limit);
