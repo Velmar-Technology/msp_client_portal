@@ -24,6 +24,7 @@ import {
   EmptyTitle,
   EmptyMedia,
 } from "@/components/ui/empty"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -125,11 +126,15 @@ export function DataTable<TData, TValue>({
         </TableHeader>
         <TableBody>
           {loading ? (
-            <TableRow>
-              <TableCell colSpan={finalColumns.length} className="h-24 text-center">
-                <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
-              </TableCell>
-            </TableRow>
+            Array.from({ length: 5 }).map((_, rowIndex) => (
+              <TableRow key={rowIndex}>
+                {finalColumns.map((_, colIndex) => (
+                  <TableCell key={colIndex}>
+                    <Skeleton className="h-6 w-full" />
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))
           ) : table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
               <TableRow

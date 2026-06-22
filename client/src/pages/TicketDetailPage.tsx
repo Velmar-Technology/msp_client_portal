@@ -9,6 +9,7 @@ import { Page } from '@/components/Page';
 import { useAuth } from '../hooks/useAuth';
 import { userService } from '../services/userService';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const statusColor: Record<string, string> = {
   OPEN: 'bg-info/10 text-info',
@@ -443,9 +444,106 @@ export function TicketDetailPage() {
 
   if (loading || !ticket) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
-      </div>
+      <Page className="max-w-7xl">
+        {/* Breadcrumb & Header Skeleton */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+          <div className="space-y-2 w-full md:w-1/2">
+            <Skeleton className="h-10 w-3/4" />
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-5 w-20 rounded" />
+              <Skeleton className="h-4 w-40" />
+            </div>
+          </div>
+          <Skeleton className="h-10 w-28 rounded-lg" />
+        </div>
+
+        {/* Main Responsive Grid Layout Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pb-8">
+          {/* Left Column Skeleton */}
+          <div className="lg:col-span-8 flex flex-col gap-6 w-full">
+            {/* Description Card Skeleton */}
+            <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm space-y-4">
+              <Skeleton className="h-6 w-28" />
+              <div className="bg-surface-container rounded-lg p-4 space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+            </div>
+
+            {/* Responses Card Skeleton */}
+            <div className="border border-outline-variant rounded-xl bg-surface-container-lowest flex flex-col shadow-sm">
+              <div className="px-6 py-4 border-b border-outline-variant bg-surface-container-low/40">
+                <Skeleton className="h-6 w-32" />
+              </div>
+              <div className="p-6 space-y-6">
+                {/* Simulated message 1 (other user) */}
+                <div className="flex gap-4 max-w-[80%]">
+                  <Skeleton className="w-8 h-8 rounded-full shrink-0" />
+                  <div className="space-y-2 w-full">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-4 w-12" />
+                    </div>
+                    <div className="p-3.5 bg-surface-container border border-outline-variant rounded-xl rounded-tl-none space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  </div>
+                </div>
+                {/* Simulated message 2 (self) */}
+                <div className="flex gap-4 ml-auto flex-row-reverse max-w-[80%]">
+                  <Skeleton className="w-8 h-8 rounded-full shrink-0" />
+                  <div className="space-y-2 w-full items-end flex flex-col">
+                    <div className="flex items-center gap-2 flex-row-reverse">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-4 w-12" />
+                    </div>
+                    <div className="p-3.5 bg-primary/10 border border-outline-variant rounded-xl rounded-tr-none space-y-2 w-full">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-5/6" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column Skeleton */}
+          <div className="lg:col-span-4 flex flex-col gap-6 w-full">
+            {/* Ticket Info Card Skeleton */}
+            <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm space-y-4">
+              <Skeleton className="h-5 w-40" />
+              <div className="space-y-3 pt-2">
+                <div className="flex justify-between">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-5 w-16 rounded" />
+                </div>
+                <div className="flex justify-between">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+                <div className="flex justify-between">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-4 w-28" />
+                </div>
+              </div>
+            </div>
+
+            {/* Assignment Card Skeleton */}
+            <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm space-y-4">
+              <Skeleton className="h-5 w-24" />
+              <div className="flex items-center gap-3 bg-surface-container/50 border border-outline-variant/40 rounded-xl p-3.5">
+                <Skeleton className="w-10 h-10 rounded-full shrink-0" />
+                <div className="space-y-2 w-full">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-32" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Page>
     );
   }
 

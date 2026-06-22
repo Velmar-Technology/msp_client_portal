@@ -94,6 +94,17 @@ To launch the client and server application:
 
 ---
 
+## UI Component Library & Loading Skeletons
+
+The client application integrates **shadcn/ui** for reusable UI components. Modern loading skeletons have been introduced to replace basic loading spinners and improve perceived page responsiveness.
+
+### Component & Page Integrations
+- **Skeleton Primitive:** Located at [skeleton.tsx](file:///c:/Users/Public/Workspace/msp_client_portal/client/src/components/ui/skeleton.tsx), it provides the pulsing base style used to mock content elements.
+- **DataTable Loaders:** The [DataTable](file:///c:/Users/Public/Workspace/msp_client_portal/client/src/components/ui/data-table.tsx) component uses the skeleton primitive to render 5 responsive skeleton rows matching the exact columns in the table layout when `loading` is active.
+- **Ticket Detail Loader:** The [TicketDetailPage](file:///c:/Users/Public/Workspace/msp_client_portal/client/src/pages/TicketDetailPage.tsx) replaces the spinner with a structural skeleton that matches the exact layout grid of the ticket, description cards, chat messages, and right sidebar details.
+
+---
+
 ## API Documentation
 The backend server serves Swagger API documentation.
 Once the server is running, visit: [http://localhost:3001/api-docs](http://localhost:3001/api-docs) to view details, parameters, and payloads.
