@@ -179,8 +179,8 @@ export const ticketResponses = pgTable(
 // ---- Plans ----
 export const plans = pgTable('plans', {
   id: varchar('id', { length: 50 }).primaryKey(),
-  name: varchar('name', { length: 255 }).notNull(),
-  description: text('description'),
+  name: jsonb('name').notNull(),
+  description: jsonb('description'),
   price: integer('price').notNull(),
   features: jsonb('features').notNull(),
   recommended: boolean('recommended').default(false).notNull(),

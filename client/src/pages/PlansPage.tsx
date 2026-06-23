@@ -13,7 +13,7 @@ import type { Subscription } from '@/services/subscriptionService';
 import type { AuthUser } from '@/store/useAuthStore';
 
 export function PlansPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const { plans, loading, fetchPlans, updatePlan, createPlan } = usePlanStore();
   const { addToast } = useNotificationStore();
@@ -27,8 +27,8 @@ export function PlansPage() {
   // Admin Editor State
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
   const [editId, setEditId] = useState('');
-  const [editName, setEditName] = useState('');
-  const [editDescription, setEditDescription] = useState('');
+  const [editName, setEditName] = useState<Record<string, string>>({ en_US: '', es_DO: '' });
+  const [editDescription, setEditDescription] = useState<Record<string, string>>({ en_US: '', es_DO: '' });
   const [editPrice, setEditPrice] = useState(0);
   const [editRecommended, setEditRecommended] = useState(false);
   const [editClientType, setEditClientType] = useState('CLIENT');
@@ -117,7 +117,7 @@ export function PlansPage() {
     setSubscribeLoading(true);
     try {
       await subscriptionService.create({
-        serviceName: currentPlan.name,
+        serviceName: getPlanName(currentPlan.name),
         plan: currentPlan.id,
         equipmentCount,
         clientId: isAdmin ? selectedClientId : undefined,
@@ -127,8 +127,8 @@ export function PlansPage() {
       addToast({
         title: isAdmin ? 'Plan Applied' : 'Subscribed Successfully',
         message: isAdmin
-          ? `Successfully applied the ${currentPlan.name} plan to the customer.`
-          : `Successfully subscribed to the ${currentPlan.name} plan.`,
+          ? `Successfully applied the ${getPlanName(currentPlan.name)} plan to the customer.`
+          : `Successfully subscribed to the ${getPlanName(currentPlan.name)} plan.`,
         type: 'success',
       });
     } catch (err) {
@@ -154,7 +154,7 @@ export function PlansPage() {
       });
       addToast({
         title: 'Subscription Updated',
-        message: `Successfully updated your subscription to ${currentPlan.name}.`,
+        message: `Successfully updated your subscription to ${getPlanName(currentPlan.name)}.`,
         type: 'success',
       });
       await fetchActiveSubscription();
@@ -208,14 +208,28 @@ export function PlansPage() {
   const tax = Math.round(subtotal * 0.16 * 100) / 100;
   const total = Math.round((subtotal + tax) * 100) / 100;
 
-  const getTierLabel = (planId: string) => {
-    if (planId === 'BASIC') return t('plans.basic.tier') || 'Level 1';
-    if (planId === 'STANDARD') return t('plans.standard.tier') || 'Level 2';
-    if (planId === 'PREMIUM') return t('plans.premium.tier') || 'Level 3';
-    return 'Level';
+  const getLocalizedValue = (val: string | Record<string, string> | null | undefined): string => {
+    if (!val) return '';
+    if (typeof val === 'string') {
+      return val;
+    }
+    const lang = i18n.language || 'en_US';
+    const resolvedLang = lang.startsWith('es') ? 'es_DO' : 'en_US';
+    
+    if (val[resolvedLang]) return val[resolvedLang];
+    if (val['en_US']) return val['en_US'];
+    const keys = Object.keys(val);
+    if (keys.length > 0) return val[keys[0]];
+    return '';
   };
 
-  const getFeatureText = (text: string) => {
+  const getPlanName = (name: string | Record<string, string>) => getLocalizedValue(name);
+  const getPlanDescription = (desc: string | Record<string, string> | null | undefined) => getLocalizedValue(desc);
+
+  const getFeatureText = (text: string | Record<string, string>) => {
+    if (typeof text !== 'string') {
+      return getLocalizedValue(text);
+    }
     // If the text looks like a translation key (no spaces), translate it
     if (/^[a-zA-Z0-9_]+$/.test(text)) {
       const translated = t(`plans.features.${text}`);
@@ -226,18 +240,63 @@ export function PlansPage() {
     return text;
   };
 
+  const getTierLabel = (planId: string) => {
+    if (planId === 'BASIC') return t('plans.basic.tier') || 'Level 1';
+    if (planId === 'STANDARD') return t('plans.standard.tier') || 'Level 2';
+    if (planId === 'PREMIUM') return t('plans.premium.tier') || 'Level 3';
+    return 'Level';
+  };
+
   // Open Edit Modal
   const handleEditClick = (plan: Plan) => {
     setIsCreateMode(false);
     setEditingPlan(plan);
     setEditId(plan.id);
-    setEditName(plan.name);
-    setEditDescription(plan.description || '');
+
+    // Parse name
+    if (typeof plan.name === 'string') {
+      setEditName({ en_US: plan.name, es_DO: plan.name });
+    } else {
+      setEditName({
+        en_US: plan.name?.en_US || '',
+        es_DO: plan.name?.es_DO || '',
+      });
+    }
+
+    // Parse description
+    if (!plan.description) {
+      setEditDescription({ en_US: '', es_DO: '' });
+    } else if (typeof plan.description === 'string') {
+      setEditDescription({ en_US: plan.description, es_DO: plan.description });
+    } else {
+      setEditDescription({
+        en_US: plan.description?.en_US || '',
+        es_DO: plan.description?.es_DO || '',
+      });
+    }
+
     setEditPrice(plan.price);
     setEditRecommended(plan.recommended);
     setEditClientType(plan.client_type || 'CLIENT');
     setEditActive(plan.active !== undefined ? plan.active : true);
-    setEditFeatures([...plan.features]);
+
+    // Parse features
+    const parsedFeatures = plan.features.map((f) => {
+      let textObj: Record<string, string>;
+      if (typeof f.text === 'string') {
+        textObj = { en_US: f.text, es_DO: f.text };
+      } else {
+        textObj = {
+          en_US: f.text?.en_US || '',
+          es_DO: f.text?.es_DO || '',
+        };
+      }
+      return {
+        ...f,
+        text: textObj,
+      };
+    });
+    setEditFeatures(parsedFeatures);
   };
 
   // Open Create Modal
@@ -245,8 +304,8 @@ export function PlansPage() {
     setIsCreateMode(true);
     setEditingPlan({
       id: '',
-      name: '',
-      description: '',
+      name: { en_US: '', es_DO: '' },
+      description: { en_US: '', es_DO: '' },
       price: 0,
       features: [],
       recommended: false,
@@ -256,8 +315,8 @@ export function PlansPage() {
       updated_at: '',
     });
     setEditId('');
-    setEditName('');
-    setEditDescription('');
+    setEditName({ en_US: '', es_DO: '' });
+    setEditDescription({ en_US: '', es_DO: '' });
     setEditPrice(0);
     setEditRecommended(false);
     setEditClientType('CLIENT');
@@ -267,7 +326,7 @@ export function PlansPage() {
 
   // Add Feature
   const handleAddFeature = () => {
-    setEditFeatures([...editFeatures, { text: '', included: true }]);
+    setEditFeatures([...editFeatures, { text: { en_US: '', es_DO: '' }, included: true }]);
   };
 
   // Delete Feature
@@ -283,9 +342,19 @@ export function PlansPage() {
   };
 
   // Edit Feature Text
-  const handleEditFeatureText = (index: number, text: string) => {
+  const handleEditFeatureText = (index: number, lang: 'en_US' | 'es_DO', textVal: string) => {
     setEditFeatures(
-      editFeatures.map((f, i) => (i === index ? { ...f, text } : f))
+      editFeatures.map((f, i) => {
+        if (i !== index) return f;
+        let textObj: Record<string, string>;
+        if (typeof f.text === 'string') {
+          textObj = { en_US: f.text, es_DO: f.text };
+        } else {
+          textObj = { ...f.text };
+        }
+        textObj[lang] = textVal;
+        return { ...f, text: textObj };
+      })
     );
   };
 
@@ -335,6 +404,16 @@ export function PlansPage() {
     setDragOverIndex(null);
   };
 
+  // Helper to fallback languages if one is missing
+  const cleanBilingualRecord = (rec: Record<string, string>): Record<string, string> => {
+    const en = (rec.en_US || '').trim();
+    const es = (rec.es_DO || '').trim();
+    return {
+      en_US: en || es,
+      es_DO: es || en,
+    };
+  };
+
   // Save Plan
   const handleSavePlan = async () => {
     if (!editingPlan) return;
@@ -346,7 +425,9 @@ export function PlansPage() {
       });
       return;
     }
-    if (!editName.trim()) {
+
+    const finalName = cleanBilingualRecord(editName);
+    if (!finalName.en_US) {
       addToast({
         title: 'Validation Error',
         message: 'Plan name is required.',
@@ -355,16 +436,33 @@ export function PlansPage() {
       return;
     }
 
+    const finalDescription = cleanBilingualRecord(editDescription);
+
     setSaveLoading(true);
     try {
-      // Filter out empty features
-      const filteredFeatures = editFeatures.filter((f) => f.text.trim() !== '');
-      
+      // Filter out empty features and apply billing clean record logic
+      const filteredFeatures = editFeatures
+        .map((f) => {
+          let textObj: Record<string, string>;
+          if (typeof f.text === 'string') {
+            textObj = { en_US: f.text, es_DO: f.text };
+          } else {
+            textObj = f.text;
+          }
+          return {
+            ...f,
+            text: cleanBilingualRecord(textObj),
+          };
+        })
+        .filter((f) => f.text.en_US !== '');
+
+      const planNameStr = getPlanName(finalName);
+
       if (isCreateMode) {
         await createPlan({
           id: editId.trim(),
-          name: editName,
-          description: editDescription,
+          name: finalName,
+          description: finalDescription.en_US ? finalDescription : null,
           price: editPrice,
           recommended: editRecommended,
           client_type: editClientType,
@@ -374,13 +472,13 @@ export function PlansPage() {
 
         addToast({
           title: 'Plan Created',
-          message: `${editName} plan has been created successfully.`,
+          message: `${planNameStr} plan has been created successfully.`,
           type: 'success',
         });
       } else {
         await updatePlan(editingPlan.id, {
-          name: editName,
-          description: editDescription,
+          name: finalName,
+          description: finalDescription.en_US ? finalDescription : null,
           price: editPrice,
           recommended: editRecommended,
           client_type: editClientType,
@@ -390,7 +488,7 @@ export function PlansPage() {
 
         addToast({
           title: 'Plan Updated',
-          message: `${editName} plan has been updated successfully.`,
+          message: `${planNameStr} plan has been updated successfully.`,
           type: 'success',
         });
       }
@@ -516,9 +614,9 @@ export function PlansPage() {
             </span>
 
             <h3 className="text-h2 text-primary mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
-              {plan.name}
+              {getPlanName(plan.name)}
             </h3>
-            <p className="text-body-md text-on-surface-variant mb-4">{plan.description}</p>
+            <p className="text-body-md text-on-surface-variant mb-4">{getPlanDescription(plan.description)}</p>
 
             <div className="mb-6">
               {billingCycle === 'annual' ? (
@@ -586,7 +684,7 @@ export function PlansPage() {
                   : 'border border-outline-variant text-on-surface hover:bg-surface-container-low'
               }`}
             >
-              {selectedPlan === plan.id ? `${t('plans.selected')}: ${plan.name}` : `${t('plans.select')} ${plan.name}`}
+              {selectedPlan === plan.id ? `${t('plans.selected')}: ${getPlanName(plan.name)}` : `${t('plans.select')} ${getPlanName(plan.name)}`}
             </button>
           </div>
         ))}
@@ -655,7 +753,7 @@ export function PlansPage() {
                       <div className="bg-primary/5 border border-primary/10 rounded-lg p-4">
                         <p className="text-body-md font-semibold text-primary">Subscription Modification</p>
                         <p className="text-body-sm text-on-surface-variant mt-1">
-                          You are modifying your subscription to the <strong className="text-on-surface">{currentPlan?.name}</strong> plan with <strong className="text-on-surface">{equipmentCount}x</strong> equipment.
+                          You are modifying your subscription to the <strong className="text-on-surface">{getPlanName(currentPlan.name)}</strong> plan with <strong className="text-on-surface">{equipmentCount}x</strong> equipment.
                         </p>
                       </div>
 
@@ -780,7 +878,7 @@ export function PlansPage() {
               <div className="space-y-3">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-body-md font-medium">{currentPlan.name} {billingCycle === 'annual' ? 'Plan (Annually)' : t('plans.planMonthly')}</p>
+                    <p className="text-body-md font-medium">{getPlanName(currentPlan.name)} {billingCycle === 'annual' ? 'Plan (Annually)' : t('plans.planMonthly')}</p>
                     <p className="text-label-sm text-on-surface-variant">{equipmentCount}x {t('plans.equipmentCountSuffix')}</p>
                   </div>
                   <span className="text-body-md font-medium">${subtotal.toFixed(2)}</span>
@@ -867,37 +965,65 @@ export function PlansPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="edit-name" className="block text-label-md text-on-surface mb-1.5">Plan Name</label>
-                  <Input
-                    id="edit-name"
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    className="w-full bg-surface-container-lowest text-on-surface border border-outline-variant"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="edit-price" className="block text-label-md text-on-surface mb-1.5">Monthly Price ($)</label>
-                  <Input
-                    id="edit-price"
-                    type="number"
-                    value={editPrice}
-                    onChange={(e) => setEditPrice(parseInt(e.target.value) || 0)}
-                    className="w-full bg-surface-container-lowest text-on-surface border border-outline-variant"
-                  />
+              <div>
+                <label className="block text-label-md text-on-surface mb-1.5 font-semibold">Plan Name</label>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-on-surface-variant w-6">EN</span>
+                    <Input
+                      type="text"
+                      value={editName.en_US || ''}
+                      onChange={(e) => setEditName({ ...editName, en_US: e.target.value })}
+                      className="flex-1 bg-surface-container-lowest text-on-surface border border-outline-variant"
+                      placeholder="Plan name in English"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-on-surface-variant w-6">ES</span>
+                    <Input
+                      type="text"
+                      value={editName.es_DO || ''}
+                      onChange={(e) => setEditName({ ...editName, es_DO: e.target.value })}
+                      className="flex-1 bg-surface-container-lowest text-on-surface border border-outline-variant"
+                      placeholder="Nombre del plan en Español"
+                    />
+                  </div>
                 </div>
               </div>
 
               <div>
-                <label htmlFor="edit-description" className="block text-label-md text-on-surface mb-1.5">Description</label>
-                <textarea
-                  id="edit-description"
-                  value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
-                  className="w-full min-h-[80px] p-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20"
+                <label htmlFor="edit-price" className="block text-label-md text-on-surface mb-1.5 font-semibold">Monthly Price ($)</label>
+                <Input
+                  id="edit-price"
+                  type="number"
+                  value={editPrice}
+                  onChange={(e) => setEditPrice(parseInt(e.target.value) || 0)}
+                  className="w-full bg-surface-container-lowest text-on-surface border border-outline-variant"
                 />
+              </div>
+
+              <div>
+                <label className="block text-label-md text-on-surface mb-1.5 font-semibold">Description</label>
+                <div className="space-y-2">
+                  <div className="flex items-start gap-2">
+                    <span className="text-xs font-bold text-on-surface-variant w-6 mt-2">EN</span>
+                    <textarea
+                      value={editDescription.en_US || ''}
+                      onChange={(e) => setEditDescription({ ...editDescription, en_US: e.target.value })}
+                      className="flex-1 min-h-[60px] p-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20"
+                      placeholder="Description in English"
+                    />
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-xs font-bold text-on-surface-variant w-6 mt-2">ES</span>
+                    <textarea
+                      value={editDescription.es_DO || ''}
+                      onChange={(e) => setEditDescription({ ...editDescription, es_DO: e.target.value })}
+                      className="flex-1 min-h-[60px] p-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20"
+                      placeholder="Descripción en Español"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="flex items-center gap-6">
@@ -949,7 +1075,7 @@ export function PlansPage() {
                       onDragOver={(e) => handleDragOver(e, index)}
                       onDrop={(e) => handleDrop(e, index)}
                       onDragEnd={handleDragEnd}
-                      className={`group flex items-center gap-2 border rounded-lg p-2 transition-all duration-200 ${
+                      className={`group flex items-start gap-2 border rounded-lg p-2 transition-all duration-200 ${
                         draggedIndex === index
                           ? 'opacity-40 bg-surface-container'
                           : dragOverIndex === index
@@ -958,7 +1084,7 @@ export function PlansPage() {
                       }`}
                     >
                       {/* Drag Handle & Accessible Controls */}
-                      <div className="flex items-center gap-0.5">
+                      <div className="flex items-center gap-0.5 mt-2">
                         <div
                           className="cursor-grab active:cursor-grabbing text-on-surface-variant/40 hover:text-on-surface-variant/80 transition-colors p-1"
                           title="Drag to reorder"
@@ -991,19 +1117,34 @@ export function PlansPage() {
                         type="checkbox"
                         checked={feat.included}
                         onChange={(e) => handleToggleFeatureIncluded(index, e.target.checked)}
-                        className="h-4 w-4 rounded border-outline-variant bg-surface-container-lowest text-success focus:ring-success cursor-pointer"
+                        className="h-4 w-4 rounded border-outline-variant bg-surface-container-lowest text-success focus:ring-success cursor-pointer mt-2.5"
                       />
-                      <Input
-                        type="text"
-                        value={feat.text}
-                        onChange={(e) => handleEditFeatureText(index, e.target.value)}
-                        className="flex-1 bg-surface-container-lowest text-on-surface border border-outline-variant py-1 h-8"
-                        placeholder="Feature description..."
-                      />
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold text-on-surface-variant w-6">EN</span>
+                          <Input
+                            type="text"
+                            value={(typeof feat.text === 'string' ? feat.text : feat.text?.en_US) || ''}
+                            onChange={(e) => handleEditFeatureText(index, 'en_US', e.target.value)}
+                            className="flex-1 bg-surface-container-lowest text-on-surface border border-outline-variant py-1 h-8"
+                            placeholder="Feature in English..."
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold text-on-surface-variant w-6">ES</span>
+                          <Input
+                            type="text"
+                            value={(typeof feat.text === 'string' ? feat.text : feat.text?.es_DO) || ''}
+                            onChange={(e) => handleEditFeatureText(index, 'es_DO', e.target.value)}
+                            className="flex-1 bg-surface-container-lowest text-on-surface border border-outline-variant py-1 h-8"
+                            placeholder="Característica en Español..."
+                          />
+                        </div>
+                      </div>
                       <button
                         type="button"
                         onClick={() => handleDeleteFeature(index)}
-                        className="p-1 hover:bg-error/15 text-error rounded-md transition-colors cursor-pointer"
+                        className="p-1 hover:bg-error/15 text-error rounded-md transition-colors cursor-pointer mt-2"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>

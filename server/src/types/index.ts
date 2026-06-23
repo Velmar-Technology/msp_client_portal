@@ -277,14 +277,14 @@ export interface NotificationPreference {
 // ---- Plan Types ----
 
 export interface PlanFeature {
-  text: string;
+  text: string | Record<string, string>;
   included: boolean;
 }
 
 export interface Plan {
   id: string;
-  name: string;
-  description: string | null;
+  name: string | Record<string, string>;
+  description: string | Record<string, string> | null;
   price: number;
   features: PlanFeature[];
   recommended: boolean;

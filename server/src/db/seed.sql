@@ -7,7 +7,7 @@ TRUNCATE TABLE ticket_responses, ticket_events, ticket_attachments, tickets, sub
 
 -- Seed plans
 INSERT INTO plans (id, name, description, price, features, recommended, client_type) VALUES
-  ('PL-001', 'Basic', 'Reactive remote support for non-critical infrastructure.', 18, '[
+  ('PL-001', '{"en_US": "Basic", "es_DO": "Básico"}'::jsonb, '{"en_US": "Reactive remote support for non-critical infrastructure.", "es_DO": "Soporte remoto reactivo para infraestructura no crítica."}'::jsonb, 18, '[
     {"text": "Chat & Remote Only support", "included": true},
     {"text": "Security monitoring", "included": true},
     {"text": "25 GB Cloud Storage", "included": true},
@@ -19,7 +19,7 @@ INSERT INTO plans (id, name, description, price, features, recommended, client_t
     {"text": "Reporting Level: Monthly Basic", "included": true}
   ]'::jsonb, false, 'CLIENT'),
 
-  ('PL-002', 'Standard', 'Proactive support and regular system maintenance.', 30, '[
+  ('PL-002', '{"en_US": "Standard", "es_DO": "Estándar"}'::jsonb, '{"en_US": "Proactive support and regular system maintenance.", "es_DO": "Soporte proactivo y mantenimiento regular del sistema."}'::jsonb, 30, '[
     {"text": "8x5 Helpdesk support", "included": true},
     {"text": "Security monitoring", "included": true},
     {"text": "50 GB Cloud Storage", "included": true},
@@ -36,7 +36,7 @@ INSERT INTO plans (id, name, description, price, features, recommended, client_t
     {"text": "Reporting Level: Monthly Standard", "included": true}
   ]'::jsonb, true, 'ENTERPRISE'),
 
-  ('PL-003', 'Advanced', 'Comprehensive support, security, and vCIO reviews.', 55, '[
+  ('PL-003', '{"en_US": "Advanced", "es_DO": "Avanzado"}'::jsonb, '{"en_US": "Comprehensive support, security, and vCIO reviews.", "es_DO": "Soporte integral, seguridad y revisiones de vCIO."}'::jsonb, 55, '[
     {"text": "24/7/365 Helpdesk support", "included": true},
     {"text": "Security monitoring", "included": true},
     {"text": "250 GB Cloud Storage", "included": true},
@@ -57,7 +57,7 @@ INSERT INTO plans (id, name, description, price, features, recommended, client_t
     {"text": "Reporting Level: Weekly Detailed", "included": true}
   ]'::jsonb, false, 'ENTERPRISE'),
 
-  ('PL-004', 'Premium', 'Premium service with a dedicated engineer.', 85, '[
+  ('PL-004', '{"en_US": "Premium", "es_DO": "Premium"}'::jsonb, '{"en_US": "Premium service with a dedicated engineer.", "es_DO": "Servicio premium con un ingeniero dedicado."}'::jsonb, 85, '[
     {"text": "Dedicated Engineer support", "included": true},
     {"text": "Security monitoring", "included": true},
     {"text": "1000 GB Cloud Storage", "included": true},
@@ -77,7 +77,7 @@ INSERT INTO plans (id, name, description, price, features, recommended, client_t
     {"text": "Reporting Level: Executive (On-Demand)", "included": true}
   ]'::jsonb, false, 'ENTERPRISE'),
 
-  ('PL-005', 'Enterprise', 'Top-tier VIP Concierge support and custom frameworks.', 120, '[
+  ('PL-005', '{"en_US": "Enterprise", "es_DO": "Empresarial"}'::jsonb, '{"en_US": "Top-tier VIP Concierge support and custom frameworks.", "es_DO": "Soporte VIP Concierge de primer nivel y marcos personalizados."}'::jsonb, 120, '[
     {"text": "VIP Concierge support", "included": true},
     {"text": "Security monitoring", "included": true},
     {"text": "5000 GB Cloud Storage", "included": true},
@@ -97,7 +97,7 @@ INSERT INTO plans (id, name, description, price, features, recommended, client_t
     {"text": "Reporting Level: Custom / SOC", "included": true}
   ]'::jsonb, false, 'ENTERPRISE'),
 
-  ('PL-006', 'Student Starter Kit', 'Essentials for students, including RMM and password management.', 20, '[
+  ('PL-006', '{"en_US": "Student Starter Kit", "es_DO": "Kit de Inicio para Estudiantes"}'::jsonb, '{"en_US": "Essentials for students, including RMM and password management.", "es_DO": "Esenciales para estudiantes, incluyendo RMM y gestión de contraseñas."}'::jsonb, 20, '[
     {"text": "Self-Serve / Community Support", "included": false},
     {"text": "Security monitoring", "included": true},
     {"text": "50 GB Cloud Storage", "included": true},
@@ -110,7 +110,7 @@ INSERT INTO plans (id, name, description, price, features, recommended, client_t
     {"text": "Reporting Level: Monthly Basic", "included": true}
   ]'::jsonb, false, 'STUDENT'),
 
-  ('PL-007', 'Custom', 'Tailored solution with specialized terms and SLAs.', 0, '[
+  ('PL-007', '{"en_US": "Custom", "es_DO": "Personalizado"}'::jsonb, '{"en_US": "Tailored solution with specialized terms and SLAs.", "es_DO": "Solución a la medida con términos y SLAs especializados."}'::jsonb, 0, '[
     {"text": "Support: As per contract", "included": true},
     {"text": "Security monitoring", "included": true},
     {"text": "Cloud Storage: Custom", "included": true},

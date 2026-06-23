@@ -7,9 +7,20 @@ import { subscriptionService } from '@/services/subscriptionService';
 import { useAuth } from '@/hooks/useAuth';
 import { usePlanStore } from '@/store/usePlanStore';
 
+let mockLanguage = 'en_US';
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
+    i18n: {
+      get language() {
+        return mockLanguage;
+      },
+      changeLanguage: (lng: string) => {
+        mockLanguage = lng;
+        return Promise.resolve();
+      },
+    },
   }),
 }));
 
@@ -45,20 +56,20 @@ vi.mock('@/services/subscriptionService', () => ({
 const mockPlans = [
   {
     id: 'BASIC',
-    name: 'Basic Support',
-    description: 'Basic plan description',
+    name: { en_US: 'Basic Support', es_DO: 'Soporte Básico' },
+    description: { en_US: 'Basic plan description', es_DO: 'Descripción del plan básico' },
     price: 199,
-    features: [{ text: 'Email support', included: true }],
+    features: [{ text: { en_US: 'Email support', es_DO: 'Soporte por correo' }, included: true }],
     recommended: false,
     created_at: '2026-06-22',
     updated_at: '2026-06-22',
   },
   {
     id: 'STANDARD',
-    name: 'Standard Support',
-    description: 'Standard plan description',
+    name: { en_US: 'Standard Support', es_DO: 'Soporte Estándar' },
+    description: { en_US: 'Standard plan description', es_DO: 'Descripción del plan estándar' },
     price: 499,
-    features: [{ text: '24/7 Phone support', included: true }],
+    features: [{ text: { en_US: '24/7 Phone support', es_DO: 'Soporte telefónico 24/7' }, included: true }],
     recommended: true,
     created_at: '2026-06-22',
     updated_at: '2026-06-22',
@@ -391,8 +402,10 @@ describe('PlansPage', () => {
 
       // Fill in details
       fireEvent.change(screen.getByPlaceholderText('e.g. PL-008'), { target: { value: 'PL-TEST' } });
-      fireEvent.change(screen.getByLabelText('Plan Name'), { target: { value: 'Test Add Plan' } });
-      fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Test description' } });
+      fireEvent.change(screen.getByPlaceholderText('Plan name in English'), { target: { value: 'Test Add Plan' } });
+      fireEvent.change(screen.getByPlaceholderText('Nombre del plan en Español'), { target: { value: 'Plan de Prueba' } });
+      fireEvent.change(screen.getByPlaceholderText('Description in English'), { target: { value: 'Test description' } });
+      fireEvent.change(screen.getByPlaceholderText('Descripción en Español'), { target: { value: 'Descripción de prueba' } });
       fireEvent.change(screen.getByLabelText('Monthly Price ($)'), { target: { value: '99' } });
       fireEvent.change(screen.getByLabelText('Client Type'), { target: { value: 'CLIENT' } });
 
@@ -402,8 +415,8 @@ describe('PlansPage', () => {
       await waitFor(() => {
         expect(mockCreatePlan).toHaveBeenCalledWith(expect.objectContaining({
           id: 'PL-TEST',
-          name: 'Test Add Plan',
-          description: 'Test description',
+          name: { en_US: 'Test Add Plan', es_DO: 'Plan de Prueba' },
+          description: { en_US: 'Test description', es_DO: 'Descripción de prueba' },
           price: 99,
           client_type: 'CLIENT',
           active: true,
@@ -416,8 +429,8 @@ describe('PlansPage', () => {
         ...mockPlans,
         {
           id: 'INACTIVE',
-          name: 'Disabled Plan',
-          description: 'This is disabled',
+          name: { en_US: 'Disabled Plan', es_DO: 'Plan Desactivado' },
+          description: { en_US: 'This is disabled', es_DO: 'Esto está desactivado' },
           price: 15,
           features: [],
           recommended: false,
@@ -471,12 +484,12 @@ describe('PlansPage', () => {
       const mockPlansWithMultipleFeatures = [
         {
           id: 'BASIC',
-          name: 'Basic Support',
-          description: 'Basic plan description',
+          name: { en_US: 'Basic Support', es_DO: 'Soporte Básico' },
+          description: { en_US: 'Basic plan description', es_DO: 'Descripción del plan básico' },
           price: 199,
           features: [
-            { text: 'Feature A', included: true },
-            { text: 'Feature B', included: true },
+            { text: { en_US: 'Feature A', es_DO: 'Feature A' }, included: true },
+            { text: { en_US: 'Feature B', es_DO: 'Feature B' }, included: true },
           ],
           recommended: false,
           active: true,
@@ -508,25 +521,25 @@ describe('PlansPage', () => {
         expect(screen.getByText('Edit Plan: BASIC')).toBeInTheDocument();
       });
 
-      // Find inputs containing the features
-      const inputs = screen.getAllByPlaceholderText('Feature description...');
-      expect(inputs).toHaveLength(2);
-      expect((inputs[0] as HTMLInputElement).value).toBe('Feature A');
-      expect((inputs[1] as HTMLInputElement).value).toBe('Feature B');
+      // Find inputs containing the English features
+      const enInputs = screen.getAllByPlaceholderText('Feature in English...');
+      expect(enInputs).toHaveLength(2);
+      expect((enInputs[0] as HTMLInputElement).value).toBe('Feature A');
+      expect((enInputs[1] as HTMLInputElement).value).toBe('Feature B');
 
       // 1. Test Keyboard Accessible Move Down
       const moveDownButtons = screen.getAllByTitle('Move down');
       fireEvent.click(moveDownButtons[0]);
 
       // Verify they swapped
-      expect((inputs[0] as HTMLInputElement).value).toBe('Feature B');
-      expect((inputs[1] as HTMLInputElement).value).toBe('Feature A');
+      expect((enInputs[0] as HTMLInputElement).value).toBe('Feature B');
+      expect((enInputs[1] as HTMLInputElement).value).toBe('Feature A');
 
       // Swap them back to original with Move Up
       const moveUpButtons = screen.getAllByTitle('Move up');
       fireEvent.click(moveUpButtons[1]);
-      expect((inputs[0] as HTMLInputElement).value).toBe('Feature A');
-      expect((inputs[1] as HTMLInputElement).value).toBe('Feature B');
+      expect((enInputs[0] as HTMLInputElement).value).toBe('Feature A');
+      expect((enInputs[1] as HTMLInputElement).value).toBe('Feature B');
 
       // 2. Test Drag and Drop reordering
       const dragRows = screen.getAllByTitle('Drag to reorder');
@@ -544,8 +557,8 @@ describe('PlansPage', () => {
       fireEvent.dragEnd(sourceContainer!);
 
       // Verify they swapped after drop
-      expect((inputs[0] as HTMLInputElement).value).toBe('Feature B');
-      expect((inputs[1] as HTMLInputElement).value).toBe('Feature A');
+      expect((enInputs[0] as HTMLInputElement).value).toBe('Feature B');
+      expect((enInputs[1] as HTMLInputElement).value).toBe('Feature A');
 
       // Click save and verify updatePlan payload
       const saveButton = screen.getByText('Save Changes');
@@ -554,11 +567,27 @@ describe('PlansPage', () => {
       await waitFor(() => {
         expect(mockUpdatePlan).toHaveBeenCalledWith('BASIC', expect.objectContaining({
           features: [
-            { text: 'Feature B', included: true },
-            { text: 'Feature A', included: true },
+            { text: { en_US: 'Feature B', es_DO: 'Feature B' }, included: true },
+            { text: { en_US: 'Feature A', es_DO: 'Feature A' }, included: true },
           ],
         }));
       });
+    });
+
+    test('renders plans in Spanish when language is es_DO', async () => {
+      mockLanguage = 'es_DO';
+      render(
+        <MemoryRouter>
+          <PlansPage />
+        </MemoryRouter>
+      );
+
+      expect(screen.getByText('Soporte Básico')).toBeInTheDocument();
+      expect(screen.getByText('Descripción del plan básico')).toBeInTheDocument();
+      expect(screen.getByText('Soporte por correo')).toBeInTheDocument();
+      
+      // Reset mockLanguage
+      mockLanguage = 'en_US';
     });
   });
 });
