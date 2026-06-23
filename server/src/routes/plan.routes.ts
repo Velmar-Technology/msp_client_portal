@@ -3,7 +3,7 @@ import { planController } from '../controllers/PlanController';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { rbacMiddleware } from '../middleware/rbacMiddleware';
 import { validate } from '../middleware/validationMiddleware';
-import { UpdatePlanDTO } from '../dtos/plan.dto';
+import { CreatePlanDTO, UpdatePlanDTO } from '../dtos/plan.dto';
 import { UserRole } from '../types';
 
 const router = Router();
@@ -15,6 +15,14 @@ router.get('/', (req, res) => planController.getAll(req, res));
 
 /** GET /api/v1/plans/:id — Get plan details */
 router.get('/:id', (req, res) => planController.getById(req, res));
+
+/** POST /api/v1/plans — Create new plan (Admin only) */
+router.post(
+  '/',
+  rbacMiddleware(UserRole.ADMIN),
+  validate(CreatePlanDTO),
+  (req, res) => planController.create(req, res)
+);
 
 /** PATCH /api/v1/plans/:id — Update plan (Admin only) */
 router.patch(

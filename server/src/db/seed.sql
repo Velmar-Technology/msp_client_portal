@@ -6,10 +6,129 @@
 TRUNCATE TABLE ticket_responses, ticket_events, ticket_attachments, tickets, subscriptions, invoices, round_robin_state, users, tenants, plans CASCADE;
 
 -- Seed plans
-INSERT INTO plans (id, name, description, price, features, recommended) VALUES
-  ('BASIC', 'Basic', 'Reactive remote support for non-critical infrastructure.', 299, '[{"text": "Remote Support 8×5", "included": true}, {"text": "Basic Monitoring (Ping/Port)", "included": true}, {"text": "Standard Ticket Management", "included": true}, {"text": "Preventive Maintenance", "included": false}]'::jsonb, false),
-  ('STANDARD', 'Standard', 'Proactive support and regular system maintenance.', 599, '[{"text": "Everything in Basic", "included": true}, {"text": "Monthly Preventive Maintenance", "included": true}, {"text": "Advanced Performance Monitoring", "included": true}, {"text": "OS Patch Management", "included": true}]'::jsonb, true),
-  ('PREMIUM', 'Premium', 'Full coverage, risk mitigation, and business continuity.', 1299, '[{"text": "Everything in Standard", "included": true}, {"text": "Managed Backups & Recovery", "included": true}, {"text": "24/7 Critical Support", "included": true}, {"text": "Quarterly Security Audit", "included": true}]'::jsonb, false);
+INSERT INTO plans (id, name, description, price, features, recommended, client_type) VALUES
+  ('PL-001', 'Basic', 'Reactive remote support for non-critical infrastructure.', 18, '[
+    {"text": "Chat & Remote Only support", "included": true},
+    {"text": "Security monitoring", "included": true},
+    {"text": "25 GB Cloud Storage", "included": true},
+    {"text": "Backup included", "included": true},
+    {"text": "Bronze SLA level (8 hours response)", "included": true},
+    {"text": "RMM Monitoring & Patch Management", "included": true},
+    {"text": "Content Filtering", "included": true},
+    {"text": "Asset Lifecycle Tracking: Basic", "included": true},
+    {"text": "Reporting Level: Monthly Basic", "included": true}
+  ]'::jsonb, false, 'CLIENT'),
+
+  ('PL-002', 'Standard', 'Proactive support and regular system maintenance.', 30, '[
+    {"text": "8x5 Helpdesk support", "included": true},
+    {"text": "Security monitoring", "included": true},
+    {"text": "50 GB Cloud Storage", "included": true},
+    {"text": "Backup included", "included": true},
+    {"text": "Bronze SLA level (4 hours response)", "included": true},
+    {"text": "RMM Monitoring & Patch Management", "included": true},
+    {"text": "Optional / Premium Content Filtering", "included": true},
+    {"text": "EDR Security", "included": true},
+    {"text": "M365 Backup", "included": true},
+    {"text": "Vulnerability Scanning: Quarterly", "included": true},
+    {"text": "Identity/MFA Management", "included": true},
+    {"text": "Asset Lifecycle Tracking: Standard", "included": true},
+    {"text": "vCIO Strategic Review: Annual", "included": true},
+    {"text": "Reporting Level: Monthly Standard", "included": true}
+  ]'::jsonb, true, 'ENTERPRISE'),
+
+  ('PL-003', 'Advanced', 'Comprehensive support, security, and vCIO reviews.', 55, '[
+    {"text": "24/7/365 Helpdesk support", "included": true},
+    {"text": "Security monitoring", "included": true},
+    {"text": "250 GB Cloud Storage", "included": true},
+    {"text": "Backup included", "included": true},
+    {"text": "Silver SLA level (2 hours response)", "included": true},
+    {"text": "RMM Monitoring & Patch Management", "included": true},
+    {"text": "On-Site Support (2h/month)", "included": true},
+    {"text": "Optional / Premium Content Filtering", "included": true},
+    {"text": "EDR Security & M365 Backup", "included": true},
+    {"text": "Password Manager", "included": true},
+    {"text": "Dark Web Monitoring", "included": true},
+    {"text": "Phishing Awareness Training", "included": true},
+    {"text": "Vulnerability Scanning: Monthly", "included": true},
+    {"text": "Identity/MFA Management", "included": true},
+    {"text": "Asset Lifecycle Tracking: Comprehensive", "included": true},
+    {"text": "vCIO Strategic Review: Semi-Annual", "included": true},
+    {"text": "Compliance Audit Mapping: Basic", "included": true},
+    {"text": "Reporting Level: Weekly Detailed", "included": true}
+  ]'::jsonb, false, 'ENTERPRISE'),
+
+  ('PL-004', 'Premium', 'Premium service with a dedicated engineer.', 85, '[
+    {"text": "Dedicated Engineer support", "included": true},
+    {"text": "Security monitoring", "included": true},
+    {"text": "1000 GB Cloud Storage", "included": true},
+    {"text": "Backup included", "included": true},
+    {"text": "Gold SLA level (1 hour response)", "included": true},
+    {"text": "RMM Monitoring & Patch Management", "included": true},
+    {"text": "On-Site Support (4h/month)", "included": true},
+    {"text": "Optional / Premium Content Filtering", "included": true},
+    {"text": "EDR Security & M365 Backup", "included": true},
+    {"text": "Password Manager & Dark Web Monitoring", "included": true},
+    {"text": "Phishing Awareness Training", "included": true},
+    {"text": "Vulnerability Scanning: Continuous", "included": true},
+    {"text": "Identity/MFA Management", "included": true},
+    {"text": "Asset Lifecycle Tracking: Comprehensive", "included": true},
+    {"text": "vCIO Strategic Review: Quarterly", "included": true},
+    {"text": "Compliance Audit Mapping: Standard", "included": true},
+    {"text": "Reporting Level: Executive (On-Demand)", "included": true}
+  ]'::jsonb, false, 'ENTERPRISE'),
+
+  ('PL-005', 'Enterprise', 'Top-tier VIP Concierge support and custom frameworks.', 120, '[
+    {"text": "VIP Concierge support", "included": true},
+    {"text": "Security monitoring", "included": true},
+    {"text": "5000 GB Cloud Storage", "included": true},
+    {"text": "Backup included", "included": true},
+    {"text": "Platinum SLA level (30 minutes response)", "included": true},
+    {"text": "RMM Monitoring & Patch Management", "included": true},
+    {"text": "Unlimited On-Site Support", "included": true},
+    {"text": "Optional / Premium Content Filtering", "included": true},
+    {"text": "EDR Security & M365 Backup", "included": true},
+    {"text": "Password Manager & Dark Web Monitoring", "included": true},
+    {"text": "Phishing Awareness Training", "included": true},
+    {"text": "Vulnerability Scanning: Continuous + Remediation", "included": true},
+    {"text": "Identity/MFA Management", "included": true},
+    {"text": "Asset Lifecycle Tracking: Corporate Fleet", "included": true},
+    {"text": "vCIO Strategic Review: Monthly Strategic", "included": true},
+    {"text": "Compliance Audit Mapping: Full Framework", "included": true},
+    {"text": "Reporting Level: Custom / SOC", "included": true}
+  ]'::jsonb, false, 'ENTERPRISE'),
+
+  ('PL-006', 'Student Starter Kit', 'Essentials for students, including RMM and password management.', 20, '[
+    {"text": "Self-Serve / Community Support", "included": false},
+    {"text": "Security monitoring", "included": true},
+    {"text": "50 GB Cloud Storage", "included": true},
+    {"text": "Backup included", "included": true},
+    {"text": "Silver SLA level (8 hours response)", "included": true},
+    {"text": "RMM Monitoring & Patch Management", "included": true},
+    {"text": "Optional / Premium Content Filtering", "included": true},
+    {"text": "Password Manager", "included": true},
+    {"text": "Asset Lifecycle Tracking: Basic", "included": true},
+    {"text": "Reporting Level: Monthly Basic", "included": true}
+  ]'::jsonb, false, 'STUDENT'),
+
+  ('PL-007', 'Custom', 'Tailored solution with specialized terms and SLAs.', 0, '[
+    {"text": "Support: As per contract", "included": true},
+    {"text": "Security monitoring", "included": true},
+    {"text": "Cloud Storage: Custom", "included": true},
+    {"text": "Backup included", "included": true},
+    {"text": "Custom SLA & Response Time", "included": true},
+    {"text": "RMM Monitoring & Patch Management", "included": true},
+    {"text": "Onsite Support: As per contract", "included": true},
+    {"text": "Optional / Premium Content Filtering", "included": true},
+    {"text": "EDR Security & M365 Backup: As per contract", "included": true},
+    {"text": "Password Manager & Dark Web: As per contract", "included": true},
+    {"text": "Phishing Training: As per contract", "included": true},
+    {"text": "Vulnerability Scanning: As per contract", "included": true},
+    {"text": "Identity/MFA Management: As per contract", "included": true},
+    {"text": "Asset Lifecycle: As per contract", "included": true},
+    {"text": "vCIO Review: As per contract", "included": true},
+    {"text": "Compliance Mapping: As per contract", "included": true},
+    {"text": "Reporting Level: Tailored", "included": true}
+  ]'::jsonb, false, 'OTHER');
 
 -- Seed tenants
 INSERT INTO tenants (id, name, subdomain) VALUES
@@ -47,10 +166,10 @@ INSERT INTO ticket_responses (ticket_id, user_id, message, tenant_id) VALUES
 
 -- Seed subscriptions linked to tenants
 INSERT INTO subscriptions (client_id, service_name, plan, status, renewal_date, equipment_count, tenant_id) VALUES
-  ('b2c3d4e5-f6a7-8901-bcde-f12345678901', 'Cloud Storage', 'STANDARD', 'ACTIVE', '2025-11-15', 5, 'bc111111-1111-1111-1111-111111111111'),
-  ('b2c3d4e5-f6a7-8901-bcde-f12345678901', 'Managed Security', 'PREMIUM', 'ACTIVE', '2025-12-01', 1, 'bc111111-1111-1111-1111-111111111111'),
-  ('b2c3d4e5-f6a7-8901-bcde-f12345678901', 'Network Monitoring', 'BASIC', 'EXPIRING', '2025-10-20', 3, 'bc111111-1111-1111-1111-111111111111'),
-  ('e5f6a7b8-c9d0-1234-efab-345678901234', 'Microsoft 365', 'STANDARD', 'ACTIVE', '2026-01-05', 10, 'bc222222-2222-2222-2222-222222222222');
+  ('b2c3d4e5-f6a7-8901-bcde-f12345678901', 'Cloud Storage', 'PL-002', 'ACTIVE', '2025-11-15', 5, 'bc111111-1111-1111-1111-111111111111'),
+  ('b2c3d4e5-f6a7-8901-bcde-f12345678901', 'Managed Security', 'PL-004', 'ACTIVE', '2025-12-01', 1, 'bc111111-1111-1111-1111-111111111111'),
+  ('b2c3d4e5-f6a7-8901-bcde-f12345678901', 'Network Monitoring', 'PL-001', 'EXPIRING', '2025-10-20', 3, 'bc111111-1111-1111-1111-111111111111'),
+  ('e5f6a7b8-c9d0-1234-efab-345678901234', 'Microsoft 365', 'PL-002', 'ACTIVE', '2026-01-05', 10, 'bc222222-2222-2222-2222-222222222222');
 
 -- Seed invoices linked to tenants
 INSERT INTO invoices (invoice_number, client_id, amount, tax_amount, total, status, invoice_date, due_date, tenant_id) VALUES

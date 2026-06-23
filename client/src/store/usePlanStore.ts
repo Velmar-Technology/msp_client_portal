@@ -8,6 +8,9 @@ export interface PlanState {
   loading: boolean;
   error: string | null;
   fetchPlans: () => Promise<void>;
+  createPlan: (
+    data: Omit<Plan, 'created_at' | 'updated_at'>
+  ) => Promise<void>;
   updatePlan: (
     id: string,
     data: Partial<Omit<Plan, 'id' | 'created_at' | 'updated_at'>>
@@ -32,6 +35,29 @@ export const usePlanStore = create<PlanState>()(
             { loading: false, error: error.message || 'Failed to fetch plans' },
             false,
             'plans/fetch_failure'
+          );
+          throw err;
+        }
+      },
+
+      createPlan: async (data) => {
+        set({ loading: true, error: null }, false, 'plans/create_request');
+        try {
+          const newPlan = await planService.create(data);
+          set(
+            (state) => ({
+              plans: [...state.plans, newPlan],
+              loading: false,
+            }),
+            false,
+            'plans/create_success'
+          );
+        } catch (err) {
+          const error = err as Error;
+          set(
+            { loading: false, error: error.message || 'Failed to create plan' },
+            false,
+            'plans/create_failure'
           );
           throw err;
         }

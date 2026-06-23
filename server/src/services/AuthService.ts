@@ -15,7 +15,7 @@ export class AuthService {
   /**
    * Register a new user account.
    */
-  async register(data: RegisterInput): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null }; tokens: AuthTokens }> {
+  async register(data: RegisterInput): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null; clientType: string }; tokens: AuthTokens }> {
     // Check for existing user
     const existing = await userRepository.findByEmail(data.email);
     if (existing) {
@@ -54,6 +54,7 @@ export class AuthService {
       password_hash,
       role: UserRole.CLIENT,
       tenant_id: tenant.id,
+      client_type: data.clientType,
     });
 
     logger.info('New user and tenant registered', { userId: user.id, email: user.email, tenantId: tenant.id });
@@ -67,7 +68,7 @@ export class AuthService {
     });
 
     return {
-      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id, avatarUrl: user.avatar_url },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id, avatarUrl: user.avatar_url, clientType: user.client_type },
       tokens,
     };
   }
@@ -75,7 +76,7 @@ export class AuthService {
   /**
    * Authenticate user with email and password.
    */
-  async login(data: LoginInput, ipAddress: string): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null; lastLoginAt: string | null; lastLoginIp: string | null }; tokens: AuthTokens }> {
+  async login(data: LoginInput, ipAddress: string): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null; lastLoginAt: string | null; lastLoginIp: string | null; clientType: string }; tokens: AuthTokens }> {
     const user = await userRepository.findByEmail(data.email);
     if (!user) {
       throw AppError.unauthorized('Invalid email or password');
@@ -107,7 +108,7 @@ export class AuthService {
     });
 
     return {
-      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id, avatarUrl: user.avatar_url, lastLoginAt: previousLoginAt, lastLoginIp: previousLoginIp },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id, avatarUrl: user.avatar_url, lastLoginAt: previousLoginAt, lastLoginIp: previousLoginIp, clientType: user.client_type },
       tokens,
     };
   }
@@ -116,7 +117,7 @@ export class AuthService {
    * Authenticate or register a user with Google OAuth.
    */
   async googleAuth(data: GoogleAuthInput, ipAddress: string): Promise<{
-    user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null; lastLoginAt: string | null; lastLoginIp: string | null };
+    user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null; lastLoginAt: string | null; lastLoginIp: string | null; clientType: string };
     tokens: AuthTokens;
     isNewUser: boolean;
   }> {
@@ -212,7 +213,7 @@ export class AuthService {
     });
 
     return {
-      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id, avatarUrl: user.avatar_url, lastLoginAt: previousLoginAt, lastLoginIp: previousLoginIp },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id, avatarUrl: user.avatar_url, lastLoginAt: previousLoginAt, lastLoginIp: previousLoginIp, clientType: user.client_type },
       tokens,
       isNewUser,
     };

@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => {
     findById: vi.fn(),
     findAll: vi.fn(),
     update: vi.fn(),
+    create: vi.fn(),
   };
 });
 
@@ -14,6 +15,7 @@ vi.mock('../repositories/PlanRepository', () => {
       findById: mocks.findById,
       findAll: mocks.findAll,
       update: mocks.update,
+      create: mocks.create,
     },
   };
 });
@@ -41,6 +43,39 @@ describe('PlanService', () => {
         { id: 'BASIC', price: 299, name: 'Basic' },
         { id: 'STANDARD', price: 599, name: 'Standard' },
         { id: 'PREMIUM', price: 1299, name: 'Premium' },
+      ]);
+    });
+
+    it('should filter out inactive plans by default', async () => {
+      const mockPlans = [
+        { id: 'STANDARD', price: 599, name: 'Standard', active: true },
+        { id: 'INACTIVE', price: 100, name: 'Inactive Plan', active: false },
+        { id: 'BASIC', price: 299, name: 'Basic', active: true },
+      ];
+      mocks.findAll.mockResolvedValue(mockPlans);
+
+      const result = await planService.getAllPlans();
+
+      expect(result).toEqual([
+        { id: 'BASIC', price: 299, name: 'Basic', active: true },
+        { id: 'STANDARD', price: 599, name: 'Standard', active: true },
+      ]);
+    });
+
+    it('should include inactive plans if includeInactive is true', async () => {
+      const mockPlans = [
+        { id: 'STANDARD', price: 599, name: 'Standard', active: true },
+        { id: 'INACTIVE', price: 100, name: 'Inactive Plan', active: false },
+        { id: 'BASIC', price: 299, name: 'Basic', active: true },
+      ];
+      mocks.findAll.mockResolvedValue(mockPlans);
+
+      const result = await planService.getAllPlans(true);
+
+      expect(result).toEqual([
+        { id: 'INACTIVE', price: 100, name: 'Inactive Plan', active: false },
+        { id: 'BASIC', price: 299, name: 'Basic', active: true },
+        { id: 'STANDARD', price: 599, name: 'Standard', active: true },
       ]);
     });
   });
@@ -102,6 +137,57 @@ describe('PlanService', () => {
         statusCode: 500,
         code: 'INTERNAL_ERROR',
       });
+    });
+  });
+
+  describe('createPlan', () => {
+    it('should create a plan if it does not exist', async () => {
+      mocks.findById.mockResolvedValue(null);
+      const planData = {
+        id: 'PL-NEW',
+        name: 'New Plan',
+        price: 15,
+        description: 'New plan description',
+        client_type: 'CLIENT' as const,
+        features: [{ text: 'Feature 1', included: true }],
+        recommended: false,
+        active: true,
+      };
+      const createdPlan = { ...planData, created_at: new Date(), updated_at: new Date() };
+      mocks.create.mockResolvedValue(createdPlan);
+
+      const result = await planService.createPlan(planData);
+
+      expect(mocks.findById).toHaveBeenCalledWith('PL-NEW');
+      expect(mocks.create).toHaveBeenCalledWith({
+        id: 'PL-NEW',
+        name: 'New Plan',
+        price: 15,
+        description: 'New plan description',
+        client_type: 'CLIENT',
+        features: [{ text: 'Feature 1', included: true }],
+        recommended: false,
+        active: true,
+      });
+      expect(result).toEqual(createdPlan);
+    });
+
+    it('should throw conflict AppError if plan ID already exists', async () => {
+      const mockPlan = { id: 'PL-NEW', price: 15, name: 'New Plan' };
+      mocks.findById.mockResolvedValue(mockPlan);
+
+      await expect(
+        planService.createPlan({
+          id: 'PL-NEW',
+          name: 'New Plan',
+          price: 15,
+        })
+      ).rejects.toMatchObject({
+        message: "Plan with ID 'PL-NEW' already exists",
+        statusCode: 409,
+        code: 'CONFLICT',
+      });
+      expect(mocks.create).not.toHaveBeenCalled();
     });
   });
 });

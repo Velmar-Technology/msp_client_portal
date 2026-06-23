@@ -8,6 +8,14 @@ export class PlanRepository extends BaseRepository<Plan> {
     super(plans, 'plans');
   }
 
+  async create(data: Omit<Plan, 'created_at' | 'updated_at'>): Promise<Plan> {
+    const results = await db
+      .insert(plans)
+      .values(data)
+      .returning();
+    return results[0] as Plan;
+  }
+
   async update(
     id: string,
     data: Partial<Omit<Plan, 'id' | 'created_at' | 'updated_at'>>

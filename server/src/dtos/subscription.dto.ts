@@ -4,7 +4,7 @@ import { SubscriptionPlan, SubscriptionStatus } from '../types';
 export const CreateSubscriptionDTO = z.object({
   serviceName: z.string().min(1, 'Service name is required').max(255),
   plan: z.nativeEnum(SubscriptionPlan, {
-    errorMap: () => ({ message: 'Plan must be BASIC, STANDARD, or PREMIUM' }),
+    errorMap: () => ({ message: 'Invalid plan selected' }),
   }),
   equipmentCount: z.coerce.number().int().min(1, 'At least 1 equipment required').max(100),
   clientId: z.string().uuid('Invalid client ID format').optional(),

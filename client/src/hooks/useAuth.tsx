@@ -14,7 +14,8 @@ export interface AuthContextType {
     name: string,
     tenantName: string,
     password: string,
-    confirmPassword: string
+    confirmPassword: string,
+    clientType: string
   ) => Promise<void>;
   loginWithGoogle: (idToken: string, tenantName?: string) => Promise<void>;
   logout: () => void;

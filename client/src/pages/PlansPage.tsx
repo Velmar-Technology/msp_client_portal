@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Check, X, Lock, Shield, Edit, Trash2 } from 'lucide-react';
+import { Check, X, Lock, Shield, Edit, Trash2, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Page } from '@/components/Page';
 import { Input } from '@/components/ui/input';
@@ -15,10 +15,10 @@ import type { AuthUser } from '@/store/useAuthStore';
 export function PlansPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { plans, loading, fetchPlans, updatePlan } = usePlanStore();
+  const { plans, loading, fetchPlans, updatePlan, createPlan } = usePlanStore();
   const { addToast } = useNotificationStore();
 
-  const [selectedPlan, setSelectedPlan] = useState('STANDARD');
+  const [userSelectedPlan, setUserSelectedPlan] = useState<string | null>(null);
   const [equipmentCount, setEquipmentCount] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'transfer'>('card');
   const [reference] = useState(() => `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9999)).padStart(4, '0')}`);
@@ -26,12 +26,19 @@ export function PlansPage() {
 
   // Admin Editor State
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
+  const [editId, setEditId] = useState('');
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editPrice, setEditPrice] = useState(0);
   const [editRecommended, setEditRecommended] = useState(false);
+  const [editClientType, setEditClientType] = useState('CLIENT');
+  const [editActive, setEditActive] = useState(true);
   const [editFeatures, setEditFeatures] = useState<PlanFeature[]>([]);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [isCreateMode, setIsCreateMode] = useState(false);
+
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   // Admin apply plan state
   const [clients, setClients] = useState<AuthUser[]>([]);
@@ -43,6 +50,13 @@ export function PlansPage() {
 
   const isAdmin = user?.role === 'ADMIN';
 
+  const filteredPlans = plans.filter((plan) => {
+    if (isAdmin || user?.role === 'TECHNICIAN') return true;
+    const userClientType = user?.clientType || 'CLIENT';
+    const planClientType = plan.client_type || 'CLIENT';
+    return plan.active !== false && planClientType === userClientType;
+  });
+
   const fetchActiveSubscription = useCallback(async () => {
     if (isAdmin || user?.role !== 'CLIENT') return;
     try {
@@ -50,7 +64,7 @@ export function PlansPage() {
       const active = subs.find((sub) => sub.status === 'ACTIVE');
       setActiveSubscription(active || null);
       if (active) {
-        setSelectedPlan(active.plan);
+        setUserSelectedPlan(active.plan);
         setEquipmentCount(active.equipment_count);
         if (active.service_name.includes('(Annual)')) {
           setBillingCycle('annual');
@@ -83,7 +97,9 @@ export function PlansPage() {
     }
   }, [isAdmin, user, fetchActiveSubscription]);
 
-  const currentPlan = plans.find((p) => p.id === selectedPlan) || plans.find((p) => p.id === 'STANDARD') || plans[0];
+  const selectedPlan = userSelectedPlan || activeSubscription?.plan || (filteredPlans.find((p) => p.id === 'STANDARD') ? 'STANDARD' : (filteredPlans[0]?.id || ''));
+
+  const currentPlan = filteredPlans.find((p) => p.id === selectedPlan) || filteredPlans.find((p) => p.id === 'STANDARD') || filteredPlans[0];
 
   const handleProcessSubscription = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -212,12 +228,41 @@ export function PlansPage() {
 
   // Open Edit Modal
   const handleEditClick = (plan: Plan) => {
+    setIsCreateMode(false);
     setEditingPlan(plan);
+    setEditId(plan.id);
     setEditName(plan.name);
     setEditDescription(plan.description || '');
     setEditPrice(plan.price);
     setEditRecommended(plan.recommended);
+    setEditClientType(plan.client_type || 'CLIENT');
+    setEditActive(plan.active !== undefined ? plan.active : true);
     setEditFeatures([...plan.features]);
+  };
+
+  // Open Create Modal
+  const handleCreateClick = () => {
+    setIsCreateMode(true);
+    setEditingPlan({
+      id: '',
+      name: '',
+      description: '',
+      price: 0,
+      features: [],
+      recommended: false,
+      client_type: 'CLIENT',
+      active: true,
+      created_at: '',
+      updated_at: '',
+    });
+    setEditId('');
+    setEditName('');
+    setEditDescription('');
+    setEditPrice(0);
+    setEditRecommended(false);
+    setEditClientType('CLIENT');
+    setEditActive(true);
+    setEditFeatures([]);
   };
 
   // Add Feature
@@ -244,9 +289,63 @@ export function PlansPage() {
     );
   };
 
+  // Move Feature (Accessible keyboard controls)
+  const handleMoveFeature = (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= editFeatures.length) return;
+    const updated = [...editFeatures];
+    const temp = updated[index];
+    updated[index] = updated[targetIndex];
+    updated[targetIndex] = temp;
+    setEditFeatures(updated);
+  };
+
+  // Drag and Drop Handlers
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === targetIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+    const updated = [...editFeatures];
+    const [removed] = updated.splice(draggedIndex, 1);
+    updated.splice(targetIndex, 0, removed);
+    setEditFeatures(updated);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
   // Save Plan
   const handleSavePlan = async () => {
     if (!editingPlan) return;
+    if (isCreateMode && !editId.trim()) {
+      addToast({
+        title: 'Validation Error',
+        message: 'Plan ID is required.',
+        type: 'error',
+      });
+      return;
+    }
     if (!editName.trim()) {
       addToast({
         title: 'Validation Error',
@@ -261,26 +360,47 @@ export function PlansPage() {
       // Filter out empty features
       const filteredFeatures = editFeatures.filter((f) => f.text.trim() !== '');
       
-      await updatePlan(editingPlan.id, {
-        name: editName,
-        description: editDescription,
-        price: editPrice,
-        recommended: editRecommended,
-        features: filteredFeatures,
-      });
+      if (isCreateMode) {
+        await createPlan({
+          id: editId.trim(),
+          name: editName,
+          description: editDescription,
+          price: editPrice,
+          recommended: editRecommended,
+          client_type: editClientType,
+          active: editActive,
+          features: filteredFeatures,
+        });
 
-      addToast({
-        title: 'Plan Updated',
-        message: `${editName} plan has been updated successfully.`,
-        type: 'success',
-      });
+        addToast({
+          title: 'Plan Created',
+          message: `${editName} plan has been created successfully.`,
+          type: 'success',
+        });
+      } else {
+        await updatePlan(editingPlan.id, {
+          name: editName,
+          description: editDescription,
+          price: editPrice,
+          recommended: editRecommended,
+          client_type: editClientType,
+          active: editActive,
+          features: filteredFeatures,
+        });
+
+        addToast({
+          title: 'Plan Updated',
+          message: `${editName} plan has been updated successfully.`,
+          type: 'success',
+        });
+      }
       setEditingPlan(null);
     } catch (err) {
       console.error('Failed to save plan:', err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
       addToast({
-        title: 'Update Failed',
-        message: error.response?.data?.message || error.message || 'Failed to update plan.',
+        title: 'Save Failed',
+        message: error.response?.data?.message || error.message || 'Failed to save plan.',
         type: 'error',
       });
     } finally {
@@ -292,10 +412,11 @@ export function PlansPage() {
     <Page
       title={t('plans.title')}
       subtitle={t('plans.subtitle')}
-      isLoading={loading && plans.length === 0}
+      isLoading={loading && filteredPlans.length === 0}
     >
-      {/* Billing Cycle Switcher */}
-      <div className="flex justify-center mb-8">
+      {/* Billing Cycle Switcher & Admin Actions */}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+        <div className="md:w-1/3" /> {/* Left Spacer */}
         <div className="bg-surface-container-low border border-outline-variant p-1 rounded-xl flex items-center gap-1">
           <button
             type="button"
@@ -327,20 +448,40 @@ export function PlansPage() {
             </span>
           </button>
         </div>
+        <div className="md:w-1/3 flex justify-end">
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={handleCreateClick}
+              className="bg-primary text-on-primary px-4 py-2 rounded-lg text-label-md font-semibold hover:opacity-90 transition-opacity cursor-pointer flex items-center gap-1.5 shadow-sm"
+            >
+              <span>+ Add Plan</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Plan Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        {plans.map((plan) => (
+      <div className="grid grid-cols-1 md:grid-cols-3 justify-center gap-6 mb-12">
+        {filteredPlans.map((plan) => (
           <div
             key={plan.id}
             className={`relative bg-surface-container-lowest border rounded-xl p-6 pt-8 flex flex-col transition-all cursor-pointer text-on-surface ${
               selectedPlan === plan.id
                 ? 'border-primary shadow-md ring-1 ring-primary'
                 : 'border-outline-variant shadow-sm hover:shadow-md'
-            }`}
-            onClick={() => setSelectedPlan(plan.id)}
+            } ${plan.active === false ? 'opacity-70 bg-surface-container-low/40 border-dashed' : ''}`}
+            onClick={() => setUserSelectedPlan(plan.id)}
           >
+            {/* Disabled Badge */}
+            {plan.active === false && (
+              <div className="absolute top-3 left-3">
+                <span className="bg-error/15 text-error border border-error/30 px-2.5 py-0.5 rounded-lg text-[10px] font-bold">
+                  Disabled
+                </span>
+              </div>
+            )}
+
             {plan.recommended && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                 <span className="bg-primary text-on-primary px-3 py-1 rounded-full text-label-sm font-bold">
@@ -674,7 +815,7 @@ export function PlansPage() {
           <div className="bg-surface-container-lowest border border-outline-variant rounded-xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-xl text-on-surface">
             <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-container-lowest">
               <h3 className="text-h3 font-bold" style={{ fontFamily: 'var(--font-heading)' }}>
-                Edit Plan: {editingPlan.id}
+                {isCreateMode ? 'Add New Plan' : `Edit Plan: ${editingPlan.id}`}
               </h3>
               <button
                 onClick={() => setEditingPlan(null)}
@@ -686,9 +827,51 @@ export function PlansPage() {
 
             <div className="p-6 overflow-y-auto space-y-4 flex-1">
               <div className="grid grid-cols-2 gap-4">
+                {isCreateMode ? (
+                  <div>
+                    <label htmlFor="edit-id" className="block text-label-md text-on-surface mb-1.5">Plan ID</label>
+                    <Input
+                      id="edit-id"
+                      type="text"
+                      value={editId}
+                      onChange={(e) => setEditId(e.target.value.toUpperCase().replace(/\s+/g, '-'))}
+                      placeholder="e.g. PL-008"
+                      className="w-full bg-surface-container-lowest text-on-surface border border-outline-variant"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label htmlFor="edit-id" className="block text-label-md text-on-surface mb-1.5">Plan ID</label>
+                    <Input
+                      id="edit-id"
+                      type="text"
+                      value={editId}
+                      disabled
+                      className="w-full bg-surface-container-low text-on-surface-variant border border-outline-variant opacity-70"
+                    />
+                  </div>
+                )}
                 <div>
-                  <label className="block text-label-md text-on-surface mb-1.5">Plan Name</label>
+                  <label htmlFor="edit-client-type" className="block text-label-md text-on-surface mb-1.5">Client Type</label>
+                  <select
+                    id="edit-client-type"
+                    value={editClientType}
+                    onChange={(e) => setEditClientType(e.target.value)}
+                    className="w-full h-10 px-3 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary bg-surface-container-lowest text-on-surface"
+                  >
+                    <option value="CLIENT">Standard Client</option>
+                    <option value="ENTERPRISE">Enterprise Client</option>
+                    <option value="STUDENT">Student Starter</option>
+                    <option value="OTHER">Other / Custom</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="edit-name" className="block text-label-md text-on-surface mb-1.5">Plan Name</label>
                   <Input
+                    id="edit-name"
                     type="text"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
@@ -696,8 +879,9 @@ export function PlansPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-label-md text-on-surface mb-1.5">Monthly Price ($)</label>
+                  <label htmlFor="edit-price" className="block text-label-md text-on-surface mb-1.5">Monthly Price ($)</label>
                   <Input
+                    id="edit-price"
                     type="number"
                     value={editPrice}
                     onChange={(e) => setEditPrice(parseInt(e.target.value) || 0)}
@@ -707,25 +891,41 @@ export function PlansPage() {
               </div>
 
               <div>
-                <label className="block text-label-md text-on-surface mb-1.5">Description</label>
+                <label htmlFor="edit-description" className="block text-label-md text-on-surface mb-1.5">Description</label>
                 <textarea
+                  id="edit-description"
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
                   className="w-full min-h-[80px] p-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20"
                 />
               </div>
 
-              <div className="flex items-center gap-2">
-                <input
-                  id="edit-recommended"
-                  type="checkbox"
-                  checked={editRecommended}
-                  onChange={(e) => setEditRecommended(e.target.checked)}
-                  className="h-4 w-4 rounded border-outline-variant bg-surface-container-lowest text-primary focus:ring-primary cursor-pointer"
-                />
-                <label htmlFor="edit-recommended" className="text-body-md text-on-surface cursor-pointer select-none">
-                  Recommended Plan
-                </label>
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <input
+                    id="edit-recommended"
+                    type="checkbox"
+                    checked={editRecommended}
+                    onChange={(e) => setEditRecommended(e.target.checked)}
+                    className="h-4 w-4 rounded border-outline-variant bg-surface-container-lowest text-primary focus:ring-primary cursor-pointer"
+                  />
+                  <label htmlFor="edit-recommended" className="text-body-md text-on-surface cursor-pointer select-none">
+                    Recommended Plan
+                  </label>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    id="edit-active"
+                    type="checkbox"
+                    checked={editActive}
+                    onChange={(e) => setEditActive(e.target.checked)}
+                    className="h-4 w-4 rounded border-outline-variant bg-surface-container-lowest text-primary focus:ring-primary cursor-pointer"
+                  />
+                  <label htmlFor="edit-active" className="text-body-md text-on-surface cursor-pointer select-none">
+                    Plan Active
+                  </label>
+                </div>
               </div>
 
               <div className="border-t border-outline-variant pt-4">
@@ -742,7 +942,51 @@ export function PlansPage() {
 
                 <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
                   {editFeatures.map((feat, index) => (
-                    <div key={index} className="flex items-center gap-2 border border-outline-variant/30 rounded-lg p-2 bg-surface-container-low/40">
+                    <div
+                      key={index}
+                      draggable={true}
+                      onDragStart={(e) => handleDragStart(e, index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDrop={(e) => handleDrop(e, index)}
+                      onDragEnd={handleDragEnd}
+                      className={`group flex items-center gap-2 border rounded-lg p-2 transition-all duration-200 ${
+                        draggedIndex === index
+                          ? 'opacity-40 bg-surface-container'
+                          : dragOverIndex === index
+                          ? 'border-primary border-dashed bg-primary/5 scale-[1.02]'
+                          : 'border-outline-variant/30 bg-surface-container-low/40'
+                      }`}
+                    >
+                      {/* Drag Handle & Accessible Controls */}
+                      <div className="flex items-center gap-0.5">
+                        <div
+                          className="cursor-grab active:cursor-grabbing text-on-surface-variant/40 hover:text-on-surface-variant/80 transition-colors p-1"
+                          title="Drag to reorder"
+                        >
+                          <GripVertical className="h-4 w-4" />
+                        </div>
+                        <div className="flex flex-col opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            disabled={index === 0}
+                            onClick={() => handleMoveFeature(index, -1)}
+                            className="p-0.5 hover:bg-surface-container rounded text-on-surface-variant disabled:opacity-30 cursor-pointer"
+                            title="Move up"
+                          >
+                            <ChevronUp className="h-3 w-3" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={index === editFeatures.length - 1}
+                            onClick={() => handleMoveFeature(index, 1)}
+                            className="p-0.5 hover:bg-surface-container rounded text-on-surface-variant disabled:opacity-30 cursor-pointer"
+                            title="Move down"
+                          >
+                            <ChevronDown className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </div>
+
                       <input
                         type="checkbox"
                         checked={feat.included}
@@ -781,7 +1025,7 @@ export function PlansPage() {
                 disabled={saveLoading}
                 className="px-5 py-2 bg-primary text-on-primary rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50 cursor-pointer"
               >
-                {saveLoading ? 'Saving...' : 'Save Changes'}
+                {saveLoading ? 'Saving...' : (isCreateMode ? 'Create Plan' : 'Save Changes')}
               </button>
             </div>
           </div>

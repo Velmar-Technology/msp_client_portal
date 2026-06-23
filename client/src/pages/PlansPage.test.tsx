@@ -6,7 +6,6 @@ import { userService } from '@/services/userService';
 import { subscriptionService } from '@/services/subscriptionService';
 import { useAuth } from '@/hooks/useAuth';
 import { usePlanStore } from '@/store/usePlanStore';
-import React from 'react';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -197,8 +196,8 @@ describe('PlansPage', () => {
         id: 'sub-active',
         client_id: 'user-client',
         service_name: 'Standard Support',
-        plan: 'STANDARD',
-        status: 'ACTIVE',
+        plan: 'STANDARD' as const,
+        status: 'ACTIVE' as const,
         renewal_date: '2026-07-22T00:00:00.000Z',
         equipment_count: 1,
         tenant_id: 'tenant-1',
@@ -225,8 +224,8 @@ describe('PlansPage', () => {
         id: 'sub-active',
         client_id: 'user-client',
         service_name: 'Standard Support',
-        plan: 'STANDARD',
-        status: 'ACTIVE',
+        plan: 'STANDARD' as const,
+        status: 'ACTIVE' as const,
         renewal_date: '2026-07-22T00:00:00.000Z',
         equipment_count: 1,
         tenant_id: 'tenant-1',
@@ -263,8 +262,8 @@ describe('PlansPage', () => {
         id: 'sub-active',
         client_id: 'user-client',
         service_name: 'Standard Support',
-        plan: 'STANDARD',
-        status: 'ACTIVE',
+        plan: 'STANDARD' as const,
+        status: 'ACTIVE' as const,
         renewal_date: '2026-07-22T00:00:00.000Z',
         equipment_count: 1,
         tenant_id: 'tenant-1',
@@ -362,6 +361,203 @@ describe('PlansPage', () => {
             type: 'success',
           })
         );
+      });
+    });
+
+    test('renders "+ Add Plan" button, opens create modal, and submits new plan', async () => {
+      const mockCreatePlan = vi.fn().mockResolvedValue(undefined);
+      vi.mocked(usePlanStore).mockReturnValue({
+        plans: mockPlans,
+        loading: false,
+        error: null,
+        fetchPlans: vi.fn().mockResolvedValue(undefined),
+        createPlan: mockCreatePlan,
+        updatePlan: vi.fn(),
+      } as unknown as ReturnType<typeof usePlanStore>);
+
+      render(
+        <MemoryRouter>
+          <PlansPage />
+        </MemoryRouter>
+      );
+
+      const addPlanButton = screen.getByText('+ Add Plan');
+      expect(addPlanButton).toBeInTheDocument();
+
+      fireEvent.click(addPlanButton);
+
+      // Verify modal is open
+      expect(screen.getByText('Add New Plan')).toBeInTheDocument();
+
+      // Fill in details
+      fireEvent.change(screen.getByPlaceholderText('e.g. PL-008'), { target: { value: 'PL-TEST' } });
+      fireEvent.change(screen.getByLabelText('Plan Name'), { target: { value: 'Test Add Plan' } });
+      fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Test description' } });
+      fireEvent.change(screen.getByLabelText('Monthly Price ($)'), { target: { value: '99' } });
+      fireEvent.change(screen.getByLabelText('Client Type'), { target: { value: 'CLIENT' } });
+
+      const saveButton = screen.getByText('Create Plan');
+      fireEvent.click(saveButton);
+
+      await waitFor(() => {
+        expect(mockCreatePlan).toHaveBeenCalledWith(expect.objectContaining({
+          id: 'PL-TEST',
+          name: 'Test Add Plan',
+          description: 'Test description',
+          price: 99,
+          client_type: 'CLIENT',
+          active: true,
+        }));
+      });
+    });
+
+    test('hides inactive plans for standard client but shows them for admin', async () => {
+      const mockPlansWithInactive = [
+        ...mockPlans,
+        {
+          id: 'INACTIVE',
+          name: 'Disabled Plan',
+          description: 'This is disabled',
+          price: 15,
+          features: [],
+          recommended: false,
+          active: false,
+          created_at: '2026-06-22',
+          updated_at: '2026-06-22',
+        }
+      ];
+
+      vi.mocked(usePlanStore).mockReturnValue({
+        plans: mockPlansWithInactive,
+        loading: false,
+        error: null,
+        fetchPlans: vi.fn().mockResolvedValue(undefined),
+        createPlan: vi.fn(),
+        updatePlan: vi.fn(),
+      } as unknown as ReturnType<typeof usePlanStore>);
+
+      // 1. Render as Admin (should see the inactive plan with Disabled badge)
+      const { rerender } = render(
+        <MemoryRouter>
+          <PlansPage />
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Disabled Plan')).toBeInTheDocument();
+        expect(screen.getByText('Disabled')).toBeInTheDocument();
+      });
+
+      // 2. Render as Standard CLIENT (should NOT see the inactive plan)
+      vi.mocked(useAuth).mockReturnValue({
+        user: { id: 'user-client', role: 'CLIENT', name: 'John Doe', email: 'john@example.com', tenantId: 'tenant-1' },
+        isAuthenticated: true,
+      } as unknown as ReturnType<typeof useAuth>);
+
+      rerender(
+        <MemoryRouter>
+          <PlansPage />
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByText('Disabled Plan')).not.toBeInTheDocument();
+        expect(screen.queryByText('Disabled')).not.toBeInTheDocument();
+      });
+    });
+
+    test('supports reordering features via drag and drop and accessible buttons', async () => {
+      const mockUpdatePlan = vi.fn().mockResolvedValue(undefined);
+      const mockPlansWithMultipleFeatures = [
+        {
+          id: 'BASIC',
+          name: 'Basic Support',
+          description: 'Basic plan description',
+          price: 199,
+          features: [
+            { text: 'Feature A', included: true },
+            { text: 'Feature B', included: true },
+          ],
+          recommended: false,
+          active: true,
+          created_at: '2026-06-22',
+          updated_at: '2026-06-22',
+        },
+      ];
+
+      vi.mocked(usePlanStore).mockReturnValue({
+        plans: mockPlansWithMultipleFeatures,
+        loading: false,
+        error: null,
+        fetchPlans: vi.fn().mockResolvedValue(undefined),
+        createPlan: vi.fn(),
+        updatePlan: mockUpdatePlan,
+      } as unknown as ReturnType<typeof usePlanStore>);
+
+      render(
+        <MemoryRouter>
+          <PlansPage />
+        </MemoryRouter>
+      );
+
+      // Open Edit Modal
+      const editButton = screen.getByRole('button', { name: /Edit/i });
+      fireEvent.click(editButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Edit Plan: BASIC')).toBeInTheDocument();
+      });
+
+      // Find inputs containing the features
+      const inputs = screen.getAllByPlaceholderText('Feature description...');
+      expect(inputs).toHaveLength(2);
+      expect((inputs[0] as HTMLInputElement).value).toBe('Feature A');
+      expect((inputs[1] as HTMLInputElement).value).toBe('Feature B');
+
+      // 1. Test Keyboard Accessible Move Down
+      const moveDownButtons = screen.getAllByTitle('Move down');
+      fireEvent.click(moveDownButtons[0]);
+
+      // Verify they swapped
+      expect((inputs[0] as HTMLInputElement).value).toBe('Feature B');
+      expect((inputs[1] as HTMLInputElement).value).toBe('Feature A');
+
+      // Swap them back to original with Move Up
+      const moveUpButtons = screen.getAllByTitle('Move up');
+      fireEvent.click(moveUpButtons[1]);
+      expect((inputs[0] as HTMLInputElement).value).toBe('Feature A');
+      expect((inputs[1] as HTMLInputElement).value).toBe('Feature B');
+
+      // 2. Test Drag and Drop reordering
+      const dragRows = screen.getAllByTitle('Drag to reorder');
+      expect(dragRows).toHaveLength(2);
+
+      const sourceContainer = dragRows[0].closest('[draggable="true"]');
+      const targetContainer = dragRows[1].closest('[draggable="true"]');
+      expect(sourceContainer).not.toBeNull();
+      expect(targetContainer).not.toBeNull();
+
+      // Trigger HTML5 Drag & Drop events
+      fireEvent.dragStart(sourceContainer!);
+      fireEvent.dragOver(targetContainer!);
+      fireEvent.drop(targetContainer!);
+      fireEvent.dragEnd(sourceContainer!);
+
+      // Verify they swapped after drop
+      expect((inputs[0] as HTMLInputElement).value).toBe('Feature B');
+      expect((inputs[1] as HTMLInputElement).value).toBe('Feature A');
+
+      // Click save and verify updatePlan payload
+      const saveButton = screen.getByText('Save Changes');
+      fireEvent.click(saveButton);
+
+      await waitFor(() => {
+        expect(mockUpdatePlan).toHaveBeenCalledWith('BASIC', expect.objectContaining({
+          features: [
+            { text: 'Feature B', included: true },
+            { text: 'Feature A', included: true },
+          ],
+        }));
       });
     });
   });

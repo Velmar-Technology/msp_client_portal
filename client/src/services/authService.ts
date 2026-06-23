@@ -11,6 +11,7 @@ export interface RegisterPayload {
   tenantName: string;
   password: string;
   confirmPassword: string;
+  clientType: string;
 }
 
 export interface GoogleAuthPayload {
@@ -26,6 +27,7 @@ export interface AuthResponse {
     role: 'CLIENT' | 'TECHNICIAN' | 'ADMIN';
     language: string;
     tenantId: string;
+    clientType?: string;
     avatarUrl?: string | null;
     lastLoginAt?: string | null;
     lastLoginIp?: string | null;

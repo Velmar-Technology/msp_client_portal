@@ -23,6 +23,9 @@ export function RegisterPage() {
   const schema = useMemo(() => z.object({
     name: z.string().min(2, t('register.nameMin') || 'Name must be at least 2 characters'),
     tenantName: z.string().min(2, t('register.tenantMin') || 'Company name must be at least 2 characters'),
+    clientType: z.enum(['CLIENT', 'ENTERPRISE', 'STUDENT', 'OTHER'], {
+      required_error: 'Client type is required',
+    }),
     email: z.string().email(t('register.emailInvalid') || 'Invalid email address'),
     password: z.string().min(8, t('register.passwordMin') || 'Password must be at least 8 characters'),
     confirmPassword: z.string()
@@ -42,6 +45,7 @@ export function RegisterPage() {
     defaultValues: {
       name: '',
       tenantName: '',
+      clientType: 'CLIENT',
       email: '',
       password: '',
       confirmPassword: ''
@@ -74,7 +78,7 @@ export function RegisterPage() {
     setError('');
     setLoading(true);
     try {
-      await register(data.email, data.name, data.tenantName, data.password, data.confirmPassword);
+      await register(data.email, data.name, data.tenantName, data.password, data.confirmPassword, data.clientType);
       navigate('/dashboard');
     } catch (err: unknown) {
       const error = err as {
@@ -168,6 +172,31 @@ export function RegisterPage() {
                     placeholder={t('register.companyNamePlaceholder')}
                     className="w-full h-10 px-4 py-2.5 border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 transition-all text-on-surface"
                   />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+
+            <Controller
+              name="clientType"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="reg-clientType">
+                    {t('register.clientType')}
+                  </FieldLabel>
+                  <select
+                    {...field}
+                    id="reg-clientType"
+                    className="w-full h-10 px-4 py-2 border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 transition-all text-on-surface"
+                  >
+                    <option value="CLIENT">{t('register.clientTypeCLIENT')}</option>
+                    <option value="ENTERPRISE">{t('register.clientTypeENTERPRISE')}</option>
+                    <option value="STUDENT">{t('register.clientTypeSTUDENT')}</option>
+                    <option value="OTHER">{t('register.clientTypeOTHER')}</option>
+                  </select>
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
                   )}

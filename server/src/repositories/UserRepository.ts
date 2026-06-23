@@ -77,6 +77,7 @@ export class UserRepository extends BaseRepository<User> {
     role?: UserRole;
     language?: string;
     tenant_id: string;
+    client_type?: string;
   }): Promise<User> {
     const results = await db
       .insert(users)
@@ -87,6 +88,7 @@ export class UserRepository extends BaseRepository<User> {
         role: data.role || UserRole.CLIENT,
         language: data.language || 'en_US',
         tenant_id: data.tenant_id,
+        client_type: data.client_type || 'CLIENT',
       })
       .returning();
     return results[0] as User;

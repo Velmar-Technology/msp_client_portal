@@ -59,6 +59,7 @@ export const users = pgTable(
     tenant_id: uuid('tenant_id')
       .references(() => tenants.id, { onDelete: 'cascade' })
       .notNull(),
+    client_type: varchar('client_type', { length: 50 }).default('CLIENT').notNull(),
     created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
     updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
   },
@@ -183,6 +184,8 @@ export const plans = pgTable('plans', {
   price: integer('price').notNull(),
   features: jsonb('features').notNull(),
   recommended: boolean('recommended').default(false).notNull(),
+  client_type: varchar('client_type', { length: 50 }).default('CLIENT').notNull(),
+  active: boolean('active').default(true).notNull(),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
@@ -196,7 +199,7 @@ export const subscriptions = pgTable(
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
     service_name: varchar('service_name', { length: 255 }).notNull(),
-    plan: subscriptionPlanEnum('plan').default('BASIC').notNull(),
+    plan: varchar('plan', { length: 50 }).default('PL-001').notNull(),
     status: subscriptionStatusEnum('status').default('ACTIVE').notNull(),
     renewal_date: timestamp('renewal_date', { withTimezone: true }).notNull(),
     equipment_count: integer('equipment_count').default(1).notNull(),

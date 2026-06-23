@@ -61,7 +61,7 @@ const options: swaggerJsdoc.Options = {
             id: { type: 'string', format: 'uuid' },
             client_id: { type: 'string', format: 'uuid' },
             service_name: { type: 'string' },
-            plan: { type: 'string', enum: ['BASIC', 'STANDARD', 'PREMIUM'] },
+            plan: { type: 'string', enum: ['PL-001', 'PL-002', 'PL-003', 'PL-004', 'PL-005', 'PL-006', 'PL-007'] },
             status: { type: 'string', enum: ['ACTIVE', 'EXPIRING', 'EXPIRED', 'CANCELLED'] },
             renewal_date: { type: 'string', format: 'date-time' },
             equipment_count: { type: 'integer' },
@@ -123,11 +123,12 @@ const options: swaggerJsdoc.Options = {
               'application/json': {
                 schema: {
                   type: 'object',
-                  required: ['email', 'name', 'tenantName', 'password', 'confirmPassword'],
+                  required: ['email', 'name', 'tenantName', 'password', 'confirmPassword', 'clientType'],
                   properties: {
                     email: { type: 'string', format: 'email' },
                     name: { type: 'string', minLength: 2 },
                     tenantName: { type: 'string', minLength: 2 },
+                    clientType: { type: 'string', enum: ['CLIENT', 'ENTERPRISE', 'STUDENT', 'OTHER'] },
                     password: { type: 'string', minLength: 8 },
                     confirmPassword: { type: 'string' },
                   },

@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => {
     getAllPlans: vi.fn(),
     getPlanById: vi.fn(),
     updatePlan: vi.fn(),
+    createPlan: vi.fn(),
   };
 });
 
@@ -15,6 +16,7 @@ vi.mock('../services/PlanService', () => {
       getAllPlans: mocks.getAllPlans,
       getPlanById: mocks.getPlanById,
       updatePlan: mocks.updatePlan,
+      createPlan: mocks.createPlan,
     },
   };
 });
@@ -41,11 +43,49 @@ describe('PlanController', () => {
 
       await planController.getAll(req, res);
 
-      expect(mocks.getAllPlans).toHaveBeenCalled();
+      expect(mocks.getAllPlans).toHaveBeenCalledWith(false);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockPlans,
       });
+    });
+
+    it('should include inactive plans for admin', async () => {
+      const mockPlans = [
+        { id: 'BASIC', price: 299, name: 'Basic' },
+        { id: 'STANDARD', price: 599, name: 'Standard' },
+      ];
+      mocks.getAllPlans.mockResolvedValue(mockPlans);
+
+      const req = {
+        user: { role: 'ADMIN' }
+      } as unknown as Request;
+      const res = {
+        json: vi.fn(),
+      } as unknown as Response;
+
+      await planController.getAll(req, res);
+
+      expect(mocks.getAllPlans).toHaveBeenCalledWith(true);
+    });
+
+    it('should include inactive plans for technician', async () => {
+      const mockPlans = [
+        { id: 'BASIC', price: 299, name: 'Basic' },
+        { id: 'STANDARD', price: 599, name: 'Standard' },
+      ];
+      mocks.getAllPlans.mockResolvedValue(mockPlans);
+
+      const req = {
+        user: { role: 'TECHNICIAN' }
+      } as unknown as Request;
+      const res = {
+        json: vi.fn(),
+      } as unknown as Response;
+
+      await planController.getAll(req, res);
+
+      expect(mocks.getAllPlans).toHaveBeenCalledWith(true);
     });
   });
 
@@ -90,6 +130,30 @@ describe('PlanController', () => {
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: updatedPlan,
+      });
+    });
+  });
+
+  describe('create', () => {
+    it('should create a plan and return 201 with created plan data', async () => {
+      const newPlan = { id: 'PL-NEW', price: 15, name: 'New Plan' };
+      mocks.createPlan.mockResolvedValue(newPlan);
+
+      const req = {
+        body: { id: 'PL-NEW', price: 15, name: 'New Plan' },
+      } as unknown as Request;
+      const res = {
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn(),
+      } as unknown as Response;
+
+      await planController.create(req, res);
+
+      expect(mocks.createPlan).toHaveBeenCalledWith({ id: 'PL-NEW', price: 15, name: 'New Plan' });
+      expect(res.status).toHaveBeenCalledWith(201);
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        data: newPlan,
       });
     });
   });

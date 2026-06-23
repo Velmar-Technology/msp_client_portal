@@ -10,6 +10,9 @@ export const RegisterDTO = z.object({
   email: z.string().email('Invalid email address'),
   name: z.string().min(2, 'Name must be at least 2 characters').max(255),
   tenantName: z.string().min(2, 'Company name must be at least 2 characters').max(255),
+  clientType: z.enum(['CLIENT', 'ENTERPRISE', 'STUDENT', 'OTHER'], {
+    errorMap: () => ({ message: 'Client type must be CLIENT, ENTERPRISE, STUDENT, or OTHER' }),
+  }),
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')

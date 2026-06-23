@@ -36,6 +36,13 @@ export enum SubscriptionPlan {
   BASIC = 'BASIC',
   STANDARD = 'STANDARD',
   PREMIUM = 'PREMIUM',
+  PL_001 = 'PL-001',
+  PL_002 = 'PL-002',
+  PL_003 = 'PL-003',
+  PL_004 = 'PL-004',
+  PL_005 = 'PL-005',
+  PL_006 = 'PL-006',
+  PL_007 = 'PL-007',
 }
 
 export enum SubscriptionStatus {
@@ -75,6 +82,7 @@ export interface User {
   last_login_at: Date | null;
   last_login_ip: string | null;
   tenant_id: string;
+  client_type: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -280,6 +288,8 @@ export interface Plan {
   price: number;
   features: PlanFeature[];
   recommended: boolean;
+  client_type: string;
+  active: boolean;
   created_at: Date;
   updated_at: Date;
 }
