@@ -30,11 +30,13 @@ const getPlanStorageQuotaGB = (planId: string): number => {
   return 25;
 };
 
-const formatStorage = (gb: number): string => {
-  if (gb >= 1000) {
-    return `${(gb / 1000).toFixed(1)} TB`;
-  }
-  return `${gb} GB`;
+const formatBytes = (bytes: number, decimals = 1): string => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 };
 
 export function ClientDashboard() {
@@ -48,8 +50,8 @@ export function ClientDashboard() {
   // Storage and account quota state
   const [totalSlotsCount, setTotalSlotsCount] = useState(0);
   const [activeSlotsCount, setActiveSlotsCount] = useState(0);
-  const [totalStorageQuota, setTotalStorageQuota] = useState(0); // in GB
-  const [activeStorageQuota, setActiveStorageQuota] = useState(0); // in GB
+  const [totalStorageQuota, setTotalStorageQuota] = useState(0); // in bytes
+  const [activeStorageQuota, setActiveStorageQuota] = useState(0); // in bytes
 
   useEffect(() => {
     async function load() {
@@ -74,35 +76,35 @@ export function ClientDashboard() {
           activeSubs.map(async (sub) => {
             try {
               const slots = await equipmentService.getSlots(sub.id);
-              const planQuota = getPlanStorageQuotaGB(sub.plan);
+              const planQuotaBytes = getPlanStorageQuotaGB(sub.plan) * 1024 * 1024 * 1024;
               
               totalSlots += sub.equipment_count;
               
               const activeInSub = slots.filter((s) => s.status === 'ACTIVE').length;
               activeSlots += activeInSub;
 
-              // Aggregate actual storage quota from slots
-              // Licensed slots (active or pending) contribute planQuota to the totalStorage.
+              // Aggregate actual storage quota from slots in raw bytes.
+              // Licensed slots (active or pending) contribute planQuotaBytes to the totalStorage.
               // Active slots contribute their actual nextcloud storage usage to activeStorage,
               // or default to 0 if not yet synced/uploaded.
               slots.forEach((slot) => {
                 if (slot.status === 'ACTIVE') {
                   if (slot.nextcloud_used_bytes !== undefined && slot.nextcloud_total_bytes !== undefined) {
-                    activeStorage += slot.nextcloud_used_bytes / (1024 * 1024 * 1024);
-                    totalStorage += slot.nextcloud_total_bytes / (1024 * 1024 * 1024);
+                    activeStorage += slot.nextcloud_used_bytes;
+                    totalStorage += slot.nextcloud_total_bytes;
                   } else {
-                    totalStorage += planQuota;
+                    totalStorage += planQuotaBytes;
                   }
                 } else {
-                  totalStorage += planQuota;
+                  totalStorage += planQuotaBytes;
                 }
               });
             } catch (err) {
               console.error(`Failed to load slots for subscription ${sub.id}`, err);
               // Fallback: count total licensed slots, assume 0 active
               totalSlots += sub.equipment_count;
-              const planQuota = getPlanStorageQuotaGB(sub.plan);
-              totalStorage += sub.equipment_count * planQuota;
+              const planQuotaBytes = getPlanStorageQuotaGB(sub.plan) * 1024 * 1024 * 1024;
+              totalStorage += sub.equipment_count * planQuotaBytes;
             }
           })
         );
@@ -250,8 +252,8 @@ export function ClientDashboard() {
                 </div>
                 <div>
                   <div className="flex justify-between text-label-md mb-1">
-                    <span className="text-on-surface-variant">{t('dashboard.used')}: {formatStorage(activeStorageQuota)}</span>
-                    <span className="text-on-surface-variant">{t('dashboard.total')}: {formatStorage(totalStorageQuota)}</span>
+                    <span className="text-on-surface-variant">{t('dashboard.used')}: {formatBytes(activeStorageQuota)}</span>
+                    <span className="text-on-surface-variant">{t('dashboard.total')}: {formatBytes(totalStorageQuota)}</span>
                   </div>
                   <div className="w-full bg-surface-container-high rounded-full h-2">
                     <div
