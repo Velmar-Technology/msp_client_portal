@@ -399,6 +399,250 @@ describe('PlansPage', () => {
       expect(emailInput.value).toBe('');
       expect(nameInput.value).toBe('');
     });
+
+    test('renders multiple active plan subscriptions with unequal equipment counts', async () => {
+      const activeSubs = [
+        {
+          id: 'sub-basic',
+          client_id: 'user-client',
+          service_name: 'Basic Support',
+          plan: 'BASIC' as const,
+          status: 'ACTIVE' as const,
+          renewal_date: '2026-07-22T00:00:00.000Z',
+          equipment_count: 2,
+          tenant_id: 'tenant-1',
+          created_at: '2026-06-22',
+          updated_at: '2026-06-22',
+        },
+        {
+          id: 'sub-standard',
+          client_id: 'user-client',
+          service_name: 'Standard Support',
+          plan: 'STANDARD' as const,
+          status: 'ACTIVE' as const,
+          renewal_date: '2026-07-22T00:00:00.000Z',
+          equipment_count: 3,
+          tenant_id: 'tenant-1',
+          created_at: '2026-06-22',
+          updated_at: '2026-06-22',
+        },
+      ];
+      vi.mocked(subscriptionService.getAll).mockResolvedValue(activeSubs);
+
+      render(
+        <MemoryRouter>
+          <PlansPage />
+        </MemoryRouter>
+      );
+
+      // Verify that both plans render with Active badges
+      await waitFor(() => {
+        const activeBadges = screen.getAllByText('Active');
+        expect(activeBadges.length).toBeGreaterThanOrEqual(2);
+      });
+
+      // Verify that BASIC support card displays equipment count of 2
+      const basicCount = screen.getByText('2');
+      expect(basicCount).toBeInTheDocument();
+
+      // Verify that STANDARD support card displays equipment count of 3
+      const standardCount = screen.getByText('3');
+      expect(standardCount).toBeInTheDocument();
+    });
+
+    test('updates a specific active subscription when multiple are present', async () => {
+      const activeSubs = [
+        {
+          id: 'sub-basic',
+          client_id: 'user-client',
+          service_name: 'Basic Support',
+          plan: 'BASIC' as const,
+          status: 'ACTIVE' as const,
+          renewal_date: '2026-07-22T00:00:00.000Z',
+          equipment_count: 2,
+          tenant_id: 'tenant-1',
+          created_at: '2026-06-22',
+          updated_at: '2026-06-22',
+        },
+        {
+          id: 'sub-standard',
+          client_id: 'user-client',
+          service_name: 'Standard Support',
+          plan: 'STANDARD' as const,
+          status: 'ACTIVE' as const,
+          renewal_date: '2026-07-22T00:00:00.000Z',
+          equipment_count: 3,
+          tenant_id: 'tenant-1',
+          created_at: '2026-06-22',
+          updated_at: '2026-06-22',
+        },
+      ];
+      vi.mocked(subscriptionService.getAll).mockResolvedValue(activeSubs);
+      vi.mocked(subscriptionService.update).mockResolvedValue({ ...activeSubs[0], equipment_count: 4 });
+
+      render(
+        <MemoryRouter>
+          <PlansPage />
+        </MemoryRouter>
+      );
+
+      // Select Basic Support plan card to manage it
+      await waitFor(() => {
+        expect(screen.getByText('plans.selected: Basic Support')).toBeInTheDocument();
+      });
+
+      // Increment equipment count of BASIC plan to 4 (currently 2, so increment twice)
+      const incrementButtons = screen.getAllByRole('button', { name: '+' });
+      // BASIC is the first card
+      fireEvent.click(incrementButtons[0]);
+      fireEvent.click(incrementButtons[0]);
+
+      // Verify updated count on screen is 4
+      expect(screen.getByText('4')).toBeInTheDocument();
+
+      // Click Update Subscription
+      fireEvent.click(screen.getByText('Update Subscription'));
+
+      await waitFor(() => {
+        expect(subscriptionService.update).toHaveBeenCalledWith('sub-basic', {
+          plan: 'BASIC',
+          equipmentCount: 4,
+        });
+      });
+    });
+
+    test('generates OTP code and simulates device activation in slot', async () => {
+      const activeSubs = [
+        {
+          id: 'sub-basic',
+          client_id: 'user-client',
+          service_name: 'Basic Support',
+          plan: 'BASIC' as const,
+          status: 'ACTIVE' as const,
+          renewal_date: '2026-07-22T00:00:00.000Z',
+          equipment_count: 2,
+          tenant_id: 'tenant-1',
+          created_at: '2026-06-22',
+          updated_at: '2026-06-22',
+        },
+      ];
+      vi.mocked(subscriptionService.getAll).mockResolvedValue(activeSubs);
+
+      render(
+        <MemoryRouter>
+          <PlansPage />
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Licensed Equipment & Activation (OTP)')).toBeInTheDocument();
+      });
+
+      // Initially, Slot #1 is active (pre-populated mock state) and Slot #2 is empty (PENDING ACTIVATION)
+      expect(screen.getByText('Slot #1')).toBeInTheDocument();
+      expect(screen.getAllByText('ACTIVE').length).toBe(2);
+      expect(screen.getByText('Slot #2')).toBeInTheDocument();
+      expect(screen.getByText('PENDING ACTIVATION')).toBeInTheDocument();
+
+      // Click Generate OTP on Slot #2
+      const generateOtpBtn = screen.getByRole('button', { name: 'Generate Activation OTP' });
+      fireEvent.click(generateOtpBtn);
+
+      // Verify toast is shown and OTP UI is rendered
+      await waitFor(() => {
+        expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({
+          title: 'OTP Generated',
+          type: 'success',
+        }));
+        expect(screen.getByText(/OTP: \d{6}/)).toBeInTheDocument();
+      });
+
+      // Mock window.prompt for simulation activation
+      const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('Simulated Laptop');
+
+      // Click simulate agent activation
+      const simulateBtn = screen.getByRole('button', { name: 'Simulate Agent Activation' });
+      fireEvent.click(simulateBtn);
+
+      await waitFor(() => {
+        expect(promptSpy).toHaveBeenCalled();
+        expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({
+          title: 'Equipment Activated',
+          type: 'success',
+        }));
+        expect(screen.getByText('Simulated Laptop')).toBeInTheDocument();
+      });
+
+      // Deactivate/revoke slot
+      const deactivateBtn = screen.getAllByRole('button', { name: 'Deactivate' });
+      // Slot #1 and Slot #2 are both ACTIVE now, click deactivate on Slot #2
+      fireEvent.click(deactivateBtn[1]);
+
+      await waitFor(() => {
+        expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({
+          title: 'Slot Revoked',
+          type: 'info',
+        }));
+      });
+    });
+
+    test('submits a new subscription as an additional plan when toggle is clicked', async () => {
+      const activeSub = {
+        id: 'sub-active-basic',
+        client_id: 'user-client',
+        service_name: 'Basic Support',
+        plan: 'BASIC' as const,
+        status: 'ACTIVE' as const,
+        renewal_date: '2026-07-22T00:00:00.000Z',
+        equipment_count: 1,
+        tenant_id: 'tenant-1',
+        created_at: '2026-06-22',
+        updated_at: '2026-06-22',
+      };
+      vi.mocked(subscriptionService.getAll).mockResolvedValue([activeSub]);
+      vi.mocked(subscriptionService.create).mockResolvedValue({ id: 'sub-new-standard' } as unknown as Awaited<ReturnType<typeof subscriptionService.create>>);
+
+      render(
+        <MemoryRouter>
+          <PlansPage />
+        </MemoryRouter>
+      );
+
+      // Verify that Basic Support is currently active and selected
+      await waitFor(() => {
+        expect(screen.getByText('Active')).toBeInTheDocument();
+      });
+
+      // Select Standard Support card (which is not active)
+      fireEvent.click(screen.getByText('plans.select Standard Support'));
+
+      // The select action header should appear
+      await waitFor(() => {
+        expect(screen.getByText('Select Action for Standard Support')).toBeInTheDocument();
+      });
+
+      // Default should be change existing plan (modify), let's click 'Subscribe as Additional Plan'
+      const subscribeAdditionalBtn = screen.getByRole('button', { name: 'Subscribe as Additional Plan' });
+      fireEvent.click(subscribeAdditionalBtn);
+
+      // Now the payment method and process payment button should be visible
+      await waitFor(() => {
+        expect(screen.getByText('plans.paymentMethod')).toBeInTheDocument();
+      });
+
+      const payButton = screen.getByText('plans.processPayment');
+      fireEvent.click(payButton);
+
+      await waitFor(() => {
+        expect(subscriptionService.create).toHaveBeenCalledWith({
+          serviceName: 'Standard Support',
+          plan: 'STANDARD',
+          equipmentCount: 1,
+          clientId: undefined,
+          billingCycle: 'monthly',
+        });
+      });
+    });
   });
 
   describe('Admin Flow', () => {

@@ -110,25 +110,7 @@ INSERT INTO plans (id, name, description, price, features, recommended, client_t
     {"text": "Reporting Level: Monthly Basic", "included": true}
   ]'::jsonb, false, 'STUDENT'),
 
-  ('PL-007', '{"en_US": "Custom", "es_DO": "Personalizado"}'::jsonb, '{"en_US": "Tailored solution with specialized terms and SLAs.", "es_DO": "Solución a la medida con términos y SLAs especializados."}'::jsonb, 0, '[
-    {"text": "Support: As per contract", "included": true},
-    {"text": "Security monitoring", "included": true},
-    {"text": "Cloud Storage: Custom", "included": true},
-    {"text": "Backup included", "included": true},
-    {"text": "Custom SLA & Response Time", "included": true},
-    {"text": "RMM Monitoring & Patch Management", "included": true},
-    {"text": "Onsite Support: As per contract", "included": true},
-    {"text": "Optional / Premium Content Filtering", "included": true},
-    {"text": "EDR Security & M365 Backup: As per contract", "included": true},
-    {"text": "Password Manager & Dark Web: As per contract", "included": true},
-    {"text": "Phishing Training: As per contract", "included": true},
-    {"text": "Vulnerability Scanning: As per contract", "included": true},
-    {"text": "Identity/MFA Management: As per contract", "included": true},
-    {"text": "Asset Lifecycle: As per contract", "included": true},
-    {"text": "vCIO Review: As per contract", "included": true},
-    {"text": "Compliance Mapping: As per contract", "included": true},
-    {"text": "Reporting Level: Tailored", "included": true}
-  ]'::jsonb, false, 'OTHER');
+  ('PL-007', '{"en_US": "Custom", "es_DO": "Personalizado"}'::jsonb, '{"en_US": "Tailored solution with specialized terms and SLAs.", "es_DO": "Solución a la medida con términos y SLAs especializados."}'::jsonb, 0, '[]'::jsonb, false, 'OTHER');
 
 -- Seed tenants
 INSERT INTO tenants (id, name, subdomain) VALUES

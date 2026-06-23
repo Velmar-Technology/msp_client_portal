@@ -26,7 +26,7 @@ export function PlansPage() {
   const { addToast } = useNotificationStore();
 
   const [userSelectedPlan, setUserSelectedPlan] = useState<string | null>(null);
-  const [equipmentCount, setEquipmentCount] = useState(1);
+  const [equipmentCounts, setEquipmentCounts] = useState<Record<string, number>>({});
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'transfer'>('card');
   const [reference] = useState(() => `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9999)).padStart(4, '0')}`);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
@@ -57,7 +57,9 @@ export function PlansPage() {
   const [subscribeLoading, setSubscribeLoading] = useState(false);
 
   // Active plan management state
-  const [activeSubscription, setActiveSubscription] = useState<Subscription | null>(null);
+  const [activeSubscriptions, setActiveSubscriptions] = useState<Subscription[]>([]);
+  // Mock state to track provisioned equipment slots and generated OTPs per subscription
+  const [subscriptionEquipment, setSubscriptionEquipment] = useState<Record<string, Array<{ id: string; name?: string; serial?: string; status: string; otp?: string; expiresAt?: string }>>>({});
 
   const isAdmin = user?.role === 'ADMIN';
 
@@ -68,29 +70,69 @@ export function PlansPage() {
     return plan.active !== false && planClientType === userClientType;
   });
 
-  const fetchActiveSubscription = useCallback(async () => {
+  const fetchActiveSubscriptions = useCallback(async () => {
     if (isAdmin || user?.role !== 'CLIENT') return;
     try {
       const subs = await subscriptionService.getAll();
-      const active = subs.find((sub) => sub.status === 'ACTIVE');
-      setActiveSubscription(active || null);
-      if (active) {
-        setUserSelectedPlan(active.plan);
-        setEquipmentCount(active.equipment_count);
-        if (active.service_name.includes('(Annual)')) {
-          setBillingCycle('annual');
-        } else {
-          setBillingCycle('monthly');
+      const active = subs.filter((sub) => sub.status === 'ACTIVE');
+      setActiveSubscriptions(active);
+
+      // Initialize equipmentCounts for all active subscriptions
+      const counts: Record<string, number> = {};
+      active.forEach((sub) => {
+        counts[sub.plan] = sub.equipment_count;
+      });
+      setEquipmentCounts((prev) => ({ ...prev, ...counts }));
+
+      // Populate mock equipment slots for each active subscription
+      const initialEquip: Record<string, Array<{ id: string; name?: string; serial?: string; status: string; otp?: string; expiresAt?: string }>> = {};
+      active.forEach((sub) => {
+        const slots = [];
+        for (let i = 0; i < sub.equipment_count; i++) {
+          if (i === 0) {
+            slots.push({
+              id: `device-slot-${i}`,
+              name: `Workstation-${sub.plan}-${i + 1}`,
+              serial: `SN-MSP-${sub.plan}-${Math.floor(1000 + Math.random() * 9000)}`,
+              status: 'ACTIVE',
+            });
+          } else {
+            slots.push({
+              id: `device-slot-${i}`,
+              status: 'PENDING_ACTIVATION',
+            });
+          }
         }
-      }
+        initialEquip[sub.id] = slots;
+      });
+      setSubscriptionEquipment(initialEquip);
+
+      setUserSelectedPlan((prev) => {
+        if (!prev && active.length > 0) {
+          return active[0].plan;
+        }
+        return prev;
+      });
     } catch (err) {
-      console.error('Failed to fetch active subscription:', err);
+      console.error('Failed to fetch active subscriptions:', err);
     }
   }, [isAdmin, user]);
 
   useEffect(() => {
     fetchPlans().catch((err) => console.error('Failed to fetch plans:', err));
   }, [fetchPlans]);
+
+  // Set default equipment counts when plans are loaded
+  useEffect(() => {
+    if (plans.length > 0) {
+      const counts: Record<string, number> = {};
+      plans.forEach((plan) => {
+        counts[plan.id] = 1;
+      });
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setEquipmentCounts((prev) => ({ ...counts, ...prev }));
+    }
+  }, [plans]);
 
   useEffect(() => {
     if (isAdmin) {
@@ -106,13 +148,116 @@ export function PlansPage() {
         .catch((err) => console.error('Failed to fetch clients:', err));
     } else {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      fetchActiveSubscription();
+      fetchActiveSubscriptions();
     }
-  }, [isAdmin, user, fetchActiveSubscription]);
+  }, [isAdmin, user, fetchActiveSubscriptions]);
 
-  const selectedPlan = userSelectedPlan || activeSubscription?.plan || (filteredPlans.find((p) => p.id === 'STANDARD') ? 'STANDARD' : (filteredPlans[0]?.id || ''));
+  const selectedPlan = userSelectedPlan || (activeSubscriptions.length > 0 ? activeSubscriptions[0].plan : (filteredPlans.find((p) => p.id === 'STANDARD') ? 'STANDARD' : (filteredPlans[0]?.id || '')));
 
   const currentPlan = filteredPlans.find((p) => p.id === selectedPlan) || filteredPlans.find((p) => p.id === 'STANDARD') || filteredPlans[0];
+
+  const [actionType, setActionType] = useState<'subscribe' | 'modify'>('modify');
+  const [subscriptionToModifyId, setSubscriptionToModifyId] = useState<string>('');
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setActionType('modify');
+    if (activeSubscriptions.length > 0) {
+      const activeSubForPlan = activeSubscriptions.find((sub) => sub.plan === selectedPlan && sub.status === 'ACTIVE');
+      if (activeSubForPlan) {
+        setSubscriptionToModifyId(activeSubForPlan.id);
+      } else {
+        setSubscriptionToModifyId(activeSubscriptions[0].id);
+      }
+    }
+  }, [selectedPlan, activeSubscriptions]);
+
+  const currentEquipmentCount = equipmentCounts[currentPlan?.id] || 1;
+
+  const handleAdjustEquipmentCount = (planId: string, delta: number) => {
+    setEquipmentCounts((prev) => ({
+      ...prev,
+      [planId]: Math.max(1, (prev[planId] || 1) + delta),
+    }));
+  };
+
+  // Handler to provision a slot / generate OTP
+  const handleGenerateOTP = (subId: string, slotIndex: number) => {
+    // eslint-disable-next-line react-hooks/purity
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    // eslint-disable-next-line react-hooks/purity
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString();
+
+    setSubscriptionEquipment((prev) => {
+      const current = prev[subId] || [];
+      const updated = [...current];
+      updated[slotIndex] = {
+        id: `device-slot-${slotIndex}`,
+        status: 'PENDING_ACTIVATION',
+        otp,
+        expiresAt,
+      };
+
+      addToast({
+        title: 'OTP Generated',
+        message: `Temporary activation code ${otp} generated for slot #${slotIndex + 1}.`,
+        type: 'success',
+      });
+
+      return {
+        ...prev,
+        [subId]: updated,
+      };
+    });
+  };
+
+  // Handler to mock activate a device
+  const handleMockActivate = (subId: string, slotIndex: number, deviceName: string, deviceSerial: string) => {
+    setSubscriptionEquipment((prev) => {
+      const current = prev[subId] || [];
+      const updated = [...current];
+      updated[slotIndex] = {
+        id: `device-slot-${slotIndex}`,
+        name: deviceName,
+        serial: deviceSerial,
+        status: 'ACTIVE',
+        otp: undefined,
+        expiresAt: undefined,
+      };
+      return {
+        ...prev,
+        [subId]: updated,
+      };
+    });
+
+    addToast({
+      title: 'Equipment Activated',
+      message: `Device ${deviceName} successfully activated. Features enabled.`,
+      type: 'success',
+    });
+  };
+
+  // Handler to revoke / deactivate a device
+  const handleRevokeEquipment = (subId: string, slotIndex: number) => {
+    setSubscriptionEquipment((prev) => {
+      const current = prev[subId] || [];
+      const updated = [...current];
+      updated[slotIndex] = {
+        id: `device-slot-${slotIndex}`,
+        status: 'PENDING_ACTIVATION',
+      };
+      return {
+        ...prev,
+        [subId]: updated,
+      };
+    });
+
+    addToast({
+      title: 'Slot Revoked',
+      message: 'Equipment slot revoked. The device will be deactivated during its next check-in.',
+      type: 'info',
+    });
+  };
 
   const handleProcessSubscription = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,7 +277,7 @@ export function PlansPage() {
       await subscriptionService.create({
         serviceName: getPlanName(currentPlan.name),
         plan: currentPlan.id,
-        equipmentCount,
+        equipmentCount: currentEquipmentCount,
         clientId: isAdmin ? selectedClientId : undefined,
         billingCycle,
       });
@@ -144,6 +289,7 @@ export function PlansPage() {
           : `Successfully subscribed to the ${getPlanName(currentPlan.name)} plan.`,
         type: 'success',
       });
+      await fetchActiveSubscriptions();
     } catch (err) {
       console.error('Failed to create subscription:', err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
@@ -184,7 +330,7 @@ export function PlansPage() {
     try {
       await subscriptionService.sendQuote({
         plan: currentPlan.id,
-        equipmentCount,
+        equipmentCount: currentEquipmentCount,
         clientId: (!sendToUnregistered && isAdmin) ? selectedClientId : undefined,
         unregisteredEmail: sendToUnregistered ? unregisteredEmail.trim() : undefined,
         unregisteredName: sendToUnregistered ? unregisteredName.trim() || undefined : undefined,
@@ -214,20 +360,20 @@ export function PlansPage() {
     }
   };
 
-  const handleUpdateSubscription = async () => {
-    if (!activeSubscription || !currentPlan) return;
+  const handleUpdateSubscription = async (subId: string, count: number) => {
+    if (!currentPlan) return;
     setSubscribeLoading(true);
     try {
-      await subscriptionService.update(activeSubscription.id, {
+      await subscriptionService.update(subId, {
         plan: currentPlan.id,
-        equipmentCount: equipmentCount,
+        equipmentCount: count,
       });
       addToast({
         title: 'Subscription Updated',
         message: `Successfully updated your subscription to ${getPlanName(currentPlan.name)}.`,
         type: 'success',
       });
-      await fetchActiveSubscription();
+      await fetchActiveSubscriptions();
     } catch (err) {
       console.error('Failed to update subscription:', err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
@@ -241,9 +387,7 @@ export function PlansPage() {
     }
   };
 
-  const handleCancelSubscription = async () => {
-    if (!activeSubscription) return;
-    
+  const handleCancelSubscription = async (subId: string) => {
     const confirmCancel = window.confirm(
       'Are you sure you want to cancel your subscription? This action will take effect immediately.'
     );
@@ -251,7 +395,7 @@ export function PlansPage() {
 
     setSubscribeLoading(true);
     try {
-      await subscriptionService.update(activeSubscription.id, {
+      await subscriptionService.update(subId, {
         status: 'CANCELLED',
       });
       addToast({
@@ -259,7 +403,7 @@ export function PlansPage() {
         message: 'Your subscription has been successfully cancelled.',
         type: 'success',
       });
-      setActiveSubscription(null);
+      await fetchActiveSubscriptions();
     } catch (err) {
       console.error('Failed to cancel subscription:', err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
@@ -274,7 +418,7 @@ export function PlansPage() {
   };
 
   const priceMultiplier = billingCycle === 'annual' ? 12 * 0.8 : 1;
-  const subtotal = currentPlan ? Math.round(currentPlan.price * priceMultiplier * equipmentCount * 100) / 100 : 0;
+  const subtotal = currentPlan ? Math.round(currentPlan.price * priceMultiplier * currentEquipmentCount * 100) / 100 : 0;
   const tax = Math.round(subtotal * 0.18 * 100) / 100;
   const total = Math.round((subtotal + tax) * 100) / 100;
 
@@ -576,6 +720,230 @@ export function PlansPage() {
     }
   };
 
+  const renderPaymentFields = () => {
+    return (
+      <>
+        <h2 className="text-h2 text-primary mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
+          {t('plans.paymentMethod')}
+        </h2>
+        <div className="flex gap-0 mb-4 border-b border-outline-variant">
+          <button
+            onClick={() => setPaymentMethod('card')}
+            className={`px-4 py-2.5 text-label-md transition-colors cursor-pointer ${
+              paymentMethod === 'card'
+                ? 'border-b-2 border-primary text-primary'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            {t('plans.creditCard')}
+          </button>
+          <button
+            onClick={() => setPaymentMethod('transfer')}
+            className={`px-4 py-2.5 text-label-md transition-colors cursor-pointer ${
+              paymentMethod === 'transfer'
+                ? 'border-b-2 border-primary text-primary'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            {t('plans.bankTransfer')}
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          {paymentMethod === 'card' ? (
+            <>
+              <div>
+                <label htmlFor="card-name" className="block text-label-md text-on-surface mb-1.5">{t('plans.nameOnCard')}</label>
+                <Input id="card-name" type="text" placeholder={t('plans.nameOnCardPlaceholder')} className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface" />
+              </div>
+              <div>
+                <label htmlFor="card-number" className="block text-label-md text-on-surface mb-1.5">{t('plans.cardNumber')}</label>
+                <Input id="card-number" type="text" placeholder={t('plans.cardNumberPlaceholder')} className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="card-expiration" className="block text-label-md text-on-surface mb-1.5">{t('plans.expiration')}</label>
+                  <Input id="card-expiration" type="text" placeholder={t('plans.expirationPlaceholder')} className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface" />
+                </div>
+                <div>
+                  <label htmlFor="card-cvv" className="block text-label-md text-on-surface mb-1.5">{t('plans.cvv')}</label>
+                  <Input id="card-cvv" type="text" placeholder={t('plans.cvvPlaceholder')} className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface" />
+                </div>
+              </div>
+              <button
+                onClick={handleProcessSubscription}
+                disabled={subscribeLoading}
+                className="w-full bg-primary text-on-primary py-3 rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
+              >
+                {subscribeLoading ? (
+                  'Processing...'
+                ) : (
+                  <>
+                    <Lock className="h-4 w-4" />
+                    {t('plans.processPayment')}
+                  </>
+                )}
+              </button>
+            </>
+          ) : (
+            <div className="text-center py-8 text-body-md text-on-surface-variant space-y-4">
+              <p className="mb-2">{t('plans.transferInstructions')}</p>
+              <p className="text-mono font-medium text-on-surface">{t('plans.bankName')}</p>
+              <p className="text-mono">{t('plans.bankAccount')}</p>
+              <p className="text-mono">{t('plans.bankReference')}: {reference}</p>
+              <button
+                onClick={handleProcessSubscription}
+                disabled={subscribeLoading}
+                className="mt-4 w-full bg-primary text-on-primary py-3 rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
+              >
+                {subscribeLoading ? 'Processing...' : 'Confirm Bank Transfer Intent'}
+              </button>
+            </div>
+          )}
+        </div>
+      </>
+    );
+  };
+
+  const renderManageActiveSubscription = (activeSub: Subscription) => {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between border-b border-outline-variant pb-4">
+          <div>
+            <p className="text-label-sm text-on-surface-variant font-medium uppercase tracking-wider">Current Service</p>
+            <p className="text-h3 font-bold text-primary mt-0.5">{activeSub.service_name}</p>
+          </div>
+          <span className="bg-success/15 text-success border border-success/30 px-2.5 py-1 rounded-full text-label-sm font-bold">
+            ACTIVE
+          </span>
+        </div>
+
+        {(currentPlan?.id !== activeSub.plan || currentEquipmentCount !== activeSub.equipment_count) ? (
+          <div className="space-y-4">
+            <div className="bg-primary/5 border border-primary/10 rounded-lg p-4">
+              <p className="text-body-md font-semibold text-primary">Subscription Modification</p>
+              <p className="text-body-sm text-on-surface-variant mt-1">
+                You are modifying your subscription to the <strong className="text-on-surface">{getPlanName(currentPlan.name)}</strong> plan with <strong className="text-on-surface">{currentEquipmentCount}x</strong> equipment.
+              </p>
+            </div>
+
+            <button
+              onClick={() => handleUpdateSubscription(activeSub.id, currentEquipmentCount)}
+              disabled={subscribeLoading}
+              className="w-full bg-primary text-on-primary py-3 rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
+            >
+              {subscribeLoading ? 'Updating...' : 'Update Subscription'}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="bg-error/5 border border-error/10 rounded-lg p-4">
+              <p className="text-body-md font-semibold text-error">Cancellation Warning</p>
+              <p className="text-body-sm text-on-surface-variant mt-1">
+                Cancelling your subscription will take effect immediately. You will lose access to premium support services.
+              </p>
+            </div>
+
+            <button
+              onClick={() => handleCancelSubscription(activeSub.id)}
+              disabled={subscribeLoading}
+              className="w-full bg-error text-on-error py-3 rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
+            >
+              {subscribeLoading ? 'Cancelling...' : 'Cancel Subscription'}
+            </button>
+          </div>
+        )}
+
+        {/* Licensed Equipment & OTP Activation UI Section */}
+        {currentPlan.id === activeSub.plan && (
+          <div className="mt-6 border-t border-outline-variant pt-6">
+            <h3 className="text-body-lg font-bold text-primary mb-3">
+              Licensed Equipment & Activation (OTP)
+            </h3>
+            <p className="text-body-sm text-on-surface-variant mb-4">
+              Manage devices associated with this subscription. Download our client app on your equipment and enter the unique OTP below to activate premium features.
+            </p>
+            
+            <div className="space-y-3">
+              {(subscriptionEquipment[activeSub.id] || []).map((equip, idx) => (
+                <div key={equip.id} className="border border-outline-variant rounded-lg p-3 bg-surface-container-low/40 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-label-sm font-semibold text-on-surface">Slot #{idx + 1}</span>
+                      {equip.status === 'ACTIVE' ? (
+                        <span className="bg-success/15 text-success border border-success/30 px-2 py-0.5 rounded text-[10px] font-bold">
+                          ACTIVE
+                        </span>
+                      ) : (
+                        <span className="bg-warning/15 text-warning border border-warning/30 px-2 py-0.5 rounded text-[10px] font-bold animate-pulse">
+                          PENDING ACTIVATION
+                        </span>
+                      )}
+                    </div>
+                    {equip.status === 'ACTIVE' ? (
+                      <div className="mt-1">
+                        <p className="text-body-sm font-medium text-on-surface">{equip.name}</p>
+                        <p className="text-label-sm text-on-surface-variant font-mono">{equip.serial}</p>
+                      </div>
+                    ) : equip.otp ? (
+                      <div className="mt-1 bg-surface-container p-2 rounded border border-outline-variant/50">
+                        <p className="text-body-sm font-bold text-primary font-mono select-all">OTP: {equip.otp}</p>
+                        <p className="text-[10px] text-on-surface-variant mt-0.5 font-medium">Expires: {equip.expiresAt}</p>
+                      </div>
+                    ) : (
+                      <p className="text-body-sm text-on-surface-variant mt-1">Empty license slot</p>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2 shrink-0">
+                    {equip.status === 'ACTIVE' ? (
+                      <button
+                        type="button"
+                        onClick={() => handleRevokeEquipment(activeSub.id, idx)}
+                        className="text-label-sm border border-error/30 text-error hover:bg-error/5 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
+                      >
+                        Deactivate
+                      </button>
+                    ) : equip.otp ? (
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const devName = prompt('Enter simulated device name:', `Workstation-${idx + 1}`) || `PC-${idx + 1}`;
+                            const devSerial = `SN-SIM-${Math.floor(100000 + Math.random() * 900000)}`;
+                            handleMockActivate(activeSub.id, idx, devName, devSerial);
+                          }}
+                          className="text-label-sm bg-success text-on-success hover:opacity-90 px-2.5 py-1.5 rounded-lg transition-opacity cursor-pointer font-medium"
+                        >
+                          Simulate Agent Activation
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleGenerateOTP(activeSub.id, idx)}
+                          className="text-label-sm border border-outline-variant hover:bg-surface-container px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
+                        >
+                          Regenerate OTP
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleGenerateOTP(activeSub.id, idx)}
+                        className="text-label-sm bg-primary text-on-primary hover:opacity-90 px-2.5 py-1.5 rounded-lg transition-opacity cursor-pointer font-medium"
+                      >
+                        Generate Activation OTP
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <Page
       title={t('plans.title')}
@@ -673,7 +1041,7 @@ export function PlansPage() {
             )}
 
             {/* Active Status Badge */}
-            {!isAdmin && activeSubscription && activeSubscription.plan === plan.id && (
+            {!isAdmin && activeSubscriptions.some((sub) => sub.plan === plan.id) && (
               <span className="absolute top-3 right-3 bg-success/15 text-success border border-success/30 px-2.5 py-1 rounded-lg text-label-sm font-bold animate-pulse z-10">
                 Active
               </span>
@@ -732,14 +1100,14 @@ export function PlansPage() {
               <span className="text-label-md text-on-surface-variant">{t('plans.equipmentCount')}</span>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={(e) => { e.stopPropagation(); setEquipmentCount(Math.max(1, equipmentCount - 1)); }}
+                  onClick={(e) => { e.stopPropagation(); handleAdjustEquipmentCount(plan.id, -1); }}
                   className="w-8 h-8 border border-outline-variant rounded flex items-center justify-center hover:bg-surface-container transition-colors text-label-md cursor-pointer text-on-surface"
                 >
                   −
                 </button>
-                <span className="w-8 text-center text-label-md font-medium">{equipmentCount}</span>
+                <span className="w-8 text-center text-label-md font-medium">{equipmentCounts[plan.id] || 1}</span>
                 <button
-                  onClick={(e) => { e.stopPropagation(); setEquipmentCount(equipmentCount + 1); }}
+                  onClick={(e) => { e.stopPropagation(); handleAdjustEquipmentCount(plan.id, 1); }}
                   className="w-8 h-8 border border-outline-variant rounded flex items-center justify-center hover:bg-surface-container transition-colors text-label-md cursor-pointer text-on-surface"
                 >
                   +
@@ -758,7 +1126,9 @@ export function PlansPage() {
             </button>
           </div>
         ))}
-      </div>      {/* Payment Section */}
+      </div>
+
+      {/* Payment Section */}
       {currentPlan && (
         <div className="max-w-2xl mx-auto w-full text-on-surface">
           {/* Payment Method or Admin Apply */}
@@ -770,7 +1140,7 @@ export function PlansPage() {
                   {getPlanName(currentPlan.name)} Plan
                 </h3>
                 <p className="text-body-sm text-on-surface-variant mt-0.5">
-                  {equipmentCount}x {t('plans.equipmentCountSuffix')} • {billingCycle === 'annual' ? 'Annually' : 'Monthly'}
+                  {currentEquipmentCount}x {t('plans.equipmentCountSuffix')} • {billingCycle === 'annual' ? 'Annually' : 'Monthly'}
                 </p>
               </div>
               <Sheet>
@@ -790,7 +1160,7 @@ export function PlansPage() {
                       <div className="flex justify-between items-start">
                         <div>
                           <p className="text-body-md font-semibold text-on-surface">{getPlanName(currentPlan.name)} {billingCycle === 'annual' ? 'Plan (Annually)' : t('plans.planMonthly')}</p>
-                          <p className="text-label-sm text-on-surface-variant mt-0.5">{equipmentCount}x {t('plans.equipmentCountSuffix')}</p>
+                          <p className="text-label-sm text-on-surface-variant mt-0.5">{currentEquipmentCount}x {t('plans.equipmentCountSuffix')}</p>
                         </div>
                         <span className="text-body-md font-semibold text-on-surface">${subtotal.toFixed(2)}</span>
                       </div>
@@ -958,141 +1328,92 @@ export function PlansPage() {
                   </button>
                 </div>
               </div>
-            ) : activeSubscription ? (
-              <div className="space-y-4">
-                <h2 className="text-h2 text-primary mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
-                  Manage Active Subscription
-                </h2>
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between border-b border-outline-variant pb-4">
-                    <div>
-                      <p className="text-label-sm text-on-surface-variant font-medium uppercase tracking-wider">Current Service</p>
-                      <p className="text-h3 font-bold text-primary mt-0.5">{activeSubscription.service_name}</p>
-                    </div>
-                    <span className="bg-success/15 text-success border border-success/30 px-2.5 py-1 rounded-full text-label-sm font-bold">
-                      ACTIVE
-                    </span>
+            ) : (() => {
+              const activeSubForPlan = activeSubscriptions.find((sub) => sub.plan === currentPlan?.id && sub.status === 'ACTIVE');
+              
+              if (activeSubForPlan) {
+                return (
+                  <div className="space-y-4">
+                    <h2 className="text-h2 text-primary mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
+                      Manage Active Subscription
+                    </h2>
+                    {renderManageActiveSubscription(activeSubForPlan)}
                   </div>
-
-                  {(selectedPlan !== activeSubscription.plan || equipmentCount !== activeSubscription.equipment_count) ? (
-                    <div className="space-y-4">
-                      <div className="bg-primary/5 border border-primary/10 rounded-lg p-4">
-                        <p className="text-body-md font-semibold text-primary">Subscription Modification</p>
-                        <p className="text-body-sm text-on-surface-variant mt-1">
-                          You are modifying your subscription to the <strong className="text-on-surface">{getPlanName(currentPlan.name)}</strong> plan with <strong className="text-on-surface">{equipmentCount}x</strong> equipment.
-                        </p>
-                      </div>
-
+                );
+              }
+              
+              if (activeSubscriptions.length === 0) {
+                return renderPaymentFields();
+              }
+              
+              return (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-h2 text-primary mb-3" style={{ fontFamily: 'var(--font-heading)' }}>
+                      Select Action for {getPlanName(currentPlan.name)}
+                    </h2>
+                    <p className="text-body-sm text-on-surface-variant mb-4">
+                      You have existing active subscriptions. Choose whether you want to replace one of them or add this plan as a new additional subscription.
+                    </p>
+                    
+                    <div className="flex bg-surface-container-low border border-outline-variant p-1 rounded-xl gap-1 mb-6">
                       <button
-                        onClick={handleUpdateSubscription}
-                        disabled={subscribeLoading}
-                        className="w-full bg-primary text-on-primary py-3 rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
+                        type="button"
+                        onClick={() => setActionType('modify')}
+                        className={`flex-1 py-2.5 rounded-lg text-label-md font-semibold transition-all cursor-pointer ${
+                          actionType === 'modify'
+                            ? 'bg-primary text-on-primary shadow-sm'
+                            : 'text-on-surface-variant hover:text-on-surface'
+                        }`}
                       >
-                        {subscribeLoading ? 'Updating...' : 'Update Subscription'}
+                        Change Existing Plan
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActionType('subscribe')}
+                        className={`flex-1 py-2.5 rounded-lg text-label-md font-semibold transition-all cursor-pointer ${
+                          actionType === 'subscribe'
+                            ? 'bg-primary text-on-primary shadow-sm'
+                            : 'text-on-surface-variant hover:text-on-surface'
+                        }`}
+                      >
+                        Subscribe as Additional Plan
                       </button>
                     </div>
+                  </div>
+                  
+                  {actionType === 'subscribe' ? (
+                    renderPaymentFields()
                   ) : (
                     <div className="space-y-4">
-                      <div className="bg-error/5 border border-error/10 rounded-lg p-4">
-                        <p className="text-body-md font-semibold text-error">Cancellation Warning</p>
-                        <p className="text-body-sm text-on-surface-variant mt-1">
-                          Cancelling your subscription will take effect immediately. You will lose access to premium support services.
-                        </p>
+                      <div>
+                        <label htmlFor="active-sub-select" className="block text-label-md text-on-surface mb-1.5 font-medium">
+                          Select Active Subscription to Replace
+                        </label>
+                        <select
+                          id="active-sub-select"
+                          value={subscriptionToModifyId}
+                          onChange={(e) => setSubscriptionToModifyId(e.target.value)}
+                          className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
+                        >
+                          {activeSubscriptions.map((sub) => (
+                            <option key={sub.id} value={sub.id}>
+                              {sub.service_name} ({sub.equipment_count} Equipment)
+                            </option>
+                          ))}
+                        </select>
                       </div>
-
-                      <button
-                        onClick={handleCancelSubscription}
-                        disabled={subscribeLoading}
-                        className="w-full bg-error text-on-error py-3 rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
-                      >
-                        {subscribeLoading ? 'Cancelling...' : 'Cancel Subscription'}
-                      </button>
+                      
+                      {(() => {
+                        const subToModify = activeSubscriptions.find((sub) => sub.id === subscriptionToModifyId) || activeSubscriptions[0];
+                        if (!subToModify) return null;
+                        return renderManageActiveSubscription(subToModify);
+                      })()}
                     </div>
                   )}
                 </div>
-              </div>
-            ) : (
-              <>
-                <h2 className="text-h2 text-primary mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
-                  {t('plans.paymentMethod')}
-                </h2>
-                <div className="flex gap-0 mb-4 border-b border-outline-variant">
-                  <button
-                    onClick={() => setPaymentMethod('card')}
-                    className={`px-4 py-2.5 text-label-md transition-colors cursor-pointer ${
-                      paymentMethod === 'card'
-                        ? 'border-b-2 border-primary text-primary'
-                        : 'text-on-surface-variant hover:text-on-surface'
-                    }`}
-                  >
-                    {t('plans.creditCard')}
-                  </button>
-                  <button
-                    onClick={() => setPaymentMethod('transfer')}
-                    className={`px-4 py-2.5 text-label-md transition-colors cursor-pointer ${
-                      paymentMethod === 'transfer'
-                        ? 'border-b-2 border-primary text-primary'
-                        : 'text-on-surface-variant hover:text-on-surface'
-                    }`}
-                  >
-                    {t('plans.bankTransfer')}
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  {paymentMethod === 'card' ? (
-                    <>
-                      <div>
-                        <label htmlFor="card-name" className="block text-label-md text-on-surface mb-1.5">{t('plans.nameOnCard')}</label>
-                        <Input id="card-name" type="text" placeholder={t('plans.nameOnCardPlaceholder')} className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface" />
-                      </div>
-                      <div>
-                        <label htmlFor="card-number" className="block text-label-md text-on-surface mb-1.5">{t('plans.cardNumber')}</label>
-                        <Input id="card-number" type="text" placeholder={t('plans.cardNumberPlaceholder')} className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label htmlFor="card-expiration" className="block text-label-md text-on-surface mb-1.5">{t('plans.expiration')}</label>
-                          <Input id="card-expiration" type="text" placeholder={t('plans.expirationPlaceholder')} className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface" />
-                        </div>
-                        <div>
-                          <label htmlFor="card-cvv" className="block text-label-md text-on-surface mb-1.5">{t('plans.cvv')}</label>
-                          <Input id="card-cvv" type="text" placeholder={t('plans.cvvPlaceholder')} className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface" />
-                        </div>
-                      </div>
-                      <button
-                        onClick={handleProcessSubscription}
-                        disabled={subscribeLoading}
-                        className="w-full bg-primary text-on-primary py-3 rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
-                      >
-                        {subscribeLoading ? (
-                          'Processing...'
-                        ) : (
-                          <>
-                            <Lock className="h-4 w-4" />
-                            {t('plans.processPayment')}
-                          </>
-                        )}
-                      </button>
-                    </>
-                  ) : (
-                    <div className="text-center py-8 text-body-md text-on-surface-variant space-y-4">
-                      <p className="mb-2">{t('plans.transferInstructions')}</p>
-                      <p className="text-mono font-medium text-on-surface">{t('plans.bankName')}</p>
-                      <p className="text-mono">{t('plans.bankAccount')}</p>
-                      <p className="text-mono">{t('plans.bankReference')}: {reference}</p>
-                      <button
-                        onClick={handleProcessSubscription}
-                        disabled={subscribeLoading}
-                        className="mt-4 w-full bg-primary text-on-primary py-3 rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
-                      >
-                        {subscribeLoading ? 'Processing...' : 'Confirm Bank Transfer Intent'}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
+              );
+            })()}
           </div>
         </div>
       )}

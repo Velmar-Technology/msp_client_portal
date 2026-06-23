@@ -4,7 +4,7 @@ import { planRepository } from '../repositories/PlanRepository';
 import { invoiceRepository } from '../repositories/InvoiceRepository';
 import { AppError } from '../utils/AppError';
 import { TAX_RATE } from '../config/constants';
-import { Subscription } from '../types';
+import { Subscription, SubscriptionPlan } from '../types';
 import { CreateSubscriptionInput, UpdateSubscriptionInput, SendQuoteInput } from '../dtos/subscription.dto';
 import { sendQuotationEmail } from '../utils/emailService';
 
@@ -43,7 +43,7 @@ export class SubscriptionService {
     const subscription = await subscriptionRepository.create({
       client_id: clientId,
       service_name: formattedServiceName,
-      plan: data.plan,
+      plan: data.plan as SubscriptionPlan,
       equipment_count: data.equipmentCount,
       renewal_date: renewalDate,
       tenant_id: tenantId,
@@ -92,7 +92,7 @@ export class SubscriptionService {
     let updated = sub;
 
     if (data.plan) {
-      const res = await subscriptionRepository.updatePlan(sub.id, data.plan, data.equipmentCount);
+      const res = await subscriptionRepository.updatePlan(sub.id, data.plan as SubscriptionPlan, data.equipmentCount);
       if (!res) throw AppError.internal('Failed to update subscription');
       updated = res;
     }
