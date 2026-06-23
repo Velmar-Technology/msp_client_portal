@@ -96,7 +96,7 @@ export function ClientDashboard() {
             <p className="text-h3 mt-1" style={{ fontFamily: 'var(--font-heading)' }}>
               {t('dashboard.activeTickets')}
             </p>
-            <div className="mt-auto pt-3 border-t border-outline-variant mt-4">
+            <div className="mt-auto pt-3 border-t border-outline-variant">
               <Link
                 to="/tickets"
                 className="text-label-md text-primary hover:underline flex items-center gap-1"
@@ -116,7 +116,7 @@ export function ClientDashboard() {
             </div>
             <h3 className="text-label-md text-on-surface-variant">{t('dashboard.maintenance')}</h3>
             <p className="text-h3 mt-1" style={{ fontFamily: 'var(--font-heading)' }}>15 Oct 2024</p>
-            <div className="mt-auto pt-3 border-t border-outline-variant mt-4">
+            <div className="mt-auto pt-3 border-t border-outline-variant">
               <span className="text-label-md text-on-surface-variant">{t('dashboard.preventiveNetworkReview')}</span>
             </div>
           </div>
@@ -131,7 +131,7 @@ export function ClientDashboard() {
             </div>
             <h3 className="text-label-md text-on-surface-variant">{t('dashboard.lastBackup')}</h3>
             <p className="text-h3 mt-1" style={{ fontFamily: 'var(--font-heading)' }}>{t('dashboard.tableStatus') === 'Estado' ? 'Hace 2 horas' : '2 hours ago'}</p>
-            <div className="mt-auto pt-3 border-t border-outline-variant mt-4">
+            <div className="mt-auto pt-3 border-t border-outline-variant">
               <span className="text-label-md text-on-surface-variant">{t('dashboard.mainDbServer')}</span>
             </div>
           </div>

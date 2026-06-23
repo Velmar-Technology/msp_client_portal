@@ -87,7 +87,7 @@ export function AdminDashboard() {
             <p className="text-h2 mt-1" style={{ fontFamily: 'var(--font-heading)' }}>
               {t('dashboard.activeTickets')}
             </p>
-            <div className="mt-auto pt-4 border-t border-outline-variant/30 mt-4">
+            <div className="mt-auto pt-4 border-t border-outline-variant/30">
               <Link to="/tickets" className="text-label-sm text-primary hover:underline flex items-center gap-1">
                 <span>{t('dashboard.viewDetails')}</span>
                 <ArrowRight className="h-3.5 w-3.5" />
@@ -107,7 +107,7 @@ export function AdminDashboard() {
             <p className="text-h2 mt-1" style={{ fontFamily: 'var(--font-heading)' }}>
               {new Date('2024-10-15').toLocaleDateString(i18n.language === 'es_DO' ? 'es-DO' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </p>
-            <div className="mt-auto pt-4 border-t border-outline-variant/30 mt-4">
+            <div className="mt-auto pt-4 border-t border-outline-variant/30">
               <span className="text-[11px] text-on-surface-variant">
                 {t('dashboard.preventiveNetworkReview')}
               </span>
@@ -126,7 +126,7 @@ export function AdminDashboard() {
             <p className="text-h2 mt-1" style={{ fontFamily: 'var(--font-heading)' }}>
               {t('dashboard.twoHoursAgo')}
             </p>
-            <div className="mt-auto pt-4 border-t border-outline-variant/30 mt-4">
+            <div className="mt-auto pt-4 border-t border-outline-variant/30">
               <span className="text-[11px] text-on-surface-variant">
                 {t('dashboard.mainDbServer')}
               </span>
