@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { subscriptionService } from '../services/SubscriptionService';
-import { CreateSubscriptionInput, UpdateSubscriptionInput } from '../dtos/subscription.dto';
+import { CreateSubscriptionInput, UpdateSubscriptionInput, SendQuoteInput } from '../dtos/subscription.dto';
 import { userRepository } from '../repositories/UserRepository';
 import { AppError } from '../utils/AppError';
 
@@ -36,6 +36,12 @@ export class SubscriptionController {
     const data = req.body as UpdateSubscriptionInput;
     const subscription = await subscriptionService.updateSubscription(req.params.id as string, data, req.user!.tenantId);
     res.json({ success: true, data: subscription });
+  }
+
+  async sendQuote(req: Request, res: Response): Promise<void> {
+    const data = req.body as SendQuoteInput;
+    await subscriptionService.sendQuotation(data, req.user!.userId, req.user!.tenantId, req.user!.role);
+    res.json({ success: true, message: 'Quotation email sent successfully' });
   }
 }
 

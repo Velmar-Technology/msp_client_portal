@@ -50,6 +50,7 @@ vi.mock('@/services/subscriptionService', () => ({
     create: vi.fn(),
     getAll: vi.fn().mockResolvedValue([]),
     update: vi.fn(),
+    sendQuote: vi.fn(),
   },
 }));
 
@@ -310,6 +311,80 @@ describe('PlansPage', () => {
           equipmentCount: 1,
         });
       });
+    });
+
+    test('sends quotation via email on Email Quotation click', async () => {
+      vi.mocked(subscriptionService.sendQuote).mockResolvedValue({ success: true, message: 'Sent' });
+      render(
+        <MemoryRouter>
+          <PlansPage />
+        </MemoryRouter>
+      );
+
+      const quoteButton = screen.getByText('plans.emailQuote');
+      expect(quoteButton).toBeInTheDocument();
+
+      fireEvent.click(quoteButton);
+
+      await waitFor(() => {
+        expect(subscriptionService.sendQuote).toHaveBeenCalledWith({
+          plan: 'STANDARD',
+          equipmentCount: 1,
+          clientId: undefined,
+          billingCycle: 'monthly',
+        });
+        expect(mockAddToast).toHaveBeenCalledWith(
+          expect.objectContaining({
+            title: 'Quotation Sent',
+            type: 'success',
+          })
+        );
+      });
+    });
+
+    test('sends quotation for unregistered customer when checkbox is checked', async () => {
+      vi.mocked(subscriptionService.sendQuote).mockResolvedValue({ success: true, message: 'Sent' });
+      render(
+        <MemoryRouter>
+          <PlansPage />
+        </MemoryRouter>
+      );
+
+      expect(screen.queryByLabelText('plans.unregisteredEmailLabel')).not.toBeInTheDocument();
+
+      const checkbox = screen.getByLabelText('plans.sendToUnregistered');
+      fireEvent.click(checkbox);
+
+      const emailInput = screen.getByLabelText('plans.unregisteredEmailLabel') as HTMLInputElement;
+      const nameInput = screen.getByLabelText('plans.unregisteredNameLabel') as HTMLInputElement;
+      expect(emailInput).toBeInTheDocument();
+      expect(nameInput).toBeInTheDocument();
+
+      fireEvent.change(emailInput, { target: { value: 'unreg@example.com' } });
+      fireEvent.change(nameInput, { target: { value: 'Unregistered Customer' } });
+
+      const quoteButton = screen.getByText('plans.emailQuote');
+      fireEvent.click(quoteButton);
+
+      await waitFor(() => {
+        expect(subscriptionService.sendQuote).toHaveBeenCalledWith({
+          plan: 'STANDARD',
+          equipmentCount: 1,
+          clientId: undefined,
+          unregisteredEmail: 'unreg@example.com',
+          unregisteredName: 'Unregistered Customer',
+          billingCycle: 'monthly',
+        });
+        expect(mockAddToast).toHaveBeenCalledWith(
+          expect.objectContaining({
+            title: 'Quotation Sent',
+            type: 'success',
+          })
+        );
+      });
+
+      expect(emailInput.value).toBe('');
+      expect(nameInput.value).toBe('');
     });
   });
 
@@ -588,6 +663,96 @@ describe('PlansPage', () => {
       
       // Reset mockLanguage
       mockLanguage = 'en_US';
+    });
+
+    test('sends customer quotation via email on Send Quotation to Customer click', async () => {
+      vi.mocked(subscriptionService.sendQuote).mockResolvedValue({ success: true, message: 'Sent' });
+      render(
+        <MemoryRouter>
+          <PlansPage />
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Select Customer')).toBeInTheDocument();
+      });
+
+      const select = screen.getByLabelText('Select Customer');
+      fireEvent.change(select, { target: { value: 'client-2' } });
+
+      const sendQuoteButton = screen.getByText('plans.sendQuoteToCustomer');
+      expect(sendQuoteButton).toBeInTheDocument();
+
+      fireEvent.click(sendQuoteButton);
+
+      await waitFor(() => {
+        expect(subscriptionService.sendQuote).toHaveBeenCalledWith({
+          plan: 'STANDARD',
+          equipmentCount: 1,
+          clientId: 'client-2',
+          billingCycle: 'monthly',
+        });
+        expect(mockAddToast).toHaveBeenCalledWith(
+          expect.objectContaining({
+            title: 'Quotation Sent',
+            type: 'success',
+          })
+        );
+      });
+    });
+
+    test('sends quotation for unregistered customer in admin flow', async () => {
+      vi.mocked(subscriptionService.sendQuote).mockResolvedValue({ success: true, message: 'Sent' });
+      render(
+        <MemoryRouter>
+          <PlansPage />
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Select Customer')).toBeInTheDocument();
+      });
+
+      expect(screen.queryByLabelText('plans.unregisteredEmailLabel')).not.toBeInTheDocument();
+
+      const applyButton = screen.getByRole('button', { name: /Apply Plan to Customer/i });
+      expect(applyButton).not.toBeDisabled();
+
+      const select = screen.getByLabelText('Select Customer');
+      fireEvent.change(select, { target: { value: 'unregistered' } });
+
+      const emailInput = screen.getByLabelText('plans.unregisteredEmailLabel') as HTMLInputElement;
+      const nameInput = screen.getByLabelText('plans.unregisteredNameLabel') as HTMLInputElement;
+      expect(emailInput).toBeInTheDocument();
+      expect(nameInput).toBeInTheDocument();
+
+      expect(applyButton).toBeDisabled();
+
+      fireEvent.change(emailInput, { target: { value: 'admin-unreg@example.com' } });
+      fireEvent.change(nameInput, { target: { value: 'Admin Unregistered Customer' } });
+
+      const sendQuoteButton = screen.getByText('plans.sendQuoteToCustomer');
+      fireEvent.click(sendQuoteButton);
+
+      await waitFor(() => {
+        expect(subscriptionService.sendQuote).toHaveBeenCalledWith({
+          plan: 'STANDARD',
+          equipmentCount: 1,
+          clientId: undefined,
+          unregisteredEmail: 'admin-unreg@example.com',
+          unregisteredName: 'Admin Unregistered Customer',
+          billingCycle: 'monthly',
+        });
+        expect(mockAddToast).toHaveBeenCalledWith(
+          expect.objectContaining({
+            title: 'Quotation Sent',
+            type: 'success',
+          })
+        );
+      });
+
+      expect(emailInput.value).toBe('');
+      expect(nameInput.value).toBe('');
     });
   });
 });

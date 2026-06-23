@@ -23,6 +23,10 @@ export function PlansPage() {
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'transfer'>('card');
   const [reference] = useState(() => `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9999)).padStart(4, '0')}`);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [isUnregistered, setIsUnregistered] = useState(false);
+  const [unregisteredEmail, setUnregisteredEmail] = useState('');
+  const [unregisteredName, setUnregisteredName] = useState('');
 
   // Admin Editor State
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
@@ -88,6 +92,8 @@ export function PlansPage() {
           setClients(data || []);
           if (data && data.length > 0) {
             setSelectedClientId(data[0].id);
+          } else {
+            setSelectedClientId('unregistered');
           }
         })
         .catch((err) => console.error('Failed to fetch clients:', err));
@@ -141,6 +147,63 @@ export function PlansPage() {
       });
     } finally {
       setSubscribeLoading(false);
+    }
+  };
+
+  const handleSendQuote = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!currentPlan) return;
+
+    const sendToUnregistered = isUnregistered || (isAdmin && selectedClientId === 'unregistered');
+    if (sendToUnregistered && !unregisteredEmail.trim()) {
+      addToast({
+        title: 'Validation Error',
+        message: 'Please enter a recipient email address.',
+        type: 'error',
+      });
+      return;
+    }
+
+    if (isAdmin && !selectedClientId) {
+      addToast({
+        title: 'Validation Error',
+        message: 'Please select a customer or unregistered option.',
+        type: 'error',
+      });
+      return;
+    }
+
+    setQuoteLoading(true);
+    try {
+      await subscriptionService.sendQuote({
+        plan: currentPlan.id,
+        equipmentCount,
+        clientId: (!sendToUnregistered && isAdmin) ? selectedClientId : undefined,
+        unregisteredEmail: sendToUnregistered ? unregisteredEmail.trim() : undefined,
+        unregisteredName: sendToUnregistered ? unregisteredName.trim() || undefined : undefined,
+        billingCycle,
+      });
+
+      addToast({
+        title: 'Quotation Sent',
+        message: t('plans.quoteSuccess'),
+        type: 'success',
+      });
+
+      if (sendToUnregistered) {
+        setUnregisteredEmail('');
+        setUnregisteredName('');
+      }
+    } catch (err) {
+      console.error('Failed to send quotation:', err);
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      addToast({
+        title: t('plans.quoteError'),
+        message: error.response?.data?.message || error.message || 'Failed to send quotation.',
+        type: 'error',
+      });
+    } finally {
+      setQuoteLoading(false);
     }
   };
 
@@ -712,7 +775,7 @@ export function PlansPage() {
                       className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
                     >
                       {clients.length === 0 ? (
-                        <option value="">No registered customers found</option>
+                        <option value="" disabled>No registered customers found</option>
                       ) : (
                         clients.map((client) => (
                           <option key={client.id} value={client.id}>
@@ -720,15 +783,57 @@ export function PlansPage() {
                           </option>
                         ))
                       )}
+                      <option value="unregistered">{t('plans.unregisteredOption')}</option>
                     </select>
                   </div>
 
+                  {selectedClientId === 'unregistered' && (
+                    <div className="space-y-3 pt-2 border-t border-outline-variant">
+                      <div>
+                        <label htmlFor="unregistered-email-admin" className="block text-label-sm text-on-surface mb-1 font-medium">
+                          {t('plans.unregisteredEmailLabel')}
+                        </label>
+                        <Input
+                          id="unregistered-email-admin"
+                          type="email"
+                          required
+                          value={unregisteredEmail}
+                          onChange={(e) => setUnregisteredEmail(e.target.value)}
+                          placeholder={t('plans.unregisteredEmailPlaceholder')}
+                          className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="unregistered-name-admin" className="block text-label-sm text-on-surface mb-1 font-medium">
+                          {t('plans.unregisteredNameLabel')}
+                        </label>
+                        <Input
+                          id="unregistered-name-admin"
+                          type="text"
+                          value={unregisteredName}
+                          onChange={(e) => setUnregisteredName(e.target.value)}
+                          placeholder={t('plans.unregisteredNamePlaceholder')}
+                          className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   <button
                     onClick={handleProcessSubscription}
-                    disabled={subscribeLoading || clients.length === 0}
+                    disabled={subscribeLoading || selectedClientId === 'unregistered' || clients.length === 0}
                     className="w-full bg-primary text-on-primary py-3 rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
                   >
                     {subscribeLoading ? 'Applying...' : 'Apply Plan to Customer'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSendQuote}
+                    disabled={quoteLoading || subscribeLoading || (!selectedClientId)}
+                    className="w-full border border-primary text-primary py-3 rounded-lg text-label-md hover:bg-primary/5 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
+                  >
+                    {quoteLoading ? t('plans.quoteSending') : t('plans.sendQuoteToCustomer')}
                   </button>
                 </div>
               </div>
@@ -891,6 +996,62 @@ export function PlansPage() {
                   <span className="text-h3 font-bold" style={{ fontFamily: 'var(--font-heading)' }}>{t('plans.total')}</span>
                   <span className="text-h3 font-bold" style={{ fontFamily: 'var(--font-heading)' }}>${total.toFixed(2)}</span>
                 </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSendQuote}
+                disabled={quoteLoading || subscribeLoading}
+                className="mt-6 w-full border border-primary text-primary py-2.5 rounded-lg text-label-md hover:bg-primary/5 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
+              >
+                {quoteLoading ? t('plans.quoteSending') : t('plans.emailQuote')}
+              </button>
+
+              <div className="mt-4 pt-4 border-t border-outline-variant space-y-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    id="send-to-unregistered-checkbox"
+                    type="checkbox"
+                    checked={isUnregistered}
+                    onChange={(e) => setIsUnregistered(e.target.checked)}
+                    className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary cursor-pointer"
+                  />
+                  <label htmlFor="send-to-unregistered-checkbox" className="text-label-md text-on-surface-variant select-none cursor-pointer">
+                    {t('plans.sendToUnregistered')}
+                  </label>
+                </div>
+
+                {isUnregistered && (
+                  <div className="space-y-3 pt-2">
+                    <div>
+                      <label htmlFor="unregistered-email-client" className="block text-label-sm text-on-surface mb-1 font-medium">
+                        {t('plans.unregisteredEmailLabel')}
+                      </label>
+                      <Input
+                        id="unregistered-email-client"
+                        type="email"
+                        required
+                        value={unregisteredEmail}
+                        onChange={(e) => setUnregisteredEmail(e.target.value)}
+                        placeholder={t('plans.unregisteredEmailPlaceholder')}
+                        className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="unregistered-name-client" className="block text-label-sm text-on-surface mb-1 font-medium">
+                        {t('plans.unregisteredNameLabel')}
+                      </label>
+                      <Input
+                        id="unregistered-name-client"
+                        type="text"
+                        value={unregisteredName}
+                        onChange={(e) => setUnregisteredName(e.target.value)}
+                        placeholder={t('plans.unregisteredNamePlaceholder')}
+                        className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="mt-6 bg-surface-container rounded-lg p-4 flex items-start gap-3">

@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
 import { env } from '../config/env';
 import { logger } from './logger';
-import { NotificationPayload, Ticket } from '../types';
+import { NotificationPayload, Ticket, Plan } from '../types';
 
 /**
  * Email service using Nodemailer.
@@ -486,4 +486,179 @@ export async function sendTicketResponseEmail(
     type: 'EMAIL',
   });
 }
+
+/**
+ * Send a plan quotation email to the client/customer.
+ */
+export async function sendQuotationEmail(
+  clientEmail: string,
+  clientName: string,
+  plan: Plan,
+  billingCycle: 'monthly' | 'annual',
+  equipmentCount: number,
+  subtotal: number,
+  tax: number,
+  total: number,
+  language: string,
+): Promise<void> {
+  const isSpanish = language.startsWith('es');
+  const portalUrl = `${env.CORS_ORIGIN || 'http://localhost:5173'}/plans`;
+
+  const getLocalizedValue = (val: any): string => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    const resolvedLang = isSpanish ? 'es_DO' : 'en_US';
+    if (val[resolvedLang]) return val[resolvedLang];
+    if (val['en_US']) return val['en_US'];
+    const keys = Object.keys(val);
+    if (keys.length > 0) return val[keys[0]];
+    return '';
+  };
+
+  const planName = getLocalizedValue(plan.name);
+
+  const preheader = isSpanish
+    ? `Su cotización para el plan "${planName}" está lista.`
+    : `Your quotation for the "${planName}" plan is ready.`;
+
+  const title = isSpanish ? 'Cotización de Plan' : 'Plan Quotation';
+
+  // Format cycle and unit price
+  const cycleLabel = isSpanish
+    ? (billingCycle === 'annual' ? 'Anual (20% Desc.)' : 'Mensual')
+    : (billingCycle === 'annual' ? 'Annual (20% Off)' : 'Monthly');
+
+  const unitPrice = billingCycle === 'annual' ? plan.price * 0.8 : plan.price;
+
+  // Features list HTML
+  const featuresHtml = plan.features
+    .map((f) => {
+      const text = getLocalizedValue(f.text);
+      const mark = f.included ? '✔️' : '❌';
+      const color = f.included ? '#10B981' : '#9CA3AF';
+      const textDecoration = f.included ? '' : 'text-decoration: line-through; opacity: 0.6;';
+      return `
+        <li style="margin-bottom: 8px; font-size: 14px; color: #334155; list-style-type: none;">
+          <span style="color: ${color}; margin-right: 8px; font-weight: bold;">${mark}</span>
+          <span style="${textDecoration}">${text}</span>
+        </li>
+      `;
+    })
+    .join('');
+
+  const contentHtml = isSpanish ? `
+    <h2 style="color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">Hola ${clientName},</h2>
+    <p style="font-size: 15px; color: #475569; margin-top: 0; margin-bottom: 24px;">
+      A solicitud suya, hemos generado una cotización formal para el plan de servicios administrados seleccionado.
+    </p>
+
+    <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+      <h3 style="color: #1E293B; font-size: 16px; font-weight: 700; margin-top: 0; margin-bottom: 16px; border-bottom: 1px solid #E2E8F0; padding-bottom: 8px;">
+        Detalles de la Cotización
+      </h3>
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+        <tr>
+          <td style="padding: 6px 0; color: #64748B; width: 150px; font-weight: 500;">Plan Seleccionado:</td>
+          <td style="padding: 6px 0; color: #0F172A; font-weight: 600;">${planName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #64748B; font-weight: 500;">Ciclo de Facturación:</td>
+          <td style="padding: 6px 0; color: #0F172A;">${cycleLabel}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #64748B; font-weight: 500;">Cantidad de Equipos:</td>
+          <td style="padding: 6px 0; color: #0F172A;">${equipmentCount}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #64748B; font-weight: 500;">Precio Unitario / mes:</td>
+          <td style="padding: 6px 0; color: #0F172A;">$${unitPrice.toFixed(2)}</td>
+        </tr>
+        <tr style="border-top: 1px solid #E2E8F0;">
+          <td style="padding: 8px 0 6px 0; color: #64748B; font-weight: 500;">Subtotal:</td>
+          <td style="padding: 8px 0 6px 0; color: #0F172A; font-weight: 600;">$${subtotal.toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #64748B; font-weight: 500;">ITBIS (18%):</td>
+          <td style="padding: 6px 0; color: #0F172A;">$${tax.toFixed(2)}</td>
+        </tr>
+        <tr style="border-top: 2px solid #1E293B;">
+          <td style="padding: 10px 0; color: #0F172A; font-weight: 700; font-size: 16px;">Total Estimado:</td>
+          <td style="padding: 10px 0; color: #4F46E5; font-weight: 700; font-size: 18px;">$${total.toFixed(2)}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="background-color: #ffffff; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+      <h4 style="color: #1E293B; font-size: 15px; font-weight: 700; margin-top: 0; margin-bottom: 12px;">
+        Características del Plan
+      </h4>
+      <ul style="padding-left: 0; margin: 0; list-style-type: none;">
+        ${featuresHtml}
+      </ul>
+    </div>
+  ` : `
+    <h2 style="color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">Hello ${clientName},</h2>
+    <p style="font-size: 15px; color: #475569; margin-top: 0; margin-bottom: 24px;">
+      As requested, we have generated a formal quotation for your selected managed services plan.
+    </p>
+
+    <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+      <h3 style="color: #1E293B; font-size: 16px; font-weight: 700; margin-top: 0; margin-bottom: 16px; border-bottom: 1px solid #E2E8F0; padding-bottom: 8px;">
+        Quotation Details
+      </h3>
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+        <tr>
+          <td style="padding: 6px 0; color: #64748B; width: 150px; font-weight: 500;">Selected Plan:</td>
+          <td style="padding: 6px 0; color: #0F172A; font-weight: 600;">${planName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #64748B; font-weight: 500;">Billing Cycle:</td>
+          <td style="padding: 6px 0; color: #0F172A;">${cycleLabel}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #64748B; font-weight: 500;">Equipment Count:</td>
+          <td style="padding: 6px 0; color: #0F172A;">${equipmentCount}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #64748B; font-weight: 500;">Unit Price / mo:</td>
+          <td style="padding: 6px 0; color: #0F172A;">$${unitPrice.toFixed(2)}</td>
+        </tr>
+        <tr style="border-top: 1px solid #E2E8F0;">
+          <td style="padding: 8px 0 6px 0; color: #64748B; font-weight: 500;">Subtotal:</td>
+          <td style="padding: 8px 0 6px 0; color: #0F172A; font-weight: 600;">$${subtotal.toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #64748B; font-weight: 500;">Taxes (ITBIS 18%):</td>
+          <td style="padding: 6px 0; color: #0F172A;">$${tax.toFixed(2)}</td>
+        </tr>
+        <tr style="border-top: 2px solid #1E293B;">
+          <td style="padding: 10px 0; color: #0F172A; font-weight: 700; font-size: 16px;">Estimated Total:</td>
+          <td style="padding: 10px 0; color: #4F46E5; font-weight: 700; font-size: 18px;">$${total.toFixed(2)}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="background-color: #ffffff; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+      <h4 style="color: #1E293B; font-size: 15px; font-weight: 700; margin-top: 0; margin-bottom: 12px;">
+        Plan Features
+      </h4>
+      <ul style="padding-left: 0; margin: 0; list-style-type: none;">
+        ${featuresHtml}
+      </ul>
+    </div>
+  `;
+
+  const actionText = isSpanish ? 'Ver Planes en el Portal' : 'View Plans in Portal';
+  const body = getEmailLayout(preheader, title, contentHtml, portalUrl, actionText);
+
+  await sendEmail({
+    to: clientEmail,
+    subject: isSpanish
+      ? `Cotización de Plan de Soporte - ${planName}`
+      : `Support Plan Quotation - ${planName}`,
+    body,
+    type: 'EMAIL',
+  });
+}
+
 
