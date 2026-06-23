@@ -40,6 +40,12 @@ const envSchema = z.object({
 
   // Google OAuth
   GOOGLE_CLIENT_ID: z.string().default(''),
+
+  // NextCloud
+  NEXTCLOUD_URL: z.string().default('http://localhost:8080'),
+  NEXTCLOUD_APP_USER: z.string().default(''),
+  NEXTCLOUD_APP_PASS: z.string().default(''),
+  NEXTCLOUD_TOTAL_CAPACITY: z.coerce.number().default(5000000000000), // Default 5.0 TB
 });
 
 const parsed = envSchema.safeParse(process.env);
