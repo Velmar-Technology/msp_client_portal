@@ -3,6 +3,7 @@ import { userRepository } from '../repositories/UserRepository';
 import { planRepository } from '../repositories/PlanRepository';
 import { invoiceRepository } from '../repositories/InvoiceRepository';
 import { AppError } from '../utils/AppError';
+import { TAX_RATE } from '../config/constants';
 import { Subscription } from '../types';
 import { CreateSubscriptionInput, UpdateSubscriptionInput } from '../dtos/subscription.dto';
 
@@ -57,7 +58,7 @@ export class SubscriptionService {
       const equipmentCount = data.equipmentCount ?? 1;
       const priceMultiplier = billingCycle === 'annual' ? 12 * 0.8 : 1;
       const subtotal = Math.round(price * priceMultiplier * equipmentCount * 100) / 100;
-      const tax = Math.round(subtotal * 0.16 * 100) / 100;
+      const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
       const total = Math.round((subtotal + tax) * 100) / 100;
 
       let invoiceNumber = '';

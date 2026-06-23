@@ -356,7 +356,7 @@ export function TopNav() {
   };
 
   return (
-    <header className="flex justify-between items-center w-full px-5 md:px-10 h-16 bg-surface-container-lowest border-b border-outline-variant sticky top-0 z-10">
+    <header className="flex justify-between items-center w-full px-5 md:px-10 h-16 bg-surface-container-lowest border-b border-outline-variant sticky top-0 z-30">
       <div className="flex items-center gap-3">
         <SidebarTrigger className="text-primary hover:bg-surface-container-low cursor-pointer" />
 

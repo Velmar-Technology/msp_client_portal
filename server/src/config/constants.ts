@@ -33,7 +33,7 @@ export const PLAN_PRICES = {
 } as const;
 
 /** Tax rate */
-export const TAX_RATE = 0.16; // 16% IVA
+export const TAX_RATE = 0.18; // 18% ITBIS
 
 /** Ticket status transitions allowed */
 export const STATUS_TRANSITIONS: Record<string, string[]> = {

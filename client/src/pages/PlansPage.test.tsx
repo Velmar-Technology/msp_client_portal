@@ -169,11 +169,11 @@ describe('PlansPage', () => {
 
       // Verify Order Summary subtotal, tax, and total
       // subtotal = 499 * 12 * 0.8 = 4790.40
-      // tax = 4790.40 * 0.16 = 766.46
-      // total = 4790.40 + 766.46 = 5556.86
+      // tax = 4790.40 * 0.18 = 862.27
+      // total = 4790.40 + 862.27 = 5652.67
       expect(screen.getByText('$4790.40')).toBeInTheDocument();
-      expect(screen.getByText('$766.46')).toBeInTheDocument();
-      expect(screen.getByText('$5556.86')).toBeInTheDocument();
+      expect(screen.getByText('$862.27')).toBeInTheDocument();
+      expect(screen.getByText('$5652.67')).toBeInTheDocument();
     });
 
     test('submits client subscription with billingCycle = annual when toggled', async () => {

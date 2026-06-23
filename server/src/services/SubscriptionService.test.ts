@@ -219,8 +219,8 @@ describe('SubscriptionService', () => {
       expect(mocks.invoiceCreate).toHaveBeenCalledWith(expect.objectContaining({
         client_id: 'client-123',
         amount: 1299 * 5,
-        tax_amount: Math.round(1299 * 5 * 0.16 * 100) / 100,
-        total: Math.round(1299 * 5 * 1.16 * 100) / 100,
+        tax_amount: Math.round(1299 * 5 * 0.18 * 100) / 100,
+        total: Math.round(1299 * 5 * 1.18 * 100) / 100,
         tenant_id: 'tenant-123',
       }));
       expect(result).toEqual(mockCreatedSub);
@@ -264,7 +264,7 @@ describe('SubscriptionService', () => {
       expect(mocks.invoiceFindByNumber).toHaveBeenCalled();
 
       const expectedSubtotal = Math.round(1299 * 12 * 0.8 * 5 * 100) / 100;
-      const expectedTax = Math.round(expectedSubtotal * 0.16 * 100) / 100;
+      const expectedTax = Math.round(expectedSubtotal * 0.18 * 100) / 100;
       const expectedTotal = Math.round((expectedSubtotal + expectedTax) * 100) / 100;
 
       expect(mocks.invoiceCreate).toHaveBeenCalledWith(expect.objectContaining({

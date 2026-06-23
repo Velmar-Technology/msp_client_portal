@@ -205,7 +205,7 @@ export function PlansPage() {
 
   const priceMultiplier = billingCycle === 'annual' ? 12 * 0.8 : 1;
   const subtotal = currentPlan ? Math.round(currentPlan.price * priceMultiplier * equipmentCount * 100) / 100 : 0;
-  const tax = Math.round(subtotal * 0.16 * 100) / 100;
+  const tax = Math.round(subtotal * 0.18 * 100) / 100;
   const total = Math.round((subtotal + tax) * 100) / 100;
 
   const getLocalizedValue = (val: string | Record<string, string> | null | undefined): string => {
