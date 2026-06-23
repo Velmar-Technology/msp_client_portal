@@ -183,7 +183,9 @@
     "selectedCount": "selected",
     "bulkCancel": "Bulk Cancel",
     "noCancelableTickets": "None of the selected tickets can be cancelled.",
-    "confirmBulkCancel": "Are you sure you want to cancel the selected tickets?"
+    "confirmBulkCancel": "Are you sure you want to cancel the selected tickets?",
+    "assignedTo": "Assigned To",
+    "unassigned": "Unassigned"
   },
   "ticketDetail": {
     "backToTickets": "Back to Tickets",

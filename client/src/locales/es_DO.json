@@ -183,7 +183,9 @@
     "selectedCount": "seleccionado(s)",
     "bulkCancel": "Cancelar en Lote",
     "noCancelableTickets": "Ninguno de los tickets seleccionados puede ser cancelado.",
-    "confirmBulkCancel": "¿Está seguro de que desea cancelar los tickets seleccionados?"
+    "confirmBulkCancel": "¿Está seguro de que desea cancelar los tickets seleccionados?",
+    "assignedTo": "Asignado a",
+    "unassigned": "Sin asignar"
   },
   "ticketDetail": {
     "backToTickets": "Volver a Tickets",
