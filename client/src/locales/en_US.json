@@ -72,6 +72,8 @@
     "successful": "SUCCESSFUL",
     "mainDbServer": "Main DB Server",
     "cloudStorage": "Cloud Storage",
+    "activeAccounts": "Active Accounts",
+    "noActiveSubscriptions": "No active backup subscriptions.",
     "used": "Used",
     "total": "Total",
     "unlimited": "Unlimited",

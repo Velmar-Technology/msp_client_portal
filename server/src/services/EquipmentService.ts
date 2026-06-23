@@ -36,7 +36,28 @@ export class EquipmentService {
       slots.sort((a, b) => a.slot_index - b.slot_index);
     }
 
-    return slots.slice(0, count);
+    const slicedSlots = slots.slice(0, count);
+
+    // Query Nextcloud quota info for active slots in parallel
+    const enrichedSlots = await Promise.all(
+      slicedSlots.map(async (slot) => {
+        if (slot.status === 'ACTIVE' && slot.nextcloud_username) {
+          try {
+            const quota = await nextcloudService.getUserStorage(slot.nextcloud_username);
+            return {
+              ...slot,
+              nextcloud_used_bytes: quota.used,
+              nextcloud_total_bytes: quota.total,
+            };
+          } catch (err) {
+            logger.warn(`Failed to fetch storage usage for slot ${slot.id}: ${err}`);
+          }
+        }
+        return slot;
+      })
+    );
+
+    return enrichedSlots;
   }
 
   /**

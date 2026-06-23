@@ -13,8 +13,29 @@ import { subscriptionService } from '../services/subscriptionService';
 import type { Subscription } from '../services/subscriptionService';
 import { invoiceService } from '../services/invoiceService';
 import type { Invoice } from '../services/invoiceService';
+import { equipmentService } from '../services/equipmentService';
 import { useTranslation } from 'react-i18next';
 import { Page } from '@/components/Page';
+
+const getPlanStorageQuotaGB = (planId: string): number => {
+  if (planId.includes('PL-001')) return 25;
+  if (planId.includes('PL-002')) return 50;
+  if (planId.includes('PL-003')) return 250;
+  if (planId.includes('PL-004')) return 1000;
+  if (planId.includes('PL-005')) return 5000;
+  if (planId.includes('PL-006')) return 50;
+  if (planId === 'BASIC') return 25;
+  if (planId === 'STANDARD') return 50;
+  if (planId === 'PREMIUM') return 100;
+  return 25;
+};
+
+const formatStorage = (gb: number): string => {
+  if (gb >= 1000) {
+    return `${(gb / 1000).toFixed(1)} TB`;
+  }
+  return `${gb} GB`;
+};
 
 export function ClientDashboard() {
   const { t } = useTranslation();
@@ -23,6 +44,12 @@ export function ClientDashboard() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Storage and account quota state
+  const [totalSlotsCount, setTotalSlotsCount] = useState(0);
+  const [activeSlotsCount, setActiveSlotsCount] = useState(0);
+  const [totalStorageQuota, setTotalStorageQuota] = useState(0); // in GB
+  const [activeStorageQuota, setActiveStorageQuota] = useState(0); // in GB
 
   useEffect(() => {
     async function load() {
@@ -35,6 +62,55 @@ export function ClientDashboard() {
         setStatusSummary(summary);
         setSubscriptions(subs);
         setInvoices(invData.data);
+
+        // Fetch slots for active subscriptions
+        const activeSubs = subs.filter((sub) => sub.status === 'ACTIVE');
+        let totalSlots = 0;
+        let activeSlots = 0;
+        let totalStorage = 0;
+        let activeStorage = 0;
+
+        await Promise.all(
+          activeSubs.map(async (sub) => {
+            try {
+              const slots = await equipmentService.getSlots(sub.id);
+              const planQuota = getPlanStorageQuotaGB(sub.plan);
+              
+              totalSlots += sub.equipment_count;
+              
+              const activeInSub = slots.filter((s) => s.status === 'ACTIVE').length;
+              activeSlots += activeInSub;
+
+              // Aggregate actual storage quota from slots
+              // Licensed slots (active or pending) contribute planQuota to the totalStorage.
+              // Active slots contribute their actual nextcloud storage usage to activeStorage,
+              // or default to 0 if not yet synced/uploaded.
+              slots.forEach((slot) => {
+                if (slot.status === 'ACTIVE') {
+                  if (slot.nextcloud_used_bytes !== undefined && slot.nextcloud_total_bytes !== undefined) {
+                    activeStorage += slot.nextcloud_used_bytes / (1024 * 1024 * 1024);
+                    totalStorage += slot.nextcloud_total_bytes / (1024 * 1024 * 1024);
+                  } else {
+                    totalStorage += planQuota;
+                  }
+                } else {
+                  totalStorage += planQuota;
+                }
+              });
+            } catch (err) {
+              console.error(`Failed to load slots for subscription ${sub.id}`, err);
+              // Fallback: count total licensed slots, assume 0 active
+              totalSlots += sub.equipment_count;
+              const planQuota = getPlanStorageQuotaGB(sub.plan);
+              totalStorage += sub.equipment_count * planQuota;
+            }
+          })
+        );
+
+        setTotalSlotsCount(totalSlots);
+        setActiveSlotsCount(activeSlots);
+        setTotalStorageQuota(totalStorage);
+        setActiveStorageQuota(activeStorage);
       } catch (err) {
         console.error('Failed to load dashboard data', err);
       } finally {
@@ -145,31 +221,60 @@ export function ClientDashboard() {
             </h3>
             <Cloud className="h-5 w-5 text-on-surface-variant" />
           </div>
-          <div className="flex-1 flex flex-col justify-center items-center py-4">
-            <div className="relative w-32 h-32 flex items-center justify-center">
-              <svg className="w-32 h-32 -rotate-90" viewBox="0 0 120 120">
-                <circle cx="60" cy="60" r="50" fill="none" stroke="var(--color-surface-container-high)" strokeWidth="10" />
-                <circle
-                  cx="60" cy="60" r="50"
-                  fill="none"
-                  stroke="var(--color-primary)"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                  strokeDasharray={`${2 * Math.PI * 50 * 0.72} ${2 * Math.PI * 50 * 0.28}`}
-                />
-              </svg>
-              <span className="absolute text-h2 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>72%</span>
+          
+          {totalSlotsCount > 0 ? (
+            <>
+              <div className="flex-1 flex flex-col justify-center items-center py-4">
+                <div className="relative w-32 h-32 flex items-center justify-center">
+                  <svg className="w-32 h-32 -rotate-90" viewBox="0 0 120 120">
+                    <circle cx="60" cy="60" r="50" fill="none" stroke="var(--color-surface-container-high)" strokeWidth="10" />
+                    <circle
+                      cx="60" cy="60" r="50"
+                      fill="none"
+                      stroke="var(--color-primary)"
+                      strokeWidth="10"
+                      strokeLinecap="round"
+                      strokeDasharray={`${2 * Math.PI * 50 * (totalStorageQuota > 0 ? activeStorageQuota / totalStorageQuota : 0)} ${2 * Math.PI * 50 * (1 - (totalStorageQuota > 0 ? activeStorageQuota / totalStorageQuota : 0))}`}
+                    />
+                  </svg>
+                  <span className="absolute text-h2 text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
+                    {totalStorageQuota > 0 ? Math.min(100, Math.round((activeStorageQuota / totalStorageQuota) * 100)) : 0}%
+                  </span>
+                </div>
+              </div>
+              
+              <div className="mt-auto space-y-3">
+                <div className="flex justify-between text-label-md text-on-surface-variant border-b border-outline-variant/30 pb-2">
+                  <span>{t('dashboard.activeAccounts')}</span>
+                  <span className="font-semibold text-on-surface">{activeSlotsCount} / {totalSlotsCount}</span>
+                </div>
+                <div>
+                  <div className="flex justify-between text-label-md mb-1">
+                    <span className="text-on-surface-variant">{t('dashboard.used')}: {formatStorage(activeStorageQuota)}</span>
+                    <span className="text-on-surface-variant">{t('dashboard.total')}: {formatStorage(totalStorageQuota)}</span>
+                  </div>
+                  <div className="w-full bg-surface-container-high rounded-full h-2">
+                    <div
+                      className="bg-primary h-2 rounded-full transition-all"
+                      style={{ width: `${totalStorageQuota > 0 ? Math.min(100, Math.round((activeStorageQuota / totalStorageQuota) * 100)) : 0}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex flex-col justify-center items-center text-center p-4">
+              <p className="text-body-md text-on-surface-variant mb-2">
+                {t('dashboard.noActiveSubscriptions')}
+              </p>
+              <Link
+                to="/plans"
+                className="text-label-md text-primary hover:underline font-semibold"
+              >
+                {t('dashboard.viewPlanDetails')}
+              </Link>
             </div>
-          </div>
-          <div className="mt-auto">
-            <div className="flex justify-between text-label-md mb-1">
-              <span className="text-on-surface-variant">{t('dashboard.used')}: 3.6 TB</span>
-              <span className="text-on-surface-variant">{t('dashboard.total')}: 5.0 TB</span>
-            </div>
-            <div className="w-full bg-surface-container-high rounded-full h-2">
-              <div className="bg-primary h-2 rounded-full transition-all" style={{ width: '72%' }} />
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Active Subscriptions — spans 8 cols */}

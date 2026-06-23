@@ -236,6 +236,61 @@ export class NextcloudService {
   }
 
   /**
+   * Retrieves a specific user's storage quota details from Nextcloud.
+   */
+  async getUserStorage(username: string): Promise<{ used: number; total: number }> {
+    const adminUser = env.NEXTCLOUD_APP_USER;
+    const adminPass = env.NEXTCLOUD_APP_PASS;
+    let rawUrl = env.NEXTCLOUD_URL;
+
+    if (!adminUser || !adminPass || !rawUrl) {
+      throw new Error('Nextcloud configuration is incomplete.');
+    }
+
+    if (!/^https?:\/\//i.test(rawUrl)) {
+      rawUrl = `http://${rawUrl}`;
+    }
+    const baseUrl = rawUrl.replace(/\/+$/, '');
+    const ocsUrl = `${baseUrl}/ocs/v1.php/cloud/users/${encodeURIComponent(username)}?format=json`;
+
+    const authHeader = 'Basic ' + Buffer.from(`${adminUser}:${adminPass}`).toString('base64');
+
+    try {
+      const response = await fetch(ocsUrl, {
+        method: 'GET',
+        headers: {
+          'OCS-APIRequest': 'true',
+          'Authorization': authHeader,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Get user request failed: ${response.status}`);
+      }
+
+      const data = await response.json() as any;
+      const statusCode = data?.ocs?.meta?.statuscode;
+      if (statusCode !== 100) {
+        const msg = data?.ocs?.meta?.message || 'Unknown error';
+        throw new Error(`Nextcloud OCS error (${statusCode}): ${msg}`);
+      }
+
+      const quota = data?.ocs?.data?.quota;
+      return {
+        used: Number(quota?.used || 0),
+        total: Number(quota?.total || 0),
+      };
+    } catch (err) {
+      logger.error('Failed to get user storage from Nextcloud. Using fallbacks.', { err });
+      // In development or fallback, assume 0 used and default quota limits
+      return {
+        used: 0,
+        total: 50 * 1000 * 1000 * 1000, // 50 GB
+      };
+    }
+  }
+
+  /**
    * Returns a standard fallback response when Nextcloud connection fails
    */
   private getFallbackStatus(): StorageStatus {

@@ -72,6 +72,8 @@
     "successful": "EXITOSO",
     "mainDbServer": "Servidor DB Principal",
     "cloudStorage": "Almacenamiento Cloud",
+    "activeAccounts": "Cuentas Activas",
+    "noActiveSubscriptions": "No hay suscripciones de respaldo activas.",
     "used": "Usado",
     "total": "Total",
     "unlimited": "Ilimitado",

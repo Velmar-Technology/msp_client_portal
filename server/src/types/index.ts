@@ -306,6 +306,8 @@ export interface SubscriptionEquipment {
   nextcloud_username: string | null;
   nextcloud_password: string | null;
   tenant_id: string;
+  nextcloud_used_bytes?: number;
+  nextcloud_total_bytes?: number;
   created_at: Date;
   updated_at: Date;
 }
