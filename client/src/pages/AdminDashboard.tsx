@@ -1,4 +1,5 @@
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Page } from '@/components/Page';
 import {
@@ -8,10 +9,29 @@ import {
   Cloud,
   ArrowRight,
 } from 'lucide-react';
+import { invoiceService } from '../services/invoiceService';
+import type { Invoice } from '../services/invoiceService';
 
 export function AdminDashboard() {
-  const navigate = useNavigate();
+
   const { t, i18n } = useTranslation();
+
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const invData = await invoiceService.getAll(1, 5);
+        setInvoices(invData.data || []);
+      } catch (err) {
+        console.error('Failed to load recent invoices:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
 
   const getStatusLabel = (status: string) => {
     const map: Record<string, string> = {
@@ -20,6 +40,28 @@ export function AdminDashboard() {
     };
     return map[status] || status;
   };
+
+  const getStatusColorClass = (status: string) => {
+    const colors: Record<string, string> = {
+      PENDING: 'bg-[#F59E0B]/10 text-[#F59E0B]',
+      PAID: 'bg-[#10B981]/10 text-[#10B981]',
+      OVERDUE: 'bg-error/10 text-error',
+    };
+    return colors[status] || 'bg-surface-container text-on-surface-variant';
+  };
+
+  if (loading) {
+    return (
+      <Page
+        title={t('dashboard.systemOverview')}
+        subtitle={t('dashboard.systemStatus')}
+      >
+        <div className="flex items-center justify-center h-64">
+          <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
+        </div>
+      </Page>
+    );
+  }
 
   return (
     <Page
@@ -138,52 +180,37 @@ export function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-outline-variant/30 hover:bg-surface-container-low/30 transition-colors h-12">
-                  <td className="px-5 py-3 text-label-sm font-mono text-on-surface">INV-2024-1001</td>
-                  <td className="px-5 py-3 text-label-sm text-on-surface-variant">
-                    {new Date('2024-10-01').toLocaleDateString(i18n.language === 'es_DO' ? 'es-DO' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </td>
-                  <td className="px-5 py-3 text-label-sm font-semibold text-on-surface">$1,250.00</td>
-                  <td className="px-5 py-3">
-                    <span className="bg-[#F59E0B]/10 text-[#F59E0B] px-2.5 py-0.5 rounded text-[10px] font-bold tracking-wider">
-                      {getStatusLabel('PENDING')}
-                    </span>
-                  </td>
-                </tr>
-                <tr className="border-b border-outline-variant/30 hover:bg-surface-container-low/30 transition-colors h-12">
-                  <td className="px-5 py-3 text-label-sm font-mono text-on-surface">INV-2024-0901</td>
-                  <td className="px-5 py-3 text-label-sm text-on-surface-variant">
-                    {new Date('2024-09-01').toLocaleDateString(i18n.language === 'es_DO' ? 'es-DO' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </td>
-                  <td className="px-5 py-3 text-label-sm font-semibold text-on-surface">$1,250.00</td>
-                  <td className="px-5 py-3">
-                    <span className="bg-[#10B981]/10 text-[#10B981] px-2.5 py-0.5 rounded text-[10px] font-bold tracking-wider">
-                      {getStatusLabel('PAID')}
-                    </span>
-                  </td>
-                </tr>
-                <tr className="hover:bg-surface-container-low/30 transition-colors h-12">
-                  <td className="px-5 py-3 text-label-sm font-mono text-on-surface">INV-2024-0801</td>
-                  <td className="px-5 py-3 text-label-sm text-on-surface-variant">
-                    {new Date('2024-08-01').toLocaleDateString(i18n.language === 'es_DO' ? 'es-DO' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </td>
-                  <td className="px-5 py-3 text-label-sm font-semibold text-on-surface">$1,250.00</td>
-                  <td className="px-5 py-3">
-                    <span className="bg-[#10B981]/10 text-[#10B981] px-2.5 py-0.5 rounded text-[10px] font-bold tracking-wider">
-                      {getStatusLabel('PAID')}
-                    </span>
-                  </td>
-                </tr>
+                {invoices.map((inv) => (
+                  <tr key={inv.id} className="border-b border-outline-variant/30 hover:bg-surface-container-low/30 transition-colors h-12">
+                    <td className="px-5 py-3 text-label-sm font-mono text-on-surface">{inv.invoice_number}</td>
+                    <td className="px-5 py-3 text-label-sm text-on-surface-variant">
+                      {new Date(inv.invoice_date).toLocaleDateString(i18n.language === 'es_DO' ? 'es-DO' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </td>
+                    <td className="px-5 py-3 text-label-sm font-semibold text-on-surface">${Number(inv.total).toFixed(2)}</td>
+                    <td className="px-5 py-3">
+                      <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold tracking-wider ${getStatusColorClass(inv.status)}`}>
+                        {getStatusLabel(inv.status)}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {invoices.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-5 py-8 text-center text-label-sm text-on-surface-variant">
+                      {t('dashboard.noInvoices') || 'No invoices found'}
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         </div>
 
         {/* Promotional Banner (Spans 4 cols on desktop) */}
-        <div className="md:col-span-4 relative rounded-xl border border-outline-variant overflow-hidden group shadow-sm">
+        {/* <div className="md:col-span-4 relative rounded-xl border border-outline-variant overflow-hidden group shadow-sm">
           <div className="absolute inset-0 bg-gradient-to-br from-[#0F172A] to-[#1E293B] z-0"></div>
           {/* Decorative gradients */}
-          <div className="absolute top-0 right-0 -mr-10 -mt-10 w-32 h-32 bg-white/5 rounded-full blur-2xl z-0 pointer-events-none"></div>
+          {/*<div className="absolute top-0 right-0 -mr-10 -mt-10 w-32 h-32 bg-white/5 rounded-full blur-2xl z-0 pointer-events-none"></div>
           <div className="absolute bottom-0 left-0 -ml-10 -mb-10 w-32 h-32 bg-white/5 rounded-full blur-2xl z-0 pointer-events-none"></div>
           
           <div className="relative z-10 p-6 h-full flex flex-col">
@@ -202,7 +229,7 @@ export function AdminDashboard() {
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
-        </div>
+        </div>*/}
 
       </div>
     </Page>

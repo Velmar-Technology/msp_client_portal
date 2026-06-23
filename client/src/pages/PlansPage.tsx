@@ -3,6 +3,13 @@ import { Check, X, Lock, Shield, Edit, Trash2, GripVertical, ChevronUp, ChevronD
 import { useTranslation } from 'react-i18next';
 import { Page } from '@/components/Page';
 import { Input } from '@/components/ui/input';
+import {
+  Sheet,
+  SheetTrigger,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { useAuth } from '@/hooks/useAuth';
 import { usePlanStore } from '@/store/usePlanStore';
 import { useNotificationStore } from '@/store/useNotificationStore';
@@ -751,19 +758,133 @@ export function PlansPage() {
             </button>
           </div>
         ))}
-      </div>
-
-      {/* Payment Section */}
+      </div>      {/* Payment Section */}
       {currentPlan && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-on-surface">
+        <div className="max-w-2xl mx-auto w-full text-on-surface">
           {/* Payment Method or Admin Apply */}
-          <div>
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
+            {/* Header Banner with Sheet Trigger */}
+            <div className="flex justify-between items-center border-b border-outline-variant pb-4 mb-6">
+              <div>
+                <h3 className="text-body-lg font-bold text-primary">
+                  {getPlanName(currentPlan.name)} Plan
+                </h3>
+                <p className="text-body-sm text-on-surface-variant mt-0.5">
+                  {equipmentCount}x {t('plans.equipmentCountSuffix')} • {billingCycle === 'annual' ? 'Annually' : 'Monthly'}
+                </p>
+              </div>
+              <Sheet>
+                <SheetTrigger asChild>
+                  <button className="bg-primary/10 text-primary hover:bg-primary/20 px-3 py-1.5 rounded-lg text-label-sm font-semibold transition-colors cursor-pointer">
+                    View Order Summary (${total.toFixed(2)})
+                  </button>
+                </SheetTrigger>
+                <SheetContent className="w-[400px] p-6 sm:w-[500px] overflow-y-auto bg-surface text-on-surface border-l border-outline-variant">
+                  <SheetHeader className="pb-4 border-b p-2 border-outline-variant">
+                    <SheetTitle className="text-h3 text-primary">{t('plans.orderSummary')}</SheetTitle>
+                  </SheetHeader>
+                  
+                  {/* Order Summary Details */}
+                  <div className="py-6 space-y-6">
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-body-md font-semibold text-on-surface">{getPlanName(currentPlan.name)} {billingCycle === 'annual' ? 'Plan (Annually)' : t('plans.planMonthly')}</p>
+                          <p className="text-label-sm text-on-surface-variant mt-0.5">{equipmentCount}x {t('plans.equipmentCountSuffix')}</p>
+                        </div>
+                        <span className="text-body-md font-semibold text-on-surface">${subtotal.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-body-md text-on-surface-variant">
+                        <span>{t('plans.taxes')}</span>
+                        <span>${tax.toFixed(2)}</span>
+                      </div>
+                      <div className="border-t border-outline-variant pt-3 flex justify-between">
+                        <span className="text-body-md font-bold text-on-surface">{t('plans.total')}</span>
+                        <span className="text-body-md font-bold text-primary text-lg">${total.toFixed(2)}</span>
+                      </div>
+                    </div>
+
+                    {/* Email Quotation and Unregistered options inside Sheet */}
+                    <div className="border-t border-outline-variant pt-6 space-y-4">
+                      <button
+                        type="button"
+                        onClick={handleSendQuote}
+                        disabled={quoteLoading || subscribeLoading}
+                        className="w-full border border-primary text-primary py-2.5 rounded-lg text-label-md hover:bg-primary/5 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
+                      >
+                        {quoteLoading ? t('plans.quoteSending') : (isAdmin ? t('plans.sendQuoteToCustomer') : t('plans.emailQuote'))}
+                      </button>
+
+                      {!isAdmin && (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <input
+                              id="send-to-unregistered-checkbox"
+                              type="checkbox"
+                              checked={isUnregistered}
+                              onChange={(e) => setIsUnregistered(e.target.checked)}
+                              className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary cursor-pointer"
+                            />
+                            <label htmlFor="send-to-unregistered-checkbox" className="text-label-md text-on-surface-variant select-none cursor-pointer">
+                              {t('plans.sendToUnregistered')}
+                            </label>
+                          </div>
+
+                          {isUnregistered && (
+                            <div className="space-y-3 pt-2">
+                              <div>
+                                <label htmlFor="unregistered-email-client" className="block text-label-sm text-on-surface mb-1 font-medium">
+                                  {t('plans.unregisteredEmailLabel')}
+                                </label>
+                                <Input
+                                  id="unregistered-email-client"
+                                  type="email"
+                                  required
+                                  value={unregisteredEmail}
+                                  onChange={(e) => setUnregisteredEmail(e.target.value)}
+                                  placeholder={t('plans.unregisteredEmailPlaceholder')}
+                                  className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
+                                />
+                              </div>
+                              <div>
+                                <label htmlFor="unregistered-name-client" className="block text-label-sm text-on-surface mb-1 font-medium">
+                                  {t('plans.unregisteredNameLabel')}
+                                </label>
+                                <Input
+                                  id="unregistered-name-client"
+                                  type="text"
+                                  value={unregisteredName}
+                                  onChange={(e) => setUnregisteredName(e.target.value)}
+                                  placeholder={t('plans.unregisteredNamePlaceholder')}
+                                  className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="bg-surface-container-low border border-outline-variant/30 rounded-lg p-4 flex items-start gap-3">
+                      <Shield className="h-5 w-5 text-success shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-label-md font-medium text-on-surface">{t('plans.encryptedTx')}</p>
+                        <p className="text-label-sm text-on-surface-variant mt-0.5">
+                          {t('plans.militaryGradeSecurity')}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+
             {isAdmin ? (
               <div className="space-y-4">
                 <h2 className="text-h2 text-primary mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
                   Apply Plan to Customer
                 </h2>
-                <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 space-y-4">
+                <div className="space-y-4">
                   <div>
                     <label htmlFor="customer-select" className="block text-label-md text-on-surface mb-1.5 font-medium">
                       Select Customer
@@ -842,7 +963,7 @@ export function PlansPage() {
                 <h2 className="text-h2 text-primary mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
                   Manage Active Subscription
                 </h2>
-                <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 space-y-6">
+                <div className="space-y-6">
                   <div className="flex items-center justify-between border-b border-outline-variant pb-4">
                     <div>
                       <p className="text-label-sm text-on-surface-variant font-medium uppercase tracking-wider">Current Service</p>
@@ -918,7 +1039,7 @@ export function PlansPage() {
                   </button>
                 </div>
 
-                <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 space-y-4">
+                <div className="space-y-4">
                   {paymentMethod === 'card' ? (
                     <>
                       <div>
@@ -972,98 +1093,6 @@ export function PlansPage() {
                 </div>
               </>
             )}
-          </div>
-
-          {/* Order Summary */}
-          <div>
-            <h2 className="text-h2 text-primary mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
-              {t('plans.orderSummary')}
-            </h2>
-            <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6">
-              <div className="space-y-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-body-md font-medium">{getPlanName(currentPlan.name)} {billingCycle === 'annual' ? 'Plan (Annually)' : t('plans.planMonthly')}</p>
-                    <p className="text-label-sm text-on-surface-variant">{equipmentCount}x {t('plans.equipmentCountSuffix')}</p>
-                  </div>
-                  <span className="text-body-md font-medium">${subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-body-md text-on-surface-variant">
-                  <span>{t('plans.taxes')}</span>
-                  <span>${tax.toFixed(2)}</span>
-                </div>
-                <div className="border-t border-outline-variant pt-3 flex justify-between">
-                  <span className="text-h3 font-bold" style={{ fontFamily: 'var(--font-heading)' }}>{t('plans.total')}</span>
-                  <span className="text-h3 font-bold" style={{ fontFamily: 'var(--font-heading)' }}>${total.toFixed(2)}</span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleSendQuote}
-                disabled={quoteLoading || subscribeLoading}
-                className="mt-6 w-full border border-primary text-primary py-2.5 rounded-lg text-label-md hover:bg-primary/5 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
-              >
-                {quoteLoading ? t('plans.quoteSending') : t('plans.emailQuote')}
-              </button>
-
-              <div className="mt-4 pt-4 border-t border-outline-variant space-y-3">
-                <div className="flex items-center gap-2">
-                  <input
-                    id="send-to-unregistered-checkbox"
-                    type="checkbox"
-                    checked={isUnregistered}
-                    onChange={(e) => setIsUnregistered(e.target.checked)}
-                    className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary cursor-pointer"
-                  />
-                  <label htmlFor="send-to-unregistered-checkbox" className="text-label-md text-on-surface-variant select-none cursor-pointer">
-                    {t('plans.sendToUnregistered')}
-                  </label>
-                </div>
-
-                {isUnregistered && (
-                  <div className="space-y-3 pt-2">
-                    <div>
-                      <label htmlFor="unregistered-email-client" className="block text-label-sm text-on-surface mb-1 font-medium">
-                        {t('plans.unregisteredEmailLabel')}
-                      </label>
-                      <Input
-                        id="unregistered-email-client"
-                        type="email"
-                        required
-                        value={unregisteredEmail}
-                        onChange={(e) => setUnregisteredEmail(e.target.value)}
-                        placeholder={t('plans.unregisteredEmailPlaceholder')}
-                        className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="unregistered-name-client" className="block text-label-sm text-on-surface mb-1 font-medium">
-                        {t('plans.unregisteredNameLabel')}
-                      </label>
-                      <Input
-                        id="unregistered-name-client"
-                        type="text"
-                        value={unregisteredName}
-                        onChange={(e) => setUnregisteredName(e.target.value)}
-                        placeholder={t('plans.unregisteredNamePlaceholder')}
-                        className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-6 bg-surface-container rounded-lg p-4 flex items-start gap-3">
-                <Shield className="h-5 w-5 text-success shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-label-md font-medium">{t('plans.encryptedTx')}</p>
-                  <p className="text-label-sm text-on-surface-variant">
-                    {t('plans.militaryGradeSecurity')}
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       )}

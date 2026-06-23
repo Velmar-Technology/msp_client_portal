@@ -6,7 +6,12 @@ export class InvoiceController {
   async getAll(req: Request, res: Response): Promise<void> {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
-    const { invoices, total } = await invoiceService.getClientInvoices(req.user!.tenantId, page, limit);
+    const { invoices, total } = await invoiceService.getClientInvoices(
+      req.user!.tenantId,
+      req.user!.role as UserRole,
+      page,
+      limit
+    );
 
     res.json({
       success: true,

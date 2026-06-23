@@ -262,7 +262,7 @@ export function ClientDashboard() {
         </div>
 
         {/* Promo Banner — spans 4 cols */}
-        <div className="md:col-span-4 relative rounded-xl border border-outline-variant overflow-hidden shadow-sm">
+        {/* <div className="md:col-span-4 relative rounded-xl border border-outline-variant overflow-hidden shadow-sm">
           <div className="absolute inset-0 bg-primary z-0" />
           <div className="absolute top-0 right-0 -mr-10 -mt-10 w-32 h-32 bg-inverse-primary/20 rounded-full blur-2xl z-0 pointer-events-none" />
           <div className="absolute bottom-0 left-0 -ml-10 -mb-10 w-32 h-32 bg-secondary/20 rounded-full blur-2xl z-0 pointer-events-none" />
@@ -284,7 +284,7 @@ export function ClientDashboard() {
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-        </div>
+        </div> */}
       </div>
     </Page>
   );

@@ -168,6 +168,10 @@ describe('PlansPage', () => {
       expect(screen.getByText('$399.20')).toBeInTheDocument();
       expect(screen.getByText('Billed annually as $4790.40/yr')).toBeInTheDocument();
 
+      // Open Order Summary Sheet
+      const viewSummaryButton = screen.getByRole('button', { name: /View Order Summary/i });
+      fireEvent.click(viewSummaryButton);
+
       // Verify Order Summary subtotal, tax, and total
       // subtotal = 499 * 12 * 0.8 = 4790.40
       // tax = 4790.40 * 0.18 = 862.27
@@ -321,6 +325,10 @@ describe('PlansPage', () => {
         </MemoryRouter>
       );
 
+      // Open the sheet
+      const viewSummaryButton = screen.getByRole('button', { name: /View Order Summary/i });
+      fireEvent.click(viewSummaryButton);
+
       const quoteButton = screen.getByText('plans.emailQuote');
       expect(quoteButton).toBeInTheDocument();
 
@@ -350,7 +358,12 @@ describe('PlansPage', () => {
         </MemoryRouter>
       );
 
+      // Verify that unregistered input fields are NOT shown initially
       expect(screen.queryByLabelText('plans.unregisteredEmailLabel')).not.toBeInTheDocument();
+
+      // Open the sheet
+      const viewSummaryButton = screen.getByRole('button', { name: /View Order Summary/i });
+      fireEvent.click(viewSummaryButton);
 
       const checkbox = screen.getByLabelText('plans.sendToUnregistered');
       fireEvent.click(checkbox);

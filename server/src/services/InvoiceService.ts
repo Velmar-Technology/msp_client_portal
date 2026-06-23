@@ -3,11 +3,17 @@ import { AppError } from '../utils/AppError';
 import { Invoice, UserRole } from '../types';
 
 export class InvoiceService {
-  async getClientInvoices(tenantId: string, page = 1, limit = 20): Promise<{ invoices: Invoice[]; total: number }> {
+  async getClientInvoices(tenantId: string, userRole: UserRole, page = 1, limit = 20): Promise<{ invoices: Invoice[]; total: number }> {
     const offset = (page - 1) * limit;
-    const invoices = await invoiceRepository.findByTenant(tenantId, limit, offset);
-    const total = await invoiceRepository.countByTenant(tenantId);
-    return { invoices, total };
+    if (userRole === UserRole.ADMIN) {
+      const invoices = await invoiceRepository.findAll(limit, offset);
+      const total = await invoiceRepository.count();
+      return { invoices, total };
+    } else {
+      const invoices = await invoiceRepository.findByTenant(tenantId, limit, offset);
+      const total = await invoiceRepository.countByTenant(tenantId);
+      return { invoices, total };
+    }
   }
 
   async getInvoiceById(id: string, tenantId: string, userRole: UserRole): Promise<Invoice> {
