@@ -294,3 +294,19 @@ export interface Plan {
   updated_at: Date;
 }
 
+export interface SubscriptionEquipment {
+  id: string;
+  subscription_id: string;
+  slot_index: number;
+  status: 'PENDING_ACTIVATION' | 'ACTIVE';
+  device_name: string | null;
+  device_serial: string | null;
+  otp: string | null;
+  otp_expires_at: Date | null;
+  nextcloud_username: string | null;
+  nextcloud_password: string | null;
+  tenant_id: string;
+  created_at: Date;
+  updated_at: Date;
+}
+

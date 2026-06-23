@@ -4,6 +4,7 @@ import { expect, test, vi, beforeEach, describe } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { userService } from '@/services/userService';
 import { subscriptionService } from '@/services/subscriptionService';
+import { equipmentService } from '@/services/equipmentService';
 import { useAuth } from '@/hooks/useAuth';
 import { usePlanStore } from '@/store/usePlanStore';
 
@@ -51,6 +52,15 @@ vi.mock('@/services/subscriptionService', () => ({
     getAll: vi.fn().mockResolvedValue([]),
     update: vi.fn(),
     sendQuote: vi.fn(),
+  },
+}));
+
+vi.mock('@/services/equipmentService', () => ({
+  equipmentService: {
+    getSlots: vi.fn().mockRejectedValue(new Error('Mock API error')),
+    generateOTP: vi.fn(),
+    activateSlot: vi.fn(),
+    deactivateSlot: vi.fn(),
   },
 }));
 
@@ -527,6 +537,87 @@ describe('PlansPage', () => {
         },
       ];
       vi.mocked(subscriptionService.getAll).mockResolvedValue(activeSubs);
+
+      vi.mocked(equipmentService.getSlots).mockResolvedValue([
+        {
+          id: 'slot-1',
+          subscription_id: 'sub-basic',
+          slot_index: 0,
+          status: 'ACTIVE',
+          device_name: 'Workstation 1',
+          device_serial: 'SN12345',
+          otp: null,
+          otp_expires_at: null,
+          nextcloud_username: 'backup_user_1',
+          nextcloud_password: 'backup_password_1',
+          tenant_id: 'tenant-1',
+          created_at: '2026-06-22',
+          updated_at: '2026-06-22',
+        },
+        {
+          id: 'slot-2',
+          subscription_id: 'sub-basic',
+          slot_index: 1,
+          status: 'PENDING_ACTIVATION',
+          device_name: null,
+          device_serial: null,
+          otp: null,
+          otp_expires_at: null,
+          nextcloud_username: null,
+          nextcloud_password: null,
+          tenant_id: 'tenant-1',
+          created_at: '2026-06-22',
+          updated_at: '2026-06-22',
+        },
+      ]);
+
+      vi.mocked(equipmentService.generateOTP).mockResolvedValue({
+        id: 'slot-2',
+        subscription_id: 'sub-basic',
+        slot_index: 1,
+        status: 'PENDING_ACTIVATION',
+        device_name: null,
+        device_serial: null,
+        otp: '123456',
+        otp_expires_at: new Date(Date.now() + 600000).toISOString(),
+        nextcloud_username: null,
+        nextcloud_password: null,
+        tenant_id: 'tenant-1',
+        created_at: '2026-06-22',
+        updated_at: '2026-06-22',
+      });
+
+      vi.mocked(equipmentService.activateSlot).mockResolvedValue({
+        id: 'slot-2',
+        subscription_id: 'sub-basic',
+        slot_index: 1,
+        status: 'ACTIVE',
+        device_name: 'Simulated Laptop',
+        device_serial: 'SN-SIMULATED',
+        otp: null,
+        otp_expires_at: null,
+        nextcloud_username: 'backup_user_2',
+        nextcloud_password: 'backup_password_2',
+        tenant_id: 'tenant-1',
+        created_at: '2026-06-22',
+        updated_at: '2026-06-22',
+      });
+
+      vi.mocked(equipmentService.deactivateSlot).mockResolvedValue({
+        id: 'slot-2',
+        subscription_id: 'sub-basic',
+        slot_index: 1,
+        status: 'PENDING_ACTIVATION',
+        device_name: null,
+        device_serial: null,
+        otp: null,
+        otp_expires_at: null,
+        nextcloud_username: null,
+        nextcloud_password: null,
+        tenant_id: 'tenant-1',
+        created_at: '2026-06-22',
+        updated_at: '2026-06-22',
+      });
 
       render(
         <MemoryRouter>

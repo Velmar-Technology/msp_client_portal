@@ -17,6 +17,8 @@ import type { Plan, PlanFeature } from '@/services/planService';
 import { userService } from '@/services/userService';
 import { subscriptionService } from '@/services/subscriptionService';
 import type { Subscription } from '@/services/subscriptionService';
+import { equipmentService } from '@/services/equipmentService';
+import type { SubscriptionEquipment } from '@/services/equipmentService';
 import type { AuthUser } from '@/store/useAuthStore';
 
 export function PlansPage() {
@@ -59,7 +61,7 @@ export function PlansPage() {
   // Active plan management state
   const [activeSubscriptions, setActiveSubscriptions] = useState<Subscription[]>([]);
   // Mock state to track provisioned equipment slots and generated OTPs per subscription
-  const [subscriptionEquipment, setSubscriptionEquipment] = useState<Record<string, Array<{ id: string; name?: string; serial?: string; status: string; otp?: string; expiresAt?: string }>>>({});
+  const [subscriptionEquipment, setSubscriptionEquipment] = useState<Record<string, Partial<SubscriptionEquipment>[]>>({});
 
   const isAdmin = user?.role === 'ADMIN';
 
@@ -84,27 +86,27 @@ export function PlansPage() {
       });
       setEquipmentCounts((prev) => ({ ...prev, ...counts }));
 
-      // Populate mock equipment slots for each active subscription
-      const initialEquip: Record<string, Array<{ id: string; name?: string; serial?: string; status: string; otp?: string; expiresAt?: string }>> = {};
-      active.forEach((sub) => {
-        const slots = [];
-        for (let i = 0; i < sub.equipment_count; i++) {
-          if (i === 0) {
-            slots.push({
-              id: `device-slot-${i}`,
-              name: `Workstation-${sub.plan}-${i + 1}`,
-              serial: `SN-MSP-${sub.plan}-${Math.floor(1000 + Math.random() * 9000)}`,
-              status: 'ACTIVE',
-            });
-          } else {
-            slots.push({
-              id: `device-slot-${i}`,
-              status: 'PENDING_ACTIVATION',
-            });
+      // Populate real equipment slots for each active subscription from the backend
+      const initialEquip: Record<string, Partial<SubscriptionEquipment>[]> = {};
+      await Promise.all(
+        active.map(async (sub) => {
+          try {
+            const slots = await equipmentService.getSlots(sub.id);
+            initialEquip[sub.id] = slots;
+          } catch (err) {
+            console.error(`Failed to load slots for subscription ${sub.id}:`, err);
+            // Fallback: populate empty slots if backend fails
+            const fallbackSlots = [];
+            for (let i = 0; i < sub.equipment_count; i++) {
+              fallbackSlots.push({
+                id: `device-slot-${i}`,
+                status: 'PENDING_ACTIVATION',
+              });
+            }
+            initialEquip[sub.id] = fallbackSlots;
           }
-        }
-        initialEquip[sub.id] = slots;
-      });
+        })
+      );
       setSubscriptionEquipment(initialEquip);
 
       setUserSelectedPlan((prev) => {
@@ -182,81 +184,78 @@ export function PlansPage() {
   };
 
   // Handler to provision a slot / generate OTP
-  const handleGenerateOTP = (subId: string, slotIndex: number) => {
-    // eslint-disable-next-line react-hooks/purity
-    const otp = String(Math.floor(100000 + Math.random() * 900000));
-    // eslint-disable-next-line react-hooks/purity
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString();
-
-    setSubscriptionEquipment((prev) => {
-      const current = prev[subId] || [];
-      const updated = [...current];
-      updated[slotIndex] = {
-        id: `device-slot-${slotIndex}`,
-        status: 'PENDING_ACTIVATION',
-        otp,
-        expiresAt,
-      };
-
+  const handleGenerateOTP = async (subId: string, slotIndex: number) => {
+    try {
+      const updatedSlot = await equipmentService.generateOTP(subId, slotIndex);
+      setSubscriptionEquipment((prev) => {
+        const current = [...(prev[subId] || [])];
+        current[slotIndex] = updatedSlot;
+        return { ...prev, [subId]: current };
+      });
       addToast({
         title: 'OTP Generated',
-        message: `Temporary activation code ${otp} generated for slot #${slotIndex + 1}.`,
+        message: `Temporary activation code ${updatedSlot.otp} generated for slot #${slotIndex + 1}.`,
         type: 'success',
       });
-
-      return {
-        ...prev,
-        [subId]: updated,
-      };
-    });
+    } catch (err) {
+      console.error('Failed to generate OTP:', err);
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      addToast({
+        title: 'Error',
+        message: error.response?.data?.message || error.message || 'Failed to generate activation code.',
+        type: 'error',
+      });
+    }
   };
 
   // Handler to mock activate a device
-  const handleMockActivate = (subId: string, slotIndex: number, deviceName: string, deviceSerial: string) => {
-    setSubscriptionEquipment((prev) => {
-      const current = prev[subId] || [];
-      const updated = [...current];
-      updated[slotIndex] = {
-        id: `device-slot-${slotIndex}`,
-        name: deviceName,
-        serial: deviceSerial,
-        status: 'ACTIVE',
-        otp: undefined,
-        expiresAt: undefined,
-      };
-      return {
-        ...prev,
-        [subId]: updated,
-      };
-    });
-
-    addToast({
-      title: 'Equipment Activated',
-      message: `Device ${deviceName} successfully activated. Features enabled.`,
-      type: 'success',
-    });
+  const handleMockActivate = async (subId: string, slotIndex: number, deviceName: string, deviceSerial: string) => {
+    try {
+      const updatedSlot = await equipmentService.activateSlot(subId, slotIndex, deviceName, deviceSerial);
+      setSubscriptionEquipment((prev) => {
+        const current = [...(prev[subId] || [])];
+        current[slotIndex] = updatedSlot;
+        return { ...prev, [subId]: current };
+      });
+      addToast({
+        title: 'Equipment Activated',
+        message: `Device ${deviceName} successfully activated. Nextcloud backup account provisioned.`,
+        type: 'success',
+      });
+    } catch (err) {
+      console.error('Failed to activate equipment:', err);
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      addToast({
+        title: 'Error',
+        message: error.response?.data?.message || error.message || 'Failed to activate device.',
+        type: 'error',
+      });
+    }
   };
 
   // Handler to revoke / deactivate a device
-  const handleRevokeEquipment = (subId: string, slotIndex: number) => {
-    setSubscriptionEquipment((prev) => {
-      const current = prev[subId] || [];
-      const updated = [...current];
-      updated[slotIndex] = {
-        id: `device-slot-${slotIndex}`,
-        status: 'PENDING_ACTIVATION',
-      };
-      return {
-        ...prev,
-        [subId]: updated,
-      };
-    });
-
-    addToast({
-      title: 'Slot Revoked',
-      message: 'Equipment slot revoked. The device will be deactivated during its next check-in.',
-      type: 'info',
-    });
+  const handleRevokeEquipment = async (subId: string, slotIndex: number) => {
+    try {
+      const updatedSlot = await equipmentService.deactivateSlot(subId, slotIndex);
+      setSubscriptionEquipment((prev) => {
+        const current = [...(prev[subId] || [])];
+        current[slotIndex] = updatedSlot;
+        return { ...prev, [subId]: current };
+      });
+      addToast({
+        title: 'Slot Revoked',
+        message: 'Equipment slot revoked. Nextcloud account deleted.',
+        type: 'info',
+      });
+    } catch (err) {
+      console.error('Failed to revoke equipment:', err);
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      addToast({
+        title: 'Error',
+        message: error.response?.data?.message || error.message || 'Failed to deactivate slot.',
+        type: 'error',
+      });
+    }
   };
 
   const handleProcessSubscription = async (e: React.FormEvent) => {
@@ -882,13 +881,22 @@ export function PlansPage() {
                     </div>
                     {equip.status === 'ACTIVE' ? (
                       <div className="mt-1">
-                        <p className="text-body-sm font-medium text-on-surface">{equip.name}</p>
-                        <p className="text-label-sm text-on-surface-variant font-mono">{equip.serial}</p>
+                        <p className="text-body-sm font-medium text-on-surface">{equip.device_name || equip.name}</p>
+                        <p className="text-label-sm text-on-surface-variant font-mono">{equip.device_serial || equip.serial}</p>
+                        {equip.nextcloud_username && (
+                          <div className="mt-2 bg-surface-container/60 p-2.5 rounded border border-outline-variant/30 text-label-sm space-y-1">
+                            <p className="font-semibold text-primary">☁️ Nextcloud Backup Account:</p>
+                            <p className="text-on-surface-variant font-mono">User: {equip.nextcloud_username}</p>
+                            <p className="text-on-surface-variant font-mono">Pass: {equip.nextcloud_password}</p>
+                          </div>
+                        )}
                       </div>
                     ) : equip.otp ? (
                       <div className="mt-1 bg-surface-container p-2 rounded border border-outline-variant/50">
                         <p className="text-body-sm font-bold text-primary font-mono select-all">OTP: {equip.otp}</p>
-                        <p className="text-[10px] text-on-surface-variant mt-0.5 font-medium">Expires: {equip.expiresAt}</p>
+                        <p className="text-[10px] text-on-surface-variant mt-0.5 font-medium">
+                          Expires: {equip.otp_expires_at ? new Date(equip.otp_expires_at).toLocaleString() : equip.expiresAt}
+                        </p>
                       </div>
                     ) : (
                       <p className="text-body-sm text-on-surface-variant mt-1">Empty license slot</p>

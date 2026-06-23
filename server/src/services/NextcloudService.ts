@@ -133,6 +133,109 @@ export class NextcloudService {
   }
 
   /**
+   * Provisions a new user account in Nextcloud with the specified quota.
+   */
+  async provisionUser(options: {
+    username: string;
+    email?: string;
+    quota?: string;
+    displayName?: string;
+  }): Promise<string> {
+    const adminUser = env.NEXTCLOUD_APP_USER;
+    const adminPass = env.NEXTCLOUD_APP_PASS;
+    let rawUrl = env.NEXTCLOUD_URL;
+
+    if (!adminUser || !adminPass || !rawUrl) {
+      throw new Error('Nextcloud configuration is incomplete.');
+    }
+
+    if (!/^https?:\/\//i.test(rawUrl)) {
+      rawUrl = `http://${rawUrl}`;
+    }
+    const baseUrl = rawUrl.replace(/\/+$/, '');
+    const ocsUrl = `${baseUrl}/ocs/v1.php/cloud/users?format=json`;
+
+    // Generate random secure password for the provisioned user
+    const password = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+
+    const authHeader = 'Basic ' + Buffer.from(`${adminUser}:${adminPass}`).toString('base64');
+    
+    // We send form data as required by the OCS API
+    const params = new URLSearchParams();
+    params.append('userid', options.username);
+    params.append('password', password);
+    if (options.email) params.append('email', options.email);
+    if (options.quota) params.append('quota', options.quota);
+    if (options.displayName) params.append('displayName', options.displayName);
+
+    const response = await fetch(ocsUrl, {
+      method: 'POST',
+      headers: {
+        'OCS-APIRequest': 'true',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': authHeader,
+      },
+      body: params,
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`Provisioning request failed: ${response.status} ${errText}`);
+    }
+
+    const data = await response.json() as any;
+    const statusCode = data?.ocs?.meta?.statuscode;
+    if (statusCode !== 100) {
+      const msg = data?.ocs?.meta?.message || 'Unknown error';
+      throw new Error(`Nextcloud OCS error (${statusCode}): ${msg}`);
+    }
+
+    // Return the generated password so we can store/display it
+    return password;
+  }
+
+  /**
+   * Deletes a user account in Nextcloud.
+   */
+  async deleteUser(username: string): Promise<void> {
+    const adminUser = env.NEXTCLOUD_APP_USER;
+    const adminPass = env.NEXTCLOUD_APP_PASS;
+    let rawUrl = env.NEXTCLOUD_URL;
+
+    if (!adminUser || !adminPass || !rawUrl) {
+      throw new Error('Nextcloud configuration is incomplete.');
+    }
+
+    if (!/^https?:\/\//i.test(rawUrl)) {
+      rawUrl = `http://${rawUrl}`;
+    }
+    const baseUrl = rawUrl.replace(/\/+$/, '');
+    const ocsUrl = `${baseUrl}/ocs/v1.php/cloud/users/${encodeURIComponent(username)}?format=json`;
+
+    const authHeader = 'Basic ' + Buffer.from(`${adminUser}:${adminPass}`).toString('base64');
+
+    const response = await fetch(ocsUrl, {
+      method: 'DELETE',
+      headers: {
+        'OCS-APIRequest': 'true',
+        'Authorization': authHeader,
+      },
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`Delete user request failed: ${response.status} ${errText}`);
+    }
+
+    const data = await response.json() as any;
+    const statusCode = data?.ocs?.meta?.statuscode;
+    if (statusCode !== 100) {
+      const msg = data?.ocs?.meta?.message || 'Unknown error';
+      throw new Error(`Nextcloud OCS error (${statusCode}): ${msg}`);
+    }
+  }
+
+  /**
    * Returns a standard fallback response when Nextcloud connection fails
    */
   private getFallbackStatus(): StorageStatus {

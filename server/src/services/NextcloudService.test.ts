@@ -11,6 +11,7 @@ describe('NextcloudService', () => {
     env.NEXTCLOUD_URL = 'http://192.168.0.100:30027';
     env.NEXTCLOUD_APP_USER = 'truenas_admin';
     env.NEXTCLOUD_APP_PASS = 'somepassword';
+    env.NEXTCLOUD_TOTAL_CAPACITY = 5000000000000;
   });
 
   afterEach(() => {

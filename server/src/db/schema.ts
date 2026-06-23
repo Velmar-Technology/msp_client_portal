@@ -307,3 +307,32 @@ export const notificationPreferences = pgTable(
   ]
 );
 
+// ---- Subscription Equipment (Device Slots) ----
+export const subscriptionEquipment = pgTable(
+  'subscription_equipment',
+  {
+    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    subscription_id: uuid('subscription_id')
+      .references(() => subscriptions.id, { onDelete: 'cascade' })
+      .notNull(),
+    slot_index: integer('slot_index').notNull(),
+    status: varchar('status', { length: 50 }).default('PENDING_ACTIVATION').notNull(),
+    device_name: varchar('device_name', { length: 255 }),
+    device_serial: varchar('device_serial', { length: 255 }),
+    otp: varchar('otp', { length: 10 }),
+    otp_expires_at: timestamp('otp_expires_at', { withTimezone: true }),
+    nextcloud_username: varchar('nextcloud_username', { length: 255 }),
+    nextcloud_password: varchar('nextcloud_password', { length: 255 }),
+    tenant_id: uuid('tenant_id')
+      .references(() => tenants.id, { onDelete: 'cascade' })
+      .notNull(),
+    created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    index('idx_sub_equip_sub').on(table.subscription_id),
+    index('idx_sub_equip_tenant').on(table.tenant_id),
+    index('idx_sub_equip_otp').on(table.otp),
+  ]
+);
+
