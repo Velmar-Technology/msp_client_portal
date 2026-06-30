@@ -1,7 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import { PoolClient } from 'pg';
+import bcrypt from 'bcrypt';
 import { pool } from '../config/database';
+import { env } from '../config/env';
 import { logger } from '../utils/logger';
 
 async function checkTableExists(client: PoolClient, tableName: string): Promise<boolean> {
@@ -29,7 +31,68 @@ async function checkColumnExists(client: PoolClient, tableName: string, columnNa
   return res.rows[0].exists;
 }
 
-async function migrate(): Promise<void> {
+export async function ensureAdminExists(client: PoolClient): Promise<void> {
+  logger.info('Checking if an administrator user exists...');
+  
+  // Check if any admin exists
+  const adminCheck = await client.query(
+    "SELECT 1 FROM users WHERE role = 'ADMIN' LIMIT 1"
+  );
+  
+  if (adminCheck.rows.length > 0) {
+    logger.info('At least one administrator user already exists in the database.');
+    return;
+  }
+  
+  logger.info('No administrator user found. Creating default administrator...');
+
+  // Check if default admin tenant exists, otherwise create it
+  let tenantId = 'ef010203-0405-0607-0809-0a0b0c0d0e0f';
+  const tenantCheck = await client.query(
+    "SELECT id FROM tenants WHERE subdomain = 'admin' OR id = $1 LIMIT 1",
+    [tenantId]
+  );
+
+  if (tenantCheck.rows.length > 0) {
+    tenantId = tenantCheck.rows[0].id;
+    logger.info(`Using existing admin tenant with ID: ${tenantId}`);
+  } else {
+    logger.info('Creating default admin tenant...');
+    await client.query(
+      "INSERT INTO tenants (id, name, subdomain) VALUES ($1, $2, $3)",
+      [tenantId, 'MSP Provider', 'admin']
+    );
+  }
+
+  // Check if a user with the admin email exists (could be a CLIENT or TECHNICIAN)
+  const userCheck = await client.query(
+    "SELECT id, role FROM users WHERE email = $1 LIMIT 1",
+    [env.ADMIN_EMAIL]
+  );
+
+  if (userCheck.rows.length > 0) {
+    // User exists. If not already an ADMIN, update role to ADMIN
+    if (userCheck.rows[0].role !== 'ADMIN') {
+      logger.info(`User with email ${env.ADMIN_EMAIL} exists with role ${userCheck.rows[0].role}. Upgrading to ADMIN...`);
+      await client.query(
+        "UPDATE users SET role = 'ADMIN' WHERE id = $1",
+        [userCheck.rows[0].id]
+      );
+    } else {
+      logger.info(`User with email ${env.ADMIN_EMAIL} is already an ADMIN.`);
+    }
+  } else {
+    // User does not exist. Create new admin user
+    logger.info(`Creating new administrator user with email: ${env.ADMIN_EMAIL}`);
+    const passwordHash = await bcrypt.hash(env.ADMIN_PASSWORD, 12);
+    await client.query(
+      "INSERT INTO users (email, name, password_hash, role, tenant_id, is_active, email_verified) VALUES ($1, $2, $3, 'ADMIN', $4, true, true)",
+      [env.ADMIN_EMAIL, 'System Administrator', passwordHash, tenantId]
+    );
+  }
+}
+
+export async function migrate(): Promise<void> {
   const migrationsDir = path.join(__dirname, 'migrations');
   const files = fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql')).sort();
 
@@ -134,6 +197,10 @@ async function migrate(): Promise<void> {
         throw err;
       }
     }
+
+    // Ensure at least one administrator user is created
+    await ensureAdminExists(client);
+
     logger.info('All migrations applied successfully');
   } catch (error) {
     logger.error('Migration failed', { error });
@@ -144,4 +211,6 @@ async function migrate(): Promise<void> {
   }
 }
 
-migrate().catch(() => process.exit(1));
+if (require.main === module) {
+  migrate().catch(() => process.exit(1));
+}
