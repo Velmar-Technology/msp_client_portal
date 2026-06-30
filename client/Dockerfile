@@ -5,13 +5,13 @@ WORKDIR /app
 # Upgrade npm to match local environment version
 RUN npm install -g npm@11.16.0
 
-# Copy root lock and package configurations for dependency installation
-COPY package*.json tsconfig.base.json ./
+# Copy root package configuration (omitting package-lock.json to force dynamic platform resolution)
+COPY package.json tsconfig.base.json ./
 COPY client/package.json ./client/
 COPY server/package.json ./server/
 COPY packages/errors/package.json ./packages/errors/
 
-# Install dependencies (npm workspaces) using npm install to dynamically fetch cross-platform binaries
+# Install dependencies (npm workspaces) from registry for Linux platform
 RUN npm install --legacy-peer-deps --no-audit --no-fund
 
 # Copy packages and build shared errors module

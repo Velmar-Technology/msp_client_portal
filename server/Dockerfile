@@ -8,13 +8,13 @@ RUN apt-get update && apt-get install -y make gcc g++ python3 && rm -rf /var/lib
 # Upgrade npm to match local environment version
 RUN npm install -g npm@11.16.0
 
-# Copy root workspace configurations
-COPY package*.json tsconfig.base.json ./
+# Copy root workspace configurations (omitting package-lock.json to force dynamic platform resolution in builder stage)
+COPY package.json tsconfig.base.json ./
 COPY client/package.json ./client/
 COPY server/package.json ./server/
 COPY packages/errors/package.json ./packages/errors/
 
-# Install dependencies (npm workspaces) using npm install to dynamically fetch cross-platform binaries
+# Install dependencies (npm workspaces) from registry for Linux platform
 RUN npm install --legacy-peer-deps --no-audit --no-fund
 
 # Copy packages and build shared errors module
@@ -36,7 +36,7 @@ RUN apt-get update && apt-get install -y make gcc g++ python3 && rm -rf /var/lib
 # Upgrade npm to match local environment version
 RUN npm install -g npm@11.16.0
 
-# Copy package requirements for production dependency installation
+# Copy package requirements for production dependency installation (uses package-lock.json for strict prod audit)
 COPY package*.json tsconfig.base.json ./
 COPY client/package.json ./client/
 COPY server/package.json ./server/
