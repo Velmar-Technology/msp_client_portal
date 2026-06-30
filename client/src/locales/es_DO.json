@@ -329,7 +329,16 @@
     "noInvoices": "No se encontraron facturas",
     "downloadInvoice": "Descargar Factura",
     "page": "Página",
-    "invoices": "facturas"
+    "invoices": "facturas",
+    "payNow": "Pagar Ahora",
+    "payWithPaypal": "Pagar con PayPal",
+    "paymentSuccess": "¡Pago capturado con éxito! Gracias.",
+    "paymentError": "El pago falló. Por favor intente de nuevo.",
+    "paymentProcessing": "Procesando pago...",
+    "modalPayTitle": "Pagar Factura {{number}}",
+    "modalPayDesc": "Por favor revise el monto a pagar y proceda a pagar de forma segura con PayPal.",
+    "amountDue": "Monto a Pagar",
+    "close": "Cerrar"
   },
   "help": {
     "title": "Ayuda y Documentación",

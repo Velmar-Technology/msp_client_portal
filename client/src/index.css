@@ -214,6 +214,15 @@
   animation: slideIn 0.3s ease-out;
 }
 
+@keyframes shimmerLine {
+  0% { left: -100%; }
+  100% { left: 200%; }
+}
+
+.animate-shimmer-line {
+  animation: shimmerLine 3s infinite linear;
+}
+
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: 'Inter Variable', sans-serif;

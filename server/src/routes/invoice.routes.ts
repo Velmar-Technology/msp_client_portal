@@ -12,4 +12,11 @@ router.get('/', (req, res) => invoiceController.getAll(req, res));
 /** GET /api/v1/invoices/:id — Get invoice details */
 router.get('/:id', (req, res) => invoiceController.getById(req, res));
 
+/** POST /api/v1/invoices/:id/create-paypal-order — Create PayPal order */
+router.post('/:id/create-paypal-order', (req, res) => invoiceController.createPaypalOrder(req, res));
+
+/** POST /api/v1/invoices/:id/capture-paypal-order — Capture PayPal order */
+router.post('/:id/capture-paypal-order', (req, res) => invoiceController.capturePaypalOrder(req, res));
+
 export default router;
+

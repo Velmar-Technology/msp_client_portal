@@ -28,6 +28,27 @@ export class InvoiceController {
     );
     res.json({ success: true, data: invoice });
   }
+
+  async createPaypalOrder(req: Request, res: Response): Promise<void> {
+    const result = await invoiceService.createPaypalOrder(
+      req.params.id as string,
+      req.user!.tenantId,
+      req.user!.role as UserRole
+    );
+    res.json({ success: true, data: result });
+  }
+
+  async capturePaypalOrder(req: Request, res: Response): Promise<void> {
+    const { orderId } = req.body;
+    const invoice = await invoiceService.capturePaypalOrder(
+      req.params.id as string,
+      orderId as string,
+      req.user!.tenantId,
+      req.user!.role as UserRole
+    );
+    res.json({ success: true, data: invoice });
+  }
 }
 
 export const invoiceController = new InvoiceController();
+

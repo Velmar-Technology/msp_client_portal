@@ -329,7 +329,16 @@
     "noInvoices": "No invoices found",
     "downloadInvoice": "Download Invoice",
     "page": "Page",
-    "invoices": "invoices"
+    "invoices": "invoices",
+    "payNow": "Pay Now",
+    "payWithPaypal": "Pay with PayPal",
+    "paymentSuccess": "Payment captured successfully! Thank you.",
+    "paymentError": "Payment failed. Please try again.",
+    "paymentProcessing": "Processing payment...",
+    "modalPayTitle": "Pay Invoice {{number}}",
+    "modalPayDesc": "Please review the amount due and proceed to pay securely with PayPal.",
+    "amountDue": "Amount Due",
+    "close": "Close"
   },
   "help": {
     "title": "Help & Documentation",

@@ -23,4 +23,15 @@ export const invoiceService = {
     const response = await api.get(`/invoices/${id}`);
     return response.data.data;
   },
+
+  async createPaypalOrder(id: string): Promise<{ orderId: string }> {
+    const response = await api.post(`/invoices/${id}/create-paypal-order`);
+    return response.data.data;
+  },
+
+  async capturePaypalOrder(id: string, orderId: string): Promise<{ success: boolean; data: Invoice }> {
+    const response = await api.post(`/invoices/${id}/capture-paypal-order`, { orderId });
+    return response.data;
+  },
 };
+

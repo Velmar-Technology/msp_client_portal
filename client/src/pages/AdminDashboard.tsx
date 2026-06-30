@@ -7,6 +7,7 @@ import { invoiceService } from "../services/invoiceService";
 import type { Invoice } from "../services/invoiceService";
 import { systemService } from "../services/systemService";
 import type { StorageStatus } from "../services/systemService";
+import { ticketService } from "../services/ticketService";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -23,6 +24,7 @@ export function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [storage, setStorage] = useState<StorageStatus | null>(null);
   const [storageLoading, setStorageLoading] = useState(true);
+  const [ticketSummary, setTicketSummary] = useState<Record<string, number>>({});
 
   useEffect(() => {
     async function loadInvoices() {
@@ -47,9 +49,21 @@ export function AdminDashboard() {
       }
     }
 
+    async function loadTickets() {
+      try {
+        const summary = await ticketService.getStatusSummary();
+        setTicketSummary(summary);
+      } catch (err) {
+        console.error("Failed to load ticket summary/DB connection:", err);
+      }
+    }
+
     loadInvoices();
     loadStorage();
+    loadTickets();
   }, []);
+
+  const openTickets = (ticketSummary.OPEN || 0) + (ticketSummary.IN_PROGRESS || 0);
 
   const getStatusLabel = (status: string) => {
     const map: Record<string, string> = {
@@ -88,14 +102,27 @@ export function AdminDashboard() {
           <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl flex flex-col relative overflow-hidden group shadow-sm hover:shadow-md transition-shadow">
             <div className="flex justify-between items-start mb-4">
               <Headphones className="h-6 w-6 text-secondary" />
-              <span className="bg-[#F59E0B]/10 text-[#F59E0B] px-2.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase">
-                {t("dashboard.twoOpen")}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="bg-success/10 text-success px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase flex items-center gap-1">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-success"></span>
+                  </span>
+                  {openTickets} {t("dashboard.tableStatus") === "Estado" ? "ABIERTOS" : "OPEN"}
+                </span>
+              </div>
             </div>
             <h3 className="text-label-sm text-on-surface-variant">{t("dashboard.technicalSupport")}</h3>
-            <p className="text-h2 mt-1" style={{ fontFamily: "var(--font-heading)" }}>
-              {t("dashboard.activeTickets")}
-            </p>
+
+            <div className="mt-1">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-h2 font-bold" style={{ fontFamily: "var(--font-heading)" }}>
+                  {openTickets}
+                </span>
+                <span className="text-[13px] text-on-surface-variant">{t("dashboard.activeTickets")}</span>
+              </div>
+            </div>
+
             <div className="mt-auto pt-4 border-t border-outline-variant/30">
               <Link to="/tickets" className="text-label-sm text-primary hover:underline flex items-center gap-1">
                 <span>{t("dashboard.viewDetails")}</span>

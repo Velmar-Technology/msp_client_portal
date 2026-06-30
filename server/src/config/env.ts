@@ -46,6 +46,10 @@ const envSchema = z.object({
   NEXTCLOUD_APP_USER: z.string().default(''),
   NEXTCLOUD_APP_PASS: z.string().default(''),
   NEXTCLOUD_TOTAL_CAPACITY: z.coerce.number().default(5000000000000), // Default 5.0 TB
+
+  // PayPal
+  PAYPAL_CLIENT_ID: z.string().default(''),
+  PAYPAL_CLIENT_SECRET: z.string().default(''),
 });
 
 const parsed = envSchema.safeParse(process.env);
