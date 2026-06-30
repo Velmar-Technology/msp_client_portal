@@ -8,14 +8,14 @@ RUN apt-get update && apt-get install -y make gcc g++ python3 && rm -rf /var/lib
 # Upgrade npm to match local environment version
 RUN npm install -g npm@11.16.0
 
-# Copy root workspace configurations (omitting package-lock.json to force dynamic platform resolution in builder stage)
-COPY package.json tsconfig.base.json ./
+# Copy root workspace configurations (restores package-lock.json in builder stage)
+COPY package*.json tsconfig.base.json ./
 COPY client/package.json ./client/
 COPY server/package.json ./server/
 COPY packages/errors/package.json ./packages/errors/
 
-# Install dependencies (npm workspaces) from registry for Linux platform
-RUN npm install --legacy-peer-deps --no-audit --no-fund
+# Install dependencies (npm workspaces) strictly using lockfile
+RUN npm ci --legacy-peer-deps
 
 # Copy packages and build shared errors module
 COPY packages/errors ./packages/errors

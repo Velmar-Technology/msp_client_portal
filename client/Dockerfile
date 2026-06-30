@@ -5,14 +5,17 @@ WORKDIR /app
 # Upgrade npm to match local environment version
 RUN npm install -g npm@11.16.0
 
-# Copy root package configuration (omitting package-lock.json to force dynamic platform resolution)
-COPY package.json tsconfig.base.json ./
+# Copy root lock and package configurations for dependency installation (restores package-lock.json)
+COPY package*.json tsconfig.base.json ./
 COPY client/package.json ./client/
 COPY server/package.json ./server/
 COPY packages/errors/package.json ./packages/errors/
 
-# Install dependencies (npm workspaces) from registry for Linux platform
-RUN npm install --legacy-peer-deps --no-audit --no-fund
+# Install strict dependencies using lockfile (resolves Typescript types correctly)
+RUN npm ci --legacy-peer-deps
+
+# Explicitly install the missing Linux optional binary module for Tailwind/Vite compiling
+RUN npm install --legacy-peer-deps --no-audit --no-fund lightningcss-linux-x64-gnu
 
 # Copy packages and build shared errors module
 COPY packages/errors ./packages/errors
