@@ -1,15 +1,18 @@
-FROM node:20-alpine AS builder
+FROM node:alpine AS builder
 
 WORKDIR /app
 
 # Install build dependencies for compilation of native Node modules (e.g. bcrypt)
 RUN apk add --no-cache make gcc g++ python3
 
+# Upgrade npm to match local environment version
+RUN npm install -g npm@11.16.0
+
 # Copy root workspace configurations
 COPY package*.json tsconfig.base.json ./
-COPY client/package*.json ./client/
-COPY server/package*.json ./server/
-COPY packages/errors/package*.json ./packages/errors/
+COPY client/package.json ./client/
+COPY server/package.json ./server/
+COPY packages/errors/package.json ./packages/errors/
 
 # Install dependencies (npm workspaces)
 RUN npm ci
@@ -23,18 +26,21 @@ COPY server ./server
 RUN npm -w server run build
 
 # Production runtime image
-FROM node:20-alpine
+FROM node:alpine
 
 WORKDIR /app
 
 # Install runtime build dependencies if any native module needs compilation in production stage
 RUN apk add --no-cache make gcc g++ python3
 
+# Upgrade npm to match local environment version
+RUN npm install -g npm@11.16.0
+
 # Copy package requirements for production dependency installation
 COPY package*.json tsconfig.base.json ./
-COPY client/package*.json ./client/
-COPY server/package*.json ./server/
-COPY packages/errors/package*.json ./packages/errors/
+COPY client/package.json ./client/
+COPY server/package.json ./server/
+COPY packages/errors/package.json ./packages/errors/
 
 # Install only production dependencies
 RUN npm ci --omit=dev --workspace=server --workspace=packages/errors
@@ -51,4 +57,3 @@ EXPOSE 3001
 
 # Run migrations and start the server
 CMD ["sh", "-c", "node server/dist/db/migrate.js && npm -w server run start"]
-

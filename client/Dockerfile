@@ -1,12 +1,15 @@
-FROM node:20-alpine AS builder
+FROM node:alpine AS builder
 
 WORKDIR /app
 
-# Copy lock and package configurations for dependency installation
+# Upgrade npm to match local environment version
+RUN npm install -g npm@11.16.0
+
+# Copy root lock and package configurations for dependency installation
 COPY package*.json tsconfig.base.json ./
-COPY client/package*.json ./client/
-COPY server/package*.json ./server/
-COPY packages/errors/package*.json ./packages/errors/
+COPY client/package.json ./client/
+COPY server/package.json ./server/
+COPY packages/errors/package.json ./packages/errors/
 
 # Install dependencies (npm workspaces)
 RUN npm ci
