@@ -14,8 +14,8 @@ COPY client/package.json ./client/
 COPY server/package.json ./server/
 COPY packages/errors/package.json ./packages/errors/
 
-# Install dependencies (npm workspaces)
-RUN npm ci --legacy-peer-deps
+# Install dependencies (npm workspaces) using npm install to dynamically fetch cross-platform binaries
+RUN npm install --legacy-peer-deps --no-audit --no-fund
 
 # Copy packages and build shared errors module
 COPY packages/errors ./packages/errors
