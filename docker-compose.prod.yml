@@ -5,12 +5,12 @@ services:
     image: postgres:16-alpine
     container_name: msp_postgres_db_prod
     restart: always
+    networks:
+      - default
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME:-msp_helpdesk}
-    ports:
-      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -23,6 +23,8 @@ services:
     image: ghcr.io/${REPOSITORY_OWNER:-eapolancovelmar}/msp-helpdesk-server:latest
     container_name: msp_server_prod
     restart: always
+    networks:
+      - default
     depends_on:
       db:
         condition: service_healthy
@@ -47,6 +49,15 @@ services:
       - PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID}
       - PAYPAL_CLIENT_SECRET=${PAYPAL_CLIENT_SECRET}
       - UPLOAD_DIR=/app/server/uploads
+      - NEXTCLOUD_URL=${NEXTCLOUD_URL}
+      - NEXTCLOUD_APP_USER=${NEXTCLOUD_APP_USER}
+      - NEXTCLOUD_APP_PASS=${NEXTCLOUD_APP_PASS}
+      - NEXTCLOUD_TOTAL_CAPACITY=${NEXTCLOUD_TOTAL_CAPACITY}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-24h}
+      - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-7d}
+      - MAX_FILE_SIZE_MB=${MAX_FILE_SIZE_MB:-10}
     volumes:
       - uploads_data:/app/server/uploads
 
@@ -54,13 +65,27 @@ services:
     image: ghcr.io/${REPOSITORY_OWNER:-eapolancovelmar}/msp-helpdesk-client:latest
     container_name: msp_client_prod
     restart: always
-    ports:
-      - "80:80"
+    networks:
+      - default
+      - reverse-proxy
     depends_on:
       - server
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.msp-client.rule=Host(`helpdesk.velmartech.com.do`)"
+      - "traefik.http.routers.msp-client.entrypoints=web"
+      - "traefik.http.routers.msp-client.entrypoints=websecure"
+      - "traefik.http.routers.msp-client.tls=true"
+      # - "traefik.http.routers.msp-client.tls.certresolver=myresolver"
+      - "traefik.http.services.msp-client-svc.loadbalancer.server.port=80"
 
 volumes:
   pgdata:
     driver: local
   uploads_data:
     driver: local
+
+networks:
+  default:
+  reverse-proxy:
+    external: true
