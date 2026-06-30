@@ -1,9 +1,9 @@
-FROM node:alpine AS builder
+FROM node:22-slim AS builder
 
 WORKDIR /app
 
-# Install build dependencies for compilation of native Node modules (e.g. bcrypt)
-RUN apk add --no-cache make gcc g++ python3
+# Install build dependencies for compilation of native Node modules (e.g. bcrypt) under Debian slim
+RUN apt-get update && apt-get install -y make gcc g++ python3 && rm -rf /var/lib/apt/lists/*
 
 # Upgrade npm to match local environment version
 RUN npm install -g npm@11.16.0
@@ -17,7 +17,6 @@ COPY packages/errors/package.json ./packages/errors/
 # Install dependencies (npm workspaces)
 RUN npm ci --legacy-peer-deps
 
-
 # Copy packages and build shared errors module
 COPY packages/errors ./packages/errors
 RUN npm run build:packages
@@ -27,12 +26,12 @@ COPY server ./server
 RUN npm -w server run build
 
 # Production runtime image
-FROM node:alpine
+FROM node:22-slim
 
 WORKDIR /app
 
 # Install runtime build dependencies if any native module needs compilation in production stage
-RUN apk add --no-cache make gcc g++ python3
+RUN apt-get update && apt-get install -y make gcc g++ python3 && rm -rf /var/lib/apt/lists/*
 
 # Upgrade npm to match local environment version
 RUN npm install -g npm@11.16.0
@@ -45,7 +44,6 @@ COPY packages/errors/package.json ./packages/errors/
 
 # Install only production dependencies
 RUN npm ci --omit=dev --workspace=server --workspace=packages/errors --legacy-peer-deps
-
 
 # Copy compiled code from build stage
 COPY --from=builder /app/packages/errors/dist ./packages/errors/dist

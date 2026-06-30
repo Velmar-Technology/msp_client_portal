@@ -1,4 +1,4 @@
-FROM node:alpine AS builder
+FROM node:22-slim AS builder
 
 WORKDIR /app
 
@@ -13,7 +13,6 @@ COPY packages/errors/package.json ./packages/errors/
 
 # Install dependencies (npm workspaces)
 RUN npm ci --legacy-peer-deps
-
 
 # Copy packages and build shared errors module
 COPY packages/errors ./packages/errors
