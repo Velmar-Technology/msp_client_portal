@@ -12,7 +12,8 @@ COPY server/package.json ./server/
 COPY packages/errors/package.json ./packages/errors/
 
 # Install dependencies (npm workspaces)
-RUN npm ci
+RUN npm ci --legacy-peer-deps
+
 
 # Copy packages and build shared errors module
 COPY packages/errors ./packages/errors
