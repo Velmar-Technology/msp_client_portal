@@ -14,8 +14,8 @@ COPY packages/errors/package.json ./packages/errors/
 # Install strict dependencies using lockfile (resolves Typescript types correctly)
 RUN npm ci --legacy-peer-deps
 
-# Explicitly install the missing Linux optional binary module for Tailwind/Vite compiling
-RUN npm install --legacy-peer-deps --no-audit --no-fund lightningcss-linux-x64-gnu
+# Explicitly install the missing Linux optional binary modules for Tailwind v4 and Vite compiling
+RUN npm install --legacy-peer-deps --no-audit --no-fund lightningcss-linux-x64-gnu @tailwindcss/oxide-linux-x64-gnu
 
 # Copy packages and build shared errors module
 COPY packages/errors ./packages/errors
