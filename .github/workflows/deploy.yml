@@ -5,6 +5,11 @@ on:
     branches:
       - main
       - master
+    tags:
+      - 'v*'
+
+env:
+  DOCKER_TAG: ${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
 
 permissions:
   contents: read
@@ -45,6 +50,7 @@ jobs:
           tags: |
             ghcr.io/${{ env.OWNER_LC }}/msp-helpdesk-server:latest
             ghcr.io/${{ env.OWNER_LC }}/msp-helpdesk-server:${{ github.sha }}
+            ghcr.io/${{ env.OWNER_LC }}/msp-helpdesk-server:${{ env.DOCKER_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -57,6 +63,7 @@ jobs:
           tags: |
             ghcr.io/${{ env.OWNER_LC }}/msp-helpdesk-client:latest
             ghcr.io/${{ env.OWNER_LC }}/msp-helpdesk-client:${{ github.sha }}
+            ghcr.io/${{ env.OWNER_LC }}/msp-helpdesk-client:${{ env.DOCKER_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -103,6 +110,7 @@ jobs:
 
             # Set the repository owner variable for Docker Compose interpolation
             export REPOSITORY_OWNER=${{ env.OWNER_LC }}
+            export VERSION=${{ env.DOCKER_TAG }}
 
             # Pull latest images from GHCR
             docker compose -f docker-compose.prod.yml pull

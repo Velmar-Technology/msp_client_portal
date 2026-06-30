@@ -20,7 +20,7 @@ services:
       retries: 5
 
   server:
-    image: ghcr.io/${REPOSITORY_OWNER:-eapolancovelmar}/msp-helpdesk-server:latest
+    image: ghcr.io/${REPOSITORY_OWNER:-eapolancovelmar}/msp-helpdesk-server:${VERSION:-latest}
     container_name: msp_server_prod
     restart: always
     networks:
@@ -62,7 +62,7 @@ services:
       - uploads_data:/app/server/uploads
 
   client:
-    image: ghcr.io/${REPOSITORY_OWNER:-eapolancovelmar}/msp-helpdesk-client:latest
+    image: ghcr.io/${REPOSITORY_OWNER:-eapolancovelmar}/msp-helpdesk-client:${VERSION:-latest}
     container_name: msp_client_prod
     restart: always
     networks:
