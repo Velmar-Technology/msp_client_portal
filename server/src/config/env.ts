@@ -15,6 +15,10 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(3001),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 
+  // Admin Credentials
+  ADMIN_EMAIL: z.string().email().default('admin@msp-helpdesk.com'),
+  ADMIN_PASSWORD: z.string().min(8).default('password123'),
+
   // JWT
   JWT_SECRET: z.string().default('dev-secret-change-in-production'),
   JWT_EXPIRES_IN: z.string().default('24h'),
