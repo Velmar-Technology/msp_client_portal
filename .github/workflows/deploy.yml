@@ -82,7 +82,8 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
           source: "docker-compose.prod.yml"
-          target: "/var/www/msp-client-portal"
+          target: "~/msp-client-portal"
+
 
       - name: Execute Remote SSH Deploy Script
         uses: appleboy/ssh-action@master
@@ -93,8 +94,9 @@ jobs:
           port: ${{ secrets.VPS_PORT || 22 }}
           script: |
             # Navigate to deploy directory
-            mkdir -p /var/www/msp-client-portal
-            cd /var/www/msp-client-portal
+            mkdir -p ~/msp-client-portal
+            cd ~/msp-client-portal
+
 
             # Log in to GHCR using ephemeral GitHub token passed from the active Action run
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
