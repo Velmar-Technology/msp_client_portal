@@ -35,7 +35,6 @@ export function Footer() {
 }
 
 export function AppLayout() {
-  const { t } = useTranslation();
   const fetchNotifications = useNotificationStore((state) => state.fetchNotifications);
   const startStream = useNotificationStore((state) => state.startStream);
   const stopStream = useNotificationStore((state) => state.stopStream);
@@ -45,10 +44,10 @@ export function AppLayout() {
   const navigate = useNavigate();
 
   const [activeSubscription, setActiveSubscription] = useState<Subscription | null>(null);
-  const [checkingSubscription, setCheckingSubscription] = useState(false);
   const [hasChecked, setHasChecked] = useState(false);
 
   useEffect(() => {
+
     // Initial fetch of historical notifications
     fetchNotifications();
 
@@ -70,7 +69,6 @@ export function AppLayout() {
 
     let isMounted = true;
     async function checkSub() {
-      setCheckingSubscription(true);
       try {
         const subs = await subscriptionService.getAll();
         if (isMounted) {
@@ -80,12 +78,9 @@ export function AppLayout() {
         }
       } catch (err) {
         console.error('Failed to check active subscription in layout:', err);
-      } finally {
-        if (isMounted) {
-          setCheckingSubscription(false);
-        }
       }
     }
+
 
     checkSub();
 

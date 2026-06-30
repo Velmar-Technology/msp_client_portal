@@ -52,6 +52,7 @@ export function BillingPage() {
 
   useEffect(() => {
     if (!showPayModal || !selectedInvoice) return;
+    const invoice = selectedInvoice;
 
     let scriptElement: HTMLScriptElement | null = null;
     let buttonsInstance: any = null;
@@ -89,7 +90,7 @@ export function BillingPage() {
             createOrder: async () => {
               setPaymentMessage(t('billing.paymentProcessing'));
               try {
-                const { orderId } = await invoiceService.createPaypalOrder(selectedInvoice.id);
+                const { orderId } = await invoiceService.createPaypalOrder(invoice.id);
                 return orderId;
               } catch (err) {
                 console.error(err);
@@ -100,8 +101,9 @@ export function BillingPage() {
             onApprove: async (data: any) => {
               setPaymentMessage(t('billing.paymentProcessing'));
               try {
-                const response = await invoiceService.capturePaypalOrder(selectedInvoice.id, data.orderID);
+                const response = await invoiceService.capturePaypalOrder(invoice.id, data.orderID);
                 if (response.success) {
+
                   setIsSuccess(true);
                   setPaymentMessage(t('billing.paymentSuccess'));
                   const result = await invoiceService.getAll(page, limit);

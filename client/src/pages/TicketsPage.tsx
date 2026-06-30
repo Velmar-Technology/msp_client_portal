@@ -292,7 +292,8 @@ export function TicketsPage() {
         header: () => (
           <span className="uppercase text-label-sm text-on-surface-variant font-bold">{t("tickets.assignedTo")}</span>
         ),
-        cell: ({ row }) => <span className="text-body-md text-on-surface-variant">{row.original.assigned_to}</span>,
+        cell: ({ row }) => <span className="text-body-md text-on-surface-variant">{row.original.assigned_tech_name || t("tickets.unassigned")}</span>,
+
       },
       {
         accessorKey: "created_at",

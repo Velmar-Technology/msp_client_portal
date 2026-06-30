@@ -24,8 +24,9 @@ export function RegisterPage() {
     name: z.string().min(2, t('register.nameMin') || 'Name must be at least 2 characters'),
     tenantName: z.string().min(2, t('register.tenantMin') || 'Company name must be at least 2 characters'),
     clientType: z.enum(['CLIENT', 'ENTERPRISE', 'STUDENT', 'OTHER'], {
-      required_error: 'Client type is required',
+      message: 'Client type is required',
     }),
+
     email: z.string().email(t('register.emailInvalid') || 'Invalid email address'),
     password: z.string().min(8, t('register.passwordMin') || 'Password must be at least 8 characters'),
     confirmPassword: z.string()

@@ -100,7 +100,8 @@ export function PlansPage() {
             for (let i = 0; i < sub.equipment_count; i++) {
               fallbackSlots.push({
                 id: `device-slot-${i}`,
-                status: 'PENDING_ACTIVATION',
+                status: 'PENDING_ACTIVATION' as const,
+
               });
             }
             initialEquip[sub.id] = fallbackSlots;
@@ -881,8 +882,8 @@ export function PlansPage() {
                     </div>
                     {equip.status === 'ACTIVE' ? (
                       <div className="mt-1">
-                        <p className="text-body-sm font-medium text-on-surface">{equip.device_name || equip.name}</p>
-                        <p className="text-label-sm text-on-surface-variant font-mono">{equip.device_serial || equip.serial}</p>
+                        <p className="text-body-sm font-medium text-on-surface">{equip.device_name || 'Unnamed Device'}</p>
+                        <p className="text-label-sm text-on-surface-variant font-mono">{equip.device_serial || 'No Serial'}</p>
                         {equip.nextcloud_username && (
                           <div className="mt-2 bg-surface-container/60 p-2.5 rounded border border-outline-variant/30 text-label-sm space-y-1">
                             <p className="font-semibold text-primary">☁️ Nextcloud Backup Account:</p>
@@ -895,8 +896,9 @@ export function PlansPage() {
                       <div className="mt-1 bg-surface-container p-2 rounded border border-outline-variant/50">
                         <p className="text-body-sm font-bold text-primary font-mono select-all">OTP: {equip.otp}</p>
                         <p className="text-[10px] text-on-surface-variant mt-0.5 font-medium">
-                          Expires: {equip.otp_expires_at ? new Date(equip.otp_expires_at).toLocaleString() : equip.expiresAt}
+                          Expires: {equip.otp_expires_at ? new Date(equip.otp_expires_at).toLocaleString() : ''}
                         </p>
+
                       </div>
                     ) : (
                       <p className="text-body-sm text-on-surface-variant mt-1">Empty license slot</p>
