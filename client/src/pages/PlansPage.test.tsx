@@ -52,6 +52,7 @@ vi.mock('@/services/subscriptionService', () => ({
     getAll: vi.fn().mockResolvedValue([]),
     update: vi.fn(),
     sendQuote: vi.fn(),
+    createPaypalOrder: vi.fn().mockResolvedValue({ orderId: 'MOCK-PAYPAL-ORDER' }),
   },
 }));
 
@@ -107,12 +108,32 @@ describe('PlansPage', () => {
   });
 
   describe('Client Flow', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let paypalButtonsOptions: any = null;
+
     beforeEach(() => {
       vi.mocked(useAuth).mockReturnValue({
         user: { id: 'user-client', role: 'CLIENT', name: 'John Doe', email: 'john@example.com', tenantId: 'tenant-1' },
         isAuthenticated: true,
       } as unknown as ReturnType<typeof useAuth>);
       vi.mocked(subscriptionService.getAll).mockResolvedValue([]);
+      
+      const script = document.getElementById('paypal-js-sdk-script');
+      if (script) {
+        script.remove();
+      }
+
+      paypalButtonsOptions = null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).paypal = {
+        Buttons: vi.fn().mockImplementation((options) => {
+          paypalButtonsOptions = options;
+          return {
+            render: vi.fn(),
+            close: vi.fn().mockResolvedValue(undefined),
+          };
+        }),
+      };
     });
 
     test('renders plans and payment method for Client', async () => {
@@ -124,7 +145,14 @@ describe('PlansPage', () => {
 
       expect(screen.getByText('Basic Support')).toBeInTheDocument();
       expect(screen.getByText('Standard Support')).toBeInTheDocument();
-      expect(screen.getByText('plans.paymentMethod')).toBeInTheDocument();
+
+      // Click Proceed to Checkout to mount the Sheet
+      const checkoutBtn = screen.getByRole('button', { name: /Proceed to Checkout/i });
+      fireEvent.click(checkoutBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText('plans.paymentMethod')).toBeInTheDocument();
+      });
       expect(screen.queryByText('Apply Plan to Customer')).not.toBeInTheDocument();
     });
 
@@ -140,8 +168,21 @@ describe('PlansPage', () => {
       const selectButton = screen.getByText('plans.selected: Standard Support');
       expect(selectButton).toBeInTheDocument();
 
-      const payButton = screen.getByText('plans.processPayment');
-      fireEvent.click(payButton);
+      // Click Proceed to Checkout to mount the Sheet
+      const checkoutBtn = screen.getByRole('button', { name: /Proceed to Checkout/i });
+      fireEvent.click(checkoutBtn);
+
+      // Wait for PayPal buttons container
+      await waitFor(() => {
+        expect(paypalButtonsOptions).not.toBeNull();
+      });
+
+      // Call createOrder
+      const orderId = await paypalButtonsOptions.createOrder();
+      expect(orderId).toBe('MOCK-PAYPAL-ORDER');
+
+      // Call onApprove
+      await paypalButtonsOptions.onApprove({ orderID: 'MOCK-PAYPAL-ORDER' });
 
       await waitFor(() => {
         expect(subscriptionService.create).toHaveBeenCalledWith({
@@ -150,6 +191,7 @@ describe('PlansPage', () => {
           equipmentCount: 1,
           clientId: undefined,
           billingCycle: 'monthly',
+          paypalOrderId: 'MOCK-PAYPAL-ORDER',
         });
         expect(mockAddToast).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -179,7 +221,7 @@ describe('PlansPage', () => {
       expect(screen.getByText('Billed annually as $4790.40/yr')).toBeInTheDocument();
 
       // Open Order Summary Sheet
-      const viewSummaryButton = screen.getByRole('button', { name: /View Order Summary/i });
+      const viewSummaryButton = screen.getByRole('button', { name: /Proceed to Checkout/i });
       fireEvent.click(viewSummaryButton);
 
       // Verify Order Summary subtotal, tax, and total
@@ -203,8 +245,21 @@ describe('PlansPage', () => {
       const annualButton = screen.getByRole('button', { name: /Annually/i });
       fireEvent.click(annualButton);
 
-      const payButton = screen.getByText('plans.processPayment');
-      fireEvent.click(payButton);
+      // Click Proceed to Checkout to mount the Sheet
+      const checkoutBtn = screen.getByRole('button', { name: /Proceed to Checkout/i });
+      fireEvent.click(checkoutBtn);
+
+      // Wait for PayPal buttons container
+      await waitFor(() => {
+        expect(paypalButtonsOptions).not.toBeNull();
+      });
+
+      // Call createOrder
+      const orderId = await paypalButtonsOptions.createOrder();
+      expect(orderId).toBe('MOCK-PAYPAL-ORDER');
+
+      // Call onApprove
+      await paypalButtonsOptions.onApprove({ orderID: 'MOCK-PAYPAL-ORDER' });
 
       await waitFor(() => {
         expect(subscriptionService.create).toHaveBeenCalledWith({
@@ -213,6 +268,7 @@ describe('PlansPage', () => {
           equipmentCount: 1,
           clientId: undefined,
           billingCycle: 'annual',
+          paypalOrderId: 'MOCK-PAYPAL-ORDER',
         });
       });
     });
@@ -327,88 +383,7 @@ describe('PlansPage', () => {
       });
     });
 
-    test('sends quotation via email on Email Quotation click', async () => {
-      vi.mocked(subscriptionService.sendQuote).mockResolvedValue({ success: true, message: 'Sent' });
-      render(
-        <MemoryRouter>
-          <PlansPage />
-        </MemoryRouter>
-      );
 
-      // Open the sheet
-      const viewSummaryButton = screen.getByRole('button', { name: /View Order Summary/i });
-      fireEvent.click(viewSummaryButton);
-
-      const quoteButton = screen.getByText('plans.emailQuote');
-      expect(quoteButton).toBeInTheDocument();
-
-      fireEvent.click(quoteButton);
-
-      await waitFor(() => {
-        expect(subscriptionService.sendQuote).toHaveBeenCalledWith({
-          plan: 'STANDARD',
-          equipmentCount: 1,
-          clientId: undefined,
-          billingCycle: 'monthly',
-        });
-        expect(mockAddToast).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: 'Quotation Sent',
-            type: 'success',
-          })
-        );
-      });
-    });
-
-    test('sends quotation for unregistered customer when checkbox is checked', async () => {
-      vi.mocked(subscriptionService.sendQuote).mockResolvedValue({ success: true, message: 'Sent' });
-      render(
-        <MemoryRouter>
-          <PlansPage />
-        </MemoryRouter>
-      );
-
-      // Verify that unregistered input fields are NOT shown initially
-      expect(screen.queryByLabelText('plans.unregisteredEmailLabel')).not.toBeInTheDocument();
-
-      // Open the sheet
-      const viewSummaryButton = screen.getByRole('button', { name: /View Order Summary/i });
-      fireEvent.click(viewSummaryButton);
-
-      const checkbox = screen.getByLabelText('plans.sendToUnregistered');
-      fireEvent.click(checkbox);
-
-      const emailInput = screen.getByLabelText('plans.unregisteredEmailLabel') as HTMLInputElement;
-      const nameInput = screen.getByLabelText('plans.unregisteredNameLabel') as HTMLInputElement;
-      expect(emailInput).toBeInTheDocument();
-      expect(nameInput).toBeInTheDocument();
-
-      fireEvent.change(emailInput, { target: { value: 'unreg@example.com' } });
-      fireEvent.change(nameInput, { target: { value: 'Unregistered Customer' } });
-
-      const quoteButton = screen.getByText('plans.emailQuote');
-      fireEvent.click(quoteButton);
-
-      await waitFor(() => {
-        expect(subscriptionService.sendQuote).toHaveBeenCalledWith({
-          plan: 'STANDARD',
-          equipmentCount: 1,
-          clientId: undefined,
-          unregisteredEmail: 'unreg@example.com',
-          unregisteredName: 'Unregistered Customer',
-          billingCycle: 'monthly',
-        });
-        expect(mockAddToast).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: 'Quotation Sent',
-            type: 'success',
-          })
-        );
-      });
-
-      expect(emailInput.value).toBe('');
-      expect(nameInput.value).toBe('');
-    });
 
     test('renders multiple active plan subscriptions with unequal equipment counts', async () => {
       const activeSubs = [
@@ -716,13 +691,25 @@ describe('PlansPage', () => {
       const subscribeAdditionalBtn = screen.getByRole('button', { name: 'Subscribe as Additional Plan' });
       fireEvent.click(subscribeAdditionalBtn);
 
-      // Now the payment method and process payment button should be visible
+      // Now the Proceed to Checkout button should be visible
+      const checkoutBtn = screen.getByRole('button', { name: /Proceed to Checkout/i });
+      fireEvent.click(checkoutBtn);
+
       await waitFor(() => {
         expect(screen.getByText('plans.paymentMethod')).toBeInTheDocument();
       });
 
-      const payButton = screen.getByText('plans.processPayment');
-      fireEvent.click(payButton);
+      // Wait for PayPal buttons container
+      await waitFor(() => {
+        expect(paypalButtonsOptions).not.toBeNull();
+      });
+
+      // Call createOrder
+      const orderId = await paypalButtonsOptions.createOrder();
+      expect(orderId).toBe('MOCK-PAYPAL-ORDER');
+
+      // Call onApprove
+      await paypalButtonsOptions.onApprove({ orderID: 'MOCK-PAYPAL-ORDER' });
 
       await waitFor(() => {
         expect(subscriptionService.create).toHaveBeenCalledWith({
@@ -731,6 +718,7 @@ describe('PlansPage', () => {
           equipmentCount: 1,
           clientId: undefined,
           billingCycle: 'monthly',
+          paypalOrderId: 'MOCK-PAYPAL-ORDER',
         });
       });
     });

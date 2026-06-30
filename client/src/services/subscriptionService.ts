@@ -17,8 +17,13 @@ export const subscriptionService = {
     return response.data.data;
   },
 
-  async create(data: { serviceName: string; plan: string; equipmentCount: number; clientId?: string; billingCycle?: 'monthly' | 'annual' }): Promise<Subscription> {
+  async create(data: { serviceName: string; plan: string; equipmentCount: number; clientId?: string; billingCycle?: 'monthly' | 'annual'; paypalOrderId?: string }): Promise<Subscription> {
     const response = await api.post('/subscriptions', data);
+    return response.data.data;
+  },
+
+  async createPaypalOrder(data: { plan: string; equipmentCount: number; billingCycle?: 'monthly' | 'annual' }): Promise<{ orderId: string }> {
+    const response = await api.post('/subscriptions/paypal-order', data);
     return response.data.data;
   },
 

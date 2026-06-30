@@ -35,6 +35,7 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
     total: number;
     due_date: Date;
     tenant_id: string;
+    status?: InvoiceStatus;
   }): Promise<Invoice> {
     const results = await db
       .insert(invoices)
@@ -46,6 +47,7 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
         total: data.total,
         due_date: data.due_date,
         tenant_id: data.tenant_id,
+        status: data.status,
       })
       .returning();
     return results[0] as Invoice;

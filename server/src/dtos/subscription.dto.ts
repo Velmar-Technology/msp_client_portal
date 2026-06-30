@@ -7,8 +7,16 @@ export const CreateSubscriptionDTO = z.object({
   equipmentCount: z.coerce.number().int().min(1, 'At least 1 equipment required').max(100),
   clientId: z.string().uuid('Invalid client ID format').optional(),
   billingCycle: z.enum(['monthly', 'annual']).default('monthly').optional(),
+  paypalOrderId: z.string().optional(),
 });
 export type CreateSubscriptionInput = z.infer<typeof CreateSubscriptionDTO>;
+
+export const CreatePaypalOrderDTO = z.object({
+  plan: z.string().min(1, 'Plan is required').max(50),
+  equipmentCount: z.coerce.number().int().min(1, 'At least 1 equipment required').max(100),
+  billingCycle: z.enum(['monthly', 'annual']).default('monthly').optional(),
+});
+export type CreatePaypalOrderInput = z.infer<typeof CreatePaypalOrderDTO>;
 
 export const UpdateSubscriptionDTO = z.object({
   plan: z.string().min(1).max(50).optional(),

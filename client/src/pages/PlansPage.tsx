@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Check, X, Lock, Shield, Edit, Trash2, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
+import { Check, X, Shield, Edit, Trash2, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Page } from '@/components/Page';
 import { Input } from '@/components/ui/input';
@@ -26,6 +26,38 @@ export function PlansPage() {
   const { user } = useAuth();
   const { plans, loading, fetchPlans, updatePlan, createPlan } = usePlanStore();
   const { addToast } = useNotificationStore();
+
+  const getLocalizedValue = (val: string | Record<string, string> | null | undefined): string => {
+    if (!val) return '';
+    if (typeof val === 'string') {
+      return val;
+    }
+    const lang = i18n.language || 'en_US';
+    const resolvedLang = lang.startsWith('es') ? 'es_DO' : 'en_US';
+    
+    if (val[resolvedLang]) return val[resolvedLang];
+    if (val['en_US']) return val['en_US'];
+    const keys = Object.keys(val);
+    if (keys.length > 0) return val[keys[0]];
+    return '';
+  };
+
+  const getPlanName = (name: string | Record<string, string>) => getLocalizedValue(name);
+  const getPlanDescription = (desc: string | Record<string, string> | null | undefined) => getLocalizedValue(desc);
+
+  const getFeatureText = (text: string | Record<string, string>) => {
+    if (typeof text !== 'string') {
+      return getLocalizedValue(text);
+    }
+    // If the text looks like a translation key (no spaces), translate it
+    if (/^[a-zA-Z0-9_]+$/.test(text)) {
+      const translated = t(`plans.features.${text}`);
+      if (translated !== `plans.features.${text}`) {
+        return translated;
+      }
+    }
+    return text;
+  };
 
   const [userSelectedPlan, setUserSelectedPlan] = useState<string | null>(null);
   const [equipmentCounts, setEquipmentCounts] = useState<Record<string, number>>({});
@@ -57,6 +89,7 @@ export function PlansPage() {
   const [clients, setClients] = useState<AuthUser[]>([]);
   const [selectedClientId, setSelectedClientId] = useState('');
   const [subscribeLoading, setSubscribeLoading] = useState(false);
+  const [paymentMessage, setPaymentMessage] = useState<string | null>(null);
 
   // Active plan management state
   const [activeSubscriptions, setActiveSubscriptions] = useState<Subscription[]>([]);
@@ -176,6 +209,123 @@ export function PlansPage() {
   }, [selectedPlan, activeSubscriptions]);
 
   const currentEquipmentCount = equipmentCounts[currentPlan?.id] || 1;
+
+  useEffect(() => {
+    if (isAdmin || user?.role !== 'CLIENT' || paymentMethod !== 'card' || !currentPlan) return;
+
+    let scriptElement: HTMLScriptElement | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let buttonsInstance: any = null;
+
+    async function initializePaypal() {
+      const scriptId = 'paypal-js-sdk-script';
+      const existingScript = document.getElementById(scriptId) as HTMLScriptElement;
+
+      if (!existingScript) {
+        scriptElement = document.createElement('script');
+        scriptElement.id = scriptId;
+        const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID || 'test';
+        scriptElement.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD`;
+        scriptElement.async = true;
+        document.body.appendChild(scriptElement);
+
+        await new Promise((resolve) => {
+          if (scriptElement) scriptElement.onload = resolve;
+          if (typeof window !== 'undefined' && navigator.userAgent.includes('jsdom')) {
+            setTimeout(resolve, 0);
+          }
+        });
+      } else {
+        scriptElement = existingScript;
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (!(window as any).paypal) {
+        console.error('PayPal SDK failed to load');
+        setPaymentMessage('PayPal SDK failed to load');
+        return;
+      }
+
+      const container = document.getElementById('paypal-button-container');
+      if (container) {
+        container.innerHTML = '';
+        setPaymentMessage(null);
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          buttonsInstance = (window as any).paypal.Buttons({
+            createOrder: async () => {
+              setPaymentMessage('Preparing checkout...');
+              try {
+                const response = await subscriptionService.createPaypalOrder({
+                  plan: currentPlan.id,
+                  equipmentCount: currentEquipmentCount,
+                  billingCycle,
+                });
+                setPaymentMessage('Order created. Please approve payment in PayPal window.');
+                return response.orderId;
+              } catch (err) {
+                console.error(err);
+                setPaymentMessage('Failed to prepare checkout.');
+                throw err;
+              }
+            },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onApprove: async (data: any) => {
+              setPaymentMessage('Payment approved. Activating subscription...');
+              setSubscribeLoading(true);
+              try {
+                await subscriptionService.create({
+                  serviceName: getPlanName(currentPlan.name),
+                  plan: currentPlan.id,
+                  equipmentCount: currentEquipmentCount,
+                  billingCycle,
+                  paypalOrderId: data.orderID,
+                });
+                setPaymentMessage('Subscription activated successfully!');
+                addToast({
+                  title: 'Subscribed Successfully',
+                  message: `Successfully subscribed to the ${getPlanName(currentPlan.name)} plan.`,
+                  type: 'success',
+                });
+                await fetchActiveSubscriptions();
+              } catch (err) {
+                console.error(err);
+                setPaymentMessage('Failed to activate subscription.');
+                addToast({
+                  title: 'Subscription Failed',
+                  message: 'Payment verification failed or could not activate subscription.',
+                  type: 'error',
+                });
+              } finally {
+                setSubscribeLoading(false);
+              }
+            },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onError: (err: any) => {
+              console.error(err);
+              setPaymentMessage('PayPal Checkout encountered an error.');
+            }
+          });
+          buttonsInstance.render('#paypal-button-container');
+        } catch (err) {
+          console.error('Failed to render PayPal buttons', err);
+        }
+      }
+    }
+
+    const timer = setTimeout(() => {
+      initializePaypal();
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      if (buttonsInstance && buttonsInstance.close) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        buttonsInstance.close().catch((e: any) => console.error('Error closing buttons', e));
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin, user, paymentMethod, currentPlan, currentEquipmentCount, billingCycle, fetchActiveSubscriptions, addToast]);
 
   const handleAdjustEquipmentCount = (planId: string, delta: number) => {
     setEquipmentCounts((prev) => ({
@@ -422,37 +572,7 @@ export function PlansPage() {
   const tax = Math.round(subtotal * 0.18 * 100) / 100;
   const total = Math.round((subtotal + tax) * 100) / 100;
 
-  const getLocalizedValue = (val: string | Record<string, string> | null | undefined): string => {
-    if (!val) return '';
-    if (typeof val === 'string') {
-      return val;
-    }
-    const lang = i18n.language || 'en_US';
-    const resolvedLang = lang.startsWith('es') ? 'es_DO' : 'en_US';
-    
-    if (val[resolvedLang]) return val[resolvedLang];
-    if (val['en_US']) return val['en_US'];
-    const keys = Object.keys(val);
-    if (keys.length > 0) return val[keys[0]];
-    return '';
-  };
 
-  const getPlanName = (name: string | Record<string, string>) => getLocalizedValue(name);
-  const getPlanDescription = (desc: string | Record<string, string> | null | undefined) => getLocalizedValue(desc);
-
-  const getFeatureText = (text: string | Record<string, string>) => {
-    if (typeof text !== 'string') {
-      return getLocalizedValue(text);
-    }
-    // If the text looks like a translation key (no spaces), translate it
-    if (/^[a-zA-Z0-9_]+$/.test(text)) {
-      const translated = t(`plans.features.${text}`);
-      if (translated !== `plans.features.${text}`) {
-        return translated;
-      }
-    }
-    return text;
-  };
 
   const getTierLabel = (planId: string) => {
     if (planId === 'BASIC') return t('plans.basic.tier') || 'Level 1';
@@ -752,38 +872,21 @@ export function PlansPage() {
         <div className="space-y-4">
           {paymentMethod === 'card' ? (
             <>
-              <div>
-                <label htmlFor="card-name" className="block text-label-md text-on-surface mb-1.5">{t('plans.nameOnCard')}</label>
-                <Input id="card-name" type="text" placeholder={t('plans.nameOnCardPlaceholder')} className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface" />
-              </div>
-              <div>
-                <label htmlFor="card-number" className="block text-label-md text-on-surface mb-1.5">{t('plans.cardNumber')}</label>
-                <Input id="card-number" type="text" placeholder={t('plans.cardNumberPlaceholder')} className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="card-expiration" className="block text-label-md text-on-surface mb-1.5">{t('plans.expiration')}</label>
-                  <Input id="card-expiration" type="text" placeholder={t('plans.expirationPlaceholder')} className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface" />
+              <p className="text-body-md text-on-surface-variant mb-4">
+                Please complete your checkout payment securely using PayPal. Once approved, your subscription will activate immediately.
+              </p>
+              {paymentMessage && (
+                <div className={`p-3 rounded-lg mb-4 text-label-md font-semibold text-center ${
+                  paymentMessage.includes('activated') || paymentMessage.includes('successfully')
+                    ? 'bg-success/10 text-success'
+                    : 'bg-primary/10 text-primary animate-pulse'
+                }`}>
+                  {paymentMessage}
                 </div>
-                <div>
-                  <label htmlFor="card-cvv" className="block text-label-md text-on-surface mb-1.5">{t('plans.cvv')}</label>
-                  <Input id="card-cvv" type="text" placeholder={t('plans.cvvPlaceholder')} className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface" />
-                </div>
+              )}
+              <div id="paypal-button-container" className="my-4 min-h-[150px] flex items-center justify-center bg-surface rounded-xl p-4 border border-outline-variant border-dashed">
+                <span className="text-label-md text-on-surface-variant">Loading PayPal Checkout...</span>
               </div>
-              <button
-                onClick={handleProcessSubscription}
-                disabled={subscribeLoading}
-                className="w-full bg-primary text-on-primary py-3 rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
-              >
-                {subscribeLoading ? (
-                  'Processing...'
-                ) : (
-                  <>
-                    <Lock className="h-4 w-4" />
-                    {t('plans.processPayment')}
-                  </>
-                )}
-              </button>
             </>
           ) : (
             <div className="text-center py-8 text-body-md text-on-surface-variant space-y-4">
@@ -802,6 +905,66 @@ export function PlansPage() {
           )}
         </div>
       </>
+    );
+  };
+
+  const renderCheckoutButtonAndSheet = () => {
+    return (
+      <div className="space-y-4 text-center py-4">
+        <p className="text-body-md text-on-surface-variant">
+          Ready to activate your **{getPlanName(currentPlan.name)}** subscription?
+        </p>
+        <Sheet>
+          <SheetTrigger asChild>
+            <button className="w-full bg-primary text-on-primary py-3.5 rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer font-bold shadow-md">
+              Proceed to Checkout (${total.toFixed(2)})
+            </button>
+          </SheetTrigger>
+          <SheetContent className="w-[400px] p-6 sm:w-[500px] overflow-y-auto bg-surface text-on-surface border-l border-outline-variant">
+            <SheetHeader className="pb-4 border-b p-2 border-outline-variant">
+              <SheetTitle className="text-h3 text-primary">{t('plans.orderSummary')}</SheetTitle>
+            </SheetHeader>
+            
+            {/* Order Summary Details */}
+            <div className="py-6 space-y-6">
+              <div className="space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-body-md font-semibold text-on-surface">{getPlanName(currentPlan.name)} {billingCycle === 'annual' ? 'Plan (Annually)' : t('plans.planMonthly')}</p>
+                    <p className="text-label-sm text-on-surface-variant mt-0.5">{currentEquipmentCount}x {t('plans.equipmentCountSuffix')}</p>
+                  </div>
+                  <span className="text-body-md font-semibold text-on-surface">${subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-body-md text-on-surface-variant">
+                  <span>{t('plans.taxes')}</span>
+                  <span>${tax.toFixed(2)}</span>
+                </div>
+                <div className="border-t border-outline-variant pt-3 flex justify-between">
+                  <span className="text-body-md font-bold text-on-surface">{t('plans.total')}</span>
+                  <span className="text-body-md font-bold text-primary text-lg">${total.toFixed(2)}</span>
+                </div>
+              </div>
+
+              {/* Payment Fields inside the Sheet */}
+              <div className="border-t border-outline-variant pt-6">
+                {renderPaymentFields()}
+              </div>
+
+
+
+              <div className="bg-surface-container-low border border-outline-variant/30 rounded-lg p-4 flex items-start gap-3">
+                <Shield className="h-5 w-5 text-success shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-label-md font-medium text-on-surface">{t('plans.encryptedTx')}</p>
+                  <p className="text-label-sm text-on-surface-variant mt-0.5">
+                    {t('plans.militaryGradeSecurity')}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
     );
   };
 
@@ -1143,7 +1306,7 @@ export function PlansPage() {
         <div className="max-w-2xl mx-auto w-full text-on-surface">
           {/* Payment Method or Admin Apply */}
           <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
-            {/* Header Banner with Sheet Trigger */}
+            {/* Header Banner */}
             <div className="flex justify-between items-center border-b border-outline-variant pb-4 mb-6">
               <div>
                 <h3 className="text-body-lg font-bold text-primary">
@@ -1153,110 +1316,6 @@ export function PlansPage() {
                   {currentEquipmentCount}x {t('plans.equipmentCountSuffix')} • {billingCycle === 'annual' ? 'Annually' : 'Monthly'}
                 </p>
               </div>
-              <Sheet>
-                <SheetTrigger asChild>
-                  <button className="bg-primary/10 text-primary hover:bg-primary/20 px-3 py-1.5 rounded-lg text-label-sm font-semibold transition-colors cursor-pointer">
-                    View Order Summary (${total.toFixed(2)})
-                  </button>
-                </SheetTrigger>
-                <SheetContent className="w-[400px] p-6 sm:w-[500px] overflow-y-auto bg-surface text-on-surface border-l border-outline-variant">
-                  <SheetHeader className="pb-4 border-b p-2 border-outline-variant">
-                    <SheetTitle className="text-h3 text-primary">{t('plans.orderSummary')}</SheetTitle>
-                  </SheetHeader>
-                  
-                  {/* Order Summary Details */}
-                  <div className="py-6 space-y-6">
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="text-body-md font-semibold text-on-surface">{getPlanName(currentPlan.name)} {billingCycle === 'annual' ? 'Plan (Annually)' : t('plans.planMonthly')}</p>
-                          <p className="text-label-sm text-on-surface-variant mt-0.5">{currentEquipmentCount}x {t('plans.equipmentCountSuffix')}</p>
-                        </div>
-                        <span className="text-body-md font-semibold text-on-surface">${subtotal.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-body-md text-on-surface-variant">
-                        <span>{t('plans.taxes')}</span>
-                        <span>${tax.toFixed(2)}</span>
-                      </div>
-                      <div className="border-t border-outline-variant pt-3 flex justify-between">
-                        <span className="text-body-md font-bold text-on-surface">{t('plans.total')}</span>
-                        <span className="text-body-md font-bold text-primary text-lg">${total.toFixed(2)}</span>
-                      </div>
-                    </div>
-
-                    {/* Email Quotation and Unregistered options inside Sheet */}
-                    <div className="border-t border-outline-variant pt-6 space-y-4">
-                      <button
-                        type="button"
-                        onClick={handleSendQuote}
-                        disabled={quoteLoading || subscribeLoading}
-                        className="w-full border border-primary text-primary py-2.5 rounded-lg text-label-md hover:bg-primary/5 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
-                      >
-                        {quoteLoading ? t('plans.quoteSending') : (isAdmin ? t('plans.sendQuoteToCustomer') : t('plans.emailQuote'))}
-                      </button>
-
-                      {!isAdmin && (
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <input
-                              id="send-to-unregistered-checkbox"
-                              type="checkbox"
-                              checked={isUnregistered}
-                              onChange={(e) => setIsUnregistered(e.target.checked)}
-                              className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary cursor-pointer"
-                            />
-                            <label htmlFor="send-to-unregistered-checkbox" className="text-label-md text-on-surface-variant select-none cursor-pointer">
-                              {t('plans.sendToUnregistered')}
-                            </label>
-                          </div>
-
-                          {isUnregistered && (
-                            <div className="space-y-3 pt-2">
-                              <div>
-                                <label htmlFor="unregistered-email-client" className="block text-label-sm text-on-surface mb-1 font-medium">
-                                  {t('plans.unregisteredEmailLabel')}
-                                </label>
-                                <Input
-                                  id="unregistered-email-client"
-                                  type="email"
-                                  required
-                                  value={unregisteredEmail}
-                                  onChange={(e) => setUnregisteredEmail(e.target.value)}
-                                  placeholder={t('plans.unregisteredEmailPlaceholder')}
-                                  className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
-                                />
-                              </div>
-                              <div>
-                                <label htmlFor="unregistered-name-client" className="block text-label-sm text-on-surface mb-1 font-medium">
-                                  {t('plans.unregisteredNameLabel')}
-                                </label>
-                                <Input
-                                  id="unregistered-name-client"
-                                  type="text"
-                                  value={unregisteredName}
-                                  onChange={(e) => setUnregisteredName(e.target.value)}
-                                  placeholder={t('plans.unregisteredNamePlaceholder')}
-                                  className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="bg-surface-container-low border border-outline-variant/30 rounded-lg p-4 flex items-start gap-3">
-                      <Shield className="h-5 w-5 text-success shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-label-md font-medium text-on-surface">{t('plans.encryptedTx')}</p>
-                        <p className="text-label-sm text-on-surface-variant mt-0.5">
-                          {t('plans.militaryGradeSecurity')}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
             </div>
 
             {isAdmin ? (
@@ -1353,7 +1412,7 @@ export function PlansPage() {
               }
               
               if (activeSubscriptions.length === 0) {
-                return renderPaymentFields();
+                return renderCheckoutButtonAndSheet();
               }
               
               return (
@@ -1393,7 +1452,7 @@ export function PlansPage() {
                   </div>
                   
                   {actionType === 'subscribe' ? (
-                    renderPaymentFields()
+                    renderCheckoutButtonAndSheet()
                   ) : (
                     <div className="space-y-4">
                       <div>

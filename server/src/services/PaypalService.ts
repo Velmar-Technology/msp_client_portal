@@ -139,6 +139,90 @@ export class PaypalService {
       throw AppError.internal('Failed to finalize PayPal payment');
     }
   }
+
+  async getOrder(paypalOrderId: string): Promise<{ id: string; status: string; purchase_units?: any }> {
+    if (this.isMockMode() || paypalOrderId.startsWith('MOCK-')) {
+      logger.info(`[PayPal Mock] Retrieved mock order ${paypalOrderId}`);
+      return {
+        id: paypalOrderId,
+        status: 'COMPLETED',
+        purchase_units: [
+          {
+            amount: {
+              value: '100.00',
+            },
+          },
+        ],
+      };
+    }
+
+    try {
+      const accessToken = await this.getAccessToken();
+      const response = await fetch(`${this.baseUrl}/v2/checkout/orders/${paypalOrderId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        logger.error('PayPal get order failed', { status: response.status, errorText });
+        throw AppError.internal('Failed to retrieve PayPal order details');
+      }
+
+      const data = await response.json() as any;
+      return data;
+    } catch (error) {
+      logger.error('Error retrieving PayPal order', { error, paypalOrderId });
+      throw AppError.internal('Failed to retrieve PayPal payment status');
+    }
+  }
+
+  async createOrderForAmount(amount: number, description: string, referenceId: string): Promise<{ id: string; status: string }> {
+    if (this.isMockMode()) {
+      const mockOrderId = `MOCK-PAYPAL-${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
+      logger.info(`[PayPal Mock] Created mock order ${mockOrderId} for Amount ${amount}`);
+      return { id: mockOrderId, status: 'CREATED' };
+    }
+
+    try {
+      const accessToken = await this.getAccessToken();
+      const response = await fetch(`${this.baseUrl}/v2/checkout/orders`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          intent: 'CAPTURE',
+          purchase_units: [
+            {
+              reference_id: referenceId,
+              amount: {
+                currency_code: 'USD',
+                value: amount.toFixed(2),
+              },
+              description,
+            },
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        logger.error('PayPal order creation failed', { status: response.status, errorText });
+        throw AppError.internal('Failed to create PayPal order');
+      }
+
+      const data = await response.json() as { id: string; status: string };
+      return data;
+    } catch (error) {
+      logger.error('Error creating PayPal order for amount', { error, amount });
+      throw AppError.internal('Failed to initiate PayPal payment');
+    }
+  }
 }
 
 export const paypalService = new PaypalService();

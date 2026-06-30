@@ -1,6 +1,6 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { subscriptionService } from '../services/SubscriptionService';
-import { CreateSubscriptionInput, UpdateSubscriptionInput, SendQuoteInput } from '../dtos/subscription.dto';
+import { CreateSubscriptionInput, UpdateSubscriptionInput, SendQuoteInput, CreatePaypalOrderInput } from '../dtos/subscription.dto';
 import { userRepository } from '../repositories/UserRepository';
 import { AppError } from '../utils/AppError';
 
@@ -30,6 +30,16 @@ export class SubscriptionController {
     const byAdmin = req.user!.role === 'ADMIN' && !!data.clientId;
     const subscription = await subscriptionService.createSubscription(data, targetClientId, targetTenantId, byAdmin);
     res.status(201).json({ success: true, data: subscription });
+  }
+
+  async createPaypalOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = req.body as CreatePaypalOrderInput;
+      const orderData = await subscriptionService.createPaypalOrderForSubscription(data);
+      res.json({ success: true, data: orderData });
+    } catch (error) {
+      next(error);
+    }
   }
 
   async update(req: Request, res: Response): Promise<void> {

@@ -79,6 +79,7 @@
     "unlimited": "Unlimited",
     "offline": "Offline",
     "unknown": "Unknown",
+    "unavailable": "Unavailable",
     "activeSubscriptions": "Active Subscriptions",
     "manage": "Manage",
     "recentInvoices": "Recent Invoices",

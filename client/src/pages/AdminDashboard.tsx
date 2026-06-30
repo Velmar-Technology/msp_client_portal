@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Page } from "@/components/Page";
-import { Headphones, Wrench, CloudUpload, Cloud, ArrowRight } from "lucide-react";
+import { Headphones, Wrench, CloudUpload, Cloud, CloudOff, ArrowRight } from "lucide-react";
 import { invoiceService } from "../services/invoiceService";
 import type { Invoice } from "../services/invoiceService";
 import { systemService } from "../services/systemService";
@@ -212,23 +212,27 @@ export function AdminDashboard() {
                 className="relative w-32 h-32 flex items-center justify-center rounded-full transition-all duration-500 ease-out"
                 style={{
                   background:
-                    storage.total === "unlimited" || storage.total === "unknown"
+                    storage.status === "offline" || storage.total === "unlimited" || storage.total === "unknown"
                       ? "var(--color-surface-container-high)"
                       : `conic-gradient(var(--color-primary) ${storage.percentage}%, var(--color-surface-container-high) ${storage.percentage}% 100%)`,
                 }}
               >
                 <div className="absolute inset-2 bg-surface-container-lowest rounded-full flex items-center justify-center">
                   <div className="text-center">
-                    <span
-                      className="block text-h1 text-primary animate-fade-in"
-                      style={{ fontFamily: "var(--font-heading)" }}
-                    >
-                      {storage.total === "unlimited"
-                        ? "∞"
-                        : storage.total === "unknown"
-                          ? "?"
-                          : `${storage.percentage}%`}
-                    </span>
+                    {storage.status === "offline" ? (
+                      <CloudOff className="h-8 w-8 text-on-surface-variant/40 animate-fade-in" />
+                    ) : (
+                      <span
+                        className="block text-h1 text-primary animate-fade-in"
+                        style={{ fontFamily: "var(--font-heading)" }}
+                      >
+                        {storage.total === "unlimited"
+                          ? "∞"
+                          : storage.total === "unknown"
+                            ? "?"
+                            : `${storage.percentage}%`}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -236,15 +240,17 @@ export function AdminDashboard() {
             <div className="mt-auto">
               <div className="flex justify-between text-[11px] text-on-surface-variant mb-1">
                 <span>
-                  {t("dashboard.used")}: {formatBytes(storage.used)}
+                  {t("dashboard.used")}: {storage.status === "offline" ? t("dashboard.unavailable") : formatBytes(storage.used)}
                 </span>
                 <span>
                   {t("dashboard.total")}:{" "}
-                  {storage.total === "unlimited"
-                    ? t("dashboard.unlimited")
-                    : storage.total === "unknown"
-                      ? t("dashboard.unknown")
-                      : formatBytes(storage.total as number)}
+                  {storage.status === "offline"
+                    ? t("dashboard.unavailable")
+                    : storage.total === "unlimited"
+                      ? t("dashboard.unlimited")
+                      : storage.total === "unknown"
+                        ? t("dashboard.unknown")
+                        : formatBytes(storage.total as number)}
                 </span>
               </div>
               <div className="w-full bg-surface-container-high rounded-full h-2">
@@ -252,7 +258,7 @@ export function AdminDashboard() {
                   className="bg-primary h-2 rounded-full transition-all duration-500 ease-out"
                   style={{
                     width:
-                      storage.total === "unlimited" || storage.total === "unknown" ? "0%" : `${storage.percentage}%`,
+                      storage.status === "offline" || storage.total === "unlimited" || storage.total === "unknown" ? "0%" : `${storage.percentage}%`,
                   }}
                 />
               </div>
