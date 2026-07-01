@@ -485,170 +485,28 @@ describe('PlansPage', () => {
       // Verify updated count on screen is 4
       expect(screen.getByText('4')).toBeInTheDocument();
 
-      // Click Update Subscription
-      fireEvent.click(screen.getByText('Update Subscription'));
+      // Switch to Manage Subscription tab
+      const manageTabButton = screen.getByRole('button', { name: /Manage Subscription/i });
+      fireEvent.click(manageTabButton);
+
+      // Wait for PayPal buttons container
+      await waitFor(() => {
+        expect(paypalButtonsOptions).not.toBeNull();
+      });
+
+      // Call createOrder
+      const orderId = await paypalButtonsOptions.createOrder();
+      expect(orderId).toBe('MOCK-PAYPAL-ORDER');
+
+      // Call onApprove
+      await paypalButtonsOptions.onApprove({ orderID: 'MOCK-PAYPAL-ORDER' });
 
       await waitFor(() => {
         expect(subscriptionService.update).toHaveBeenCalledWith('sub-basic', {
           plan: 'BASIC',
           equipmentCount: 4,
+          paypalOrderId: 'MOCK-PAYPAL-ORDER',
         });
-      });
-    });
-
-    test('generates OTP code and simulates device activation in slot', async () => {
-      const activeSubs = [
-        {
-          id: 'sub-basic',
-          client_id: 'user-client',
-          service_name: 'Basic Support',
-          plan: 'BASIC' as const,
-          status: 'ACTIVE' as const,
-          renewal_date: '2026-07-22T00:00:00.000Z',
-          equipment_count: 2,
-          tenant_id: 'tenant-1',
-          created_at: '2026-06-22',
-          updated_at: '2026-06-22',
-        },
-      ];
-      vi.mocked(subscriptionService.getAll).mockResolvedValue(activeSubs);
-
-      vi.mocked(equipmentService.getSlots).mockResolvedValue([
-        {
-          id: 'slot-1',
-          subscription_id: 'sub-basic',
-          slot_index: 0,
-          status: 'ACTIVE',
-          device_name: 'Workstation 1',
-          device_serial: 'SN12345',
-          otp: null,
-          otp_expires_at: null,
-          nextcloud_username: 'backup_user_1',
-          nextcloud_password: 'backup_password_1',
-          tenant_id: 'tenant-1',
-          created_at: '2026-06-22',
-          updated_at: '2026-06-22',
-        },
-        {
-          id: 'slot-2',
-          subscription_id: 'sub-basic',
-          slot_index: 1,
-          status: 'PENDING_ACTIVATION',
-          device_name: null,
-          device_serial: null,
-          otp: null,
-          otp_expires_at: null,
-          nextcloud_username: null,
-          nextcloud_password: null,
-          tenant_id: 'tenant-1',
-          created_at: '2026-06-22',
-          updated_at: '2026-06-22',
-        },
-      ]);
-
-      vi.mocked(equipmentService.generateOTP).mockResolvedValue({
-        id: 'slot-2',
-        subscription_id: 'sub-basic',
-        slot_index: 1,
-        status: 'PENDING_ACTIVATION',
-        device_name: null,
-        device_serial: null,
-        otp: '123456',
-        otp_expires_at: new Date(Date.now() + 600000).toISOString(),
-        nextcloud_username: null,
-        nextcloud_password: null,
-        tenant_id: 'tenant-1',
-        created_at: '2026-06-22',
-        updated_at: '2026-06-22',
-      });
-
-      vi.mocked(equipmentService.activateSlot).mockResolvedValue({
-        id: 'slot-2',
-        subscription_id: 'sub-basic',
-        slot_index: 1,
-        status: 'ACTIVE',
-        device_name: 'Simulated Laptop',
-        device_serial: 'SN-SIMULATED',
-        otp: null,
-        otp_expires_at: null,
-        nextcloud_username: 'backup_user_2',
-        nextcloud_password: 'backup_password_2',
-        tenant_id: 'tenant-1',
-        created_at: '2026-06-22',
-        updated_at: '2026-06-22',
-      });
-
-      vi.mocked(equipmentService.deactivateSlot).mockResolvedValue({
-        id: 'slot-2',
-        subscription_id: 'sub-basic',
-        slot_index: 1,
-        status: 'PENDING_ACTIVATION',
-        device_name: null,
-        device_serial: null,
-        otp: null,
-        otp_expires_at: null,
-        nextcloud_username: null,
-        nextcloud_password: null,
-        tenant_id: 'tenant-1',
-        created_at: '2026-06-22',
-        updated_at: '2026-06-22',
-      });
-
-      render(
-        <MemoryRouter>
-          <PlansPage />
-        </MemoryRouter>
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText('Licensed Equipment & Activation (OTP)')).toBeInTheDocument();
-      });
-
-      // Initially, Slot #1 is active (pre-populated mock state) and Slot #2 is empty (PENDING ACTIVATION)
-      expect(screen.getByText('Slot #1')).toBeInTheDocument();
-      expect(screen.getAllByText('ACTIVE').length).toBe(3);
-      expect(screen.getByText('Slot #2')).toBeInTheDocument();
-      expect(screen.getByText('PENDING ACTIVATION')).toBeInTheDocument();
-
-      // Click Generate OTP on Slot #2
-      const generateOtpBtn = screen.getByRole('button', { name: 'Generate Activation OTP' });
-      fireEvent.click(generateOtpBtn);
-
-      // Verify toast is shown and OTP UI is rendered
-      await waitFor(() => {
-        expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({
-          title: 'OTP Generated',
-          type: 'success',
-        }));
-        expect(screen.getByText(/OTP: \d{6}/)).toBeInTheDocument();
-      });
-
-      // Mock window.prompt for simulation activation
-      const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('Simulated Laptop');
-
-      // Click simulate agent activation
-      const simulateBtn = screen.getByRole('button', { name: 'Simulate Agent Activation' });
-      fireEvent.click(simulateBtn);
-
-      await waitFor(() => {
-        expect(promptSpy).toHaveBeenCalled();
-        expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({
-          title: 'Equipment Activated',
-          type: 'success',
-        }));
-        expect(screen.getByText('Simulated Laptop')).toBeInTheDocument();
-      });
-
-      // Deactivate/revoke slot
-      const deactivateBtn = screen.getAllByRole('button', { name: 'Deactivate' });
-      // Slot #1 and Slot #2 are both ACTIVE now, click deactivate on Slot #2
-      fireEvent.click(deactivateBtn[1]);
-
-      await waitFor(() => {
-        expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({
-          title: 'Slot Revoked',
-          type: 'info',
-        }));
       });
     });
 

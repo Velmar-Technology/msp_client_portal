@@ -515,42 +515,140 @@ describe('SubscriptionService', () => {
   });
 
   describe('updateSubscription', () => {
-    it('should successfully update plan tier and status', async () => {
-      const mockSub = {
-        id: 'sub-1',
-        tenant_id: 'tenant-123',
-        plan: SubscriptionPlan.BASIC,
-        status: SubscriptionStatus.ACTIVE,
-      };
+    const mockSub = {
+      id: 'sub-1',
+      tenant_id: 'tenant-123',
+      service_name: 'Basic Support (Monthly)',
+      plan: SubscriptionPlan.BASIC,
+      status: SubscriptionStatus.ACTIVE,
+      equipment_count: 2,
+    };
 
-      const mockUpdatedPlanSub = {
-        ...mockSub,
-        plan: SubscriptionPlan.STANDARD,
-      };
+    const mockPlan = {
+      id: 'BASIC',
+      name: 'Basic Support',
+      price: 199,
+      features: [],
+    };
 
+    beforeEach(() => {
+      mocks.subFindById.mockResolvedValue(mockSub);
+      mocks.planFindById.mockResolvedValue(mockPlan);
+    });
+
+    it('should successfully update status without billing changes', async () => {
       const mockUpdatedStatusSub = {
-        ...mockUpdatedPlanSub,
+        ...mockSub,
         status: SubscriptionStatus.CANCELLED,
       };
 
-      mocks.subFindById.mockResolvedValue(mockSub);
-      mocks.subUpdatePlan.mockResolvedValue(mockUpdatedPlanSub);
       mocks.subUpdateStatus.mockResolvedValue(mockUpdatedStatusSub);
 
       const result = await subscriptionService.updateSubscription(
         'sub-1',
         {
-          plan: SubscriptionPlan.STANDARD,
-          equipmentCount: 2,
           status: SubscriptionStatus.CANCELLED,
         },
         'tenant-123'
       );
 
       expect(mocks.subFindById).toHaveBeenCalledWith('sub-1');
-      expect(mocks.subUpdatePlan).toHaveBeenCalledWith('sub-1', SubscriptionPlan.STANDARD, 2);
       expect(mocks.subUpdateStatus).toHaveBeenCalledWith('sub-1', SubscriptionStatus.CANCELLED);
       expect(result).toEqual(mockUpdatedStatusSub);
+    });
+
+    it('should throw badRequest when a client adds devices without a paypalOrderId', async () => {
+      await expect(
+        subscriptionService.updateSubscription(
+          'sub-1',
+          {
+            equipmentCount: 4,
+          },
+          'tenant-123',
+          false
+        )
+      ).rejects.toMatchObject({
+        statusCode: 400,
+        message: 'PayPal order ID is required to add more devices',
+      });
+    });
+
+    it('should successfully add devices when byAdmin is true even without paypalOrderId', async () => {
+      const mockUpdatedSub = { ...mockSub, equipment_count: 4 };
+      mocks.subUpdatePlan.mockResolvedValue(mockUpdatedSub);
+
+      const result = await subscriptionService.updateSubscription(
+        'sub-1',
+        {
+          equipmentCount: 4,
+        },
+        'tenant-123',
+        true
+      );
+
+      expect(mocks.subUpdatePlan).toHaveBeenCalledWith('sub-1', 'BASIC', 4);
+      expect(result).toEqual(mockUpdatedSub);
+    });
+
+    it('should verify upgrade payment amount and succeed when paypalOrderId is valid', async () => {
+      const mockUpdatedSub = { ...mockSub, equipment_count: 4 };
+      mocks.subUpdatePlan.mockResolvedValue(mockUpdatedSub);
+
+      mocks.paypalGetOrder.mockResolvedValue({
+        status: 'APPROVED',
+        purchase_units: [
+          {
+            amount: {
+              value: '469.64', // 199 * 2 additional * 1.18 tax = 469.64
+            },
+          },
+        ],
+      });
+      mocks.paypalCaptureOrder.mockResolvedValue({ status: 'COMPLETED' });
+
+      const result = await subscriptionService.updateSubscription(
+        'sub-1',
+        {
+          equipmentCount: 4,
+          paypalOrderId: 'UPGRADE-PAYPAL-ORDER',
+        },
+        'tenant-123',
+        false
+      );
+
+      expect(mocks.paypalGetOrder).toHaveBeenCalledWith('UPGRADE-PAYPAL-ORDER');
+      expect(mocks.paypalCaptureOrder).toHaveBeenCalledWith('UPGRADE-PAYPAL-ORDER');
+      expect(mocks.subUpdatePlan).toHaveBeenCalledWith('sub-1', 'BASIC', 4);
+      expect(result).toEqual(mockUpdatedSub);
+    });
+
+    it('should throw badRequest if paid amount does not match expected upgrade price', async () => {
+      mocks.paypalGetOrder.mockResolvedValue({
+        status: 'APPROVED',
+        purchase_units: [
+          {
+            amount: {
+              value: '100.00', // incorrect amount
+            },
+          },
+        ],
+      });
+      mocks.paypalCaptureOrder.mockResolvedValue({ status: 'COMPLETED' });
+
+      await expect(
+        subscriptionService.updateSubscription(
+          'sub-1',
+          {
+            equipmentCount: 4,
+            paypalOrderId: 'UPGRADE-PAYPAL-ORDER',
+          },
+          'tenant-123',
+          false
+        )
+      ).rejects.toMatchObject({
+        statusCode: 400,
+        message: 'Paid upgrade amount $100 does not match expected upgrade cost $469.64',
+      });
     });
   });
 

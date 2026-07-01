@@ -44,7 +44,8 @@ export class SubscriptionController {
 
   async update(req: Request, res: Response): Promise<void> {
     const data = req.body as UpdateSubscriptionInput;
-    const subscription = await subscriptionService.updateSubscription(req.params.id as string, data, req.user!.tenantId);
+    const byAdmin = req.user!.role === 'ADMIN';
+    const subscription = await subscriptionService.updateSubscription(req.params.id as string, data, req.user!.tenantId, byAdmin);
     res.json({ success: true, data: subscription });
   }
 

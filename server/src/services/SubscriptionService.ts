@@ -21,7 +21,7 @@ export class SubscriptionService {
     return sub;
   }
 
-  async createPaypalOrderForSubscription(data: { plan: string; equipmentCount: number; billingCycle?: 'monthly' | 'annual' }): Promise<{ orderId: string }> {
+  async createPaypalOrderForSubscription(data: { plan: string; equipmentCount: number; billingCycle?: 'monthly' | 'annual'; currentSubscriptionId?: string }): Promise<{ orderId: string }> {
     const planDetails = await planRepository.findById(data.plan);
     if (!planDetails) {
       throw AppError.notFound('Plan not found');
@@ -31,11 +31,29 @@ export class SubscriptionService {
     const equipmentCount = data.equipmentCount ?? 1;
     const billingCycle = data.billingCycle || 'monthly';
     const priceMultiplier = billingCycle === 'annual' ? 12 * 0.8 : 1;
-    const subtotal = Math.round(price * priceMultiplier * equipmentCount * 100) / 100;
-    const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
-    const total = Math.round((subtotal + tax) * 100) / 100;
+    let total = 0;
+    let description = '';
 
-    const description = `${planDetails.name} Subscription - ${equipmentCount} Equipment (${billingCycle === 'annual' ? 'Annually' : 'Monthly'})`;
+    if (data.currentSubscriptionId) {
+      const existingSub = await subscriptionRepository.findById(data.currentSubscriptionId);
+      if (!existingSub) throw AppError.notFound('Subscription not found');
+
+      const additionalCount = equipmentCount - existingSub.equipment_count;
+      if (additionalCount <= 0) {
+        throw AppError.badRequest('New equipment count must be greater than current count for an upgrade payment');
+      }
+
+      description = `Upgrade for ${planDetails.name} - Adding ${additionalCount} Equipment`;
+      const subtotal = Math.round(price * priceMultiplier * additionalCount * 100) / 100;
+      const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
+      total = Math.round((subtotal + tax) * 100) / 100;
+    } else {
+      const subtotal = Math.round(price * priceMultiplier * equipmentCount * 100) / 100;
+      const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
+      total = Math.round((subtotal + tax) * 100) / 100;
+      description = `${planDetails.name} Subscription - ${equipmentCount} Equipment (${billingCycle === 'annual' ? 'Annually' : 'Monthly'})`;
+    }
+
     const referenceId = `SUB-${planDetails.id}-${Date.now()}`;
     const order = await paypalService.createOrderForAmount(total, description, referenceId);
 
@@ -197,12 +215,47 @@ export class SubscriptionService {
     return subscription;
   }
 
-  async updateSubscription(id: string, data: UpdateSubscriptionInput, tenantId: string): Promise<Subscription> {
+  async updateSubscription(id: string, data: UpdateSubscriptionInput, tenantId: string, byAdmin = false): Promise<Subscription> {
     const sub = await this.getSubscriptionById(id, tenantId);
     let updated = sub;
 
-    if (data.plan) {
-      const res = await subscriptionRepository.updatePlan(sub.id, data.plan as SubscriptionPlan, data.equipmentCount);
+    if (data.plan || data.equipmentCount !== undefined) {
+      const newPlan = data.plan || sub.plan;
+      const newCount = data.equipmentCount !== undefined ? data.equipmentCount : sub.equipment_count;
+
+      if (!byAdmin && newCount > sub.equipment_count) {
+        if (!data.paypalOrderId) {
+          throw AppError.badRequest('PayPal order ID is required to add more devices');
+        }
+
+        const order = await paypalService.getOrder(data.paypalOrderId);
+        if (order.status === 'APPROVED') {
+          const capture = await paypalService.captureOrder(data.paypalOrderId);
+          order.status = capture.status;
+        }
+
+        if (order.status !== 'COMPLETED') {
+          throw AppError.badRequest('PayPal payment for device upgrade was not completed');
+        }
+
+        const planDetails = await planRepository.findById(newPlan);
+        if (!planDetails) throw AppError.notFound('Plan not found');
+
+        const billingCycle = (sub.service_name.includes('Annual') || sub.service_name.includes('Anual')) ? 'annual' : 'monthly';
+        const priceMultiplier = billingCycle === 'annual' ? 12 * 0.8 : 1;
+        const additionalCount = newCount - sub.equipment_count;
+        const subtotal = Math.round(planDetails.price * priceMultiplier * additionalCount * 100) / 100;
+        const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
+        const expectedUpgradeTotal = Math.round((subtotal + tax) * 100) / 100;
+
+        const purchaseUnit = order.purchase_units?.[0];
+        const paidAmount = Number(purchaseUnit?.amount?.value);
+        if (isNaN(paidAmount) || Math.abs(paidAmount - expectedUpgradeTotal) > 0.05) {
+          throw AppError.badRequest(`Paid upgrade amount $${paidAmount} does not match expected upgrade cost $${expectedUpgradeTotal}`);
+        }
+      }
+
+      const res = await subscriptionRepository.updatePlan(sub.id, newPlan as SubscriptionPlan, newCount);
       if (!res) throw AppError.internal('Failed to update subscription');
       updated = res;
     }

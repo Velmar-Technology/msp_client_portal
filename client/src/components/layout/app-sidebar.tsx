@@ -45,7 +45,15 @@ interface NavItem {
 
 const clientNavItems: NavItem[] = [
   { to: '/dashboard', icon: LayoutDashboard, labelKey: 'dashboard' },
-  { to: '/tickets', icon: Ticket, labelKey: 'tickets' },
+  {
+    to: '/tickets-group',
+    icon: Ticket,
+    labelKey: 'tickets',
+    items: [
+      { to: '/tickets', labelKey: 'myTickets' },
+      { to: '/devices', labelKey: 'devices' },
+    ],
+  },
   {
     to: '/profile-group',
     icon: User,
@@ -75,7 +83,15 @@ const techNavItems: NavItem[] = [
 
 const adminNavItems: NavItem[] = [
   { to: '/admin/dashboard', icon: Shield, labelKey: 'adminDashboard' },
-  { to: '/tickets', icon: Ticket, labelKey: 'allTickets' },
+  {
+    to: '/tickets-group',
+    icon: Ticket,
+    labelKey: 'tickets',
+    items: [
+      { to: '/tickets', labelKey: 'allTickets' },
+      { to: '/devices', labelKey: 'devices' },
+    ],
+  },
   {
     to: '/settings-group',
     icon: Settings,

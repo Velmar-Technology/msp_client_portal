@@ -23,12 +23,12 @@ export const subscriptionService = {
     return response.data.data;
   },
 
-  async createPaypalOrder(data: { plan: string; equipmentCount: number; billingCycle?: 'monthly' | 'annual' }): Promise<{ orderId: string }> {
+  async createPaypalOrder(data: { plan: string; equipmentCount: number; billingCycle?: 'monthly' | 'annual'; currentSubscriptionId?: string }): Promise<{ orderId: string }> {
     const response = await api.post('/subscriptions/paypal-order', data);
     return response.data.data;
   },
 
-  async update(id: string, data: { plan?: string; equipmentCount?: number; status?: string }): Promise<Subscription> {
+  async update(id: string, data: { plan?: string; equipmentCount?: number; status?: string; paypalOrderId?: string }): Promise<Subscription> {
     const response = await api.patch(`/subscriptions/${id}`, data);
     return response.data.data;
   },
