@@ -203,6 +203,7 @@ export const subscriptions = pgTable(
     status: subscriptionStatusEnum('status').default('ACTIVE').notNull(),
     renewal_date: timestamp('renewal_date', { withTimezone: true }).notNull(),
     equipment_count: integer('equipment_count').default(1).notNull(),
+    paypal_order_id: varchar('paypal_order_id', { length: 255 }).unique(),
     tenant_id: uuid('tenant_id')
       .references(() => tenants.id, { onDelete: 'cascade' })
       .notNull(),
@@ -213,6 +214,7 @@ export const subscriptions = pgTable(
     index('idx_subscriptions_client').on(table.client_id),
     index('idx_subscriptions_status').on(table.status),
     index('idx_subscriptions_tenant').on(table.tenant_id),
+    index('idx_subscriptions_paypal_order').on(table.paypal_order_id),
   ]
 );
 

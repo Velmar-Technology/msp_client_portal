@@ -4,6 +4,8 @@ const mocks = vi.hoisted(() => {
   return {
     subFindById: vi.fn(),
     subFindByTenant: vi.fn(),
+    subFindByClient: vi.fn(),
+    subFindByPaypalOrderId: vi.fn(),
     subCreate: vi.fn(),
     subUpdatePlan: vi.fn(),
     subUpdateStatus: vi.fn(),
@@ -39,6 +41,8 @@ vi.mock('../repositories/SubscriptionRepository', () => {
     subscriptionRepository: {
       findById: mocks.subFindById,
       findByTenant: mocks.subFindByTenant,
+      findByClient: mocks.subFindByClient,
+      findByPaypalOrderId: mocks.subFindByPaypalOrderId,
       create: mocks.subCreate,
       updatePlan: mocks.subUpdatePlan,
       updateStatus: mocks.subUpdateStatus,
@@ -77,6 +81,8 @@ import { SubscriptionPlan, SubscriptionStatus } from '../types';
 describe('SubscriptionService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.subFindByClient.mockResolvedValue([]);
+    mocks.subFindByPaypalOrderId.mockResolvedValue(null);
   });
 
   describe('getClientSubscriptions', () => {
@@ -443,6 +449,67 @@ describe('SubscriptionService', () => {
         statusCode: 400,
         message: 'Target user must have CLIENT role',
       });
+      expect(mocks.subCreate).not.toHaveBeenCalled();
+    });
+
+    it('should return existing subscription if the paypalOrderId has already been processed (idempotency check)', async () => {
+      const mockUser = {
+        id: 'client-123',
+        tenant_id: 'tenant-123',
+        role: 'CLIENT',
+      };
+      const mockExistingSub = {
+        id: 'sub-existing',
+        client_id: 'client-123',
+        service_name: 'Velmar Premium Plan (Monthly)',
+        plan: input.plan,
+        equipment_count: input.equipmentCount,
+        tenant_id: 'tenant-123',
+        paypal_order_id: 'MOCK-PAYPAL-ORDER',
+      };
+
+      mocks.userFindById.mockResolvedValue(mockUser);
+      mocks.subFindByPaypalOrderId.mockResolvedValue(mockExistingSub);
+
+      const result = await subscriptionService.createSubscription(
+        { ...input, paypalOrderId: 'MOCK-PAYPAL-ORDER' },
+        'client-123',
+        'tenant-123'
+      );
+
+      expect(mocks.userFindById).toHaveBeenCalledWith('client-123');
+      expect(mocks.subFindByPaypalOrderId).toHaveBeenCalledWith('MOCK-PAYPAL-ORDER');
+      expect(mocks.subCreate).not.toHaveBeenCalled();
+      expect(result).toEqual(mockExistingSub);
+    });
+
+    it('should throw 400 AppError if the client already has an active subscription for the requested plan', async () => {
+      const mockUser = {
+        id: 'client-123',
+        tenant_id: 'tenant-123',
+        role: 'CLIENT',
+      };
+      const mockActiveSub = {
+        id: 'sub-existing',
+        client_id: 'client-123',
+        plan: input.plan,
+        status: 'ACTIVE',
+      };
+
+      mocks.userFindById.mockResolvedValue(mockUser);
+      mocks.subFindByClient.mockResolvedValue([mockActiveSub]);
+
+      await expect(
+        subscriptionService.createSubscription(
+          { ...input, paypalOrderId: 'MOCK-PAYPAL-ORDER' },
+          'client-123',
+          'tenant-123'
+        )
+      ).rejects.toMatchObject({
+        statusCode: 400,
+        message: `You already have an active subscription for the ${input.plan} plan. Please modify your existing subscription instead.`,
+      });
+
       expect(mocks.subCreate).not.toHaveBeenCalled();
     });
   });

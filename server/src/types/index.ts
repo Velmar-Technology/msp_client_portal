@@ -148,6 +148,7 @@ export interface Subscription {
   status: SubscriptionStatus;
   renewal_date: Date;
   equipment_count: number;
+  paypal_order_id?: string;
   tenant_id: string;
   created_at: Date;
   updated_at: Date;

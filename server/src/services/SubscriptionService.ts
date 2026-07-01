@@ -48,6 +48,21 @@ export class SubscriptionService {
     if (clientUser.tenant_id !== tenantId) throw AppError.forbidden('Client does not belong to this tenant');
     if (clientUser.role !== 'CLIENT') throw AppError.badRequest('Target user must have CLIENT role');
 
+    // Idempotency: Check if this PayPal order was already processed
+    if (data.paypalOrderId) {
+      const existingSub = await subscriptionRepository.findByPaypalOrderId(data.paypalOrderId);
+      if (existingSub) {
+        return existingSub;
+      }
+    }
+
+    // Double plan check: Ensure client doesn't buy the same plan twice
+    const existingSubs = await subscriptionRepository.findByClient(clientId);
+    const hasActivePlan = existingSubs.some((sub) => sub.plan === data.plan && sub.status === 'ACTIVE');
+    if (hasActivePlan) {
+      throw AppError.badRequest(`You already have an active subscription for the ${data.plan} plan. Please modify your existing subscription instead.`);
+    }
+
     const billingCycle = data.billingCycle || 'monthly';
 
     // Validate PayPal payment if not done by Admin
@@ -110,6 +125,7 @@ export class SubscriptionService {
       equipment_count: data.equipmentCount,
       renewal_date: renewalDate,
       tenant_id: tenantId,
+      paypal_order_id: data.paypalOrderId,
     });
 
     if (byAdmin) {

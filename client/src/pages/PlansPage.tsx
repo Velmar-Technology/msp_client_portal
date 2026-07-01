@@ -20,6 +20,8 @@ import type { Subscription } from '@/services/subscriptionService';
 import { equipmentService } from '@/services/equipmentService';
 import type { SubscriptionEquipment } from '@/services/equipmentService';
 import type { AuthUser } from '@/store/useAuthStore';
+import { DataTable } from '@/components/ui/data-table';
+import type { ColumnDef } from '@tanstack/react-table';
 
 export function PlansPage() {
   const { t, i18n } = useTranslation();
@@ -65,7 +67,7 @@ export function PlansPage() {
   const [reference] = useState(() => `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9999)).padStart(4, '0')}`);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const [quoteLoading, setQuoteLoading] = useState(false);
-  const [isUnregistered, setIsUnregistered] = useState(false);
+  const [isUnregistered] = useState(false);
   const [unregisteredEmail, setUnregisteredEmail] = useState('');
   const [unregisteredName, setUnregisteredName] = useState('');
 
@@ -581,6 +583,239 @@ export function PlansPage() {
     return 'Level';
   };
 
+  // Table Columns for Subscription Dashboard (DataTable)
+  const subscriptionDashboardColumns: ColumnDef<Subscription>[] = [
+    {
+      accessorKey: 'service_name',
+      header: 'Service Name',
+      cell: ({ row }) => (
+        <span className="font-semibold text-primary text-body-sm">
+          {row.getValue('service_name')}
+        </span>
+      )
+    },
+    {
+      accessorKey: 'plan',
+      header: 'Tier',
+      cell: ({ row }) => {
+        const planId = row.getValue('plan') as string;
+        return (
+          <span className="inline-block px-2 py-0.5 border border-outline-variant rounded text-mono w-fit text-on-surface-variant font-medium text-xs">
+            {getTierLabel(planId)}
+          </span>
+        );
+      }
+    },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      cell: ({ row }) => (
+        <span className="bg-success/15 text-success border border-success/30 px-2.5 py-1 rounded-full text-label-sm font-bold">
+          {row.getValue('status')}
+        </span>
+      )
+    },
+    {
+      accessorKey: 'renewal_date',
+      header: 'Renewal Date',
+      cell: ({ row }) => {
+        const dateStr = row.getValue('renewal_date') as string;
+        return (
+          <span className="text-body-sm text-on-surface-variant">
+            {new Date(dateStr).toLocaleDateString(i18n.language.startsWith('es') ? 'es-DO' : 'en-US', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+            })}
+          </span>
+        );
+      }
+    },
+    {
+      accessorKey: 'equipment_count',
+      header: 'Devices Limit',
+      cell: ({ row }) => (
+        <span className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-xs font-semibold">
+          {row.getValue('equipment_count')} Devices
+        </span>
+      )
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => {
+        const sub = row.original;
+        return (
+          <button
+            type="button"
+            onClick={() => {
+              setUserSelectedPlan(sub.plan);
+              document.getElementById('customer-select')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="text-label-sm text-primary hover:underline font-semibold cursor-pointer"
+          >
+            Manage
+          </button>
+        );
+      }
+    }
+  ];
+
+  // Table Columns for Equipment Slots (DataTable)
+  const equipmentColumns = useCallback((activeSub: Subscription): ColumnDef<Partial<SubscriptionEquipment>>[] => [
+    {
+      id: 'slotNumber',
+      header: 'Slot',
+      cell: ({ row }) => (
+        <span className="text-label-sm font-semibold text-on-surface">
+          Slot #{row.index + 1}
+        </span>
+      )
+    },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      cell: ({ row }) => {
+        const status = row.getValue('status') as string;
+        return status === 'ACTIVE' ? (
+          <span className="bg-success/15 text-success border border-success/30 px-2 py-0.5 rounded text-[10px] font-bold">
+            ACTIVE
+          </span>
+        ) : (
+          <span className="bg-warning/15 text-warning border border-warning/30 px-2 py-0.5 rounded text-[10px] font-bold animate-pulse">
+            PENDING ACTIVATION
+          </span>
+        );
+      }
+    },
+    {
+      id: 'deviceDetails',
+      header: 'Device Details',
+      cell: ({ row }) => {
+        const equip = row.original;
+        if (equip.status === 'ACTIVE') {
+          return (
+            <div className="space-y-0.5">
+              <p className="text-body-sm font-medium text-on-surface">{equip.device_name || 'Unnamed Device'}</p>
+              <p className="text-label-sm text-on-surface-variant font-mono">{equip.device_serial || 'No Serial'}</p>
+            </div>
+          );
+        }
+        if (equip.otp) {
+          return (
+            <div className="bg-surface-container p-2 rounded border border-outline-variant/50 max-w-[200px]">
+              <p className="text-body-sm font-bold text-primary font-mono select-all">OTP: {equip.otp}</p>
+              <p className="text-[9px] text-on-surface-variant mt-0.5 font-medium">
+                Expires: {equip.otp_expires_at ? new Date(equip.otp_expires_at).toLocaleString() : ''}
+              </p>
+            </div>
+          );
+        }
+        return <p className="text-body-sm text-on-surface-variant">Empty license slot</p>;
+      }
+    },
+    {
+      id: 'backupAccount',
+      header: 'Cloud Backup Storage',
+      cell: ({ row }) => {
+        const equip = row.original;
+        if (equip.status === 'ACTIVE' && equip.nextcloud_username) {
+          const used = equip.nextcloud_used_bytes || 0;
+          const total = equip.nextcloud_total_bytes || 0;
+          const percentage = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
+          
+          const formatSize = (bytes: number) => {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+          };
+
+          return (
+            <div className="space-y-2 max-w-[240px]">
+              <div className="bg-surface-container/60 p-2 rounded border border-outline-variant/30 text-label-sm space-y-1">
+                <p className="font-semibold text-primary">☁️ Nextcloud Account:</p>
+                <p className="text-on-surface-variant font-mono truncate">User: {equip.nextcloud_username}</p>
+                <p className="text-on-surface-variant font-mono truncate">Pass: {equip.nextcloud_password}</p>
+              </div>
+              {total > 0 && (
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[10px] text-on-surface-variant font-medium">
+                    <span>Used: {formatSize(used)}</span>
+                    <span>Total: {formatSize(total)} ({percentage}%)</span>
+                  </div>
+                  <div className="w-full bg-surface-container rounded-full h-1.5 overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all ${
+                        percentage > 90 ? 'bg-error' : percentage > 75 ? 'bg-warning' : 'bg-success'
+                      }`}
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        }
+        return <span className="text-label-sm text-on-surface-variant">—</span>;
+      }
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => {
+        const equip = row.original;
+        const idx = row.index;
+        if (equip.status === 'ACTIVE') {
+          return (
+            <button
+              type="button"
+              onClick={() => handleRevokeEquipment(activeSub.id, idx)}
+              className="text-label-sm border border-error/30 text-error hover:bg-error/5 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
+            >
+              Deactivate
+            </button>
+          );
+        }
+        if (equip.otp) {
+          return (
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const devName = prompt('Enter simulated device name:', `Workstation-${idx + 1}`) || `PC-${idx + 1}`;
+                  const devSerial = `SN-SIM-${Math.floor(100000 + Math.random() * 900000)}`;
+                  handleMockActivate(activeSub.id, idx, devName, devSerial);
+                }}
+                className="text-[11px] bg-success text-on-success hover:opacity-90 px-2.5 py-1.5 rounded-lg transition-opacity cursor-pointer font-medium whitespace-nowrap"
+              >
+                Simulate Agent Activation
+              </button>
+              <button
+                type="button"
+                onClick={() => handleGenerateOTP(activeSub.id, idx)}
+                className="text-[11px] border border-outline-variant hover:bg-surface-container px-2 py-1.5 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
+              >
+                Regenerate OTP
+              </button>
+            </div>
+          );
+        }
+        return (
+          <button
+            type="button"
+            onClick={() => handleGenerateOTP(activeSub.id, idx)}
+            className="text-[11px] bg-primary text-on-primary hover:opacity-90 px-2.5 py-1.5 rounded-lg transition-opacity cursor-pointer font-medium whitespace-nowrap"
+          >
+            Generate Activation OTP
+          </button>
+        );
+      }
+    }
+  ], [handleRevokeEquipment, handleMockActivate, handleGenerateOTP]);
+
+
   // Open Edit Modal
   const handleEditClick = (plan: Plan) => {
     setIsCreateMode(false);
@@ -841,6 +1076,20 @@ export function PlansPage() {
   };
 
   const renderPaymentFields = () => {
+    if (currentPlan) {
+      const alreadySubscribed = activeSubscriptions.some((sub) => sub.plan === currentPlan.id && sub.status === 'ACTIVE');
+      if (alreadySubscribed) {
+        return (
+          <div className="bg-warning/15 border border-warning/30 p-4 rounded-xl text-center space-y-2 my-4">
+            <p className="text-body-md font-semibold text-warning">Active Plan Already Registered</p>
+            <p className="text-body-sm text-on-surface-variant">
+              You already have an active subscription for the <strong>{getPlanName(currentPlan.name)}</strong> plan. To change equipment slots or update details, please use the modification tools on the active subscription manager.
+            </p>
+          </div>
+        );
+      }
+    }
+
     return (
       <>
         <h2 className="text-h2 text-primary mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
@@ -1028,88 +1277,11 @@ export function PlansPage() {
             </p>
             
             <div className="space-y-3">
-              {(subscriptionEquipment[activeSub.id] || []).map((equip, idx) => (
-                <div key={equip.id} className="border border-outline-variant rounded-lg p-3 bg-surface-container-low/40 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-label-sm font-semibold text-on-surface">Slot #{idx + 1}</span>
-                      {equip.status === 'ACTIVE' ? (
-                        <span className="bg-success/15 text-success border border-success/30 px-2 py-0.5 rounded text-[10px] font-bold">
-                          ACTIVE
-                        </span>
-                      ) : (
-                        <span className="bg-warning/15 text-warning border border-warning/30 px-2 py-0.5 rounded text-[10px] font-bold animate-pulse">
-                          PENDING ACTIVATION
-                        </span>
-                      )}
-                    </div>
-                    {equip.status === 'ACTIVE' ? (
-                      <div className="mt-1">
-                        <p className="text-body-sm font-medium text-on-surface">{equip.device_name || 'Unnamed Device'}</p>
-                        <p className="text-label-sm text-on-surface-variant font-mono">{equip.device_serial || 'No Serial'}</p>
-                        {equip.nextcloud_username && (
-                          <div className="mt-2 bg-surface-container/60 p-2.5 rounded border border-outline-variant/30 text-label-sm space-y-1">
-                            <p className="font-semibold text-primary">☁️ Nextcloud Backup Account:</p>
-                            <p className="text-on-surface-variant font-mono">User: {equip.nextcloud_username}</p>
-                            <p className="text-on-surface-variant font-mono">Pass: {equip.nextcloud_password}</p>
-                          </div>
-                        )}
-                      </div>
-                    ) : equip.otp ? (
-                      <div className="mt-1 bg-surface-container p-2 rounded border border-outline-variant/50">
-                        <p className="text-body-sm font-bold text-primary font-mono select-all">OTP: {equip.otp}</p>
-                        <p className="text-[10px] text-on-surface-variant mt-0.5 font-medium">
-                          Expires: {equip.otp_expires_at ? new Date(equip.otp_expires_at).toLocaleString() : ''}
-                        </p>
-
-                      </div>
-                    ) : (
-                      <p className="text-body-sm text-on-surface-variant mt-1">Empty license slot</p>
-                    )}
-                  </div>
-
-                  <div className="flex gap-2 shrink-0">
-                    {equip.status === 'ACTIVE' ? (
-                      <button
-                        type="button"
-                        onClick={() => handleRevokeEquipment(activeSub.id, idx)}
-                        className="text-label-sm border border-error/30 text-error hover:bg-error/5 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
-                      >
-                        Deactivate
-                      </button>
-                    ) : equip.otp ? (
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const devName = prompt('Enter simulated device name:', `Workstation-${idx + 1}`) || `PC-${idx + 1}`;
-                            const devSerial = `SN-SIM-${Math.floor(100000 + Math.random() * 900000)}`;
-                            handleMockActivate(activeSub.id, idx, devName, devSerial);
-                          }}
-                          className="text-label-sm bg-success text-on-success hover:opacity-90 px-2.5 py-1.5 rounded-lg transition-opacity cursor-pointer font-medium"
-                        >
-                          Simulate Agent Activation
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleGenerateOTP(activeSub.id, idx)}
-                          className="text-label-sm border border-outline-variant hover:bg-surface-container px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
-                        >
-                          Regenerate OTP
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleGenerateOTP(activeSub.id, idx)}
-                        className="text-label-sm bg-primary text-on-primary hover:opacity-90 px-2.5 py-1.5 rounded-lg transition-opacity cursor-pointer font-medium"
-                      >
-                        Generate Activation OTP
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
+              <DataTable
+                columns={equipmentColumns(activeSub)}
+                data={subscriptionEquipment[activeSub.id] || []}
+                noDataMessage="No device slots found."
+              />
             </div>
           </div>
         )}
@@ -1483,6 +1655,25 @@ export function PlansPage() {
                 </div>
               );
             })()}
+          </div>
+        </div>
+      )}
+
+      {/* Subscriptions Dashboard (DataTable) */}
+      {!isAdmin && activeSubscriptions.length > 0 && (
+        <div className="max-w-4xl mx-auto w-full mt-12 text-on-surface">
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
+            <h3 className="text-h2 text-primary mb-2 font-bold" style={{ fontFamily: 'var(--font-heading)' }}>
+              Active Subscriptions Dashboard
+            </h3>
+            <p className="text-body-sm text-on-surface-variant mb-6">
+              View details, active equipment, and renewal dates for all your active plans.
+            </p>
+            <DataTable 
+              columns={subscriptionDashboardColumns}
+              data={activeSubscriptions}
+              noDataMessage="No active subscriptions found."
+            />
           </div>
         </div>
       )}

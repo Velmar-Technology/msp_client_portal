@@ -17,6 +17,24 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     return results as Subscription[];
   }
 
+  async findByClient(clientId: string): Promise<Subscription[]> {
+    const results = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.client_id, clientId))
+      .orderBy(desc(subscriptions.created_at));
+    return results as Subscription[];
+  }
+
+  async findByPaypalOrderId(paypalOrderId: string): Promise<Subscription | null> {
+    const results = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.paypal_order_id, paypalOrderId))
+      .limit(1);
+    return (results[0] as Subscription) || null;
+  }
+
   async create(data: {
     client_id: string;
     service_name: string;
@@ -24,6 +42,7 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     equipment_count: number;
     renewal_date: Date;
     tenant_id: string;
+    paypal_order_id?: string;
   }): Promise<Subscription> {
     const results = await db
       .insert(subscriptions)
@@ -34,6 +53,7 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
         equipment_count: data.equipment_count,
         renewal_date: data.renewal_date,
         tenant_id: data.tenant_id,
+        paypal_order_id: data.paypal_order_id,
       })
       .returning();
     return results[0] as Subscription;

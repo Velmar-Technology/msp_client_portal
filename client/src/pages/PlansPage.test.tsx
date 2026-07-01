@@ -606,7 +606,7 @@ describe('PlansPage', () => {
 
       // Initially, Slot #1 is active (pre-populated mock state) and Slot #2 is empty (PENDING ACTIVATION)
       expect(screen.getByText('Slot #1')).toBeInTheDocument();
-      expect(screen.getAllByText('ACTIVE').length).toBe(2);
+      expect(screen.getAllByText('ACTIVE').length).toBe(3);
       expect(screen.getByText('Slot #2')).toBeInTheDocument();
       expect(screen.getByText('PENDING ACTIVATION')).toBeInTheDocument();
 

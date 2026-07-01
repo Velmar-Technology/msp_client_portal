@@ -8,6 +8,7 @@ export interface Subscription {
   status: 'ACTIVE' | 'EXPIRING' | 'EXPIRED' | 'CANCELLED';
   renewal_date: string;
   equipment_count: number;
+  paypal_order_id?: string;
   created_at: string;
 }
 
