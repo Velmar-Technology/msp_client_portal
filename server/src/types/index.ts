@@ -96,11 +96,13 @@ export interface Ticket {
   priority: TicketPriority;
   client_id: string;
   assigned_tech_id: string | null;
+  equipment_id: string | null;
   tenant_id: string;
   client_name?: string;
   client_email?: string;
   assigned_tech_name?: string | null;
   assigned_tech_email?: string | null;
+  device_name?: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -220,6 +222,7 @@ export interface TicketFilters {
   assignedTechId?: string;
   clientId?: string;
   tenantId?: string;
+  equipmentId?: string;
   search?: string;
   page?: number;
   limit?: number;

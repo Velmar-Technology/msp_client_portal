@@ -10,10 +10,12 @@ export interface Ticket {
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   client_id: string;
   assigned_tech_id: string | null;
+  equipment_id: string | null;
   client_name?: string;
   client_email?: string;
   assigned_tech_name?: string | null;
   assigned_tech_email?: string | null;
+  device_name?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -58,6 +60,7 @@ export interface CreateTicketPayload {
   description: string;
   category: string;
   priority?: string;
+  equipmentId?: string;
 }
 
 export const ticketService = {

@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Plus, Search, ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 import { ticketService } from "../services/ticketService";
 import type { Ticket, TicketResponse } from "../services/ticketService";
+import { equipmentService } from "../services/equipmentService";
+import type { SubscriptionEquipment } from "../services/equipmentService";
 import { useTranslation } from "react-i18next";
 import { Page } from "@/components/Page";
 import { Input } from "@/components/ui/input";
@@ -128,6 +130,8 @@ export function TicketsPage() {
   const [ticketToCancel, setTicketToCancel] = useState<Ticket | null>(null);
   const [showBulkCancelAlert, setShowBulkCancelAlert] = useState(false);
   const [alertWarningMessage, setAlertWarningMessage] = useState<string | null>(null);
+  const [deviceFilter, setDeviceFilter] = useState("");
+  const [devices, setDevices] = useState<SubscriptionEquipment[]>([]);
   const limit = 10;
 
   useEffect(() => {
@@ -139,6 +143,19 @@ export function TicketsPage() {
       return () => clearTimeout(timer);
     }
   }, [location.state]);
+
+  // Load active devices for filter dropdown
+  useEffect(() => {
+    async function loadDevices() {
+      try {
+        const result = await equipmentService.getMyDevices();
+        setDevices(result);
+      } catch (err) {
+        console.error("Failed to load devices", err);
+      }
+    }
+    loadDevices();
+  }, []);
 
   const getCategoryLabel = (cat: string) => {
     const map: Record<string, string> = {
@@ -177,6 +194,7 @@ export function TicketsPage() {
       const params: Record<string, string | number> = { page, limit };
       if (statusFilter) params.status = statusFilter;
       if (search) params.search = search;
+      if (deviceFilter) params.equipmentId = deviceFilter;
       const result = await ticketService.getAll(params);
       setTickets(result.data);
       setTotal(result.pagination.total);
@@ -185,7 +203,7 @@ export function TicketsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter, search]);
+  }, [page, statusFilter, search, deviceFilter]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -294,6 +312,15 @@ export function TicketsPage() {
         ),
         cell: ({ row }) => <span className="text-body-md text-on-surface-variant">{row.original.assigned_tech_name || t("tickets.unassigned")}</span>,
 
+      },
+      {
+        accessorKey: "device_name",
+        header: () => (
+          <span className="uppercase text-label-sm text-on-surface-variant font-bold">{t("tickets.tableDevice")}</span>
+        ),
+        cell: ({ row }) => (
+          <span className="text-body-md text-on-surface-variant">{row.original.device_name || t("tickets.noDevice")}</span>
+        ),
       },
       {
         accessorKey: "created_at",
@@ -415,6 +442,23 @@ export function TicketsPage() {
           <option value="CLOSED">{t("tickets.filterClosed")}</option>
           <option value="CANCELLED">{t("tickets.filterCancelled")}</option>
         </select>
+        {devices.length > 0 && (
+          <select
+            value={deviceFilter}
+            onChange={(e) => {
+              setDeviceFilter(e.target.value);
+              setPage(1);
+            }}
+            className="px-4 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary cursor-pointer text-on-surface"
+          >
+            <option value="">{t("tickets.filterAllDevices")}</option>
+            {devices.map((device) => (
+              <option key={device.id} value={device.id}>
+                {device.device_name || `Device ${device.slot_index + 1}`}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* Bulk Actions Bar */}

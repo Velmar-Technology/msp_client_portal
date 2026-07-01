@@ -205,6 +205,13 @@ export class EquipmentService {
 
     return updated!;
   }
+
+  /**
+   * Get all active devices (equipment) for a client across their active subscriptions.
+   */
+  async getActiveDevicesForClient(clientId: string, tenantId: string): Promise<SubscriptionEquipment[]> {
+    return equipmentRepository.findActiveByClient(clientId, tenantId);
+  }
 }
 
 export const equipmentService = new EquipmentService();

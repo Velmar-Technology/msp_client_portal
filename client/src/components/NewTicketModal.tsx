@@ -1,6 +1,8 @@
-import { useState, memo } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { X } from 'lucide-react';
 import { ticketService } from '../services/ticketService';
+import { equipmentService } from '../services/equipmentService';
+import type { SubscriptionEquipment } from '../services/equipmentService';
 import { useTranslation } from 'react-i18next';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
@@ -16,8 +18,22 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
   const [newDesc, setNewDesc] = useState('');
   const [newCategory, setNewCategory] = useState('REPAIR');
   const [newPriority, setNewPriority] = useState('MEDIUM');
+  const [selectedEquipmentId, setSelectedEquipmentId] = useState('');
+  const [devices, setDevices] = useState<SubscriptionEquipment[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    async function loadDevices() {
+      try {
+        const result = await equipmentService.getMyDevices();
+        setDevices(result);
+      } catch (err) {
+        console.error('Failed to load devices for ticket modal', err);
+      }
+    }
+    loadDevices();
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -39,6 +55,7 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
         description: newDesc,
         category: newCategory,
         priority: newPriority,
+        equipmentId: selectedEquipmentId || undefined,
       });
 
       // Upload selected attachments if any
@@ -120,6 +137,23 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
               </select>
             </div>
           </div>
+          {devices.length > 0 && (
+            <div>
+              <label className="block text-label-md text-on-surface mb-1.5">{t('tickets.modalDeviceLabel')}</label>
+              <select
+                value={selectedEquipmentId}
+                onChange={(e) => setSelectedEquipmentId(e.target.value)}
+                className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary cursor-pointer bg-surface-container-lowest text-on-surface"
+              >
+                <option value="">{t('tickets.modalDevicePlaceholder')}</option>
+                {devices.map((device) => (
+                  <option key={device.id} value={device.id}>
+                    {device.device_name || `Device ${device.slot_index + 1}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="block text-label-md text-on-surface mb-1.5">{t('tickets.attachmentsLabel')}</label>

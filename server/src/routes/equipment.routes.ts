@@ -6,6 +6,11 @@ const router = Router();
 
 router.use(authMiddleware);
 
+/** GET /api/v1/equipment/my-devices — Get active devices for the authenticated client */
+router.get('/my-devices', (req, res, next) =>
+  equipmentController.getMyDevices(req, res, next)
+);
+
 /** GET /api/v1/equipment/subscriptions/:subId/slots — Get equipment slots */
 router.get('/subscriptions/:subId/slots', (req, res, next) =>
   equipmentController.getSlots(req, res, next)

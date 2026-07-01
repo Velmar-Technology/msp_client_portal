@@ -8,6 +8,7 @@ export const CreateTicketDTO = z.object({
     errorMap: () => ({ message: 'Category must be REPAIR, WARRANTY, or SERVICE_OUTAGE' }),
   }),
   priority: z.nativeEnum(TicketPriority).optional().default(TicketPriority.MEDIUM),
+  equipmentId: z.string().uuid('Invalid equipment ID').optional(),
 });
 export type CreateTicketInput = z.infer<typeof CreateTicketDTO>;
 
@@ -25,6 +26,7 @@ export const TicketQueryDTO = z.object({
   status: z.nativeEnum(TicketStatus).optional(),
   category: z.nativeEnum(TicketCategory).optional(),
   priority: z.nativeEnum(TicketPriority).optional(),
+  equipmentId: z.string().uuid().optional(),
   search: z.string().optional(),
   page: z.coerce.number().int().positive().optional().default(1),
   limit: z.coerce.number().int().positive().max(100).optional().default(20),

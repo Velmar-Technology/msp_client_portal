@@ -192,7 +192,12 @@
     "noCancelableTickets": "Ninguno de los tickets seleccionados puede ser cancelado.",
     "confirmBulkCancel": "¿Está seguro de que desea cancelar los tickets seleccionados?",
     "assignedTo": "Asignado a",
-    "unassigned": "Sin asignar"
+    "unassigned": "Sin asignar",
+    "filterAllDevices": "Todos los Dispositivos",
+    "tableDevice": "Dispositivo",
+    "noDevice": "—",
+    "modalDeviceLabel": "Dispositivo (Opcional)",
+    "modalDevicePlaceholder": "Seleccionar un dispositivo..."
   },
   "ticketDetail": {
     "backToTickets": "Volver a Tickets",
