@@ -19,6 +19,11 @@ export interface SubscriptionEquipment {
 }
 
 export const equipmentService = {
+  async getMyDevices(): Promise<SubscriptionEquipment[]> {
+    const response = await api.get('/equipment/my-devices');
+    return response.data.data;
+  },
+
   async getSlots(subId: string): Promise<SubscriptionEquipment[]> {
     const response = await api.get(`/equipment/subscriptions/${subId}/slots`);
     return response.data.data;

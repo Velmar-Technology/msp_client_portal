@@ -4,9 +4,10 @@ import { planRepository } from '../repositories/PlanRepository';
 import { invoiceRepository } from '../repositories/InvoiceRepository';
 import { AppError } from '../utils/AppError';
 import { TAX_RATE } from '../config/constants';
-import { Subscription, SubscriptionPlan } from '../types';
+import { Subscription, SubscriptionPlan, InvoiceStatus } from '../types';
 import { CreateSubscriptionInput, UpdateSubscriptionInput, SendQuoteInput } from '../dtos/subscription.dto';
 import { sendQuotationEmail } from '../utils/emailService';
+import { paypalService } from './PaypalService';
 
 export class SubscriptionService {
   async getClientSubscriptions(tenantId: string): Promise<Subscription[]> {
@@ -20,13 +21,108 @@ export class SubscriptionService {
     return sub;
   }
 
+  async createPaypalOrderForSubscription(data: { plan: string; equipmentCount: number; billingCycle?: 'monthly' | 'annual'; currentSubscriptionId?: string }): Promise<{ orderId: string }> {
+    const planDetails = await planRepository.findById(data.plan);
+    if (!planDetails) {
+      throw AppError.notFound('Plan not found');
+    }
+
+    const price = planDetails.price;
+    const equipmentCount = data.equipmentCount ?? 1;
+    const billingCycle = data.billingCycle || 'monthly';
+    const priceMultiplier = billingCycle === 'annual' ? 12 * 0.8 : 1;
+    let total = 0;
+    let description = '';
+
+    if (data.currentSubscriptionId) {
+      const existingSub = await subscriptionRepository.findById(data.currentSubscriptionId);
+      if (!existingSub) throw AppError.notFound('Subscription not found');
+
+      const additionalCount = equipmentCount - existingSub.equipment_count;
+      if (additionalCount <= 0) {
+        throw AppError.badRequest('New equipment count must be greater than current count for an upgrade payment');
+      }
+
+      description = `Upgrade for ${planDetails.name} - Adding ${additionalCount} Equipment`;
+      const subtotal = Math.round(price * priceMultiplier * additionalCount * 100) / 100;
+      const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
+      total = Math.round((subtotal + tax) * 100) / 100;
+    } else {
+      const subtotal = Math.round(price * priceMultiplier * equipmentCount * 100) / 100;
+      const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
+      total = Math.round((subtotal + tax) * 100) / 100;
+      description = `${planDetails.name} Subscription - ${equipmentCount} Equipment (${billingCycle === 'annual' ? 'Annually' : 'Monthly'})`;
+    }
+
+    const referenceId = `SUB-${planDetails.id}-${Date.now()}`;
+    const order = await paypalService.createOrderForAmount(total, description, referenceId);
+
+    return { orderId: order.id };
+  }
+
   async createSubscription(data: CreateSubscriptionInput, clientId: string, tenantId: string, byAdmin = false): Promise<Subscription> {
     const clientUser = await userRepository.findById(clientId);
     if (!clientUser) throw AppError.notFound('Client user not found');
     if (clientUser.tenant_id !== tenantId) throw AppError.forbidden('Client does not belong to this tenant');
     if (clientUser.role !== 'CLIENT') throw AppError.badRequest('Target user must have CLIENT role');
 
+    // Idempotency: Check if this PayPal order was already processed
+    if (data.paypalOrderId) {
+      const existingSub = await subscriptionRepository.findByPaypalOrderId(data.paypalOrderId);
+      if (existingSub) {
+        return existingSub;
+      }
+    }
+
+    // Double plan check: Ensure client doesn't buy the same plan twice
+    const existingSubs = await subscriptionRepository.findByClient(clientId);
+    const hasActivePlan = existingSubs.some((sub) => sub.plan === data.plan && sub.status === 'ACTIVE');
+    if (hasActivePlan) {
+      throw AppError.badRequest(`You already have an active subscription for the ${data.plan} plan. Please modify your existing subscription instead.`);
+    }
+
     const billingCycle = data.billingCycle || 'monthly';
+
+    // Validate PayPal payment if not done by Admin
+    if (!byAdmin) {
+      if (!data.paypalOrderId) {
+        throw AppError.badRequest('PayPal order ID is required for checkout');
+      }
+
+      // 1. Get order details from PayPal
+      const order = await paypalService.getOrder(data.paypalOrderId);
+      
+      // 2. Capture the order if it's approved
+      if (order.status === 'APPROVED') {
+        const capture = await paypalService.captureOrder(data.paypalOrderId);
+        order.status = capture.status;
+      }
+
+      if (order.status !== 'COMPLETED') {
+        throw AppError.badRequest('PayPal payment was not completed');
+      }
+
+      // 3. Verify total paid matches expected total
+      const planDetails = await planRepository.findById(data.plan);
+      if (!planDetails) {
+        throw AppError.notFound('Plan not found');
+      }
+
+      const price = planDetails.price;
+      const equipmentCount = data.equipmentCount ?? 1;
+      const priceMultiplier = billingCycle === 'annual' ? 12 * 0.8 : 1;
+      const subtotal = Math.round(price * priceMultiplier * equipmentCount * 100) / 100;
+      const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
+      const expectedTotal = Math.round((subtotal + tax) * 100) / 100;
+
+      // Extract amount paid from PayPal order purchase units
+      const purchaseUnit = order.purchase_units?.[0];
+      const paidAmount = Number(purchaseUnit?.amount?.value);
+      if (isNaN(paidAmount) || Math.abs(paidAmount - expectedTotal) > 0.05) {
+        throw AppError.badRequest(`Paid amount $${paidAmount} does not match expected subscription cost $${expectedTotal}`);
+      }
+    }
+
     const renewalDate = new Date();
     if (billingCycle === 'annual') {
       renewalDate.setFullYear(renewalDate.getFullYear() + 1);
@@ -47,6 +143,7 @@ export class SubscriptionService {
       equipment_count: data.equipmentCount,
       renewal_date: renewalDate,
       tenant_id: tenantId,
+      paypal_order_id: data.paypalOrderId,
     });
 
     if (byAdmin) {
@@ -82,17 +179,83 @@ export class SubscriptionService {
         due_date: dueDate,
         tenant_id: tenantId,
       });
+    } else {
+      // Create PAID invoice record for the client's PayPal checkout payment
+      const planDetails = await planRepository.findById(data.plan);
+      if (planDetails) {
+        const price = planDetails.price;
+        const equipmentCount = data.equipmentCount ?? 1;
+        const priceMultiplier = billingCycle === 'annual' ? 12 * 0.8 : 1;
+        const subtotal = Math.round(price * priceMultiplier * equipmentCount * 100) / 100;
+        const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
+        const total = Math.round((subtotal + tax) * 100) / 100;
+
+        let invoiceNumber = '';
+        while (true) {
+          const rand = String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
+          invoiceNumber = `INV-${new Date().getFullYear()}-${rand}`;
+          const existing = await invoiceRepository.findByInvoiceNumber(invoiceNumber);
+          if (!existing) break;
+        }
+
+        const dueDate = new Date();
+        await invoiceRepository.create({
+          invoice_number: invoiceNumber,
+          client_id: clientId,
+          amount: subtotal,
+          tax_amount: tax,
+          total: total,
+          due_date: dueDate,
+          tenant_id: tenantId,
+          status: InvoiceStatus.PAID,
+        });
+      }
     }
 
     return subscription;
   }
 
-  async updateSubscription(id: string, data: UpdateSubscriptionInput, tenantId: string): Promise<Subscription> {
+  async updateSubscription(id: string, data: UpdateSubscriptionInput, tenantId: string, byAdmin = false): Promise<Subscription> {
     const sub = await this.getSubscriptionById(id, tenantId);
     let updated = sub;
 
-    if (data.plan) {
-      const res = await subscriptionRepository.updatePlan(sub.id, data.plan as SubscriptionPlan, data.equipmentCount);
+    if (data.plan || data.equipmentCount !== undefined) {
+      const newPlan = data.plan || sub.plan;
+      const newCount = data.equipmentCount !== undefined ? data.equipmentCount : sub.equipment_count;
+
+      if (!byAdmin && newCount > sub.equipment_count) {
+        if (!data.paypalOrderId) {
+          throw AppError.badRequest('PayPal order ID is required to add more devices');
+        }
+
+        const order = await paypalService.getOrder(data.paypalOrderId);
+        if (order.status === 'APPROVED') {
+          const capture = await paypalService.captureOrder(data.paypalOrderId);
+          order.status = capture.status;
+        }
+
+        if (order.status !== 'COMPLETED') {
+          throw AppError.badRequest('PayPal payment for device upgrade was not completed');
+        }
+
+        const planDetails = await planRepository.findById(newPlan);
+        if (!planDetails) throw AppError.notFound('Plan not found');
+
+        const billingCycle = (sub.service_name.includes('Annual') || sub.service_name.includes('Anual')) ? 'annual' : 'monthly';
+        const priceMultiplier = billingCycle === 'annual' ? 12 * 0.8 : 1;
+        const additionalCount = newCount - sub.equipment_count;
+        const subtotal = Math.round(planDetails.price * priceMultiplier * additionalCount * 100) / 100;
+        const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
+        const expectedUpgradeTotal = Math.round((subtotal + tax) * 100) / 100;
+
+        const purchaseUnit = order.purchase_units?.[0];
+        const paidAmount = Number(purchaseUnit?.amount?.value);
+        if (isNaN(paidAmount) || Math.abs(paidAmount - expectedUpgradeTotal) > 0.05) {
+          throw AppError.badRequest(`Paid upgrade amount $${paidAmount} does not match expected upgrade cost $${expectedUpgradeTotal}`);
+        }
+      }
+
+      const res = await subscriptionRepository.updatePlan(sub.id, newPlan as SubscriptionPlan, newCount);
       if (!res) throw AppError.internal('Failed to update subscription');
       updated = res;
     }

@@ -9,6 +9,7 @@
     "help": "Help Center",
     "myTickets": "My Tickets",
     "allTickets": "All Tickets",
+    "devices": "Devices",
     "adminDashboard": "Dashboard",
     "infrastructure": "Service Management",
     "notificationPreferences": "Notifications"
@@ -79,6 +80,7 @@
     "unlimited": "Unlimited",
     "offline": "Offline",
     "unknown": "Unknown",
+    "unavailable": "Unavailable",
     "activeSubscriptions": "Active Subscriptions",
     "manage": "Manage",
     "recentInvoices": "Recent Invoices",
@@ -190,7 +192,12 @@
     "noCancelableTickets": "None of the selected tickets can be cancelled.",
     "confirmBulkCancel": "Are you sure you want to cancel the selected tickets?",
     "assignedTo": "Assigned To",
-    "unassigned": "Unassigned"
+    "unassigned": "Unassigned",
+    "filterAllDevices": "All Devices",
+    "tableDevice": "Device",
+    "noDevice": "—",
+    "modalDeviceLabel": "Device (Optional)",
+    "modalDevicePlaceholder": "Select a device..."
   },
   "ticketDetail": {
     "backToTickets": "Back to Tickets",
@@ -248,7 +255,7 @@
     "title": "Plan Selection",
     "subtitle": "Choose the managed service level that best fits your infrastructure needs. Upgrade or change your plan at any time.",
     "recommended": "RECOMMENDED",
-    "equipmentCount": "Equipment Count",
+    "equipmentCount": "Device Count",
     "selected": "Selected",
     "select": "Select",
     "paymentMethod": "Payment Method",
@@ -268,8 +275,14 @@
     "bankAccount": "Account: 1234-5678-9012-3456",
     "bankReference": "Reference",
     "orderSummary": "Order Summary",
+    "planSummary": "Plan Summary",
+    "basePlanName": "Base Plan ({{name}})",
+    "addonCloudStorage": "Add-on: Cloud Storage",
+    "included": "Included",
+    "additionalDevices": "Additional Devices (x{{count}})",
+    "estimatedMonthly": "Estimated Monthly",
     "planMonthly": "Plan (Monthly)",
-    "equipmentCountSuffix": "equipment",
+    "equipmentCountSuffix": "device(s)",
     "taxes": "Taxes (ITBIS 18%)",
     "emailQuote": "Email Quotation",
     "sendQuoteToCustomer": "Send Quotation to Customer",
@@ -283,6 +296,8 @@
     "unregisteredNamePlaceholder": "e.g. Acme Corporation",
     "unregisteredOption": "-- Unregistered Customer --",
     "total": "Total",
+    "agreeToTermsPrefix": "I have read and agree to the",
+    "termsOfServiceLink": "Terms of Service",
     "encryptedTx": "Encrypted Transaction",
     "militaryGradeSecurity": "Your data is protected with military-grade SSL security.",
     "basic": {
@@ -314,6 +329,15 @@
       "criticalSupport": "24/7 Critical Support",
       "quarterlySecurity": "Quarterly Security Audit"
     }
+  },
+  "devices": {
+    "tableSlot": "Slot",
+    "tableStatus": "Status",
+    "tableDeviceDetails": "Device Details",
+    "tableCloudBackup": "Cloud Backup Storage",
+    "tableActions": "Actions",
+    "actionsLabel": "Actions",
+    "searchPlaceholder": "Search by Device ID..."
   },
   "billing": {
     "title": "Billing History",

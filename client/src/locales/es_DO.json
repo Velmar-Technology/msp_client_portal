@@ -9,6 +9,7 @@
     "help": "Centro de Ayuda",
     "myTickets": "Mis Tickets",
     "allTickets": "Todos los Tickets",
+    "devices": "Dispositivos",
     "adminDashboard": "Panel de Administración",
     "infrastructure": "Gestión de Servicios",
     "notificationPreferences": "Notificaciones"
@@ -79,6 +80,7 @@
     "unlimited": "Ilimitado",
     "offline": "Desconectado",
     "unknown": "Desconocido",
+    "unavailable": "No disponible",
     "activeSubscriptions": "Suscripciones Activas",
     "manage": "Gestionar",
     "recentInvoices": "Facturas Recientes",
@@ -190,7 +192,12 @@
     "noCancelableTickets": "Ninguno de los tickets seleccionados puede ser cancelado.",
     "confirmBulkCancel": "¿Está seguro de que desea cancelar los tickets seleccionados?",
     "assignedTo": "Asignado a",
-    "unassigned": "Sin asignar"
+    "unassigned": "Sin asignar",
+    "filterAllDevices": "Todos los Dispositivos",
+    "tableDevice": "Dispositivo",
+    "noDevice": "—",
+    "modalDeviceLabel": "Dispositivo (Opcional)",
+    "modalDevicePlaceholder": "Seleccionar un dispositivo..."
   },
   "ticketDetail": {
     "backToTickets": "Volver a Tickets",
@@ -248,7 +255,7 @@
     "title": "Selección de Plan",
     "subtitle": "Elija el nivel de servicio gestionado que mejor se adapte a sus necesidades de infraestructura. Actualice o cambie su plan en cualquier momento.",
     "recommended": "RECOMENDADO",
-    "equipmentCount": "Cantidad de Equipos",
+    "equipmentCount": "Cantidad de Dispositivos",
     "selected": "Seleccionado",
     "select": "Seleccionar",
     "paymentMethod": "Método de Pago",
@@ -268,8 +275,14 @@
     "bankAccount": "Cuenta: 1234-5678-9012-3456",
     "bankReference": "Referencia",
     "orderSummary": "Resumen del Pedido",
+    "planSummary": "Resumen del Plan",
+    "basePlanName": "Plan Base ({{name}})",
+    "addonCloudStorage": "Adicional: Almacenamiento en la Nube",
+    "included": "Incluido",
+    "additionalDevices": "Dispositivos Adicionales (x{{count}})",
+    "estimatedMonthly": "Mensual Estimado",
     "planMonthly": "Plan (Mensual)",
-    "equipmentCountSuffix": "equipos",
+    "equipmentCountSuffix": "dispositivo(s)",
     "taxes": "Impuestos (ITBIS 18%)",
     "emailQuote": "Enviar Cotización",
     "sendQuoteToCustomer": "Enviar Cotización al Cliente",
@@ -283,6 +296,8 @@
     "unregisteredNamePlaceholder": "ej. Corporación Acme",
     "unregisteredOption": "-- Cliente No Registrado --",
     "total": "Total",
+    "agreeToTermsPrefix": "He leído y acepto los",
+    "termsOfServiceLink": "Términos de Servicio",
     "encryptedTx": "Transacción Encriptada",
     "militaryGradeSecurity": "Sus datos están protegidos con seguridad SSL de grado militar.",
     "basic": {
@@ -314,6 +329,15 @@
       "criticalSupport": "Soporte Crítico 24/7",
       "quarterlySecurity": "Auditoría Trimestral de Seguridad"
     }
+  },
+  "devices": {
+    "tableSlot": "Ranura",
+    "tableStatus": "Estado",
+    "tableDeviceDetails": "Detalles del Dispositivo",
+    "tableCloudBackup": "Almacenamiento de Respaldo",
+    "tableActions": "Acciones",
+    "actionsLabel": "Acciones",
+    "searchPlaceholder": "Buscar por ID del Dispositivo..."
   },
   "billing": {
     "title": "Historial de Facturación",

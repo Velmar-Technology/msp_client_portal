@@ -31,6 +31,7 @@ export class TicketService {
       category: data.category,
       priority: data.priority,
       client_id: clientId,
+      equipment_id: data.equipmentId || null,
       tenant_id: tenantId,
     });
 

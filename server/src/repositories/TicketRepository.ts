@@ -1,6 +1,6 @@
 import { BaseRepository } from './BaseRepository';
 import { Ticket, TicketAttachment, TicketFilters, TicketStatus, TicketCategory, TicketPriority } from '../types';
-import { db, tickets, users, ticketAttachments } from '../db';
+import { db, tickets, users, ticketAttachments, subscriptionEquipment } from '../db';
 import { eq, and, or, ilike, desc, asc, count, SQL, isNull, isNotNull } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
@@ -23,6 +23,7 @@ export class TicketRepository extends BaseRepository<Ticket> {
         priority: tickets.priority,
         client_id: tickets.client_id,
         assigned_tech_id: tickets.assigned_tech_id,
+        equipment_id: tickets.equipment_id,
         tenant_id: tickets.tenant_id,
         created_at: tickets.created_at,
         updated_at: tickets.updated_at,
@@ -30,10 +31,12 @@ export class TicketRepository extends BaseRepository<Ticket> {
         client_email: clientAlias.email,
         assigned_tech_name: techAlias.name,
         assigned_tech_email: techAlias.email,
+        device_name: subscriptionEquipment.device_name,
       })
       .from(tickets)
       .innerJoin(clientAlias, eq(tickets.client_id, clientAlias.id))
       .leftJoin(techAlias, eq(tickets.assigned_tech_id, techAlias.id))
+      .leftJoin(subscriptionEquipment, eq(tickets.equipment_id, subscriptionEquipment.id))
       .where(eq(tickets.id, id));
 
     return (results[0] as unknown as Ticket) || null;
@@ -45,6 +48,7 @@ export class TicketRepository extends BaseRepository<Ticket> {
     category: TicketCategory;
     priority: TicketPriority;
     client_id: string;
+    equipment_id?: string | null;
     tenant_id: string;
   }): Promise<Ticket> {
     const results = await db
@@ -55,6 +59,7 @@ export class TicketRepository extends BaseRepository<Ticket> {
         category: data.category,
         priority: data.priority,
         client_id: data.client_id,
+        equipment_id: data.equipment_id || null,
         tenant_id: data.tenant_id,
       })
       .returning();
@@ -104,6 +109,9 @@ export class TicketRepository extends BaseRepository<Ticket> {
     if (filters.tenantId) {
       conditions.push(eq(tickets.tenant_id, filters.tenantId));
     }
+    if (filters.equipmentId) {
+      conditions.push(eq(tickets.equipment_id, filters.equipmentId));
+    }
     if (filters.search) {
       conditions.push(
         or(
@@ -137,6 +145,7 @@ export class TicketRepository extends BaseRepository<Ticket> {
         priority: tickets.priority,
         client_id: tickets.client_id,
         assigned_tech_id: tickets.assigned_tech_id,
+        equipment_id: tickets.equipment_id,
         tenant_id: tickets.tenant_id,
         created_at: tickets.created_at,
         updated_at: tickets.updated_at,
@@ -144,10 +153,12 @@ export class TicketRepository extends BaseRepository<Ticket> {
         client_email: clientAlias.email,
         assigned_tech_name: techAlias.name,
         assigned_tech_email: techAlias.email,
+        device_name: subscriptionEquipment.device_name,
       })
       .from(tickets)
       .innerJoin(clientAlias, eq(tickets.client_id, clientAlias.id))
       .leftJoin(techAlias, eq(tickets.assigned_tech_id, techAlias.id))
+      .leftJoin(subscriptionEquipment, eq(tickets.equipment_id, subscriptionEquipment.id))
       .where(whereClause)
       .orderBy(desc(tickets.created_at))
       .limit(limit)

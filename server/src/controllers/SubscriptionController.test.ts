@@ -187,7 +187,8 @@ describe('SubscriptionController', () => {
       expect(mocks.updateSubscription).toHaveBeenCalledWith(
         'sub-1',
         { plan: SubscriptionPlan.STANDARD },
-        'tenant-123'
+        'tenant-123',
+        false
       );
       expect(res.json).toHaveBeenCalledWith({
         success: true,

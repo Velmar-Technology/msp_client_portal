@@ -84,6 +84,7 @@ export const tickets = pgTable(
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
     assigned_tech_id: uuid('assigned_tech_id').references(() => users.id, { onDelete: 'set null' }),
+    equipment_id: uuid('equipment_id').references(() => subscriptionEquipment.id, { onDelete: 'set null' }),
     tenant_id: uuid('tenant_id')
       .references(() => tenants.id, { onDelete: 'cascade' })
       .notNull(),
@@ -97,6 +98,7 @@ export const tickets = pgTable(
     index('idx_tickets_category').on(table.category),
     index('idx_tickets_created').on(table.created_at),
     index('idx_tickets_tenant').on(table.tenant_id),
+    index('idx_tickets_equipment').on(table.equipment_id),
   ]
 );
 
@@ -203,6 +205,7 @@ export const subscriptions = pgTable(
     status: subscriptionStatusEnum('status').default('ACTIVE').notNull(),
     renewal_date: timestamp('renewal_date', { withTimezone: true }).notNull(),
     equipment_count: integer('equipment_count').default(1).notNull(),
+    paypal_order_id: varchar('paypal_order_id', { length: 255 }).unique(),
     tenant_id: uuid('tenant_id')
       .references(() => tenants.id, { onDelete: 'cascade' })
       .notNull(),
@@ -213,6 +216,7 @@ export const subscriptions = pgTable(
     index('idx_subscriptions_client').on(table.client_id),
     index('idx_subscriptions_status').on(table.status),
     index('idx_subscriptions_tenant').on(table.tenant_id),
+    index('idx_subscriptions_paypal_order').on(table.paypal_order_id),
   ]
 );
 

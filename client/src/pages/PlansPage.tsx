@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Check, X, Lock, Shield, Edit, Trash2, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Check, X, Shield, Edit, Trash2, GripVertical, ChevronUp, ChevronDown, Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Page } from '@/components/Page';
 import { Input } from '@/components/ui/input';
@@ -17,9 +17,9 @@ import type { Plan, PlanFeature } from '@/services/planService';
 import { userService } from '@/services/userService';
 import { subscriptionService } from '@/services/subscriptionService';
 import type { Subscription } from '@/services/subscriptionService';
-import { equipmentService } from '@/services/equipmentService';
-import type { SubscriptionEquipment } from '@/services/equipmentService';
 import type { AuthUser } from '@/store/useAuthStore';
+import { DataTable } from '@/components/ui/data-table';
+import type { ColumnDef } from '@tanstack/react-table';
 
 export function PlansPage() {
   const { t, i18n } = useTranslation();
@@ -27,15 +27,56 @@ export function PlansPage() {
   const { plans, loading, fetchPlans, updatePlan, createPlan } = usePlanStore();
   const { addToast } = useNotificationStore();
 
+  const getLocalizedValue = (val: string | Record<string, string> | null | undefined): string => {
+    if (!val) return '';
+    if (typeof val === 'string') {
+      return val;
+    }
+    const lang = i18n.language || 'en_US';
+    const resolvedLang = lang.startsWith('es') ? 'es_DO' : 'en_US';
+    
+    if (val[resolvedLang]) return val[resolvedLang];
+    if (val['en_US']) return val['en_US'];
+    const keys = Object.keys(val);
+    if (keys.length > 0) return val[keys[0]];
+    return '';
+  };
+
+  const getPlanName = (name: string | Record<string, string>) => getLocalizedValue(name);
+  const getPlanDescription = (desc: string | Record<string, string> | null | undefined) => getLocalizedValue(desc);
+
+  const getFeatureText = (text: string | Record<string, string>) => {
+    if (typeof text !== 'string') {
+      return getLocalizedValue(text);
+    }
+    // If the text looks like a translation key (no spaces), translate it
+    if (/^[a-zA-Z0-9_]+$/.test(text)) {
+      const translated = t(`plans.features.${text}`);
+      if (translated !== `plans.features.${text}`) {
+        return translated;
+      }
+    }
+    return text;
+  };
+
   const [userSelectedPlan, setUserSelectedPlan] = useState<string | null>(null);
   const [equipmentCounts, setEquipmentCounts] = useState<Record<string, number>>({});
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'transfer'>('card');
+  const [acceptedTos, setAcceptedTos] = useState(false);
+  const acceptedTosRef = useRef(acceptedTos);
+  useEffect(() => {
+    acceptedTosRef.current = acceptedTos;
+  }, [acceptedTos]);
   const [reference] = useState(() => `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9999)).padStart(4, '0')}`);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const [quoteLoading, setQuoteLoading] = useState(false);
-  const [isUnregistered, setIsUnregistered] = useState(false);
+  const [isUnregistered] = useState(false);
   const [unregisteredEmail, setUnregisteredEmail] = useState('');
   const [unregisteredName, setUnregisteredName] = useState('');
+
+  // Tab Selector State
+  const [activeTab, setActiveTab] = useState<'browse' | 'manage'>('browse');
+
 
   // Admin Editor State
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
@@ -57,11 +98,10 @@ export function PlansPage() {
   const [clients, setClients] = useState<AuthUser[]>([]);
   const [selectedClientId, setSelectedClientId] = useState('');
   const [subscribeLoading, setSubscribeLoading] = useState(false);
+  const [paymentMessage, setPaymentMessage] = useState<string | null>(null);
 
   // Active plan management state
   const [activeSubscriptions, setActiveSubscriptions] = useState<Subscription[]>([]);
-  // Mock state to track provisioned equipment slots and generated OTPs per subscription
-  const [subscriptionEquipment, setSubscriptionEquipment] = useState<Record<string, Partial<SubscriptionEquipment>[]>>({});
 
   const isAdmin = user?.role === 'ADMIN';
 
@@ -86,29 +126,7 @@ export function PlansPage() {
       });
       setEquipmentCounts((prev) => ({ ...prev, ...counts }));
 
-      // Populate real equipment slots for each active subscription from the backend
-      const initialEquip: Record<string, Partial<SubscriptionEquipment>[]> = {};
-      await Promise.all(
-        active.map(async (sub) => {
-          try {
-            const slots = await equipmentService.getSlots(sub.id);
-            initialEquip[sub.id] = slots;
-          } catch (err) {
-            console.error(`Failed to load slots for subscription ${sub.id}:`, err);
-            // Fallback: populate empty slots if backend fails
-            const fallbackSlots = [];
-            for (let i = 0; i < sub.equipment_count; i++) {
-              fallbackSlots.push({
-                id: `device-slot-${i}`,
-                status: 'PENDING_ACTIVATION' as const,
 
-              });
-            }
-            initialEquip[sub.id] = fallbackSlots;
-          }
-        })
-      );
-      setSubscriptionEquipment(initialEquip);
 
       setUserSelectedPlan((prev) => {
         if (!prev && active.length > 0) {
@@ -177,6 +195,213 @@ export function PlansPage() {
 
   const currentEquipmentCount = equipmentCounts[currentPlan?.id] || 1;
 
+  useEffect(() => {
+    if (isAdmin || user?.role !== 'CLIENT' || paymentMethod !== 'card' || !currentPlan) return;
+
+    let scriptElement: HTMLScriptElement | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let buttonsInstance: any = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let upgradeButtonsInstance: any = null;
+
+    async function initializePaypal() {
+      const scriptId = 'paypal-js-sdk-script';
+      const existingScript = document.getElementById(scriptId) as HTMLScriptElement;
+
+      if (!existingScript) {
+        scriptElement = document.createElement('script');
+        scriptElement.id = scriptId;
+        const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID || 'test';
+        scriptElement.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD`;
+        scriptElement.async = true;
+        document.body.appendChild(scriptElement);
+
+        await new Promise((resolve) => {
+          if (scriptElement) scriptElement.onload = resolve;
+          if (typeof window !== 'undefined' && navigator.userAgent.includes('jsdom')) {
+            setTimeout(resolve, 0);
+          }
+        });
+      } else {
+        scriptElement = existingScript;
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (!(window as any).paypal) {
+        console.error('PayPal SDK failed to load');
+        setPaymentMessage('PayPal SDK failed to load');
+        return;
+      }
+
+      const container = document.getElementById('paypal-button-container');
+      if (container) {
+        container.innerHTML = '';
+        setPaymentMessage(null);
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          buttonsInstance = (window as any).paypal.Buttons({
+            createOrder: async () => {
+              if (!acceptedTosRef.current) {
+                addToast({
+                  title: 'Terms of Service',
+                  message: 'Please accept the Terms of Service before proceeding.',
+                  type: 'warning',
+                });
+                throw new Error('Terms of Service not accepted');
+              }
+              setPaymentMessage('Preparing checkout...');
+              try {
+                const response = await subscriptionService.createPaypalOrder({
+                  plan: currentPlan.id,
+                  equipmentCount: currentEquipmentCount,
+                  billingCycle,
+                });
+                setPaymentMessage('Order created. Please approve payment in PayPal window.');
+                return response.orderId;
+              } catch (err) {
+                console.error(err);
+                setPaymentMessage('Failed to prepare checkout.');
+                throw err;
+              }
+            },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onApprove: async (data: any) => {
+              setPaymentMessage('Payment approved. Activating subscription...');
+              setSubscribeLoading(true);
+              try {
+                await subscriptionService.create({
+                  serviceName: getPlanName(currentPlan.name),
+                  plan: currentPlan.id,
+                  equipmentCount: currentEquipmentCount,
+                  billingCycle,
+                  paypalOrderId: data.orderID,
+                });
+                setPaymentMessage('Subscription activated successfully!');
+                addToast({
+                  title: 'Subscribed Successfully',
+                  message: `Successfully subscribed to the ${getPlanName(currentPlan.name)} plan.`,
+                  type: 'success',
+                });
+                await fetchActiveSubscriptions();
+              } catch (err) {
+                console.error(err);
+                setPaymentMessage('Failed to activate subscription.');
+                addToast({
+                  title: 'Subscription Failed',
+                  message: 'Payment verification failed or could not activate subscription.',
+                  type: 'error',
+                });
+              } finally {
+                setSubscribeLoading(false);
+              }
+            },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onError: (err: any) => {
+              console.error(err);
+              setPaymentMessage('PayPal Checkout encountered an error.');
+            }
+          });
+          buttonsInstance.render('#paypal-button-container');
+        } catch (err) {
+          console.error('Failed to render PayPal buttons', err);
+        }
+      }
+
+      const upgradeContainer = document.getElementById('paypal-upgrade-button-container');
+      if (upgradeContainer) {
+        upgradeContainer.innerHTML = '';
+        setPaymentMessage(null);
+        try {
+          const activeSub = activeSubscriptions.find((sub) => sub.id === subscriptionToModifyId) || activeSubscriptions[0];
+          if (activeSub) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            upgradeButtonsInstance = (window as any).paypal.Buttons({
+              createOrder: async () => {
+                if (!acceptedTosRef.current) {
+                  addToast({
+                    title: 'Terms of Service',
+                    message: 'Please accept the Terms of Service before proceeding.',
+                    type: 'warning',
+                  });
+                  throw new Error('Terms of Service not accepted');
+                }
+                setPaymentMessage('Preparing upgrade checkout...');
+                try {
+                  const response = await subscriptionService.createPaypalOrder({
+                    plan: currentPlan.id,
+                    equipmentCount: currentEquipmentCount,
+                    billingCycle,
+                    currentSubscriptionId: activeSub.id,
+                  });
+                  setPaymentMessage('Upgrade order created. Please approve payment in PayPal window.');
+                  return response.orderId;
+                } catch (err) {
+                  console.error(err);
+                  setPaymentMessage('Failed to prepare upgrade checkout.');
+                  throw err;
+                }
+              },
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              onApprove: async (data: any) => {
+                setPaymentMessage('Upgrade payment approved. Updating subscription...');
+                setSubscribeLoading(true);
+                try {
+                  await subscriptionService.update(activeSub.id, {
+                    plan: currentPlan.id,
+                    equipmentCount: currentEquipmentCount,
+                    paypalOrderId: data.orderID,
+                  });
+                  setPaymentMessage('Subscription upgraded successfully!');
+                  addToast({
+                    title: 'Subscription Updated',
+                    message: `Successfully updated your subscription to ${getPlanName(currentPlan.name)} with ${currentEquipmentCount} devices.`,
+                    type: 'success',
+                  });
+                  await fetchActiveSubscriptions();
+                } catch (err) {
+                  console.error(err);
+                  setPaymentMessage('Failed to update subscription.');
+                  addToast({
+                    title: 'Upgrade Failed',
+                    message: 'Payment verification failed or could not upgrade subscription.',
+                    type: 'error',
+                  });
+                } finally {
+                  setSubscribeLoading(false);
+                }
+              },
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              onError: (err: any) => {
+                console.error(err);
+                setPaymentMessage('PayPal Upgrade Checkout encountered an error.');
+              }
+            });
+            upgradeButtonsInstance.render('#paypal-upgrade-button-container');
+          }
+        } catch (err) {
+          console.error('Failed to render PayPal upgrade buttons', err);
+        }
+      }
+    }
+
+    const timer = setTimeout(() => {
+      initializePaypal();
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      if (buttonsInstance && buttonsInstance.close) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        buttonsInstance.close().catch((e: any) => console.error('Error closing buttons', e));
+      }
+      if (upgradeButtonsInstance && upgradeButtonsInstance.close) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        upgradeButtonsInstance.close().catch((e: any) => console.error('Error closing upgrade buttons', e));
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin, user, paymentMethod, currentPlan, currentEquipmentCount, billingCycle, subscriptionToModifyId, activeSubscriptions, fetchActiveSubscriptions, addToast]);
+
   const handleAdjustEquipmentCount = (planId: string, delta: number) => {
     setEquipmentCounts((prev) => ({
       ...prev,
@@ -184,84 +409,21 @@ export function PlansPage() {
     }));
   };
 
-  // Handler to provision a slot / generate OTP
-  const handleGenerateOTP = async (subId: string, slotIndex: number) => {
-    try {
-      const updatedSlot = await equipmentService.generateOTP(subId, slotIndex);
-      setSubscriptionEquipment((prev) => {
-        const current = [...(prev[subId] || [])];
-        current[slotIndex] = updatedSlot;
-        return { ...prev, [subId]: current };
-      });
-      addToast({
-        title: 'OTP Generated',
-        message: `Temporary activation code ${updatedSlot.otp} generated for slot #${slotIndex + 1}.`,
-        type: 'success',
-      });
-    } catch (err) {
-      console.error('Failed to generate OTP:', err);
-      const error = err as { response?: { data?: { message?: string } }; message?: string };
-      addToast({
-        title: 'Error',
-        message: error.response?.data?.message || error.message || 'Failed to generate activation code.',
-        type: 'error',
-      });
-    }
-  };
 
-  // Handler to mock activate a device
-  const handleMockActivate = async (subId: string, slotIndex: number, deviceName: string, deviceSerial: string) => {
-    try {
-      const updatedSlot = await equipmentService.activateSlot(subId, slotIndex, deviceName, deviceSerial);
-      setSubscriptionEquipment((prev) => {
-        const current = [...(prev[subId] || [])];
-        current[slotIndex] = updatedSlot;
-        return { ...prev, [subId]: current };
-      });
-      addToast({
-        title: 'Equipment Activated',
-        message: `Device ${deviceName} successfully activated. Nextcloud backup account provisioned.`,
-        type: 'success',
-      });
-    } catch (err) {
-      console.error('Failed to activate equipment:', err);
-      const error = err as { response?: { data?: { message?: string } }; message?: string };
-      addToast({
-        title: 'Error',
-        message: error.response?.data?.message || error.message || 'Failed to activate device.',
-        type: 'error',
-      });
-    }
-  };
 
-  // Handler to revoke / deactivate a device
-  const handleRevokeEquipment = async (subId: string, slotIndex: number) => {
-    try {
-      const updatedSlot = await equipmentService.deactivateSlot(subId, slotIndex);
-      setSubscriptionEquipment((prev) => {
-        const current = [...(prev[subId] || [])];
-        current[slotIndex] = updatedSlot;
-        return { ...prev, [subId]: current };
-      });
-      addToast({
-        title: 'Slot Revoked',
-        message: 'Equipment slot revoked. Nextcloud account deleted.',
-        type: 'info',
-      });
-    } catch (err) {
-      console.error('Failed to revoke equipment:', err);
-      const error = err as { response?: { data?: { message?: string } }; message?: string };
-      addToast({
-        title: 'Error',
-        message: error.response?.data?.message || error.message || 'Failed to deactivate slot.',
-        type: 'error',
-      });
-    }
-  };
 
   const handleProcessSubscription = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentPlan) return;
+
+    if (!isAdmin && !acceptedTos) {
+      addToast({
+        title: 'Terms of Service',
+        message: 'Please accept the Terms of Service before proceeding.',
+        type: 'warning',
+      });
+      return;
+    }
 
     if (isAdmin && !selectedClientId) {
       addToast({
@@ -362,6 +524,14 @@ export function PlansPage() {
 
   const handleUpdateSubscription = async (subId: string, count: number) => {
     if (!currentPlan) return;
+    if (!isAdmin && !acceptedTos) {
+      addToast({
+        title: 'Terms of Service',
+        message: 'Please accept the Terms of Service before proceeding.',
+        type: 'warning',
+      });
+      return;
+    }
     setSubscribeLoading(true);
     try {
       await subscriptionService.update(subId, {
@@ -422,37 +592,7 @@ export function PlansPage() {
   const tax = Math.round(subtotal * 0.18 * 100) / 100;
   const total = Math.round((subtotal + tax) * 100) / 100;
 
-  const getLocalizedValue = (val: string | Record<string, string> | null | undefined): string => {
-    if (!val) return '';
-    if (typeof val === 'string') {
-      return val;
-    }
-    const lang = i18n.language || 'en_US';
-    const resolvedLang = lang.startsWith('es') ? 'es_DO' : 'en_US';
-    
-    if (val[resolvedLang]) return val[resolvedLang];
-    if (val['en_US']) return val['en_US'];
-    const keys = Object.keys(val);
-    if (keys.length > 0) return val[keys[0]];
-    return '';
-  };
 
-  const getPlanName = (name: string | Record<string, string>) => getLocalizedValue(name);
-  const getPlanDescription = (desc: string | Record<string, string> | null | undefined) => getLocalizedValue(desc);
-
-  const getFeatureText = (text: string | Record<string, string>) => {
-    if (typeof text !== 'string') {
-      return getLocalizedValue(text);
-    }
-    // If the text looks like a translation key (no spaces), translate it
-    if (/^[a-zA-Z0-9_]+$/.test(text)) {
-      const translated = t(`plans.features.${text}`);
-      if (translated !== `plans.features.${text}`) {
-        return translated;
-      }
-    }
-    return text;
-  };
 
   const getTierLabel = (planId: string) => {
     if (planId === 'BASIC') return t('plans.basic.tier') || 'Level 1';
@@ -460,6 +600,87 @@ export function PlansPage() {
     if (planId === 'PREMIUM') return t('plans.premium.tier') || 'Level 3';
     return 'Level';
   };
+
+  // Table Columns for Subscription Dashboard (DataTable)
+  const subscriptionDashboardColumns: ColumnDef<Subscription>[] = [
+    {
+      accessorKey: 'service_name',
+      header: 'Service Name',
+      cell: ({ row }) => (
+        <span className="font-semibold text-primary text-body-sm">
+          {row.getValue('service_name')}
+        </span>
+      )
+    },
+    {
+      accessorKey: 'plan',
+      header: 'Tier',
+      cell: ({ row }) => {
+        const planId = row.getValue('plan') as string;
+        return (
+          <span className="inline-block px-2 py-0.5 border border-outline-variant rounded text-mono w-fit text-on-surface-variant font-medium text-xs">
+            {getTierLabel(planId)}
+          </span>
+        );
+      }
+    },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      cell: ({ row }) => (
+        <span className="bg-success/15 text-success border border-success/30 px-2.5 py-1 rounded-full text-label-sm font-bold">
+          {row.getValue('status')}
+        </span>
+      )
+    },
+    {
+      accessorKey: 'renewal_date',
+      header: 'Renewal Date',
+      cell: ({ row }) => {
+        const dateStr = row.getValue('renewal_date') as string;
+        return (
+          <span className="text-body-sm text-on-surface-variant">
+            {new Date(dateStr).toLocaleDateString(i18n.language.startsWith('es') ? 'es-DO' : 'en-US', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+            })}
+          </span>
+        );
+      }
+    },
+    {
+      accessorKey: 'equipment_count',
+      header: 'Devices Limit',
+      cell: ({ row }) => (
+        <span className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-xs font-semibold">
+          {row.getValue('equipment_count')} Devices
+        </span>
+      )
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => {
+        const sub = row.original;
+        return (
+          <button
+            type="button"
+            onClick={() => {
+              setUserSelectedPlan(sub.plan);
+              document.getElementById('customer-select')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="text-label-sm text-primary hover:underline font-semibold cursor-pointer"
+          >
+            Manage
+          </button>
+        );
+      }
+    }
+  ];
+
+
+
 
   // Open Edit Modal
   const handleEditClick = (plan: Plan) => {
@@ -721,8 +942,44 @@ export function PlansPage() {
   };
 
   const renderPaymentFields = () => {
+    if (currentPlan) {
+      const alreadySubscribed = activeSubscriptions.some((sub) => sub.plan === currentPlan.id && sub.status === 'ACTIVE');
+      if (alreadySubscribed) {
+        return (
+          <div className="bg-warning/15 border border-warning/30 p-4 rounded-xl text-center space-y-2 my-4">
+            <p className="text-body-md font-semibold text-warning">Active Plan Already Registered</p>
+            <p className="text-body-sm text-on-surface-variant">
+              You already have an active subscription for the <strong>{getPlanName(currentPlan.name)}</strong> plan. To change device slots or update details, please use the modification tools on the active subscription manager.
+            </p>
+          </div>
+        );
+      }
+    }
+
     return (
       <>
+        {!isAdmin && (
+          <div className="flex items-start gap-2.5 p-3 bg-surface-container rounded-lg border border-outline-variant mb-4">
+            <input
+              type="checkbox"
+              id="tos-checkbox"
+              checked={acceptedTos}
+              onChange={(e) => setAcceptedTos(e.target.checked)}
+              className="h-4 w-4 rounded border-outline text-primary focus:ring-primary mt-1 cursor-pointer"
+            />
+            <label htmlFor="tos-checkbox" className="text-body-sm text-on-surface cursor-pointer select-none">
+              {t('plans.agreeToTermsPrefix')}{' '}
+              <a
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline hover:text-primary/80 transition-colors font-medium"
+              >
+                {t('plans.termsOfServiceLink')}
+              </a>
+            </label>
+          </div>
+        )}
         <h2 className="text-h2 text-primary mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
           {t('plans.paymentMethod')}
         </h2>
@@ -752,38 +1009,21 @@ export function PlansPage() {
         <div className="space-y-4">
           {paymentMethod === 'card' ? (
             <>
-              <div>
-                <label htmlFor="card-name" className="block text-label-md text-on-surface mb-1.5">{t('plans.nameOnCard')}</label>
-                <Input id="card-name" type="text" placeholder={t('plans.nameOnCardPlaceholder')} className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface" />
-              </div>
-              <div>
-                <label htmlFor="card-number" className="block text-label-md text-on-surface mb-1.5">{t('plans.cardNumber')}</label>
-                <Input id="card-number" type="text" placeholder={t('plans.cardNumberPlaceholder')} className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="card-expiration" className="block text-label-md text-on-surface mb-1.5">{t('plans.expiration')}</label>
-                  <Input id="card-expiration" type="text" placeholder={t('plans.expirationPlaceholder')} className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface" />
+              <p className="text-body-md text-on-surface-variant mb-4">
+                Please complete your checkout payment securely using PayPal. Once approved, your subscription will activate immediately.
+              </p>
+              {paymentMessage && (
+                <div className={`p-3 rounded-lg mb-4 text-label-md font-semibold text-center ${
+                  paymentMessage.includes('activated') || paymentMessage.includes('successfully')
+                    ? 'bg-success/10 text-success'
+                    : 'bg-primary/10 text-primary animate-pulse'
+                }`}>
+                  {paymentMessage}
                 </div>
-                <div>
-                  <label htmlFor="card-cvv" className="block text-label-md text-on-surface mb-1.5">{t('plans.cvv')}</label>
-                  <Input id="card-cvv" type="text" placeholder={t('plans.cvvPlaceholder')} className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface" />
-                </div>
+              )}
+              <div id="paypal-button-container" className="my-4 min-h-[150px] flex items-center justify-center bg-surface rounded-xl p-4 border border-outline-variant border-dashed">
+                <span className="text-label-md text-on-surface-variant">Loading PayPal Checkout...</span>
               </div>
-              <button
-                onClick={handleProcessSubscription}
-                disabled={subscribeLoading}
-                className="w-full bg-primary text-on-primary py-3 rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
-              >
-                {subscribeLoading ? (
-                  'Processing...'
-                ) : (
-                  <>
-                    <Lock className="h-4 w-4" />
-                    {t('plans.processPayment')}
-                  </>
-                )}
-              </button>
             </>
           ) : (
             <div className="text-center py-8 text-body-md text-on-surface-variant space-y-4">
@@ -805,6 +1045,66 @@ export function PlansPage() {
     );
   };
 
+  const renderCheckoutButtonAndSheet = () => {
+    return (
+      <div className="space-y-4 text-center py-4">
+        <p className="text-body-md text-on-surface-variant">
+          Ready to activate your **{getPlanName(currentPlan.name)}** subscription?
+        </p>
+        <Sheet>
+          <SheetTrigger asChild>
+            <button className="w-full bg-primary text-on-primary py-3.5 rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer font-bold shadow-md">
+              Proceed to Checkout (${total.toFixed(2)})
+            </button>
+          </SheetTrigger>
+          <SheetContent className="w-[400px] p-6 sm:w-[500px] overflow-y-auto bg-surface text-on-surface border-l border-outline-variant">
+            <SheetHeader className="pb-4 border-b p-2 border-outline-variant">
+              <SheetTitle className="text-h3 text-primary">{t('plans.orderSummary')}</SheetTitle>
+            </SheetHeader>
+            
+            {/* Order Summary Details */}
+            <div className="py-6 space-y-6">
+              <div className="space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-body-md font-semibold text-on-surface">{getPlanName(currentPlan.name)} {billingCycle === 'annual' ? 'Plan (Annually)' : t('plans.planMonthly')}</p>
+                    <p className="text-label-sm text-on-surface-variant mt-0.5">{currentEquipmentCount}x {t('plans.equipmentCountSuffix')}</p>
+                  </div>
+                  <span className="text-body-md font-semibold text-on-surface">${subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-body-md text-on-surface-variant">
+                  <span>{t('plans.taxes')}</span>
+                  <span>${tax.toFixed(2)}</span>
+                </div>
+                <div className="border-t border-outline-variant pt-3 flex justify-between">
+                  <span className="text-body-md font-bold text-on-surface">{t('plans.total')}</span>
+                  <span className="text-body-md font-bold text-primary text-lg">${total.toFixed(2)}</span>
+                </div>
+              </div>
+
+              {/* Payment Fields inside the Sheet */}
+              <div className="border-t border-outline-variant pt-6">
+                {renderPaymentFields()}
+              </div>
+
+
+
+              <div className="bg-surface-container-low border border-outline-variant/30 rounded-lg p-4 flex items-start gap-3">
+                <Shield className="h-5 w-5 text-success shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-label-md font-medium text-on-surface">{t('plans.encryptedTx')}</p>
+                  <p className="text-label-sm text-on-surface-variant mt-0.5">
+                    {t('plans.militaryGradeSecurity')}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
+    );
+  };
+
   const renderManageActiveSubscription = (activeSub: Subscription) => {
     return (
       <div className="space-y-6">
@@ -823,17 +1123,54 @@ export function PlansPage() {
             <div className="bg-primary/5 border border-primary/10 rounded-lg p-4">
               <p className="text-body-md font-semibold text-primary">Subscription Modification</p>
               <p className="text-body-sm text-on-surface-variant mt-1">
-                You are modifying your subscription to the <strong className="text-on-surface">{getPlanName(currentPlan.name)}</strong> plan with <strong className="text-on-surface">{currentEquipmentCount}x</strong> equipment.
+                You are modifying your subscription to the <strong className="text-on-surface">{getPlanName(currentPlan.name)}</strong> plan with <strong className="text-on-surface">{currentEquipmentCount}x</strong> device(s).
               </p>
             </div>
 
-            <button
-              onClick={() => handleUpdateSubscription(activeSub.id, currentEquipmentCount)}
-              disabled={subscribeLoading}
-              className="w-full bg-primary text-on-primary py-3 rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
-            >
-              {subscribeLoading ? 'Updating...' : 'Update Subscription'}
-            </button>
+            {!isAdmin && (
+              <div className="flex items-start gap-2.5 p-3 bg-surface-container rounded-lg border border-outline-variant my-3">
+                <input
+                  type="checkbox"
+                  id="tos-checkbox-manage"
+                  checked={acceptedTos}
+                  onChange={(e) => setAcceptedTos(e.target.checked)}
+                  className="h-4 w-4 rounded border-outline text-primary focus:ring-primary mt-1 cursor-pointer"
+                />
+                <label htmlFor="tos-checkbox-manage" className="text-body-sm text-on-surface cursor-pointer select-none">
+                  {t('plans.agreeToTermsPrefix')}{' '}
+                  <a
+                    href="/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline hover:text-primary/80 transition-colors font-medium"
+                  >
+                    {t('plans.termsOfServiceLink')}
+                  </a>
+                </label>
+              </div>
+            )}
+
+            {currentEquipmentCount > activeSub.equipment_count ? (
+              <div className="mt-2 border-t border-outline-variant pt-4">
+                <p className="text-body-sm text-on-surface-variant mb-3 font-medium">
+                  Adding more devices requires a PayPal payment to activate the additional licenses immediately.
+                </p>
+                <div id="paypal-upgrade-button-container" className="my-2 min-h-[150px] flex items-center justify-center bg-surface rounded-xl p-4 border border-outline-variant border-dashed">
+                  <span className="text-label-md text-on-surface-variant">Loading PayPal Upgrade...</span>
+                </div>
+                {paymentMessage && (
+                  <p className="text-body-xs text-primary font-medium mt-2">{paymentMessage}</p>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={() => handleUpdateSubscription(activeSub.id, currentEquipmentCount)}
+                disabled={subscribeLoading}
+                className="w-full bg-primary text-on-primary py-3 rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
+              >
+                {subscribeLoading ? 'Updating...' : 'Update Subscription'}
+              </button>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
@@ -854,105 +1191,12 @@ export function PlansPage() {
           </div>
         )}
 
-        {/* Licensed Equipment & OTP Activation UI Section */}
-        {currentPlan.id === activeSub.plan && (
-          <div className="mt-6 border-t border-outline-variant pt-6">
-            <h3 className="text-body-lg font-bold text-primary mb-3">
-              Licensed Equipment & Activation (OTP)
-            </h3>
-            <p className="text-body-sm text-on-surface-variant mb-4">
-              Manage devices associated with this subscription. Download our client app on your equipment and enter the unique OTP below to activate premium features.
-            </p>
-            
-            <div className="space-y-3">
-              {(subscriptionEquipment[activeSub.id] || []).map((equip, idx) => (
-                <div key={equip.id} className="border border-outline-variant rounded-lg p-3 bg-surface-container-low/40 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-label-sm font-semibold text-on-surface">Slot #{idx + 1}</span>
-                      {equip.status === 'ACTIVE' ? (
-                        <span className="bg-success/15 text-success border border-success/30 px-2 py-0.5 rounded text-[10px] font-bold">
-                          ACTIVE
-                        </span>
-                      ) : (
-                        <span className="bg-warning/15 text-warning border border-warning/30 px-2 py-0.5 rounded text-[10px] font-bold animate-pulse">
-                          PENDING ACTIVATION
-                        </span>
-                      )}
-                    </div>
-                    {equip.status === 'ACTIVE' ? (
-                      <div className="mt-1">
-                        <p className="text-body-sm font-medium text-on-surface">{equip.device_name || 'Unnamed Device'}</p>
-                        <p className="text-label-sm text-on-surface-variant font-mono">{equip.device_serial || 'No Serial'}</p>
-                        {equip.nextcloud_username && (
-                          <div className="mt-2 bg-surface-container/60 p-2.5 rounded border border-outline-variant/30 text-label-sm space-y-1">
-                            <p className="font-semibold text-primary">☁️ Nextcloud Backup Account:</p>
-                            <p className="text-on-surface-variant font-mono">User: {equip.nextcloud_username}</p>
-                            <p className="text-on-surface-variant font-mono">Pass: {equip.nextcloud_password}</p>
-                          </div>
-                        )}
-                      </div>
-                    ) : equip.otp ? (
-                      <div className="mt-1 bg-surface-container p-2 rounded border border-outline-variant/50">
-                        <p className="text-body-sm font-bold text-primary font-mono select-all">OTP: {equip.otp}</p>
-                        <p className="text-[10px] text-on-surface-variant mt-0.5 font-medium">
-                          Expires: {equip.otp_expires_at ? new Date(equip.otp_expires_at).toLocaleString() : ''}
-                        </p>
 
-                      </div>
-                    ) : (
-                      <p className="text-body-sm text-on-surface-variant mt-1">Empty license slot</p>
-                    )}
-                  </div>
-
-                  <div className="flex gap-2 shrink-0">
-                    {equip.status === 'ACTIVE' ? (
-                      <button
-                        type="button"
-                        onClick={() => handleRevokeEquipment(activeSub.id, idx)}
-                        className="text-label-sm border border-error/30 text-error hover:bg-error/5 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
-                      >
-                        Deactivate
-                      </button>
-                    ) : equip.otp ? (
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const devName = prompt('Enter simulated device name:', `Workstation-${idx + 1}`) || `PC-${idx + 1}`;
-                            const devSerial = `SN-SIM-${Math.floor(100000 + Math.random() * 900000)}`;
-                            handleMockActivate(activeSub.id, idx, devName, devSerial);
-                          }}
-                          className="text-label-sm bg-success text-on-success hover:opacity-90 px-2.5 py-1.5 rounded-lg transition-opacity cursor-pointer font-medium"
-                        >
-                          Simulate Agent Activation
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleGenerateOTP(activeSub.id, idx)}
-                          className="text-label-sm border border-outline-variant hover:bg-surface-container px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
-                        >
-                          Regenerate OTP
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleGenerateOTP(activeSub.id, idx)}
-                        className="text-label-sm bg-primary text-on-primary hover:opacity-90 px-2.5 py-1.5 rounded-lg transition-opacity cursor-pointer font-medium"
-                      >
-                        Generate Activation OTP
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     );
   };
+
+  const showTabs = !isAdmin && activeSubscriptions.length > 0;
 
   return (
     <Page
@@ -960,473 +1204,656 @@ export function PlansPage() {
       subtitle={t('plans.subtitle')}
       isLoading={loading && filteredPlans.length === 0}
     >
-      {/* Billing Cycle Switcher & Admin Actions */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
-        <div className="md:w-1/3" /> {/* Left Spacer */}
-        <div className="bg-surface-container-low border border-outline-variant p-1 rounded-xl flex items-center gap-1">
+      {/* Tabs Section */}
+      {showTabs && (
+        <div className="border-b border-outline-variant flex gap-8 mb-8">
           <button
             type="button"
-            onClick={() => setBillingCycle('monthly')}
-            className={`px-4 py-2 rounded-lg text-label-md font-semibold transition-all cursor-pointer ${
-              billingCycle === 'monthly'
-                ? 'bg-primary text-on-primary shadow-sm'
-                : 'text-on-surface-variant hover:text-on-surface'
+            className={`pb-3 text-label-md font-semibold transition-all cursor-pointer ${
+              activeTab === 'browse'
+                ? 'border-b-2 border-primary text-primary font-bold'
+                : 'text-on-surface-variant hover:text-on-surface border-b-2 border-transparent'
             }`}
+            onClick={() => setActiveTab('browse')}
           >
-            Monthly
+            Browse Plans
           </button>
           <button
             type="button"
-            onClick={() => setBillingCycle('annual')}
-            className={`px-4 py-2 rounded-lg text-label-md font-semibold transition-all cursor-pointer flex items-center gap-2 ${
-              billingCycle === 'annual'
-                ? 'bg-primary text-on-primary shadow-sm'
-                : 'text-on-surface-variant hover:text-on-surface'
+            className={`pb-3 text-label-md font-semibold transition-all cursor-pointer ${
+              activeTab === 'manage'
+                ? 'border-b-2 border-primary text-primary font-bold'
+                : 'text-on-surface-variant hover:text-on-surface border-b-2 border-transparent'
             }`}
+            onClick={() => setActiveTab('manage')}
           >
-            <span>Annually</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-              billingCycle === 'annual'
-                ? 'bg-on-primary text-primary'
-                : 'bg-primary/10 text-primary'
-            }`}>
-              Save 20%
-            </span>
+            Manage Subscription
           </button>
         </div>
-        <div className="md:w-1/3 flex justify-end">
-          {isAdmin && (
-            <button
-              type="button"
-              onClick={handleCreateClick}
-              className="bg-primary text-on-primary px-4 py-2 rounded-lg text-label-md font-semibold hover:opacity-90 transition-opacity cursor-pointer flex items-center gap-1.5 shadow-sm"
-            >
-              <span>+ Add Plan</span>
-            </button>
-          )}
-        </div>
-      </div>
+      )}
 
-      {/* Plan Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 justify-center gap-6 mb-12">
-        {filteredPlans.map((plan) => (
-          <div
-            key={plan.id}
-            className={`relative bg-surface-container-lowest border rounded-xl p-6 pt-8 flex flex-col transition-all cursor-pointer text-on-surface ${
-              selectedPlan === plan.id
-                ? 'border-primary shadow-md ring-1 ring-primary'
-                : 'border-outline-variant shadow-sm hover:shadow-md'
-            } ${plan.active === false ? 'opacity-70 bg-surface-container-low/40 border-dashed' : ''}`}
-            onClick={() => setUserSelectedPlan(plan.id)}
-          >
-            {/* Disabled Badge */}
-            {plan.active === false && (
-              <div className="absolute top-3 left-3">
-                <span className="bg-error/15 text-error border border-error/30 px-2.5 py-0.5 rounded-lg text-[10px] font-bold">
-                  Disabled
-                </span>
-              </div>
-            )}
-
-            {plan.recommended && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="bg-primary text-on-primary px-3 py-1 rounded-full text-label-sm font-bold">
-                  {t('plans.recommended')}
-                </span>
-              </div>
-            )}
-
-            {/* Admin Edit Trigger */}
-            {isAdmin && (
+      {(isAdmin || activeTab === 'browse') ? (
+        <>
+          {/* Billing Cycle Switcher & Admin Actions */}
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+            <div className="md:w-1/3" /> {/* Left Spacer */}
+            <div className="bg-surface-container-low border border-outline-variant p-1 rounded-xl flex items-center gap-1">
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleEditClick(plan);
-                }}
-                className="absolute top-3 right-3 bg-surface-container hover:bg-surface-container-high border border-outline-variant p-1.5 rounded-lg transition-colors cursor-pointer text-on-surface-variant flex items-center gap-1 text-[11px] font-semibold z-10"
+                type="button"
+                onClick={() => setBillingCycle('monthly')}
+                className={`px-4 py-2 rounded-lg text-label-md font-semibold transition-all cursor-pointer ${
+                  billingCycle === 'monthly'
+                    ? 'bg-primary text-on-primary shadow-sm'
+                    : 'text-on-surface-variant hover:text-on-surface'
+                }`}
               >
-                <Edit className="h-3.5 w-3.5" />
-                Edit
+                Monthly
               </button>
-            )}
-
-            {/* Active Status Badge */}
-            {!isAdmin && activeSubscriptions.some((sub) => sub.plan === plan.id) && (
-              <span className="absolute top-3 right-3 bg-success/15 text-success border border-success/30 px-2.5 py-1 rounded-lg text-label-sm font-bold animate-pulse z-10">
-                Active
-              </span>
-            )}
-
-            <span className="inline-block mb-3 px-2 py-0.5 border border-outline-variant rounded text-mono w-fit text-on-surface-variant">
-              {getTierLabel(plan.id)}
-            </span>
-
-            <h3 className="text-h2 text-primary mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
-              {getPlanName(plan.name)}
-            </h3>
-            <p className="text-body-md text-on-surface-variant mb-4">{getPlanDescription(plan.description)}</p>
-
-            <div className="mb-6">
-              {billingCycle === 'annual' ? (
-                <>
-                  <span className="text-4xl font-bold text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
-                    ${(plan.price * 0.8).toFixed(2)}
-                  </span>
-                  <span className="text-body-md text-on-surface-variant"> /mo</span>
-                  <div className="text-label-sm text-on-surface-variant mt-1 font-medium">
-                    Billed annually as ${(plan.price * 12 * 0.8).toFixed(2)}/yr
-                  </div>
-                </>
-              ) : (
-                <>
-                  <span className="text-4xl font-bold text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
-                    ${plan.price}
-                  </span>
-                  <span className="text-body-md text-on-surface-variant"> /mo</span>
-                  <div className="text-label-sm text-on-surface-variant mt-1 opacity-0 select-none">
-                    Placeholder
-                  </div>
-                </>
+              <button
+                type="button"
+                onClick={() => setBillingCycle('annual')}
+                className={`px-4 py-2 rounded-lg text-label-md font-semibold transition-all cursor-pointer flex items-center gap-2 ${
+                  billingCycle === 'annual'
+                    ? 'bg-primary text-on-primary shadow-sm'
+                    : 'text-on-surface-variant hover:text-on-surface'
+                }`}
+              >
+                <span>Annually</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  billingCycle === 'annual'
+                    ? 'bg-on-primary text-primary'
+                    : 'bg-primary/10 text-primary'
+                }`}>
+                  Save 20%
+                </span>
+              </button>
+            </div>
+            <div className="md:w-1/3 flex justify-end">
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={handleCreateClick}
+                  className="bg-primary text-on-primary px-4 py-2 rounded-lg text-label-md font-semibold hover:opacity-90 transition-opacity cursor-pointer flex items-center gap-1.5 shadow-sm"
+                >
+                  <span>+ Add Plan</span>
+                </button>
               )}
             </div>
-
-            <div className="space-y-3 flex-1">
-              {plan.features.map((feature, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  {feature.included ? (
-                    <Check className="h-5 w-5 text-success shrink-0 mt-0.5" />
-                  ) : (
-                    <X className="h-5 w-5 text-on-surface-variant opacity-40 shrink-0 mt-0.5" />
-                  )}
-                  <span className={`text-body-md ${feature.included ? 'text-on-surface' : 'text-on-surface-variant opacity-50'}`}>
-                    {getFeatureText(feature.text)}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* Equipment Count */}
-            <div className="mt-6 flex items-center justify-between bg-surface-container-low rounded-lg p-3">
-              <span className="text-label-md text-on-surface-variant">{t('plans.equipmentCount')}</span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleAdjustEquipmentCount(plan.id, -1); }}
-                  className="w-8 h-8 border border-outline-variant rounded flex items-center justify-center hover:bg-surface-container transition-colors text-label-md cursor-pointer text-on-surface"
-                >
-                  −
-                </button>
-                <span className="w-8 text-center text-label-md font-medium">{equipmentCounts[plan.id] || 1}</span>
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleAdjustEquipmentCount(plan.id, 1); }}
-                  className="w-8 h-8 border border-outline-variant rounded flex items-center justify-center hover:bg-surface-container transition-colors text-label-md cursor-pointer text-on-surface"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            <button
-              className={`mt-4 w-full py-2.5 rounded-lg text-label-md transition-all cursor-pointer ${
-                selectedPlan === plan.id
-                  ? 'bg-primary text-on-primary hover:opacity-90'
-                  : 'border border-outline-variant text-on-surface hover:bg-surface-container-low'
-              }`}
-            >
-              {selectedPlan === plan.id ? `${t('plans.selected')}: ${getPlanName(plan.name)}` : `${t('plans.select')} ${getPlanName(plan.name)}`}
-            </button>
           </div>
-        ))}
-      </div>
 
-      {/* Payment Section */}
-      {currentPlan && (
-        <div className="max-w-2xl mx-auto w-full text-on-surface">
-          {/* Payment Method or Admin Apply */}
-          <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
-            {/* Header Banner with Sheet Trigger */}
-            <div className="flex justify-between items-center border-b border-outline-variant pb-4 mb-6">
-              <div>
-                <h3 className="text-body-lg font-bold text-primary">
-                  {getPlanName(currentPlan.name)} Plan
-                </h3>
-                <p className="text-body-sm text-on-surface-variant mt-0.5">
-                  {currentEquipmentCount}x {t('plans.equipmentCountSuffix')} • {billingCycle === 'annual' ? 'Annually' : 'Monthly'}
-                </p>
-              </div>
-              <Sheet>
-                <SheetTrigger asChild>
-                  <button className="bg-primary/10 text-primary hover:bg-primary/20 px-3 py-1.5 rounded-lg text-label-sm font-semibold transition-colors cursor-pointer">
-                    View Order Summary (${total.toFixed(2)})
+          {/* Plan Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 justify-center gap-6 mb-12">
+            {filteredPlans.map((plan) => (
+              <div
+                key={plan.id}
+                className={`relative bg-surface-container-lowest border rounded-xl p-6 pt-8 flex flex-col transition-all cursor-pointer text-on-surface ${
+                  selectedPlan === plan.id
+                    ? 'border-primary shadow-md ring-1 ring-primary'
+                    : 'border-outline-variant shadow-sm hover:shadow-md'
+                } ${plan.active === false ? 'opacity-70 bg-surface-container-low/40 border-dashed' : ''}`}
+                onClick={() => setUserSelectedPlan(plan.id)}
+              >
+                {/* Disabled Badge */}
+                {plan.active === false && (
+                  <div className="absolute top-3 left-3">
+                    <span className="bg-error/15 text-error border border-error/30 px-2.5 py-0.5 rounded-lg text-[10px] font-bold">
+                      Disabled
+                    </span>
+                  </div>
+                )}
+
+                {plan.recommended && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="bg-primary text-on-primary px-3 py-1 rounded-full text-label-sm font-bold">
+                      {t('plans.recommended')}
+                    </span>
+                  </div>
+                )}
+
+                {/* Admin Edit Trigger */}
+                {isAdmin && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditClick(plan);
+                    }}
+                    className="absolute top-3 right-3 bg-surface-container hover:bg-surface-container-high border border-outline-variant p-1.5 rounded-lg transition-colors cursor-pointer text-on-surface-variant flex items-center gap-1 text-[11px] font-semibold z-10"
+                  >
+                    <Edit className="h-3.5 w-3.5" />
+                    Edit
                   </button>
-                </SheetTrigger>
-                <SheetContent className="w-[400px] p-6 sm:w-[500px] overflow-y-auto bg-surface text-on-surface border-l border-outline-variant">
-                  <SheetHeader className="pb-4 border-b p-2 border-outline-variant">
-                    <SheetTitle className="text-h3 text-primary">{t('plans.orderSummary')}</SheetTitle>
-                  </SheetHeader>
-                  
-                  {/* Order Summary Details */}
-                  <div className="py-6 space-y-6">
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="text-body-md font-semibold text-on-surface">{getPlanName(currentPlan.name)} {billingCycle === 'annual' ? 'Plan (Annually)' : t('plans.planMonthly')}</p>
-                          <p className="text-label-sm text-on-surface-variant mt-0.5">{currentEquipmentCount}x {t('plans.equipmentCountSuffix')}</p>
-                        </div>
-                        <span className="text-body-md font-semibold text-on-surface">${subtotal.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-body-md text-on-surface-variant">
-                        <span>{t('plans.taxes')}</span>
-                        <span>${tax.toFixed(2)}</span>
-                      </div>
-                      <div className="border-t border-outline-variant pt-3 flex justify-between">
-                        <span className="text-body-md font-bold text-on-surface">{t('plans.total')}</span>
-                        <span className="text-body-md font-bold text-primary text-lg">${total.toFixed(2)}</span>
-                      </div>
-                    </div>
+                )}
 
-                    {/* Email Quotation and Unregistered options inside Sheet */}
-                    <div className="border-t border-outline-variant pt-6 space-y-4">
+                {/* Active Status Badge */}
+                {!isAdmin && activeSubscriptions.some((sub) => sub.plan === plan.id) && (
+                  <span className="absolute top-3 right-3 bg-success/15 text-success border border-success/30 px-2.5 py-1 rounded-lg text-label-sm font-bold animate-pulse z-10">
+                    Active
+                  </span>
+                )}
+
+                <span className="inline-block mb-3 px-2 py-0.5 border border-outline-variant rounded text-mono w-fit text-on-surface-variant">
+                  {getTierLabel(plan.id)}
+                </span>
+
+                <h3 className="text-h2 text-primary mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
+                  {getPlanName(plan.name)}
+                </h3>
+                <p className="text-body-md text-on-surface-variant mb-4">{getPlanDescription(plan.description)}</p>
+
+                <div className="mb-6">
+                  {billingCycle === 'annual' ? (
+                    <>
+                      <span className="text-4xl font-bold text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
+                        ${(plan.price * 0.8).toFixed(2)}
+                      </span>
+                      <span className="text-body-md text-on-surface-variant"> /mo</span>
+                      <div className="text-label-sm text-on-surface-variant mt-1 font-medium">
+                        Billed annually as ${(plan.price * 12 * 0.8).toFixed(2)}/yr
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-4xl font-bold text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
+                        ${plan.price}
+                      </span>
+                      <span className="text-body-md text-on-surface-variant"> /mo</span>
+                      <div className="text-label-sm text-on-surface-variant mt-1 opacity-0 select-none">
+                        Placeholder
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="space-y-3 flex-1">
+                  {plan.features.map((feature, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      {feature.included ? (
+                        <Check className="h-5 w-5 text-success shrink-0 mt-0.5" />
+                      ) : (
+                        <X className="h-5 w-5 text-on-surface-variant opacity-40 shrink-0 mt-0.5" />
+                      )}
+                      <span className={`text-body-md ${feature.included ? 'text-on-surface' : 'text-on-surface-variant opacity-50'}`}>
+                        {getFeatureText(feature.text)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Equipment Count */}
+                <div className="mt-6 flex items-center justify-between bg-surface-container-low rounded-lg p-3">
+                  <span className="text-label-md text-on-surface-variant">{t('plans.equipmentCount')}</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleAdjustEquipmentCount(plan.id, -1); }}
+                      className="w-8 h-8 border border-outline-variant rounded flex items-center justify-center hover:bg-surface-container transition-colors text-label-md cursor-pointer text-on-surface"
+                    >
+                      −
+                    </button>
+                    <span className="w-8 text-center text-label-md font-medium">{equipmentCounts[plan.id] || 1}</span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleAdjustEquipmentCount(plan.id, 1); }}
+                      className="w-8 h-8 border border-outline-variant rounded flex items-center justify-center hover:bg-surface-container transition-colors text-label-md cursor-pointer text-on-surface"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  className={`mt-4 w-full py-2.5 rounded-lg text-label-md transition-all cursor-pointer ${
+                    selectedPlan === plan.id
+                      ? 'bg-primary text-on-primary hover:opacity-90'
+                      : 'border border-outline-variant text-on-surface hover:bg-surface-container-low'
+                  }`}
+                >
+                  {selectedPlan === plan.id ? `${t('plans.selected')}: ${getPlanName(plan.name)}` : `${t('plans.select')} ${getPlanName(plan.name)}`}
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Payment Section */}
+          {currentPlan && (
+            <div className="max-w-2xl mx-auto w-full text-on-surface">
+              {/* Payment Method or Admin Apply */}
+              <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
+                {/* Header Banner */}
+                <div className="flex justify-between items-center border-b border-outline-variant pb-4 mb-6">
+                  <div>
+                    <h3 className="text-body-lg font-bold text-primary">
+                      {getPlanName(currentPlan.name)} Plan
+                    </h3>
+                    <p className="text-body-sm text-on-surface-variant mt-0.5">
+                      {currentEquipmentCount}x {t('plans.equipmentCountSuffix')} • {billingCycle === 'annual' ? 'Annually' : 'Monthly'}
+                    </p>
+                  </div>
+                </div>
+
+                {isAdmin ? (
+                  <div className="space-y-4">
+                    <h2 className="text-h2 text-primary mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
+                      Apply Plan to Customer
+                    </h2>
+                    <div className="space-y-4">
+                      <div>
+                        <label htmlFor="customer-select" className="block text-label-md text-on-surface mb-1.5 font-medium">
+                          Select Customer
+                        </label>
+                        <select
+                          id="customer-select"
+                          value={selectedClientId}
+                          onChange={(e) => setSelectedClientId(e.target.value)}
+                          className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
+                        >
+                          {clients.length === 0 ? (
+                            <option value="" disabled>No registered customers found</option>
+                          ) : (
+                            clients.map((client) => (
+                              <option key={client.id} value={client.id}>
+                                {client.name} ({client.email})
+                              </option>
+                            ))
+                          )}
+                          <option value="unregistered">{t('plans.unregisteredOption')}</option>
+                        </select>
+                      </div>
+
+                      {selectedClientId === 'unregistered' && (
+                        <div className="space-y-3 pt-2 border-t border-outline-variant">
+                          <div>
+                            <label htmlFor="unregistered-email-admin" className="block text-label-sm text-on-surface mb-1 font-medium">
+                              {t('plans.unregisteredEmailLabel')}
+                            </label>
+                            <Input
+                              id="unregistered-email-admin"
+                              type="email"
+                              required
+                              value={unregisteredEmail}
+                              onChange={(e) => setUnregisteredEmail(e.target.value)}
+                              placeholder={t('plans.unregisteredEmailPlaceholder')}
+                              className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="unregistered-name-admin" className="block text-label-sm text-on-surface mb-1 font-medium">
+                              {t('plans.unregisteredNameLabel')}
+                            </label>
+                            <Input
+                              id="unregistered-name-admin"
+                              type="text"
+                              value={unregisteredName}
+                              onChange={(e) => setUnregisteredName(e.target.value)}
+                              placeholder={t('plans.unregisteredNamePlaceholder')}
+                              className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={handleProcessSubscription}
+                        disabled={subscribeLoading || selectedClientId === 'unregistered' || clients.length === 0}
+                        className="w-full bg-primary text-on-primary py-3 rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
+                      >
+                        {subscribeLoading ? 'Applying...' : 'Apply Plan to Customer'}
+                      </button>
+
                       <button
                         type="button"
                         onClick={handleSendQuote}
-                        disabled={quoteLoading || subscribeLoading}
-                        className="w-full border border-primary text-primary py-2.5 rounded-lg text-label-md hover:bg-primary/5 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
+                        disabled={quoteLoading || subscribeLoading || (!selectedClientId)}
+                        className="w-full border border-primary text-primary py-3 rounded-lg text-label-md hover:bg-primary/5 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
                       >
-                        {quoteLoading ? t('plans.quoteSending') : (isAdmin ? t('plans.sendQuoteToCustomer') : t('plans.emailQuote'))}
+                        {quoteLoading ? t('plans.quoteSending') : t('plans.sendQuoteToCustomer')}
                       </button>
-
-                      {!isAdmin && (
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <input
-                              id="send-to-unregistered-checkbox"
-                              type="checkbox"
-                              checked={isUnregistered}
-                              onChange={(e) => setIsUnregistered(e.target.checked)}
-                              className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary cursor-pointer"
-                            />
-                            <label htmlFor="send-to-unregistered-checkbox" className="text-label-md text-on-surface-variant select-none cursor-pointer">
-                              {t('plans.sendToUnregistered')}
+                    </div>
+                  </div>
+                ) : (() => {
+                  const activeSubForPlan = activeSubscriptions.find((sub) => sub.plan === currentPlan?.id && sub.status === 'ACTIVE');
+                  
+                  if (activeSubForPlan) {
+                    return (
+                      <div className="space-y-4">
+                        <h2 className="text-h2 text-primary mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
+                          Manage Active Subscription
+                        </h2>
+                        {renderManageActiveSubscription(activeSubForPlan)}
+                      </div>
+                    );
+                  }
+                  
+                  if (activeSubscriptions.length === 0) {
+                    return renderCheckoutButtonAndSheet();
+                  }
+                  
+                  return (
+                    <div className="space-y-6">
+                      <div>
+                        <h2 className="text-h2 text-primary mb-3" style={{ fontFamily: 'var(--font-heading)' }}>
+                          Select Action for {getPlanName(currentPlan.name)}
+                        </h2>
+                        <p className="text-body-sm text-on-surface-variant mb-4">
+                          You have existing active subscriptions. Choose whether you want to replace one of them or add this plan as a new additional subscription.
+                        </p>
+                        
+                        <div className="flex bg-surface-container-low border border-outline-variant p-1 rounded-xl gap-1 mb-6">
+                          <button
+                            type="button"
+                            onClick={() => setActionType('modify')}
+                            className={`flex-1 py-2.5 rounded-lg text-label-md font-semibold transition-all cursor-pointer ${
+                              actionType === 'modify'
+                                ? 'bg-primary text-on-primary shadow-sm'
+                                : 'text-on-surface-variant hover:text-on-surface'
+                            }`}
+                          >
+                            Change Existing Plan
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setActionType('subscribe')}
+                            className={`flex-1 py-2.5 rounded-lg text-label-md font-semibold transition-all cursor-pointer ${
+                              actionType === 'subscribe'
+                                ? 'bg-primary text-on-primary shadow-sm'
+                                : 'text-on-surface-variant hover:text-on-surface'
+                            }`}
+                          >
+                            Subscribe as Additional Plan
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {actionType === 'subscribe' ? (
+                        renderCheckoutButtonAndSheet()
+                      ) : (
+                        <div className="space-y-4">
+                          <div>
+                            <label htmlFor="active-sub-select" className="block text-label-md text-on-surface mb-1.5 font-medium">
+                              Select Active Subscription to Replace
                             </label>
+                            <select
+                              id="active-sub-select"
+                              value={subscriptionToModifyId}
+                              onChange={(e) => setSubscriptionToModifyId(e.target.value)}
+                              className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
+                            >
+                              {activeSubscriptions.map((sub) => (
+                                <option key={sub.id} value={sub.id}>
+                                  {sub.service_name} ({sub.equipment_count} Equipment)
+                                </option>
+                              ))}
+                            </select>
                           </div>
-
-                          {isUnregistered && (
-                            <div className="space-y-3 pt-2">
-                              <div>
-                                <label htmlFor="unregistered-email-client" className="block text-label-sm text-on-surface mb-1 font-medium">
-                                  {t('plans.unregisteredEmailLabel')}
-                                </label>
-                                <Input
-                                  id="unregistered-email-client"
-                                  type="email"
-                                  required
-                                  value={unregisteredEmail}
-                                  onChange={(e) => setUnregisteredEmail(e.target.value)}
-                                  placeholder={t('plans.unregisteredEmailPlaceholder')}
-                                  className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
-                                />
-                              </div>
-                              <div>
-                                <label htmlFor="unregistered-name-client" className="block text-label-sm text-on-surface mb-1 font-medium">
-                                  {t('plans.unregisteredNameLabel')}
-                                </label>
-                                <Input
-                                  id="unregistered-name-client"
-                                  type="text"
-                                  value={unregisteredName}
-                                  onChange={(e) => setUnregisteredName(e.target.value)}
-                                  placeholder={t('plans.unregisteredNamePlaceholder')}
-                                  className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
-                                />
-                              </div>
-                            </div>
-                          )}
+                          
+                          {(() => {
+                            const subToModify = activeSubscriptions.find((sub) => sub.id === subscriptionToModifyId) || activeSubscriptions[0];
+                            if (!subToModify) return null;
+                            return renderManageActiveSubscription(subToModify);
+                          })()}
                         </div>
                       )}
                     </div>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        activeSubscriptions.length > 0 && (() => {
+          const activeSub = activeSubscriptions.find((sub) => sub.id === subscriptionToModifyId) || activeSubscriptions[0];
+          if (!activeSub) return null;
+          return (
+            <div className="space-y-6 text-on-surface">
+              {activeSubscriptions.length > 1 && (
+                <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 shadow-sm">
+                  <label htmlFor="active-sub-select-manage" className="block text-label-md text-on-surface mb-1.5 font-medium">
+                    Select Active Subscription to Manage
+                  </label>
+                  <select
+                    id="active-sub-select-manage"
+                    value={subscriptionToModifyId}
+                    onChange={(e) => setSubscriptionToModifyId(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20"
+                  >
+                    {activeSubscriptions.map((sub) => (
+                      <option key={sub.id} value={sub.id}>
+                        {sub.service_name} ({sub.equipment_count} Devices)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
-                    <div className="bg-surface-container-low border border-outline-variant/30 rounded-lg p-4 flex items-start gap-3">
-                      <Shield className="h-5 w-5 text-success shrink-0 mt-0.5" />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                
+                {/* Left Column: Manage Active Subscription + Licensed Devices list */}
+                <div className="lg:col-span-2 space-y-6">
+                  
+                  {/* Active Subscription Details Card */}
+                  <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
+                    <div className="flex items-center justify-between mb-6">
                       <div>
-                        <p className="text-label-md font-medium text-on-surface">{t('plans.encryptedTx')}</p>
-                        <p className="text-label-sm text-on-surface-variant mt-0.5">
-                          {t('plans.militaryGradeSecurity')}
+                        <h4 className="font-headline-md text-headline-md font-bold text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
+                          Manage Active Subscription
+                        </h4>
+                        <p className="text-body-sm text-on-surface-variant mt-1">
+                          Details for {activeSub.service_name} ({billingCycle || 'monthly'} billing)
+                        </p>
+                      </div>
+                      <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-label-sm font-bold border border-primary/20">
+                        ACTIVE
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4 mb-6">
+                      <div className="p-4 bg-surface-container-low/55 rounded-lg border border-outline-variant">
+                        <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Devices</p>
+                        <p className="text-body-base font-semibold text-on-surface">{activeSub.equipment_count}x Managed Units</p>
+                      </div>
+                      <div className="p-4 bg-surface-container-low/55 rounded-lg border border-outline-variant">
+                        <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Cycle</p>
+                        <p className="text-body-base font-semibold capitalize text-on-surface">{billingCycle || 'monthly'}</p>
+                      </div>
+                      <div className="p-4 bg-surface-container-low/55 rounded-lg border border-outline-variant">
+                        <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Renewal</p>
+                        <p className="text-body-base font-semibold text-on-surface">
+                          {activeSub.renewal_date ? new Date(activeSub.renewal_date).toLocaleDateString() : 'N/A'}
                         </p>
                       </div>
                     </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
 
-            {isAdmin ? (
-              <div className="space-y-4">
-                <h2 className="text-h2 text-primary mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
-                  Apply Plan to Customer
-                </h2>
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="customer-select" className="block text-label-md text-on-surface mb-1.5 font-medium">
-                      Select Customer
-                    </label>
-                    <select
-                      id="customer-select"
-                      value={selectedClientId}
-                      onChange={(e) => setSelectedClientId(e.target.value)}
-                      className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
-                    >
-                      {clients.length === 0 ? (
-                        <option value="" disabled>No registered customers found</option>
-                      ) : (
-                        clients.map((client) => (
-                          <option key={client.id} value={client.id}>
-                            {client.name} ({client.email})
-                          </option>
-                        ))
-                      )}
-                      <option value="unregistered">{t('plans.unregisteredOption')}</option>
-                    </select>
-                  </div>
+                    {(currentPlan?.id !== activeSub.plan || currentEquipmentCount !== activeSub.equipment_count) ? (
+                      <div className="p-4 bg-primary/5 rounded-lg border border-primary/20 border-dashed flex flex-col gap-4">
+                        <div className="flex items-start gap-3">
+                          <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <p className="text-body-sm text-on-surface font-semibold">
+                              Modify Subscription Request
+                            </p>
+                            <p className="text-body-sm text-on-surface-variant mt-1">
+                              You are modifying your subscription to the <b>{getPlanName(currentPlan.name)}</b> plan with <b>{currentEquipmentCount}x device(s)</b>.
+                            </p>
+                          </div>
+                        </div>
 
-                  {selectedClientId === 'unregistered' && (
-                    <div className="space-y-3 pt-2 border-t border-outline-variant">
-                      <div>
-                        <label htmlFor="unregistered-email-admin" className="block text-label-sm text-on-surface mb-1 font-medium">
-                          {t('plans.unregisteredEmailLabel')}
-                        </label>
-                        <Input
-                          id="unregistered-email-admin"
-                          type="email"
-                          required
-                          value={unregisteredEmail}
-                          onChange={(e) => setUnregisteredEmail(e.target.value)}
-                          placeholder={t('plans.unregisteredEmailPlaceholder')}
-                          className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
-                        />
+                        {!isAdmin && (
+                          <div className="flex items-start gap-2.5 p-3 bg-surface-container rounded-lg border border-outline-variant my-1">
+                            <input
+                              type="checkbox"
+                              id="tos-checkbox-manage-actual"
+                              checked={acceptedTos}
+                              onChange={(e) => setAcceptedTos(e.target.checked)}
+                              className="h-4 w-4 rounded border-outline text-primary focus:ring-primary mt-1 cursor-pointer"
+                            />
+                            <label htmlFor="tos-checkbox-manage-actual" className="text-body-sm text-on-surface cursor-pointer select-none">
+                              {t('plans.agreeToTermsPrefix')}{' '}
+                              <a
+                                href="/terms"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary underline hover:text-primary/80 transition-colors font-medium"
+                              >
+                                {t('plans.termsOfServiceLink')}
+                              </a>
+                            </label>
+                          </div>
+                        )}
+
+                        {currentEquipmentCount > activeSub.equipment_count ? (
+                          <div className="mt-2 border-t border-outline-variant pt-4">
+                            <p className="text-body-sm text-on-surface-variant mb-3 font-medium">
+                              Adding more devices requires a PayPal payment to activate the additional licenses immediately.
+                            </p>
+                            <div id="paypal-upgrade-button-container" className="my-2 min-h-[150px] flex items-center justify-center bg-surface rounded-xl p-4 border border-outline-variant border-dashed">
+                              <span className="text-label-md text-on-surface-variant">Loading PayPal Upgrade...</span>
+                            </div>
+                            {paymentMessage && (
+                              <p className="text-body-xs text-primary font-medium mt-2">{paymentMessage}</p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex justify-end">
+                            <button
+                              onClick={() => handleUpdateSubscription(activeSub.id, currentEquipmentCount)}
+                              disabled={subscribeLoading}
+                              className="px-6 py-2 bg-primary text-on-primary font-bold rounded-lg text-body-sm shadow-sm hover:scale-[1.02] active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+                            >
+                              {subscribeLoading ? 'Updating...' : 'Update Subscription'}
+                            </button>
+                          </div>
+                        )}
                       </div>
-                      <div>
-                        <label htmlFor="unregistered-name-admin" className="block text-label-sm text-on-surface mb-1 font-medium">
-                          {t('plans.unregisteredNameLabel')}
-                        </label>
-                        <Input
-                          id="unregistered-name-admin"
-                          type="text"
-                          value={unregisteredName}
-                          onChange={(e) => setUnregisteredName(e.target.value)}
-                          placeholder={t('plans.unregisteredNamePlaceholder')}
-                          className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <button
-                    onClick={handleProcessSubscription}
-                    disabled={subscribeLoading || selectedClientId === 'unregistered' || clients.length === 0}
-                    className="w-full bg-primary text-on-primary py-3 rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
-                  >
-                    {subscribeLoading ? 'Applying...' : 'Apply Plan to Customer'}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleSendQuote}
-                    disabled={quoteLoading || subscribeLoading || (!selectedClientId)}
-                    className="w-full border border-primary text-primary py-3 rounded-lg text-label-md hover:bg-primary/5 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
-                  >
-                    {quoteLoading ? t('plans.quoteSending') : t('plans.sendQuoteToCustomer')}
-                  </button>
-                </div>
-              </div>
-            ) : (() => {
-              const activeSubForPlan = activeSubscriptions.find((sub) => sub.plan === currentPlan?.id && sub.status === 'ACTIVE');
-              
-              if (activeSubForPlan) {
-                return (
-                  <div className="space-y-4">
-                    <h2 className="text-h2 text-primary mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
-                      Manage Active Subscription
-                    </h2>
-                    {renderManageActiveSubscription(activeSubForPlan)}
-                  </div>
-                );
-              }
-              
-              if (activeSubscriptions.length === 0) {
-                return renderPaymentFields();
-              }
-              
-              return (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-h2 text-primary mb-3" style={{ fontFamily: 'var(--font-heading)' }}>
-                      Select Action for {getPlanName(currentPlan.name)}
-                    </h2>
-                    <p className="text-body-sm text-on-surface-variant mb-4">
-                      You have existing active subscriptions. Choose whether you want to replace one of them or add this plan as a new additional subscription.
-                    </p>
-                    
-                    <div className="flex bg-surface-container-low border border-outline-variant p-1 rounded-xl gap-1 mb-6">
-                      <button
-                        type="button"
-                        onClick={() => setActionType('modify')}
-                        className={`flex-1 py-2.5 rounded-lg text-label-md font-semibold transition-all cursor-pointer ${
-                          actionType === 'modify'
-                            ? 'bg-primary text-on-primary shadow-sm'
-                            : 'text-on-surface-variant hover:text-on-surface'
-                        }`}
-                      >
-                        Change Existing Plan
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setActionType('subscribe')}
-                        className={`flex-1 py-2.5 rounded-lg text-label-md font-semibold transition-all cursor-pointer ${
-                          actionType === 'subscribe'
-                            ? 'bg-primary text-on-primary shadow-sm'
-                            : 'text-on-surface-variant hover:text-on-surface'
-                        }`}
-                      >
-                        Subscribe as Additional Plan
-                      </button>
-                    </div>
-                  </div>
-                  
-                  {actionType === 'subscribe' ? (
-                    renderPaymentFields()
-                  ) : (
-                    <div className="space-y-4">
-                      <div>
-                        <label htmlFor="active-sub-select" className="block text-label-md text-on-surface mb-1.5 font-medium">
-                          Select Active Subscription to Replace
-                        </label>
-                        <select
-                          id="active-sub-select"
-                          value={subscriptionToModifyId}
-                          onChange={(e) => setSubscriptionToModifyId(e.target.value)}
-                          className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
+                    ) : (
+                      <div className="p-4 bg-error/5 rounded-lg border border-error/20 border-dashed flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <Info className="h-5 w-5 text-error shrink-0" />
+                          <p className="text-body-sm text-on-surface-variant font-medium">
+                            Cancelling your subscription will take effect immediately. You will lose access to premium support.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleCancelSubscription(activeSub.id)}
+                          disabled={subscribeLoading}
+                          className="px-6 py-2 bg-error text-on-error font-bold rounded-lg text-body-sm shadow-sm hover:scale-[1.02] active:scale-95 transition-all cursor-pointer whitespace-nowrap"
                         >
-                          {activeSubscriptions.map((sub) => (
-                            <option key={sub.id} value={sub.id}>
-                              {sub.service_name} ({sub.equipment_count} Equipment)
-                            </option>
-                          ))}
-                        </select>
+                          {subscribeLoading ? 'Cancelling...' : 'Cancel Subscription'}
+                        </button>
                       </div>
-                      
-                      {(() => {
-                        const subToModify = activeSubscriptions.find((sub) => sub.id === subscriptionToModifyId) || activeSubscriptions[0];
-                        if (!subToModify) return null;
-                        return renderManageActiveSubscription(subToModify);
-                      })()}
-                    </div>
-                  )}
+                    )}
+                  </div>
+
+
+
                 </div>
-              );
-            })()}
+
+                {/* Right Column: Sidebar Plan Summary + custom Help card */}
+                <div className="space-y-6">
+                  
+                  {/* Plan Summary Card */}
+                  <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
+                    <h4 className="font-headline-md text-headline-md font-bold text-primary mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
+                      {t('plans.planSummary')}
+                    </h4>
+                    {(() => {
+                      const basePrice = currentPlan ? (billingCycle === 'annual' ? currentPlan.price * 0.8 : currentPlan.price) : 0;
+                      const planName = currentPlan ? getPlanName(currentPlan.name) : activeSub.service_name;
+                      const additionalDevicesCount = Math.max(0, currentEquipmentCount - 1);
+                      const additionalDevicesPrice = basePrice * additionalDevicesCount;
+                      const estimatedTotal = basePrice * currentEquipmentCount;
+                      const annualBilledTotal = basePrice * 12 * currentEquipmentCount;
+
+                      return (
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-center text-body-sm">
+                            <span className="text-on-surface-variant font-medium">
+                              {t('plans.basePlanName', { name: planName })}
+                            </span>
+                            <span className="font-semibold text-on-surface">
+                              ${basePrice.toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center text-body-sm">
+                            <span className="text-on-surface-variant font-medium">
+                              {t('plans.addonCloudStorage')}
+                            </span>
+                            <span className="font-semibold text-on-surface">
+                              {t('plans.included')}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center text-body-sm">
+                            <span className="text-on-surface-variant font-medium">
+                              {t('plans.additionalDevices', { count: additionalDevicesCount })}
+                            </span>
+                            <span className="font-semibold text-on-surface">
+                              ${additionalDevicesPrice.toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="pt-4 border-t border-outline-variant">
+                            <div className="flex justify-between items-center">
+                              <span className="font-bold text-on-surface">
+                                {t('plans.estimatedMonthly')}
+                              </span>
+                              <span className="text-xl font-bold text-primary">
+                                ${estimatedTotal.toFixed(2)}
+                              </span>
+                            </div>
+                            {billingCycle === 'annual' && (
+                              <p className="text-right text-[11px] text-on-surface-variant mt-1 font-medium">
+                                Billed annually as ${annualBilledTotal.toFixed(2)}/yr
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Tailored Enterprise Help Card */}
+                  <div className="bg-primary text-on-primary rounded-xl p-6 relative overflow-hidden shadow-sm">
+                    <div className="relative z-10">
+                      <h4 className="text-lg font-bold mb-2 text-on-primary" style={{ fontFamily: 'var(--font-heading)' }}>
+                        Need a custom plan?
+                      </h4>
+                      <p className="text-body-sm text-on-primary/80 mb-4">
+                        For organizations with over 100 devices, we offer tailored enterprise solutions.
+                      </p>
+                      <button className="w-full py-2 bg-on-primary text-primary font-bold rounded-lg text-body-sm hover:opacity-95 transition-opacity cursor-pointer">
+                        Contact Sales
+                      </button>
+                    </div>
+                    <div className="absolute -bottom-6 -right-6 text-[120px] text-on-primary/10 select-none pointer-events-none">
+                      ☁️
+                    </div>
+                  </div>
+
+                </div>
+
+              </div>
+            </div>
+          );
+        })()
+      )}
+
+      {/* Subscriptions Dashboard (DataTable) */}
+      {!isAdmin && activeSubscriptions.length > 0 && (
+        <div className="max-w-4xl mx-auto w-full mt-12 text-on-surface">
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
+            <h3 className="text-h2 text-primary mb-2 font-bold" style={{ fontFamily: 'var(--font-heading)' }}>
+              Active Subscriptions Dashboard
+            </h3>
+            <p className="text-body-sm text-on-surface-variant mb-6">
+              View details, active equipment, and renewal dates for all your active plans.
+            </p>
+            <DataTable 
+              columns={subscriptionDashboardColumns}
+              data={activeSubscriptions}
+              noDataMessage="No active subscriptions found."
+            />
           </div>
         </div>
       )}
+
+
 
       {/* Plan Edit Modal */}
       {editingPlan && (

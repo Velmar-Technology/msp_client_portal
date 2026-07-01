@@ -8,6 +8,7 @@ export interface Subscription {
   status: 'ACTIVE' | 'EXPIRING' | 'EXPIRED' | 'CANCELLED';
   renewal_date: string;
   equipment_count: number;
+  paypal_order_id?: string;
   created_at: string;
 }
 
@@ -17,12 +18,17 @@ export const subscriptionService = {
     return response.data.data;
   },
 
-  async create(data: { serviceName: string; plan: string; equipmentCount: number; clientId?: string; billingCycle?: 'monthly' | 'annual' }): Promise<Subscription> {
+  async create(data: { serviceName: string; plan: string; equipmentCount: number; clientId?: string; billingCycle?: 'monthly' | 'annual'; paypalOrderId?: string }): Promise<Subscription> {
     const response = await api.post('/subscriptions', data);
     return response.data.data;
   },
 
-  async update(id: string, data: { plan?: string; equipmentCount?: number; status?: string }): Promise<Subscription> {
+  async createPaypalOrder(data: { plan: string; equipmentCount: number; billingCycle?: 'monthly' | 'annual'; currentSubscriptionId?: string }): Promise<{ orderId: string }> {
+    const response = await api.post('/subscriptions/paypal-order', data);
+    return response.data.data;
+  },
+
+  async update(id: string, data: { plan?: string; equipmentCount?: number; status?: string; paypalOrderId?: string }): Promise<Subscription> {
     const response = await api.patch(`/subscriptions/${id}`, data);
     return response.data.data;
   },

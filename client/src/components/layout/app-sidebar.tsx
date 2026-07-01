@@ -8,6 +8,7 @@ import {
   Shield,
   ChevronRight,
   Settings,
+  Laptop,
 } from 'lucide-react';
 import logoUrl from '../../assets/logo.png';
 import { useAuth } from '../../hooks/useAuth';
@@ -38,14 +39,15 @@ interface NavSubItem {
 
 interface NavItem {
   to: string;
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   labelKey: string;
   items?: NavSubItem[];
 }
 
 const clientNavItems: NavItem[] = [
   { to: '/dashboard', icon: LayoutDashboard, labelKey: 'dashboard' },
-  { to: '/tickets', icon: Ticket, labelKey: 'tickets' },
+  { to: '/devices', icon: Laptop, labelKey: 'devices' },
+  { to: '/tickets', icon: Ticket, labelKey: 'myTickets' },
   {
     to: '/profile-group',
     icon: User,
@@ -75,6 +77,7 @@ const techNavItems: NavItem[] = [
 
 const adminNavItems: NavItem[] = [
   { to: '/admin/dashboard', icon: Shield, labelKey: 'adminDashboard' },
+  { to: '/devices', icon: Laptop, labelKey: 'devices' },
   { to: '/tickets', icon: Ticket, labelKey: 'allTickets' },
   {
     to: '/settings-group',
@@ -97,6 +100,7 @@ export function AppSidebar() {
 
   useEffect(() => {
     if (user?.role !== 'CLIENT') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveSubscription(null);
       return;
     }

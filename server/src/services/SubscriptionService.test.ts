@@ -4,6 +4,8 @@ const mocks = vi.hoisted(() => {
   return {
     subFindById: vi.fn(),
     subFindByTenant: vi.fn(),
+    subFindByClient: vi.fn(),
+    subFindByPaypalOrderId: vi.fn(),
     subCreate: vi.fn(),
     subUpdatePlan: vi.fn(),
     subUpdateStatus: vi.fn(),
@@ -12,6 +14,9 @@ const mocks = vi.hoisted(() => {
     invoiceFindByNumber: vi.fn(),
     invoiceCreate: vi.fn(),
     sendQuotationEmail: vi.fn(),
+    paypalGetOrder: vi.fn(),
+    paypalCaptureOrder: vi.fn(),
+    paypalCreateOrderForAmount: vi.fn(),
   };
 });
 
@@ -21,11 +26,23 @@ vi.mock('../utils/emailService', () => {
   };
 });
 
+vi.mock('./PaypalService', () => {
+  return {
+    paypalService: {
+      getOrder: mocks.paypalGetOrder,
+      captureOrder: mocks.paypalCaptureOrder,
+      createOrderForAmount: mocks.paypalCreateOrderForAmount,
+    },
+  };
+});
+
 vi.mock('../repositories/SubscriptionRepository', () => {
   return {
     subscriptionRepository: {
       findById: mocks.subFindById,
       findByTenant: mocks.subFindByTenant,
+      findByClient: mocks.subFindByClient,
+      findByPaypalOrderId: mocks.subFindByPaypalOrderId,
       create: mocks.subCreate,
       updatePlan: mocks.subUpdatePlan,
       updateStatus: mocks.subUpdateStatus,
@@ -64,6 +81,8 @@ import { SubscriptionPlan, SubscriptionStatus } from '../types';
 describe('SubscriptionService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.subFindByClient.mockResolvedValue([]);
+    mocks.subFindByPaypalOrderId.mockResolvedValue(null);
   });
 
   describe('getClientSubscriptions', () => {
@@ -118,7 +137,7 @@ describe('SubscriptionService', () => {
       equipmentCount: 5,
     };
 
-    it('should successfully create subscription when client is valid and matches tenant', async () => {
+    it('should successfully create subscription when client is valid, matches tenant, and payment is verified', async () => {
       const mockUser = {
         id: 'client-123',
         tenant_id: 'tenant-123',
@@ -132,13 +151,31 @@ describe('SubscriptionService', () => {
         equipment_count: input.equipmentCount,
         tenant_id: 'tenant-123',
       };
+      const mockPlan = {
+        id: 'PREMIUM',
+        name: 'Premium Support',
+        price: 1299,
+      };
 
       mocks.userFindById.mockResolvedValue(mockUser);
       mocks.subCreate.mockResolvedValue(mockCreatedSub);
+      mocks.planFindById.mockResolvedValue(mockPlan);
+      mocks.paypalGetOrder.mockResolvedValue({
+        id: 'MOCK-PAYPAL-ORDER',
+        status: 'COMPLETED',
+        purchase_units: [{ amount: { value: '7664.10' } }],
+      });
+      mocks.invoiceFindByNumber.mockResolvedValue(null);
+      mocks.invoiceCreate.mockResolvedValue({ id: 'inv-123' });
 
-      const result = await subscriptionService.createSubscription(input, 'client-123', 'tenant-123');
+      const result = await subscriptionService.createSubscription(
+        { ...input, paypalOrderId: 'MOCK-PAYPAL-ORDER' },
+        'client-123',
+        'tenant-123'
+      );
 
       expect(mocks.userFindById).toHaveBeenCalledWith('client-123');
+      expect(mocks.paypalGetOrder).toHaveBeenCalledWith('MOCK-PAYPAL-ORDER');
       expect(mocks.subCreate).toHaveBeenCalledWith(expect.objectContaining({
         client_id: 'client-123',
         service_name: 'Velmar Premium Plan (Monthly)',
@@ -153,7 +190,7 @@ describe('SubscriptionService', () => {
       expect(result).toEqual(mockCreatedSub);
     });
 
-    it('should successfully create annual subscription with 1-year renewal date and formatted service name', async () => {
+    it('should successfully create annual subscription with 1-year renewal date and verified annual payment', async () => {
       const mockUser = {
         id: 'client-123',
         tenant_id: 'tenant-123',
@@ -167,17 +204,31 @@ describe('SubscriptionService', () => {
         equipment_count: input.equipmentCount,
         tenant_id: 'tenant-123',
       };
+      const mockPlan = {
+        id: 'PREMIUM',
+        name: 'Premium Support',
+        price: 1299,
+      };
 
       mocks.userFindById.mockResolvedValue(mockUser);
       mocks.subCreate.mockResolvedValue(mockCreatedSub);
+      mocks.planFindById.mockResolvedValue(mockPlan);
+      mocks.paypalGetOrder.mockResolvedValue({
+        id: 'MOCK-PAYPAL-ORDER',
+        status: 'COMPLETED',
+        purchase_units: [{ amount: { value: '73575.36' } }],
+      });
+      mocks.invoiceFindByNumber.mockResolvedValue(null);
+      mocks.invoiceCreate.mockResolvedValue({ id: 'inv-123' });
 
       const result = await subscriptionService.createSubscription(
-        { ...input, billingCycle: 'annual' },
+        { ...input, billingCycle: 'annual', paypalOrderId: 'MOCK-PAYPAL-ORDER' },
         'client-123',
         'tenant-123'
       );
 
       expect(mocks.userFindById).toHaveBeenCalledWith('client-123');
+      expect(mocks.paypalGetOrder).toHaveBeenCalledWith('MOCK-PAYPAL-ORDER');
       expect(mocks.subCreate).toHaveBeenCalledWith(expect.objectContaining({
         client_id: 'client-123',
         service_name: 'Velmar Premium Plan (Annual)',
@@ -190,6 +241,77 @@ describe('SubscriptionService', () => {
       expectedDate.setFullYear(expectedDate.getFullYear() + 1);
       expect(Math.abs(renewalArg.getTime() - expectedDate.getTime())).toBeLessThan(1000);
       expect(result).toEqual(mockCreatedSub);
+    });
+
+    it('should throw 400 AppError when client subscribes without paypalOrderId', async () => {
+      const mockUser = {
+        id: 'client-123',
+        tenant_id: 'tenant-123',
+        role: 'CLIENT',
+      };
+      mocks.userFindById.mockResolvedValue(mockUser);
+
+      await expect(
+        subscriptionService.createSubscription(input, 'client-123', 'tenant-123')
+      ).rejects.toMatchObject({
+        statusCode: 400,
+        message: 'PayPal order ID is required for checkout',
+      });
+    });
+
+    it('should throw 400 AppError when PayPal payment was not completed', async () => {
+      const mockUser = {
+        id: 'client-123',
+        tenant_id: 'tenant-123',
+        role: 'CLIENT',
+      };
+      mocks.userFindById.mockResolvedValue(mockUser);
+      mocks.paypalGetOrder.mockResolvedValue({
+        id: 'MOCK-PAYPAL-ORDER',
+        status: 'VOIDED',
+      });
+
+      await expect(
+        subscriptionService.createSubscription(
+          { ...input, paypalOrderId: 'MOCK-PAYPAL-ORDER' },
+          'client-123',
+          'tenant-123'
+        )
+      ).rejects.toMatchObject({
+        statusCode: 400,
+        message: 'PayPal payment was not completed',
+      });
+    });
+
+    it('should throw 400 AppError when paid amount does not match expected total', async () => {
+      const mockUser = {
+        id: 'client-123',
+        tenant_id: 'tenant-123',
+        role: 'CLIENT',
+      };
+      const mockPlan = {
+        id: 'PREMIUM',
+        name: 'Premium Support',
+        price: 1299,
+      };
+      mocks.userFindById.mockResolvedValue(mockUser);
+      mocks.planFindById.mockResolvedValue(mockPlan);
+      mocks.paypalGetOrder.mockResolvedValue({
+        id: 'MOCK-PAYPAL-ORDER',
+        status: 'COMPLETED',
+        purchase_units: [{ amount: { value: '1.00' } }], // mismatched amount paid
+      });
+
+      await expect(
+        subscriptionService.createSubscription(
+          { ...input, paypalOrderId: 'MOCK-PAYPAL-ORDER' },
+          'client-123',
+          'tenant-123'
+        )
+      ).rejects.toMatchObject({
+        statusCode: 400,
+        message: 'Paid amount $1 does not match expected subscription cost $7664.1',
+      });
     });
 
     it('should calculate pricing and create invoice when byAdmin is true', async () => {
@@ -329,45 +451,204 @@ describe('SubscriptionService', () => {
       });
       expect(mocks.subCreate).not.toHaveBeenCalled();
     });
+
+    it('should return existing subscription if the paypalOrderId has already been processed (idempotency check)', async () => {
+      const mockUser = {
+        id: 'client-123',
+        tenant_id: 'tenant-123',
+        role: 'CLIENT',
+      };
+      const mockExistingSub = {
+        id: 'sub-existing',
+        client_id: 'client-123',
+        service_name: 'Velmar Premium Plan (Monthly)',
+        plan: input.plan,
+        equipment_count: input.equipmentCount,
+        tenant_id: 'tenant-123',
+        paypal_order_id: 'MOCK-PAYPAL-ORDER',
+      };
+
+      mocks.userFindById.mockResolvedValue(mockUser);
+      mocks.subFindByPaypalOrderId.mockResolvedValue(mockExistingSub);
+
+      const result = await subscriptionService.createSubscription(
+        { ...input, paypalOrderId: 'MOCK-PAYPAL-ORDER' },
+        'client-123',
+        'tenant-123'
+      );
+
+      expect(mocks.userFindById).toHaveBeenCalledWith('client-123');
+      expect(mocks.subFindByPaypalOrderId).toHaveBeenCalledWith('MOCK-PAYPAL-ORDER');
+      expect(mocks.subCreate).not.toHaveBeenCalled();
+      expect(result).toEqual(mockExistingSub);
+    });
+
+    it('should throw 400 AppError if the client already has an active subscription for the requested plan', async () => {
+      const mockUser = {
+        id: 'client-123',
+        tenant_id: 'tenant-123',
+        role: 'CLIENT',
+      };
+      const mockActiveSub = {
+        id: 'sub-existing',
+        client_id: 'client-123',
+        plan: input.plan,
+        status: 'ACTIVE',
+      };
+
+      mocks.userFindById.mockResolvedValue(mockUser);
+      mocks.subFindByClient.mockResolvedValue([mockActiveSub]);
+
+      await expect(
+        subscriptionService.createSubscription(
+          { ...input, paypalOrderId: 'MOCK-PAYPAL-ORDER' },
+          'client-123',
+          'tenant-123'
+        )
+      ).rejects.toMatchObject({
+        statusCode: 400,
+        message: `You already have an active subscription for the ${input.plan} plan. Please modify your existing subscription instead.`,
+      });
+
+      expect(mocks.subCreate).not.toHaveBeenCalled();
+    });
   });
 
   describe('updateSubscription', () => {
-    it('should successfully update plan tier and status', async () => {
-      const mockSub = {
-        id: 'sub-1',
-        tenant_id: 'tenant-123',
-        plan: SubscriptionPlan.BASIC,
-        status: SubscriptionStatus.ACTIVE,
-      };
+    const mockSub = {
+      id: 'sub-1',
+      tenant_id: 'tenant-123',
+      service_name: 'Basic Support (Monthly)',
+      plan: SubscriptionPlan.BASIC,
+      status: SubscriptionStatus.ACTIVE,
+      equipment_count: 2,
+    };
 
-      const mockUpdatedPlanSub = {
-        ...mockSub,
-        plan: SubscriptionPlan.STANDARD,
-      };
+    const mockPlan = {
+      id: 'BASIC',
+      name: 'Basic Support',
+      price: 199,
+      features: [],
+    };
 
+    beforeEach(() => {
+      mocks.subFindById.mockResolvedValue(mockSub);
+      mocks.planFindById.mockResolvedValue(mockPlan);
+    });
+
+    it('should successfully update status without billing changes', async () => {
       const mockUpdatedStatusSub = {
-        ...mockUpdatedPlanSub,
+        ...mockSub,
         status: SubscriptionStatus.CANCELLED,
       };
 
-      mocks.subFindById.mockResolvedValue(mockSub);
-      mocks.subUpdatePlan.mockResolvedValue(mockUpdatedPlanSub);
       mocks.subUpdateStatus.mockResolvedValue(mockUpdatedStatusSub);
 
       const result = await subscriptionService.updateSubscription(
         'sub-1',
         {
-          plan: SubscriptionPlan.STANDARD,
-          equipmentCount: 2,
           status: SubscriptionStatus.CANCELLED,
         },
         'tenant-123'
       );
 
       expect(mocks.subFindById).toHaveBeenCalledWith('sub-1');
-      expect(mocks.subUpdatePlan).toHaveBeenCalledWith('sub-1', SubscriptionPlan.STANDARD, 2);
       expect(mocks.subUpdateStatus).toHaveBeenCalledWith('sub-1', SubscriptionStatus.CANCELLED);
       expect(result).toEqual(mockUpdatedStatusSub);
+    });
+
+    it('should throw badRequest when a client adds devices without a paypalOrderId', async () => {
+      await expect(
+        subscriptionService.updateSubscription(
+          'sub-1',
+          {
+            equipmentCount: 4,
+          },
+          'tenant-123',
+          false
+        )
+      ).rejects.toMatchObject({
+        statusCode: 400,
+        message: 'PayPal order ID is required to add more devices',
+      });
+    });
+
+    it('should successfully add devices when byAdmin is true even without paypalOrderId', async () => {
+      const mockUpdatedSub = { ...mockSub, equipment_count: 4 };
+      mocks.subUpdatePlan.mockResolvedValue(mockUpdatedSub);
+
+      const result = await subscriptionService.updateSubscription(
+        'sub-1',
+        {
+          equipmentCount: 4,
+        },
+        'tenant-123',
+        true
+      );
+
+      expect(mocks.subUpdatePlan).toHaveBeenCalledWith('sub-1', 'BASIC', 4);
+      expect(result).toEqual(mockUpdatedSub);
+    });
+
+    it('should verify upgrade payment amount and succeed when paypalOrderId is valid', async () => {
+      const mockUpdatedSub = { ...mockSub, equipment_count: 4 };
+      mocks.subUpdatePlan.mockResolvedValue(mockUpdatedSub);
+
+      mocks.paypalGetOrder.mockResolvedValue({
+        status: 'APPROVED',
+        purchase_units: [
+          {
+            amount: {
+              value: '469.64', // 199 * 2 additional * 1.18 tax = 469.64
+            },
+          },
+        ],
+      });
+      mocks.paypalCaptureOrder.mockResolvedValue({ status: 'COMPLETED' });
+
+      const result = await subscriptionService.updateSubscription(
+        'sub-1',
+        {
+          equipmentCount: 4,
+          paypalOrderId: 'UPGRADE-PAYPAL-ORDER',
+        },
+        'tenant-123',
+        false
+      );
+
+      expect(mocks.paypalGetOrder).toHaveBeenCalledWith('UPGRADE-PAYPAL-ORDER');
+      expect(mocks.paypalCaptureOrder).toHaveBeenCalledWith('UPGRADE-PAYPAL-ORDER');
+      expect(mocks.subUpdatePlan).toHaveBeenCalledWith('sub-1', 'BASIC', 4);
+      expect(result).toEqual(mockUpdatedSub);
+    });
+
+    it('should throw badRequest if paid amount does not match expected upgrade price', async () => {
+      mocks.paypalGetOrder.mockResolvedValue({
+        status: 'APPROVED',
+        purchase_units: [
+          {
+            amount: {
+              value: '100.00', // incorrect amount
+            },
+          },
+        ],
+      });
+      mocks.paypalCaptureOrder.mockResolvedValue({ status: 'COMPLETED' });
+
+      await expect(
+        subscriptionService.updateSubscription(
+          'sub-1',
+          {
+            equipmentCount: 4,
+            paypalOrderId: 'UPGRADE-PAYPAL-ORDER',
+          },
+          'tenant-123',
+          false
+        )
+      ).rejects.toMatchObject({
+        statusCode: 400,
+        message: 'Paid upgrade amount $100 does not match expected upgrade cost $469.64',
+      });
     });
   });
 

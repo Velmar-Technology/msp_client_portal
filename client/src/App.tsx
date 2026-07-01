@@ -15,6 +15,7 @@ import { HelpPage } from './pages/HelpPage';
 import { TermsPage } from './pages/TermsPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { NotificationPreferencesPage } from './pages/NotificationPreferencesPage';
+import { DevicesPage } from './pages/DevicesPage';
 import { ThemeProvider } from './components/theme-provider';
 import { ReactErrorBoundary } from '@shared/errors';
 
@@ -75,6 +76,7 @@ export function App() {
               <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['CLIENT']}><ClientDashboard /></ProtectedRoute>} />
               <Route path="/plans" element={<ProtectedRoute allowedRoles={['CLIENT', 'ADMIN']}><PlansPage /></ProtectedRoute>} />
               <Route path="/billing" element={<ProtectedRoute allowedRoles={['CLIENT', 'ADMIN']}><BillingPage /></ProtectedRoute>} />
+              <Route path="/devices" element={<ProtectedRoute allowedRoles={['CLIENT', 'ADMIN']}><DevicesPage /></ProtectedRoute>} />
 
               {/* Tech/Admin Routes */}
               <Route path="/tech/dashboard" element={<ProtectedRoute allowedRoles={['TECHNICIAN']}><TechDashboard /></ProtectedRoute>} />

@@ -65,6 +65,21 @@ export class EquipmentController {
       next(error);
     }
   }
+
+  async getMyDevices(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const devices = await equipmentService.getActiveDevicesForClient(
+        req.user!.userId,
+        req.user!.tenantId
+      );
+      res.json({
+        success: true,
+        data: devices,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const equipmentController = new EquipmentController();
