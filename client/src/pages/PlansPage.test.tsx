@@ -4,7 +4,6 @@ import { expect, test, vi, beforeEach, describe } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { userService } from '@/services/userService';
 import { subscriptionService } from '@/services/subscriptionService';
-import { equipmentService } from '@/services/equipmentService';
 import { useAuth } from '@/hooks/useAuth';
 import { usePlanStore } from '@/store/usePlanStore';
 
@@ -177,6 +176,10 @@ describe('PlansPage', () => {
         expect(paypalButtonsOptions).not.toBeNull();
       });
 
+      // Click Terms of Service checkbox
+      const tosCheckbox = screen.getByLabelText(/plans.termsOfServiceLink/i);
+      fireEvent.click(tosCheckbox);
+
       // Call createOrder
       const orderId = await paypalButtonsOptions.createOrder();
       expect(orderId).toBe('MOCK-PAYPAL-ORDER');
@@ -253,6 +256,10 @@ describe('PlansPage', () => {
       await waitFor(() => {
         expect(paypalButtonsOptions).not.toBeNull();
       });
+
+      // Click Terms of Service checkbox
+      const tosCheckbox = screen.getByLabelText(/plans.termsOfServiceLink/i);
+      fireEvent.click(tosCheckbox);
 
       // Call createOrder
       const orderId = await paypalButtonsOptions.createOrder();
@@ -372,6 +379,10 @@ describe('PlansPage', () => {
         expect(screen.getByText('Subscription Modification')).toBeInTheDocument();
         expect(screen.getByText('Update Subscription')).toBeInTheDocument();
       });
+
+      // Click Terms of Service checkbox
+      const tosCheckbox = screen.getByLabelText(/plans.termsOfServiceLink/i);
+      fireEvent.click(tosCheckbox);
 
       fireEvent.click(screen.getByText('Update Subscription'));
 
@@ -494,6 +505,10 @@ describe('PlansPage', () => {
         expect(paypalButtonsOptions).not.toBeNull();
       });
 
+      // Click Terms of Service checkbox
+      const tosCheckbox = screen.getByLabelText(/plans.termsOfServiceLink/i);
+      fireEvent.click(tosCheckbox);
+
       // Call createOrder
       const orderId = await paypalButtonsOptions.createOrder();
       expect(orderId).toBe('MOCK-PAYPAL-ORDER');
@@ -561,6 +576,10 @@ describe('PlansPage', () => {
       await waitFor(() => {
         expect(paypalButtonsOptions).not.toBeNull();
       });
+
+      // Click Terms of Service checkbox
+      const tosCheckbox = screen.getByLabelText(/plans.termsOfServiceLink/i);
+      fireEvent.click(tosCheckbox);
 
       // Call createOrder
       const orderId = await paypalButtonsOptions.createOrder();

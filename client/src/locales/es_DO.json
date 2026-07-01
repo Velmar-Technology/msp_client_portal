@@ -290,6 +290,8 @@
     "unregisteredNamePlaceholder": "ej. Corporación Acme",
     "unregisteredOption": "-- Cliente No Registrado --",
     "total": "Total",
+    "agreeToTermsPrefix": "He leído y acepto los",
+    "termsOfServiceLink": "Términos de Servicio",
     "encryptedTx": "Transacción Encriptada",
     "militaryGradeSecurity": "Sus datos están protegidos con seguridad SSL de grado militar.",
     "basic": {

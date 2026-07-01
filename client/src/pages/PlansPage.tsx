@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Check, X, Shield, Edit, Trash2, GripVertical, ChevronUp, ChevronDown, Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Page } from '@/components/Page';
@@ -17,8 +17,6 @@ import type { Plan, PlanFeature } from '@/services/planService';
 import { userService } from '@/services/userService';
 import { subscriptionService } from '@/services/subscriptionService';
 import type { Subscription } from '@/services/subscriptionService';
-import { equipmentService } from '@/services/equipmentService';
-import type { SubscriptionEquipment } from '@/services/equipmentService';
 import type { AuthUser } from '@/store/useAuthStore';
 import { DataTable } from '@/components/ui/data-table';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -64,6 +62,11 @@ export function PlansPage() {
   const [userSelectedPlan, setUserSelectedPlan] = useState<string | null>(null);
   const [equipmentCounts, setEquipmentCounts] = useState<Record<string, number>>({});
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'transfer'>('card');
+  const [acceptedTos, setAcceptedTos] = useState(false);
+  const acceptedTosRef = useRef(acceptedTos);
+  useEffect(() => {
+    acceptedTosRef.current = acceptedTos;
+  }, [acceptedTos]);
   const [reference] = useState(() => `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9999)).padStart(4, '0')}`);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const [quoteLoading, setQuoteLoading] = useState(false);
@@ -238,6 +241,14 @@ export function PlansPage() {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           buttonsInstance = (window as any).paypal.Buttons({
             createOrder: async () => {
+              if (!acceptedTosRef.current) {
+                addToast({
+                  title: 'Terms of Service',
+                  message: 'Please accept the Terms of Service before proceeding.',
+                  type: 'warning',
+                });
+                throw new Error('Terms of Service not accepted');
+              }
               setPaymentMessage('Preparing checkout...');
               try {
                 const response = await subscriptionService.createPaypalOrder({
@@ -306,6 +317,14 @@ export function PlansPage() {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             upgradeButtonsInstance = (window as any).paypal.Buttons({
               createOrder: async () => {
+                if (!acceptedTosRef.current) {
+                  addToast({
+                    title: 'Terms of Service',
+                    message: 'Please accept the Terms of Service before proceeding.',
+                    type: 'warning',
+                  });
+                  throw new Error('Terms of Service not accepted');
+                }
                 setPaymentMessage('Preparing upgrade checkout...');
                 try {
                   const response = await subscriptionService.createPaypalOrder({
@@ -396,6 +415,15 @@ export function PlansPage() {
   const handleProcessSubscription = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentPlan) return;
+
+    if (!isAdmin && !acceptedTos) {
+      addToast({
+        title: 'Terms of Service',
+        message: 'Please accept the Terms of Service before proceeding.',
+        type: 'warning',
+      });
+      return;
+    }
 
     if (isAdmin && !selectedClientId) {
       addToast({
@@ -496,6 +524,14 @@ export function PlansPage() {
 
   const handleUpdateSubscription = async (subId: string, count: number) => {
     if (!currentPlan) return;
+    if (!isAdmin && !acceptedTos) {
+      addToast({
+        title: 'Terms of Service',
+        message: 'Please accept the Terms of Service before proceeding.',
+        type: 'warning',
+      });
+      return;
+    }
     setSubscribeLoading(true);
     try {
       await subscriptionService.update(subId, {
@@ -922,6 +958,28 @@ export function PlansPage() {
 
     return (
       <>
+        {!isAdmin && (
+          <div className="flex items-start gap-2.5 p-3 bg-surface-container rounded-lg border border-outline-variant mb-4">
+            <input
+              type="checkbox"
+              id="tos-checkbox"
+              checked={acceptedTos}
+              onChange={(e) => setAcceptedTos(e.target.checked)}
+              className="h-4 w-4 rounded border-outline text-primary focus:ring-primary mt-1 cursor-pointer"
+            />
+            <label htmlFor="tos-checkbox" className="text-body-sm text-on-surface cursor-pointer select-none">
+              {t('plans.agreeToTermsPrefix')}{' '}
+              <a
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline hover:text-primary/80 transition-colors font-medium"
+              >
+                {t('plans.termsOfServiceLink')}
+              </a>
+            </label>
+          </div>
+        )}
         <h2 className="text-h2 text-primary mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
           {t('plans.paymentMethod')}
         </h2>
@@ -1068,6 +1126,29 @@ export function PlansPage() {
                 You are modifying your subscription to the <strong className="text-on-surface">{getPlanName(currentPlan.name)}</strong> plan with <strong className="text-on-surface">{currentEquipmentCount}x</strong> device(s).
               </p>
             </div>
+
+            {!isAdmin && (
+              <div className="flex items-start gap-2.5 p-3 bg-surface-container rounded-lg border border-outline-variant my-3">
+                <input
+                  type="checkbox"
+                  id="tos-checkbox-manage"
+                  checked={acceptedTos}
+                  onChange={(e) => setAcceptedTos(e.target.checked)}
+                  className="h-4 w-4 rounded border-outline text-primary focus:ring-primary mt-1 cursor-pointer"
+                />
+                <label htmlFor="tos-checkbox-manage" className="text-body-sm text-on-surface cursor-pointer select-none">
+                  {t('plans.agreeToTermsPrefix')}{' '}
+                  <a
+                    href="/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline hover:text-primary/80 transition-colors font-medium"
+                  >
+                    {t('plans.termsOfServiceLink')}
+                  </a>
+                </label>
+              </div>
+            )}
 
             {currentEquipmentCount > activeSub.equipment_count ? (
               <div className="mt-2 border-t border-outline-variant pt-4">
@@ -1594,6 +1675,29 @@ export function PlansPage() {
                             </p>
                           </div>
                         </div>
+
+                        {!isAdmin && (
+                          <div className="flex items-start gap-2.5 p-3 bg-surface-container rounded-lg border border-outline-variant my-1">
+                            <input
+                              type="checkbox"
+                              id="tos-checkbox-manage-actual"
+                              checked={acceptedTos}
+                              onChange={(e) => setAcceptedTos(e.target.checked)}
+                              className="h-4 w-4 rounded border-outline text-primary focus:ring-primary mt-1 cursor-pointer"
+                            />
+                            <label htmlFor="tos-checkbox-manage-actual" className="text-body-sm text-on-surface cursor-pointer select-none">
+                              {t('plans.agreeToTermsPrefix')}{' '}
+                              <a
+                                href="/terms"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary underline hover:text-primary/80 transition-colors font-medium"
+                              >
+                                {t('plans.termsOfServiceLink')}
+                              </a>
+                            </label>
+                          </div>
+                        )}
 
                         {currentEquipmentCount > activeSub.equipment_count ? (
                           <div className="mt-2 border-t border-outline-variant pt-4">
