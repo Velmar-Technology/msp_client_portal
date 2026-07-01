@@ -51,6 +51,9 @@ export function TopNav() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Search states
   const [searchQuery, setSearchQuery] = useState('');
@@ -94,11 +97,17 @@ export function TopNav() {
     }
   };
 
-  // Close dropdown on click outside
+  // Close dropdowns on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+      }
+      if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+        setShowSettingsMenu(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -465,13 +474,52 @@ export function TopNav() {
         {/* Notifications */}
         <NotificationBell />
 
-        {/* Settings */}
-        <button className="p-2 text-on-surface-variant hover:bg-surface-container-low transition-colors rounded-lg cursor-pointer">
-          <Settings className="h-5 w-5" />
-        </button>
+        {/* Settings Quick Access */}
+        <div className="relative" ref={settingsRef}>
+          <button
+            onClick={() => setShowSettingsMenu(!showSettingsMenu)}
+            className={`p-2 transition-colors rounded-lg cursor-pointer ${
+              showSettingsMenu
+                ? 'bg-primary/10 text-primary'
+                : 'text-on-surface-variant hover:bg-surface-container-low'
+            }`}
+          >
+            <Settings className="h-5 w-5" />
+          </button>
+
+          {showSettingsMenu && (
+            <div className="absolute right-0 top-12 w-52 bg-surface-container-lowest border border-outline-variant rounded-lg shadow-lg py-1 animate-fade-in z-50">
+              <div className="px-3 py-2 border-b border-outline-variant">
+                <p className="text-label-sm font-bold text-on-surface-variant uppercase tracking-wider">
+                  {t('nav.account')}
+                </p>
+              </div>
+              {[
+                { to: '/profile', icon: User, labelKey: 'profile', roles: ['CLIENT', 'TECHNICIAN', 'ADMIN'] },
+                { to: '/notifications/preferences', icon: Bell, labelKey: 'notificationPreferences', roles: ['CLIENT', 'TECHNICIAN', 'ADMIN'] },
+                { to: '/plans', icon: CreditCard, labelKey: 'plans', roles: ['CLIENT', 'ADMIN'] },
+                { to: '/billing', icon: CreditCard, labelKey: 'billing', roles: ['CLIENT', 'ADMIN'] },
+              ]
+                .filter((item) => item.roles.includes(user?.role || 'CLIENT'))
+                .map((item) => (
+                  <button
+                    key={item.to}
+                    onClick={() => {
+                      navigate(item.to);
+                      setShowSettingsMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-on-surface hover:bg-surface-container-low transition-colors text-label-md cursor-pointer"
+                  >
+                    <item.icon className="h-4 w-4 text-on-surface-variant" />
+                    <span>{t(`nav.${item.labelKey}`)}</span>
+                  </button>
+                ))}
+            </div>
+          )}
+        </div>
 
         {/* User Menu */}
-        <div className="relative">
+        <div className="relative" ref={userMenuRef}>
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
             className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer"
