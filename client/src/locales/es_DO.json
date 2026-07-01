@@ -275,6 +275,12 @@
     "bankAccount": "Cuenta: 1234-5678-9012-3456",
     "bankReference": "Referencia",
     "orderSummary": "Resumen del Pedido",
+    "planSummary": "Resumen del Plan",
+    "basePlanName": "Plan Base ({{name}})",
+    "addonCloudStorage": "Adicional: Almacenamiento en la Nube",
+    "included": "Incluido",
+    "additionalDevices": "Dispositivos Adicionales (x{{count}})",
+    "estimatedMonthly": "Mensual Estimado",
     "planMonthly": "Plan (Mensual)",
     "equipmentCountSuffix": "dispositivo(s)",
     "taxes": "Impuestos (ITBIS 18%)",
@@ -323,6 +329,15 @@
       "criticalSupport": "Soporte Crítico 24/7",
       "quarterlySecurity": "Auditoría Trimestral de Seguridad"
     }
+  },
+  "devices": {
+    "tableSlot": "Ranura",
+    "tableStatus": "Estado",
+    "tableDeviceDetails": "Detalles del Dispositivo",
+    "tableCloudBackup": "Almacenamiento de Respaldo",
+    "tableActions": "Acciones",
+    "actionsLabel": "Acciones",
+    "searchPlaceholder": "Buscar por ID del Dispositivo..."
   },
   "billing": {
     "title": "Historial de Facturación",

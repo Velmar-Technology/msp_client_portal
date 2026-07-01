@@ -275,6 +275,12 @@
     "bankAccount": "Account: 1234-5678-9012-3456",
     "bankReference": "Reference",
     "orderSummary": "Order Summary",
+    "planSummary": "Plan Summary",
+    "basePlanName": "Base Plan ({{name}})",
+    "addonCloudStorage": "Add-on: Cloud Storage",
+    "included": "Included",
+    "additionalDevices": "Additional Devices (x{{count}})",
+    "estimatedMonthly": "Estimated Monthly",
     "planMonthly": "Plan (Monthly)",
     "equipmentCountSuffix": "device(s)",
     "taxes": "Taxes (ITBIS 18%)",
@@ -323,6 +329,15 @@
       "criticalSupport": "24/7 Critical Support",
       "quarterlySecurity": "Quarterly Security Audit"
     }
+  },
+  "devices": {
+    "tableSlot": "Slot",
+    "tableStatus": "Status",
+    "tableDeviceDetails": "Device Details",
+    "tableCloudBackup": "Cloud Backup Storage",
+    "tableActions": "Actions",
+    "actionsLabel": "Actions",
+    "searchPlaceholder": "Search by Device ID..."
   },
   "billing": {
     "title": "Billing History",

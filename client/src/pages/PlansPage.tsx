@@ -1752,30 +1752,60 @@ export function PlansPage() {
                   {/* Plan Summary Card */}
                   <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
                     <h4 className="font-headline-md text-headline-md font-bold text-primary mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
-                      Plan Summary
+                      {t('plans.planSummary')}
                     </h4>
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center text-body-sm">
-                        <span className="text-on-surface-variant font-medium">Base Plan ({activeSub.service_name})</span>
-                        <span className="font-semibold text-on-surface">
-                          ${billingCycle === 'annual' ? ((currentPlan?.price || 0) * 0.8).toFixed(2) : (currentPlan?.price || 0).toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center text-body-sm">
-                        <span className="text-on-surface-variant font-medium">Add-on: Cloud Storage</span>
-                        <span className="font-semibold text-on-surface">Included</span>
-                      </div>
-                      <div className="flex justify-between items-center text-body-sm">
-                        <span className="text-on-surface-variant font-medium">Managed Devices (x{activeSub.equipment_count})</span>
-                        <span className="font-semibold text-on-surface">$0.00</span>
-                      </div>
-                      <div className="pt-4 border-t border-outline-variant flex justify-between items-center">
-                        <span className="font-bold text-on-surface">Estimated Monthly</span>
-                        <span className="text-xl font-bold text-primary">
-                          ${billingCycle === 'annual' ? ((currentPlan?.price || 0) * 0.8).toFixed(2) : (currentPlan?.price || 0).toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
+                    {(() => {
+                      const basePrice = currentPlan ? (billingCycle === 'annual' ? currentPlan.price * 0.8 : currentPlan.price) : 0;
+                      const planName = currentPlan ? getPlanName(currentPlan.name) : activeSub.service_name;
+                      const additionalDevicesCount = Math.max(0, currentEquipmentCount - 1);
+                      const additionalDevicesPrice = basePrice * additionalDevicesCount;
+                      const estimatedTotal = basePrice * currentEquipmentCount;
+                      const annualBilledTotal = basePrice * 12 * currentEquipmentCount;
+
+                      return (
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-center text-body-sm">
+                            <span className="text-on-surface-variant font-medium">
+                              {t('plans.basePlanName', { name: planName })}
+                            </span>
+                            <span className="font-semibold text-on-surface">
+                              ${basePrice.toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center text-body-sm">
+                            <span className="text-on-surface-variant font-medium">
+                              {t('plans.addonCloudStorage')}
+                            </span>
+                            <span className="font-semibold text-on-surface">
+                              {t('plans.included')}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center text-body-sm">
+                            <span className="text-on-surface-variant font-medium">
+                              {t('plans.additionalDevices', { count: additionalDevicesCount })}
+                            </span>
+                            <span className="font-semibold text-on-surface">
+                              ${additionalDevicesPrice.toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="pt-4 border-t border-outline-variant">
+                            <div className="flex justify-between items-center">
+                              <span className="font-bold text-on-surface">
+                                {t('plans.estimatedMonthly')}
+                              </span>
+                              <span className="text-xl font-bold text-primary">
+                                ${estimatedTotal.toFixed(2)}
+                              </span>
+                            </div>
+                            {billingCycle === 'annual' && (
+                              <p className="text-right text-[11px] text-on-surface-variant mt-1 font-medium">
+                                Billed annually as ${annualBilledTotal.toFixed(2)}/yr
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Tailored Enterprise Help Card */}
