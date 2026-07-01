@@ -1,25 +1,19 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { Check, X, Shield, Edit, Trash2, GripVertical, ChevronUp, ChevronDown, Info } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { Page } from '@/components/Page';
-import { Input } from '@/components/ui/input';
-import {
-  Sheet,
-  SheetTrigger,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
-import { useAuth } from '@/hooks/useAuth';
-import { usePlanStore } from '@/store/usePlanStore';
-import { useNotificationStore } from '@/store/useNotificationStore';
-import type { Plan, PlanFeature } from '@/services/planService';
-import { userService } from '@/services/userService';
-import { subscriptionService } from '@/services/subscriptionService';
-import type { Subscription } from '@/services/subscriptionService';
-import type { AuthUser } from '@/store/useAuthStore';
-import { DataTable } from '@/components/ui/data-table';
-import type { ColumnDef } from '@tanstack/react-table';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Check, X, Shield, Edit, Trash2, GripVertical, ChevronUp, ChevronDown, Info } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Page } from "@/components/Page";
+import { Input } from "@/components/ui/input";
+import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useAuth } from "@/hooks/useAuth";
+import { usePlanStore } from "@/store/usePlanStore";
+import { useNotificationStore } from "@/store/useNotificationStore";
+import type { Plan, PlanFeature } from "@/services/planService";
+import { userService } from "@/services/userService";
+import { subscriptionService } from "@/services/subscriptionService";
+import type { Subscription } from "@/services/subscriptionService";
+import type { AuthUser } from "@/store/useAuthStore";
+import { DataTable } from "@/components/ui/data-table";
+import type { ColumnDef } from "@tanstack/react-table";
 
 export function PlansPage() {
   const { t, i18n } = useTranslation();
@@ -28,25 +22,25 @@ export function PlansPage() {
   const { addToast } = useNotificationStore();
 
   const getLocalizedValue = (val: string | Record<string, string> | null | undefined): string => {
-    if (!val) return '';
-    if (typeof val === 'string') {
+    if (!val) return "";
+    if (typeof val === "string") {
       return val;
     }
-    const lang = i18n.language || 'en_US';
-    const resolvedLang = lang.startsWith('es') ? 'es_DO' : 'en_US';
-    
+    const lang = i18n.language || "en_US";
+    const resolvedLang = lang.startsWith("es") ? "es_DO" : "en_US";
+
     if (val[resolvedLang]) return val[resolvedLang];
-    if (val['en_US']) return val['en_US'];
+    if (val["en_US"]) return val["en_US"];
     const keys = Object.keys(val);
     if (keys.length > 0) return val[keys[0]];
-    return '';
+    return "";
   };
 
   const getPlanName = (name: string | Record<string, string>) => getLocalizedValue(name);
   const getPlanDescription = (desc: string | Record<string, string> | null | undefined) => getLocalizedValue(desc);
 
   const getFeatureText = (text: string | Record<string, string>) => {
-    if (typeof text !== 'string') {
+    if (typeof text !== "string") {
       return getLocalizedValue(text);
     }
     // If the text looks like a translation key (no spaces), translate it
@@ -61,31 +55,32 @@ export function PlansPage() {
 
   const [userSelectedPlan, setUserSelectedPlan] = useState<string | null>(null);
   const [equipmentCounts, setEquipmentCounts] = useState<Record<string, number>>({});
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'transfer'>('card');
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "transfer">("card");
   const [acceptedTos, setAcceptedTos] = useState(false);
   const acceptedTosRef = useRef(acceptedTos);
   useEffect(() => {
     acceptedTosRef.current = acceptedTos;
   }, [acceptedTos]);
-  const [reference] = useState(() => `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9999)).padStart(4, '0')}`);
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [reference] = useState(
+    () => `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9999)).padStart(4, "0")}`,
+  );
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [isUnregistered] = useState(false);
-  const [unregisteredEmail, setUnregisteredEmail] = useState('');
-  const [unregisteredName, setUnregisteredName] = useState('');
+  const [unregisteredEmail, setUnregisteredEmail] = useState("");
+  const [unregisteredName, setUnregisteredName] = useState("");
 
   // Tab Selector State
-  const [activeTab, setActiveTab] = useState<'browse' | 'manage'>('browse');
-
+  const [activeTab, setActiveTab] = useState<"browse" | "manage">("browse");
 
   // Admin Editor State
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
-  const [editId, setEditId] = useState('');
-  const [editName, setEditName] = useState<Record<string, string>>({ en_US: '', es_DO: '' });
-  const [editDescription, setEditDescription] = useState<Record<string, string>>({ en_US: '', es_DO: '' });
+  const [editId, setEditId] = useState("");
+  const [editName, setEditName] = useState<Record<string, string>>({ en_US: "", es_DO: "" });
+  const [editDescription, setEditDescription] = useState<Record<string, string>>({ en_US: "", es_DO: "" });
   const [editPrice, setEditPrice] = useState(0);
   const [editRecommended, setEditRecommended] = useState(false);
-  const [editClientType, setEditClientType] = useState('CLIENT');
+  const [editClientType, setEditClientType] = useState("CLIENT");
   const [editActive, setEditActive] = useState(true);
   const [editFeatures, setEditFeatures] = useState<PlanFeature[]>([]);
   const [saveLoading, setSaveLoading] = useState(false);
@@ -96,27 +91,27 @@ export function PlansPage() {
 
   // Admin apply plan state
   const [clients, setClients] = useState<AuthUser[]>([]);
-  const [selectedClientId, setSelectedClientId] = useState('');
+  const [selectedClientId, setSelectedClientId] = useState("");
   const [subscribeLoading, setSubscribeLoading] = useState(false);
   const [paymentMessage, setPaymentMessage] = useState<string | null>(null);
 
   // Active plan management state
   const [activeSubscriptions, setActiveSubscriptions] = useState<Subscription[]>([]);
 
-  const isAdmin = user?.role === 'ADMIN';
+  const isAdmin = user?.role === "ADMIN";
 
   const filteredPlans = plans.filter((plan) => {
-    if (isAdmin || user?.role === 'TECHNICIAN') return true;
-    const userClientType = user?.clientType || 'CLIENT';
-    const planClientType = plan.client_type || 'CLIENT';
+    if (isAdmin || user?.role === "TECHNICIAN") return true;
+    const userClientType = user?.clientType || "CLIENT";
+    const planClientType = plan.client_type || "CLIENT";
     return plan.active !== false && planClientType === userClientType;
   });
 
   const fetchActiveSubscriptions = useCallback(async () => {
-    if (isAdmin || user?.role !== 'CLIENT') return;
+    if (isAdmin || user?.role !== "CLIENT") return;
     try {
       const subs = await subscriptionService.getAll();
-      const active = subs.filter((sub) => sub.status === 'ACTIVE');
+      const active = subs.filter((sub) => sub.status === "ACTIVE");
       setActiveSubscriptions(active);
 
       // Initialize equipmentCounts for all active subscriptions
@@ -126,8 +121,6 @@ export function PlansPage() {
       });
       setEquipmentCounts((prev) => ({ ...prev, ...counts }));
 
-
-
       setUserSelectedPlan((prev) => {
         if (!prev && active.length > 0) {
           return active[0].plan;
@@ -135,12 +128,12 @@ export function PlansPage() {
         return prev;
       });
     } catch (err) {
-      console.error('Failed to fetch active subscriptions:', err);
+      console.error("Failed to fetch active subscriptions:", err);
     }
   }, [isAdmin, user]);
 
   useEffect(() => {
-    fetchPlans().catch((err) => console.error('Failed to fetch plans:', err));
+    fetchPlans().catch((err) => console.error("Failed to fetch plans:", err));
   }, [fetchPlans]);
 
   // Set default equipment counts when plans are loaded
@@ -157,34 +150,44 @@ export function PlansPage() {
 
   useEffect(() => {
     if (isAdmin) {
-      userService.getClients()
+      userService
+        .getClients()
         .then((data) => {
           setClients(data || []);
           if (data && data.length > 0) {
             setSelectedClientId(data[0].id);
           } else {
-            setSelectedClientId('unregistered');
+            setSelectedClientId("unregistered");
           }
         })
-        .catch((err) => console.error('Failed to fetch clients:', err));
+        .catch((err) => console.error("Failed to fetch clients:", err));
     } else {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchActiveSubscriptions();
     }
   }, [isAdmin, user, fetchActiveSubscriptions]);
 
-  const selectedPlan = userSelectedPlan || (activeSubscriptions.length > 0 ? activeSubscriptions[0].plan : (filteredPlans.find((p) => p.id === 'STANDARD') ? 'STANDARD' : (filteredPlans[0]?.id || '')));
+  const selectedPlan =
+    userSelectedPlan ||
+    (activeSubscriptions.length > 0
+      ? activeSubscriptions[0].plan
+      : filteredPlans.find((p) => p.id === "STANDARD")
+        ? "STANDARD"
+        : filteredPlans[0]?.id || "");
 
-  const currentPlan = filteredPlans.find((p) => p.id === selectedPlan) || filteredPlans.find((p) => p.id === 'STANDARD') || filteredPlans[0];
+  const currentPlan =
+    filteredPlans.find((p) => p.id === selectedPlan) ||
+    filteredPlans.find((p) => p.id === "STANDARD") ||
+    filteredPlans[0];
 
-  const [actionType, setActionType] = useState<'subscribe' | 'modify'>('modify');
-  const [subscriptionToModifyId, setSubscriptionToModifyId] = useState<string>('');
+  const [actionType, setActionType] = useState<"subscribe" | "modify">("modify");
+  const [subscriptionToModifyId, setSubscriptionToModifyId] = useState<string>("");
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setActionType('modify');
+    setActionType("modify");
     if (activeSubscriptions.length > 0) {
-      const activeSubForPlan = activeSubscriptions.find((sub) => sub.plan === selectedPlan && sub.status === 'ACTIVE');
+      const activeSubForPlan = activeSubscriptions.find((sub) => sub.plan === selectedPlan && sub.status === "ACTIVE");
       if (activeSubForPlan) {
         setSubscriptionToModifyId(activeSubForPlan.id);
       } else {
@@ -196,7 +199,7 @@ export function PlansPage() {
   const currentEquipmentCount = equipmentCounts[currentPlan?.id] || 1;
 
   useEffect(() => {
-    if (isAdmin || user?.role !== 'CLIENT' || paymentMethod !== 'card' || !currentPlan) return;
+    if (isAdmin || user?.role !== "CLIENT" || paymentMethod !== "card" || !currentPlan) return;
 
     let scriptElement: HTMLScriptElement | null = null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -205,20 +208,20 @@ export function PlansPage() {
     let upgradeButtonsInstance: any = null;
 
     async function initializePaypal() {
-      const scriptId = 'paypal-js-sdk-script';
+      const scriptId = "paypal-js-sdk-script";
       const existingScript = document.getElementById(scriptId) as HTMLScriptElement;
 
       if (!existingScript) {
-        scriptElement = document.createElement('script');
+        scriptElement = document.createElement("script");
         scriptElement.id = scriptId;
-        const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID || 'test';
+        const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID || "test";
         scriptElement.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD`;
         scriptElement.async = true;
         document.body.appendChild(scriptElement);
 
         await new Promise((resolve) => {
           if (scriptElement) scriptElement.onload = resolve;
-          if (typeof window !== 'undefined' && navigator.userAgent.includes('jsdom')) {
+          if (typeof window !== "undefined" && navigator.userAgent.includes("jsdom")) {
             setTimeout(resolve, 0);
           }
         });
@@ -228,14 +231,14 @@ export function PlansPage() {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (!(window as any).paypal) {
-        console.error('PayPal SDK failed to load');
-        setPaymentMessage('PayPal SDK failed to load');
+        console.error("PayPal SDK failed to load");
+        setPaymentMessage("PayPal SDK failed to load");
         return;
       }
 
-      const container = document.getElementById('paypal-button-container');
+      const container = document.getElementById("paypal-button-container");
       if (container) {
-        container.innerHTML = '';
+        container.innerHTML = "";
         setPaymentMessage(null);
         try {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -243,30 +246,30 @@ export function PlansPage() {
             createOrder: async () => {
               if (!acceptedTosRef.current) {
                 addToast({
-                  title: 'Terms of Service',
-                  message: 'Please accept the Terms of Service before proceeding.',
-                  type: 'warning',
+                  title: "Terms of Service",
+                  message: "Please accept the Terms of Service before proceeding.",
+                  type: "warning",
                 });
-                throw new Error('Terms of Service not accepted');
+                throw new Error("Terms of Service not accepted");
               }
-              setPaymentMessage('Preparing checkout...');
+              setPaymentMessage("Preparing checkout...");
               try {
                 const response = await subscriptionService.createPaypalOrder({
                   plan: currentPlan.id,
                   equipmentCount: currentEquipmentCount,
                   billingCycle,
                 });
-                setPaymentMessage('Order created. Please approve payment in PayPal window.');
+                setPaymentMessage("Order created. Please approve payment in PayPal window.");
                 return response.orderId;
               } catch (err) {
                 console.error(err);
-                setPaymentMessage('Failed to prepare checkout.');
+                setPaymentMessage("Failed to prepare checkout.");
                 throw err;
               }
             },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onApprove: async (data: any) => {
-              setPaymentMessage('Payment approved. Activating subscription...');
+              setPaymentMessage("Payment approved. Activating subscription...");
               setSubscribeLoading(true);
               try {
                 await subscriptionService.create({
@@ -276,20 +279,20 @@ export function PlansPage() {
                   billingCycle,
                   paypalOrderId: data.orderID,
                 });
-                setPaymentMessage('Subscription activated successfully!');
+                setPaymentMessage("Subscription activated successfully!");
                 addToast({
-                  title: 'Subscribed Successfully',
+                  title: "Subscribed Successfully",
                   message: `Successfully subscribed to the ${getPlanName(currentPlan.name)} plan.`,
-                  type: 'success',
+                  type: "success",
                 });
                 await fetchActiveSubscriptions();
               } catch (err) {
                 console.error(err);
-                setPaymentMessage('Failed to activate subscription.');
+                setPaymentMessage("Failed to activate subscription.");
                 addToast({
-                  title: 'Subscription Failed',
-                  message: 'Payment verification failed or could not activate subscription.',
-                  type: 'error',
+                  title: "Subscription Failed",
+                  message: "Payment verification failed or could not activate subscription.",
+                  type: "error",
                 });
               } finally {
                 setSubscribeLoading(false);
@@ -298,34 +301,35 @@ export function PlansPage() {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onError: (err: any) => {
               console.error(err);
-              setPaymentMessage('PayPal Checkout encountered an error.');
-            }
+              setPaymentMessage("PayPal Checkout encountered an error.");
+            },
           });
-          buttonsInstance.render('#paypal-button-container');
+          buttonsInstance.render("#paypal-button-container");
         } catch (err) {
-          console.error('Failed to render PayPal buttons', err);
+          console.error("Failed to render PayPal buttons", err);
         }
       }
 
-      const upgradeContainer = document.getElementById('paypal-upgrade-button-container');
+      const upgradeContainer = document.getElementById("paypal-upgrade-button-container");
       if (upgradeContainer) {
-        upgradeContainer.innerHTML = '';
+        upgradeContainer.innerHTML = "";
         setPaymentMessage(null);
         try {
-          const activeSub = activeSubscriptions.find((sub) => sub.id === subscriptionToModifyId) || activeSubscriptions[0];
+          const activeSub =
+            activeSubscriptions.find((sub) => sub.id === subscriptionToModifyId) || activeSubscriptions[0];
           if (activeSub) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             upgradeButtonsInstance = (window as any).paypal.Buttons({
               createOrder: async () => {
                 if (!acceptedTosRef.current) {
                   addToast({
-                    title: 'Terms of Service',
-                    message: 'Please accept the Terms of Service before proceeding.',
-                    type: 'warning',
+                    title: "Terms of Service",
+                    message: "Please accept the Terms of Service before proceeding.",
+                    type: "warning",
                   });
-                  throw new Error('Terms of Service not accepted');
+                  throw new Error("Terms of Service not accepted");
                 }
-                setPaymentMessage('Preparing upgrade checkout...');
+                setPaymentMessage("Preparing upgrade checkout...");
                 try {
                   const response = await subscriptionService.createPaypalOrder({
                     plan: currentPlan.id,
@@ -333,17 +337,17 @@ export function PlansPage() {
                     billingCycle,
                     currentSubscriptionId: activeSub.id,
                   });
-                  setPaymentMessage('Upgrade order created. Please approve payment in PayPal window.');
+                  setPaymentMessage("Upgrade order created. Please approve payment in PayPal window.");
                   return response.orderId;
                 } catch (err) {
                   console.error(err);
-                  setPaymentMessage('Failed to prepare upgrade checkout.');
+                  setPaymentMessage("Failed to prepare upgrade checkout.");
                   throw err;
                 }
               },
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               onApprove: async (data: any) => {
-                setPaymentMessage('Upgrade payment approved. Updating subscription...');
+                setPaymentMessage("Upgrade payment approved. Updating subscription...");
                 setSubscribeLoading(true);
                 try {
                   await subscriptionService.update(activeSub.id, {
@@ -351,20 +355,20 @@ export function PlansPage() {
                     equipmentCount: currentEquipmentCount,
                     paypalOrderId: data.orderID,
                   });
-                  setPaymentMessage('Subscription upgraded successfully!');
+                  setPaymentMessage("Subscription upgraded successfully!");
                   addToast({
-                    title: 'Subscription Updated',
+                    title: "Subscription Updated",
                     message: `Successfully updated your subscription to ${getPlanName(currentPlan.name)} with ${currentEquipmentCount} devices.`,
-                    type: 'success',
+                    type: "success",
                   });
                   await fetchActiveSubscriptions();
                 } catch (err) {
                   console.error(err);
-                  setPaymentMessage('Failed to update subscription.');
+                  setPaymentMessage("Failed to update subscription.");
                   addToast({
-                    title: 'Upgrade Failed',
-                    message: 'Payment verification failed or could not upgrade subscription.',
-                    type: 'error',
+                    title: "Upgrade Failed",
+                    message: "Payment verification failed or could not upgrade subscription.",
+                    type: "error",
                   });
                 } finally {
                   setSubscribeLoading(false);
@@ -373,13 +377,13 @@ export function PlansPage() {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               onError: (err: any) => {
                 console.error(err);
-                setPaymentMessage('PayPal Upgrade Checkout encountered an error.');
-              }
+                setPaymentMessage("PayPal Upgrade Checkout encountered an error.");
+              },
             });
-            upgradeButtonsInstance.render('#paypal-upgrade-button-container');
+            upgradeButtonsInstance.render("#paypal-upgrade-button-container");
           }
         } catch (err) {
-          console.error('Failed to render PayPal upgrade buttons', err);
+          console.error("Failed to render PayPal upgrade buttons", err);
         }
       }
     }
@@ -392,15 +396,26 @@ export function PlansPage() {
       clearTimeout(timer);
       if (buttonsInstance && buttonsInstance.close) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        buttonsInstance.close().catch((e: any) => console.error('Error closing buttons', e));
+        buttonsInstance.close().catch((e: any) => console.error("Error closing buttons", e));
       }
       if (upgradeButtonsInstance && upgradeButtonsInstance.close) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        upgradeButtonsInstance.close().catch((e: any) => console.error('Error closing upgrade buttons', e));
+        upgradeButtonsInstance.close().catch((e: any) => console.error("Error closing upgrade buttons", e));
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAdmin, user, paymentMethod, currentPlan, currentEquipmentCount, billingCycle, subscriptionToModifyId, activeSubscriptions, fetchActiveSubscriptions, addToast]);
+  }, [
+    isAdmin,
+    user,
+    paymentMethod,
+    currentPlan,
+    currentEquipmentCount,
+    billingCycle,
+    subscriptionToModifyId,
+    activeSubscriptions,
+    fetchActiveSubscriptions,
+    addToast,
+  ]);
 
   const handleAdjustEquipmentCount = (planId: string, delta: number) => {
     setEquipmentCounts((prev) => ({
@@ -409,27 +424,24 @@ export function PlansPage() {
     }));
   };
 
-
-
-
   const handleProcessSubscription = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentPlan) return;
 
     if (!isAdmin && !acceptedTos) {
       addToast({
-        title: 'Terms of Service',
-        message: 'Please accept the Terms of Service before proceeding.',
-        type: 'warning',
+        title: "Terms of Service",
+        message: "Please accept the Terms of Service before proceeding.",
+        type: "warning",
       });
       return;
     }
 
     if (isAdmin && !selectedClientId) {
       addToast({
-        title: 'Validation Error',
-        message: 'Please select a customer to apply the plan to.',
-        type: 'error',
+        title: "Validation Error",
+        message: "Please select a customer to apply the plan to.",
+        type: "error",
       });
       return;
     }
@@ -445,20 +457,20 @@ export function PlansPage() {
       });
 
       addToast({
-        title: isAdmin ? 'Plan Applied' : 'Subscribed Successfully',
+        title: isAdmin ? "Plan Applied" : "Subscribed Successfully",
         message: isAdmin
           ? `Successfully applied the ${getPlanName(currentPlan.name)} plan to the customer.`
           : `Successfully subscribed to the ${getPlanName(currentPlan.name)} plan.`,
-        type: 'success',
+        type: "success",
       });
       await fetchActiveSubscriptions();
     } catch (err) {
-      console.error('Failed to create subscription:', err);
+      console.error("Failed to create subscription:", err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
       addToast({
-        title: 'Subscription Failed',
-        message: error.response?.data?.message || error.message || 'Failed to create subscription.',
-        type: 'error',
+        title: "Subscription Failed",
+        message: error.response?.data?.message || error.message || "Failed to create subscription.",
+        type: "error",
       });
     } finally {
       setSubscribeLoading(false);
@@ -469,21 +481,21 @@ export function PlansPage() {
     e.preventDefault();
     if (!currentPlan) return;
 
-    const sendToUnregistered = isUnregistered || (isAdmin && selectedClientId === 'unregistered');
+    const sendToUnregistered = isUnregistered || (isAdmin && selectedClientId === "unregistered");
     if (sendToUnregistered && !unregisteredEmail.trim()) {
       addToast({
-        title: 'Validation Error',
-        message: 'Please enter a recipient email address.',
-        type: 'error',
+        title: "Validation Error",
+        message: "Please enter a recipient email address.",
+        type: "error",
       });
       return;
     }
 
     if (isAdmin && !selectedClientId) {
       addToast({
-        title: 'Validation Error',
-        message: 'Please select a customer or unregistered option.',
-        type: 'error',
+        title: "Validation Error",
+        message: "Please select a customer or unregistered option.",
+        type: "error",
       });
       return;
     }
@@ -493,29 +505,29 @@ export function PlansPage() {
       await subscriptionService.sendQuote({
         plan: currentPlan.id,
         equipmentCount: currentEquipmentCount,
-        clientId: (!sendToUnregistered && isAdmin) ? selectedClientId : undefined,
+        clientId: !sendToUnregistered && isAdmin ? selectedClientId : undefined,
         unregisteredEmail: sendToUnregistered ? unregisteredEmail.trim() : undefined,
         unregisteredName: sendToUnregistered ? unregisteredName.trim() || undefined : undefined,
         billingCycle,
       });
 
       addToast({
-        title: 'Quotation Sent',
-        message: t('plans.quoteSuccess'),
-        type: 'success',
+        title: "Quotation Sent",
+        message: t("plans.quoteSuccess"),
+        type: "success",
       });
 
       if (sendToUnregistered) {
-        setUnregisteredEmail('');
-        setUnregisteredName('');
+        setUnregisteredEmail("");
+        setUnregisteredName("");
       }
     } catch (err) {
-      console.error('Failed to send quotation:', err);
+      console.error("Failed to send quotation:", err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
       addToast({
-        title: t('plans.quoteError'),
-        message: error.response?.data?.message || error.message || 'Failed to send quotation.',
-        type: 'error',
+        title: t("plans.quoteError"),
+        message: error.response?.data?.message || error.message || "Failed to send quotation.",
+        type: "error",
       });
     } finally {
       setQuoteLoading(false);
@@ -526,9 +538,9 @@ export function PlansPage() {
     if (!currentPlan) return;
     if (!isAdmin && !acceptedTos) {
       addToast({
-        title: 'Terms of Service',
-        message: 'Please accept the Terms of Service before proceeding.',
-        type: 'warning',
+        title: "Terms of Service",
+        message: "Please accept the Terms of Service before proceeding.",
+        type: "warning",
       });
       return;
     }
@@ -539,18 +551,18 @@ export function PlansPage() {
         equipmentCount: count,
       });
       addToast({
-        title: 'Subscription Updated',
+        title: "Subscription Updated",
         message: `Successfully updated your subscription to ${getPlanName(currentPlan.name)}.`,
-        type: 'success',
+        type: "success",
       });
       await fetchActiveSubscriptions();
     } catch (err) {
-      console.error('Failed to update subscription:', err);
+      console.error("Failed to update subscription:", err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
       addToast({
-        title: 'Update Failed',
-        message: error.response?.data?.message || error.message || 'Failed to update subscription.',
-        type: 'error',
+        title: "Update Failed",
+        message: error.response?.data?.message || error.message || "Failed to update subscription.",
+        type: "error",
       });
     } finally {
       setSubscribeLoading(false);
@@ -559,108 +571,106 @@ export function PlansPage() {
 
   const handleCancelSubscription = async (subId: string) => {
     const confirmCancel = window.confirm(
-      'Are you sure you want to cancel your subscription? This action will take effect immediately.'
+      "Are you sure you want to cancel your subscription? This action will take effect immediately.",
     );
     if (!confirmCancel) return;
 
     setSubscribeLoading(true);
     try {
       await subscriptionService.update(subId, {
-        status: 'CANCELLED',
+        status: "CANCELLED",
       });
       addToast({
-        title: 'Subscription Cancelled',
-        message: 'Your subscription has been successfully cancelled.',
-        type: 'success',
+        title: "Subscription Cancelled",
+        message: "Your subscription has been successfully cancelled.",
+        type: "success",
       });
       await fetchActiveSubscriptions();
     } catch (err) {
-      console.error('Failed to cancel subscription:', err);
+      console.error("Failed to cancel subscription:", err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
       addToast({
-        title: 'Cancellation Failed',
-        message: error.response?.data?.message || error.message || 'Failed to cancel subscription.',
-        type: 'error',
+        title: "Cancellation Failed",
+        message: error.response?.data?.message || error.message || "Failed to cancel subscription.",
+        type: "error",
       });
     } finally {
       setSubscribeLoading(false);
     }
   };
 
-  const priceMultiplier = billingCycle === 'annual' ? 12 * 0.8 : 1;
-  const subtotal = currentPlan ? Math.round(currentPlan.price * priceMultiplier * currentEquipmentCount * 100) / 100 : 0;
+  const priceMultiplier = billingCycle === "annual" ? 12 * 0.8 : 1;
+  const subtotal = currentPlan
+    ? Math.round(currentPlan.price * priceMultiplier * currentEquipmentCount * 100) / 100
+    : 0;
   const tax = Math.round(subtotal * 0.18 * 100) / 100;
   const total = Math.round((subtotal + tax) * 100) / 100;
 
-
-
   const getTierLabel = (planId: string) => {
-    if (planId === 'BASIC') return t('plans.basic.tier') || 'Level 1';
-    if (planId === 'STANDARD') return t('plans.standard.tier') || 'Level 2';
-    if (planId === 'PREMIUM') return t('plans.premium.tier') || 'Level 3';
-    return 'Level';
+    if (planId === "BASIC") return t("plans.basic.tier") || "Level 1";
+    if (planId === "STANDARD") return t("plans.standard.tier") || "Level 2";
+    if (planId === "PREMIUM") return t("plans.premium.tier") || "Level 3";
+    return "Level";
   };
 
   // Table Columns for Subscription Dashboard (DataTable)
   const subscriptionDashboardColumns: ColumnDef<Subscription>[] = [
     {
-      accessorKey: 'service_name',
-      header: 'Service Name',
+      accessorKey: "service_name",
+      header: "Service Name",
       cell: ({ row }) => (
-        <span className="font-semibold text-primary text-body-sm">
-          {row.getValue('service_name')}
-        </span>
-      )
+        <span className="font-semibold text-primary text-body-sm">{row.getValue("service_name")}</span>
+      ),
     },
     {
-      accessorKey: 'plan',
-      header: 'Tier',
+      accessorKey: "plan",
+      header: "Tier",
       cell: ({ row }) => {
-        const planId = row.getValue('plan') as string;
+        const planId = row.getValue("plan") as string;
         return (
           <span className="inline-block px-2 py-0.5 border border-outline-variant rounded text-mono w-fit text-on-surface-variant font-medium text-xs">
             {getTierLabel(planId)}
           </span>
         );
-      }
+      },
     },
     {
-      accessorKey: 'status',
-      header: 'Status',
+      accessorKey: "status",
+      header: "Status",
       cell: ({ row }) => (
         <span className="bg-success/15 text-success border border-success/30 px-2.5 py-1 rounded-full text-label-sm font-bold">
-          {row.getValue('status')}
+          {row.getValue("status")}
         </span>
-      )
+      ),
     },
     {
-      accessorKey: 'renewal_date',
-      header: 'Renewal Date',
+      accessorKey: "renewal_date",
+      header: "Renewal Date",
       cell: ({ row }) => {
-        const dateStr = row.getValue('renewal_date') as string;
+        const dateStr = row.getValue("renewal_date") as string;
         return (
           <span className="text-body-sm text-on-surface-variant">
-            {new Date(dateStr).toLocaleDateString(i18n.language.startsWith('es') ? 'es-DO' : 'en-US', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric',
+            {new Date(dateStr).toLocaleDateString(i18n.language.startsWith("es") ? "es-DO" : "en-US", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
             })}
           </span>
         );
-      }
+      },
     },
     {
-      accessorKey: 'equipment_count',
-      header: 'Devices Limit',
+      accessorKey: "equipment_count",
+      header: "Devices Limit",
       cell: ({ row }) => (
         <span className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-xs font-semibold">
-          {row.getValue('equipment_count')} Devices
+          {row.getValue("equipment_count")} Devices
         </span>
-      )
+      ),
     },
     {
-      id: 'actions',
-      header: 'Actions',
+      id: "actions",
+      header: "Actions",
       cell: ({ row }) => {
         const sub = row.original;
         return (
@@ -668,19 +678,16 @@ export function PlansPage() {
             type="button"
             onClick={() => {
               setUserSelectedPlan(sub.plan);
-              document.getElementById('customer-select')?.scrollIntoView({ behavior: 'smooth' });
+              document.getElementById("customer-select")?.scrollIntoView({ behavior: "smooth" });
             }}
             className="text-label-sm text-primary hover:underline font-semibold cursor-pointer"
           >
             Manage
           </button>
         );
-      }
-    }
+      },
+    },
   ];
-
-
-
 
   // Open Edit Modal
   const handleEditClick = (plan: Plan) => {
@@ -689,41 +696,41 @@ export function PlansPage() {
     setEditId(plan.id);
 
     // Parse name
-    if (typeof plan.name === 'string') {
+    if (typeof plan.name === "string") {
       setEditName({ en_US: plan.name, es_DO: plan.name });
     } else {
       setEditName({
-        en_US: plan.name?.en_US || '',
-        es_DO: plan.name?.es_DO || '',
+        en_US: plan.name?.en_US || "",
+        es_DO: plan.name?.es_DO || "",
       });
     }
 
     // Parse description
     if (!plan.description) {
-      setEditDescription({ en_US: '', es_DO: '' });
-    } else if (typeof plan.description === 'string') {
+      setEditDescription({ en_US: "", es_DO: "" });
+    } else if (typeof plan.description === "string") {
       setEditDescription({ en_US: plan.description, es_DO: plan.description });
     } else {
       setEditDescription({
-        en_US: plan.description?.en_US || '',
-        es_DO: plan.description?.es_DO || '',
+        en_US: plan.description?.en_US || "",
+        es_DO: plan.description?.es_DO || "",
       });
     }
 
     setEditPrice(plan.price);
     setEditRecommended(plan.recommended);
-    setEditClientType(plan.client_type || 'CLIENT');
+    setEditClientType(plan.client_type || "CLIENT");
     setEditActive(plan.active !== undefined ? plan.active : true);
 
     // Parse features
     const parsedFeatures = plan.features.map((f) => {
       let textObj: Record<string, string>;
-      if (typeof f.text === 'string') {
+      if (typeof f.text === "string") {
         textObj = { en_US: f.text, es_DO: f.text };
       } else {
         textObj = {
-          en_US: f.text?.en_US || '',
-          es_DO: f.text?.es_DO || '',
+          en_US: f.text?.en_US || "",
+          es_DO: f.text?.es_DO || "",
         };
       }
       return {
@@ -738,30 +745,30 @@ export function PlansPage() {
   const handleCreateClick = () => {
     setIsCreateMode(true);
     setEditingPlan({
-      id: '',
-      name: { en_US: '', es_DO: '' },
-      description: { en_US: '', es_DO: '' },
+      id: "",
+      name: { en_US: "", es_DO: "" },
+      description: { en_US: "", es_DO: "" },
       price: 0,
       features: [],
       recommended: false,
-      client_type: 'CLIENT',
+      client_type: "CLIENT",
       active: true,
-      created_at: '',
-      updated_at: '',
+      created_at: "",
+      updated_at: "",
     });
-    setEditId('');
-    setEditName({ en_US: '', es_DO: '' });
-    setEditDescription({ en_US: '', es_DO: '' });
+    setEditId("");
+    setEditName({ en_US: "", es_DO: "" });
+    setEditDescription({ en_US: "", es_DO: "" });
     setEditPrice(0);
     setEditRecommended(false);
-    setEditClientType('CLIENT');
+    setEditClientType("CLIENT");
     setEditActive(true);
     setEditFeatures([]);
   };
 
   // Add Feature
   const handleAddFeature = () => {
-    setEditFeatures([...editFeatures, { text: { en_US: '', es_DO: '' }, included: true }]);
+    setEditFeatures([...editFeatures, { text: { en_US: "", es_DO: "" }, included: true }]);
   };
 
   // Delete Feature
@@ -771,25 +778,23 @@ export function PlansPage() {
 
   // Toggle Feature Included
   const handleToggleFeatureIncluded = (index: number, included: boolean) => {
-    setEditFeatures(
-      editFeatures.map((f, i) => (i === index ? { ...f, included } : f))
-    );
+    setEditFeatures(editFeatures.map((f, i) => (i === index ? { ...f, included } : f)));
   };
 
   // Edit Feature Text
-  const handleEditFeatureText = (index: number, lang: 'en_US' | 'es_DO', textVal: string) => {
+  const handleEditFeatureText = (index: number, lang: "en_US" | "es_DO", textVal: string) => {
     setEditFeatures(
       editFeatures.map((f, i) => {
         if (i !== index) return f;
         let textObj: Record<string, string>;
-        if (typeof f.text === 'string') {
+        if (typeof f.text === "string") {
           textObj = { en_US: f.text, es_DO: f.text };
         } else {
           textObj = { ...f.text };
         }
         textObj[lang] = textVal;
         return { ...f, text: textObj };
-      })
+      }),
     );
   };
 
@@ -808,7 +813,7 @@ export function PlansPage() {
   const handleDragStart = (e: React.DragEvent, index: number) => {
     setDraggedIndex(index);
     if (e.dataTransfer) {
-      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.effectAllowed = "move";
     }
   };
 
@@ -841,8 +846,8 @@ export function PlansPage() {
 
   // Helper to fallback languages if one is missing
   const cleanBilingualRecord = (rec: Record<string, string>): Record<string, string> => {
-    const en = (rec.en_US || '').trim();
-    const es = (rec.es_DO || '').trim();
+    const en = (rec.en_US || "").trim();
+    const es = (rec.es_DO || "").trim();
     return {
       en_US: en || es,
       es_DO: es || en,
@@ -854,9 +859,9 @@ export function PlansPage() {
     if (!editingPlan) return;
     if (isCreateMode && !editId.trim()) {
       addToast({
-        title: 'Validation Error',
-        message: 'Plan ID is required.',
-        type: 'error',
+        title: "Validation Error",
+        message: "Plan ID is required.",
+        type: "error",
       });
       return;
     }
@@ -864,9 +869,9 @@ export function PlansPage() {
     const finalName = cleanBilingualRecord(editName);
     if (!finalName.en_US) {
       addToast({
-        title: 'Validation Error',
-        message: 'Plan name is required.',
-        type: 'error',
+        title: "Validation Error",
+        message: "Plan name is required.",
+        type: "error",
       });
       return;
     }
@@ -879,7 +884,7 @@ export function PlansPage() {
       const filteredFeatures = editFeatures
         .map((f) => {
           let textObj: Record<string, string>;
-          if (typeof f.text === 'string') {
+          if (typeof f.text === "string") {
             textObj = { en_US: f.text, es_DO: f.text };
           } else {
             textObj = f.text;
@@ -889,7 +894,7 @@ export function PlansPage() {
             text: cleanBilingualRecord(textObj),
           };
         })
-        .filter((f) => f.text.en_US !== '');
+        .filter((f) => f.text.en_US !== "");
 
       const planNameStr = getPlanName(finalName);
 
@@ -906,9 +911,9 @@ export function PlansPage() {
         });
 
         addToast({
-          title: 'Plan Created',
+          title: "Plan Created",
           message: `${planNameStr} plan has been created successfully.`,
-          type: 'success',
+          type: "success",
         });
       } else {
         await updatePlan(editingPlan.id, {
@@ -922,19 +927,19 @@ export function PlansPage() {
         });
 
         addToast({
-          title: 'Plan Updated',
+          title: "Plan Updated",
           message: `${planNameStr} plan has been updated successfully.`,
-          type: 'success',
+          type: "success",
         });
       }
       setEditingPlan(null);
     } catch (err) {
-      console.error('Failed to save plan:', err);
+      console.error("Failed to save plan:", err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
       addToast({
-        title: 'Save Failed',
-        message: error.response?.data?.message || error.message || 'Failed to save plan.',
-        type: 'error',
+        title: "Save Failed",
+        message: error.response?.data?.message || error.message || "Failed to save plan.",
+        type: "error",
       });
     } finally {
       setSaveLoading(false);
@@ -943,13 +948,17 @@ export function PlansPage() {
 
   const renderPaymentFields = () => {
     if (currentPlan) {
-      const alreadySubscribed = activeSubscriptions.some((sub) => sub.plan === currentPlan.id && sub.status === 'ACTIVE');
+      const alreadySubscribed = activeSubscriptions.some(
+        (sub) => sub.plan === currentPlan.id && sub.status === "ACTIVE",
+      );
       if (alreadySubscribed) {
         return (
           <div className="bg-warning/15 border border-warning/30 p-4 rounded-xl text-center space-y-2 my-4">
             <p className="text-body-md font-semibold text-warning">Active Plan Already Registered</p>
             <p className="text-body-sm text-on-surface-variant">
-              You already have an active subscription for the <strong>{getPlanName(currentPlan.name)}</strong> plan. To change device slots or update details, please use the modification tools on the active subscription manager.
+              You already have an active subscription for the <strong>{getPlanName(currentPlan.name)}</strong> plan. To
+              change device slots or update details, please use the modification tools on the active subscription
+              manager.
             </p>
           </div>
         );
@@ -968,75 +977,83 @@ export function PlansPage() {
               className="h-4 w-4 rounded border-outline text-primary focus:ring-primary mt-1 cursor-pointer"
             />
             <label htmlFor="tos-checkbox" className="text-body-sm text-on-surface cursor-pointer select-none">
-              {t('plans.agreeToTermsPrefix')}{' '}
+              {t("plans.agreeToTermsPrefix")}{" "}
               <a
                 href="/terms"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary underline hover:text-primary/80 transition-colors font-medium"
               >
-                {t('plans.termsOfServiceLink')}
+                {t("plans.termsOfServiceLink")}
               </a>
             </label>
           </div>
         )}
-        <h2 className="text-h2 text-primary mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
-          {t('plans.paymentMethod')}
+        <h2 className="text-h2 text-primary mb-4" style={{ fontFamily: "var(--font-heading)" }}>
+          {t("plans.paymentMethod")}
         </h2>
         <div className="flex gap-0 mb-4 border-b border-outline-variant">
           <button
-            onClick={() => setPaymentMethod('card')}
+            onClick={() => setPaymentMethod("card")}
             className={`px-4 py-2.5 text-label-md transition-colors cursor-pointer ${
-              paymentMethod === 'card'
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-on-surface-variant hover:text-on-surface'
+              paymentMethod === "card"
+                ? "border-b-2 border-primary text-primary"
+                : "text-on-surface-variant hover:text-on-surface"
             }`}
           >
-            {t('plans.creditCard')}
+            {t("plans.creditCard")}
           </button>
           <button
-            onClick={() => setPaymentMethod('transfer')}
+            onClick={() => setPaymentMethod("transfer")}
             className={`px-4 py-2.5 text-label-md transition-colors cursor-pointer ${
-              paymentMethod === 'transfer'
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-on-surface-variant hover:text-on-surface'
+              paymentMethod === "transfer"
+                ? "border-b-2 border-primary text-primary"
+                : "text-on-surface-variant hover:text-on-surface"
             }`}
           >
-            {t('plans.bankTransfer')}
+            {t("plans.bankTransfer")}
           </button>
         </div>
 
         <div className="space-y-4">
-          {paymentMethod === 'card' ? (
+          {paymentMethod === "card" ? (
             <>
               <p className="text-body-md text-on-surface-variant mb-4">
-                Please complete your checkout payment securely using PayPal. Once approved, your subscription will activate immediately.
+                Please complete your checkout payment securely using PayPal. Once approved, your subscription will
+                activate immediately.
               </p>
               {paymentMessage && (
-                <div className={`p-3 rounded-lg mb-4 text-label-md font-semibold text-center ${
-                  paymentMessage.includes('activated') || paymentMessage.includes('successfully')
-                    ? 'bg-success/10 text-success'
-                    : 'bg-primary/10 text-primary animate-pulse'
-                }`}>
+                <div
+                  className={`p-3 rounded-lg mb-4 text-label-md font-semibold text-center ${
+                    paymentMessage.includes("activated") || paymentMessage.includes("successfully")
+                      ? "bg-success/10 text-success"
+                      : "bg-primary/10 text-primary animate-pulse"
+                  }`}
+                >
                   {paymentMessage}
                 </div>
               )}
-              <div id="paypal-button-container" className="my-4 min-h-[150px] flex items-center justify-center bg-surface rounded-xl p-4 border border-outline-variant border-dashed">
+              <div
+                id="paypal-button-container"
+                className="my-4 min-h-[150px] flex items-center justify-center bg-surface rounded-xl p-4 border border-outline-variant border-dashed"
+              >
                 <span className="text-label-md text-on-surface-variant">Loading PayPal Checkout...</span>
               </div>
             </>
           ) : (
             <div className="text-center py-8 text-body-md text-on-surface-variant space-y-4">
-              <p className="mb-2">{t('plans.transferInstructions')}</p>
-              <p className="text-mono font-medium text-on-surface">{t('plans.bankName')}</p>
-              <p className="text-mono">{t('plans.bankAccount')}</p>
-              <p className="text-mono">{t('plans.bankReference')}: {reference}</p>
+              <p className="mb-2">{t("plans.transferInstructions")}</p>
+              <p className="text-mono font-medium text-on-surface">{t("plans.bankName")}</p>
+              <p className="text-mono">{t("plans.bankAccount")}</p>
+              <p className="text-mono">
+                {t("plans.bankReference")}: {reference}
+              </p>
               <button
                 onClick={handleProcessSubscription}
                 disabled={subscribeLoading}
                 className="mt-4 w-full bg-primary text-on-primary py-3 rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
               >
-                {subscribeLoading ? 'Processing...' : 'Confirm Bank Transfer Intent'}
+                {subscribeLoading ? "Processing..." : "Confirm Bank Transfer Intent"}
               </button>
             </div>
           )}
@@ -1059,43 +1076,42 @@ export function PlansPage() {
           </SheetTrigger>
           <SheetContent className="w-[400px] p-6 sm:w-[500px] overflow-y-auto bg-surface text-on-surface border-l border-outline-variant">
             <SheetHeader className="pb-4 border-b p-2 border-outline-variant">
-              <SheetTitle className="text-h3 text-primary">{t('plans.orderSummary')}</SheetTitle>
+              <SheetTitle className="text-h3 text-primary">{t("plans.orderSummary")}</SheetTitle>
             </SheetHeader>
-            
+
             {/* Order Summary Details */}
             <div className="py-6 space-y-6">
               <div className="space-y-3">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-body-md font-semibold text-on-surface">{getPlanName(currentPlan.name)} {billingCycle === 'annual' ? 'Plan (Annually)' : t('plans.planMonthly')}</p>
-                    <p className="text-label-sm text-on-surface-variant mt-0.5">{currentEquipmentCount}x {t('plans.equipmentCountSuffix')}</p>
+                    <p className="text-body-md font-semibold text-on-surface">
+                      {getPlanName(currentPlan.name)}{" "}
+                      {billingCycle === "annual" ? "Plan (Annually)" : t("plans.planMonthly")}
+                    </p>
+                    <p className="text-label-sm text-on-surface-variant mt-0.5">
+                      {currentEquipmentCount}x {t("plans.equipmentCountSuffix")}
+                    </p>
                   </div>
                   <span className="text-body-md font-semibold text-on-surface">${subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-body-md text-on-surface-variant">
-                  <span>{t('plans.taxes')}</span>
+                  <span>{t("plans.taxes")}</span>
                   <span>${tax.toFixed(2)}</span>
                 </div>
                 <div className="border-t border-outline-variant pt-3 flex justify-between">
-                  <span className="text-body-md font-bold text-on-surface">{t('plans.total')}</span>
+                  <span className="text-body-md font-bold text-on-surface">{t("plans.total")}</span>
                   <span className="text-body-md font-bold text-primary text-lg">${total.toFixed(2)}</span>
                 </div>
               </div>
 
               {/* Payment Fields inside the Sheet */}
-              <div className="border-t border-outline-variant pt-6">
-                {renderPaymentFields()}
-              </div>
-
-
+              <div className="border-t border-outline-variant pt-6">{renderPaymentFields()}</div>
 
               <div className="bg-surface-container-low border border-outline-variant/30 rounded-lg p-4 flex items-start gap-3">
                 <Shield className="h-5 w-5 text-success shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-label-md font-medium text-on-surface">{t('plans.encryptedTx')}</p>
-                  <p className="text-label-sm text-on-surface-variant mt-0.5">
-                    {t('plans.militaryGradeSecurity')}
-                  </p>
+                  <p className="text-label-md font-medium text-on-surface">{t("plans.encryptedTx")}</p>
+                  <p className="text-label-sm text-on-surface-variant mt-0.5">{t("plans.militaryGradeSecurity")}</p>
                 </div>
               </div>
             </div>
@@ -1110,7 +1126,9 @@ export function PlansPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between border-b border-outline-variant pb-4">
           <div>
-            <p className="text-label-sm text-on-surface-variant font-medium uppercase tracking-wider">Current Service</p>
+            <p className="text-label-sm text-on-surface-variant font-medium uppercase tracking-wider">
+              Current Service
+            </p>
             <p className="text-h3 font-bold text-primary mt-0.5">{activeSub.service_name}</p>
           </div>
           <span className="bg-success/15 text-success border border-success/30 px-2.5 py-1 rounded-full text-label-sm font-bold">
@@ -1118,12 +1136,14 @@ export function PlansPage() {
           </span>
         </div>
 
-        {(currentPlan?.id !== activeSub.plan || currentEquipmentCount !== activeSub.equipment_count) ? (
+        {currentPlan?.id !== activeSub.plan || currentEquipmentCount !== activeSub.equipment_count ? (
           <div className="space-y-4">
             <div className="bg-primary/5 border border-primary/10 rounded-lg p-4">
               <p className="text-body-md font-semibold text-primary">Subscription Modification</p>
               <p className="text-body-sm text-on-surface-variant mt-1">
-                You are modifying your subscription to the <strong className="text-on-surface">{getPlanName(currentPlan.name)}</strong> plan with <strong className="text-on-surface">{currentEquipmentCount}x</strong> device(s).
+                You are modifying your subscription to the{" "}
+                <strong className="text-on-surface">{getPlanName(currentPlan.name)}</strong> plan with{" "}
+                <strong className="text-on-surface">{currentEquipmentCount}x</strong> device(s).
               </p>
             </div>
 
@@ -1136,15 +1156,18 @@ export function PlansPage() {
                   onChange={(e) => setAcceptedTos(e.target.checked)}
                   className="h-4 w-4 rounded border-outline text-primary focus:ring-primary mt-1 cursor-pointer"
                 />
-                <label htmlFor="tos-checkbox-manage" className="text-body-sm text-on-surface cursor-pointer select-none">
-                  {t('plans.agreeToTermsPrefix')}{' '}
+                <label
+                  htmlFor="tos-checkbox-manage"
+                  className="text-body-sm text-on-surface cursor-pointer select-none"
+                >
+                  {t("plans.agreeToTermsPrefix")}{" "}
                   <a
                     href="/terms"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-primary underline hover:text-primary/80 transition-colors font-medium"
                   >
-                    {t('plans.termsOfServiceLink')}
+                    {t("plans.termsOfServiceLink")}
                   </a>
                 </label>
               </div>
@@ -1155,12 +1178,13 @@ export function PlansPage() {
                 <p className="text-body-sm text-on-surface-variant mb-3 font-medium">
                   Adding more devices requires a PayPal payment to activate the additional licenses immediately.
                 </p>
-                <div id="paypal-upgrade-button-container" className="my-2 min-h-[150px] flex items-center justify-center bg-surface rounded-xl p-4 border border-outline-variant border-dashed">
+                <div
+                  id="paypal-upgrade-button-container"
+                  className="my-2 min-h-[150px] flex items-center justify-center bg-surface rounded-xl p-4 border border-outline-variant border-dashed"
+                >
                   <span className="text-label-md text-on-surface-variant">Loading PayPal Upgrade...</span>
                 </div>
-                {paymentMessage && (
-                  <p className="text-body-xs text-primary font-medium mt-2">{paymentMessage}</p>
-                )}
+                {paymentMessage && <p className="text-body-xs text-primary font-medium mt-2">{paymentMessage}</p>}
               </div>
             ) : (
               <button
@@ -1168,7 +1192,7 @@ export function PlansPage() {
                 disabled={subscribeLoading}
                 className="w-full bg-primary text-on-primary py-3 rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
               >
-                {subscribeLoading ? 'Updating...' : 'Update Subscription'}
+                {subscribeLoading ? "Updating..." : "Update Subscription"}
               </button>
             )}
           </div>
@@ -1177,7 +1201,8 @@ export function PlansPage() {
             <div className="bg-error/5 border border-error/10 rounded-lg p-4">
               <p className="text-body-md font-semibold text-error">Cancellation Warning</p>
               <p className="text-body-sm text-on-surface-variant mt-1">
-                Cancelling your subscription will take effect immediately. You will lose access to premium support services.
+                Cancelling your subscription will take effect immediately. You will lose access to premium support
+                services.
               </p>
             </div>
 
@@ -1186,12 +1211,10 @@ export function PlansPage() {
               disabled={subscribeLoading}
               className="w-full bg-error text-on-error py-3 rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
             >
-              {subscribeLoading ? 'Cancelling...' : 'Cancel Subscription'}
+              {subscribeLoading ? "Cancelling..." : "Cancel Subscription"}
             </button>
           </div>
         )}
-
-
       </div>
     );
   };
@@ -1199,40 +1222,36 @@ export function PlansPage() {
   const showTabs = !isAdmin && activeSubscriptions.length > 0;
 
   return (
-    <Page
-      title={t('plans.title')}
-      subtitle={t('plans.subtitle')}
-      isLoading={loading && filteredPlans.length === 0}
-    >
+    <Page title={t("plans.title")} subtitle={t("plans.subtitle")} isLoading={loading && filteredPlans.length === 0}>
       {/* Tabs Section */}
       {showTabs && (
         <div className="border-b border-outline-variant flex gap-8 mb-8">
           <button
             type="button"
             className={`pb-3 text-label-md font-semibold transition-all cursor-pointer ${
-              activeTab === 'browse'
-                ? 'border-b-2 border-primary text-primary font-bold'
-                : 'text-on-surface-variant hover:text-on-surface border-b-2 border-transparent'
+              activeTab === "browse"
+                ? "border-b-2 border-primary text-primary font-bold"
+                : "text-on-surface-variant hover:text-on-surface border-b-2 border-transparent"
             }`}
-            onClick={() => setActiveTab('browse')}
+            onClick={() => setActiveTab("browse")}
           >
-            Browse Plans
+            {t("plans.browseTab")}
           </button>
           <button
             type="button"
             className={`pb-3 text-label-md font-semibold transition-all cursor-pointer ${
-              activeTab === 'manage'
-                ? 'border-b-2 border-primary text-primary font-bold'
-                : 'text-on-surface-variant hover:text-on-surface border-b-2 border-transparent'
+              activeTab === "manage"
+                ? "border-b-2 border-primary text-primary font-bold"
+                : "text-on-surface-variant hover:text-on-surface border-b-2 border-transparent"
             }`}
-            onClick={() => setActiveTab('manage')}
+            onClick={() => setActiveTab("manage")}
           >
-            Manage Subscription
+            {t("plans.manageTab")}
           </button>
         </div>
       )}
 
-      {(isAdmin || activeTab === 'browse') ? (
+      {isAdmin || activeTab === "browse" ? (
         <>
           {/* Billing Cycle Switcher & Admin Actions */}
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
@@ -1240,31 +1259,32 @@ export function PlansPage() {
             <div className="bg-surface-container-low border border-outline-variant p-1 rounded-xl flex items-center gap-1">
               <button
                 type="button"
-                onClick={() => setBillingCycle('monthly')}
+                onClick={() => setBillingCycle("monthly")}
                 className={`px-4 py-2 rounded-lg text-label-md font-semibold transition-all cursor-pointer ${
-                  billingCycle === 'monthly'
-                    ? 'bg-primary text-on-primary shadow-sm'
-                    : 'text-on-surface-variant hover:text-on-surface'
+                  billingCycle === "monthly"
+                    ? "bg-primary text-on-primary shadow-sm"
+                    : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
-                Monthly
+                {/* Monthly */}
+                {t("plans.monthlyButtonLabel")}
               </button>
               <button
                 type="button"
-                onClick={() => setBillingCycle('annual')}
+                onClick={() => setBillingCycle("annual")}
                 className={`px-4 py-2 rounded-lg text-label-md font-semibold transition-all cursor-pointer flex items-center gap-2 ${
-                  billingCycle === 'annual'
-                    ? 'bg-primary text-on-primary shadow-sm'
-                    : 'text-on-surface-variant hover:text-on-surface'
+                  billingCycle === "annual"
+                    ? "bg-primary text-on-primary shadow-sm"
+                    : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
-                <span>Annually</span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                  billingCycle === 'annual'
-                    ? 'bg-on-primary text-primary'
-                    : 'bg-primary/10 text-primary'
-                }`}>
-                  Save 20%
+                {t("plans.annualButtonLabel")}
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    billingCycle === "annual" ? "bg-on-primary text-primary" : "bg-primary/10 text-primary"
+                  }`}
+                >
+                  {t("plans.saveLabel")} 20%
                 </span>
               </button>
             </div>
@@ -1282,15 +1302,21 @@ export function PlansPage() {
           </div>
 
           {/* Plan Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 justify-center gap-6 mb-12">
+          <div
+            className="grid gap-6 mb-12 mx-auto w-full"
+            style={{
+              gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, 320px), 1fr))`,
+              maxWidth: `${Math.min(filteredPlans.length, 3) * 380}px`,
+            }}
+          >
             {filteredPlans.map((plan) => (
               <div
                 key={plan.id}
                 className={`relative bg-surface-container-lowest border rounded-xl p-6 pt-8 flex flex-col transition-all cursor-pointer text-on-surface ${
                   selectedPlan === plan.id
-                    ? 'border-primary shadow-md ring-1 ring-primary'
-                    : 'border-outline-variant shadow-sm hover:shadow-md'
-                } ${plan.active === false ? 'opacity-70 bg-surface-container-low/40 border-dashed' : ''}`}
+                    ? "border-primary shadow-md ring-1 ring-primary"
+                    : "border-outline-variant shadow-sm hover:shadow-md"
+                } ${plan.active === false ? "opacity-70 bg-surface-container-low/40 border-dashed" : ""}`}
                 onClick={() => setUserSelectedPlan(plan.id)}
               >
                 {/* Disabled Badge */}
@@ -1305,7 +1331,7 @@ export function PlansPage() {
                 {plan.recommended && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <span className="bg-primary text-on-primary px-3 py-1 rounded-full text-label-sm font-bold">
-                      {t('plans.recommended')}
+                      {t("plans.recommended")}
                     </span>
                   </div>
                 )}
@@ -1335,25 +1361,25 @@ export function PlansPage() {
                   {getTierLabel(plan.id)}
                 </span>
 
-                <h3 className="text-h2 text-primary mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
+                <h3 className="text-h2 text-primary mb-1" style={{ fontFamily: "var(--font-heading)" }}>
                   {getPlanName(plan.name)}
                 </h3>
                 <p className="text-body-md text-on-surface-variant mb-4">{getPlanDescription(plan.description)}</p>
 
                 <div className="mb-6">
-                  {billingCycle === 'annual' ? (
+                  {billingCycle === "annual" ? (
                     <>
-                      <span className="text-4xl font-bold text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
+                      <span className="text-4xl font-bold text-primary" style={{ fontFamily: "var(--font-heading)" }}>
                         ${(plan.price * 0.8).toFixed(2)}
                       </span>
                       <span className="text-body-md text-on-surface-variant"> /mo</span>
                       <div className="text-label-sm text-on-surface-variant mt-1 font-medium">
-                        Billed annually as ${(plan.price * 12 * 0.8).toFixed(2)}/yr
+                        {t("plans.billedAnnually")} ${(plan.price * 12 * 0.8).toFixed(2)}/yr
                       </div>
                     </>
                   ) : (
                     <>
-                      <span className="text-4xl font-bold text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
+                      <span className="text-4xl font-bold text-primary" style={{ fontFamily: "var(--font-heading)" }}>
                         ${plan.price}
                       </span>
                       <span className="text-body-md text-on-surface-variant"> /mo</span>
@@ -1372,7 +1398,9 @@ export function PlansPage() {
                       ) : (
                         <X className="h-5 w-5 text-on-surface-variant opacity-40 shrink-0 mt-0.5" />
                       )}
-                      <span className={`text-body-md ${feature.included ? 'text-on-surface' : 'text-on-surface-variant opacity-50'}`}>
+                      <span
+                        className={`text-body-md ${feature.included ? "text-on-surface" : "text-on-surface-variant opacity-50"}`}
+                      >
                         {getFeatureText(feature.text)}
                       </span>
                     </div>
@@ -1381,17 +1409,23 @@ export function PlansPage() {
 
                 {/* Equipment Count */}
                 <div className="mt-6 flex items-center justify-between bg-surface-container-low rounded-lg p-3">
-                  <span className="text-label-md text-on-surface-variant">{t('plans.equipmentCount')}</span>
+                  <span className="text-label-md text-on-surface-variant">{t("plans.equipmentCount")}</span>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleAdjustEquipmentCount(plan.id, -1); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAdjustEquipmentCount(plan.id, -1);
+                      }}
                       className="w-8 h-8 border border-outline-variant rounded flex items-center justify-center hover:bg-surface-container transition-colors text-label-md cursor-pointer text-on-surface"
                     >
                       −
                     </button>
                     <span className="w-8 text-center text-label-md font-medium">{equipmentCounts[plan.id] || 1}</span>
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleAdjustEquipmentCount(plan.id, 1); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAdjustEquipmentCount(plan.id, 1);
+                      }}
                       className="w-8 h-8 border border-outline-variant rounded flex items-center justify-center hover:bg-surface-container transition-colors text-label-md cursor-pointer text-on-surface"
                     >
                       +
@@ -1402,11 +1436,13 @@ export function PlansPage() {
                 <button
                   className={`mt-4 w-full py-2.5 rounded-lg text-label-md transition-all cursor-pointer ${
                     selectedPlan === plan.id
-                      ? 'bg-primary text-on-primary hover:opacity-90'
-                      : 'border border-outline-variant text-on-surface hover:bg-surface-container-low'
+                      ? "bg-primary text-on-primary hover:opacity-90"
+                      : "border border-outline-variant text-on-surface hover:bg-surface-container-low"
                   }`}
                 >
-                  {selectedPlan === plan.id ? `${t('plans.selected')}: ${getPlanName(plan.name)}` : `${t('plans.select')} ${getPlanName(plan.name)}`}
+                  {selectedPlan === plan.id
+                    ? `${t("plans.selected")}: ${getPlanName(plan.name)}`
+                    : `${t("plans.select")} ${getPlanName(plan.name)}`}
                 </button>
               </div>
             ))}
@@ -1420,23 +1456,25 @@ export function PlansPage() {
                 {/* Header Banner */}
                 <div className="flex justify-between items-center border-b border-outline-variant pb-4 mb-6">
                   <div>
-                    <h3 className="text-body-lg font-bold text-primary">
-                      {getPlanName(currentPlan.name)} Plan
-                    </h3>
+                    <h3 className="text-body-lg font-bold text-primary">{getPlanName(currentPlan.name)} Plan</h3>
                     <p className="text-body-sm text-on-surface-variant mt-0.5">
-                      {currentEquipmentCount}x {t('plans.equipmentCountSuffix')} • {billingCycle === 'annual' ? 'Annually' : 'Monthly'}
+                      {currentEquipmentCount}x {t("plans.equipmentCountSuffix")} •{" "}
+                      {billingCycle === "annual" ? "Annually" : "Monthly"}
                     </p>
                   </div>
                 </div>
 
                 {isAdmin ? (
                   <div className="space-y-4">
-                    <h2 className="text-h2 text-primary mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
+                    <h2 className="text-h2 text-primary mb-4" style={{ fontFamily: "var(--font-heading)" }}>
                       Apply Plan to Customer
                     </h2>
                     <div className="space-y-4">
                       <div>
-                        <label htmlFor="customer-select" className="block text-label-md text-on-surface mb-1.5 font-medium">
+                        <label
+                          htmlFor="customer-select"
+                          className="block text-label-md text-on-surface mb-1.5 font-medium"
+                        >
                           Select Customer
                         </label>
                         <select
@@ -1446,7 +1484,9 @@ export function PlansPage() {
                           className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
                         >
                           {clients.length === 0 ? (
-                            <option value="" disabled>No registered customers found</option>
+                            <option value="" disabled>
+                              No registered customers found
+                            </option>
                           ) : (
                             clients.map((client) => (
                               <option key={client.id} value={client.id}>
@@ -1454,15 +1494,18 @@ export function PlansPage() {
                               </option>
                             ))
                           )}
-                          <option value="unregistered">{t('plans.unregisteredOption')}</option>
+                          <option value="unregistered">{t("plans.unregisteredOption")}</option>
                         </select>
                       </div>
 
-                      {selectedClientId === 'unregistered' && (
+                      {selectedClientId === "unregistered" && (
                         <div className="space-y-3 pt-2 border-t border-outline-variant">
                           <div>
-                            <label htmlFor="unregistered-email-admin" className="block text-label-sm text-on-surface mb-1 font-medium">
-                              {t('plans.unregisteredEmailLabel')}
+                            <label
+                              htmlFor="unregistered-email-admin"
+                              className="block text-label-sm text-on-surface mb-1 font-medium"
+                            >
+                              {t("plans.unregisteredEmailLabel")}
                             </label>
                             <Input
                               id="unregistered-email-admin"
@@ -1470,20 +1513,23 @@ export function PlansPage() {
                               required
                               value={unregisteredEmail}
                               onChange={(e) => setUnregisteredEmail(e.target.value)}
-                              placeholder={t('plans.unregisteredEmailPlaceholder')}
+                              placeholder={t("plans.unregisteredEmailPlaceholder")}
                               className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
                             />
                           </div>
                           <div>
-                            <label htmlFor="unregistered-name-admin" className="block text-label-sm text-on-surface mb-1 font-medium">
-                              {t('plans.unregisteredNameLabel')}
+                            <label
+                              htmlFor="unregistered-name-admin"
+                              className="block text-label-sm text-on-surface mb-1 font-medium"
+                            >
+                              {t("plans.unregisteredNameLabel")}
                             </label>
                             <Input
                               id="unregistered-name-admin"
                               type="text"
                               value={unregisteredName}
                               onChange={(e) => setUnregisteredName(e.target.value)}
-                              placeholder={t('plans.unregisteredNamePlaceholder')}
+                              placeholder={t("plans.unregisteredNamePlaceholder")}
                               className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
                             />
                           </div>
@@ -1492,121 +1538,136 @@ export function PlansPage() {
 
                       <button
                         onClick={handleProcessSubscription}
-                        disabled={subscribeLoading || selectedClientId === 'unregistered' || clients.length === 0}
+                        disabled={subscribeLoading || selectedClientId === "unregistered" || clients.length === 0}
                         className="w-full bg-primary text-on-primary py-3 rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
                       >
-                        {subscribeLoading ? 'Applying...' : 'Apply Plan to Customer'}
+                        {subscribeLoading ? "Applying..." : "Apply Plan to Customer"}
                       </button>
 
                       <button
                         type="button"
                         onClick={handleSendQuote}
-                        disabled={quoteLoading || subscribeLoading || (!selectedClientId)}
+                        disabled={quoteLoading || subscribeLoading || !selectedClientId}
                         className="w-full border border-primary text-primary py-3 rounded-lg text-label-md hover:bg-primary/5 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
                       >
-                        {quoteLoading ? t('plans.quoteSending') : t('plans.sendQuoteToCustomer')}
+                        {quoteLoading ? t("plans.quoteSending") : t("plans.sendQuoteToCustomer")}
                       </button>
                     </div>
                   </div>
-                ) : (() => {
-                  const activeSubForPlan = activeSubscriptions.find((sub) => sub.plan === currentPlan?.id && sub.status === 'ACTIVE');
-                  
-                  if (activeSubForPlan) {
+                ) : (
+                  (() => {
+                    const activeSubForPlan = activeSubscriptions.find(
+                      (sub) => sub.plan === currentPlan?.id && sub.status === "ACTIVE",
+                    );
+
+                    if (activeSubForPlan) {
+                      return (
+                        <div className="space-y-4">
+                          <h2 className="text-h2 text-primary mb-4" style={{ fontFamily: "var(--font-heading)" }}>
+                            Manage Active Subscription
+                          </h2>
+                          {renderManageActiveSubscription(activeSubForPlan)}
+                        </div>
+                      );
+                    }
+
+                    if (activeSubscriptions.length === 0) {
+                      return renderCheckoutButtonAndSheet();
+                    }
+
                     return (
-                      <div className="space-y-4">
-                        <h2 className="text-h2 text-primary mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
-                          Manage Active Subscription
-                        </h2>
-                        {renderManageActiveSubscription(activeSubForPlan)}
+                      <div className="space-y-6">
+                        <div>
+                          <h2 className="text-h2 text-primary mb-3" style={{ fontFamily: "var(--font-heading)" }}>
+                            Select Action for {getPlanName(currentPlan.name)}
+                          </h2>
+                          <p className="text-body-sm text-on-surface-variant mb-4">
+                            You have existing active subscriptions. Choose whether you want to replace one of them or
+                            add this plan as a new additional subscription.
+                          </p>
+
+                          <div className="flex bg-surface-container-low border border-outline-variant p-1 rounded-xl gap-1 mb-6">
+                            <button
+                              type="button"
+                              onClick={() => setActionType("modify")}
+                              className={`flex-1 py-2.5 rounded-lg text-label-md font-semibold transition-all cursor-pointer ${
+                                actionType === "modify"
+                                  ? "bg-primary text-on-primary shadow-sm"
+                                  : "text-on-surface-variant hover:text-on-surface"
+                              }`}
+                            >
+                              Change Existing Plan
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setActionType("subscribe")}
+                              className={`flex-1 py-2.5 rounded-lg text-label-md font-semibold transition-all cursor-pointer ${
+                                actionType === "subscribe"
+                                  ? "bg-primary text-on-primary shadow-sm"
+                                  : "text-on-surface-variant hover:text-on-surface"
+                              }`}
+                            >
+                              Subscribe as Additional Plan
+                            </button>
+                          </div>
+                        </div>
+
+                        {actionType === "subscribe" ? (
+                          renderCheckoutButtonAndSheet()
+                        ) : (
+                          <div className="space-y-4">
+                            <div>
+                              <label
+                                htmlFor="active-sub-select"
+                                className="block text-label-md text-on-surface mb-1.5 font-medium"
+                              >
+                                Select Active Subscription to Replace
+                              </label>
+                              <select
+                                id="active-sub-select"
+                                value={subscriptionToModifyId}
+                                onChange={(e) => setSubscriptionToModifyId(e.target.value)}
+                                className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
+                              >
+                                {activeSubscriptions.map((sub) => (
+                                  <option key={sub.id} value={sub.id}>
+                                    {sub.service_name} ({sub.equipment_count} Equipment)
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {(() => {
+                              const subToModify =
+                                activeSubscriptions.find((sub) => sub.id === subscriptionToModifyId) ||
+                                activeSubscriptions[0];
+                              if (!subToModify) return null;
+                              return renderManageActiveSubscription(subToModify);
+                            })()}
+                          </div>
+                        )}
                       </div>
                     );
-                  }
-                  
-                  if (activeSubscriptions.length === 0) {
-                    return renderCheckoutButtonAndSheet();
-                  }
-                  
-                  return (
-                    <div className="space-y-6">
-                      <div>
-                        <h2 className="text-h2 text-primary mb-3" style={{ fontFamily: 'var(--font-heading)' }}>
-                          Select Action for {getPlanName(currentPlan.name)}
-                        </h2>
-                        <p className="text-body-sm text-on-surface-variant mb-4">
-                          You have existing active subscriptions. Choose whether you want to replace one of them or add this plan as a new additional subscription.
-                        </p>
-                        
-                        <div className="flex bg-surface-container-low border border-outline-variant p-1 rounded-xl gap-1 mb-6">
-                          <button
-                            type="button"
-                            onClick={() => setActionType('modify')}
-                            className={`flex-1 py-2.5 rounded-lg text-label-md font-semibold transition-all cursor-pointer ${
-                              actionType === 'modify'
-                                ? 'bg-primary text-on-primary shadow-sm'
-                                : 'text-on-surface-variant hover:text-on-surface'
-                            }`}
-                          >
-                            Change Existing Plan
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setActionType('subscribe')}
-                            className={`flex-1 py-2.5 rounded-lg text-label-md font-semibold transition-all cursor-pointer ${
-                              actionType === 'subscribe'
-                                ? 'bg-primary text-on-primary shadow-sm'
-                                : 'text-on-surface-variant hover:text-on-surface'
-                            }`}
-                          >
-                            Subscribe as Additional Plan
-                          </button>
-                        </div>
-                      </div>
-                      
-                      {actionType === 'subscribe' ? (
-                        renderCheckoutButtonAndSheet()
-                      ) : (
-                        <div className="space-y-4">
-                          <div>
-                            <label htmlFor="active-sub-select" className="block text-label-md text-on-surface mb-1.5 font-medium">
-                              Select Active Subscription to Replace
-                            </label>
-                            <select
-                              id="active-sub-select"
-                              value={subscriptionToModifyId}
-                              onChange={(e) => setSubscriptionToModifyId(e.target.value)}
-                              className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
-                            >
-                              {activeSubscriptions.map((sub) => (
-                                <option key={sub.id} value={sub.id}>
-                                  {sub.service_name} ({sub.equipment_count} Equipment)
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          
-                          {(() => {
-                            const subToModify = activeSubscriptions.find((sub) => sub.id === subscriptionToModifyId) || activeSubscriptions[0];
-                            if (!subToModify) return null;
-                            return renderManageActiveSubscription(subToModify);
-                          })()}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
+                  })()
+                )}
               </div>
             </div>
           )}
         </>
       ) : (
-        activeSubscriptions.length > 0 && (() => {
-          const activeSub = activeSubscriptions.find((sub) => sub.id === subscriptionToModifyId) || activeSubscriptions[0];
+        activeSubscriptions.length > 0 &&
+        (() => {
+          const activeSub =
+            activeSubscriptions.find((sub) => sub.id === subscriptionToModifyId) || activeSubscriptions[0];
           if (!activeSub) return null;
           return (
             <div className="space-y-6 text-on-surface">
               {activeSubscriptions.length > 1 && (
                 <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 shadow-sm">
-                  <label htmlFor="active-sub-select-manage" className="block text-label-md text-on-surface mb-1.5 font-medium">
+                  <label
+                    htmlFor="active-sub-select-manage"
+                    className="block text-label-md text-on-surface mb-1.5 font-medium"
+                  >
                     Select Active Subscription to Manage
                   </label>
                   <select
@@ -1624,20 +1685,21 @@ export function PlansPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                
+              <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6 items-start">
                 {/* Left Column: Manage Active Subscription + Licensed Devices list */}
-                <div className="lg:col-span-2 space-y-6">
-                  
+                <div className="space-y-6">
                   {/* Active Subscription Details Card */}
                   <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
                     <div className="flex items-center justify-between mb-6">
                       <div>
-                        <h4 className="font-headline-md text-headline-md font-bold text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
+                        <h4
+                          className="font-headline-md text-headline-md font-bold text-primary"
+                          style={{ fontFamily: "var(--font-heading)" }}
+                        >
                           Manage Active Subscription
                         </h4>
                         <p className="text-body-sm text-on-surface-variant mt-1">
-                          Details for {activeSub.service_name} ({billingCycle || 'monthly'} billing)
+                          Details for {activeSub.service_name} ({billingCycle || "monthly"} billing)
                         </p>
                       </div>
                       <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-label-sm font-bold border border-primary/20">
@@ -1645,33 +1707,42 @@ export function PlansPage() {
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4 mb-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                       <div className="p-4 bg-surface-container-low/55 rounded-lg border border-outline-variant">
-                        <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Devices</p>
-                        <p className="text-body-base font-semibold text-on-surface">{activeSub.equipment_count}x Managed Units</p>
-                      </div>
-                      <div className="p-4 bg-surface-container-low/55 rounded-lg border border-outline-variant">
-                        <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Cycle</p>
-                        <p className="text-body-base font-semibold capitalize text-on-surface">{billingCycle || 'monthly'}</p>
-                      </div>
-                      <div className="p-4 bg-surface-container-low/55 rounded-lg border border-outline-variant">
-                        <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Renewal</p>
+                        <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+                          Devices
+                        </p>
                         <p className="text-body-base font-semibold text-on-surface">
-                          {activeSub.renewal_date ? new Date(activeSub.renewal_date).toLocaleDateString() : 'N/A'}
+                          {activeSub.equipment_count}x Managed Units
+                        </p>
+                      </div>
+                      <div className="p-4 bg-surface-container-low/55 rounded-lg border border-outline-variant">
+                        <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+                          Cycle
+                        </p>
+                        <p className="text-body-base font-semibold capitalize text-on-surface">
+                          {billingCycle || "monthly"}
+                        </p>
+                      </div>
+                      <div className="p-4 bg-surface-container-low/55 rounded-lg border border-outline-variant">
+                        <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+                          Renewal
+                        </p>
+                        <p className="text-body-base font-semibold text-on-surface">
+                          {activeSub.renewal_date ? new Date(activeSub.renewal_date).toLocaleDateString() : "N/A"}
                         </p>
                       </div>
                     </div>
 
-                    {(currentPlan?.id !== activeSub.plan || currentEquipmentCount !== activeSub.equipment_count) ? (
+                    {currentPlan?.id !== activeSub.plan || currentEquipmentCount !== activeSub.equipment_count ? (
                       <div className="p-4 bg-primary/5 rounded-lg border border-primary/20 border-dashed flex flex-col gap-4">
                         <div className="flex items-start gap-3">
                           <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                           <div className="flex-1">
-                            <p className="text-body-sm text-on-surface font-semibold">
-                              Modify Subscription Request
-                            </p>
+                            <p className="text-body-sm text-on-surface font-semibold">Modify Subscription Request</p>
                             <p className="text-body-sm text-on-surface-variant mt-1">
-                              You are modifying your subscription to the <b>{getPlanName(currentPlan.name)}</b> plan with <b>{currentEquipmentCount}x device(s)</b>.
+                              You are modifying your subscription to the <b>{getPlanName(currentPlan.name)}</b> plan
+                              with <b>{currentEquipmentCount}x device(s)</b>.
                             </p>
                           </div>
                         </div>
@@ -1685,15 +1756,18 @@ export function PlansPage() {
                               onChange={(e) => setAcceptedTos(e.target.checked)}
                               className="h-4 w-4 rounded border-outline text-primary focus:ring-primary mt-1 cursor-pointer"
                             />
-                            <label htmlFor="tos-checkbox-manage-actual" className="text-body-sm text-on-surface cursor-pointer select-none">
-                              {t('plans.agreeToTermsPrefix')}{' '}
+                            <label
+                              htmlFor="tos-checkbox-manage-actual"
+                              className="text-body-sm text-on-surface cursor-pointer select-none"
+                            >
+                              {t("plans.agreeToTermsPrefix")}{" "}
                               <a
                                 href="/terms"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-primary underline hover:text-primary/80 transition-colors font-medium"
                               >
-                                {t('plans.termsOfServiceLink')}
+                                {t("plans.termsOfServiceLink")}
                               </a>
                             </label>
                           </div>
@@ -1702,9 +1776,13 @@ export function PlansPage() {
                         {currentEquipmentCount > activeSub.equipment_count ? (
                           <div className="mt-2 border-t border-outline-variant pt-4">
                             <p className="text-body-sm text-on-surface-variant mb-3 font-medium">
-                              Adding more devices requires a PayPal payment to activate the additional licenses immediately.
+                              Adding more devices requires a PayPal payment to activate the additional licenses
+                              immediately.
                             </p>
-                            <div id="paypal-upgrade-button-container" className="my-2 min-h-[150px] flex items-center justify-center bg-surface rounded-xl p-4 border border-outline-variant border-dashed">
+                            <div
+                              id="paypal-upgrade-button-container"
+                              className="my-2 min-h-[150px] flex items-center justify-center bg-surface rounded-xl p-4 border border-outline-variant border-dashed"
+                            >
                               <span className="text-label-md text-on-surface-variant">Loading PayPal Upgrade...</span>
                             </div>
                             {paymentMessage && (
@@ -1718,7 +1796,7 @@ export function PlansPage() {
                               disabled={subscribeLoading}
                               className="px-6 py-2 bg-primary text-on-primary font-bold rounded-lg text-body-sm shadow-sm hover:scale-[1.02] active:scale-95 transition-all cursor-pointer whitespace-nowrap"
                             >
-                              {subscribeLoading ? 'Updating...' : 'Update Subscription'}
+                              {subscribeLoading ? "Updating..." : "Update Subscription"}
                             </button>
                           </div>
                         )}
@@ -1728,7 +1806,8 @@ export function PlansPage() {
                         <div className="flex items-center gap-3">
                           <Info className="h-5 w-5 text-error shrink-0" />
                           <p className="text-body-sm text-on-surface-variant font-medium">
-                            Cancelling your subscription will take effect immediately. You will lose access to premium support.
+                            Cancelling your subscription will take effect immediately. You will lose access to premium
+                            support.
                           </p>
                         </div>
                         <button
@@ -1736,26 +1815,29 @@ export function PlansPage() {
                           disabled={subscribeLoading}
                           className="px-6 py-2 bg-error text-on-error font-bold rounded-lg text-body-sm shadow-sm hover:scale-[1.02] active:scale-95 transition-all cursor-pointer whitespace-nowrap"
                         >
-                          {subscribeLoading ? 'Cancelling...' : 'Cancel Subscription'}
+                          {subscribeLoading ? "Cancelling..." : "Cancel Subscription"}
                         </button>
                       </div>
                     )}
                   </div>
-
-
-
                 </div>
 
                 {/* Right Column: Sidebar Plan Summary + custom Help card */}
                 <div className="space-y-6">
-                  
                   {/* Plan Summary Card */}
                   <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
-                    <h4 className="font-headline-md text-headline-md font-bold text-primary mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
-                      {t('plans.planSummary')}
+                    <h4
+                      className="font-headline-md text-headline-md font-bold text-primary mb-4"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      {t("plans.planSummary")}
                     </h4>
                     {(() => {
-                      const basePrice = currentPlan ? (billingCycle === 'annual' ? currentPlan.price * 0.8 : currentPlan.price) : 0;
+                      const basePrice = currentPlan
+                        ? billingCycle === "annual"
+                          ? currentPlan.price * 0.8
+                          : currentPlan.price
+                        : 0;
                       const planName = currentPlan ? getPlanName(currentPlan.name) : activeSub.service_name;
                       const additionalDevicesCount = Math.max(0, currentEquipmentCount - 1);
                       const additionalDevicesPrice = basePrice * additionalDevicesCount;
@@ -1766,38 +1848,26 @@ export function PlansPage() {
                         <div className="space-y-4">
                           <div className="flex justify-between items-center text-body-sm">
                             <span className="text-on-surface-variant font-medium">
-                              {t('plans.basePlanName', { name: planName })}
+                              {t("plans.basePlanName", { name: planName })}
                             </span>
-                            <span className="font-semibold text-on-surface">
-                              ${basePrice.toFixed(2)}
-                            </span>
+                            <span className="font-semibold text-on-surface">${basePrice.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-body-sm">
+                            <span className="text-on-surface-variant font-medium">{t("plans.addonCloudStorage")}</span>
+                            <span className="font-semibold text-on-surface">{t("plans.included")}</span>
                           </div>
                           <div className="flex justify-between items-center text-body-sm">
                             <span className="text-on-surface-variant font-medium">
-                              {t('plans.addonCloudStorage')}
+                              {t("plans.additionalDevices", { count: additionalDevicesCount })}
                             </span>
-                            <span className="font-semibold text-on-surface">
-                              {t('plans.included')}
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-center text-body-sm">
-                            <span className="text-on-surface-variant font-medium">
-                              {t('plans.additionalDevices', { count: additionalDevicesCount })}
-                            </span>
-                            <span className="font-semibold text-on-surface">
-                              ${additionalDevicesPrice.toFixed(2)}
-                            </span>
+                            <span className="font-semibold text-on-surface">${additionalDevicesPrice.toFixed(2)}</span>
                           </div>
                           <div className="pt-4 border-t border-outline-variant">
                             <div className="flex justify-between items-center">
-                              <span className="font-bold text-on-surface">
-                                {t('plans.estimatedMonthly')}
-                              </span>
-                              <span className="text-xl font-bold text-primary">
-                                ${estimatedTotal.toFixed(2)}
-                              </span>
+                              <span className="font-bold text-on-surface">{t("plans.estimatedMonthly")}</span>
+                              <span className="text-xl font-bold text-primary">${estimatedTotal.toFixed(2)}</span>
                             </div>
-                            {billingCycle === 'annual' && (
+                            {billingCycle === "annual" && (
                               <p className="text-right text-[11px] text-on-surface-variant mt-1 font-medium">
                                 Billed annually as ${annualBilledTotal.toFixed(2)}/yr
                               </p>
@@ -1811,7 +1881,10 @@ export function PlansPage() {
                   {/* Tailored Enterprise Help Card */}
                   <div className="bg-primary text-on-primary rounded-xl p-6 relative overflow-hidden shadow-sm">
                     <div className="relative z-10">
-                      <h4 className="text-lg font-bold mb-2 text-on-primary" style={{ fontFamily: 'var(--font-heading)' }}>
+                      <h4
+                        className="text-lg font-bold mb-2 text-on-primary"
+                        style={{ fontFamily: "var(--font-heading)" }}
+                      >
                         Need a custom plan?
                       </h4>
                       <p className="text-body-sm text-on-primary/80 mb-4">
@@ -1825,43 +1898,39 @@ export function PlansPage() {
                       ☁️
                     </div>
                   </div>
-
                 </div>
-
               </div>
+
+              {/* Subscriptions Dashboard (DataTable) — outside grid for full width */}
+              {!isAdmin && activeSubscriptions.length > 0 && (
+                <div className="w-full text-on-surface">
+                  <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
+                    <h3 className="text-h2 text-primary mb-2 font-bold" style={{ fontFamily: "var(--font-heading)" }}>
+                      Active Subscriptions Dashboard
+                    </h3>
+                    <p className="text-body-sm text-on-surface-variant mb-6">
+                      View details, active equipment, and renewal dates for all your active plans.
+                    </p>
+                    <DataTable
+                      columns={subscriptionDashboardColumns}
+                      data={activeSubscriptions}
+                      noDataMessage="No active subscriptions found."
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           );
         })()
       )}
-
-      {/* Subscriptions Dashboard (DataTable) */}
-      {!isAdmin && activeSubscriptions.length > 0 && (
-        <div className="max-w-4xl mx-auto w-full mt-12 text-on-surface">
-          <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
-            <h3 className="text-h2 text-primary mb-2 font-bold" style={{ fontFamily: 'var(--font-heading)' }}>
-              Active Subscriptions Dashboard
-            </h3>
-            <p className="text-body-sm text-on-surface-variant mb-6">
-              View details, active equipment, and renewal dates for all your active plans.
-            </p>
-            <DataTable 
-              columns={subscriptionDashboardColumns}
-              data={activeSubscriptions}
-              noDataMessage="No active subscriptions found."
-            />
-          </div>
-        </div>
-      )}
-
-
 
       {/* Plan Edit Modal */}
       {editingPlan && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-surface-container-lowest border border-outline-variant rounded-xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-xl text-on-surface">
             <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-container-lowest">
-              <h3 className="text-h3 font-bold" style={{ fontFamily: 'var(--font-heading)' }}>
-                {isCreateMode ? 'Add New Plan' : `Edit Plan: ${editingPlan.id}`}
+              <h3 className="text-h3 font-bold" style={{ fontFamily: "var(--font-heading)" }}>
+                {isCreateMode ? "Add New Plan" : `Edit Plan: ${editingPlan.id}`}
               </h3>
               <button
                 onClick={() => setEditingPlan(null)}
@@ -1875,19 +1944,23 @@ export function PlansPage() {
               <div className="grid grid-cols-2 gap-4">
                 {isCreateMode ? (
                   <div>
-                    <label htmlFor="edit-id" className="block text-label-md text-on-surface mb-1.5">Plan ID</label>
+                    <label htmlFor="edit-id" className="block text-label-md text-on-surface mb-1.5">
+                      Plan ID
+                    </label>
                     <Input
                       id="edit-id"
                       type="text"
                       value={editId}
-                      onChange={(e) => setEditId(e.target.value.toUpperCase().replace(/\s+/g, '-'))}
+                      onChange={(e) => setEditId(e.target.value.toUpperCase().replace(/\s+/g, "-"))}
                       placeholder="e.g. PL-008"
                       className="w-full bg-surface-container-lowest text-on-surface border border-outline-variant"
                     />
                   </div>
                 ) : (
                   <div>
-                    <label htmlFor="edit-id" className="block text-label-md text-on-surface mb-1.5">Plan ID</label>
+                    <label htmlFor="edit-id" className="block text-label-md text-on-surface mb-1.5">
+                      Plan ID
+                    </label>
                     <Input
                       id="edit-id"
                       type="text"
@@ -1898,7 +1971,9 @@ export function PlansPage() {
                   </div>
                 )}
                 <div>
-                  <label htmlFor="edit-client-type" className="block text-label-md text-on-surface mb-1.5">Client Type</label>
+                  <label htmlFor="edit-client-type" className="block text-label-md text-on-surface mb-1.5">
+                    Client Type
+                  </label>
                   <select
                     id="edit-client-type"
                     value={editClientType}
@@ -1920,7 +1995,7 @@ export function PlansPage() {
                     <span className="text-xs font-bold text-on-surface-variant w-6">EN</span>
                     <Input
                       type="text"
-                      value={editName.en_US || ''}
+                      value={editName.en_US || ""}
                       onChange={(e) => setEditName({ ...editName, en_US: e.target.value })}
                       className="flex-1 bg-surface-container-lowest text-on-surface border border-outline-variant"
                       placeholder="Plan name in English"
@@ -1930,7 +2005,7 @@ export function PlansPage() {
                     <span className="text-xs font-bold text-on-surface-variant w-6">ES</span>
                     <Input
                       type="text"
-                      value={editName.es_DO || ''}
+                      value={editName.es_DO || ""}
                       onChange={(e) => setEditName({ ...editName, es_DO: e.target.value })}
                       className="flex-1 bg-surface-container-lowest text-on-surface border border-outline-variant"
                       placeholder="Nombre del plan en Español"
@@ -1940,7 +2015,9 @@ export function PlansPage() {
               </div>
 
               <div>
-                <label htmlFor="edit-price" className="block text-label-md text-on-surface mb-1.5 font-semibold">Monthly Price ($)</label>
+                <label htmlFor="edit-price" className="block text-label-md text-on-surface mb-1.5 font-semibold">
+                  Monthly Price ($)
+                </label>
                 <Input
                   id="edit-price"
                   type="number"
@@ -1956,7 +2033,7 @@ export function PlansPage() {
                   <div className="flex items-start gap-2">
                     <span className="text-xs font-bold text-on-surface-variant w-6 mt-2">EN</span>
                     <textarea
-                      value={editDescription.en_US || ''}
+                      value={editDescription.en_US || ""}
                       onChange={(e) => setEditDescription({ ...editDescription, en_US: e.target.value })}
                       className="flex-1 min-h-[60px] p-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20"
                       placeholder="Description in English"
@@ -1965,7 +2042,7 @@ export function PlansPage() {
                   <div className="flex items-start gap-2">
                     <span className="text-xs font-bold text-on-surface-variant w-6 mt-2">ES</span>
                     <textarea
-                      value={editDescription.es_DO || ''}
+                      value={editDescription.es_DO || ""}
                       onChange={(e) => setEditDescription({ ...editDescription, es_DO: e.target.value })}
                       className="flex-1 min-h-[60px] p-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20"
                       placeholder="Descripción en Español"
@@ -2025,10 +2102,10 @@ export function PlansPage() {
                       onDragEnd={handleDragEnd}
                       className={`group flex items-start gap-2 border rounded-lg p-2 transition-all duration-200 ${
                         draggedIndex === index
-                          ? 'opacity-40 bg-surface-container'
+                          ? "opacity-40 bg-surface-container"
                           : dragOverIndex === index
-                          ? 'border-primary border-dashed bg-primary/5 scale-[1.02]'
-                          : 'border-outline-variant/30 bg-surface-container-low/40'
+                            ? "border-primary border-dashed bg-primary/5 scale-[1.02]"
+                            : "border-outline-variant/30 bg-surface-container-low/40"
                       }`}
                     >
                       {/* Drag Handle & Accessible Controls */}
@@ -2072,8 +2149,8 @@ export function PlansPage() {
                           <span className="text-[10px] font-bold text-on-surface-variant w-6">EN</span>
                           <Input
                             type="text"
-                            value={(typeof feat.text === 'string' ? feat.text : feat.text?.en_US) || ''}
-                            onChange={(e) => handleEditFeatureText(index, 'en_US', e.target.value)}
+                            value={(typeof feat.text === "string" ? feat.text : feat.text?.en_US) || ""}
+                            onChange={(e) => handleEditFeatureText(index, "en_US", e.target.value)}
                             className="flex-1 bg-surface-container-lowest text-on-surface border border-outline-variant py-1 h-8"
                             placeholder="Feature in English..."
                           />
@@ -2082,8 +2159,8 @@ export function PlansPage() {
                           <span className="text-[10px] font-bold text-on-surface-variant w-6">ES</span>
                           <Input
                             type="text"
-                            value={(typeof feat.text === 'string' ? feat.text : feat.text?.es_DO) || ''}
-                            onChange={(e) => handleEditFeatureText(index, 'es_DO', e.target.value)}
+                            value={(typeof feat.text === "string" ? feat.text : feat.text?.es_DO) || ""}
+                            onChange={(e) => handleEditFeatureText(index, "es_DO", e.target.value)}
                             className="flex-1 bg-surface-container-lowest text-on-surface border border-outline-variant py-1 h-8"
                             placeholder="Característica en Español..."
                           />
@@ -2114,7 +2191,7 @@ export function PlansPage() {
                 disabled={saveLoading}
                 className="px-5 py-2 bg-primary text-on-primary rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50 cursor-pointer"
               >
-                {saveLoading ? 'Saving...' : (isCreateMode ? 'Create Plan' : 'Save Changes')}
+                {saveLoading ? "Saving..." : isCreateMode ? "Create Plan" : "Save Changes"}
               </button>
             </div>
           </div>

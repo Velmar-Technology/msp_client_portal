@@ -12,7 +12,8 @@
     "devices": "Dispositivos",
     "adminDashboard": "Panel de Administración",
     "infrastructure": "Gestión de Servicios",
-    "notificationPreferences": "Notificaciones"
+    "notificationPreferences": "Notificaciones",
+    "account": "Cuenta"
   },
   "topNav": {
     "search": "Buscar tickets, facturas, FAQs...",
@@ -255,6 +256,12 @@
     "title": "Selección de Plan",
     "subtitle": "Elija el nivel de servicio gestionado que mejor se adapte a sus necesidades de infraestructura. Actualice o cambie su plan en cualquier momento.",
     "recommended": "RECOMENDADO",
+    "browseTab": "Explorar Planes",
+    "manageTab": "Gestionar Suscripción",
+    "monthlyButtonLabel": "Mensual",
+    "annualButtonLabel": "Anual",
+    "saveLabel": "Ahorra un",
+    "billedAnnually": "Facturado anualmente",
     "equipmentCount": "Cantidad de Dispositivos",
     "selected": "Seleccionado",
     "select": "Seleccionar",

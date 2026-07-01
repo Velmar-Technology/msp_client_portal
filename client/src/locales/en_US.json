@@ -12,7 +12,8 @@
     "devices": "Devices",
     "adminDashboard": "Dashboard",
     "infrastructure": "Service Management",
-    "notificationPreferences": "Notifications"
+    "notificationPreferences": "Notifications",
+    "account": "Account"
   },
   "topNav": {
     "search": "Search tickets, invoices, FAQs...",
@@ -253,8 +254,14 @@
   },
   "plans": {
     "title": "Plan Selection",
+    "monthlyButtonLabel": "Monthly",
+    "annualButtonLabel": "Annually",
     "subtitle": "Choose the managed service level that best fits your infrastructure needs. Upgrade or change your plan at any time.",
     "recommended": "RECOMMENDED",
+    "browseTab": "Browse Plans",
+    "billedAnnually": "Billed annually as",
+    "saveLabel": "Save",
+    "manageTab": "Manage Subscription",
     "equipmentCount": "Device Count",
     "selected": "Selected",
     "select": "Select",

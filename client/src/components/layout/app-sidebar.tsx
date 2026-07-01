@@ -49,9 +49,9 @@ const clientNavItems: NavItem[] = [
   { to: '/devices', icon: Laptop, labelKey: 'devices' },
   { to: '/tickets', icon: Ticket, labelKey: 'myTickets' },
   {
-    to: '/profile-group',
+    to: '/account-group',
     icon: User,
-    labelKey: 'profile',
+    labelKey: 'account',
     items: [
       { to: '/profile', labelKey: 'profile' },
       { to: '/notifications/preferences', labelKey: 'notificationPreferences' },
@@ -65,9 +65,9 @@ const techNavItems: NavItem[] = [
   { to: '/tech/dashboard', icon: LayoutDashboard, labelKey: 'dashboard' },
   { to: '/tickets', icon: Ticket, labelKey: 'myTickets' },
   {
-    to: '/profile-group',
+    to: '/account-group',
     icon: User,
-    labelKey: 'profile',
+    labelKey: 'account',
     items: [
       { to: '/profile', labelKey: 'profile' },
       { to: '/notifications/preferences', labelKey: 'notificationPreferences' },
