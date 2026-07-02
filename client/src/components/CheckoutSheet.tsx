@@ -2,6 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Shield } from "lucide-react";
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { Plan } from "@/services/planService";
 import type { Subscription } from "@/services/subscriptionService";
 
@@ -124,55 +125,45 @@ export function PaymentFields({
         {t("plans.paymentMethod")}
       </h2>
 
-      <div className="flex gap-0 mb-4 border-b border-outline-variant">
-        <button
-          onClick={() => setPaymentMethod("card")}
-          className={`px-4 py-2.5 text-label-md transition-colors cursor-pointer ${
-            paymentMethod === "card"
-              ? "border-b-2 border-primary text-primary"
-              : "text-on-surface-variant hover:text-on-surface"
-          }`}
-        >
-          {t("plans.creditCard")}
-        </button>
-        <button
-          onClick={() => setPaymentMethod("transfer")}
-          className={`px-4 py-2.5 text-label-md transition-colors cursor-pointer ${
-            paymentMethod === "transfer"
-              ? "border-b-2 border-primary text-primary"
-              : "text-on-surface-variant hover:text-on-surface"
-          }`}
-        >
-          {t("plans.bankTransfer")}
-        </button>
-      </div>
-
-      <div className="space-y-4">
-        {paymentMethod === "card" ? (
-          <>
-            <p className="text-body-md text-on-surface-variant mb-4">
-              Please complete your checkout payment securely using PayPal. Once approved, your subscription will
-              activate immediately.
-            </p>
-            {paymentMessage && (
-              <div
-                className={`p-3 rounded-lg mb-4 text-label-md font-semibold text-center ${
-                  paymentMessage.includes("activated") || paymentMessage.includes("successfully")
-                    ? "bg-success/10 text-success"
-                    : "bg-primary/10 text-primary animate-pulse"
-                }`}
-              >
-                {paymentMessage}
-              </div>
-            )}
+      <Tabs
+        value={paymentMethod}
+        onValueChange={(val) => setPaymentMethod(val as "card" | "transfer")}
+        className="w-full"
+      >
+        <TabsList className="grid w-full grid-cols-2 bg-surface-container-low border border-outline-variant p-1 rounded-lg mb-6">
+          <TabsTrigger value="card" className="py-2.5 font-semibold text-label-md">
+            {t("plans.creditCard")}
+          </TabsTrigger>
+          <TabsTrigger value="transfer" className="py-2.5 font-semibold text-label-md">
+            {t("plans.bankTransfer")}
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="card" className="space-y-4 pt-2">
+          <p className="text-body-md text-on-surface-variant mb-4">
+            Please complete your checkout payment securely using PayPal. Once approved, your subscription will
+            activate immediately.
+          </p>
+          {paymentMessage && (
             <div
-              id="paypal-button-container"
-              className="my-4 min-h-[150px] flex items-center justify-center bg-surface rounded-xl p-4 border border-outline-variant border-dashed"
+              className={`p-3 rounded-lg mb-4 text-label-md font-semibold text-center ${
+                paymentMessage.includes("activated") || paymentMessage.includes("successfully")
+                  ? "bg-success/10 text-success"
+                  : "bg-primary/10 text-primary animate-pulse"
+              }`}
             >
-              <span className="text-label-md text-on-surface-variant">Loading PayPal Checkout...</span>
+              {paymentMessage}
             </div>
-          </>
-        ) : (
+          )}
+          <div
+            id="paypal-button-container"
+            className="my-4 min-h-[150px] flex items-center justify-center bg-surface rounded-xl p-4 border border-outline-variant border-dashed"
+          >
+            <span className="text-label-md text-on-surface-variant">Loading PayPal Checkout...</span>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="transfer" className="pt-2">
           <div className="text-center py-8 text-body-md text-on-surface-variant space-y-4">
             <p className="mb-2">{t("plans.transferInstructions")}</p>
             <p className="text-mono font-medium text-on-surface">{t("plans.bankName")}</p>
@@ -188,8 +179,8 @@ export function PaymentFields({
               {subscribeLoading ? "Processing..." : "Confirm Bank Transfer Intent"}
             </button>
           </div>
-        )}
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
