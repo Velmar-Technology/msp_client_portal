@@ -7,6 +7,50 @@ export interface ChangePasswordPayload {
   confirmPassword?: string;
 }
 
+// ---- Admin User Management Types ----
+
+export type UserRole = 'CLIENT' | 'TECHNICIAN' | 'ADMIN';
+
+export interface ManagedUser {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  specialty: string | null;
+  is_active: boolean;
+  email_verified: boolean;
+  language: string;
+  avatar_url: string | null;
+  last_login_at: string | null;
+  last_login_ip: string | null;
+  tenant_id: string;
+  client_type: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserListResponse {
+  users: ManagedUser[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface UserStats {
+  total: number;
+  byRole: Record<string, number>;
+  active: number;
+  inactive: number;
+}
+
+export interface UserListParams {
+  page?: number;
+  limit?: number;
+  role?: UserRole | '';
+  isActive?: string;
+  search?: string;
+}
+
 export const userService = {
   async getProfile(): Promise<Record<string, unknown>> {
     const response = await api.get('/users/me');
@@ -46,6 +90,35 @@ export const userService = {
 
   async getClients(): Promise<AuthUser[]> {
     const response = await api.get('/users/clients');
+    return response.data.data;
+  },
+
+  // ---- Admin User Management ----
+
+  async getAllUsers(params: UserListParams): Promise<UserListResponse> {
+    const queryParams: Record<string, string> = {};
+    if (params.page) queryParams.page = String(params.page);
+    if (params.limit) queryParams.limit = String(params.limit);
+    if (params.role) queryParams.role = params.role;
+    if (params.isActive !== undefined && params.isActive !== '') queryParams.isActive = params.isActive;
+    if (params.search) queryParams.search = params.search;
+
+    const response = await api.get('/users', { params: queryParams });
+    return response.data.data;
+  },
+
+  async getUserStats(): Promise<UserStats> {
+    const response = await api.get('/users/stats');
+    return response.data.data;
+  },
+
+  async updateUserRole(userId: string, role: UserRole): Promise<ManagedUser> {
+    const response = await api.patch(`/users/${userId}/role`, { role });
+    return response.data.data;
+  },
+
+  async toggleUserStatus(userId: string, isActive: boolean): Promise<ManagedUser> {
+    const response = await api.patch(`/users/${userId}/status`, { is_active: isActive });
     return response.data.data;
   },
 };

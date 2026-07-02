@@ -7,11 +7,34 @@ import { subscriptionService } from '@/services/subscriptionService';
 import { useAuth } from '@/hooks/useAuth';
 import { usePlanStore } from '@/store/usePlanStore';
 
+import enTranslations from '../locales/en_US.json';
+
 let mockLanguage = 'en_US';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => key,
+    t: (key: string, options?: any) => {
+      const parts = key.split('.');
+      let current: any = enTranslations;
+      for (const part of parts) {
+        if (current && typeof current === 'object' && part in current) {
+          current = current[part];
+        } else {
+          return key;
+        }
+      }
+      if (typeof current === 'string') {
+        if (options && typeof options === 'object') {
+          let res = current;
+          for (const k of Object.keys(options)) {
+            res = res.replace(`{{${k}}}`, options[k]);
+          }
+          return res;
+        }
+        return current;
+      }
+      return key;
+    },
     i18n: {
       get language() {
         return mockLanguage;
@@ -142,15 +165,15 @@ describe('PlansPage', () => {
         </MemoryRouter>
       );
 
-      expect(screen.getByText('Basic Support')).toBeInTheDocument();
-      expect(screen.getByText('Standard Support')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Basic Support' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Standard Support' })).toBeInTheDocument();
 
       // Click Proceed to Checkout to mount the Sheet
       const checkoutBtn = screen.getByRole('button', { name: /Proceed to Checkout/i });
       fireEvent.click(checkoutBtn);
 
       await waitFor(() => {
-        expect(screen.getByText('plans.paymentMethod')).toBeInTheDocument();
+        expect(screen.getByText('Payment Method')).toBeInTheDocument();
       });
       expect(screen.queryByText('Apply Plan to Customer')).not.toBeInTheDocument();
     });
@@ -164,7 +187,7 @@ describe('PlansPage', () => {
       );
 
       // Select Standard Support
-      const selectButton = screen.getByText('plans.selected: Standard Support');
+      const selectButton = screen.getByText('Selected: Standard Support');
       expect(selectButton).toBeInTheDocument();
 
       // Click Proceed to Checkout to mount the Sheet
@@ -177,7 +200,7 @@ describe('PlansPage', () => {
       });
 
       // Click Terms of Service checkbox
-      const tosCheckbox = screen.getByLabelText(/plans.termsOfServiceLink/i);
+      const tosCheckbox = screen.getByLabelText(/Terms of Service/i);
       fireEvent.click(tosCheckbox);
 
       // Call createOrder
@@ -258,7 +281,7 @@ describe('PlansPage', () => {
       });
 
       // Click Terms of Service checkbox
-      const tosCheckbox = screen.getByLabelText(/plans.termsOfServiceLink/i);
+      const tosCheckbox = screen.getByLabelText(/Terms of Service/i);
       fireEvent.click(tosCheckbox);
 
       // Call createOrder
@@ -373,7 +396,7 @@ describe('PlansPage', () => {
       });
 
       // Select Basic Support card
-      fireEvent.click(screen.getByText('plans.select Basic Support'));
+      fireEvent.click(screen.getByText('Select Basic Support'));
 
       await waitFor(() => {
         expect(screen.getByText('Subscription Modification')).toBeInTheDocument();
@@ -381,7 +404,7 @@ describe('PlansPage', () => {
       });
 
       // Click Terms of Service checkbox
-      const tosCheckbox = screen.getByLabelText(/plans.termsOfServiceLink/i);
+      const tosCheckbox = screen.getByLabelText(/Terms of Service/i);
       fireEvent.click(tosCheckbox);
 
       fireEvent.click(screen.getByText('Update Subscription'));
@@ -484,7 +507,7 @@ describe('PlansPage', () => {
 
       // Select Basic Support plan card to manage it
       await waitFor(() => {
-        expect(screen.getByText('plans.selected: Basic Support')).toBeInTheDocument();
+        expect(screen.getByText('Selected: Basic Support')).toBeInTheDocument();
       });
 
       // Increment equipment count of BASIC plan to 4 (currently 2, so increment twice)
@@ -506,7 +529,7 @@ describe('PlansPage', () => {
       });
 
       // Click Terms of Service checkbox
-      const tosCheckbox = screen.getByLabelText(/plans.termsOfServiceLink/i);
+      const tosCheckbox = screen.getByLabelText(/Terms of Service/i);
       fireEvent.click(tosCheckbox);
 
       // Call createOrder
@@ -553,7 +576,7 @@ describe('PlansPage', () => {
       });
 
       // Select Standard Support card (which is not active)
-      fireEvent.click(screen.getByText('plans.select Standard Support'));
+      fireEvent.click(screen.getByText('Select Standard Support'));
 
       // The select action header should appear
       await waitFor(() => {
@@ -569,7 +592,7 @@ describe('PlansPage', () => {
       fireEvent.click(checkoutBtn);
 
       await waitFor(() => {
-        expect(screen.getByText('plans.paymentMethod')).toBeInTheDocument();
+        expect(screen.getByText('Payment Method')).toBeInTheDocument();
       });
 
       // Wait for PayPal buttons container
@@ -578,7 +601,7 @@ describe('PlansPage', () => {
       });
 
       // Click Terms of Service checkbox
-      const tosCheckbox = screen.getByLabelText(/plans.termsOfServiceLink/i);
+      const tosCheckbox = screen.getByLabelText(/Terms of Service/i);
       fireEvent.click(tosCheckbox);
 
       // Call createOrder
@@ -624,7 +647,7 @@ describe('PlansPage', () => {
         expect(screen.getByLabelText('Select Customer')).toBeInTheDocument();
       });
 
-      expect(screen.queryByText('plans.paymentMethod')).not.toBeInTheDocument();
+      expect(screen.queryByText('Payment Method')).not.toBeInTheDocument();
     });
 
     test('submits admin client assignment with selected clientId', async () => {
@@ -893,7 +916,7 @@ describe('PlansPage', () => {
       const select = screen.getByLabelText('Select Customer');
       fireEvent.change(select, { target: { value: 'client-2' } });
 
-      const sendQuoteButton = screen.getByText('plans.sendQuoteToCustomer');
+      const sendQuoteButton = screen.getByText('Send Quotation to Customer');
       expect(sendQuoteButton).toBeInTheDocument();
 
       fireEvent.click(sendQuoteButton);
@@ -926,7 +949,7 @@ describe('PlansPage', () => {
         expect(screen.getByLabelText('Select Customer')).toBeInTheDocument();
       });
 
-      expect(screen.queryByLabelText('plans.unregisteredEmailLabel')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Recipient Email Address')).not.toBeInTheDocument();
 
       const applyButton = screen.getByRole('button', { name: /Apply Plan to Customer/i });
       expect(applyButton).not.toBeDisabled();
@@ -934,8 +957,8 @@ describe('PlansPage', () => {
       const select = screen.getByLabelText('Select Customer');
       fireEvent.change(select, { target: { value: 'unregistered' } });
 
-      const emailInput = screen.getByLabelText('plans.unregisteredEmailLabel') as HTMLInputElement;
-      const nameInput = screen.getByLabelText('plans.unregisteredNameLabel') as HTMLInputElement;
+      const emailInput = screen.getByLabelText('Recipient Email Address') as HTMLInputElement;
+      const nameInput = screen.getByLabelText('Recipient Name (Optional)') as HTMLInputElement;
       expect(emailInput).toBeInTheDocument();
       expect(nameInput).toBeInTheDocument();
 
@@ -944,7 +967,7 @@ describe('PlansPage', () => {
       fireEvent.change(emailInput, { target: { value: 'admin-unreg@example.com' } });
       fireEvent.change(nameInput, { target: { value: 'Admin Unregistered Customer' } });
 
-      const sendQuoteButton = screen.getByText('plans.sendQuoteToCustomer');
+      const sendQuoteButton = screen.getByText('Send Quotation to Customer');
       fireEvent.click(sendQuoteButton);
 
       await waitFor(() => {

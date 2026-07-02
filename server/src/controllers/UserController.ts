@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { userService } from '../services/UserService';
-import { UpdateProfileInput, ChangePasswordInput } from '../dtos/user.dto';
+import { UpdateProfileInput, ChangePasswordInput, UpdateUserRoleInput, UpdateUserStatusInput } from '../dtos/user.dto';
+import { UserRole } from '../types';
 
 export class UserController {
   async getProfile(req: Request, res: Response): Promise<void> {
@@ -38,6 +39,47 @@ export class UserController {
   async getClients(_req: Request, res: Response): Promise<void> {
     const clients = await userService.getClients();
     res.json({ success: true, data: clients });
+  }
+
+  // ---- Admin User Management ----
+
+  async getAllUsers(req: Request, res: Response): Promise<void> {
+    const { page, limit, role, isActive, search } = req.query;
+    const result = await userService.getAllUsers({
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+      role: role as string | undefined,
+      isActive: isActive as string | undefined,
+      search: search as string | undefined,
+    });
+    res.json({ success: true, data: result });
+  }
+
+  async getStats(_req: Request, res: Response): Promise<void> {
+    const stats = await userService.getUserStats();
+    res.json({ success: true, data: stats });
+  }
+
+  async updateRole(req: Request, res: Response): Promise<void> {
+    const id = req.params.id as string;
+    const data = req.body as UpdateUserRoleInput;
+    const user = await userService.updateUserRole(
+      req.user!.userId,
+      id,
+      data.role as UserRole
+    );
+    res.json({ success: true, data: user });
+  }
+
+  async toggleStatus(req: Request, res: Response): Promise<void> {
+    const id = req.params.id as string;
+    const data = req.body as UpdateUserStatusInput;
+    const user = await userService.toggleUserStatus(
+      req.user!.userId,
+      id,
+      data.is_active
+    );
+    res.json({ success: true, data: user });
   }
 }
 

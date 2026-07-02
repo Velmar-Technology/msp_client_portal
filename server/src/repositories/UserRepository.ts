@@ -1,11 +1,115 @@
 import { BaseRepository } from './BaseRepository';
 import { User, UserRole } from '../types';
 import { db, users } from '../db';
-import { eq, and, ilike, asc, sql } from 'drizzle-orm';
+import { eq, and, or, ilike, asc, sql, count } from 'drizzle-orm';
+import type { SQL } from 'drizzle-orm';
+
+export interface UserListFilters {
+  role?: UserRole;
+  isActive?: boolean;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}
 
 export class UserRepository extends BaseRepository<User> {
   constructor() {
     super(users, 'users');
+  }
+
+  private buildFilterConditions(filters: UserListFilters): SQL | undefined {
+    const conditions: SQL[] = [];
+
+    if (filters.role) {
+      conditions.push(eq(users.role, filters.role));
+    }
+    if (filters.isActive !== undefined) {
+      conditions.push(eq(users.is_active, filters.isActive));
+    }
+    if (filters.search) {
+      const searchPattern = `%${filters.search}%`;
+      conditions.push(
+        or(ilike(users.name, searchPattern), ilike(users.email, searchPattern))!
+      );
+    }
+
+    return conditions.length > 0 ? and(...conditions) : undefined;
+  }
+
+  async findAllWithFilters(filters: UserListFilters): Promise<User[]> {
+    const whereClause = this.buildFilterConditions(filters);
+    const query = db
+      .select()
+      .from(users)
+      .orderBy(asc(users.name))
+      .limit(filters.limit ?? 20)
+      .offset(filters.offset ?? 0);
+
+    if (whereClause) {
+      query.where(whereClause);
+    }
+
+    const results = await query;
+    return results as User[];
+  }
+
+  async countWithFilters(filters: UserListFilters): Promise<number> {
+    const whereClause = this.buildFilterConditions(filters);
+    const query = db.select({ total: count() }).from(users);
+
+    if (whereClause) {
+      query.where(whereClause);
+    }
+
+    const result = await query;
+    return result[0]?.total ?? 0;
+  }
+
+  async countByRole(): Promise<Record<string, number>> {
+    const results = await db
+      .select({ role: users.role, total: count() })
+      .from(users)
+      .groupBy(users.role);
+
+    const counts: Record<string, number> = {};
+    for (const row of results) {
+      counts[row.role] = row.total;
+    }
+    return counts;
+  }
+
+  async countByStatus(): Promise<{ active: number; inactive: number }> {
+    const [activeResult] = await db
+      .select({ total: count() })
+      .from(users)
+      .where(eq(users.is_active, true));
+    const [inactiveResult] = await db
+      .select({ total: count() })
+      .from(users)
+      .where(eq(users.is_active, false));
+
+    return {
+      active: activeResult?.total ?? 0,
+      inactive: inactiveResult?.total ?? 0,
+    };
+  }
+
+  async updateRole(id: string, role: UserRole): Promise<User | null> {
+    const results = await db
+      .update(users)
+      .set({ role, updated_at: sql`NOW()` })
+      .where(eq(users.id, id))
+      .returning();
+    return (results[0] as User) || null;
+  }
+
+  async updateStatus(id: string, isActive: boolean): Promise<User | null> {
+    const results = await db
+      .update(users)
+      .set({ is_active: isActive, updated_at: sql`NOW()` })
+      .where(eq(users.id, id))
+      .returning();
+    return (results[0] as User) || null;
   }
 
   async findByEmail(email: string): Promise<User | null> {

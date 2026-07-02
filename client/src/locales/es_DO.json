@@ -13,7 +13,8 @@
     "adminDashboard": "Panel de Administración",
     "infrastructure": "Gestión de Servicios",
     "notificationPreferences": "Notificaciones",
-    "account": "Cuenta"
+    "account": "Cuenta",
+    "userManagement": "Usuarios"
   },
   "topNav": {
     "search": "Buscar tickets, facturas, FAQs...",
@@ -437,5 +438,40 @@
     "dark": "Oscuro",
     "system": "Sistema",
     "toggleTheme": "Cambiar tema"
+  },
+  "userManagement": {
+    "title": "Gestión de Usuarios",
+    "subtitle": "Administrar todos los usuarios, roles y accesos de su organización",
+    "totalUsers": "Total",
+    "roleAdmin": "Administrador",
+    "roleTech": "Técnico",
+    "roleClient": "Cliente",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "searchPlaceholder": "Buscar por nombre o correo...",
+    "filterRole": "Rol",
+    "filterStatus": "Estado",
+    "allRoles": "Todos los Roles",
+    "allStatuses": "Todos los Estados",
+    "results": "resultados",
+    "colUser": "Usuario",
+    "colRole": "Rol",
+    "colStatus": "Estado",
+    "colLastLogin": "Último Acceso",
+    "colCreated": "Creado",
+    "actions": "Acciones",
+    "changeRole": "Cambiar Rol",
+    "current": "actual",
+    "deactivate": "Desactivar Usuario",
+    "reactivate": "Reactivar Usuario",
+    "confirmRoleTitle": "Cambiar Rol de Usuario",
+    "confirmStatusTitle": "Cambiar Estado de Usuario",
+    "confirmRoleChange": "¿Está seguro de cambiar el rol de {name} a {role}?",
+    "confirmStatusChange": "¿Está seguro de establecer a {name} como {status}?",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "processing": "Procesando...",
+    "noUsers": "No se encontraron usuarios",
+    "pageOf": "Página {page} de {total}"
   }
 }

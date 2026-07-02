@@ -16,6 +16,7 @@ import { TermsPage } from './pages/TermsPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { NotificationPreferencesPage } from './pages/NotificationPreferencesPage';
 import { DevicesPage } from './pages/DevicesPage';
+import { UserManagementPage } from './pages/UserManagementPage';
 import { ThemeProvider } from './components/theme-provider';
 import { ReactErrorBoundary } from '@shared/errors';
 
@@ -81,6 +82,7 @@ export function App() {
               {/* Tech/Admin Routes */}
               <Route path="/tech/dashboard" element={<ProtectedRoute allowedRoles={['TECHNICIAN']}><TechDashboard /></ProtectedRoute>} />
               <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['ADMIN']}><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['ADMIN']}><UserManagementPage /></ProtectedRoute>} />
 
               {/* Shared Routes */}
               <Route path="/tickets" element={<TicketsPage />} />

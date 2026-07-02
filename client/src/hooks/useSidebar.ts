@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Ticket,
   User,
+  Users,
   Shield,
   Settings,
   Laptop,
@@ -57,6 +58,7 @@ const techNavItems: NavItem[] = [
 
 const adminNavItems: NavItem[] = [
   { to: "/admin/dashboard", icon: Shield, labelKey: "adminDashboard" },
+  { to: "/admin/users", icon: Users, labelKey: "userManagement" },
   { to: "/devices", icon: Laptop, labelKey: "devices" },
   { to: "/tickets", icon: Ticket, labelKey: "allTickets" },
   {

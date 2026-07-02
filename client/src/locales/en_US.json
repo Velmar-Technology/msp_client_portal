@@ -13,7 +13,8 @@
     "adminDashboard": "Dashboard",
     "infrastructure": "Service Management",
     "notificationPreferences": "Notifications",
-    "account": "Account"
+    "account": "Account",
+    "userManagement": "Users"
   },
   "topNav": {
     "search": "Search tickets, invoices, FAQs...",
@@ -437,5 +438,40 @@
     "dark": "Dark",
     "system": "System",
     "toggleTheme": "Toggle theme"
+  },
+  "userManagement": {
+    "title": "User Management",
+    "subtitle": "Manage all users, roles, and access in your organization",
+    "totalUsers": "Total",
+    "roleAdmin": "Admin",
+    "roleTech": "Technician",
+    "roleClient": "Client",
+    "active": "Active",
+    "inactive": "Inactive",
+    "searchPlaceholder": "Search by name or email...",
+    "filterRole": "Role",
+    "filterStatus": "Status",
+    "allRoles": "All Roles",
+    "allStatuses": "All Statuses",
+    "results": "results",
+    "colUser": "User",
+    "colRole": "Role",
+    "colStatus": "Status",
+    "colLastLogin": "Last Login",
+    "colCreated": "Created",
+    "actions": "Actions",
+    "changeRole": "Change Role",
+    "current": "current",
+    "deactivate": "Deactivate User",
+    "reactivate": "Reactivate User",
+    "confirmRoleTitle": "Change User Role",
+    "confirmStatusTitle": "Change User Status",
+    "confirmRoleChange": "Are you sure you want to change {name}'s role to {role}?",
+    "confirmStatusChange": "Are you sure you want to set {name} as {status}?",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "processing": "Processing...",
+    "noUsers": "No users found",
+    "pageOf": "Page {page} of {total}"
   }
 }

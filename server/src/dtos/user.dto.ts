@@ -23,3 +23,20 @@ export const ChangePasswordDTO = z.object({
 });
 export type ChangePasswordInput = z.infer<typeof ChangePasswordDTO>;
 
+// ---- Admin User Management DTOs ----
+
+export const UpdateUserRoleDTO = z.object({
+  role: z.enum(['CLIENT', 'TECHNICIAN', 'ADMIN'], {
+    required_error: 'Role is required',
+    invalid_type_error: 'Role must be CLIENT, TECHNICIAN, or ADMIN',
+  }),
+});
+export type UpdateUserRoleInput = z.infer<typeof UpdateUserRoleDTO>;
+
+export const UpdateUserStatusDTO = z.object({
+  is_active: z.boolean({
+    required_error: 'Active status is required',
+    invalid_type_error: 'Active status must be a boolean',
+  }),
+});
+export type UpdateUserStatusInput = z.infer<typeof UpdateUserStatusDTO>;
