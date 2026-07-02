@@ -23,34 +23,38 @@ export function Page({
 }: PageProps) {
   return (
     <div
-      className={cn('animate-fade-in max-w-7xl mx-auto', className)}
+      className={cn('animate-fade-in max-w-7xl mx-auto w-full text-zinc-900 dark:text-zinc-50', className)}
       {...props}
     >
-      {showBreadcrumbs && <Breadcrumbs className="mb-6" />}
+      {showBreadcrumbs && <Breadcrumbs className="mb-4 text-zinc-500 dark:text-zinc-400" />}
       {(title || subtitle || actions) && (
-        <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           {(title || subtitle) && (
-            <div>
+            <div className="space-y-0.5">
               {title && (
                 <h1
-                  className="text-h1 text-primary animate-fade-in"
+                  className="text-lg sm:text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 animate-fade-in"
                   style={{ fontFamily: 'var(--font-heading)' }}
                 >
                   {title}
                 </h1>
               )}
               {subtitle && (
-                <p className="text-body-md text-on-surface-variant opacity-80 mt-1 animate-fade-in">
+                <p className="text-xs text-zinc-550 dark:text-zinc-400 animate-fade-in">
                   {subtitle}
                 </p>
               )}
             </div>
           )}
-          {actions ? isLoading ? (<Skeleton className={cn('animate-fade-in shrink-0 w-36 h-10')} />) : (
-            <div className="flex items-center gap-3 animate-fade-in shrink-0">
-              {actions}
-            </div>
-          ) : (null)}
+          {actions ? (
+            isLoading ? (
+              <Skeleton className="animate-fade-in shrink-0 w-32 h-8.5 rounded-md" />
+            ) : (
+              <div className="flex items-center gap-2 animate-fade-in shrink-0">
+                {actions}
+              </div>
+            )
+          ) : null}
         </div>
       )}
       {children}
