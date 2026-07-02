@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback } from "react";
 import { X, Laptop, Loader2, MoreHorizontal, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDevicesPage } from "../hooks/useDevicesPage";
@@ -25,7 +25,7 @@ interface EmptySubscriptionsCardProps {
 export function EmptySubscriptionsCard({ onBrowsePlans }: EmptySubscriptionsCardProps) {
   return (
     <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 shadow-sm flex flex-col items-center justify-center text-center space-y-3 max-w-md mx-auto">
-      <div className="p-3 bg-zinc-100 dark:bg-zinc-900 rounded-full border border-zinc-200 dark:border-zinc-850 text-zinc-600 dark:text-zinc-400">
+      <div className="p-3 bg-zinc-100 dark:bg-zinc-900 rounded-full border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400">
         <Laptop className="h-6 w-6" />
       </div>
       <div>
@@ -144,7 +144,7 @@ export function ActivationWizardModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg max-w-md w-full shadow-lg text-zinc-900 dark:text-zinc-100 flex flex-col">
+      <div className="bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-lg max-w-md w-full shadow-lg text-zinc-900 dark:text-zinc-100 flex flex-col">
         {/* Modal Header */}
         <div className="px-5 py-3 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-white dark:bg-zinc-950 rounded-t-lg">
           <h3 className="text-sm font-bold text-zinc-950 dark:text-zinc-50">
@@ -269,7 +269,7 @@ export function ActivationWizardModal({
                     value={deviceName}
                     onChange={(e) => setDeviceName(e.target.value)}
                     placeholder="e.g. Sales-Laptop-03"
-                    className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs h-8"
+                    className="w-full bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs h-8"
                   />
                 </div>
 
@@ -286,7 +286,7 @@ export function ActivationWizardModal({
                     value={deviceSerial}
                     onChange={(e) => setDeviceSerial(e.target.value)}
                     placeholder="e.g. SN-SIM-827461"
-                    className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs h-8"
+                    className="w-full bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs h-8"
                   />
                 </div>
               </div>
@@ -312,7 +312,7 @@ export function ActivationWizardModal({
                       <span>Activating...</span>
                     </>
                   ) : (
-                    <span>Activate & Provision</span>
+                    <span>Activate & Provision Backup</span>
                   )}
                 </button>
               </div>
@@ -322,7 +322,7 @@ export function ActivationWizardModal({
           {step === 3 && (
             <div className="space-y-3">
               <div className="text-center space-y-1.5 py-2">
-                <span className="inline-block p-2 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-250 dark:border-emerald-900/50 rounded-full text-sm font-bold">
+                <span className="inline-block p-2 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-405 border border-emerald-900/50 rounded-full text-sm font-bold">
                   ✓
                 </span>
                 <h4 className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Device Successfully Activated!</h4>
@@ -612,7 +612,7 @@ export function DevicesPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
               <div className="lg:col-span-3 space-y-4">
-                <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden shadow-sm flex flex-col">
+                <div className="bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden shadow-sm flex flex-col">
                   {/* Table Filters */}
                   <DevicesTableFilters
                     searchTerm={searchTerm}
@@ -654,3 +654,4 @@ export function DevicesPage() {
     </Page>
   );
 }
+export default DevicesPage;
