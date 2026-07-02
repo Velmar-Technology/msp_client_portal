@@ -677,8 +677,9 @@ export function PlansPage() {
           <button
             type="button"
             onClick={() => {
-              setUserSelectedPlan(sub.plan);
-              document.getElementById("customer-select")?.scrollIntoView({ behavior: "smooth" });
+              // setUserSelectedPlan(sub.plan);
+              // document.getElementById("customer-select")?.scrollIntoView({ behavior: "smooth" });
+              alert("Manage subscription" + sub.id);
             }}
             className="text-label-sm text-primary hover:underline font-semibold cursor-pointer"
           >

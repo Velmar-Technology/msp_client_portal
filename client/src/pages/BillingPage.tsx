@@ -33,6 +33,26 @@ export function BillingPage() {
   const [showPayModal, setShowPayModal] = useState(false);
   const [paymentMessage, setPaymentMessage] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const handleDownload = async (inv: Invoice) => {
+    setDownloadingId(inv.id);
+    try {
+      const blob = await invoiceService.downloadInvoice(inv.id, i18n.language);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `invoice-${inv.invoice_number}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to download invoice', err);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   useEffect(() => {
     async function loadInvoices() {
@@ -202,10 +222,16 @@ export function BillingPage() {
                     </td>
                     <td className="px-4 py-3 flex gap-2 items-center">
                       <button
-                        className="p-1.5 rounded hover:bg-surface-container transition-colors cursor-pointer"
+                        onClick={() => handleDownload(inv)}
+                        disabled={downloadingId === inv.id}
+                        className="p-1.5 rounded hover:bg-surface-container transition-colors cursor-pointer disabled:opacity-50"
                         title={t('billing.downloadInvoice')}
                       >
-                        <Download className="h-4 w-4 text-on-surface-variant" />
+                        {downloadingId === inv.id ? (
+                          <div className="w-4 h-4 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+                        ) : (
+                          <Download className="h-4 w-4 text-on-surface-variant" />
+                        )}
                       </button>
                       {(inv.status === 'PENDING' || inv.status === 'OVERDUE') && (
                         <button
