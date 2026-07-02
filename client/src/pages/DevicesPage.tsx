@@ -31,8 +31,8 @@ export function EmptySubscriptionsCard({ onBrowsePlans }: EmptySubscriptionsCard
       <div>
         <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">No Active Subscriptions</h3>
         <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
-          You currently do not have any active subscriptions. A managed support service plan is required to
-          activate and manage devices.
+          You currently do not have any active subscriptions. A managed support service plan is required to activate and
+          manage devices.
         </p>
       </div>
       <button
@@ -52,17 +52,10 @@ interface SubscriptionSelectorProps {
   onChange: (id: string) => void;
 }
 
-export function SubscriptionSelector({
-  subscriptions,
-  selectedId,
-  onChange,
-}: SubscriptionSelectorProps) {
+export function SubscriptionSelector({ subscriptions, selectedId, onChange }: SubscriptionSelectorProps) {
   return (
     <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 shadow-sm max-w-sm">
-      <label
-        htmlFor="active-sub-select-devices"
-        className="block text-[10px] uppercase font-bold text-zinc-400 mb-1.5"
-      >
+      <label htmlFor="active-sub-select-devices" className="block text-[10px] uppercase font-bold text-zinc-400 mb-1.5">
         Select Subscription to Manage Devices
       </label>
       <select
@@ -88,11 +81,7 @@ interface DevicesTableFiltersProps {
   searchPlaceholder: string;
 }
 
-export function DevicesTableFilters({
-  searchTerm,
-  setSearchTerm,
-  searchPlaceholder,
-}: DevicesTableFiltersProps) {
+export function DevicesTableFilters({ searchTerm, setSearchTerm, searchPlaceholder }: DevicesTableFiltersProps) {
   return (
     <div className="p-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/10 flex flex-col sm:flex-row gap-3 items-center justify-between">
       <div className="relative w-full sm:max-w-xs">
@@ -147,9 +136,7 @@ export function ActivationWizardModal({
       <div className="bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-lg max-w-md w-full shadow-lg text-zinc-900 dark:text-zinc-100 flex flex-col">
         {/* Modal Header */}
         <div className="px-5 py-3 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-white dark:bg-zinc-950 rounded-t-lg">
-          <h3 className="text-sm font-bold text-zinc-950 dark:text-zinc-50">
-            Device Activation Wizard
-          </h3>
+          <h3 className="text-sm font-bold text-zinc-950 dark:text-zinc-50">Device Activation Wizard</h3>
           <button
             onClick={onClose}
             className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-md transition-colors cursor-pointer text-zinc-400"
@@ -215,16 +202,13 @@ export function ActivationWizardModal({
                       {currentSlot.otp}
                     </p>
                     <p className="text-[10px] text-zinc-400 font-medium">
-                      Expires:{" "}
-                      {currentSlot.otp_expires_at ? new Date(currentSlot.otp_expires_at).toLocaleString() : ""}
+                      Expires: {currentSlot.otp_expires_at ? new Date(currentSlot.otp_expires_at).toLocaleString() : ""}
                     </p>
                   </>
                 ) : (
                   <div className="py-3 flex flex-col items-center gap-1.5">
                     <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
-                    <p className="text-[10px] text-zinc-400 animate-pulse font-medium">
-                      Generating temporary code...
-                    </p>
+                    <p className="text-[10px] text-zinc-400 animate-pulse font-medium">Generating temporary code...</p>
                   </div>
                 )}
               </div>
@@ -257,10 +241,7 @@ export function ActivationWizardModal({
 
               <div className="space-y-3.5">
                 <div>
-                  <label
-                    htmlFor="wizard-dev-name"
-                    className="block text-[10px] uppercase font-bold text-zinc-400 mb-1"
-                  >
+                  <label htmlFor="wizard-dev-name" className="block text-[10px] uppercase font-bold text-zinc-400 mb-1">
                     Device Name / Label
                   </label>
                   <Input
@@ -325,7 +306,9 @@ export function ActivationWizardModal({
                 <span className="inline-block p-2 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-405 border border-emerald-900/50 rounded-full text-sm font-bold">
                   ✓
                 </span>
-                <h4 className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Device Successfully Activated!</h4>
+                <h4 className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                  Device Successfully Activated!
+                </h4>
                 <p className="text-xs text-zinc-500">
                   Cloud storage space has been provisioned and mapped to this device.
                 </p>
@@ -338,12 +321,12 @@ export function ActivationWizardModal({
                 </div>
                 <div className="flex justify-between text-zinc-500">
                   <span>Serial Number:</span>
-                  <span className="text-zinc-900 dark:text-zinc-100 font-mono font-semibold">{currentSlot?.device_serial}</span>
+                  <span className="text-zinc-900 dark:text-zinc-100 font-mono font-semibold">
+                    {currentSlot?.device_serial}
+                  </span>
                 </div>
                 <div className="border-t border-zinc-200 dark:border-zinc-800 pt-2 space-y-1.5">
-                  <p className="text-[10px] font-bold text-primary uppercase tracking-wider">
-                    Nextcloud Credentials
-                  </p>
+                  <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Nextcloud Credentials</p>
                   <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-850 p-2 rounded-md font-mono text-[10px] text-zinc-600 dark:text-zinc-400 space-y-0.5 select-all">
                     <p>User: {currentSlot?.nextcloud_username}</p>
                     <p>Pass: {currentSlot?.nextcloud_password}</p>
@@ -430,7 +413,9 @@ export function DevicesPage() {
       {
         accessorKey: "status",
         header: () => (
-          <span className="uppercase text-[10px] text-zinc-400 font-bold tracking-wider">{t("devices.tableStatus")}</span>
+          <span className="uppercase text-[10px] text-zinc-400 font-bold tracking-wider">
+            {t("devices.tableStatus")}
+          </span>
         ),
         cell: ({ row }) => {
           const status = row.getValue("status") as string;
@@ -457,7 +442,9 @@ export function DevicesPage() {
           if (equip.status === "ACTIVE") {
             return (
               <div className="space-y-0.5">
-                <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100">{equip.device_name || "Unnamed Device"}</p>
+                <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
+                  {equip.device_name || "Unnamed Device"}
+                </p>
                 <p className="text-[10px] text-zinc-400 font-mono">{equip.device_serial || "No Serial"}</p>
               </div>
             );
@@ -465,7 +452,9 @@ export function DevicesPage() {
           if (equip.otp) {
             return (
               <div className="bg-zinc-50 dark:bg-zinc-900/30 p-2 rounded border border-zinc-200 dark:border-zinc-800 max-w-[180px]">
-                <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 font-mono select-all">OTP: {equip.otp}</p>
+                <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 font-mono select-all">
+                  OTP: {equip.otp}
+                </p>
                 <p className="text-[9px] text-zinc-400 mt-0.5">
                   Expires: {equip.otp_expires_at ? new Date(equip.otp_expires_at).toLocaleString() : ""}
                 </p>
@@ -531,7 +520,9 @@ export function DevicesPage() {
       {
         id: "actions",
         header: () => (
-          <span className="uppercase text-[10px] text-zinc-400 font-bold tracking-wider">{t("devices.tableActions")}</span>
+          <span className="uppercase text-[10px] text-zinc-400 font-bold tracking-wider">
+            {t("devices.tableActions")}
+          </span>
         ),
         cell: ({ row }) => {
           const equip = row.original;
@@ -548,7 +539,10 @@ export function DevicesPage() {
                     <MoreHorizontal className="h-3.5 w-3.5 text-zinc-550" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
+                <DropdownMenuContent
+                  align="end"
+                  className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800"
+                >
                   <DropdownMenuLabel className="text-xs">{t("devices.actionsLabel")}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {equip.status === "ACTIVE" ? (
@@ -588,15 +582,11 @@ export function DevicesPage() {
         },
       },
     ],
-    [t, handleRevokeEquipment, handleStartActivationWizard, handleGenerateOTP]
+    [t, handleRevokeEquipment, handleStartActivationWizard, handleGenerateOTP],
   );
 
   return (
-    <Page
-      title={t("nav.devices")}
-      subtitle="Manage your active device licenses, generate activation OTPs, and provision client storage."
-      isLoading={false}
-    >
+    <Page title={t("nav.devices")} subtitle={t("devices.subtitle")} isLoading={false}>
       <div className="max-w-7xl mx-auto space-y-4">
         {activeSubscriptions.length === 0 && !loading ? (
           <EmptySubscriptionsCard onBrowsePlans={() => navigate("/plans")} />

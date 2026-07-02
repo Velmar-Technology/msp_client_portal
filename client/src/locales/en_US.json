@@ -359,6 +359,8 @@
     "updateErrorTitle": "Update Failed"
   },
   "devices": {
+    "description": "Manage your active device licenses, generate activation OTPs, and provision client storage.",
+    "tableId": "Device ID",
     "tableSlot": "Slot",
     "tableStatus": "Status",
     "tableDeviceDetails": "Device Details",

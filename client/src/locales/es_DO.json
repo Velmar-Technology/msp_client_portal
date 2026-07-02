@@ -359,6 +359,8 @@
     "updateErrorTitle": "Actualización Fallida"
   },
   "devices": {
+    "title": "Dispositivos",
+    "subtitle": "Gestione las licencias de dispositivos activos, genere OTPs de activación y aprovisione almacenamiento para clientes.",
     "tableSlot": "Ranura",
     "tableStatus": "Estado",
     "tableDeviceDetails": "Detalles del Dispositivo",
