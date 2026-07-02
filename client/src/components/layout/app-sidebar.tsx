@@ -1,19 +1,9 @@
-import { useState, useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import {
-  LayoutDashboard,
-  Ticket,
-  User,
-  HelpCircle,
-  Shield,
-  ChevronRight,
-  Settings,
-  Laptop,
-} from 'lucide-react';
-import logoUrl from '../../assets/logo.png';
-import { useAuth } from '../../hooks/useAuth';
-import { subscriptionService } from '../../services/subscriptionService';
-import type { Subscription } from '../../services/subscriptionService';
+import React, { useMemo } from "react";
+import { NavLink } from "react-router-dom";
+import { ChevronRight, HelpCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import logoUrl from "../../assets/logo.png";
+import { useSidebar, type NavItem } from "../../hooks/useSidebar";
 import {
   Sidebar as ShadcnSidebar,
   SidebarContent,
@@ -27,229 +17,227 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton,
-} from '../ui/sidebar';
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '../ui/collapsible';
+} from "../ui/sidebar";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "../ui/collapsible";
+import type { Subscription } from "../../services/subscriptionService";
 
-import { useTranslation } from 'react-i18next';
-
-interface NavSubItem {
-  to: string;
-  labelKey: string;
+// 1. Sidebar Brand Sub-component
+interface SidebarBrandProps {
+  logo: string;
+  portalTitle: string;
+  infraTitle: string;
 }
 
-interface NavItem {
-  to: string;
-  icon: React.ComponentType<{ className?: string }>;
-  labelKey: string;
-  items?: NavSubItem[];
+export function SidebarBrand({ logo, portalTitle, infraTitle }: SidebarBrandProps) {
+  return (
+    <SidebarHeader className="border-b border-zinc-200 dark:border-zinc-800 px-3.5 py-2.5">
+      <div className="flex items-center gap-2.5">
+        <img
+          src={logo}
+          alt="Velmar Logo"
+          className="h-5.5 w-auto max-w-full shrink-0 object-contain dark:brightness-110"
+        />
+        <div className="flex flex-col group-data-[collapsible=icon]:hidden">
+          <h1
+            className="text-xs font-bold text-zinc-900 dark:text-zinc-100 leading-none"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            {portalTitle}
+          </h1>
+          <span className="text-[9px] text-zinc-500 font-medium mt-0.5 uppercase tracking-wider">
+            {infraTitle}
+          </span>
+        </div>
+      </div>
+    </SidebarHeader>
+  );
 }
 
-const clientNavItems: NavItem[] = [
-  { to: '/dashboard', icon: LayoutDashboard, labelKey: 'dashboard' },
-  { to: '/devices', icon: Laptop, labelKey: 'devices' },
-  { to: '/tickets', icon: Ticket, labelKey: 'myTickets' },
-  {
-    to: '/account-group',
-    icon: User,
-    labelKey: 'account',
-    items: [
-      { to: '/profile', labelKey: 'profile' },
-      { to: '/notifications/preferences', labelKey: 'notificationPreferences' },
-      { to: '/plans', labelKey: 'plans' },
-      { to: '/billing', labelKey: 'billing' },
-    ],
-  },
-];
+// 2. High-Density Active Subscription Card Sub-component
+interface ActiveSubCardProps {
+  sub: Subscription;
+  renewalLabel: string;
+  isSpanish: boolean;
+}
 
-const techNavItems: NavItem[] = [
-  { to: '/tech/dashboard', icon: LayoutDashboard, labelKey: 'dashboard' },
-  { to: '/tickets', icon: Ticket, labelKey: 'myTickets' },
-  {
-    to: '/account-group',
-    icon: User,
-    labelKey: 'account',
-    items: [
-      { to: '/profile', labelKey: 'profile' },
-      { to: '/notifications/preferences', labelKey: 'notificationPreferences' },
-    ],
-  },
-];
+export function ActiveSubCard({ sub, renewalLabel, isSpanish }: ActiveSubCardProps) {
+  const formattedDate = useMemo(() => {
+    return new Date(sub.renewal_date).toLocaleDateString(
+      isSpanish ? "es-DO" : "en-US",
+      { day: "2-digit", month: "short" }
+    );
+  }, [sub.renewal_date, isSpanish]);
 
-const adminNavItems: NavItem[] = [
-  { to: '/admin/dashboard', icon: Shield, labelKey: 'adminDashboard' },
-  { to: '/devices', icon: Laptop, labelKey: 'devices' },
-  { to: '/tickets', icon: Ticket, labelKey: 'allTickets' },
-  {
-    to: '/settings-group',
-    icon: Settings,
-    labelKey: 'settings',
-    items: [
-      { to: '/profile', labelKey: 'profile' },
-      { to: '/notifications/preferences', labelKey: 'notificationPreferences' },
-      { to: '/plans', labelKey: 'plans' },
-      { to: '/billing', labelKey: 'billing' },
-    ],
-  },
-];
+  return (
+    <div className="mx-2 my-2 p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/20 group-data-[collapsible=icon]:hidden">
+      <div className="flex items-center justify-between gap-2 mb-1">
+        <span className="text-[9px] font-mono font-bold text-zinc-900 dark:text-zinc-100 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700/50 px-1 rounded uppercase">
+          {sub.plan} Plan
+        </span>
+        <div className="flex items-center gap-1">
+          <span className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-pulse" />
+          <span className="text-[8px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+            Active
+          </span>
+        </div>
+      </div>
+      <p className="text-[11px] font-medium text-zinc-800 dark:text-zinc-200 truncate">
+        {sub.service_name}
+      </p>
+      <p className="text-[9px] text-zinc-500 mt-0.5">
+        {renewalLabel}: {formattedDate}
+      </p>
+    </div>
+  );
+}
 
+// 3. Navigation List Component
+interface SidebarNavListProps {
+  navItems: NavItem[];
+  checkIsActive: (to: string) => boolean;
+  checkIsGroupActive: (items?: any[]) => boolean;
+}
+
+export function SidebarNavList({
+  navItems,
+  checkIsActive,
+  checkIsGroupActive,
+}: SidebarNavListProps) {
+  const { t } = useTranslation();
+
+  return (
+    <SidebarMenu className="gap-0.5 px-1">
+      {navItems.map((item) => {
+        const translatedLabel = t(`nav.${item.labelKey}`);
+
+        if (item.items) {
+          const isGroupActive = checkIsGroupActive(item.items);
+
+          return (
+            <Collapsible
+              key={item.labelKey}
+              asChild
+              defaultOpen={isGroupActive}
+              className="group/collapsible"
+            >
+              <SidebarMenuItem>
+                <CollapsibleTrigger asChild>
+                  <SidebarMenuButton
+                    tooltip={translatedLabel}
+                    isActive={isGroupActive}
+                    className="h-7 text-xs py-1 px-2 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                  >
+                    <item.icon className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
+                    <span className="group-data-[collapsible=icon]:hidden font-medium">
+                      {translatedLabel}
+                    </span>
+                    <ChevronRight className="ml-auto h-3 w-3 text-zinc-400 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden" />
+                  </SidebarMenuButton>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <SidebarMenuSub className="ml-3 border-l border-zinc-200 dark:border-zinc-800 pl-1.5 py-0.5 space-y-0.5">
+                    {item.items.map((sub) => {
+                      const isSubActive = checkIsActive(sub.to);
+                      return (
+                        <SidebarMenuSubItem key={sub.to}>
+                          <SidebarMenuSubButton asChild isActive={isSubActive} className="h-6 text-[11px]">
+                            <NavLink to={sub.to} className="w-full truncate font-normal">
+                              {t(`nav.${sub.labelKey}`)}
+                            </NavLink>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      );
+                    })}
+                  </SidebarMenuSub>
+                </CollapsibleContent>
+              </SidebarMenuItem>
+            </Collapsible>
+          );
+        }
+
+        const isActive = checkIsActive(item.to);
+
+        return (
+          <SidebarMenuItem key={item.to}>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive}
+              tooltip={translatedLabel}
+              className="h-7 text-xs py-1 px-2 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+            >
+              <NavLink to={item.to} className="flex items-center gap-2">
+                <item.icon className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
+                <span className="group-data-[collapsible=icon]:hidden font-medium">
+                  {translatedLabel}
+                </span>
+              </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        );
+      })}
+    </SidebarMenu>
+  );
+}
+
+// 4. Premium SaaS Sidebar Component
 export function AppSidebar() {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  const location = useLocation();
-  const [activeSubscription, setActiveSubscription] = useState<Subscription | null>(null);
+  const {
+    user,
+    activeSubscription,
+    navItems,
+    checkIsActive,
+    checkIsGroupActive,
+  } = useSidebar();
 
-  useEffect(() => {
-    if (user?.role !== 'CLIENT') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setActiveSubscription(null);
-      return;
-    }
-
-    let isMounted = true;
-    async function loadActiveSub() {
-      try {
-        const subs = await subscriptionService.getAll();
-        if (isMounted) {
-          const active = subs.find((sub) => sub.status === 'ACTIVE');
-          setActiveSubscription(active || null);
-        }
-      } catch (err) {
-        console.error('Failed to load active subscription for sidebar', err);
-      }
-    }
-    loadActiveSub();
-    return () => {
-      isMounted = false;
-    };
-  }, [user]);
-
-  const navItems =
-    user?.role === 'ADMIN'
-      ? adminNavItems
-      : user?.role === 'TECHNICIAN'
-      ? techNavItems
-      : clientNavItems;
+  const isSpanish = t("dashboard.tableStatus") === "Estado";
 
   return (
     <ShadcnSidebar>
-      {/* Brand / Header */}
-      <SidebarHeader className="border-b border-sidebar-border px-4 py-3">
-        <div className="flex items-center gap-3">
-          <img src={logoUrl} alt="Velmar Logo" className="h-6 w-auto max-w-full shrink-0 object-contain dark:brightness-110" />
-          <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <h1 className="text-label-md font-bold text-on-surface leading-none" style={{ fontFamily: 'var(--font-heading)' }}>
-              {t('topNav.portal')}
-            </h1>
-            <span className="text-[10px] text-on-surface-variant opacity-70 mt-0.5">
-              {t('nav.infrastructure')}
-            </span>
-          </div>
-        </div>
-      </SidebarHeader>
+      {/* Header section */}
+      <SidebarBrand
+        logo={logoUrl}
+        portalTitle={t("topNav.portal")}
+        infraTitle={t("nav.infrastructure")}
+      />
 
-      {/* Main Navigation */}
-      <SidebarContent className="py-2">
-        <SidebarGroup>
+      {/* Navigation Content */}
+      <SidebarContent className="py-1">
+        <SidebarGroup className="p-0">
           <SidebarGroupContent>
-            <SidebarMenu>
-              {navItems.map((item) => {
-                if (item.items) {
-                  const isGroupActive = item.items.some((sub) =>
-                    location.pathname.startsWith(sub.to)
-                  );
-                  const translatedLabel = t(`nav.${item.labelKey}`);
-
-                  return (
-                    <Collapsible
-                      key={item.labelKey}
-                      asChild
-                      defaultOpen={isGroupActive}
-                      className="group/collapsible"
-                    >
-                      <SidebarMenuItem>
-                        <CollapsibleTrigger asChild>
-                          <SidebarMenuButton tooltip={translatedLabel} isActive={isGroupActive}>
-                            <item.icon className="h-4 w-4 shrink-0" />
-                            <span className="group-data-[collapsible=icon]:hidden">{translatedLabel}</span>
-                            <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden" />
-                          </SidebarMenuButton>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <SidebarMenuSub>
-                            {item.items.map((sub) => {
-                              const isSubActive = location.pathname.startsWith(sub.to);
-                              return (
-                                <SidebarMenuSubItem key={sub.to}>
-                                  <SidebarMenuSubButton asChild isActive={isSubActive}>
-                                    <NavLink to={sub.to}>
-                                      <span>{t(`nav.${sub.labelKey}`)}</span>
-                                    </NavLink>
-                                  </SidebarMenuSubButton>
-                                </SidebarMenuSubItem>
-                              );
-                            })}
-                          </SidebarMenuSub>
-                        </CollapsibleContent>
-                      </SidebarMenuItem>
-                    </Collapsible>
-                  );
-                }
-
-                const isActive = item.to === '/dashboard' || item.to === '/tech/dashboard' || item.to === '/admin/dashboard'
-                  ? location.pathname === item.to
-                  : location.pathname.startsWith(item.to);
-                
-                const translatedLabel = t(`nav.${item.labelKey}`);
-                
-                return (
-                  <SidebarMenuItem key={item.to}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive}
-                      tooltip={translatedLabel}
-                    >
-                      <NavLink to={item.to} className="flex items-center gap-3">
-                        <item.icon className="h-4 w-4 shrink-0" />
-                        <span className="group-data-[collapsible=icon]:hidden">{translatedLabel}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
+            <SidebarNavList
+              navItems={navItems}
+              checkIsActive={checkIsActive}
+              checkIsGroupActive={checkIsGroupActive}
+            />
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {user?.role === 'CLIENT' && activeSubscription && (
-          <div className="mx-3 my-4 p-4 rounded-xl bg-primary/10 border border-primary/20 backdrop-blur-sm shadow-sm group-data-[collapsible=icon]:hidden">
-            <div className="flex items-center gap-2 mb-1.5">
-              <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
-              <span className="text-label-sm font-bold text-primary uppercase tracking-wider">
-                {activeSubscription.plan} Plan
-              </span>
-            </div>
-            <p className="text-body-md font-semibold text-on-surface truncate">
-              {activeSubscription.service_name}
-            </p>
-            <p className="text-[11px] text-on-surface-variant/80 mt-1">
-              {t('dashboard.tableRenewal')}: {new Date(activeSubscription.renewal_date).toLocaleDateString(t('dashboard.tableStatus') === 'Estado' ? 'es-DO' : 'en-US', { day: '2-digit', month: 'short' })}
-            </p>
-          </div>
+        {/* Subscription Info Card */}
+        {user?.role === "CLIENT" && activeSubscription && (
+          <ActiveSubCard
+            sub={activeSubscription}
+            renewalLabel={t("dashboard.tableRenewal")}
+            isSpanish={isSpanish}
+          />
         )}
       </SidebarContent>
 
-      {/* Footer Support/Help */}
-      <SidebarFooter className="border-t border-sidebar-border p-2">
+      {/* Footer support item */}
+      <SidebarFooter className="border-t border-zinc-200 dark:border-zinc-800 p-1.5">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              isActive={location.pathname === '/help'}
-              tooltip={t('nav.help')}
+              isActive={checkIsActive("/help")}
+              tooltip={t("nav.help")}
+              className="h-7 text-xs py-1 px-2 hover:bg-zinc-100 dark:hover:bg-zinc-900"
             >
-              <NavLink to="/help" className="flex items-center gap-3">
-                <HelpCircle className="h-4 w-4 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden">{t('nav.help')}</span>
+              <NavLink to="/help" className="flex items-center gap-2">
+                <HelpCircle className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
+                <span className="group-data-[collapsible=icon]:hidden font-medium">
+                  {t("nav.help")}
+                </span>
               </NavLink>
             </SidebarMenuButton>
           </SidebarMenuItem>
