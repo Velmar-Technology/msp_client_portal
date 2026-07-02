@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Check, X, Shield, Edit, Trash2, GripVertical, ChevronUp, ChevronDown, Info } from "lucide-react";
+import { Check, X, Shield, Edit, Trash2, GripVertical, ChevronUp, ChevronDown, Info, Plus, Minus, Ban, RefreshCw, Mail } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Page } from "@/components/Page";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,13 @@ import type { Subscription } from "@/services/subscriptionService";
 import type { AuthUser } from "@/store/useAuthStore";
 import { DataTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 export function PlansPage() {
   const { t, i18n } = useTranslation();
@@ -599,6 +606,32 @@ export function PlansPage() {
     }
   };
 
+  const handleUpdateSubscriptionDirect = async (subId: string, planId: string, count: number) => {
+    setSubscribeLoading(true);
+    try {
+      await subscriptionService.update(subId, {
+        plan: planId,
+        equipmentCount: count,
+      });
+      addToast({
+        title: "Subscription Updated",
+        message: `Successfully updated device count to ${count}.`,
+        type: "success",
+      });
+      await fetchActiveSubscriptions();
+    } catch (err) {
+      console.error("Failed to update subscription:", err);
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      addToast({
+        title: "Update Failed",
+        message: error.response?.data?.message || error.message || "Failed to update subscription.",
+        type: "error",
+      });
+    } finally {
+      setSubscribeLoading(false);
+    }
+  };
+
   const priceMultiplier = billingCycle === "annual" ? 12 * 0.8 : 1;
   const subtotal = currentPlan
     ? Math.round(currentPlan.price * priceMultiplier * currentEquipmentCount * 100) / 100
@@ -674,17 +707,108 @@ export function PlansPage() {
       cell: ({ row }) => {
         const sub = row.original;
         return (
-          <button
-            type="button"
-            onClick={() => {
-              // setUserSelectedPlan(sub.plan);
-              // document.getElementById("customer-select")?.scrollIntoView({ behavior: "smooth" });
-              alert("Manage subscription" + sub.id);
-            }}
-            className="text-label-sm text-primary hover:underline font-semibold cursor-pointer"
-          >
-            Manage
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="flex items-center gap-1 text-label-sm text-primary hover:underline font-semibold cursor-pointer"
+              >
+                {t("plans.manageTab") || "Manage"} <ChevronDown className="h-3.5 w-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 bg-surface-container-lowest text-on-surface border border-outline-variant">
+              {/* Add Device */}
+              <DropdownMenuItem
+                onClick={async () => {
+                  if (isAdmin) {
+                    await handleUpdateSubscriptionDirect(sub.id, sub.plan, sub.equipment_count + 1);
+                  } else {
+                    // Client: Set plan and target equipment count, switch tab to manage, and show toast
+                    setUserSelectedPlan(sub.plan);
+                    setEquipmentCounts((prev) => ({ ...prev, [sub.plan]: sub.equipment_count + 1 }));
+                    setActiveTab("manage");
+                    addToast({
+                      title: "Upgrade Pre-configured",
+                      message: "Complete payment to add the new device license to your subscription.",
+                      type: "info",
+                    });
+                  }
+                }}
+                className="cursor-pointer flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Device
+              </DropdownMenuItem>
+
+              {/* Remove Device */}
+              <DropdownMenuItem
+                disabled={sub.equipment_count <= 1}
+                onClick={async () => {
+                  if (sub.equipment_count > 1) {
+                    const confirmRemove = window.confirm(
+                      `Are you sure you want to remove a device license? Your limit will decrease to ${sub.equipment_count - 1} devices.`
+                    );
+                    if (confirmRemove) {
+                      await handleUpdateSubscriptionDirect(sub.id, sub.plan, sub.equipment_count - 1);
+                    }
+                  }
+                }}
+                className="cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
+              >
+                <Minus className="h-4 w-4" />
+                Remove Device
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator className="bg-outline-variant" />
+
+              {/* Change Plan / Upgrade Tier */}
+              <DropdownMenuItem
+                onClick={() => {
+                  setUserSelectedPlan(sub.plan);
+                  setActiveTab("browse");
+                  addToast({
+                    title: "Browse Plans",
+                    message: "Select a different plan tier to switch or subscribe.",
+                    type: "info",
+                  });
+                }}
+                className="cursor-pointer flex items-center gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Change Plan Tier
+              </DropdownMenuItem>
+
+              {/* Contact Support */}
+              <DropdownMenuItem
+                onClick={() => {
+                  addToast({
+                    title: "Contact Support",
+                    message: "Need assistance? Email: soporte@verlmartech.com.do",
+                    type: "info",
+                  });
+                  window.location.href = "mailto:soporte@verlmartech.com.do?subject=Subscription Support Request";
+                }}
+                className="cursor-pointer flex items-center gap-2"
+              >
+                <Mail className="h-4 w-4" />
+                Contact Support
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator className="bg-outline-variant" />
+
+              {/* Cancel Subscription */}
+              <DropdownMenuItem
+                onClick={async () => {
+                  await handleCancelSubscription(sub.id);
+                }}
+                variant="destructive"
+                className="cursor-pointer flex items-center gap-2 text-error focus:bg-error/15"
+              >
+                <Ban className="h-4 w-4 text-error" />
+                Cancel Subscription
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         );
       },
     },
