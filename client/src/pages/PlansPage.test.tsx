@@ -75,6 +75,7 @@ vi.mock('@/services/subscriptionService', () => ({
     update: vi.fn(),
     sendQuote: vi.fn(),
     createPaypalOrder: vi.fn().mockResolvedValue({ orderId: 'MOCK-PAYPAL-ORDER' }),
+    createPaypalSubscription: vi.fn().mockResolvedValue({ subscriptionId: 'MOCK-PAYPAL-SUB', approveUrl: 'http://approve.url' }),
   },
 }));
 
@@ -203,12 +204,12 @@ describe('PlansPage', () => {
       const tosCheckbox = screen.getByLabelText(/Terms of Service/i);
       fireEvent.click(tosCheckbox);
 
-      // Call createOrder
-      const orderId = await paypalButtonsOptions.createOrder();
-      expect(orderId).toBe('MOCK-PAYPAL-ORDER');
+      // Call createSubscription
+      const subscriptionId = await paypalButtonsOptions.createSubscription();
+      expect(subscriptionId).toBe('MOCK-PAYPAL-SUB');
 
       // Call onApprove
-      await paypalButtonsOptions.onApprove({ orderID: 'MOCK-PAYPAL-ORDER' });
+      await paypalButtonsOptions.onApprove({ subscriptionID: 'MOCK-PAYPAL-SUB' });
 
       await waitFor(() => {
         expect(subscriptionService.create).toHaveBeenCalledWith({
@@ -217,7 +218,7 @@ describe('PlansPage', () => {
           equipmentCount: 1,
           clientId: undefined,
           billingCycle: 'monthly',
-          paypalOrderId: 'MOCK-PAYPAL-ORDER',
+          paypalOrderId: 'MOCK-PAYPAL-SUB',
         });
         expect(mockAddToast).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -284,12 +285,12 @@ describe('PlansPage', () => {
       const tosCheckbox = screen.getByLabelText(/Terms of Service/i);
       fireEvent.click(tosCheckbox);
 
-      // Call createOrder
-      const orderId = await paypalButtonsOptions.createOrder();
-      expect(orderId).toBe('MOCK-PAYPAL-ORDER');
+      // Call createSubscription
+      const subscriptionId = await paypalButtonsOptions.createSubscription();
+      expect(subscriptionId).toBe('MOCK-PAYPAL-SUB');
 
       // Call onApprove
-      await paypalButtonsOptions.onApprove({ orderID: 'MOCK-PAYPAL-ORDER' });
+      await paypalButtonsOptions.onApprove({ subscriptionID: 'MOCK-PAYPAL-SUB' });
 
       await waitFor(() => {
         expect(subscriptionService.create).toHaveBeenCalledWith({
@@ -298,7 +299,7 @@ describe('PlansPage', () => {
           equipmentCount: 1,
           clientId: undefined,
           billingCycle: 'annual',
-          paypalOrderId: 'MOCK-PAYPAL-ORDER',
+          paypalOrderId: 'MOCK-PAYPAL-SUB',
         });
       });
     });
@@ -604,12 +605,12 @@ describe('PlansPage', () => {
       const tosCheckbox = screen.getByLabelText(/Terms of Service/i);
       fireEvent.click(tosCheckbox);
 
-      // Call createOrder
-      const orderId = await paypalButtonsOptions.createOrder();
-      expect(orderId).toBe('MOCK-PAYPAL-ORDER');
+      // Call createSubscription
+      const subscriptionId = await paypalButtonsOptions.createSubscription();
+      expect(subscriptionId).toBe('MOCK-PAYPAL-SUB');
 
       // Call onApprove
-      await paypalButtonsOptions.onApprove({ orderID: 'MOCK-PAYPAL-ORDER' });
+      await paypalButtonsOptions.onApprove({ subscriptionID: 'MOCK-PAYPAL-SUB' });
 
       await waitFor(() => {
         expect(subscriptionService.create).toHaveBeenCalledWith({
@@ -618,7 +619,7 @@ describe('PlansPage', () => {
           equipmentCount: 1,
           clientId: undefined,
           billingCycle: 'monthly',
-          paypalOrderId: 'MOCK-PAYPAL-ORDER',
+          paypalOrderId: 'MOCK-PAYPAL-SUB',
         });
       });
     });

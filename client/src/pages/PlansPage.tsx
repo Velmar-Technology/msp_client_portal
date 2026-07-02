@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Check, X, Shield, Edit, Trash2, GripVertical, ChevronUp, ChevronDown, Info, Plus, Minus, Ban, RefreshCw, Mail } from "lucide-react";
+import { Check, X, Edit, Trash2, GripVertical, ChevronUp, ChevronDown, Info, Plus, Minus, Ban, RefreshCw, Mail } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Page } from "@/components/Page";
 import { Input } from "@/components/ui/input";
-import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
 import { usePlanStore } from "@/store/usePlanStore";
 import { useNotificationStore } from "@/store/useNotificationStore";
@@ -223,7 +222,10 @@ export function PlansPage() {
         scriptElement = document.createElement("script");
         scriptElement.id = scriptId;
         const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID || "test";
-        scriptElement.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD`;
+        const isMockPaypal = clientId === "test";
+        scriptElement.src = isMockPaypal
+          ? `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD`
+          : `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&vault=true&intent=subscription`;
         scriptElement.async = true;
         document.body.appendChild(scriptElement);
 
@@ -249,9 +251,48 @@ export function PlansPage() {
         container.innerHTML = "";
         setPaymentMessage(null);
         try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          buttonsInstance = (window as any).paypal.Buttons({
-            createOrder: async () => {
+          const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID || "test";
+          const isMockPaypal = clientId === "test";
+
+          const buttonConfig: any = {
+            onApprove: async (data: any) => {
+              setPaymentMessage("Payment approved. Activating subscription...");
+              setSubscribeLoading(true);
+              try {
+                await subscriptionService.create({
+                  serviceName: getPlanName(currentPlan.name),
+                  plan: currentPlan.id,
+                  equipmentCount: currentEquipmentCount,
+                  billingCycle,
+                  paypalOrderId: data.subscriptionID || data.orderID,
+                });
+                setPaymentMessage("Subscription activated successfully!");
+                addToast({
+                  title: "Subscribed Successfully",
+                  message: `Successfully subscribed to the ${getPlanName(currentPlan.name)} plan.`,
+                  type: "success",
+                });
+                await fetchActiveSubscriptions();
+              } catch (err) {
+                console.error(err);
+                setPaymentMessage("Failed to activate subscription.");
+                addToast({
+                  title: "Subscription Failed",
+                  message: "Payment verification failed or could not activate subscription.",
+                  type: "error",
+                });
+              } finally {
+                setSubscribeLoading(false);
+              }
+            },
+            onError: (err: any) => {
+              console.error(err);
+              setPaymentMessage("PayPal Checkout encountered an error.");
+            },
+          };
+
+          if (isMockPaypal) {
+            buttonConfig.createOrder = async () => {
               if (!acceptedTosRef.current) {
                 addToast({
                   title: "Terms of Service",
@@ -274,44 +315,35 @@ export function PlansPage() {
                 setPaymentMessage("Failed to prepare checkout.");
                 throw err;
               }
-            },
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            onApprove: async (data: any) => {
-              setPaymentMessage("Payment approved. Activating subscription...");
-              setSubscribeLoading(true);
+            };
+          } else {
+            buttonConfig.createSubscription = async () => {
+              if (!acceptedTosRef.current) {
+                addToast({
+                  title: "Terms of Service",
+                  message: "Please accept the Terms of Service before proceeding.",
+                  type: "warning",
+                });
+                throw new Error("Terms of Service not accepted");
+              }
+              setPaymentMessage("Preparing checkout...");
               try {
-                await subscriptionService.create({
-                  serviceName: getPlanName(currentPlan.name),
+                const response = await subscriptionService.createPaypalSubscription({
                   plan: currentPlan.id,
                   equipmentCount: currentEquipmentCount,
                   billingCycle,
-                  paypalOrderId: data.orderID,
                 });
-                setPaymentMessage("Subscription activated successfully!");
-                addToast({
-                  title: "Subscribed Successfully",
-                  message: `Successfully subscribed to the ${getPlanName(currentPlan.name)} plan.`,
-                  type: "success",
-                });
-                await fetchActiveSubscriptions();
+                setPaymentMessage("Subscription created. Please approve billing in PayPal window.");
+                return response.subscriptionId;
               } catch (err) {
                 console.error(err);
-                setPaymentMessage("Failed to activate subscription.");
-                addToast({
-                  title: "Subscription Failed",
-                  message: "Payment verification failed or could not activate subscription.",
-                  type: "error",
-                });
-              } finally {
-                setSubscribeLoading(false);
+                setPaymentMessage("Failed to prepare checkout.");
+                throw err;
               }
-            },
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            onError: (err: any) => {
-              console.error(err);
-              setPaymentMessage("PayPal Checkout encountered an error.");
-            },
-          });
+            };
+          }
+
+          buttonsInstance = (window as any).paypal.Buttons(buttonConfig);
           buttonsInstance.render("#paypal-button-container");
         } catch (err) {
           console.error("Failed to render PayPal buttons", err);
@@ -1127,7 +1159,8 @@ export function PlansPage() {
               </div>
             )}
 
-            {currentEquipmentCount > activeSub.equipment_count ? (
+            {currentEquipmentCount > activeSub.equipment_count &&
+            !(activeSub.paypal_order_id?.startsWith('I-') || activeSub.paypal_order_id?.startsWith('MOCK-SUB-')) ? (
               <div className="mt-2 border-t border-outline-variant pt-4">
                 <p className="text-body-sm text-on-surface-variant mb-3 font-medium">
                   Adding more devices requires a PayPal payment to activate the additional licenses immediately.
@@ -1765,7 +1798,8 @@ export function PlansPage() {
                           </div>
                         )}
 
-                        {currentEquipmentCount > activeSub.equipment_count ? (
+                        {currentEquipmentCount > activeSub.equipment_count &&
+                        !(activeSub.paypal_order_id?.startsWith('I-') || activeSub.paypal_order_id?.startsWith('MOCK-SUB-')) ? (
                           <div className="mt-2 border-t border-outline-variant pt-4">
                             <p className="text-body-sm text-on-surface-variant mb-3 font-medium">
                               Adding more devices requires a PayPal payment to activate the additional licenses

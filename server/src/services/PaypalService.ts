@@ -223,6 +223,237 @@ export class PaypalService {
       throw AppError.internal('Failed to initiate PayPal payment');
     }
   }
+
+  async createProduct(name: string, description: string): Promise<string> {
+    const productId = 'MSP-HELPDESK-SUPPORT';
+    if (this.isMockMode()) {
+      logger.info(`[PayPal Mock] Create Product ${productId}`);
+      return productId;
+    }
+
+    try {
+      const accessToken = await this.getAccessToken();
+      const response = await fetch(`${this.baseUrl}/v1/catalogs/products`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: productId,
+          name,
+          description,
+          type: 'SERVICE',
+          category: 'COMPUTER_AND_DATA_PROCESSING_SERVICES',
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        if (response.status === 422 || errorText.includes('PRODUCT_ID_ALREADY_EXISTS') || errorText.includes('RESOURCE_ALREADY_EXISTS')) {
+          logger.info(`PayPal product ${productId} already exists.`);
+          return productId;
+        }
+        logger.error('PayPal product creation failed', { status: response.status, errorText });
+        throw AppError.internal('Failed to create PayPal product');
+      }
+
+      logger.info(`PayPal product ${productId} created successfully.`);
+      return productId;
+    } catch (error) {
+      logger.error('Error creating PayPal product', { error });
+      throw AppError.internal('Failed to create PayPal product');
+    }
+  }
+
+  async createPlan(productId: string, name: string, description: string, price: number, billingCycle: 'monthly' | 'annual'): Promise<string> {
+    if (this.isMockMode()) {
+      const mockPlanId = `MOCK-PLAN-${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
+      logger.info(`[PayPal Mock] Created mock plan ${mockPlanId} for price ${price} (${billingCycle})`);
+      return mockPlanId;
+    }
+
+    try {
+      const accessToken = await this.getAccessToken();
+      const response = await fetch(`${this.baseUrl}/v1/billing/plans`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          product_id: productId,
+          name,
+          description,
+          status: 'ACTIVE',
+          billing_cycles: [
+            {
+              frequency: {
+                interval_unit: billingCycle === 'annual' ? 'YEAR' : 'MONTH',
+                interval_count: 1,
+              },
+              tenure_type: 'REGULAR',
+              sequence: 1,
+              total_cycles: 0,
+              pricing_scheme: {
+                fixed_price: {
+                  value: price.toFixed(2),
+                  currency_code: 'USD',
+                },
+              },
+            },
+          ],
+          payment_preferences: {
+            auto_bill_outstanding: true,
+            setup_fee_failure_action: 'CANCEL',
+            payment_failure_threshold: 1,
+          },
+          quantity_supported: true,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        logger.error('PayPal billing plan creation failed', { status: response.status, errorText });
+        throw AppError.internal('Failed to create PayPal billing plan');
+      }
+
+      const data = await response.json() as { id: string };
+      logger.info(`PayPal billing plan ${data.id} created successfully.`);
+      return data.id;
+    } catch (error) {
+      logger.error('Error creating PayPal plan', { error });
+      throw AppError.internal('Failed to create PayPal billing plan');
+    }
+  }
+
+  async createSubscription(paypalPlanId: string, quantity: number, returnUrl: string, cancelUrl: string): Promise<{ id: string; approveUrl: string }> {
+    if (this.isMockMode() || paypalPlanId.startsWith('MOCK-')) {
+      const mockSubId = `MOCK-SUB-${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
+      logger.info(`[PayPal Mock] Created mock subscription ${mockSubId} for plan ${paypalPlanId} with quantity ${quantity}`);
+      return {
+        id: mockSubId,
+        approveUrl: `${returnUrl}?subscription_id=${mockSubId}&mock_approve=true`,
+      };
+    }
+
+    try {
+      const accessToken = await this.getAccessToken();
+      const response = await fetch(`${this.baseUrl}/v1/billing/subscriptions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          plan_id: paypalPlanId,
+          quantity: quantity.toString(),
+          application_context: {
+            brand_name: 'Velmar Tech Helpdesk',
+            locale: 'en-US',
+            shipping_preference: 'NO_SHIPPING',
+            user_action: 'SUBSCRIBE_NOW',
+            return_url: returnUrl,
+            cancel_url: cancelUrl,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        logger.error('PayPal subscription creation failed', { status: response.status, errorText });
+        throw AppError.internal('Failed to create PayPal subscription');
+      }
+
+      const data = await response.json() as { id: string; links?: Array<{ rel: string; href: string }> };
+      const approveLink = data.links?.find((l) => l.rel === 'approve');
+      if (!approveLink) {
+        throw AppError.internal('PayPal approval link not found in response');
+      }
+
+      return {
+        id: data.id,
+        approveUrl: approveLink.href,
+      };
+    } catch (error) {
+      logger.error('Error creating PayPal subscription', { error });
+      throw AppError.internal('Failed to initiate PayPal subscription');
+    }
+  }
+
+  async getSubscription(subscriptionId: string): Promise<{ status: string; nextBillingTime: string }> {
+    if (this.isMockMode() || subscriptionId.startsWith('MOCK-')) {
+      logger.info(`[PayPal Mock] Get subscription details for ${subscriptionId}`);
+      const thirtyDaysFromNow = new Date();
+      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+      return {
+        status: 'ACTIVE',
+        nextBillingTime: thirtyDaysFromNow.toISOString(),
+      };
+    }
+
+    try {
+      const accessToken = await this.getAccessToken();
+      const response = await fetch(`${this.baseUrl}/v1/billing/subscriptions/${subscriptionId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        logger.error('PayPal get subscription details failed', { status: response.status, errorText });
+        throw AppError.internal('Failed to retrieve PayPal subscription details');
+      }
+
+      const data = await response.json() as { status: string; billing_info?: { next_billing_time?: string } };
+      return {
+        status: data.status,
+        nextBillingTime: data.billing_info?.next_billing_time || new Date().toISOString(),
+      };
+    } catch (error) {
+      logger.error('Error retrieving PayPal subscription', { error, subscriptionId });
+      throw AppError.internal('Failed to retrieve PayPal subscription status');
+    }
+  }
+
+  async updateSubscriptionQuantity(subscriptionId: string, quantity: number): Promise<void> {
+    if (this.isMockMode() || subscriptionId.startsWith('MOCK-')) {
+      logger.info(`[PayPal Mock] Updated subscription ${subscriptionId} quantity to ${quantity}`);
+      return;
+    }
+
+    try {
+      const accessToken = await this.getAccessToken();
+      const response = await fetch(`${this.baseUrl}/v1/billing/subscriptions/${subscriptionId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify([
+          {
+            op: 'replace',
+            path: '/quantity',
+            value: quantity.toString(),
+          },
+        ]),
+      });
+
+      if (response.status !== 204 && !response.ok) {
+        const errorText = await response.text();
+        logger.error('PayPal subscription quantity update failed', { status: response.status, errorText });
+        throw AppError.internal('Failed to update PayPal subscription quantity');
+      }
+
+      logger.info(`PayPal subscription ${subscriptionId} quantity updated to ${quantity} successfully.`);
+    } catch (error) {
+      logger.error('Error updating PayPal subscription quantity', { error, subscriptionId });
+      throw AppError.internal('Failed to update subscription quantity in PayPal');
+    }
+  }
 }
 
 export const paypalService = new PaypalService();

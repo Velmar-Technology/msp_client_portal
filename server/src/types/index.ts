@@ -294,6 +294,8 @@ export interface Plan {
   recommended: boolean;
   client_type: string;
   active: boolean;
+  paypal_plan_id_monthly?: string | null;
+  paypal_plan_id_annual?: string | null;
   created_at: Date;
   updated_at: Date;
 }
