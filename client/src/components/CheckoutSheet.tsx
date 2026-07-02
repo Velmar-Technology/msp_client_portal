@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Shield } from "lucide-react";
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -10,9 +10,6 @@ interface CheckoutSheetProps {
   currentPlan: Plan;
   billingCycle: "monthly" | "annual";
   currentEquipmentCount: number;
-  subtotal: number;
-  tax: number;
-  total: number;
   isAdmin: boolean;
   acceptedTos: boolean;
   setAcceptedTos: (accepted: boolean) => void;
@@ -26,7 +23,7 @@ interface CheckoutSheetProps {
   getPlanName: (name: string | Record<string, string>) => string;
 }
 
-// 1. Order Summary Sub-component
+// 1. High-Density Order Summary Sub-component
 interface OrderSummaryProps {
   planName: string;
   billingCycle: "monthly" | "annual";
@@ -45,32 +42,35 @@ export function OrderSummary({
   total,
 }: OrderSummaryProps) {
   const { t } = useTranslation();
+
   return (
-    <div className="space-y-3">
-      <div className="flex justify-between items-start">
+    <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/30 p-3 text-xs space-y-2">
+      <div className="flex justify-between items-start pb-2 border-b border-zinc-200/60 dark:border-zinc-800/60">
         <div>
-          <p className="text-body-md font-semibold text-on-surface">
-            {planName} {billingCycle === "annual" ? "Plan (Annually)" : t("plans.planMonthly")}
+          <p className="font-semibold text-zinc-900 dark:text-zinc-100">
+            {planName}
           </p>
-          <p className="text-label-sm text-on-surface-variant mt-0.5">
-            {currentEquipmentCount}x {t("plans.equipmentCountSuffix")}
+          <p className="text-[10px] text-zinc-500 mt-0.5">
+            {billingCycle === "annual" ? t("plans.annualButtonLabel") : t("plans.planMonthly")} • {currentEquipmentCount}x {t("plans.equipmentCountSuffix")}
           </p>
         </div>
-        <span className="text-body-md font-semibold text-on-surface">${subtotal.toFixed(2)}</span>
+        <span className="font-semibold text-zinc-900 dark:text-zinc-100">${subtotal.toFixed(2)}</span>
       </div>
-      <div className="flex justify-between text-body-md text-on-surface-variant">
+
+      <div className="flex justify-between text-zinc-500 py-0.5">
         <span>{t("plans.taxes")}</span>
         <span>${tax.toFixed(2)}</span>
       </div>
-      <div className="border-t border-outline-variant pt-3 flex justify-between">
-        <span className="text-body-md font-bold text-on-surface">{t("plans.total")}</span>
-        <span className="text-body-md font-bold text-primary text-lg">${total.toFixed(2)}</span>
+
+      <div className="border-t border-zinc-200 dark:border-zinc-800 pt-2 flex justify-between items-center text-sm font-semibold">
+        <span className="text-zinc-950 dark:text-zinc-50">{t("plans.total")}</span>
+        <span className="text-primary font-bold">${total.toFixed(2)}</span>
       </div>
     </div>
   );
 }
 
-// 2. Payment Fields Sub-component
+// 2. High-Density Payment Fields Sub-component
 interface PaymentFieldsProps {
   isAdmin: boolean;
   acceptedTos: boolean;
@@ -99,21 +99,21 @@ export function PaymentFields({
   return (
     <div className="space-y-4">
       {!isAdmin && (
-        <div className="flex items-start gap-2.5 p-3 bg-surface-container rounded-lg border border-outline-variant mb-4">
+        <div className="flex items-start gap-2 p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/20">
           <input
             type="checkbox"
             id="tos-checkbox"
             checked={acceptedTos}
             onChange={(e) => setAcceptedTos(e.target.checked)}
-            className="h-4 w-4 rounded border-outline text-primary focus:ring-primary mt-1 cursor-pointer"
+            className="h-3.5 w-3.5 rounded border-zinc-300 text-primary focus:ring-primary/20 mt-0.5 cursor-pointer accent-primary"
           />
-          <label htmlFor="tos-checkbox" className="text-body-sm text-on-surface cursor-pointer select-none">
+          <label htmlFor="tos-checkbox" className="text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400 cursor-pointer select-none">
             {t("plans.agreeToTermsPrefix")}{" "}
             <a
               href="/terms"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-primary underline hover:text-primary/80 transition-colors font-medium"
+              className="text-primary underline hover:opacity-85 font-medium"
             >
               {t("plans.termsOfServiceLink")}
             </a>
@@ -121,78 +121,90 @@ export function PaymentFields({
         </div>
       )}
 
-      <h2 className="text-h2 text-primary mb-4" style={{ fontFamily: "var(--font-heading)" }}>
-        {t("plans.paymentMethod")}
-      </h2>
+      <div className="space-y-2">
+        <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-200 uppercase tracking-wider">
+          {t("plans.paymentMethod")}
+        </h3>
 
-      <Tabs
-        value={paymentMethod}
-        onValueChange={(val) => setPaymentMethod(val as "card" | "transfer")}
-        className="w-full"
-      >
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="card">
-            {t("plans.creditCard")}
-          </TabsTrigger>
-          <TabsTrigger value="transfer">
-            {t("plans.bankTransfer")}
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="card" className="space-y-4 pt-2">
-          <p className="text-body-md text-on-surface-variant mb-4">
-            Please complete your checkout payment securely using PayPal. Once approved, your subscription will
-            activate immediately.
-          </p>
-          {paymentMessage && (
-            <div
-              className={`p-3 rounded-lg mb-4 text-label-md font-semibold text-center ${
-                paymentMessage.includes("activated") || paymentMessage.includes("successfully")
-                  ? "bg-success/10 text-success"
-                  : "bg-primary/10 text-primary animate-pulse"
-              }`}
-            >
-              {paymentMessage}
-            </div>
-          )}
-          <div
-            id="paypal-button-container"
-            className="my-4 min-h-[150px] flex items-center justify-center bg-surface rounded-xl p-4 border border-outline-variant border-dashed"
-          >
-            <span className="text-label-md text-on-surface-variant">Loading PayPal Checkout...</span>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="transfer" className="pt-2">
-          <div className="text-center py-8 text-body-md text-on-surface-variant space-y-4">
-            <p className="mb-2">{t("plans.transferInstructions")}</p>
-            <p className="text-mono font-medium text-on-surface">{t("plans.bankName")}</p>
-            <p className="text-mono">{t("plans.bankAccount")}</p>
-            <p className="text-mono">
-              {t("plans.bankReference")}: {reference}
+        <Tabs
+          value={paymentMethod}
+          onValueChange={(val) => setPaymentMethod(val as "card" | "transfer")}
+          className="w-full"
+        >
+          <TabsList className="grid w-full grid-cols-2 mb-4 h-8 p-0.5 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+            <TabsTrigger value="card" className="text-xs py-1">
+              {t("plans.creditCard")}
+            </TabsTrigger>
+            <TabsTrigger value="transfer" className="text-xs py-1">
+              {t("plans.bankTransfer")}
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="card" className="space-y-3 mt-0">
+            <p className="text-xs text-zinc-500 leading-normal">
+              Please complete your checkout payment securely using PayPal. Once approved, your subscription will
+              activate immediately.
             </p>
-            <button
-              onClick={handleProcessSubscription}
-              disabled={subscribeLoading}
-              className="mt-4 w-full bg-primary text-on-primary py-3 rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-semibold"
+            {paymentMessage && (
+              <div
+                className={`py-1.5 px-3 rounded text-[11px] font-medium text-center border ${
+                  paymentMessage.includes("activated") || paymentMessage.includes("successfully")
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/50"
+                    : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/50 animate-pulse"
+                }`}
+              >
+                {paymentMessage}
+              </div>
+            )}
+            <div
+              id="paypal-button-container"
+              className="my-2 min-h-[120px] flex items-center justify-center bg-zinc-50/50 dark:bg-zinc-900/30 rounded-lg p-3 border border-zinc-200 dark:border-zinc-800 border-dashed"
             >
-              {subscribeLoading ? "Processing..." : "Confirm Bank Transfer Intent"}
-            </button>
-          </div>
-        </TabsContent>
-      </Tabs>
+              <span className="text-xs text-zinc-400">Loading PayPal Checkout...</span>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="transfer" className="mt-0">
+            <div className="text-center py-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-950/10 space-y-3">
+              <p className="text-xs text-zinc-500 px-4">{t("plans.transferInstructions")}</p>
+              
+              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-2 mx-4 rounded-md space-y-1 text-left text-xs font-mono">
+                <div className="flex justify-between text-zinc-500">
+                  <span>Bank:</span>
+                  <span className="text-zinc-900 dark:text-zinc-100 font-medium">{t("plans.bankName")}</span>
+                </div>
+                <div className="flex justify-between text-zinc-500">
+                  <span>Account:</span>
+                  <span className="text-zinc-900 dark:text-zinc-100 font-medium">{t("plans.bankAccount")}</span>
+                </div>
+                <div className="flex justify-between text-zinc-500 border-t border-zinc-100 dark:border-zinc-800/80 pt-1 mt-1">
+                  <span>Reference:</span>
+                  <span className="text-zinc-900 dark:text-zinc-100 font-bold">{reference}</span>
+                </div>
+              </div>
+
+              <div className="px-4">
+                <button
+                  onClick={handleProcessSubscription}
+                  disabled={subscribeLoading}
+                  className="w-full bg-zinc-900 dark:bg-zinc-100 hover:opacity-90 text-white dark:text-zinc-900 py-1.5 rounded text-xs font-medium transition-opacity disabled:opacity-50 cursor-pointer"
+                >
+                  {subscribeLoading ? "Processing..." : "Confirm Bank Transfer Intent"}
+                </button>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
 
-// 3. Main CheckoutSheet Component
+// 3. Premium SaaS Parent Component
 export function CheckoutSheet({
   currentPlan,
   billingCycle,
   currentEquipmentCount,
-  subtotal,
-  tax,
-  total,
   isAdmin,
   acceptedTos,
   setAcceptedTos,
@@ -207,15 +219,33 @@ export function CheckoutSheet({
 }: CheckoutSheetProps) {
   const { t } = useTranslation();
 
+  // Dynamic calculations via memoization (separation of concerns)
+  const priceMultiplier = useMemo(() => {
+    return billingCycle === "annual" ? 12 * 0.8 : 1;
+  }, [billingCycle]);
+
+  const subtotal = useMemo(() => {
+    if (!currentPlan) return 0;
+    return Math.round(currentPlan.price * priceMultiplier * currentEquipmentCount * 100) / 100;
+  }, [currentPlan, priceMultiplier, currentEquipmentCount]);
+
+  const tax = useMemo(() => {
+    return Math.round(subtotal * 0.18 * 100) / 100;
+  }, [subtotal]);
+
+  const total = useMemo(() => {
+    return Math.round((subtotal + tax) * 100) / 100;
+  }, [subtotal, tax]);
+
   if (currentPlan) {
     const alreadySubscribed = activeSubscriptions.some(
       (sub) => sub.plan === currentPlan.id && sub.status === "ACTIVE"
     );
     if (alreadySubscribed) {
       return (
-        <div className="bg-warning/15 border border-warning/30 p-4 rounded-xl text-center space-y-2 my-4">
-          <p className="text-body-md font-semibold text-warning">Active Plan Already Registered</p>
-          <p className="text-body-sm text-on-surface-variant">
+        <div className="rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/15 p-3.5 text-center text-xs space-y-1.5 my-4">
+          <p className="font-semibold text-amber-800 dark:text-amber-400">Active Plan Already Registered</p>
+          <p className="text-zinc-600 dark:text-zinc-400 leading-normal">
             You already have an active subscription for the <strong>{getPlanName(currentPlan.name)}</strong> plan. To
             change device slots or update details, please use the modification tools on the active subscription
             manager.
@@ -226,23 +256,23 @@ export function CheckoutSheet({
   }
 
   return (
-    <div className="space-y-4 text-center py-4">
-      <p className="text-body-md text-on-surface-variant">
-        Ready to activate your <strong>{getPlanName(currentPlan.name)}</strong> subscription?
+    <div className="space-y-3 text-center py-2">
+      <p className="text-xs text-zinc-500 leading-relaxed">
+        Ready to activate your <strong className="text-zinc-900 dark:text-zinc-200">{getPlanName(currentPlan.name)}</strong> subscription?
       </p>
       <Sheet>
         <SheetTrigger asChild>
-          <button className="w-full bg-primary text-on-primary py-3.5 rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer font-bold shadow-md">
+          <button className="w-full bg-zinc-900 dark:bg-zinc-100 hover:opacity-90 text-white dark:text-zinc-900 py-2 rounded text-xs font-semibold transition-opacity flex items-center justify-center gap-2 cursor-pointer shadow-sm">
             Proceed to Checkout (${total.toFixed(2)})
           </button>
         </SheetTrigger>
-        <SheetContent className="w-[400px] p-6 sm:w-[500px] overflow-y-auto bg-surface text-on-surface border-l border-outline-variant">
-          <SheetHeader className="pb-4 border-b p-2 border-outline-variant">
-            <SheetTitle className="text-h3 text-primary">{t("plans.orderSummary")}</SheetTitle>
+        <SheetContent className="w-[380px] p-4 sm:w-[440px] overflow-y-auto bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 border-l border-zinc-200 dark:border-zinc-800">
+          <SheetHeader className="pb-3 border-b border-zinc-200 dark:border-zinc-800">
+            <SheetTitle className="text-sm font-bold text-zinc-900 dark:text-zinc-50">{t("plans.orderSummary")}</SheetTitle>
           </SheetHeader>
 
-          {/* Order Summary Details */}
-          <div className="py-6 space-y-6">
+          {/* Order Summary & Payment Fields */}
+          <div className="py-4 space-y-4">
             <OrderSummary
               planName={getPlanName(currentPlan.name)}
               billingCycle={billingCycle}
@@ -252,8 +282,7 @@ export function CheckoutSheet({
               total={total}
             />
 
-            {/* Payment Fields inside the Sheet */}
-            <div className="border-t border-outline-variant pt-6">
+            <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
               <PaymentFields
                 isAdmin={isAdmin}
                 acceptedTos={acceptedTos}
@@ -267,11 +296,11 @@ export function CheckoutSheet({
               />
             </div>
 
-            <div className="bg-surface-container-low border border-outline-variant/30 rounded-lg p-4 flex items-start gap-3">
-              <Shield className="h-5 w-5 text-success shrink-0 mt-0.5" />
-              <div>
-                <p className="text-label-md font-medium text-on-surface">{t("plans.encryptedTx")}</p>
-                <p className="text-label-sm text-on-surface-variant mt-0.5">{t("plans.militaryGradeSecurity")}</p>
+            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-950/20 p-3 flex items-start gap-2.5">
+              <Shield className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+              <div className="text-left">
+                <p className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100">{t("plans.encryptedTx")}</p>
+                <p className="text-[10px] text-zinc-500 mt-0.5 leading-normal">{t("plans.militaryGradeSecurity")}</p>
               </div>
             </div>
           </div>
