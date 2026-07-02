@@ -306,7 +306,7 @@
     "agreeToTermsPrefix": "He leído y acepto los",
     "termsOfServiceLink": "Términos de Servicio",
     "encryptedTx": "Transacción Encriptada",
-    "militaryGradeSecurity": "Sus datos están protegidos con seguridad SSL de grado militar.",
+    "militaryGradeSecurity": "Sus datos de pago están protegidos con seguridad SSL.",
     "basic": {
       "tier": "Nivel 1",
       "name": "Básico",
@@ -335,7 +335,28 @@
       "managedBackup": "Copias de Seguridad y Recuperación Gestionadas",
       "criticalSupport": "Soporte Crítico 24/7",
       "quarterlySecurity": "Auditoría Trimestral de Seguridad"
-    }
+    },
+    "actions": "Acciones",
+    "addDevice": "Agregar Dispositivo",
+    "removeDevice": "Eliminar Dispositivo",
+    "changePlanTier": "Cambiar Nivel de Plan",
+    "contactSupport": "Contactar Soporte",
+    "cancelSubscription": "Cancelar Suscripción",
+    "addDeviceTitle": "Actualización Preconfigurada",
+    "addDeviceMsg": "Complete el pago para agregar la nueva licencia de dispositivo a su suscripción.",
+    "removeDeviceConfirm": "¿Está seguro de que desea eliminar una licencia de dispositivo? Su límite disminuirá a {{count}} dispositivos.",
+    "deviceUpdateSuccess": "Límite de dispositivos actualizado con éxito a {{count}}.",
+    "changePlanTitle": "Explorar Planes",
+    "changePlanMsg": "Seleccione un nivel de plan diferente para cambiar o suscribirse.",
+    "contactSupportTitle": "Contactar Soporte",
+    "contactSupportMsg": "¿Necesita ayuda? Correo: soporte@verlmartech.com.do",
+    "cancelConfirm": "¿Está seguro de que desea cancelar su suscripción? Esta acción tendrá efecto de inmediato.",
+    "cancelSuccess": "Su suscripción ha sido cancelada exitosamente.",
+    "cancelFailed": "Error al cancelar la suscripción.",
+    "subscriptionUpdated": "Suscripción Actualizada",
+    "cancelTitle": "Suscripción Cancelada",
+    "cancelErrorTitle": "Cancelación Fallida",
+    "updateErrorTitle": "Actualización Fallida"
   },
   "devices": {
     "tableSlot": "Ranura",

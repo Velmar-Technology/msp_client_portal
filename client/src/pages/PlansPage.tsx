@@ -578,7 +578,7 @@ export function PlansPage() {
 
   const handleCancelSubscription = async (subId: string) => {
     const confirmCancel = window.confirm(
-      "Are you sure you want to cancel your subscription? This action will take effect immediately.",
+      t("plans.cancelConfirm") || "Are you sure you want to cancel your subscription? This action will take effect immediately.",
     );
     if (!confirmCancel) return;
 
@@ -588,8 +588,8 @@ export function PlansPage() {
         status: "CANCELLED",
       });
       addToast({
-        title: "Subscription Cancelled",
-        message: "Your subscription has been successfully cancelled.",
+        title: t("plans.cancelTitle") || "Subscription Cancelled",
+        message: t("plans.cancelSuccess") || "Your subscription has been successfully cancelled.",
         type: "success",
       });
       await fetchActiveSubscriptions();
@@ -597,7 +597,7 @@ export function PlansPage() {
       console.error("Failed to cancel subscription:", err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
       addToast({
-        title: "Cancellation Failed",
+        title: t("plans.cancelErrorTitle") || "Cancellation Failed",
         message: error.response?.data?.message || error.message || "Failed to cancel subscription.",
         type: "error",
       });
@@ -614,8 +614,8 @@ export function PlansPage() {
         equipmentCount: count,
       });
       addToast({
-        title: "Subscription Updated",
-        message: `Successfully updated device count to ${count}.`,
+        title: t("plans.subscriptionUpdated") || "Subscription Updated",
+        message: t("plans.deviceUpdateSuccess", { count }) || `Successfully updated device count to ${count}.`,
         type: "success",
       });
       await fetchActiveSubscriptions();
@@ -623,7 +623,7 @@ export function PlansPage() {
       console.error("Failed to update subscription:", err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
       addToast({
-        title: "Update Failed",
+        title: t("plans.updateErrorTitle") || "Update Failed",
         message: error.response?.data?.message || error.message || "Failed to update subscription.",
         type: "error",
       });
@@ -703,7 +703,7 @@ export function PlansPage() {
     },
     {
       id: "actions",
-      header: "Actions",
+      header: t("plans.actions") || "Actions",
       cell: ({ row }) => {
         const sub = row.original;
         return (
@@ -728,8 +728,8 @@ export function PlansPage() {
                     setEquipmentCounts((prev) => ({ ...prev, [sub.plan]: sub.equipment_count + 1 }));
                     setActiveTab("manage");
                     addToast({
-                      title: "Upgrade Pre-configured",
-                      message: "Complete payment to add the new device license to your subscription.",
+                      title: t("plans.addDeviceTitle") || "Upgrade Pre-configured",
+                      message: t("plans.addDeviceMsg") || "Complete payment to add the new device license to your subscription.",
                       type: "info",
                     });
                   }
@@ -737,7 +737,7 @@ export function PlansPage() {
                 className="cursor-pointer flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                Add Device
+                {t("plans.addDevice") || "Add Device"}
               </DropdownMenuItem>
 
               {/* Remove Device */}
@@ -746,6 +746,7 @@ export function PlansPage() {
                 onClick={async () => {
                   if (sub.equipment_count > 1) {
                     const confirmRemove = window.confirm(
+                      t("plans.removeDeviceConfirm", { count: sub.equipment_count - 1 }) ||
                       `Are you sure you want to remove a device license? Your limit will decrease to ${sub.equipment_count - 1} devices.`
                     );
                     if (confirmRemove) {
@@ -756,7 +757,7 @@ export function PlansPage() {
                 className="cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
               >
                 <Minus className="h-4 w-4" />
-                Remove Device
+                {t("plans.removeDevice") || "Remove Device"}
               </DropdownMenuItem>
 
               <DropdownMenuSeparator className="bg-outline-variant" />
@@ -767,23 +768,23 @@ export function PlansPage() {
                   setUserSelectedPlan(sub.plan);
                   setActiveTab("browse");
                   addToast({
-                    title: "Browse Plans",
-                    message: "Select a different plan tier to switch or subscribe.",
+                    title: t("plans.changePlanTitle") || "Browse Plans",
+                    message: t("plans.changePlanMsg") || "Select a different plan tier to switch or subscribe.",
                     type: "info",
                   });
                 }}
                 className="cursor-pointer flex items-center gap-2"
               >
                 <RefreshCw className="h-4 w-4" />
-                Change Plan Tier
+                {t("plans.changePlanTier") || "Change Plan Tier"}
               </DropdownMenuItem>
 
               {/* Contact Support */}
               <DropdownMenuItem
                 onClick={() => {
                   addToast({
-                    title: "Contact Support",
-                    message: "Need assistance? Email: soporte@verlmartech.com.do",
+                    title: t("plans.contactSupportTitle") || "Contact Support",
+                    message: t("plans.contactSupportMsg") || "Need assistance? Email: soporte@verlmartech.com.do",
                     type: "info",
                   });
                   window.location.href = "mailto:soporte@verlmartech.com.do?subject=Subscription Support Request";
@@ -791,7 +792,7 @@ export function PlansPage() {
                 className="cursor-pointer flex items-center gap-2"
               >
                 <Mail className="h-4 w-4" />
-                Contact Support
+                {t("plans.contactSupport") || "Contact Support"}
               </DropdownMenuItem>
 
               <DropdownMenuSeparator className="bg-outline-variant" />
@@ -805,7 +806,7 @@ export function PlansPage() {
                 className="cursor-pointer flex items-center gap-2 text-error focus:bg-error/15"
               >
                 <Ban className="h-4 w-4 text-error" />
-                Cancel Subscription
+                {t("plans.cancelSubscription") || "Cancel Subscription"}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
