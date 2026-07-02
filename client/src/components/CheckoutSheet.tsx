@@ -130,11 +130,11 @@ export function PaymentFields({
         onValueChange={(val) => setPaymentMethod(val as "card" | "transfer")}
         className="w-full"
       >
-        <TabsList className="grid w-full grid-cols-2 bg-surface-container-low border border-outline-variant p-1 rounded-lg mb-6">
-          <TabsTrigger value="card" className="py-2.5 font-semibold text-label-md">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="card">
             {t("plans.creditCard")}
           </TabsTrigger>
-          <TabsTrigger value="transfer" className="py-2.5 font-semibold text-label-md">
+          <TabsTrigger value="transfer">
             {t("plans.bankTransfer")}
           </TabsTrigger>
         </TabsList>
