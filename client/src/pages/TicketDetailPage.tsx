@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Clock, AlertTriangle, UserCheck, FileText, Image, Video, FileSpreadsheet, Download, Paperclip, CheckCircle2, AlertCircle, Send, Upload, Activity, UserPlus, XCircle } from 'lucide-react';
+import { Clock, AlertTriangle, UserCheck, FileText, Image, Video, FileSpreadsheet, Download, Paperclip, CheckCircle2, AlertCircle, Send, Upload, Activity, UserPlus, XCircle, X } from 'lucide-react';
 import { ticketService } from '../services/ticketService';
 import type { Ticket, TicketEvent, TicketAttachment, TicketResponse } from '../services/ticketService';
 import { useSLATimer } from '../hooks/useSLATimer';
@@ -647,6 +647,7 @@ export function TicketDetailPage() {
                                         target="_blank"
                                         rel="noreferrer"
                                         className="p-1 rounded-full hover:bg-primary-container/30 text-on-primary transition-colors cursor-pointer shrink-0"
+                                        aria-label={`${t('ticketDetail.downloadFile')} ${att.filename}`}
                                       >
                                         <Download className="h-3.5 w-3.5" />
                                       </a>
@@ -709,6 +710,7 @@ export function TicketDetailPage() {
                                       target="_blank"
                                       rel="noreferrer"
                                       className="p-1 rounded-full hover:bg-primary/10 text-primary transition-colors cursor-pointer shrink-0"
+                                      aria-label={`${t('ticketDetail.downloadFile')} ${att.filename}`}
                                     >
                                       <Download className="h-3.5 w-3.5" />
                                     </a>
@@ -738,8 +740,9 @@ export function TicketDetailPage() {
                         type="button"
                         onClick={() => setResponseFiles(prev => prev.filter((_, i) => i !== idx))}
                         className="p-0.5 rounded-full hover:bg-error/10 text-on-surface-variant hover:text-error transition-colors cursor-pointer"
+                        aria-label={`${t('ticketDetail.removeAttachment')} ${file.name}`}
                       >
-                        <span className="text-[14px] leading-none font-bold">×</span>
+                        <X className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   ))}
@@ -760,6 +763,7 @@ export function TicketDetailPage() {
                     type="button"
                     onClick={() => document.getElementById('response-file-input')?.click()}
                     className="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer"
+                    aria-label={t('ticketDetail.uploadAttachment')}
                     title={t('ticketDetail.uploadAttachment')}
                   >
                     <Paperclip className="h-5 w-5" />
@@ -774,6 +778,7 @@ export function TicketDetailPage() {
                       }
                     }}
                     className="hidden"
+                    aria-label={t('ticketDetail.fileInput')}
                   />
                   
                   <button
@@ -1039,6 +1044,7 @@ export function TicketDetailPage() {
                           target="_blank"
                           rel="noreferrer"
                           className="p-1 rounded-full hover:bg-primary/10 text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+                          aria-label={`${t('ticketDetail.downloadFile')} ${att.filename}`}
                         >
                           <Download className="h-3.5 w-3.5" />
                         </a>
@@ -1070,6 +1076,7 @@ export function TicketDetailPage() {
                 multiple
                 onChange={(e) => handleFileUpload(e.target.files)}
                 className="hidden"
+                aria-label={t('ticketDetail.fileInput')}
               />
               <Upload className={`h-6 w-6 mx-auto mb-1 text-on-surface-variant opacity-60 ${uploading ? 'animate-bounce' : ''}`} />
               <p className="text-body-md font-bold text-on-surface mb-0.5">
@@ -1097,9 +1104,10 @@ export function TicketDetailPage() {
               <h3 className="text-h3 text-primary truncate max-w-[80%] font-semibold">{previewFile.filename}</h3>
               <button
                 onClick={() => setPreviewFile(null)}
-                className="p-1 text-[24px] leading-none font-bold rounded-full hover:bg-surface-container-high text-on-surface-variant cursor-pointer"
+                className="p-1 rounded-full hover:bg-surface-container-high text-on-surface-variant cursor-pointer"
+                aria-label={t('ticketDetail.closePreview')}
               >
-                ×
+                <X className="h-6 w-6" />
               </button>
             </div>
 

@@ -58,6 +58,7 @@
     "lastLoginNever": "No hay registro de inicio de sesión previo",
     "passwordRequirements": "La contraseña debe incluir símbolos y números.",
     "updatePassword": "Actualizar Contraseña",
+    "avatarInput": "Entrada de carga de avatar",
     "avatarSuccess": "Foto de perfil actualizada exitosamente",
     "avatarError": "Error al subir la foto de perfil"
   },
@@ -172,6 +173,8 @@
     "modalCreating": "Creando...",
     "attachmentsLabel": "Adjuntos (Opcional)",
     "selectFiles": "Seleccionar Archivos",
+    "removeAttachment": "Eliminar adjunto",
+    "fileInput": "Entrada de carga de archivos",
     "filesSelected": "archivos seleccionados",
     "categories": {
       "REPAIR": "Reparación",
@@ -220,6 +223,8 @@
     "attachmentsTitle": "Archivos Adjuntos",
     "noAttachments": "No se han subido archivos adjuntos aún.",
     "uploadAttachment": "Subir Archivo",
+    "removeAttachment": "Eliminar adjunto",
+    "fileInput": "Entrada de carga de archivos",
     "uploading": "Subiendo...",
     "uploadSuccess": "Archivo subido con éxito",
     "uploadError": "Error al subir el archivo",
@@ -235,7 +240,8 @@
     "responseSuccess": "Respuesta enviada con éxito",
     "responseError": "Error al enviar la respuesta",
     "previewNotAvailable": "Vista previa no disponible para este tipo de archivo.",
-    "downloadFile": "Descargar Archivo"
+    "downloadFile": "Descargar Archivo",
+    "closePreview": "Cerrar vista previa"
   },
   "techDashboard": {
     "subtitle": "Gestione sus tickets asignados, controle los SLA y actualice los estados de los tickets.",
