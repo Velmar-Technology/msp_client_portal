@@ -12,6 +12,14 @@ import * as z from 'zod';
 import { Field, FieldLabel, FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 export function RegisterPage() {
   const { t, i18n } = useTranslation();
@@ -24,6 +32,7 @@ export function RegisterPage() {
   const [showOtpForm, setShowOtpForm] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
   const [otp, setOtp] = useState('');
+  const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
 
   const schema = useMemo(() => z.object({
     name: z.string().min(2, t('register.nameMin') || 'Name must be at least 2 characters'),
@@ -137,6 +146,7 @@ export function RegisterPage() {
       await verifyEmail(registeredEmail, otp);
       setSuccessMessage('Email verified successfully. You can now log in.');
       setShowOtpForm(false);
+      setShowWelcomeDialog(true);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       const errorMsg = error.response?.data?.message || 
@@ -404,6 +414,35 @@ export function RegisterPage() {
           </p>
         </div>
       </div>
+
+      <Dialog open={showWelcomeDialog} onOpenChange={(open) => {
+        setShowWelcomeDialog(open);
+        if (!open) {
+          navigate('/login');
+        }
+      }}>
+        <DialogContent className="sm:max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-extrabold text-zinc-900 dark:text-zinc-100 font-heading tracking-tight">
+              ¡Bienvenido a Velmar!
+            </DialogTitle>
+            <DialogDescription className="text-sm text-zinc-500 dark:text-zinc-400">
+              Tu cuenta ha sido creada exitosamente.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-end mt-4">
+            <button
+              onClick={() => {
+                setShowWelcomeDialog(false);
+                navigate('/login');
+              }}
+              className="bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 px-4 py-2 rounded-lg text-sm font-bold hover:opacity-90 transition-opacity cursor-pointer shadow-md"
+            >
+              Continuar al Login
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
