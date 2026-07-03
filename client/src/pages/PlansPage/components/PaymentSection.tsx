@@ -86,23 +86,23 @@ export function PaymentSection({
         <div className="flex items-center justify-between border-b border-zinc-200/60 dark:border-zinc-800/80 pb-3">
           <div>
             <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider">
-              Current Service
+              {t('plans.currentService') || 'Current Service'}
             </p>
             <p className="text-base font-bold text-zinc-900 dark:text-zinc-50 mt-0.5">{activeSub.service_name}</p>
           </div>
           <span className="bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/10 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
-            ACTIVE
+            {t('plans.activeStatus')?.toUpperCase() || 'ACTIVE'}
           </span>
         </div>
 
         {!isSamePlanAndCount ? (
           <div className="space-y-3">
             <div className="bg-zinc-50/50 dark:bg-zinc-900/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded p-3">
-              <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">Subscription Modification</p>
+              <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                {t('plans.subscriptionModification') || 'Subscription Modification'}
+              </p>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 leading-normal">
-                You are modifying your subscription to the{' '}
-                <strong className="text-zinc-800 dark:text-zinc-200">{getPlanName(currentPlan.name)}</strong> plan with{' '}
-                <strong className="text-zinc-850 dark:text-zinc-200">{currentEquipmentCount}x</strong> device(s).
+                {t('plans.subscriptionModificationDesc', { name: getPlanName(currentPlan.name), count: currentEquipmentCount })}
               </p>
             </div>
 
@@ -135,13 +135,15 @@ export function PaymentSection({
             {isIncreaseCount && !isMockOrI ? (
               <div className="mt-2 border-t border-zinc-200/50 dark:border-zinc-800/50 pt-3">
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2 leading-normal">
-                  Adding more devices requires a PayPal payment to activate the additional licenses immediately.
+                  {t('plans.addDevicesPaymentNotice') || 'Adding more devices requires a PayPal payment to activate the additional licenses immediately.'}
                 </p>
                 <div
                   id="paypal-upgrade-button-container"
                   className="my-1.5 min-h-[100px] flex items-center justify-center bg-zinc-50/20 rounded-md p-3 border border-zinc-200 dark:border-zinc-800 border-dashed"
                 >
-                  <span className="text-xs text-zinc-450 dark:text-zinc-500">Loading PayPal Upgrade...</span>
+                  <span className="text-xs text-zinc-450 dark:text-zinc-500">
+                    {t('plans.loadingPayPal') || 'Loading PayPal Upgrade...'}
+                  </span>
                 </div>
                 {paymentMessage && <p className="text-xs text-zinc-900 dark:text-zinc-50 font-semibold mt-1.5">{paymentMessage}</p>}
               </div>
@@ -151,17 +153,18 @@ export function PaymentSection({
                 disabled={subscribeLoading}
                 className="w-full bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950 py-2 rounded text-xs font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
-                {subscribeLoading ? 'Updating...' : 'Update Subscription'}
+                {subscribeLoading ? (t('plans.updatingStatus') || 'Updating...') : (t('plans.updateSubscription') || 'Update Subscription')}
               </button>
             )}
           </div>
         ) : (
           <div className="space-y-3">
             <div className="bg-red-500/5 border border-red-500/10 rounded p-3">
-              <p className="text-xs font-semibold text-red-650 dark:text-red-400">Cancellation Warning</p>
+              <p className="text-xs font-semibold text-red-650 dark:text-red-400">
+                {t('plans.cancelWarningTitle') || 'Cancellation Warning'}
+              </p>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 leading-normal">
-                Cancelling your subscription will take effect immediately. You will lose access to premium support
-                services.
+                {t('plans.cancelWarningDesc') || 'Cancelling your subscription will take effect immediately. You will lose access to premium support services.'}
               </p>
             </div>
 
@@ -170,7 +173,7 @@ export function PaymentSection({
               disabled={subscribeLoading}
               className="w-full bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-450 border border-red-200/60 dark:border-red-900/40 py-2 rounded text-xs font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
-              {subscribeLoading ? 'Cancelling...' : 'Cancel Subscription'}
+              {subscribeLoading ? (t('plans.cancellingStatus') || 'Cancelling...') : (t('plans.cancelSubscription') || 'Cancel Subscription')}
             </button>
           </div>
         )}
@@ -188,11 +191,11 @@ export function PaymentSection({
       <div className="flex justify-between items-center border-b border-zinc-200/50 dark:border-zinc-800/50 pb-3 mb-4">
         <div>
           <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-            {getPlanName(currentPlan.name)} Plan
+            {t('plans.planTitle', { name: getPlanName(currentPlan.name) }) || `${getPlanName(currentPlan.name)} Plan`}
           </h3>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 font-medium">
             {currentEquipmentCount}x {t('plans.equipmentCountSuffix')} •{' '}
-            {billingCycle === 'annual' ? 'Annually' : 'Monthly'}
+            {billingCycle === 'annual' ? (t('plans.annualButtonLabel') || 'Annually') : (t('plans.monthlyButtonLabel') || 'Monthly')}
           </p>
         </div>
       </div>
@@ -200,7 +203,7 @@ export function PaymentSection({
       {isAdmin ? (
         <div className="space-y-3">
           <h4 className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 mb-2">
-            Apply Plan to Customer
+            {t('plans.applyPlanToCustomer') || 'Apply Plan to Customer'}
           </h4>
           <div className="space-y-3">
             <div>
@@ -208,7 +211,7 @@ export function PaymentSection({
                 htmlFor="customer-select"
                 className="block text-xs text-zinc-500 dark:text-zinc-450 mb-1 font-semibold uppercase tracking-wider"
               >
-                Select Customer
+                {t('plans.selectCustomer') || 'Select Customer'}
               </label>
               <select
                 id="customer-select"
@@ -218,7 +221,7 @@ export function PaymentSection({
               >
                 {clients.length === 0 ? (
                   <option value="" disabled>
-                    No registered customers found
+                    {t('plans.noCustomersFound') || 'No registered customers found'}
                   </option>
                 ) : (
                   clients.map((client) => (
@@ -274,7 +277,7 @@ export function PaymentSection({
               disabled={subscribeLoading || selectedClientId === 'unregistered' || clients.length === 0}
               className="w-full bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950 py-2 rounded text-xs font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
-              {subscribeLoading ? 'Applying...' : 'Apply Plan to Customer'}
+              {subscribeLoading ? (t('plans.applyingStatus') || 'Applying...') : (t('plans.applyPlanToCustomer') || 'Apply Plan to Customer')}
             </button>
 
             <button
@@ -293,7 +296,7 @@ export function PaymentSection({
             return (
               <div className="space-y-3">
                 <h4 className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-                  Manage Active Subscription
+                  {t('plans.manageActiveSub') || 'Manage Active Subscription'}
                 </h4>
                 {renderManageActiveSubscription(activeSubForPlan)}
               </div>
@@ -328,11 +331,10 @@ export function PaymentSection({
             <div className="space-y-4">
               <div>
                 <h4 className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 mb-1">
-                  Select Action for {getPlanName(currentPlan.name)}
+                  {t('plans.selectActionForPlan', { name: getPlanName(currentPlan.name) })}
                 </h4>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-normal mb-3">
-                  You have existing active subscriptions. Choose whether you want to replace one of them or
-                  add this plan as a new additional subscription.
+                  {t('plans.selectActionDesc') || 'You have existing active subscriptions. Choose whether you want to replace one of them or add this plan as a new additional subscription.'}
                 </p>
 
                 <div className="bg-zinc-150/70 dark:bg-zinc-800/60 border border-zinc-200/50 dark:border-zinc-700/50 p-0.5 rounded-md flex items-center gap-0.5 w-full shadow-[0_1px_2px_rgba(0,0,0,0.01)] mb-4">
@@ -345,7 +347,7 @@ export function PaymentSection({
                         : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 border border-transparent'
                     }`}
                   >
-                    Change Existing Plan
+                    {t('plans.changeExistingPlan') || 'Change Existing Plan'}
                   </button>
                   <button
                     type="button"
@@ -356,7 +358,7 @@ export function PaymentSection({
                         : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 border border-transparent'
                     }`}
                   >
-                    Subscribe as Additional Plan
+                    {t('plans.subscribeAsAdditionalPlan') || 'Subscribe as Additional Plan'}
                   </button>
                 </div>
               </div>
@@ -388,7 +390,7 @@ export function PaymentSection({
                       htmlFor="active-sub-select"
                       className="block text-[10px] text-zinc-500 dark:text-zinc-450 mb-1 font-semibold uppercase tracking-wider"
                     >
-                      Select Active Subscription to Replace
+                      {t('plans.selectActiveSubToReplace') || 'Select Active Subscription to Replace'}
                     </label>
                     <select
                       id="active-sub-select"
@@ -398,7 +400,7 @@ export function PaymentSection({
                     >
                       {activeSubscriptions.map((sub) => (
                         <option key={sub.id} value={sub.id}>
-                          {sub.service_name} ({sub.equipment_count} Equipment)
+                          {sub.service_name} ({t('plans.equipmentCountLabel', { count: sub.equipment_count }) || `${sub.equipment_count} Equipment`})
                         </option>
                       ))}
                     </select>

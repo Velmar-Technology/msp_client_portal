@@ -115,7 +115,7 @@ export function PlansPage() {
   const subscriptionDashboardColumns = useMemo<ColumnDef<Subscription>[]>(() => [
     {
       accessorKey: 'service_name',
-      header: 'Service Name',
+      header: t('plans.serviceName') || 'Service Name',
       cell: ({ row }) => (
         <span className="font-semibold text-zinc-900 dark:text-zinc-50 text-xs">
           {row.getValue('service_name')}
@@ -124,7 +124,7 @@ export function PlansPage() {
     },
     {
       accessorKey: 'plan',
-      header: 'Tier',
+      header: t('plans.tier') || 'Tier',
       cell: ({ row }) => {
         const planId = row.getValue('plan') as string;
         return (
@@ -136,23 +136,28 @@ export function PlansPage() {
     },
     {
       accessorKey: 'status',
-      header: 'Status',
+      header: t('plans.status') || 'Status',
       cell: ({ row }) => {
         const status = row.getValue('status') as string;
+        const displayStatus = status === 'ACTIVE' 
+          ? (t('plans.activeStatus') || 'Active') 
+          : status === 'CANCELLED' 
+            ? (t('plans.cancelledStatus') || 'Cancelled') 
+            : status;
         return (
           <span
             className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold tracking-wider uppercase border ${getStatusColor(
               status
             )}`}
           >
-            {status}
+            {displayStatus}
           </span>
         );
       },
     },
     {
       accessorKey: 'renewal_date',
-      header: 'Renewal Date',
+      header: t('plans.renewalDate') || 'Renewal Date',
       cell: ({ row }) => {
         const dateStr = row.getValue('renewal_date') as string;
         return (
@@ -167,10 +172,10 @@ export function PlansPage() {
     },
     {
       accessorKey: 'equipment_count',
-      header: 'Devices Limit',
+      header: t('plans.devicesLimit') || 'Devices Limit',
       cell: ({ row }) => (
         <span className="bg-zinc-100 text-zinc-800 dark:bg-zinc-800/80 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700/60 px-1.5 py-0.2 rounded text-[10px] font-bold uppercase tracking-wider">
-          {row.getValue('equipment_count')} Devices
+          {t('plans.devicesCount', { count: row.getValue('equipment_count') })}
         </span>
       ),
     },
@@ -362,7 +367,7 @@ export function PlansPage() {
                   onClick={handleCreateClick}
                   className="bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950 px-3.5 py-1.5 rounded-md text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer flex items-center gap-1 shadow-sm border border-zinc-850 dark:border-zinc-200 w-full sm:w-auto justify-center"
                 >
-                  <span>+ Add Plan</span>
+                  <span>+ {t('plans.addPlan') || 'Add Plan'}</span>
                 </button>
               )}
             </div>
@@ -452,7 +457,7 @@ export function PlansPage() {
                     htmlFor="active-sub-select-manage"
                     className="block text-[10px] text-zinc-500 dark:text-zinc-450 font-bold uppercase tracking-wider mb-1"
                   >
-                    Select Active Subscription to Manage
+                    {t('plans.selectActiveSubToManage') || 'Select Active Subscription to Manage'}
                   </label>
                   <select
                     id="active-sub-select-manage"
@@ -462,7 +467,7 @@ export function PlansPage() {
                   >
                     {activeSubscriptions.map((sub) => (
                       <option key={sub.id} value={sub.id}>
-                        {sub.service_name} ({sub.equipment_count} Devices)
+                        {sub.service_name} ({t('plans.devicesCount', { count: sub.equipment_count })})
                       </option>
                     ))}
                   </select>
@@ -477,41 +482,48 @@ export function PlansPage() {
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
-                          Manage Active Subscription
+                          {t('plans.manageActiveSub') || 'Manage Active Subscription'}
                         </h4>
                         <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                          Details for {activeSub.service_name} ({billingCycle || 'monthly'} billing)
+                          {t('plans.detailsForService', {
+                            name: activeSub.service_name,
+                            cycle: billingCycle === 'annual'
+                              ? (t('plans.annualButtonLabel') || 'annual').toLowerCase()
+                              : (t('plans.monthlyButtonLabel') || 'monthly').toLowerCase()
+                          })}
                         </p>
                       </div>
                       <span className="bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border border-zinc-950 dark:border-zinc-200">
-                        ACTIVE
+                        {t('plans.activeStatus')?.toUpperCase() || 'ACTIVE'}
                       </span>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                       <div className="p-3 bg-zinc-100/50 dark:bg-zinc-800/30 rounded border border-zinc-200/50 dark:border-zinc-800/60">
                         <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">
-                          Devices
+                          {t('plans.devicesLabel') || 'Devices'}
                         </p>
                         <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                          {activeSub.equipment_count}x Managed Units
+                          {t('plans.devicesCount', { count: activeSub.equipment_count })}
                         </p>
                       </div>
                       <div className="p-3 bg-zinc-100/50 dark:bg-zinc-800/30 rounded border border-zinc-200/50 dark:border-zinc-800/60">
                         <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">
-                          Cycle
+                          {t('plans.cycleLabel') || 'Cycle'}
                         </p>
                         <p className="text-xs font-semibold capitalize text-zinc-900 dark:text-zinc-100">
-                          {billingCycle || 'monthly'}
+                          {billingCycle === 'annual' ? (t('plans.annualButtonLabel') || 'annual') : (t('plans.monthlyButtonLabel') || 'monthly')}
                         </p>
                       </div>
                       <div className="p-3 bg-zinc-100/50 dark:bg-zinc-800/30 rounded border border-zinc-200/50 dark:border-zinc-800/60">
                         <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">
-                          Renewal
+                          {t('plans.renewalLabel') || 'Renewal'}
                         </p>
                         <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 font-mono">
                           {activeSub.renewal_date
-                            ? new Date(activeSub.renewal_date).toLocaleDateString()
+                            ? new Date(activeSub.renewal_date).toLocaleDateString(
+                                i18n.language.startsWith('es') ? 'es-DO' : 'en-US'
+                              )
                             : 'N/A'}
                         </p>
                       </div>
@@ -612,7 +624,7 @@ export function PlansPage() {
                             </div>
                             {billingCycle === 'annual' && (
                               <p className="text-right text-[9px] text-zinc-450 dark:text-zinc-500 mt-0.5 font-medium">
-                                Billed annually as ${annualBilledTotal.toFixed(2)}/yr
+                                {t('plans.billedAnnually', { price: annualBilledTotal.toFixed(2) })}
                               </p>
                             )}
                           </div>
@@ -625,13 +637,13 @@ export function PlansPage() {
                   <div className="bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950 border border-zinc-900 dark:border-zinc-100 rounded-lg p-4 relative overflow-hidden shadow-[0_2px_10px_-3px_rgba(0,0,0,0.1)]">
                     <div className="relative z-10">
                       <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-350 dark:text-zinc-650 mb-1">
-                        Need a custom plan?
+                        {t('plans.customPlanTitle') || 'Need a custom plan?'}
                       </h4>
                       <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mb-3 leading-normal font-medium">
-                        For organizations with over 100 devices, we offer tailored enterprise solutions.
+                        {t('plans.customPlanDesc') || 'For organizations with over 100 devices, we offer tailored enterprise solutions.'}
                       </p>
                       <button className="w-full py-1.5 bg-white text-zinc-950 dark:bg-zinc-900 dark:text-zinc-50 border border-zinc-200 dark:border-zinc-800 font-semibold rounded text-xs hover:opacity-95 transition-opacity cursor-pointer">
-                        Contact Sales
+                        {t('plans.contactSales') || 'Contact Sales'}
                       </button>
                     </div>
                   </div>

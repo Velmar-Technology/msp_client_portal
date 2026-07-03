@@ -142,8 +142,7 @@ export function PaymentFields({
           
           <TabsContent value="card" className="space-y-3 mt-0">
             <p className="text-xs text-zinc-500 leading-normal">
-              Please complete your checkout payment securely using PayPal. Once approved, your subscription will
-              activate immediately.
+              {t('plans.paypalPaymentNotice') || 'Please complete your checkout payment securely using PayPal. Once approved, your subscription will activate immediately.'}
             </p>
             {paymentMessage && (
               <div
@@ -160,7 +159,9 @@ export function PaymentFields({
               id="paypal-button-container"
               className="my-2 min-h-[120px] flex items-center justify-center bg-zinc-50/50 dark:bg-zinc-900/30 rounded-lg p-3 border border-zinc-200 dark:border-zinc-800 border-dashed"
             >
-              <span className="text-xs text-zinc-400">Loading PayPal Checkout...</span>
+              <span className="text-xs text-zinc-400">
+                {t('plans.loadingPayPalCheckout') || 'Loading PayPal Checkout...'}
+              </span>
             </div>
           </TabsContent>
 
@@ -170,15 +171,15 @@ export function PaymentFields({
               
               <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-2 mx-4 rounded-md space-y-1 text-left text-xs font-mono">
                 <div className="flex justify-between text-zinc-500">
-                  <span>Bank:</span>
+                  <span>{t('plans.bankLabel') || 'Bank:'}</span>
                   <span className="text-zinc-900 dark:text-zinc-100 font-medium">{t("plans.bankName")}</span>
                 </div>
                 <div className="flex justify-between text-zinc-500">
-                  <span>Account:</span>
+                  <span>{t('plans.accountLabel') || 'Account:'}</span>
                   <span className="text-zinc-900 dark:text-zinc-100 font-medium">{t("plans.bankAccount")}</span>
                 </div>
                 <div className="flex justify-between text-zinc-500 border-t border-zinc-100 dark:border-zinc-800/80 pt-1 mt-1">
-                  <span>Reference:</span>
+                  <span>{t('plans.referenceLabel') || 'Reference:'}</span>
                   <span className="text-zinc-900 dark:text-zinc-100 font-bold">{reference}</span>
                 </div>
               </div>
@@ -189,7 +190,7 @@ export function PaymentFields({
                   disabled={subscribeLoading}
                   className="w-full bg-zinc-900 dark:bg-zinc-100 hover:opacity-90 text-white dark:text-zinc-900 py-1.5 rounded text-xs font-medium transition-opacity disabled:opacity-50 cursor-pointer"
                 >
-                  {subscribeLoading ? "Processing..." : "Confirm Bank Transfer Intent"}
+                  {subscribeLoading ? (t('plans.processing') || 'Processing...') : (t('plans.confirmBankTransferIntent') || 'Confirm Bank Transfer Intent')}
                 </button>
               </div>
             </div>
@@ -244,11 +245,11 @@ export function CheckoutSheet({
     if (alreadySubscribed) {
       return (
         <div className="rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/15 p-3.5 text-center text-xs space-y-1.5 my-4">
-          <p className="font-semibold text-amber-800 dark:text-amber-400">Active Plan Already Registered</p>
+          <p className="font-semibold text-amber-800 dark:text-amber-400">
+            {t('plans.activePlanAlreadyRegistered') || 'Active Plan Already Registered'}
+          </p>
           <p className="text-zinc-600 dark:text-zinc-400 leading-normal">
-            You already have an active subscription for the <strong>{getPlanName(currentPlan.name)}</strong> plan. To
-            change device slots or update details, please use the modification tools on the active subscription
-            manager.
+            {t('plans.alreadySubscribedDesc', { name: getPlanName(currentPlan.name) })}
           </p>
         </div>
       );
@@ -258,12 +259,12 @@ export function CheckoutSheet({
   return (
     <div className="space-y-3 text-center py-2">
       <p className="text-xs text-zinc-500 leading-relaxed">
-        Ready to activate your <strong className="text-zinc-900 dark:text-zinc-200">{getPlanName(currentPlan.name)}</strong> subscription?
+        {t('plans.readyToActivate', { name: getPlanName(currentPlan.name) })}
       </p>
       <Sheet>
         <SheetTrigger asChild>
           <button className="w-full bg-zinc-900 dark:bg-zinc-100 hover:opacity-90 text-white dark:text-zinc-900 py-2 rounded text-xs font-semibold transition-opacity flex items-center justify-center gap-2 cursor-pointer shadow-sm">
-            Proceed to Checkout (${total.toFixed(2)})
+            {t('plans.proceedToCheckout', { total: total.toFixed(2) })}
           </button>
         </SheetTrigger>
         <SheetContent className="w-[380px] p-4 sm:w-[440px] overflow-y-auto bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 border-l border-zinc-200 dark:border-zinc-800">

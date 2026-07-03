@@ -1,4 +1,5 @@
 import { X, GripVertical, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { Plan, PlanFeature } from '../../../services/planService';
 import { Input } from '../../../components/ui/input';
 
@@ -69,12 +70,14 @@ export function EditPlanModal({
   onDrop,
   onDragEnd,
 }: EditPlanModalProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="fixed inset-0 bg-black/55 backdrop-blur-sm z-50 flex items-center justify-center p-3">
       <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg max-w-md w-full max-h-[85vh] flex flex-col shadow-xl text-zinc-900 dark:text-zinc-50">
         <div className="p-4.5 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-100/50 dark:bg-zinc-900/60 rounded-t-lg">
           <h3 className="text-sm font-bold tracking-tight">
-            {isCreateMode ? 'Add New Plan' : `Edit Plan: ${editingPlan.id}`}
+            {isCreateMode ? (t('plans.addNewPlan') || 'Add New Plan') : (t('plans.editPlanTitle', { id: editingPlan.id }) || `Edit Plan: ${editingPlan.id}`)}
           </h3>
           <button
             onClick={onClose}
@@ -89,7 +92,7 @@ export function EditPlanModal({
             {isCreateMode ? (
               <div>
                 <label htmlFor="edit-id" className="block text-[10px] text-zinc-500 dark:text-zinc-450 font-bold uppercase tracking-wider mb-1">
-                  Plan ID
+                  {t('plans.planId') || 'Plan ID'}
                 </label>
                 <Input
                   id="edit-id"
@@ -97,13 +100,13 @@ export function EditPlanModal({
                   value={editId}
                   onChange={(e) => setEditId(e.target.value.toUpperCase().replace(/\s+/g, '-'))}
                   placeholder="e.g. PL-008"
-                  className="h-8.5 text-xs bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-850"
+                  className="h-8.5 text-xs bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-855"
                 />
               </div>
             ) : (
               <div>
                 <label htmlFor="edit-id" className="block text-[10px] text-zinc-500 dark:text-zinc-450 font-bold uppercase tracking-wider mb-1">
-                  Plan ID
+                  {t('plans.planId') || 'Plan ID'}
                 </label>
                 <Input
                   id="edit-id"
@@ -116,7 +119,7 @@ export function EditPlanModal({
             )}
             <div>
               <label htmlFor="edit-client-type" className="block text-[10px] text-zinc-500 dark:text-zinc-450 font-bold uppercase tracking-wider mb-1">
-                Client Type
+                {t('plans.clientType') || 'Client Type'}
               </label>
               <select
                 id="edit-client-type"
@@ -124,17 +127,17 @@ export function EditPlanModal({
                 onChange={(e) => setEditClientType(e.target.value)}
                 className="w-full h-8.5 px-2.5 border border-zinc-200/85 dark:border-zinc-850 rounded text-xs focus:outline-none focus:border-zinc-900 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-55"
               >
-                <option value="CLIENT">Standard Client</option>
-                <option value="ENTERPRISE">Enterprise Client</option>
-                <option value="STUDENT">Student Starter</option>
-                <option value="OTHER">Other / Custom</option>
+                <option value="CLIENT">{t('plans.clientTypes.standard') || 'Standard Client'}</option>
+                <option value="ENTERPRISE">{t('plans.clientTypes.enterprise') || 'Enterprise Client'}</option>
+                <option value="STUDENT">{t('plans.clientTypes.student') || 'Student Starter'}</option>
+                <option value="OTHER">{t('plans.clientTypes.other') || 'Other / Custom'}</option>
               </select>
             </div>
           </div>
 
           <div>
             <label className="block text-[10px] text-zinc-500 dark:text-zinc-450 font-bold uppercase tracking-wider mb-1">
-              Plan Name
+              {t('plans.planNameLabel') || 'Plan Name'}
             </label>
             <div className="space-y-1.5">
               <div className="flex items-center gap-1.5">
@@ -143,7 +146,7 @@ export function EditPlanModal({
                   type="text"
                   value={editName.en_US || ''}
                   onChange={(e) => setEditName({ ...editName, en_US: e.target.value })}
-                  className="flex-1 h-8 text-xs bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-850"
+                  className="flex-1 h-8 text-xs bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-855"
                   placeholder="Plan name in English"
                 />
               </div>
@@ -153,7 +156,7 @@ export function EditPlanModal({
                   type="text"
                   value={editName.es_DO || ''}
                   onChange={(e) => setEditName({ ...editName, es_DO: e.target.value })}
-                  className="flex-1 h-8 text-xs bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-850"
+                  className="flex-1 h-8 text-xs bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-855"
                   placeholder="Nombre del plan en Español"
                 />
               </div>
@@ -162,20 +165,20 @@ export function EditPlanModal({
 
           <div>
             <label htmlFor="edit-price" className="block text-[10px] text-zinc-500 dark:text-zinc-450 font-bold uppercase tracking-wider mb-1">
-              Monthly Price ($)
+              {t('plans.monthlyPriceLabel') || 'Monthly Price ($)'}
             </label>
             <Input
               id="edit-price"
               type="number"
               value={editPrice}
               onChange={(e) => setEditPrice(parseInt(e.target.value) || 0)}
-              className="h-8.5 text-xs bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-850 font-mono"
+              className="h-8.5 text-xs bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-855 font-mono"
             />
           </div>
 
           <div>
             <label className="block text-[10px] text-zinc-500 dark:text-zinc-450 font-bold uppercase tracking-wider mb-1">
-              Description
+              {t('plans.descriptionLabel') || 'Description'}
             </label>
             <div className="space-y-1.5">
               <div className="flex items-start gap-1.5">
@@ -209,7 +212,7 @@ export function EditPlanModal({
                 className="h-3.5 w-3.5 rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 focus:ring-zinc-900 cursor-pointer"
               />
               <label htmlFor="edit-recommended" className="text-xs text-zinc-700 dark:text-zinc-300 cursor-pointer select-none font-medium">
-                Recommended Plan
+                {t('plans.recommendedPlan') || 'Recommended Plan'}
               </label>
             </div>
 
@@ -222,20 +225,20 @@ export function EditPlanModal({
                 className="h-3.5 w-3.5 rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 focus:ring-zinc-900 cursor-pointer"
               />
               <label htmlFor="edit-active" className="text-xs text-zinc-700 dark:text-zinc-300 cursor-pointer select-none font-medium">
-                Active
+                {t('plans.active') || 'Active'}
               </label>
             </div>
           </div>
 
           <div className="border-t border-zinc-200 dark:border-zinc-800 pt-3">
             <div className="flex justify-between items-center mb-2.5">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Features</h4>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-500">{t('plans.featuresTitle') || 'Features'}</h4>
               <button
                 type="button"
                 onClick={onAddFeature}
                 className="text-[10px] text-zinc-900 dark:text-zinc-200 hover:underline flex items-center gap-0.5 cursor-pointer font-bold uppercase tracking-wider"
               >
-                + Add Feature
+                + {t('plans.addFeature') || 'Add Feature'}
               </button>
             </div>
 
@@ -259,7 +262,7 @@ export function EditPlanModal({
                   <div className="flex items-center gap-0.5 mt-1">
                     <div
                       className="cursor-grab active:cursor-grabbing text-zinc-400 hover:text-zinc-650 dark:text-zinc-600 dark:hover:text-zinc-400 transition-colors p-0.5"
-                      title="Drag to reorder"
+                      title={t('plans.dragToReorder') || 'Drag to reorder'}
                     >
                       <GripVertical className="h-3.5 w-3.5" />
                     </div>
@@ -269,7 +272,7 @@ export function EditPlanModal({
                         disabled={index === 0}
                         onClick={() => onMoveFeature(index, -1)}
                         className="p-0.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded text-zinc-500 disabled:opacity-30 cursor-pointer"
-                        title="Move up"
+                        title={t('plans.moveUp') || 'Move up'}
                       >
                         <ChevronUp className="h-2.5 w-2.5" />
                       </button>
@@ -278,7 +281,7 @@ export function EditPlanModal({
                         disabled={index === editFeatures.length - 1}
                         onClick={() => onMoveFeature(index, 1)}
                         className="p-0.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded text-zinc-500 disabled:opacity-30 cursor-pointer"
-                        title="Move down"
+                        title={t('plans.moveDown') || 'Move down'}
                       >
                         <ChevronDown className="h-2.5 w-2.5" />
                       </button>
@@ -299,7 +302,7 @@ export function EditPlanModal({
                         value={(typeof feat.text === 'string' ? feat.text : feat.text?.en_US) || ''}
                         onChange={(e) => onEditFeatureText(index, 'en_US', e.target.value)}
                         className="flex-1 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-850 py-0.5 h-7 text-xs"
-                        placeholder="Feature in English..."
+                        placeholder={t('plans.featureEnPlaceholder') || 'Feature in English...'}
                       />
                     </div>
                     <div className="flex items-center gap-1">
@@ -309,7 +312,7 @@ export function EditPlanModal({
                         value={(typeof feat.text === 'string' ? feat.text : feat.text?.es_DO) || ''}
                         onChange={(e) => onEditFeatureText(index, 'es_DO', e.target.value)}
                         className="flex-1 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-850 py-0.5 h-7 text-xs"
-                        placeholder="Característica en Español..."
+                        placeholder={t('plans.featureEsPlaceholder') || 'Característica en Español...'}
                       />
                     </div>
                   </div>
@@ -331,14 +334,14 @@ export function EditPlanModal({
             onClick={onClose}
             className="px-3.5 py-1.5 border border-zinc-200 hover:bg-zinc-100/50 dark:border-zinc-800 rounded text-xs font-semibold cursor-pointer text-zinc-700 dark:text-zinc-300"
           >
-            Cancel
+            {t('plans.cancel') || 'Cancel'}
           </button>
           <button
             onClick={onSave}
             disabled={saveLoading}
             className="px-4 py-1.5 bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950 rounded text-xs font-semibold hover:opacity-90 transition-opacity flex items-center gap-1 disabled:opacity-50 cursor-pointer"
           >
-            {saveLoading ? 'Saving...' : isCreateMode ? 'Create Plan' : 'Save Changes'}
+            {saveLoading ? (t('plans.saving') || 'Saving...') : isCreateMode ? (t('plans.createPlan') || 'Create Plan') : (t('plans.saveChanges') || 'Save Changes')}
           </button>
         </div>
       </div>

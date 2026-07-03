@@ -53,7 +53,7 @@ export function PlanCard({
       {isPlanDisabled && (
         <div className="absolute top-2.5 left-2.5">
           <span className="bg-red-500/10 text-red-700 border border-red-500/20 dark:text-red-400 dark:border-red-500/10 px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider">
-            Disabled
+            {t('plans.disabledStatus') || 'Disabled'}
           </span>
         </div>
       )}
@@ -77,14 +77,14 @@ export function PlanCard({
           className="absolute top-2.5 right-2.5 bg-white hover:bg-zinc-50 dark:bg-zinc-850 dark:hover:bg-zinc-800 border border-zinc-200/60 dark:border-zinc-700/60 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer text-zinc-650 dark:text-zinc-300 flex items-center gap-1 z-10"
         >
           <Edit className="h-3 w-3" />
-          Edit
+          {t('plans.editAction') || 'Edit'}
         </button>
       )}
 
       {/* Active Status Badge */}
       {!isAdmin && activeSubscriptions.some((sub) => sub.plan === plan.id) && (
         <span className="absolute top-2.5 right-2.5 bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/10 px-1.5 py-0.5 rounded text-[10px] font-bold animate-pulse z-10">
-          Active
+          {t('plans.activeStatus') || 'Active'}
         </span>
       )}
 
@@ -104,10 +104,10 @@ export function PlanCard({
           <span className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 font-mono">
             ${Number.isInteger(priceVal) ? priceVal : priceVal.toFixed(2)}
           </span>
-          <span className="text-xs text-zinc-400 dark:text-zinc-500 font-medium"> /mo</span>
+          <span className="text-xs text-zinc-400 dark:text-zinc-500 font-medium">{t('plans.perMonth')}</span>
           {billingCycle === 'annual' ? (
             <div className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5 font-medium">
-              {t('plans.billedAnnually')} ${(plan.price * 12 * 0.8).toFixed(2)}/yr
+              {t('plans.billedAnnually', { price: (plan.price * 12 * 0.8).toFixed(2) })}
             </div>
           ) : (
             <div className="text-[10px] opacity-0 select-none mt-0.5">Placeholder</div>
