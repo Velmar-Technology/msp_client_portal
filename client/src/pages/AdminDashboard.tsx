@@ -26,7 +26,7 @@ interface SummaryCardProps {
 
 export function SummaryCard({ icon, badge, title, value, subtitle, footer }: SummaryCardProps) {
   return (
-    <div className="bg-white dark:bg-zinc-955 border border-zinc-205 dark:border-zinc-800 p-4 rounded-lg flex flex-col shadow-sm hover:shadow-md transition-all">
+    <div className="bg-card border p-4 rounded-lg flex flex-col shadow-sm hover:shadow-md transition-all">
       <div className="flex justify-between items-start mb-3">
         <div className="text-zinc-500 dark:text-zinc-400">{icon}</div>
         {badge && <div className="flex items-center">{badge}</div>}
@@ -53,7 +53,7 @@ interface StorageOverviewProps {
 export function StorageOverview({ storage, loading, t }: StorageOverviewProps) {
   if (loading) {
     return (
-      <div className="md:col-span-4 bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 p-4 rounded-lg flex flex-col shadow-sm min-h-[220px]">
+      <div className="md:col-span-4 bg-card border p-4 rounded-lg flex flex-col shadow-sm min-h-[220px]">
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-50">{t("dashboard.cloudStorage")}</h3>
           <Cloud className="h-4 w-4 text-zinc-400 animate-pulse" />
@@ -67,7 +67,7 @@ export function StorageOverview({ storage, loading, t }: StorageOverviewProps) {
 
   if (!storage) {
     return (
-      <div className="md:col-span-4 bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 p-4 rounded-lg flex flex-col shadow-sm min-h-[220px]">
+      <div className="md:col-span-4 bg-card border p-4 rounded-lg flex flex-col shadow-sm min-h-[220px]">
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-50">{t("dashboard.cloudStorage")}</h3>
           <Cloud className="h-4 w-4 text-red-500" />
@@ -84,7 +84,7 @@ export function StorageOverview({ storage, loading, t }: StorageOverviewProps) {
   const isOffline = storage.status === "offline";
 
   return (
-    <div className="md:col-span-4 bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 p-4 rounded-lg flex flex-col shadow-sm hover:shadow-md transition-all">
+    <div className="md:col-span-4 bg-card border p-4 rounded-lg flex flex-col shadow-sm hover:shadow-md transition-all">
       <div className="flex justify-between items-center mb-3">
         <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-50">{t("dashboard.cloudStorage")}</h3>
         <div className="flex items-center gap-1.5">
@@ -108,7 +108,7 @@ export function StorageOverview({ storage, loading, t }: StorageOverviewProps) {
                 : `conic-gradient(var(--color-primary) ${storage.percentage}%, var(--color-surface-container-high) ${storage.percentage}% 100%)`,
           }}
         >
-          <div className="absolute inset-1.5 bg-white dark:bg-zinc-955 rounded-full flex items-center justify-center">
+          <div className="absolute inset-1.5 bg-card rounded-full flex items-center justify-center">
             <div className="text-center">
               {isOffline ? (
                 <CloudOff className="h-6 w-6 text-zinc-300 dark:text-zinc-700" />
@@ -176,8 +176,8 @@ export function RecentInvoices({
   getStatusColorClass,
 }: RecentInvoicesProps) {
   return (
-    <div className="md:col-span-8 bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden flex flex-col shadow-sm">
-      <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-white dark:bg-zinc-955">
+    <div className="md:col-span-8 bg-card border rounded-lg overflow-hidden flex flex-col shadow-sm">
+      <div className="p-4 border-b flex justify-between items-center bg-card">
         <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-50">{t("dashboard.recentInvoices")}</h3>
         <Link to="/billing" className="text-xs text-zinc-900 dark:text-zinc-100 hover:underline font-semibold">
           {t("dashboard.viewAll")}

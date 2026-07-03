@@ -215,7 +215,7 @@ export function PaymentSection({
                 id="customer-select"
                 value={selectedClientId}
                 onChange={(e) => setSelectedClientId(e.target.value)}
-                className="w-full h-8.5 px-2 border border-zinc-200/85 dark:border-zinc-800 rounded text-xs focus:outline-none focus:border-zinc-900 dark:focus:border-zinc-100 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-55 mt-0.5"
+                className="w-full h-8.5 px-2 border rounded text-xs focus:outline-none focus:border-zinc-900 dark:focus:border-zinc-100 bg-card text-zinc-900 dark:text-zinc-100 mt-0.5"
               >
                 {clients.length === 0 ? (
                   <option value="" disabled>
@@ -248,7 +248,7 @@ export function PaymentSection({
                     value={unregisteredEmail}
                     onChange={(e) => setUnregisteredEmail(e.target.value)}
                     placeholder={t('plans.unregisteredEmailPlaceholder')}
-                    className="h-8.5 text-xs bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-55 border-zinc-200 dark:border-zinc-800"
+                    className="h-8.5 text-xs bg-card text-zinc-900 dark:text-zinc-100 border"
                   />
                 </div>
                 <div>
@@ -264,7 +264,7 @@ export function PaymentSection({
                     value={unregisteredName}
                     onChange={(e) => setUnregisteredName(e.target.value)}
                     placeholder={t('plans.unregisteredNamePlaceholder')}
-                    className="h-8.5 text-xs bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-55 border-zinc-200 dark:border-zinc-800"
+                    className="h-8.5 text-xs bg-card text-zinc-900 dark:text-zinc-100 border"
                   />
                 </div>
               </div>
@@ -388,7 +388,7 @@ export function PaymentSection({
                       id="active-sub-select"
                       value={subscriptionToModifyId}
                       onChange={(e) => setSubscriptionToModifyId(e.target.value)}
-                      className="w-full h-8.5 px-2 border border-zinc-200/85 dark:border-zinc-800 rounded text-xs focus:outline-none focus:border-zinc-900 dark:focus:border-zinc-100 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-55"
+                      className="w-full h-8.5 px-2 border rounded text-xs focus:outline-none focus:border-zinc-900 dark:focus:border-zinc-100 bg-card text-zinc-900 dark:text-zinc-100"
                     >
                       {activeSubscriptions.map((sub) => (
                         <option key={sub.id} value={sub.id}>

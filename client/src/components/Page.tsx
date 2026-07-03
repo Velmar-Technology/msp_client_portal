@@ -40,7 +40,7 @@ export function Page({
                 </h1>
               )}
               {subtitle && (
-                <p className="text-xs text-zinc-550 dark:text-zinc-400 animate-fade-in">
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 animate-fade-in">
                   {subtitle}
                 </p>
               )}

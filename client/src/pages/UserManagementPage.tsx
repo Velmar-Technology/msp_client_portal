@@ -282,7 +282,7 @@ export function UserManagementPage() {
       <UserStatsBar stats={stats} loading={statsLoading} />
 
       {/* Table Card */}
-      <div className="bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm overflow-hidden">
+      <div className="bg-card border rounded-lg shadow-sm overflow-hidden">
         {/* Filters */}
         <div className="px-4 pt-3 pb-1">
           <UserFiltersBar

@@ -125,7 +125,7 @@ export function EditPlanModal({
                 id="edit-client-type"
                 value={editClientType}
                 onChange={(e) => setEditClientType(e.target.value)}
-                className="w-full h-8.5 px-2.5 border border-zinc-200/85 dark:border-zinc-850 rounded text-xs focus:outline-none focus:border-zinc-900 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-55"
+                className="w-full h-8.5 px-2.5 border rounded text-xs focus:outline-none focus:border-zinc-900 bg-card text-zinc-900 dark:text-zinc-100"
               >
                 <option value="CLIENT">{t('plans.clientTypes.standard') || 'Standard Client'}</option>
                 <option value="ENTERPRISE">{t('plans.clientTypes.enterprise') || 'Enterprise Client'}</option>
@@ -141,22 +141,22 @@ export function EditPlanModal({
             </label>
             <div className="space-y-1.5">
               <div className="flex items-center gap-1.5">
-                <span className="text-[9px] font-bold text-zinc-400 dark:text-zinc-550 w-5">EN</span>
+                <span className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 w-5">EN</span>
                 <Input
                   type="text"
                   value={editName.en_US || ''}
                   onChange={(e) => setEditName({ ...editName, en_US: e.target.value })}
-                  className="flex-1 h-8 text-xs bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-855"
+                  className="flex-1 h-8 text-xs bg-card border"
                   placeholder="Plan name in English"
                 />
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-[9px] font-bold text-zinc-400 dark:text-zinc-550 w-5">ES</span>
+                <span className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 w-5">ES</span>
                 <Input
                   type="text"
                   value={editName.es_DO || ''}
                   onChange={(e) => setEditName({ ...editName, es_DO: e.target.value })}
-                  className="flex-1 h-8 text-xs bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-855"
+                  className="flex-1 h-8 text-xs bg-card border"
                   placeholder="Nombre del plan en Español"
                 />
               </div>
@@ -172,7 +172,7 @@ export function EditPlanModal({
               type="number"
               value={editPrice}
               onChange={(e) => setEditPrice(parseInt(e.target.value) || 0)}
-              className="h-8.5 text-xs bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-855 font-mono"
+              className="h-8.5 text-xs bg-card border font-mono"
             />
           </div>
 
@@ -182,20 +182,20 @@ export function EditPlanModal({
             </label>
             <div className="space-y-1.5">
               <div className="flex items-start gap-1.5">
-                <span className="text-[9px] font-bold text-zinc-400 dark:text-zinc-555 w-5 mt-2">EN</span>
+                <span className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 w-5 mt-2">EN</span>
                 <textarea
                   value={editDescription.en_US || ''}
                   onChange={(e) => setEditDescription({ ...editDescription, en_US: e.target.value })}
-                  className="flex-1 min-h-[50px] p-2 rounded border border-zinc-200/85 dark:border-zinc-850 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-55 text-xs focus:outline-none focus:border-zinc-900"
+                  className="flex-1 min-h-[50px] p-2 rounded border bg-card text-zinc-900 dark:text-zinc-100 text-xs focus:outline-none focus:border-zinc-900"
                   placeholder="Description in English"
                 />
               </div>
               <div className="flex items-start gap-1.5">
-                <span className="text-[9px] font-bold text-zinc-400 dark:text-zinc-555 w-5 mt-2">ES</span>
+                <span className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 w-5 mt-2">ES</span>
                 <textarea
                   value={editDescription.es_DO || ''}
                   onChange={(e) => setEditDescription({ ...editDescription, es_DO: e.target.value })}
-                  className="flex-1 min-h-[50px] p-2 rounded border border-zinc-200/85 dark:border-zinc-855 bg-white dark:bg-zinc-955 text-zinc-900 dark:text-zinc-55 text-xs focus:outline-none focus:border-zinc-900"
+                  className="flex-1 min-h-[50px] p-2 rounded border bg-card text-zinc-900 dark:text-zinc-100 text-xs focus:outline-none focus:border-zinc-900"
                   placeholder="Descripción en Español"
                 />
               </div>

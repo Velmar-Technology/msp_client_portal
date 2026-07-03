@@ -1,21 +1,34 @@
-import { useState, useRef } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import { userService } from '../services/userService';
-import { Save, User, Mail, ShieldCheck, Globe, CheckCircle2, AlertCircle, Lock, Key, Clock, Info, Edit } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { Page } from '@/components/Page';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Input } from '@/components/ui/input';
+import { useState, useRef } from "react";
+import { useAuth } from "../hooks/useAuth";
+import { userService } from "../services/userService";
+import {
+  Save,
+  User,
+  Mail,
+  ShieldCheck,
+  Globe,
+  CheckCircle2,
+  AlertCircle,
+  Lock,
+  Key,
+  Clock,
+  Info,
+  Edit,
+} from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Page } from "@/components/Page";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
 
 export function ProfilePage() {
   const { t, i18n } = useTranslation();
   const { user, updateUser } = useAuth();
-  const [name, setName] = useState(user?.name || '');
-  const [email, setEmail] = useState(user?.email || '');
-  const [language, setLanguage] = useState(user?.language || 'en_US');
+  const [name, setName] = useState(user?.name || "");
+  const [email, setEmail] = useState(user?.email || "");
+  const [language, setLanguage] = useState(user?.language || "en_US");
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState('');
-  const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState<"success" | "error" | "">("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -29,28 +42,28 @@ export function ProfilePage() {
     if (!file) return;
 
     setUploadingAvatar(true);
-    setMessage('');
-    setMessageType('');
+    setMessage("");
+    setMessageType("");
     try {
       const result = await userService.uploadAvatar(file);
       updateUser({ avatarUrl: result.avatarUrl });
-      setMessage(t('profile.avatarSuccess', 'Profile picture updated successfully'));
-      setMessageType('success');
+      setMessage(t("profile.avatarSuccess", "Profile picture updated successfully"));
+      setMessageType("success");
     } catch {
-      setMessage(t('profile.avatarError', 'Failed to upload profile picture'));
-      setMessageType('error');
+      setMessage(t("profile.avatarError", "Failed to upload profile picture"));
+      setMessageType("error");
     } finally {
       setUploadingAvatar(false);
-      if (e.target) e.target.value = '';
+      if (e.target) e.target.value = "";
     }
   };
 
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
-  const [pwMessage, setPwMessage] = useState('');
-  const [pwMessageType, setPwMessageType] = useState<'success' | 'error' | ''>('');
+  const [pwMessage, setPwMessage] = useState("");
+  const [pwMessageType, setPwMessageType] = useState<"success" | "error" | "">("");
 
   function formatRelativeTime(isoDate: string): string {
     const now = Date.now();
@@ -64,67 +77,67 @@ export function ProfilePage() {
     const weeks = Math.floor(days / 7);
     const months = Math.floor(days / 30);
 
-    if (i18n.language?.startsWith('es')) {
-      if (seconds < 60) return 'hace unos segundos';
-      if (minutes === 1) return 'hace 1 minuto';
+    if (i18n.language?.startsWith("es")) {
+      if (seconds < 60) return "hace unos segundos";
+      if (minutes === 1) return "hace 1 minuto";
       if (minutes < 60) return `hace ${minutes} minutos`;
-      if (hours === 1) return 'hace 1 hora';
+      if (hours === 1) return "hace 1 hora";
       if (hours < 24) return `hace ${hours} horas`;
-      if (days === 1) return 'hace 1 día';
+      if (days === 1) return "hace 1 día";
       if (days < 7) return `hace ${days} días`;
-      if (weeks === 1) return 'hace 1 semana';
+      if (weeks === 1) return "hace 1 semana";
       if (weeks < 4) return `hace ${weeks} semanas`;
-      if (months === 1) return 'hace 1 mes';
+      if (months === 1) return "hace 1 mes";
       return `hace ${months} meses`;
     }
 
-    if (seconds < 60) return 'just now';
-    if (minutes === 1) return '1 minute ago';
+    if (seconds < 60) return "just now";
+    if (minutes === 1) return "1 minute ago";
     if (minutes < 60) return `${minutes} minutes ago`;
-    if (hours === 1) return '1 hour ago';
+    if (hours === 1) return "1 hour ago";
     if (hours < 24) return `${hours} hours ago`;
-    if (days === 1) return '1 day ago';
+    if (days === 1) return "1 day ago";
     if (days < 7) return `${days} days ago`;
-    if (weeks === 1) return '1 week ago';
+    if (weeks === 1) return "1 week ago";
     if (weeks < 4) return `${weeks} weeks ago`;
-    if (months === 1) return '1 month ago';
+    if (months === 1) return "1 month ago";
     return `${months} months ago`;
   }
 
   const lastLoginText = user?.lastLoginAt
-    ? t('profile.lastLogin', {
+    ? t("profile.lastLogin", {
         time: formatRelativeTime(user.lastLoginAt),
-        ip: user.lastLoginIp || 'unknown',
+        ip: user.lastLoginIp || "unknown",
       })
-    : t('profile.lastLoginNever');
+    : t("profile.lastLoginNever");
 
   async function handlePasswordChange(e: React.FormEvent) {
     e.preventDefault();
     if (newPassword.length < 8) {
-      setPwMessage(t('profile.passwordMin'));
-      setPwMessageType('error');
+      setPwMessage(t("profile.passwordMin"));
+      setPwMessageType("error");
       return;
     }
     if (newPassword !== confirmPassword) {
-      setPwMessage(t('profile.passwordsMismatch'));
-      setPwMessageType('error');
+      setPwMessage(t("profile.passwordsMismatch"));
+      setPwMessageType("error");
       return;
     }
     setChangingPassword(true);
-    setPwMessage('');
-    setPwMessageType('');
+    setPwMessage("");
+    setPwMessageType("");
     try {
       await userService.changePassword({ currentPassword, newPassword, confirmPassword });
-      setPwMessage(t('profile.passwordSuccess'));
-      setPwMessageType('success');
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      setPwMessage(t("profile.passwordSuccess"));
+      setPwMessageType("success");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
     } catch (err) {
       const error = err as { response?: { data?: { message?: string } } };
-      const errMsg = error?.response?.data?.message || t('profile.passwordError');
+      const errMsg = error?.response?.data?.message || t("profile.passwordError");
       setPwMessage(errMsg);
-      setPwMessageType('error');
+      setPwMessageType("error");
     } finally {
       setChangingPassword(false);
     }
@@ -133,28 +146,24 @@ export function ProfilePage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    setMessage('');
-    setMessageType('');
+    setMessage("");
+    setMessageType("");
     try {
       await userService.updateProfile({ name, email, language });
       updateUser({ name, email, language });
       await i18n.changeLanguage(language);
-      setMessage(t('profile.success'));
-      setMessageType('success');
+      setMessage(t("profile.success"));
+      setMessageType("success");
     } catch {
-      setMessage(t('profile.error'));
-      setMessageType('error');
+      setMessage(t("profile.error"));
+      setMessageType("error");
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <Page
-      className="max-w-5xl"
-      title={t('profile.title')}
-      subtitle={t('profile.subtitle')}
-    >
+    <Page className="max-w-7xl" title={t("profile.title")} subtitle={t("profile.subtitle")}>
       <div className="grid gap-6">
         {/* Profile Identity Card */}
         <section className="bg-surface-container-lowest border border-outline-variant rounded-xl flex flex-col sm:flex-row items-center sm:items-start gap-6 shadow-sm p-6">
@@ -167,7 +176,7 @@ export function ProfilePage() {
               />
             ) : (
               <div className="rounded-2xl bg-primary-container flex items-center justify-center text-white text-4xl font-bold shadow-lg w-16 h-16">
-                {user?.name?.charAt(0).toUpperCase() || 'U'}
+                {user?.name?.charAt(0).toUpperCase() || "U"}
               </div>
             )}
             <button
@@ -185,7 +194,7 @@ export function ProfilePage() {
               onChange={handleAvatarChange}
               accept="image/*"
               className="hidden"
-              aria-label={t('profile.avatarInput')}
+              aria-label={t("profile.avatarInput")}
             />
           </div>
           <div className="text-center sm:text-left flex-1">
@@ -204,29 +213,33 @@ export function ProfilePage() {
         </section>
 
         {/* Account Details Form */}
-        <form onSubmit={handleSave} className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+        <form
+          onSubmit={handleSave}
+          className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm"
+        >
           <div className="px-8 py-5 border-b border-outline-variant bg-surface-container-low/30">
-            <h3 className="font-h3 text-h3 text-on-surface">
-              {t('profile.accountDetails')}
-            </h3>
+            <h3 className="font-h3 text-h3 text-on-surface">{t("profile.accountDetails")}</h3>
           </div>
           <div className="p-6 space-y-6">
             {message && messageType && (
-              <Alert variant={messageType === 'success' ? 'success' : 'destructive'} className="animate-fade-in">
-                {messageType === 'success' ? (
+              <Alert variant={messageType === "success" ? "success" : "destructive"} className="animate-fade-in">
+                {messageType === "success" ? (
                   <CheckCircle2 className="h-4 w-4 text-success" />
                 ) : (
                   <AlertCircle className="h-4 w-4" />
                 )}
-                <AlertTitle>{messageType === 'success' ? 'Success' : 'Error'}</AlertTitle>
+                <AlertTitle>{messageType === "success" ? "Success" : "Error"}</AlertTitle>
                 <AlertDescription>{message}</AlertDescription>
               </Alert>
             )}
 
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="profile-name" className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5">
-                  <User className="h-4 w-4" /> {t('profile.fullName')}
+                <label
+                  htmlFor="profile-name"
+                  className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5"
+                >
+                  <User className="h-4 w-4" /> {t("profile.fullName")}
                 </label>
                 <Input
                   id="profile-name"
@@ -239,8 +252,11 @@ export function ProfilePage() {
               </div>
 
               <div>
-                <label htmlFor="profile-email" className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5">
-                  <Mail className="h-4 w-4" /> {t('profile.email')}
+                <label
+                  htmlFor="profile-email"
+                  className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5"
+                >
+                  <Mail className="h-4 w-4" /> {t("profile.email")}
                 </label>
                 <Input
                   id="profile-email"
@@ -254,15 +270,15 @@ export function ProfilePage() {
 
               <div className="md:col-span-2">
                 <label className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5">
-                  <Globe className="h-4 w-4" /> {t('profile.languageSetting')}
+                  <Globe className="h-4 w-4" /> {t("profile.languageSetting")}
                 </label>
                 <select
                   value={language}
                   onChange={(e) => setLanguage(e.target.value)}
                   className="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 cursor-pointer transition-all"
                 >
-                  <option value="en_US">{t('profile.languages.en_US')}</option>
-                  <option value="es_DO">{t('profile.languages.es_DO')}</option>
+                  <option value="en_US">{t("profile.languages.en_US")}</option>
+                  <option value="es_DO">{t("profile.languages.es_DO")}</option>
                 </select>
               </div>
             </div>
@@ -274,36 +290,40 @@ export function ProfilePage() {
                 className="flex items-center gap-2 bg-primary text-on-primary font-label-md text-label-md px-6 py-2.5 rounded-lg hover:opacity-90 active:scale-95 transition-all shadow-md cursor-pointer disabled:opacity-50"
               >
                 <Save className="h-4 w-4" />
-                {saving ? t('profile.saving') : t('profile.saveChanges')}
+                {saving ? t("profile.saving") : t("profile.saveChanges")}
               </button>
             </div>
           </div>
         </form>
 
         {/* Change Password Form */}
-        <form onSubmit={handlePasswordChange} className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+        <form
+          onSubmit={handlePasswordChange}
+          className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm"
+        >
           <div className="px-8 py-5 border-b border-outline-variant bg-surface-container-low/30">
-            <h3 className="font-h3 text-h3 text-on-surface">
-              {t('profile.changePassword')}
-            </h3>
+            <h3 className="font-h3 text-h3 text-on-surface">{t("profile.changePassword")}</h3>
           </div>
           <div className="p-6 space-y-6">
             {pwMessage && pwMessageType && (
-              <Alert variant={pwMessageType === 'success' ? 'success' : 'destructive'} className="animate-fade-in">
-                {pwMessageType === 'success' ? (
+              <Alert variant={pwMessageType === "success" ? "success" : "destructive"} className="animate-fade-in">
+                {pwMessageType === "success" ? (
                   <CheckCircle2 className="h-4 w-4 text-success" />
                 ) : (
                   <AlertCircle className="h-4 w-4" />
                 )}
-                <AlertTitle>{pwMessageType === 'success' ? 'Success' : 'Error'}</AlertTitle>
+                <AlertTitle>{pwMessageType === "success" ? "Success" : "Error"}</AlertTitle>
                 <AlertDescription>{pwMessage}</AlertDescription>
               </Alert>
             )}
 
             <div className="space-y-4">
               <div>
-                <label htmlFor="profile-current-password" className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5">
-                  <Lock className="h-4 w-4" /> {t('profile.currentPassword')}
+                <label
+                  htmlFor="profile-current-password"
+                  className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5"
+                >
+                  <Lock className="h-4 w-4" /> {t("profile.currentPassword")}
                 </label>
                 <Input
                   id="profile-current-password"
@@ -318,8 +338,11 @@ export function ProfilePage() {
 
               <div className="grid md:grid-cols-2 gap-6 pt-2">
                 <div>
-                  <label htmlFor="profile-new-password" className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5">
-                    <Key className="h-4 w-4" /> {t('profile.newPassword')}
+                  <label
+                    htmlFor="profile-new-password"
+                    className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5"
+                  >
+                    <Key className="h-4 w-4" /> {t("profile.newPassword")}
                   </label>
                   <Input
                     id="profile-new-password"
@@ -333,8 +356,11 @@ export function ProfilePage() {
                 </div>
 
                 <div>
-                  <label htmlFor="profile-confirm-password" className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5">
-                    <Key className="h-4 w-4" /> {t('profile.confirmPassword')}
+                  <label
+                    htmlFor="profile-confirm-password"
+                    className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5"
+                  >
+                    <Key className="h-4 w-4" /> {t("profile.confirmPassword")}
                   </label>
                   <Input
                     id="profile-confirm-password"
@@ -352,7 +378,7 @@ export function ProfilePage() {
             <div className="pt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <p className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-2 opacity-85">
                 <Info className="h-4 w-4 text-secondary shrink-0" />
-                {t('profile.passwordRequirements')}
+                {t("profile.passwordRequirements")}
               </p>
               <button
                 type="submit"
@@ -360,7 +386,7 @@ export function ProfilePage() {
                 className="flex items-center gap-2 bg-primary text-on-primary font-label-md text-label-md px-6 py-2.5 rounded-lg hover:opacity-90 active:scale-95 transition-all shadow-md cursor-pointer disabled:opacity-50 self-end sm:self-auto"
               >
                 <Key className="h-4 w-4" />
-                {changingPassword ? t('profile.saving') : t('profile.updatePassword')}
+                {changingPassword ? t("profile.saving") : t("profile.updatePassword")}
               </button>
             </div>
           </div>
