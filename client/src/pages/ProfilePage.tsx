@@ -1,6 +1,6 @@
-import { useState, useRef } from "react";
-import { useAuth } from "../hooks/useAuth";
-import { userService } from "../services/userService";
+import { Page } from "@/components/Page";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
 import {
   Save,
   User,
@@ -14,383 +14,308 @@ import {
   Clock,
   Info,
   Edit,
+  Loader2,
 } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import { Page } from "@/components/Page";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Input } from "@/components/ui/input";
+import { useProfile } from "../hooks/useProfile";
 
-export function ProfilePage() {
-  const { t, i18n } = useTranslation();
-  const { user, updateUser } = useAuth();
-  const [name, setName] = useState(user?.name || "");
-  const [email, setEmail] = useState(user?.email || "");
-  const [language, setLanguage] = useState(user?.language || "en_US");
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState<"success" | "error" | "">("");
+/* --- Sub-Components --- */
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploadingAvatar(true);
-    setMessage("");
-    setMessageType("");
-    try {
-      const result = await userService.uploadAvatar(file);
-      updateUser({ avatarUrl: result.avatarUrl });
-      setMessage(t("profile.avatarSuccess", "Profile picture updated successfully"));
-      setMessageType("success");
-    } catch {
-      setMessage(t("profile.avatarError", "Failed to upload profile picture"));
-      setMessageType("error");
-    } finally {
-      setUploadingAvatar(false);
-      if (e.target) e.target.value = "";
-    }
-  };
-
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [changingPassword, setChangingPassword] = useState(false);
-  const [pwMessage, setPwMessage] = useState("");
-  const [pwMessageType, setPwMessageType] = useState<"success" | "error" | "">("");
-
-  function formatRelativeTime(isoDate: string): string {
-    const now = Date.now();
-    const then = new Date(isoDate).getTime();
-    const diffMs = now - then;
-
-    const seconds = Math.floor(diffMs / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-    const weeks = Math.floor(days / 7);
-    const months = Math.floor(days / 30);
-
-    if (i18n.language?.startsWith("es")) {
-      if (seconds < 60) return "hace unos segundos";
-      if (minutes === 1) return "hace 1 minuto";
-      if (minutes < 60) return `hace ${minutes} minutos`;
-      if (hours === 1) return "hace 1 hora";
-      if (hours < 24) return `hace ${hours} horas`;
-      if (days === 1) return "hace 1 día";
-      if (days < 7) return `hace ${days} días`;
-      if (weeks === 1) return "hace 1 semana";
-      if (weeks < 4) return `hace ${weeks} semanas`;
-      if (months === 1) return "hace 1 mes";
-      return `hace ${months} meses`;
-    }
-
-    if (seconds < 60) return "just now";
-    if (minutes === 1) return "1 minute ago";
-    if (minutes < 60) return `${minutes} minutes ago`;
-    if (hours === 1) return "1 hour ago";
-    if (hours < 24) return `${hours} hours ago`;
-    if (days === 1) return "1 day ago";
-    if (days < 7) return `${days} days ago`;
-    if (weeks === 1) return "1 week ago";
-    if (weeks < 4) return `${weeks} weeks ago`;
-    if (months === 1) return "1 month ago";
-    return `${months} months ago`;
-  }
-
-  const lastLoginText = user?.lastLoginAt
-    ? t("profile.lastLogin", {
-        time: formatRelativeTime(user.lastLoginAt),
-        ip: user.lastLoginIp || "unknown",
-      })
-    : t("profile.lastLoginNever");
-
-  async function handlePasswordChange(e: React.FormEvent) {
-    e.preventDefault();
-    if (newPassword.length < 8) {
-      setPwMessage(t("profile.passwordMin"));
-      setPwMessageType("error");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPwMessage(t("profile.passwordsMismatch"));
-      setPwMessageType("error");
-      return;
-    }
-    setChangingPassword(true);
-    setPwMessage("");
-    setPwMessageType("");
-    try {
-      await userService.changePassword({ currentPassword, newPassword, confirmPassword });
-      setPwMessage(t("profile.passwordSuccess"));
-      setPwMessageType("success");
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    } catch (err) {
-      const error = err as { response?: { data?: { message?: string } } };
-      const errMsg = error?.response?.data?.message || t("profile.passwordError");
-      setPwMessage(errMsg);
-      setPwMessageType("error");
-    } finally {
-      setChangingPassword(false);
-    }
-  }
-
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    setMessage("");
-    setMessageType("");
-    try {
-      await userService.updateProfile({ name, email, language });
-      updateUser({ name, email, language });
-      await i18n.changeLanguage(language);
-      setMessage(t("profile.success"));
-      setMessageType("success");
-    } catch {
-      setMessage(t("profile.error"));
-      setMessageType("error");
-    } finally {
-      setSaving(false);
-    }
-  }
+const StatusAlert = ({ message, type }: { message: string; type: "success" | "error" | "" }) => {
+  if (!message || !type) return null;
 
   return (
-    <Page className="max-w-7xl" title={t("profile.title")} subtitle={t("profile.subtitle")}>
-      <div className="grid gap-6">
-        {/* Profile Identity Card */}
-        <section className="bg-surface-container-lowest border border-outline-variant rounded-xl flex flex-col sm:flex-row items-center sm:items-start gap-6 shadow-sm p-6">
-          <div className="relative group shrink-0">
-            {user?.avatarUrl ? (
-              <img
-                src={user.avatarUrl}
-                alt={user.name}
-                className="rounded-2xl shadow-lg w-16 h-16 object-cover border border-outline-variant"
-              />
-            ) : (
-              <div className="rounded-2xl bg-primary-container flex items-center justify-center text-white text-4xl font-bold shadow-lg w-16 h-16">
-                {user?.name?.charAt(0).toUpperCase() || "U"}
-              </div>
-            )}
-            <button
-              type="button"
-              onClick={handleAvatarClick}
-              disabled={uploadingAvatar}
-              className="absolute -bottom-2 -right-2 bg-white border border-outline-variant p-2 rounded-lg shadow-md hover:bg-surface-container-high transition-all cursor-pointer disabled:opacity-50"
+    <Alert
+      variant={type === "success" ? "default" : "destructive"}
+      className={`mb-6 px-3 py-2 ${type === "success" ? "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900" : ""}`}
+    >
+      {type === "success" ? (
+        <CheckCircle2 className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
+      ) : (
+        <AlertCircle className="h-4 w-4" />
+      )}
+      <AlertTitle className="text-sm font-medium dark:text-zinc-100">{type === "success" ? "Success" : "Error"}</AlertTitle>
+      <AlertDescription className="text-xs dark:text-zinc-300">{message}</AlertDescription>
+    </Alert>
+  );
+};
+
+const ProfileIdentityCard = ({
+  user,
+  lastLoginText,
+  uploadingAvatar,
+  fileInputRef,
+  onAvatarClick,
+  onAvatarChange,
+  t,
+}: any) => {
+  return (
+    <section className="flex flex-col items-center gap-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm sm:flex-row sm:items-start">
+      <div className="relative shrink-0 group">
+        {user?.avatarUrl ? (
+          <img
+            src={user.avatarUrl}
+            alt={user.name}
+            className="h-16 w-16 rounded-xl border border-zinc-200 dark:border-zinc-700 object-cover shadow-sm"
+          />
+        ) : (
+          <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 text-2xl font-bold text-zinc-400 dark:text-zinc-500 shadow-sm">
+            {user?.name?.charAt(0).toUpperCase() || "U"}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={onAvatarClick}
+          disabled={uploadingAvatar}
+          className="absolute -bottom-2 -right-2 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-1.5 shadow-sm transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 cursor-pointer"
+        >
+          {uploadingAvatar ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-zinc-900 dark:text-zinc-100" />
+          ) : (
+            <Edit className="h-3.5 w-3.5 text-zinc-900 dark:text-zinc-100" />
+          )}
+        </button>
+        <Input
+          id="profile-avatar-upload"
+          type="file"
+          ref={fileInputRef}
+          onChange={onAvatarChange}
+          accept="image/*"
+          className="hidden"
+          aria-label={t("profile.avatarInput")}
+        />
+      </div>
+      <div className="flex-1 text-center sm:text-left">
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{user?.name}</h2>
+        <div className="mt-1 flex items-center justify-center gap-1.5 sm:justify-start">
+          <ShieldCheck className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+          <span className="text-xs font-semibold tracking-wider text-zinc-500 dark:text-zinc-400 uppercase">
+            {user?.role}
+          </span>
+        </div>
+        <p className="mt-2 flex items-center justify-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 sm:justify-start">
+          <Clock className="h-3.5 w-3.5" />
+          {lastLoginText}
+        </p>
+      </div>
+    </section>
+  );
+};
+
+const AccountDetailsForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) => {
+  const {
+    t,
+    name,
+    setName,
+    email,
+    setEmail,
+    language,
+    setLanguage,
+    saving,
+    message,
+    messageType,
+    handleSave,
+  } = hook;
+
+  return (
+    <form
+      onSubmit={handleSave}
+      className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm"
+    >
+      <div className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 px-6 py-4">
+        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t("profile.accountDetails")}</h3>
+      </div>
+      <div className="p-6">
+        <StatusAlert message={message} type={messageType} />
+
+        <div className="grid gap-6 md:grid-cols-2">
+          <div>
+            <label
+              htmlFor="profile-name"
+              className="mb-1.5 flex items-center gap-2 text-xs font-medium text-zinc-700 dark:text-zinc-300"
             >
-              <Edit className="h-4 w-4 text-primary" />
-            </button>
+              <User className="h-3.5 w-3.5" /> {t("profile.fullName")}
+            </label>
             <Input
-              id="profile-avatar-upload"
-              type="file"
-              ref={fileInputRef}
-              onChange={handleAvatarChange}
-              accept="image/*"
-              className="hidden"
-              aria-label={t("profile.avatarInput")}
+              id="profile-name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 transition-all focus:border-zinc-400 dark:focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+              required
             />
           </div>
-          <div className="text-center sm:text-left flex-1">
-            <h2 className="font-h2 text-h2 text-on-surface">{user?.name}</h2>
-            <div className="flex items-center justify-center sm:justify-start gap-2 mt-1">
-              <ShieldCheck className="h-4 w-4 text-secondary" />
-              <span className="font-label-md text-label-md text-secondary font-bold tracking-wider uppercase">
-                {user?.role}
-              </span>
-            </div>
-            <p className="text-on-surface-variant font-label-sm text-label-sm mt-3 flex items-center justify-center sm:justify-start gap-2 opacity-80">
-              <Clock className="h-3.5 w-3.5" />
-              {lastLoginText}
-            </p>
+
+          <div>
+            <label
+              htmlFor="profile-email"
+              className="mb-1.5 flex items-center gap-2 text-xs font-medium text-zinc-700 dark:text-zinc-300"
+            >
+              <Mail className="h-3.5 w-3.5" /> {t("profile.email")}
+            </label>
+            <Input
+              id="profile-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 transition-all focus:border-zinc-400 dark:focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+              required
+            />
           </div>
-        </section>
 
-        {/* Account Details Form */}
-        <form
-          onSubmit={handleSave}
-          className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm"
-        >
-          <div className="px-8 py-5 border-b border-outline-variant bg-surface-container-low/30">
-            <h3 className="font-h3 text-h3 text-on-surface">{t("profile.accountDetails")}</h3>
+          <div className="md:col-span-2">
+            <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-zinc-700 dark:text-zinc-300">
+              <Globe className="h-3.5 w-3.5" /> {t("profile.languageSetting")}
+            </label>
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              className="w-full cursor-pointer rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 transition-all focus:border-zinc-400 dark:focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+            >
+              <option value="en_US">{t("profile.languages.en_US")}</option>
+              <option value="es_DO">{t("profile.languages.es_DO")}</option>
+            </select>
           </div>
-          <div className="p-6 space-y-6">
-            {message && messageType && (
-              <Alert variant={messageType === "success" ? "success" : "destructive"} className="animate-fade-in">
-                {messageType === "success" ? (
-                  <CheckCircle2 className="h-4 w-4 text-success" />
-                ) : (
-                  <AlertCircle className="h-4 w-4" />
-                )}
-                <AlertTitle>{messageType === "success" ? "Success" : "Error"}</AlertTitle>
-                <AlertDescription>{message}</AlertDescription>
-              </Alert>
-            )}
+        </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label
-                  htmlFor="profile-name"
-                  className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5"
-                >
-                  <User className="h-4 w-4" /> {t("profile.fullName")}
-                </label>
-                <Input
-                  id="profile-name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-outline-variant rounded-lg font-body-md text-body-md bg-surface-container-lowest text-on-surface focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all"
-                  required
-                />
-              </div>
+        <div className="mt-6 flex justify-end">
+          <button
+            type="submit"
+            disabled={saving}
+            className="flex cursor-pointer items-center gap-2 rounded-md bg-zinc-900 dark:bg-zinc-100 px-4 py-2 text-xs font-semibold text-white dark:text-zinc-900 shadow-sm transition-all hover:bg-zinc-800 dark:hover:bg-zinc-200 active:scale-95 disabled:cursor-not-allowed disabled:bg-zinc-300 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-500"
+          >
+            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+            {saving ? t("profile.saving") : t("profile.saveChanges")}
+          </button>
+        </div>
+      </div>
+    </form>
+  );
+};
 
-              <div>
-                <label
-                  htmlFor="profile-email"
-                  className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5"
-                >
-                  <Mail className="h-4 w-4" /> {t("profile.email")}
-                </label>
-                <Input
-                  id="profile-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-outline-variant rounded-lg font-body-md text-body-md bg-surface-container-lowest text-on-surface focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all"
-                  required
-                />
-              </div>
+const ChangePasswordForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) => {
+  const {
+    t,
+    currentPassword,
+    setCurrentPassword,
+    newPassword,
+    setNewPassword,
+    confirmPassword,
+    setConfirmPassword,
+    changingPassword,
+    pwMessage,
+    pwMessageType,
+    handlePasswordChange,
+  } = hook;
 
-              <div className="md:col-span-2">
-                <label className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5">
-                  <Globe className="h-4 w-4" /> {t("profile.languageSetting")}
-                </label>
-                <select
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 cursor-pointer transition-all"
-                >
-                  <option value="en_US">{t("profile.languages.en_US")}</option>
-                  <option value="es_DO">{t("profile.languages.es_DO")}</option>
-                </select>
-              </div>
-            </div>
+  return (
+    <form
+      onSubmit={handlePasswordChange}
+      className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm"
+    >
+      <div className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 px-6 py-4">
+        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t("profile.changePassword")}</h3>
+      </div>
+      <div className="p-6">
+        <StatusAlert message={pwMessage} type={pwMessageType} />
 
-            <div className="pt-4 flex justify-end">
-              <button
-                type="submit"
-                disabled={saving}
-                className="flex items-center gap-2 bg-primary text-on-primary font-label-md text-label-md px-6 py-2.5 rounded-lg hover:opacity-90 active:scale-95 transition-all shadow-md cursor-pointer disabled:opacity-50"
+        <div className="space-y-4">
+          <div>
+            <label
+              htmlFor="profile-current-password"
+              className="mb-1.5 flex items-center gap-2 text-xs font-medium text-zinc-700 dark:text-zinc-300"
+            >
+              <Lock className="h-3.5 w-3.5" /> {t("profile.currentPassword")}
+            </label>
+            <Input
+              id="profile-current-password"
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 transition-all focus:border-zinc-400 dark:focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+              placeholder="••••••••••••"
+              required
+            />
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 pt-2">
+            <div>
+              <label
+                htmlFor="profile-new-password"
+                className="mb-1.5 flex items-center gap-2 text-xs font-medium text-zinc-700 dark:text-zinc-300"
               >
-                <Save className="h-4 w-4" />
-                {saving ? t("profile.saving") : t("profile.saveChanges")}
-              </button>
-            </div>
-          </div>
-        </form>
-
-        {/* Change Password Form */}
-        <form
-          onSubmit={handlePasswordChange}
-          className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm"
-        >
-          <div className="px-8 py-5 border-b border-outline-variant bg-surface-container-low/30">
-            <h3 className="font-h3 text-h3 text-on-surface">{t("profile.changePassword")}</h3>
-          </div>
-          <div className="p-6 space-y-6">
-            {pwMessage && pwMessageType && (
-              <Alert variant={pwMessageType === "success" ? "success" : "destructive"} className="animate-fade-in">
-                {pwMessageType === "success" ? (
-                  <CheckCircle2 className="h-4 w-4 text-success" />
-                ) : (
-                  <AlertCircle className="h-4 w-4" />
-                )}
-                <AlertTitle>{pwMessageType === "success" ? "Success" : "Error"}</AlertTitle>
-                <AlertDescription>{pwMessage}</AlertDescription>
-              </Alert>
-            )}
-
-            <div className="space-y-4">
-              <div>
-                <label
-                  htmlFor="profile-current-password"
-                  className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5"
-                >
-                  <Lock className="h-4 w-4" /> {t("profile.currentPassword")}
-                </label>
-                <Input
-                  id="profile-current-password"
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-outline-variant rounded-lg font-body-md text-body-md bg-surface-container-lowest text-on-surface focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all"
-                  placeholder="••••••••••••"
-                  required
-                />
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6 pt-2">
-                <div>
-                  <label
-                    htmlFor="profile-new-password"
-                    className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5"
-                  >
-                    <Key className="h-4 w-4" /> {t("profile.newPassword")}
-                  </label>
-                  <Input
-                    id="profile-new-password"
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-outline-variant rounded-lg font-body-md text-body-md bg-surface-container-lowest text-on-surface focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all"
-                    placeholder="Min. 8 characters"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="profile-confirm-password"
-                    className="flex items-center gap-2 font-label-md text-label-md text-on-surface mb-1.5"
-                  >
-                    <Key className="h-4 w-4" /> {t("profile.confirmPassword")}
-                  </label>
-                  <Input
-                    id="profile-confirm-password"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-outline-variant rounded-lg font-body-md text-body-md bg-surface-container-lowest text-on-surface focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all"
-                    placeholder="Repeat new password"
-                    required
-                  />
-                </div>
-              </div>
+                <Key className="h-3.5 w-3.5" /> {t("profile.newPassword")}
+              </label>
+              <Input
+                id="profile-new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 transition-all focus:border-zinc-400 dark:focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+                placeholder="Min. 8 characters"
+                required
+              />
             </div>
 
-            <div className="pt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <p className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-2 opacity-85">
-                <Info className="h-4 w-4 text-secondary shrink-0" />
-                {t("profile.passwordRequirements")}
-              </p>
-              <button
-                type="submit"
-                disabled={changingPassword}
-                className="flex items-center gap-2 bg-primary text-on-primary font-label-md text-label-md px-6 py-2.5 rounded-lg hover:opacity-90 active:scale-95 transition-all shadow-md cursor-pointer disabled:opacity-50 self-end sm:self-auto"
+            <div>
+              <label
+                htmlFor="profile-confirm-password"
+                className="mb-1.5 flex items-center gap-2 text-xs font-medium text-zinc-700 dark:text-zinc-300"
               >
-                <Key className="h-4 w-4" />
-                {changingPassword ? t("profile.saving") : t("profile.updatePassword")}
-              </button>
+                <Key className="h-3.5 w-3.5" /> {t("profile.confirmPassword")}
+              </label>
+              <Input
+                id="profile-confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 transition-all focus:border-zinc-400 dark:focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+                placeholder="Repeat new password"
+                required
+              />
             </div>
           </div>
-        </form>
+        </div>
+
+        <div className="mt-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+          <p className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+            <Info className="h-3.5 w-3.5 shrink-0" />
+            {t("profile.passwordRequirements")}
+          </p>
+          <button
+            type="submit"
+            disabled={changingPassword}
+            className="flex cursor-pointer self-end sm:self-auto items-center gap-2 rounded-md bg-zinc-900 dark:bg-zinc-100 px-4 py-2 text-xs font-semibold text-white dark:text-zinc-900 shadow-sm transition-all hover:bg-zinc-800 dark:hover:bg-zinc-200 active:scale-95 disabled:cursor-not-allowed disabled:bg-zinc-300 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-500"
+          >
+            {changingPassword ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Key className="h-3.5 w-3.5" />}
+            {changingPassword ? t("profile.saving") : t("profile.updatePassword")}
+          </button>
+        </div>
+      </div>
+    </form>
+  );
+};
+
+/* --- Main Component --- */
+
+export function ProfilePage() {
+  const profileHook = useProfile();
+  const { t, user, lastLoginText, uploadingAvatar, fileInputRef, handleAvatarClick, handleAvatarChange } =
+    profileHook;
+
+  return (
+    <Page className="max-w-4xl" title={t("profile.title")} subtitle={t("profile.subtitle")}>
+      <div className="grid gap-6">
+        <ProfileIdentityCard
+          user={user}
+          lastLoginText={lastLoginText}
+          uploadingAvatar={uploadingAvatar}
+          fileInputRef={fileInputRef}
+          onAvatarClick={handleAvatarClick}
+          onAvatarChange={handleAvatarChange}
+          t={t}
+        />
+        <AccountDetailsForm hook={profileHook} />
+        <ChangePasswordForm hook={profileHook} />
       </div>
     </Page>
   );

@@ -23,64 +23,76 @@ export function ThemeToggle() {
     <div className="relative" ref={containerRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="p-2 text-on-surface-variant hover:bg-surface-container-low transition-colors rounded-lg flex items-center justify-center cursor-pointer"
+        className={`p-1.5 transition-colors rounded-md cursor-pointer flex items-center justify-center ${
+          open
+            ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100'
+            : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100'
+        }`}
         aria-label={t('theme.toggleTheme')}
       >
-        <div className="relative h-5 w-5 flex items-center justify-center">
+        <div className="relative h-4 w-4 flex items-center justify-center">
           {/* Light Theme Active */}
           {theme === 'light' && (
-            <Sun className="h-5 w-5 animate-fade-in" />
+            <Sun className="h-4 w-4 animate-fade-in" />
           )}
           {/* Dark Theme Active */}
           {theme === 'dark' && (
-            <Moon className="h-5 w-5 animate-fade-in" />
+            <Moon className="h-4 w-4 animate-fade-in" />
           )}
           {/* System Theme Active - Show combination based on system color */}
           {theme === 'system' && (
             <>
-              <Sun className="h-5 w-5 dark:hidden animate-fade-in" />
-              <Moon className="h-5 w-5 hidden dark:block animate-fade-in" />
+              <Sun className="h-4 w-4 dark:hidden animate-fade-in" />
+              <Moon className="h-4 w-4 hidden dark:block animate-fade-in" />
             </>
           )}
         </div>
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-36 bg-surface-container-lowest border border-outline-variant rounded-lg shadow-lg py-1 z-50 animate-fade-in">
+        <div className="absolute right-0 top-9 w-32 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-lg py-1 z-50 animate-fade-in overflow-hidden">
           <button
             onClick={() => {
               setTheme('light');
               setOpen(false);
             }}
-            className={`w-full flex items-center gap-2 px-3 py-2 text-body-md transition-colors hover:bg-surface-container-low cursor-pointer ${
-              theme === 'light' ? 'text-primary font-semibold' : 'text-on-surface-variant'
+            className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-xs transition-colors cursor-pointer text-left ${
+              theme === 'light' 
+                ? 'text-zinc-900 dark:text-zinc-100 font-bold bg-zinc-50 dark:bg-zinc-900/50' 
+                : 'text-zinc-600 dark:text-zinc-400 font-medium hover:bg-zinc-50 hover:text-zinc-900 dark:hover:bg-zinc-900/30 dark:hover:text-zinc-100'
             }`}
           >
-            <Sun className="h-4 w-4" />
+            <Sun className="h-3.5 w-3.5" />
             <span>{t('theme.light')}</span>
           </button>
+          
           <button
             onClick={() => {
               setTheme('dark');
               setOpen(false);
             }}
-            className={`w-full flex items-center gap-2 px-3 py-2 text-body-md transition-colors hover:bg-surface-container-low cursor-pointer ${
-              theme === 'dark' ? 'text-primary font-semibold' : 'text-on-surface-variant'
+            className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-xs transition-colors cursor-pointer text-left ${
+              theme === 'dark' 
+                ? 'text-zinc-900 dark:text-zinc-100 font-bold bg-zinc-50 dark:bg-zinc-900/50' 
+                : 'text-zinc-600 dark:text-zinc-400 font-medium hover:bg-zinc-50 hover:text-zinc-900 dark:hover:bg-zinc-900/30 dark:hover:text-zinc-100'
             }`}
           >
-            <Moon className="h-4 w-4" />
+            <Moon className="h-3.5 w-3.5" />
             <span>{t('theme.dark')}</span>
           </button>
+          
           <button
             onClick={() => {
               setTheme('system');
               setOpen(false);
             }}
-            className={`w-full flex items-center gap-2 px-3 py-2 text-body-md transition-colors hover:bg-surface-container-low cursor-pointer ${
-              theme === 'system' ? 'text-primary font-semibold' : 'text-on-surface-variant'
+            className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-xs transition-colors cursor-pointer text-left ${
+              theme === 'system' 
+                ? 'text-zinc-900 dark:text-zinc-100 font-bold bg-zinc-50 dark:bg-zinc-900/50' 
+                : 'text-zinc-600 dark:text-zinc-400 font-medium hover:bg-zinc-50 hover:text-zinc-900 dark:hover:bg-zinc-900/30 dark:hover:text-zinc-100'
             }`}
           >
-            <Laptop className="h-4 w-4 text-on-surface-variant opacity-70" />
+            <Laptop className="h-3.5 w-3.5" />
             <span>{t('theme.system')}</span>
           </button>
         </div>

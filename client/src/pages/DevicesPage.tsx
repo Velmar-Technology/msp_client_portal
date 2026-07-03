@@ -587,7 +587,9 @@ export function DevicesPage() {
     <Page title={t("nav.devices")} subtitle={t("devices.subtitle")} isLoading={false}>
       <div className="max-w-7xl mx-auto space-y-4">
         {activeSubscriptions.length === 0 && !loading ? (
-          <EmptySubscriptionsCard onBrowsePlans={() => navigate("/plans")} />
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <EmptySubscriptionsCard onBrowsePlans={() => navigate("/plans")} />
+          </div>
         ) : (
           <div className="space-y-4 text-on-surface animate-fade-in">
             {activeSubscriptions.length > 1 && (

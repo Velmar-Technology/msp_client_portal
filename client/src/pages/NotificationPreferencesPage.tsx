@@ -1,10 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
 import { Page } from "@/components/Page";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Bell,
   Mail,
-  MessageSquare,
   Smartphone,
   Save,
   CheckCircle2,
@@ -18,63 +16,50 @@ import {
   Loader2,
 } from "lucide-react";
 import {
-  notificationPreferenceService,
   type NotificationPreferencesMap,
   type NotificationEventType,
   type ChannelPreference,
 } from "../services/notificationPreferenceService";
+import { useNotificationPreferences } from "../hooks/useNotificationPreferences";
 
 /**
  * Event definitions for the preference matrix.
- * Each row in the table corresponds to one event type.
  */
 const EVENT_DEFINITIONS: {
   key: NotificationEventType;
   label: string;
   description: string;
   icon: typeof Bell;
-  color: string;
-  bgColor: string;
 }[] = [
   {
     key: "TICKET_CREATED",
     label: "Ticket Created",
     description: "When a new support ticket is opened",
     icon: Ticket,
-    color: "text-tertiary",
-    bgColor: "bg-tertiary/10",
   },
   {
     key: "TICKET_ASSIGNED",
     label: "Ticket Assigned",
     description: "When a ticket is assigned to a technician",
     icon: UserCheck,
-    color: "text-warning",
-    bgColor: "bg-warning/10",
   },
   {
     key: "TICKET_STATUS_CHANGED",
     label: "Status Changed",
     description: "When a ticket status is updated",
     icon: RefreshCw,
-    color: "text-info",
-    bgColor: "bg-info/10",
   },
   {
     key: "TICKET_CANCELLED",
     label: "Ticket Cancelled",
     description: "When a ticket is cancelled",
     icon: XCircle,
-    color: "text-error",
-    bgColor: "bg-error/10",
   },
   {
     key: "NEW_REPLY",
     label: "New Reply",
     description: "When someone replies to your ticket",
     icon: MessageCircle,
-    color: "text-secondary",
-    bgColor: "bg-secondary/10",
   },
 ];
 
@@ -85,98 +70,212 @@ const CHANNEL_DEFINITIONS: {
   key: keyof ChannelPreference;
   label: string;
   icon: typeof Bell;
-  description: string;
 }[] = [
-  { key: "in_app", label: "In-App", icon: Bell, description: "Bell & toast notifications" },
-  { key: "email", label: "Email", icon: Mail, description: "Email notifications" },
-  { key: "whatsapp", label: "WhatsApp", icon: Smartphone, description: "WhatsApp messages" },
+  { key: "in_app", label: "In-App", icon: Bell },
+  { key: "email", label: "Email", icon: Mail },
+  { key: "whatsapp", label: "WhatsApp", icon: Smartphone },
 ];
 
-/**
- * Events that cannot have in_app disabled.
- */
-const FORCE_IN_APP_EVENTS: NotificationEventType[] = ["TICKET_CREATED", "TICKET_STATUS_CHANGED"];
+/* --- Sub-Components --- */
+
+const ToggleSwitch = ({
+  enabled,
+  locked,
+  onClick,
+  ariaLabel,
+}: {
+  enabled: boolean;
+  locked: boolean;
+  onClick: () => void;
+  ariaLabel: string;
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={locked && enabled}
+    aria-label={ariaLabel}
+    className={`
+      relative inline-flex h-4 w-7 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:ring-offset-2 dark:focus:ring-offset-zinc-950
+      ${enabled ? "bg-zinc-900 dark:bg-zinc-100" : "bg-zinc-200 dark:bg-zinc-700"}
+      ${locked && enabled ? "cursor-not-allowed opacity-50" : ""}
+    `}
+  >
+    <span
+      className={`
+        inline-block h-3 w-3 transform rounded-full transition duration-200 ease-in-out shadow-sm
+        ${enabled ? "translate-x-3.5 bg-white dark:bg-zinc-900" : "translate-x-0.5 bg-white dark:bg-zinc-300"}
+      `}
+    />
+  </button>
+);
+
+const PreferenceRow = ({
+  event,
+  preferences,
+  onToggle,
+  isLocked,
+}: {
+  event: typeof EVENT_DEFINITIONS[0];
+  preferences: ChannelPreference;
+  onToggle: (eventKey: NotificationEventType, channelKey: keyof ChannelPreference) => void;
+  isLocked: (eventKey: NotificationEventType, channelKey: keyof ChannelPreference) => boolean;
+}) => {
+  const EventIcon = event.icon;
+  return (
+    <div className="grid grid-cols-[1fr_repeat(3,60px)] sm:grid-cols-[1fr_repeat(3,80px)] items-center gap-4 border-b border-zinc-100 dark:border-zinc-800 px-4 py-2.5 last:border-0 hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors">
+      <div className="flex min-w-0 items-center gap-3">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-sm">
+          <EventIcon className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-400" />
+        </div>
+        <div className="flex min-w-0 flex-col">
+          <span className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">{event.label}</span>
+          <span className="truncate text-xs text-zinc-500 dark:text-zinc-400">{event.description}</span>
+        </div>
+      </div>
+      {CHANNEL_DEFINITIONS.map((channel) => (
+        <div key={channel.key} className="flex justify-center">
+          <ToggleSwitch
+            enabled={preferences[channel.key]}
+            locked={isLocked(event.key, channel.key)}
+            onClick={() => onToggle(event.key, channel.key)}
+            ariaLabel={`Toggle ${channel.label} for ${event.label}`}
+          />
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const PreferenceMatrix = ({
+  preferences,
+  onToggle,
+  isLocked,
+}: {
+  preferences: NotificationPreferencesMap;
+  onToggle: (eventKey: NotificationEventType, channelKey: keyof ChannelPreference) => void;
+  isLocked: (eventKey: NotificationEventType, channelKey: keyof ChannelPreference) => boolean;
+}) => (
+  <div className="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
+    <div className="grid grid-cols-[1fr_repeat(3,60px)] sm:grid-cols-[1fr_repeat(3,80px)] items-center gap-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 px-4 py-2">
+      <div className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Event Type</div>
+      {CHANNEL_DEFINITIONS.map((channel) => (
+        <div key={channel.key} className="flex flex-col items-center gap-1">
+          <channel.icon className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+            {channel.label}
+          </span>
+        </div>
+      ))}
+    </div>
+    <div className="flex flex-col">
+      {EVENT_DEFINITIONS.map((event) => (
+        <PreferenceRow
+          key={event.key}
+          event={event}
+          preferences={preferences[event.key]}
+          onToggle={onToggle}
+          isLocked={isLocked}
+        />
+      ))}
+    </div>
+    <div className="flex items-center gap-2 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 px-4 py-2">
+      <Lock className="h-3 w-3 text-zinc-400 dark:text-zinc-500" />
+      <span className="text-xs text-zinc-500 dark:text-zinc-400">Locked toggles cannot be disabled.</span>
+    </div>
+  </div>
+);
+
+const HeaderInfo = () => (
+  <div className="mb-6 flex items-start gap-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3 shadow-sm">
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50">
+      <Bell className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
+    </div>
+    <div className="flex flex-col gap-0.5">
+      <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Delivery Channels</h2>
+      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+        Control which channels receive notifications for each event type. Critical system events always
+        deliver in-app notifications.
+      </p>
+    </div>
+  </div>
+);
+
+const StatusBanner = ({ message, type }: { message: string; type: "success" | "error" | "" }) => {
+  if (!message || !type) return null;
+
+  return (
+    <Alert
+      variant={type === "success" ? "default" : "destructive"}
+      className={`mb-6 px-3 py-2 ${type === "success" ? "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900" : ""}`}
+    >
+      {type === "success" ? (
+        <CheckCircle2 className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
+      ) : (
+        <AlertCircle className="h-4 w-4" />
+      )}
+      <AlertTitle className="text-sm font-medium dark:text-zinc-100">{type === "success" ? "Saved" : "Error"}</AlertTitle>
+      <AlertDescription className="text-xs dark:text-zinc-300">{message}</AlertDescription>
+    </Alert>
+  );
+};
+
+const ActionFooter = ({
+  hasChanges,
+  isSaving,
+  onSave,
+}: {
+  hasChanges: boolean;
+  isSaving: boolean;
+  onSave: () => void;
+}) => (
+  <div className="mt-4 flex items-center justify-between">
+    <div className="flex items-center">
+      {hasChanges && (
+        <span className="flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+          <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-900 dark:bg-zinc-100" />
+          Unsaved changes
+        </span>
+      )}
+    </div>
+    <button
+      type="button"
+      onClick={onSave}
+      disabled={isSaving || !hasChanges}
+      className={`
+        flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium shadow-sm transition-all
+        ${
+          isSaving || !hasChanges
+            ? "cursor-not-allowed bg-zinc-300 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500"
+            : "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 active:scale-95"
+        }
+      `}
+    >
+      {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+      {isSaving ? "Saving..." : "Save Changes"}
+    </button>
+  </div>
+);
+
+/* --- Main Component --- */
 
 export function NotificationPreferencesPage() {
-  const [preferences, setPreferences] = useState<NotificationPreferencesMap | null>(null);
-  const [originalPreferences, setOriginalPreferences] = useState<NotificationPreferencesMap | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState<"success" | "error" | "">("");
-
-  const fetchPreferences = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const result = await notificationPreferenceService.getPreferences();
-      setPreferences(result.data.preferences);
-      setOriginalPreferences(result.data.preferences);
-    } catch {
-      setMessage("Failed to load notification preferences.");
-      setMessageType("error");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchPreferences();
-  }, [fetchPreferences]);
-
-  const handleToggle = (event: NotificationEventType, channel: keyof ChannelPreference) => {
-    if (!preferences) return;
-
-    // Don't allow disabling in_app for critical events
-    if (channel === "in_app" && FORCE_IN_APP_EVENTS.includes(event) && preferences[event].in_app) {
-      return;
-    }
-
-    setPreferences((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        [event]: {
-          ...prev[event],
-          [channel]: !prev[event][channel],
-        },
-      };
-    });
-  };
-
-  const hasChanges = (): boolean => {
-    if (!preferences || !originalPreferences) return false;
-    return JSON.stringify(preferences) !== JSON.stringify(originalPreferences);
-  };
-
-  const handleSave = async () => {
-    if (!preferences) return;
-    setIsSaving(true);
-    setMessage("");
-    setMessageType("");
-
-    try {
-      const result = await notificationPreferenceService.updatePreferences(preferences);
-      setPreferences(result.data.preferences);
-      setOriginalPreferences(result.data.preferences);
-      setMessage("Notification preferences saved successfully.");
-      setMessageType("success");
-    } catch {
-      setMessage("Failed to save notification preferences. Please try again.");
-      setMessageType("error");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const isLocked = (event: NotificationEventType, channel: keyof ChannelPreference): boolean => {
-    return channel === "in_app" && FORCE_IN_APP_EVENTS.includes(event);
-  };
+  const {
+    preferences,
+    isLoading,
+    isSaving,
+    message,
+    messageType,
+    hasChanges,
+    handleToggle,
+    handleSave,
+    isLocked,
+  } = useNotificationPreferences();
 
   if (isLoading) {
     return (
-      <Page className="max-w-7xl" title="Notification Preferences" subtitle="Choose how you want to be notified">
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 text-primary animate-spin" />
+      <Page className="max-w-3xl" title="Notification Preferences" subtitle="Manage your alert delivery channels">
+        <div className="flex min-h-[400px] items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-zinc-400 dark:text-zinc-600" />
         </div>
       </Page>
     );
@@ -184,152 +283,23 @@ export function NotificationPreferencesPage() {
 
   return (
     <Page
-      className="max-w-7xl"
+      className="max-w-3xl"
       title="Notification Preferences"
-      subtitle="Choose how and when you receive notifications for each event type"
+      subtitle="Manage your alert delivery channels"
     >
-      {/* Info Banner */}
-      <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 mb-6 shadow-sm">
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <Bell className="h-5 w-5" />
-          </div>
-          <div>
-            <h2 className="text-h3 text-on-surface" style={{ fontFamily: "var(--font-heading)" }}>
-              Delivery Channels
-            </h2>
-            <p className="text-body-sm text-on-surface-variant mt-1">
-              Control which channels receive notifications for each event type. Critical system events will always
-              deliver in-app notifications to ensure you never miss important updates.
-            </p>
-          </div>
-        </div>
-      </div>
+      <div className="flex flex-col">
+        <HeaderInfo />
+        <StatusBanner message={message} type={messageType} />
 
-      {/* Status Message */}
-      {message && messageType && (
-        <Alert variant={messageType === "success" ? "success" : "destructive"} className="mb-6 animate-fade-in">
-          {messageType === "success" ? (
-            <CheckCircle2 className="h-4 w-4 text-success" />
-          ) : (
-            <AlertCircle className="h-4 w-4" />
-          )}
-          <AlertTitle>{messageType === "success" ? "Saved" : "Error"}</AlertTitle>
-          <AlertDescription>{message}</AlertDescription>
-        </Alert>
-      )}
+        {preferences && (
+          <PreferenceMatrix
+            preferences={preferences}
+            onToggle={handleToggle}
+            isLocked={isLocked}
+          />
+        )}
 
-      {/* Preferences Matrix */}
-      {preferences && (
-        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm overflow-hidden">
-          {/* Table Header */}
-          <div className="grid grid-cols-[1fr_repeat(3,80px)] md:grid-cols-[1fr_repeat(3,100px)] items-center gap-2 px-4 md:px-6 py-4 border-b border-outline-variant bg-surface-container-low/30">
-            <div className="text-label-md font-bold text-on-surface">Event Type</div>
-            {CHANNEL_DEFINITIONS.map((channel) => (
-              <div key={channel.key} className="flex flex-col items-center text-center">
-                <channel.icon className="h-4 w-4 text-on-surface-variant mb-1" />
-                <span className="text-[11px] font-semibold text-on-surface">{channel.label}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Table Rows */}
-          <div className="divide-y divide-outline-variant/50">
-            {EVENT_DEFINITIONS.map((event) => {
-              const EventIcon = event.icon;
-              return (
-                <div
-                  key={event.key}
-                  className="grid grid-cols-[1fr_repeat(3,80px)] md:grid-cols-[1fr_repeat(3,100px)] items-center gap-2 px-4 md:px-6 py-4 hover:bg-surface-container-low/20 transition-colors"
-                >
-                  {/* Event info */}
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-9 h-9 rounded-lg ${event.bgColor} ${event.color} flex items-center justify-center shrink-0`}
-                    >
-                      <EventIcon className="h-4.5 w-4.5" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-body-sm font-semibold text-on-surface leading-tight truncate">{event.label}</p>
-                      <p className="text-[11px] text-on-surface-variant leading-snug mt-0.5 hidden md:block">
-                        {event.description}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Channel toggles */}
-                  {CHANNEL_DEFINITIONS.map((channel) => {
-                    const enabled = preferences[event.key][channel.key];
-                    const locked = isLocked(event.key, channel.key);
-
-                    return (
-                      <div key={channel.key} className="flex justify-center">
-                        <button
-                          type="button"
-                          onClick={() => handleToggle(event.key, channel.key)}
-                          disabled={locked && enabled}
-                          className={`
-                            relative w-11 h-6 rounded-full transition-all duration-300 ease-in-out
-                            focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-1
-                            ${enabled ? "bg-primary shadow-inner" : "bg-outline-variant/40"}
-                            ${locked && enabled ? "cursor-not-allowed opacity-80" : "cursor-pointer hover:shadow-md"}
-                          `}
-                          title={
-                            locked && enabled
-                              ? "This channel cannot be disabled for critical events"
-                              : `${enabled ? "Disable" : "Enable"} ${channel.label} for ${event.label}`
-                          }
-                          aria-label={`${enabled ? "Disable" : "Enable"} ${channel.label} for ${event.label}`}
-                          id={`toggle-${event.key}-${channel.key}`}
-                        >
-                          {/* Toggle knob */}
-                          <span
-                            className={`
-                              absolute top-0.5 left-0.5 w-5 h-5 rounded-full transition-all duration-300 ease-in-out
-                              shadow-sm flex items-center justify-center
-                              ${enabled ? "translate-x-5 bg-on-primary" : "translate-x-0 bg-surface-container-lowest"}
-                            `}
-                          >
-                            {locked && enabled && <Lock className="h-2.5 w-2.5 text-primary" />}
-                          </span>
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Legend Footer */}
-          <div className="px-4 md:px-6 py-3 border-t border-outline-variant bg-surface-container-low/20">
-            <div className="flex items-center gap-2 text-[11px] text-on-surface-variant">
-              <Lock className="h-3 w-3" />
-              <span>Locked toggles cannot be disabled — critical events always deliver in-app notifications.</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Action Buttons */}
-      <div className="flex items-center justify-between mt-6">
-        <div className="flex items-center gap-2">
-          {hasChanges() && (
-            <span className="text-[12px] text-warning font-medium animate-fade-in flex items-center gap-1">
-              <MessageSquare className="h-3 w-3" />
-              Unsaved changes
-            </span>
-          )}
-        </div>
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={isSaving || !hasChanges()}
-          className="bg-primary text-on-primary px-6 py-2.5 rounded-lg text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2 cursor-pointer shadow-sm"
-        >
-          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          {isSaving ? "Saving..." : "Save Changes"}
-        </button>
+        <ActionFooter hasChanges={hasChanges} isSaving={isSaving} onSave={handleSave} />
       </div>
     </Page>
   );
