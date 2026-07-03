@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authController } from '../controllers/AuthController';
 import { validate } from '../middleware/validationMiddleware';
-import { LoginDTO, RegisterDTO, ForgotPasswordDTO, ResetPasswordDTO, RefreshTokenDTO, GoogleAuthDTO } from '../dtos/auth.dto';
+import { LoginDTO, RegisterDTO, ForgotPasswordDTO, ResetPasswordDTO, RefreshTokenDTO, GoogleAuthDTO, VerifyEmailDTO } from '../dtos/auth.dto';
 
 const router = Router();
 
@@ -21,6 +21,10 @@ router.post('/refresh', validate(RefreshTokenDTO), (req, res) => authController.
 router.post('/forgot-password', validate(ForgotPasswordDTO), (req, res) => authController.forgotPassword(req, res));
 
 /** POST /api/v1/auth/reset-password — Reset password with token */
+/** POST /api/v1/auth/reset-password — Reset password with token */
 router.post('/reset-password', validate(ResetPasswordDTO), (req, res) => authController.resetPassword(req, res));
+
+/** POST /api/v1/auth/verify-email — Verify user email */
+router.post('/verify-email', validate(VerifyEmailDTO), (req, res) => authController.verifyEmail(req, res));
 
 export default router;

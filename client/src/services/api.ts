@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { setupAxiosErrorInterceptor } from '@shared/errors';
+import { toast } from 'sonner';
 
 const api = axios.create({
   baseURL: '/api/v1',
@@ -18,6 +19,26 @@ api.interceptors.request.use(
     return config;
   },
   (error) => Promise.reject(error),
+);
+
+// Global response interceptor to show toast notifications for backend errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Only toast if we have a response and it's not a 401 (which is handled by refresh/redirect)
+    if (error.response && error.response.status !== 401) {
+      const errorMsg = error.response.data?.message || 'An unexpected error occurred';
+      
+      // Prevent double toasting for specific errors that have custom UI/Actions in their respective pages
+      const customHandledErrors = ['verify your email', 'verificar tu correo', 'already exists', 'ya existe'];
+      const hasCustomHandler = customHandledErrors.some((str) => errorMsg.includes(str));
+      
+      if (!hasCustomHandler) {
+        toast.error(errorMsg);
+      }
+    }
+    return Promise.reject(error);
+  }
 );
 
 // Response interceptor — handle token refresh on 401 and normalize error output
