@@ -185,6 +185,7 @@ export function ProfilePage() {
               onChange={handleAvatarChange}
               accept="image/*"
               className="hidden"
+              aria-label={t('profile.avatarInput')}
             />
           </div>
           <div className="text-center sm:text-left flex-1">

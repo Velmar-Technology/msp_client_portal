@@ -172,6 +172,7 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
                   multiple
                   onChange={handleFileChange}
                   className="hidden"
+                  aria-label={t('tickets.fileInput')}
                 />
                 {selectedFiles.length > 0 && (
                   <span className="text-label-sm text-on-surface-variant font-medium">
@@ -192,6 +193,7 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
                           type="button"
                           onClick={() => removeFile(idx)}
                           className="text-error hover:text-error/80 cursor-pointer p-0.5"
+                          aria-label={`${t('tickets.removeAttachment')} ${file.name}`}
                         >
                           <X className="h-3.5 w-3.5" />
                         </button>
