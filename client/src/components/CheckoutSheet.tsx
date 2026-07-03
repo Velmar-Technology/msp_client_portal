@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo, type SyntheticEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Shield } from "lucide-react";
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -18,7 +18,7 @@ interface CheckoutSheetProps {
   paymentMessage: string | null;
   reference: string;
   subscribeLoading: boolean;
-  handleProcessSubscription: () => void;
+  handleProcessSubscription: (e?: SyntheticEvent) => void;
   activeSubscriptions: Subscription[];
   getPlanName: (name: string | Record<string, string>) => string;
 }
@@ -80,7 +80,7 @@ interface PaymentFieldsProps {
   paymentMessage: string | null;
   reference: string;
   subscribeLoading: boolean;
-  handleProcessSubscription: () => void;
+  handleProcessSubscription: (e?: SyntheticEvent) => void;
 }
 
 export function PaymentFields({

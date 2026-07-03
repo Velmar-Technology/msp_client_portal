@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import { useCallback } from "react";
 import { X, Laptop, Loader2, MoreHorizontal, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDevicesPage } from "../hooks/useDevicesPage";
@@ -101,7 +101,6 @@ export function DevicesTableFilters({ searchTerm, setSearchTerm, searchPlacehold
 
 // 4. Decoupled Activation Wizard Modal Sub-component
 interface ActivationWizardModalProps {
-  subId: string;
   slotIdx: number;
   step: 1 | 2 | 3;
   deviceName: string;
@@ -116,7 +115,6 @@ interface ActivationWizardModalProps {
 }
 
 export function ActivationWizardModal({
-  subId,
   slotIdx,
   step,
   deviceName,
@@ -627,7 +625,6 @@ export function DevicesPage() {
       {/* Device Activation Wizard Modal */}
       {activationWizardSubId && activationWizardSlotIdx !== null && (
         <ActivationWizardModal
-          subId={activationWizardSubId}
           slotIdx={activationWizardSlotIdx}
           step={activationWizardStep}
           deviceName={activationDeviceName}

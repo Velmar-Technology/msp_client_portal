@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { NavLink } from "react-router-dom";
 import { ChevronRight, HelpCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";

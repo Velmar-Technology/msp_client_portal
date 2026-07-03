@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, type SyntheticEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './useAuth';
 import { usePlanStore } from '../store/usePlanStore';
@@ -488,8 +488,8 @@ export function usePlansPage() {
     }));
   }, []);
 
-  const handleProcessSubscription = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleProcessSubscription = useCallback(async (e?: SyntheticEvent) => {
+    e?.preventDefault();
     if (!currentPlan) return;
 
     if (!isAdmin && !acceptedTos) {

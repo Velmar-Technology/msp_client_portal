@@ -3,7 +3,6 @@ import {
   Settings,
   LogOut,
   Search,
-  Ticket,
   CreditCard,
   User as UserIcon,
   Bell,
