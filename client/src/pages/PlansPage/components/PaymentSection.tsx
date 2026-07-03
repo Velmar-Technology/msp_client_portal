@@ -1,3 +1,4 @@
+import { type SyntheticEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Plan } from '../../../services/planService';
 import type { Subscription } from '../../../services/subscriptionService';
@@ -20,7 +21,7 @@ interface PaymentSectionProps {
   paymentMessage: string | null;
   reference: string;
   subscribeLoading: boolean;
-  handleProcessSubscription: (e: React.FormEvent) => Promise<void>;
+  handleProcessSubscription: (e?: SyntheticEvent) => Promise<void>;
   activeSubscriptions: Subscription[];
   getPlanName: (name: string | Record<string, string>) => string;
   clients: AuthUser[];
@@ -44,9 +45,6 @@ export function PaymentSection({
   currentPlan,
   billingCycle,
   currentEquipmentCount,
-  subtotal,
-  tax,
-  total,
   isAdmin,
   acceptedTos,
   setAcceptedTos,
@@ -309,9 +307,6 @@ export function PaymentSection({
                 currentPlan={currentPlan}
                 billingCycle={billingCycle}
                 currentEquipmentCount={currentEquipmentCount}
-                subtotal={subtotal}
-                tax={tax}
-                total={total}
                 isAdmin={isAdmin}
                 acceptedTos={acceptedTos}
                 setAcceptedTos={setAcceptedTos}
@@ -368,9 +363,6 @@ export function PaymentSection({
                   currentPlan={currentPlan}
                   billingCycle={billingCycle}
                   currentEquipmentCount={currentEquipmentCount}
-                  subtotal={subtotal}
-                  tax={tax}
-                  total={total}
                   isAdmin={isAdmin}
                   acceptedTos={acceptedTos}
                   setAcceptedTos={setAcceptedTos}
