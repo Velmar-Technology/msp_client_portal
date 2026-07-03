@@ -42,6 +42,16 @@ export class SubscriptionController {
     }
   }
 
+  async createPaypalSubscription(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = req.body as { plan: string; equipmentCount: number; billingCycle?: 'monthly' | 'annual' };
+      const subData = await subscriptionService.createPaypalSubscription(data);
+      res.json({ success: true, data: subData });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async update(req: Request, res: Response): Promise<void> {
     const data = req.body as UpdateSubscriptionInput;
     const byAdmin = req.user!.role === 'ADMIN';

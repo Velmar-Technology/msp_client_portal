@@ -17,6 +17,9 @@ router.get('/:id', (req, res) => subscriptionController.getById(req, res));
 /** POST /api/v1/subscriptions/paypal-order — Create a PayPal order for a subscription purchase */
 router.post('/paypal-order', validate(CreatePaypalOrderDTO), (req, res, next) => subscriptionController.createPaypalOrder(req, res, next));
 
+/** POST /api/v1/subscriptions/paypal-subscription — Create a PayPal subscription */
+router.post('/paypal-subscription', validate(CreatePaypalOrderDTO), (req, res, next) => subscriptionController.createPaypalSubscription(req, res, next));
+
 /** POST /api/v1/subscriptions — Create a subscription */
 router.post('/', validate(CreateSubscriptionDTO), (req, res) => subscriptionController.create(req, res));
 

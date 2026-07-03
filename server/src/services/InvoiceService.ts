@@ -1,8 +1,11 @@
 import { invoiceRepository } from '../repositories/InvoiceRepository';
+import { userRepository } from '../repositories/UserRepository';
+import { tenantRepository } from '../repositories/TenantRepository';
 import { AppError } from '../utils/AppError';
 import { Invoice, UserRole, InvoiceStatus } from '../types';
 import { paypalService } from './PaypalService';
 import { notificationService } from './NotificationService';
+import { generateInvoicePdf } from '../utils/pdfGenerator';
 
 export class InvoiceService {
   async getClientInvoices(tenantId: string, userRole: UserRole, page = 1, limit = 20): Promise<{ invoices: Invoice[]; total: number }> {
@@ -63,6 +66,31 @@ export class InvoiceService {
     });
 
     return updatedInvoice;
+  }
+
+  async downloadInvoice(id: string, tenantId: string, userRole: UserRole, lang?: string): Promise<{ pdfBuffer: Buffer; invoiceNumber: string }> {
+    const invoice = await this.getInvoiceById(id, tenantId, userRole);
+
+    const client = await userRepository.findById(invoice.client_id);
+    if (!client) throw AppError.notFound('Client not found');
+
+    const tenant = await tenantRepository.findById(invoice.tenant_id);
+    if (!tenant) throw AppError.notFound('Tenant not found');
+
+    const finalLang = lang || client.language || 'en_US';
+
+    const pdfBuffer = generateInvoicePdf(
+      invoice,
+      client.name,
+      client.email,
+      tenant.name,
+      finalLang
+    );
+
+    return {
+      pdfBuffer,
+      invoiceNumber: invoice.invoice_number,
+    };
   }
 }
 

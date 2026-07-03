@@ -28,6 +28,11 @@ export const subscriptionService = {
     return response.data.data;
   },
 
+  async createPaypalSubscription(data: { plan: string; equipmentCount: number; billingCycle?: 'monthly' | 'annual' }): Promise<{ subscriptionId: string; approveUrl: string }> {
+    const response = await api.post('/subscriptions/paypal-subscription', data);
+    return response.data.data;
+  },
+
   async update(id: string, data: { plan?: string; equipmentCount?: number; status?: string; paypalOrderId?: string }): Promise<Subscription> {
     const response = await api.patch(`/subscriptions/${id}`, data);
     return response.data.data;

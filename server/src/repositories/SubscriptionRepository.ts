@@ -1,7 +1,7 @@
 import { BaseRepository } from './BaseRepository';
 import { Subscription, SubscriptionPlan, SubscriptionStatus } from '../types';
 import { db, subscriptions } from '../db';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and, or, lt } from 'drizzle-orm';
 
 export class SubscriptionRepository extends BaseRepository<Subscription> {
   constructor() {
@@ -77,6 +77,35 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     const results = await db
       .update(subscriptions)
       .set({ status })
+      .where(eq(subscriptions.id, id))
+      .returning();
+    return (results[0] as Subscription) || null;
+  }
+
+  async findPendingRenewal(now: Date): Promise<Subscription[]> {
+    const results = await db
+      .select()
+      .from(subscriptions)
+      .where(
+        and(
+          or(
+            eq(subscriptions.status, 'ACTIVE'),
+            eq(subscriptions.status, 'EXPIRING')
+          ),
+          lt(subscriptions.renewal_date, now)
+        )
+      );
+    return results as Subscription[];
+  }
+
+  async updateRenewal(id: string, renewalDate: Date, status: SubscriptionStatus): Promise<Subscription | null> {
+    const results = await db
+      .update(subscriptions)
+      .set({
+        renewal_date: renewalDate,
+        status,
+        updated_at: new Date(),
+      })
       .where(eq(subscriptions.id, id))
       .returning();
     return (results[0] as Subscription) || null;

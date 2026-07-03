@@ -62,6 +62,10 @@ async function startServer(): Promise<void> {
       logger.info(`🚀 Velmar Technology SRL MSP API Server running on port ${env.PORT}`);
       logger.info(`📚 API Docs available at http://localhost:${env.PORT}/api-docs`);
       logger.info(`🌐 Environment: ${env.NODE_ENV}`);
+      
+      // Start background subscriptions renewal scheduler
+      const { subscriptionScheduler } = require('./services/SubscriptionScheduler');
+      subscriptionScheduler.start();
     });
   } catch (error) {
     logger.error('Failed to start server', { error });

@@ -18,5 +18,8 @@ router.post('/:id/create-paypal-order', (req, res) => invoiceController.createPa
 /** POST /api/v1/invoices/:id/capture-paypal-order — Capture PayPal order */
 router.post('/:id/capture-paypal-order', (req, res) => invoiceController.capturePaypalOrder(req, res));
 
+/** GET /api/v1/invoices/:id/download — Download invoice PDF */
+router.get('/:id/download', (req, res) => invoiceController.download(req, res));
+
 export default router;
 

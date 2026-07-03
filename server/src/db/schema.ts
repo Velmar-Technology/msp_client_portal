@@ -188,6 +188,8 @@ export const plans = pgTable('plans', {
   recommended: boolean('recommended').default(false).notNull(),
   client_type: varchar('client_type', { length: 50 }).default('CLIENT').notNull(),
   active: boolean('active').default(true).notNull(),
+  paypal_plan_id_monthly: varchar('paypal_plan_id_monthly', { length: 255 }),
+  paypal_plan_id_annual: varchar('paypal_plan_id_annual', { length: 255 }),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });

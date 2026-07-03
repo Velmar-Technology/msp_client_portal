@@ -33,5 +33,13 @@ export const invoiceService = {
     const response = await api.post(`/invoices/${id}/capture-paypal-order`, { orderId });
     return response.data;
   },
+
+  async downloadInvoice(id: string, lang?: string): Promise<Blob> {
+    const response = await api.get(`/invoices/${id}/download`, {
+      params: lang ? { lang } : {},
+      responseType: 'blob'
+    });
+    return response.data;
+  },
 };
 
