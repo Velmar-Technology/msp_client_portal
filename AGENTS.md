@@ -1,4 +1,31 @@
-# AI Development Guidelines
+# AI Agent Registry & Development Guidelines
+
+This document serves as both the registry for active and referenced AI agents within this monorepo, and the guidelines for agent development and boundaries.
+
+---
+
+## AI Agent Registry
+
+### Overview
+This monorepo utilizes a structured, multi-agent collaboration workflow modeled after Test-Driven Development (TDD) principles. Different agents handle specialized phases of the lifecycle: design and coordination, test creation, code implementation, and database orchestration.
+
+### Active Agent Registry
+The following agent is actively configured with dedicated skill assets and instructions in the workspace:
+
+| Agent Name | Description / Core Purpose | Location | Capabilities & Tools |
+| :--- | :--- | :--- | :--- |
+| **implementer-agent** | Implements backend business logic (use cases) and Next.js App Router API route handlers to make failing tests pass (Green phase of TDD). | [.agents/skills/implementer-agent-skill](file:///c:/Users/Public/Workspace/msp_client_portal/.agents/skills/implementer-agent-skill) | - Custom use case validation templates using Zod `safeParse`. <br>- Dependency injection patterns for services. <br>- Context7 MCP integration (Zod, TypeScript, Next.js). <br>- CASL ability mapping (`defineAbilitiesFor`). |
+
+### Referenced Coordination Roles (External/Inactive)
+The following roles are referenced in the monorepo's workflows and guidelines to coordinate with the `implementer-agent`, but do not have local skill configurations in the `.agents/` folder:
+
+| Role Name | Description / Core Purpose | Notes |
+| :--- | :--- | :--- |
+| **Architect Agent** | Coordinates tasks, writes/updates PRDs, maps service interfaces, and ensures database/client alignment. | Acts as the orchestrator of the development flow. |
+| **Test Agent** | Creates comprehensive failing test suites before any feature implementation. | Establishes the code contract. |
+| **Supabase Agent** | Implements database schemas, seed data, and Row Level Security (RLS) policies. | Manages the persistent data layer. |
+
+---
 
 ## AI Agent Workflow Rules
 - Always initiate `sequential-thinking` before implementing features.
