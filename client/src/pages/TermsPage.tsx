@@ -33,8 +33,25 @@ export function TermsPage() {
       )
     },
     {
+      id: "verification",
+      title: "2. Account Verification and OTP Security",
+      content: (
+        <>
+          <p className="font-bold text-primary mb-2">[User Summary]: You must verify your email address using a One-Time Password (OTP) before you can log in. Keep your OTP and account credentials secure.</p>
+          <p className="mt-2">
+            To ensure the security and integrity of the Service, the Company requires all new accounts to undergo an identity verification process:
+          </p>
+          <ul className="list-disc pl-5 mt-2 space-y-1">
+            <li><strong>OTP Verification:</strong> Upon registration, the Client must verify their email address by entering a One-Time Password (OTP) sent to their registered email. Unverified accounts will be strictly restricted from accessing the portal or any stored data.</li>
+            <li><strong>Credential Custody:</strong> The Client is solely responsible for maintaining the confidentiality of their login credentials and OTP codes. The Company will never ask for the Client's password or OTP via phone or external channels.</li>
+            <li><strong>Account Recovery:</strong> If the Client loses access to their registered email, the Company reserves the right to require additional corporate documentation (such as a valid RNC certificate) to process manual account recovery requests.</li>
+          </ul>
+        </>
+      )
+    },
+    {
       id: "data-protection",
-      title: "2. Personal Data Protection (Ley No. 172-13)",
+      title: "3. Personal Data Protection (Ley No. 172-13)",
       content: (
         <>
           <p className="font-bold text-primary mb-2">[User Summary]: We only store your files; we do not read them, mine them, or use them for advertising. You are responsible for your users' personal data and handling their access requests. Our technical staff is under strict confidentiality agreements.</p>
@@ -52,7 +69,7 @@ export function TermsPage() {
     },
     {
       id: "acceptable-use",
-      title: "3. Acceptable Use and Cybercrimes (Ley No. 53-07)",
+      title: "4. Acceptable Use and Cybercrimes (Ley No. 53-07)",
       content: (
         <>
           <p className="font-bold text-primary mb-2">[User Summary]: You must not use the storage to upload malware, scams, child abuse material, or other illegal files. If you do, we will suspend your account immediately and cooperate with government authorities (DICAT and the Public Ministry) if required by a judge.</p>
@@ -71,7 +88,7 @@ export function TermsPage() {
     },
     {
       id: "intellectual-property",
-      title: "4. Intellectual Property and Nextcloud Licensing (Ley No. 65-00)",
+      title: "5. Intellectual Property and Nextcloud Licensing (Ley No. 65-00)",
       content: (
         <>
           <p className="font-bold text-primary mb-2">[User Summary]: You must own the rights or licenses for all files you upload. The app runs on Nextcloud, which is free software licensed under AGPLv3. We do not claim ownership of your files, and you do not own our code.</p>
@@ -88,7 +105,7 @@ export function TermsPage() {
     },
     {
       id: "sla",
-      title: "5. Service Level Agreement (SLA) & Maintenance",
+      title: "6. Service Level Agreement (SLA) & Maintenance",
       content: (
         <>
           <p className="font-bold text-primary mb-2">[User Summary]: We guarantee 99.5% service availability each month. Scheduled maintenance in the early morning (1:00 AM - 6:00 AM AST) and general local internet provider failures (Claro, Altice, etc.) do not count as downtime. Our support helpdesk response times are active during Dominican business hours, exclude weekends/holidays, and require fair use to prevent abuse.</p>
@@ -109,7 +126,7 @@ export function TermsPage() {
     },
     {
       id: "backup",
-      title: "6. Obligatory Backup and Limitation of Liability",
+      title: "7. Obligatory Backup and Limitation of Liability",
       content: (
         <>
           <p className="font-bold text-primary mb-2">[User Summary]: While we make automated backups of our servers, you are required to keep local copies of your critical files. If a catastrophic data loss occurs, our maximum financial liability is limited to one month of your subscription fee.</p>
@@ -126,7 +143,7 @@ export function TermsPage() {
     },
     {
       id: "billing",
-      title: "7. Billing, ITBIS, Tax Invoices (NCF), and Grace Periods",
+      title: "8. Billing, ITBIS, Tax Invoices (NCF), and Grace Periods",
       content: (
         <>
           <p className="font-bold text-primary mb-2">[User Summary]: We bill in Dominican Pesos (DOP) and include 18% ITBIS. We issue tax-valid invoices (NCF) for DGII-registered companies. If payment is late: Day 1: notification; Day 5: read-only access (no uploads); Day 15: full account suspension; Day 30: permanent and irreversible data deletion.</p>
@@ -151,7 +168,7 @@ export function TermsPage() {
     },
     {
       id: "governing-law",
-      title: "8. Governing Law and Jurisdiction",
+      title: "9. Governing Law and Jurisdiction",
       content: (
         <>
           <p className="font-bold text-primary mb-2">[User Summary]: These terms are governed by the laws of the Dominican Republic. Any disputes will be settled exclusively in the courts of San Pedro de Macorís.</p>
@@ -163,7 +180,7 @@ export function TermsPage() {
     },
     {
       id: "subscription-plans",
-      title: "9. Special Terms of Subscription Plans",
+      title: "10. Special Terms of Subscription Plans",
       content: (
         <>
           <p className="font-bold text-primary mb-2">[User Summary]: Each plan has different prices, cloud storage quotas, and support levels. If your plan includes hardware loans, store discounts, or password managers, you must follow the corresponding rules. Password manager security is your responsibility.</p>
@@ -203,8 +220,25 @@ export function TermsPage() {
       )
     },
     {
+      id: "verification",
+      title: "2. Verificación de Cuenta y Seguridad OTP",
+      content: (
+        <>
+          <p className="font-bold text-primary mb-2">[Resumen para el Usuario]: Debes verificar tu correo electrónico usando una Contraseña de un Solo Uso (OTP) antes de poder iniciar sesión. Mantén tu OTP y credenciales seguras.</p>
+          <p className="mt-2">
+            Para garantizar la seguridad e integridad del Servicio, la Empresa requiere que todas las cuentas nuevas se sometan a un proceso de verificación de identidad:
+          </p>
+          <ul className="list-disc pl-5 mt-2 space-y-1">
+            <li><strong>Verificación OTP:</strong> Al registrarse, el Cliente debe verificar su dirección de correo electrónico ingresando una Contraseña de un Solo Uso (OTP) enviada a su correo registrado. Las cuentas no verificadas tendrán el acceso estrictamente restringido al portal y a cualquier dato almacenado.</li>
+            <li><strong>Custodia de Credenciales:</strong> El Cliente es el único responsable de mantener la confidencialidad de sus credenciales de acceso y códigos OTP. La Empresa nunca solicitará la contraseña ni el OTP del Cliente por teléfono o canales externos.</li>
+            <li><strong>Recuperación de Cuenta:</strong> Si el Cliente pierde el acceso a su correo registrado, la Empresa se reserva el derecho de requerir documentación corporativa adicional (como un certificado de RNC válido) para procesar solicitudes de recuperación manual de la cuenta.</li>
+          </ul>
+        </>
+      )
+    },
+    {
       id: "data-protection",
-      title: "2. Marco de Protección de Datos Personales (Ley No. 172-13)",
+      title: "3. Marco de Protección de Datos Personales (Ley No. 172-13)",
       content: (
         <>
           <p className="font-bold text-primary mb-2">[Resumen para el Usuario]: Nosotros solo guardamos tus archivos, no los leemos ni los usamos para publicidad. Tú eres responsable de los datos de tus usuarios y de atender sus solicitudes. Nuestro equipo técnico firma acuerdos de confidencialidad y tiene prohibido minar tus datos.</p>
@@ -222,7 +256,7 @@ export function TermsPage() {
     },
     {
       id: "acceptable-use",
-      title: "3. Uso Aceptable y Delitos Informáticos (Ley No. 53-07)",
+      title: "4. Uso Aceptable y Delitos Informáticos (Ley No. 53-07)",
       content: (
         <>
           <p className="font-bold text-primary mb-2">[Resumen para el Usuario]: No puedes usar este espacio para subir virus, estafas, pornografía infantil o cosas ilegales. Si lo haces, suspenderemos tu cuenta de inmediato y entregaremos la información a la policía (DICAT) y a la fiscalía si un juez lo ordena.</p>
@@ -241,7 +275,7 @@ export function TermsPage() {
     },
     {
       id: "intellectual-property",
-      title: "4. Propiedad Intelectual y Licencia AGPLv3 (Ley No. 65-00)",
+      title: "5. Propiedad Intelectual y Licencia AGPLv3 (Ley No. 65-00)",
       content: (
         <>
           <p className="font-bold text-primary mb-2">[Resumen para el Usuario]: Asegúrate de tener los derechos de autor de todo lo que subes. La aplicación utiliza Nextcloud, que es software libre bajo licencia AGPLv3, y no reclamamos propiedad sobre tus archivos ni tú sobre nuestro código.</p>
@@ -258,7 +292,7 @@ export function TermsPage() {
     },
     {
       id: "sla",
-      title: "5. Acuerdo de Nivel de Servicio (SLA) y Mantenimiento",
+      title: "6. Acuerdo de Nivel de Servicio (SLA) y Mantenimiento",
       content: (
         <>
           <p className="font-bold text-primary mb-2">[Resumen para el Usuario]: Te garantizamos que el servicio estará en línea el 99.5% del tiempo cada mes. No cuentan como caídas las ventanas de mantenimiento programadas en la madrugada (1:00 AM a 6:00 AM, hora dominicana) ni los problemas generales de internet con Claro o Altice. Nuestra mesa de ayuda ofrece respuestas en días laborables y horas de oficina dominicanas, suspendiéndose en fines de semana/feriados, y se prohíbe el uso abusivo o reiterado de tickets.</p>
@@ -279,7 +313,7 @@ export function TermsPage() {
     },
     {
       id: "backup",
-      title: "6. Cláusula de Respaldo Obligatorio (Backup) y Límite de Responsabilidad",
+      title: "7. Cláusula de Respaldo Obligatorio (Backup) y Límite de Responsabilidad",
       content: (
         <>
           <p className="font-bold text-primary mb-2">[Resumen para el Usuario]: Aunque hacemos copias de seguridad de los servidores, debes guardar copias locales de tus archivos importantes. Si ocurre una pérdida total de datos por algún fallo grave, lo máximo que te compensaremos será el valor de un mes de tu suscripción.</p>
@@ -296,7 +330,7 @@ export function TermsPage() {
     },
     {
       id: "billing",
-      title: "7. Política de Pagos, Facturación (NCF) y Escala de Impagos",
+      title: "8. Política de Pagos, Facturación (NCF) y Escala de Impagos",
       content: (
         <>
           <p className="font-bold text-primary mb-2">[Resumen para el Usuario]: Cobramos en Pesos Dominicanos (DOP) e incluimos el 18% de ITBIS. Si necesitas factura con valor fiscal para la DGII, la emitimos. Si te retrasas en el pago, a partir del día 1 te avisaremos; al día 5 tu cuenta será de solo lectura; al día 15 se suspenderá por completo; y al día 30 borraremos tus datos definitivamente de los servidores.</p>
@@ -321,7 +355,7 @@ export function TermsPage() {
     },
     {
       id: "governing-law",
-      title: "8. Ley Aplicable y Jurisdicción Dominicana",
+      title: "9. Ley Aplicable y Jurisdicción Dominicana",
       content: (
         <>
           <p className="font-bold text-primary mb-2">[Resumen para el Usuario]: Estos términos se rigen por las leyes de la República Dominicana. Cualquier disputa o desacuerdo se resolverá en los tribunales de San Pedro de Macorís.</p>
@@ -336,7 +370,7 @@ export function TermsPage() {
     },
     {
       id: "subscription-plans",
-      title: "9. Términos Especiales de los Planes de Suscripción",
+      title: "10. Términos Especiales de los Planes de Suscripción",
       content: (
         <>
           <p className="font-bold text-primary mb-2">[Resumen para el Usuario]: Cada plan tiene un precio, cantidad de almacenamiento y nivel de soporte diferente. Si tu plan incluye préstamo de equipos, descuentos en la tienda o administrador de contraseñas, debes seguir las reglas de devolución y cuidado correspondientes. La seguridad de tu gestor de contraseñas es tu responsabilidad.</p>
@@ -370,12 +404,12 @@ export function TermsPage() {
             {t('legal.termsTitle')}
           </h1>
           <p className="text-body-lg text-on-surface-variant mt-1">
-            {t('legal.lastUpdated')}: {i18n.language === 'es_DO' ? '18 de Junio, 2026' : 'June 18, 2026'}. {i18n.language === 'es_DO' ? 'Lea estos términos atentamente antes de usar el portal.' : 'Please read these terms carefully before using the portal.'}
+            {t('legal.lastUpdated')}: {i18n.language === 'es_DO' ? '3 de Julio, 2026' : 'July 3, 2026'}. {i18n.language === 'es_DO' ? 'Lea estos términos atentamente antes de usar el portal.' : 'Please read these terms carefully before using the portal.'}
           </p>
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-lg border border-outline-variant text-label-sm text-on-surface-variant">
           <FileText className="h-4 w-4 text-secondary" />
-          <span>v2.4 {t('legal.effectiveText')}</span>
+          <span>v2.5 {t('legal.effectiveText')}</span>
         </div>
       </div>
 
