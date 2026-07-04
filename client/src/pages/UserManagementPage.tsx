@@ -35,10 +35,10 @@ function StatusDot({ isActive, label }: StatusDotProps) {
     <span className="inline-flex items-center gap-1.5">
       <span
         className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-          isActive ? "bg-emerald-500" : "bg-red-400"
+          isActive ? "bg-emerald-500" : "bg-red-500"
         }`}
       />
-      <span className="text-xs text-zinc-600 dark:text-zinc-400">{label}</span>
+      <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{label}</span>
     </span>
   );
 }
@@ -65,10 +65,10 @@ function UserAvatarCell({ name, email, avatarUrl }: UserAvatarCellProps) {
         <img
           src={avatarUrl}
           alt={name}
-          className="w-7 h-7 rounded-full object-cover shrink-0 border border-zinc-200 dark:border-zinc-700"
+          className="w-7 h-7 rounded-full object-cover shrink-0 border border-zinc-200 dark:border-zinc-700 shadow-sm"
         />
       ) : (
-        <div className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0 border border-zinc-200 dark:border-zinc-700">
+        <div className="w-7 h-7 rounded-full bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center shrink-0 border border-zinc-200 dark:border-zinc-700 shadow-sm">
           <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400">
             {initials}
           </span>
@@ -78,7 +78,7 @@ function UserAvatarCell({ name, email, avatarUrl }: UserAvatarCellProps) {
         <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate leading-tight">
           {name}
         </span>
-        <span className="text-[10px] text-zinc-400 truncate leading-tight">
+        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate leading-tight">
           {email}
         </span>
       </div>
@@ -99,8 +99,8 @@ function Pagination({ page, totalPages, onPageChange, t }: PaginationProps) {
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-between pt-3 border-t border-zinc-100 dark:border-zinc-900 mt-1">
-      <span className="text-[10px] text-zinc-400 font-mono">
+    <div className="flex items-center justify-between pt-3 border-t border-zinc-200 dark:border-zinc-800 mt-1 bg-zinc-50/50 dark:bg-zinc-900/50 px-4 pb-3">
+      <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 font-mono">
         {t("userManagement.pageOf")
           .replace("{page}", String(page))
           .replace("{total}", String(totalPages))}
@@ -109,7 +109,7 @@ function Pagination({ page, totalPages, onPageChange, t }: PaginationProps) {
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7"
+          className="h-7 w-7 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-30"
           disabled={page <= 1}
           onClick={() => onPageChange(page - 1)}
         >
@@ -118,7 +118,7 @@ function Pagination({ page, totalPages, onPageChange, t }: PaginationProps) {
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7"
+          className="h-7 w-7 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-30"
           disabled={page >= totalPages}
           onClick={() => onPageChange(page + 1)}
         >
@@ -167,7 +167,7 @@ export function UserManagementPage() {
       {
         accessorKey: "name",
         header: () => (
-          <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
+          <span className="text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">
             {t("userManagement.colUser")}
           </span>
         ),
@@ -182,7 +182,7 @@ export function UserManagementPage() {
       {
         accessorKey: "role",
         header: () => (
-          <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
+          <span className="text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">
             {t("userManagement.colRole")}
           </span>
         ),
@@ -196,7 +196,7 @@ export function UserManagementPage() {
       {
         accessorKey: "is_active",
         header: () => (
-          <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
+          <span className="text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">
             {t("userManagement.colStatus")}
           </span>
         ),
@@ -214,12 +214,12 @@ export function UserManagementPage() {
       {
         accessorKey: "last_login_at",
         header: () => (
-          <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
+          <span className="text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">
             {t("userManagement.colLastLogin")}
           </span>
         ),
         cell: ({ row }) => (
-          <span className="text-xs text-zinc-500 font-mono">
+          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400 font-mono">
             {formatDate(row.original.last_login_at)}
           </span>
         ),
@@ -227,12 +227,12 @@ export function UserManagementPage() {
       {
         accessorKey: "created_at",
         header: () => (
-          <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
+          <span className="text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">
             {t("userManagement.colCreated")}
           </span>
         ),
         cell: ({ row }) => (
-          <span className="text-xs text-zinc-500 font-mono">
+          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400 font-mono">
             {formatDate(row.original.created_at)}
           </span>
         ),
@@ -240,7 +240,7 @@ export function UserManagementPage() {
       {
         id: "actions",
         header: () => (
-          <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider sr-only">
+          <span className="text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-wider sr-only">
             {t("userManagement.actions")}
           </span>
         ),
@@ -282,9 +282,9 @@ export function UserManagementPage() {
       <UserStatsBar stats={stats} loading={statsLoading} />
 
       {/* Table Card */}
-      <div className="bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm overflow-hidden mt-6">
         {/* Filters */}
-        <div className="px-4 pt-3 pb-1">
+        <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
           <UserFiltersBar
             searchQuery={searchQuery}
             onSearchChange={handleSearchChange}
@@ -306,14 +306,12 @@ export function UserManagementPage() {
         />
 
         {/* Pagination */}
-        <div className="px-4 pb-3">
-          <Pagination
-            page={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
-            t={t}
-          />
-        </div>
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          t={t}
+        />
       </div>
 
       {/* Confirmation Dialog */}
@@ -323,19 +321,19 @@ export function UserManagementPage() {
           if (!open) cancelConfirmation();
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100">
           <AlertDialogHeader>
-            <AlertDialogTitle>
+            <AlertDialogTitle className="text-zinc-900 dark:text-zinc-100">
               {confirmation.type === "role"
                 ? t("userManagement.confirmRoleTitle")
                 : t("userManagement.confirmStatusTitle")}
             </AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-zinc-500 dark:text-zinc-400">
               {confirmationDescription}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={actionLoading}>
+            <AlertDialogCancel disabled={actionLoading} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800">
               {t("userManagement.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
@@ -343,8 +341,8 @@ export function UserManagementPage() {
               disabled={actionLoading}
               className={
                 confirmation.type === "status" && !confirmation.newValue
-                  ? "bg-red-600 hover:bg-red-700 text-white"
-                  : ""
+                  ? "bg-red-600 hover:bg-red-700 text-white dark:bg-red-600 dark:hover:bg-red-700"
+                  : "bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
               }
             >
               {actionLoading

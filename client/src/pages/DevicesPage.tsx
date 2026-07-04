@@ -131,7 +131,7 @@ export function ActivationWizardModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-lg max-w-md w-full shadow-lg text-zinc-900 dark:text-zinc-100 flex flex-col">
+      <div className="bg-card border rounded-lg max-w-md w-full shadow-lg text-zinc-900 dark:text-zinc-100 flex flex-col">
         {/* Modal Header */}
         <div className="px-5 py-3 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-white dark:bg-zinc-950 rounded-t-lg">
           <h3 className="text-sm font-bold text-zinc-950 dark:text-zinc-50">Device Activation Wizard</h3>
@@ -248,7 +248,7 @@ export function ActivationWizardModal({
                     value={deviceName}
                     onChange={(e) => setDeviceName(e.target.value)}
                     placeholder="e.g. Sales-Laptop-03"
-                    className="w-full bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs h-8"
+                    className="w-full bg-card border rounded-md text-xs h-8"
                   />
                 </div>
 
@@ -265,7 +265,7 @@ export function ActivationWizardModal({
                     value={deviceSerial}
                     onChange={(e) => setDeviceSerial(e.target.value)}
                     placeholder="e.g. SN-SIM-827461"
-                    className="w-full bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs h-8"
+                    className="w-full bg-card border rounded-md text-xs h-8"
                   />
                 </div>
               </div>
@@ -534,7 +534,7 @@ export function DevicesPage() {
                     aria-label={t("devices.tableActions")}
                     className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-md border border-transparent hover:border-zinc-200 dark:hover:border-zinc-850 cursor-pointer transition-colors"
                   >
-                    <MoreHorizontal className="h-3.5 w-3.5 text-zinc-550" />
+                    <MoreHorizontal className="h-3.5 w-3.5 text-zinc-500" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
@@ -587,7 +587,9 @@ export function DevicesPage() {
     <Page title={t("nav.devices")} subtitle={t("devices.subtitle")} isLoading={false}>
       <div className="max-w-7xl mx-auto space-y-4">
         {activeSubscriptions.length === 0 && !loading ? (
-          <EmptySubscriptionsCard onBrowsePlans={() => navigate("/plans")} />
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <EmptySubscriptionsCard onBrowsePlans={() => navigate("/plans")} />
+          </div>
         ) : (
           <div className="space-y-4 text-on-surface animate-fade-in">
             {activeSubscriptions.length > 1 && (
@@ -600,7 +602,7 @@ export function DevicesPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
               <div className="lg:col-span-3 space-y-4">
-                <div className="bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden shadow-sm flex flex-col">
+                <div className="bg-card border rounded-lg overflow-hidden shadow-sm flex flex-col">
                   {/* Table Filters */}
                   <DevicesTableFilters
                     searchTerm={searchTerm}

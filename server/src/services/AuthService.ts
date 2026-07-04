@@ -15,7 +15,7 @@ export class AuthService {
   /**
    * Register a new user account.
    */
-  async register(data: RegisterInput): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null; clientType: string }; tokens: AuthTokens }> {
+  async register(data: RegisterInput): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null; clientType: string }, message: string }> {
     // Check for existing user
     const existing = await userRepository.findByEmail(data.email);
     if (existing) {
@@ -59,17 +59,17 @@ export class AuthService {
 
     logger.info('New user and tenant registered', { userId: user.id, email: user.email, tenantId: tenant.id });
 
-    // Generate tokens including tenantId
-    const tokens = this.generateTokens({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      tenantId: user.tenant_id,
-    });
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 15); // OTP expires in 15 mins
+    
+    await userRepository.setOTP(user.id, otp, expiresAt);
+    logger.info('Email verification OTP generated', { userId: user.id, otp });
 
     return {
       user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id, avatarUrl: user.avatar_url, clientType: user.client_type },
-      tokens,
+      message: 'Registration successful. Please check your email to verify your account.',
     };
   }
 
@@ -84,6 +84,10 @@ export class AuthService {
 
     if (!user.is_active) {
       throw AppError.forbidden('Account has been deactivated');
+    }
+
+    if (!user.email_verified) {
+      throw AppError.forbidden('Please verify your email address before logging in');
     }
 
     const isValid = await comparePassword(data.password, user.password_hash);
@@ -194,6 +198,9 @@ export class AuthService {
         tenant_id: tenant.id,
       });
 
+      // Automatically verify email for Google OAuth users
+      await userRepository.verifyEmail(user.id);
+
       logger.info('New user registered via Google OAuth', { userId: user.id, email: user.email, tenantId: tenant.id });
     } else {
       if (!user.is_active) {
@@ -231,6 +238,10 @@ export class AuthService {
         throw AppError.unauthorized('Invalid refresh token');
       }
 
+      if (!user.email_verified) {
+        throw AppError.forbidden('Please verify your email address');
+      }
+
       return this.generateTokens({
         userId: user.id,
         email: user.email,
@@ -240,6 +251,31 @@ export class AuthService {
     } catch {
       throw AppError.unauthorized('Invalid or expired refresh token');
     }
+  }
+
+  /**
+   * Verify user's email using a valid OTP.
+   */
+  async verifyEmail(email: string, otp: string): Promise<void> {
+    const user = await userRepository.findByEmail(email);
+    if (!user) {
+      throw AppError.badRequest('Invalid email or OTP');
+    }
+
+    if (user.email_verified) {
+      throw AppError.badRequest('Email is already verified');
+    }
+
+    if (!user.otp_code || user.otp_code !== otp) {
+      throw AppError.badRequest('Invalid OTP');
+    }
+
+    if (!user.otp_expires || user.otp_expires < new Date()) {
+      throw AppError.badRequest('OTP has expired');
+    }
+
+    await userRepository.verifyEmail(user.id);
+    logger.info('Email verified successfully via OTP', { userId: user.id });
   }
 
   /**

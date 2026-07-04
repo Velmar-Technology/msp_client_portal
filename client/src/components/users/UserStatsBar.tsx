@@ -17,7 +17,7 @@ interface StatItemProps {
 
 function StatItem({ icon, label, value, accent }: StatItemProps) {
   return (
-    <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800">
+    <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-card border">
       <div className="text-zinc-400 dark:text-zinc-500">{icon}</div>
       <div className="flex flex-col">
         <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider leading-none">

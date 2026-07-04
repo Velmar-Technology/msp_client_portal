@@ -52,6 +52,8 @@ export const users = pgTable(
     specialty: varchar('specialty', { length: 100 }),
     is_active: boolean('is_active').default(true),
     email_verified: boolean('email_verified').default(false),
+    otp_code: varchar('otp_code', { length: 10 }),
+    otp_expires: timestamp('otp_expires', { withTimezone: true }),
     language: varchar('language', { length: 10 }).default('en_US'),
     avatar_url: varchar('avatar_url', { length: 1000 }),
     last_login_at: timestamp('last_login_at', { withTimezone: true }),

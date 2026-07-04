@@ -1,21 +1,21 @@
-import { useMemo } from 'react';
-import { ChevronDown, Plus, Minus, RefreshCw, Mail, Ban } from 'lucide-react';
-import { Page } from '@/components/Page';
-import type { ColumnDef } from '@tanstack/react-table';
-import type { Subscription } from '../services/subscriptionService';
+import { useMemo } from "react";
+import { ChevronDown, Plus, Minus, RefreshCw, Mail, Ban } from "lucide-react";
+import { Page } from "@/components/Page";
+import type { ColumnDef } from "@tanstack/react-table";
+import type { Subscription } from "../services/subscriptionService";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
-import { usePlansPage } from '../hooks/usePlansPage';
-import { BillingCycleSwitcher } from './PlansPage/components/BillingCycleSwitcher';
-import { PlanCard } from './PlansPage/components/PlanCard';
-import { PaymentSection } from './PlansPage/components/PaymentSection';
-import { ActiveSubscriptionsDashboard } from './PlansPage/components/ActiveSubscriptionsDashboard';
-import { EditPlanModal } from './PlansPage/components/EditPlanModal';
+} from "@/components/ui/dropdown-menu";
+import { usePlansPage } from "../hooks/usePlansPage";
+import { BillingCycleSwitcher } from "./PlansPage/components/BillingCycleSwitcher";
+import { PlanCard } from "./PlansPage/components/PlanCard";
+import { PaymentSection } from "./PlansPage/components/PaymentSection";
+import { ActiveSubscriptionsDashboard } from "./PlansPage/components/ActiveSubscriptionsDashboard";
+import { EditPlanModal } from "./PlansPage/components/EditPlanModal";
 
 export function PlansPage() {
   const {
@@ -105,221 +105,239 @@ export function PlansPage() {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      ACTIVE: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/10',
-      CANCELLED: 'bg-zinc-100 text-zinc-550 border-zinc-200 dark:bg-zinc-800/60 dark:text-zinc-450 dark:border-zinc-700/80',
+      ACTIVE:
+        "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/10",
+      CANCELLED:
+        "bg-zinc-100 text-zinc-500 border-zinc-200 dark:bg-zinc-800/60 dark:text-zinc-400 dark:border-zinc-700/80",
     };
-    return colors[status] || 'bg-zinc-100 text-zinc-850 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:border-zinc-800';
+    return (
+      colors[status] ||
+      "bg-zinc-100 text-zinc-800 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:border-zinc-800"
+    );
   };
 
   // Memoized columns definition for DataTable
-  const subscriptionDashboardColumns = useMemo<ColumnDef<Subscription>[]>(() => [
-    {
-      accessorKey: 'service_name',
-      header: t('plans.serviceName') || 'Service Name',
-      cell: ({ row }) => (
-        <span className="font-semibold text-zinc-900 dark:text-zinc-50 text-xs">
-          {row.getValue('service_name')}
-        </span>
-      ),
-    },
-    {
-      accessorKey: 'plan',
-      header: t('plans.tier') || 'Tier',
-      cell: ({ row }) => {
-        const planId = row.getValue('plan') as string;
-        return (
-          <span className="inline-block px-1.5 py-0.2 border border-zinc-200 dark:border-zinc-850 rounded font-mono text-[9px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-            {getTierLabel(planId)}
-          </span>
-        );
+  const subscriptionDashboardColumns = useMemo<ColumnDef<Subscription>[]>(
+    () => [
+      {
+        accessorKey: "service_name",
+        header: t("plans.serviceName") || "Service Name",
+        cell: ({ row }) => (
+          <span className="font-semibold text-zinc-900 dark:text-zinc-50 text-xs">{row.getValue("service_name")}</span>
+        ),
       },
-    },
-    {
-      accessorKey: 'status',
-      header: t('plans.status') || 'Status',
-      cell: ({ row }) => {
-        const status = row.getValue('status') as string;
-        const displayStatus = status === 'ACTIVE' 
-          ? (t('plans.activeStatus') || 'Active') 
-          : status === 'CANCELLED' 
-            ? (t('plans.cancelledStatus') || 'Cancelled') 
-            : status;
-        return (
-          <span
-            className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold tracking-wider uppercase border ${getStatusColor(
-              status
-            )}`}
-          >
-            {displayStatus}
-          </span>
-        );
+      {
+        accessorKey: "plan",
+        header: t("plans.tier") || "Tier",
+        cell: ({ row }) => {
+          const planId = row.getValue("plan") as string;
+          return (
+            <span className="inline-block px-1.5 py-0.2 border border-zinc-200 dark:border-zinc-850 rounded font-mono text-[9px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              {getTierLabel(planId)}
+            </span>
+          );
+        },
       },
-    },
-    {
-      accessorKey: 'renewal_date',
-      header: t('plans.renewalDate') || 'Renewal Date',
-      cell: ({ row }) => {
-        const dateStr = row.getValue('renewal_date') as string;
-        return (
-          <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">
-            {new Date(dateStr).toLocaleDateString(
-              i18n.language.startsWith('es') ? 'es-DO' : 'en-US',
-              { day: '2-digit', month: 'short', year: 'numeric' }
-            )}
-          </span>
-        );
-      },
-    },
-    {
-      accessorKey: 'equipment_count',
-      header: t('plans.devicesLimit') || 'Devices Limit',
-      cell: ({ row }) => (
-        <span className="bg-zinc-100 text-zinc-800 dark:bg-zinc-800/80 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700/60 px-1.5 py-0.2 rounded text-[10px] font-bold uppercase tracking-wider">
-          {t('plans.devicesCount', { count: row.getValue('equipment_count') })}
-        </span>
-      ),
-    },
-    {
-      id: 'actions',
-      header: t('plans.actions') || 'Actions',
-      cell: ({ row }) => {
-        const sub = row.original;
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className="flex items-center gap-0.5 text-xs text-zinc-800 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-zinc-50 font-semibold cursor-pointer border border-zinc-200 dark:border-zinc-800 px-2 py-1 rounded bg-white dark:bg-zinc-950"
-              >
-                {t('plans.manageTab') || 'Manage'} <ChevronDown className="h-3 w-3" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="w-44 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 border border-zinc-200 dark:border-zinc-800"
+      {
+        accessorKey: "status",
+        header: t("plans.status") || "Status",
+        cell: ({ row }) => {
+          const status = row.getValue("status") as string;
+          const displayStatus =
+            status === "ACTIVE"
+              ? t("plans.activeStatus") || "Active"
+              : status === "CANCELLED"
+                ? t("plans.cancelledStatus") || "Cancelled"
+                : status;
+          return (
+            <span
+              className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold tracking-wider uppercase border ${getStatusColor(
+                status,
+              )}`}
             >
-              {/* Add Device */}
-              <DropdownMenuItem
-                onClick={async () => {
-                  if (isAdmin) {
-                    await handleUpdateSubscriptionDirect(sub.id, sub.plan, sub.equipment_count + 1);
-                  } else {
-                    setUserSelectedPlan(sub.plan);
-                    setEquipmentCounts((prev) => ({ ...prev, [sub.plan]: sub.equipment_count + 1 }));
-                    setActiveTab('manage');
-                    addToast({
-                      title: t('plans.addDeviceTitle') || 'Upgrade Pre-configured',
-                      message:
-                        t('plans.addDeviceMsg') ||
-                        'Complete payment to add the new device license to your subscription.',
-                      type: 'info',
-                    });
-                  }
-                }}
-                className="cursor-pointer flex items-center gap-1.5 text-xs py-1.5"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                {t('plans.addDevice') || 'Add Device'}
-              </DropdownMenuItem>
-
-              {/* Remove Device */}
-              <DropdownMenuItem
-                disabled={sub.equipment_count <= 1}
-                onClick={async () => {
-                  if (sub.equipment_count > 1) {
-                    const confirmRemove = window.confirm(
-                      t('plans.removeDeviceConfirm', { count: sub.equipment_count - 1 }) ||
-                        `Are you sure you want to remove a device license? Your limit will decrease to ${
-                          sub.equipment_count - 1
-                        } devices.`
-                    );
-                    if (confirmRemove) {
-                      await handleUpdateSubscriptionDirect(sub.id, sub.plan, sub.equipment_count - 1);
-                    }
-                  }
-                }}
-                className="cursor-pointer flex items-center gap-1.5 text-xs py-1.5 disabled:opacity-50 disabled:pointer-events-none"
-              >
-                <Minus className="h-3.5 w-3.5" />
-                {t('plans.removeDevice') || 'Remove Device'}
-              </DropdownMenuItem>
-
-              <DropdownMenuSeparator className="bg-zinc-200 dark:bg-zinc-800" />
-
-              {/* Change Plan */}
-              <DropdownMenuItem
-                onClick={() => {
-                  setUserSelectedPlan(sub.plan);
-                  setActiveTab('browse');
-                  addToast({
-                    title: t('plans.changePlanTitle') || 'Browse Plans',
-                    message:
-                      t('plans.changePlanMsg') || 'Select a different plan tier to switch or subscribe.',
-                    type: 'info',
-                  });
-                }}
-                className="cursor-pointer flex items-center gap-1.5 text-xs py-1.5"
-              >
-                <RefreshCw className="h-3.5 w-3.5" />
-                {t('plans.changePlanTier') || 'Change Plan Tier'}
-              </DropdownMenuItem>
-
-              {/* Contact Support */}
-              <DropdownMenuItem
-                onClick={() => {
-                  addToast({
-                    title: t('plans.contactSupportTitle') || 'Contact Support',
-                    message:
-                      t('plans.contactSupportMsg') || 'Need assistance? Email: soporte@verlmartech.com.do',
-                    type: 'info',
-                  });
-                  window.location.href =
-                    'mailto:soporte@verlmartech.com.do?subject=Subscription Support Request';
-                }}
-                className="cursor-pointer flex items-center gap-1.5 text-xs py-1.5"
-              >
-                <Mail className="h-3.5 w-3.5" />
-                {t('plans.contactSupport') || 'Contact Support'}
-              </DropdownMenuItem>
-
-              <DropdownMenuSeparator className="bg-zinc-200 dark:bg-zinc-800" />
-
-              {/* Cancel Subscription */}
-              <DropdownMenuItem
-                onClick={async () => {
-                  await handleCancelSubscription(sub.id);
-                }}
-                variant="destructive"
-                className="cursor-pointer flex items-center gap-1.5 text-xs py-1.5 text-error focus:bg-error/15"
-              >
-                <Ban className="h-3.5 w-3.5 text-error" />
-                {t('plans.cancelSubscription') || 'Cancel Subscription'}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
+              {displayStatus}
+            </span>
+          );
+        },
       },
-    },
-  ], [
-    t,
-    i18n,
-    isAdmin,
-    getTierLabel,
-    handleUpdateSubscriptionDirect,
-    handleCancelSubscription,
-    setUserSelectedPlan,
-    setEquipmentCounts,
-    setActiveTab,
-    addToast,
-  ]);
+      {
+        accessorKey: "renewal_date",
+        header: t("plans.renewalDate") || "Renewal Date",
+        cell: ({ row }) => {
+          const dateStr = row.getValue("renewal_date") as string;
+          return (
+            <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">
+              {new Date(dateStr).toLocaleDateString(i18n.language.startsWith("es") ? "es-DO" : "en-US", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })}
+            </span>
+          );
+        },
+      },
+      {
+        accessorKey: "equipment_count",
+        header: t("plans.devicesLimit") || "Devices Limit",
+        cell: ({ row }) => (
+          <span className="bg-zinc-100 text-zinc-800 dark:bg-zinc-800/80 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700/60 px-1.5 py-0.2 rounded text-[10px] font-bold uppercase tracking-wider">
+            {t("plans.devicesCount", { count: row.getValue("equipment_count") })}
+          </span>
+        ),
+      },
+      {
+        id: "actions",
+        header: t("plans.actions") || "Actions",
+        cell: ({ row }) => {
+          const sub = row.original;
+          return (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-0.5 text-xs text-zinc-800 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-zinc-50 font-semibold cursor-pointer border border-zinc-200 dark:border-zinc-800 px-2 py-1 rounded bg-white dark:bg-zinc-950"
+                >
+                  {t("plans.manageTab") || "Manage"} <ChevronDown className="h-3 w-3" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-44 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 border border-zinc-200 dark:border-zinc-800"
+              >
+                {/* Add Device */}
+                <DropdownMenuItem
+                  onClick={async () => {
+                    if (isAdmin) {
+                      await handleUpdateSubscriptionDirect(sub.id, sub.plan, sub.equipment_count + 1);
+                    } else {
+                      setUserSelectedPlan(sub.plan);
+                      setEquipmentCounts((prev) => ({ ...prev, [sub.plan]: sub.equipment_count + 1 }));
+                      setActiveTab("manage");
+                      addToast({
+                        title: t("plans.addDeviceTitle") || "Upgrade Pre-configured",
+                        message:
+                          t("plans.addDeviceMsg") ||
+                          "Complete payment to add the new device license to your subscription.",
+                        type: "info",
+                      });
+                    }
+                  }}
+                  className="cursor-pointer flex items-center gap-1.5 text-xs py-1.5"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  {t("plans.addDevice") || "Add Device"}
+                </DropdownMenuItem>
+
+                {/* Remove Device */}
+                <DropdownMenuItem
+                  disabled={sub.equipment_count <= 1}
+                  onClick={async () => {
+                    if (sub.equipment_count > 1) {
+                      const confirmRemove = window.confirm(
+                        t("plans.removeDeviceConfirm", { count: sub.equipment_count - 1 }) ||
+                          `Are you sure you want to remove a device license? Your limit will decrease to ${
+                            sub.equipment_count - 1
+                          } devices.`,
+                      );
+                      if (confirmRemove) {
+                        await handleUpdateSubscriptionDirect(sub.id, sub.plan, sub.equipment_count - 1);
+                      }
+                    }
+                  }}
+                  className="cursor-pointer flex items-center gap-1.5 text-xs py-1.5 disabled:opacity-50 disabled:pointer-events-none"
+                >
+                  <Minus className="h-3.5 w-3.5" />
+                  {t("plans.removeDevice") || "Remove Device"}
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator className="bg-zinc-200 dark:bg-zinc-800" />
+
+                {/* Change Plan */}
+                <DropdownMenuItem
+                  onClick={() => {
+                    setUserSelectedPlan(sub.plan);
+                    setActiveTab("browse");
+                    addToast({
+                      title: t("plans.changePlanTitle") || "Browse Plans",
+                      message: t("plans.changePlanMsg") || "Select a different plan tier to switch or subscribe.",
+                      type: "info",
+                    });
+                  }}
+                  className="cursor-pointer flex items-center gap-1.5 text-xs py-1.5"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  {t("plans.changePlanTier") || "Change Plan Tier"}
+                </DropdownMenuItem>
+
+                {/* Contact Support */}
+                <DropdownMenuItem
+                  onClick={() => {
+                    addToast({
+                      title: t("plans.contactSupportTitle") || "Contact Support",
+                      message: t("plans.contactSupportMsg") || "Need assistance? Email: soporte@verlmartech.com.do",
+                      type: "info",
+                    });
+                    window.location.href = "mailto:soporte@verlmartech.com.do?subject=Subscription Support Request";
+                  }}
+                  className="cursor-pointer flex items-center gap-1.5 text-xs py-1.5"
+                >
+                  <Mail className="h-3.5 w-3.5" />
+                  {t("plans.contactSupport") || "Contact Support"}
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator className="bg-zinc-200 dark:bg-zinc-800" />
+
+                {/* Cancel Subscription */}
+                <DropdownMenuItem
+                  onClick={async () => {
+                    await handleCancelSubscription(sub.id);
+                  }}
+                  variant="destructive"
+                  className="cursor-pointer flex items-center gap-1.5 text-xs py-1.5 text-error focus:bg-error/15"
+                >
+                  <Ban className="h-3.5 w-3.5 text-error" />
+                  {t("plans.cancelSubscription") || "Cancel Subscription"}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          );
+        },
+      },
+    ],
+    [
+      t,
+      i18n,
+      isAdmin,
+      getTierLabel,
+      handleUpdateSubscriptionDirect,
+      handleCancelSubscription,
+      setUserSelectedPlan,
+      setEquipmentCounts,
+      setActiveTab,
+      addToast,
+    ],
+  );
 
   const showTabs = !isAdmin && activeSubscriptions.length > 0;
 
   return (
     <Page
-      title={t('plans.title')}
-      subtitle={t('plans.subtitle')}
+      title={t("plans.title")}
+      subtitle={t("plans.subtitle")}
       isLoading={loading && filteredPlans.length === 0}
+      actions={
+        isAdmin && (
+          <div className="flex justify-end w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={handleCreateClick}
+              className="bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950 px-3.5 py-1.5 rounded-md text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer flex items-center gap-1 shadow-sm border border-zinc-850 dark:border-zinc-200 w-full sm:w-auto justify-center"
+            >
+              <span>+ {t("plans.addPlan") || "Add Plan"}</span>
+            </button>
+          </div>
+        )
+      }
     >
       {/* Tabs Section */}
       {showTabs && (
@@ -327,49 +345,34 @@ export function PlansPage() {
           <button
             type="button"
             className={`pb-2 text-xs font-semibold transition-all cursor-pointer ${
-              activeTab === 'browse'
-                ? 'border-b-2 border-zinc-900 dark:border-zinc-50 text-zinc-900 dark:text-zinc-50'
-                : 'text-zinc-400 hover:text-zinc-600 border-b-2 border-transparent'
+              activeTab === "browse"
+                ? "border-b-2 border-zinc-900 dark:border-zinc-50 text-zinc-900 dark:text-zinc-50"
+                : "text-zinc-400 hover:text-zinc-600 border-b-2 border-transparent"
             }`}
-            onClick={() => setActiveTab('browse')}
+            onClick={() => setActiveTab("browse")}
           >
-            {t('plans.browseTab')}
+            {t("plans.browseTab")}
           </button>
           <button
             type="button"
             className={`pb-2 text-xs font-semibold transition-all cursor-pointer ${
-              activeTab === 'manage'
-                ? 'border-b-2 border-zinc-900 dark:border-zinc-50 text-zinc-900 dark:text-zinc-50'
-                : 'text-zinc-400 hover:text-zinc-600 border-b-2 border-transparent'
+              activeTab === "manage"
+                ? "border-b-2 border-zinc-900 dark:border-zinc-50 text-zinc-900 dark:text-zinc-50"
+                : "text-zinc-400 hover:text-zinc-600 border-b-2 border-transparent"
             }`}
-            onClick={() => setActiveTab('manage')}
+            onClick={() => setActiveTab("manage")}
           >
-            {t('plans.manageTab')}
+            {t("plans.manageTab")}
           </button>
         </div>
       )}
 
-      {isAdmin || activeTab === 'browse' ? (
+      {isAdmin || activeTab === "browse" ? (
         <>
           {/* Billing Cycle Switcher & Admin Actions */}
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-3.5 mb-6">
-            <div className="sm:w-1/3" />
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-3.5 mb-6">
             <div className="flex justify-center">
-              <BillingCycleSwitcher
-                billingCycle={billingCycle}
-                setBillingCycle={setBillingCycle}
-              />
-            </div>
-            <div className="sm:w-1/3 flex justify-end w-full sm:w-auto">
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={handleCreateClick}
-                  className="bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950 px-3.5 py-1.5 rounded-md text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer flex items-center gap-1 shadow-sm border border-zinc-850 dark:border-zinc-200 w-full sm:w-auto justify-center"
-                >
-                  <span>+ {t('plans.addPlan') || 'Add Plan'}</span>
-                </button>
-              )}
+              <BillingCycleSwitcher billingCycle={billingCycle} setBillingCycle={setBillingCycle} />
             </div>
           </div>
 
@@ -445,8 +448,7 @@ export function PlansPage() {
         activeSubscriptions.length > 0 &&
         (() => {
           const activeSub =
-            activeSubscriptions.find((sub) => sub.id === subscriptionToModifyId) ||
-            activeSubscriptions[0];
+            activeSubscriptions.find((sub) => sub.id === subscriptionToModifyId) || activeSubscriptions[0];
           if (!activeSub) return null;
 
           return (
@@ -457,17 +459,17 @@ export function PlansPage() {
                     htmlFor="active-sub-select-manage"
                     className="block text-[10px] text-zinc-500 dark:text-zinc-450 font-bold uppercase tracking-wider mb-1"
                   >
-                    {t('plans.selectActiveSubToManage') || 'Select Active Subscription to Manage'}
+                    {t("plans.selectActiveSubToManage") || "Select Active Subscription to Manage"}
                   </label>
                   <select
                     id="active-sub-select-manage"
                     value={subscriptionToModifyId}
                     onChange={(e) => setSubscriptionToModifyId(e.target.value)}
-                    className="w-full h-8.5 px-2.5 border border-zinc-200/85 dark:border-zinc-805 rounded text-xs bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-55 focus:outline-none"
+                    className="w-full h-8.5 px-2.5 border rounded text-xs bg-card text-zinc-900 dark:text-zinc-100 focus:outline-none"
                   >
                     {activeSubscriptions.map((sub) => (
                       <option key={sub.id} value={sub.id}>
-                        {sub.service_name} ({t('plans.devicesCount', { count: sub.equipment_count })})
+                        {sub.service_name} ({t("plans.devicesCount", { count: sub.equipment_count })})
                       </option>
                     ))}
                   </select>
@@ -482,49 +484,52 @@ export function PlansPage() {
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
-                          {t('plans.manageActiveSub') || 'Manage Active Subscription'}
+                          {t("plans.manageActiveSub") || "Manage Active Subscription"}
                         </h4>
                         <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                          {t('plans.detailsForService', {
+                          {t("plans.detailsForService", {
                             name: activeSub.service_name,
-                            cycle: billingCycle === 'annual'
-                              ? (t('plans.annualButtonLabel') || 'annual').toLowerCase()
-                              : (t('plans.monthlyButtonLabel') || 'monthly').toLowerCase()
+                            cycle:
+                              billingCycle === "annual"
+                                ? (t("plans.annualButtonLabel") || "annual").toLowerCase()
+                                : (t("plans.monthlyButtonLabel") || "monthly").toLowerCase(),
                           })}
                         </p>
                       </div>
                       <span className="bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border border-zinc-950 dark:border-zinc-200">
-                        {t('plans.activeStatus')?.toUpperCase() || 'ACTIVE'}
+                        {t("plans.activeStatus")?.toUpperCase() || "ACTIVE"}
                       </span>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                       <div className="p-3 bg-zinc-100/50 dark:bg-zinc-800/30 rounded border border-zinc-200/50 dark:border-zinc-800/60">
                         <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">
-                          {t('plans.devicesLabel') || 'Devices'}
+                          {t("plans.devicesLabel") || "Devices"}
                         </p>
                         <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                          {t('plans.devicesCount', { count: activeSub.equipment_count })}
+                          {t("plans.devicesCount", { count: activeSub.equipment_count })}
                         </p>
                       </div>
                       <div className="p-3 bg-zinc-100/50 dark:bg-zinc-800/30 rounded border border-zinc-200/50 dark:border-zinc-800/60">
                         <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">
-                          {t('plans.cycleLabel') || 'Cycle'}
+                          {t("plans.cycleLabel") || "Cycle"}
                         </p>
                         <p className="text-xs font-semibold capitalize text-zinc-900 dark:text-zinc-100">
-                          {billingCycle === 'annual' ? (t('plans.annualButtonLabel') || 'annual') : (t('plans.monthlyButtonLabel') || 'monthly')}
+                          {billingCycle === "annual"
+                            ? t("plans.annualButtonLabel") || "annual"
+                            : t("plans.monthlyButtonLabel") || "monthly"}
                         </p>
                       </div>
                       <div className="p-3 bg-zinc-100/50 dark:bg-zinc-800/30 rounded border border-zinc-200/50 dark:border-zinc-800/60">
                         <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">
-                          {t('plans.renewalLabel') || 'Renewal'}
+                          {t("plans.renewalLabel") || "Renewal"}
                         </p>
                         <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 font-mono">
                           {activeSub.renewal_date
                             ? new Date(activeSub.renewal_date).toLocaleDateString(
-                                i18n.language.startsWith('es') ? 'es-DO' : 'en-US'
+                                i18n.language.startsWith("es") ? "es-DO" : "en-US",
                               )
-                            : 'N/A'}
+                            : "N/A"}
                         </p>
                       </div>
                     </div>
@@ -571,17 +576,15 @@ export function PlansPage() {
                   {/* Plan Summary Card */}
                   <div className="bg-zinc-50/50 dark:bg-zinc-900/30 border border-zinc-200/60 dark:border-zinc-800/80 rounded-lg p-4 shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-3">
-                      {t('plans.planSummary')}
+                      {t("plans.planSummary")}
                     </h4>
                     {(() => {
                       const basePrice = currentPlan
-                        ? billingCycle === 'annual'
+                        ? billingCycle === "annual"
                           ? currentPlan.price * 0.8
                           : currentPlan.price
                         : 0;
-                      const planName = currentPlan
-                        ? getPlanName(currentPlan.name)
-                        : activeSub.service_name;
+                      const planName = currentPlan ? getPlanName(currentPlan.name) : activeSub.service_name;
                       const additionalDevicesCount = Math.max(0, currentEquipmentCount - 1);
                       const additionalDevicesPrice = basePrice * additionalDevicesCount;
                       const estimatedTotal = basePrice * currentEquipmentCount;
@@ -591,7 +594,7 @@ export function PlansPage() {
                         <div className="space-y-2.5">
                           <div className="flex justify-between items-center text-xs">
                             <span className="text-zinc-500 dark:text-zinc-400 font-medium">
-                              {t('plans.basePlanName', { name: planName })}
+                              {t("plans.basePlanName", { name: planName })}
                             </span>
                             <span className="font-semibold text-zinc-900 dark:text-zinc-100 font-mono">
                               ${basePrice.toFixed(2)}
@@ -599,15 +602,15 @@ export function PlansPage() {
                           </div>
                           <div className="flex justify-between items-center text-xs">
                             <span className="text-zinc-500 dark:text-zinc-400 font-medium">
-                              {t('plans.addonCloudStorage')}
+                              {t("plans.addonCloudStorage")}
                             </span>
                             <span className="font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide text-[9px] px-1 bg-zinc-100 dark:bg-zinc-800 rounded">
-                              {t('plans.included')}
+                              {t("plans.included")}
                             </span>
                           </div>
                           <div className="flex justify-between items-center text-xs">
                             <span className="text-zinc-500 dark:text-zinc-400 font-medium">
-                              {t('plans.additionalDevices', { count: additionalDevicesCount })}
+                              {t("plans.additionalDevices", { count: additionalDevicesCount })}
                             </span>
                             <span className="font-semibold text-zinc-900 dark:text-zinc-100 font-mono">
                               ${additionalDevicesPrice.toFixed(2)}
@@ -616,15 +619,15 @@ export function PlansPage() {
                           <div className="pt-2.5 border-t border-zinc-200/50 dark:border-zinc-800/50">
                             <div className="flex justify-between items-center">
                               <span className="font-semibold text-zinc-900 dark:text-zinc-100 text-xs">
-                                {t('plans.estimatedMonthly')}
+                                {t("plans.estimatedMonthly")}
                               </span>
                               <span className="text-sm font-bold text-zinc-900 dark:text-zinc-50 font-mono">
                                 ${estimatedTotal.toFixed(2)}
                               </span>
                             </div>
-                            {billingCycle === 'annual' && (
+                            {billingCycle === "annual" && (
                               <p className="text-right text-[9px] text-zinc-450 dark:text-zinc-500 mt-0.5 font-medium">
-                                {t('plans.billedAnnually', { price: annualBilledTotal.toFixed(2) })}
+                                {t("plans.billedAnnually", { price: annualBilledTotal.toFixed(2) })}
                               </p>
                             )}
                           </div>
@@ -637,13 +640,14 @@ export function PlansPage() {
                   <div className="bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950 border border-zinc-900 dark:border-zinc-100 rounded-lg p-4 relative overflow-hidden shadow-[0_2px_10px_-3px_rgba(0,0,0,0.1)]">
                     <div className="relative z-10">
                       <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-350 dark:text-zinc-650 mb-1">
-                        {t('plans.customPlanTitle') || 'Need a custom plan?'}
+                        {t("plans.customPlanTitle") || "Need a custom plan?"}
                       </h4>
                       <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mb-3 leading-normal font-medium">
-                        {t('plans.customPlanDesc') || 'For organizations with over 100 devices, we offer tailored enterprise solutions.'}
+                        {t("plans.customPlanDesc") ||
+                          "For organizations with over 100 devices, we offer tailored enterprise solutions."}
                       </p>
                       <button className="w-full py-1.5 bg-white text-zinc-950 dark:bg-zinc-900 dark:text-zinc-50 border border-zinc-200 dark:border-zinc-800 font-semibold rounded text-xs hover:opacity-95 transition-opacity cursor-pointer">
-                        {t('plans.contactSales') || 'Contact Sales'}
+                        {t("plans.contactSales") || "Contact Sales"}
                       </button>
                     </div>
                   </div>

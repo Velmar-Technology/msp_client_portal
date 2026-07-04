@@ -57,3 +57,9 @@ export const GoogleAuthDTO = z.object({
 });
 export type GoogleAuthInput = z.infer<typeof GoogleAuthDTO>;
 
+export const VerifyEmailDTO = z.object({
+  email: z.string().email('Invalid email address'),
+  otp: z.string().length(6, 'OTP must be exactly 6 digits').regex(/^\d+$/, 'OTP must contain only numbers'),
+});
+export type VerifyEmailInput = z.infer<typeof VerifyEmailDTO>;
+

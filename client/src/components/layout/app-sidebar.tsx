@@ -30,7 +30,7 @@ interface SidebarBrandProps {
 
 export function SidebarBrand({ logo, portalTitle, infraTitle }: SidebarBrandProps) {
   return (
-    <SidebarHeader className="border-b border-zinc-200 dark:border-zinc-800 px-3.5 py-2.5">
+    <SidebarHeader className="border-b border-zinc-200 dark:border-zinc-800 px-3.5 py-2.5 bg-white dark:bg-zinc-950">
       <div className="flex items-center gap-2.5">
         <img
           src={logo}
@@ -44,7 +44,7 @@ export function SidebarBrand({ logo, portalTitle, infraTitle }: SidebarBrandProp
           >
             {portalTitle}
           </h1>
-          <span className="text-[9px] text-zinc-500 font-medium mt-0.5 uppercase tracking-wider">
+          <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-medium mt-0.5 uppercase tracking-wider">
             {infraTitle}
           </span>
         </div>
@@ -69,9 +69,9 @@ export function ActiveSubCard({ sub, renewalLabel, isSpanish }: ActiveSubCardPro
   }, [sub.renewal_date, isSpanish]);
 
   return (
-    <div className="mx-2 my-2 p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/20 group-data-[collapsible=icon]:hidden">
+    <div className="mx-2 my-2 p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 shadow-sm group-data-[collapsible=icon]:hidden transition-colors">
       <div className="flex items-center justify-between gap-2 mb-1">
-        <span className="text-[9px] font-mono font-bold text-zinc-900 dark:text-zinc-100 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700/50 px-1 rounded uppercase">
+        <span className="text-[9px] font-mono font-bold text-zinc-900 dark:text-zinc-100 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-1 rounded uppercase">
           {sub.plan} Plan
         </span>
         <div className="flex items-center gap-1">
@@ -84,7 +84,7 @@ export function ActiveSubCard({ sub, renewalLabel, isSpanish }: ActiveSubCardPro
       <p className="text-[11px] font-medium text-zinc-800 dark:text-zinc-200 truncate">
         {sub.service_name}
       </p>
-      <p className="text-[9px] text-zinc-500 mt-0.5">
+      <p className="text-[9px] text-zinc-500 dark:text-zinc-400 mt-0.5 font-mono">
         {renewalLabel}: {formattedDate}
       </p>
     </div>
@@ -125,13 +125,13 @@ export function SidebarNavList({
                   <SidebarMenuButton
                     tooltip={translatedLabel}
                     isActive={isGroupActive}
-                    className="h-7 text-xs py-1 px-2 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                    className="h-7 text-xs py-1 px-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 data-[active=true]:text-zinc-900 dark:data-[active=true]:text-zinc-100 data-[active=true]:font-semibold transition-colors"
                   >
-                    <item.icon className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
-                    <span className="group-data-[collapsible=icon]:hidden font-medium">
+                    <item.icon className="h-3.5 w-3.5 shrink-0" />
+                    <span className="group-data-[collapsible=icon]:hidden">
                       {translatedLabel}
                     </span>
-                    <ChevronRight className="ml-auto h-3 w-3 text-zinc-400 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden" />
+                    <ChevronRight className="ml-auto h-3 w-3 text-zinc-400 dark:text-zinc-500 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden" />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
@@ -140,8 +140,12 @@ export function SidebarNavList({
                       const isSubActive = checkIsActive(sub.to);
                       return (
                         <SidebarMenuSubItem key={sub.to}>
-                          <SidebarMenuSubButton asChild isActive={isSubActive} className="h-6 text-[11px]">
-                            <NavLink to={sub.to} className="w-full truncate font-normal">
+                          <SidebarMenuSubButton 
+                            asChild 
+                            isActive={isSubActive} 
+                            className="h-6 text-[11px] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 data-[active=true]:text-zinc-900 dark:data-[active=true]:text-zinc-100 data-[active=true]:font-medium transition-colors"
+                          >
+                            <NavLink to={sub.to} className="w-full truncate">
                               {t(`nav.${sub.labelKey}`)}
                             </NavLink>
                           </SidebarMenuSubButton>
@@ -163,11 +167,11 @@ export function SidebarNavList({
               asChild
               isActive={isActive}
               tooltip={translatedLabel}
-              className="h-7 text-xs py-1 px-2 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+              className="h-7 text-xs py-1 px-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 data-[active=true]:text-zinc-900 dark:data-[active=true]:text-zinc-100 data-[active=true]:font-semibold transition-colors"
             >
               <NavLink to={item.to} className="flex items-center gap-2">
-                <item.icon className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
-                <span className="group-data-[collapsible=icon]:hidden font-medium">
+                <item.icon className="h-3.5 w-3.5 shrink-0" />
+                <span className="group-data-[collapsible=icon]:hidden">
                   {translatedLabel}
                 </span>
               </NavLink>
@@ -193,7 +197,7 @@ export function AppSidebar() {
   const isSpanish = t("dashboard.tableStatus") === "Estado";
 
   return (
-    <ShadcnSidebar>
+    <ShadcnSidebar className="border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
       {/* Header section */}
       <SidebarBrand
         logo={logoUrl}
@@ -202,7 +206,7 @@ export function AppSidebar() {
       />
 
       {/* Navigation Content */}
-      <SidebarContent className="py-1">
+      <SidebarContent className="py-1 bg-white dark:bg-zinc-950">
         <SidebarGroup className="p-0">
           <SidebarGroupContent>
             <SidebarNavList
@@ -224,17 +228,17 @@ export function AppSidebar() {
       </SidebarContent>
 
       {/* Footer support item */}
-      <SidebarFooter className="border-t border-zinc-200 dark:border-zinc-800 p-1.5">
+      <SidebarFooter className="border-t border-zinc-200 dark:border-zinc-800 p-1.5 bg-white dark:bg-zinc-950">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
               isActive={checkIsActive("/help")}
               tooltip={t("nav.help")}
-              className="h-7 text-xs py-1 px-2 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+              className="h-7 text-xs py-1 px-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 data-[active=true]:text-zinc-900 dark:data-[active=true]:text-zinc-100 transition-colors"
             >
               <NavLink to="/help" className="flex items-center gap-2">
-                <HelpCircle className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
+                <HelpCircle className="h-3.5 w-3.5 shrink-0" />
                 <span className="group-data-[collapsible=icon]:hidden font-medium">
                   {t("nav.help")}
                 </span>

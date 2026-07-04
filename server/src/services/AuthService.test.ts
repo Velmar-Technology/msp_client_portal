@@ -14,6 +14,8 @@ const mocks = vi.hoisted(() => {
     comparePassword: vi.fn(),
     jwtSign: vi.fn(),
     jwtVerify: vi.fn(),
+    verifyEmail: vi.fn(),
+    setOTP: vi.fn(),
   };
 });
 
@@ -23,6 +25,8 @@ vi.mock('../repositories/UserRepository', () => ({
     findById: mocks.findById,
     create: mocks.create,
     updateLastLogin: mocks.updateLastLogin,
+    verifyEmail: mocks.verifyEmail,
+    setOTP: mocks.setOTP,
   },
 }));
 
@@ -81,7 +85,7 @@ function createMockUser(overrides: Record<string, unknown> = {}) {
     role: UserRole.CLIENT,
     specialty: null,
     is_active: true,
-    email_verified: false,
+    email_verified: true,
     language: 'en_US',
     avatar_url: null,
     last_login_at: null,
@@ -167,6 +171,21 @@ describe('AuthService', () => {
         message: 'Invalid email or password',
         statusCode: 401,
         code: 'UNAUTHORIZED',
+      });
+
+      expect(mocks.updateLastLogin).not.toHaveBeenCalled();
+    });
+
+    it('should throw forbidden error for unverified email', async () => {
+      const mockUser = createMockUser({ email_verified: false });
+      mocks.findByEmail.mockResolvedValue(mockUser);
+
+      await expect(
+        authService.login({ email: 'user@example.com', password: 'password123' }, '1.2.3.4')
+      ).rejects.toMatchObject({
+        message: 'Please verify your email address before logging in',
+        statusCode: 403,
+        code: 'FORBIDDEN',
       });
 
       expect(mocks.updateLastLogin).not.toHaveBeenCalled();
@@ -258,6 +277,7 @@ describe('AuthService', () => {
       expect(result.user.lastLoginAt).toBeNull();
       expect(result.user.lastLoginIp).toBeNull();
       expect(mocks.updateLastLogin).toHaveBeenCalledWith('user-new', '5.5.5.5');
+      expect(mocks.verifyEmail).toHaveBeenCalledWith('user-new');
     });
 
     it('should throw forbidden for deactivated Google auth user', async () => {
@@ -300,8 +320,70 @@ describe('AuthService', () => {
       });
 
       expect(result.user).toBeDefined();
-      expect(result.tokens).toBeDefined();
+      expect(result.message).toBe('Registration successful. Please check your email to verify your account.');
       expect(mocks.updateLastLogin).not.toHaveBeenCalled();
+      expect(mocks.setOTP).toHaveBeenCalledWith('user-1', expect.any(String), expect.any(Date));
+    });
+  });
+
+  // ============================
+  // VERIFY EMAIL
+  // ============================
+  describe('verifyEmail', () => {
+    it('should verify email successfully with valid OTP', async () => {
+      const mockUser = createMockUser({ 
+        email_verified: false, 
+        otp_code: '123456', 
+        otp_expires: new Date(Date.now() + 15 * 60000) 
+      });
+      mocks.findByEmail.mockResolvedValue(mockUser);
+      mocks.verifyEmail.mockResolvedValue(undefined);
+
+      await expect(authService.verifyEmail('user@example.com', '123456')).resolves.toBeUndefined();
+      expect(mocks.verifyEmail).toHaveBeenCalledWith('user-1');
+    });
+
+    it('should throw bad request for invalid email', async () => {
+      mocks.findByEmail.mockResolvedValue(null);
+      await expect(authService.verifyEmail('unknown@example.com', '123456')).rejects.toMatchObject({
+        message: 'Invalid email or OTP',
+        statusCode: 400,
+      });
+    });
+
+    it('should throw bad request if email already verified', async () => {
+      const mockUser = createMockUser({ email_verified: true });
+      mocks.findByEmail.mockResolvedValue(mockUser);
+      await expect(authService.verifyEmail('user@example.com', '123456')).rejects.toMatchObject({
+        message: 'Email is already verified',
+        statusCode: 400,
+      });
+    });
+
+    it('should throw bad request for incorrect OTP', async () => {
+      const mockUser = createMockUser({ 
+        email_verified: false, 
+        otp_code: '654321', 
+        otp_expires: new Date(Date.now() + 15 * 60000) 
+      });
+      mocks.findByEmail.mockResolvedValue(mockUser);
+      await expect(authService.verifyEmail('user@example.com', '123456')).rejects.toMatchObject({
+        message: 'Invalid OTP',
+        statusCode: 400,
+      });
+    });
+
+    it('should throw bad request for expired OTP', async () => {
+      const mockUser = createMockUser({ 
+        email_verified: false, 
+        otp_code: '123456', 
+        otp_expires: new Date(Date.now() - 15 * 60000) 
+      });
+      mocks.findByEmail.mockResolvedValue(mockUser);
+      await expect(authService.verifyEmail('user@example.com', '123456')).rejects.toMatchObject({
+        message: 'OTP has expired',
+        statusCode: 400,
+      });
     });
   });
 });

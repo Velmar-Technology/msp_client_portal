@@ -28,6 +28,7 @@ export interface AuthState {
     confirmPassword: string,
     clientType: string
   ) => Promise<void>;
+  verifyEmail: (email: string, otp: string) => Promise<void>;
   loginWithGoogle: (idToken: string, tenantName?: string) => Promise<void>;
   logout: () => void;
   updateUser: (updatedFields: Partial<AuthUser>) => void;
@@ -72,7 +73,7 @@ export const useAuthStore = create<AuthState>()(
       register: async (email, name, tenantName, password, confirmPassword, clientType) => {
         set({ isLoading: true }, false, 'auth/register_request');
         try {
-          const result = await authService.register({
+          await authService.register({
             email,
             name,
             tenantName,
@@ -82,8 +83,6 @@ export const useAuthStore = create<AuthState>()(
           });
           set(
             {
-              user: result.user,
-              isAuthenticated: true,
               isLoading: false,
             },
             false,
@@ -91,6 +90,17 @@ export const useAuthStore = create<AuthState>()(
           );
         } catch (error) {
           set({ isLoading: false }, false, 'auth/register_failure');
+          throw error;
+        }
+      },
+
+      verifyEmail: async (email, otp) => {
+        set({ isLoading: true }, false, 'auth/verify_email_request');
+        try {
+          await authService.verifyEmail(email, otp);
+          set({ isLoading: false }, false, 'auth/verify_email_success');
+        } catch (error) {
+          set({ isLoading: false }, false, 'auth/verify_email_failure');
           throw error;
         }
       },

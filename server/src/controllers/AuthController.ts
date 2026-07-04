@@ -60,6 +60,15 @@ export class AuthController {
       message: 'Password reset successfully',
     });
   }
+
+  async verifyEmail(req: Request, res: Response): Promise<void> {
+    const { email, otp } = req.body as { email: string; otp: string };
+    await authService.verifyEmail(email, otp);
+    res.json({
+      success: true,
+      message: 'Email verified successfully. You can now log in.',
+    });
+  }
 }
 
 export const authController = new AuthController();

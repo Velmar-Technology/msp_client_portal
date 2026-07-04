@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => {
     refreshToken: vi.fn(),
     forgotPassword: vi.fn(),
     resetPassword: vi.fn(),
+    verifyEmail: vi.fn(),
   };
 });
 
@@ -21,6 +22,7 @@ vi.mock('../services/AuthService', () => ({
     refreshToken: mocks.refreshToken,
     forgotPassword: mocks.forgotPassword,
     resetPassword: mocks.resetPassword,
+    verifyEmail: mocks.verifyEmail,
   },
 }));
 
@@ -211,6 +213,25 @@ describe('AuthController', () => {
         { idToken: 'token-123' },
         '10.20.30.40'
       );
+    });
+  });
+
+  describe('verifyEmail', () => {
+    it('should call authService.verifyEmail with email and otp and return success', async () => {
+      mocks.verifyEmail.mockResolvedValue(undefined);
+
+      const req = {
+        body: { email: 'test@example.com', otp: '123456' },
+      } as unknown as Request;
+      const res = createMockResponse();
+
+      await authController.verifyEmail(req, res);
+
+      expect(mocks.verifyEmail).toHaveBeenCalledWith('test@example.com', '123456');
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        message: 'Email verified successfully. You can now log in.',
+      });
     });
   });
 });

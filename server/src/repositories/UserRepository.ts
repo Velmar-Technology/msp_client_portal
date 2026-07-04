@@ -216,7 +216,18 @@ export class UserRepository extends BaseRepository<User> {
   }
 
   async verifyEmail(id: string): Promise<void> {
-    await db.update(users).set({ email_verified: true }).where(eq(users.id, id));
+    await db.update(users).set({ 
+      email_verified: true,
+      otp_code: null,
+      otp_expires: null
+    }).where(eq(users.id, id));
+  }
+
+  async setOTP(id: string, otpCode: string, otpExpires: Date): Promise<void> {
+    await db.update(users).set({
+      otp_code: otpCode,
+      otp_expires: otpExpires
+    }).where(eq(users.id, id));
   }
 
   async updatePassword(id: string, passwordHash: string): Promise<void> {

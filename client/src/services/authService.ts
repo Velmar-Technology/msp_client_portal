@@ -48,13 +48,12 @@ export const authService = {
     return result;
   },
 
-  async register(data: RegisterPayload): Promise<AuthResponse> {
-    const response = await api.post('/auth/register', data);
-    const result = response.data.data as AuthResponse;
-    localStorage.setItem('accessToken', result.tokens.accessToken);
-    localStorage.setItem('refreshToken', result.tokens.refreshToken);
-    localStorage.setItem('user', JSON.stringify(result.user));
-    return result;
+  async register(data: RegisterPayload): Promise<void> {
+    await api.post('/auth/register', data);
+  },
+
+  async verifyEmail(email: string, otp: string): Promise<void> {
+    await api.post('/auth/verify-email', { email, otp });
   },
 
   async loginWithGoogle(data: GoogleAuthPayload): Promise<AuthResponse> {

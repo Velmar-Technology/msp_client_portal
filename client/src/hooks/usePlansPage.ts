@@ -218,10 +218,9 @@ export function usePlansPage() {
   }, [subtotal, tax]);
 
   const getTierLabel = useCallback((planId: string) => {
-    if (planId === "BASIC") return t("plans.basic.tier") || "Level 1";
-    if (planId === "STANDARD") return t("plans.standard.tier") || "Level 2";
-    if (planId === "PREMIUM") return t("plans.premium.tier") || "Level 3";
-    return "Level";
+    if (planId )
+      return planId.toString();
+    return "";
   }, [t]);
 
   // PayPal checkout effect

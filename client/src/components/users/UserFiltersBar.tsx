@@ -40,7 +40,7 @@ export function UserFiltersBar({
           placeholder={t("userManagement.searchPlaceholder")}
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-8 pr-8 h-8 text-sm bg-white dark:bg-zinc-955 border-zinc-200 dark:border-zinc-800"
+          className="pl-8 pr-8 h-8 text-sm bg-card border"
         />
         {searchQuery && (
           <button
@@ -60,7 +60,7 @@ export function UserFiltersBar({
           onRoleFilterChange(value === "ALL" ? "" : (value as RoleFilter))
         }
       >
-        <SelectTrigger className="h-8 w-[140px] text-xs bg-white dark:bg-zinc-955 border-zinc-200 dark:border-zinc-800">
+        <SelectTrigger className="h-8 w-[140px] text-xs bg-card border">
           <SelectValue placeholder={t("userManagement.filterRole")} />
         </SelectTrigger>
         <SelectContent>
@@ -76,7 +76,7 @@ export function UserFiltersBar({
         value={statusFilter}
         onValueChange={(value) => onStatusFilterChange(value as StatusFilter)}
       >
-        <SelectTrigger className="h-8 w-[130px] text-xs bg-white dark:bg-zinc-955 border-zinc-200 dark:border-zinc-800">
+        <SelectTrigger className="h-8 w-[130px] text-xs bg-card border">
           <SelectValue placeholder={t("userManagement.filterStatus")} />
         </SelectTrigger>
         <SelectContent>

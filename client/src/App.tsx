@@ -19,6 +19,7 @@ import { DevicesPage } from './pages/DevicesPage';
 import { UserManagementPage } from './pages/UserManagementPage';
 import { ThemeProvider } from './components/theme-provider';
 import { ReactErrorBoundary } from '@shared/errors';
+import { Toaster } from '@/components/ui/sonner';
 
 // Protected Route Component
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) {
@@ -94,6 +95,7 @@ export function App() {
               <Route path="/privacy" element={<PrivacyPage />} />
             </Route>
           </Routes>
+          <Toaster />
         </BrowserRouter>
       </ThemeProvider>
     </ReactErrorBoundary>
