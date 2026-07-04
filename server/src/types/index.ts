@@ -77,6 +77,8 @@ export interface User {
   specialty: string | null;
   is_active: boolean;
   email_verified: boolean;
+  otp_code: string | null;
+  otp_expires: Date | null;
   language: string;
   avatar_url: string | null;
   last_login_at: Date | null;
