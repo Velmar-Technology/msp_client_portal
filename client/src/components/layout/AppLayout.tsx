@@ -4,7 +4,6 @@ import { Shield } from "lucide-react";
 import { AppSidebar } from "./app-sidebar";
 import { TopNav } from "./TopNav";
 import { SidebarProvider, SidebarInset } from "../ui/sidebar";
-import { ToastContainer } from "./ToastContainer";
 import { useAppLayout } from "../../hooks/useAppLayout";
 
 // 1. High-Density Footer Sub-component
@@ -80,7 +79,6 @@ export function AppLayout() {
         </main>
         <Footer />
       </SidebarInset>
-      <ToastContainer />
     </SidebarProvider>
   );
 }

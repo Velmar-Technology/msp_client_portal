@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo, type SyntheticEvent 
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './useAuth';
 import { usePlanStore } from '../store/usePlanStore';
-import { useNotificationStore } from '../store/useNotificationStore';
+import { toast } from 'sonner';
 import type { Plan, PlanFeature } from '../services/planService';
 import { userService } from '../services/userService';
 import { subscriptionService } from '../services/subscriptionService';
@@ -13,7 +13,11 @@ export function usePlansPage() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const { plans, loading, fetchPlans, updatePlan, createPlan } = usePlanStore();
-  const { addToast } = useNotificationStore();
+
+  const addToast = useCallback(({ title, message, type }: { title: string; message: string; type?: 'success' | 'error' | 'warning' | 'info' }) => {
+    const tType = type || 'info';
+    toast[tType](title, { description: message });
+  }, []);
 
   const getLocalizedValue = useCallback((val: string | Record<string, string> | null | undefined): string => {
     if (!val) return "";

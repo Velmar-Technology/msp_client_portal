@@ -13,8 +13,10 @@ let mockLanguage = 'en_US';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     t: (key: string, options?: any) => {
       const parts = key.split('.');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let current: any = enTranslations;
       for (const part of parts) {
         if (current && typeof current === 'object' && part in current) {
@@ -47,11 +49,21 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-const mockAddToast = vi.fn();
+const { mockToast } = vi.hoisted(() => ({
+  mockToast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn(),
+  }
+}));
+
+vi.mock('sonner', () => ({
+  toast: mockToast,
+}));
+
 vi.mock('../store/useNotificationStore', () => ({
-  useNotificationStore: () => ({
-    addToast: mockAddToast,
-  }),
+  useNotificationStore: () => ({}),
 }));
 
 vi.mock('@/hooks/useAuth', () => ({
@@ -227,11 +239,9 @@ describe('PlansPage', () => {
           billingCycle: 'monthly',
           paypalOrderId: 'MOCK-PAYPAL-SUB',
         });
-        expect(mockAddToast).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: 'Subscribed Successfully',
-            type: 'success',
-          })
+        expect(mockToast.success).toHaveBeenCalledWith(
+          'Subscribed Successfully',
+          expect.any(Object)
         );
       });
     });
@@ -688,11 +698,9 @@ describe('PlansPage', () => {
           clientId: 'client-2',
           billingCycle: 'monthly',
         });
-        expect(mockAddToast).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: 'Plan Applied',
-            type: 'success',
-          })
+        expect(mockToast.success).toHaveBeenCalledWith(
+          'Plan Applied',
+          expect.any(Object)
         );
       });
     });
@@ -939,11 +947,9 @@ describe('PlansPage', () => {
           clientId: 'client-2',
           billingCycle: 'monthly',
         });
-        expect(mockAddToast).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: 'Quotation Sent',
-            type: 'success',
-          })
+        expect(mockToast.success).toHaveBeenCalledWith(
+          'Quotation Sent',
+          expect.any(Object)
         );
       });
     });
@@ -990,11 +996,9 @@ describe('PlansPage', () => {
           unregisteredName: 'Admin Unregistered Customer',
           billingCycle: 'monthly',
         });
-        expect(mockAddToast).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: 'Quotation Sent',
-            type: 'success',
-          })
+        expect(mockToast.success).toHaveBeenCalledWith(
+          'Quotation Sent',
+          expect.any(Object)
         );
       });
 

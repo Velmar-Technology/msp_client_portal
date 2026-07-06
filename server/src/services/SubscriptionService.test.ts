@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => {
     paypalGetOrder: vi.fn(),
     paypalCaptureOrder: vi.fn(),
     paypalCreateOrderForAmount: vi.fn(),
+    notificationCreateInApp: vi.fn().mockResolvedValue(null),
   };
 });
 
@@ -71,6 +72,14 @@ vi.mock('../repositories/InvoiceRepository', () => {
     invoiceRepository: {
       findByInvoiceNumber: mocks.invoiceFindByNumber,
       create: mocks.invoiceCreate,
+    },
+  };
+});
+
+vi.mock('./NotificationService', () => {
+  return {
+    notificationService: {
+      createInAppNotification: mocks.notificationCreateInApp,
     },
   };
 });

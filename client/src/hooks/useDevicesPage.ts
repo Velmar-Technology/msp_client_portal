@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./useAuth";
-import { useNotificationStore } from "@/store/useNotificationStore";
+import { toast } from "sonner";
 import { subscriptionService } from "@/services/subscriptionService";
 import type { Subscription } from "@/services/subscriptionService";
 import { equipmentService } from "@/services/equipmentService";
@@ -12,7 +12,6 @@ export function useDevicesPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { addToast } = useNotificationStore();
 
   const [loading, setLoading] = useState(true);
   const [activeSubscriptions, setActiveSubscriptions] = useState<Subscription[]>([]);
@@ -113,15 +112,13 @@ export function useDevicesPage() {
       }
     } catch (err) {
       console.error("Failed to load active subscriptions", err);
-      addToast({
-        title: "Error",
-        message: "Failed to retrieve active subscriptions for device management.",
-        type: "error",
+      toast.error("Error", {
+        description: "Failed to retrieve active subscriptions for device management.",
       });
     } finally {
       setLoading(false);
     }
-  }, [user?.role, isAdmin, addToast]);
+  }, [user?.role, isAdmin]);
 
   useEffect(() => {
     fetchActiveSubscriptions();
@@ -146,41 +143,33 @@ export function useDevicesPage() {
     try {
       const updatedSlot = await equipmentService.generateOTP(subId, slotIndex);
       updateDeviceList(subId, slotIndex, updatedSlot);
-      addToast({
-        title: "OTP Generated",
-        message: `Temporary activation code ${updatedSlot.otp} generated for slot #${slotIndex + 1}.`,
-        type: "success",
+      toast.success("OTP Generated", {
+        description: `Temporary activation code ${updatedSlot.otp} generated for slot #${slotIndex + 1}.`,
       });
     } catch (err) {
       console.error("Failed to generate OTP:", err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
-      addToast({
-        title: "Error",
-        message: error.response?.data?.message || error.message || "Failed to generate OTP.",
-        type: "error",
+      toast.error("Error", {
+        description: error.response?.data?.message || error.message || "Failed to generate OTP.",
       });
     }
-  }, [addToast, updateDeviceList]);
+  }, [updateDeviceList]);
 
   const handleRevokeEquipment = useCallback(async (subId: string, slotIndex: number) => {
     try {
       const updatedSlot = await equipmentService.deactivateSlot(subId, slotIndex);
       updateDeviceList(subId, slotIndex, updatedSlot);
-      addToast({
-        title: "Slot Revoked",
-        message: "Device slot revoked. Nextcloud account deleted.",
-        type: "info",
+      toast.info("Slot Revoked", {
+        description: "Device slot revoked. Nextcloud account deleted.",
       });
     } catch (err) {
       console.error("Failed to revoke device:", err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
-      addToast({
-        title: "Error",
-        message: error.response?.data?.message || error.message || "Failed to deactivate slot.",
-        type: "error",
+      toast.error("Error", {
+        description: error.response?.data?.message || error.message || "Failed to deactivate slot.",
       });
     }
-  }, [addToast, updateDeviceList]);
+  }, [updateDeviceList]);
 
   const handleStartActivationWizard = useCallback(async (subId: string, slotIndex: number, currentOtp?: string | null) => {
     setActivationWizardSubId(subId);
@@ -209,24 +198,20 @@ export function useDevicesPage() {
         activationDeviceSerial
       );
       updateDeviceList(activationWizardSubId, activationWizardSlotIdx, updatedSlot);
-      addToast({
-        title: "Device Activated",
-        message: `Device ${activationDeviceName} successfully activated. Nextcloud backup account provisioned.`,
-        type: "success",
+      toast.success("Device Activated", {
+        description: `Device ${activationDeviceName} successfully activated. Nextcloud backup account provisioned.`,
       });
       setActivationWizardStep(3);
     } catch (err) {
       console.error("Failed to activate device in wizard:", err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
-      addToast({
-        title: "Error",
-        message: error.response?.data?.message || error.message || "Failed to activate device.",
-        type: "error",
+      toast.error("Error", {
+        description: error.response?.data?.message || error.message || "Failed to activate device.",
       });
     } finally {
       setActivationWizardLoading(false);
     }
-  }, [activationWizardSubId, activationWizardSlotIdx, activationDeviceName, activationDeviceSerial, addToast, updateDeviceList]);
+  }, [activationWizardSubId, activationWizardSlotIdx, activationDeviceName, activationDeviceSerial, updateDeviceList]);
 
   const activeSub = useMemo(() => {
     return activeSubscriptions.find((sub) => sub.id === selectedSubscriptionId) || activeSubscriptions[0];

@@ -3,7 +3,6 @@ import { AppLayout } from './AppLayout';
 import { expect, test, vi, beforeEach, describe } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { subscriptionService } from '../../services/subscriptionService';
-import { useAuth } from '../../hooks/useAuth';
 import React from 'react';
 
 vi.mock('react-i18next', () => ({
@@ -25,12 +24,12 @@ vi.mock('../../services/subscriptionService', () => ({
 
 vi.mock('../../store/useNotificationStore', () => {
   const store = {
-    toasts: [],
     fetchNotifications: vi.fn().mockResolvedValue([]),
     startStream: vi.fn(),
     stopStream: vi.fn(),
   };
   return {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     useNotificationStore: (selector?: (state: any) => any) => {
       if (selector) return selector(store);
       return store;

@@ -2,19 +2,11 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { notificationService } from '../services/notificationService';
 import type { Notification } from '../services/notificationService';
-
-export interface ToastMessage {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  link?: string | null;
-}
+import { toast } from 'sonner';
 
 export interface NotificationState {
   notifications: Notification[];
   unreadCount: number;
-  toasts: ToastMessage[];
   isLoading: boolean;
   eventSource: EventSource | null;
 
@@ -22,9 +14,6 @@ export interface NotificationState {
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   clearNotifications: () => Promise<void>;
-  
-  addToast: (toast: Omit<ToastMessage, 'id'>) => string;
-  removeToast: (id: string) => void;
   
   startStream: () => void;
   stopStream: () => void;
@@ -35,7 +24,6 @@ export const useNotificationStore = create<NotificationState>()(
     (set, get) => ({
       notifications: [],
       unreadCount: 0,
-      toasts: [],
       isLoading: false,
       eventSource: null,
 
@@ -112,31 +100,7 @@ export const useNotificationStore = create<NotificationState>()(
         }
       },
 
-      addToast: (toastData) => {
-        const id = Math.random().toString(36).substring(2, 9);
-        const newToast: ToastMessage = { ...toastData, id };
-        
-        set(
-          (state) => ({ toasts: [...state.toasts, newToast] }),
-          false,
-          'notifications/add_toast'
-        );
 
-        // Auto-remove toast after 6 seconds
-        setTimeout(() => {
-          get().removeToast(id);
-        }, 6000);
-
-        return id;
-      },
-
-      removeToast: (id) => {
-        set(
-          (state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }),
-          false,
-          'notifications/remove_toast'
-        );
-      },
 
       startStream: () => {
         const { eventSource } = get();
@@ -177,20 +141,55 @@ export const useNotificationStore = create<NotificationState>()(
               toastType = 'warning';
             }
 
-            get().addToast({
-              title: newNotif.title,
-              message: newNotif.message,
-              type: toastType,
-              link: newNotif.link,
-            });
+            const options: { description: string; action?: { label: string; onClick: () => void } } = {
+              description: newNotif.message,
+            };
+
+            if (newNotif.link) {
+              options.action = {
+                label: 'View',
+                onClick: () => {
+                  window.location.href = newNotif.link!;
+                },
+              };
+            }
+
+            if (toastType === 'success') {
+              toast.success(newNotif.title, options);
+            } else if (toastType === 'error') {
+              toast.error(newNotif.title, options);
+            } else if (toastType === 'warning') {
+              toast.warning(newNotif.title, options);
+            } else {
+              toast.info(newNotif.title, options);
+            }
 
           } catch (err) {
             console.error('Error parsing SSE event data:', err);
           }
         });
 
-        es.addEventListener('error', (e) => {
-          console.warn('SSE connection encountered an error, reconnecting...', e);
+        es.addEventListener('error', async (e) => {
+          console.warn('SSE connection encountered an error, attempting to reconnect...', e);
+          es.close();
+          set({ eventSource: null }, false, 'notifications/stream_error');
+
+          try {
+            // Trigger a call to fetch notifications. This uses the Axios 'api' instance.
+            // If the current token is expired, Axios interceptors will auto-refresh it in the background.
+            await notificationService.getAll();
+          } catch (error) {
+            console.error('Failed to trigger token auto-refresh during SSE reconnect:', error);
+          }
+
+          // Retry connection after 5 seconds if still authenticated
+          setTimeout(() => {
+            const token = localStorage.getItem('accessToken');
+            const currentES = get().eventSource;
+            if (token && !currentES) {
+              get().startStream();
+            }
+          }, 5000);
         });
 
         set({ eventSource: es }, false, 'notifications/stream_start');

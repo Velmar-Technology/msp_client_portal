@@ -33,11 +33,21 @@ vi.mock('@/hooks/useAuth', () => ({
   }),
 }));
 
-const mockAddToast = vi.fn();
+const { mockToast } = vi.hoisted(() => ({
+  mockToast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn(),
+  }
+}));
+
+vi.mock('sonner', () => ({
+  toast: mockToast,
+}));
+
 vi.mock('@/store/useNotificationStore', () => ({
-  useNotificationStore: () => ({
-    addToast: mockAddToast,
-  }),
+  useNotificationStore: () => ({}),
 }));
 
 let mockLanguage = 'en_US';
@@ -217,10 +227,7 @@ describe('DevicesPage', () => {
     // Verify toast is shown and OTP UI is rendered in Wizard Step 1
     await waitFor(() => {
       expect(screen.getByText('Device Activation Wizard')).toBeInTheDocument();
-      expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({
-        title: 'OTP Generated',
-        type: 'success',
-      }));
+      expect(mockToast.success).toHaveBeenCalledWith('OTP Generated', expect.any(Object));
       expect(screen.getByText('123456')).toBeInTheDocument();
     });
 
@@ -238,10 +245,7 @@ describe('DevicesPage', () => {
 
     // Expect Step 3 success screen
     await waitFor(() => {
-      expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({
-        title: 'Device Activated',
-        type: 'success',
-      }));
+      expect(mockToast.success).toHaveBeenCalledWith('Device Activated', expect.any(Object));
       expect(screen.getAllByText('Simulated Laptop')[0]).toBeInTheDocument();
     });
 
@@ -270,10 +274,7 @@ describe('DevicesPage', () => {
     fireEvent.click(deactivateMenuItems[1]);
 
     await waitFor(() => {
-      expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({
-        title: 'Slot Revoked',
-        type: 'info',
-      }));
+      expect(mockToast.info).toHaveBeenCalledWith('Slot Revoked', expect.any(Object));
     });
   });
 

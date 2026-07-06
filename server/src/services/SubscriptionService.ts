@@ -9,6 +9,7 @@ import { CreateSubscriptionInput, UpdateSubscriptionInput, SendQuoteInput } from
 import { sendQuotationEmail } from '../utils/emailService';
 import { paypalService } from './PaypalService';
 import { env } from '../config/env';
+import { notificationService } from './NotificationService';
 
 function getLocalizedValue(val: any): string {
   if (!val) return '';
@@ -288,6 +289,18 @@ export class SubscriptionService {
         });
       }
     }
+
+    // Trigger in-app notification for subscription activation
+    await notificationService.createInAppNotification({
+      userId: clientId,
+      title: 'Subscription Activated',
+      message: `Your subscription to ${subscription.service_name} is now active.`,
+      type: 'SUBSCRIPTION_ACTIVATED_SUCCESS',
+      link: '/billing',
+      tenantId,
+    }).catch((err) => {
+      console.error('Failed to create in-app notification for subscription activation:', err);
+    });
 
     return subscription;
   }

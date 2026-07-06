@@ -3,6 +3,7 @@ import { ChevronDown, Plus, Minus, RefreshCw, Mail, Ban } from "lucide-react";
 import { Page } from "@/components/Page";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Subscription } from "../services/subscriptionService";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -100,7 +101,6 @@ export function PlansPage() {
     handleDrop,
     handleDragEnd,
     handleSavePlan,
-    addToast,
   } = usePlansPage();
 
   const getStatusColor = (status: string) => {
@@ -213,12 +213,10 @@ export function PlansPage() {
                       setUserSelectedPlan(sub.plan);
                       setEquipmentCounts((prev) => ({ ...prev, [sub.plan]: sub.equipment_count + 1 }));
                       setActiveTab("manage");
-                      addToast({
-                        title: t("plans.addDeviceTitle") || "Upgrade Pre-configured",
-                        message:
+                      toast.info(t("plans.addDeviceTitle") || "Upgrade Pre-configured", {
+                        description:
                           t("plans.addDeviceMsg") ||
                           "Complete payment to add the new device license to your subscription.",
-                        type: "info",
                       });
                     }
                   }}
@@ -257,10 +255,8 @@ export function PlansPage() {
                   onClick={() => {
                     setUserSelectedPlan(sub.plan);
                     setActiveTab("browse");
-                    addToast({
-                      title: t("plans.changePlanTitle") || "Browse Plans",
-                      message: t("plans.changePlanMsg") || "Select a different plan tier to switch or subscribe.",
-                      type: "info",
+                    toast.info(t("plans.changePlanTitle") || "Browse Plans", {
+                      description: t("plans.changePlanMsg") || "Select a different plan tier to switch or subscribe.",
                     });
                   }}
                   className="cursor-pointer flex items-center gap-1.5 text-xs py-1.5"
@@ -272,10 +268,8 @@ export function PlansPage() {
                 {/* Contact Support */}
                 <DropdownMenuItem
                   onClick={() => {
-                    addToast({
-                      title: t("plans.contactSupportTitle") || "Contact Support",
-                      message: t("plans.contactSupportMsg") || "Need assistance? Email: soporte@verlmartech.com.do",
-                      type: "info",
+                    toast.info(t("plans.contactSupportTitle") || "Contact Support", {
+                      description: t("plans.contactSupportMsg") || "Need assistance? Email: soporte@verlmartech.com.do",
                     });
                     window.location.href = "mailto:soporte@verlmartech.com.do?subject=Subscription Support Request";
                   }}
@@ -314,7 +308,6 @@ export function PlansPage() {
       setUserSelectedPlan,
       setEquipmentCounts,
       setActiveTab,
-      addToast,
     ],
   );
 
