@@ -141,6 +141,78 @@ describe('AppLayout UI Blocker', () => {
     expect(screen.queryByText('Active Plan Required')).not.toBeInTheDocument();
   });
 
+  test('does not block UI for CLIENT user without active subscription on /terms route', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'client-123', name: 'John Client', role: 'CLIENT', email: 'john@client.com', tenantId: 'tenant-1' },
+      isAuthenticated: true,
+    });
+
+    vi.mocked(subscriptionService.getAll).mockResolvedValue([]);
+
+    render(
+      <MemoryRouter initialEntries={['/terms']}>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route path="/terms" element={<div>Terms Page Content</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Terms Page Content')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Active Plan Required')).not.toBeInTheDocument();
+  });
+
+  test('does not block UI for CLIENT user without active subscription on /privacy route', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'client-123', name: 'John Client', role: 'CLIENT', email: 'john@client.com', tenantId: 'tenant-1' },
+      isAuthenticated: true,
+    });
+
+    vi.mocked(subscriptionService.getAll).mockResolvedValue([]);
+
+    render(
+      <MemoryRouter initialEntries={['/privacy']}>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route path="/privacy" element={<div>Privacy Page Content</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Privacy Page Content')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Active Plan Required')).not.toBeInTheDocument();
+  });
+
+  test('does not block UI for CLIENT user without active subscription on /help route', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'client-123', name: 'John Client', role: 'CLIENT', email: 'john@client.com', tenantId: 'tenant-1' },
+      isAuthenticated: true,
+    });
+
+    vi.mocked(subscriptionService.getAll).mockResolvedValue([]);
+
+    render(
+      <MemoryRouter initialEntries={['/help']}>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route path="/help" element={<div>Help Page Content</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Help Page Content')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Active Plan Required')).not.toBeInTheDocument();
+  });
+
   test('does not block UI for ADMIN user without active subscription', async () => {
     mockUseAuth.mockReturnValue({
       user: { id: 'admin-123', name: 'Admin User', role: 'ADMIN', email: 'admin@example.com', tenantId: 'tenant-1' },

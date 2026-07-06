@@ -478,6 +478,7 @@ export function usePlansPage() {
     fetchActiveSubscriptions,
     addToast,
     getPlanName,
+    acceptedTos,
   ]);
 
   const handleAdjustEquipmentCount = useCallback((planId: string, delta: number) => {
