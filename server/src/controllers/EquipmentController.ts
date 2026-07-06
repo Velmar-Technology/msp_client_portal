@@ -86,7 +86,7 @@ export class EquipmentController {
     }
   }
 
-  async getAllDevicesForAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getAllDevicesForAdmin(_req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const devices = await equipmentService.getAllDevicesForAdmin();
       res.json({
