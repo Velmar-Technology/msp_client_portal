@@ -81,8 +81,6 @@ export interface User {
   otp_expires: Date | null;
   language: string;
   avatar_url: string | null;
-  otp_code: string | null;
-  otp_expires: Date | null;
   last_login_at: Date | null;
   last_login_ip: string | null;
   tenant_id: string;
