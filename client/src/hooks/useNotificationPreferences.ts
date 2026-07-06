@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import {
   notificationPreferenceService,
   type NotificationPreferencesMap,
@@ -12,6 +13,7 @@ export const FORCE_IN_APP_EVENTS: NotificationEventType[] = [
 ];
 
 export function useNotificationPreferences() {
+  const { t } = useTranslation();
   const [preferences, setPreferences] = useState<NotificationPreferencesMap | null>(null);
   const [originalPreferences, setOriginalPreferences] = useState<NotificationPreferencesMap | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -19,23 +21,34 @@ export function useNotificationPreferences() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"success" | "error" | "">("");
 
-  const fetchPreferences = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const result = await notificationPreferenceService.getPreferences();
-      setPreferences(result.data.preferences);
-      setOriginalPreferences(result.data.preferences);
-    } catch {
-      setMessage("Failed to load notification preferences.");
-      setMessageType("error");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    fetchPreferences();
-  }, [fetchPreferences]);
+    let isMounted = true;
+
+    async function load() {
+      try {
+        const result = await notificationPreferenceService.getPreferences();
+        if (isMounted) {
+          setPreferences(result.data.preferences);
+          setOriginalPreferences(result.data.preferences);
+        }
+      } catch {
+        if (isMounted) {
+          setMessage(t("notificationPreferences.loadFailed"));
+          setMessageType("error");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    load();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [t]);
 
   const handleToggle = useCallback((event: NotificationEventType, channel: keyof ChannelPreference) => {
     setPreferences((prev) => {
@@ -71,15 +84,15 @@ export function useNotificationPreferences() {
       const result = await notificationPreferenceService.updatePreferences(preferences);
       setPreferences(result.data.preferences);
       setOriginalPreferences(result.data.preferences);
-      setMessage("Preferences saved successfully.");
+      setMessage(t("notificationPreferences.saveSuccess"));
       setMessageType("success");
     } catch {
-      setMessage("Failed to save preferences. Please try again.");
+      setMessage(t("notificationPreferences.saveFailed"));
       setMessageType("error");
     } finally {
       setIsSaving(false);
     }
-  }, [preferences]);
+  }, [preferences, t]);
 
   const isLocked = useCallback((event: NotificationEventType, channel: keyof ChannelPreference): boolean => {
     return channel === "in_app" && FORCE_IN_APP_EVENTS.includes(event);

@@ -115,7 +115,8 @@
     "dontHaveAccount": "¿No tiene una cuenta?",
     "createAccount": "Crear cuenta",
     "emailPlaceholder": "usuario@empresa.com",
-    "enterPasswordPlaceholder": "Escriba su contraseña"
+    "enterPasswordPlaceholder": "Escriba su contraseña",
+    "or": "O continuar con"
   },
   "register": {
     "createAccountHeader": "Crear Cuenta",
@@ -560,5 +561,50 @@
     "processing": "Procesando...",
     "noUsers": "No se encontraron usuarios",
     "pageOf": "Página {page} de {total}"
+  },
+  "notificationPreferences": {
+    "title": "Preferencias de Notificación",
+    "subtitle": "Administre sus canales de entrega de alertas",
+    "loading": "Cargando...",
+    "eventType": "Tipo de Evento",
+    "lockedTogglesInfo": "Los interruptores bloqueados no se pueden desactivar.",
+    "deliveryChannels": "Canales de Entrega",
+    "deliveryChannelsDesc": "Controle qué canales reciben notificaciones para cada tipo de evento. Los eventos críticos del sistema siempre entregan notificaciones en la aplicación.",
+    "saved": "Guardado",
+    "error": "Error",
+    "unsavedChanges": "Cambios sin guardar",
+    "saving": "Guardando...",
+    "saveChanges": "Guardar Cambios",
+    "toggleAriaLabel": "Alternar {{channel}} para {{event}}",
+    "loadFailed": "Error al cargar las preferencias de notificación.",
+    "saveSuccess": "Preferencias guardadas exitosamente.",
+    "saveFailed": "Error al guardar las preferencias. Por favor, inténtelo de nuevo.",
+    "events": {
+      "TICKET_CREATED": {
+        "label": "Ticket Creado",
+        "description": "Cuando se abre un nuevo ticket de soporte"
+      },
+      "TICKET_ASSIGNED": {
+        "label": "Ticket Asignado",
+        "description": "Cuando se asigna un ticket a un técnico"
+      },
+      "TICKET_STATUS_CHANGED": {
+        "label": "Estado Cambiado",
+        "description": "Cuando se actualiza el estado de un ticket"
+      },
+      "TICKET_CANCELLED": {
+        "label": "Ticket Cancelado",
+        "description": "Cuando se cancela un ticket"
+      },
+      "NEW_REPLY": {
+        "label": "Nueva Respuesta",
+        "description": "Cuando alguien responde a su ticket"
+      }
+    },
+    "channels": {
+      "in_app": "Portal",
+      "email": "Email",
+      "whatsapp": "WhatsApp"
+    }
   }
 }

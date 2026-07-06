@@ -1,35 +1,36 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
-import { Eye, EyeOff, AlertCircle } from 'lucide-react';
-import logoUrl from '../assets/logo.png';
-import { useTranslation } from 'react-i18next';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { GoogleLoginButton } from '../components/auth/GoogleLoginButton';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { toast } from 'sonner';
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+import { Eye, EyeOff, AlertCircle } from "lucide-react";
+import logoUrl from "../assets/logo.png";
+import { useTranslation } from "react-i18next";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { GoogleLoginButton } from "../components/auth/GoogleLoginButton";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { toast } from "sonner";
 
 export function LoginPage() {
   const { t, i18n } = useTranslation();
   const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleGoogleSuccess = async (idToken: string) => {
-    setError('');
+    setError("");
     setLoading(true);
     try {
       await loginWithGoogle(idToken);
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      const errorMsg = error.response?.data?.message || 
-        (i18n.language === 'es_DO' ? 'Error al autenticar con Google' : 'Google authentication failed');
+      const errorMsg =
+        error.response?.data?.message ||
+        (i18n.language === "es_DO" ? "Error al autenticar con Google" : "Google authentication failed");
       setError(errorMsg);
       toast.error(errorMsg);
     } finally {
@@ -38,30 +39,31 @@ export function LoginPage() {
   };
 
   const handleGoogleError = (errMsg?: string) => {
-    const defaultMsg = i18n.language === 'es_DO' ? 'Error al autenticar con Google' : 'Google authentication failed';
+    const defaultMsg = i18n.language === "es_DO" ? "Error al autenticar con Google" : "Google authentication failed";
     setError(errMsg || defaultMsg);
     toast.error(errMsg || defaultMsg);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
     try {
       await login(email, password);
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      const errorMsg = error.response?.data?.message || 
-        (i18n.language === 'es_DO' ? 'Correo o contraseña incorrectos' : 'Invalid email or password');
+      const errorMsg =
+        error.response?.data?.message ||
+        (i18n.language === "es_DO" ? "Correo o contraseña incorrectos" : "Invalid email or password");
       setError(errorMsg);
-      
-      if (errorMsg.includes('verify your email') || errorMsg.includes('verificar tu correo')) {
-        toast.error('Authentication Failed', {
+
+      if (errorMsg.includes("verify your email") || errorMsg.includes("verificar tu correo")) {
+        toast.error("Authentication Failed", {
           description: errorMsg,
           action: {
-            label: i18n.language === 'es_DO' ? 'Ir a Registro' : 'Go to Register',
-            onClick: () => navigate('/register'),
+            label: i18n.language === "es_DO" ? "Ir a Registro" : "Go to Register",
+            onClick: () => navigate("/register"),
           },
           duration: 6000,
         });
@@ -81,14 +83,16 @@ export function LoginPage() {
             {/* Form Section */}
             <div className="p-6 md:p-10 flex flex-col justify-center bg-white dark:bg-zinc-900">
               <div className="flex flex-col items-center justify-center mb-8 gap-4">
-                <img src={logoUrl} alt="Velmar Technology SRL" className="h-14 w-auto object-contain dark:brightness-110" />
+                <img
+                  src={logoUrl}
+                  alt="Velmar Technology SRL"
+                  className="h-14 w-auto object-contain dark:brightness-110"
+                />
                 <div className="text-center">
-                  <h1 className="text-2xl font-bold tracking-tight mb-2" style={{ fontFamily: 'var(--font-heading)' }}>
-                    {t('login.welcome')}
+                  <h1 className="text-2xl font-bold tracking-tight mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                    {t("login.welcome")}
                   </h1>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                    {t('login.signInToPortal')}
-                  </p>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">{t("login.signInToPortal")}</p>
                 </div>
               </div>
 
@@ -102,15 +106,18 @@ export function LoginPage() {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label htmlFor="login-email" className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                    {t('login.emailAddress')}
+                  <label
+                    htmlFor="login-email"
+                    className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5"
+                  >
+                    {t("login.emailAddress")}
                   </label>
                   <Input
                     id="login-email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder={t('login.emailPlaceholder')}
+                    placeholder={t("login.emailPlaceholder")}
                     required
                     className="w-full h-10 px-3 py-2 border-zinc-200 dark:border-zinc-800 rounded-lg text-sm bg-zinc-50 dark:bg-zinc-950 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
                   />
@@ -118,23 +125,26 @@ export function LoginPage() {
 
                 <div>
                   <div className="flex justify-between items-center mb-1.5">
-                    <label htmlFor="login-password" className="block text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                      {t('login.password')}
+                    <label
+                      htmlFor="login-password"
+                      className="block text-xs font-bold text-zinc-700 dark:text-zinc-300"
+                    >
+                      {t("login.password")}
                     </label>
                     <Link
                       to="/forgot-password"
                       className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 hover:underline"
                     >
-                      {t('login.forgotPassword')}
+                      {t("login.forgotPassword")}
                     </Link>
                   </div>
                   <div className="relative">
                     <Input
                       id="login-password"
-                      type={showPassword ? 'text' : 'password'}
+                      type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder={t('login.enterPasswordPlaceholder')}
+                      placeholder={t("login.enterPasswordPlaceholder")}
                       required
                       className="w-full h-10 px-3 py-2 pr-10 border-zinc-200 dark:border-zinc-800 rounded-lg text-sm bg-zinc-50 dark:bg-zinc-950 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
                     />
@@ -149,9 +159,16 @@ export function LoginPage() {
                 </div>
 
                 <div className="flex items-center gap-2 pt-1 pb-2">
-                  <input type="checkbox" id="remember" className="rounded border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:ring-0 focus:ring-offset-0 bg-zinc-50 dark:bg-zinc-950 cursor-pointer" />
-                  <label htmlFor="remember" className="text-xs font-medium text-zinc-600 dark:text-zinc-400 cursor-pointer">
-                    {t('login.rememberMe')}
+                  <input
+                    type="checkbox"
+                    id="remember"
+                    className="rounded border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:ring-0 focus:ring-offset-0 bg-zinc-50 dark:bg-zinc-950 cursor-pointer"
+                  />
+                  <label
+                    htmlFor="remember"
+                    className="text-xs font-medium text-zinc-600 dark:text-zinc-400 cursor-pointer"
+                  >
+                    {t("login.rememberMe")}
                   </label>
                 </div>
 
@@ -163,7 +180,7 @@ export function LoginPage() {
                   {loading ? (
                     <div className="w-4 h-4 border-2 border-white/30 dark:border-zinc-900/30 border-t-white dark:border-t-zinc-900 rounded-full animate-spin" />
                   ) : (
-                    t('login.signIn')
+                    t("login.signIn")
                   )}
                 </button>
               </form>
@@ -174,21 +191,17 @@ export function LoginPage() {
                 </div>
                 <div className="relative flex justify-center text-xs">
                   <span className="bg-white dark:bg-zinc-900 px-3 text-zinc-500 dark:text-zinc-400 font-medium">
-                    {t('login.or') || 'Or continue with'}
+                    {t("login.or") || "Or continue with"}
                   </span>
                 </div>
               </div>
 
-              <GoogleLoginButton
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                text="signin_with"
-              />
+              <GoogleLoginButton onSuccess={handleGoogleSuccess} onError={handleGoogleError} text="signin_with" />
 
               <p className="mt-8 text-center text-xs text-zinc-500 dark:text-zinc-400">
-                {t('login.dontHaveAccount')}{' '}
+                {t("login.dontHaveAccount")}{" "}
                 <Link to="/register" className="text-zinc-900 dark:text-zinc-100 font-bold hover:underline">
-                  {t('login.createAccount')}
+                  {t("login.createAccount")}
                 </Link>
               </p>
             </div>
@@ -201,8 +214,8 @@ export function LoginPage() {
                 className="absolute inset-0 h-full w-full object-cover opacity-50 dark:opacity-40 grayscale-[0.3]"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-zinc-950/40 to-transparent mix-blend-multiply" />
-              
-              <div className="relative z-10 mt-auto w-full max-w-sm flex flex-col gap-3">
+
+              {/* <div className="relative z-10 mt-auto w-full max-w-sm flex flex-col gap-3">
                 <div className="bg-zinc-950/50 backdrop-blur-md border border-white/10 rounded-xl p-5 shadow-2xl">
                   <h3 className="text-white font-bold text-sm mb-2 flex items-center gap-2">
                     <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
@@ -219,7 +232,7 @@ export function LoginPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </div> */}
             </div>
           </CardContent>
         </Card>

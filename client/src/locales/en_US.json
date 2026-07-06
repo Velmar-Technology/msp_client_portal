@@ -115,7 +115,8 @@
     "dontHaveAccount": "Don't have an account?",
     "createAccount": "Create account",
     "emailPlaceholder": "you@company.com",
-    "enterPasswordPlaceholder": "Enter your password"
+    "enterPasswordPlaceholder": "Enter your password",
+    "or": "Or continue with"
   },
   "register": {
     "createAccountHeader": "Create Account",

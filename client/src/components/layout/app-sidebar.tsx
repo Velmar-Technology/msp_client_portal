@@ -3,7 +3,7 @@ import { NavLink } from "react-router-dom";
 import { ChevronRight, HelpCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import logoUrl from "../../assets/logo.png";
-import { useSidebar, type NavItem } from "../../hooks/useSidebar";
+import { useSidebar, type NavItem, type NavSubItem } from "../../hooks/useSidebar";
 import {
   Sidebar as ShadcnSidebar,
   SidebarContent,
@@ -62,17 +62,17 @@ interface ActiveSubCardProps {
 
 export function ActiveSubCard({ sub, renewalLabel, isSpanish }: ActiveSubCardProps) {
   const formattedDate = useMemo(() => {
-    return new Date(sub.renewal_date).toLocaleDateString(
-      isSpanish ? "es-DO" : "en-US",
-      { day: "2-digit", month: "short" }
-    );
+    return new Date(sub.renewal_date).toLocaleDateString(isSpanish ? "es-DO" : "en-US", {
+      day: "2-digit",
+      month: "short",
+    });
   }, [sub.renewal_date, isSpanish]);
 
   return (
     <div className="mx-2 my-2 p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 shadow-sm group-data-[collapsible=icon]:hidden transition-colors">
       <div className="flex items-center justify-between gap-2 mb-1">
         <span className="text-[9px] font-mono font-bold text-zinc-900 dark:text-zinc-100 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-1 rounded uppercase">
-          {sub.plan} Plan
+          {sub.plan}
         </span>
         <div className="flex items-center gap-1">
           <span className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-pulse" />
@@ -81,9 +81,7 @@ export function ActiveSubCard({ sub, renewalLabel, isSpanish }: ActiveSubCardPro
           </span>
         </div>
       </div>
-      <p className="text-[11px] font-medium text-zinc-800 dark:text-zinc-200 truncate">
-        {sub.service_name}
-      </p>
+      <p className="text-[11px] font-medium text-zinc-800 dark:text-zinc-200 truncate">{sub.service_name}</p>
       <p className="text-[9px] text-zinc-500 dark:text-zinc-400 mt-0.5 font-mono">
         {renewalLabel}: {formattedDate}
       </p>
@@ -95,14 +93,10 @@ export function ActiveSubCard({ sub, renewalLabel, isSpanish }: ActiveSubCardPro
 interface SidebarNavListProps {
   navItems: NavItem[];
   checkIsActive: (to: string) => boolean;
-  checkIsGroupActive: (items?: any[]) => boolean;
+  checkIsGroupActive: (items?: NavSubItem[]) => boolean;
 }
 
-export function SidebarNavList({
-  navItems,
-  checkIsActive,
-  checkIsGroupActive,
-}: SidebarNavListProps) {
+export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive }: SidebarNavListProps) {
   const { t } = useTranslation();
 
   return (
@@ -114,12 +108,7 @@ export function SidebarNavList({
           const isGroupActive = checkIsGroupActive(item.items);
 
           return (
-            <Collapsible
-              key={item.labelKey}
-              asChild
-              defaultOpen={isGroupActive}
-              className="group/collapsible"
-            >
+            <Collapsible key={item.labelKey} asChild defaultOpen={isGroupActive} className="group/collapsible">
               <SidebarMenuItem>
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton
@@ -128,9 +117,7 @@ export function SidebarNavList({
                     className="h-7 text-xs py-1 px-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 data-[active=true]:text-zinc-900 dark:data-[active=true]:text-zinc-100 data-[active=true]:font-semibold transition-colors"
                   >
                     <item.icon className="h-3.5 w-3.5 shrink-0" />
-                    <span className="group-data-[collapsible=icon]:hidden">
-                      {translatedLabel}
-                    </span>
+                    <span className="group-data-[collapsible=icon]:hidden">{translatedLabel}</span>
                     <ChevronRight className="ml-auto h-3 w-3 text-zinc-400 dark:text-zinc-500 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden" />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
@@ -140,9 +127,9 @@ export function SidebarNavList({
                       const isSubActive = checkIsActive(sub.to);
                       return (
                         <SidebarMenuSubItem key={sub.to}>
-                          <SidebarMenuSubButton 
-                            asChild 
-                            isActive={isSubActive} 
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={isSubActive}
                             className="h-6 text-[11px] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 data-[active=true]:text-zinc-900 dark:data-[active=true]:text-zinc-100 data-[active=true]:font-medium transition-colors"
                           >
                             <NavLink to={sub.to} className="w-full truncate">
@@ -171,9 +158,7 @@ export function SidebarNavList({
             >
               <NavLink to={item.to} className="flex items-center gap-2">
                 <item.icon className="h-3.5 w-3.5 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden">
-                  {translatedLabel}
-                </span>
+                <span className="group-data-[collapsible=icon]:hidden">{translatedLabel}</span>
               </NavLink>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -186,49 +171,29 @@ export function SidebarNavList({
 // 4. Premium SaaS Sidebar Component
 export function AppSidebar() {
   const { t } = useTranslation();
-  const {
-    user,
-    activeSubscription,
-    navItems,
-    checkIsActive,
-    checkIsGroupActive,
-  } = useSidebar();
+  const { user, activeSubscription, navItems, checkIsActive, checkIsGroupActive } = useSidebar();
 
   const isSpanish = t("dashboard.tableStatus") === "Estado";
 
   return (
     <ShadcnSidebar className="border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
       {/* Header section */}
-      <SidebarBrand
-        logo={logoUrl}
-        portalTitle={t("topNav.portal")}
-        infraTitle={t("nav.infrastructure")}
-      />
+      <SidebarBrand logo={logoUrl} portalTitle={t("topNav.portal")} infraTitle={t("nav.infrastructure")} />
 
       {/* Navigation Content */}
       <SidebarContent className="py-1 bg-white dark:bg-zinc-950">
         <SidebarGroup className="p-0">
           <SidebarGroupContent>
-            <SidebarNavList
-              navItems={navItems}
-              checkIsActive={checkIsActive}
-              checkIsGroupActive={checkIsGroupActive}
-            />
+            <SidebarNavList navItems={navItems} checkIsActive={checkIsActive} checkIsGroupActive={checkIsGroupActive} />
           </SidebarGroupContent>
         </SidebarGroup>
-
-        {/* Subscription Info Card */}
-        {user?.role === "CLIENT" && activeSubscription && (
-          <ActiveSubCard
-            sub={activeSubscription}
-            renewalLabel={t("dashboard.tableRenewal")}
-            isSpanish={isSpanish}
-          />
-        )}
       </SidebarContent>
 
       {/* Footer support item */}
       <SidebarFooter className="border-t border-zinc-200 dark:border-zinc-800 p-1.5 bg-white dark:bg-zinc-950">
+        {user?.role === "CLIENT" && activeSubscription && (
+          <ActiveSubCard sub={activeSubscription} renewalLabel={t("dashboard.tableRenewal")} isSpanish={isSpanish} />
+        )}
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
@@ -239,9 +204,7 @@ export function AppSidebar() {
             >
               <NavLink to="/help" className="flex items-center gap-2">
                 <HelpCircle className="h-3.5 w-3.5 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden font-medium">
-                  {t("nav.help")}
-                </span>
+                <span className="group-data-[collapsible=icon]:hidden font-medium">{t("nav.help")}</span>
               </NavLink>
             </SidebarMenuButton>
           </SidebarMenuItem>
