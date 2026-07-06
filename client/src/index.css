@@ -97,6 +97,8 @@
     font-size: 16px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-color: var(--color-background);
+    min-height: 100vh;
   }
 
   body {
@@ -104,7 +106,20 @@
     background-color: var(--color-background);
     color: var(--color-on-surface);
     line-height: 1.5;
-    min-height: 100vh;
+    zoom: 0.8;
+    min-height: 125vh;
+  }
+
+  .min-h-screen {
+    min-height: 125vh !important;
+  }
+
+  .min-h-svh {
+    min-height: 125svh !important;
+  }
+
+  .h-svh {
+    height: 125svh !important;
   }
 }
 

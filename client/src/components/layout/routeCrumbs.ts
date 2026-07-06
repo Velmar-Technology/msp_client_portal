@@ -1,0 +1,81 @@
+export interface RouteCrumb {
+  label: string;
+  to?: string;
+}
+
+export type CrumbResolver = (t: any, params: any, user: any) => RouteCrumb | RouteCrumb[];
+
+export interface RouteCrumbConfig {
+  path: string;
+  crumb: CrumbResolver;
+}
+
+export const routeCrumbs: RouteCrumbConfig[] = [
+  {
+    path: "/plans",
+    crumb: (t, _params, user) => [
+      { label: user?.role === "ADMIN" ? t("nav.settings") : t("nav.account") },
+      { label: t("nav.plans") },
+    ],
+  },
+  {
+    path: "/billing",
+    crumb: (t, _params, user) => [
+      { label: user?.role === "ADMIN" ? t("nav.settings") : t("nav.account") },
+      { label: t("nav.billing") },
+    ],
+  },
+  {
+    path: "/devices",
+    crumb: (t) => ({ label: t("nav.devices"), to: "/devices" }),
+  },
+  {
+    path: "/admin/users",
+    crumb: (t) => ({ label: t("nav.userManagement"), to: "/admin/users" }),
+  },
+  {
+    path: "/tickets",
+    crumb: (t, _params, user) => ({
+      label: user?.role === "ADMIN" ? t("nav.allTickets") : t("nav.myTickets"),
+      to: "/tickets",
+    }),
+  },
+  {
+    path: "/tickets/:id",
+    crumb: (t, params, user) => [
+      {
+        label: user?.role === "ADMIN" ? t("nav.allTickets") : t("nav.myTickets"),
+        to: "/tickets",
+      },
+      {
+        label: `${t("ticketDetail.ticketId")} #${params?.id?.substring(0, 8) || ""}`,
+      },
+    ],
+  },
+  {
+    path: "/profile",
+    crumb: (t, _params, user) => [
+      { label: user?.role === "ADMIN" ? t("nav.settings") : t("nav.account") },
+      { label: t("nav.profile") },
+    ],
+  },
+  {
+    path: "/notifications/preferences",
+    crumb: (t, _params, user) => [
+      { label: user?.role === "ADMIN" ? t("nav.settings") : t("nav.account") },
+      { label: t("nav.notificationPreferences") },
+    ],
+  },
+  {
+    path: "/help",
+    crumb: (t) => ({ label: t("nav.help"), to: "/help" }),
+  },
+  {
+    path: "/terms",
+    crumb: (t) => ({ label: t("footer.terms"), to: "/terms" }),
+  },
+  {
+    path: "/privacy",
+    crumb: (t) => ({ label: t("footer.privacy"), to: "/privacy" }),
+  },
+];

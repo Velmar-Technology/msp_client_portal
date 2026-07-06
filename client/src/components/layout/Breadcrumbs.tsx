@@ -1,7 +1,8 @@
 import * as React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, matchPath } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../hooks/useAuth";
+import { routeCrumbs } from "./routeCrumbs";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -12,7 +13,7 @@ import {
 } from "../ui/breadcrumb";
 
 export function Breadcrumbs({ className }: { className?: string }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const location = useLocation();
 
@@ -20,8 +21,6 @@ export function Breadcrumbs({ className }: { className?: string }) {
   if (["/login", "/register"].includes(location.pathname)) {
     return null;
   }
-
-  const pathnames = location.pathname.split("/").filter((x) => x);
 
   // Determine starting dashboard page based on user role
   let dashboardPath = "/dashboard";
@@ -40,53 +39,26 @@ export function Breadcrumbs({ className }: { className?: string }) {
   // Always start with Dashboard
   items.push({ label: dashboardLabel, to: dashboardPath });
 
-  let currentLink = "";
+  // Find dynamic route match from routeCrumbs config using matchPath
+  let matchedConfig: any = null;
+  let matchParams: any = {};
 
-  for (let i = 0; i < pathnames.length; i++) {
-    const segment = pathnames[i];
-
-    // Skip nested route identifiers that correspond to the root dashboards
-    if ((segment === "admin" || segment === "tech") && pathnames[i + 1] === "dashboard") {
-      continue;
+  for (const config of routeCrumbs) {
+    const match = matchPath({ path: config.path, end: true }, location.pathname);
+    if (match) {
+      matchedConfig = config;
+      matchParams = match.params;
+      break;
     }
-    if (segment === "dashboard" && (pathnames[i - 1] === "admin" || pathnames[i - 1] === "tech")) {
-      continue;
+  }
+
+  if (matchedConfig) {
+    const result = matchedConfig.crumb(t, matchParams, user);
+    if (Array.isArray(result)) {
+      items.push(...result);
+    } else if (result) {
+      items.push(result);
     }
-
-    currentLink += `/${segment}`;
-
-    // Skip duplicating the dashboard link
-    if (currentLink === dashboardPath) {
-      continue;
-    }
-
-    let label = segment;
-    let isClickable = true;
-
-    // Check if it is a ticket detail route (e.g. tickets/:id)
-    const isTicketId = pathnames[i - 1] === "tickets";
-    if (isTicketId) {
-      // Use "Ticket ID" or format nicely
-      label = `${t("ticketDetail.ticketId")} #${segment.substring(0, 8)}`;
-      isClickable = false; // Leaf node
-    } else {
-      const translationKey = `nav.${segment}`;
-      const footerKey = `footer.${segment}`;
-
-      if (i18n.exists(translationKey)) {
-        label = t(translationKey);
-      } else if (i18n.exists(footerKey)) {
-        label = t(footerKey);
-      } else {
-        // Fallback capitalization
-        label = segment.charAt(0).toUpperCase() + segment.slice(1);
-      }
-    }
-
-    items.push({
-      label,
-      to: isClickable ? currentLink : undefined,
-    });
   }
 
   // Render breadcrumbs if there is a depth of at least one subpage

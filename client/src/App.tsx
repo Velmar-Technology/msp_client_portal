@@ -20,6 +20,7 @@ import { UserManagementPage } from './pages/UserManagementPage';
 import { ThemeProvider } from './components/theme-provider';
 import { ReactErrorBoundary } from '@shared/errors';
 import { Toaster } from '@/components/ui/sonner';
+import { routeCrumbs } from './components/layout/routeCrumbs';
 
 // Protected Route Component
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) {
@@ -59,6 +60,41 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+interface AppRouteConfig {
+  path: string;
+  element: React.ReactNode;
+  allowedRoles?: string[];
+  handle?: {
+    crumb: (t: any, params: any, user: any) => any;
+  };
+}
+
+const protectedRoutes: AppRouteConfig[] = [
+  // Client Routes
+  { path: "/dashboard", element: <ClientDashboard />, allowedRoles: ["CLIENT"] },
+  { path: "/plans", element: <PlansPage />, allowedRoles: ["CLIENT", "ADMIN"] },
+  { path: "/billing", element: <BillingPage />, allowedRoles: ["CLIENT", "ADMIN"] },
+  { path: "/devices", element: <DevicesPage />, allowedRoles: ["CLIENT", "ADMIN"] },
+  // Tech/Admin Routes
+  { path: "/tech/dashboard", element: <TechDashboard />, allowedRoles: ["TECHNICIAN"] },
+  { path: "/admin/dashboard", element: <AdminDashboard />, allowedRoles: ["ADMIN"] },
+  { path: "/admin/users", element: <UserManagementPage />, allowedRoles: ["ADMIN"] },
+  // Shared Routes
+  { path: "/tickets", element: <TicketsPage /> },
+  { path: "/tickets/:id", element: <TicketDetailPage /> },
+  { path: "/profile", element: <ProfilePage /> },
+  { path: "/notifications/preferences", element: <NotificationPreferencesPage /> },
+  { path: "/help", element: <HelpPage /> },
+  { path: "/terms", element: <TermsPage /> },
+  { path: "/privacy", element: <PrivacyPage /> },
+].map((route) => {
+  const crumbConfig = routeCrumbs.find((c) => c.path === route.path);
+  return {
+    ...route,
+    handle: crumbConfig ? { crumb: crumbConfig.crumb } : undefined,
+  };
+});
+
 export function App() {
   return (
     <ReactErrorBoundary>
@@ -74,25 +110,22 @@ export function App() {
 
             {/* Protected Routes inside Layout */}
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-              {/* Client Routes */}
-              <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['CLIENT']}><ClientDashboard /></ProtectedRoute>} />
-              <Route path="/plans" element={<ProtectedRoute allowedRoles={['CLIENT', 'ADMIN']}><PlansPage /></ProtectedRoute>} />
-              <Route path="/billing" element={<ProtectedRoute allowedRoles={['CLIENT', 'ADMIN']}><BillingPage /></ProtectedRoute>} />
-              <Route path="/devices" element={<ProtectedRoute allowedRoles={['CLIENT', 'ADMIN']}><DevicesPage /></ProtectedRoute>} />
-
-              {/* Tech/Admin Routes */}
-              <Route path="/tech/dashboard" element={<ProtectedRoute allowedRoles={['TECHNICIAN']}><TechDashboard /></ProtectedRoute>} />
-              <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['ADMIN']}><AdminDashboard /></ProtectedRoute>} />
-              <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['ADMIN']}><UserManagementPage /></ProtectedRoute>} />
-
-              {/* Shared Routes */}
-              <Route path="/tickets" element={<TicketsPage />} />
-              <Route path="/tickets/:id" element={<TicketDetailPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/notifications/preferences" element={<NotificationPreferencesPage />} />
-              <Route path="/help" element={<HelpPage />} />
-              <Route path="/terms" element={<TermsPage />} />
-              <Route path="/privacy" element={<PrivacyPage />} />
+              {protectedRoutes.map(({ path, element, allowedRoles, handle }) => (
+                <Route
+                  key={path}
+                  path={path}
+                  element={
+                    allowedRoles ? (
+                      <ProtectedRoute allowedRoles={allowedRoles}>
+                        {element}
+                      </ProtectedRoute>
+                    ) : (
+                      element
+                    )
+                  }
+                  handle={handle}
+                />
+              ))}
             </Route>
           </Routes>
           <Toaster />

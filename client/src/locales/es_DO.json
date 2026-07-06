@@ -194,7 +194,7 @@
     "confirmCancel": "¿Está seguro de que desea cancelar este ticket?",
     "actionsLabel": "Acciones",
     "selectedCount": "seleccionado(s)",
-    "bulkCancel": "Cancelar en Lote",
+    "bulkCancel": "Cancelar todos",
     "noCancelableTickets": "Ninguno de los tickets seleccionados puede ser cancelado.",
     "confirmBulkCancel": "¿Está seguro de que desea cancelar los tickets seleccionados?",
     "assignedTo": "Asignado a",
