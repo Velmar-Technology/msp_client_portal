@@ -10,10 +10,10 @@ export class EquipmentService {
   /**
    * Retrieves or initializes equipment slots for a subscription
    */
-  async getEquipmentSlots(subscriptionId: string, tenantId: string): Promise<SubscriptionEquipment[]> {
+  async getEquipmentSlots(subscriptionId: string, tenantId: string, byAdmin = false): Promise<SubscriptionEquipment[]> {
     const sub = await subscriptionRepository.findById(subscriptionId);
     if (!sub) throw AppError.notFound('Subscription not found');
-    if (sub.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
+    if (!byAdmin && sub.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
 
     let slots = await equipmentRepository.findBySubscription(subscriptionId);
     const count = sub.equipment_count;
@@ -63,13 +63,13 @@ export class EquipmentService {
   /**
    * Generates a 6-digit OTP for slot activation
    */
-  async generateSlotOTP(subscriptionId: string, slotIndex: number, tenantId: string): Promise<SubscriptionEquipment> {
+  async generateSlotOTP(subscriptionId: string, slotIndex: number, tenantId: string, byAdmin = false): Promise<SubscriptionEquipment> {
     // Ensure slots are initialized
-    await this.getEquipmentSlots(subscriptionId, tenantId);
+    await this.getEquipmentSlots(subscriptionId, tenantId, byAdmin);
 
     const slot = await equipmentRepository.findBySlot(subscriptionId, slotIndex);
     if (!slot) throw AppError.notFound('Equipment slot not found');
-    if (slot.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
+    if (!byAdmin && slot.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
 
     // Generate random 6-digit OTP
     const otp = String(Math.floor(100000 + Math.random() * 900000));
@@ -107,6 +107,7 @@ export class EquipmentService {
     deviceName: string;
     deviceSerial: string;
     tenantId: string;
+    byAdmin?: boolean;
   }): Promise<SubscriptionEquipment> {
     let slot: SubscriptionEquipment | null = null;
 
@@ -120,7 +121,7 @@ export class EquipmentService {
       // Direct simulation from portal
       slot = await equipmentRepository.findBySlot(options.subscriptionId, options.slotIndex);
       if (!slot) throw AppError.notFound('Slot not found');
-      if (slot.tenant_id !== options.tenantId) throw AppError.forbidden('Access denied');
+      if (!options.byAdmin && slot.tenant_id !== options.tenantId) throw AppError.forbidden('Access denied');
     } else {
       throw AppError.badRequest('Must provide either OTP or SubscriptionId + SlotIndex');
     }
@@ -179,10 +180,10 @@ export class EquipmentService {
   /**
    * Deactivates/revokes an equipment slot and deletes its Nextcloud account
    */
-  async deactivateSlot(subscriptionId: string, slotIndex: number, tenantId: string): Promise<SubscriptionEquipment> {
+  async deactivateSlot(subscriptionId: string, slotIndex: number, tenantId: string, byAdmin = false): Promise<SubscriptionEquipment> {
     const slot = await equipmentRepository.findBySlot(subscriptionId, slotIndex);
     if (!slot) throw AppError.notFound('Slot not found');
-    if (slot.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
+    if (!byAdmin && slot.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
 
     // Clean up Nextcloud user account
     if (slot.nextcloud_username) {
@@ -211,6 +212,34 @@ export class EquipmentService {
    */
   async getActiveDevicesForClient(clientId: string, tenantId: string): Promise<SubscriptionEquipment[]> {
     return equipmentRepository.findActiveByClient(clientId, tenantId);
+  }
+
+  /**
+   * Get all client devices across all subscriptions and tenants (for Admin view).
+   */
+  async getAllDevicesForAdmin(): Promise<any[]> {
+    const slots = await equipmentRepository.findAllWithDetails();
+
+    // Query Nextcloud quota info for active slots in parallel
+    const enrichedSlots = await Promise.all(
+      slots.map(async (slot) => {
+        if (slot.status === 'ACTIVE' && slot.nextcloud_username) {
+          try {
+            const quota = await nextcloudService.getUserStorage(slot.nextcloud_username);
+            return {
+              ...slot,
+              nextcloud_used_bytes: quota.used,
+              nextcloud_total_bytes: quota.total,
+            };
+          } catch (err) {
+            logger.warn(`Failed to fetch storage usage for slot ${slot.id}: ${err}`);
+          }
+        }
+        return slot;
+      })
+    );
+
+    return enrichedSlots;
   }
 }
 

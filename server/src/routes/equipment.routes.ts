@@ -1,10 +1,17 @@
 import { Router } from 'express';
 import { equipmentController } from '../controllers/EquipmentController';
 import { authMiddleware } from '../middleware/authMiddleware';
+import { rbacMiddleware } from '../middleware/rbacMiddleware';
+import { UserRole } from '../types';
 
 const router = Router();
 
 router.use(authMiddleware);
+
+/** GET /api/v1/equipment/admin/devices — Get all devices for all clients (Admin only) */
+router.get('/admin/devices', rbacMiddleware(UserRole.ADMIN), (req, res, next) =>
+  equipmentController.getAllDevicesForAdmin(req, res, next)
+);
 
 /** GET /api/v1/equipment/my-devices — Get active devices for the authenticated client */
 router.get('/my-devices', (req, res, next) =>

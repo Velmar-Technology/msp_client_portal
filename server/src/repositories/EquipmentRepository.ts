@@ -1,7 +1,7 @@
 import { BaseRepository } from './BaseRepository';
 import { SubscriptionEquipment } from '../types';
-import { db, subscriptionEquipment, subscriptions } from '../db';
-import { eq, and } from 'drizzle-orm';
+import { db, subscriptionEquipment, subscriptions, users, tenants } from '../db';
+import { eq, and, desc } from 'drizzle-orm';
 
 export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
   constructor() {
@@ -98,6 +98,36 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
       )
       .orderBy(subscriptionEquipment.device_name);
     return results as SubscriptionEquipment[];
+  }
+
+  async findAllWithDetails(): Promise<any[]> {
+    const results = await db
+      .select({
+        id: subscriptionEquipment.id,
+        subscription_id: subscriptionEquipment.subscription_id,
+        slot_index: subscriptionEquipment.slot_index,
+        status: subscriptionEquipment.status,
+        device_name: subscriptionEquipment.device_name,
+        device_serial: subscriptionEquipment.device_serial,
+        otp: subscriptionEquipment.otp,
+        otp_expires_at: subscriptionEquipment.otp_expires_at,
+        nextcloud_username: subscriptionEquipment.nextcloud_username,
+        nextcloud_password: subscriptionEquipment.nextcloud_password,
+        tenant_id: subscriptionEquipment.tenant_id,
+        created_at: subscriptionEquipment.created_at,
+        updated_at: subscriptionEquipment.updated_at,
+        client_name: users.name,
+        client_email: users.email,
+        service_name: subscriptions.service_name,
+        plan: subscriptions.plan,
+        tenant_name: tenants.name,
+      })
+      .from(subscriptionEquipment)
+      .innerJoin(subscriptions, eq(subscriptionEquipment.subscription_id, subscriptions.id))
+      .innerJoin(users, eq(subscriptions.client_id, users.id))
+      .innerJoin(tenants, eq(subscriptionEquipment.tenant_id, tenants.id))
+      .orderBy(desc(subscriptionEquipment.created_at));
+    return results;
   }
 }
 
