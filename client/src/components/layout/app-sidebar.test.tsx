@@ -82,7 +82,7 @@ describe('AppSidebar', () => {
 
     // Wait for the async subscription load and assert rendering
     await waitFor(() => {
-      expect(screen.getByText('STANDARD Plan')).toBeInTheDocument();
+      expect(screen.getByText('STANDARD')).toBeInTheDocument();
       expect(screen.getByText('Standard Support')).toBeInTheDocument();
       expect(screen.getByText(/dashboard.tableRenewal/)).toBeInTheDocument();
     });
