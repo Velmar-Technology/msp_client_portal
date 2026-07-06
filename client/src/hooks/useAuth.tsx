@@ -18,6 +18,7 @@ export interface AuthContextType {
     clientType: string
   ) => Promise<void>;
   loginWithGoogle: (idToken: string, tenantName?: string) => Promise<void>;
+  verifyEmail: (email: string, otp: string) => Promise<void>;
   logout: () => void;
   updateUser: (updatedFields: Partial<AuthUser>) => void;
 }
@@ -42,6 +43,7 @@ export function useAuth(): AuthContextType {
     isAuthenticated: store.isAuthenticated,
     login: store.login,
     register: store.register,
+    verifyEmail: store.verifyEmail,
     loginWithGoogle: store.loginWithGoogle,
     logout: store.logout,
     updateUser: store.updateUser,

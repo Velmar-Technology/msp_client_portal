@@ -1,4 +1,3 @@
-import React from 'react';
 import { useParams } from 'react-router-dom';
 import {
   Clock, AlertTriangle, UserCheck, FileText, Image as ImageIcon, Video,

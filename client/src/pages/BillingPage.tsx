@@ -77,7 +77,7 @@ const PayModal = ({
             createOrder: async () => {
               setPaymentMessage(t('billing.paymentProcessing'));
               try {
-                const { orderId } = await invoiceService.createPaypalOrder(invoice.id);
+                const { orderId } = await invoiceService.createPaypalOrder(invoice!.id);
                 return orderId;
               } catch (err) {
                 console.error(err);
@@ -88,7 +88,7 @@ const PayModal = ({
             onApprove: async (data: any) => {
               setPaymentMessage(t('billing.paymentProcessing'));
               try {
-                const response = await invoiceService.capturePaypalOrder(invoice.id, data.orderID);
+                const response = await invoiceService.capturePaypalOrder(invoice!.id, data.orderID);
                 if (response.success) {
                   setIsSuccess(true);
                   setPaymentMessage(t('billing.paymentSuccess'));
