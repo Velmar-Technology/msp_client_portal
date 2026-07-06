@@ -20,6 +20,16 @@ export function useDevicesPage() {
   const [subscriptionEquipment, setSubscriptionEquipment] = useState<Record<string, Partial<SubscriptionEquipment>[]>>({});
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Admin specific states
+  const [adminDevices, setAdminDevices] = useState<SubscriptionEquipment[]>([]);
+  const [selectedClient, setSelectedClient] = useState<string>("all");
+  const [selectedPlan, setSelectedPlan] = useState<string>("all");
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+
   // Activation Wizard State
   const [activationWizardSubId, setActivationWizardSubId] = useState<string | null>(null);
   const [activationWizardSlotIdx, setActivationWizardSlotIdx] = useState<number | null>(null);
@@ -30,6 +40,11 @@ export function useDevicesPage() {
 
   const isAdmin = user?.role === "ADMIN";
 
+  // Reset page to 1 when filters or search change
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, selectedClient, selectedPlan, selectedStatus, selectedSubscriptionId]);
+
   const fetchActiveSubscriptions = useCallback(async () => {
     if (user?.role !== "CLIENT" && !isAdmin) {
       setLoading(false);
@@ -37,34 +52,64 @@ export function useDevicesPage() {
     }
     setLoading(true);
     try {
-      const subs = await subscriptionService.getAll();
-      const active = subs.filter((sub) => sub.status === "ACTIVE");
-      setActiveSubscriptions(active);
+      if (isAdmin) {
+        const devices = await equipmentService.getAllDevicesForAdmin();
+        setAdminDevices(devices);
 
-      if (active.length > 0) {
-        setSelectedSubscriptionId((prev) => prev || active[0].id);
+        // Group by subscription_id for compatibility with activation wizard / other operations
+        const grouped: Record<string, Partial<SubscriptionEquipment>[]> = {};
+        devices.forEach((d) => {
+          if (!grouped[d.subscription_id]) {
+            grouped[d.subscription_id] = [];
+          }
+          grouped[d.subscription_id][d.slot_index] = d;
+        });
 
-        const initialEquip: Record<string, Partial<SubscriptionEquipment>[]> = {};
-        await Promise.all(
-          active.map(async (sub) => {
-            try {
-              const slots = await equipmentService.getSlots(sub.id);
-              initialEquip[sub.id] = slots;
-            } catch (err) {
-              console.error(`Failed to load slots for subscription ${sub.id}:`, err);
-              // Fallback slots
-              const fallbackSlots = [];
-              for (let i = 0; i < sub.equipment_count; i++) {
-                fallbackSlots.push({
-                  id: `device-slot-${i}`,
-                  status: "PENDING_ACTIVATION" as const,
-                });
-              }
-              initialEquip[sub.id] = fallbackSlots;
+        // Ensure array has no empty holes (in case a slot was not loaded/missing)
+        Object.keys(grouped).forEach((subId) => {
+          const arr = grouped[subId];
+          for (let i = 0; i < arr.length; i++) {
+            if (!arr[i]) {
+              arr[i] = {
+                id: `device-slot-${i}`,
+                subscription_id: subId,
+                slot_index: i,
+                status: "PENDING_ACTIVATION",
+              };
             }
-          })
-        );
-        setSubscriptionEquipment(initialEquip);
+          }
+        });
+
+        setSubscriptionEquipment(grouped);
+      } else {
+        const subs = await subscriptionService.getAll();
+        const active = subs.filter((sub) => sub.status === "ACTIVE");
+        setActiveSubscriptions(active);
+
+        if (active.length > 0) {
+          setSelectedSubscriptionId((prev) => prev || active[0].id);
+
+          const initialEquip: Record<string, Partial<SubscriptionEquipment>[]> = {};
+          await Promise.all(
+            active.map(async (sub) => {
+              try {
+                const slots = await equipmentService.getSlots(sub.id);
+                initialEquip[sub.id] = slots;
+              } catch (err) {
+                console.error(`Failed to load slots for subscription ${sub.id}:`, err);
+                const fallbackSlots = [];
+                for (let i = 0; i < sub.equipment_count; i++) {
+                  fallbackSlots.push({
+                    id: `device-slot-${i}`,
+                    status: "PENDING_ACTIVATION" as const,
+                  });
+                }
+                initialEquip[sub.id] = fallbackSlots;
+              }
+            })
+          );
+          setSubscriptionEquipment(initialEquip);
+        }
       }
     } catch (err) {
       console.error("Failed to load active subscriptions", err);
@@ -82,14 +127,25 @@ export function useDevicesPage() {
     fetchActiveSubscriptions();
   }, [fetchActiveSubscriptions]);
 
+  // Update helper for admin and client
+  const updateDeviceList = useCallback((subId: string, slotIndex: number, updatedSlot: SubscriptionEquipment) => {
+    setSubscriptionEquipment((prev) => {
+      const current = [...(prev[subId] || [])];
+      current[slotIndex] = updatedSlot;
+      return { ...prev, [subId]: current };
+    });
+
+    setAdminDevices((prev) =>
+      prev.map((d) =>
+        d.subscription_id === subId && d.slot_index === slotIndex ? { ...d, ...updatedSlot } : d
+      )
+    );
+  }, []);
+
   const handleGenerateOTP = useCallback(async (subId: string, slotIndex: number) => {
     try {
       const updatedSlot = await equipmentService.generateOTP(subId, slotIndex);
-      setSubscriptionEquipment((prev) => {
-        const current = [...(prev[subId] || [])];
-        current[slotIndex] = updatedSlot;
-        return { ...prev, [subId]: current };
-      });
+      updateDeviceList(subId, slotIndex, updatedSlot);
       addToast({
         title: "OTP Generated",
         message: `Temporary activation code ${updatedSlot.otp} generated for slot #${slotIndex + 1}.`,
@@ -104,16 +160,12 @@ export function useDevicesPage() {
         type: "error",
       });
     }
-  }, [addToast]);
+  }, [addToast, updateDeviceList]);
 
   const handleRevokeEquipment = useCallback(async (subId: string, slotIndex: number) => {
     try {
       const updatedSlot = await equipmentService.deactivateSlot(subId, slotIndex);
-      setSubscriptionEquipment((prev) => {
-        const current = [...(prev[subId] || [])];
-        current[slotIndex] = updatedSlot;
-        return { ...prev, [subId]: current };
-      });
+      updateDeviceList(subId, slotIndex, updatedSlot);
       addToast({
         title: "Slot Revoked",
         message: "Device slot revoked. Nextcloud account deleted.",
@@ -128,7 +180,7 @@ export function useDevicesPage() {
         type: "error",
       });
     }
-  }, [addToast]);
+  }, [addToast, updateDeviceList]);
 
   const handleStartActivationWizard = useCallback(async (subId: string, slotIndex: number, currentOtp?: string | null) => {
     setActivationWizardSubId(subId);
@@ -156,11 +208,7 @@ export function useDevicesPage() {
         activationDeviceName,
         activationDeviceSerial
       );
-      setSubscriptionEquipment((prev) => {
-        const current = [...(prev[activationWizardSubId] || [])];
-        current[activationWizardSlotIdx] = updatedSlot;
-        return { ...prev, [activationWizardSubId]: current };
-      });
+      updateDeviceList(activationWizardSubId, activationWizardSlotIdx, updatedSlot);
       addToast({
         title: "Device Activated",
         message: `Device ${activationDeviceName} successfully activated. Nextcloud backup account provisioned.`,
@@ -178,20 +226,67 @@ export function useDevicesPage() {
     } finally {
       setActivationWizardLoading(false);
     }
-  }, [activationWizardSubId, activationWizardSlotIdx, activationDeviceName, activationDeviceSerial, addToast]);
+  }, [activationWizardSubId, activationWizardSlotIdx, activationDeviceName, activationDeviceSerial, addToast, updateDeviceList]);
 
   const activeSub = useMemo(() => {
     return activeSubscriptions.find((sub) => sub.id === selectedSubscriptionId) || activeSubscriptions[0];
   }, [activeSubscriptions, selectedSubscriptionId]);
 
+  const uniqueClients = useMemo(() => {
+    const clients = new Map<string, string>();
+    adminDevices.forEach((d) => {
+      if (d.tenant_id && d.tenant_name) {
+        clients.set(d.tenant_id, d.tenant_name);
+      }
+    });
+    return Array.from(clients.entries()).map(([id, name]) => ({ id, name }));
+  }, [adminDevices]);
+
+  const uniquePlans = useMemo(() => {
+    const plans = new Set<string>();
+    adminDevices.forEach((d) => {
+      if (d.plan) plans.add(d.plan);
+    });
+    return Array.from(plans);
+  }, [adminDevices]);
+
   const filteredEquipment = useMemo(() => {
-    if (!activeSub) return [];
-    const equipList = subscriptionEquipment[activeSub.id] || [];
-    if (!searchTerm.trim()) return equipList;
-    return equipList.filter((device) =>
-      device.id?.toLowerCase().includes(searchTerm.toLowerCase().trim())
-    );
-  }, [subscriptionEquipment, activeSub, searchTerm]);
+    if (isAdmin) {
+      return adminDevices.filter((device) => {
+        const matchSearch = !searchTerm.trim() ||
+          device.id?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
+          device.device_name?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
+          device.device_serial?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
+          device.nextcloud_username?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
+          device.client_name?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
+          device.client_email?.toLowerCase().includes(searchTerm.toLowerCase().trim());
+        
+        const matchClient = selectedClient === "all" || device.tenant_id === selectedClient;
+        const matchPlan = selectedPlan === "all" || device.plan === selectedPlan;
+        const matchStatus = selectedStatus === "all" || device.status === selectedStatus;
+        
+        return matchSearch && matchClient && matchPlan && matchStatus;
+      });
+    } else {
+      if (!activeSub) return [];
+      const equipList = subscriptionEquipment[activeSub.id] || [];
+      if (!searchTerm.trim()) return equipList;
+      return equipList.filter((device) =>
+        device.id?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
+        device.device_name?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
+        device.device_serial?.toLowerCase().includes(searchTerm.toLowerCase().trim())
+      );
+    }
+  }, [adminDevices, subscriptionEquipment, activeSub, searchTerm, isAdmin, selectedClient, selectedPlan, selectedStatus]);
+
+  const totalPages = useMemo(() => {
+    return Math.max(1, Math.ceil(filteredEquipment.length / limit));
+  }, [filteredEquipment.length, limit]);
+
+  const paginatedEquipment = useMemo(() => {
+    const startIndex = (page - 1) * limit;
+    return filteredEquipment.slice(startIndex, startIndex + limit);
+  }, [filteredEquipment, page, limit]);
 
   return {
     t,
@@ -217,10 +312,26 @@ export function useDevicesPage() {
     activationWizardLoading,
     activeSub,
     filteredEquipment,
+    paginatedEquipment,
     fetchActiveSubscriptions,
     handleGenerateOTP,
     handleRevokeEquipment,
     handleStartActivationWizard,
     handleWizardActivate,
+    isAdmin,
+    adminDevices,
+    selectedClient,
+    setSelectedClient,
+    selectedPlan,
+    setSelectedPlan,
+    selectedStatus,
+    setSelectedStatus,
+    uniqueClients,
+    uniquePlans,
+    page,
+    setPage,
+    limit,
+    setLimit,
+    totalPages,
   };
 }

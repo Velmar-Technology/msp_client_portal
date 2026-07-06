@@ -16,6 +16,11 @@ export interface SubscriptionEquipment {
   nextcloud_total_bytes?: number;
   created_at: string;
   updated_at: string;
+  client_name?: string;
+  client_email?: string;
+  service_name?: string;
+  plan?: string;
+  tenant_name?: string;
 }
 
 export const equipmentService = {
@@ -49,6 +54,11 @@ export const equipmentService = {
 
   async deactivateSlot(subId: string, slotIndex: number): Promise<SubscriptionEquipment> {
     const response = await api.post(`/equipment/subscriptions/${subId}/slots/${slotIndex}/deactivate`);
+    return response.data.data;
+  },
+
+  async getAllDevicesForAdmin(): Promise<SubscriptionEquipment[]> {
+    const response = await api.get('/equipment/admin/devices');
     return response.data.data;
   },
 };

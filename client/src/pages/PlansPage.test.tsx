@@ -173,6 +173,13 @@ describe('PlansPage', () => {
       const checkoutBtn = screen.getByRole('button', { name: /Proceed to Checkout/i });
       fireEvent.click(checkoutBtn);
 
+      // Verify Payment Method is not shown initially before accepting ToS
+      expect(screen.queryByText('Payment Method')).not.toBeInTheDocument();
+
+      // Click Terms of Service checkbox
+      const tosCheckbox = screen.getByLabelText(/Terms of Service/i);
+      fireEvent.click(tosCheckbox);
+
       await waitFor(() => {
         expect(screen.getByText('Payment Method')).toBeInTheDocument();
       });
@@ -195,14 +202,14 @@ describe('PlansPage', () => {
       const checkoutBtn = screen.getByRole('button', { name: /Proceed to Checkout/i });
       fireEvent.click(checkoutBtn);
 
+      // Click Terms of Service checkbox
+      const tosCheckbox = screen.getByLabelText(/Terms of Service/i);
+      fireEvent.click(tosCheckbox);
+
       // Wait for PayPal buttons container
       await waitFor(() => {
         expect(paypalButtonsOptions).not.toBeNull();
       });
-
-      // Click Terms of Service checkbox
-      const tosCheckbox = screen.getByLabelText(/Terms of Service/i);
-      fireEvent.click(tosCheckbox);
 
       // Call createSubscription
       const subscriptionId = await paypalButtonsOptions.createSubscription();
@@ -276,14 +283,14 @@ describe('PlansPage', () => {
       const checkoutBtn = screen.getByRole('button', { name: /Proceed to Checkout/i });
       fireEvent.click(checkoutBtn);
 
+      // Click Terms of Service checkbox
+      const tosCheckbox = screen.getByLabelText(/Terms of Service/i);
+      fireEvent.click(tosCheckbox);
+
       // Wait for PayPal buttons container
       await waitFor(() => {
         expect(paypalButtonsOptions).not.toBeNull();
       });
-
-      // Click Terms of Service checkbox
-      const tosCheckbox = screen.getByLabelText(/Terms of Service/i);
-      fireEvent.click(tosCheckbox);
 
       // Call createSubscription
       const subscriptionId = await paypalButtonsOptions.createSubscription();
@@ -592,6 +599,13 @@ describe('PlansPage', () => {
       const checkoutBtn = screen.getByRole('button', { name: /Proceed to Checkout/i });
       fireEvent.click(checkoutBtn);
 
+      // Verify Payment Method is not shown initially before accepting ToS
+      expect(screen.queryByText('Payment Method')).not.toBeInTheDocument();
+
+      // Click Terms of Service checkbox
+      const tosCheckbox = screen.getByLabelText(/Terms of Service/i);
+      fireEvent.click(tosCheckbox);
+
       await waitFor(() => {
         expect(screen.getByText('Payment Method')).toBeInTheDocument();
       });
@@ -600,10 +614,6 @@ describe('PlansPage', () => {
       await waitFor(() => {
         expect(paypalButtonsOptions).not.toBeNull();
       });
-
-      // Click Terms of Service checkbox
-      const tosCheckbox = screen.getByLabelText(/Terms of Service/i);
-      fireEvent.click(tosCheckbox);
 
       // Call createSubscription
       const subscriptionId = await paypalButtonsOptions.createSubscription();

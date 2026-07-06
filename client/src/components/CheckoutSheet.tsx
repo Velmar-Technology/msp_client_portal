@@ -121,82 +121,84 @@ export function PaymentFields({
         </div>
       )}
 
-      <div className="space-y-2">
-        <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-200 uppercase tracking-wider">
-          {t("plans.paymentMethod")}
-        </h3>
+      {(isAdmin || acceptedTos) && (
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-200 uppercase tracking-wider">
+            {t("plans.paymentMethod")}
+          </h3>
 
-        <Tabs
-          value={paymentMethod}
-          onValueChange={(val) => setPaymentMethod(val as "card" | "transfer")}
-          className="w-full"
-        >
-          <TabsList className="grid w-full grid-cols-2 mb-4 h-8 p-0.5 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-            <TabsTrigger value="card" className="text-xs py-1">
-              {t("plans.creditCard")}
-            </TabsTrigger>
-            <TabsTrigger value="transfer" className="text-xs py-1">
-              {t("plans.bankTransfer")}
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="card" className="space-y-3 mt-0">
-            <p className="text-xs text-zinc-500 leading-normal">
-              {t('plans.paypalPaymentNotice') || 'Please complete your checkout payment securely using PayPal. Once approved, your subscription will activate immediately.'}
-            </p>
-            {paymentMessage && (
-              <div
-                className={`py-1.5 px-3 rounded text-[11px] font-medium text-center border ${
-                  paymentMessage.includes("activated") || paymentMessage.includes("successfully")
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/50"
-                    : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/50 animate-pulse"
-                }`}
-              >
-                {paymentMessage}
-              </div>
-            )}
-            <div
-              id="paypal-button-container"
-              className="my-2 min-h-[120px] flex items-center justify-center bg-zinc-50/50 dark:bg-zinc-900/30 rounded-lg p-3 border border-zinc-200 dark:border-zinc-800 border-dashed"
-            >
-              <span className="text-xs text-zinc-400">
-                {t('plans.loadingPayPalCheckout') || 'Loading PayPal Checkout...'}
-              </span>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="transfer" className="mt-0">
-            <div className="text-center py-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-950/10 space-y-3">
-              <p className="text-xs text-zinc-500 px-4">{t("plans.transferInstructions")}</p>
-              
-              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-2 mx-4 rounded-md space-y-1 text-left text-xs font-mono">
-                <div className="flex justify-between text-zinc-500">
-                  <span>{t('plans.bankLabel') || 'Bank:'}</span>
-                  <span className="text-zinc-900 dark:text-zinc-100 font-medium">{t("plans.bankName")}</span>
-                </div>
-                <div className="flex justify-between text-zinc-500">
-                  <span>{t('plans.accountLabel') || 'Account:'}</span>
-                  <span className="text-zinc-900 dark:text-zinc-100 font-medium">{t("plans.bankAccount")}</span>
-                </div>
-                <div className="flex justify-between text-zinc-500 border-t border-zinc-100 dark:border-zinc-800/80 pt-1 mt-1">
-                  <span>{t('plans.referenceLabel') || 'Reference:'}</span>
-                  <span className="text-zinc-900 dark:text-zinc-100 font-bold">{reference}</span>
-                </div>
-              </div>
-
-              <div className="px-4">
-                <button
-                  onClick={handleProcessSubscription}
-                  disabled={subscribeLoading}
-                  className="w-full bg-zinc-900 dark:bg-zinc-100 hover:opacity-90 text-white dark:text-zinc-900 py-1.5 rounded text-xs font-medium transition-opacity disabled:opacity-50 cursor-pointer"
+          <Tabs
+            value={paymentMethod}
+            onValueChange={(val) => setPaymentMethod(val as "card" | "transfer")}
+            className="w-full"
+          >
+            <TabsList className="grid w-full grid-cols-2 mb-4 h-8 p-0.5 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+              <TabsTrigger value="card" className="text-xs py-1">
+                {t("plans.creditCard")}
+              </TabsTrigger>
+              <TabsTrigger value="transfer" className="text-xs py-1">
+                {t("plans.bankTransfer")}
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="card" className="space-y-3 mt-0">
+              <p className="text-xs text-zinc-500 leading-normal">
+                {t('plans.paypalPaymentNotice') || 'Please complete your checkout payment securely using PayPal. Once approved, your subscription will activate immediately.'}
+              </p>
+              {paymentMessage && (
+                <div
+                  className={`py-1.5 px-3 rounded text-[11px] font-medium text-center border ${
+                    paymentMessage.includes("activated") || paymentMessage.includes("successfully")
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/50"
+                      : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/50 animate-pulse"
+                  }`}
                 >
-                  {subscribeLoading ? (t('plans.processing') || 'Processing...') : (t('plans.confirmBankTransferIntent') || 'Confirm Bank Transfer Intent')}
-                </button>
+                  {paymentMessage}
+                </div>
+              )}
+              <div
+                id="paypal-button-container"
+                className="my-2 min-h-[120px] flex items-center justify-center bg-zinc-50/50 dark:bg-zinc-900/30 rounded-lg p-3 border border-zinc-200 dark:border-zinc-800 border-dashed"
+              >
+                <span className="text-xs text-zinc-400">
+                  {t('plans.loadingPayPalCheckout') || 'Loading PayPal Checkout...'}
+                </span>
               </div>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+            </TabsContent>
+
+            <TabsContent value="transfer" className="mt-0">
+              <div className="text-center py-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-950/10 space-y-3">
+                <p className="text-xs text-zinc-500 px-4">{t("plans.transferInstructions")}</p>
+                
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-2 mx-4 rounded-md space-y-1 text-left text-xs font-mono">
+                  <div className="flex justify-between text-zinc-500">
+                    <span>{t('plans.bankLabel') || 'Bank:'}</span>
+                    <span className="text-zinc-900 dark:text-zinc-100 font-medium">{t("plans.bankName")}</span>
+                  </div>
+                  <div className="flex justify-between text-zinc-500">
+                    <span>{t('plans.accountLabel') || 'Account:'}</span>
+                    <span className="text-zinc-900 dark:text-zinc-100 font-medium">{t("plans.bankAccount")}</span>
+                  </div>
+                  <div className="flex justify-between text-zinc-500 border-t border-zinc-100 dark:border-zinc-800/80 pt-1 mt-1">
+                    <span>{t('plans.referenceLabel') || 'Reference:'}</span>
+                    <span className="text-zinc-900 dark:text-zinc-100 font-bold">{reference}</span>
+                  </div>
+                </div>
+
+                <div className="px-4">
+                  <button
+                    onClick={handleProcessSubscription}
+                    disabled={subscribeLoading}
+                    className="w-full bg-zinc-900 dark:bg-zinc-100 hover:opacity-90 text-white dark:text-zinc-900 py-1.5 rounded text-xs font-medium transition-opacity disabled:opacity-50 cursor-pointer"
+                  >
+                    {subscribeLoading ? (t('plans.processing') || 'Processing...') : (t('plans.confirmBankTransferIntent') || 'Confirm Bank Transfer Intent')}
+                  </button>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+      )}
     </div>
   );
 }

@@ -52,7 +52,14 @@ export function useAppLayout() {
     };
   }, [user, location.pathname]);
 
-  const isBlocked = user?.role === "CLIENT" && hasChecked && !activeSubscription && location.pathname !== "/plans";
+  const isBlocked =
+    user?.role === "CLIENT" &&
+    hasChecked &&
+    !activeSubscription &&
+    location.pathname !== "/plans" &&
+    location.pathname !== "/terms" &&
+    location.pathname !== "/privacy" &&
+    location.pathname !== "/help";
 
   return {
     user,
