@@ -8,6 +8,7 @@ import {
   Shield,
   Settings,
   Laptop,
+  Landmark,
 } from "lucide-react";
 import { useAuth } from "./useAuth";
 import { subscriptionService } from "@/services/subscriptionService";
@@ -27,6 +28,7 @@ export interface NavItem {
 
 const clientNavItems: NavItem[] = [
   { to: "/dashboard", icon: LayoutDashboard, labelKey: "dashboard" },
+  { to: "/financial", icon: Landmark, labelKey: "financial" },
   { to: "/devices", icon: Laptop, labelKey: "devices" },
   { to: "/tickets", icon: Ticket, labelKey: "myTickets" },
   {
@@ -58,6 +60,7 @@ const techNavItems: NavItem[] = [
 
 const adminNavItems: NavItem[] = [
   { to: "/admin/dashboard", icon: Shield, labelKey: "adminDashboard" },
+  { to: "/financial", icon: Landmark, labelKey: "financial" },
   { to: "/admin/users", icon: Users, labelKey: "userManagement" },
   { to: "/devices", icon: Laptop, labelKey: "devices" },
   { to: "/tickets", icon: Ticket, labelKey: "allTickets" },
@@ -81,12 +84,14 @@ export function useSidebar() {
   const [loadingSub, setLoadingSub] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+
     if (user?.role !== "CLIENT") {
-      setActiveSubscription(null);
+      Promise.resolve().then(() => {
+        if (isMounted) setActiveSubscription(null);
+      });
       return;
     }
-
-    let isMounted = true;
     async function loadActiveSub() {
       setLoadingSub(true);
       try {

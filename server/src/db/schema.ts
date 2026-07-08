@@ -344,3 +344,24 @@ export const subscriptionEquipment = pgTable(
   ]
 );
 
+// ---- Expenses ----
+export const expenses = pgTable(
+  'expenses',
+  {
+    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    amount: decimal('amount', { precision: 12, scale: 2 }).$type<number>().notNull(),
+    description: text('description').notNull(),
+    category: varchar('category', { length: 50 }).notNull(),
+    expense_date: date('expense_date', { mode: 'date' }).defaultNow().notNull(),
+    tenant_id: uuid('tenant_id')
+      .references(() => tenants.id, { onDelete: 'cascade' })
+      .notNull(),
+    expense_identifier: varchar('expense_identifier', { length: 100 }),
+    created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    index('idx_expenses_tenant').on(table.tenant_id),
+    index('idx_expenses_date').on(table.expense_date),
+  ]
+);
+

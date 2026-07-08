@@ -69,6 +69,20 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
       .where(eq(invoices.tenant_id, tenantId));
     return results[0]?.val ?? 0;
   }
+
+  async getAllForStats(tenantId?: string): Promise<Invoice[]> {
+    if (tenantId) {
+      return (await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.tenant_id, tenantId))
+        .orderBy(desc(invoices.invoice_date))) as Invoice[];
+    }
+    return (await db
+      .select()
+      .from(invoices)
+      .orderBy(desc(invoices.invoice_date))) as Invoice[];
+  }
 }
 
 export const invoiceRepository = new InvoiceRepository();

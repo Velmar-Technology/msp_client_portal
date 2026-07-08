@@ -3,6 +3,7 @@ export interface RouteCrumb {
   to?: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type CrumbResolver = (t: any, params: any, user: any) => RouteCrumb | RouteCrumb[];
 
 export interface RouteCrumbConfig {
@@ -11,6 +12,10 @@ export interface RouteCrumbConfig {
 }
 
 export const routeCrumbs: RouteCrumbConfig[] = [
+  {
+    path: "/financial",
+    crumb: (t) => ({ label: t("nav.financial"), to: "/financial" }),
+  },
   {
     path: "/plans",
     crumb: (t, _params, user) => [

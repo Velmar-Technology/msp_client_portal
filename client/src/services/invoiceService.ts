@@ -41,5 +41,15 @@ export const invoiceService = {
     });
     return response.data;
   },
+
+  async getFinancialStats(range: '30_days' | 'quarter' | 'year'): Promise<{
+    kpis: Array<{ key: string; titleKey: string; value: string; trend: string; isPositiveTrend: boolean }>;
+    monthlyData: Array<{ month: string; revenue: number; expenses: number }>;
+    expenseCategories: Array<{ nameKey: string; value: number; percentage: number; color: string }>;
+    transactions: Array<{ id: string; date: string; description: string; categoryKey: string; status: 'PAID' | 'PENDING' | 'FAILED'; amount: number }>;
+  }> {
+    const response = await api.get('/invoices/financial-stats', { params: { range } });
+    return response.data.data;
+  },
 };
 

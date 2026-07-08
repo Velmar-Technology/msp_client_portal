@@ -320,3 +320,14 @@ export interface SubscriptionEquipment {
   updated_at: Date;
 }
 
+
+export interface Expense {
+  id: string;
+  amount: number;
+  description: string;
+  category: string;
+  expense_date: Date;
+  tenant_id: string;
+  expense_identifier?: string | null;
+  created_at: Date;
+}

@@ -9,6 +9,9 @@ router.use(authMiddleware);
 /** GET /api/v1/invoices — List client invoices */
 router.get('/', (req, res) => invoiceController.getAll(req, res));
 
+/** GET /api/v1/invoices/financial-stats — Get financial dashboard stats */
+router.get('/financial-stats', (req, res) => invoiceController.getFinancialStats(req, res));
+
 /** GET /api/v1/invoices/:id — Get invoice details */
 router.get('/:id', (req, res) => invoiceController.getById(req, res));
 

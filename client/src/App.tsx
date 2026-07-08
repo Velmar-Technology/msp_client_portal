@@ -8,6 +8,7 @@ import { TicketsPage } from './pages/TicketsPage';
 import { TicketDetailPage } from './pages/TicketDetailPage';
 import { PlansPage } from './pages/PlansPage';
 import { BillingPage } from './pages/BillingPage';
+import { FinancialDashboard } from './pages/FinancialDashboard';
 import { ProfilePage } from './pages/ProfilePage';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { TechDashboard } from './pages/TechDashboard';
@@ -65,6 +66,7 @@ interface AppRouteConfig {
   element: React.ReactNode;
   allowedRoles?: string[];
   handle?: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     crumb: (t: any, params: any, user: any) => any;
   };
 }
@@ -72,6 +74,7 @@ interface AppRouteConfig {
 const protectedRoutes: AppRouteConfig[] = [
   // Client Routes
   { path: "/dashboard", element: <ClientDashboard />, allowedRoles: ["CLIENT"] },
+  { path: "/financial", element: <FinancialDashboard />, allowedRoles: ["CLIENT", "ADMIN"] },
   { path: "/plans", element: <PlansPage />, allowedRoles: ["CLIENT", "ADMIN"] },
   { path: "/billing", element: <BillingPage />, allowedRoles: ["CLIENT", "ADMIN"] },
   { path: "/devices", element: <DevicesPage />, allowedRoles: ["CLIENT", "ADMIN"] },

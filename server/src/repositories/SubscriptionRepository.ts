@@ -1,6 +1,6 @@
 import { BaseRepository } from './BaseRepository';
 import { Subscription, SubscriptionPlan, SubscriptionStatus } from '../types';
-import { db, subscriptions } from '../db';
+import { db, subscriptions, plans } from '../db';
 import { eq, desc, and, or, lt } from 'drizzle-orm';
 
 export class SubscriptionRepository extends BaseRepository<Subscription> {
@@ -109,6 +109,27 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
       .where(eq(subscriptions.id, id))
       .returning();
     return (results[0] as Subscription) || null;
+  }
+
+  async getActiveSubscriptionsWithPlan(tenantId?: string): Promise<any[]> {
+    const conditions = [eq(subscriptions.status, 'ACTIVE')];
+    if (tenantId) {
+      conditions.push(eq(subscriptions.tenant_id, tenantId));
+    }
+    const results = await db
+      .select({
+        id: subscriptions.id,
+        planId: subscriptions.plan,
+        equipmentCount: subscriptions.equipment_count,
+        status: subscriptions.status,
+        created_at: subscriptions.created_at,
+        price: plans.price,
+        tenant_id: subscriptions.tenant_id,
+      })
+      .from(subscriptions)
+      .innerJoin(plans, eq(subscriptions.plan, plans.id))
+      .where(and(...conditions));
+    return results;
   }
 }
 

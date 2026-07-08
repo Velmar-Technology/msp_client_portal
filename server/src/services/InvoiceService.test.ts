@@ -13,6 +13,9 @@ const mocks = vi.hoisted(() => {
     paypalCreateOrder: vi.fn(),
     paypalCaptureOrder: vi.fn(),
     createInAppNotification: vi.fn(),
+    getAllForStats: vi.fn(),
+    getActiveSubscriptionsWithPlan: vi.fn(),
+    getExpensesForStats: vi.fn(),
   };
 });
 
@@ -25,6 +28,23 @@ vi.mock('../repositories/InvoiceRepository', () => {
       count: mocks.count,
       countByTenant: mocks.countByTenant,
       updateStatus: mocks.updateStatus,
+      getAllForStats: mocks.getAllForStats,
+    },
+  };
+});
+
+vi.mock('../repositories/SubscriptionRepository', () => {
+  return {
+    subscriptionRepository: {
+      getActiveSubscriptionsWithPlan: mocks.getActiveSubscriptionsWithPlan,
+    },
+  };
+});
+
+vi.mock('../repositories/ExpenseRepository', () => {
+  return {
+    expenseRepository: {
+      getAllForStats: mocks.getExpensesForStats,
     },
   };
 });
@@ -47,7 +67,7 @@ vi.mock('./NotificationService', () => {
 });
 
 import { invoiceService } from './InvoiceService';
-import { UserRole, InvoiceStatus, Invoice } from '../types';
+import { UserRole, InvoiceStatus, Invoice, SubscriptionStatus } from '../types';
 
 describe('InvoiceService', () => {
   beforeEach(() => {
@@ -201,6 +221,36 @@ describe('InvoiceService', () => {
         statusCode: 400,
         message: 'PayPal payment was not completed',
       });
+    });
+  });
+
+  describe('getFinancialStats', () => {
+    it('should aggregate revenue and active subscription MRR correctly', async () => {
+      const refDate = new Date('2026-07-01T12:00:00Z');
+      const invoices = [
+        { id: 'inv-1', invoice_number: '1', client_id: 'c1', amount: 100, tax_amount: 18, total: 118, status: InvoiceStatus.PAID, invoice_date: refDate },
+        { id: 'inv-2', invoice_number: '2', client_id: 'c1', amount: 50, tax_amount: 9, total: 59, status: InvoiceStatus.PAID, invoice_date: refDate },
+        { id: 'inv-3', invoice_number: '3', client_id: 'c1', amount: 200, tax_amount: 36, total: 236, status: InvoiceStatus.PENDING, invoice_date: refDate },
+      ];
+      mocks.getAllForStats.mockResolvedValue(invoices);
+
+      const activeSubs = [
+        { id: 'sub-1', planId: 'PL-001', equipmentCount: 2, status: SubscriptionStatus.ACTIVE, created_at: refDate, price: 30 },
+      ];
+      mocks.getActiveSubscriptionsWithPlan.mockResolvedValue(activeSubs);
+      const mockExpenses = [
+        { id: 'exp-1', amount: 150.00, description: 'Cloud hosting', category: 'cloudInfra', expense_date: refDate, tenant_id: 'tenant-1' }
+      ];
+      mocks.getExpensesForStats.mockResolvedValue(mockExpenses);
+
+      const result = await invoiceService.getFinancialStats('tenant-1', UserRole.CLIENT, '30_days');
+
+      expect(mocks.getAllForStats).toHaveBeenCalledWith('tenant-1');
+      expect(mocks.getActiveSubscriptionsWithPlan).toHaveBeenCalledWith('tenant-1');
+
+      expect(result.kpis.find(k => k.key === 'revenue')?.value).toBe('$177.00');
+      expect(result.kpis.find(k => k.key === 'mrr')?.value).toBe('$60.00');
+      expect(result.kpis.find(k => k.key === 'expenses')?.value).toBe('$150.00');
     });
   });
 });

@@ -62,6 +62,20 @@ export class InvoiceController {
     res.setHeader('Content-Disposition', `attachment; filename="invoice-${invoiceNumber}.pdf"`);
     res.send(pdfBuffer);
   }
+
+  async getFinancialStats(req: Request, res: Response): Promise<void> {
+    const range = (req.query.range as '30_days' | 'quarter' | 'year') || '30_days';
+    if (!['30_days', 'quarter', 'year'].includes(range)) {
+      res.status(400).json({ success: false, message: 'Invalid range parameter' });
+      return;
+    }
+    const stats = await invoiceService.getFinancialStats(
+      req.user!.tenantId,
+      req.user!.role as UserRole,
+      range
+    );
+    res.json({ success: true, data: stats });
+  }
 }
 
 export const invoiceController = new InvoiceController();

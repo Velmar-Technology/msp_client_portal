@@ -10,6 +10,7 @@ import notificationPreferenceRoutes from './notificationPreference.routes';
 import planRoutes from './plan.routes';
 import systemRoutes from './system.routes';
 import equipmentRoutes from './equipment.routes';
+import expenseRoutes from './expense.routes';
 
 const router = Router();
 
@@ -24,6 +25,7 @@ router.use('/notification-preferences', notificationPreferenceRoutes);
 router.use('/plans', planRoutes);
 router.use('/system', systemRoutes);
 router.use('/equipment', equipmentRoutes);
+router.use('/expenses', expenseRoutes);
 
 // Health check
 router.get('/health', (_req, res) => {

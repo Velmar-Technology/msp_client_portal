@@ -1,0 +1,1 @@
+ALTER TABLE expenses ADD COLUMN IF NOT EXISTS expense_identifier VARCHAR(100);
