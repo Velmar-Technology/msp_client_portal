@@ -124,6 +124,22 @@ describe('setupAxiosErrorInterceptor', () => {
     expect(onUnauthorized).toHaveBeenCalled();
   });
 
+  it('calls onUnauthorized for UNAUTHORIZED', async () => {
+    const onUnauthorized = vi.fn();
+    setupAxiosErrorInterceptor(instance, { onUnauthorized });
+
+    const rejectFn = interceptorSpy.mock.calls[0][1];
+    const axiosError = createMockAxiosError({
+      response: {
+        status: 401,
+        data: { success: false, code: 'UNAUTHORIZED', message: 'Unauthorized', correlationId: 'err_001' },
+      },
+    });
+
+    await rejectFn(axiosError).catch(() => {});
+    expect(onUnauthorized).toHaveBeenCalled();
+  });
+
   it('does not call onUnauthorized for non-401 errors', async () => {
     const onUnauthorized = vi.fn();
     setupAxiosErrorInterceptor(instance, { onUnauthorized });
@@ -144,7 +160,7 @@ describe('setupAxiosErrorInterceptor', () => {
     const axiosError = createMockAxiosError({
       response: {
         status: 401,
-        data: { success: false, code: 'UNAUTHORIZED_ERROR', message: 'Unauthorized', correlationId: 'err_001' },
+        data: { success: false, code: 'UNAUTHORIZED', message: 'Unauthorized', correlationId: 'err_001' },
       },
     });
 
@@ -159,13 +175,13 @@ describe('setupAxiosErrorInterceptor', () => {
     const axiosError = createMockAxiosError({
       response: {
         status: 401,
-        data: { success: false, code: 'UNAUTHORIZED_ERROR', message: 'Unauthorized', correlationId: 'err_001' },
+        data: { success: false, code: 'UNAUTHORIZED', message: 'Unauthorized', correlationId: 'err_001' },
       },
     });
 
     const result = await rejectFn(axiosError).catch((e: ClientError) => e);
     expect(result).toBeInstanceOf(ClientError);
-    expect(result.code).toBe('UNAUTHORIZED_ERROR');
+    expect(result.code).toBe('UNAUTHORIZED');
   });
 
   it('dispatches auth:unauthorized CustomEvent when no onUnauthorized provided', async () => {
@@ -178,7 +194,7 @@ describe('setupAxiosErrorInterceptor', () => {
     const axiosError = createMockAxiosError({
       response: {
         status: 401,
-        data: { success: false, code: 'UNAUTHORIZED_ERROR', message: 'Unauthorized', correlationId: 'err_001' },
+        data: { success: false, code: 'UNAUTHORIZED', message: 'Unauthorized', correlationId: 'err_001' },
       },
     });
 

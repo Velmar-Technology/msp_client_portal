@@ -92,7 +92,9 @@ export function setupAxiosErrorInterceptor(
         const axiosError = error as AxiosError;
         const clientError = parseClientError(error);
 
-        if (clientError.code === 'UNAUTHORIZED_ERROR' && options?.onUnauthorized) {
+        const isUnauthorized = clientError.code === 'UNAUTHORIZED_ERROR' || clientError.code === 'UNAUTHORIZED';
+
+        if (isUnauthorized && options?.onUnauthorized) {
           try {
             const response = await options.onUnauthorized(clientError, axiosError);
             if (response) return response;
@@ -101,7 +103,7 @@ export function setupAxiosErrorInterceptor(
           }
         }
 
-        if (clientError.code === 'UNAUTHORIZED_ERROR') {
+        if (isUnauthorized) {
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: clientError }));
           }
