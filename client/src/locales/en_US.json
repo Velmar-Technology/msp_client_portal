@@ -1,5 +1,15 @@
 {
+  "common": {
+    "actions": "Actions",
+    "cancel": "Cancel",
+    "close": "Close",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading..."
+  },
   "nav": {
+
     "dashboard": "Dashboard",
     "tickets": "Tickets",
     "plans": "Plans",
@@ -10,6 +20,7 @@
     "myTickets": "My Tickets",
     "allTickets": "All Tickets",
     "devices": "Devices",
+    "maintenance": "Maintenance",
     "adminDashboard": "Dashboard",
     "infrastructure": "Service Management",
     "notificationPreferences": "Notifications",
@@ -73,6 +84,8 @@
     "maintenance": "Maintenance",
     "scheduled": "SCHEDULED",
     "preventiveNetworkReview": "Preventive network review",
+    "noneScheduled": "None Scheduled",
+    "noUpcomingMaintenance": "No upcoming maintenance tasks",
     "lastBackup": "Last Backup",
     "successful": "SUCCESSFUL",
     "mainDbServer": "Main DB Server",
@@ -379,7 +392,10 @@
     "manageActiveSub": "Manage Active Subscription",
     "detailsForService": "Details for {{name}} ({{cycle}} billing)",
     "activeStatus": "Active",
+    "active": "Active",
+    "cancelledStatus": "Cancelled",
     "disabledStatus": "Disabled",
+
     "editAction": "Edit",
     "devicesLabel": "Devices",
     "cycleLabel": "Cycle",
@@ -449,7 +465,9 @@
     "referenceLabel": "Reference:"
   },
   "devices": {
+    "title": "Devices",
     "subtitle": "Manage your active device licenses, generate activation OTPs, and provision client storage.",
+
     "tableId": "Device ID",
     "tableSlot": "Slot",
     "tableStatus": "Status",
@@ -628,7 +646,53 @@
     "noUsers": "No users found",
     "pageOf": "Page {page} of {total}"
   },
+  "notificationPreferences": {
+    "title": "Notification Preferences",
+    "subtitle": "Manage your alert delivery channels",
+    "loading": "Loading...",
+    "eventType": "Event Type",
+    "lockedTogglesInfo": "Locked toggles cannot be disabled.",
+    "deliveryChannels": "Delivery Channels",
+    "deliveryChannelsDesc": "Control which channels receive notifications for each event type. Critical system events always deliver in-app notifications.",
+    "saved": "Saved",
+    "error": "Error",
+    "unsavedChanges": "Unsaved changes",
+    "saving": "Saving...",
+    "saveChanges": "Save Changes",
+    "toggleAriaLabel": "Toggle {{channel}} for {{event}}",
+    "loadFailed": "Failed to load notification preferences.",
+    "saveSuccess": "Preferences saved successfully.",
+    "saveFailed": "Failed to save preferences. Please try again.",
+    "events": {
+      "TICKET_CREATED": {
+        "label": "Ticket Created",
+        "description": "When a new support ticket is opened"
+      },
+      "TICKET_ASSIGNED": {
+        "label": "Ticket Assigned",
+        "description": "When a ticket is assigned to a technician"
+      },
+      "TICKET_STATUS_CHANGED": {
+        "label": "Status Changed",
+        "description": "When a ticket status is updated"
+      },
+      "TICKET_CANCELLED": {
+        "label": "Ticket Cancelled",
+        "description": "When a ticket is cancelled"
+      },
+      "NEW_REPLY": {
+        "label": "New Reply",
+        "description": "When someone replies to your ticket"
+      }
+    },
+    "channels": {
+      "in_app": "Portal",
+      "email": "Email",
+      "whatsapp": "WhatsApp"
+    }
+  },
   "financial": {
+
     "title": "Financial Overview",
     "subtitle": "Real-time monthly recurring income, cashflow ledger, and infrastructure overhead.",
     "export": "Export Report",
@@ -683,5 +747,77 @@
     "pageOf": "Page {page} of {total}",
     "noExpenses": "No expenses recorded",
     "cancel": "Cancel"
+  },
+  "calendar": {
+    "sun": "Sun",
+    "mon": "Mon",
+    "tue": "Tue",
+    "wed": "Wed",
+    "thu": "Thu",
+    "fri": "Fri",
+    "sat": "Sat"
+  },
+  "maintenance": {
+    "subtitle": "Schedule and track preventative device maintenance routines",
+    "modalTitle": "Schedule Device Maintenance",
+    "modalSubtitle": "Set up a routine checkup date or pick a custom date picker date",
+    "scheduleBtn": "Schedule Maintenance",
+    "viewCalendar": "Calendar",
+    "viewList": "List View",
+    "today": "Today",
+    "prevMonth": "Previous Month",
+    "nextMonth": "Next Month",
+    "searchPlaceholder": "Search maintenance title, device, or client...",
+    "filterAllStatuses": "All Statuses",
+    "filterAllTechs": "All Technicians",
+    "statusScheduled": "Scheduled",
+    "statusInProgress": "In Progress",
+    "statusCompleted": "Completed",
+    "statusOverdue": "Overdue",
+    "statusCancelled": "Cancelled",
+    "labelSelectDevice": "Select Target Device / Equipment",
+    "labelSchedulingMethod": "Scheduling Method",
+    "modePredefinedTitle": "Predefined Period",
+    "modePredefinedDesc": "Default 6 months schedule from activation date",
+    "modeCustomTitle": "Custom Date Picker",
+    "modeCustomDesc": "Pick a specific calendar date",
+    "labelPredefinedMonths": "Select Interval",
+    "months3": "3 Months",
+    "months6Default": "6 Months (Default)",
+    "months12": "12 Months",
+    "predefinedNote": "Maintenance will be scheduled for {{date}}",
+    "labelDatePicker": "Select Specific Date",
+    "labelAssignTech": "Assign Technician",
+    "unassignedTech": "Unassigned",
+    "labelTitle": "Maintenance Title",
+    "titlePlaceholder": "Routine 6-Month Workstation Maintenance",
+    "defaultTitle": "Routine Maintenance - {{name}}",
+    "labelNotes": "Notes & Special Instructions",
+    "notesPlaceholder": "e.g., Check antivirus definition, clean dust filters, run diagnostic tools...",
+    "confirmSchedule": "Confirm Schedule",
+    "scheduling": "Scheduling...",
+    "errorSelectDevice": "Please select a device slot",
+    "scheduleSuccess": "Maintenance scheduled successfully",
+    "scheduleError": "Failed to schedule maintenance",
+    "tableDate": "Scheduled Date",
+    "tableDevice": "Device",
+    "tableClient": "Client / Tenant",
+    "tableTech": "Assigned Tech",
+    "tableStatus": "Status",
+    "actionsLabel": "Maintenance Actions",
+    "viewDetails": "View Details",
+    "markInProgress": "Mark as In Progress",
+    "markCompleted": "Mark as Completed",
+    "markCancelled": "Mark as Cancelled",
+    "noMaintenancesFound": "No scheduled maintenance items found",
+    "typeCustomDate": "Custom Date",
+    "typePredefined": "Predefined Period"
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "description": "Sorry, the page you are looking for doesn't exist or has been moved.",
+    "backHome": "Back to Home",
+    "goBack": "Go Back",
+    "errorCode": "404 Error"
   }
 }

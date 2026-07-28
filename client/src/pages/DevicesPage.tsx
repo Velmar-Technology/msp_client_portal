@@ -1,5 +1,5 @@
-import { useCallback } from "react";
-import { X, Laptop, Loader2, MoreHorizontal, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { useCallback, useState } from "react";
+import { X, Laptop, Loader2, MoreHorizontal, Search, ChevronLeft, ChevronRight, Wrench } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDevicesPage } from "../hooks/useDevicesPage";
 import type { Subscription } from "@/services/subscriptionService";
@@ -8,6 +8,7 @@ import { Page } from "@/components/Page";
 import { Input } from "@/components/ui/input";
 import { DataTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
+import { ScheduleMaintenanceModal } from "@/components/maintenance/ScheduleMaintenanceModal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
 
 // 1. High-Density Empty Subscriptions Card Sub-component
 interface EmptySubscriptionsCardProps {
@@ -543,7 +545,16 @@ export function DevicesPage() {
     totalPages,
   } = useDevicesPage();
 
+  const [maintModalEquip, setMaintModalEquip] = useState<Partial<SubscriptionEquipment> | null>(null);
+  const [isMaintModalOpen, setIsMaintModalOpen] = useState(false);
+
+  const handleOpenScheduleMaint = useCallback((equip: Partial<SubscriptionEquipment>) => {
+    setMaintModalEquip(equip);
+    setIsMaintModalOpen(true);
+  }, []);
+
   const handleCloseWizard = useCallback(() => {
+
     setActivationWizardSubId(null);
     setActivationWizardSlotIdx(null);
     fetchActiveSubscriptions();
@@ -769,13 +780,23 @@ export function DevicesPage() {
                   <DropdownMenuLabel className="text-xs">{t("devices.actionsLabel")}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {equip.status === "ACTIVE" ? (
-                    <DropdownMenuItem
-                      onClick={() => targetSubId && handleRevokeEquipment(targetSubId, idx)}
-                      className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer text-xs"
-                    >
-                      {t("devices.actionDeactivate")}
-                    </DropdownMenuItem>
+                    <>
+                      <DropdownMenuItem
+                        onClick={() => handleOpenScheduleMaint(equip)}
+                        className="cursor-pointer text-xs flex items-center gap-1.5 font-medium text-primary"
+                      >
+                        <Wrench className="h-3.5 w-3.5" />
+                        {t("maintenance.scheduleBtn")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => targetSubId && handleRevokeEquipment(targetSubId, idx)}
+                        className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer text-xs"
+                      >
+                        {t("devices.actionDeactivate")}
+                      </DropdownMenuItem>
+                    </>
                   ) : equip.otp ? (
+
                     <>
                       <DropdownMenuItem
                         onClick={() => targetSubId && handleStartActivationWizard(targetSubId, idx, equip.otp)}
@@ -804,10 +825,9 @@ export function DevicesPage() {
           );
         },
       });
-
       return cols;
     },
-    [t, handleRevokeEquipment, handleStartActivationWizard, handleGenerateOTP, isAdmin]
+    [t, handleRevokeEquipment, handleStartActivationWizard, handleGenerateOTP, handleOpenScheduleMaint, isAdmin]
   );
 
   return (
@@ -889,6 +909,20 @@ export function DevicesPage() {
           slotsEquipment={subscriptionEquipment[activationWizardSubId] || []}
         />
       )}
+
+      {/* Schedule Maintenance Modal */}
+      <ScheduleMaintenanceModal
+        equipment={maintModalEquip}
+        isOpen={isMaintModalOpen}
+        onClose={() => {
+          setIsMaintModalOpen(false);
+          setMaintModalEquip(null);
+        }}
+        onSuccess={() => {
+          fetchActiveSubscriptions();
+        }}
+        isAdminOrTech={isAdmin}
+      />
     </Page>
   );
 }

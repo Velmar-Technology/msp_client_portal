@@ -251,6 +251,7 @@ export function AdminDashboard() {
     storage,
     storageLoading,
     openTickets,
+    nextMaintenance,
     getStatusLabel,
     getStatusColorClass,
   } = useAdminDashboard();
@@ -297,17 +298,48 @@ export function AdminDashboard() {
           <SummaryCard
             icon={<Wrench className="h-5 w-5 text-zinc-600 dark:text-zinc-400" />}
             badge={
-              <span className="bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800 px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase">
-                {t("dashboard.scheduled")}
-              </span>
+              nextMaintenance ? (
+                <span className={`border px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase ${
+                  nextMaintenance.status === "OVERDUE"
+                    ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800"
+                    : nextMaintenance.status === "IN_PROGRESS"
+                      ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800 animate-pulse"
+                      : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800"
+                }`}>
+                  {t(
+                    nextMaintenance.status === "IN_PROGRESS"
+                      ? "maintenance.statusInProgress"
+                      : nextMaintenance.status === "OVERDUE"
+                        ? "maintenance.statusOverdue"
+                        : "maintenance.statusScheduled"
+                  )}
+                </span>
+              ) : null
             }
             title={t("dashboard.maintenance")}
-            value={new Date("2024-10-15").toLocaleDateString(i18n.language === "es_DO" ? "es-DO" : "en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
-            footer={<span className="text-[10px] text-zinc-500 dark:text-zinc-400">{t("dashboard.preventiveNetworkReview")}</span>}
+            value={
+              nextMaintenance
+                ? new Date(nextMaintenance.scheduled_date).toLocaleDateString(i18n.language === "es_DO" ? "es-DO" : "en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })
+                : t("dashboard.noneScheduled")
+            }
+            footer={
+              nextMaintenance ? (
+                <Link to="/maintenance" className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 hover:underline flex items-center gap-1">
+                  <span className="truncate max-w-[140px] block" title={nextMaintenance.title}>
+                    {nextMaintenance.title}
+                  </span>
+                  <ArrowRight className="h-3 w-3 shrink-0" />
+                </Link>
+              ) : (
+                <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                  {t("dashboard.noUpcomingMaintenance")}
+                </span>
+              )
+            }
           />
 
           {/* Backups */}

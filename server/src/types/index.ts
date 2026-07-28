@@ -331,3 +331,42 @@ export interface Expense {
   expense_identifier?: string | null;
   created_at: Date;
 }
+
+export enum MaintenanceStatus {
+  SCHEDULED = 'SCHEDULED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+  OVERDUE = 'OVERDUE',
+}
+
+export enum MaintenanceType {
+  PREDEFINED_6M = 'PREDEFINED_6M',
+  PREDEFINED_3M = 'PREDEFINED_3M',
+  PREDEFINED_12M = 'PREDEFINED_12M',
+  CUSTOM_DATE = 'CUSTOM_DATE',
+}
+
+export interface DeviceMaintenance {
+  id: string;
+  equipment_id: string;
+  subscription_id: string;
+  client_id: string;
+  tenant_id: string;
+  assigned_tech_id: string | null;
+  scheduled_date: Date;
+  status: MaintenanceStatus | string;
+  title: string;
+  notes: string | null;
+  maintenance_type: MaintenanceType | string;
+  created_by: string | null;
+  created_at: Date;
+  updated_at: Date;
+  device_name?: string | null;
+  device_serial?: string | null;
+  client_name?: string | null;
+  client_email?: string | null;
+  assigned_tech_name?: string | null;
+  service_name?: string | null;
+}
+

@@ -6,7 +6,9 @@ import fs from 'fs';
 import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env';
 import { testConnection } from './config/database';
+import { migrate } from './db/migrate';
 import { logger } from './utils/logger';
+
 import { createExpressErrorMiddleware } from '@shared/errors';
 import routes from './routes';
 import { swaggerSpec } from './swagger/swagger.config';
@@ -57,6 +59,10 @@ async function startServer(): Promise<void> {
   try {
     // Test database connection
     await testConnection();
+
+    // Auto-run pending database migrations
+    await migrate();
+
 
     app.listen(env.PORT, () => {
       logger.info(`🚀 Velmar Technology SRL MSP API Server running on port ${env.PORT}`);

@@ -35,6 +35,11 @@ export const routeCrumbs: RouteCrumbConfig[] = [
     crumb: (t) => ({ label: t("nav.devices"), to: "/devices" }),
   },
   {
+    path: "/maintenance",
+    crumb: (t) => ({ label: t("nav.maintenance"), to: "/maintenance" }),
+  },
+
+  {
     path: "/admin/users",
     crumb: (t) => ({ label: t("nav.userManagement"), to: "/admin/users" }),
   },

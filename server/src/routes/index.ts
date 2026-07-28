@@ -11,6 +11,7 @@ import planRoutes from './plan.routes';
 import systemRoutes from './system.routes';
 import equipmentRoutes from './equipment.routes';
 import expenseRoutes from './expense.routes';
+import maintenanceRoutes from './maintenance.routes';
 
 const router = Router();
 
@@ -26,6 +27,8 @@ router.use('/plans', planRoutes);
 router.use('/system', systemRoutes);
 router.use('/equipment', equipmentRoutes);
 router.use('/expenses', expenseRoutes);
+router.use('/maintenance', maintenanceRoutes);
+
 
 // Health check
 router.get('/health', (_req, res) => {

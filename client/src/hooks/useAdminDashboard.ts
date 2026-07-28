@@ -5,6 +5,8 @@ import type { Invoice } from "../services/invoiceService";
 import { systemService } from "../services/systemService";
 import type { StorageStatus } from "../services/systemService";
 import { ticketService } from "../services/ticketService";
+import { maintenanceService } from "../services/maintenanceService";
+import type { DeviceMaintenance } from "../services/maintenanceService";
 
 export function useAdminDashboard() {
   const { t, i18n } = useTranslation();
@@ -14,6 +16,8 @@ export function useAdminDashboard() {
   const [storage, setStorage] = useState<StorageStatus | null>(null);
   const [storageLoading, setStorageLoading] = useState(true);
   const [ticketSummary, setTicketSummary] = useState<Record<string, number>>({});
+  const [maintenances, setMaintenances] = useState<DeviceMaintenance[]>([]);
+  const [maintenanceLoading, setMaintenanceLoading] = useState(true);
 
   useEffect(() => {
     async function loadInvoices() {
@@ -22,8 +26,6 @@ export function useAdminDashboard() {
         setInvoices(invData.data || []);
       } catch (err) {
         console.error("Failed to load recent invoices:", err);
-      } finally {
-        setLoading(false);
       }
     }
 
@@ -47,14 +49,42 @@ export function useAdminDashboard() {
       }
     }
 
-    loadInvoices();
+    async function loadMaintenances() {
+      try {
+        const data = await maintenanceService.getMaintenances();
+        setMaintenances(data || []);
+      } catch (err) {
+        console.error("Failed to load maintenances:", err);
+      } finally {
+        setMaintenanceLoading(false);
+      }
+    }
+
+    Promise.all([
+      loadInvoices(),
+      loadTickets(),
+      loadMaintenances()
+    ]).finally(() => {
+      setLoading(false);
+    });
+
     loadStorage();
-    loadTickets();
   }, []);
 
   const openTickets = useMemo(() => {
     return (ticketSummary.OPEN || 0) + (ticketSummary.IN_PROGRESS || 0);
   }, [ticketSummary]);
+
+  const nextMaintenance = useMemo(() => {
+    const active = maintenances.filter(
+      (m) => m.status === "SCHEDULED" || m.status === "IN_PROGRESS" || m.status === "OVERDUE"
+    );
+    if (active.length === 0) return null;
+    // Sort ascending by scheduled_date to get the earliest one
+    return [...active].sort(
+      (a, b) => new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime()
+    )[0];
+  }, [maintenances]);
 
   const getStatusLabel = useCallback((status: string) => {
     const map: Record<string, string> = {
@@ -82,6 +112,8 @@ export function useAdminDashboard() {
     storageLoading,
     ticketSummary,
     openTickets,
+    nextMaintenance,
+    maintenanceLoading,
     getStatusLabel,
     getStatusColorClass,
   };

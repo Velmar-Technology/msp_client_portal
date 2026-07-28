@@ -207,9 +207,12 @@ export async function migrate(): Promise<void> {
     throw error;
   } finally {
     client.release();
-    await pool.end();
+    if (require.main === module) {
+      await pool.end();
+    }
   }
 }
+
 
 if (require.main === module) {
   migrate().catch(() => process.exit(1));

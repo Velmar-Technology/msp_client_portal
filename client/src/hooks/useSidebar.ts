@@ -9,6 +9,7 @@ import {
   Settings,
   Laptop,
   Landmark,
+  Calendar,
 } from "lucide-react";
 import { useAuth } from "./useAuth";
 import { subscriptionService } from "@/services/subscriptionService";
@@ -30,6 +31,7 @@ const clientNavItems: NavItem[] = [
   { to: "/dashboard", icon: LayoutDashboard, labelKey: "dashboard" },
   { to: "/financial", icon: Landmark, labelKey: "financial" },
   { to: "/devices", icon: Laptop, labelKey: "devices" },
+  { to: "/maintenance", icon: Calendar, labelKey: "maintenance" },
   { to: "/tickets", icon: Ticket, labelKey: "myTickets" },
   {
     to: "/account-group",
@@ -46,6 +48,7 @@ const clientNavItems: NavItem[] = [
 
 const techNavItems: NavItem[] = [
   { to: "/tech/dashboard", icon: LayoutDashboard, labelKey: "dashboard" },
+  { to: "/maintenance", icon: Calendar, labelKey: "maintenance" },
   { to: "/tickets", icon: Ticket, labelKey: "myTickets" },
   {
     to: "/account-group",
@@ -63,6 +66,7 @@ const adminNavItems: NavItem[] = [
   { to: "/financial", icon: Landmark, labelKey: "financial" },
   { to: "/admin/users", icon: Users, labelKey: "userManagement" },
   { to: "/devices", icon: Laptop, labelKey: "devices" },
+  { to: "/maintenance", icon: Calendar, labelKey: "maintenance" },
   { to: "/tickets", icon: Ticket, labelKey: "allTickets" },
   {
     to: "/settings-group",

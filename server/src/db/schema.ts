@@ -365,3 +365,42 @@ export const expenses = pgTable(
   ]
 );
 
+// ---- Device Maintenances ----
+export const deviceMaintenances = pgTable(
+  'device_maintenances',
+  {
+    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    equipment_id: uuid('equipment_id')
+      .references(() => subscriptionEquipment.id, { onDelete: 'cascade' })
+      .notNull(),
+    subscription_id: uuid('subscription_id')
+      .references(() => subscriptions.id, { onDelete: 'cascade' })
+      .notNull(),
+    client_id: uuid('client_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    tenant_id: uuid('tenant_id')
+      .references(() => tenants.id, { onDelete: 'cascade' })
+      .notNull(),
+    assigned_tech_id: uuid('assigned_tech_id').references(() => users.id, { onDelete: 'set null' }),
+    scheduled_date: timestamp('scheduled_date', { withTimezone: true }).notNull(),
+    status: varchar('status', { length: 50 }).default('SCHEDULED').notNull(),
+    title: varchar('title', { length: 255 }).notNull(),
+    notes: text('notes'),
+    maintenance_type: varchar('maintenance_type', { length: 50 }).default('PREDEFINED_6M').notNull(),
+    created_by: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    index('idx_device_maint_equip').on(table.equipment_id),
+    index('idx_device_maint_sub').on(table.subscription_id),
+    index('idx_device_maint_client').on(table.client_id),
+    index('idx_device_maint_tech').on(table.assigned_tech_id),
+    index('idx_device_maint_tenant').on(table.tenant_id),
+    index('idx_device_maint_date').on(table.scheduled_date),
+    index('idx_device_maint_status').on(table.status),
+  ]
+);
+
+

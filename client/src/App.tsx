@@ -17,7 +17,9 @@ import { TermsPage } from './pages/TermsPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { NotificationPreferencesPage } from './pages/NotificationPreferencesPage';
 import { DevicesPage } from './pages/DevicesPage';
+import { MaintenancePage } from './pages/MaintenancePage';
 import { UserManagementPage } from './pages/UserManagementPage';
+import { NotFoundPage } from './pages/NotFoundPage';
 import { ThemeProvider } from './components/theme-provider';
 import { ReactErrorBoundary } from '@shared/errors';
 import { Toaster } from '@/components/ui/sonner';
@@ -78,6 +80,8 @@ const protectedRoutes: AppRouteConfig[] = [
   { path: "/plans", element: <PlansPage />, allowedRoles: ["CLIENT", "ADMIN"] },
   { path: "/billing", element: <BillingPage />, allowedRoles: ["CLIENT", "ADMIN"] },
   { path: "/devices", element: <DevicesPage />, allowedRoles: ["CLIENT", "ADMIN"] },
+  { path: "/maintenance", element: <MaintenancePage /> },
+
   // Tech/Admin Routes
   { path: "/tech/dashboard", element: <TechDashboard />, allowedRoles: ["TECHNICIAN"] },
   { path: "/admin/dashboard", element: <AdminDashboard />, allowedRoles: ["ADMIN"] },
@@ -130,6 +134,9 @@ export function App() {
                 />
               ))}
             </Route>
+
+            {/* Catch-all Route */}
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
           <Toaster />
         </BrowserRouter>
