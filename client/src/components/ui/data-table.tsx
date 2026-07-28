@@ -155,7 +155,7 @@ export function DataTable<TData, TValue>({
                 placeholder={search.placeholder || "Search..."}
                 value={search.value}
                 onChange={(e) => search.onChange(e.target.value)}
-                className="w-full pl-8 pr-3 h-8.5 bg-card border text-xs"
+                className="w-full pl-8 pr-3 h-8.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-400 transition-all"
               />
             </div>
           )}
@@ -165,7 +165,7 @@ export function DataTable<TData, TValue>({
                 key={filter.id}
                 value={filter.value}
                 onChange={(e) => filter.onChange(e.target.value)}
-                className="px-2.5 h-8.5 bg-card border rounded-md text-xs focus:outline-none cursor-pointer text-zinc-700 dark:text-zinc-300 font-medium"
+                className="px-2.5 h-8.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs focus:outline-none focus:border-zinc-400 cursor-pointer text-zinc-900 dark:text-zinc-100 font-medium"
               >
                 {filter.placeholder && <option value="">{filter.placeholder}</option>}
                 {filter.options.map((opt) => (
@@ -180,7 +180,7 @@ export function DataTable<TData, TValue>({
 
       {/* 2. Selection Bulk Action Bar */}
       {enableRowSelection && bulkActions && hasSelectedRows && (
-        <div className="px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 rounded-md flex items-center justify-between animate-fade-in">
+        <div className="px-3 py-1.5 bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded-md flex items-center justify-between animate-fade-in">
           <span className="text-xs font-mono font-bold text-zinc-900 dark:text-zinc-100">
             {Object.keys(rowSelection).length} selected
           </span>
@@ -193,11 +193,11 @@ export function DataTable<TData, TValue>({
                   action.onClick(selectedRows)
                 }}
                 className={cn(
-                  "px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer",
+                  "px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer",
                   action.variant === "destructive"
-                    ? "bg-red-650 hover:bg-red-750 text-white"
+                    ? "bg-red-600 hover:bg-red-700 text-white"
                     : action.variant === "outline"
-                    ? "border border-zinc-250 hover:bg-zinc-100 dark:border-zinc-850 dark:hover:bg-zinc-900 text-zinc-700 dark:text-zinc-300"
+                    ? "border border-zinc-200 hover:bg-zinc-100 dark:border-zinc-800 dark:hover:bg-zinc-805 text-zinc-700 dark:text-zinc-300"
                     : "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90"
                 )}
               >
@@ -209,7 +209,7 @@ export function DataTable<TData, TValue>({
       )}
 
       {/* 3. Main Data Table */}
-      <div className="rounded-md border border-outline-variant overflow-hidden bg-card">
+      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -270,7 +270,7 @@ export function DataTable<TData, TValue>({
 
       {/* 4. Footer Pagination controls */}
       {pagination && pagination.totalPages > 1 && (
-        <div className="flex justify-between items-center px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-sm">
+        <div className="flex justify-between items-center px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-sm">
           <span className="text-[10px] md:text-xs text-zinc-500 font-medium">
             Showing {Math.max(0, (pagination.page - 1) * pagination.limit + 1)}–{Math.min(pagination.page * pagination.limit, pagination.totalItems)} of {pagination.totalItems}
           </span>
@@ -279,7 +279,7 @@ export function DataTable<TData, TValue>({
               <select
                 value={pagination.limit}
                 onChange={(e) => pagination.onLimitChange?.(Number(e.target.value))}
-                className="px-1.5 h-7 bg-card border rounded text-[10px] focus:outline-none cursor-pointer text-zinc-650 dark:text-zinc-350"
+                className="px-2 h-7 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md text-[10px] focus:outline-none cursor-pointer text-zinc-755 dark:text-zinc-250 font-semibold"
               >
                 <option value={5}>5 per page</option>
                 <option value={10}>10 per page</option>
@@ -291,14 +291,14 @@ export function DataTable<TData, TValue>({
               <button
                 onClick={() => pagination.onPageChange(Math.max(1, pagination.page - 1))}
                 disabled={pagination.page === 1}
-                className="p-1 rounded hover:bg-zinc-150 dark:hover:bg-zinc-900 disabled:opacity-30 transition-colors cursor-pointer border border-zinc-200 dark:border-zinc-800"
+                className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-30 transition-colors cursor-pointer border border-zinc-200 dark:border-zinc-800"
               >
                 <ChevronLeft className="h-3.5 w-3.5 text-zinc-700 dark:text-zinc-300" />
               </button>
               <button
                 onClick={() => pagination.onPageChange(Math.min(pagination.totalPages, pagination.page + 1))}
                 disabled={pagination.page === pagination.totalPages}
-                className="p-1 rounded hover:bg-zinc-150 dark:hover:bg-zinc-900 disabled:opacity-30 transition-colors cursor-pointer border border-zinc-200 dark:border-zinc-800"
+                className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-30 transition-colors cursor-pointer border border-zinc-200 dark:border-zinc-800"
               >
                 <ChevronRight className="h-3.5 w-3.5 text-zinc-700 dark:text-zinc-300" />
               </button>
