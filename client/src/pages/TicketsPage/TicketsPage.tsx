@@ -1,12 +1,10 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { Plus, Search, ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
+import { Plus, MoreHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useTicketsPage } from "@/hooks/useTicketsPage";
 import { ticketService } from "@/services/ticketService";
 import type { Ticket, TicketResponse } from "@/services/ticketService";
-import type { SubscriptionEquipment } from "@/services/equipmentService";
 import { Page } from "@/components/Page";
-import { Input } from "@/components/ui/input";
 import { NewTicketModal } from "@/components/NewTicketModal";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
@@ -115,150 +113,7 @@ export function TicketTitleWithHoverCard({ ticket }: { ticket: Ticket }) {
   );
 }
 
-// 2. High-Density Filters Sub-component
-interface FiltersBarProps {
-  search: string;
-  setSearch: (val: string) => void;
-  statusFilter: string;
-  setStatusFilter: (val: string) => void;
-  deviceFilter: string;
-  setDeviceFilter: (val: string) => void;
-  devices: SubscriptionEquipment[];
-  onSubmitSearch: () => void;
-  t: (key: string) => string;
-}
 
-export function FiltersBar({
-  search,
-  setSearch,
-  statusFilter,
-  setStatusFilter,
-  deviceFilter,
-  setDeviceFilter,
-  devices,
-  onSubmitSearch,
-  t,
-}: FiltersBarProps) {
-  return (
-    <div className="mb-4 flex flex-col md:flex-row gap-2">
-      <div className="relative flex-1">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
-        <Input
-          id="tickets-search"
-          type="text"
-          placeholder={t("tickets.searchPlaceholder")}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && onSubmitSearch()}
-          className="w-full pl-8 pr-3 h-8 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs placeholder:text-zinc-400 focus:outline-none focus:border-zinc-400 transition-all text-zinc-900 dark:text-zinc-100"
-        />
-      </div>
-      <select
-        value={statusFilter}
-        onChange={(e) => setStatusFilter(e.target.value)}
-        className="px-2.5 h-8 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs focus:outline-none focus:border-zinc-400 cursor-pointer text-zinc-700 dark:text-zinc-300 font-medium"
-      >
-        <option value="">{t("tickets.filterAllStatuses")}</option>
-        <option value="OPEN">{t("tickets.filterOpen")}</option>
-        <option value="IN_PROGRESS">{t("tickets.filterInProgress")}</option>
-        <option value="AWAITING_PAYMENT">{t("tickets.filterAwaitingPayment")}</option>
-        <option value="RESOLVED">{t("tickets.filterResolved")}</option>
-        <option value="CLOSED">{t("tickets.filterClosed")}</option>
-        <option value="CANCELLED">{t("tickets.filterCancelled")}</option>
-      </select>
-      {devices.length > 0 && (
-        <select
-          value={deviceFilter}
-          onChange={(e) => setDeviceFilter(e.target.value)}
-          className="px-2.5 h-8 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs focus:outline-none focus:border-zinc-400 cursor-pointer text-zinc-700 dark:text-zinc-300 font-medium"
-        >
-          <option value="">{t("tickets.filterAllDevices")}</option>
-          {devices.map((device) => (
-            <option key={device.id} value={device.id}>
-              {device.device_name || `Device ${device.slot_index + 1}`}
-            </option>
-          ))}
-        </select>
-      )}
-    </div>
-  );
-}
-
-// 3. High-Density Bulk Action Bar Sub-component
-interface BulkActionBarProps {
-  selectedCount: number;
-  onBulkCancel: () => void;
-  selectedLabel: string;
-  cancelLabel: string;
-}
-
-export function BulkActionBar({
-  selectedCount,
-  onBulkCancel,
-  selectedLabel,
-  cancelLabel,
-}: BulkActionBarProps) {
-  return (
-    <div className="mb-3 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 rounded-md flex items-center justify-between animate-fade-in">
-      <span className="text-xs font-mono font-bold text-zinc-900 dark:text-zinc-100">
-        {selectedCount} {selectedLabel}
-      </span>
-      <button
-        onClick={onBulkCancel}
-        className="bg-red-600 hover:bg-red-700 text-white px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer"
-      >
-        {cancelLabel}
-      </button>
-    </div>
-  );
-}
-
-// 4. Pagination Bar Sub-component
-interface PaginationBarProps {
-  page: number;
-  total: number;
-  limit: number;
-  totalPages: number;
-  onPrev: () => void;
-  onNext: () => void;
-  showingLabel: string;
-  ofLabel: string;
-}
-
-export function PaginationBar({
-  page,
-  total,
-  limit,
-  totalPages,
-  onPrev,
-  onNext,
-  showingLabel,
-  ofLabel,
-}: PaginationBarProps) {
-  return (
-    <div className="flex justify-between items-center px-3 py-2 mt-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-sm">
-      <span className="text-[10px] md:text-xs text-zinc-500">
-        {showingLabel} {(page - 1) * limit + 1}–{Math.min(page * limit, total)} {ofLabel} {total}
-      </span>
-      <div className="flex gap-1">
-        <button
-          onClick={onPrev}
-          disabled={page === 1}
-          className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-900 disabled:opacity-30 transition-colors cursor-pointer border border-zinc-200 dark:border-zinc-800"
-        >
-          <ChevronLeft className="h-3.5 w-3.5 text-zinc-700 dark:text-zinc-300" />
-        </button>
-        <button
-          onClick={onNext}
-          disabled={page === totalPages}
-          className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-900 disabled:opacity-30 transition-colors cursor-pointer border border-zinc-200 dark:border-zinc-800"
-        >
-          <ChevronRight className="h-3.5 w-3.5 text-zinc-700 dark:text-zinc-300" />
-        </button>
-      </div>
-    </div>
-  );
-}
 
 // 5. Parent Dashboard Page
 export function TicketsPage() {
@@ -280,7 +135,6 @@ export function TicketsPage() {
     loading,
     showNewTicket,
     setShowNewTicket,
-    selectedTickets,
     setSelectedTickets,
     ticketToCancel,
     setTicketToCancel,
@@ -290,7 +144,7 @@ export function TicketsPage() {
     setAlertWarningMessage,
     totalPages,
     limit,
-    loadTickets,
+
     handleBulkCancelClick,
     confirmBulkCancel,
     confirmCancelIndividual,
@@ -481,36 +335,6 @@ export function TicketsPage() {
         </button>
       }
     >
-      {/* Search and Filters */}
-      <FiltersBar
-        search={search}
-        setSearch={setSearch}
-        statusFilter={statusFilter}
-        setStatusFilter={(val) => {
-          setStatusFilter(val);
-          setPage(1);
-        }}
-        deviceFilter={deviceFilter}
-        setDeviceFilter={(val) => {
-          setDeviceFilter(val);
-          setPage(1);
-        }}
-        devices={devices}
-        onSubmitSearch={loadTickets}
-        t={t}
-      />
-
-      {/* Bulk Actions */}
-      {selectedTickets.length > 0 && (
-        <BulkActionBar
-          selectedCount={selectedTickets.length}
-          onBulkCancel={handleBulkCancelClick}
-          selectedLabel={t("tickets.selectedCount") || "selected"}
-          cancelLabel={t("tickets.bulkCancel") || "Bulk Cancel"}
-        />
-      )}
-
-      {/* Main Table */}
       <DataTable
         columns={columns}
         data={tickets}
@@ -519,21 +343,58 @@ export function TicketsPage() {
         onRowClick={(ticket) => navigate(`/tickets/${ticket.id}`)}
         enableRowSelection={true}
         onSelectedRowsChange={setSelectedTickets}
+        search={{
+          value: search,
+          onChange: setSearch,
+          placeholder: t("tickets.searchPlaceholder")
+        }}
+        filters={[
+          {
+            id: "status",
+            value: statusFilter,
+            onChange: (val) => {
+              setStatusFilter(val);
+              setPage(1);
+            },
+            options: [
+              { value: "OPEN", label: t("tickets.filterOpen") },
+              { value: "IN_PROGRESS", label: t("tickets.filterInProgress") },
+              { value: "AWAITING_PAYMENT", label: t("tickets.filterAwaitingPayment") },
+              { value: "RESOLVED", label: t("tickets.filterResolved") },
+              { value: "CLOSED", label: t("tickets.filterClosed") },
+              { value: "CANCELLED", label: t("tickets.filterCancelled") },
+            ],
+            placeholder: t("tickets.filterAllStatuses")
+          },
+          ...(devices.length > 0 ? [{
+            id: "device",
+            value: deviceFilter,
+            onChange: (val) => {
+              setDeviceFilter(val);
+              setPage(1);
+            },
+            options: devices.map((device) => ({
+              value: device.id,
+              label: device.device_name || `Device ${device.slot_index + 1}`
+            })),
+            placeholder: t("tickets.filterAllDevices")
+          }] : [])
+        ]}
+        bulkActions={[
+          {
+            label: t("tickets.bulkCancel") || "Bulk Cancel",
+            onClick: handleBulkCancelClick,
+            variant: "destructive"
+          }
+        ]}
+        pagination={{
+          page,
+          totalPages,
+          totalItems: total,
+          limit,
+          onPageChange: setPage
+        }}
       />
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <PaginationBar
-          page={page}
-          total={total}
-          limit={limit}
-          totalPages={totalPages}
-          onPrev={() => setPage(Math.max(1, page - 1))}
-          onNext={() => setPage(Math.min(totalPages, page + 1))}
-          showingLabel={t("tickets.showing")}
-          ofLabel={t("tickets.of")}
-        />
-      )}
 
       {/* New Ticket Modal */}
       {showNewTicket && <NewTicketModal onClose={() => setShowNewTicket(false)} onCreated={handleTicketCreated} />}

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Page } from "@/components/Page";
 import { DataTable } from "@/components/ui/data-table";
-import { Button } from "@/components/ui/button";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,13 +12,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+
 import type { ColumnDef } from "@tanstack/react-table";
 
 import { useUserManagement } from "@/hooks/useUserManagement";
+import type { RoleFilter, StatusFilter } from "@/hooks/useUserManagement";
 import { useAuth } from "@/hooks/useAuth";
 import { UserStatsBar } from "@/components/users/UserStatsBar";
-import { UserFiltersBar } from "@/components/users/UserFiltersBar";
+
 import { UserRoleBadge } from "@/components/users/UserRoleBadge";
 import { UserActionsMenu } from "@/components/users/UserActionsMenu";
 import type { ManagedUser } from "@/services/userService";
@@ -86,48 +87,7 @@ function UserAvatarCell({ name, email, avatarUrl }: UserAvatarCellProps) {
   );
 }
 
-// ---- Pagination Controls ----
 
-interface PaginationProps {
-  page: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-  t: (key: string) => string;
-}
-
-function Pagination({ page, totalPages, onPageChange, t }: PaginationProps) {
-  if (totalPages <= 1) return null;
-
-  return (
-    <div className="flex items-center justify-between pt-3 border-t border-zinc-200 dark:border-zinc-800 mt-1 bg-zinc-50/50 dark:bg-zinc-900/50 px-4 pb-3">
-      <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 font-mono">
-        {t("userManagement.pageOf")
-          .replace("{page}", String(page))
-          .replace("{total}", String(totalPages))}
-      </span>
-      <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-30"
-          disabled={page <= 1}
-          onClick={() => onPageChange(page - 1)}
-        >
-          <ChevronLeft className="h-3.5 w-3.5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-30"
-          disabled={page >= totalPages}
-          onClick={() => onPageChange(page + 1)}
-        >
-          <ChevronRight className="h-3.5 w-3.5" />
-        </Button>
-      </div>
-    </div>
-  );
-}
 
 // ---- Main Page ----
 
@@ -281,38 +241,48 @@ export function UserManagementPage() {
       {/* Stats */}
       <UserStatsBar stats={stats} loading={statsLoading} />
 
-      {/* Table Card */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm overflow-hidden mt-6">
-        {/* Filters */}
-        <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
-          <UserFiltersBar
-            searchQuery={searchQuery}
-            onSearchChange={handleSearchChange}
-            roleFilter={roleFilter}
-            onRoleFilterChange={handleRoleFilterChange}
-            statusFilter={statusFilter}
-            onStatusFilterChange={handleStatusFilterChange}
-            total={total}
-          />
-        </div>
-
-        {/* Data Table */}
-        <DataTable
-          columns={columns}
-          data={users}
-          loading={loading}
-          noDataMessage={t("userManagement.noUsers")}
-          className="border-none rounded-none"
-        />
-
-        {/* Pagination */}
-        <Pagination
-          page={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          t={t}
-        />
-      </div>
+      <DataTable
+        columns={columns}
+        data={users}
+        loading={loading}
+        noDataMessage={t("userManagement.noUsers")}
+        search={{
+          value: searchQuery,
+          onChange: handleSearchChange,
+          placeholder: t("userManagement.searchPlaceholder") || "Search users..."
+        }}
+        filters={[
+          {
+            id: "role",
+            value: roleFilter,
+            onChange: (val) => handleRoleFilterChange(val as RoleFilter),
+            options: [
+              { value: "ADMIN", label: t("userManagement.roleAdmin") },
+              { value: "TECHNICIAN", label: t("userManagement.roleTech") },
+              { value: "CLIENT", label: t("userManagement.roleClient") }
+            ],
+            placeholder: t("userManagement.allRoles") || "All Roles"
+          },
+          {
+            id: "status",
+            value: statusFilter,
+            onChange: (val) => handleStatusFilterChange(val as StatusFilter),
+            options: [
+              { value: "active", label: t("userManagement.active") },
+              { value: "inactive", label: t("userManagement.inactive") }
+            ],
+            placeholder: t("userManagement.allStatuses") || "All Statuses"
+          }
+        ]}
+        pagination={{
+          page,
+          totalPages,
+          totalItems: total,
+          limit: 20,
+          onPageChange: setPage
+        }}
+        className="mt-6"
+      />
 
       {/* Confirmation Dialog */}
       <AlertDialog

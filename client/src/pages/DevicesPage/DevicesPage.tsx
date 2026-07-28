@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { X, Laptop, Loader2, MoreHorizontal, Search, ChevronLeft, ChevronRight, Wrench } from "lucide-react";
+import { X, Laptop, Loader2, MoreHorizontal, Wrench } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDevicesPage } from "@/hooks/useDevicesPage";
 import type { Subscription } from "@/services/subscriptionService";
@@ -76,103 +76,6 @@ export function SubscriptionSelector({ subscriptions, selectedId, onChange }: Su
           </option>
         ))}
       </select>
-    </div>
-  );
-}
-
-// 3. High-Density Filters Sub-component
-interface DevicesTableFiltersProps {
-  searchTerm: string;
-  setSearchTerm: (term: string) => void;
-  searchPlaceholder: string;
-  isAdmin?: boolean;
-  selectedClient?: string;
-  setSelectedClient?: (client: string) => void;
-  uniqueClients?: { id: string; name: string }[];
-  selectedPlan?: string;
-  setSelectedPlan?: (plan: string) => void;
-  uniquePlans?: string[];
-  selectedStatus?: string;
-  setSelectedStatus?: (status: string) => void;
-}
-
-export function DevicesTableFilters({
-  searchTerm,
-  setSearchTerm,
-  searchPlaceholder,
-  isAdmin,
-  selectedClient,
-  setSelectedClient,
-  uniqueClients = [],
-  selectedPlan,
-  setSelectedPlan,
-  uniquePlans = [],
-  selectedStatus,
-  setSelectedStatus,
-}: DevicesTableFiltersProps) {
-  const { t } = useTranslation();
-  return (
-    <div className="p-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/10 flex flex-col md:flex-row gap-3 items-center justify-between">
-      <div className="relative w-full md:max-w-xs">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
-        <Input
-          id="devices-search"
-          type="text"
-          placeholder={searchPlaceholder}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-8 pr-3 h-8 bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs placeholder:text-zinc-400 focus:outline-none focus:border-zinc-400 text-zinc-900 dark:text-zinc-100"
-        />
-      </div>
-
-      {isAdmin && (
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
-          {/* Client Filter */}
-          <div className="flex items-center gap-1.5 min-w-[120px]">
-            <select
-              value={selectedClient}
-              onChange={(e) => setSelectedClient?.(e.target.value)}
-              className="h-8 px-2 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs bg-white dark:bg-zinc-950 text-zinc-850 dark:text-zinc-200 focus:outline-none cursor-pointer w-full"
-            >
-              <option value="all">{t("devices.filterAllClients")}</option>
-              {uniqueClients.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Plan Filter */}
-          <div className="flex items-center gap-1.5 min-w-[100px]">
-            <select
-              value={selectedPlan}
-              onChange={(e) => setSelectedPlan?.(e.target.value)}
-              className="h-8 px-2 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs bg-white dark:bg-zinc-950 text-zinc-850 dark:text-zinc-200 focus:outline-none cursor-pointer w-full"
-            >
-              <option value="all">{t("devices.filterAllPlans")}</option>
-              {uniquePlans.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Status Filter */}
-          <div className="flex items-center gap-1.5 min-w-[110px]">
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus?.(e.target.value)}
-              className="h-8 px-2 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs bg-white dark:bg-zinc-950 text-zinc-850 dark:text-zinc-200 focus:outline-none cursor-pointer w-full"
-            >
-              <option value="all">{t("devices.filterAllStatuses")}</option>
-              <option value="ACTIVE">{t("devices.statusActive")}</option>
-              <option value="PENDING_ACTIVATION">{t("devices.statusPending")}</option>
-            </select>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -425,74 +328,6 @@ export function ActivationWizardModal({
             </div>
           )}
         </div>
-      </div>
-    </div>
-  );
-}
-
-// 5. High-Density Pagination Bar Component
-interface PaginationBarProps {
-  page: number;
-  total: number;
-  limit: number;
-  totalPages: number;
-  onPrev: () => void;
-  onNext: () => void;
-  onLimitChange: (limit: number) => void;
-}
-
-export function PaginationBar({
-  page,
-  total,
-  limit,
-  totalPages,
-  onPrev,
-  onNext,
-  onLimitChange,
-}: PaginationBarProps) {
-  const { t } = useTranslation();
-  return (
-    <div className="flex flex-col sm:flex-row justify-between items-center px-4 py-3 bg-zinc-50/50 dark:bg-zinc-900/10 border-t border-zinc-200 dark:border-zinc-800 gap-3">
-      <div className="flex items-center gap-4 text-xs text-zinc-500">
-        <span>
-          {t("devices.paginationShowing", {
-            start: total === 0 ? 0 : (page - 1) * limit + 1,
-            end: Math.min(page * limit, total),
-            total,
-          })}
-        </span>
-        <div className="flex items-center gap-1.5">
-          <span>{t("devices.paginationShow")}</span>
-          <select
-            value={limit}
-            onChange={(e) => onLimitChange(Number(e.target.value))}
-            className="h-7 px-1.5 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-205 focus:outline-none cursor-pointer"
-          >
-            {[5, 10, 20, 50].map((opt) => (
-              <option key={opt} value={opt}>
-                {opt}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-      <div className="flex gap-1.5">
-        <button
-          onClick={onPrev}
-          disabled={page === 1}
-          aria-label={t("devices.paginationPrev")}
-          className="p-1 rounded hover:bg-zinc-105 dark:hover:bg-zinc-900 disabled:opacity-30 transition-colors cursor-pointer border border-zinc-200 dark:border-zinc-800"
-        >
-          <ChevronLeft className="h-4 w-4 text-zinc-700 dark:text-zinc-300" />
-        </button>
-        <button
-          onClick={onNext}
-          disabled={page === totalPages}
-          aria-label={t("devices.paginationNext")}
-          className="p-1 rounded hover:bg-zinc-105 dark:hover:bg-zinc-900 disabled:opacity-30 transition-colors cursor-pointer border border-zinc-200 dark:border-zinc-800"
-        >
-          <ChevronRight className="h-4 w-4 text-zinc-700 dark:text-zinc-300" />
-        </button>
       </div>
     </div>
   );
@@ -850,42 +685,53 @@ export function DevicesPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
               <div className="lg:col-span-3 space-y-4">
                 <div className="bg-card border rounded-lg overflow-hidden shadow-sm flex flex-col">
-                  {/* Table Filters */}
-                  <DevicesTableFilters
-                    searchTerm={searchTerm}
-                    setSearchTerm={setSearchTerm}
-                    searchPlaceholder={isAdmin ? t("devices.adminSearchPlaceholder") : t("devices.searchPlaceholder")}
-                    isAdmin={isAdmin}
-                    selectedClient={selectedClient}
-                    setSelectedClient={setSelectedClient}
-                    uniqueClients={uniqueClients}
-                    selectedPlan={selectedPlan}
-                    setSelectedPlan={setSelectedPlan}
-                    uniquePlans={uniquePlans}
-                    selectedStatus={selectedStatus}
-                    setSelectedStatus={setSelectedStatus}
-                  />
-
                   {/* Device List Data Table */}
                   <DataTable
                     columns={equipmentColumns(activeSub)}
                     data={paginatedEquipment}
                     noDataMessage={t("devices.noSlotsFound")}
                     loading={loading}
+                    className="border-none rounded-none"
+                    search={{
+                      value: searchTerm,
+                      onChange: setSearchTerm,
+                      placeholder: isAdmin ? t("devices.adminSearchPlaceholder") : t("devices.searchPlaceholder")
+                    }}
+                    filters={isAdmin ? [
+                      {
+                        id: "client",
+                        value: selectedClient,
+                        onChange: setSelectedClient,
+                        options: uniqueClients.map((c) => ({ value: c.id, label: c.name })),
+                        placeholder: t("devices.filterAllClients")
+                      },
+                      {
+                        id: "plan",
+                        value: selectedPlan,
+                        onChange: setSelectedPlan,
+                        options: uniquePlans.map((p) => ({ value: p, label: p })),
+                        placeholder: t("devices.filterAllPlans")
+                      },
+                      {
+                        id: "status",
+                        value: selectedStatus,
+                        onChange: setSelectedStatus,
+                        options: [
+                          { value: "ACTIVE", label: t("devices.statusActive") },
+                          { value: "PENDING_ACTIVATION", label: t("devices.statusPending") }
+                        ],
+                        placeholder: t("devices.filterAllStatuses")
+                      }
+                    ] : undefined}
+                    pagination={{
+                      page,
+                      totalPages,
+                      totalItems: filteredEquipment.length,
+                      limit,
+                      onPageChange: setPage,
+                      onLimitChange: setLimit
+                    }}
                   />
-
-                  {/* Pagination Bar */}
-                  {!loading && filteredEquipment.length > 0 && (
-                    <PaginationBar
-                      page={page}
-                      total={filteredEquipment.length}
-                      limit={limit}
-                      totalPages={totalPages}
-                      onPrev={() => setPage((p) => Math.max(1, p - 1))}
-                      onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
-                      onLimitChange={setLimit}
-                    />
-                  )}
                 </div>
               </div>
             </div>

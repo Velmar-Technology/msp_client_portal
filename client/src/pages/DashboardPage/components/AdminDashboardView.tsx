@@ -5,6 +5,8 @@ import { Headphones, Wrench, CloudUpload, Cloud, CloudOff, ArrowRight } from "lu
 import { useAdminDashboard } from "@/hooks/useAdminDashboard";
 import type { Invoice } from "@/services/invoiceService";
 import type { StorageStatus } from "@/services/systemService";
+import { DataTable } from "@/components/ui/data-table";
+import type { ColumnDef } from "@tanstack/react-table";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -175,68 +177,81 @@ export function RecentInvoices({
   getStatusLabel,
   getStatusColorClass,
 }: RecentInvoicesProps) {
+  const columns: ColumnDef<Invoice>[] = [
+    {
+      accessorKey: "invoice_number",
+      header: () => (
+        <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+          {t("dashboard.tableInvoiceNo")}
+        </span>
+      ),
+      cell: ({ row }) => (
+        <span className="text-xs font-mono font-medium text-zinc-900 dark:text-zinc-100">
+          {row.original.invoice_number}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "invoice_date",
+      header: () => (
+        <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+          {t("dashboard.tableDate")}
+        </span>
+      ),
+      cell: ({ row }) => (
+        <span className="text-xs text-zinc-500 dark:text-zinc-400">
+          {new Date(row.original.invoice_date).toLocaleDateString(language === "es_DO" ? "es-DO" : "en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "total",
+      header: () => (
+        <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+          {t("dashboard.tableAmount")}
+        </span>
+      ),
+      cell: ({ row }) => (
+        <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 font-mono">
+          ${Number(row.original.total).toFixed(2)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: () => (
+        <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+          {t("dashboard.tableStatus")}
+        </span>
+      ),
+      cell: ({ row }) => (
+        <span
+          className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${getStatusColorClass(row.original.status)}`}
+        >
+          {getStatusLabel(row.original.status)}
+        </span>
+      ),
+    },
+  ];
+
   return (
     <div className="md:col-span-8 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden flex flex-col shadow-sm">
-      <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-white dark:bg-zinc-900">
+      <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-white dark:bg-zinc-900 mb-3">
         <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">{t("dashboard.recentInvoices")}</h3>
         <Link to="/billing" className="text-xs text-zinc-900 dark:text-zinc-100 hover:underline font-semibold">
           {t("dashboard.viewAll")}
         </Link>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200/50 dark:border-zinc-800">
-              <th className="px-4 py-2 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                {t("dashboard.tableInvoiceNo")}
-              </th>
-              <th className="px-4 py-2 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                {t("dashboard.tableDate")}
-              </th>
-              <th className="px-4 py-2 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                {t("dashboard.tableAmount")}
-              </th>
-              <th className="px-4 py-2 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                {t("dashboard.tableStatus")}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {invoices.map((inv) => (
-              <tr
-                key={inv.id}
-                className="border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors h-10"
-              >
-                <td className="px-4 py-2 text-xs font-mono font-medium text-zinc-900 dark:text-zinc-100">{inv.invoice_number}</td>
-                <td className="px-4 py-2 text-xs text-zinc-500 dark:text-zinc-400">
-                  {new Date(inv.invoice_date).toLocaleDateString(language === "es_DO" ? "es-DO" : "en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </td>
-                <td className="px-4 py-2 text-xs font-semibold text-zinc-900 dark:text-zinc-100 font-mono">
-                  ${Number(inv.total).toFixed(2)}
-                </td>
-                <td className="px-4 py-2">
-                  <span
-                    className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${getStatusColorClass(inv.status)}`}
-                  >
-                    {getStatusLabel(inv.status)}
-                  </span>
-                </td>
-              </tr>
-            ))}
-            {invoices.length === 0 && (
-              <tr>
-                <td colSpan={4} className="px-4 py-6 text-center text-xs text-zinc-500 dark:text-zinc-400 italic">
-                  {t("dashboard.noInvoices") || "No invoices found"}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        columns={columns}
+        data={invoices}
+        noDataMessage={t("dashboard.noInvoices") || "No invoices found"}
+        className="border-none"
+      />
     </div>
   );
 }
