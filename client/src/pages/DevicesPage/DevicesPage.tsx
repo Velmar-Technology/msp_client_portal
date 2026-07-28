@@ -729,7 +729,12 @@ export function DevicesPage() {
                       totalItems: filteredEquipment.length,
                       limit,
                       onPageChange: setPage,
-                      onLimitChange: setLimit
+                      onLimitChange: setLimit,
+                      showingText: t("devices.paginationShowing", {
+                        start: filteredEquipment.length === 0 ? 0 : (page - 1) * limit + 1,
+                        end: Math.min(page * limit, filteredEquipment.length),
+                        total: filteredEquipment.length
+                      })
                     }}
                   />
                 </div>

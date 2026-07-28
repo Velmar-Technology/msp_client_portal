@@ -392,7 +392,8 @@ export function TicketsPage() {
           totalPages,
           totalItems: total,
           limit,
-          onPageChange: setPage
+          onPageChange: setPage,
+          showingText: `${t("tickets.showing")} ${(page - 1) * limit + 1}–${Math.min(page * limit, total)} ${t("tickets.of")} ${total}`
         }}
       />
 

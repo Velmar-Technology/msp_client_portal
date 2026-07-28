@@ -48,6 +48,7 @@ export interface DataTablePagination {
   limit: number
   onPageChange: (page: number) => void
   onLimitChange?: (limit: number) => void
+  showingText?: string
 }
 
 interface DataTableProps<TData, TValue> {
@@ -271,8 +272,8 @@ export function DataTable<TData, TValue>({
       {/* 4. Footer Pagination controls */}
       {pagination && pagination.totalPages > 1 && (
         <div className="flex justify-between items-center px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-sm">
-          <span className="text-[10px] md:text-xs text-zinc-500 font-medium">
-            Showing {Math.max(0, (pagination.page - 1) * pagination.limit + 1)}–{Math.min(pagination.page * pagination.limit, pagination.totalItems)} of {pagination.totalItems}
+          <span className="text-[10px] md:text-xs text-zinc-500 font-medium font-mono">
+            {pagination.showingText || `Showing ${Math.max(0, (pagination.page - 1) * pagination.limit + 1)}–${Math.min(pagination.page * pagination.limit, pagination.totalItems)} of ${pagination.totalItems}`}
           </span>
           <div className="flex items-center gap-2">
             {pagination.onLimitChange && (

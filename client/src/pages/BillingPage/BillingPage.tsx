@@ -371,6 +371,9 @@ export function BillingPage() {
           totalItems: total,
           limit: 10,
           onPageChange: setPage,
+          showingText: t("userManagement.pageOf")
+            .replace("{page}", String(page))
+            .replace("{total}", String(totalPages))
         }}
       />
       <PayModal
