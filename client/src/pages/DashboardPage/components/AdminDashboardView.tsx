@@ -7,6 +7,8 @@ import type { Invoice } from "@/services/invoiceService";
 import type { StorageStatus } from "@/services/systemService";
 import { DataTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
+import SummaryCard from "@/components/dashboard/summary-card";
+import { StatsGrid } from "@/components/stats-grid";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -14,35 +16,6 @@ function formatBytes(bytes: number): string {
   const sizes = ["B", "KB", "MB", "GB", "TB", "PB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
-}
-
-// 1. High-Density Status Summary Card
-interface SummaryCardProps {
-  icon: React.ReactNode;
-  badge?: React.ReactNode;
-  title: string;
-  value: string | number;
-  subtitle?: string;
-  footer?: React.ReactNode;
-}
-
-export function SummaryCard({ icon, badge, title, value, subtitle, footer }: SummaryCardProps) {
-  return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4 rounded-xl flex flex-col shadow-sm hover:shadow-md transition-all">
-      <div className="flex justify-between items-start mb-3">
-        <div className="text-zinc-500 dark:text-zinc-400">{icon}</div>
-        {badge && <div className="flex items-center">{badge}</div>}
-      </div>
-      <h3 className="text-[10px] uppercase font-bold text-zinc-400 dark:text-zinc-500 tracking-wider">{title}</h3>
-      <div className="mt-1 flex items-baseline gap-1.5">
-        <span className="text-xl font-extrabold text-zinc-900 dark:text-zinc-100" style={{ fontFamily: "var(--font-heading)" }}>
-          {value}
-        </span>
-        {subtitle && <span className="text-xs text-zinc-500 dark:text-zinc-400">{subtitle}</span>}
-      </div>
-      {footer && <div className="mt-auto pt-3 border-t border-zinc-100 dark:border-zinc-800">{footer}</div>}
-    </div>
-  );
 }
 
 // 2. High-Density Storage Widget
@@ -55,12 +28,13 @@ interface StorageOverviewProps {
 export function StorageOverview({ storage, loading, t }: StorageOverviewProps) {
   if (loading) {
     return (
-      <div className="md:col-span-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4 rounded-xl flex flex-col shadow-sm min-h-[220px]">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">{t("dashboard.cloudStorage")}</h3>
-          <Cloud className="h-4 w-4 text-zinc-400 dark:text-zinc-500 animate-pulse" />
+      <div className="bg-zinc-50/50 dark:bg-zinc-900/30 border border-zinc-200/60 dark:border-zinc-800/80 p-3.5 rounded-lg flex flex-col justify-between shadow-[0_1px_2px_rgba(0,0,0,0.02)] min-h-[180px]">
+        <div className="flex justify-between items-center mb-2">
+          <div className="p-1.5 bg-zinc-100 dark:bg-zinc-800/60 rounded">
+            <Cloud className="h-4 w-4 text-zinc-500 dark:text-zinc-500 animate-pulse" />
+          </div>
         </div>
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center py-6">
           <div className="w-5 h-5 border-2 border-zinc-200 dark:border-zinc-700 border-t-zinc-900 dark:border-t-zinc-100 rounded-full animate-spin" />
         </div>
       </div>
@@ -69,95 +43,114 @@ export function StorageOverview({ storage, loading, t }: StorageOverviewProps) {
 
   if (!storage) {
     return (
-      <div className="md:col-span-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4 rounded-xl flex flex-col shadow-sm min-h-[220px]">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">{t("dashboard.cloudStorage")}</h3>
-          <Cloud className="h-4 w-4 text-red-500 dark:text-red-400" />
-        </div>
-        <div className="flex-1 flex flex-col items-center justify-center text-center">
-          <span className="text-xs text-red-600 dark:text-red-400 font-semibold">
-            {t("dashboard.storageError") || "Failed to retrieve storage status"}
-          </span>
-        </div>
-      </div>
+      <SummaryCard
+        icon={<Cloud className="h-4 w-4 text-red-500 dark:text-red-400" />}
+        title={t("dashboard.cloudStorage")}
+        value={
+          <div className="flex-1 flex flex-col items-center justify-center text-center py-6">
+            <span className="text-xs text-red-600 dark:text-red-400 font-semibold">
+              {t("dashboard.storageError") || "Failed to retrieve storage status"}
+            </span>
+          </div>
+        }
+      />
     );
   }
 
   const isOffline = storage.status === "offline";
+  const hasNoGauge = isOffline || storage.total === "unlimited" || storage.total === "unknown";
+  const usagePercentage = hasNoGauge ? 0 : Math.min(100, Math.round(storage.percentage));
+
+  // Circular gauge config
+  const radius = 50;
+  const strokeWidth = 8;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (usagePercentage / 100) * circumference;
 
   return (
-    <div className="md:col-span-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4 rounded-xl flex flex-col shadow-sm hover:shadow-md transition-all">
-      <div className="flex justify-between items-center mb-3">
-        <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">{t("dashboard.cloudStorage")}</h3>
-        <div className="flex items-center gap-1.5">
-          {isOffline && (
-            <span className="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 px-1.5 py-0.5 rounded text-[9px] font-bold flex items-center gap-1 animate-pulse">
-              <span className="w-1 h-1 bg-red-600 dark:bg-red-400 rounded-full animate-ping" />
-              {t("dashboard.offline")}
-            </span>
-          )}
-          <Cloud className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
-        </div>
-      </div>
+    <SummaryCard
+      icon={<Cloud className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />}
+      title={t("dashboard.cloudStorage")}
+      value={
+        <div className="flex-1 flex flex-col justify-between">
+          <div className="flex items-center justify-center py-2.5">
+            <div className="relative w-24 h-24 flex items-center justify-center">
+              <svg className="w-24 h-24 -rotate-90" viewBox="0 0 120 120">
+                <circle
+                  cx="60"
+                  cy="60"
+                  r={radius}
+                  fill="none"
+                  className="stroke-zinc-100 dark:stroke-zinc-800/80"
+                  strokeWidth={strokeWidth}
+                />
+                <circle
+                  cx="60"
+                  cy="60"
+                  r={radius}
+                  fill="none"
+                  className="stroke-zinc-900 dark:stroke-zinc-100 transition-all duration-550 ease-out"
+                  strokeWidth={strokeWidth}
+                  strokeLinecap="round"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={strokeDashoffset}
+                />
+              </svg>
+              <div className="absolute flex flex-col items-center justify-center">
+                {isOffline ? (
+                  <CloudOff className="h-6 w-6 text-zinc-300 dark:text-zinc-700" />
+                ) : (
+                  <>
+                    <span className="text-base font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
+                      {storage.total === "unlimited"
+                        ? "∞"
+                        : storage.total === "unknown"
+                          ? "?"
+                          : `${usagePercentage}%`}
+                    </span>
+                    {storage.total !== "unlimited" && storage.total !== "unknown" && (
+                      <span className="text-[9px] uppercase tracking-wider text-zinc-400 dark:text-zinc-500 font-medium">
+                        {t("dashboard.used")}
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
 
-      <div className="flex-1 flex flex-col justify-center items-center py-2">
-        <div
-          className="relative w-24 h-24 flex items-center justify-center rounded-full transition-all duration-500 ease-out"
-          style={{
-            background:
-              isOffline || storage.total === "unlimited" || storage.total === "unknown"
-                ? "var(--color-surface-container-high)"
-                : `conic-gradient(var(--color-primary) ${storage.percentage}%, var(--color-surface-container-high) ${storage.percentage}% 100%)`,
-          }}
-        >
-          <div className="absolute inset-1.5 bg-white dark:bg-zinc-900 rounded-full flex items-center justify-center">
-            <div className="text-center">
-              {isOffline ? (
-                <CloudOff className="h-6 w-6 text-zinc-300 dark:text-zinc-700" />
-              ) : (
-                <span
-                  className="block text-lg font-extrabold text-zinc-900 dark:text-zinc-100"
-                  style={{ fontFamily: "var(--font-heading)" }}
-                >
-                  {storage.total === "unlimited"
-                    ? "∞"
-                    : storage.total === "unknown"
-                      ? "?"
-                      : `${storage.percentage}%`}
+          <div className="space-y-2 mt-2">
+            <div className="flex justify-between text-xs text-zinc-500 dark:text-zinc-400 border-b border-zinc-200/50 dark:border-zinc-800/50 pb-1.5">
+              <span>{t("dashboard.tableStatus")}</span>
+              <span className={`font-semibold ${isOffline ? "text-red-600 dark:text-red-400 animate-pulse" : "text-zinc-800 dark:text-zinc-200"}`}>
+                {isOffline ? t("dashboard.offline") : t("dashboard.online") || "Online"}
+              </span>
+            </div>
+
+            <div>
+              <div className="flex justify-between text-[11px] mb-1 font-medium text-zinc-500 dark:text-zinc-400">
+                <span>{isOffline ? t("dashboard.unavailable") : formatBytes(storage.used)}</span>
+                <span>
+                  {isOffline
+                    ? t("dashboard.unavailable")
+                    : storage.total === "unlimited"
+                      ? t("dashboard.unlimited")
+                      : storage.total === "unknown"
+                        ? t("dashboard.unknown")
+                        : formatBytes(storage.total as number)}
                 </span>
-              )}
+              </div>
+              <div className="w-full bg-zinc-100 dark:bg-zinc-800/60 rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="bg-zinc-900 dark:bg-zinc-100 h-1.5 rounded-full transition-all duration-550"
+                  style={{ width: `${usagePercentage}%` }}
+                />
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="mt-auto pt-2">
-        <div className="flex justify-between text-[10px] text-zinc-500 dark:text-zinc-400 mb-1 font-mono">
-          <span>
-            {t("dashboard.used")}: {isOffline ? t("dashboard.unavailable") : formatBytes(storage.used)}
-          </span>
-          <span>
-            {t("dashboard.total")}:{" "}
-            {isOffline
-              ? t("dashboard.unavailable")
-              : storage.total === "unlimited"
-                ? t("dashboard.unlimited")
-                : storage.total === "unknown"
-                  ? t("dashboard.unknown")
-                  : formatBytes(storage.total as number)}
-          </span>
-        </div>
-        <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-1">
-          <div
-            className="bg-zinc-900 dark:bg-zinc-100 h-1 rounded-full transition-all duration-500 ease-out"
-            style={{
-              width:
-                isOffline || storage.total === "unlimited" || storage.total === "unknown" ? "0%" : `${storage.percentage}%`,
-            }}
-          />
-        </div>
-      </div>
-    </div>
+      }
+    />
   );
 }
 
@@ -177,16 +170,18 @@ export function RecentInvoices({
   getStatusLabel,
   getStatusColorClass,
 }: RecentInvoicesProps) {
+  const isSpanish = language === "es_DO";
+
   const columns: ColumnDef<Invoice>[] = [
     {
       accessorKey: "invoice_number",
       header: () => (
-        <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
           {t("dashboard.tableInvoiceNo")}
         </span>
       ),
       cell: ({ row }) => (
-        <span className="text-xs font-mono font-medium text-zinc-900 dark:text-zinc-100">
+        <span className="text-xs text-zinc-900 dark:text-zinc-100 font-mono">
           {row.original.invoice_number}
         </span>
       ),
@@ -194,15 +189,15 @@ export function RecentInvoices({
     {
       accessorKey: "invoice_date",
       header: () => (
-        <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
           {t("dashboard.tableDate")}
         </span>
       ),
       cell: ({ row }) => (
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">
-          {new Date(row.original.invoice_date).toLocaleDateString(language === "es_DO" ? "es-DO" : "en-US", {
+        <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">
+          {new Date(row.original.invoice_date).toLocaleDateString(isSpanish ? "es-DO" : "en-US", {
+            day: "2-digit",
             month: "short",
-            day: "numeric",
             year: "numeric",
           })}
         </span>
@@ -211,7 +206,7 @@ export function RecentInvoices({
     {
       accessorKey: "total",
       header: () => (
-        <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
           {t("dashboard.tableAmount")}
         </span>
       ),
@@ -224,13 +219,15 @@ export function RecentInvoices({
     {
       accessorKey: "status",
       header: () => (
-        <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
           {t("dashboard.tableStatus")}
         </span>
       ),
       cell: ({ row }) => (
         <span
-          className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${getStatusColorClass(row.original.status)}`}
+          className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold tracking-wider uppercase border ${getStatusColorClass(
+            row.original.status
+          )}`}
         >
           {getStatusLabel(row.original.status)}
         </span>
@@ -239,17 +236,22 @@ export function RecentInvoices({
   ];
 
   return (
-    <div className="md:col-span-8 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden flex flex-col shadow-sm">
-      <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-white dark:bg-zinc-900 mb-3">
-        <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">{t("dashboard.recentInvoices")}</h3>
-        <Link to="/billing" className="text-xs text-zinc-900 dark:text-zinc-100 hover:underline font-semibold">
+    <div className="bg-zinc-50/50 dark:bg-zinc-900/30 border border-zinc-200/60 dark:border-zinc-800/80 rounded-lg overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+      <div className="p-3 border-b border-zinc-200/50 dark:border-zinc-800/50 flex justify-between items-center bg-zinc-50/20 dark:bg-zinc-900/10 mb-3">
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+          {t("dashboard.recentInvoices")}
+        </h4>
+        <Link
+          to="/billing"
+          className="text-xs font-medium text-zinc-900 dark:text-zinc-300 hover:text-zinc-600 dark:hover:text-zinc-150 transition-colors"
+        >
           {t("dashboard.viewAll")}
         </Link>
       </div>
       <DataTable
         columns={columns}
         data={invoices}
-        noDataMessage={t("dashboard.noInvoices") || "No invoices found"}
+        noDataMessage={t("dashboard.noInvoices")}
         className="border-none"
       />
     </div>
@@ -283,74 +285,74 @@ export function AdminDashboardView() {
 
   return (
     <Page title={t("dashboard.systemOverview")} subtitle={t("dashboard.systemStatus")}>
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-4">
-        {/* Services Summary (Spans 8 cols on desktop) */}
-        <div className="md:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-6">
+        {/* Support Status, Maintenance, Backup Status, and Cloud Storage Card grid - spans 10 cols */}
+        <StatsGrid className="md:col-span-10">
           {/* Support Status */}
           <SummaryCard
-            icon={<Headphones className="h-5 w-5 text-zinc-600 dark:text-zinc-400" />}
-            badge={
-              <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800 px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase flex items-center gap-1">
-                <span className="relative flex h-1 w-1">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-1 w-1 bg-emerald-500" />
-                </span>
-                {openTickets} {t("dashboard.tableStatus") === "Estado" ? "ABIERTOS" : "OPEN"}
-              </span>
-            }
+            icon={<Headphones className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />}
             title={t("dashboard.technicalSupport")}
             value={openTickets}
             subtitle={t("dashboard.activeTickets")}
+            badge={
+              openTickets > 0 ? (
+                <span className="flex items-center gap-1.5">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                  </span>
+                  {t("dashboard.tableStatus") === "Estado" ? "ABIERTOS" : "OPEN"}
+                </span>
+              ) : undefined
+            }
             footer={
-              <Link to="/tickets" className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 hover:underline flex items-center gap-1">
-                <span>{t("dashboard.viewDetails")}</span>
-                <ArrowRight className="h-3 w-3" />
+              <Link
+                to="/tickets"
+                className="flex items-center gap-1 text-zinc-650 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium"
+              >
+                {t("dashboard.viewDetails")}
+                <ArrowRight className="h-4 w-4" />
               </Link>
             }
           />
 
           {/* Maintenance */}
           <SummaryCard
-            icon={<Wrench className="h-5 w-5 text-zinc-600 dark:text-zinc-400" />}
-            badge={
-              nextMaintenance ? (
-                <span className={`border px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase ${
-                  nextMaintenance.status === "OVERDUE"
-                    ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800"
-                    : nextMaintenance.status === "IN_PROGRESS"
-                      ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800 animate-pulse"
-                      : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800"
-                }`}>
-                  {t(
-                    nextMaintenance.status === "IN_PROGRESS"
-                      ? "maintenance.statusInProgress"
-                      : nextMaintenance.status === "OVERDUE"
-                        ? "maintenance.statusOverdue"
-                        : "maintenance.statusScheduled"
-                  )}
-                </span>
-              ) : null
-            }
+            icon={<Wrench className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />}
             title={t("dashboard.maintenance")}
             value={
               nextMaintenance
                 ? new Date(nextMaintenance.scheduled_date).toLocaleDateString(i18n.language === "es_DO" ? "es-DO" : "en-US", {
+                    day: "2-digit",
                     month: "short",
-                    day: "numeric",
                     year: "numeric",
                   })
                 : t("dashboard.noneScheduled")
             }
+            badge={
+              nextMaintenance ? (
+                t(
+                  nextMaintenance.status === "IN_PROGRESS"
+                    ? "maintenance.statusInProgress"
+                    : nextMaintenance.status === "OVERDUE"
+                      ? "maintenance.statusOverdue"
+                      : "maintenance.statusScheduled"
+                )
+              ) : undefined
+            }
             footer={
               nextMaintenance ? (
-                <Link to="/maintenance" className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 hover:underline flex items-center gap-1">
+                <Link
+                  to="/maintenance"
+                  className="flex items-center gap-1 text-zinc-650 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium"
+                >
                   <span className="truncate max-w-[140px] block" title={nextMaintenance.title}>
                     {nextMaintenance.title}
                   </span>
-                  <ArrowRight className="h-3 w-3 shrink-0" />
+                  <ArrowRight className="h-4 w-4 shrink-0" />
                 </Link>
               ) : (
-                <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                <span className="text-[11px] text-zinc-450 dark:text-zinc-500 font-normal">
                   {t("dashboard.noUpcomingMaintenance")}
                 </span>
               )
@@ -359,29 +361,31 @@ export function AdminDashboardView() {
 
           {/* Backups */}
           <SummaryCard
-            icon={<CloudUpload className="h-5 w-5 text-zinc-600 dark:text-zinc-400" />}
-            badge={
-              <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800 px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase">
-                {t("dashboard.successful")}
-              </span>
-            }
+            icon={<CloudUpload className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />}
             title={t("dashboard.lastBackup")}
             value={t("dashboard.twoHoursAgo")}
-            footer={<span className="text-[10px] text-zinc-500 dark:text-zinc-400">{t("dashboard.mainDbServer")}</span>}
+            badge={t("dashboard.successful")}
+            footer={
+              <span className="text-[11px] text-zinc-450 dark:text-zinc-500 font-normal">
+                {t("dashboard.mainDbServer")}
+              </span>
+            }
+          />
+
+          {/* Cloud Storage (Resource Usage) */}
+          <StorageOverview storage={storage} loading={storageLoading} t={t} />
+        </StatsGrid>
+
+        {/* Billing & Invoices - spans 8 cols */}
+        <div className="md:col-span-8">
+          <RecentInvoices
+            invoices={invoices}
+            t={t}
+            language={i18n.language}
+            getStatusLabel={getStatusLabel}
+            getStatusColorClass={getStatusColorClass}
           />
         </div>
-
-        {/* Resource Usage (Spans 4 cols on desktop) */}
-        <StorageOverview storage={storage} loading={storageLoading} t={t} />
-
-        {/* Billing & Invoices (Spans 8 cols on desktop) */}
-        <RecentInvoices
-          invoices={invoices}
-          t={t}
-          language={i18n.language}
-          getStatusLabel={getStatusLabel}
-          getStatusColorClass={getStatusColorClass}
-        />
       </div>
     </Page>
   );
