@@ -196,14 +196,14 @@ export function TicketsPage() {
       {
         accessorKey: "title",
         header: () => (
-          <span className="uppercase text-[10px] text-zinc-400 font-bold tracking-wider">{t("tickets.tableTitle")}</span>
+          <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t("tickets.tableTitle")}</span>
         ),
         cell: ({ row }) => <TicketTitleWithHoverCard ticket={row.original} />,
       },
       {
         accessorKey: "category",
         header: () => (
-          <span className="uppercase text-[10px] text-zinc-400 font-bold tracking-wider">
+          <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
             {t("tickets.tableCategory")}
           </span>
         ),
@@ -214,7 +214,7 @@ export function TicketsPage() {
       {
         accessorKey: "priority",
         header: () => (
-          <span className="uppercase text-[10px] text-zinc-400 font-bold tracking-wider">
+          <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
             {t("tickets.tablePriority")}
           </span>
         ),
@@ -227,7 +227,7 @@ export function TicketsPage() {
       {
         accessorKey: "status",
         header: () => (
-          <span className="uppercase text-[10px] text-zinc-400 font-bold tracking-wider">{t("tickets.tableStatus")}</span>
+          <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t("tickets.tableStatus")}</span>
         ),
         cell: ({ row }) => (
           <span className={`px-1.5 py-0.5 rounded text-[10px] border font-semibold ${statusColor[row.original.status]}`}>
@@ -238,14 +238,14 @@ export function TicketsPage() {
       {
         accessorKey: "assigned_to",
         header: () => (
-          <span className="uppercase text-[10px] text-zinc-400 font-bold tracking-wider">{t("tickets.assignedTo")}</span>
+          <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t("tickets.assignedTo")}</span>
         ),
         cell: ({ row }) => <span className="text-xs text-zinc-500 dark:text-zinc-400">{row.original.assigned_tech_name || t("tickets.unassigned")}</span>,
       },
       {
         accessorKey: "device_name",
         header: () => (
-          <span className="uppercase text-[10px] text-zinc-400 font-bold tracking-wider">{t("tickets.tableDevice")}</span>
+          <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t("tickets.tableDevice")}</span>
         ),
         cell: ({ row }) => (
           <span className="text-xs text-zinc-500 dark:text-zinc-400">{row.original.device_name || t("tickets.noDevice")}</span>
@@ -254,7 +254,7 @@ export function TicketsPage() {
       {
         accessorKey: "created_at",
         header: () => (
-          <span className="uppercase text-[10px] text-zinc-400 font-bold tracking-wider">{t("tickets.tableCreated")}</span>
+          <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t("tickets.tableCreated")}</span>
         ),
         cell: ({ row }) => (
           <span className="text-xs text-zinc-500 dark:text-zinc-400">
@@ -269,7 +269,7 @@ export function TicketsPage() {
       {
         id: "actions",
         header: () => (
-          <span className="uppercase text-[10px] text-zinc-400 font-bold tracking-wider block text-right">
+          <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider block text-right">
             {t("techDashboard.tableStatus") === "Estado" ? "Acciones" : "Actions"}
           </span>
         ),
@@ -393,7 +393,6 @@ export function TicketsPage() {
           totalItems: total,
           limit,
           onPageChange: setPage,
-          showingText: `${t("tickets.showing")} ${(page - 1) * limit + 1}–${Math.min(page * limit, total)} ${t("tickets.of")} ${total}`
         }}
       />
 

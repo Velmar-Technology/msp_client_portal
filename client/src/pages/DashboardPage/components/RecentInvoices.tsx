@@ -17,7 +17,7 @@ export function RecentInvoices({ invoices, getStatusColor }: RecentInvoicesProps
     {
       accessorKey: "invoice_number",
       header: () => (
-        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
           {t("dashboard.tableInvoiceNo")}
         </span>
       ),
@@ -30,7 +30,7 @@ export function RecentInvoices({ invoices, getStatusColor }: RecentInvoicesProps
     {
       accessorKey: "invoice_date",
       header: () => (
-        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
           {t("dashboard.tableDate")}
         </span>
       ),
@@ -47,7 +47,7 @@ export function RecentInvoices({ invoices, getStatusColor }: RecentInvoicesProps
     {
       accessorKey: "total",
       header: () => (
-        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
           {t("dashboard.tableAmount")}
         </span>
       ),
@@ -60,7 +60,7 @@ export function RecentInvoices({ invoices, getStatusColor }: RecentInvoicesProps
     {
       accessorKey: "status",
       header: () => (
-        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
           {t("dashboard.tableStatus")}
         </span>
       ),

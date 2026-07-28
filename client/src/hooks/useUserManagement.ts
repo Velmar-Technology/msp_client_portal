@@ -28,7 +28,7 @@ const INITIAL_CONFIRMATION: ConfirmationState = {
   newValue: "",
 };
 
-const PAGE_SIZE = 20;
+const DEFAULT_PAGE_SIZE = 20;
 
 // ---- Hook ----
 
@@ -44,6 +44,7 @@ export function useUserManagement() {
 
   // Pagination
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
 
@@ -72,14 +73,13 @@ export function useUserManagement() {
 
   // Fetch users
   const fetchUsers = useCallback(async () => {
-    setLoading(true);
     try {
       const isActiveParam =
         statusFilter === "active" ? "true" : statusFilter === "inactive" ? "false" : undefined;
 
       const result = await userService.getAllUsers({
         page,
-        limit: PAGE_SIZE,
+        limit,
         role: roleFilter || undefined,
         isActive: isActiveParam,
         search: debouncedSearch || undefined,
@@ -93,11 +93,10 @@ export function useUserManagement() {
     } finally {
       setLoading(false);
     }
-  }, [page, roleFilter, statusFilter, debouncedSearch]);
+  }, [page, limit, roleFilter, statusFilter, debouncedSearch]);
 
   // Fetch stats
   const fetchStats = useCallback(async () => {
-    setStatsLoading(true);
     try {
       const data = await userService.getUserStats();
       setStats(data);
@@ -110,11 +109,17 @@ export function useUserManagement() {
 
   // Initial load + reload on filter changes
   useEffect(() => {
-    fetchUsers();
+    const timer = setTimeout(() => {
+      fetchUsers();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchUsers]);
 
   useEffect(() => {
-    fetchStats();
+    const timer = setTimeout(() => {
+      fetchStats();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchStats]);
 
   // Filter handlers (reset page on filter change)
@@ -125,6 +130,11 @@ export function useUserManagement() {
 
   const handleStatusFilterChange = useCallback((value: StatusFilter) => {
     setStatusFilter(value);
+    setPage(1);
+  }, []);
+
+  const handleLimitChange = useCallback((value: number) => {
+    setLimit(value);
     setPage(1);
   }, []);
 
@@ -227,7 +237,9 @@ export function useUserManagement() {
     page,
     totalPages,
     total,
+    limit,
     setPage,
+    handleLimitChange,
     // Filters
     roleFilter,
     statusFilter,

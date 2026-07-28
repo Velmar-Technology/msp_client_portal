@@ -1,74 +1,110 @@
-import { useState, useEffect, useMemo } from "react"
-import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table"
-import type { ColumnDef, RowSelectionState } from "@tanstack/react-table"
+import { useState, useEffect, useMemo } from "react";
+import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
+import type { ColumnDef, RowSelectionState, SortingState, Column } from "@tanstack/react-table";
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-import { cn } from "@/lib/utils"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Inbox, Search, ChevronLeft, ChevronRight } from "lucide-react"
-import {
-  Empty,
-  EmptyHeader,
-  EmptyTitle,
-  EmptyMedia,
-} from "@/components/ui/empty"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Inbox, Search, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Empty, EmptyHeader, EmptyTitle, EmptyMedia } from "@/components/ui/empty";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+
+// ─── Canonical Column Header ────────────────────────────────────────────────
+// Re-usable header component with standardized styling and optional sort toggle.
+// Usage: header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />
+
+interface DataTableColumnHeaderProps<TData, TValue> {
+  column: Column<TData, TValue>;
+  title: string;
+  className?: string;
+}
+
+export function DataTableColumnHeader<TData, TValue>({
+  column,
+  title,
+  className,
+}: DataTableColumnHeaderProps<TData, TValue>) {
+  const canSort = column.getCanSort();
+
+  if (!canSort) {
+    return (
+      <span
+        className={cn("text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-wider", className)}
+      >
+        {title}
+      </span>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={column.getToggleSortingHandler()}
+      className={cn(
+        "inline-flex items-center gap-1 text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-wider cursor-pointer hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors select-none",
+        className,
+      )}
+    >
+      {title}
+      {column.getIsSorted() === "asc" ? (
+        <ArrowUp className="h-3 w-3" />
+      ) : column.getIsSorted() === "desc" ? (
+        <ArrowDown className="h-3 w-3" />
+      ) : (
+        <ArrowUpDown className="h-3 w-3 opacity-40" />
+      )}
+    </button>
+  );
+}
+
+// ─── Types ──────────────────────────────────────────────────────────────────
 
 export interface DataTableFilter {
-  id: string
-  value: string
-  onChange: (value: string) => void
-  options: { value: string; label: string }[]
-  placeholder?: string
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
 }
 
 export interface DataTableBulkAction<TData> {
-  label: string
-  onClick: (selectedRows: TData[]) => void
-  variant?: "default" | "destructive" | "outline"
+  label: string;
+  onClick: (selectedRows: TData[]) => void;
+  variant?: "default" | "destructive" | "outline";
 }
 
 export interface DataTablePagination {
-  page: number
-  totalPages: number
-  totalItems: number
-  limit: number
-  onPageChange: (page: number) => void
-  onLimitChange?: (limit: number) => void
-  showingText?: string
+  page: number;
+  totalPages: number;
+  totalItems: number;
+  limit: number;
+  onPageChange: (page: number) => void;
+  onLimitChange?: (limit: number) => void;
+  showingText?: string;
 }
 
 interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
-  loading?: boolean
-  noDataMessage?: string
-  onRowClick?: (row: TData) => void
-  className?: string
-  enableRowSelection?: boolean
-  onSelectedRowsChange?: (selectedRows: TData[]) => void
-  bulkActions?: DataTableBulkAction<TData>[]
-  pagination?: DataTablePagination
+  columns: ColumnDef<TData, TValue>[];
+  data: TData[];
+  loading?: boolean;
+  noDataMessage?: string;
+  onRowClick?: (row: TData) => void;
+  className?: string;
+  enableRowSelection?: boolean;
+  onSelectedRowsChange?: (selectedRows: TData[]) => void;
+  bulkActions?: DataTableBulkAction<TData>[];
+  pagination?: DataTablePagination;
   search?: {
-    value: string
-    onChange: (value: string) => void
-    placeholder?: string
-  }
-  filters?: DataTableFilter[]
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+  };
+  filters?: DataTableFilter[];
 }
+
+// ─── Component ──────────────────────────────────────────────────────────────
 
 export function DataTable<TData, TValue>({
   columns,
@@ -84,19 +120,17 @@ export function DataTable<TData, TValue>({
   search,
   filters,
 }: DataTableProps<TData, TValue>) {
-  const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const [sorting, setSorting] = useState<SortingState>([]);
 
   const finalColumns = useMemo(() => {
-    if (!enableRowSelection) return columns
+    if (!enableRowSelection) return columns;
 
     const selectColumn: ColumnDef<TData, unknown> = {
       id: "select",
       header: ({ table }) => (
         <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
+          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label="Select all"
           onClick={(e) => e.stopPropagation()}
@@ -112,35 +146,43 @@ export function DataTable<TData, TValue>({
       ),
       enableSorting: false,
       enableHiding: false,
-    }
+    };
 
-    return [selectColumn, ...columns]
-  }, [columns, enableRowSelection])
+    return [selectColumn, ...columns];
+  }, [columns, enableRowSelection]);
 
   const table = useReactTable({
     data,
     columns: finalColumns,
     state: {
       rowSelection,
+      sorting,
     },
     enableRowSelection,
     onRowSelectionChange: setRowSelection,
+    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
-  })
+    getSortedRowModel: getSortedRowModel(),
+  });
 
   // Clear selection if data changes (e.g. after paginating or reloading)
   useEffect(() => {
-    setRowSelection({})
-  }, [data])
+    setRowSelection({});
+  }, [data]);
 
   useEffect(() => {
     if (onSelectedRowsChange) {
-      const selectedRows = table.getSelectedRowModel().rows.map((row) => row.original)
-      onSelectedRowsChange(selectedRows)
+      const selectedRows = table.getSelectedRowModel().rows.map((row) => row.original);
+      onSelectedRowsChange(selectedRows);
     }
-  }, [rowSelection, table, onSelectedRowsChange])
+  }, [rowSelection, table, onSelectedRowsChange]);
 
-  const hasSelectedRows = Object.keys(rowSelection).length > 0
+  const hasSelectedRows = Object.keys(rowSelection).length > 0;
+
+  // Compute default showing text
+  const defaultShowingText = pagination
+    ? `Showing ${pagination.totalItems === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1}–${Math.min(pagination.page * pagination.limit, pagination.totalItems)} of ${pagination.totalItems}`
+    : "";
 
   return (
     <div className={cn("space-y-3", className)}>
@@ -190,16 +232,16 @@ export function DataTable<TData, TValue>({
               <button
                 key={idx}
                 onClick={() => {
-                  const selectedRows = table.getSelectedRowModel().rows.map((row) => row.original)
-                  action.onClick(selectedRows)
+                  const selectedRows = table.getSelectedRowModel().rows.map((row) => row.original);
+                  action.onClick(selectedRows);
                 }}
                 className={cn(
                   "px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer",
                   action.variant === "destructive"
                     ? "bg-red-600 hover:bg-red-700 text-white"
                     : action.variant === "outline"
-                    ? "border border-zinc-200 hover:bg-zinc-100 dark:border-zinc-800 dark:hover:bg-zinc-805 text-zinc-700 dark:text-zinc-300"
-                    : "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90"
+                      ? "border border-zinc-200 hover:bg-zinc-100 dark:border-zinc-800 dark:hover:bg-zinc-805 text-zinc-700 dark:text-zinc-300"
+                      : "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90",
                 )}
               >
                 {action.label}
@@ -210,16 +252,14 @@ export function DataTable<TData, TValue>({
       )}
 
       {/* 3. Main Data Table */}
-      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
+      <div className="rounded-xl border overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
+                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 ))}
               </TableRow>
@@ -245,9 +285,7 @@ export function DataTable<TData, TValue>({
                   className={onRowClick ? "cursor-pointer" : ""}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
+                    <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                   ))}
                 </TableRow>
               ))
@@ -270,10 +308,10 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* 4. Footer Pagination controls */}
-      {pagination && pagination.totalPages > 1 && (
+      {pagination && (
         <div className="flex justify-between items-center px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-sm">
           <span className="text-[10px] md:text-xs text-zinc-500 font-medium font-mono">
-            {pagination.showingText || `Showing ${Math.max(0, (pagination.page - 1) * pagination.limit + 1)}–${Math.min(pagination.page * pagination.limit, pagination.totalItems)} of ${pagination.totalItems}`}
+            {pagination.showingText || defaultShowingText}
           </span>
           <div className="flex items-center gap-2">
             {pagination.onLimitChange && (
@@ -298,7 +336,7 @@ export function DataTable<TData, TValue>({
               </button>
               <button
                 onClick={() => pagination.onPageChange(Math.min(pagination.totalPages, pagination.page + 1))}
-                disabled={pagination.page === pagination.totalPages}
+                disabled={pagination.page >= pagination.totalPages}
                 className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-30 transition-colors cursor-pointer border border-zinc-200 dark:border-zinc-800"
               >
                 <ChevronRight className="h-3.5 w-3.5 text-zinc-700 dark:text-zinc-300" />
@@ -308,5 +346,5 @@ export function DataTable<TData, TValue>({
         </div>
       )}
     </div>
-  )
+  );
 }

@@ -33,7 +33,7 @@ export function StorageQuota({
       icon={<Cloud className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />}
       title={t("dashboard.cloudStorage")}
       value={
-        totalSlotsCount > 0 ? (
+        totalSlotsCount + 1 > 0 ? (
           <div className="flex-1 flex flex-col justify-between">
             <div className="flex items-center justify-center py-2.5">
               <div className="relative w-24 h-24 flex items-center justify-center">

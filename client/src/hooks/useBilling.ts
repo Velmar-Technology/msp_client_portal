@@ -5,11 +5,14 @@ import type { Invoice } from "@/services/invoiceService";
 
 export function useBilling() {
   const { t, i18n } = useTranslation();
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [total, setTotal] = useState(0);
+  const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [loading, setLoading] = useState(true);
-  const limit = 10;
+
+  // Filters (client-side)
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [showPayModal, setShowPayModal] = useState(false);
@@ -18,18 +21,21 @@ export function useBilling() {
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await invoiceService.getAll(page, limit);
-      setInvoices(result.data);
-      setTotal(result.pagination.total);
+      // Fetch a large batch to enable client-side filtering
+      const result = await invoiceService.getAll(1, 200);
+      setAllInvoices(result.data);
     } catch (err) {
       console.error('Failed to load invoices', err);
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, []);
 
   useEffect(() => {
-    fetchInvoices();
+    const timer = setTimeout(() => {
+      fetchInvoices();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchInvoices]);
 
   const handleDownload = useCallback(async (inv: Invoice) => {
@@ -61,20 +67,62 @@ export function useBilling() {
     setSelectedInvoice(null);
   }, []);
 
-  const totalPages = Math.ceil(total / limit);
+  // Client-side filtered list
+  const filteredInvoices = allInvoices.filter((inv) => {
+    if (statusFilter && inv.status !== statusFilter) return false;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      return (
+        inv.invoice_number.toLowerCase().includes(q) ||
+        inv.status.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
+
+  const filteredTotal = filteredInvoices.length;
+  const totalPages = Math.ceil(filteredTotal / limit);
+
+  // Paginate the filtered list
+  const paginatedInvoices = filteredInvoices.slice(
+    (page - 1) * limit,
+    page * limit,
+  );
+
+  // Reset page when filters change
+  const handleSearchChange = useCallback((value: string) => {
+    setSearch(value);
+    setPage(1);
+  }, []);
+
+  const handleStatusFilterChange = useCallback((value: string) => {
+    setStatusFilter(value);
+    setPage(1);
+  }, []);
+
+  const handleLimitChange = useCallback((value: number) => {
+    setLimit(value);
+    setPage(1);
+  }, []);
 
   return {
     t,
     i18n,
-    invoices,
-    total,
+    invoices: paginatedInvoices,
+    total: filteredTotal,
     page,
     totalPages,
+    limit,
     loading,
     selectedInvoice,
     showPayModal,
     downloadingId,
+    search,
+    statusFilter,
     setPage,
+    handleSearchChange,
+    handleStatusFilterChange,
+    handleLimitChange,
     handleDownload,
     openPayModal,
     closePayModal,

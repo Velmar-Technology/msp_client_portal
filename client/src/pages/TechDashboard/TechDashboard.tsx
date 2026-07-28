@@ -4,9 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Page } from '@/components/Page';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/ui/data-table';
-import { Input } from '@/components/ui/input';
 import {
-  Search,
   User,
   CheckCircle2,
   Play,
@@ -113,9 +111,10 @@ export function TechDashboard() {
       await ticketService.updateStatus(ticketId, newStatus, notes);
       setActionMessage({ text: t('techDashboard.statusUpdateSuccess'), isError: false });
       await loadDashboardData(); // Refresh list and metrics
-    } catch (err: any) {
+    } catch (err) {
       console.error('Status transition failed', err);
-      const errMsg = err?.response?.data?.message || t('techDashboard.statusUpdateError');
+      const errorObj = err as { response?: { data?: { message?: string } } };
+      const errMsg = errorObj?.response?.data?.message || t('techDashboard.statusUpdateError');
       setActionMessage({ text: errMsg, isError: true });
     } finally {
       setUpdatingId(null);
@@ -124,16 +123,16 @@ export function TechDashboard() {
     }
   }, [t, loadDashboardData]);
 
-  const getCategoryLabel = (cat: string) => {
+  const getCategoryLabel = useCallback((cat: string) => {
     const map: Record<string, string> = {
       REPAIR: t('tickets.categories.REPAIR'),
       WARRANTY: t('tickets.categories.WARRANTY'),
       SERVICE_OUTAGE: t('tickets.categories.SERVICE_OUTAGE'),
     };
     return map[cat] || cat;
-  };
+  }, [t]);
 
-  const getPriorityLabel = (pri: string) => {
+  const getPriorityLabel = useCallback((pri: string) => {
     const map: Record<string, string> = {
       LOW: t('tickets.priorities.LOW'),
       MEDIUM: t('tickets.priorities.MEDIUM'),
@@ -141,9 +140,9 @@ export function TechDashboard() {
       CRITICAL: t('tickets.priorities.CRITICAL'),
     };
     return map[pri] || pri;
-  };
+  }, [t]);
 
-  const getStatusLabel = (status: string) => {
+  const getStatusLabel = useCallback((status: string) => {
     const map: Record<string, string> = {
       OPEN: t('tickets.filterOpen'),
       IN_PROGRESS: t('tickets.filterInProgress'),
@@ -153,44 +152,44 @@ export function TechDashboard() {
       CANCELLED: t('tickets.filterCancelled'),
     };
     return map[status] || status;
-  };
+  }, [t]);
 
   const columns = useMemo<ColumnDef<Ticket>[]>(() => [
     {
       accessorKey: 'title',
-      header: () => <span className="uppercase text-label-sm text-on-surface-variant font-bold">{t('tickets.tableTitle')}</span>,
+      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t('tickets.tableTitle')}</span>,
       cell: ({ row }) => (
-        <span className="text-body-md font-semibold text-on-surface truncate max-w-[200px] block">
+        <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate max-w-[200px] block">
           {row.original.title}
         </span>
       ),
     },
     {
       accessorKey: 'category',
-      header: () => <span className="uppercase text-label-sm text-on-surface-variant font-bold">{t('tickets.tableCategory')}</span>,
-      cell: ({ row }) => <span className="text-body-md text-on-surface-variant">{getCategoryLabel(row.original.category)}</span>,
+      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t('tickets.tableCategory')}</span>,
+      cell: ({ row }) => <span className="text-xs text-zinc-500 dark:text-zinc-400">{getCategoryLabel(row.original.category)}</span>,
     },
     {
       accessorKey: 'priority',
-      header: () => <span className="uppercase text-label-sm text-on-surface-variant font-bold">{t('tickets.tablePriority')}</span>,
+      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t('tickets.tablePriority')}</span>,
       cell: ({ row }) => (
-        <span className={`text-label-sm ${priorityColor[row.original.priority]}`}>
+        <span className={`text-[11px] font-medium ${priorityColor[row.original.priority]}`}>
           {getPriorityLabel(row.original.priority)}
         </span>
       ),
     },
     {
       accessorKey: 'status',
-      header: () => <span className="uppercase text-label-sm text-on-surface-variant font-bold">{t('tickets.tableStatus')}</span>,
+      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t('tickets.tableStatus')}</span>,
       cell: ({ row }) => (
-        <span className={`px-2 py-0.5 rounded text-label-sm font-bold ${statusColor[row.original.status]}`}>
+        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${statusColor[row.original.status]}`}>
           {getStatusLabel(row.original.status)}
         </span>
       ),
     },
     {
       id: 'actions',
-      header: () => <span className="uppercase text-label-sm text-on-surface-variant font-bold block text-right">{t('techDashboard.tableStatus') === 'Estado' ? 'Acciones' : 'Actions'}</span>,
+      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider block text-right">{t('techDashboard.tableStatus') === 'Estado' ? 'Acciones' : 'Actions'}</span>,
       cell: ({ row }) => {
         const ticket = row.original;
         return (
@@ -233,7 +232,7 @@ export function TechDashboard() {
         );
       },
     },
-  ], [t, updatingId, handleStatusTransition, navigate, priorityColor, statusColor, getCategoryLabel, getPriorityLabel, getStatusLabel]);
+  ], [t, updatingId, handleStatusTransition, navigate, getCategoryLabel, getPriorityLabel, getStatusLabel]);
 
   // Filtered tickets list for display
   const filteredTickets = tickets.filter((ticket) => {
@@ -244,13 +243,26 @@ export function TechDashboard() {
     return matchesSearch && matchesStatus;
   });
 
+  // Client-side pagination
+  const ticketsLimit = 10;
+  const [ticketPage, setTicketPage] = useState(1);
+  const ticketTotalPages = Math.ceil(filteredTickets.length / ticketsLimit);
+  const paginatedTickets = filteredTickets.slice(
+    (ticketPage - 1) * ticketsLimit,
+    ticketPage * ticketsLimit,
+  );
+
   // Identify tickets that require urgent SLA attention (WARRANTY/SERVICE_OUTAGE in open/in progress status created within last hour)
-  const slaTickets = tickets.filter((ticket) => {
-    if (!['OPEN', 'IN_PROGRESS'].includes(ticket.status)) return false;
-    if (!['WARRANTY', 'SERVICE_OUTAGE'].includes(ticket.category)) return false;
-    const elapsed = Date.now() - new Date(ticket.created_at).getTime();
-    return elapsed < 60 * 60 * 1000; // Under 1 hour
-  });
+  const slaTickets = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity
+    const now = Date.now();
+    return tickets.filter((ticket) => {
+      if (!['OPEN', 'IN_PROGRESS'].includes(ticket.status)) return false;
+      if (!['WARRANTY', 'SERVICE_OUTAGE'].includes(ticket.category)) return false;
+      const elapsed = now - new Date(ticket.created_at).getTime();
+      return elapsed < 60 * 60 * 1000; // Under 1 hour
+    });
+  }, [tickets]);
 
   const totalAssigned = tickets.length;
   const openCount = statusSummary.OPEN || 0;
@@ -362,10 +374,10 @@ export function TechDashboard() {
         </div>
 
         {/* Tickets Listing & Controls (Spans 8 cols on desktop) */}
-        <div className="lg:col-span-8 bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm flex flex-col">
+        <div className="lg:col-span-8 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm flex flex-col">
           {/* Action Message Alert */}
           {actionMessage && (
-            <div className="p-4 border-b border-outline-variant">
+            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800">
               <Alert variant={actionMessage.isError ? 'destructive' : 'success'} className="animate-fade-in">
                 {actionMessage.isError ? (
                   <AlertCircle className="h-4 w-4" />
@@ -378,57 +390,40 @@ export function TechDashboard() {
             </div>
           )}
 
-          {/* Table Header / Filters */}
-          <div className="p-4 border-b border-outline-variant bg-surface-container-low/40 flex flex-col sm:flex-row gap-3 items-center justify-between">
-            <div className="relative w-full sm:max-w-xs">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant opacity-60" />
-              <Input
-                id="tech-tickets-search"
-                type="text"
-                placeholder={t('tickets.searchPlaceholder')}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary text-on-surface"
-              />
-            </div>
-
-            {/* Quick Status Filter Tabs */}
-            <div className="flex flex-wrap gap-1.5 w-full sm:w-auto">
-              <button
-                onClick={() => setStatusFilter('')}
-                className={`px-3 py-1 rounded-md text-label-sm font-semibold cursor-pointer transition-colors ${!statusFilter ? 'bg-primary text-on-primary' : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant'}`}
-              >
-                {t('tickets.filterAllStatuses') === 'Todos los Estados' ? 'Todos' : 'All'}
-              </button>
-              <button
-                onClick={() => setStatusFilter('OPEN')}
-                className={`px-3 py-1 rounded-md text-label-sm font-semibold cursor-pointer transition-colors ${statusFilter === 'OPEN' ? 'bg-primary text-on-primary' : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant'}`}
-              >
-                {t('tickets.filterOpen')}
-              </button>
-              <button
-                onClick={() => setStatusFilter('IN_PROGRESS')}
-                className={`px-3 py-1 rounded-md text-label-sm font-semibold cursor-pointer transition-colors ${statusFilter === 'IN_PROGRESS' ? 'bg-primary text-on-primary' : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant'}`}
-              >
-                {t('tickets.filterInProgress')}
-              </button>
-              <button
-                onClick={() => setStatusFilter('RESOLVED')}
-                className={`px-3 py-1 rounded-md text-label-sm font-semibold cursor-pointer transition-colors ${statusFilter === 'RESOLVED' ? 'bg-primary text-on-primary' : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant'}`}
-              >
-                {t('tickets.filterResolved')}
-              </button>
-            </div>
-          </div>
-
           {/* Tickets Table */}
           <DataTable
             columns={columns}
-            data={filteredTickets}
+            data={paginatedTickets}
             loading={false}
             noDataMessage={t('tickets.noTicketsFound')}
             onRowClick={(ticket) => navigate(`/tickets/${ticket.id}`)}
             className="border-none rounded-none"
+            search={{
+              value: search,
+              onChange: (val) => { setSearch(val); setTicketPage(1); },
+              placeholder: t('tickets.searchPlaceholder'),
+            }}
+            filters={[
+              {
+                id: 'status',
+                value: statusFilter,
+                onChange: (val) => { setStatusFilter(val); setTicketPage(1); },
+                options: [
+                  { value: 'OPEN', label: t('tickets.filterOpen') },
+                  { value: 'IN_PROGRESS', label: t('tickets.filterInProgress') },
+                  { value: 'RESOLVED', label: t('tickets.filterResolved') },
+                  { value: 'CLOSED', label: t('tickets.filterClosed') },
+                ],
+                placeholder: t('tickets.filterAllStatuses'),
+              }
+            ]}
+            pagination={{
+              page: ticketPage,
+              totalPages: ticketTotalPages,
+              totalItems: filteredTickets.length,
+              limit: ticketsLimit,
+              onPageChange: setTicketPage,
+            }}
           />
         </div>
       </div>

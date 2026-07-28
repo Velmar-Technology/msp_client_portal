@@ -1,4 +1,4 @@
-import React from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Page } from "@/components/Page";
 import { Headphones, Wrench, CloudUpload, Cloud, CloudOff, ArrowRight } from "lucide-react";
@@ -102,11 +102,7 @@ export function StorageOverview({ storage, loading, t }: StorageOverviewProps) {
                 ) : (
                   <>
                     <span className="text-base font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
-                      {storage.total === "unlimited"
-                        ? "∞"
-                        : storage.total === "unknown"
-                          ? "?"
-                          : `${usagePercentage}%`}
+                      {storage.total === "unlimited" ? "∞" : storage.total === "unknown" ? "?" : `${usagePercentage}%`}
                     </span>
                     {storage.total !== "unlimited" && storage.total !== "unknown" && (
                       <span className="text-[9px] uppercase tracking-wider text-zinc-400 dark:text-zinc-500 font-medium">
@@ -122,7 +118,9 @@ export function StorageOverview({ storage, loading, t }: StorageOverviewProps) {
           <div className="space-y-2 mt-2">
             <div className="flex justify-between text-xs text-zinc-500 dark:text-zinc-400 border-b border-zinc-200/50 dark:border-zinc-800/50 pb-1.5">
               <span>{t("dashboard.tableStatus")}</span>
-              <span className={`font-semibold ${isOffline ? "text-red-600 dark:text-red-400 animate-pulse" : "text-zinc-800 dark:text-zinc-200"}`}>
+              <span
+                className={`font-semibold ${isOffline ? "text-red-600 dark:text-red-400 animate-pulse" : "text-zinc-800 dark:text-zinc-200"}`}
+              >
                 {isOffline ? t("dashboard.offline") : t("dashboard.online") || "Online"}
               </span>
             </div>
@@ -163,33 +161,30 @@ interface RecentInvoicesProps {
   getStatusColorClass: (status: string) => string;
 }
 
-export function RecentInvoices({
-  invoices,
-  t,
-  language,
-  getStatusLabel,
-  getStatusColorClass,
-}: RecentInvoicesProps) {
+export function RecentInvoices({ invoices, t, language, getStatusLabel, getStatusColorClass }: RecentInvoicesProps) {
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(5);
   const isSpanish = language === "es_DO";
+
+  const totalPages = Math.ceil(invoices.length / limit);
+  const paginatedInvoices = invoices.slice((page - 1) * limit, page * limit);
 
   const columns: ColumnDef<Invoice>[] = [
     {
       accessorKey: "invoice_number",
       header: () => (
-        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
           {t("dashboard.tableInvoiceNo")}
         </span>
       ),
       cell: ({ row }) => (
-        <span className="text-xs text-zinc-900 dark:text-zinc-100 font-mono">
-          {row.original.invoice_number}
-        </span>
+        <span className="text-xs text-zinc-900 dark:text-zinc-100 font-mono">{row.original.invoice_number}</span>
       ),
     },
     {
       accessorKey: "invoice_date",
       header: () => (
-        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
           {t("dashboard.tableDate")}
         </span>
       ),
@@ -206,7 +201,7 @@ export function RecentInvoices({
     {
       accessorKey: "total",
       header: () => (
-        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
           {t("dashboard.tableAmount")}
         </span>
       ),
@@ -219,14 +214,14 @@ export function RecentInvoices({
     {
       accessorKey: "status",
       header: () => (
-        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
           {t("dashboard.tableStatus")}
         </span>
       ),
       cell: ({ row }) => (
         <span
           className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold tracking-wider uppercase border ${getStatusColorClass(
-            row.original.status
+            row.original.status,
           )}`}
         >
           {getStatusLabel(row.original.status)}
@@ -236,23 +231,35 @@ export function RecentInvoices({
   ];
 
   return (
-    <div className="bg-zinc-50/50 dark:bg-zinc-900/30 border border-zinc-200/60 dark:border-zinc-800/80 rounded-lg overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-      <div className="p-3 border-b border-zinc-200/50 dark:border-zinc-800/50 flex justify-between items-center bg-zinc-50/20 dark:bg-zinc-900/10 mb-3">
+    <div className="bg-zinc-50/50 dark:bg-zinc-900/30 rounded-lg overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+      <div className="p-3 border-b border-zinc-200/60 dark:border-zinc-800/60 flex justify-between items-center bg-zinc-50/20 dark:bg-zinc-900/10 mb-3">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
           {t("dashboard.recentInvoices")}
         </h4>
         <Link
           to="/billing"
-          className="text-xs font-medium text-zinc-900 dark:text-zinc-300 hover:text-zinc-600 dark:hover:text-zinc-150 transition-colors"
+          className="text-xs font-medium text-zinc-900 dark:text-zinc-300 hover:text-zinc-600 dark:hover:text-zinc-150 transition-colors flex items-center gap-1"
         >
           {t("dashboard.viewAll")}
+          <ArrowRight className="h-3 w-3" />
         </Link>
       </div>
       <DataTable
         columns={columns}
-        data={invoices}
+        data={paginatedInvoices}
         noDataMessage={t("dashboard.noInvoices")}
         className="border-none"
+        pagination={{
+          page,
+          totalPages,
+          totalItems: invoices.length,
+          limit,
+          onPageChange: setPage,
+          onLimitChange: (newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          },
+        }}
       />
     </div>
   );
@@ -322,23 +329,26 @@ export function AdminDashboardView() {
             title={t("dashboard.maintenance")}
             value={
               nextMaintenance
-                ? new Date(nextMaintenance.scheduled_date).toLocaleDateString(i18n.language === "es_DO" ? "es-DO" : "en-US", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                  })
+                ? new Date(nextMaintenance.scheduled_date).toLocaleDateString(
+                    i18n.language === "es_DO" ? "es-DO" : "en-US",
+                    {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    },
+                  )
                 : t("dashboard.noneScheduled")
             }
             badge={
-              nextMaintenance ? (
-                t(
-                  nextMaintenance.status === "IN_PROGRESS"
-                    ? "maintenance.statusInProgress"
-                    : nextMaintenance.status === "OVERDUE"
-                      ? "maintenance.statusOverdue"
-                      : "maintenance.statusScheduled"
-                )
-              ) : undefined
+              nextMaintenance
+                ? t(
+                    nextMaintenance.status === "IN_PROGRESS"
+                      ? "maintenance.statusInProgress"
+                      : nextMaintenance.status === "OVERDUE"
+                        ? "maintenance.statusOverdue"
+                        : "maintenance.statusScheduled",
+                  )
+                : undefined
             }
             footer={
               nextMaintenance ? (
@@ -377,7 +387,7 @@ export function AdminDashboardView() {
         </StatsGrid>
 
         {/* Billing & Invoices - spans 8 cols */}
-        <div className="md:col-span-8">
+        <div className="md:col-span-10">
           <RecentInvoices
             invoices={invoices}
             t={t}

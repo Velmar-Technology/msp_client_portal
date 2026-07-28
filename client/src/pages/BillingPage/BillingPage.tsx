@@ -195,11 +195,17 @@ export function BillingPage() {
     total,
     page,
     totalPages,
+    limit,
     loading,
     selectedInvoice,
     showPayModal,
     downloadingId,
+    search,
+    statusFilter,
     setPage,
+    handleSearchChange,
+    handleStatusFilterChange,
+    handleLimitChange,
     handleDownload,
     openPayModal,
     closePayModal,
@@ -228,7 +234,7 @@ export function BillingPage() {
       {
         accessorKey: "invoice_number",
         header: () => (
-          <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
             {t("billing.tableInvoiceNo")}
           </span>
         ),
@@ -241,7 +247,7 @@ export function BillingPage() {
       {
         accessorKey: "invoice_date",
         header: () => (
-          <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
             {t("billing.tableDate")}
           </span>
         ),
@@ -254,7 +260,7 @@ export function BillingPage() {
       {
         accessorKey: "due_date",
         header: () => (
-          <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
             {t("billing.tableDueDate")}
           </span>
         ),
@@ -267,7 +273,7 @@ export function BillingPage() {
       {
         accessorKey: "amount",
         header: () => (
-          <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
             {t("billing.tableAmount")}
           </span>
         ),
@@ -280,7 +286,7 @@ export function BillingPage() {
       {
         accessorKey: "tax_amount",
         header: () => (
-          <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
             {t("billing.tableTax")}
           </span>
         ),
@@ -293,7 +299,7 @@ export function BillingPage() {
       {
         accessorKey: "total",
         header: () => (
-          <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
             {t("billing.tableTotal")}
           </span>
         ),
@@ -306,7 +312,7 @@ export function BillingPage() {
       {
         accessorKey: "status",
         header: () => (
-          <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
             {t("billing.tableStatus")}
           </span>
         ),
@@ -323,7 +329,7 @@ export function BillingPage() {
       {
         id: "actions",
         header: () => (
-          <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
             {t("billing.tableActions")}
           </span>
         ),
@@ -365,15 +371,31 @@ export function BillingPage() {
         data={invoices}
         loading={loading}
         noDataMessage={t("billing.noInvoices")}
+        search={{
+          value: search,
+          onChange: handleSearchChange,
+          placeholder: t("billing.searchPlaceholder") || "Search invoices..."
+        }}
+        filters={[
+          {
+            id: "status",
+            value: statusFilter,
+            onChange: handleStatusFilterChange,
+            options: [
+              { value: "PENDING", label: t("tickets.filterAwaitingPayment") },
+              { value: "PAID", label: t("tickets.filterResolved") },
+              { value: "OVERDUE", label: i18n.language === "es_DO" ? "VENCIDA" : "OVERDUE" },
+            ],
+            placeholder: t("billing.allStatuses") || "All Statuses"
+          }
+        ]}
         pagination={{
           page,
           totalPages,
           totalItems: total,
-          limit: 10,
+          limit,
           onPageChange: setPage,
-          showingText: t("userManagement.pageOf")
-            .replace("{page}", String(page))
-            .replace("{total}", String(totalPages))
+          onLimitChange: handleLimitChange,
         }}
       />
       <PayModal

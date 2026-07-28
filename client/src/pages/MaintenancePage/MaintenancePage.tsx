@@ -34,24 +34,34 @@ import { ScheduleMaintenanceModal } from "@/components/maintenance/ScheduleMaint
 import type { DeviceMaintenance, MaintenanceStatus } from "@/services/maintenanceService";
 
 export function MaintenancePage() {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const isSpanish = i18n.language.startsWith("es");
 
   const {
+    t,
     isAdminOrTech,
     currentDate,
     viewMode,
     setViewMode,
     filteredMaintenances,
+    paginatedMaintenances,
     allEquipment,
     loading,
     statusFilter,
     setStatusFilter,
     searchQuery,
     setSearchQuery,
+    handleSearchChange,
+    handleStatusFilterChangeForList,
+    handleTechFilterChange,
+    handleListLimitChange,
     selectedTechFilter,
     setSelectedTechFilter,
     uniqueTechnicians,
+    listPage,
+    setListPage,
+    listLimit,
+    listTotalPages,
     isModalOpen,
     selectedEquipForModal,
     openScheduleModal,
@@ -160,7 +170,7 @@ export function MaintenancePage() {
   const listColumns: ColumnDef<DeviceMaintenance>[] = [
     {
       id: "scheduledDate",
-      header: () => <span className="uppercase text-[10px] font-bold text-zinc-400">{t("maintenance.tableDate")}</span>,
+      header: () => <span className="uppercase text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">{t("maintenance.tableDate")}</span>,
       cell: ({ row }) => {
         const item = row.original;
         const d = new Date(item.scheduled_date);
@@ -178,7 +188,7 @@ export function MaintenancePage() {
     },
     {
       id: "deviceInfo",
-      header: () => <span className="uppercase text-[10px] font-bold text-zinc-400">{t("maintenance.tableDevice")}</span>,
+      header: () => <span className="uppercase text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">{t("maintenance.tableDevice")}</span>,
       cell: ({ row }) => {
         const item = row.original;
         return (
@@ -192,7 +202,7 @@ export function MaintenancePage() {
     },
     {
       id: "clientInfo",
-      header: () => <span className="uppercase text-[10px] font-bold text-zinc-400">{t("maintenance.tableClient")}</span>,
+      header: () => <span className="uppercase text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">{t("maintenance.tableClient")}</span>,
       cell: ({ row }) => {
         const item = row.original;
         return (
@@ -205,7 +215,7 @@ export function MaintenancePage() {
     },
     {
       id: "assignedTech",
-      header: () => <span className="uppercase text-[10px] font-bold text-zinc-400">{t("maintenance.tableTech")}</span>,
+      header: () => <span className="uppercase text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">{t("maintenance.tableTech")}</span>,
       cell: ({ row }) => {
         const item = row.original;
         return item.assigned_tech_name ? (
@@ -220,12 +230,12 @@ export function MaintenancePage() {
     },
     {
       accessorKey: "status",
-      header: () => <span className="uppercase text-[10px] font-bold text-zinc-400">{t("maintenance.tableStatus")}</span>,
+      header: () => <span className="uppercase text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">{t("maintenance.tableStatus")}</span>,
       cell: ({ row }) => getStatusBadge(row.getValue("status")),
     },
     {
       id: "actions",
-      header: () => <span className="uppercase text-[10px] font-bold text-zinc-400 text-right">{t("common.actions")}</span>,
+      header: () => <span className="uppercase text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-wider text-right">{t("common.actions")}</span>,
       cell: ({ row }) => {
         const item = row.original;
         return (
@@ -349,7 +359,8 @@ export function MaintenancePage() {
           </div>
         </div>
 
-        {/* Filters Toolbar */}
+        {/* Filters Toolbar - Calendar view only */}
+        {viewMode === "CALENDAR" && (
         <div className="bg-white dark:bg-zinc-950 p-3 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm flex flex-col md:flex-row gap-3 items-center justify-between">
           <div className="relative w-full md:max-w-xs">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
@@ -388,15 +399,16 @@ export function MaintenancePage() {
                 className="h-8 px-2 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200 focus:outline-none cursor-pointer"
               >
                 <option value="ALL">{t("maintenance.filterAllTechs")}</option>
-                {uniqueTechnicians.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
+                {uniqueTechnicians.map((tech) => (
+                  <option key={tech.id} value={tech.id}>
+                    {tech.name}
                   </option>
                 ))}
               </select>
             )}
           </div>
         </div>
+        )}
 
         {/* CALENDAR VIEW GRID */}
         {viewMode === "CALENDAR" && (
@@ -489,9 +501,44 @@ export function MaintenancePage() {
           <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
             <DataTable
               columns={listColumns}
-              data={filteredMaintenances}
+              data={paginatedMaintenances}
               noDataMessage={t("maintenance.noMaintenancesFound")}
               loading={loading}
+              search={{
+                value: searchQuery,
+                onChange: handleSearchChange,
+                placeholder: t("maintenance.searchPlaceholder")
+              }}
+              filters={[
+                {
+                  id: "status",
+                  value: statusFilter === "ALL" ? "" : statusFilter,
+                  onChange: (val) => handleStatusFilterChangeForList(val || "ALL"),
+                  options: [
+                    { value: "SCHEDULED", label: t("maintenance.statusScheduled") },
+                    { value: "IN_PROGRESS", label: t("maintenance.statusInProgress") },
+                    { value: "COMPLETED", label: t("maintenance.statusCompleted") },
+                    { value: "OVERDUE", label: t("maintenance.statusOverdue") },
+                    { value: "CANCELLED", label: t("maintenance.statusCancelled") },
+                  ],
+                  placeholder: t("maintenance.filterAllStatuses")
+                },
+                ...(isAdminOrTech && uniqueTechnicians.length > 0 ? [{
+                  id: "tech",
+                  value: selectedTechFilter === "ALL" ? "" : selectedTechFilter,
+                  onChange: (val: string) => handleTechFilterChange(val || "ALL"),
+                  options: uniqueTechnicians.map((tech) => ({ value: tech.id, label: tech.name })),
+                  placeholder: t("maintenance.filterAllTechs")
+                }] : [])
+              ]}
+              pagination={{
+                page: listPage,
+                totalPages: listTotalPages,
+                totalItems: filteredMaintenances.length,
+                limit: listLimit,
+                onPageChange: setListPage,
+                onLimitChange: handleListLimitChange,
+              }}
             />
           </div>
         )}

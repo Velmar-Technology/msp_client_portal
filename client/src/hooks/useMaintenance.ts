@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { maintenanceService, type DeviceMaintenance, type MaintenanceStatus } from "@/services/maintenanceService";
 import { equipmentService, type SubscriptionEquipment } from "@/services/equipmentService";
 
 export function useMaintenance() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
   const isTech = user?.role === "TECHNICIAN";
@@ -20,22 +22,18 @@ export function useMaintenance() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedTechFilter, setSelectedTechFilter] = useState<string>("ALL");
 
+  // Pagination (LIST view)
+  const [listPage, setListPage] = useState<number>(1);
+  const [listLimit, setListLimit] = useState<number>(10);
+
   // Modal
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedEquipForModal, setSelectedEquipForModal] = useState<Partial<SubscriptionEquipment> | null>(null);
 
-  // Calculated Month Boundaries for Calendar
-  const monthStart = useMemo(() => {
-    return new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-  }, [currentDate]);
 
-  const monthEnd = useMemo(() => {
-    return new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59);
-  }, [currentDate]);
 
   // Fetch maintenances
   const fetchMaintenances = useCallback(async () => {
-    setLoading(true);
     try {
       // Calculate start and end of calendar view grid (including padding days)
       const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1).toISOString();
@@ -69,11 +67,17 @@ export function useMaintenance() {
   }, [isAdminOrTech]);
 
   useEffect(() => {
-    fetchMaintenances();
+    const timer = setTimeout(() => {
+      fetchMaintenances();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchMaintenances]);
 
   useEffect(() => {
-    fetchEquipment();
+    const timer = setTimeout(() => {
+      fetchEquipment();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchEquipment]);
 
   // Navigation handlers
@@ -112,6 +116,34 @@ export function useMaintenance() {
       return true;
     });
   }, [maintenances, statusFilter, selectedTechFilter, searchQuery]);
+
+  // LIST view pagination
+  const listTotalPages = Math.ceil(filteredMaintenances.length / listLimit);
+  const paginatedMaintenances = useMemo(() => {
+    const start = (listPage - 1) * listLimit;
+    return filteredMaintenances.slice(start, start + listLimit);
+  }, [filteredMaintenances, listPage, listLimit]);
+
+  // Reset page when filters change
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    setListPage(1);
+  }, []);
+
+  const handleStatusFilterChangeForList = useCallback((value: string) => {
+    setStatusFilter(value);
+    setListPage(1);
+  }, []);
+
+  const handleTechFilterChange = useCallback((value: string) => {
+    setSelectedTechFilter(value);
+    setListPage(1);
+  }, []);
+
+  const handleListLimitChange = useCallback((value: number) => {
+    setListLimit(value);
+    setListPage(1);
+  }, []);
 
   // Unique Technicians for Filter Dropdown
   const uniqueTechnicians = useMemo(() => {
@@ -152,6 +184,7 @@ export function useMaintenance() {
   );
 
   return {
+    t,
     user,
     isAdmin,
     isTech,
@@ -162,15 +195,24 @@ export function useMaintenance() {
     setViewMode,
     maintenances,
     filteredMaintenances,
+    paginatedMaintenances,
     allEquipment,
     loading,
     statusFilter,
     setStatusFilter,
     searchQuery,
     setSearchQuery,
+    handleSearchChange,
+    handleStatusFilterChangeForList,
+    handleTechFilterChange,
+    handleListLimitChange,
     selectedTechFilter,
     setSelectedTechFilter,
     uniqueTechnicians,
+    listPage,
+    setListPage,
+    listLimit,
+    listTotalPages,
     isModalOpen,
     selectedEquipForModal,
     openScheduleModal,

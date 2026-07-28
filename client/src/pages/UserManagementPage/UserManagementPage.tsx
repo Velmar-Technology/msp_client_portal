@@ -105,7 +105,9 @@ export function UserManagementPage() {
     page,
     totalPages,
     total,
+    limit,
     setPage,
+    handleLimitChange,
     roleFilter,
     statusFilter,
     searchQuery,
@@ -278,11 +280,9 @@ export function UserManagementPage() {
           page,
           totalPages,
           totalItems: total,
-          limit: 20,
+          limit,
           onPageChange: setPage,
-          showingText: t("userManagement.pageOf")
-            .replace("{page}", String(page))
-            .replace("{total}", String(totalPages))
+          onLimitChange: handleLimitChange,
         }}
         className="mt-6"
       />
