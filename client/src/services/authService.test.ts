@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import api from './api';
-import { authService } from './authService';
+import api from "@/services/api";
+import { authService } from "@/services/authService";
 
 vi.mock('./api');
 

@@ -1,8 +1,8 @@
 import * as React from "react";
 import { Link, useLocation, matchPath } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../../hooks/useAuth";
-import { routeCrumbs } from "./routeCrumbs";
+import { useAuth } from "@/hooks/useAuth";
+import { routeCrumbs } from "@/components/layout/routeCrumbs";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -27,7 +27,7 @@ export function Breadcrumbs({ className }: { className?: string }) {
   let dashboardLabel = t("nav.dashboard");
 
   if (user?.role === "ADMIN") {
-    dashboardPath = "/admin/dashboard";
+    dashboardPath = "/dashboard";
     dashboardLabel = t("nav.adminDashboard");
   } else if (user?.role === "TECHNICIAN") {
     dashboardPath = "/tech/dashboard";

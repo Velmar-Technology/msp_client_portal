@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../hooks/useAuth";
-import { userService } from "../services/userService";
+import { useAuth } from "@/hooks/useAuth";
+import { userService } from "@/services/userService";
 
 export function useProfile() {
   const { t, i18n } = useTranslation();

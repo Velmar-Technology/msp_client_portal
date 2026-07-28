@@ -2,8 +2,8 @@ import { useMemo } from "react";
 import { NavLink } from "react-router-dom";
 import { ChevronRight, HelpCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import logoUrl from "../../assets/logo.png";
-import { useSidebar, type NavItem, type NavSubItem } from "../../hooks/useSidebar";
+import logoUrl from "@/assets/logo.png";
+import { useSidebar, type NavItem, type NavSubItem } from "@/hooks/useSidebar";
 import {
   Sidebar as ShadcnSidebar,
   SidebarContent,
@@ -18,8 +18,8 @@ import {
   SidebarMenuSubItem,
   SidebarMenuSubButton,
 } from "../ui/sidebar";
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "../ui/collapsible";
-import type { Subscription } from "../../services/subscriptionService";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import type { Subscription } from "@/services/subscriptionService";
 
 // 1. Sidebar Brand Sub-component
 interface SidebarBrandProps {

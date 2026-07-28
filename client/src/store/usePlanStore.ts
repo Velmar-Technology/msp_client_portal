@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { planService } from '../services/planService';
-import type { Plan } from '../services/planService';
+import { planService } from "@/services/planService";
+import type { Plan } from "@/services/planService";
 
 export interface PlanState {
   plans: Plan[];

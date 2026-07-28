@@ -1,5 +1,5 @@
 import { Sun, Moon, Laptop } from 'lucide-react';
-import { useTheme } from '../theme-provider';
+import { useTheme } from "@/components/theme-provider";
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 

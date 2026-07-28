@@ -11,7 +11,7 @@ import {
   Landmark,
   Calendar,
 } from "lucide-react";
-import { useAuth } from "./useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { subscriptionService } from "@/services/subscriptionService";
 import type { Subscription } from "@/services/subscriptionService";
 
@@ -29,7 +29,6 @@ export interface NavItem {
 
 const clientNavItems: NavItem[] = [
   { to: "/dashboard", icon: LayoutDashboard, labelKey: "dashboard" },
-  { to: "/financial", icon: Landmark, labelKey: "financial" },
   { to: "/devices", icon: Laptop, labelKey: "devices" },
   { to: "/maintenance", icon: Calendar, labelKey: "maintenance" },
   { to: "/tickets", icon: Ticket, labelKey: "myTickets" },
@@ -62,7 +61,7 @@ const techNavItems: NavItem[] = [
 ];
 
 const adminNavItems: NavItem[] = [
-  { to: "/admin/dashboard", icon: Shield, labelKey: "adminDashboard" },
+  { to: "/dashboard", icon: Shield, labelKey: "adminDashboard" },
   { to: "/financial", icon: Landmark, labelKey: "financial" },
   { to: "/admin/users", icon: Users, labelKey: "userManagement" },
   { to: "/devices", icon: Laptop, labelKey: "devices" },

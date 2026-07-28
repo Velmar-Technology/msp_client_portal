@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { notificationService } from '../services/notificationService';
-import type { Notification } from '../services/notificationService';
+import { notificationService } from "@/services/notificationService";
+import type { Notification } from "@/services/notificationService";
 import { toast } from 'sonner';
 
 export interface NotificationState {

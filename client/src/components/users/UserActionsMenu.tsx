@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { ManagedUser, UserRole } from "../../services/userService";
+import type { ManagedUser, UserRole } from "@/services/userService";
 
 interface UserActionsMenuProps {
   user: ManagedUser;

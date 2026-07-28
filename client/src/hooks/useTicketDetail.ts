@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ticketService } from '../services/ticketService';
-import type { Ticket, TicketEvent, TicketAttachment, TicketResponse } from '../services/ticketService';
-import { useAuth } from './useAuth';
-import { userService } from '../services/userService';
+import { ticketService } from "@/services/ticketService";
+import type { Ticket, TicketEvent, TicketAttachment, TicketResponse } from "@/services/ticketService";
+import { useAuth } from "@/hooks/useAuth";
+import { userService } from "@/services/userService";
 
 export function useTicketDetail(ticketId: string | undefined) {
   const { t, i18n } = useTranslation();

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Ticket, CreditCard, HelpCircle, LayoutDashboard, Plus, BookOpen, Bell, User } from "lucide-react";
-import { useAuth } from "./useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { ticketService } from "@/services/ticketService";
 import { invoiceService } from "@/services/invoiceService";
 import { faqsEn, faqsEs } from "@/lib/faqs";
@@ -148,7 +148,7 @@ export function useTopNav() {
       );
     } else if (user.role === "ADMIN") {
       pages.push(
-        { title: t("nav.dashboard"), path: "/admin/dashboard", icon: LayoutDashboard },
+        { title: t("nav.dashboard"), path: "/dashboard", icon: LayoutDashboard },
         { title: t("nav.tickets"), path: "/tickets", icon: Ticket },
         { title: t("nav.plans"), path: "/plans", icon: BookOpen },
         { title: t("nav.billing"), path: "/billing", icon: CreditCard },

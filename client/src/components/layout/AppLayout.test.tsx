@@ -1,8 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { AppLayout } from './AppLayout';
+import { AppLayout } from "@/components/layout/AppLayout";
 import { expect, test, vi, beforeEach, describe } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import { subscriptionService } from '../../services/subscriptionService';
+import { subscriptionService } from "@/services/subscriptionService";
 import React from 'react';
 
 vi.mock('react-i18next', () => ({

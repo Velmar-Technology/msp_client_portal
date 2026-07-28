@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { invoiceService } from '../services/invoiceService';
-import type { Invoice } from '../services/invoiceService';
+import { invoiceService } from "@/services/invoiceService";
+import type { Invoice } from "@/services/invoiceService";
 
 export function useBilling() {
   const { t, i18n } = useTranslation();

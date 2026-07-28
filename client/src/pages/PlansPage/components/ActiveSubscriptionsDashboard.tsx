@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { ColumnDef } from '@tanstack/react-table';
-import type { Subscription } from '../../../services/subscriptionService';
-import { DataTable } from '../../../components/ui/data-table';
+import type { Subscription } from "@/services/subscriptionService";
+import { DataTable } from "@/components/ui/data-table";
 
 interface ActiveSubscriptionsDashboardProps {
   activeSubscriptions: Subscription[];

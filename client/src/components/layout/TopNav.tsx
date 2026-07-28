@@ -9,11 +9,11 @@ import {
   HelpCircle,
   Loader2,
 } from "lucide-react";
-import { useTopNav, type FlatItem } from "../../hooks/useTopNav";
-import { SidebarTrigger } from "../ui/sidebar";
-import { ThemeToggle } from "./ThemeToggle";
-import { NotificationBell } from "./NotificationBell";
-import { Input } from "../ui/input";
+import { useTopNav, type FlatItem } from "@/hooks/useTopNav";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { NotificationBell } from "@/components/layout/NotificationBell";
+import { Input } from "@/components/ui/input";
 
 // 1. SearchBar Sub-component
 interface SearchBarProps {

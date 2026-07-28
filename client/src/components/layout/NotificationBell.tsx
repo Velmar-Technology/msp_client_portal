@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNotificationStore } from '../../store/useNotificationStore';
+import { useNotificationStore } from "@/store/useNotificationStore";
 import { Bell, Check, Ticket, MessageSquare, ShieldAlert, CheckSquare, RefreshCw, Settings2, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 

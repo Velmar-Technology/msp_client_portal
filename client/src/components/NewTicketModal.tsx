@@ -1,8 +1,8 @@
 import { useState, useEffect, memo } from 'react';
 import { X } from 'lucide-react';
-import { ticketService } from '../services/ticketService';
-import { equipmentService } from '../services/equipmentService';
-import type { SubscriptionEquipment } from '../services/equipmentService';
+import { ticketService } from "@/services/ticketService";
+import { equipmentService } from "@/services/equipmentService";
+import type { SubscriptionEquipment } from "@/services/equipmentService";
 import { useTranslation } from 'react-i18next';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';

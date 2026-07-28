@@ -1,7 +1,7 @@
 import { X, GripVertical, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Plan, PlanFeature } from '../../../services/planService';
-import { Input } from '../../../components/ui/input';
+import type { Plan, PlanFeature } from "@/services/planService";
+import { Input } from "@/components/ui/input";
 
 interface EditPlanModalProps {
   editingPlan: Plan;

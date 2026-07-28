@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { invoiceService } from "../services/invoiceService";
-import type { Invoice } from "../services/invoiceService";
-import { systemService } from "../services/systemService";
-import type { StorageStatus } from "../services/systemService";
-import { ticketService } from "../services/ticketService";
-import { maintenanceService } from "../services/maintenanceService";
-import type { DeviceMaintenance } from "../services/maintenanceService";
+import { invoiceService } from "@/services/invoiceService";
+import type { Invoice } from "@/services/invoiceService";
+import { systemService } from "@/services/systemService";
+import type { StorageStatus } from "@/services/systemService";
+import { ticketService } from "@/services/ticketService";
+import { maintenanceService } from "@/services/maintenanceService";
+import type { DeviceMaintenance } from "@/services/maintenanceService";
 
 export function useAdminDashboard() {
   const { t, i18n } = useTranslation();

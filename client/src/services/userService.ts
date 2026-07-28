@@ -1,5 +1,5 @@
-import type { AuthUser } from '../store/useAuthStore';
-import api from './api';
+import type { AuthUser } from "@/store/useAuthStore";
+import api from "@/services/api";
 
 export interface ChangePasswordPayload {
   currentPassword?: string;

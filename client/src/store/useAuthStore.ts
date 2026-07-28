@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { authService } from '../services/authService';
+import { authService } from "@/services/authService";
 
 export interface AuthUser {
   id: string;

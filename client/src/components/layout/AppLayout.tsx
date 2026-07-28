@@ -1,10 +1,10 @@
 import { Outlet, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Shield } from "lucide-react";
-import { AppSidebar } from "./app-sidebar";
-import { TopNav } from "./TopNav";
-import { SidebarProvider, SidebarInset } from "../ui/sidebar";
-import { useAppLayout } from "../../hooks/useAppLayout";
+import { AppSidebar } from "@/components/layout/app-sidebar";
+import { TopNav } from "@/components/layout/TopNav";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { useAppLayout } from "@/hooks/useAppLayout";
 
 // 1. High-Density Footer Sub-component
 export function Footer() {

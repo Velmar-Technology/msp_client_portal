@@ -1,4 +1,4 @@
-import api from './api';
+import api from "@/services/api";
 
 export type MaintenanceStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'OVERDUE';
 export type MaintenanceType = 'PREDEFINED_6M' | 'PREDEFINED_3M' | 'PREDEFINED_12M' | 'CUSTOM_DATE';

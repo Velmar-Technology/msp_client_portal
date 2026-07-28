@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ticketService } from '../services/ticketService';
-import { subscriptionService } from '../services/subscriptionService';
-import type { Subscription } from '../services/subscriptionService';
-import { invoiceService } from '../services/invoiceService';
-import type { Invoice } from '../services/invoiceService';
-import { equipmentService } from '../services/equipmentService';
+import { ticketService } from "@/services/ticketService";
+import { subscriptionService } from "@/services/subscriptionService";
+import type { Subscription } from "@/services/subscriptionService";
+import { invoiceService } from "@/services/invoiceService";
+import type { Invoice } from "@/services/invoiceService";
+import { equipmentService } from "@/services/equipmentService";
 
 export const getPlanStorageQuotaGB = (planId: string): number => {
   if (planId.includes('PL-001')) return 25;

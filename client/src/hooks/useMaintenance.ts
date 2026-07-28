@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useAuth } from "./useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { maintenanceService, type DeviceMaintenance, type MaintenanceStatus } from "@/services/maintenanceService";
 import { equipmentService, type SubscriptionEquipment } from "@/services/equipmentService";
 

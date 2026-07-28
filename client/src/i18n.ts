@@ -1,7 +1,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import enUS from './locales/en_US.json';
-import esDO from './locales/es_DO.json';
+import enUS from "@/locales/en_US.json";
+import esDO from "@/locales/es_DO.json";
 
 // Retrieve initial language setting from cached user preference or browser setting
 const getInitialLanguage = (): string => {

@@ -1,6 +1,6 @@
 import React from 'react';
-import { useAuthStore } from '../store/useAuthStore';
-import type { AuthUser } from '../store/useAuthStore';
+import { useAuthStore } from "@/store/useAuthStore";
+import type { AuthUser } from "@/store/useAuthStore";
 
 export type { AuthUser };
 

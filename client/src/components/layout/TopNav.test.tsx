@@ -1,8 +1,8 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { TopNav } from './TopNav';
+import { TopNav } from "@/components/layout/TopNav";
 import { expect, test, vi, beforeEach } from 'vitest';
-import { ticketService } from '../../services/ticketService';
-import { invoiceService } from '../../services/invoiceService';
+import { ticketService } from "@/services/ticketService";
+import { invoiceService } from "@/services/invoiceService";
 
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', () => ({

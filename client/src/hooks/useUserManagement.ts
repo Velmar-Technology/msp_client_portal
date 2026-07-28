@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { userService } from "../services/userService";
+import { userService } from "@/services/userService";
 import type {
   ManagedUser,
   UserRole,

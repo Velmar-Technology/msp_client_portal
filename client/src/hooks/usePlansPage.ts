@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback, useRef, useMemo, type SyntheticEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from './useAuth';
-import { usePlanStore } from '../store/usePlanStore';
+import { useAuth } from "@/hooks/useAuth";
+import { usePlanStore } from "@/store/usePlanStore";
 import { toast } from 'sonner';
-import type { Plan, PlanFeature } from '../services/planService';
-import { userService } from '../services/userService';
-import { subscriptionService } from '../services/subscriptionService';
-import type { Subscription } from '../services/subscriptionService';
-import type { AuthUser } from '../store/useAuthStore';
+import type { Plan, PlanFeature } from "@/services/planService";
+import { userService } from "@/services/userService";
+import { subscriptionService } from "@/services/subscriptionService";
+import type { Subscription } from "@/services/subscriptionService";
+import type { AuthUser } from "@/store/useAuthStore";
 
 export function usePlansPage() {
   const { t, i18n } = useTranslation();

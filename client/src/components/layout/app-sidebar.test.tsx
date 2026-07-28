@@ -1,9 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { AppSidebar } from './app-sidebar';
+import { AppSidebar } from "@/components/layout/app-sidebar";
 import { expect, test, vi, beforeEach, describe } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import { subscriptionService } from '../../services/subscriptionService';
-import { useAuth } from '../../hooks/useAuth';
+import { subscriptionService } from "@/services/subscriptionService";
+import { useAuth } from "@/hooks/useAuth";
 import React from 'react';
 
 vi.mock('react-i18next', () => ({

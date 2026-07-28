@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
-import { Breadcrumbs } from './layout/Breadcrumbs';
-import { Skeleton } from './ui/skeleton';
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export interface PageProps extends Omit<React.ComponentPropsWithoutRef<'div'>, 'title'> {
   title?: React.ReactNode;

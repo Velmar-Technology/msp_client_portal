@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "./useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { useNotificationStore } from "@/store/useNotificationStore";
 import { subscriptionService } from "@/services/subscriptionService";
 import type { Subscription } from "@/services/subscriptionService";

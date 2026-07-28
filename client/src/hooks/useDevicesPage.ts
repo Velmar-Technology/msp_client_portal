@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "./useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { subscriptionService } from "@/services/subscriptionService";
 import type { Subscription } from "@/services/subscriptionService";
