@@ -23,7 +23,7 @@ export function ThemeToggle() {
     <div className="relative" ref={containerRef}>
       <button
         onClick={() => setOpen(!open)}
-        className={`p-1.5 transition-colors rounded-md cursor-pointer flex items-center justify-center ${
+        className={`p-1.5 transition-colors rounded-sm cursor-pointer flex items-center justify-center ${
           open
             ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100'
             : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100'
@@ -50,7 +50,7 @@ export function ThemeToggle() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-9 w-32 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-lg py-1 z-50 animate-fade-in overflow-hidden">
+        <div className="absolute right-0 top-9 w-32 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-sm shadow-lg py-1 z-50 animate-fade-in overflow-hidden">
           <button
             onClick={() => {
               setTheme('light');

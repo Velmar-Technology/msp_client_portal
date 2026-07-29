@@ -49,7 +49,7 @@ export function Page({
           )}
           {actions ? (
             isLoading ? (
-              <Skeleton className="animate-fade-in shrink-0 w-32 h-8.5 rounded-md" />
+              <Skeleton className="animate-fade-in shrink-0 w-32 h-8.5 rounded-sm" />
             ) : (
               <div className="flex items-center gap-2 animate-fade-in shrink-0">
                 {actions}

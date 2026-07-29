@@ -290,10 +290,10 @@ export function MaintenancePage() {
     >
       <div className="space-y-4">
         {/* Top Control Bar */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white dark:bg-zinc-950 p-4 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white dark:bg-zinc-950 p-4 border border-zinc-200 dark:border-zinc-800 rounded-sm shadow-sm">
           {/* Calendar Month Navigation */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center border border-zinc-200 dark:border-zinc-800 rounded-md overflow-hidden bg-zinc-50 dark:bg-zinc-900/50">
+            <div className="flex items-center border border-zinc-200 dark:border-zinc-800 rounded-sm overflow-hidden bg-zinc-50 dark:bg-zinc-900/50">
               <button
                 onClick={handlePrevMonth}
                 className="p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer text-zinc-600 dark:text-zinc-300"
@@ -498,7 +498,7 @@ export function MaintenancePage() {
 
         {/* LIST VIEW TABLE */}
         {viewMode === "LIST" && (
-          <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+          <div className="overflow-hidden">
             <DataTable
               columns={listColumns}
               data={paginatedMaintenances}
@@ -558,7 +558,7 @@ export function MaintenancePage() {
       {/* Event Details Drawer/Modal */}
       {selectedEventDetails && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-md w-full p-5 shadow-2xl space-y-4">
+          <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-sm max-w-md w-full p-5 shadow-2xl space-y-4">
             <div className="flex justify-between items-start border-b border-zinc-200 dark:border-zinc-800 pb-3">
               <div>
                 <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{selectedEventDetails.title}</h3>

@@ -62,12 +62,12 @@ export function SearchBar({
             prefetchInvoices();
           }}
           onKeyDown={handleKeyDown}
-          className="w-full pl-8 pr-3 h-8 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-600 transition-colors text-zinc-900 dark:text-zinc-100"
+          className="w-full pl-8 pr-3 h-8 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-sm text-xs placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-600 transition-colors text-zinc-900 dark:text-zinc-100"
         />
       </div>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-xl overflow-hidden z-50 text-zinc-900 dark:text-zinc-100 select-none max-h-[380px] overflow-y-auto custom-scrollbar">
+        <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-sm shadow-xl overflow-hidden z-50 text-zinc-900 dark:text-zinc-100 select-none max-h-[380px] overflow-y-auto custom-scrollbar">
           {isLoading ? (
             <div className="flex items-center justify-center py-6 gap-2 text-zinc-500 dark:text-zinc-400">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -157,7 +157,7 @@ export function SettingsMenu({
     <div className="relative" ref={settingsRef}>
       <button
         onClick={() => setShowSettingsMenu(!showSettingsMenu)}
-        className={`p-1.5 transition-colors rounded-md cursor-pointer ${
+        className={`p-1.5 transition-colors rounded-sm cursor-pointer ${
           showSettingsMenu
             ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
             : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100"
@@ -167,7 +167,7 @@ export function SettingsMenu({
       </button>
 
       {showSettingsMenu && (
-        <div className="absolute right-0 top-9 w-48 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg py-1 animate-fade-in z-50">
+        <div className="absolute right-0 top-9 w-48 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-sm shadow-lg py-1 animate-fade-in z-50">
           <div className="px-3 py-1.5 border-b border-zinc-100 dark:border-zinc-800">
             <p className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
               {t("nav.account")}
@@ -204,7 +204,7 @@ interface UserMenuProps {
   showUserMenu: boolean;
   setShowUserMenu: (show: boolean) => void;
   userMenuRef: React.RefObject<HTMLDivElement | null>;
-  user: any;
+  user: { name?: string; email?: string; role?: string; avatarUrl?: string | null } | null;
   logout: () => void;
   t: (key: string) => string;
 }
@@ -221,7 +221,7 @@ export function UserMenu({
     <div className="relative" ref={userMenuRef}>
       <button
         onClick={() => setShowUserMenu(!showUserMenu)}
-        className="flex items-center gap-1.5 p-1 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+        className="flex items-center gap-1.5 p-1 rounded-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
       >
         {user?.avatarUrl ? (
           <img
@@ -239,11 +239,11 @@ export function UserMenu({
       </button>
 
       {showUserMenu && (
-        <div className="absolute right-0 top-9 w-52 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg py-1 animate-fade-in z-50">
+        <div className="absolute right-0 top-9 w-52 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-sm shadow-lg py-1 animate-fade-in z-50">
           <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800 mb-1">
             <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">{user?.name}</p>
             <p className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5">{user?.email}</p>
-            <span className="inline-block mt-1.5 px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 text-[8px] font-mono font-bold rounded uppercase">
+            <span className="inline-block mt-1.5 px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 text-[8px] font-mono font-bold rounded-sm uppercase">
               {user?.role}
             </span>
           </div>
@@ -288,7 +288,7 @@ export function TopNav() {
   return (
     <header className="flex justify-between items-center w-full px-4 md:px-8 h-12 bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 sticky top-0 z-30 transition-colors">
       <div className="flex items-center gap-2">
-        <SidebarTrigger className="text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 h-8 w-8 cursor-pointer rounded-md transition-colors" />
+        <SidebarTrigger className="text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 h-8 w-8 cursor-pointer rounded-sm transition-colors" />
         <h2 className="text-xs font-bold text-zinc-900 dark:text-zinc-50 md:hidden" style={{ fontFamily: "var(--font-heading)" }}>
           {t("topNav.portal")}
         </h2>

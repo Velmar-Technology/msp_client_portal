@@ -41,7 +41,7 @@ interface BlockedPortalAlertProps {
 
 export function BlockedPortalAlert({ onChoosePlan, choosePlanLabel }: BlockedPortalAlertProps) {
   return (
-    <div className="max-w-sm w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5 text-center shadow-sm animate-fade-in">
+    <div className="max-w-sm w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-sm p-5 text-center shadow-sm animate-fade-in">
       <div className="w-10 h-10 bg-amber-500/10 text-amber-500 dark:text-amber-400 rounded-full flex items-center justify-center mx-auto mb-3">
         <Shield className="h-5 w-5" />
       </div>
@@ -53,7 +53,7 @@ export function BlockedPortalAlert({ onChoosePlan, choosePlanLabel }: BlockedPor
       </p>
       <button
         onClick={onChoosePlan}
-        className="w-full bg-zinc-900 dark:bg-zinc-100 hover:opacity-90 text-white dark:text-zinc-900 py-1.5 rounded text-xs font-semibold transition-opacity flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+        className="w-full bg-zinc-900 dark:bg-zinc-100 hover:opacity-90 text-white dark:text-zinc-900 py-1.5 rounded-sm text-xs font-semibold transition-opacity flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
       >
         {choosePlanLabel}
       </button>

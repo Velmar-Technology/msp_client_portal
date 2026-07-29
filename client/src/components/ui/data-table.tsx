@@ -223,7 +223,7 @@ export function DataTable<TData, TValue>({
 
       {/* 2. Selection Bulk Action Bar */}
       {enableRowSelection && bulkActions && hasSelectedRows && (
-        <div className="px-3 py-1.5 bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded-md flex items-center justify-between animate-fade-in">
+        <div className="px-3 py-1.5 bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded-sm flex items-center justify-between animate-fade-in">
           <span className="text-xs font-mono font-bold text-zinc-900 dark:text-zinc-100">
             {Object.keys(rowSelection).length} selected
           </span>
@@ -252,7 +252,7 @@ export function DataTable<TData, TValue>({
       )}
 
       {/* 3. Main Data Table */}
-      <div className="rounded-xl border overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
+      <div className="rounded-sm border overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

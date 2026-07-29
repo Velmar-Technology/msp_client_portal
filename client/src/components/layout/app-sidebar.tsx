@@ -69,9 +69,9 @@ export function ActiveSubCard({ sub, renewalLabel, isSpanish }: ActiveSubCardPro
   }, [sub.renewal_date, isSpanish]);
 
   return (
-    <div className="mx-2 my-2 p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 shadow-sm group-data-[collapsible=icon]:hidden transition-colors">
+    <div className="mx-2 my-2 p-2.5 rounded-sm border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 shadow-sm group-data-[collapsible=icon]:hidden transition-colors">
       <div className="flex items-center justify-between gap-2 mb-1">
-        <span className="text-[9px] font-mono font-bold text-zinc-900 dark:text-zinc-100 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-1 rounded uppercase">
+        <span className="text-[9px] font-mono font-bold text-zinc-900 dark:text-zinc-100 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-1 rounded-sm uppercase">
           {sub.plan}
         </span>
         <div className="flex items-center gap-1">

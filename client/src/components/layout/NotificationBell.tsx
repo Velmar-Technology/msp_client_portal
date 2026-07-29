@@ -99,7 +99,7 @@ export function NotificationBell() {
             fetchNotifications(); // Refresh notifications list on open
           }
         }}
-        className={`relative p-1.5 transition-colors rounded-md cursor-pointer ${
+        className={`relative p-1.5 transition-colors rounded-sm cursor-pointer ${
           isOpen
             ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
             : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100"
@@ -116,13 +116,13 @@ export function NotificationBell() {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 top-9 w-80 md:w-[360px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-xl py-0 animate-fade-in z-50 overflow-hidden flex flex-col">
+        <div className="absolute right-0 top-9 w-80 md:w-[360px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-sm shadow-xl py-0 animate-fade-in z-50 overflow-hidden flex flex-col">
           {/* Header */}
           <div className="flex justify-between items-center px-4 py-3 border-b border-zinc-100 dark:border-zinc-900 bg-zinc-50/50 dark:bg-zinc-950/50">
             <div className="flex items-center gap-2">
               <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">Notifications</h3>
               {unreadCount > 0 && (
-                <span className="px-1.5 py-0.5 bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-[9px] font-bold rounded-md uppercase tracking-wider">
+                <span className="px-1.5 py-0.5 bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-[9px] font-bold rounded-sm uppercase tracking-wider">
                   {unreadCount} unread
                 </span>
               )}
@@ -131,7 +131,7 @@ export function NotificationBell() {
               {unreadCount > 0 && (
                 <button
                   onClick={() => markAllAsRead()}
-                  className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors cursor-pointer uppercase tracking-wider"
+                  className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-sm transition-colors cursor-pointer uppercase tracking-wider"
                   title="Mark all as read"
                 >
                   <Check className="h-3 w-3" />
@@ -141,7 +141,7 @@ export function NotificationBell() {
               {notifications.length > 0 && (
                 <button
                   onClick={() => clearNotifications()}
-                  className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors cursor-pointer uppercase tracking-wider"
+                  className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-sm transition-colors cursor-pointer uppercase tracking-wider"
                   title="Clear all notifications"
                 >
                   <Trash2 className="h-3 w-3" />
@@ -150,7 +150,7 @@ export function NotificationBell() {
               )}
               <button
                 onClick={() => fetchNotifications()}
-                className="p-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 dark:hover:text-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors cursor-pointer"
+                className="p-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 dark:hover:text-zinc-100 dark:hover:bg-zinc-800 rounded-sm transition-colors cursor-pointer"
                 title="Refresh notifications"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
@@ -180,7 +180,7 @@ export function NotificationBell() {
                     }`}
                   >
                     {/* Icon container */}
-                    <div className={`w-8 h-8 rounded-lg ${conf.bg} ${conf.text} flex items-center justify-center shrink-0 mt-0.5 shadow-sm`}>
+                    <div className={`w-8 h-8 rounded-sm ${conf.bg} ${conf.text} flex items-center justify-center shrink-0 mt-0.5 shadow-sm`}>
                       <conf.Icon className="h-4 w-4" />
                     </div>
 
