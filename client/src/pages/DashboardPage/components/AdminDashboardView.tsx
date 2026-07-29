@@ -9,7 +9,6 @@ import { DataTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import SummaryCard from "@/components/dashboard/summary-card";
 import { StatsGrid } from "@/components/stats-grid";
-import { Skeleton } from "@/components/ui/skeleton";
 import DashboardSkeleton from "@/components/dashboard/dashboard-skeleton";
 
 function formatBytes(bytes: number): string {

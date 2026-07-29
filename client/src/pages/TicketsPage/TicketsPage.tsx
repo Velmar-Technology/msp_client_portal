@@ -353,7 +353,7 @@ export function TicketsPage() {
           {
             id: "status",
             value: statusFilter,
-            onChange: (val) => {
+            onChange: (val: string) => {
               setStatusFilter(val);
               setPage(1);
             },
@@ -370,7 +370,7 @@ export function TicketsPage() {
           ...(devices.length > 0 ? [{
             id: "device",
             value: deviceFilter,
-            onChange: (val) => {
+            onChange: (val: string) => {
               setDeviceFilter(val);
               setPage(1);
             },
