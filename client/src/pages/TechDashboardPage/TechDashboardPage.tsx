@@ -63,7 +63,7 @@ function SLACountdownRow({ ticket, onNavigate }: { ticket: Ticket; onNavigate: (
   );
 }
 
-export function TechDashboard() {
+export function TechDashboardPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -244,8 +244,14 @@ export function TechDashboard() {
   });
 
   // Client-side pagination
-  const ticketsLimit = 10;
+  const [ticketsLimit, setTicketsLimit] = useState(10);
   const [ticketPage, setTicketPage] = useState(1);
+
+  const handleTicketLimitChange = (val: number) => {
+    setTicketsLimit(val);
+    setTicketPage(1);
+  };
+
   const ticketTotalPages = Math.ceil(filteredTickets.length / ticketsLimit);
   const paginatedTickets = filteredTickets.slice(
     (ticketPage - 1) * ticketsLimit,
@@ -423,6 +429,7 @@ export function TechDashboard() {
               totalItems: filteredTickets.length,
               limit: ticketsLimit,
               onPageChange: setTicketPage,
+              onLimitChange: handleTicketLimitChange,
             }}
           />
         </div>
@@ -430,3 +437,5 @@ export function TechDashboard() {
     </Page>
   );
 }
+
+export default TechDashboardPage;

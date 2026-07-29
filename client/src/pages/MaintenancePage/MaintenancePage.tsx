@@ -288,7 +288,7 @@ export function MaintenancePage() {
       subtitle={t("maintenance.subtitle")}
       isLoading={loading}
     >
-      <div className="max-w-7xl mx-auto space-y-4">
+      <div className="space-y-4">
         {/* Top Control Bar */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white dark:bg-zinc-950 p-4 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm">
           {/* Calendar Month Navigation */}

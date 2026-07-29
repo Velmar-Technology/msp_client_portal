@@ -9,9 +9,9 @@ import { TicketsPage } from "@/pages/TicketsPage";
 import { TicketDetailPage } from "@/pages/TicketDetailPage";
 import { PlansPage } from "@/pages/PlansPage";
 import { BillingPage } from "@/pages/BillingPage";
-import { FinancialDashboard } from "@/pages/FinancialDashboard";
+import { FinancialPage } from "@/pages/FinancialPage";
 import { ProfilePage } from "@/pages/ProfilePage";
-import { TechDashboard } from "@/pages/TechDashboard";
+import { TechDashboardPage } from "@/pages/TechDashboardPage";
 import { HelpPage } from "@/pages/HelpPage";
 import { TermsPage } from "@/pages/TermsPage";
 import { PrivacyPage } from "@/pages/PrivacyPage";
@@ -33,14 +33,14 @@ export interface AppRouteConfig {
 export const protectedRoutes: AppRouteConfig[] = [
   // Client Routes
   { path: "/dashboard", element: <DashboardPage />, allowedRoles: ["CLIENT", "ADMIN"] },
-  { path: "/financial", element: <FinancialDashboard />, allowedRoles: ["ADMIN"] },
+  { path: "/financial", element: <FinancialPage />, allowedRoles: ["ADMIN"] },
   { path: "/plans", element: <PlansPage />, allowedRoles: ["CLIENT", "ADMIN"] },
   { path: "/billing", element: <BillingPage />, allowedRoles: ["CLIENT", "ADMIN"] },
   { path: "/devices", element: <DevicesPage />, allowedRoles: ["CLIENT", "ADMIN"] },
   { path: "/maintenance", element: <MaintenancePage /> },
 
   // Tech/Admin Routes
-  { path: "/tech/dashboard", element: <TechDashboard />, allowedRoles: ["TECHNICIAN"] },
+  { path: "/tech/dashboard", element: <TechDashboardPage />, allowedRoles: ["TECHNICIAN"] },
   { path: "/admin/dashboard", element: <Navigate to="/dashboard" replace />, allowedRoles: ["ADMIN"] },
   { path: "/admin/users", element: <UserManagementPage />, allowedRoles: ["ADMIN"] },
   // Shared Routes

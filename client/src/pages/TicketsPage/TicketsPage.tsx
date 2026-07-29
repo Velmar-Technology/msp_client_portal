@@ -144,6 +144,7 @@ export function TicketsPage() {
     setAlertWarningMessage,
     totalPages,
     limit,
+    handleLimitChange,
 
     handleBulkCancelClick,
     confirmBulkCancel,
@@ -393,6 +394,7 @@ export function TicketsPage() {
           totalItems: total,
           limit,
           onPageChange: setPage,
+          onLimitChange: handleLimitChange,
         }}
       />
 

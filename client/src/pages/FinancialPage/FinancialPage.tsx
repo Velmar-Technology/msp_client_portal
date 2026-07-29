@@ -9,8 +9,9 @@ import { TransactionsTable } from "@/components/financial/TransactionsTable";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { LogExpenseDialog } from "@/components/financial/LogExpenseDialog";
+import { Page } from "@/components/Page";
 
-export function FinancialDashboard() {
+export function FinancialPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
@@ -38,29 +39,20 @@ export function FinancialDashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] bg-zinc-50/50 dark:bg-zinc-950/20">
-        <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
-      </div>
+      <Page title={t("financial.title")} subtitle={t("financial.subtitle")} isLoading={true}>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
+        </div>
+      </Page>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 md:p-6 bg-zinc-50/50 dark:bg-zinc-950/20 min-h-[calc(100vh-4rem)]">
-      {/* 1. Header Section: Title and Filters */}
-      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-zinc-100 pb-4 dark:border-zinc-900">
-        <div>
-          <h1
-            className="text-lg font-bold text-zinc-900 dark:text-zinc-50 tracking-tight"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            {t("financial.title")}
-          </h1>
-          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
-            {t("financial.subtitle")}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
+    <Page
+      title={t("financial.title")}
+      subtitle={t("financial.subtitle")}
+      actions={
+        <>
           {/* Date Selector */}
           <select
             value={dateRange}
@@ -88,40 +80,44 @@ export function FinancialDashboard() {
           {isAdmin && (
             <LogExpenseDialog onExpenseLogged={refresh} />
           )}
-        </div>
-      </header>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        {/* KPI Summary Cards (Top Row) */}
+        <section aria-label="KPI Metrics">
+          <KpiCards kpis={kpis} />
+        </section>
 
-      {/* 2. KPI Summary Cards (Top Row) */}
-      <section aria-label="KPI Metrics">
-        <KpiCards kpis={kpis} />
-      </section>
+        {/* Interactive Charts Section (Middle Grid) */}
+        <section className="grid grid-cols-1 gap-4 lg:grid-cols-3" aria-label="Financial Trends">
+          {/* Left: Revenue vs Expenses (Col-span 2) */}
+          <div className="lg:col-span-2">
+            <RevenueChart
+              data={monthlyData}
+              hoveredIndex={hoveredMonthIndex}
+              setHoveredIndex={setHoveredMonthIndex}
+            />
+          </div>
+          
+          {/* Right: Expense Breakdown (Col-span 1) */}
+          <div className="lg:col-span-1">
+            <ExpenseDoughnut
+              categories={expenseCategories}
+              hoveredIndex={hoveredCategoryIndex}
+              setHoveredIndex={setHoveredCategoryIndex}
+              totalExpenses={totalExpensesFormatted}
+            />
+          </div>
+        </section>
 
-      {/* 3. Interactive Charts Section (Middle Grid) */}
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3" aria-label="Financial Trends">
-        {/* Left: Revenue vs Expenses (Col-span 2) */}
-        <div className="lg:col-span-2">
-          <RevenueChart
-            data={monthlyData}
-            hoveredIndex={hoveredMonthIndex}
-            setHoveredIndex={setHoveredMonthIndex}
-          />
-        </div>
-        
-        {/* Right: Expense Breakdown (Col-span 1) */}
-        <div className="lg:col-span-1">
-          <ExpenseDoughnut
-            categories={expenseCategories}
-            hoveredIndex={hoveredCategoryIndex}
-            setHoveredIndex={setHoveredCategoryIndex}
-            totalExpenses={totalExpensesFormatted}
-          />
-        </div>
-      </section>
-
-      {/* 4. Recent Transactions Section (Bottom Table) */}
-      <section aria-label="Ledger Movements" className="mt-1">
-        <TransactionsTable transactions={transactions} />
-      </section>
-    </div>
+        {/* Recent Transactions Section (Bottom Table) */}
+        <section aria-label="Ledger Movements" className="mt-1">
+          <TransactionsTable transactions={transactions} />
+        </section>
+      </div>
+    </Page>
   );
 }
+
+export default FinancialPage;

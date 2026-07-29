@@ -545,6 +545,8 @@
   "billing": {
     "title": "Billing History",
     "subtitle": "View and manage your invoices and payment history",
+    "searchPlaceholder": "Search invoices...",
+    "allStatuses": "All Statuses",
     "tableInvoiceNo": "Invoice No.",
     "tableDate": "Date",
     "tableDueDate": "Due Date",

@@ -676,7 +676,7 @@ export function DevicesPage() {
   if (loading) {
     return (
       <Page title={t("nav.devices")} subtitle={t("devices.subtitle")} isLoading={false}>
-        <div className="max-w-7xl mx-auto space-y-4">
+        <div className="space-y-4">
           <div className="space-y-4 text-on-surface animate-fade-in">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
               <div className="lg:col-span-3 space-y-4">
@@ -693,7 +693,7 @@ export function DevicesPage() {
 
   return (
     <Page title={t("nav.devices")} subtitle={t("devices.subtitle")} isLoading={false}>
-      <div className="max-w-7xl mx-auto space-y-4">
+      <div className="space-y-4">
         {activeSubscriptions.length === 0 && !loading && !isAdmin ? (
           <div className="flex items-center justify-center min-h-[60vh]">
             <EmptySubscriptionsCard onBrowsePlans={() => navigate("/plans")} />

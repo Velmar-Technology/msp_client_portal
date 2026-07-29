@@ -2,6 +2,7 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MaxWidthWrapper } from '@/components/max-width-wrapper';
 
 export interface PageProps extends Omit<React.ComponentPropsWithoutRef<'div'>, 'title'> {
   title?: React.ReactNode;
@@ -22,8 +23,8 @@ export function Page({
   ...props
 }: PageProps) {
   return (
-    <div
-      className={cn('animate-fade-in max-w-7xl mx-auto w-full text-zinc-900 dark:text-zinc-50', className)}
+    <MaxWidthWrapper
+      className={cn('animate-fade-in text-zinc-900 dark:text-zinc-50', className)}
       {...props}
     >
       {showBreadcrumbs && <Breadcrumbs className="mb-4 text-zinc-500 dark:text-zinc-400" />}
@@ -58,6 +59,6 @@ export function Page({
         </div>
       )}
       {children}
-    </div>
+    </MaxWidthWrapper>
   );
 }

@@ -9,7 +9,7 @@ interface SummaryCardProps {
 
 export default function SummaryCard({ icon, badge, title, value, subtitle, footer }: SummaryCardProps) {
   return (
-    <div className="bg-white dark:bg-zinc-900/30 border border-zinc-200/60 dark:border-zinc-800/80 p-3.5 rounded-lg flex flex-col justify-between shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-200 hover:border-zinc-300 dark:hover:border-zinc-700/80 hover:shadow-[0_2px_8px_-3px_rgba(0,0,0,0.05)]">
+    <div className="bg-white dark:bg-zinc-900/30 border border-zinc-200/60 dark:border-zinc-800/80 p-3.5 rounded-lg flex flex-col justify-between shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-200 hover:border-zinc-300 dark:hover:border-zinc-700/80 hover:shadow-[0_2px_8px_-3px_rgba(0,0,0,0.05)] min-h-[120px]">
       <div>
         <div className="flex justify-between items-center mb-2">
           <div className="p-1.5 bg-zinc-100 dark:bg-zinc-800/60 rounded">{icon}</div>

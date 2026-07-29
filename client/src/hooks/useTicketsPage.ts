@@ -24,8 +24,12 @@ export function useTicketsPage() {
   const [alertWarningMessage, setAlertWarningMessage] = useState<string | null>(null);
   const [deviceFilter, setDeviceFilter] = useState("");
   const [devices, setDevices] = useState<SubscriptionEquipment[]>([]);
+  const [limit, setLimit] = useState(10);
 
-  const limit = 10;
+  const handleLimitChange = useCallback((value: number) => {
+    setLimit(value);
+    setPage(1);
+  }, []);
 
   // Handle modal trigger from location state
   useEffect(() => {
@@ -67,7 +71,7 @@ export function useTicketsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter, search, deviceFilter]);
+  }, [page, limit, statusFilter, search, deviceFilter]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -161,6 +165,7 @@ export function useTicketsPage() {
     setAlertWarningMessage,
     totalPages,
     limit,
+    handleLimitChange,
     loadTickets,
     handleBulkCancelClick,
     confirmBulkCancel,

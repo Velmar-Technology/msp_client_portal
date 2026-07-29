@@ -544,6 +544,8 @@
   "billing": {
     "title": "Historial de Facturación",
     "subtitle": "Consulte y gestione sus facturas e historial de pagos",
+    "searchPlaceholder": "Buscar facturas...",
+    "allStatuses": "Todos los Estados",
     "tableInvoiceNo": "Núm. Factura",
     "tableDate": "Fecha",
     "tableDueDate": "Fecha Venc.",

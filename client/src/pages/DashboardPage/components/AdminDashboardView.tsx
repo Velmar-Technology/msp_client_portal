@@ -9,6 +9,8 @@ import { DataTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import SummaryCard from "@/components/dashboard/summary-card";
 import { StatsGrid } from "@/components/stats-grid";
+import { Skeleton } from "@/components/ui/skeleton";
+import DashboardSkeleton from "@/components/dashboard/dashboard-skeleton";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -281,13 +283,7 @@ export function AdminDashboardView() {
   } = useAdminDashboard();
 
   if (loading) {
-    return (
-      <Page title={t("dashboard.systemOverview")} subtitle={t("dashboard.systemStatus")}>
-        <div className="flex items-center justify-center h-64">
-          <div className="w-6 h-6 border-2 border-zinc-200 dark:border-zinc-700 border-t-zinc-900 dark:border-t-zinc-100 rounded-full animate-spin" />
-        </div>
-      </Page>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (

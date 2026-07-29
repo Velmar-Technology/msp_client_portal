@@ -5,27 +5,30 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 import { TopNav } from "@/components/layout/TopNav";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { useAppLayout } from "@/hooks/useAppLayout";
+import { MaxWidthWrapper } from "@/components/max-width-wrapper";
 
 // 1. High-Density Footer Sub-component
 export function Footer() {
   const { t } = useTranslation();
 
   return (
-    <footer className="flex flex-col md:flex-row justify-between items-center px-4 md:px-8 py-1.5 mt-auto bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 w-full gap-2 text-[10px] md:text-xs">
-      <span className="text-zinc-500">
-        {t("footer.copyright")}
-      </span>
-      <div className="flex gap-4">
-        <Link to="/help" className="text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">
-          {t("footer.help")}
-        </Link>
-        <Link to="/terms" className="text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">
-          {t("footer.terms")}
-        </Link>
-        <Link to="/privacy" className="text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">
-          {t("footer.privacy")}
-        </Link>
-      </div>
+    <footer className="w-full mt-auto bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 py-1.5">
+      <MaxWidthWrapper className="flex flex-col md:flex-row justify-between items-center gap-2 text-[10px] md:text-xs">
+        <span className="text-zinc-500">
+          {t("footer.copyright")}
+        </span>
+        <div className="flex gap-4">
+          <Link to="/help" className="text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">
+            {t("footer.help")}
+          </Link>
+          <Link to="/terms" className="text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">
+            {t("footer.terms")}
+          </Link>
+          <Link to="/privacy" className="text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">
+            {t("footer.privacy")}
+          </Link>
+        </div>
+      </MaxWidthWrapper>
     </footer>
   );
 }
