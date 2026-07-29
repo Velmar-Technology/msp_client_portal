@@ -21,7 +21,7 @@ RUN npm install --legacy-peer-deps --no-audit --no-fund lightningcss-linux-x64-g
 COPY packages/errors ./packages/errors
 RUN npm run build:packages
 
-# Copy client and build production bundle
+# Copy client and build production bundle (invalidates cache for VITE_GOOGLE_CLIENT_ID)
 ARG VITE_GOOGLE_CLIENT_ID
 ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 
