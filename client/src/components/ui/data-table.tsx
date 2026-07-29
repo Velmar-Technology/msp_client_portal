@@ -306,50 +306,50 @@ export function DataTable<TData, TValue>({
             )}
           </TableBody>
         </Table>
-      </div>
 
-      {/* 4. Footer Pagination controls */}
-      {pagination && (
-        <div className="flex justify-between items-center px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-sm shadow-sm">
-          <span className="text-[10px] md:text-xs text-zinc-500 dark:text-zinc-400 font-medium font-mono">
-            {pagination.showingText || defaultShowingText}
-          </span>
-          <div className="flex items-center gap-2">
-            {pagination.onLimitChange && (
-              <select
-                value={pagination.limit}
-                onChange={(e) => pagination.onLimitChange?.(Number(e.target.value))}
-                className="px-2 h-6 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-sm text-[10px] focus:outline-none cursor-pointer text-zinc-700 dark:text-zinc-300 font-semibold"
-              >
-                <option value={5}>5 per page</option>
-                <option value={10}>10 per page</option>
-                <option value={20}>20 per page</option>
-                <option value={50}>50 per page</option>
-              </select>
-            )}
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-30 cursor-pointer rounded-sm"
-                disabled={pagination.page <= 1}
-                onClick={() => pagination.onPageChange(Math.max(1, pagination.page - 1))}
-              >
-                <ChevronLeft className="h-3 w-3" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-30 cursor-pointer rounded-sm"
-                disabled={pagination.page >= pagination.totalPages}
-                onClick={() => pagination.onPageChange(Math.min(pagination.totalPages, pagination.page + 1))}
-              >
-                <ChevronRight className="h-3 w-3" />
-              </Button>
+        {/* Footer Pagination controls */}
+        {pagination && (
+          <div className="flex items-center justify-between pt-2.5 pb-2.5 px-3.5 border-t border-zinc-100 dark:border-zinc-900 bg-zinc-50/20 dark:bg-zinc-900/10">
+            <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 font-mono">
+              {pagination.showingText || defaultShowingText}
+            </span>
+            <div className="flex items-center gap-2">
+              {pagination.onLimitChange && (
+                <select
+                  value={pagination.limit}
+                  onChange={(e) => pagination.onLimitChange?.(Number(e.target.value))}
+                  className="px-2 h-6 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-sm text-[10px] focus:outline-none cursor-pointer text-zinc-700 dark:text-zinc-300 font-semibold"
+                >
+                  <option value={5}>5 per page</option>
+                  <option value={10}>10 per page</option>
+                  <option value={20}>20 per page</option>
+                  <option value={50}>50 per page</option>
+                </select>
+              )}
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-30 cursor-pointer"
+                  disabled={pagination.page <= 1}
+                  onClick={() => pagination.onPageChange(Math.max(1, pagination.page - 1))}
+                >
+                  <ChevronLeft className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-30 cursor-pointer"
+                  disabled={pagination.page >= pagination.totalPages}
+                  onClick={() => pagination.onPageChange(Math.min(pagination.totalPages, pagination.page + 1))}
+                >
+                  <ChevronRight className="h-3 w-3" />
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
