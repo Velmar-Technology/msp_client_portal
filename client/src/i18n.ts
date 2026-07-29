@@ -37,4 +37,8 @@ i18n
     },
   });
 
+i18n.on('languageChanged', (lng) => {
+  localStorage.setItem('language', lng);
+});
+
 export default i18n;

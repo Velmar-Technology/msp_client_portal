@@ -106,19 +106,19 @@
     background-color: var(--color-background);
     color: var(--color-on-surface);
     line-height: 1.5;
-    min-height: 125vh;
+    min-height: 100vh;
   }
 
   .min-h-screen {
-    min-height: 125vh !important;
+    min-height: 100vh !important;
   }
 
   .min-h-svh {
-    min-height: 125svh !important;
+    min-height: 100svh !important;
   }
 
   .h-svh {
-    height: 125svh !important;
+    height: 100svh !important;
   }
 }
 
