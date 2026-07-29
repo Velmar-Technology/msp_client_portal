@@ -10,6 +10,7 @@ import { Inbox, Search, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDo
 import { Empty, EmptyHeader, EmptyTitle, EmptyMedia } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 // ─── Canonical Column Header ────────────────────────────────────────────────
 // Re-usable header component with standardized styling and optional sort toggle.
@@ -309,8 +310,8 @@ export function DataTable<TData, TValue>({
 
       {/* 4. Footer Pagination controls */}
       {pagination && (
-        <div className="flex justify-between items-center px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-sm">
-          <span className="text-[10px] md:text-xs text-zinc-500 font-medium font-mono">
+        <div className="flex justify-between items-center px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-sm shadow-sm">
+          <span className="text-[10px] md:text-xs text-zinc-500 dark:text-zinc-400 font-medium font-mono">
             {pagination.showingText || defaultShowingText}
           </span>
           <div className="flex items-center gap-2">
@@ -318,7 +319,7 @@ export function DataTable<TData, TValue>({
               <select
                 value={pagination.limit}
                 onChange={(e) => pagination.onLimitChange?.(Number(e.target.value))}
-                className="px-2 h-7 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md text-[10px] focus:outline-none cursor-pointer text-zinc-755 dark:text-zinc-250 font-semibold"
+                className="px-2 h-6 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-sm text-[10px] focus:outline-none cursor-pointer text-zinc-700 dark:text-zinc-300 font-semibold"
               >
                 <option value={5}>5 per page</option>
                 <option value={10}>10 per page</option>
@@ -326,21 +327,25 @@ export function DataTable<TData, TValue>({
                 <option value={50}>50 per page</option>
               </select>
             )}
-            <div className="flex gap-1">
-              <button
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-30 cursor-pointer rounded-sm"
+                disabled={pagination.page <= 1}
                 onClick={() => pagination.onPageChange(Math.max(1, pagination.page - 1))}
-                disabled={pagination.page === 1}
-                className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-30 transition-colors cursor-pointer border border-zinc-200 dark:border-zinc-800"
               >
-                <ChevronLeft className="h-3.5 w-3.5 text-zinc-700 dark:text-zinc-300" />
-              </button>
-              <button
-                onClick={() => pagination.onPageChange(Math.min(pagination.totalPages, pagination.page + 1))}
+                <ChevronLeft className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-30 cursor-pointer rounded-sm"
                 disabled={pagination.page >= pagination.totalPages}
-                className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-30 transition-colors cursor-pointer border border-zinc-200 dark:border-zinc-800"
+                onClick={() => pagination.onPageChange(Math.min(pagination.totalPages, pagination.page + 1))}
               >
-                <ChevronRight className="h-3.5 w-3.5 text-zinc-700 dark:text-zinc-300" />
-              </button>
+                <ChevronRight className="h-3 w-3" />
+              </Button>
             </div>
           </div>
         </div>
