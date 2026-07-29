@@ -60,6 +60,8 @@ jobs:
           context: .
           file: client/Dockerfile
           push: true
+          build-args: |
+            VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }}
           tags: |
             ghcr.io/${{ env.OWNER_LC }}/msp-helpdesk-client:latest
             ghcr.io/${{ env.OWNER_LC }}/msp-helpdesk-client:${{ github.sha }}

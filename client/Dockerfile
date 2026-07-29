@@ -22,6 +22,9 @@ COPY packages/errors ./packages/errors
 RUN npm run build:packages
 
 # Copy client and build production bundle
+ARG VITE_GOOGLE_CLIENT_ID
+ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
+
 COPY client ./client
 RUN npm -w client run build
 
