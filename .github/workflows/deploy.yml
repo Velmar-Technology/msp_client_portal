@@ -54,6 +54,17 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Verify Client Secrets
+        run: |
+          if [ -n "${SECRET_VAL}" ]; then
+            echo "✅ Google Client ID secret found for Vite build."
+          else
+            echo "⚠️ WARNING: Neither VITE_GOOGLE_CLIENT_ID nor GOOGLE_CLIENT_ID secret was found in GitHub Secrets!"
+            echo "Vite frontend will be built in Sandbox mode."
+          fi
+        env:
+          SECRET_VAL: ${{ secrets.VITE_GOOGLE_CLIENT_ID || secrets.GOOGLE_CLIENT_ID }}
+
       - name: Build & Push Client Image
         uses: docker/build-push-action@v5
         with:
@@ -61,7 +72,7 @@ jobs:
           file: client/Dockerfile
           push: true
           build-args: |
-            VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+            VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID || secrets.GOOGLE_CLIENT_ID }}
           tags: |
             ghcr.io/${{ env.OWNER_LC }}/msp-helpdesk-client:latest
             ghcr.io/${{ env.OWNER_LC }}/msp-helpdesk-client:${{ github.sha }}
