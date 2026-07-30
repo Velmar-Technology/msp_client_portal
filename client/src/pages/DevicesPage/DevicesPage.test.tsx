@@ -17,6 +17,7 @@ vi.mock('@/services/subscriptionService', () => ({
 vi.mock('@/services/equipmentService', () => ({
   equipmentService: {
     getSlots: vi.fn(),
+    getMyDevices: vi.fn(),
     generateOTP: vi.fn(),
     activateSlot: vi.fn(),
     deactivateSlot: vi.fn(),
@@ -111,6 +112,7 @@ describe('DevicesPage', () => {
 
   test('renders empty state when client has no active subscriptions', async () => {
     vi.mocked(subscriptionService.getAll).mockResolvedValue([]);
+    vi.mocked(equipmentService.getMyDevices).mockResolvedValue([]);
 
     render(
       <MemoryRouter>
@@ -174,9 +176,7 @@ describe('DevicesPage', () => {
       },
     ];
 
-    vi.mocked(equipmentService.getSlots).mockImplementation(async () => {
-      return [...mockSlots];
-    });
+    vi.mocked(equipmentService.getMyDevices).mockResolvedValue([...mockSlots]);
 
     vi.mocked(equipmentService.generateOTP).mockImplementation(async (subId, slotIndex) => {
       mockSlots[slotIndex].otp = '123456';
@@ -308,7 +308,7 @@ describe('DevicesPage', () => {
       },
     ];
     vi.mocked(subscriptionService.getAll).mockResolvedValue(activeSubs);
-    vi.mocked(equipmentService.getSlots).mockResolvedValue([]);
+    vi.mocked(equipmentService.getMyDevices).mockResolvedValue([]);
 
     render(
       <MemoryRouter>
@@ -366,7 +366,7 @@ describe('DevicesPage', () => {
         updated_at: '2026-06-22',
       },
     ]);
-    vi.mocked(equipmentService.getSlots).mockResolvedValue(mockSlots);
+    vi.mocked(equipmentService.getMyDevices).mockResolvedValue(mockSlots);
 
     render(
       <MemoryRouter>
@@ -539,6 +539,7 @@ describe('DevicesPage', () => {
   });
 
   test('opens Nextcloud info modal from Actions menu on active device slot', async () => {
+    mockUser.role = 'CLIENT';
     const activeSub = {
       id: 'sub-nc-test',
       client_id: 'user-client',
@@ -568,7 +569,7 @@ describe('DevicesPage', () => {
     };
 
     vi.mocked(subscriptionService.getAll).mockResolvedValue([activeSub]);
-    vi.mocked(equipmentService.getSlots).mockResolvedValue([mockSlot]);
+    vi.mocked(equipmentService.getMyDevices).mockResolvedValue([mockSlot]);
     vi.mocked(equipmentService.getNextcloudInfo).mockResolvedValue({
       nextcloud_username: 'client_tenant1_slot_1',
       nextcloud_password: 'nc_password_123',

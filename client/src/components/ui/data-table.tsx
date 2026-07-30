@@ -320,10 +320,10 @@ export function DataTable<TData, TValue>({
                   onChange={(e) => pagination.onLimitChange?.(Number(e.target.value))}
                   className="px-2 h-6 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-sm text-[10px] focus:outline-none cursor-pointer text-zinc-700 dark:text-zinc-300 font-semibold"
                 >
-                  <option value={5}>5 per page</option>
-                  <option value={10}>10 per page</option>
-                  <option value={20}>20 per page</option>
-                  <option value={50}>50 per page</option>
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
                 </select>
               )}
               <div className="flex items-center gap-1">

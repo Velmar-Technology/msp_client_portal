@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react";
-import { X, Laptop, Loader2, MoreHorizontal, Wrench, Cloud } from "lucide-react";
+import { memo, useCallback, useState, useMemo } from "react";
+import { X, Laptop, Loader2, MoreHorizontal, Cloud } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDevicesPage } from "@/hooks/useDevicesPage";
 import type { Subscription } from "@/services/subscriptionService";
@@ -25,7 +25,9 @@ interface EmptySubscriptionsCardProps {
   onBrowsePlans: () => void;
 }
 
-export function EmptySubscriptionsCard({ onBrowsePlans }: EmptySubscriptionsCardProps) {
+export const EmptySubscriptionsCard = memo(function EmptySubscriptionsCard({
+  onBrowsePlans,
+}: EmptySubscriptionsCardProps) {
   const { t } = useTranslation();
   return (
     <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 shadow-sm flex flex-col items-center justify-center text-center space-y-3 max-w-md mx-auto">
@@ -44,7 +46,7 @@ export function EmptySubscriptionsCard({ onBrowsePlans }: EmptySubscriptionsCard
       </button>
     </div>
   );
-}
+});
 
 // 2. High-Density Subscription Selector Sub-component
 interface SubscriptionSelectorProps {
@@ -53,7 +55,11 @@ interface SubscriptionSelectorProps {
   onChange: (id: string) => void;
 }
 
-export function SubscriptionSelector({ subscriptions, selectedId, onChange }: SubscriptionSelectorProps) {
+export const SubscriptionSelector = memo(function SubscriptionSelector({
+  subscriptions,
+  selectedId,
+  onChange,
+}: SubscriptionSelectorProps) {
   const { t } = useTranslation();
   return (
     <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 shadow-sm max-w-sm">
@@ -77,7 +83,7 @@ export function SubscriptionSelector({ subscriptions, selectedId, onChange }: Su
       </select>
     </div>
   );
-}
+});
 
 // 4. Decoupled Activation Wizard Modal Sub-component
 interface ActivationWizardModalProps {
@@ -94,7 +100,7 @@ interface ActivationWizardModalProps {
   slotsEquipment: Partial<SubscriptionEquipment>[];
 }
 
-export function ActivationWizardModal({
+export const ActivationWizardModal = memo(function ActivationWizardModal({
   slotIdx,
   step,
   deviceName,
@@ -332,7 +338,86 @@ export function ActivationWizardModal({
       </div>
     </div>
   );
+});
+
+// 5. Memoized Actions Cell to prevent cross-row re-renders on dropdown open/close
+interface DeviceActionsCellProps {
+  equip: Partial<SubscriptionEquipment>;
+  rowIndex: number;
+  targetSubId: string | undefined;
+  onOpenNcModal: (equip: Partial<SubscriptionEquipment>) => void;
+  onOpenScheduleMaint: (equip: Partial<SubscriptionEquipment>) => void;
+  onRevokeEquipment: (subId: string, slotIndex: number) => void;
+  onStartActivationWizard: (subId: string, slotIndex: number, otp: string | null) => void;
+  onGenerateOTP: (subId: string, slotIndex: number) => void;
 }
+
+const DeviceActionsCell = memo(function DeviceActionsCell({
+  equip,
+  rowIndex,
+  targetSubId,
+  onOpenNcModal,
+  onOpenScheduleMaint,
+  onRevokeEquipment,
+  onStartActivationWizard,
+  onGenerateOTP,
+}: DeviceActionsCellProps) {
+  const { t } = useTranslation();
+  const idx = equip.slot_index !== undefined ? equip.slot_index : rowIndex;
+
+  return (
+    <div className="text-right" onClick={(e) => e.stopPropagation()}>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            aria-label={t("devices.tableActions")}
+            className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-md border border-transparent hover:border-zinc-200 dark:hover:border-zinc-850 cursor-pointer transition-colors"
+          >
+            <MoreHorizontal className="h-3.5 w-3.5 text-zinc-505" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="end"
+          className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 w-36"
+        >
+          <DropdownMenuLabel className="text-xs">{t("devices.actionsLabel")}</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {equip.status === "ACTIVE" ? (
+            <>
+              {equip.nextcloud_username && (
+                <DropdownMenuItem onClick={() => onOpenNcModal(equip)}>
+                  {t("devices.actionNextcloudInfo")}
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={() => onOpenScheduleMaint(equip)}>
+                {t("maintenance.scheduleBtn")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => targetSubId && onRevokeEquipment(targetSubId, idx)}
+              >
+                {t("devices.actionDeactivate")}
+              </DropdownMenuItem>
+            </>
+          ) : equip.otp ? (
+            <>
+              <DropdownMenuItem onClick={() => targetSubId && onStartActivationWizard(targetSubId, idx, equip.otp!)}>
+                {t("devices.actionSimulate")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => targetSubId && onGenerateOTP(targetSubId, idx)}>
+                {t("devices.actionRegenerate")}
+              </DropdownMenuItem>
+            </>
+          ) : (
+            <DropdownMenuItem onClick={() => targetSubId && onStartActivationWizard(targetSubId, idx, null)}>
+              {t("devices.actionGenerate")}
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+});
 
 // 6. Parent Dashboard Page
 export function DevicesPage() {
@@ -360,7 +445,6 @@ export function DevicesPage() {
     activeSub,
     filteredEquipment,
     paginatedEquipment,
-    fetchActiveSubscriptions,
     handleGenerateOTP,
     handleRevokeEquipment,
     handleStartActivationWizard,
@@ -372,8 +456,9 @@ export function DevicesPage() {
     setSelectedPlan,
     selectedStatus,
     setSelectedStatus,
-    uniqueClients,
-    uniquePlans,
+    clientFilterOptions,
+    planFilterOptions,
+    statusFilterOptions,
     page,
     setPage,
     limit,
@@ -399,262 +484,293 @@ export function DevicesPage() {
   const handleCloseWizard = useCallback(() => {
     setActivationWizardSubId(null);
     setActivationWizardSlotIdx(null);
-    fetchActiveSubscriptions();
-  }, [fetchActiveSubscriptions, setActivationWizardSubId, setActivationWizardSlotIdx]);
+  }, [setActivationWizardSubId, setActivationWizardSlotIdx]);
 
-  const equipmentColumns = useCallback(
-    (sub?: Subscription): ColumnDef<Partial<SubscriptionEquipment>>[] => {
-      const cols: ColumnDef<Partial<SubscriptionEquipment>>[] = [];
+  const handleCloseMaintModal = useCallback(() => {
+    setIsMaintModalOpen(false);
+    setMaintModalEquip(null);
+  }, []);
 
-      // Add Client/Tenant column if Admin
-      if (isAdmin) {
-        cols.push({
-          id: "clientInfo",
-          header: () => (
-            <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
-              {t("devices.tableClientTenant")}
-            </span>
-          ),
-          cell: ({ row }) => {
-            const equip = row.original;
-            return (
-              <div className="space-y-0.5">
-                <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                  {equip.client_name || t("devices.unknownClient")}
-                </p>
-                <p className="text-[10px] text-zinc-450 font-mono">{equip.tenant_name || t("devices.unknownTenant")}</p>
-                {equip.client_email && (
-                  <p className="text-[9px] text-zinc-400 truncate max-w-[140px]" title={equip.client_email}>
-                    {equip.client_email}
-                  </p>
-                )}
-              </div>
-            );
-          },
-        });
-      }
+  const handleMaintSuccess = useCallback(() => {
+    handleCloseMaintModal();
+  }, [handleCloseMaintModal]);
 
-      // Add Slot number
+  const handleCloseNcModal = useCallback(() => {
+    setIsNcModalOpen(false);
+    setNcModalEquip(null);
+  }, []);
+
+  const handleBrowsePlans = useCallback(() => {
+    navigate("/plans");
+  }, [navigate]);
+
+  const equipmentColumns = useMemo<ColumnDef<Partial<SubscriptionEquipment>>[]>(() => {
+    const cols: ColumnDef<Partial<SubscriptionEquipment>>[] = [];
+    const sub = activeSub;
+
+    // Add Client/Tenant column if Admin
+    if (isAdmin) {
       cols.push({
-        id: "slotNumber",
+        id: "clientInfo",
         header: () => (
           <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
-            {t("devices.tableSlot")}
+            {t("devices.tableClientTenant")}
           </span>
         ),
         cell: ({ row }) => {
           const equip = row.original;
           return (
             <div className="space-y-0.5">
-              <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                {t("devices.slotNumber", {
-                  num: equip.slot_index !== undefined ? equip.slot_index + 1 : row.index + 1,
-                })}
-              </span>
-              {equip.id && (
-                <p className="text-[9px] text-zinc-400 font-mono truncate max-w-[100px]" title={equip.id}>
-                  {t("devices.idLabel")} {equip.id}
+              <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                {equip.client_name || t("devices.unknownClient")}
+              </p>
+              <p className="text-[10px] text-zinc-450 font-mono">{equip.tenant_name || t("devices.unknownTenant")}</p>
+              {equip.client_email && (
+                <p className="text-[9px] text-zinc-400 truncate max-w-[140px]" title={equip.client_email}>
+                  {equip.client_email}
                 </p>
               )}
             </div>
           );
         },
       });
+    }
 
-      // Add Plan column if Admin
-      if (isAdmin) {
-        cols.push({
-          id: "planInfo",
-          header: () => (
-            <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
-              {t("devices.tablePlanService")}
+    // Add Slot number
+    cols.push({
+      id: "slotNumber",
+      header: () => (
+        <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
+          {t("devices.tableSlot")}
+        </span>
+      ),
+      cell: ({ row }) => {
+        const equip = row.original;
+        return (
+          <div className="space-y-0.5">
+            <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+              {t("devices.slotNumber", {
+                num: equip.slot_index !== undefined ? equip.slot_index + 1 : row.index + 1,
+              })}
             </span>
-          ),
-          cell: ({ row }) => {
-            const equip = row.original;
-            return (
-              <div className="space-y-0.5">
-                <span className="inline-block bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 px-1 rounded text-[9px] font-mono font-bold uppercase">
-                  {equip.plan || t("devices.notAvailable")}
-                </span>
-                <p className="text-xs text-zinc-505 truncate max-w-[140px]">{equip.service_name}</p>
-              </div>
-            );
-          },
-        });
-      }
+            {equip.id && (
+              <p className="text-[9px] text-zinc-400 font-mono truncate max-w-[100px]" title={equip.id}>
+                {t("devices.idLabel")} {equip.id}
+              </p>
+            )}
+          </div>
+        );
+      },
+    });
 
-      // Add Status
+    // Add Plan column if Admin
+    if (isAdmin) {
       cols.push({
-        accessorKey: "status",
+        id: "planInfo",
         header: () => (
           <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
-            {t("devices.tableStatus")}
-          </span>
-        ),
-        cell: ({ row }) => {
-          const status = row.getValue("status") as string;
-          return status === "ACTIVE" ? (
-            <span className="bg-emerald-55 text-emerald-700 border border-emerald-202 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/50 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase">
-              ACTIVE
-            </span>
-          ) : (
-            <span className="bg-amber-55 text-amber-700 border border-amber-202 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/50 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase animate-pulse">
-              {t("devices.statusPendingActivation")}
-            </span>
-          );
-        },
-      });
-
-      // Add Device Details
-      cols.push({
-        id: "deviceDetails",
-        header: () => (
-          <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
-            {t("devices.tableDeviceDetails")}
+            {t("devices.tablePlanService")}
           </span>
         ),
         cell: ({ row }) => {
           const equip = row.original;
-          if (equip.status === "ACTIVE") {
-            return (
-              <div className="space-y-0.5">
-                <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
-                  {equip.device_name || t("devices.unnamedDevice")}
-                </p>
-                <p className="text-[10px] text-zinc-400 font-mono">{equip.device_serial || t("devices.noSerial")}</p>
-              </div>
-            );
-          }
-          if (equip.otp) {
-            return (
-              <div className="bg-zinc-50 dark:bg-zinc-900/30 p-2 rounded border border-zinc-200 dark:border-zinc-800 max-w-[180px]">
-                <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 font-mono select-all">
-                  {t("devices.otpLabel")} {equip.otp}
-                </p>
-                <p className="text-[9px] text-zinc-400 mt-0.5">
-                  {t("devices.otpExpires", {
-                    date: equip.otp_expires_at ? new Date(equip.otp_expires_at).toLocaleString() : "",
-                  })}
-                </p>
-              </div>
-            );
-          }
-          return <p className="text-xs text-zinc-455 italic">{t("devices.emptyLicenseSlot")}</p>;
-        },
-      });
-
-      // Add Cloud Backup Account
-      cols.push({
-        id: "backupAccount",
-        header: () => (
-          <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
-            {t("devices.tableCloudBackup")}
-          </span>
-        ),
-        cell: ({ row }) => {
-          const equip = row.original;
-          if (equip.status === "ACTIVE" && equip.nextcloud_username) {
-            return (
-              <div className="flex items-center gap-1.5">
-                <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50 px-2 py-0.5 rounded text-[10px] font-medium">
-                  <Cloud className="h-3 w-3" />
-                  {t("devices.configured")}
-                </span>
-              </div>
-            );
-          }
-          return <span className="text-xs text-zinc-400">—</span>;
-        },
-      });
-
-      // Add Actions
-      cols.push({
-        id: "actions",
-        header: () => (
-          <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
-            {t("devices.tableActions")}
-          </span>
-        ),
-        cell: ({ row }) => {
-          const equip = row.original;
-          const idx = equip.slot_index !== undefined ? equip.slot_index : row.index;
-          const targetSubId = equip.subscription_id || (sub && sub.id);
-
           return (
-            <div className="text-right" onClick={(e) => e.stopPropagation()}>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    aria-label={t("devices.tableActions")}
-                    className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-md border border-transparent hover:border-zinc-200 dark:hover:border-zinc-850 cursor-pointer transition-colors"
-                  >
-                    <MoreHorizontal className="h-3.5 w-3.5 text-zinc-505" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800"
-                >
-                  <DropdownMenuLabel className="text-xs">{t("devices.actionsLabel")}</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {equip.status === "ACTIVE" ? (
-                    <>
-                      {equip.nextcloud_username && (
-                        <DropdownMenuItem
-                          onClick={() => handleOpenNcModal(equip)}
-                          className="cursor-pointer text-xs flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400"
-                        >
-                          <Cloud className="h-3.5 w-3.5" />
-                          {t("devices.actionNextcloudInfo")}
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem
-                        onClick={() => handleOpenScheduleMaint(equip)}
-                        className="cursor-pointer text-xs flex items-center gap-1.5 font-medium text-primary"
-                      >
-                        <Wrench className="h-3.5 w-3.5" />
-                        {t("maintenance.scheduleBtn")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => targetSubId && handleRevokeEquipment(targetSubId, idx)}
-                        className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer text-xs"
-                      >
-                        {t("devices.actionDeactivate")}
-                      </DropdownMenuItem>
-                    </>
-                  ) : equip.otp ? (
-                    <>
-                      <DropdownMenuItem
-                        onClick={() => targetSubId && handleStartActivationWizard(targetSubId, idx, equip.otp)}
-                        className="cursor-pointer text-xs"
-                      >
-                        {t("devices.actionSimulate")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => targetSubId && handleGenerateOTP(targetSubId, idx)}
-                        className="cursor-pointer text-xs"
-                      >
-                        {t("devices.actionRegenerate")}
-                      </DropdownMenuItem>
-                    </>
-                  ) : (
-                    <DropdownMenuItem
-                      onClick={() => targetSubId && handleStartActivationWizard(targetSubId, idx, null)}
-                      className="cursor-pointer text-xs"
-                    >
-                      {t("devices.actionGenerate")}
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+            <div className="space-y-0.5">
+              <span className="inline-block bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 px-1 rounded text-[9px] font-mono font-bold uppercase">
+                {equip.plan || t("devices.notAvailable")}
+              </span>
+              <p className="text-xs text-zinc-505 truncate max-w-[140px]">{equip.service_name}</p>
             </div>
           );
         },
       });
-      return cols;
-    },
-    [t, handleRevokeEquipment, handleStartActivationWizard, handleGenerateOTP, handleOpenScheduleMaint, handleOpenNcModal, isAdmin],
+    }
+
+    // Add Status
+    cols.push({
+      accessorKey: "status",
+      header: () => (
+        <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
+          {t("devices.tableStatus")}
+        </span>
+      ),
+      cell: ({ row }) => {
+        const status = row.getValue("status") as string;
+        return status === "ACTIVE" ? (
+          <span className="bg-emerald-55 text-emerald-700 border border-emerald-202 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/50 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase">
+            ACTIVE
+          </span>
+        ) : (
+          <span className="bg-amber-55 text-amber-700 border border-amber-202 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/50 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase animate-pulse">
+            {t("devices.statusPendingActivation")}
+          </span>
+        );
+      },
+    });
+
+    // Add Device Details
+    cols.push({
+      id: "deviceDetails",
+      header: () => (
+        <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
+          {t("devices.tableDeviceDetails")}
+        </span>
+      ),
+      cell: ({ row }) => {
+        const equip = row.original;
+        if (equip.status === "ACTIVE") {
+          return (
+            <div className="space-y-0.5">
+              <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
+                {equip.device_name || t("devices.unnamedDevice")}
+              </p>
+              <p className="text-[10px] text-zinc-400 font-mono">{equip.device_serial || t("devices.noSerial")}</p>
+            </div>
+          );
+        }
+        if (equip.otp) {
+          return (
+            <div className="bg-zinc-50 dark:bg-zinc-900/30 p-2 rounded border border-zinc-200 dark:border-zinc-800 max-w-[180px]">
+              <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 font-mono select-all">
+                {t("devices.otpLabel")} {equip.otp}
+              </p>
+              <p className="text-[9px] text-zinc-400 mt-0.5">
+                {t("devices.otpExpires", {
+                  date: equip.otp_expires_at ? new Date(equip.otp_expires_at).toLocaleString() : "",
+                })}
+              </p>
+            </div>
+          );
+        }
+        return <p className="text-xs text-zinc-455 italic">{t("devices.emptyLicenseSlot")}</p>;
+      },
+    });
+
+    // Add Cloud Backup Account
+    cols.push({
+      id: "backupAccount",
+      header: () => (
+        <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
+          {t("devices.tableCloudBackup")}
+        </span>
+      ),
+      cell: ({ row }) => {
+        const equip = row.original;
+        if (equip.status === "ACTIVE" && equip.nextcloud_username) {
+          return (
+            <div className="flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50 px-2 py-0.5 rounded text-[10px] font-medium">
+                <Cloud className="h-3 w-3" />
+                {t("devices.configured")}
+              </span>
+            </div>
+          );
+        }
+        return <span className="text-xs text-zinc-400">—</span>;
+      },
+    });
+
+    // Add Actions
+    cols.push({
+      id: "actions",
+      header: () => (
+        <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
+          {t("devices.tableActions")}
+        </span>
+      ),
+      cell: ({ row }) => {
+        const equip = row.original;
+        const targetSubId = equip.subscription_id || (sub && sub.id);
+
+        return (
+          <DeviceActionsCell
+            equip={equip}
+            rowIndex={row.index}
+            targetSubId={targetSubId}
+            onOpenNcModal={handleOpenNcModal}
+            onOpenScheduleMaint={handleOpenScheduleMaint}
+            onRevokeEquipment={handleRevokeEquipment}
+            onStartActivationWizard={handleStartActivationWizard}
+            onGenerateOTP={handleGenerateOTP}
+          />
+        );
+      },
+    });
+    return cols;
+  }, [
+    t,
+    handleRevokeEquipment,
+    handleStartActivationWizard,
+    handleGenerateOTP,
+    handleOpenScheduleMaint,
+    handleOpenNcModal,
+    isAdmin,
+    activeSub,
+  ]);
+
+  const searchConfig = useMemo(
+    () => ({
+      value: searchTerm,
+      onChange: setSearchTerm,
+      placeholder: isAdmin ? t("devices.adminSearchPlaceholder") : t("devices.searchPlaceholder"),
+    }),
+    [searchTerm, setSearchTerm, isAdmin, t],
+  );
+
+  const filtersConfig = useMemo(() => {
+    if (!isAdmin) return undefined;
+    return [
+      {
+        id: "client",
+        value: selectedClient,
+        onChange: setSelectedClient,
+        options: clientFilterOptions,
+        placeholder: t("devices.filterAllClients"),
+      },
+      {
+        id: "plan",
+        value: selectedPlan,
+        onChange: setSelectedPlan,
+        options: planFilterOptions,
+        placeholder: t("devices.filterAllPlans"),
+      },
+      {
+        id: "status",
+        value: selectedStatus,
+        onChange: setSelectedStatus,
+        options: statusFilterOptions,
+        placeholder: t("devices.filterAllStatuses"),
+      },
+    ];
+  }, [
+    isAdmin,
+    selectedClient,
+    setSelectedClient,
+    clientFilterOptions,
+    selectedPlan,
+    setSelectedPlan,
+    planFilterOptions,
+    selectedStatus,
+    setSelectedStatus,
+    statusFilterOptions,
+    t,
+  ]);
+
+  const paginationConfig = useMemo(
+    () => ({
+      page,
+      totalPages,
+      totalItems: filteredEquipment.length,
+      limit,
+      onPageChange: setPage,
+      onLimitChange: setLimit,
+      showingText: t("devices.paginationShowing", {
+        start: filteredEquipment.length === 0 ? 0 : (page - 1) * limit + 1,
+        end: Math.min(page * limit, filteredEquipment.length),
+        total: filteredEquipment.length,
+      }),
+    }),
+    [page, totalPages, filteredEquipment.length, limit, setPage, setLimit, t],
   );
 
   if (loading) {
@@ -680,7 +796,7 @@ export function DevicesPage() {
       <div className="space-y-4">
         {activeSubscriptions.length === 0 && !loading && !isAdmin ? (
           <div className="flex items-center justify-center min-h-[60vh]">
-            <EmptySubscriptionsCard onBrowsePlans={() => navigate("/plans")} />
+            <EmptySubscriptionsCard onBrowsePlans={handleBrowsePlans} />
           </div>
         ) : (
           <div className="space-y-4 text-on-surface animate-fade-in">
@@ -696,59 +812,14 @@ export function DevicesPage() {
               <div className="lg:col-span-3 space-y-4">
                 {/* Device List Data Table */}
                 <DataTable
-                  columns={equipmentColumns(activeSub)}
+                  columns={equipmentColumns}
                   data={paginatedEquipment}
                   noDataMessage={t("devices.noSlotsFound")}
                   loading={loading}
                   className="border-none rounded-none"
-                  search={{
-                    value: searchTerm,
-                    onChange: setSearchTerm,
-                    placeholder: isAdmin ? t("devices.adminSearchPlaceholder") : t("devices.searchPlaceholder"),
-                  }}
-                  filters={
-                    isAdmin
-                      ? [
-                          {
-                            id: "client",
-                            value: selectedClient,
-                            onChange: setSelectedClient,
-                            options: uniqueClients.map((c) => ({ value: c.id, label: c.name })),
-                            placeholder: t("devices.filterAllClients"),
-                          },
-                          {
-                            id: "plan",
-                            value: selectedPlan,
-                            onChange: setSelectedPlan,
-                            options: uniquePlans.map((p) => ({ value: p, label: p })),
-                            placeholder: t("devices.filterAllPlans"),
-                          },
-                          {
-                            id: "status",
-                            value: selectedStatus,
-                            onChange: setSelectedStatus,
-                            options: [
-                              { value: "ACTIVE", label: t("devices.statusActive") },
-                              { value: "PENDING_ACTIVATION", label: t("devices.statusPending") },
-                            ],
-                            placeholder: t("devices.filterAllStatuses"),
-                          },
-                        ]
-                      : undefined
-                  }
-                  pagination={{
-                    page,
-                    totalPages,
-                    totalItems: filteredEquipment.length,
-                    limit,
-                    onPageChange: setPage,
-                    onLimitChange: setLimit,
-                    showingText: t("devices.paginationShowing", {
-                      start: filteredEquipment.length === 0 ? 0 : (page - 1) * limit + 1,
-                      end: Math.min(page * limit, filteredEquipment.length),
-                      total: filteredEquipment.length,
-                    }),
-                  }}
+                  search={searchConfig}
+                  filters={filtersConfig}
+                  pagination={paginationConfig}
                 />
               </div>
             </div>
@@ -777,23 +848,15 @@ export function DevicesPage() {
       <ScheduleMaintenanceModal
         equipment={maintModalEquip}
         isOpen={isMaintModalOpen}
-        onClose={() => {
-          setIsMaintModalOpen(false);
-          setMaintModalEquip(null);
-        }}
-        onSuccess={() => {
-          fetchActiveSubscriptions();
-        }}
+        onClose={handleCloseMaintModal}
+        onSuccess={handleMaintSuccess}
         isAdminOrTech={isAdmin}
       />
 
       {/* Nextcloud Info Modal */}
       <NextcloudInfoModal
         isOpen={isNcModalOpen}
-        onClose={() => {
-          setIsNcModalOpen(false);
-          setNcModalEquip(null);
-        }}
+        onClose={handleCloseNcModal}
         subId={ncModalEquip?.subscription_id || null}
         slotIndex={ncModalEquip?.slot_index ?? null}
         fallbackUsername={ncModalEquip?.nextcloud_username}

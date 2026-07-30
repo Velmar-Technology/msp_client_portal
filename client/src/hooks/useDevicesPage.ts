@@ -41,6 +41,7 @@ export function useDevicesPage() {
 
   // Reset page to 1 when filters or search change
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPage(1);
   }, [searchTerm, selectedClient, selectedPlan, selectedStatus, selectedSubscriptionId]);
 
@@ -81,33 +82,48 @@ export function useDevicesPage() {
 
         setSubscriptionEquipment(grouped);
       } else {
-        const subs = await subscriptionService.getAll();
+        // Fetch subscriptions and all devices in parallel (2 calls instead of 1+N)
+        const [subs, allDevices] = await Promise.all([
+          subscriptionService.getAll(),
+          equipmentService.getMyDevices(),
+        ]);
         const active = subs.filter((sub) => sub.status === "ACTIVE");
         setActiveSubscriptions(active);
 
         if (active.length > 0) {
           setSelectedSubscriptionId((prev) => prev || active[0].id);
 
-          const initialEquip: Record<string, Partial<SubscriptionEquipment>[]> = {};
-          await Promise.all(
-            active.map(async (sub) => {
-              try {
-                const slots = await equipmentService.getSlots(sub.id);
-                initialEquip[sub.id] = slots;
-              } catch (err) {
-                console.error(`Failed to load slots for subscription ${sub.id}:`, err);
-                const fallbackSlots = [];
-                for (let i = 0; i < sub.equipment_count; i++) {
-                  fallbackSlots.push({
-                    id: `device-slot-${i}`,
-                    status: "PENDING_ACTIVATION" as const,
-                  });
-                }
-                initialEquip[sub.id] = fallbackSlots;
+          // Group devices by subscription_id in-memory
+          const activeSubIds = new Set(active.map((s) => s.id));
+          const grouped: Record<string, Partial<SubscriptionEquipment>[]> = {};
+
+          for (const device of allDevices) {
+            if (!activeSubIds.has(device.subscription_id)) continue;
+            if (!grouped[device.subscription_id]) {
+              grouped[device.subscription_id] = [];
+            }
+            grouped[device.subscription_id][device.slot_index] = device;
+          }
+
+          // Fill empty slots for subscriptions with no devices or gaps
+          for (const sub of active) {
+            if (!grouped[sub.id]) {
+              grouped[sub.id] = [];
+            }
+            const arr = grouped[sub.id];
+            for (let i = 0; i < sub.equipment_count; i++) {
+              if (!arr[i]) {
+                arr[i] = {
+                  id: `device-slot-${i}`,
+                  subscription_id: sub.id,
+                  slot_index: i,
+                  status: "PENDING_ACTIVATION" as const,
+                };
               }
-            })
-          );
-          setSubscriptionEquipment(initialEquip);
+            }
+          }
+
+          setSubscriptionEquipment(grouped);
         }
       }
     } catch (err) {
@@ -121,6 +137,7 @@ export function useDevicesPage() {
   }, [user?.role, isAdmin]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchActiveSubscriptions();
   }, [fetchActiveSubscriptions]);
 
@@ -235,31 +252,61 @@ export function useDevicesPage() {
     return Array.from(plans);
   }, [adminDevices]);
 
+  const clientFilterOptions = useMemo(() => {
+    return uniqueClients.map((c) => ({ value: c.id, label: c.name }));
+  }, [uniqueClients]);
+
+  const planFilterOptions = useMemo(() => {
+    return uniquePlans.map((p) => ({ value: p, label: p }));
+  }, [uniquePlans]);
+
+  const statusFilterOptions = useMemo(() => {
+    return [
+      { value: "ACTIVE", label: t("devices.statusActive") },
+      { value: "PENDING_ACTIVATION", label: t("devices.statusPending") },
+    ];
+  }, [t]);
+
   const filteredEquipment = useMemo(() => {
+    const search = searchTerm.toLowerCase().trim();
     if (isAdmin) {
+      const hasSearch = search.length > 0;
+      const hasClientFilter = Boolean(selectedClient && selectedClient !== "all");
+      const hasPlanFilter = Boolean(selectedPlan && selectedPlan !== "all");
+      const hasStatusFilter = Boolean(selectedStatus && selectedStatus !== "all");
+
+      if (!hasSearch && !hasClientFilter && !hasPlanFilter && !hasStatusFilter) {
+        return adminDevices || [];
+      }
+
       return (adminDevices || []).filter((device) => {
-        const matchSearch = !searchTerm.trim() ||
-          device.id?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
-          device.device_name?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
-          device.device_serial?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
-          device.nextcloud_username?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
-          device.client_name?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
-          device.client_email?.toLowerCase().includes(searchTerm.toLowerCase().trim());
-        
-        const matchClient = !selectedClient || selectedClient === "all" || device.tenant_id === selectedClient;
-        const matchPlan = !selectedPlan || selectedPlan === "all" || device.plan === selectedPlan;
-        const matchStatus = !selectedStatus || selectedStatus === "all" || device.status === selectedStatus;
-        
-        return matchSearch && matchClient && matchPlan && matchStatus;
+        if (hasClientFilter && device.tenant_id !== selectedClient) return false;
+        if (hasPlanFilter && device.plan !== selectedPlan) return false;
+        if (hasStatusFilter && device.status !== selectedStatus) return false;
+
+        if (hasSearch) {
+          const matchSearch =
+            (device.id && device.id.toLowerCase().includes(search)) ||
+            (device.device_name && device.device_name.toLowerCase().includes(search)) ||
+            (device.device_serial && device.device_serial.toLowerCase().includes(search)) ||
+            (device.nextcloud_username && device.nextcloud_username.toLowerCase().includes(search)) ||
+            (device.client_name && device.client_name.toLowerCase().includes(search)) ||
+            (device.client_email && device.client_email.toLowerCase().includes(search));
+
+          if (!matchSearch) return false;
+        }
+
+        return true;
       });
     } else {
       if (!activeSub) return [];
       const equipList = subscriptionEquipment[activeSub.id] || [];
-      if (!searchTerm.trim()) return equipList;
-      return equipList.filter((device) =>
-        device.id?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
-        device.device_name?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
-        device.device_serial?.toLowerCase().includes(searchTerm.toLowerCase().trim())
+      if (!search) return equipList;
+      return equipList.filter(
+        (device) =>
+          (device.id && device.id.toLowerCase().includes(search)) ||
+          (device.device_name && device.device_name.toLowerCase().includes(search)) ||
+          (device.device_serial && device.device_serial.toLowerCase().includes(search))
       );
     }
   }, [adminDevices, subscriptionEquipment, activeSub, searchTerm, isAdmin, selectedClient, selectedPlan, selectedStatus]);
@@ -313,6 +360,9 @@ export function useDevicesPage() {
     setSelectedStatus,
     uniqueClients,
     uniquePlans,
+    clientFilterOptions,
+    planFilterOptions,
+    statusFilterOptions,
     page,
     setPage,
     limit,
