@@ -190,7 +190,7 @@ export function EditPlanModal({
                 </TabsList>
               </div>
 
-              <TabsContent value="en_US" className="space-y-2 mt-0">
+              <TabsContent value="en_US" forceMount className={activeLang === 'en_US' ? 'space-y-2 mt-0' : 'hidden'}>
                 <div>
                   <label className="block text-[9px] text-zinc-500 font-bold uppercase tracking-wider mb-0.5">
                     {t('plans.planNameLabel') || 'Plan Name'} (English)
@@ -211,12 +211,12 @@ export function EditPlanModal({
                     value={editDescription.en_US || ''}
                     onChange={(e) => setEditDescription({ ...editDescription, en_US: e.target.value })}
                     className="w-full h-11 p-1.5 rounded border bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 text-[11px] focus:outline-none border-zinc-200 dark:border-zinc-800 resize-none"
-                    placeholder="English description..."
+                    placeholder="Description in English..."
                   />
                 </div>
               </TabsContent>
 
-              <TabsContent value="es_DO" className="space-y-2 mt-0">
+              <TabsContent value="es_DO" forceMount className={activeLang === 'es_DO' ? 'space-y-2 mt-0' : 'hidden'}>
                 <div>
                   <label className="block text-[9px] text-zinc-500 font-bold uppercase tracking-wider mb-0.5">
                     {t('plans.planNameLabel') || 'Plan Name'} (Español)
@@ -237,7 +237,7 @@ export function EditPlanModal({
                     value={editDescription.es_DO || ''}
                     onChange={(e) => setEditDescription({ ...editDescription, es_DO: e.target.value })}
                     className="w-full h-11 p-1.5 rounded border bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 text-[11px] focus:outline-none border-zinc-200 dark:border-zinc-800 resize-none"
-                    placeholder="Descripción en español..."
+                    placeholder="Descripción en Español..."
                   />
                 </div>
               </TabsContent>
@@ -429,7 +429,7 @@ export function EditPlanModal({
                       {/* Custom Text Input for Active Feature Language Tab */}
                       {(!feat.code || feat.code === 'CUSTOM_FEATURE') && (
                         <div className="ml-6 pt-0.5">
-                          <TabsContent value="en_US" className="mt-0">
+                          <TabsContent value="en_US" forceMount className={featureLangTab === 'en_US' ? 'mt-0' : 'hidden'}>
                             <div className="flex items-center gap-1.5">
                               <span className="text-[8px] font-bold text-zinc-400 uppercase w-4">EN</span>
                               <Input
@@ -441,7 +441,7 @@ export function EditPlanModal({
                               />
                             </div>
                           </TabsContent>
-                          <TabsContent value="es_DO" className="mt-0">
+                          <TabsContent value="es_DO" forceMount className={featureLangTab === 'es_DO' ? 'mt-0' : 'hidden'}>
                             <div className="flex items-center gap-1.5">
                               <span className="text-[8px] font-bold text-zinc-400 uppercase w-4">ES</span>
                               <Input
