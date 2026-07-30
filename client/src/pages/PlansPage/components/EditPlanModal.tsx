@@ -333,11 +333,15 @@ export function EditPlanModal({
                           className="flex-1 h-6.5 px-1.5 border rounded text-[11px] bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none border-zinc-200 dark:border-zinc-800 truncate font-medium"
                         >
                           <option value="CUSTOM_FEATURE">-- Custom Text Feature --</option>
-                          {FEATURE_CATALOG.filter((c) => c.code !== 'CUSTOM_FEATURE').map((cat) => (
-                            <option key={cat.code} value={cat.code}>
-                              {t(cat.labelKey) || cat.code} ({cat.code})
-                            </option>
-                          ))}
+                          {FEATURE_CATALOG.filter((c) => c.code !== 'CUSTOM_FEATURE').map((cat) => {
+                            const paramsToUse = feat.code === cat.code ? (feat.params || cat.defaultParams || {}) : (cat.defaultParams || {});
+                            const label = t(cat.labelKey, paramsToUse) || cat.code;
+                            return (
+                              <option key={cat.code} value={cat.code}>
+                                {label} ({cat.code})
+                              </option>
+                            );
+                          })}
                         </select>
 
                         <button
