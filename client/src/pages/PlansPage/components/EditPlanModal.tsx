@@ -1,8 +1,7 @@
-import { X, GripVertical, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
+import { X, GripVertical, ChevronUp, ChevronDown, Trash2, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Plan, PlanFeature } from "@/services/planService";
 import { Input } from "@/components/ui/input";
-
 import { FEATURE_CATALOG } from "@/constants/featureCatalog";
 
 interface EditPlanModalProps {
@@ -81,234 +80,219 @@ export function EditPlanModal({
   const { t } = useTranslation();
 
   return (
-    <div className="fixed inset-0 bg-black/55 backdrop-blur-sm z-50 flex items-center justify-center p-3">
-      <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg max-w-md w-full max-h-[85vh] flex flex-col shadow-xl text-zinc-900 dark:text-zinc-50">
-        <div className="p-4.5 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-100/50 dark:bg-zinc-900/60 rounded-t-lg">
-          <h3 className="text-sm font-bold tracking-tight">
-            {isCreateMode ? (t('plans.addNewPlan') || 'Add New Plan') : (t('plans.editPlanTitle', { id: editingPlan.id }) || `Edit Plan: ${editingPlan.id}`)}
-          </h3>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-3">
+      <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl text-zinc-900 dark:text-zinc-50 overflow-hidden">
+        {/* Header */}
+        <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-100/60 dark:bg-zinc-900/80">
+          <div className="flex items-center gap-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
+              {isCreateMode ? (t('plans.addNewPlan') || 'Add New Plan') : (t('plans.editPlanTitle', { id: editingPlan.id }) || `Edit Plan: ${editingPlan.id}`)}
+            </h3>
+          </div>
           <button
             onClick={onClose}
             className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors cursor-pointer text-zinc-500 dark:text-zinc-400"
           >
-            <X className="h-4 w-4" />
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
 
-        <div className="p-4.5 overflow-y-auto space-y-3.5 flex-1">
-          <div className="grid grid-cols-2 gap-3">
-            {isCreateMode ? (
-              <div>
-                <label htmlFor="edit-id" className="block text-[10px] text-zinc-500 dark:text-zinc-450 font-bold uppercase tracking-wider mb-1">
-                  {t('plans.planId') || 'Plan ID'}
-                </label>
-                <Input
-                  id="edit-id"
-                  type="text"
-                  value={editId}
-                  onChange={(e) => setEditId(e.target.value.toUpperCase().replace(/\s+/g, '-'))}
-                  placeholder="e.g. PL-008"
-                  className="h-8.5 text-xs bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-855"
-                />
-              </div>
-            ) : (
-              <div>
-                <label htmlFor="edit-id" className="block text-[10px] text-zinc-500 dark:text-zinc-450 font-bold uppercase tracking-wider mb-1">
-                  {t('plans.planId') || 'Plan ID'}
-                </label>
-                <Input
-                  id="edit-id"
-                  type="text"
-                  value={editId}
-                  disabled
-                  className="h-8.5 text-xs bg-zinc-100/80 dark:bg-zinc-850/80 text-zinc-400 dark:text-zinc-500 border-zinc-200 dark:border-zinc-850 opacity-70 cursor-not-allowed"
-                />
-              </div>
-            )}
-            <div>
-              <label htmlFor="edit-client-type" className="block text-[10px] text-zinc-500 dark:text-zinc-450 font-bold uppercase tracking-wider mb-1">
+        {/* Scrollable Body */}
+        <div className="p-3.5 overflow-y-auto space-y-3 flex-1 text-xs">
+          {/* Row 1: Plan ID, Client Type, Price, Flags */}
+          <div className="grid grid-cols-12 gap-2 items-end">
+            <div className="col-span-3">
+              <label htmlFor="edit-id" className="block text-[9px] text-zinc-500 font-bold uppercase tracking-wider mb-0.5">
+                {t('plans.planId') || 'Plan ID'}
+              </label>
+              <Input
+                id="edit-id"
+                type="text"
+                value={editId}
+                disabled={!isCreateMode}
+                onChange={(e) => setEditId(e.target.value.toUpperCase().replace(/\s+/g, '-'))}
+                placeholder="PL-008"
+                className="h-7 text-xs bg-white dark:bg-zinc-950 font-mono disabled:opacity-60"
+              />
+            </div>
+
+            <div className="col-span-4">
+              <label htmlFor="edit-client-type" className="block text-[9px] text-zinc-500 font-bold uppercase tracking-wider mb-0.5">
                 {t('plans.clientType') || 'Client Type'}
               </label>
               <select
                 id="edit-client-type"
                 value={editClientType}
                 onChange={(e) => setEditClientType(e.target.value)}
-                className="w-full h-8.5 px-2.5 border rounded text-xs focus:outline-none focus:border-zinc-900 bg-card text-zinc-900 dark:text-zinc-100"
+                className="w-full h-7 px-2 border rounded text-xs focus:outline-none bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 border-zinc-200 dark:border-zinc-800"
               >
-                <option value="CLIENT">{t('plans.clientTypes.standard') || 'Standard Client'}</option>
-                <option value="ENTERPRISE">{t('plans.clientTypes.enterprise') || 'Enterprise Client'}</option>
-                <option value="STUDENT">{t('plans.clientTypes.student') || 'Student Starter'}</option>
-                <option value="OTHER">{t('plans.clientTypes.other') || 'Other / Custom'}</option>
+                <option value="CLIENT">{t('plans.clientTypes.standard') || 'Standard'}</option>
+                <option value="ENTERPRISE">{t('plans.clientTypes.enterprise') || 'Enterprise'}</option>
+                <option value="STUDENT">{t('plans.clientTypes.student') || 'Student'}</option>
+                <option value="OTHER">{t('plans.clientTypes.other') || 'Other'}</option>
               </select>
+            </div>
+
+            <div className="col-span-2">
+              <label htmlFor="edit-price" className="block text-[9px] text-zinc-500 font-bold uppercase tracking-wider mb-0.5">
+                {t('plans.monthlyPriceLabel') || 'Price ($)'}
+              </label>
+              <Input
+                id="edit-price"
+                type="number"
+                value={editPrice}
+                onChange={(e) => setEditPrice(parseInt(e.target.value) || 0)}
+                className="h-7 text-xs bg-white dark:bg-zinc-950 font-mono"
+              />
+            </div>
+
+            <div className="col-span-3 flex items-center gap-2 pb-1 justify-end">
+              <label className="flex items-center gap-1 cursor-pointer select-none text-[10px] font-medium">
+                <input
+                  type="checkbox"
+                  checked={editRecommended}
+                  onChange={(e) => setEditRecommended(e.target.checked)}
+                  className="h-3 w-3 rounded border-zinc-300 dark:border-zinc-700 accent-zinc-900"
+                />
+                Rec.
+              </label>
+              <label className="flex items-center gap-1 cursor-pointer select-none text-[10px] font-medium">
+                <input
+                  type="checkbox"
+                  checked={editActive}
+                  onChange={(e) => setEditActive(e.target.checked)}
+                  className="h-3 w-3 rounded border-zinc-300 dark:border-zinc-700 accent-zinc-900"
+                />
+                Active
+              </label>
             </div>
           </div>
 
+          {/* Row 2: Plan Names (EN & ES) side-by-side */}
           <div>
-            <label className="block text-[10px] text-zinc-500 dark:text-zinc-450 font-bold uppercase tracking-wider mb-1">
-              {t('plans.planNameLabel') || 'Plan Name'}
+            <label className="block text-[9px] text-zinc-500 font-bold uppercase tracking-wider mb-0.5">
+              {t('plans.planNameLabel') || 'Plan Name'} (EN / ES)
             </label>
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 w-5">EN</span>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex items-center gap-1">
+                <span className="text-[8px] font-bold text-zinc-400 w-3">EN</span>
                 <Input
                   type="text"
                   value={editName.en_US || ''}
                   onChange={(e) => setEditName({ ...editName, en_US: e.target.value })}
-                  className="flex-1 h-8 text-xs bg-card border"
-                  placeholder="Plan name in English"
+                  className="h-7 text-xs bg-white dark:bg-zinc-950"
+                  placeholder="English name..."
                 />
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 w-5">ES</span>
+              <div className="flex items-center gap-1">
+                <span className="text-[8px] font-bold text-zinc-400 w-3">ES</span>
                 <Input
                   type="text"
                   value={editName.es_DO || ''}
                   onChange={(e) => setEditName({ ...editName, es_DO: e.target.value })}
-                  className="flex-1 h-8 text-xs bg-card border"
-                  placeholder="Nombre del plan en Español"
+                  className="h-7 text-xs bg-white dark:bg-zinc-950"
+                  placeholder="Nombre en español..."
                 />
               </div>
             </div>
           </div>
 
+          {/* Row 3: Descriptions (EN & ES) side-by-side */}
           <div>
-            <label htmlFor="edit-price" className="block text-[10px] text-zinc-500 dark:text-zinc-450 font-bold uppercase tracking-wider mb-1">
-              {t('plans.monthlyPriceLabel') || 'Monthly Price ($)'}
+            <label className="block text-[9px] text-zinc-500 font-bold uppercase tracking-wider mb-0.5">
+              {t('plans.descriptionLabel') || 'Description'} (EN / ES)
             </label>
-            <Input
-              id="edit-price"
-              type="number"
-              value={editPrice}
-              onChange={(e) => setEditPrice(parseInt(e.target.value) || 0)}
-              className="h-8.5 text-xs bg-card border font-mono"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[10px] text-zinc-500 dark:text-zinc-450 font-bold uppercase tracking-wider mb-1">
-              {t('plans.descriptionLabel') || 'Description'}
-            </label>
-            <div className="space-y-1.5">
-              <div className="flex items-start gap-1.5">
-                <span className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 w-5 mt-2">EN</span>
-                <textarea
-                  value={editDescription.en_US || ''}
-                  onChange={(e) => setEditDescription({ ...editDescription, en_US: e.target.value })}
-                  className="flex-1 min-h-[50px] p-2 rounded border bg-card text-zinc-900 dark:text-zinc-100 text-xs focus:outline-none focus:border-zinc-900"
-                  placeholder="Description in English"
-                />
-              </div>
-              <div className="flex items-start gap-1.5">
-                <span className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 w-5 mt-2">ES</span>
-                <textarea
-                  value={editDescription.es_DO || ''}
-                  onChange={(e) => setEditDescription({ ...editDescription, es_DO: e.target.value })}
-                  className="flex-1 min-h-[50px] p-2 rounded border bg-card text-zinc-900 dark:text-zinc-100 text-xs focus:outline-none focus:border-zinc-900"
-                  placeholder="Descripción en Español"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4 py-1">
-            <div className="flex items-center gap-1.5">
-              <input
-                id="edit-recommended"
-                type="checkbox"
-                checked={editRecommended}
-                onChange={(e) => setEditRecommended(e.target.checked)}
-                className="h-3.5 w-3.5 rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 focus:ring-zinc-900 cursor-pointer"
+            <div className="grid grid-cols-2 gap-2">
+              <textarea
+                value={editDescription.en_US || ''}
+                onChange={(e) => setEditDescription({ ...editDescription, en_US: e.target.value })}
+                className="w-full h-11 p-1.5 rounded border bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 text-[11px] focus:outline-none border-zinc-200 dark:border-zinc-800 resize-none"
+                placeholder="English description..."
               />
-              <label htmlFor="edit-recommended" className="text-xs text-zinc-700 dark:text-zinc-300 cursor-pointer select-none font-medium">
-                {t('plans.recommendedPlan') || 'Recommended Plan'}
-              </label>
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              <input
-                id="edit-active"
-                type="checkbox"
-                checked={editActive}
-                onChange={(e) => setEditActive(e.target.checked)}
-                className="h-3.5 w-3.5 rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 focus:ring-zinc-900 cursor-pointer"
+              <textarea
+                value={editDescription.es_DO || ''}
+                onChange={(e) => setEditDescription({ ...editDescription, es_DO: e.target.value })}
+                className="w-full h-11 p-1.5 rounded border bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 text-[11px] focus:outline-none border-zinc-200 dark:border-zinc-800 resize-none"
+                placeholder="Descripción en español..."
               />
-              <label htmlFor="edit-active" className="text-xs text-zinc-700 dark:text-zinc-300 cursor-pointer select-none font-medium">
-                {t('plans.active') || 'Active'}
-              </label>
             </div>
           </div>
 
-          <div className="border-t border-zinc-200 dark:border-zinc-800 pt-3">
-            <div className="flex justify-between items-center mb-2.5">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-500">{t('plans.featuresTitle') || 'Features'}</h4>
+          {/* Features Section */}
+          <div className="border-t border-zinc-200 dark:border-zinc-800 pt-2.5">
+            <div className="flex justify-between items-center mb-1.5">
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                {t('plans.featuresTitle') || 'Features'} ({editFeatures.length})
+              </h4>
               <button
                 type="button"
                 onClick={onAddFeature}
-                className="text-[10px] text-zinc-900 dark:text-zinc-200 hover:underline flex items-center gap-0.5 cursor-pointer font-bold uppercase tracking-wider"
+                className="text-[10px] text-zinc-900 dark:text-zinc-100 hover:underline flex items-center gap-0.5 cursor-pointer font-bold uppercase tracking-wider bg-zinc-200/60 dark:bg-zinc-800 px-2 py-0.5 rounded"
               >
-                + {t('plans.addFeature') || 'Add Feature'}
+                <Plus className="h-3 w-3" /> {t('plans.addFeature') || 'Add Feature'}
               </button>
             </div>
 
-            <div className="space-y-1.5 max-h-[180px] overflow-y-auto pr-1">
-              {editFeatures.map((feat, index) => (
-                <div
-                  key={index}
-                  draggable={true}
-                  onDragStart={(e) => onDragStart(e, index)}
-                  onDragOver={(e) => onDragOver(e, index)}
-                  onDrop={(e) => onDrop(e, index)}
-                  onDragEnd={onDragEnd}
-                  className={`group flex items-start gap-1.5 border rounded p-1.5 transition-all duration-200 ${
-                    draggedIndex === index
-                      ? 'opacity-40 bg-zinc-100 dark:bg-zinc-800'
-                      : dragOverIndex === index
-                        ? 'border-zinc-900 border-dashed bg-zinc-100/50 dark:bg-zinc-800/40'
-                        : 'border-zinc-200/50 bg-zinc-50/10 dark:border-zinc-800/30'
-                  }`}
-                >
-                  <div className="flex items-center gap-0.5 mt-1">
-                    <div
-                      className="cursor-grab active:cursor-grabbing text-zinc-400 hover:text-zinc-650 dark:text-zinc-600 dark:hover:text-zinc-400 transition-colors p-0.5"
-                      title={t('plans.dragToReorder') || 'Drag to reorder'}
-                    >
-                      <GripVertical className="h-3.5 w-3.5" />
-                    </div>
-                    <div className="flex flex-col opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-                      <button
-                        type="button"
-                        disabled={index === 0}
-                        onClick={() => onMoveFeature(index, -1)}
-                        className="p-0.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded text-zinc-500 disabled:opacity-30 cursor-pointer"
-                        title={t('plans.moveUp') || 'Move up'}
-                      >
-                        <ChevronUp className="h-2.5 w-2.5" />
-                      </button>
-                      <button
-                        type="button"
-                        disabled={index === editFeatures.length - 1}
-                        onClick={() => onMoveFeature(index, 1)}
-                        className="p-0.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded text-zinc-500 disabled:opacity-30 cursor-pointer"
-                        title={t('plans.moveDown') || 'Move down'}
-                      >
-                        <ChevronDown className="h-2.5 w-2.5" />
-                      </button>
-                    </div>
-                  </div>
+            <div className="space-y-1.5 max-h-[230px] overflow-y-auto pr-1">
+              {editFeatures.map((feat, index) => {
+                const catalogItem = FEATURE_CATALOG.find((c) => c.code === feat.code);
+                const schemaKeys = new Set(catalogItem?.paramSchema?.map((p) => p.key) || []);
+                const allParamKeys = Array.from(new Set([...Array.from(schemaKeys), ...Object.keys(feat.params || {})]));
 
-                  <input
-                    type="checkbox"
-                    checked={feat.included}
-                    onChange={(e) => onToggleFeatureIncluded(index, e.target.checked)}
-                    className="h-3.5 w-3.5 rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 focus:ring-zinc-900 cursor-pointer mt-1.5"
-                  />
-                  <div className="flex-1 space-y-1 mt-0.5">
-                    {/* Feature Code Selector */}
-                    <div className="flex items-center gap-1">
+                return (
+                  <div
+                    key={index}
+                    draggable={true}
+                    onDragStart={(e) => onDragStart(e, index)}
+                    onDragOver={(e) => onDragOver(e, index)}
+                    onDrop={(e) => onDrop(e, index)}
+                    onDragEnd={onDragEnd}
+                    className={`group flex flex-col gap-1 border rounded p-1.5 transition-all duration-150 ${
+                      draggedIndex === index
+                        ? 'opacity-40 bg-zinc-100 dark:bg-zinc-800'
+                        : dragOverIndex === index
+                          ? 'border-zinc-900 border-dashed bg-zinc-100/50 dark:bg-zinc-800/40'
+                          : 'border-zinc-200/80 dark:border-zinc-800 bg-white/40 dark:bg-zinc-950/40'
+                    }`}
+                  >
+                    {/* Feature Main Control Bar */}
+                    <div className="flex items-center gap-1.5">
+                      <div className="cursor-grab active:cursor-grabbing text-zinc-400 hover:text-zinc-600 p-0.5">
+                        <GripVertical className="h-3.5 w-3.5" />
+                      </div>
+
+                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          disabled={index === 0}
+                          onClick={() => onMoveFeature(index, -1)}
+                          className="p-0.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded text-zinc-500 disabled:opacity-30 cursor-pointer"
+                        >
+                          <ChevronUp className="h-2.5 w-2.5" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={index === editFeatures.length - 1}
+                          onClick={() => onMoveFeature(index, 1)}
+                          className="p-0.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded text-zinc-500 disabled:opacity-30 cursor-pointer"
+                        >
+                          <ChevronDown className="h-2.5 w-2.5" />
+                        </button>
+                      </div>
+
+                      <input
+                        type="checkbox"
+                        checked={feat.included}
+                        onChange={(e) => onToggleFeatureIncluded(index, e.target.checked)}
+                        className="h-3.5 w-3.5 rounded border-zinc-300 dark:border-zinc-700 accent-zinc-900 cursor-pointer"
+                        title={feat.included ? 'Included in plan' : 'Excluded from plan'}
+                      />
+
+                      {/* Code Dropdown */}
                       <select
                         value={feat.code || 'CUSTOM_FEATURE'}
                         onChange={(e) => onUpdateFeatureCode?.(index, e.target.value)}
-                        className="w-full h-7 px-1.5 border rounded text-[11px] bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none border-zinc-200 dark:border-zinc-850"
+                        className="flex-1 h-6.5 px-1.5 border rounded text-[11px] bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none border-zinc-200 dark:border-zinc-800 truncate font-medium"
                       >
                         <option value="CUSTOM_FEATURE">-- Custom Text Feature --</option>
                         {FEATURE_CATALOG.filter((c) => c.code !== 'CUSTOM_FEATURE').map((cat) => (
@@ -317,148 +301,128 @@ export function EditPlanModal({
                           </option>
                         ))}
                       </select>
+
+                      <button
+                        type="button"
+                        onClick={() => onDeleteFeature(index)}
+                        className="p-1 hover:bg-red-500/10 text-red-500 rounded transition-colors cursor-pointer"
+                        title="Delete feature"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
                     </div>
 
-                    {/* Parameter Controls for Feature */}
+                    {/* Parameter Controls (Inline compact pills) */}
                     {feat.code && feat.code !== 'CUSTOM_FEATURE' && (
-                      <div className="bg-zinc-100/60 dark:bg-zinc-800/40 p-2 rounded border border-zinc-200/50 dark:border-zinc-700/50 my-1 space-y-1.5">
-                        <div className="flex justify-between items-center">
-                          <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500">Feature Parameters</span>
-                        </div>
+                      <div className="ml-6 pl-1 pt-0.5 flex items-center gap-1.5 flex-wrap bg-zinc-100/50 dark:bg-zinc-800/30 p-1 rounded border border-zinc-200/40 dark:border-zinc-800/40">
+                        {allParamKeys.map((paramKey) => {
+                          const schemaItem = catalogItem?.paramSchema?.find((p) => p.key === paramKey);
+                          const label = schemaItem ? schemaItem.label : paramKey;
+                          const currentVal = feat.params?.[paramKey] ?? schemaItem?.defaultValue ?? '';
 
-                        <div className="grid grid-cols-2 gap-1.5">
-                          {(() => {
-                            const catalogItem = FEATURE_CATALOG.find((c) => c.code === feat.code);
-                            const schemaKeys = new Set(catalogItem?.paramSchema?.map((p) => p.key) || []);
-                            const allParamKeys = Array.from(new Set([...Array.from(schemaKeys), ...Object.keys(feat.params || {})]));
+                          return (
+                            <div key={paramKey} className="flex items-center gap-1 bg-white dark:bg-zinc-950 px-1.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-800">
+                              <span className="text-[8px] font-bold uppercase tracking-wider text-zinc-400">{label}:</span>
+                              {schemaItem?.type === 'select' && schemaItem.options ? (
+                                <select
+                                  value={String(currentVal)}
+                                  onChange={(e) => onUpdateFeatureParam?.(index, paramKey, e.target.value)}
+                                  className="h-5 px-0.5 bg-transparent text-[10px] text-zinc-900 dark:text-zinc-100 font-medium focus:outline-none"
+                                >
+                                  {schemaItem.options.map((opt) => (
+                                    <option key={opt} value={opt}>
+                                      {opt}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <input
+                                  type={schemaItem?.type === 'number' ? 'number' : 'text'}
+                                  value={currentVal as string | number}
+                                  onChange={(e) =>
+                                    onUpdateFeatureParam?.(
+                                      index,
+                                      paramKey,
+                                      schemaItem?.type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value
+                                    )
+                                  }
+                                  className="h-5 w-16 text-[10px] bg-transparent font-mono text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                                />
+                              )}
+                              {!schemaKeys.has(paramKey) && (
+                                <button
+                                  type="button"
+                                  onClick={() => onDeleteFeatureParam?.(index, paramKey)}
+                                  className="text-[9px] text-red-400 hover:text-red-600 ml-0.5"
+                                  title="Remove parameter"
+                                >
+                                  ✕
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
 
-                            if (allParamKeys.length === 0) {
-                              return <p className="col-span-2 text-[9px] text-zinc-400 italic">No parameters configured.</p>;
-                            }
-
-                            return allParamKeys.map((paramKey) => {
-                              const schemaItem = catalogItem?.paramSchema?.find((p) => p.key === paramKey);
-                              const label = schemaItem ? schemaItem.label : paramKey;
-                              const currentVal = feat.params?.[paramKey] ?? schemaItem?.defaultValue ?? '';
-
-                              return (
-                                <div key={paramKey} className="space-y-0.5 relative">
-                                  <div className="flex justify-between items-center">
-                                    <label className="block text-[8px] font-bold uppercase tracking-wider text-zinc-500 truncate">
-                                      {label}
-                                    </label>
-                                    {!schemaKeys.has(paramKey) && (
-                                      <button
-                                        type="button"
-                                        onClick={() => onDeleteFeatureParam?.(index, paramKey)}
-                                        className="text-[9px] text-red-500 hover:underline px-0.5"
-                                        title="Remove custom parameter"
-                                      >
-                                        ✕
-                                      </button>
-                                    )}
-                                  </div>
-                                  {schemaItem?.type === 'select' && schemaItem.options ? (
-                                    <select
-                                      value={String(currentVal)}
-                                      onChange={(e) => onUpdateFeatureParam?.(index, paramKey, e.target.value)}
-                                      className="w-full h-6 px-1 border rounded text-[10px] bg-card text-zinc-900 dark:text-zinc-100 focus:outline-none border-zinc-200 dark:border-zinc-800"
-                                    >
-                                      {schemaItem.options.map((opt) => (
-                                        <option key={opt} value={opt}>
-                                          {opt}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  ) : (
-                                    <Input
-                                      type={schemaItem?.type === 'number' ? 'number' : 'text'}
-                                      value={currentVal as string | number}
-                                      onChange={(e) =>
-                                        onUpdateFeatureParam?.(
-                                          index,
-                                          paramKey,
-                                          schemaItem?.type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value
-                                        )
-                                      }
-                                      className="h-6 text-[10px] py-0 px-1.5 bg-white dark:bg-zinc-950 border"
-                                    />
-                                  )}
-                                </div>
-                              );
-                            });
-                          })()}
-                        </div>
-
-                        {/* Inline Custom Parameter Adder */}
-                        <div className="pt-1 border-t border-zinc-200/40 dark:border-zinc-700/40">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const key = window.prompt("Enter parameter key name (e.g. limit, unit, hours, frequency):");
-                              if (!key || !key.trim()) return;
-                              const val = window.prompt(`Enter value for '${key.trim()}':`);
-                              if (val === null) return;
-                              onUpdateFeatureParam?.(index, key.trim(), val);
-                            }}
-                            className="text-[9px] font-bold text-zinc-700 dark:text-zinc-300 hover:underline flex items-center gap-0.5 cursor-pointer uppercase tracking-wider"
-                          >
-                            + Add Custom Parameter
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const key = window.prompt("Enter parameter key name (e.g. limit, unit, hours):");
+                            if (!key || !key.trim()) return;
+                            const val = window.prompt(`Enter value for '${key.trim()}':`);
+                            if (val === null) return;
+                            onUpdateFeatureParam?.(index, key.trim(), val);
+                          }}
+                          className="text-[9px] text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:underline px-1 cursor-pointer font-medium"
+                        >
+                          + Param
+                        </button>
                       </div>
                     )}
 
-                    {/* Freeform text fields fallback if Custom Feature */}
+                    {/* Custom Text Inputs (if custom feature) */}
                     {(!feat.code || feat.code === 'CUSTOM_FEATURE') && (
-                      <>
+                      <div className="ml-6 grid grid-cols-2 gap-1.5 pt-0.5">
                         <div className="flex items-center gap-1">
-                          <span className="text-[8px] font-bold text-zinc-400 dark:text-zinc-500 w-4">EN</span>
+                          <span className="text-[8px] font-bold text-zinc-400 w-3">EN</span>
                           <Input
                             type="text"
                             value={(typeof feat.text === 'string' ? feat.text : feat.text?.en_US) || ''}
                             onChange={(e) => onEditFeatureText(index, 'en_US', e.target.value)}
-                            className="flex-1 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-850 py-0.5 h-7 text-xs"
-                            placeholder={t('plans.featureEnPlaceholder') || 'Feature in English...'}
+                            className="flex-1 h-6.5 text-[11px] bg-white dark:bg-zinc-950 py-0"
+                            placeholder="English description..."
                           />
                         </div>
                         <div className="flex items-center gap-1">
-                          <span className="text-[8px] font-bold text-zinc-400 dark:text-zinc-500 w-4">ES</span>
+                          <span className="text-[8px] font-bold text-zinc-400 w-3">ES</span>
                           <Input
                             type="text"
                             value={(typeof feat.text === 'string' ? feat.text : feat.text?.es_DO) || ''}
                             onChange={(e) => onEditFeatureText(index, 'es_DO', e.target.value)}
-                            className="flex-1 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-850 py-0.5 h-7 text-xs"
-                            placeholder={t('plans.featureEsPlaceholder') || 'Característica en Español...'}
+                            className="flex-1 h-6.5 text-[11px] bg-white dark:bg-zinc-950 py-0"
+                            placeholder="Descripción en español..."
                           />
                         </div>
-                      </>
+                      </div>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => onDeleteFeature(index)}
-                    className="p-1 hover:bg-red-500/10 text-red-650 dark:text-red-400 rounded transition-colors cursor-pointer mt-1"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
 
-        <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex justify-end gap-2 bg-zinc-100/10 rounded-b-lg">
+        {/* Footer */}
+        <div className="px-4 py-2.5 border-t border-zinc-200 dark:border-zinc-800 flex justify-end gap-2 bg-zinc-100/50 dark:bg-zinc-900/60">
           <button
             onClick={onClose}
-            className="px-3.5 py-1.5 border border-zinc-200 hover:bg-zinc-100/50 dark:border-zinc-800 rounded text-xs font-semibold cursor-pointer text-zinc-700 dark:text-zinc-300"
+            className="px-3 py-1 border border-zinc-200 hover:bg-zinc-100 dark:border-zinc-800 rounded text-xs font-semibold cursor-pointer text-zinc-700 dark:text-zinc-300"
           >
             {t('plans.cancel') || 'Cancel'}
           </button>
           <button
             onClick={onSave}
             disabled={saveLoading}
-            className="px-4 py-1.5 bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950 rounded text-xs font-semibold hover:opacity-90 transition-opacity flex items-center gap-1 disabled:opacity-50 cursor-pointer"
+            className="px-3.5 py-1 bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950 rounded text-xs font-semibold hover:opacity-90 transition-opacity flex items-center gap-1 disabled:opacity-50 cursor-pointer shadow-sm"
           >
             {saveLoading ? (t('plans.saving') || 'Saving...') : isCreateMode ? (t('plans.createPlan') || 'Create Plan') : (t('plans.saveChanges') || 'Save Changes')}
           </button>
