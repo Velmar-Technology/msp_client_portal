@@ -16,81 +16,34 @@ INSERT INTO plans (id, name, description, price, features, recommended, client_t
   ]'::jsonb, true, 'CLIENT'),
 
   ('PL-002', '{"en_US": "Standard", "es_DO": "Estándar"}'::jsonb, '{"en_US": "Proactive support and regular system maintenance.", "es_DO": "Soporte proactivo y mantenimiento regular del sistema."}'::jsonb, 30, '[
-    {"code": "HELPDESK_SUPPORT", "params": {"type": "8x5"}, "included": true},
-    {"code": "SECURITY_MONITORING", "included": true},
-    {"code": "CLOUD_STORAGE", "params": {"limit": 50, "unit": "GB"}, "included": true},
-    {"code": "BACKUP_INCLUDED", "included": true},
-    {"code": "SLA_LEVEL", "params": {"level": "Bronze", "response": "4 hours"}, "included": true},
-    {"code": "RMM_PATCH_MANAGEMENT", "included": true},
-    {"code": "PREMIUM_CONTENT_FILTERING", "included": true},
-    {"code": "EDR_SECURITY", "included": true},
-    {"code": "M365_BACKUP", "included": true},
-    {"code": "VULNERABILITY_SCANNING", "params": {"frequency": "Quarterly"}, "included": true},
-    {"code": "IDENTITY_MFA_MANAGEMENT", "included": true},
-    {"code": "ASSET_LIFECYCLE", "params": {"tier": "Standard"}, "included": true},
-    {"code": "VCIO_REVIEW", "params": {"frequency": "Annual"}, "included": true},
-    {"code": "REPORTING_LEVEL", "params": {"level": "Monthly Standard"}, "included": true}
+    {"code": "HELPDESK_SUPPORT", "text": {"en_US": "8x5 Helpdesk support", "es_DO": "Soporte de Mesa de Ayuda (8x5)"}, "params": {"type": "8x5"}, "included": true},
+    {"code": "CLOUD_STORAGE", "text": {"en_US": "25 GB Cloud Storage", "es_DO": "25 GB Almacenamiento en la Nube"}, "params": {"limit": 25, "unit": "GB"}, "included": true},
+    {"code": "BACKUP_INCLUDED", "text": {"en_US": "Backup included", "es_DO": "Backup incluido"}, "included": true},
+    {"code": "SLA_LEVEL", "text": {"en_US": "Bronze SLA level (4 hours response)", "es_DO": "SLA (8 horas de respuesta)"}, "params": {"level": "Bronze", "response": "4 hours"}, "included": true},
+    {"code": "RMM_PATCH_MANAGEMENT", "text": {"en_US": "RMM Monitoring & Patch Management", "es_DO": "Monitoreo & Parches de Seguridad"}, "included": true}
   ]'::jsonb, true, 'ENTERPRISE'),
 
-  ('PL-003', '{"en_US": "Advanced", "es_DO": "Avanzado"}'::jsonb, '{"en_US": "Comprehensive support, security, and vCIO reviews.", "es_DO": "Soporte integral, seguridad y revisiones de vCIO."}'::jsonb, 55, '[
-    {"code": "HELPDESK_SUPPORT", "params": {"type": "24/7/365"}, "included": true},
-    {"code": "SECURITY_MONITORING", "included": true},
-    {"code": "CLOUD_STORAGE", "params": {"limit": 250, "unit": "GB"}, "included": true},
-    {"code": "BACKUP_INCLUDED", "included": true},
-    {"code": "SLA_LEVEL", "params": {"level": "Silver", "response": "2 hours"}, "included": true},
-    {"code": "RMM_PATCH_MANAGEMENT", "included": true},
-    {"code": "ONSITE_SUPPORT", "params": {"hours": "2"}, "included": true},
-    {"code": "PREMIUM_CONTENT_FILTERING", "included": true},
-    {"code": "EDR_M365_BACKUP", "included": true},
-    {"code": "PASSWORD_MANAGER", "included": true},
-    {"code": "DARK_WEB_MONITORING", "included": true},
-    {"code": "PHISHING_TRAINING", "included": true},
-    {"code": "VULNERABILITY_SCANNING", "params": {"frequency": "Monthly"}, "included": true},
-    {"code": "IDENTITY_MFA_MANAGEMENT", "included": true},
-    {"code": "ASSET_LIFECYCLE", "params": {"tier": "Comprehensive"}, "included": true},
-    {"code": "VCIO_REVIEW", "params": {"frequency": "Semi-Annual"}, "included": true},
-    {"code": "COMPLIANCE_AUDIT", "params": {"tier": "Basic"}, "included": true},
-    {"code": "REPORTING_LEVEL", "params": {"level": "Weekly Detailed"}, "included": true}
-  ]'::jsonb, false, 'ENTERPRISE'),
+  ('PL-003', '{"en_US": "Advanced", "es_DO": "Avanzado"}'::jsonb, '{"en_US": "Comprehensive support, security, reviews.", "es_DO": "Soporte integral, seguridad y revisiones."}'::jsonb, 55, '[
+    {"text": {"en_US": "All Standard Features", "es_DO": "Todo incluido en Estandar"}, "included": true},
+    {"code": "CLOUD_STORAGE", "text": {"en_US": "50 GB Cloud Storage", "es_DO": "50 GB Almacenamiento en la Nube"}, "params": {"unit": "GB", "limit": 50}, "included": true},
+    {"code": "SLA_LEVEL", "text": {"en_US": "Silver SLA level (2 hours response)", "es_DO": "SLA (4 horas de respuesta)"}, "params": {"level": "Silver", "response": "2 hours"}, "included": true},
+    {"text": {"en_US": "On-Site Support (2h/month)", "es_DO": "Soporte On-Site (2h/mes)"}, "included": true},
+    {"code": "PASSWORD_MANAGER", "text": {"en_US": "Password Manager", "es_DO": "Administrador de Contraseñas"}, "included": true},
+    {"text": {"en_US": "5% Discount in Velmar Store*", "es_DO": "5% de descuento en la tienda Velmar*"}, "included": true}
+  ]'::jsonb, true, 'ENTERPRISE'),
 
-  ('PL-004', '{"en_US": "Premium", "es_DO": "Premium"}'::jsonb, '{"en_US": "Premium service with a dedicated engineer.", "es_DO": "Servicio premium con un ingeniero dedicado."}'::jsonb, 85, '[
-    {"code": "HELPDESK_SUPPORT", "params": {"type": "Dedicated Engineer"}, "included": true},
-    {"code": "SECURITY_MONITORING", "included": true},
-    {"code": "CLOUD_STORAGE", "params": {"limit": 1000, "unit": "GB"}, "included": true},
-    {"code": "BACKUP_INCLUDED", "included": true},
-    {"code": "SLA_LEVEL", "params": {"level": "Gold", "response": "1 hour"}, "included": true},
-    {"code": "RMM_PATCH_MANAGEMENT", "included": true},
-    {"code": "ONSITE_SUPPORT", "params": {"hours": "4"}, "included": true},
-    {"code": "PREMIUM_CONTENT_FILTERING", "included": true},
-    {"code": "EDR_M365_BACKUP", "included": true},
-    {"code": "PASSWORD_DARK_WEB", "included": true},
-    {"code": "PHISHING_TRAINING", "included": true},
-    {"code": "VULNERABILITY_SCANNING", "params": {"frequency": "Continuous"}, "included": true},
-    {"code": "IDENTITY_MFA_MANAGEMENT", "included": true},
-    {"code": "ASSET_LIFECYCLE", "params": {"tier": "Comprehensive"}, "included": true},
-    {"code": "VCIO_REVIEW", "params": {"frequency": "Quarterly"}, "included": true},
-    {"code": "COMPLIANCE_AUDIT", "params": {"tier": "Standard"}, "included": true},
-    {"code": "REPORTING_LEVEL", "params": {"level": "Executive (On-Demand)"}, "included": true}
-  ]'::jsonb, false, 'ENTERPRISE'),
-
-  ('PL-005', '{"en_US": "Enterprise", "es_DO": "Empresarial"}'::jsonb, '{"en_US": "Top-tier VIP Concierge support and custom frameworks.", "es_DO": "Soporte VIP Concierge de primer nivel y marcos personalizados."}'::jsonb, 120, '[
-    {"code": "HELPDESK_SUPPORT", "params": {"type": "VIP Concierge"}, "included": true},
-    {"code": "SECURITY_MONITORING", "included": true},
-    {"code": "CLOUD_STORAGE", "params": {"limit": 5000, "unit": "GB"}, "included": true},
-    {"code": "BACKUP_INCLUDED", "included": true},
-    {"code": "SLA_LEVEL", "params": {"level": "Platinum", "response": "30 minutes"}, "included": true},
-    {"code": "RMM_PATCH_MANAGEMENT", "included": true},
-    {"code": "ONSITE_SUPPORT", "params": {"hours": "Unlimited"}, "included": true},
-    {"code": "PREMIUM_CONTENT_FILTERING", "included": true},
-    {"code": "EDR_M365_BACKUP", "included": true},
-    {"code": "PASSWORD_DARK_WEB", "included": true},
-    {"code": "PHISHING_TRAINING", "included": true},
-    {"code": "VULNERABILITY_SCANNING", "params": {"frequency": "Continuous + Remediation"}, "included": true},
-    {"code": "IDENTITY_MFA_MANAGEMENT", "included": true},
-    {"code": "ASSET_LIFECYCLE", "params": {"tier": "Corporate Fleet"}, "included": true},
-    {"code": "VCIO_REVIEW", "params": {"frequency": "Monthly Strategic"}, "included": true},
-    {"code": "COMPLIANCE_AUDIT", "params": {"tier": "Full Framework"}, "included": true},
-    {"code": "REPORTING_LEVEL", "params": {"level": "Custom / SOC"}, "included": true}
+  ('PL-004', '{"en_US": "Premium", "es_DO": "Premium"}'::jsonb, '{"en_US": "Premium service with a dedicated assistance.", "es_DO": "Servicio premium con asistencia personalizada."}'::jsonb, 85, '[
+    {"text": {"en_US": "All Advanced Features", "es_DO": "Todo Incluido en Avanzado"}, "included": true},
+    {"text": {"en_US": "Equipment Lending*", "es_DO": "Prestamo de equipo*"}, "included": true},
+    {"text": {"en_US": "Dedicated Engineer support", "es_DO": "Soporte de Ingeniero Dedicado"}, "included": true},
+    {"code": "CLOUD_STORAGE", "text": {"en_US": "100 GB Cloud Storage", "es_DO": "100 GB Almacenamiento en la Nube"}, "params": {"unit": "GB", "limit": 100}, "included": true},
+    {"code": "BACKUP_INCLUDED", "text": {"en_US": "Backup included", "es_DO": "Copia de seguridad incluida"}, "included": true},
+    {"code": "SLA_LEVEL", "text": {"en_US": "Gold SLA level (1 hour response)", "es_DO": "SLA (1 hora de respuesta)"}, "params": {"level": "Gold", "response": "1 hour"}, "included": true},
+    {"text": {"en_US": "On-Site Support (4h/month)", "es_DO": "Soporte On-Site (2h/mes)"}, "included": true},
+    {"text": {"en_US": "Vulnerability Scanning: Continuous", "es_DO": "Escaneo de Vulnerabilidad: Continuo"}, "included": true},
+    {"text": {"en_US": "Asset Lifecycle Tracking: Comprehensive", "es_DO": "Seguimiento del ciclo de vida de los activos: Exhaustivo"}, "included": true},
+    {"text": {"en_US": "Reporting Level: Executive (On-Demand)", "es_DO": "Nivel jerárquico: Ejecutivo (Bajo demanda)"}, "included": true},
+    {"text": {"en_US": "10% Discount in Velmar store*", "es_DO": "10% de descuento en la tienda Velmar*"}, "included": true}
   ]'::jsonb, false, 'ENTERPRISE'),
 
   ('PL-006', '{"en_US": "Student Starter Kit", "es_DO": "Kit de Inicio para Estudiantes"}'::jsonb, '{"en_US": "Essentials for students, including RMM and password management.", "es_DO": "Esenciales para estudiantes, incluyendo Monitoreo y gestión de contraseñas."}'::jsonb, 20, '[
@@ -100,7 +53,15 @@ INSERT INTO plans (id, name, description, price, features, recommended, client_t
     {"code": "PASSWORD_MANAGER", "text": {"en_US": "Password Manager", "es_DO": "Administrador de Contraseña"}, "included": true}
   ]'::jsonb, false, 'STUDENT'),
 
-  ('PL-007', '{"en_US": "Custom", "es_DO": "Personalizado"}'::jsonb, '{"en_US": "Tailored solution with specialized terms and SLAs.", "es_DO": "Solución a la medida con términos y SLAs especializados."}'::jsonb, 0, '[]'::jsonb, false, 'OTHER');
+  ('PL-007', '{"en_US": "Custom", "es_DO": "Personalizado"}'::jsonb, '{"en_US": "Tailored solution with specialized terms and SLAs.", "es_DO": "Solución a la medida con términos y SLAs especializados."}'::jsonb, 0, '[]'::jsonb, false, 'OTHER'),
+
+  ('PL-008', '{"en_US": "Premium POS", "es_DO": "Premium POS"}'::jsonb, '{"en_US": "A premium, high-availability service designed to ensure your point of sale never stops.", "es_DO": "Servicio premium de alta disponibilidad diseñado para que tu punto de venta nunca se detenga."}'::jsonb, 49, '[
+    {"code": "HELPDESK_SUPPORT", "text": {"en_US": "Technical Support", "es_DO": "Soporte Técnico"}, "params": {"type": "24/7/365"}, "included": true},
+    {"code": "SLA_LEVEL", "text": {"en_US": "SLA (Response within 8 hours)", "es_DO": "SLA (Respuesta en menos de 8 hora)"}, "params": {"level": "Silver", "response": "2 hours"}, "included": true},
+    {"text": {"en_US": "On-Site Support (2 hours/month)", "es_DO": "Soporte On-Site (2h/semanales)"}, "included": true},
+    {"text": {"en_US": "Equipment Loan*", "es_DO": "Prestamo de Equipo*"}, "included": true},
+    {"code": "BACKUP_INCLUDED", "text": {"en_US": "Backup Included", "es_DO": "Copia de seguridad"}, "included": true}
+  ]'::jsonb, false, 'CLIENT');
 
 -- Seed tenants
 INSERT INTO tenants (id, name, subdomain) VALUES
