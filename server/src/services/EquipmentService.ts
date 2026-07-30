@@ -51,7 +51,7 @@ export class EquipmentService {
 
     const slot = await equipmentRepository.findBySlot(subscriptionId, slotIndex);
     if (!slot) throw AppError.notFound('Equipment slot not found');
-    if (slot.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
+    if (!byAdmin && slot.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
 
     // Generate random 6-digit OTP
     const otp = String(Math.floor(100000 + Math.random() * 900000));

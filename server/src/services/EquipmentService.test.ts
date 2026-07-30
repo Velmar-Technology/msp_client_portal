@@ -123,11 +123,17 @@ describe('EquipmentService', () => {
       mocks.equipFindBySlot.mockResolvedValue(mockSlot);
       mocks.equipUpdate.mockImplementation((id, data) => Promise.resolve({ id, ...data }));
 
-      const result = await equipmentService.generateSlotOTP(subId, 0, tenantId);
+      const result = await equipmentService.generateSlotOTP(subId, 0, tenantId, true);
 
       expect(result.otp).toMatch(/^\d{6}$/);
       expect(result.otp_expires_at).toBeInstanceOf(Date);
       expect(mocks.equipUpdate).toHaveBeenCalled();
+    });
+
+    it('should reject if non-admin/client attempts to generate OTP', async () => {
+      await expect(equipmentService.generateSlotOTP(subId, 0, tenantId, false)).rejects.toThrow(
+        'Client users are not authorized to generate activation codes'
+      );
     });
 
     it('should bypass tenant check if byAdmin is true', async () => {
