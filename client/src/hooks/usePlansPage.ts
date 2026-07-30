@@ -842,6 +842,20 @@ export function usePlansPage() {
     );
   }, []);
 
+  const handleDeleteFeatureParam = useCallback((index: number, paramKey: string) => {
+    setEditFeatures((prev) =>
+      prev.map((f, i) => {
+        if (i !== index) return f;
+        const newParams = { ...(f.params || {}) };
+        delete newParams[paramKey];
+        return {
+          ...f,
+          params: newParams,
+        };
+      })
+    );
+  }, []);
+
   const handleMoveFeature = useCallback((index: number, direction: -1 | 1) => {
     setEditFeatures((prev) => {
       const targetIndex = index + direction;
@@ -940,7 +954,7 @@ export function usePlansPage() {
             text: cleanBilingualRecord(textObj),
           };
         })
-        .filter((f) => f.text.en_US !== "");
+        .filter((f) => Boolean(f.code) || f.text.en_US !== "");
 
       const planNameStr = getPlanName(finalName);
 
@@ -1073,6 +1087,7 @@ export function usePlansPage() {
     handleEditFeatureText,
     handleUpdateFeatureCode,
     handleUpdateFeatureParam,
+    handleDeleteFeatureParam,
     handleMoveFeature,
     handleDragStart,
     handleDragOver,

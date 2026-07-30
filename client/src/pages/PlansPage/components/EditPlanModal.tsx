@@ -34,6 +34,7 @@ interface EditPlanModalProps {
   onEditFeatureText: (index: number, lang: 'en_US' | 'es_DO', textVal: string) => void;
   onUpdateFeatureCode?: (index: number, code: string) => void;
   onUpdateFeatureParam?: (index: number, paramKey: string, value: string | number | boolean) => void;
+  onDeleteFeatureParam?: (index: number, paramKey: string) => void;
   onMoveFeature: (index: number, direction: -1 | 1) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent, index: number) => void;
@@ -70,6 +71,7 @@ export function EditPlanModal({
   onEditFeatureText,
   onUpdateFeatureCode,
   onUpdateFeatureParam,
+  onDeleteFeatureParam,
   onMoveFeature,
   onDragStart,
   onDragOver,
@@ -317,26 +319,52 @@ export function EditPlanModal({
                       </select>
                     </div>
 
-                    {/* Parameter Controls if Codified Feature */}
-                    {(() => {
-                      const catalogItem = FEATURE_CATALOG.find((c) => c.code === feat.code);
-                      if (catalogItem && catalogItem.paramSchema && catalogItem.paramSchema.length > 0) {
-                        return (
-                          <div className="grid grid-cols-2 gap-1 bg-zinc-100/60 dark:bg-zinc-800/40 p-1.5 rounded border border-zinc-200/50 dark:border-zinc-700/50 my-1">
-                            {catalogItem.paramSchema.map((p) => {
-                              const currentVal = feat.params?.[p.key] ?? p.defaultValue;
+                    {/* Parameter Controls for Feature */}
+                    {feat.code && feat.code !== 'CUSTOM_FEATURE' && (
+                      <div className="bg-zinc-100/60 dark:bg-zinc-800/40 p-2 rounded border border-zinc-200/50 dark:border-zinc-700/50 my-1 space-y-1.5">
+                        <div className="flex justify-between items-center">
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500">Feature Parameters</span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {(() => {
+                            const catalogItem = FEATURE_CATALOG.find((c) => c.code === feat.code);
+                            const schemaKeys = new Set(catalogItem?.paramSchema?.map((p) => p.key) || []);
+                            const allParamKeys = Array.from(new Set([...Array.from(schemaKeys), ...Object.keys(feat.params || {})]));
+
+                            if (allParamKeys.length === 0) {
+                              return <p className="col-span-2 text-[9px] text-zinc-400 italic">No parameters configured.</p>;
+                            }
+
+                            return allParamKeys.map((paramKey) => {
+                              const schemaItem = catalogItem?.paramSchema?.find((p) => p.key === paramKey);
+                              const label = schemaItem ? schemaItem.label : paramKey;
+                              const currentVal = feat.params?.[paramKey] ?? schemaItem?.defaultValue ?? '';
+
                               return (
-                                <div key={p.key} className="space-y-0.5">
-                                  <label className="block text-[8px] font-bold uppercase tracking-wider text-zinc-500">
-                                    {p.label}
-                                  </label>
-                                  {p.type === 'select' && p.options ? (
+                                <div key={paramKey} className="space-y-0.5 relative">
+                                  <div className="flex justify-between items-center">
+                                    <label className="block text-[8px] font-bold uppercase tracking-wider text-zinc-500 truncate">
+                                      {label}
+                                    </label>
+                                    {!schemaKeys.has(paramKey) && (
+                                      <button
+                                        type="button"
+                                        onClick={() => onDeleteFeatureParam?.(index, paramKey)}
+                                        className="text-[9px] text-red-500 hover:underline px-0.5"
+                                        title="Remove custom parameter"
+                                      >
+                                        ✕
+                                      </button>
+                                    )}
+                                  </div>
+                                  {schemaItem?.type === 'select' && schemaItem.options ? (
                                     <select
                                       value={String(currentVal)}
-                                      onChange={(e) => onUpdateFeatureParam?.(index, p.key, e.target.value)}
+                                      onChange={(e) => onUpdateFeatureParam?.(index, paramKey, e.target.value)}
                                       className="w-full h-6 px-1 border rounded text-[10px] bg-card text-zinc-900 dark:text-zinc-100 focus:outline-none border-zinc-200 dark:border-zinc-800"
                                     >
-                                      {p.options.map((opt) => (
+                                      {schemaItem.options.map((opt) => (
                                         <option key={opt} value={opt}>
                                           {opt}
                                         </option>
@@ -344,13 +372,13 @@ export function EditPlanModal({
                                     </select>
                                   ) : (
                                     <Input
-                                      type={p.type === 'number' ? 'number' : 'text'}
+                                      type={schemaItem?.type === 'number' ? 'number' : 'text'}
                                       value={currentVal as string | number}
                                       onChange={(e) =>
                                         onUpdateFeatureParam?.(
                                           index,
-                                          p.key,
-                                          p.type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value
+                                          paramKey,
+                                          schemaItem?.type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value
                                         )
                                       }
                                       className="h-6 text-[10px] py-0 px-1.5 bg-white dark:bg-zinc-950 border"
@@ -358,12 +386,28 @@ export function EditPlanModal({
                                   )}
                                 </div>
                               );
-                            })}
-                          </div>
-                        );
-                      }
-                      return null;
-                    })()}
+                            });
+                          })()}
+                        </div>
+
+                        {/* Inline Custom Parameter Adder */}
+                        <div className="pt-1 border-t border-zinc-200/40 dark:border-zinc-700/40">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const key = window.prompt("Enter parameter key name (e.g. limit, unit, hours, frequency):");
+                              if (!key || !key.trim()) return;
+                              const val = window.prompt(`Enter value for '${key.trim()}':`);
+                              if (val === null) return;
+                              onUpdateFeatureParam?.(index, key.trim(), val);
+                            }}
+                            className="text-[9px] font-bold text-zinc-700 dark:text-zinc-300 hover:underline flex items-center gap-0.5 cursor-pointer uppercase tracking-wider"
+                          >
+                            + Add Custom Parameter
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Freeform text fields fallback if Custom Feature */}
                     {(!feat.code || feat.code === 'CUSTOM_FEATURE') && (

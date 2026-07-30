@@ -97,6 +97,7 @@ export function PlansPage() {
     handleEditFeatureText,
     handleUpdateFeatureCode,
     handleUpdateFeatureParam,
+    handleDeleteFeatureParam,
     handleMoveFeature,
     handleDragStart,
     handleDragOver,
@@ -713,6 +714,7 @@ export function PlansPage() {
           onEditFeatureText={handleEditFeatureText}
           onUpdateFeatureCode={handleUpdateFeatureCode}
           onUpdateFeatureParam={handleUpdateFeatureParam}
+          onDeleteFeatureParam={handleDeleteFeatureParam}
           onMoveFeature={handleMoveFeature}
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
