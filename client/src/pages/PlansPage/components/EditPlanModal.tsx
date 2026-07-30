@@ -81,6 +81,7 @@ export function EditPlanModal({
 }: EditPlanModalProps) {
   const { t } = useTranslation();
   const [activeLang, setActiveLang] = useState<'en_US' | 'es_DO'>('en_US');
+  const [featureLangTab, setFeatureLangTab] = useState<'en_US' | 'es_DO'>('en_US');
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-3">
@@ -171,7 +172,7 @@ export function EditPlanModal({
             </div>
           </div>
 
-          {/* i18n Language Tabs Section */}
+          {/* i18n Language Tabs Section for Plan Information */}
           <div className="bg-zinc-100/60 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded-md p-2.5">
             <Tabs value={activeLang} onValueChange={(val) => setActiveLang(val as 'en_US' | 'es_DO')} className="w-full">
               <div className="flex items-center justify-between mb-2">
@@ -243,184 +244,213 @@ export function EditPlanModal({
             </Tabs>
           </div>
 
-          {/* Features Section */}
+          {/* Features Section with i18n Tabs */}
           <div className="border-t border-zinc-200 dark:border-zinc-800 pt-2.5">
-            <div className="flex justify-between items-center mb-1.5">
-              <h4 className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
-                {t('plans.featuresTitle') || 'Features'} ({editFeatures.length})
-              </h4>
-              <button
-                type="button"
-                onClick={onAddFeature}
-                className="text-[10px] text-zinc-900 dark:text-zinc-100 hover:underline flex items-center gap-0.5 cursor-pointer font-bold uppercase tracking-wider bg-zinc-200/60 dark:bg-zinc-800 px-2 py-0.5 rounded"
-              >
-                <Plus className="h-3 w-3" /> {t('plans.addFeature') || 'Add Feature'}
-              </button>
-            </div>
+            <Tabs value={featureLangTab} onValueChange={(val) => setFeatureLangTab(val as 'en_US' | 'es_DO')} className="w-full">
+              <div className="flex justify-between items-center mb-1.5">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                    {t('plans.featuresTitle') || 'Features'} ({editFeatures.length})
+                  </h4>
+                  <TabsList className="h-5 p-0.5 bg-zinc-200/60 dark:bg-zinc-800 rounded">
+                    <TabsTrigger value="en_US" className="px-1.5 py-0 text-[9px] h-4 font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-950">
+                      EN Text
+                    </TabsTrigger>
+                    <TabsTrigger value="es_DO" className="px-1.5 py-0 text-[9px] h-4 font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-950">
+                      ES Text
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
 
-            <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1">
-              {editFeatures.map((feat, index) => {
-                const catalogItem = FEATURE_CATALOG.find((c) => c.code === feat.code);
-                const schemaKeys = new Set(catalogItem?.paramSchema?.map((p) => p.key) || []);
-                const allParamKeys = Array.from(new Set([...Array.from(schemaKeys), ...Object.keys(feat.params || {})]));
+                <button
+                  type="button"
+                  onClick={onAddFeature}
+                  className="text-[10px] text-zinc-900 dark:text-zinc-100 hover:underline flex items-center gap-0.5 cursor-pointer font-bold uppercase tracking-wider bg-zinc-200/60 dark:bg-zinc-800 px-2 py-0.5 rounded"
+                >
+                  <Plus className="h-3 w-3" /> {t('plans.addFeature') || 'Add Feature'}
+                </button>
+              </div>
 
-                return (
-                  <div
-                    key={index}
-                    draggable={true}
-                    onDragStart={(e) => onDragStart(e, index)}
-                    onDragOver={(e) => onDragOver(e, index)}
-                    onDrop={(e) => onDrop(e, index)}
-                    onDragEnd={onDragEnd}
-                    className={`group flex flex-col gap-1 border rounded p-1.5 transition-all duration-150 ${
-                      draggedIndex === index
-                        ? 'opacity-40 bg-zinc-100 dark:bg-zinc-800'
-                        : dragOverIndex === index
-                          ? 'border-zinc-900 border-dashed bg-zinc-100/50 dark:bg-zinc-800/40'
-                          : 'border-zinc-200/80 dark:border-zinc-800 bg-white/40 dark:bg-zinc-950/40'
-                    }`}
-                  >
-                    {/* Feature Main Control Bar */}
-                    <div className="flex items-center gap-1.5">
-                      <div className="cursor-grab active:cursor-grabbing text-zinc-400 hover:text-zinc-600 p-0.5">
-                        <GripVertical className="h-3.5 w-3.5" />
-                      </div>
+              <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1">
+                {editFeatures.map((feat, index) => {
+                  const catalogItem = FEATURE_CATALOG.find((c) => c.code === feat.code);
+                  const schemaKeys = new Set(catalogItem?.paramSchema?.map((p) => p.key) || []);
+                  const allParamKeys = Array.from(new Set([...Array.from(schemaKeys), ...Object.keys(feat.params || {})]));
 
-                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          type="button"
-                          disabled={index === 0}
-                          onClick={() => onMoveFeature(index, -1)}
-                          className="p-0.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded text-zinc-500 disabled:opacity-30 cursor-pointer"
-                        >
-                          <ChevronUp className="h-2.5 w-2.5" />
-                        </button>
-                        <button
-                          type="button"
-                          disabled={index === editFeatures.length - 1}
-                          onClick={() => onMoveFeature(index, 1)}
-                          className="p-0.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded text-zinc-500 disabled:opacity-30 cursor-pointer"
-                        >
-                          <ChevronDown className="h-2.5 w-2.5" />
-                        </button>
-                      </div>
+                  return (
+                    <div
+                      key={index}
+                      draggable={true}
+                      onDragStart={(e) => onDragStart(e, index)}
+                      onDragOver={(e) => onDragOver(e, index)}
+                      onDrop={(e) => onDrop(e, index)}
+                      onDragEnd={onDragEnd}
+                      className={`group flex flex-col gap-1 border rounded p-1.5 transition-all duration-150 ${
+                        draggedIndex === index
+                          ? 'opacity-40 bg-zinc-100 dark:bg-zinc-800'
+                          : dragOverIndex === index
+                            ? 'border-zinc-900 border-dashed bg-zinc-100/50 dark:bg-zinc-800/40'
+                            : 'border-zinc-200/80 dark:border-zinc-800 bg-white/40 dark:bg-zinc-950/40'
+                      }`}
+                    >
+                      {/* Feature Main Control Bar */}
+                      <div className="flex items-center gap-1.5">
+                        <div className="cursor-grab active:cursor-grabbing text-zinc-400 hover:text-zinc-600 p-0.5">
+                          <GripVertical className="h-3.5 w-3.5" />
+                        </div>
 
-                      <input
-                        type="checkbox"
-                        checked={feat.included}
-                        onChange={(e) => onToggleFeatureIncluded(index, e.target.checked)}
-                        className="h-3.5 w-3.5 rounded border-zinc-300 dark:border-zinc-700 accent-zinc-900 cursor-pointer"
-                        title={feat.included ? 'Included in plan' : 'Excluded from plan'}
-                      />
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            disabled={index === 0}
+                            onClick={() => onMoveFeature(index, -1)}
+                            className="p-0.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded text-zinc-500 disabled:opacity-30 cursor-pointer"
+                          >
+                            <ChevronUp className="h-2.5 w-2.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={index === editFeatures.length - 1}
+                            onClick={() => onMoveFeature(index, 1)}
+                            className="p-0.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded text-zinc-500 disabled:opacity-30 cursor-pointer"
+                          >
+                            <ChevronDown className="h-2.5 w-2.5" />
+                          </button>
+                        </div>
 
-                      {/* Code Dropdown */}
-                      <select
-                        value={feat.code || 'CUSTOM_FEATURE'}
-                        onChange={(e) => onUpdateFeatureCode?.(index, e.target.value)}
-                        className="flex-1 h-6.5 px-1.5 border rounded text-[11px] bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none border-zinc-200 dark:border-zinc-800 truncate font-medium"
-                      >
-                        <option value="CUSTOM_FEATURE">-- Custom Text Feature --</option>
-                        {FEATURE_CATALOG.filter((c) => c.code !== 'CUSTOM_FEATURE').map((cat) => (
-                          <option key={cat.code} value={cat.code}>
-                            {t(cat.labelKey) || cat.code} ({cat.code})
-                          </option>
-                        ))}
-                      </select>
-
-                      <button
-                        type="button"
-                        onClick={() => onDeleteFeature(index)}
-                        className="p-1 hover:bg-red-500/10 text-red-500 rounded transition-colors cursor-pointer"
-                        title="Delete feature"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-
-                    {/* Parameter Controls (Inline compact pills) */}
-                    {feat.code && feat.code !== 'CUSTOM_FEATURE' && (
-                      <div className="ml-6 pl-1 pt-0.5 flex items-center gap-1.5 flex-wrap bg-zinc-100/50 dark:bg-zinc-800/30 p-1 rounded border border-zinc-200/40 dark:border-zinc-800/40">
-                        {allParamKeys.map((paramKey) => {
-                          const schemaItem = catalogItem?.paramSchema?.find((p) => p.key === paramKey);
-                          const label = schemaItem ? schemaItem.label : paramKey;
-                          const currentVal = feat.params?.[paramKey] ?? schemaItem?.defaultValue ?? '';
-
-                          return (
-                            <div key={paramKey} className="flex items-center gap-1 bg-white dark:bg-zinc-950 px-1.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-800">
-                              <span className="text-[8px] font-bold uppercase tracking-wider text-zinc-400">{label}:</span>
-                              {schemaItem?.type === 'select' && schemaItem.options ? (
-                                <select
-                                  value={String(currentVal)}
-                                  onChange={(e) => onUpdateFeatureParam?.(index, paramKey, e.target.value)}
-                                  className="h-5 px-0.5 bg-transparent text-[10px] text-zinc-900 dark:text-zinc-100 font-medium focus:outline-none"
-                                >
-                                  {schemaItem.options.map((opt) => (
-                                    <option key={opt} value={opt}>
-                                      {opt}
-                                    </option>
-                                  ))}
-                                </select>
-                              ) : (
-                                <input
-                                  type={schemaItem?.type === 'number' ? 'number' : 'text'}
-                                  value={currentVal as string | number}
-                                  onChange={(e) =>
-                                    onUpdateFeatureParam?.(
-                                      index,
-                                      paramKey,
-                                      schemaItem?.type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value
-                                    )
-                                  }
-                                  className="h-5 w-16 text-[10px] bg-transparent font-mono text-zinc-900 dark:text-zinc-100 focus:outline-none"
-                                />
-                              )}
-                              {!schemaKeys.has(paramKey) && (
-                                <button
-                                  type="button"
-                                  onClick={() => onDeleteFeatureParam?.(index, paramKey)}
-                                  className="text-[9px] text-red-400 hover:text-red-600 ml-0.5"
-                                  title="Remove parameter"
-                                >
-                                  ✕
-                                </button>
-                              )}
-                            </div>
-                          );
-                        })}
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const key = window.prompt("Enter parameter key name (e.g. limit, unit, hours):");
-                            if (!key || !key.trim()) return;
-                            const val = window.prompt(`Enter value for '${key.trim()}':`);
-                            if (val === null) return;
-                            onUpdateFeatureParam?.(index, key.trim(), val);
-                          }}
-                          className="text-[9px] text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:underline px-1 cursor-pointer font-medium"
-                        >
-                          + Param
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Custom Text Input for Active Language (if custom feature) */}
-                    {(!feat.code || feat.code === 'CUSTOM_FEATURE') && (
-                      <div className="ml-6 flex items-center gap-1.5 pt-0.5">
-                        <span className="text-[8px] font-bold text-zinc-400 uppercase w-4">{activeLang === 'en_US' ? 'EN' : 'ES'}</span>
-                        <Input
-                          type="text"
-                          value={(typeof feat.text === 'string' ? feat.text : feat.text?.[activeLang]) || ''}
-                          onChange={(e) => onEditFeatureText(index, activeLang, e.target.value)}
-                          className="flex-1 h-6.5 text-[11px] bg-white dark:bg-zinc-950 py-0"
-                          placeholder={activeLang === 'en_US' ? 'Feature description in English...' : 'Descripción de la característica en español...'}
+                        <input
+                          type="checkbox"
+                          checked={feat.included}
+                          onChange={(e) => onToggleFeatureIncluded(index, e.target.checked)}
+                          className="h-3.5 w-3.5 rounded border-zinc-300 dark:border-zinc-700 accent-zinc-900 cursor-pointer"
+                          title={feat.included ? 'Included in plan' : 'Excluded from plan'}
                         />
+
+                        {/* Code Dropdown */}
+                        <select
+                          value={feat.code || 'CUSTOM_FEATURE'}
+                          onChange={(e) => onUpdateFeatureCode?.(index, e.target.value)}
+                          className="flex-1 h-6.5 px-1.5 border rounded text-[11px] bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none border-zinc-200 dark:border-zinc-800 truncate font-medium"
+                        >
+                          <option value="CUSTOM_FEATURE">-- Custom Text Feature --</option>
+                          {FEATURE_CATALOG.filter((c) => c.code !== 'CUSTOM_FEATURE').map((cat) => (
+                            <option key={cat.code} value={cat.code}>
+                              {t(cat.labelKey) || cat.code} ({cat.code})
+                            </option>
+                          ))}
+                        </select>
+
+                        <button
+                          type="button"
+                          onClick={() => onDeleteFeature(index)}
+                          className="p-1 hover:bg-red-500/10 text-red-500 rounded transition-colors cursor-pointer"
+                          title="Delete feature"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+
+                      {/* Parameter Controls (Inline compact pills) */}
+                      {feat.code && feat.code !== 'CUSTOM_FEATURE' && (
+                        <div className="ml-6 pl-1 pt-0.5 flex items-center gap-1.5 flex-wrap bg-zinc-100/50 dark:bg-zinc-800/30 p-1 rounded border border-zinc-200/40 dark:border-zinc-800/40">
+                          {allParamKeys.map((paramKey) => {
+                            const schemaItem = catalogItem?.paramSchema?.find((p) => p.key === paramKey);
+                            const label = schemaItem ? schemaItem.label : paramKey;
+                            const currentVal = feat.params?.[paramKey] ?? schemaItem?.defaultValue ?? '';
+
+                            return (
+                              <div key={paramKey} className="flex items-center gap-1 bg-white dark:bg-zinc-950 px-1.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-800">
+                                <span className="text-[8px] font-bold uppercase tracking-wider text-zinc-400">{label}:</span>
+                                {schemaItem?.type === 'select' && schemaItem.options ? (
+                                  <select
+                                    value={String(currentVal)}
+                                    onChange={(e) => onUpdateFeatureParam?.(index, paramKey, e.target.value)}
+                                    className="h-5 px-0.5 bg-transparent text-[10px] text-zinc-900 dark:text-zinc-100 font-medium focus:outline-none"
+                                  >
+                                    {schemaItem.options.map((opt) => (
+                                      <option key={opt} value={opt}>
+                                        {opt}
+                                      </option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  <input
+                                    type={schemaItem?.type === 'number' ? 'number' : 'text'}
+                                    value={currentVal as string | number}
+                                    onChange={(e) =>
+                                      onUpdateFeatureParam?.(
+                                        index,
+                                        paramKey,
+                                        schemaItem?.type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value
+                                      )
+                                    }
+                                    className="h-5 w-16 text-[10px] bg-transparent font-mono text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                                  />
+                                )}
+                                {!schemaKeys.has(paramKey) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => onDeleteFeatureParam?.(index, paramKey)}
+                                    className="text-[9px] text-red-400 hover:text-red-600 ml-0.5"
+                                    title="Remove parameter"
+                                  >
+                                    ✕
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const key = window.prompt("Enter parameter key name (e.g. limit, unit, hours):");
+                              if (!key || !key.trim()) return;
+                              const val = window.prompt(`Enter value for '${key.trim()}':`);
+                              if (val === null) return;
+                              onUpdateFeatureParam?.(index, key.trim(), val);
+                            }}
+                            className="text-[9px] text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:underline px-1 cursor-pointer font-medium"
+                          >
+                            + Param
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Custom Text Input for Active Feature Language Tab */}
+                      {(!feat.code || feat.code === 'CUSTOM_FEATURE') && (
+                        <div className="ml-6 pt-0.5">
+                          <TabsContent value="en_US" className="mt-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[8px] font-bold text-zinc-400 uppercase w-4">EN</span>
+                              <Input
+                                type="text"
+                                value={(typeof feat.text === 'string' ? feat.text : feat.text?.en_US) || ''}
+                                onChange={(e) => onEditFeatureText(index, 'en_US', e.target.value)}
+                                className="flex-1 h-6.5 text-[11px] bg-white dark:bg-zinc-950 py-0"
+                                placeholder="Feature description in English..."
+                              />
+                            </div>
+                          </TabsContent>
+                          <TabsContent value="es_DO" className="mt-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[8px] font-bold text-zinc-400 uppercase w-4">ES</span>
+                              <Input
+                                type="text"
+                                value={(typeof feat.text === 'string' ? feat.text : feat.text?.es_DO) || ''}
+                                onChange={(e) => onEditFeatureText(index, 'es_DO', e.target.value)}
+                                className="flex-1 h-6.5 text-[11px] bg-white dark:bg-zinc-950 py-0"
+                                placeholder="Descripción de la característica en español..."
+                              />
+                            </div>
+                          </TabsContent>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </Tabs>
           </div>
         </div>
 
