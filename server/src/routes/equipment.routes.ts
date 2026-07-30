@@ -24,7 +24,7 @@ router.get('/subscriptions/:subId/slots', (req, res, next) =>
 );
 
 /** POST /api/v1/equipment/subscriptions/:subId/slots/:slotIndex/otp — Generate OTP code */
-router.post('/subscriptions/:subId/slots/:slotIndex/otp', (req, res, next) =>
+router.post('/subscriptions/:subId/slots/:slotIndex/otp', rbacMiddleware(UserRole.ADMIN, UserRole.TECHNICIAN), (req, res, next) =>
   equipmentController.generateOTP(req, res, next)
 );
 

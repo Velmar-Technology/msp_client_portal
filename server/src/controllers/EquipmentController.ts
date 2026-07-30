@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { equipmentService } from '../services/EquipmentService';
+import { AppError } from '../utils/AppError';
 
 export class EquipmentController {
   async getSlots(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -18,9 +19,12 @@ export class EquipmentController {
 
   async generateOTP(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      if (req.user!.role === 'CLIENT') {
+        throw AppError.forbidden('Client users are not authorized to generate activation codes');
+      }
       const subId = req.params.subId as string;
       const slotIndex = parseInt(req.params.slotIndex as string, 10);
-      const byAdmin = req.user!.role === 'ADMIN';
+      const byAdmin = req.user!.role === 'ADMIN' || req.user!.role === 'TECHNICIAN';
       const slot = await equipmentService.generateSlotOTP(subId, slotIndex, req.user!.tenantId, byAdmin);
       res.json({
         success: true,

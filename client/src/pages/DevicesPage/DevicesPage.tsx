@@ -345,6 +345,7 @@ interface DeviceActionsCellProps {
   equip: Partial<SubscriptionEquipment>;
   rowIndex: number;
   targetSubId: string | undefined;
+  isAdmin?: boolean;
   onOpenNcModal: (equip: Partial<SubscriptionEquipment>) => void;
   onOpenScheduleMaint: (equip: Partial<SubscriptionEquipment>) => void;
   onRevokeEquipment: (subId: string, slotIndex: number) => void;
@@ -356,6 +357,7 @@ const DeviceActionsCell = memo(function DeviceActionsCell({
   equip,
   rowIndex,
   targetSubId,
+  isAdmin = false,
   onOpenNcModal,
   onOpenScheduleMaint,
   onRevokeEquipment,
@@ -404,14 +406,25 @@ const DeviceActionsCell = memo(function DeviceActionsCell({
               <DropdownMenuItem onClick={() => targetSubId && onStartActivationWizard(targetSubId, idx, equip.otp!)}>
                 {t("devices.actionSimulate")}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => targetSubId && onGenerateOTP(targetSubId, idx)}>
-                {t("devices.actionRegenerate")}
-              </DropdownMenuItem>
+              {isAdmin && (
+                <DropdownMenuItem onClick={() => targetSubId && onGenerateOTP(targetSubId, idx)}>
+                  {t("devices.actionRegenerate")}
+                </DropdownMenuItem>
+              )}
             </>
           ) : (
-            <DropdownMenuItem onClick={() => targetSubId && onStartActivationWizard(targetSubId, idx, null)}>
-              {t("devices.actionGenerate")}
-            </DropdownMenuItem>
+            isAdmin ? (
+              <DropdownMenuItem onClick={() => targetSubId && onStartActivationWizard(targetSubId, idx, null)}>
+                {t("devices.actionGenerate")}
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem
+                onClick={() => targetSubId && onStartActivationWizard(targetSubId, idx, null)}
+                className="opacity-60"
+              >
+                {t("devices.actionGenerate")}
+              </DropdownMenuItem>
+            )
           )}
         </DropdownMenuContent>
       </DropdownMenu>
@@ -687,6 +700,7 @@ export function DevicesPage() {
             equip={equip}
             rowIndex={row.index}
             targetSubId={targetSubId}
+            isAdmin={isAdmin}
             onOpenNcModal={handleOpenNcModal}
             onOpenScheduleMaint={handleOpenScheduleMaint}
             onRevokeEquipment={handleRevokeEquipment}

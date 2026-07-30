@@ -127,6 +127,7 @@ describe('DevicesPage', () => {
   });
 
   test('renders devices table and runs simulated activation wizard', async () => {
+    mockUser.role = 'ADMIN';
     const activeSubs = [
       {
         id: 'sub-basic',
@@ -177,6 +178,7 @@ describe('DevicesPage', () => {
     ];
 
     vi.mocked(equipmentService.getMyDevices).mockResolvedValue([...mockSlots]);
+    vi.mocked(equipmentService.getAllDevicesForAdmin).mockResolvedValue([...mockSlots]);
 
     vi.mocked(equipmentService.generateOTP).mockImplementation(async (subId, slotIndex) => {
       mockSlots[slotIndex].otp = '123456';
@@ -277,6 +279,64 @@ describe('DevicesPage', () => {
 
     await waitFor(() => {
       expect(mockToast.info).toHaveBeenCalledWith('Slot Revoked', expect.any(Object));
+    });
+  });
+
+  test('blocks CLIENT role users from generating OTPs', async () => {
+    mockUser.role = 'CLIENT';
+    const activeSubs = [
+      {
+        id: 'sub-basic',
+        client_id: 'user-client',
+        service_name: 'Basic Support',
+        plan: 'BASIC' as const,
+        status: 'ACTIVE' as const,
+        renewal_date: '2026-07-22T00:00:00.000Z',
+        equipment_count: 1,
+        tenant_id: 'tenant-1',
+        created_at: '2026-06-22',
+        updated_at: '2026-06-22',
+      },
+    ];
+    vi.mocked(subscriptionService.getAll).mockResolvedValue(activeSubs);
+
+    const mockSlots: SubscriptionEquipment[] = [
+      {
+        id: 'slot-1',
+        subscription_id: 'sub-basic',
+        slot_index: 0,
+        status: 'PENDING_ACTIVATION',
+        device_name: null,
+        device_serial: null,
+        otp: null,
+        otp_expires_at: null,
+        nextcloud_username: null,
+        nextcloud_password: null,
+        tenant_id: 'tenant-1',
+        created_at: '2026-06-22',
+        updated_at: '2026-06-22',
+      },
+    ];
+    vi.mocked(equipmentService.getMyDevices).mockResolvedValue([...mockSlots]);
+
+    render(
+      <MemoryRouter>
+        <DevicesPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('PENDING ACTIVATION')).toBeInTheDocument();
+    });
+
+    const actionsBtn = screen.getByRole('button', { name: 'Actions' });
+    fireEvent.click(actionsBtn);
+
+    const generateBtn = screen.getByRole('menuitem', { name: 'Generate Activation OTP' });
+    fireEvent.click(generateBtn);
+
+    await waitFor(() => {
+      expect(mockToast.error).toHaveBeenCalledWith('Activation Code Required', expect.any(Object));
     });
   });
 

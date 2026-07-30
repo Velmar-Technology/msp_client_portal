@@ -43,12 +43,15 @@ export class EquipmentService {
    * Generates a 6-digit OTP for slot activation
    */
   async generateSlotOTP(subscriptionId: string, slotIndex: number, tenantId: string, byAdmin = false): Promise<SubscriptionEquipment> {
+    if (!byAdmin) {
+      throw AppError.forbidden('Client users are not authorized to generate activation codes');
+    }
     // Ensure slots are initialized
     await this.getEquipmentSlots(subscriptionId, tenantId, byAdmin);
 
     const slot = await equipmentRepository.findBySlot(subscriptionId, slotIndex);
     if (!slot) throw AppError.notFound('Equipment slot not found');
-    if (!byAdmin && slot.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
+    if (slot.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
 
     // Generate random 6-digit OTP
     const otp = String(Math.floor(100000 + Math.random() * 900000));

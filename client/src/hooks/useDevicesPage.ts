@@ -170,7 +170,7 @@ export function useDevicesPage() {
         description: error.response?.data?.message || error.message || "Failed to generate OTP.",
       });
     }
-  }, [updateDeviceList]);
+  }, [updateDeviceList, user?.role]);
 
   const handleRevokeEquipment = useCallback(async (subId: string, slotIndex: number) => {
     try {
@@ -189,20 +189,26 @@ export function useDevicesPage() {
   }, [updateDeviceList]);
 
   const handleStartActivationWizard = useCallback(async (subId: string, slotIndex: number, currentOtp?: string | null) => {
+    if (!currentOtp && user?.role === "CLIENT") {
+      toast.error("Activation Code Required", {
+        description: "An administrator must generate an activation code before you can activate this slot.",
+      });
+      return;
+    }
     setActivationWizardSubId(subId);
     setActivationWizardSlotIdx(slotIndex);
     setActivationDeviceName(`Workstation-${slotIndex + 1}`);
     setActivationDeviceSerial(`SN-SIM-${Math.floor(100000 + Math.random() * 900000)}`);
     setActivationWizardStep(1);
 
-    if (!currentOtp) {
+    if (!currentOtp && user?.role !== "CLIENT") {
       try {
         await handleGenerateOTP(subId, slotIndex);
       } catch (err) {
         console.error("Failed to auto-generate OTP for wizard:", err);
       }
     }
-  }, [handleGenerateOTP]);
+  }, [handleGenerateOTP, user?.role]);
 
   const handleWizardActivate = useCallback(async () => {
     if (!activationWizardSubId || activationWizardSlotIdx === null) return;
