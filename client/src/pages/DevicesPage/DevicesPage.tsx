@@ -19,6 +19,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // 1. High-Density Empty Subscriptions Card Sub-component
 interface EmptySubscriptionsCardProps {
@@ -475,12 +485,42 @@ export function DevicesPage() {
     limit,
     setLimit,
     totalPages,
+    setSelectedDevices,
+    showBulkDeactivateAlert,
+    setShowBulkDeactivateAlert,
+    bulkDeactivateTargets,
+    bulkProcessing,
+    handleBulkGenerateOTP,
+    handleBulkDeactivateClick,
+    confirmBulkDeactivate,
+    handleBulkExportCSV,
   } = useDevicesPage();
 
   const [maintModalEquip, setMaintModalEquip] = useState<Partial<SubscriptionEquipment> | null>(null);
   const [isMaintModalOpen, setIsMaintModalOpen] = useState(false);
   const [ncModalEquip, setNcModalEquip] = useState<Partial<SubscriptionEquipment> | null>(null);
   const [isNcModalOpen, setIsNcModalOpen] = useState(false);
+
+  const bulkActions = useMemo(
+    () => [
+      {
+        label: t("devices.bulkGenerateOtp") || "Generate OTPs",
+        onClick: handleBulkGenerateOTP,
+        variant: "default" as const,
+      },
+      {
+        label: t("devices.bulkDeactivate") || "Deactivate Devices",
+        onClick: handleBulkDeactivateClick,
+        variant: "destructive" as const,
+      },
+      {
+        label: t("devices.bulkExport") || "Export CSV",
+        onClick: handleBulkExportCSV,
+        variant: "outline" as const,
+      },
+    ],
+    [t, handleBulkGenerateOTP, handleBulkDeactivateClick, handleBulkExportCSV]
+  );
 
   const handleOpenScheduleMaint = useCallback((equip: Partial<SubscriptionEquipment>) => {
     setMaintModalEquip(equip);
@@ -831,6 +871,9 @@ export function DevicesPage() {
                   search={searchConfig}
                   filters={filtersConfig}
                   pagination={paginationConfig}
+                  enableRowSelection={true}
+                  onSelectedRowsChange={setSelectedDevices}
+                  bulkActions={bulkActions}
                 />
               </div>
             </div>
@@ -873,6 +916,36 @@ export function DevicesPage() {
         fallbackUsername={ncModalEquip?.nextcloud_username}
         fallbackDeviceName={ncModalEquip?.device_name}
       />
+
+      {/* Bulk Deactivation Confirmation Modal */}
+      <AlertDialog open={showBulkDeactivateAlert} onOpenChange={setShowBulkDeactivateAlert}>
+        <AlertDialogContent className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 max-w-sm rounded-lg p-5">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-sm font-bold">
+              {t("devices.bulkDeactivateConfirmTitle") || "Deactivate Selected Devices"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-zinc-500 leading-relaxed mt-1">
+              {t("devices.bulkDeactivateConfirmDesc", { count: bulkDeactivateTargets.length }) ||
+                `Are you sure you want to deactivate ${bulkDeactivateTargets.length} active device(s)? This action will revoke cloud backup accounts.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 gap-2 flex justify-end">
+            <AlertDialogCancel
+              disabled={bulkProcessing}
+              className="h-8 px-3 rounded-md text-xs font-semibold cursor-pointer border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+            >
+              {t("devices.cancel") || "Cancel"}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkProcessing}
+              className="h-8 px-3 rounded-md text-xs font-semibold cursor-pointer bg-red-600 hover:bg-red-700 text-white border-0"
+              onClick={confirmBulkDeactivate}
+            >
+              {t("devices.bulkDeactivate") || "Deactivate Devices"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Page>
   );
 }

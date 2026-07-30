@@ -317,6 +317,12 @@ export function useDevicesPage() {
     }
   }, [adminDevices, subscriptionEquipment, activeSub, searchTerm, isAdmin, selectedClient, selectedPlan, selectedStatus]);
 
+  // Bulk Operations State
+  const [selectedDevices, setSelectedDevices] = useState<Partial<SubscriptionEquipment>[]>([]);
+  const [showBulkDeactivateAlert, setShowBulkDeactivateAlert] = useState(false);
+  const [bulkDeactivateTargets, setBulkDeactivateTargets] = useState<Partial<SubscriptionEquipment>[]>([]);
+  const [bulkProcessing, setBulkProcessing] = useState(false);
+
   const totalPages = useMemo(() => {
     return Math.max(1, Math.ceil(filteredEquipment.length / limit));
   }, [filteredEquipment.length, limit]);
@@ -325,6 +331,130 @@ export function useDevicesPage() {
     const startIndex = (page - 1) * limit;
     return filteredEquipment.slice(startIndex, startIndex + limit);
   }, [filteredEquipment, page, limit]);
+
+  const handleBulkGenerateOTP = useCallback(
+    async (selected: Partial<SubscriptionEquipment>[]) => {
+      const pendingSlots = selected.filter(
+        (equip) => equip.status !== "ACTIVE" && (equip.subscription_id || activeSub?.id) && equip.slot_index !== undefined
+      );
+      if (pendingSlots.length === 0) {
+        toast.info(t("common.info") || "Info", {
+          description: t("devices.noPendingForOtp") || "No selected devices require OTP generation.",
+        });
+        return;
+      }
+      setBulkProcessing(true);
+      let successCount = 0;
+      try {
+        await Promise.allSettled(
+          pendingSlots.map(async (slot) => {
+            const subId = slot.subscription_id || activeSub?.id;
+            if (subId !== undefined && slot.slot_index !== undefined) {
+              const updatedSlot = await equipmentService.generateOTP(subId, slot.slot_index);
+              updateDeviceList(subId, slot.slot_index, updatedSlot);
+              successCount++;
+            }
+          })
+        );
+        if (successCount > 0) {
+          toast.success(t("common.success") || "Success", {
+            description:
+              t("devices.bulkGenerateOtpSuccess", { count: successCount }) ||
+              `Generated OTPs for ${successCount} pending slot(s).`,
+          });
+        }
+      } catch (err) {
+        console.error("Bulk OTP generation failed:", err);
+      } finally {
+        setBulkProcessing(false);
+      }
+    },
+    [activeSub, updateDeviceList, t]
+  );
+
+  const handleBulkDeactivateClick = useCallback(
+    (selected: Partial<SubscriptionEquipment>[]) => {
+      const activeSlots = selected.filter(
+        (equip) => equip.status === "ACTIVE" && (equip.subscription_id || activeSub?.id) && equip.slot_index !== undefined
+      );
+      if (activeSlots.length === 0) {
+        toast.info(t("common.info") || "Info", {
+          description: t("devices.noActiveForDeactivate") || "No active devices selected for deactivation.",
+        });
+        return;
+      }
+      setBulkDeactivateTargets(activeSlots);
+      setShowBulkDeactivateAlert(true);
+    },
+    [activeSub, t]
+  );
+
+  const confirmBulkDeactivate = useCallback(async () => {
+    if (bulkDeactivateTargets.length === 0) return;
+    setBulkProcessing(true);
+    let successCount = 0;
+    try {
+      await Promise.allSettled(
+        bulkDeactivateTargets.map(async (slot) => {
+          const subId = slot.subscription_id || activeSub?.id;
+          if (subId !== undefined && slot.slot_index !== undefined) {
+            const updatedSlot = await equipmentService.deactivateSlot(subId, slot.slot_index);
+            updateDeviceList(subId, slot.slot_index, updatedSlot);
+            successCount++;
+          }
+        })
+      );
+      if (successCount > 0) {
+        toast.info(t("devices.slotRevokedTitle") || "Slot Revoked", {
+          description:
+            t("devices.bulkDeactivateSuccess", { count: successCount }) ||
+            `Deactivated ${successCount} active device(s).`,
+        });
+      }
+    } catch (err) {
+      console.error("Bulk deactivation failed:", err);
+    } finally {
+      setBulkProcessing(false);
+      setShowBulkDeactivateAlert(false);
+      setBulkDeactivateTargets([]);
+    }
+  }, [bulkDeactivateTargets, activeSub, updateDeviceList, t]);
+
+  const handleBulkExportCSV = useCallback(
+    (selected: Partial<SubscriptionEquipment>[]) => {
+      const rowsToExport = selected.length > 0 ? selected : filteredEquipment;
+      if (rowsToExport.length === 0) return;
+
+      const headers = ["Slot", "Status", "Device Name", "Serial Number", "Nextcloud User", "Client", "Plan", "ID"];
+      const csvLines = [headers.join(",")];
+
+      rowsToExport.forEach((item) => {
+        const slot = item.slot_index !== undefined ? item.slot_index + 1 : "";
+        const status = item.status || "";
+        const deviceName = item.device_name ? `"${item.device_name.replace(/"/g, '""')}"` : "";
+        const serial = item.device_serial ? `"${item.device_serial.replace(/"/g, '""')}"` : "";
+        const ncUser = item.nextcloud_username || "";
+        const client = item.client_name ? `"${item.client_name.replace(/"/g, '""')}"` : item.tenant_name || "";
+        const plan = item.plan || "";
+        const id = item.id || "";
+
+        csvLines.push([slot, status, deviceName, serial, ncUser, client, plan, id].join(","));
+      });
+
+      const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(csvLines.join("\n"));
+      const link = document.createElement("a");
+      link.setAttribute("href", csvContent);
+      link.setAttribute("download", `devices_export_${Date.now()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success(t("common.success") || "Success", {
+        description: `Exported ${rowsToExport.length} device(s) to CSV.`,
+      });
+    },
+    [filteredEquipment, t]
+  );
 
   return {
     t,
@@ -374,5 +504,15 @@ export function useDevicesPage() {
     limit,
     setLimit,
     totalPages,
+    selectedDevices,
+    setSelectedDevices,
+    showBulkDeactivateAlert,
+    setShowBulkDeactivateAlert,
+    bulkDeactivateTargets,
+    bulkProcessing,
+    handleBulkGenerateOTP,
+    handleBulkDeactivateClick,
+    confirmBulkDeactivate,
+    handleBulkExportCSV,
   };
 }

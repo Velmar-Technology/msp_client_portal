@@ -554,7 +554,16 @@
     "slotRevokedDesc": "Ranura de dispositivo revocada. Cuenta de almacenamiento en la nube eliminada.",
     "revokeFailed": "Error al desactivar la ranura.",
     "otpGeneratedTitle": "OTP Generado",
-    "otpGeneratedDesc": "Código de activación temporal {{otp}} generado para la ranura #{{slot}}."
+    "otpGeneratedDesc": "Código de activación temporal {{otp}} generado para la ranura #{{slot}}.",
+    "bulkGenerateOtp": "Generar OTPs",
+    "bulkDeactivate": "Desactivar Dispositivos",
+    "bulkExport": "Exportar CSV",
+    "bulkGenerateOtpSuccess": "OTPs generados para {{count}} ranura(s) pendiente(s).",
+    "bulkDeactivateSuccess": "Desactivados {{count}} dispositivo(s) activo(s).",
+    "bulkDeactivateConfirmTitle": "Desactivar Dispositivos Seleccionados",
+    "bulkDeactivateConfirmDesc": "¿Está seguro de que desea desactivar {{count}} dispositivo(s) activo(s)? Esta acción revocará las cuentas de almacenamiento en la nube.",
+    "noPendingForOtp": "Ninguno de los dispositivos seleccionados requiere generación de OTP.",
+    "noActiveForDeactivate": "No hay dispositivos activos seleccionados para desactivar."
   },
   "billing": {
     "title": "Historial de Facturación",

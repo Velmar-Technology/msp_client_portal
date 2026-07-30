@@ -555,7 +555,16 @@
     "slotRevokedDesc": "Device slot revoked. Cloud storage account deleted.",
     "revokeFailed": "Failed to deactivate slot.",
     "otpGeneratedTitle": "OTP Generated",
-    "otpGeneratedDesc": "Temporary activation code {{otp}} generated for slot #{{slot}}."
+    "otpGeneratedDesc": "Temporary activation code {{otp}} generated for slot #{{slot}}.",
+    "bulkGenerateOtp": "Generate OTPs",
+    "bulkDeactivate": "Deactivate Devices",
+    "bulkExport": "Export CSV",
+    "bulkGenerateOtpSuccess": "Generated OTPs for {{count}} pending slot(s).",
+    "bulkDeactivateSuccess": "Deactivated {{count}} active device(s).",
+    "bulkDeactivateConfirmTitle": "Deactivate Selected Devices",
+    "bulkDeactivateConfirmDesc": "Are you sure you want to deactivate {{count}} active device(s)? This action will revoke cloud backup accounts.",
+    "noPendingForOtp": "No selected devices require OTP generation.",
+    "noActiveForDeactivate": "No active devices selected for deactivation."
   },
   "billing": {
     "title": "Billing History",

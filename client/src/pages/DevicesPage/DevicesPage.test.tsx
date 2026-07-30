@@ -668,4 +668,126 @@ describe('DevicesPage', () => {
 
     expect(equipmentService.getNextcloudInfo).toHaveBeenCalledWith('sub-nc-test', 0);
   });
+
+  test('supports bulk OTP generation on pending devices', async () => {
+    mockUser.role = 'ADMIN';
+    const mockAdminDevices = [
+      {
+        id: 'slot-bulk-1',
+        subscription_id: 'sub-bulk',
+        slot_index: 0,
+        status: 'PENDING_ACTIVATION' as const,
+        device_name: null,
+        device_serial: null,
+        tenant_id: 'tenant-1',
+        tenant_name: 'Acme Corp',
+        client_name: 'John Mitchell',
+        client_email: 'john@example.com',
+        plan: 'BASIC',
+      },
+    ];
+
+    vi.mocked(equipmentService.getAllDevicesForAdmin).mockResolvedValue(mockAdminDevices);
+    vi.mocked(equipmentService.generateOTP).mockResolvedValue({
+      ...mockAdminDevices[0],
+      otp: '654321',
+      otp_expires_at: new Date().toISOString(),
+    });
+
+    render(
+      <MemoryRouter>
+        <DevicesPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('PENDING ACTIVATION')).toBeInTheDocument();
+    });
+
+    const selectAllCheckbox = screen.getByLabelText('Select all');
+    fireEvent.click(selectAllCheckbox);
+
+    await waitFor(() => {
+      expect(screen.getByText('1 selected')).toBeInTheDocument();
+    });
+
+    const generateOtpsBtn = screen.getByRole('button', { name: 'Generate OTPs' });
+    fireEvent.click(generateOtpsBtn);
+
+    await waitFor(() => {
+      expect(equipmentService.generateOTP).toHaveBeenCalledWith('sub-bulk', 0);
+      expect(mockToast.success).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          description: expect.stringContaining('Generated OTPs for 1 pending slot(s).'),
+        })
+      );
+    });
+  });
+
+  test('supports bulk deactivation on active devices', async () => {
+    mockUser.role = 'ADMIN';
+    const mockAdminDevices = [
+      {
+        id: 'slot-bulk-2',
+        subscription_id: 'sub-bulk',
+        slot_index: 1,
+        status: 'ACTIVE' as const,
+        device_name: 'Workstation Beta',
+        device_serial: 'SN-BETA-02',
+        nextcloud_username: 'nc_user_beta',
+        tenant_id: 'tenant-1',
+        tenant_name: 'Acme Corp',
+        client_name: 'John Mitchell',
+        client_email: 'john@example.com',
+        plan: 'BASIC',
+      },
+    ];
+
+    vi.mocked(equipmentService.getAllDevicesForAdmin).mockResolvedValue(mockAdminDevices);
+    vi.mocked(equipmentService.deactivateSlot).mockResolvedValue({
+      ...mockAdminDevices[0],
+      status: 'PENDING_ACTIVATION',
+      device_name: null,
+      device_serial: null,
+      nextcloud_username: null,
+    });
+
+    render(
+      <MemoryRouter>
+        <DevicesPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Workstation Beta')).toBeInTheDocument();
+    });
+
+    const selectAllCheckbox = screen.getByLabelText('Select all');
+    fireEvent.click(selectAllCheckbox);
+
+    await waitFor(() => {
+      expect(screen.getByText('1 selected')).toBeInTheDocument();
+    });
+
+    const deactivateBtn = screen.getByRole('button', { name: 'Deactivate Devices' });
+    fireEvent.click(deactivateBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText('Deactivate Selected Devices')).toBeInTheDocument();
+    });
+
+    const deactivateButtons = screen.getAllByRole('button', { name: 'Deactivate Devices' });
+    fireEvent.click(deactivateButtons[deactivateButtons.length - 1]);
+
+    await waitFor(() => {
+      expect(equipmentService.deactivateSlot).toHaveBeenCalledWith('sub-bulk', 1);
+      expect(mockToast.info).toHaveBeenCalledWith(
+        'Slot Revoked',
+        expect.objectContaining({
+          description: expect.stringContaining('Deactivated 1 active device(s).'),
+        })
+      );
+    });
+  });
 });
