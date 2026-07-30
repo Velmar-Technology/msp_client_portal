@@ -212,6 +212,30 @@ describe('AppLayout UI Blocker', () => {
     expect(screen.queryByText('Active Plan Required')).not.toBeInTheDocument();
   });
 
+  test('does not block UI for CLIENT user without active subscription on /billing route', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'client-123', name: 'John Client', role: 'CLIENT', email: 'john@client.com', tenantId: 'tenant-1' },
+      isAuthenticated: true,
+    });
+
+    vi.mocked(subscriptionService.getAll).mockResolvedValue([]);
+
+    render(
+      <MemoryRouter initialEntries={['/billing']}>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route path="/billing" element={<div>Billing Page Content</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Billing Page Content')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Active Plan Required')).not.toBeInTheDocument();
+  });
+
   test('does not block UI for ADMIN user without active subscription', async () => {
     mockUseAuth.mockReturnValue({
       user: { id: 'admin-123', name: 'Admin User', role: 'ADMIN', email: 'admin@example.com', tenantId: 'tenant-1' },

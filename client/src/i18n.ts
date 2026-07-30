@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import enUS from "@/locales/en_US.json";
 import esDO from "@/locales/es_DO.json";
+import { APP_METADATA } from "@/config/metadata";
 
 // Retrieve initial language setting from cached user preference or browser setting
 const getInitialLanguage = (): string => {
@@ -34,6 +35,7 @@ i18n
     fallbackLng: 'en_US',
     interpolation: {
       escapeValue: false, // React already handles escaping
+      defaultVariables: APP_METADATA,
     },
   });
 

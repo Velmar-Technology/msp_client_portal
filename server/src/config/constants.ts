@@ -2,6 +2,24 @@
 // Application Constants
 // ============================================
 
+/** Centralized company & app metadata */
+export const APP_METADATA = {
+  company: 'Velmar Technology SRL',
+  shortName: 'Velmar',
+  portalName: 'Velmar MSP Portal',
+  website: 'https://velmartech.com.do',
+  tagline: 'Managed IT Services & Enterprise Support',
+  email: 'soporte@velmartech.com.do',
+  billingEmail: 'facturacion@velmartech.com.do',
+  salesEmail: 'ventas@velmartech.com.do',
+  privacyEmail: 'privacy@velmartech.com.do',
+  phone: '+1 (849) 925-7586',
+  emergencyPhone: '+1 (829) 925-7586',
+  supportHours: 'Mon - Fri: 9:00 AM - 4:00 PM EST',
+  address: 'San Pedro de Macoris, Dominican Republic',
+  securityStandard: 'AES-256 Encryption',
+} as const;
+
 /** SLA window in milliseconds — 1 hour for warranty/service ticket modifications */
 export const SLA_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 

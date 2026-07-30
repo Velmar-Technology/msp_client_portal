@@ -372,7 +372,7 @@
     "changePlanTitle": "Explorar Planes",
     "changePlanMsg": "Seleccione un nivel de plan diferente para cambiar o suscribirse.",
     "contactSupportTitle": "Contactar Soporte",
-    "contactSupportMsg": "¿Necesita ayuda? Correo: soporte@verlmartech.com.do",
+    "contactSupportMsg": "¿Necesita ayuda? Correo: {{email}}",
     "cancelConfirm": "¿Está seguro de que desea cancelar su suscripción? Esta acción tendrá efecto de inmediato.",
     "cancelSuccess": "Su suscripción ha sido cancelada exitosamente.",
     "cancelFailed": "Error al cancelar la suscripción.",
@@ -546,7 +546,12 @@
     "storageUsage": "Uso de Almacenamiento en Vivo",
     "configured": "Aprovisionado",
     "noSlotsFound": "No se encontraron ranuras de dispositivos.",
-    "adminSearchPlaceholder": "Buscar por nombre, serie, usuario, correo..."
+    "adminSearchPlaceholder": "Buscar por nombre, serie, usuario, correo...",
+    "slotRevokedTitle": "Ranura Revocada",
+    "slotRevokedDesc": "Ranura de dispositivo revocada. Cuenta de almacenamiento en la nube eliminada.",
+    "revokeFailed": "Error al desactivar la ranura.",
+    "otpGeneratedTitle": "OTP Generado",
+    "otpGeneratedDesc": "Código de activación temporal {{otp}} generado para la ranura #{{slot}}."
   },
   "billing": {
     "title": "Historial de Facturación",
@@ -586,14 +591,14 @@
     "createSupportTicket": "Crear Ticket de Soporte",
     "emergencySupport": "Soporte Directo y Emergencias",
     "phoneSupport": "Soporte Telefónico",
-    "phoneValue": "+1 (849) 420-8484",
+    "phoneValue": "{{phone}}",
     "phoneDesc": "Llamadas con costo de su proveedor",
     "emailSupport": "Soporte por Correo",
-    "emailValue": "soporte@velmartech.com.do",
+    "emailValue": "{{email}}",
     "emailDesc": "Respuestas en menos de 24 horas",
     "supportHours": "Horas de Soporte",
-    "hoursValue": "Lun - Vie: 9:00 AM - 4:00 PM EST",
-    "hoursDesc": "Monitoreo 24/7 y respuesta a incidentes críticos"
+    "hoursValue": "{{supportHours}}",
+    "hoursDesc": "{{monitoringHours}}"
   },
   "legal": {
     "termsTitle": "Términos de Servicio",
@@ -603,12 +608,12 @@
     "compliantText": "Estándar de Cumplimiento",
     "tableOfContents": "Tabla de Contenidos",
     "pleaseNote": "Tenga en cuenta",
-    "termsAlertText": "Este acuerdo rige todo acceso al Portal MSP de Velmar. Al iniciar sesión o utilizar cualquier herramienta en su interior, usted acepta estos parámetros.",
+    "termsAlertText": "Este acuerdo rige todo acceso al {{portalName}}. Al iniciar sesión o utilizar cualquier herramienta en su interior, usted acepta estos parámetros.",
     "privacyAlertTitle": "Infraestructura Segura:",
-    "privacyAlertText": "Encriptamos todas las credenciales de monitoreo de servidores, archivos de registro y tickets utilizando protocolos AES-256 estándar de la industria."
+    "privacyAlertText": "Encriptamos todas las credenciales de monitoreo de servidores, archivos de registro y tickets utilizando protocolos {{securityStandard}} estándar de la industria."
   },
   "footer": {
-    "copyright": "© 2026 Velmar Technology SRL. Todos los derechos reservados.",
+    "copyright": "© 2026 {{company}}. Todos los derechos reservados.",
     "help": "Ayuda",
     "terms": "Términos de Servicio",
     "privacy": "Privacidad"
@@ -790,7 +795,7 @@
     "modeCustomDesc": "Elegir una fecha específica en el calendario",
     "labelPredefinedMonths": "Seleccionar Intervalo",
     "months3": "3 Meses",
-    "months6Default": "6 Meses (Por Defecto)",
+    "months6Default": "6 Meses",
     "months12": "12 Meses",
     "predefinedNote": "El mantenimiento quedará programado para el {{date}}",
     "labelDatePicker": "Seleccionar Fecha Específica",

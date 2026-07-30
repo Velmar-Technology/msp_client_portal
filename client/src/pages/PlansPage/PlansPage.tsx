@@ -269,9 +269,9 @@ export function PlansPage() {
                 <DropdownMenuItem
                   onClick={() => {
                     toast.info(t("plans.contactSupportTitle") || "Contact Support", {
-                      description: t("plans.contactSupportMsg") || "Need assistance? Email: soporte@verlmartech.com.do",
+                      description: t("plans.contactSupportMsg", { email: "soporte@velmartech.com.do" }) || "Need assistance? Email: soporte@velmartech.com.do",
                     });
-                    window.location.href = "mailto:soporte@verlmartech.com.do?subject=Subscription Support Request";
+                    window.location.href = "mailto:soporte@velmartech.com.do?subject=Subscription Support Request";
                   }}
                   className="cursor-pointer flex items-center gap-1.5 text-xs py-1.5"
                 >

@@ -372,7 +372,7 @@
     "changePlanTitle": "Browse Plans",
     "changePlanMsg": "Select a different plan tier to switch or subscribe.",
     "contactSupportTitle": "Contact Support",
-    "contactSupportMsg": "Need assistance? Email: soporte@verlmartech.com.do",
+    "contactSupportMsg": "Need assistance? Email: {{email}}",
     "cancelConfirm": "Are you sure you want to cancel your subscription? This action will take effect immediately.",
     "cancelSuccess": "Your subscription has been successfully cancelled.",
     "cancelFailed": "Failed to cancel subscription.",
@@ -547,7 +547,12 @@
     "storageUsage": "Live Storage Usage",
     "configured": "Provisioned",
     "noSlotsFound": "No device slots found.",
-    "adminSearchPlaceholder": "Search by name, serial, user, email..."
+    "adminSearchPlaceholder": "Search by name, serial, user, email...",
+    "slotRevokedTitle": "Slot Revoked",
+    "slotRevokedDesc": "Device slot revoked. Cloud storage account deleted.",
+    "revokeFailed": "Failed to deactivate slot.",
+    "otpGeneratedTitle": "OTP Generated",
+    "otpGeneratedDesc": "Temporary activation code {{otp}} generated for slot #{{slot}}."
   },
   "billing": {
     "title": "Billing History",
@@ -587,14 +592,14 @@
     "createSupportTicket": "Create Support Ticket",
     "emergencySupport": "Emergency & Direct Support",
     "phoneSupport": "Phone Support",
-    "phoneValue": "+1 (800) 555-0199",
+    "phoneValue": "{{phone}}",
     "phoneDesc": "Toll-free emergency hotline",
     "emailSupport": "Email Support",
-    "emailValue": "support@velmartech.com",
+    "emailValue": "{{email}}",
     "emailDesc": "Responses within 24 hours",
     "supportHours": "Support Hours",
-    "hoursValue": "Mon - Fri: 8:00 AM - 6:00 PM EST",
-    "hoursDesc": "24/7 Monitoring & Critical Incident response"
+    "hoursValue": "{{supportHours}}",
+    "hoursDesc": "{{monitoringHours}}"
   },
   "legal": {
     "termsTitle": "Terms of Service",
@@ -604,12 +609,12 @@
     "compliantText": "Compliant Standard",
     "tableOfContents": "Table of Contents",
     "pleaseNote": "Please note",
-    "termsAlertText": "This agreement governs all access to the Velmar MSP Portal. By logging in or utilizing any tools inside, you consent to these parameters.",
+    "termsAlertText": "This agreement governs all access to the {{portalName}}. By logging in or utilizing any tools inside, you consent to these parameters.",
     "privacyAlertTitle": "Secure Infrastructure:",
-    "privacyAlertText": "We encrypt all server monitoring credentials, log files, and tickets using industry standard AES-256 protocols."
+    "privacyAlertText": "We encrypt all server monitoring credentials, log files, and tickets using industry standard {{securityStandard}} protocols."
   },
   "footer": {
-    "copyright": "© 2026 Velmar Technology SRL. All rights reserved.",
+    "copyright": "© 2026 {{company}}. All rights reserved.",
     "help": "Help",
     "terms": "Terms of Service",
     "privacy": "Privacy"

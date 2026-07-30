@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import zlib from 'zlib';
 import { Invoice } from '../types';
+import { APP_METADATA } from '../config/constants';
 
 class SimplePdfDoc {
   private objects: Buffer[] = [];
@@ -173,7 +174,7 @@ const labels: Record<string, any> = {
     paymentDue: 'Payment is due within 14 days of invoice date.',
     paymentPortal: 'Please pay using the client portal / PayPal integration.',
     thankYou: 'Thank you for your business!',
-    support: 'Need help? Support: soporte@verlmartech.com.do',
+    support: `Need help? Support: ${APP_METADATA.email}`,
     serviceDesc: 'Managed IT & Tech Support Subscription'
   },
   es_DO: {
@@ -194,7 +195,7 @@ const labels: Record<string, any> = {
     paymentDue: 'El pago vence dentro de los 14 dias posteriores a la fecha de la factura.',
     paymentPortal: 'Por favor, pague utilizando el portal de clientes / integracion de PayPal.',
     thankYou: '¡Gracias por su preferencia!',
-    support: '¿Necesita ayuda? Soporte: soporte@verlmartech.com.do',
+    support: `¿Necesita ayuda? Soporte: ${APP_METADATA.email}`,
     serviceDesc: 'Suscripcion de Soporte Tecnico y TI Gestionado'
   }
 };
@@ -298,7 +299,7 @@ export function generateInvoicePdf(
     commands.push(`/F1 9 Tf`);
     commands.push(`0.4 0.4 0.4 rg`);
     commands.push(`98 720 Td`);
-    commands.push(`(Support Email: soporte@verlmartech.com.do) Tj`);
+    commands.push(`(Support Email: ${APP_METADATA.email}) Tj`);
     commands.push(`ET`);
   } else {
     // Fallback Vector Logo (Modern Isometric Cube)
@@ -331,7 +332,7 @@ export function generateInvoicePdf(
     commands.push(`/F1 9 Tf`);
     commands.push(`0.4 0.4 0.4 rg`);
     commands.push(`85 720 Td`);
-    commands.push(`(Support Email: soporte@verlmartech.com.do) Tj`);
+    commands.push(`(Support Email: ${APP_METADATA.email}) Tj`);
     commands.push(`ET`);
   }
 

@@ -1,5 +1,6 @@
 import React, { useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { APP_METADATA } from '@/config/metadata';
 
 export interface PrivacySection {
   id: string;
@@ -140,10 +141,11 @@ const privacyEn: PrivacySection[] = [
           If you have questions about this Privacy Policy or wish to request data correction/deletion, please reach out to us:
         </p>
         <div className="p-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md">
-          <p className="font-semibold text-zinc-900 dark:text-zinc-100">Velmar Technology SRL</p>
+          <p className="font-semibold text-zinc-900 dark:text-zinc-100">{APP_METADATA.company}</p>
           <p>Attn: Data Privacy Officer</p>
-          <p>Email: privacy@velmartech.com</p>
-          <p>Phone: +1 (800) 555-0199 ext. 4</p>
+          <p>Email: {APP_METADATA.privacyEmail}</p>
+          <p>Phone: {APP_METADATA.phone}</p>
+          <p>Address: {APP_METADATA.address}</p>
         </div>
       </>
     )
@@ -283,10 +285,11 @@ const privacyEs: PrivacySection[] = [
           Si tiene preguntas sobre esta Política de Privacidad o desea solicitar la corrección/eliminación de datos, comuníquese con nosotros:
         </p>
         <div className="p-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md">
-          <p className="font-semibold text-zinc-900 dark:text-zinc-100">Velmar Technology SRL</p>
+          <p className="font-semibold text-zinc-900 dark:text-zinc-100">{APP_METADATA.company}</p>
           <p>Atn: Oficial de Privacidad de Datos</p>
-          <p>Correo: privacy@velmartech.com</p>
-          <p>Teléfono: +1 (800) 555-0199 ext. 4</p>
+          <p>Correo: {APP_METADATA.privacyEmail}</p>
+          <p>Teléfono: {APP_METADATA.phone}</p>
+          <p>Dirección: {APP_METADATA.address}</p>
         </div>
       </>
     )

@@ -412,19 +412,17 @@ const DeviceActionsCell = memo(function DeviceActionsCell({
                 </DropdownMenuItem>
               )}
             </>
+          ) : isAdmin ? (
+            <DropdownMenuItem onClick={() => targetSubId && onStartActivationWizard(targetSubId, idx, null)}>
+              {t("devices.actionGenerate")}
+            </DropdownMenuItem>
           ) : (
-            isAdmin ? (
-              <DropdownMenuItem onClick={() => targetSubId && onStartActivationWizard(targetSubId, idx, null)}>
-                {t("devices.actionGenerate")}
-              </DropdownMenuItem>
-            ) : (
-              <DropdownMenuItem
-                onClick={() => targetSubId && onStartActivationWizard(targetSubId, idx, null)}
-                className="opacity-60"
-              >
-                {t("devices.actionGenerate")}
-              </DropdownMenuItem>
-            )
+            <DropdownMenuItem
+              onClick={() => targetSubId && onStartActivationWizard(targetSubId, idx, null)}
+              className="opacity-60"
+            >
+              {t("devices.actionGenerate")}
+            </DropdownMenuItem>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
@@ -592,7 +590,6 @@ export function DevicesPage() {
               <span className="inline-block bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 px-1 rounded text-[9px] font-mono font-bold uppercase">
                 {equip.plan || t("devices.notAvailable")}
               </span>
-              <p className="text-xs text-zinc-505 truncate max-w-[140px]">{equip.service_name}</p>
             </div>
           );
         },
@@ -610,11 +607,11 @@ export function DevicesPage() {
       cell: ({ row }) => {
         const status = row.getValue("status") as string;
         return status === "ACTIVE" ? (
-          <span className="bg-emerald-55 text-emerald-700 border border-emerald-202 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/50 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase">
+          <span className="bg-emerald-55 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 px-1.5 py-0.5 text-[10px] font-mono uppercase">
             ACTIVE
           </span>
         ) : (
-          <span className="bg-amber-55 text-amber-700 border border-amber-202 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/50 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase animate-pulse">
+          <span className="bg-amber-55 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 px-1.5 py-0.5 text-[10px] font-mono uppercase">
             {t("devices.statusPendingActivation")}
           </span>
         );

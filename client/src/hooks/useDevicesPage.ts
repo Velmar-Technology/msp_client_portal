@@ -160,33 +160,33 @@ export function useDevicesPage() {
     try {
       const updatedSlot = await equipmentService.generateOTP(subId, slotIndex);
       updateDeviceList(subId, slotIndex, updatedSlot);
-      toast.success("OTP Generated", {
-        description: `Temporary activation code ${updatedSlot.otp} generated for slot #${slotIndex + 1}.`,
+      toast.success(t("devices.otpGeneratedTitle") || "OTP Generated", {
+        description: t("devices.otpGeneratedDesc", { otp: updatedSlot.otp, slot: slotIndex + 1 }) || `Temporary activation code ${updatedSlot.otp} generated for slot #${slotIndex + 1}.`,
       });
     } catch (err) {
       console.error("Failed to generate OTP:", err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
-      toast.error("Error", {
+      toast.error(t("common.error") || "Error", {
         description: error.response?.data?.message || error.message || "Failed to generate OTP.",
       });
     }
-  }, [updateDeviceList, user?.role]);
+  }, [updateDeviceList, user?.role, t]);
 
   const handleRevokeEquipment = useCallback(async (subId: string, slotIndex: number) => {
     try {
       const updatedSlot = await equipmentService.deactivateSlot(subId, slotIndex);
       updateDeviceList(subId, slotIndex, updatedSlot);
-      toast.info("Slot Revoked", {
-        description: "Device slot revoked. Nextcloud account deleted.",
+      toast.info(t("devices.slotRevokedTitle") || "Slot Revoked", {
+        description: t("devices.slotRevokedDesc") || "Device slot revoked. Cloud storage account deleted.",
       });
     } catch (err) {
       console.error("Failed to revoke device:", err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
-      toast.error("Error", {
-        description: error.response?.data?.message || error.message || "Failed to deactivate slot.",
+      toast.error(t("common.error") || "Error", {
+        description: error.response?.data?.message || error.message || t("devices.revokeFailed") || "Failed to deactivate slot.",
       });
     }
-  }, [updateDeviceList]);
+  }, [updateDeviceList, t]);
 
   const handleStartActivationWizard = useCallback(async (subId: string, slotIndex: number, currentOtp?: string | null) => {
     if (!currentOtp && user?.role === "CLIENT") {
