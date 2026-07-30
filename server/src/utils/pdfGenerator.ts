@@ -3,6 +3,7 @@ import path from 'path';
 import zlib from 'zlib';
 import { Invoice } from '../types';
 import { APP_METADATA } from '../config/constants';
+import { logger } from './logger';
 
 class SimplePdfDoc {
   private objects: Buffer[] = [];
@@ -150,7 +151,7 @@ function loadLogoPng(): LogoData | null {
       alphaBuffer: zlib.deflateSync(alphaBuffer),
     };
   } catch (err) {
-    console.error('Failed to parse PNG logo:', err);
+    logger.error('Failed to parse PNG logo:', { err });
     return null;
   }
 }

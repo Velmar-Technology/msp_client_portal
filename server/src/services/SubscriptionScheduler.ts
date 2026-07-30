@@ -1,6 +1,8 @@
 import { subscriptionRepository } from '../repositories/SubscriptionRepository';
 import { planRepository } from '../repositories/PlanRepository';
 import { invoiceRepository } from '../repositories/InvoiceRepository';
+import { equipmentRepository } from '../repositories/EquipmentRepository';
+import { nextcloudService } from './NextcloudService';
 import { paypalService } from './PaypalService';
 import { notificationService } from './NotificationService';
 import { logger } from '../utils/logger';
@@ -70,6 +72,28 @@ export class SubscriptionScheduler {
     if (sub.status === SubscriptionStatus.EXPIRING) {
       logger.info(`Subscription ${sub.id} reached end of paid billing period (${sub.renewal_date}). Finalizing cancellation.`);
       await subscriptionRepository.updateStatus(sub.id, SubscriptionStatus.CANCELLED);
+
+      // Clean up Nextcloud accounts for active slots
+      const slots = await equipmentRepository.findBySubscription(sub.id);
+      for (const slot of slots) {
+        if (slot.nextcloud_username) {
+          try {
+            await nextcloudService.deleteUser(slot.nextcloud_username);
+          } catch (err) {
+            logger.error(`Failed to delete Nextcloud user ${slot.nextcloud_username} during scheduler cancellation`, { err });
+          }
+          await equipmentRepository.update(slot.id, {
+            status: 'PENDING_ACTIVATION',
+            device_name: null,
+            device_serial: null,
+            otp: null,
+            otp_expires_at: null,
+            nextcloud_username: null,
+            nextcloud_password: null,
+          });
+        }
+      }
+
       await notificationService.createInAppNotification({
         userId: sub.client_id,
         title: 'Subscription Cancelled',

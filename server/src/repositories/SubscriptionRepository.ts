@@ -17,11 +17,15 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     return results as Subscription[];
   }
 
-  async findByClient(clientId: string): Promise<Subscription[]> {
+  async findByClient(clientId: string, tenantId?: string): Promise<Subscription[]> {
+    const conditions = [eq(subscriptions.client_id, clientId)];
+    if (tenantId) {
+      conditions.push(eq(subscriptions.tenant_id, tenantId));
+    }
     const results = await db
       .select()
       .from(subscriptions)
-      .where(eq(subscriptions.client_id, clientId))
+      .where(and(...conditions))
       .orderBy(desc(subscriptions.created_at));
     return results as Subscription[];
   }

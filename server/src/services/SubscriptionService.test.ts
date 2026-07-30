@@ -18,6 +18,26 @@ const mocks = vi.hoisted(() => {
     paypalCaptureOrder: vi.fn(),
     paypalCreateOrderForAmount: vi.fn(),
     notificationCreateInApp: vi.fn().mockResolvedValue(null),
+    equipmentFindBySubscription: vi.fn().mockResolvedValue([]),
+    equipmentUpdate: vi.fn().mockResolvedValue({}),
+    nextcloudDeleteUser: vi.fn().mockResolvedValue(true),
+  };
+});
+
+vi.mock('../repositories/EquipmentRepository', () => {
+  return {
+    equipmentRepository: {
+      findBySubscription: mocks.equipmentFindBySubscription,
+      update: mocks.equipmentUpdate,
+    },
+  };
+});
+
+vi.mock('./NextcloudService', () => {
+  return {
+    nextcloudService: {
+      deleteUser: mocks.nextcloudDeleteUser,
+    },
   };
 });
 

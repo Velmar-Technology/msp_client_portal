@@ -2,7 +2,10 @@ import { subscriptionRepository } from '../repositories/SubscriptionRepository';
 import { userRepository } from '../repositories/UserRepository';
 import { planRepository } from '../repositories/PlanRepository';
 import { invoiceRepository } from '../repositories/InvoiceRepository';
+import { equipmentRepository } from '../repositories/EquipmentRepository';
+import { nextcloudService } from './NextcloudService';
 import { AppError } from '../utils/AppError';
+import { logger } from '../utils/logger';
 import { TAX_RATE } from '../config/constants';
 import { Subscription, SubscriptionPlan, SubscriptionStatus, InvoiceStatus } from '../types';
 import { CreateSubscriptionInput, UpdateSubscriptionInput, SendQuoteInput } from '../dtos/subscription.dto';
@@ -146,7 +149,7 @@ export class SubscriptionService {
     }
 
     // Double plan check: Ensure client doesn't buy the same plan twice
-    const existingSubs = await subscriptionRepository.findByClient(clientId);
+    const existingSubs = await subscriptionRepository.findByClient(clientId, tenantId);
     const hasActivePlan = existingSubs.some((sub) => sub.plan === data.plan && sub.status === 'ACTIVE');
     if (hasActivePlan) {
       throw AppError.badRequest(`You already have an active subscription for the ${data.plan} plan. Please modify your existing subscription instead.`);
@@ -299,7 +302,7 @@ export class SubscriptionService {
       link: '/billing',
       tenantId,
     }).catch((err) => {
-      console.error('Failed to create in-app notification for subscription activation:', err);
+      logger.error('Failed to create in-app notification for subscription activation:', { err });
     });
 
     return subscription;
@@ -351,6 +354,29 @@ export class SubscriptionService {
         }
       }
 
+      if (newCount < sub.equipment_count) {
+        // Clean up excess slots if downgraded
+        const slots = await equipmentRepository.findBySubscription(sub.id);
+        for (const slot of slots) {
+          if (slot.slot_index >= newCount && slot.nextcloud_username) {
+            try {
+              await nextcloudService.deleteUser(slot.nextcloud_username);
+            } catch (err) {
+              logger.error(`Failed to delete Nextcloud user ${slot.nextcloud_username} during downgrade`, { err });
+            }
+            await equipmentRepository.update(slot.id, {
+              status: 'PENDING_ACTIVATION',
+              device_name: null,
+              device_serial: null,
+              otp: null,
+              otp_expires_at: null,
+              nextcloud_username: null,
+              nextcloud_password: null,
+            });
+          }
+        }
+      }
+
       const res = await subscriptionRepository.updatePlan(sub.id, newPlan as SubscriptionPlan, newCount);
       if (!res) throw AppError.internal('Failed to update subscription');
       updated = res;
@@ -364,6 +390,27 @@ export class SubscriptionService {
         // Keep subscription active through renewal_date to avoid partial period refunds
         if (sub.renewal_date && new Date(sub.renewal_date) > now && !byAdmin) {
           targetStatus = SubscriptionStatus.EXPIRING;
+        } else {
+          // If immediately transitioning to CANCELLED, clean up all equipment Nextcloud accounts
+          const slots = await equipmentRepository.findBySubscription(sub.id);
+          for (const slot of slots) {
+            if (slot.nextcloud_username) {
+              try {
+                await nextcloudService.deleteUser(slot.nextcloud_username);
+              } catch (err) {
+                logger.error(`Failed to delete Nextcloud user ${slot.nextcloud_username} during cancellation`, { err });
+              }
+              await equipmentRepository.update(slot.id, {
+                status: 'PENDING_ACTIVATION',
+                device_name: null,
+                device_serial: null,
+                otp: null,
+                otp_expires_at: null,
+                nextcloud_username: null,
+                nextcloud_password: null,
+              });
+            }
+          }
         }
 
         // Cancel PayPal recurring billing if linked
@@ -371,7 +418,7 @@ export class SubscriptionService {
           try {
             await paypalService.cancelSubscription(sub.paypal_order_id, 'Cancelled by user request at end of billing period');
           } catch (err) {
-            console.error(`Failed to cancel PayPal subscription ${sub.paypal_order_id}:`, err);
+            logger.error(`Failed to cancel PayPal subscription ${sub.paypal_order_id}:`, { err });
           }
         }
       }

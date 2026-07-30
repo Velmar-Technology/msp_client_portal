@@ -2,6 +2,7 @@ import { maintenanceRepository } from '../repositories/MaintenanceRepository';
 import { equipmentRepository } from '../repositories/EquipmentRepository';
 import { subscriptionRepository } from '../repositories/SubscriptionRepository';
 import { AppError } from '../utils/AppError';
+import { logger } from '../utils/logger';
 import { DeviceMaintenance, UserRole, MaintenanceStatus, MaintenanceType } from '../types';
 import { CreateMaintenanceInput, UpdateMaintenanceInput, MaintenanceQueryInput } from '../dtos/maintenance.dto';
 import { notificationService } from './NotificationService';
@@ -141,7 +142,7 @@ export class MaintenanceService {
         title: 'Device Maintenance Scheduled',
         message: `Maintenance scheduled for ${deviceDisplayName} on ${scheduledDate.toLocaleDateString()}`,
         type: 'SYSTEM',
-      }).catch((err) => console.error('Failed to send maintenance notification:', err));
+      }).catch((err) => logger.error('Failed to send maintenance notification:', { err }));
     }
 
     return (await maintenanceRepository.findByIdWithDetails(newMaintenance.id, tenantId)) || newMaintenance;
@@ -192,7 +193,7 @@ export class MaintenanceService {
         title: 'Device Maintenance Completed',
         message: `Maintenance for ${existing.device_name || 'Device'} has been marked as completed.`,
         type: 'SYSTEM',
-      }).catch((err) => console.error('Failed to send maintenance completed notification:', err));
+      }).catch((err) => logger.error('Failed to send maintenance completed notification:', { err }));
     }
 
     return updated || existing;
