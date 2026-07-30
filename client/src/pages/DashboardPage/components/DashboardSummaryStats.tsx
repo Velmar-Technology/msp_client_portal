@@ -12,7 +12,7 @@ export function DashboardSummaryStats() {
     useClientDashboard();
 
   return (
-    <StatsGrid className="md:col-span-10">
+    <StatsGrid className="w-full">
       {/* Support Status Card */}
       <SummaryCard
         icon={<Headphones className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />}

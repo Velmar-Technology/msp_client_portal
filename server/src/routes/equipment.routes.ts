@@ -38,4 +38,9 @@ router.post('/subscriptions/:subId/slots/:slotIndex/deactivate', (req, res, next
   equipmentController.deactivateSlot(req, res, next)
 );
 
+/** GET /api/v1/equipment/subscriptions/:subId/slots/:slotIndex/nextcloud — Get Nextcloud info for a slot */
+router.get('/subscriptions/:subId/slots/:slotIndex/nextcloud', (req, res, next) =>
+  equipmentController.getSlotNextcloudInfo(req, res, next)
+);
+
 export default router;

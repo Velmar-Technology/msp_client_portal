@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { X, Laptop, Loader2, MoreHorizontal, Wrench } from "lucide-react";
+import { X, Laptop, Loader2, MoreHorizontal, Wrench, Cloud } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDevicesPage } from "@/hooks/useDevicesPage";
 import type { Subscription } from "@/services/subscriptionService";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { DataTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ScheduleMaintenanceModal } from "@/components/maintenance/ScheduleMaintenanceModal";
+import { NextcloudInfoModal } from "@/components/devices/NextcloudInfoModal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -382,10 +383,17 @@ export function DevicesPage() {
 
   const [maintModalEquip, setMaintModalEquip] = useState<Partial<SubscriptionEquipment> | null>(null);
   const [isMaintModalOpen, setIsMaintModalOpen] = useState(false);
+  const [ncModalEquip, setNcModalEquip] = useState<Partial<SubscriptionEquipment> | null>(null);
+  const [isNcModalOpen, setIsNcModalOpen] = useState(false);
 
   const handleOpenScheduleMaint = useCallback((equip: Partial<SubscriptionEquipment>) => {
     setMaintModalEquip(equip);
     setIsMaintModalOpen(true);
+  }, []);
+
+  const handleOpenNcModal = useCallback((equip: Partial<SubscriptionEquipment>) => {
+    setNcModalEquip(equip);
+    setIsNcModalOpen(true);
   }, []);
 
   const handleCloseWizard = useCallback(() => {
@@ -547,45 +555,12 @@ export function DevicesPage() {
         cell: ({ row }) => {
           const equip = row.original;
           if (equip.status === "ACTIVE" && equip.nextcloud_username) {
-            const used = equip.nextcloud_used_bytes || 0;
-            const total = equip.nextcloud_total_bytes || 0;
-            const percentage = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
-
-            const formatSize = (bytes: number) => {
-              if (bytes === 0) return "0 B";
-              const k = 1024;
-              const sizes = ["B", "KB", "MB", "GB", "TB"];
-              const i = Math.floor(Math.log(bytes) / Math.log(k));
-              return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
-            };
-
             return (
-              <div className="space-y-1.5 max-w-[200px]">
-                <div className="bg-zinc-50/50 dark:bg-zinc-900/30 p-2 rounded border border-zinc-200 dark:border-zinc-800 text-[10px] space-y-0.5">
-                  <p className="font-semibold text-zinc-900 dark:text-zinc-202">{t("devices.nextcloudBackupTitle")}</p>
-                  <p className="text-zinc-500 font-mono truncate">
-                    {t("devices.wizardStep3User")} {equip.nextcloud_username}
-                  </p>
-                  <p className="text-zinc-500 font-mono truncate">
-                    {t("devices.wizardStep3Pass")} {equip.nextcloud_password}
-                  </p>
-                </div>
-                {total > 0 && (
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[9px] text-zinc-400 font-medium">
-                      <span>{t("devices.usedLabel", { size: formatSize(used) })}</span>
-                      <span>{t("devices.totalLabel", { size: formatSize(total), percentage })}</span>
-                    </div>
-                    <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-1 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${
-                          percentage > 90 ? "bg-red-500" : percentage > 75 ? "bg-amber-505" : "bg-emerald-500"
-                        }`}
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
+              <div className="flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50 px-2 py-0.5 rounded text-[10px] font-medium">
+                  <Cloud className="h-3 w-3" />
+                  {t("devices.configured")}
+                </span>
               </div>
             );
           }
@@ -625,6 +600,15 @@ export function DevicesPage() {
                   <DropdownMenuSeparator />
                   {equip.status === "ACTIVE" ? (
                     <>
+                      {equip.nextcloud_username && (
+                        <DropdownMenuItem
+                          onClick={() => handleOpenNcModal(equip)}
+                          className="cursor-pointer text-xs flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400"
+                        >
+                          <Cloud className="h-3.5 w-3.5" />
+                          {t("devices.actionNextcloudInfo")}
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem
                         onClick={() => handleOpenScheduleMaint(equip)}
                         className="cursor-pointer text-xs flex items-center gap-1.5 font-medium text-primary"
@@ -670,7 +654,7 @@ export function DevicesPage() {
       });
       return cols;
     },
-    [t, handleRevokeEquipment, handleStartActivationWizard, handleGenerateOTP, handleOpenScheduleMaint, isAdmin],
+    [t, handleRevokeEquipment, handleStartActivationWizard, handleGenerateOTP, handleOpenScheduleMaint, handleOpenNcModal, isAdmin],
   );
 
   if (loading) {
@@ -759,6 +743,11 @@ export function DevicesPage() {
                     limit,
                     onPageChange: setPage,
                     onLimitChange: setLimit,
+                    showingText: t("devices.paginationShowing", {
+                      start: filteredEquipment.length === 0 ? 0 : (page - 1) * limit + 1,
+                      end: Math.min(page * limit, filteredEquipment.length),
+                      total: filteredEquipment.length,
+                    }),
                   }}
                 />
               </div>
@@ -796,6 +785,19 @@ export function DevicesPage() {
           fetchActiveSubscriptions();
         }}
         isAdminOrTech={isAdmin}
+      />
+
+      {/* Nextcloud Info Modal */}
+      <NextcloudInfoModal
+        isOpen={isNcModalOpen}
+        onClose={() => {
+          setIsNcModalOpen(false);
+          setNcModalEquip(null);
+        }}
+        subId={ncModalEquip?.subscription_id || null}
+        slotIndex={ncModalEquip?.slot_index ?? null}
+        fallbackUsername={ncModalEquip?.nextcloud_username}
+        fallbackDeviceName={ncModalEquip?.device_name}
       />
     </Page>
   );

@@ -119,6 +119,7 @@ export function useTopNav() {
 
   // Reset selection index when search query or dropdown open state changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedIndex(0);
   }, [searchQuery, isOpen]);
 
@@ -163,7 +164,9 @@ export function useTopNav() {
   // Search logic (debounced with request cancellation and local indexes/caches)
   useEffect(() => {
     if (!searchQuery.trim()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults({ pages: [], tickets: [], invoices: [], faqs: [] });
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoading(false);
       return;
     }

@@ -37,7 +37,7 @@ api.defaults.adapter = async (config) => {
       config,
     });
   }
-  return { data: 'ok', status: 200, statusText: 'OK', headers: {}, config } as any;
+  return { data: 'ok', status: 200, statusText: 'OK', headers: {}, config } as unknown as AxiosResponse;
 };
 
 describe('api global response interceptors', () => {
@@ -48,7 +48,7 @@ describe('api global response interceptors', () => {
   it('should show toast.error for generic backend errors (e.g. 400)', async () => {
     try {
       await api.get('/400');
-    } catch (e) {
+    } catch {
       // Expected to throw
     }
     expect(toast.error).toHaveBeenCalledWith('Some generic error');
@@ -58,7 +58,7 @@ describe('api global response interceptors', () => {
   it('should not show toast.error for 401 Unauthorized (handled by refresh/redirect interceptor)', async () => {
     try {
       await api.get('/401');
-    } catch (e) {
+    } catch {
       // Expected to throw
     }
     expect(toast.error).not.toHaveBeenCalled();
@@ -67,7 +67,7 @@ describe('api global response interceptors', () => {
   it('should not show toast.error for custom handled errors (e.g. "already exists")', async () => {
     try {
       await api.get('/409');
-    } catch (e) {
+    } catch {
       // Expected to throw
     }
     expect(toast.error).not.toHaveBeenCalled();

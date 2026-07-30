@@ -538,6 +538,13 @@
     "actionSimulate": "Simular Activación de Agente",
     "actionRegenerate": "Regenerar OTP",
     "actionGenerate": "Generar OTP de Activación",
+    "actionNextcloudInfo": "Info de Backup Nextcloud",
+    "nextcloudModalTitle": "Detalles del Backup en la Nube",
+    "nextcloudLoading": "Cargando detalles del respaldo...",
+    "nextcloudError": "Error al cargar los detalles de Nextcloud.",
+    "nextcloudAccount": "Credenciales de Cuenta Nextcloud",
+    "storageUsage": "Uso de Almacenamiento en Vivo",
+    "configured": "Aprovisionado",
     "noSlotsFound": "No se encontraron ranuras de dispositivos.",
     "adminSearchPlaceholder": "Buscar por nombre, serie, usuario, correo..."
   },

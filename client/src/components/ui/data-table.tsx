@@ -330,6 +330,7 @@ export function DataTable<TData, TValue>({
                 <Button
                   variant="ghost"
                   size="icon"
+                  aria-label="Previous page"
                   className="h-6 w-6 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-30 cursor-pointer"
                   disabled={pagination.page <= 1}
                   onClick={() => pagination.onPageChange(Math.max(1, pagination.page - 1))}
@@ -339,6 +340,7 @@ export function DataTable<TData, TValue>({
                 <Button
                   variant="ghost"
                   size="icon"
+                  aria-label="Next page"
                   className="h-6 w-6 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-30 cursor-pointer"
                   disabled={pagination.page >= pagination.totalPages}
                   onClick={() => pagination.onPageChange(Math.min(pagination.totalPages, pagination.page + 1))}

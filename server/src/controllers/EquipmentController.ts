@@ -97,6 +97,21 @@ export class EquipmentController {
       next(error);
     }
   }
+
+  async getSlotNextcloudInfo(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const subId = req.params.subId as string;
+      const slotIndex = parseInt(req.params.slotIndex as string, 10);
+      const byAdmin = req.user!.role === 'ADMIN';
+      const info = await equipmentService.getNextcloudInfo(subId, slotIndex, req.user!.tenantId, byAdmin);
+      res.json({
+        success: true,
+        data: info,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const equipmentController = new EquipmentController();

@@ -11,7 +11,7 @@ interface RevenueChartProps {
 export function RevenueChart({ data, hoveredIndex, setHoveredIndex }: RevenueChartProps) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   // Responsive SVG viewBox state
   const [dimensions, setDimensions] = useState({ width: 500, height: 260 });
 
@@ -25,18 +25,18 @@ export function RevenueChart({ data, hoveredIndex, setHoveredIndex }: RevenueCha
         });
       }
     };
-    
+
     // Initial size
     handleResize();
-    
+
     const resizeObserver = new ResizeObserver(() => handleResize());
     resizeObserver.observe(containerRef.current);
-    
+
     return () => resizeObserver.disconnect();
   }, []);
 
   const { width, height } = dimensions;
-  
+
   const paddingLeft = 40;
   const paddingRight = 10;
   const paddingTop = 15;
@@ -64,9 +64,10 @@ export function RevenueChart({ data, hoveredIndex, setHoveredIndex }: RevenueCha
   const expensePoints = data.map((d, i) => `${getX(i)},${getY(d.expenses)}`);
 
   const revenueLinePath = revenuePoints.length > 0 ? `M ${revenuePoints.join(" L ")}` : "";
-  const revenueAreaPath = revenuePoints.length > 0 
-    ? `${revenueLinePath} L ${getX(data.length - 1)},${height - paddingBottom} L ${getX(0)},${height - paddingBottom} Z` 
-    : "";
+  const revenueAreaPath =
+    revenuePoints.length > 0
+      ? `${revenueLinePath} L ${getX(data.length - 1)},${height - paddingBottom} L ${getX(0)},${height - paddingBottom} Z`
+      : "";
 
   const expenseLinePath = expensePoints.length > 0 ? `M ${expensePoints.join(" L ")}` : "";
 
@@ -75,17 +76,14 @@ export function RevenueChart({ data, hoveredIndex, setHoveredIndex }: RevenueCha
     const svg = e.currentTarget;
     const rect = svg.getBoundingClientRect();
     const x = e.clientX - rect.left - paddingLeft;
-    
+
     if (x < -10 || x > chartWidth + 10) {
       setHoveredIndex(null);
       return;
     }
 
     const relativePct = x / chartWidth;
-    const index = Math.min(
-      data.length - 1,
-      Math.max(0, Math.round(relativePct * (data.length - 1)))
-    );
+    const index = Math.min(data.length - 1, Math.max(0, Math.round(relativePct * (data.length - 1))));
     setHoveredIndex(index);
   };
 
@@ -111,12 +109,8 @@ export function RevenueChart({ data, hoveredIndex, setHoveredIndex }: RevenueCha
     <div className="rounded-lg border border-zinc-200 bg-white p-3.5 shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
       <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5 dark:border-zinc-900">
         <div>
-          <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-50">
-            {t("financial.revenueVsExpenses")}
-          </h3>
-          <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
-            {t("financial.analysisPeriodDesc")}
-          </p>
+          <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-50">{t("financial.revenueVsExpenses")}</h3>
+          <p className="text-[10px] text-zinc-400 dark:text-zinc-500">{t("financial.analysisPeriodDesc")}</p>
         </div>
         <div className="flex items-center gap-3 text-[10px] font-medium">
           <div className="flex items-center gap-1">
@@ -130,7 +124,7 @@ export function RevenueChart({ data, hoveredIndex, setHoveredIndex }: RevenueCha
         </div>
       </div>
 
-      <div ref={containerRef} className="relative mt-3 h-[260px] w-full select-none">
+      <div ref={containerRef} className="relative mt-3 h-65 w-full select-none">
         <svg
           width={width}
           height={height}
@@ -185,11 +179,7 @@ export function RevenueChart({ data, hoveredIndex, setHoveredIndex }: RevenueCha
 
           {/* Revenue Fill Area */}
           {revenueAreaPath && (
-            <path
-              d={revenueAreaPath}
-              fill="url(#revenueGrad)"
-              className="transition-all duration-300"
-            />
+            <path d={revenueAreaPath} fill="url(#revenueGrad)" className="transition-all duration-300" />
           )}
 
           {/* Revenue Line */}
@@ -263,17 +253,12 @@ export function RevenueChart({ data, hoveredIndex, setHoveredIndex }: RevenueCha
           <div
             className="pointer-events-none absolute z-20 flex flex-col gap-1 rounded-md border border-zinc-150 bg-white/95 p-2 text-[10px] shadow-md backdrop-blur-xs transition-all duration-75 dark:border-zinc-850 dark:bg-zinc-950/95"
             style={{
-              left: `${Math.min(
-                width - 130,
-                Math.max(paddingLeft + 10, tooltipX - 60)
-              )}px`,
+              left: `${Math.min(width - 130, Math.max(paddingLeft + 10, tooltipX - 60))}px`,
               top: `${paddingTop + 10}px`,
               width: "120px",
             }}
           >
-            <div className="font-semibold text-zinc-900 dark:text-zinc-200">
-              {activeItem.month} 2026
-            </div>
+            <div className="font-semibold text-zinc-900 dark:text-zinc-200">{activeItem.month} 2026</div>
             <div className="flex justify-between border-t border-zinc-100 pt-1 mt-0.5 dark:border-zinc-800">
               <span className="text-zinc-400">{t("financial.revTooltip")}:</span>
               <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">

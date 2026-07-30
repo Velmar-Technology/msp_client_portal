@@ -61,4 +61,17 @@ export const equipmentService = {
     const response = await api.get('/equipment/admin/devices');
     return response.data.data;
   },
+
+  async getNextcloudInfo(subId: string, slotIndex: number): Promise<{
+    nextcloud_username: string | null;
+    nextcloud_password: string | null;
+    nextcloud_used_bytes: number;
+    nextcloud_total_bytes: number;
+    device_name: string | null;
+    device_serial: string | null;
+    status: string;
+  }> {
+    const response = await api.get(`/equipment/subscriptions/${subId}/slots/${slotIndex}/nextcloud`);
+    return response.data.data;
+  },
 };

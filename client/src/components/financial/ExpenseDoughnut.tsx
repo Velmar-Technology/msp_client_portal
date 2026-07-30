@@ -15,7 +15,7 @@ function getDoughnutSegmentPath(
   r: number,
   R: number,
   startAngle: number,
-  endAngle: number
+  endAngle: number,
 ): string {
   // Rotate by -90 so the first slice starts at the top (12 o'clock)
   const radStart = ((startAngle - 90) * Math.PI) / 180;
@@ -42,12 +42,7 @@ function getDoughnutSegmentPath(
   `;
 }
 
-export function ExpenseDoughnut({
-  categories,
-  hoveredIndex,
-  setHoveredIndex,
-  totalExpenses,
-}: ExpenseDoughnutProps) {
+export function ExpenseDoughnut({ categories, hoveredIndex, setHoveredIndex, totalExpenses }: ExpenseDoughnutProps) {
   const { t } = useTranslation();
 
   // Accumulate angles using a local loop to ensure pure functional rendering patterns
@@ -75,17 +70,13 @@ export function ExpenseDoughnut({
   return (
     <div className="rounded-lg border border-zinc-200 bg-white p-3.5 shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
       <div className="border-b border-zinc-100 pb-2.5 dark:border-zinc-900">
-        <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-50">
-          {t("financial.expenseBreakdown")}
-        </h3>
-        <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
-          {t("financial.distributionDesc")}
-        </p>
+        <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-50">{t("financial.expenseBreakdown")}</h3>
+        <p className="text-[10px] text-zinc-400 dark:text-zinc-500">{t("financial.distributionDesc")}</p>
       </div>
 
       <div className="mt-4 flex flex-col items-center justify-around gap-4 sm:flex-row sm:gap-2">
         {/* SVG Doughnut */}
-        <div className="relative h-[200px] w-[200px] shrink-0">
+        <div className="relative h-64 w-[200px] shrink-0">
           <svg width={200} height={200} className="overflow-visible">
             {segments.map((seg) => {
               const isHovered = seg.idx === hoveredIndex;
@@ -99,7 +90,7 @@ export function ExpenseDoughnut({
                 innerRadius,
                 outerRadius,
                 seg.startAngle,
-                seg.endAngle
+                seg.endAngle,
               );
 
               return (
@@ -134,12 +125,8 @@ export function ExpenseDoughnut({
                 <span className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
                   {t("financial.expenses")}
                 </span>
-                <span className="text-[16px] font-bold text-zinc-900 dark:text-zinc-50">
-                  {totalExpenses}
-                </span>
-                <span className="text-[8px] text-zinc-400 dark:text-zinc-500">
-                  {t("financial.allCategories")}
-                </span>
+                <span className="text-[16px] font-bold text-zinc-900 dark:text-zinc-50">{totalExpenses}</span>
+                <span className="text-[8px] text-zinc-400 dark:text-zinc-500">{t("financial.allCategories")}</span>
               </>
             )}
           </div>
@@ -154,18 +141,13 @@ export function ExpenseDoughnut({
                 <div
                   key={cat.nameKey}
                   className={`flex items-center justify-between rounded-md p-1.5 transition-colors duration-150 ${
-                    isHovered
-                      ? "bg-zinc-50 dark:bg-zinc-900/60"
-                      : "hover:bg-zinc-50/50 dark:hover:bg-zinc-900/20"
+                    isHovered ? "bg-zinc-50 dark:bg-zinc-900/60" : "hover:bg-zinc-50/50 dark:hover:bg-zinc-900/20"
                   }`}
                   onMouseEnter={() => setHoveredIndex(idx)}
                   onMouseLeave={() => setHoveredIndex(null)}
                 >
                   <div className="flex items-center gap-2 truncate">
-                    <span
-                      className="h-2 w-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: cat.color }}
-                    />
+                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: cat.color }} />
                     <span className="text-[10px] font-medium text-zinc-700 dark:text-zinc-300 truncate">
                       {t(`financial.${cat.nameKey}`)}
                     </span>

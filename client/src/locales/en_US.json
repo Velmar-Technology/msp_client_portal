@@ -539,6 +539,13 @@
     "actionSimulate": "Simulate Agent Activation",
     "actionRegenerate": "Regenerate OTP",
     "actionGenerate": "Generate Activation OTP",
+    "actionNextcloudInfo": "Nextcloud Backup Info",
+    "nextcloudModalTitle": "Cloud Backup Details",
+    "nextcloudLoading": "Loading backup details...",
+    "nextcloudError": "Failed to load Nextcloud details.",
+    "nextcloudAccount": "Nextcloud Account Credentials",
+    "storageUsage": "Live Storage Usage",
+    "configured": "Provisioned",
     "noSlotsFound": "No device slots found.",
     "adminSearchPlaceholder": "Search by name, serial, user, email..."
   },

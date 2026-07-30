@@ -21,9 +21,9 @@ export function useDevicesPage() {
 
   // Admin specific states
   const [adminDevices, setAdminDevices] = useState<SubscriptionEquipment[]>([]);
-  const [selectedClient, setSelectedClient] = useState<string>("all");
-  const [selectedPlan, setSelectedPlan] = useState<string>("all");
-  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [selectedClient, setSelectedClient] = useState<string>("");
+  const [selectedPlan, setSelectedPlan] = useState<string>("");
+  const [selectedStatus, setSelectedStatus] = useState<string>("");
 
   // Pagination states
   const [page, setPage] = useState(1);
@@ -52,7 +52,7 @@ export function useDevicesPage() {
     setLoading(true);
     try {
       if (isAdmin) {
-        const devices = await equipmentService.getAllDevicesForAdmin();
+        const devices = (await equipmentService.getAllDevicesForAdmin()) || [];
         setAdminDevices(devices);
 
         // Group by subscription_id for compatibility with activation wizard / other operations
@@ -219,7 +219,7 @@ export function useDevicesPage() {
 
   const uniqueClients = useMemo(() => {
     const clients = new Map<string, string>();
-    adminDevices.forEach((d) => {
+    (adminDevices || []).forEach((d) => {
       if (d.tenant_id && d.tenant_name) {
         clients.set(d.tenant_id, d.tenant_name);
       }
@@ -229,7 +229,7 @@ export function useDevicesPage() {
 
   const uniquePlans = useMemo(() => {
     const plans = new Set<string>();
-    adminDevices.forEach((d) => {
+    (adminDevices || []).forEach((d) => {
       if (d.plan) plans.add(d.plan);
     });
     return Array.from(plans);
@@ -237,7 +237,7 @@ export function useDevicesPage() {
 
   const filteredEquipment = useMemo(() => {
     if (isAdmin) {
-      return adminDevices.filter((device) => {
+      return (adminDevices || []).filter((device) => {
         const matchSearch = !searchTerm.trim() ||
           device.id?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
           device.device_name?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
@@ -246,9 +246,9 @@ export function useDevicesPage() {
           device.client_name?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
           device.client_email?.toLowerCase().includes(searchTerm.toLowerCase().trim());
         
-        const matchClient = selectedClient === "all" || device.tenant_id === selectedClient;
-        const matchPlan = selectedPlan === "all" || device.plan === selectedPlan;
-        const matchStatus = selectedStatus === "all" || device.status === selectedStatus;
+        const matchClient = !selectedClient || selectedClient === "all" || device.tenant_id === selectedClient;
+        const matchPlan = !selectedPlan || selectedPlan === "all" || device.plan === selectedPlan;
+        const matchStatus = !selectedStatus || selectedStatus === "all" || device.status === selectedStatus;
         
         return matchSearch && matchClient && matchPlan && matchStatus;
       });

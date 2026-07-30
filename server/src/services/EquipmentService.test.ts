@@ -236,7 +236,7 @@ describe('EquipmentService', () => {
   });
 
   describe('getAllDevicesForAdmin', () => {
-    it('should fetch all devices and enrich with Nextcloud storage info in parallel', async () => {
+    it('should fetch all devices without querying Nextcloud on load', async () => {
       const mockDevices = [
         {
           id: 'slot-1',
@@ -255,15 +255,40 @@ describe('EquipmentService', () => {
       ];
 
       mocks.equipFindAllWithDetails.mockResolvedValue(mockDevices);
-      mocks.ncGetUserStorage.mockResolvedValue({ used: 1000, total: 5000 });
 
       const result = await equipmentService.getAllDevicesForAdmin();
 
       expect(mocks.equipFindAllWithDetails).toHaveBeenCalled();
-      expect(mocks.ncGetUserStorage).toHaveBeenCalledTimes(1);
-      expect(result[0].nextcloud_used_bytes).toBe(1000);
-      expect(result[0].nextcloud_total_bytes).toBe(5000);
-      expect(result[1].nextcloud_used_bytes).toBeUndefined();
+      expect(mocks.ncGetUserStorage).not.toHaveBeenCalled();
+      expect(result).toHaveLength(2);
+    });
+  });
+
+  describe('getNextcloudInfo', () => {
+    it('should fetch Nextcloud storage info on demand for an active slot', async () => {
+      const mockSlot = {
+        id: 'slot-1',
+        subscription_id: subId,
+        slot_index: 0,
+        status: 'ACTIVE',
+        nextcloud_username: 'client_1_slot_1',
+        nextcloud_password: 'secret_password',
+        device_name: 'Workstation Alpha',
+        device_serial: 'SN-001',
+        tenant_id: tenantId,
+      };
+
+      mocks.equipFindBySlot.mockResolvedValue(mockSlot);
+      mocks.ncGetUserStorage.mockResolvedValue({ used: 2048, total: 10240 });
+
+      const result = await equipmentService.getNextcloudInfo(subId, 0, tenantId);
+
+      expect(mocks.equipFindBySlot).toHaveBeenCalledWith(subId, 0);
+      expect(mocks.ncGetUserStorage).toHaveBeenCalledWith('client_1_slot_1');
+      expect(result.nextcloud_username).toBe('client_1_slot_1');
+      expect(result.nextcloud_password).toBe('secret_password');
+      expect(result.nextcloud_used_bytes).toBe(2048);
+      expect(result.nextcloud_total_bytes).toBe(10240);
     });
   });
 });

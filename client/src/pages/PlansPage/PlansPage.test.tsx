@@ -207,8 +207,8 @@ describe('PlansPage', () => {
       );
 
       // Select Standard Support
-      const selectButton = screen.getByText('Selected: Standard Support');
-      expect(selectButton).toBeInTheDocument();
+      const selectCard = screen.getByText('Standard Support');
+      expect(selectCard).toBeInTheDocument();
 
       // Click Proceed to Checkout to mount the Sheet
       const checkoutBtn = screen.getByRole('button', { name: /Proceed to Checkout/i });
@@ -414,7 +414,7 @@ describe('PlansPage', () => {
       });
 
       // Select Basic Support card
-      fireEvent.click(screen.getByText('Select Basic Support'));
+      fireEvent.click(screen.getByText('Basic Support'));
 
       await waitFor(() => {
         expect(screen.getByText('Subscription Modification')).toBeInTheDocument();
@@ -525,7 +525,7 @@ describe('PlansPage', () => {
 
       // Select Basic Support plan card to manage it
       await waitFor(() => {
-        expect(screen.getByText('Selected: Basic Support')).toBeInTheDocument();
+        expect(screen.getByText('Basic Support')).toBeInTheDocument();
       });
 
       // Increment equipment count of BASIC plan to 4 (currently 2, so increment twice)
@@ -594,7 +594,7 @@ describe('PlansPage', () => {
       });
 
       // Select Standard Support card (which is not active)
-      fireEvent.click(screen.getByText('Select Standard Support'));
+      fireEvent.click(screen.getByText('Standard Support'));
 
       // The select action header should appear
       await waitFor(() => {

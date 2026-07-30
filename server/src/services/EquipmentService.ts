@@ -36,28 +36,7 @@ export class EquipmentService {
       slots.sort((a, b) => a.slot_index - b.slot_index);
     }
 
-    const slicedSlots = slots.slice(0, count);
-
-    // Query Nextcloud quota info for active slots in parallel
-    const enrichedSlots = await Promise.all(
-      slicedSlots.map(async (slot) => {
-        if (slot.status === 'ACTIVE' && slot.nextcloud_username) {
-          try {
-            const quota = await nextcloudService.getUserStorage(slot.nextcloud_username);
-            return {
-              ...slot,
-              nextcloud_used_bytes: quota.used,
-              nextcloud_total_bytes: quota.total,
-            };
-          } catch (err) {
-            logger.warn(`Failed to fetch storage usage for slot ${slot.id}: ${err}`);
-          }
-        }
-        return slot;
-      })
-    );
-
-    return enrichedSlots;
+    return slots.slice(0, count);
   }
 
   /**
@@ -218,28 +197,52 @@ export class EquipmentService {
    * Get all client devices across all subscriptions and tenants (for Admin view).
    */
   async getAllDevicesForAdmin(): Promise<any[]> {
-    const slots = await equipmentRepository.findAllWithDetails();
+    return equipmentRepository.findAllWithDetails();
+  }
 
-    // Query Nextcloud quota info for active slots in parallel
-    const enrichedSlots = await Promise.all(
-      slots.map(async (slot) => {
-        if (slot.status === 'ACTIVE' && slot.nextcloud_username) {
-          try {
-            const quota = await nextcloudService.getUserStorage(slot.nextcloud_username);
-            return {
-              ...slot,
-              nextcloud_used_bytes: quota.used,
-              nextcloud_total_bytes: quota.total,
-            };
-          } catch (err) {
-            logger.warn(`Failed to fetch storage usage for slot ${slot.id}: ${err}`);
-          }
-        }
-        return slot;
-      })
-    );
+  /**
+   * Get Nextcloud credentials and live storage info for a specific slot on demand.
+   */
+  async getNextcloudInfo(
+    subscriptionId: string,
+    slotIndex: number,
+    tenantId: string,
+    byAdmin = false
+  ): Promise<{
+    nextcloud_username: string | null;
+    nextcloud_password: string | null;
+    nextcloud_used_bytes: number;
+    nextcloud_total_bytes: number;
+    device_name: string | null;
+    device_serial: string | null;
+    status: string;
+  }> {
+    const slot = await equipmentRepository.findBySlot(subscriptionId, slotIndex);
+    if (!slot) throw AppError.notFound('Slot not found');
+    if (!byAdmin && slot.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
 
-    return enrichedSlots;
+    let used = 0;
+    let total = 0;
+
+    if (slot.status === 'ACTIVE' && slot.nextcloud_username) {
+      try {
+        const quota = await nextcloudService.getUserStorage(slot.nextcloud_username);
+        used = quota.used;
+        total = quota.total;
+      } catch (err) {
+        logger.warn(`Failed to fetch storage usage for slot ${slot.id}: ${err}`);
+      }
+    }
+
+    return {
+      nextcloud_username: slot.nextcloud_username,
+      nextcloud_password: slot.nextcloud_password,
+      nextcloud_used_bytes: used,
+      nextcloud_total_bytes: total,
+      device_name: slot.device_name,
+      device_serial: slot.device_serial,
+      status: slot.status,
+    };
   }
 }
 

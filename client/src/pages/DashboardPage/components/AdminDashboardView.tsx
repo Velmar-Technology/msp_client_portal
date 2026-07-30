@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Page } from "@/components/Page";
 import { Headphones, Wrench, CloudUpload, Cloud, CloudOff, ArrowRight } from "lucide-react";
@@ -163,12 +162,8 @@ interface RecentInvoicesProps {
 }
 
 export function RecentInvoices({ invoices, t, language, getStatusLabel, getStatusColorClass }: RecentInvoicesProps) {
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(5);
   const isSpanish = language === "es_DO";
-
-  const totalPages = Math.ceil(invoices.length / limit);
-  const paginatedInvoices = invoices.slice((page - 1) * limit, page * limit);
+  const recentInvoices = invoices.slice(0, 5);
 
   const columns: ColumnDef<Invoice>[] = [
     {
@@ -247,20 +242,9 @@ export function RecentInvoices({ invoices, t, language, getStatusLabel, getStatu
       </div>
       <DataTable
         columns={columns}
-        data={paginatedInvoices}
+        data={recentInvoices}
         noDataMessage={t("dashboard.noInvoices")}
         className="border-none"
-        pagination={{
-          page,
-          totalPages,
-          totalItems: invoices.length,
-          limit,
-          onPageChange: setPage,
-          onLimitChange: (newLimit) => {
-            setLimit(newLimit);
-            setPage(1);
-          },
-        }}
       />
     </div>
   );
@@ -287,9 +271,9 @@ export function AdminDashboardView() {
 
   return (
     <Page title={t("dashboard.systemOverview")} subtitle={t("dashboard.systemStatus")}>
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-6">
-        {/* Support Status, Maintenance, Backup Status, and Cloud Storage Card grid - spans 10 cols */}
-        <StatsGrid className="md:col-span-10">
+      <div className="space-y-6 mb-6">
+        {/* Support Status, Maintenance, Backup Status, and Cloud Storage Card grid */}
+        <StatsGrid className="w-full">
           {/* Support Status */}
           <SummaryCard
             icon={<Headphones className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />}
@@ -381,8 +365,8 @@ export function AdminDashboardView() {
           <StorageOverview storage={storage} loading={storageLoading} t={t} />
         </StatsGrid>
 
-        {/* Billing & Invoices - spans 8 cols */}
-        <div className="md:col-span-10">
+        {/* Billing & Invoices */}
+        <div className="w-full">
           <RecentInvoices
             invoices={invoices}
             t={t}

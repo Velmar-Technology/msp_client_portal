@@ -21,6 +21,7 @@ vi.mock('@/services/equipmentService', () => ({
     activateSlot: vi.fn(),
     deactivateSlot: vi.fn(),
     getAllDevicesForAdmin: vi.fn(),
+    getNextcloudInfo: vi.fn(),
   },
 }));
 
@@ -105,6 +106,7 @@ vi.mock('@/components/ui/dropdown-menu', () => {
 describe('DevicesPage', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    mockUser.role = 'CLIENT';
   });
 
   test('renders empty state when client has no active subscriptions', async () => {
@@ -534,5 +536,75 @@ describe('DevicesPage', () => {
 
     // Reset mockUser role to CLIENT for next tests
     mockUser.role = 'CLIENT';
+  });
+
+  test('opens Nextcloud info modal from Actions menu on active device slot', async () => {
+    const activeSub = {
+      id: 'sub-nc-test',
+      client_id: 'user-client',
+      service_name: 'Cloud Pro Plan',
+      plan: 'PREMIUM',
+      status: 'ACTIVE' as const,
+      equipment_count: 1,
+      tenant_id: 'tenant-1',
+      created_at: '2026-06-22',
+      updated_at: '2026-06-22',
+    };
+
+    const mockSlot: SubscriptionEquipment = {
+      id: 'slot-nc-1',
+      subscription_id: 'sub-nc-test',
+      slot_index: 0,
+      status: 'ACTIVE',
+      device_name: 'Backup Workstation',
+      device_serial: 'SN-NC-001',
+      otp: null,
+      otp_expires_at: null,
+      nextcloud_username: 'client_tenant1_slot_1',
+      nextcloud_password: 'nc_password_123',
+      tenant_id: 'tenant-1',
+      created_at: '2026-06-22',
+      updated_at: '2026-06-22',
+    };
+
+    vi.mocked(subscriptionService.getAll).mockResolvedValue([activeSub]);
+    vi.mocked(equipmentService.getSlots).mockResolvedValue([mockSlot]);
+    vi.mocked(equipmentService.getNextcloudInfo).mockResolvedValue({
+      nextcloud_username: 'client_tenant1_slot_1',
+      nextcloud_password: 'nc_password_123',
+      nextcloud_used_bytes: 1073741824, // 1 GB
+      nextcloud_total_bytes: 10737418240, // 10 GB
+      device_name: 'Backup Workstation',
+      device_serial: 'SN-NC-001',
+      status: 'ACTIVE',
+    });
+
+    render(
+      <MemoryRouter>
+        <DevicesPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Backup Workstation')).toBeInTheDocument();
+      expect(screen.getByText('Provisioned')).toBeInTheDocument();
+    });
+
+    // Open Actions dropdown
+    const actionsBtn = screen.getByRole('button', { name: 'Actions' });
+    fireEvent.click(actionsBtn);
+
+    // Click Nextcloud Backup Info menu item
+    const ncMenuItem = screen.getByRole('menuitem', { name: 'Nextcloud Backup Info' });
+    fireEvent.click(ncMenuItem);
+
+    // Verify modal title and fetched info are displayed
+    await waitFor(() => {
+      expect(screen.getByText('Cloud Backup Details')).toBeInTheDocument();
+      expect(screen.getByText('client_tenant1_slot_1')).toBeInTheDocument();
+      expect(screen.getByText('nc_password_123')).toBeInTheDocument();
+    });
+
+    expect(equipmentService.getNextcloudInfo).toHaveBeenCalledWith('sub-nc-test', 0);
   });
 });

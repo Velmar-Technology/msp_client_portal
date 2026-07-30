@@ -7,18 +7,15 @@ export default function DashboardSkeleton() {
   const { t } = useTranslation();
 
   return (
-    <Page
-      title={t("dashboard.systemOverview")}
-      subtitle={t("dashboard.systemStatus")}
-    >
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-6">
-        <StatsGrid className="md:col-span-10">
+    <Page title={t("dashboard.systemOverview")} subtitle={t("dashboard.systemStatus")}>
+      <div className="space-y-6 mb-6">
+        <StatsGrid className="w-full">
           <Skeleton className="w-full h-64" />
           <Skeleton className="w-full h-64" />
           <Skeleton className="w-full h-64" />
           <Skeleton className="w-full h-64" />
         </StatsGrid>
-        <div className="md:col-span-10">
+        <div className="w-full">
           <div className="flex justify-between gap-6 mb-6">
             <Skeleton className="w-64 h-10" />
             <Skeleton className="w-24 h-10" />

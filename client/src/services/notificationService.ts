@@ -9,7 +9,7 @@ export interface Notification {
   ticket_id: string | null;
   type: string;
   read: boolean;
-  metadata: Record<string, any> | null;
+  metadata: Record<string, unknown> | null;
   tenant_id: string;
   created_at: string;
 }

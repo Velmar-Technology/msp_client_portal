@@ -39,6 +39,16 @@ const StatusAlert = ({ message, type }: { message: string; type: "success" | "er
   );
 };
 
+interface ProfileIdentityCardProps {
+  user: any;
+  lastLoginText: string;
+  uploadingAvatar: boolean;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  onAvatarClick: () => void;
+  onAvatarChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  t: (key: string) => string;
+}
+
 const ProfileIdentityCard = ({
   user,
   lastLoginText,
@@ -47,7 +57,7 @@ const ProfileIdentityCard = ({
   onAvatarClick,
   onAvatarChange,
   t,
-}: any) => {
+}: ProfileIdentityCardProps) => {
   return (
     <section className="flex flex-col items-center gap-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm sm:flex-row sm:items-start">
       <div className="relative shrink-0 group">

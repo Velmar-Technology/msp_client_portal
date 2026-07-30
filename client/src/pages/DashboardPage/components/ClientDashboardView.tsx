@@ -57,23 +57,14 @@ export function ClientDashboardView() {
         </button>
       }
     >
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-6">
-        {/* Support Status, Maintenance, Backup Status Card grid - spans 8 cols */}
-        <div className="md:col-span-10">
-          <DashboardSummaryStats />
-        </div>
+      <div className="space-y-6 mb-6">
+        <DashboardSummaryStats />
 
-        {/* Active Subscriptions - spans 8 cols */}
         {subscriptions.length > 0 && (
-          <div className="md:col-span-8">
-            <ActiveSubscriptions subscriptions={subscriptions} getStatusColor={getStatusColor} />
-          </div>
+          <ActiveSubscriptions subscriptions={subscriptions} getStatusColor={getStatusColor} />
         )}
 
-        {/* Recent Invoices - spans 8 cols */}
-        <div className="md:col-span-8">
-          <RecentInvoices invoices={invoices} getStatusColor={getStatusColor} />
-        </div>
+        <RecentInvoices invoices={invoices} getStatusColor={getStatusColor} />
       </div>
     </Page>
   );

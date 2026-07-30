@@ -149,7 +149,7 @@ const PayModal = ({
           {!isSuccess && (
             <div
               id="paypal-button-container"
-              className="my-3 min-h-[150px] flex items-center justify-center bg-zinc-50/10 rounded-lg p-4 border border-zinc-200 dark:border-zinc-800 border-dashed"
+              className="my-3 min-h-37.5 flex items-center justify-center bg-zinc-50/10 rounded-lg p-4 border border-zinc-200 dark:border-zinc-800 border-dashed"
             >
               <span className="text-xs text-zinc-450 dark:text-zinc-500">
                 {t("plans.loadingPayPal") || "Loading PayPal..."}
@@ -163,8 +163,8 @@ const PayModal = ({
                 isSuccess
                   ? "bg-green-500/10 border-green-500/20 text-green-700 dark:text-green-400"
                   : paymentMessage === t("billing.paymentProcessing")
-                  ? "bg-zinc-500/10 border-zinc-500/20 text-zinc-700 dark:text-zinc-300"
-                  : "bg-red-500/10 border-red-500/20 text-red-700 dark:text-red-400"
+                    ? "bg-zinc-500/10 border-zinc-500/20 text-zinc-700 dark:text-zinc-300"
+                    : "bg-red-500/10 border-red-500/20 text-red-700 dark:text-red-400"
               }`}
             >
               {paymentMessage}
@@ -212,22 +212,28 @@ export function BillingPage() {
     fetchInvoices,
   } = useBilling();
 
-  const getStatusLabel = useCallback((status: string) => {
-    const map: Record<string, string> = {
-      PENDING: t("tickets.filterAwaitingPayment"),
-      PAID: t("tickets.filterResolved"),
-      OVERDUE: i18n.language === "es_DO" ? "VENCIDA" : "OVERDUE",
-    };
-    return map[status] || status;
-  }, [t, i18n.language]);
+  const getStatusLabel = useCallback(
+    (status: string) => {
+      const map: Record<string, string> = {
+        PENDING: t("tickets.filterAwaitingPayment"),
+        PAID: t("tickets.filterResolved"),
+        OVERDUE: i18n.language === "es_DO" ? "VENCIDA" : "OVERDUE",
+      };
+      return map[status] || status;
+    },
+    [t, i18n.language],
+  );
 
-  const formatDate = useCallback((dateString: string) => {
-    return new Date(dateString).toLocaleDateString(i18n.language === "es_DO" ? "es-DO" : "en-US", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  }, [i18n.language]);
+  const formatDate = useCallback(
+    (dateString: string) => {
+      return new Date(dateString).toLocaleDateString(i18n.language === "es_DO" ? "es-DO" : "en-US", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    },
+    [i18n.language],
+  );
 
   const columns = useMemo<ColumnDef<Invoice>[]>(
     () => [
@@ -361,7 +367,7 @@ export function BillingPage() {
         ),
       },
     ],
-    [t, downloadingId, handleDownload, openPayModal, formatDate, getStatusLabel]
+    [t, downloadingId, handleDownload, openPayModal, formatDate, getStatusLabel],
   );
 
   return (
@@ -374,7 +380,7 @@ export function BillingPage() {
         search={{
           value: search,
           onChange: handleSearchChange,
-          placeholder: t("billing.searchPlaceholder") || "Search invoices..."
+          placeholder: t("billing.searchPlaceholder") || "Search invoices...",
         }}
         filters={[
           {
@@ -386,8 +392,8 @@ export function BillingPage() {
               { value: "PAID", label: t("tickets.filterResolved") },
               { value: "OVERDUE", label: i18n.language === "es_DO" ? "VENCIDA" : "OVERDUE" },
             ],
-            placeholder: t("billing.allStatuses") || "All Statuses"
-          }
+            placeholder: t("billing.allStatuses") || "All Statuses",
+          },
         ]}
         pagination={{
           page,
