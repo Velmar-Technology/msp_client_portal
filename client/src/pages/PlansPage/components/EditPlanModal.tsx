@@ -1,7 +1,9 @@
-import { X, GripVertical, ChevronUp, ChevronDown, Trash2, Plus } from 'lucide-react';
+import { useState } from 'react';
+import { X, GripVertical, ChevronUp, ChevronDown, Trash2, Plus, Globe } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Plan, PlanFeature } from "@/services/planService";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { FEATURE_CATALOG } from "@/constants/featureCatalog";
 
 interface EditPlanModalProps {
@@ -78,6 +80,7 @@ export function EditPlanModal({
   onDragEnd,
 }: EditPlanModalProps) {
   const { t } = useTranslation();
+  const [activeLang, setActiveLang] = useState<'en_US' | 'es_DO'>('en_US');
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-3">
@@ -168,54 +171,76 @@ export function EditPlanModal({
             </div>
           </div>
 
-          {/* Row 2: Plan Names (EN & ES) side-by-side */}
-          <div>
-            <label className="block text-[9px] text-zinc-500 font-bold uppercase tracking-wider mb-0.5">
-              {t('plans.planNameLabel') || 'Plan Name'} (EN / ES)
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="flex items-center gap-1">
-                <span className="text-[8px] font-bold text-zinc-400 w-3">EN</span>
-                <Input
-                  type="text"
-                  value={editName.en_US || ''}
-                  onChange={(e) => setEditName({ ...editName, en_US: e.target.value })}
-                  className="h-7 text-xs bg-white dark:bg-zinc-950"
-                  placeholder="English name..."
-                />
+          {/* i18n Language Tabs Section */}
+          <div className="bg-zinc-100/60 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded-md p-2.5">
+            <Tabs value={activeLang} onValueChange={(val) => setActiveLang(val as 'en_US' | 'es_DO')} className="w-full">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                  <Globe className="h-3 w-3 text-zinc-400" />
+                  <span>{t('plans.i18nContent') || 'Localization (i18n)'}</span>
+                </div>
+                <TabsList className="h-6 p-0.5 bg-zinc-200/80 dark:bg-zinc-800 rounded">
+                  <TabsTrigger value="en_US" className="px-2 py-0 text-[10px] h-5 font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-950">
+                    EN (English)
+                  </TabsTrigger>
+                  <TabsTrigger value="es_DO" className="px-2 py-0 text-[10px] h-5 font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-950">
+                    ES (Español)
+                  </TabsTrigger>
+                </TabsList>
               </div>
-              <div className="flex items-center gap-1">
-                <span className="text-[8px] font-bold text-zinc-400 w-3">ES</span>
-                <Input
-                  type="text"
-                  value={editName.es_DO || ''}
-                  onChange={(e) => setEditName({ ...editName, es_DO: e.target.value })}
-                  className="h-7 text-xs bg-white dark:bg-zinc-950"
-                  placeholder="Nombre en español..."
-                />
-              </div>
-            </div>
-          </div>
 
-          {/* Row 3: Descriptions (EN & ES) side-by-side */}
-          <div>
-            <label className="block text-[9px] text-zinc-500 font-bold uppercase tracking-wider mb-0.5">
-              {t('plans.descriptionLabel') || 'Description'} (EN / ES)
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <textarea
-                value={editDescription.en_US || ''}
-                onChange={(e) => setEditDescription({ ...editDescription, en_US: e.target.value })}
-                className="w-full h-11 p-1.5 rounded border bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 text-[11px] focus:outline-none border-zinc-200 dark:border-zinc-800 resize-none"
-                placeholder="English description..."
-              />
-              <textarea
-                value={editDescription.es_DO || ''}
-                onChange={(e) => setEditDescription({ ...editDescription, es_DO: e.target.value })}
-                className="w-full h-11 p-1.5 rounded border bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 text-[11px] focus:outline-none border-zinc-200 dark:border-zinc-800 resize-none"
-                placeholder="Descripción en español..."
-              />
-            </div>
+              <TabsContent value="en_US" className="space-y-2 mt-0">
+                <div>
+                  <label className="block text-[9px] text-zinc-500 font-bold uppercase tracking-wider mb-0.5">
+                    {t('plans.planNameLabel') || 'Plan Name'} (English)
+                  </label>
+                  <Input
+                    type="text"
+                    value={editName.en_US || ''}
+                    onChange={(e) => setEditName({ ...editName, en_US: e.target.value })}
+                    className="h-7 text-xs bg-white dark:bg-zinc-950"
+                    placeholder="Plan name in English..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] text-zinc-500 font-bold uppercase tracking-wider mb-0.5">
+                    {t('plans.descriptionLabel') || 'Description'} (English)
+                  </label>
+                  <textarea
+                    value={editDescription.en_US || ''}
+                    onChange={(e) => setEditDescription({ ...editDescription, en_US: e.target.value })}
+                    className="w-full h-11 p-1.5 rounded border bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 text-[11px] focus:outline-none border-zinc-200 dark:border-zinc-800 resize-none"
+                    placeholder="English description..."
+                  />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="es_DO" className="space-y-2 mt-0">
+                <div>
+                  <label className="block text-[9px] text-zinc-500 font-bold uppercase tracking-wider mb-0.5">
+                    {t('plans.planNameLabel') || 'Plan Name'} (Español)
+                  </label>
+                  <Input
+                    type="text"
+                    value={editName.es_DO || ''}
+                    onChange={(e) => setEditName({ ...editName, es_DO: e.target.value })}
+                    className="h-7 text-xs bg-white dark:bg-zinc-950"
+                    placeholder="Nombre del plan en español..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] text-zinc-500 font-bold uppercase tracking-wider mb-0.5">
+                    {t('plans.descriptionLabel') || 'Description'} (Español)
+                  </label>
+                  <textarea
+                    value={editDescription.es_DO || ''}
+                    onChange={(e) => setEditDescription({ ...editDescription, es_DO: e.target.value })}
+                    className="w-full h-11 p-1.5 rounded border bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 text-[11px] focus:outline-none border-zinc-200 dark:border-zinc-800 resize-none"
+                    placeholder="Descripción en español..."
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
 
           {/* Features Section */}
@@ -233,7 +258,7 @@ export function EditPlanModal({
               </button>
             </div>
 
-            <div className="space-y-1.5 max-h-[230px] overflow-y-auto pr-1">
+            <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1">
               {editFeatures.map((feat, index) => {
                 const catalogItem = FEATURE_CATALOG.find((c) => c.code === feat.code);
                 const schemaKeys = new Set(catalogItem?.paramSchema?.map((p) => p.key) || []);
@@ -379,29 +404,17 @@ export function EditPlanModal({
                       </div>
                     )}
 
-                    {/* Custom Text Inputs (if custom feature) */}
+                    {/* Custom Text Input for Active Language (if custom feature) */}
                     {(!feat.code || feat.code === 'CUSTOM_FEATURE') && (
-                      <div className="ml-6 grid grid-cols-2 gap-1.5 pt-0.5">
-                        <div className="flex items-center gap-1">
-                          <span className="text-[8px] font-bold text-zinc-400 w-3">EN</span>
-                          <Input
-                            type="text"
-                            value={(typeof feat.text === 'string' ? feat.text : feat.text?.en_US) || ''}
-                            onChange={(e) => onEditFeatureText(index, 'en_US', e.target.value)}
-                            className="flex-1 h-6.5 text-[11px] bg-white dark:bg-zinc-950 py-0"
-                            placeholder="English description..."
-                          />
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="text-[8px] font-bold text-zinc-400 w-3">ES</span>
-                          <Input
-                            type="text"
-                            value={(typeof feat.text === 'string' ? feat.text : feat.text?.es_DO) || ''}
-                            onChange={(e) => onEditFeatureText(index, 'es_DO', e.target.value)}
-                            className="flex-1 h-6.5 text-[11px] bg-white dark:bg-zinc-950 py-0"
-                            placeholder="Descripción en español..."
-                          />
-                        </div>
+                      <div className="ml-6 flex items-center gap-1.5 pt-0.5">
+                        <span className="text-[8px] font-bold text-zinc-400 uppercase w-4">{activeLang === 'en_US' ? 'EN' : 'ES'}</span>
+                        <Input
+                          type="text"
+                          value={(typeof feat.text === 'string' ? feat.text : feat.text?.[activeLang]) || ''}
+                          onChange={(e) => onEditFeatureText(index, activeLang, e.target.value)}
+                          className="flex-1 h-6.5 text-[11px] bg-white dark:bg-zinc-950 py-0"
+                          placeholder={activeLang === 'en_US' ? 'Feature description in English...' : 'Descripción de la característica en español...'}
+                        />
                       </div>
                     )}
                   </div>
