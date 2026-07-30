@@ -46,22 +46,22 @@ INSERT INTO plans (id, name, description, price, features, recommended, client_t
     {"text": {"en_US": "10% Discount in Velmar store*", "es_DO": "10% de descuento en la tienda Velmar*"}, "included": true}
   ]'::jsonb, false, 'ENTERPRISE'),
 
-  ('PL-006', '{"en_US": "Student Starter Kit", "es_DO": "Kit de Inicio para Estudiantes"}'::jsonb, '{"en_US": "Essentials for students, including RMM and password management.", "es_DO": "Esenciales para estudiantes, incluyendo Monitoreo y gestión de contraseñas."}'::jsonb, 20, '[
+  ('PL-005', '{"en_US": "Student Starter Kit", "es_DO": "Kit de Inicio para Estudiantes"}'::jsonb, '{"en_US": "Essentials for students, including RMM and password management.", "es_DO": "Esenciales para estudiantes, incluyendo Monitoreo y gestión de contraseñas."}'::jsonb, 20, '[
     {"code": "CLOUD_STORAGE", "text": {"en_US": "50 GB Cloud Storage", "es_DO": "50 GB de Almacenamiento en la Nube"}, "params": {"unit": "GB", "limit": 25}, "included": true},
     {"code": "SLA_LEVEL", "text": {"en_US": "Silver SLA level (8 hours response)", "es_DO": "SLA (8 horas de respuesta)"}, "params": {"level": "Silver", "response": "4 hours"}, "included": true},
     {"code": "RMM_PATCH_MANAGEMENT", "text": {"en_US": "RMM Monitoring & Patch Management", "es_DO": "Monitoreo & Parches de Seguridad"}, "included": true},
     {"code": "PASSWORD_MANAGER", "text": {"en_US": "Password Manager", "es_DO": "Administrador de Contraseña"}, "included": true}
   ]'::jsonb, false, 'STUDENT'),
 
-  ('PL-007', '{"en_US": "Custom", "es_DO": "Personalizado"}'::jsonb, '{"en_US": "Tailored solution with specialized terms and SLAs.", "es_DO": "Solución a la medida con términos y SLAs especializados."}'::jsonb, 0, '[]'::jsonb, false, 'OTHER'),
-
-  ('PL-008', '{"en_US": "Premium POS", "es_DO": "Premium POS"}'::jsonb, '{"en_US": "A premium, high-availability service designed to ensure your point of sale never stops.", "es_DO": "Servicio premium de alta disponibilidad diseñado para que tu punto de venta nunca se detenga."}'::jsonb, 49, '[
+   ('PL-006', '{"en_US": "Premium POS", "es_DO": "Premium POS"}'::jsonb, '{"en_US": "A premium, high-availability service designed to ensure your point of sale never stops.", "es_DO": "Servicio premium de alta disponibilidad diseñado para que tu punto de venta nunca se detenga."}'::jsonb, 49, '[
     {"code": "HELPDESK_SUPPORT", "text": {"en_US": "Technical Support", "es_DO": "Soporte Técnico"}, "params": {"type": "24/7/365"}, "included": true},
     {"code": "SLA_LEVEL", "text": {"en_US": "SLA (Response within 8 hours)", "es_DO": "SLA (Respuesta en menos de 8 hora)"}, "params": {"level": "Silver", "response": "2 hours"}, "included": true},
     {"text": {"en_US": "On-Site Support (2 hours/month)", "es_DO": "Soporte On-Site (2h/semanales)"}, "included": true},
     {"text": {"en_US": "Equipment Loan*", "es_DO": "Prestamo de Equipo*"}, "included": true},
     {"code": "BACKUP_INCLUDED", "text": {"en_US": "Backup Included", "es_DO": "Copia de seguridad"}, "included": true}
   ]'::jsonb, false, 'CLIENT');
+
+  ('PL-007', '{"en_US": "Custom", "es_DO": "Personalizado"}'::jsonb, '{"en_US": "Tailored solution with specialized terms and SLAs.", "es_DO": "Solución a la medida con términos y SLAs especializados."}'::jsonb, 0, '[]'::jsonb, false, 'OTHER'),
 
 -- Seed tenants
 INSERT INTO tenants (id, name, subdomain) VALUES

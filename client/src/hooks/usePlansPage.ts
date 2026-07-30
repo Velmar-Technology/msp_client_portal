@@ -907,7 +907,8 @@ export function usePlansPage() {
     setDragOverIndex(null);
   }, []);
 
-  const cleanBilingualRecord = useCallback((rec: Record<string, string>): Record<string, string> => {
+  const cleanBilingualRecord = useCallback((rec?: Record<string, string> | null): Record<string, string> => {
+    if (!rec) return { en_US: "", es_DO: "" };
     const en = (rec.en_US || "").trim();
     const es = (rec.es_DO || "").trim();
     return {
@@ -947,7 +948,7 @@ export function usePlansPage() {
           if (typeof f.text === "string") {
             textObj = { en_US: f.text, es_DO: f.text };
           } else {
-            textObj = f.text;
+            textObj = f.text || {};
           }
           return {
             ...f,
