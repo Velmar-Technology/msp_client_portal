@@ -295,7 +295,10 @@ export function EditPlanModal({
                     >
                       {/* Feature Main Control Bar */}
                       <div className="flex items-center gap-1.5">
-                        <div className="cursor-grab active:cursor-grabbing text-zinc-400 hover:text-zinc-600 p-0.5">
+                        <div
+                          className="cursor-grab active:cursor-grabbing text-zinc-400 hover:text-zinc-600 p-0.5"
+                          title={t('plans.dragToReorder') || 'Drag to reorder'}
+                        >
                           <GripVertical className="h-3.5 w-3.5" />
                         </div>
 
