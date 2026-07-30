@@ -87,7 +87,7 @@ export function useDevicesPage() {
           subscriptionService.getAll(),
           equipmentService.getMyDevices(),
         ]);
-        const active = subs.filter((sub) => sub.status === "ACTIVE");
+        const active = subs.filter((sub) => sub.status === "ACTIVE" || sub.status === "EXPIRING");
         setActiveSubscriptions(active);
 
         if (active.length > 0) {

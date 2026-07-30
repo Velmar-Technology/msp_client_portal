@@ -38,7 +38,7 @@ export function useAppLayout() {
       try {
         const subs = await subscriptionService.getAll();
         if (isMounted) {
-          const active = subs.find((s) => s.status === "ACTIVE");
+          const active = subs.find((s) => s.status === "ACTIVE" || s.status === "EXPIRING");
           setActiveSubscription(active || null);
           setHasChecked(true);
         }

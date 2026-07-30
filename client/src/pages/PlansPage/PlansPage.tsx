@@ -107,6 +107,8 @@ export function PlansPage() {
     const colors: Record<string, string> = {
       ACTIVE:
         "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/10",
+      EXPIRING:
+        "bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400 dark:border-amber-500/10",
       CANCELLED:
         "bg-zinc-100 text-zinc-500 border-zinc-200 dark:bg-zinc-800/60 dark:text-zinc-400 dark:border-zinc-700/80",
     };
@@ -146,9 +148,11 @@ export function PlansPage() {
           const displayStatus =
             status === "ACTIVE"
               ? t("plans.activeStatus") || "Active"
-              : status === "CANCELLED"
-                ? t("plans.cancelledStatus") || "Cancelled"
-                : status;
+              : status === "EXPIRING"
+                ? t("plans.expiringStatus") || "Cancel Pending"
+                : status === "CANCELLED"
+                  ? t("plans.cancelledStatus") || "Cancelled"
+                  : status;
           return (
             <span
               className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold tracking-wider uppercase border ${getStatusColor(
@@ -489,10 +493,27 @@ export function PlansPage() {
                           })}
                         </p>
                       </div>
-                      <span className="bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border border-zinc-950 dark:border-zinc-200">
-                        {t("plans.activeStatus")?.toUpperCase() || "ACTIVE"}
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                        activeSub.status === "EXPIRING"
+                          ? "bg-amber-500/20 text-amber-800 border-amber-300 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800"
+                          : "bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950 border-zinc-950 dark:border-zinc-200"
+                      }`}>
+                        {activeSub.status === "EXPIRING"
+                          ? (t("plans.expiringStatus") || "CANCEL PENDING").toUpperCase()
+                          : (t("plans.activeStatus")?.toUpperCase() || "ACTIVE")}
                       </span>
                     </div>
+
+                    {activeSub.status === "EXPIRING" && (
+                      <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-md text-xs text-amber-800 dark:text-amber-300">
+                        <p className="font-semibold">{t("plans.cancellingPeriodEndTitle") || "Subscription Cancellation Scheduled"}</p>
+                        <p className="text-[11px] opacity-90 mt-0.5">
+                          {t("plans.cancellingPeriodEndDesc", {
+                            date: activeSub.renewal_date ? new Date(activeSub.renewal_date).toLocaleDateString() : "",
+                          }) || `Your plan will remain active through ${activeSub.renewal_date ? new Date(activeSub.renewal_date).toLocaleDateString() : "the end of your paid billing period"}. No further renewal payments will be charged.`}
+                        </p>
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                       <div className="p-3 bg-zinc-100/50 dark:bg-zinc-800/30 rounded border border-zinc-200/50 dark:border-zinc-800/60">

@@ -66,6 +66,21 @@ export class SubscriptionScheduler {
   private async renewSubscription(sub: Subscription): Promise<void> {
     logger.info(`Processing renewal for subscription ${sub.id} (client: ${sub.client_id})`);
 
+    // Handle subscriptions that were set to EXPIRING (cancelled by user at end of billing cycle)
+    if (sub.status === SubscriptionStatus.EXPIRING) {
+      logger.info(`Subscription ${sub.id} reached end of paid billing period (${sub.renewal_date}). Finalizing cancellation.`);
+      await subscriptionRepository.updateStatus(sub.id, SubscriptionStatus.CANCELLED);
+      await notificationService.createInAppNotification({
+        userId: sub.client_id,
+        title: 'Subscription Cancelled',
+        message: `Your subscription to ${sub.service_name} has reached the end of its billing cycle and is now inactive.`,
+        link: '/plans',
+        type: 'SUBSCRIPTION_CANCELLED',
+        tenantId: sub.tenant_id,
+      });
+      return;
+    }
+
     const planDetails = await planRepository.findById(sub.plan);
     if (!planDetails) {
       logger.error(`Plan ${sub.plan} not found for subscription ${sub.id}`);

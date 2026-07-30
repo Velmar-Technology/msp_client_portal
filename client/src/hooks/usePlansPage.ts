@@ -190,7 +190,7 @@ export function usePlansPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setActionType("modify");
     if (activeSubscriptions.length > 0) {
-      const activeSubForPlan = activeSubscriptions.find((sub) => sub.plan === selectedPlan && sub.status === "ACTIVE");
+      const activeSubForPlan = activeSubscriptions.find((sub) => sub.plan === selectedPlan && (sub.status === "ACTIVE" || sub.status === "EXPIRING"));
       if (activeSubForPlan) {
         setSubscriptionToModifyId(activeSubForPlan.id);
       } else {
@@ -639,7 +639,7 @@ export function usePlansPage() {
 
   const handleCancelSubscription = useCallback(async (subId: string) => {
     const confirmCancel = window.confirm(
-      t("plans.cancelConfirm") || "Are you sure you want to cancel your subscription? This action will take effect immediately.",
+      t("plans.cancelConfirm") || "Are you sure you want to cancel your subscription? Your access will remain active through the end of your paid billing cycle.",
     );
     if (!confirmCancel) return;
 
@@ -649,8 +649,8 @@ export function usePlansPage() {
         status: "CANCELLED",
       });
       addToast({
-        title: t("plans.cancelTitle") || "Subscription Cancelled",
-        message: t("plans.cancelSuccess") || "Your subscription has been successfully cancelled.",
+        title: t("plans.cancelTitle") || "Subscription Cancellation Scheduled",
+        message: t("plans.cancelSuccess") || "Your subscription cancellation has been scheduled. Services will remain active until the end of your billing period.",
         type: "success",
       });
       await fetchActiveSubscriptions();

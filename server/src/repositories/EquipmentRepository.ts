@@ -1,7 +1,7 @@
 import { BaseRepository } from './BaseRepository';
 import { SubscriptionEquipment } from '../types';
 import { db, subscriptionEquipment, subscriptions, users, tenants } from '../db';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, or, desc } from 'drizzle-orm';
 
 export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
   constructor() {
@@ -91,7 +91,10 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
       .where(
         and(
           eq(subscriptions.client_id, clientId),
-          eq(subscriptions.status, 'ACTIVE'),
+          or(
+            eq(subscriptions.status, 'ACTIVE'),
+            eq(subscriptions.status, 'EXPIRING')
+          ),
           eq(subscriptionEquipment.status, 'ACTIVE'),
           eq(subscriptionEquipment.tenant_id, tenantId)
         )

@@ -454,6 +454,36 @@ export class PaypalService {
       throw AppError.internal('Failed to update subscription quantity in PayPal');
     }
   }
+
+  async cancelSubscription(subscriptionId: string, reason = 'Cancelled by user'): Promise<void> {
+    if (this.isMockMode() || subscriptionId.startsWith('MOCK-')) {
+      logger.info(`[PayPal Mock] Cancelled subscription ${subscriptionId} (reason: ${reason})`);
+      return;
+    }
+
+    try {
+      const accessToken = await this.getAccessToken();
+      const response = await fetch(`${this.baseUrl}/v1/billing/subscriptions/${subscriptionId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reason }),
+      });
+
+      if (response.status !== 204 && !response.ok) {
+        const errorText = await response.text();
+        logger.error('PayPal cancel subscription failed', { status: response.status, errorText });
+        throw AppError.internal('Failed to cancel PayPal subscription');
+      }
+
+      logger.info(`PayPal subscription ${subscriptionId} cancelled successfully.`);
+    } catch (error) {
+      logger.error('Error cancelling PayPal subscription', { error, subscriptionId });
+      throw AppError.internal('Failed to cancel subscription in PayPal');
+    }
+  }
 }
 
 export const paypalService = new PaypalService();

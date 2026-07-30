@@ -112,7 +112,12 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
   }
 
   async getActiveSubscriptionsWithPlan(tenantId?: string): Promise<any[]> {
-    const conditions = [eq(subscriptions.status, 'ACTIVE')];
+    const conditions = [
+      or(
+        eq(subscriptions.status, 'ACTIVE'),
+        eq(subscriptions.status, 'EXPIRING')
+      )
+    ];
     if (tenantId) {
       conditions.push(eq(subscriptions.tenant_id, tenantId));
     }

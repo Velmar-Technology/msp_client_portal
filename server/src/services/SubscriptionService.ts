@@ -4,7 +4,7 @@ import { planRepository } from '../repositories/PlanRepository';
 import { invoiceRepository } from '../repositories/InvoiceRepository';
 import { AppError } from '../utils/AppError';
 import { TAX_RATE } from '../config/constants';
-import { Subscription, SubscriptionPlan, InvoiceStatus } from '../types';
+import { Subscription, SubscriptionPlan, SubscriptionStatus, InvoiceStatus } from '../types';
 import { CreateSubscriptionInput, UpdateSubscriptionInput, SendQuoteInput } from '../dtos/subscription.dto';
 import { sendQuotationEmail } from '../utils/emailService';
 import { paypalService } from './PaypalService';
@@ -357,7 +357,26 @@ export class SubscriptionService {
     }
 
     if (data.status) {
-      const res = await subscriptionRepository.updateStatus(sub.id, data.status);
+      let targetStatus = data.status;
+
+      if (data.status === SubscriptionStatus.CANCELLED) {
+        const now = new Date();
+        // Keep subscription active through renewal_date to avoid partial period refunds
+        if (sub.renewal_date && new Date(sub.renewal_date) > now && !byAdmin) {
+          targetStatus = SubscriptionStatus.EXPIRING;
+        }
+
+        // Cancel PayPal recurring billing if linked
+        if (sub.paypal_order_id && (sub.paypal_order_id.startsWith('I-') || sub.paypal_order_id.startsWith('MOCK-SUB-'))) {
+          try {
+            await paypalService.cancelSubscription(sub.paypal_order_id, 'Cancelled by user request at end of billing period');
+          } catch (err) {
+            console.error(`Failed to cancel PayPal subscription ${sub.paypal_order_id}:`, err);
+          }
+        }
+      }
+
+      const res = await subscriptionRepository.updateStatus(sub.id, targetStatus);
       if (!res) throw AppError.internal('Failed to update subscription status');
       updated = res;
     }

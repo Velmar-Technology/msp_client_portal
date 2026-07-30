@@ -1,5 +1,5 @@
 import { memo, useCallback, useState, useMemo } from "react";
-import { X, Laptop, Loader2, MoreHorizontal, Cloud } from "lucide-react";
+import { X, Laptop, Loader2, MoreHorizontal, Cloud, Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDevicesPage } from "@/hooks/useDevicesPage";
 import type { Subscription } from "@/services/subscriptionService";
@@ -287,9 +287,9 @@ export const ActivationWizardModal = memo(function ActivationWizardModal({
 
           {step === 3 && (
             <div className="space-y-3">
-              <div className="text-center space-y-1.5 py-2">
-                <span className="inline-block p-2 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-405 border border-emerald-900/50 rounded-full text-sm font-bold">
-                  ✓
+              <div className="text-center flex flex-col items-center space-y-1.5 py-2">
+                <span className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center font-bold">
+                  <Check className="w-4 h-4" />
                 </span>
                 <h4 className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
                   {t("devices.wizardStep3Success")}
@@ -565,7 +565,7 @@ export function DevicesPage() {
               })}
             </span>
             {equip.id && (
-              <p className="text-[9px] text-zinc-400 font-mono truncate max-w-[100px]" title={equip.id}>
+              <p className="text-[9px] text-zinc-400 font-mono truncate max-w-25" title={equip.id}>
                 {t("devices.idLabel")} {equip.id}
               </p>
             )}
