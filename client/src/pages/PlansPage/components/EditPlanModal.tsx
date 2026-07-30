@@ -432,7 +432,7 @@ export function EditPlanModal({
                                 value={(typeof feat.text === 'string' ? feat.text : feat.text?.en_US) || ''}
                                 onChange={(e) => onEditFeatureText(index, 'en_US', e.target.value)}
                                 className="flex-1 h-6.5 text-[11px] bg-white dark:bg-zinc-950 py-0"
-                                placeholder="Feature description in English..."
+                                placeholder={t('plans.featureEnPlaceholder') || 'Feature in English...'}
                               />
                             </div>
                           </TabsContent>
@@ -444,7 +444,7 @@ export function EditPlanModal({
                                 value={(typeof feat.text === 'string' ? feat.text : feat.text?.es_DO) || ''}
                                 onChange={(e) => onEditFeatureText(index, 'es_DO', e.target.value)}
                                 className="flex-1 h-6.5 text-[11px] bg-white dark:bg-zinc-950 py-0"
-                                placeholder="Descripción de la característica en español..."
+                                placeholder={t('plans.featureEsPlaceholder') || 'Característica en Español...'}
                               />
                             </div>
                           </TabsContent>
