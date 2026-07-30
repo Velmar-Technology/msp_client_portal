@@ -7,17 +7,13 @@ TRUNCATE TABLE ticket_responses, ticket_events, ticket_attachments, tickets, sub
 
 -- Seed plans
 INSERT INTO plans (id, name, description, price, features, recommended, client_type) VALUES
-  ('PL-001', '{"en_US": "Basic", "es_DO": "Básico"}'::jsonb, '{"en_US": "Reactive remote support for non-critical infrastructure.", "es_DO": "Soporte remoto reactivo para infraestructura no crítica."}'::jsonb, 18, '[
-    {"code": "HELPDESK_SUPPORT", "params": {"type": "Chat & Remote Only"}, "included": true},
-    {"code": "SECURITY_MONITORING", "included": true},
-    {"code": "CLOUD_STORAGE", "params": {"limit": 25, "unit": "GB"}, "included": true},
-    {"code": "BACKUP_INCLUDED", "included": true},
-    {"code": "SLA_LEVEL", "params": {"level": "Bronze", "response": "8 hours"}, "included": true},
-    {"code": "RMM_PATCH_MANAGEMENT", "included": true},
-    {"code": "CONTENT_FILTERING", "included": true},
-    {"code": "ASSET_LIFECYCLE", "params": {"tier": "Basic"}, "included": true},
-    {"code": "REPORTING_LEVEL", "params": {"level": "Monthly Basic"}, "included": true}
-  ]'::jsonb, false, 'CLIENT'),
+  ('PL-001', '{"en_US": "Basic", "es_DO": "Básico"}'::jsonb, '{"en_US": "Reactive remote support for non-critical infrastructure.", "es_DO": "Soporte remoto reactivo para clientes fieles."}'::jsonb, 18, '[
+    {"code": "HELPDESK_SUPPORT", "text": {"en_US": "Chat & Remote Only support", "es_DO": "Chat & Soporte Remoto"}, "params": {"type": "8x5"}, "included": true},
+    {"code": "CLOUD_STORAGE", "text": {"en_US": "25 GB Cloud Storage", "es_DO": "25 GB Almacenamiento en la Nube"}, "params": {"limit": 25, "unit": "GB"}, "included": true},
+    {"code": "BACKUP_INCLUDED", "text": {"en_US": "Backup included", "es_DO": "Backup Incluido"}, "included": true},
+    {"code": "SLA_LEVEL", "text": {"en_US": "Bronze SLA level (8 hours response)", "es_DO": "SLA (8 horas de respuesta)"}, "params": {"level": "Bronze", "response": "4 hours"}, "included": true},
+    {"code": "RMM_PATCH_MANAGEMENT", "text": {"en_US": "RMM Monitoring & Patch Management", "es_DO": "Monitorio Remoto & Parches de Seguridad"}, "included": true}
+  ]'::jsonb, true, 'CLIENT'),
 
   ('PL-002', '{"en_US": "Standard", "es_DO": "Estándar"}'::jsonb, '{"en_US": "Proactive support and regular system maintenance.", "es_DO": "Soporte proactivo y mantenimiento regular del sistema."}'::jsonb, 30, '[
     {"code": "HELPDESK_SUPPORT", "params": {"type": "8x5"}, "included": true},
@@ -97,17 +93,11 @@ INSERT INTO plans (id, name, description, price, features, recommended, client_t
     {"code": "REPORTING_LEVEL", "params": {"level": "Custom / SOC"}, "included": true}
   ]'::jsonb, false, 'ENTERPRISE'),
 
-  ('PL-006', '{"en_US": "Student Starter Kit", "es_DO": "Kit de Inicio para Estudiantes"}'::jsonb, '{"en_US": "Essentials for students, including RMM and password management.", "es_DO": "Esenciales para estudiantes, incluyendo RMM y gestión de contraseñas."}'::jsonb, 20, '[
-    {"code": "HELPDESK_SUPPORT", "params": {"type": "Self-Serve / Community"}, "included": false},
-    {"code": "SECURITY_MONITORING", "included": true},
-    {"code": "CLOUD_STORAGE", "params": {"limit": 50, "unit": "GB"}, "included": true},
-    {"code": "BACKUP_INCLUDED", "included": true},
-    {"code": "SLA_LEVEL", "params": {"level": "Silver", "response": "8 hours"}, "included": true},
-    {"code": "RMM_PATCH_MANAGEMENT", "included": true},
-    {"code": "PREMIUM_CONTENT_FILTERING", "included": true},
-    {"code": "PASSWORD_MANAGER", "included": true},
-    {"code": "ASSET_LIFECYCLE", "params": {"tier": "Basic"}, "included": true},
-    {"code": "REPORTING_LEVEL", "params": {"level": "Monthly Basic"}, "included": true}
+  ('PL-006', '{"en_US": "Student Starter Kit", "es_DO": "Kit de Inicio para Estudiantes"}'::jsonb, '{"en_US": "Essentials for students, including RMM and password management.", "es_DO": "Esenciales para estudiantes, incluyendo Monitoreo y gestión de contraseñas."}'::jsonb, 20, '[
+    {"code": "CLOUD_STORAGE", "text": {"en_US": "50 GB Cloud Storage", "es_DO": "50 GB de Almacenamiento en la Nube"}, "params": {"unit": "GB", "limit": 25}, "included": true},
+    {"code": "SLA_LEVEL", "text": {"en_US": "Silver SLA level (8 hours response)", "es_DO": "SLA (8 horas de respuesta)"}, "params": {"level": "Silver", "response": "4 hours"}, "included": true},
+    {"code": "RMM_PATCH_MANAGEMENT", "text": {"en_US": "RMM Monitoring & Patch Management", "es_DO": "Monitoreo & Parches de Seguridad"}, "included": true},
+    {"code": "PASSWORD_MANAGER", "text": {"en_US": "Password Manager", "es_DO": "Administrador de Contraseña"}, "included": true}
   ]'::jsonb, false, 'STUDENT'),
 
   ('PL-007', '{"en_US": "Custom", "es_DO": "Personalizado"}'::jsonb, '{"en_US": "Tailored solution with specialized terms and SLAs.", "es_DO": "Solución a la medida con términos y SLAs especializados."}'::jsonb, 0, '[]'::jsonb, false, 'OTHER');
