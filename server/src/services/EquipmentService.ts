@@ -121,11 +121,15 @@ export class EquipmentService {
       const planDetails = await planRepository.findById(sub.plan);
       if (planDetails) {
         const feature = planDetails.features.find((f: any) =>
-          f.text?.toString().toLowerCase().includes('storage')
+          f.code === 'CLOUD_STORAGE' || (f.text && f.text.toString().toLowerCase().includes('storage'))
         );
         if (feature) {
-          const match = feature.text.toString().match(/(\d+\s*[G|T]B)/i);
-          if (match) quota = match[1];
+          if (feature.code === 'CLOUD_STORAGE' && feature.params?.limit && feature.params?.unit) {
+            quota = `${feature.params.limit} ${feature.params.unit}`;
+          } else if (feature.text) {
+            const match = feature.text.toString().match(/(\d+\s*[G|T]B)/i);
+            if (match) quota = match[1];
+          }
         }
       }
     }

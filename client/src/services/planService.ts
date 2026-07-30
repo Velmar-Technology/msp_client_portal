@@ -1,7 +1,9 @@
 import api from "@/services/api";
 
 export interface PlanFeature {
-  text: string | Record<string, string>;
+  code?: string;
+  params?: Record<string, string | number | boolean>;
+  text?: string | Record<string, string>;
   included: boolean;
 }
 

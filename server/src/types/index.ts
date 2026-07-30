@@ -283,7 +283,9 @@ export interface NotificationPreference {
 // ---- Plan Types ----
 
 export interface PlanFeature {
-  text: string | Record<string, string>;
+  code?: string;
+  params?: Record<string, any>;
+  text?: string | Record<string, string>;
   included: boolean;
 }
 

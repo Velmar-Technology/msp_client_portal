@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import type { Plan, PlanFeature } from "@/services/planService";
 import { Input } from "@/components/ui/input";
 
+import { FEATURE_CATALOG } from "@/constants/featureCatalog";
+
 interface EditPlanModalProps {
   editingPlan: Plan;
   isCreateMode: boolean;
@@ -30,6 +32,8 @@ interface EditPlanModalProps {
   onDeleteFeature: (index: number) => void;
   onToggleFeatureIncluded: (index: number, included: boolean) => void;
   onEditFeatureText: (index: number, lang: 'en_US' | 'es_DO', textVal: string) => void;
+  onUpdateFeatureCode?: (index: number, code: string) => void;
+  onUpdateFeatureParam?: (index: number, paramKey: string, value: string | number | boolean) => void;
   onMoveFeature: (index: number, direction: -1 | 1) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent, index: number) => void;
@@ -64,6 +68,8 @@ export function EditPlanModal({
   onDeleteFeature,
   onToggleFeatureIncluded,
   onEditFeatureText,
+  onUpdateFeatureCode,
+  onUpdateFeatureParam,
   onMoveFeature,
   onDragStart,
   onDragOver,
@@ -295,26 +301,95 @@ export function EditPlanModal({
                     className="h-3.5 w-3.5 rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 focus:ring-zinc-900 cursor-pointer mt-1.5"
                   />
                   <div className="flex-1 space-y-1 mt-0.5">
+                    {/* Feature Code Selector */}
                     <div className="flex items-center gap-1">
-                      <span className="text-[8px] font-bold text-zinc-400 dark:text-zinc-500 w-4">EN</span>
-                      <Input
-                        type="text"
-                        value={(typeof feat.text === 'string' ? feat.text : feat.text?.en_US) || ''}
-                        onChange={(e) => onEditFeatureText(index, 'en_US', e.target.value)}
-                        className="flex-1 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-850 py-0.5 h-7 text-xs"
-                        placeholder={t('plans.featureEnPlaceholder') || 'Feature in English...'}
-                      />
+                      <select
+                        value={feat.code || 'CUSTOM_FEATURE'}
+                        onChange={(e) => onUpdateFeatureCode?.(index, e.target.value)}
+                        className="w-full h-7 px-1.5 border rounded text-[11px] bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none border-zinc-200 dark:border-zinc-850"
+                      >
+                        <option value="CUSTOM_FEATURE">-- Custom Text Feature --</option>
+                        {FEATURE_CATALOG.filter((c) => c.code !== 'CUSTOM_FEATURE').map((cat) => (
+                          <option key={cat.code} value={cat.code}>
+                            {t(cat.labelKey) || cat.code} ({cat.code})
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-[8px] font-bold text-zinc-400 dark:text-zinc-500 w-4">ES</span>
-                      <Input
-                        type="text"
-                        value={(typeof feat.text === 'string' ? feat.text : feat.text?.es_DO) || ''}
-                        onChange={(e) => onEditFeatureText(index, 'es_DO', e.target.value)}
-                        className="flex-1 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-850 py-0.5 h-7 text-xs"
-                        placeholder={t('plans.featureEsPlaceholder') || 'Característica en Español...'}
-                      />
-                    </div>
+
+                    {/* Parameter Controls if Codified Feature */}
+                    {(() => {
+                      const catalogItem = FEATURE_CATALOG.find((c) => c.code === feat.code);
+                      if (catalogItem && catalogItem.paramSchema && catalogItem.paramSchema.length > 0) {
+                        return (
+                          <div className="grid grid-cols-2 gap-1 bg-zinc-100/60 dark:bg-zinc-800/40 p-1.5 rounded border border-zinc-200/50 dark:border-zinc-700/50 my-1">
+                            {catalogItem.paramSchema.map((p) => {
+                              const currentVal = feat.params?.[p.key] ?? p.defaultValue;
+                              return (
+                                <div key={p.key} className="space-y-0.5">
+                                  <label className="block text-[8px] font-bold uppercase tracking-wider text-zinc-500">
+                                    {p.label}
+                                  </label>
+                                  {p.type === 'select' && p.options ? (
+                                    <select
+                                      value={String(currentVal)}
+                                      onChange={(e) => onUpdateFeatureParam?.(index, p.key, e.target.value)}
+                                      className="w-full h-6 px-1 border rounded text-[10px] bg-card text-zinc-900 dark:text-zinc-100 focus:outline-none border-zinc-200 dark:border-zinc-800"
+                                    >
+                                      {p.options.map((opt) => (
+                                        <option key={opt} value={opt}>
+                                          {opt}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  ) : (
+                                    <Input
+                                      type={p.type === 'number' ? 'number' : 'text'}
+                                      value={currentVal as string | number}
+                                      onChange={(e) =>
+                                        onUpdateFeatureParam?.(
+                                          index,
+                                          p.key,
+                                          p.type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value
+                                        )
+                                      }
+                                      className="h-6 text-[10px] py-0 px-1.5 bg-white dark:bg-zinc-950 border"
+                                    />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+
+                    {/* Freeform text fields fallback if Custom Feature */}
+                    {(!feat.code || feat.code === 'CUSTOM_FEATURE') && (
+                      <>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[8px] font-bold text-zinc-400 dark:text-zinc-500 w-4">EN</span>
+                          <Input
+                            type="text"
+                            value={(typeof feat.text === 'string' ? feat.text : feat.text?.en_US) || ''}
+                            onChange={(e) => onEditFeatureText(index, 'en_US', e.target.value)}
+                            className="flex-1 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-850 py-0.5 h-7 text-xs"
+                            placeholder={t('plans.featureEnPlaceholder') || 'Feature in English...'}
+                          />
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[8px] font-bold text-zinc-400 dark:text-zinc-500 w-4">ES</span>
+                          <Input
+                            type="text"
+                            value={(typeof feat.text === 'string' ? feat.text : feat.text?.es_DO) || ''}
+                            onChange={(e) => onEditFeatureText(index, 'es_DO', e.target.value)}
+                            className="flex-1 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-850 py-0.5 h-7 text-xs"
+                            placeholder={t('plans.featureEsPlaceholder') || 'Característica en Español...'}
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
                   <button
                     type="button"

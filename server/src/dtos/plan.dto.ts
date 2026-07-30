@@ -1,7 +1,9 @@
 import { z } from 'zod';
 
 export const FeatureSchema = z.object({
-  text: z.union([z.string().min(1, 'Feature text is required'), z.record(z.string().min(1))]),
+  code: z.string().optional(),
+  params: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
+  text: z.union([z.string(), z.record(z.string())]).optional(),
   included: z.boolean(),
 });
 

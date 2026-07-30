@@ -15,7 +15,7 @@ interface PlanCardProps {
   onAdjustEquipmentCount: (planId: string, delta: number) => void;
   getPlanName: (name: string | Record<string, string>) => string;
   getPlanDescription: (desc: string | Record<string, string> | null | undefined) => string;
-  getFeatureText: (text: string | Record<string, string>) => string;
+  getFeatureText: (featureOrText: PlanFeature | string | Record<string, string>) => string;
   getTierLabel: (planId: string) => string;
 }
 
@@ -135,7 +135,7 @@ export function PlanCard({
                     : "text-zinc-400 dark:text-zinc-600 font-normal line-through opacity-75"
                 }`}
               >
-                {getFeatureText(feature.text)}
+                {getFeatureText(feature)}
               </span>
             </div>
           ))}

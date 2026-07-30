@@ -8,6 +8,7 @@ import { userService } from "@/services/userService";
 import { subscriptionService } from "@/services/subscriptionService";
 import type { Subscription } from "@/services/subscriptionService";
 import type { AuthUser } from "@/store/useAuthStore";
+import { FEATURE_CATALOG } from "@/constants/featureCatalog";
 
 export function usePlansPage() {
   const { t, i18n } = useTranslation();
@@ -37,17 +38,33 @@ export function usePlansPage() {
   const getPlanName = useCallback((name: string | Record<string, string>) => getLocalizedValue(name), [getLocalizedValue]);
   const getPlanDescription = useCallback((desc: string | Record<string, string> | null | undefined) => getLocalizedValue(desc), [getLocalizedValue]);
 
-  const getFeatureText = useCallback((text: string | Record<string, string>) => {
-    if (typeof text !== "string") {
-      return getLocalizedValue(text);
+  const getFeatureText = useCallback((featureOrText: PlanFeature | string | Record<string, string>) => {
+    if (typeof featureOrText === "object" && featureOrText !== null && "included" in featureOrText) {
+      const feature = featureOrText as PlanFeature;
+      if (feature.code) {
+        const key = `plans.features.${feature.code}`;
+        const translated = t(key, feature.params || {});
+        if (translated !== key) {
+          return translated;
+        }
+      }
+      if (feature.text) {
+        return getLocalizedValue(feature.text);
+      }
+      return feature.code || "";
     }
-    if (/^[a-zA-Z0-9_]+$/.test(text)) {
-      const translated = t(`plans.features.${text}`);
-      if (translated !== `plans.features.${text}`) {
+
+    const val = featureOrText as string | Record<string, string>;
+    if (typeof val !== "string") {
+      return getLocalizedValue(val);
+    }
+    if (/^[a-zA-Z0-9_]+$/.test(val)) {
+      const translated = t(`plans.features.${val}`);
+      if (translated !== `plans.features.${val}`) {
         return translated;
       }
     }
-    return text;
+    return val;
   }, [getLocalizedValue, t]);
 
   const [userSelectedPlan, setUserSelectedPlan] = useState<string | null>(null);
@@ -225,7 +242,7 @@ export function usePlansPage() {
     if (planId )
       return planId.toString();
     return "";
-  }, [t]);
+  }, []);
 
   // PayPal checkout effect
   useEffect(() => {
@@ -795,6 +812,36 @@ export function usePlansPage() {
     );
   }, []);
 
+  const handleUpdateFeatureCode = useCallback((index: number, code: string) => {
+    setEditFeatures((prev) =>
+      prev.map((f, i) => {
+        if (i !== index) return f;
+        const catalogItem = FEATURE_CATALOG.find((item) => item.code === code);
+        const defaultParams = catalogItem?.defaultParams ? { ...catalogItem.defaultParams } : undefined;
+        return {
+          ...f,
+          code,
+          params: defaultParams,
+        };
+      })
+    );
+  }, []);
+
+  const handleUpdateFeatureParam = useCallback((index: number, paramKey: string, value: string | number | boolean) => {
+    setEditFeatures((prev) =>
+      prev.map((f, i) => {
+        if (i !== index) return f;
+        return {
+          ...f,
+          params: {
+            ...(f.params || {}),
+            [paramKey]: value,
+          },
+        };
+      })
+    );
+  }, []);
+
   const handleMoveFeature = useCallback((index: number, direction: -1 | 1) => {
     setEditFeatures((prev) => {
       const targetIndex = index + direction;
@@ -1024,6 +1071,8 @@ export function usePlansPage() {
     handleDeleteFeature,
     handleToggleFeatureIncluded,
     handleEditFeatureText,
+    handleUpdateFeatureCode,
+    handleUpdateFeatureParam,
     handleMoveFeature,
     handleDragStart,
     handleDragOver,
