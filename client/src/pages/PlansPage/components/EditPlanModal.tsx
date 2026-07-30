@@ -115,7 +115,7 @@ export function EditPlanModal({
                 value={editId}
                 disabled={!isCreateMode}
                 onChange={(e) => setEditId(e.target.value.toUpperCase().replace(/\s+/g, '-'))}
-                placeholder="PL-008"
+                placeholder="e.g. PL-008"
                 className="h-7 text-xs bg-white dark:bg-zinc-950 font-mono disabled:opacity-60"
               />
             </div>
@@ -305,6 +305,7 @@ export function EditPlanModal({
                             disabled={index === 0}
                             onClick={() => onMoveFeature(index, -1)}
                             className="p-0.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded text-zinc-500 disabled:opacity-30 cursor-pointer"
+                            title={t('plans.moveUp') || 'Move up'}
                           >
                             <ChevronUp className="h-2.5 w-2.5" />
                           </button>
@@ -313,6 +314,7 @@ export function EditPlanModal({
                             disabled={index === editFeatures.length - 1}
                             onClick={() => onMoveFeature(index, 1)}
                             className="p-0.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded text-zinc-500 disabled:opacity-30 cursor-pointer"
+                            title={t('plans.moveDown') || 'Move down'}
                           >
                             <ChevronDown className="h-2.5 w-2.5" />
                           </button>
