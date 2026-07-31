@@ -14,7 +14,7 @@ export class MaintenanceRepository extends BaseRepository<DeviceMaintenance> {
   }
 
   async findByTenant(
-    tenantId: string,
+    tenantId?: string,
     filters?: {
       startDate?: Date;
       endDate?: Date;
@@ -24,7 +24,11 @@ export class MaintenanceRepository extends BaseRepository<DeviceMaintenance> {
       status?: string;
     }
   ): Promise<DeviceMaintenance[]> {
-    const conditions = [eq(deviceMaintenances.tenant_id, tenantId)];
+    const conditions = [];
+
+    if (tenantId) {
+      conditions.push(eq(deviceMaintenances.tenant_id, tenantId));
+    }
 
     if (filters?.startDate) {
       conditions.push(gte(deviceMaintenances.scheduled_date, filters.startDate));
@@ -45,7 +49,7 @@ export class MaintenanceRepository extends BaseRepository<DeviceMaintenance> {
       conditions.push(eq(deviceMaintenances.status, filters.status));
     }
 
-    const results = await db
+    const query = db
       .select({
         id: deviceMaintenances.id,
         equipment_id: deviceMaintenances.equipment_id,
@@ -72,14 +76,21 @@ export class MaintenanceRepository extends BaseRepository<DeviceMaintenance> {
       .innerJoin(subscriptionEquipment, eq(deviceMaintenances.equipment_id, subscriptionEquipment.id))
       .innerJoin(subscriptions, eq(deviceMaintenances.subscription_id, subscriptions.id))
       .innerJoin(clientUser, eq(deviceMaintenances.client_id, clientUser.id))
-      .leftJoin(techUser, eq(deviceMaintenances.assigned_tech_id, techUser.id))
-      .where(and(...conditions))
-      .orderBy(desc(deviceMaintenances.scheduled_date));
+      .leftJoin(techUser, eq(deviceMaintenances.assigned_tech_id, techUser.id));
+
+    const results = conditions.length > 0
+      ? await query.where(and(...conditions)).orderBy(desc(deviceMaintenances.scheduled_date))
+      : await query.orderBy(desc(deviceMaintenances.scheduled_date));
 
     return results as DeviceMaintenance[];
   }
 
-  async findByIdWithDetails(id: string, tenantId: string): Promise<DeviceMaintenance | null> {
+  async findByIdWithDetails(id: string, tenantId?: string): Promise<DeviceMaintenance | null> {
+    const conditions = [eq(deviceMaintenances.id, id)];
+    if (tenantId) {
+      conditions.push(eq(deviceMaintenances.tenant_id, tenantId));
+    }
+
     const results = await db
       .select({
         id: deviceMaintenances.id,
@@ -108,7 +119,7 @@ export class MaintenanceRepository extends BaseRepository<DeviceMaintenance> {
       .innerJoin(subscriptions, eq(deviceMaintenances.subscription_id, subscriptions.id))
       .innerJoin(clientUser, eq(deviceMaintenances.client_id, clientUser.id))
       .leftJoin(techUser, eq(deviceMaintenances.assigned_tech_id, techUser.id))
-      .where(and(eq(deviceMaintenances.id, id), eq(deviceMaintenances.tenant_id, tenantId)));
+      .where(and(...conditions));
 
     return (results[0] as DeviceMaintenance) || null;
   }
@@ -154,10 +165,15 @@ export class MaintenanceRepository extends BaseRepository<DeviceMaintenance> {
     return (results[0] as DeviceMaintenance) || null;
   }
 
-  async delete(id: string, tenantId: string): Promise<boolean> {
+  async delete(id: string, tenantId?: string): Promise<boolean> {
+    const conditions = [eq(deviceMaintenances.id, id)];
+    if (tenantId) {
+      conditions.push(eq(deviceMaintenances.tenant_id, tenantId));
+    }
+
     const results = await db
       .delete(deviceMaintenances)
-      .where(and(eq(deviceMaintenances.id, id), eq(deviceMaintenances.tenant_id, tenantId)))
+      .where(and(...conditions))
       .returning();
     return results.length > 0;
   }

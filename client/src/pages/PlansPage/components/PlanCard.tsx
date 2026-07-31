@@ -44,7 +44,7 @@ export function PlanCard({
   return (
     <div
       onClick={() => onSelect(plan.id)}
-      className={`relative bg-zinc-50/50 dark:bg-zinc-900/20 border rounded-lg p-3.5 sm:p-4 flex flex-col justify-between transition-all duration-200 cursor-pointer text-zinc-900 dark:text-zinc-50 shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:shadow-md ${
+      className={`relative bg-zinc-50/50 dark:bg-zinc-950 dark:border-zinc-800 border rounded-lg p-3.5 sm:p-4 flex flex-col justify-between transition-all duration-200 cursor-pointer text-zinc-900 dark:text-zinc-50 shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:shadow-md ${
         isSelected
           ? "border-zinc-900 dark:border-sky-500 ring-1 ring-zinc-900 dark:ring-sky-500/50 bg-zinc-100/60 dark:bg-zinc-900/50"
           : "border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700"

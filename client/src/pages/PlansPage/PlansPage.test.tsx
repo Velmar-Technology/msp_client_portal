@@ -732,12 +732,17 @@ describe('PlansPage', () => {
 
       // Fill in details
       fireEvent.change(screen.getByPlaceholderText('e.g. PL-008'), { target: { value: 'PL-TEST' } });
-      fireEvent.change(screen.getByPlaceholderText('Plan name in English'), { target: { value: 'Test Add Plan' } });
-      fireEvent.change(screen.getByPlaceholderText('Nombre del plan en Español'), { target: { value: 'Plan de Prueba' } });
-      fireEvent.change(screen.getByPlaceholderText('Description in English'), { target: { value: 'Test description' } });
-      fireEvent.change(screen.getByPlaceholderText('Descripción en Español'), { target: { value: 'Descripción de prueba' } });
-      fireEvent.change(screen.getByLabelText('Monthly Price ($)'), { target: { value: '99' } });
-      fireEvent.change(screen.getByLabelText('Client Type'), { target: { value: 'CLIENT' } });
+      fireEvent.change(screen.getByPlaceholderText(/Plan name in English/i), { target: { value: 'Test Add Plan' } });
+      fireEvent.change(screen.getByPlaceholderText(/Description in English/i), { target: { value: 'Test description' } });
+
+      // Switch to Spanish tab for ES fields
+      const esTab = screen.getByText('ES (Español)');
+      fireEvent.click(esTab);
+      fireEvent.change(screen.getByPlaceholderText(/Nombre del plan en Español/i), { target: { value: 'Plan de Prueba' } });
+      fireEvent.change(screen.getByPlaceholderText(/Descripción en Español/i), { target: { value: 'Descripción de prueba' } });
+
+      fireEvent.change(screen.getByLabelText(/Price/i), { target: { value: '99' } });
+      fireEvent.change(screen.getByLabelText(/Client Type/i), { target: { value: 'CLIENT' } });
 
       const saveButton = screen.getByText('Create Plan');
       fireEvent.click(saveButton);

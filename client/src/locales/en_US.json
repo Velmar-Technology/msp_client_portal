@@ -689,12 +689,22 @@
     "confirmStatusTitle": "Change User Status",
     "confirmRoleChange": "Are you sure you want to change {name}'s role to {role}?",
     "confirmStatusChange": "Are you sure you want to set {name} as {status}?",
+    "bulkActivate": "Activate Selected",
+    "bulkDeactivate": "Deactivate Selected",
+    "bulkSetAdmin": "Set as Admin",
+    "bulkSetTech": "Set as Tech",
+    "bulkSetClient": "Set as Client",
+    "confirmBulkRoleTitle": "Change Role for Selected Users",
+    "confirmBulkStatusTitle": "Change Status for Selected Users",
+    "confirmBulkRoleChange": "Are you sure you want to change the role of {count} selected user(s) to {role}?",
+    "confirmBulkStatusChange": "Are you sure you want to set {count} selected user(s) to {status}?",
     "cancel": "Cancel",
     "confirm": "Confirm",
     "processing": "Processing...",
     "noUsers": "No users found",
     "pageOf": "Page {page} of {total}"
   },
+
   "notificationPreferences": {
     "title": "Notification Preferences",
     "subtitle": "Manage your alert delivery channels",

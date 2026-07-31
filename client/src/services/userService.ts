@@ -121,4 +121,15 @@ export const userService = {
     const response = await api.patch(`/users/${userId}/status`, { is_active: isActive });
     return response.data.data;
   },
+
+  async bulkUpdateStatus(userIds: string[], isActive: boolean): Promise<{ updatedCount: number }> {
+    const response = await api.patch('/users/bulk/status', { userIds, is_active: isActive });
+    return response.data.data;
+  },
+
+  async bulkUpdateRole(userIds: string[], role: UserRole): Promise<{ updatedCount: number }> {
+    const response = await api.patch('/users/bulk/role', { userIds, role });
+    return response.data.data;
+  },
 };
+

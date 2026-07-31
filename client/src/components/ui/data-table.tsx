@@ -253,7 +253,7 @@ export function DataTable<TData, TValue>({
       )}
 
       {/* 3. Main Data Table */}
-      <div className="rounded-sm border overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
+      <div className="rounded-sm border overflow-hidden bg-white dark:bg-zinc-950 shadow-sm">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

@@ -57,7 +57,7 @@ export function FinancialPage() {
           <select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value as DateRange)}
-            className="h-7 rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs font-medium text-zinc-700 shadow-xs outline-none transition-all hover:border-zinc-300 focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:border-zinc-700 dark:focus:border-zinc-650 cursor-pointer"
+            className="h-7 rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs font-medium text-zinc-700 shadow-xs outline-none transition-all hover:border-zinc-300 focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:focus:border-zinc-650 cursor-pointer"
           >
             <option value="30_days">{t("financial.last30Days")}</option>
             <option value="quarter">{t("financial.thisQuarter")}</option>
@@ -70,16 +70,14 @@ export function FinancialPage() {
             size="sm"
             onClick={handleExport}
             disabled={isExporting}
-            className="h-7 flex items-center gap-1 px-3 text-xs font-medium bg-white hover:bg-zinc-50 text-zinc-700 hover:text-zinc-900 border-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800/80 dark:border-zinc-850 dark:text-zinc-300 dark:hover:text-zinc-100"
+            className="h-7 flex items-center gap-1 px-3 text-xs font-medium bg-white hover:bg-zinc-50 text-zinc-700 border-zinc-800 cursor-pointer dark:border-zinc-800 dark:bg-zinc-900 hover:text-zinc-900 dark:hover:bg-zinc-800/80 dark:border-zinc-850 dark:text-zinc-300 dark:hover:text-zinc-100"
           >
             <Download className={`h-3 w-3 text-zinc-500 dark:text-zinc-400 ${isExporting ? "animate-spin" : ""}`} />
             {isExporting ? t("financial.exporting") : t("financial.export")}
           </Button>
 
           {/* Log Expense Button (ADMIN only) */}
-          {isAdmin && (
-            <LogExpenseDialog onExpenseLogged={refresh} />
-          )}
+          {isAdmin && <LogExpenseDialog onExpenseLogged={refresh} />}
         </>
       }
     >
@@ -93,13 +91,9 @@ export function FinancialPage() {
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-3" aria-label="Financial Trends">
           {/* Left: Revenue vs Expenses (Col-span 2) */}
           <div className="lg:col-span-2">
-            <RevenueChart
-              data={monthlyData}
-              hoveredIndex={hoveredMonthIndex}
-              setHoveredIndex={setHoveredMonthIndex}
-            />
+            <RevenueChart data={monthlyData} hoveredIndex={hoveredMonthIndex} setHoveredIndex={setHoveredMonthIndex} />
           </div>
-          
+
           {/* Right: Expense Breakdown (Col-span 1) */}
           <div className="lg:col-span-1">
             <ExpenseDoughnut

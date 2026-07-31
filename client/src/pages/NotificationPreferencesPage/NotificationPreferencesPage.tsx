@@ -116,7 +116,7 @@ const PreferenceRow = ({
   onToggle,
   isLocked,
 }: {
-  event: typeof EVENT_DEFINITIONS[0];
+  event: (typeof EVENT_DEFINITIONS)[0];
   preferences: ChannelPreference;
   onToggle: (eventKey: NotificationEventType, channelKey: keyof ChannelPreference) => void;
   isLocked: (eventKey: NotificationEventType, channelKey: keyof ChannelPreference) => boolean;
@@ -166,7 +166,7 @@ const PreferenceMatrix = ({
 }) => {
   const { t } = useTranslation();
   return (
-    <div className="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
+    <div className="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm">
       <div className="grid grid-cols-[1fr_repeat(3,60px)] sm:grid-cols-[1fr_repeat(3,80px)] items-center gap-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 px-4 py-2">
         <div className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
           {t("notificationPreferences.eventType", "Event Type")}
@@ -204,7 +204,7 @@ const PreferenceMatrix = ({
 const HeaderInfo = () => {
   const { t } = useTranslation();
   return (
-    <div className="mb-6 flex items-start gap-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3 shadow-sm">
+    <div className="mb-6 flex items-start gap-3 rounded-lg border border-zinc-200 dark:border-zinc-900 bg-white dark:bg-zinc-950 p-3 shadow-sm">
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50">
         <Bell className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
       </div>
@@ -213,7 +213,10 @@ const HeaderInfo = () => {
           {t("notificationPreferences.deliveryChannels", "Delivery Channels")}
         </h2>
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          {t("notificationPreferences.deliveryChannelsDesc", "Control which channels receive notifications for each event type. Critical system events always deliver in-app notifications.")}
+          {t(
+            "notificationPreferences.deliveryChannelsDesc",
+            "Control which channels receive notifications for each event type. Critical system events always deliver in-app notifications.",
+          )}
         </p>
       </div>
     </div>
@@ -276,7 +279,9 @@ const ActionFooter = ({
         `}
       >
         {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-        {isSaving ? t("notificationPreferences.saving", "Saving...") : t("notificationPreferences.saveChanges", "Save Changes")}
+        {isSaving
+          ? t("notificationPreferences.saving", "Saving...")
+          : t("notificationPreferences.saveChanges", "Save Changes")}
       </button>
     </div>
   );
@@ -286,17 +291,8 @@ const ActionFooter = ({
 
 export function NotificationPreferencesPage() {
   const { t } = useTranslation();
-  const {
-    preferences,
-    isLoading,
-    isSaving,
-    message,
-    messageType,
-    hasChanges,
-    handleToggle,
-    handleSave,
-    isLocked,
-  } = useNotificationPreferences();
+  const { preferences, isLoading, isSaving, message, messageType, hasChanges, handleToggle, handleSave, isLocked } =
+    useNotificationPreferences();
 
   if (isLoading) {
     return (
@@ -322,13 +318,7 @@ export function NotificationPreferencesPage() {
         <HeaderInfo />
         <StatusBanner message={message} type={messageType} />
 
-        {preferences && (
-          <PreferenceMatrix
-            preferences={preferences}
-            onToggle={handleToggle}
-            isLocked={isLocked}
-          />
-        )}
+        {preferences && <PreferenceMatrix preferences={preferences} onToggle={handleToggle} isLocked={isLocked} />}
 
         <ActionFooter hasChanges={hasChanges} isSaving={isSaving} onSave={handleSave} />
       </div>

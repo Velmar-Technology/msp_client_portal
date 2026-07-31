@@ -688,12 +688,22 @@
     "confirmStatusTitle": "Cambiar Estado de Usuario",
     "confirmRoleChange": "¿Está seguro de cambiar el rol de {name} a {role}?",
     "confirmStatusChange": "¿Está seguro de establecer a {name} como {status}?",
+    "bulkActivate": "Activar Seleccionados",
+    "bulkDeactivate": "Desactivar Seleccionados",
+    "bulkSetAdmin": "Asignar Admin",
+    "bulkSetTech": "Asignar Técnico",
+    "bulkSetClient": "Asignar Cliente",
+    "confirmBulkRoleTitle": "Cambiar Rol de Usuarios Seleccionados",
+    "confirmBulkStatusTitle": "Cambiar Estado de Usuarios Seleccionados",
+    "confirmBulkRoleChange": "¿Está seguro de cambiar el rol de {count} usuario(s) seleccionado(s) a {role}?",
+    "confirmBulkStatusChange": "¿Está seguro de establecer {count} usuario(s) seleccionado(s) como {status}?",
     "cancel": "Cancelar",
     "confirm": "Confirmar",
     "processing": "Procesando...",
     "noUsers": "No se encontraron usuarios",
     "pageOf": "Página {page} de {total}"
   },
+
   "notificationPreferences": {
     "title": "Preferencias de Notificación",
     "subtitle": "Administre sus canales de entrega de alertas",

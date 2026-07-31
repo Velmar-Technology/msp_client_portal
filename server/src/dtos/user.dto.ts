@@ -40,3 +40,22 @@ export const UpdateUserStatusDTO = z.object({
   }),
 });
 export type UpdateUserStatusInput = z.infer<typeof UpdateUserStatusDTO>;
+
+export const BulkUpdateUserStatusDTO = z.object({
+  userIds: z.array(z.string().uuid({ message: 'Each user ID must be a valid UUID' })).min(1, 'At least one user ID is required'),
+  is_active: z.boolean({
+    required_error: 'Active status is required',
+    invalid_type_error: 'Active status must be a boolean',
+  }),
+});
+export type BulkUpdateUserStatusInput = z.infer<typeof BulkUpdateUserStatusDTO>;
+
+export const BulkUpdateUserRoleDTO = z.object({
+  userIds: z.array(z.string().uuid({ message: 'Each user ID must be a valid UUID' })).min(1, 'At least one user ID is required'),
+  role: z.enum(['CLIENT', 'TECHNICIAN', 'ADMIN'], {
+    required_error: 'Role is required',
+    invalid_type_error: 'Role must be CLIENT, TECHNICIAN, or ADMIN',
+  }),
+});
+export type BulkUpdateUserRoleInput = z.infer<typeof BulkUpdateUserRoleDTO>;
+

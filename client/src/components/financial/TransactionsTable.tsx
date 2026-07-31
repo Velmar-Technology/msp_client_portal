@@ -55,12 +55,8 @@ export function TransactionsTable({ transactions }: TransactionsTableProps) {
   return (
     <div className="rounded-lg border border-zinc-200 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
       <div className="border-b border-zinc-100 px-3.5 py-3 dark:border-zinc-900">
-        <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-50">
-          {t("financial.transactions")}
-        </h3>
-        <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
-          {t("financial.transactionsDesc")}
-        </p>
+        <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-50">{t("financial.transactions")}</h3>
+        <p className="text-[10px] text-zinc-400 dark:text-zinc-500">{t("financial.transactionsDesc")}</p>
       </div>
 
       <div className="overflow-x-auto">
@@ -89,7 +85,7 @@ export function TransactionsTable({ transactions }: TransactionsTableProps) {
                   <td className="whitespace-nowrap px-3.5 py-2 font-mono text-zinc-500 dark:text-zinc-400">
                     {txn.date}
                   </td>
-                  <td className="px-3.5 py-2 font-medium text-zinc-900 dark:text-zinc-150">
+                  <td className="px-3.5 py-2 font-medium text-zinc-900 dark:text-zinc-100">
                     <div>{txn.description}</div>
                     {txn.expense_identifier && (
                       <div className="text-[9px] text-zinc-400 dark:text-zinc-500 font-mono mt-0.5">
@@ -100,14 +96,10 @@ export function TransactionsTable({ transactions }: TransactionsTableProps) {
                   <td className="px-3.5 py-2 text-zinc-500 dark:text-zinc-400">
                     {t(`financial.${txn.categoryKey}`) || txn.categoryKey}
                   </td>
-                  <td className="whitespace-nowrap px-3.5 py-2">
-                    {getStatusBadge(txn.status)}
-                  </td>
+                  <td className="whitespace-nowrap px-3.5 py-2">{getStatusBadge(txn.status)}</td>
                   <td
                     className={`whitespace-nowrap px-3.5 py-2 text-right font-mono font-bold ${
-                      isPositive
-                        ? "text-emerald-600 dark:text-emerald-400"
-                        : "text-zinc-800 dark:text-zinc-300"
+                      isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-800 dark:text-zinc-300"
                     }`}
                   >
                     {formattedAmount}
@@ -122,9 +114,7 @@ export function TransactionsTable({ transactions }: TransactionsTableProps) {
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-2.5 border-t border-zinc-100 dark:border-zinc-900 bg-zinc-50/20 dark:bg-zinc-900/10 px-3.5 pb-2.5 rounded-b-lg">
           <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 font-mono">
-            {t("financial.pageOf")
-              .replace("{page}", String(currentPage))
-              .replace("{total}", String(totalPages))}
+            {t("financial.pageOf").replace("{page}", String(currentPage)).replace("{total}", String(totalPages))}
           </span>
           <div className="flex items-center gap-1">
             <Button

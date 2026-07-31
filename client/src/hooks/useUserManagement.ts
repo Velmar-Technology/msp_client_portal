@@ -15,16 +15,22 @@ export type StatusFilter = "all" | "active" | "inactive";
 export interface ConfirmationState {
   open: boolean;
   type: "role" | "status";
-  userId: string;
-  userName: string;
+  isBulk?: boolean;
+  userId?: string;
+  userName?: string;
+  userIds?: string[];
+  userCount?: number;
   newValue: string | boolean;
 }
 
 const INITIAL_CONFIRMATION: ConfirmationState = {
   open: false,
   type: "role",
+  isBulk: false,
   userId: "",
   userName: "",
+  userIds: [],
+  userCount: 0,
   newValue: "",
 };
 
@@ -144,6 +150,7 @@ export function useUserManagement() {
       setConfirmation({
         open: true,
         type: "role",
+        isBulk: false,
         userId,
         userName,
         newValue: newRole,
@@ -157,8 +164,49 @@ export function useUserManagement() {
       setConfirmation({
         open: true,
         type: "status",
+        isBulk: false,
         userId,
         userName,
+        newValue: newStatus,
+      });
+    },
+    []
+  );
+
+  const requestBulkRoleChange = useCallback(
+    (selectedUsers: ManagedUser[], currentUserId: string, newRole: UserRole) => {
+      const validUserIds = selectedUsers
+        .map((u) => u.id)
+        .filter((id) => id !== currentUserId);
+
+      if (validUserIds.length === 0) return;
+
+      setConfirmation({
+        open: true,
+        type: "role",
+        isBulk: true,
+        userIds: validUserIds,
+        userCount: validUserIds.length,
+        newValue: newRole,
+      });
+    },
+    []
+  );
+
+  const requestBulkStatusToggle = useCallback(
+    (selectedUsers: ManagedUser[], currentUserId: string, newStatus: boolean) => {
+      const validUserIds = selectedUsers
+        .map((u) => u.id)
+        .filter((id) => id !== currentUserId);
+
+      if (validUserIds.length === 0) return;
+
+      setConfirmation({
+        open: true,
+        type: "status",
+        isBulk: true,
+        userIds: validUserIds,
+        userCount: validUserIds.length,
         newValue: newStatus,
       });
     },
@@ -170,26 +218,41 @@ export function useUserManagement() {
   }, []);
 
   const executeConfirmation = useCallback(async () => {
-    if (!confirmation.userId) return;
+    if (!confirmation.isBulk && !confirmation.userId) return;
+    if (confirmation.isBulk && (!confirmation.userIds || confirmation.userIds.length === 0)) return;
 
     setActionLoading(true);
     try {
-      if (confirmation.type === "role") {
-        await userService.updateUserRole(
-          confirmation.userId,
-          confirmation.newValue as UserRole
-        );
+      if (confirmation.isBulk) {
+        if (confirmation.type === "role") {
+          await userService.bulkUpdateRole(
+            confirmation.userIds!,
+            confirmation.newValue as UserRole
+          );
+        } else {
+          await userService.bulkUpdateStatus(
+            confirmation.userIds!,
+            confirmation.newValue as boolean
+          );
+        }
       } else {
-        await userService.toggleUserStatus(
-          confirmation.userId,
-          confirmation.newValue as boolean
-        );
+        if (confirmation.type === "role") {
+          await userService.updateUserRole(
+            confirmation.userId!,
+            confirmation.newValue as UserRole
+          );
+        } else {
+          await userService.toggleUserStatus(
+            confirmation.userId!,
+            confirmation.newValue as boolean
+          );
+        }
       }
 
       // Refresh data
       await Promise.all([fetchUsers(), fetchStats()]);
     } catch (err) {
-      console.error("Failed to update user:", err);
+      console.error("Failed to update user(s):", err);
     } finally {
       setActionLoading(false);
       setConfirmation(INITIAL_CONFIRMATION);
@@ -251,6 +314,8 @@ export function useUserManagement() {
     confirmation,
     requestRoleChange,
     requestStatusToggle,
+    requestBulkRoleChange,
+    requestBulkStatusToggle,
     cancelConfirmation,
     executeConfirmation,
     // Utilities
@@ -258,3 +323,4 @@ export function useUserManagement() {
     formatDate,
   };
 }
+

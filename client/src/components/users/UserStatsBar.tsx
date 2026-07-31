@@ -17,12 +17,10 @@ interface StatItemProps {
 
 function StatItem({ icon, label, value, accent }: StatItemProps) {
   return (
-    <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-card border">
+    <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-zinc-100 dark:bg-zinc-950 border border-zinc-200/60 dark:border-zinc-800/80">
       <div className="text-zinc-400 dark:text-zinc-500">{icon}</div>
       <div className="flex flex-col">
-        <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider leading-none">
-          {label}
-        </span>
+        <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider leading-none">{label}</span>
         <span
           className={`text-base font-extrabold leading-tight ${accent ?? "text-zinc-900 dark:text-zinc-50"}`}
           style={{ fontFamily: "var(--font-heading)" }}
@@ -49,11 +47,7 @@ export function UserStatsBar({ stats, loading }: UserStatsBarProps) {
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
-      <StatItem
-        icon={<Users className="h-3.5 w-3.5" />}
-        label={t("userManagement.totalUsers")}
-        value={stats.total}
-      />
+      <StatItem icon={<Users className="h-3.5 w-3.5" />} label={t("userManagement.totalUsers")} value={stats.total} />
       <StatItem
         icon={<User className="h-3.5 w-3.5" />}
         label={t("userManagement.roleClient")}

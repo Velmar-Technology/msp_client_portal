@@ -59,7 +59,7 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
         expense_identifier: expenseIdentifier.trim() || null,
       });
       toast.success(t("financial.addExpenseSuccess") || "Expense logged successfully");
-      
+
       // Reset form
       setAmount("");
       setDescription("");
@@ -67,10 +67,10 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
       setExpenseDate(new Date().toISOString().split("T")[0]);
       setExpenseIdentifier("");
       setErrors({});
-      
+
       // Close dialog
       setIsOpen(false);
-      
+
       // Trigger dashboard refresh
       onExpenseLogged();
     } catch (err: unknown) {
@@ -88,7 +88,7 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
         <Button
           variant="outline"
           size="sm"
-          className="h-7 flex items-center gap-1 px-3 text-xs font-medium bg-white hover:bg-zinc-50 text-zinc-700 hover:text-zinc-900 border-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800/80 dark:border-zinc-850 dark:text-zinc-300 dark:hover:text-zinc-100 cursor-pointer shadow-xs"
+          className="h-7 flex items-center gap-1 px-3 text-xs font-medium bg-white hover:bg-zinc-50 text-zinc-700 hover:text-zinc-900 border-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800/80 dark:border-zinc-800 dark:text-zinc-300 dark:hover:text-zinc-100 cursor-pointer shadow-xs"
         >
           <Plus className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
           {t("financial.addExpense")}
@@ -117,9 +117,7 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
               className={errors.description ? "border-destructive focus-visible:ring-destructive/30" : ""}
             />
             {errors.description && (
-              <span className="text-[10px] text-destructive dark:text-red-400 font-medium">
-                {errors.description}
-              </span>
+              <span className="text-[10px] text-destructive dark:text-red-400 font-medium">{errors.description}</span>
             )}
           </div>
 
@@ -138,9 +136,7 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
               className={errors.amount ? "border-destructive focus-visible:ring-destructive/30" : ""}
             />
             {errors.amount && (
-              <span className="text-[10px] text-destructive dark:text-red-400 font-medium">
-                {errors.amount}
-              </span>
+              <span className="text-[10px] text-destructive dark:text-red-400 font-medium">{errors.amount}</span>
             )}
           </div>
 
@@ -176,9 +172,7 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
 
           {/* Date */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-750 dark:text-zinc-300">
-              {t("financial.dateLabel")}
-            </label>
+            <label className="text-xs font-semibold text-zinc-750 dark:text-zinc-300">{t("financial.dateLabel")}</label>
             <Input
               type="date"
               value={expenseDate}

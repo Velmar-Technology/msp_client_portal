@@ -3,7 +3,14 @@ import { userController } from '../controllers/UserController';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { rbacMiddleware } from '../middleware/rbacMiddleware';
 import { validate } from '../middleware/validationMiddleware';
-import { UpdateProfileDTO, ChangePasswordDTO, UpdateUserRoleDTO, UpdateUserStatusDTO } from '../dtos/user.dto';
+import {
+  UpdateProfileDTO,
+  ChangePasswordDTO,
+  UpdateUserRoleDTO,
+  UpdateUserStatusDTO,
+  BulkUpdateUserRoleDTO,
+  BulkUpdateUserStatusDTO,
+} from '../dtos/user.dto';
 import { UserRole } from '../types';
 import { upload } from '../middleware/uploadMiddleware';
 
@@ -11,13 +18,29 @@ const router = Router();
 
 router.use(authMiddleware);
 
-// ---- Admin User Management (placed before /me to avoid route conflicts) ----
+// ---- Admin User Management (placed before /me and /:id to avoid route conflicts) ----
 
 /** GET /api/v1/users/stats — User statistics breakdown (Admin only) */
 router.get(
   '/stats',
   rbacMiddleware(UserRole.ADMIN),
   (req, res) => userController.getStats(req, res),
+);
+
+/** PATCH /api/v1/users/bulk/status — Bulk update user active status (Admin only) */
+router.patch(
+  '/bulk/status',
+  rbacMiddleware(UserRole.ADMIN),
+  validate(BulkUpdateUserStatusDTO),
+  (req, res) => userController.bulkToggleStatus(req, res),
+);
+
+/** PATCH /api/v1/users/bulk/role — Bulk update user role (Admin only) */
+router.patch(
+  '/bulk/role',
+  rbacMiddleware(UserRole.ADMIN),
+  validate(BulkUpdateUserRoleDTO),
+  (req, res) => userController.bulkUpdateRole(req, res),
 );
 
 /** GET /api/v1/users — List all users with filters (Admin only) */
@@ -42,6 +65,7 @@ router.patch(
   validate(UpdateUserStatusDTO),
   (req, res) => userController.toggleStatus(req, res),
 );
+
 
 // ---- Existing User Routes ----
 

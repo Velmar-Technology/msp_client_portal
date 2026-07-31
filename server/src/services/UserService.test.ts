@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => {
     findAllClients: vi.fn(),
     updateProfile: vi.fn(),
     updatePassword: vi.fn(),
+    bulkUpdateStatus: vi.fn(),
+    bulkUpdateRole: vi.fn(),
     hashPassword: vi.fn(),
     comparePassword: vi.fn(),
   };
@@ -22,9 +24,12 @@ vi.mock('../repositories/UserRepository', () => {
       findAllClients: mocks.findAllClients,
       updateProfile: mocks.updateProfile,
       updatePassword: mocks.updatePassword,
+      bulkUpdateStatus: mocks.bulkUpdateStatus,
+      bulkUpdateRole: mocks.bulkUpdateRole,
     },
   };
 });
+
 
 vi.mock('../utils/passwordUtils', () => {
   return {
@@ -240,4 +245,34 @@ describe('UserService', () => {
       expect((result[0] as any).password_hash).toBeUndefined();
     });
   });
+
+  describe('bulkUpdateStatus', () => {
+    it('should exclude admin user id and update status for remaining target users', async () => {
+      mocks.bulkUpdateStatus.mockResolvedValue(2);
+
+      const result = await userService.bulkUpdateStatus('admin-1', ['admin-1', 'user-2', 'user-3'], true);
+
+      expect(mocks.bulkUpdateStatus).toHaveBeenCalledWith(['user-2', 'user-3'], true);
+      expect(result).toEqual({ updatedCount: 2 });
+    });
+
+    it('should return updatedCount 0 if no valid target users remain after excluding admin', async () => {
+      const result = await userService.bulkUpdateStatus('admin-1', ['admin-1'], false);
+
+      expect(mocks.bulkUpdateStatus).not.toHaveBeenCalled();
+      expect(result).toEqual({ updatedCount: 0 });
+    });
+  });
+
+  describe('bulkUpdateRole', () => {
+    it('should exclude admin user id and update role for remaining target users', async () => {
+      mocks.bulkUpdateRole.mockResolvedValue(2);
+
+      const result = await userService.bulkUpdateRole('admin-1', ['admin-1', 'user-2', 'user-3'], UserRole.TECHNICIAN);
+
+      expect(mocks.bulkUpdateRole).toHaveBeenCalledWith(['user-2', 'user-3'], UserRole.TECHNICIAN);
+      expect(result).toEqual({ updatedCount: 2 });
+    });
+  });
 });
+

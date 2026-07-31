@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Page } from "@/components/Page";
 import { DataTable } from "@/components/ui/data-table";
+import type { DataTableBulkAction } from "@/components/ui/data-table";
 
 import {
   AlertDialog,
@@ -87,8 +88,6 @@ function UserAvatarCell({ name, email, avatarUrl }: UserAvatarCellProps) {
   );
 }
 
-
-
 // ---- Main Page ----
 
 export function UserManagementPage() {
@@ -117,6 +116,8 @@ export function UserManagementPage() {
     confirmation,
     requestRoleChange,
     requestStatusToggle,
+    requestBulkRoleChange,
+    requestBulkStatusToggle,
     cancelConfirmation,
     executeConfirmation,
     getRoleLabel,
@@ -221,19 +222,72 @@ export function UserManagementPage() {
     [t, getRoleLabel, formatDate, currentUserId, requestRoleChange, requestStatusToggle]
   );
 
-  // Confirmation dialog description
-  const confirmationDescription = confirmation.type === "role"
-    ? t("userManagement.confirmRoleChange")
-        .replace("{name}", confirmation.userName)
-        .replace("{role}", getRoleLabel(confirmation.newValue as ManagedUser["role"]))
-    : t("userManagement.confirmStatusChange")
-        .replace("{name}", confirmation.userName)
-        .replace(
-          "{status}",
-          confirmation.newValue
-            ? t("userManagement.active").toLowerCase()
-            : t("userManagement.inactive").toLowerCase()
-        );
+  // Bulk actions configuration
+  const bulkActions = useMemo<DataTableBulkAction<ManagedUser>[]>(
+    () => [
+      {
+        label: t("userManagement.bulkActivate") || "Activate Selected",
+        onClick: (selectedRows) => requestBulkStatusToggle(selectedRows, currentUserId, true),
+        variant: "outline",
+      },
+      {
+        label: t("userManagement.bulkDeactivate") || "Deactivate Selected",
+        onClick: (selectedRows) => requestBulkStatusToggle(selectedRows, currentUserId, false),
+        variant: "destructive",
+      },
+      {
+        label: t("userManagement.bulkSetAdmin") || "Set Admin",
+        onClick: (selectedRows) => requestBulkRoleChange(selectedRows, currentUserId, "ADMIN"),
+        variant: "outline",
+      },
+      {
+        label: t("userManagement.bulkSetTech") || "Set Tech",
+        onClick: (selectedRows) => requestBulkRoleChange(selectedRows, currentUserId, "TECHNICIAN"),
+        variant: "outline",
+      },
+      {
+        label: t("userManagement.bulkSetClient") || "Set Client",
+        onClick: (selectedRows) => requestBulkRoleChange(selectedRows, currentUserId, "CLIENT"),
+        variant: "outline",
+      },
+    ],
+    [t, currentUserId, requestBulkStatusToggle, requestBulkRoleChange]
+  );
+
+  // Confirmation dialog title and description
+  const confirmationTitle = confirmation.isBulk
+    ? confirmation.type === "role"
+      ? t("userManagement.confirmBulkRoleTitle")
+      : t("userManagement.confirmBulkStatusTitle")
+    : confirmation.type === "role"
+      ? t("userManagement.confirmRoleTitle")
+      : t("userManagement.confirmStatusTitle");
+
+  const confirmationDescription = confirmation.isBulk
+    ? confirmation.type === "role"
+      ? t("userManagement.confirmBulkRoleChange")
+          .replace("{count}", String(confirmation.userCount ?? 0))
+          .replace("{role}", getRoleLabel(confirmation.newValue as ManagedUser["role"]))
+      : t("userManagement.confirmBulkStatusChange")
+          .replace("{count}", String(confirmation.userCount ?? 0))
+          .replace(
+            "{status}",
+            confirmation.newValue
+              ? t("userManagement.active").toLowerCase()
+              : t("userManagement.inactive").toLowerCase()
+          )
+    : confirmation.type === "role"
+      ? t("userManagement.confirmRoleChange")
+          .replace("{name}", confirmation.userName || "")
+          .replace("{role}", getRoleLabel(confirmation.newValue as ManagedUser["role"]))
+      : t("userManagement.confirmStatusChange")
+          .replace("{name}", confirmation.userName || "")
+          .replace(
+            "{status}",
+            confirmation.newValue
+              ? t("userManagement.active").toLowerCase()
+              : t("userManagement.inactive").toLowerCase()
+          );
 
   return (
     <Page
@@ -248,6 +302,8 @@ export function UserManagementPage() {
         data={users}
         loading={loading}
         noDataMessage={t("userManagement.noUsers")}
+        enableRowSelection={true}
+        bulkActions={bulkActions}
         search={{
           value: searchQuery,
           onChange: handleSearchChange,
@@ -297,9 +353,7 @@ export function UserManagementPage() {
         <AlertDialogContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-zinc-900 dark:text-zinc-100">
-              {confirmation.type === "role"
-                ? t("userManagement.confirmRoleTitle")
-                : t("userManagement.confirmStatusTitle")}
+              {confirmationTitle}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-500 dark:text-zinc-400">
               {confirmationDescription}
@@ -330,3 +384,4 @@ export function UserManagementPage() {
 }
 
 export default UserManagementPage;
+

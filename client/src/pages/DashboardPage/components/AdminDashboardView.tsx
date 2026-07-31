@@ -28,16 +28,15 @@ interface StorageOverviewProps {
 export function StorageOverview({ storage, loading, t }: StorageOverviewProps) {
   if (loading) {
     return (
-      <div className="bg-zinc-50/50 dark:bg-zinc-900/30 border border-zinc-200/60 dark:border-zinc-800/80 p-3.5 rounded-lg flex flex-col justify-between shadow-[0_1px_2px_rgba(0,0,0,0.02)] min-h-[180px]">
-        <div className="flex justify-between items-center mb-2">
-          <div className="p-1.5 bg-zinc-100 dark:bg-zinc-800/60 rounded">
-            <Cloud className="h-4 w-4 text-zinc-500 dark:text-zinc-500 animate-pulse" />
+      <SummaryCard
+        icon={<Cloud className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />}
+        title={t("dashboard.cloudStorage")}
+        value={
+          <div className="flex-1 flex flex-col items-center justify-center py-6">
+            <div className="w-5 h-5 border-2 border-zinc-200 dark:border-zinc-700 border-t-zinc-900 dark:border-t-zinc-100 rounded-full animate-spin" />
           </div>
-        </div>
-        <div className="flex-1 flex items-center justify-center py-6">
-          <div className="w-5 h-5 border-2 border-zinc-200 dark:border-zinc-700 border-t-zinc-900 dark:border-t-zinc-100 rounded-full animate-spin" />
-        </div>
-      </div>
+        }
+      />
     );
   }
 

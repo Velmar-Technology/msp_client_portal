@@ -1,7 +1,7 @@
 import { BaseRepository } from './BaseRepository';
 import { User, UserRole } from '../types';
 import { db, users } from '../db';
-import { eq, and, or, ilike, asc, sql, count } from 'drizzle-orm';
+import { eq, and, or, ilike, asc, sql, count, inArray } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 
 export interface UserListFilters {
@@ -111,6 +111,27 @@ export class UserRepository extends BaseRepository<User> {
       .returning();
     return (results[0] as User) || null;
   }
+
+  async bulkUpdateStatus(ids: string[], isActive: boolean): Promise<number> {
+    if (ids.length === 0) return 0;
+    const results = await db
+      .update(users)
+      .set({ is_active: isActive, updated_at: sql`NOW()` })
+      .where(inArray(users.id, ids))
+      .returning();
+    return results.length;
+  }
+
+  async bulkUpdateRole(ids: string[], role: UserRole): Promise<number> {
+    if (ids.length === 0) return 0;
+    const results = await db
+      .update(users)
+      .set({ role, updated_at: sql`NOW()` })
+      .where(inArray(users.id, ids))
+      .returning();
+    return results.length;
+  }
+
 
   async findByEmail(email: string): Promise<User | null> {
     const results = await db.select().from(users).where(eq(users.email, email));

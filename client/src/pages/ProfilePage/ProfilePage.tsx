@@ -33,7 +33,9 @@ const StatusAlert = ({ message, type }: { message: string; type: "success" | "er
       ) : (
         <AlertCircle className="h-4 w-4" />
       )}
-      <AlertTitle className="text-sm font-medium dark:text-zinc-100">{type === "success" ? "Success" : "Error"}</AlertTitle>
+      <AlertTitle className="text-sm font-medium dark:text-zinc-100">
+        {type === "success" ? "Success" : "Error"}
+      </AlertTitle>
       <AlertDescription className="text-xs dark:text-zinc-300">{message}</AlertDescription>
     </Alert>
   );
@@ -59,7 +61,7 @@ const ProfileIdentityCard = ({
   t,
 }: ProfileIdentityCardProps) => {
   return (
-    <section className="flex flex-col items-center gap-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm sm:flex-row sm:items-start">
+    <section className="flex flex-col items-center gap-6 rounded-xl border border-zinc-200 dark:border-zinc-800 dark:bg-zinc-950 bg-white p-6 shadow-sm sm:flex-row sm:items-start">
       <div className="relative shrink-0 group">
         {user?.avatarUrl ? (
           <img
@@ -112,24 +114,12 @@ const ProfileIdentityCard = ({
 };
 
 const AccountDetailsForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) => {
-  const {
-    t,
-    name,
-    setName,
-    email,
-    setEmail,
-    language,
-    setLanguage,
-    saving,
-    message,
-    messageType,
-    handleSave,
-  } = hook;
+  const { t, name, setName, email, setEmail, language, setLanguage, saving, message, messageType, handleSave } = hook;
 
   return (
     <form
       onSubmit={handleSave}
-      className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm"
+      className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm"
     >
       <div className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 px-6 py-4">
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t("profile.accountDetails")}</h3>
@@ -220,7 +210,7 @@ const ChangePasswordForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
   return (
     <form
       onSubmit={handlePasswordChange}
-      className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm"
+      className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm"
     >
       <div className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 px-6 py-4">
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t("profile.changePassword")}</h3>
@@ -309,8 +299,7 @@ const ChangePasswordForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
 
 export function ProfilePage() {
   const profileHook = useProfile();
-  const { t, user, lastLoginText, uploadingAvatar, fileInputRef, handleAvatarClick, handleAvatarChange } =
-    profileHook;
+  const { t, user, lastLoginText, uploadingAvatar, fileInputRef, handleAvatarClick, handleAvatarChange } = profileHook;
 
   return (
     <Page className="max-w-4xl" title={t("profile.title")} subtitle={t("profile.subtitle")}>

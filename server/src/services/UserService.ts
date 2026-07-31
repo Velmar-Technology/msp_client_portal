@@ -145,6 +145,33 @@ export class UserService {
     return user;
   }
 
+  async bulkUpdateStatus(
+    adminUserId: string,
+    targetUserIds: string[],
+    isActive: boolean
+  ): Promise<{ updatedCount: number }> {
+    const validIds = targetUserIds.filter((id) => id !== adminUserId);
+    if (validIds.length === 0) {
+      return { updatedCount: 0 };
+    }
+    const updatedCount = await userRepository.bulkUpdateStatus(validIds, isActive);
+    return { updatedCount };
+  }
+
+  async bulkUpdateRole(
+    adminUserId: string,
+    targetUserIds: string[],
+    newRole: UserRole
+  ): Promise<{ updatedCount: number }> {
+    const validIds = targetUserIds.filter((id) => id !== adminUserId);
+    if (validIds.length === 0) {
+      return { updatedCount: 0 };
+    }
+    const updatedCount = await userRepository.bulkUpdateRole(validIds, newRole);
+    return { updatedCount };
+  }
+
+
   async getUserStats(): Promise<UserStats> {
     const [byRole, byStatus] = await Promise.all([
       userRepository.countByRole(),

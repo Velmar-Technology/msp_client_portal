@@ -54,7 +54,8 @@ export class MaintenanceService {
       }
     }
 
-    const items = await maintenanceRepository.findByTenant(tenantId, filters);
+    const effectiveTenantId = user.role === UserRole.CLIENT ? tenantId : undefined;
+    const items = await maintenanceRepository.findByTenant(effectiveTenantId, filters);
 
     // Auto-mark overdue statuses if scheduled date has passed and status is still SCHEDULED
     const now = new Date();
@@ -69,7 +70,8 @@ export class MaintenanceService {
   }
 
   async getMaintenanceById(id: string, tenantId: string, user: { id: string; role: UserRole }): Promise<DeviceMaintenance> {
-    const item = await maintenanceRepository.findByIdWithDetails(id, tenantId);
+    const effectiveTenantId = user.role === UserRole.CLIENT ? tenantId : undefined;
+    const item = await maintenanceRepository.findByIdWithDetails(id, effectiveTenantId);
     if (!item) {
       throw AppError.notFound('Maintenance schedule not found');
     }
@@ -88,7 +90,7 @@ export class MaintenanceService {
     if (!equipment) {
       throw AppError.notFound('Device / Equipment slot not found');
     }
-    if (equipment.tenant_id !== tenantId) {
+    if (user.role === UserRole.CLIENT && equipment.tenant_id !== tenantId) {
       throw AppError.forbidden('Access denied');
     }
 
@@ -119,12 +121,13 @@ export class MaintenanceService {
 
     const deviceDisplayName = equipment.device_name || `Slot #${equipment.slot_index + 1}`;
     const defaultTitle = data.title || `Routine Device Maintenance - ${deviceDisplayName}`;
+    const targetTenantId = user.role === UserRole.CLIENT ? tenantId : equipment.tenant_id;
 
     const newMaintenance = await maintenanceRepository.create({
       equipment_id: equipment.id,
       subscription_id: subscription.id,
       client_id: subscription.client_id,
-      tenant_id: tenantId,
+      tenant_id: targetTenantId,
       assigned_tech_id: data.assignedTechId || null,
       scheduled_date: scheduledDate,
       status: MaintenanceStatus.SCHEDULED,
@@ -138,14 +141,14 @@ export class MaintenanceService {
     if (user.role !== UserRole.CLIENT) {
       await notificationService.createInAppNotification({
         userId: subscription.client_id,
-        tenantId,
+        tenantId: targetTenantId,
         title: 'Device Maintenance Scheduled',
         message: `Maintenance scheduled for ${deviceDisplayName} on ${scheduledDate.toLocaleDateString()}`,
         type: 'SYSTEM',
       }).catch((err) => logger.error('Failed to send maintenance notification:', { err }));
     }
 
-    return (await maintenanceRepository.findByIdWithDetails(newMaintenance.id, tenantId)) || newMaintenance;
+    return (await maintenanceRepository.findByIdWithDetails(newMaintenance.id, targetTenantId)) || newMaintenance;
   }
 
   async updateMaintenance(
@@ -154,7 +157,8 @@ export class MaintenanceService {
     id: string,
     data: UpdateMaintenanceInput
   ): Promise<DeviceMaintenance> {
-    const existing = await maintenanceRepository.findByIdWithDetails(id, tenantId);
+    const effectiveTenantId = user.role === UserRole.CLIENT ? tenantId : undefined;
+    const existing = await maintenanceRepository.findByIdWithDetails(id, effectiveTenantId);
     if (!existing) {
       throw AppError.notFound('Maintenance schedule not found');
     }
@@ -183,13 +187,13 @@ export class MaintenanceService {
     }
 
     await maintenanceRepository.update(id, updatePayload);
-    const updated = await maintenanceRepository.findByIdWithDetails(id, tenantId);
+    const updated = await maintenanceRepository.findByIdWithDetails(id, effectiveTenantId);
 
     // If status changed to COMPLETED, optionally notify client
     if (data.status === MaintenanceStatus.COMPLETED && existing.status !== MaintenanceStatus.COMPLETED) {
       await notificationService.createInAppNotification({
         userId: existing.client_id,
-        tenantId,
+        tenantId: existing.tenant_id,
         title: 'Device Maintenance Completed',
         message: `Maintenance for ${existing.device_name || 'Device'} has been marked as completed.`,
         type: 'SYSTEM',
@@ -204,12 +208,13 @@ export class MaintenanceService {
       throw AppError.forbidden('Only technicians or administrators can delete maintenance schedules');
     }
 
-    const existing = await maintenanceRepository.findByIdWithDetails(id, tenantId);
+    const effectiveTenantId = user.role === UserRole.CLIENT ? tenantId : undefined;
+    const existing = await maintenanceRepository.findByIdWithDetails(id, effectiveTenantId);
     if (!existing) {
       throw AppError.notFound('Maintenance schedule not found');
     }
 
-    const success = await maintenanceRepository.delete(id, tenantId);
+    const success = await maintenanceRepository.delete(id, effectiveTenantId);
     return { success };
   }
 }

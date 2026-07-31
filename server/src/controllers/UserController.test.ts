@@ -4,6 +4,8 @@ import { Request, Response } from 'express';
 const mocks = vi.hoisted(() => {
   return {
     updateProfile: vi.fn(),
+    bulkUpdateStatus: vi.fn(),
+    bulkUpdateRole: vi.fn(),
   };
 });
 
@@ -11,11 +13,14 @@ vi.mock('../services/UserService', () => {
   return {
     userService: {
       updateProfile: mocks.updateProfile,
+      bulkUpdateStatus: mocks.bulkUpdateStatus,
+      bulkUpdateRole: mocks.bulkUpdateRole,
     },
   };
 });
 
 import { userController } from './UserController';
+import { UserRole } from '../types';
 
 describe('UserController', () => {
   beforeEach(() => {
@@ -73,4 +78,51 @@ describe('UserController', () => {
       });
     });
   });
+
+  describe('bulkToggleStatus', () => {
+    it('should call userService.bulkUpdateStatus and return result', async () => {
+      const req = {
+        user: { userId: 'admin-1' },
+        body: { userIds: ['u-1', 'u-2'], is_active: false },
+      } as unknown as Request;
+
+      const res = {
+        json: vi.fn(),
+      } as unknown as Response;
+
+      mocks.bulkUpdateStatus.mockResolvedValue({ updatedCount: 2 });
+
+      await userController.bulkToggleStatus(req, res);
+
+      expect(mocks.bulkUpdateStatus).toHaveBeenCalledWith('admin-1', ['u-1', 'u-2'], false);
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        data: { updatedCount: 2 },
+      });
+    });
+  });
+
+  describe('bulkUpdateRole', () => {
+    it('should call userService.bulkUpdateRole and return result', async () => {
+      const req = {
+        user: { userId: 'admin-1' },
+        body: { userIds: ['u-1', 'u-2'], role: UserRole.TECHNICIAN },
+      } as unknown as Request;
+
+      const res = {
+        json: vi.fn(),
+      } as unknown as Response;
+
+      mocks.bulkUpdateRole.mockResolvedValue({ updatedCount: 2 });
+
+      await userController.bulkUpdateRole(req, res);
+
+      expect(mocks.bulkUpdateRole).toHaveBeenCalledWith('admin-1', ['u-1', 'u-2'], UserRole.TECHNICIAN);
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        data: { updatedCount: 2 },
+      });
+    });
+  });
 });
+

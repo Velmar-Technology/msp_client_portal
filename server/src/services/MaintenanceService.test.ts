@@ -99,7 +99,7 @@ describe('MaintenanceService', () => {
         {}
       );
 
-      expect(mocks.findByTenant).toHaveBeenCalled();
+      expect(mocks.findByTenant).toHaveBeenCalledWith(undefined, expect.anything());
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('maint-1');
     });
@@ -166,6 +166,26 @@ describe('MaintenanceService', () => {
         })
       );
       expect(result.maintenance_type).toBe(MaintenanceType.CUSTOM_DATE);
+    });
+
+    it('should allow ADMIN to schedule maintenance for equipment belonging to another tenant', async () => {
+      mocks.findEquipmentById.mockResolvedValue({ ...mockEquipment, tenant_id: 'client-tenant-99' });
+      mocks.findSubscriptionById.mockResolvedValue({ ...mockSubscription, tenant_id: 'client-tenant-99' });
+      mocks.create.mockResolvedValue({ ...mockItem, tenant_id: 'client-tenant-99' });
+      mocks.findByIdWithDetails.mockResolvedValue({ ...mockItem, tenant_id: 'client-tenant-99' });
+
+      const result = await maintenanceService.scheduleMaintenance(
+        'admin-tenant-1',
+        { id: 'admin-1', role: UserRole.ADMIN },
+        { equipmentId: 'equip-1', monthsAhead: 6 }
+      );
+
+      expect(mocks.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tenant_id: 'client-tenant-99',
+        })
+      );
+      expect(result).toBeDefined();
     });
   });
 

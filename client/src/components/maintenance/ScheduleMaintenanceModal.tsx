@@ -39,6 +39,11 @@ export function ScheduleMaintenanceModal({
   const [notes, setNotes] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
 
+  // Filter only provisioned (active) equipment
+  const provisionedEquipment = useMemo(() => {
+    return allEquipment.filter((eq) => eq.status === "ACTIVE");
+  }, [allEquipment]);
+
   useEffect(() => {
     if (equipment?.id) {
       setSelectedEquipId(equipment.id);
@@ -47,20 +52,24 @@ export function ScheduleMaintenanceModal({
           name: equipment.device_name || t("devices.unnamedDevice"),
         })
       );
-    } else if (allEquipment.length > 0 && !selectedEquipId) {
-      setSelectedEquipId(allEquipment[0].id || "");
-      setTitle(
-        t("maintenance.defaultTitle", {
-          name: allEquipment[0].device_name || t("devices.unnamedDevice"),
-        })
-      );
+    } else if (provisionedEquipment.length > 0) {
+      if (!selectedEquipId || !provisionedEquipment.some((e) => e.id === selectedEquipId)) {
+        setSelectedEquipId(provisionedEquipment[0].id || "");
+        setTitle(
+          t("maintenance.defaultTitle", {
+            name: provisionedEquipment[0].device_name || t("devices.unnamedDevice"),
+          })
+        );
+      }
+    } else {
+      setSelectedEquipId("");
     }
-  }, [equipment, allEquipment, t, selectedEquipId]);
+  }, [equipment, provisionedEquipment, t, selectedEquipId]);
 
   const activeTargetEquip = useMemo(() => {
     if (equipment?.id === selectedEquipId) return equipment;
-    return allEquipment.find((e) => e.id === selectedEquipId) || equipment;
-  }, [equipment, allEquipment, selectedEquipId]);
+    return provisionedEquipment.find((e) => e.id === selectedEquipId) || equipment;
+  }, [equipment, provisionedEquipment, selectedEquipId]);
 
   if (!isOpen) return null;
 
@@ -138,14 +147,25 @@ export function ScheduleMaintenanceModal({
             <label htmlFor="maint-target-device" className="block text-[10px] uppercase font-bold text-zinc-400">
               {t("maintenance.labelSelectDevice")}
             </label>
-            {allEquipment.length > 1 && !equipment?.id ? (
+            {provisionedEquipment.length > 1 && !equipment?.id ? (
               <select
                 id="maint-target-device"
                 value={selectedEquipId}
-                onChange={(e) => setSelectedEquipId(e.target.value)}
+                onChange={(e) => {
+                  const newId = e.target.value;
+                  setSelectedEquipId(newId);
+                  const selectedEq = provisionedEquipment.find((item) => item.id === newId);
+                  if (selectedEq) {
+                    setTitle(
+                      t("maintenance.defaultTitle", {
+                        name: selectedEq.device_name || t("devices.unnamedDevice"),
+                      })
+                    );
+                  }
+                }}
                 className="w-full h-8 px-2.5 border border-zinc-200 dark:border-zinc-800 rounded-md bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-zinc-400"
               >
-                {allEquipment.map((eq) => (
+                {provisionedEquipment.map((eq) => (
                   <option key={eq.id} value={eq.id}>
                     {eq.device_name || t("devices.unnamedDevice")} ({eq.device_serial || t("devices.noSerial")}) - {eq.client_name || ""}
                   </option>

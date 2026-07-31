@@ -1,6 +1,13 @@
 import { Request, Response } from 'express';
 import { userService } from '../services/UserService';
-import { UpdateProfileInput, ChangePasswordInput, UpdateUserRoleInput, UpdateUserStatusInput } from '../dtos/user.dto';
+import {
+  UpdateProfileInput,
+  ChangePasswordInput,
+  UpdateUserRoleInput,
+  UpdateUserStatusInput,
+  BulkUpdateUserStatusInput,
+  BulkUpdateUserRoleInput,
+} from '../dtos/user.dto';
 import { UserRole } from '../types';
 
 export class UserController {
@@ -81,6 +88,27 @@ export class UserController {
     );
     res.json({ success: true, data: user });
   }
+
+  async bulkToggleStatus(req: Request, res: Response): Promise<void> {
+    const data = req.body as BulkUpdateUserStatusInput;
+    const result = await userService.bulkUpdateStatus(
+      req.user!.userId,
+      data.userIds,
+      data.is_active
+    );
+    res.json({ success: true, data: result });
+  }
+
+  async bulkUpdateRole(req: Request, res: Response): Promise<void> {
+    const data = req.body as BulkUpdateUserRoleInput;
+    const result = await userService.bulkUpdateRole(
+      req.user!.userId,
+      data.userIds,
+      data.role as UserRole
+    );
+    res.json({ success: true, data: result });
+  }
 }
+
 
 export const userController = new UserController();
