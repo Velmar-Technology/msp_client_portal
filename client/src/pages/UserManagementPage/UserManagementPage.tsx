@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Page } from "@/components/Page";
 import { DataTable } from "@/components/ui/data-table";
 import type { DataTableBulkAction } from "@/components/ui/data-table";
@@ -13,6 +13,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 import type { ColumnDef } from "@tanstack/react-table";
 
@@ -23,7 +32,7 @@ import { UserStatsBar } from "@/components/users/UserStatsBar";
 
 import { UserRoleBadge } from "@/components/users/UserRoleBadge";
 import { UserActionsMenu } from "@/components/users/UserActionsMenu";
-import type { ManagedUser } from "@/services/userService";
+import type { ManagedUser, ClientType, UserRole } from "@/services/userService";
 
 // ---- Status Dot ----
 
@@ -94,6 +103,14 @@ export function UserManagementPage() {
   const { user } = useAuth();
   const currentUserId = user?.id ?? "";
 
+  const [bulkRoleModalOpen, setBulkRoleModalOpen] = useState(false);
+  const [selectedUsersForBulkRole, setSelectedUsersForBulkRole] = useState<ManagedUser[]>([]);
+  const [selectedBulkRole, setSelectedBulkRole] = useState<UserRole>("CLIENT");
+
+  const [bulkClientTypeModalOpen, setBulkClientTypeModalOpen] = useState(false);
+  const [selectedUsersForBulkClientType, setSelectedUsersForBulkClientType] = useState<ManagedUser[]>([]);
+  const [selectedBulkClientType, setSelectedBulkClientType] = useState<ClientType>("CLIENT");
+
   const {
     t,
     users,
@@ -116,11 +133,14 @@ export function UserManagementPage() {
     confirmation,
     requestRoleChange,
     requestStatusToggle,
+    requestClientTypeChange,
     requestBulkRoleChange,
     requestBulkStatusToggle,
+    requestBulkClientTypeChange,
     cancelConfirmation,
     executeConfirmation,
     getRoleLabel,
+    getClientTypeLabel,
     formatDate,
   } = useUserManagement();
 
@@ -154,6 +174,19 @@ export function UserManagementPage() {
             role={row.original.role}
             label={getRoleLabel(row.original.role)}
           />
+        ),
+      },
+      {
+        accessorKey: "client_type",
+        header: () => (
+          <span className="text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">
+            {t("userManagement.colClientType") || "Client Type"}
+          </span>
+        ),
+        cell: ({ row }) => (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
+            {getClientTypeLabel(row.original.client_type)}
+          </span>
         ),
       },
       {
@@ -214,12 +247,13 @@ export function UserManagementPage() {
               currentUserId={currentUserId}
               onRoleChange={requestRoleChange}
               onStatusToggle={requestStatusToggle}
+              onClientTypeChange={requestClientTypeChange}
             />
           </div>
         ),
       },
     ],
-    [t, getRoleLabel, formatDate, currentUserId, requestRoleChange, requestStatusToggle]
+    [t, getRoleLabel, getClientTypeLabel, formatDate, currentUserId, requestRoleChange, requestStatusToggle, requestClientTypeChange]
   );
 
   // Bulk actions configuration
@@ -236,18 +270,21 @@ export function UserManagementPage() {
         variant: "destructive",
       },
       {
-        label: t("userManagement.bulkSetAdmin") || "Set Admin",
-        onClick: (selectedRows) => requestBulkRoleChange(selectedRows, currentUserId, "ADMIN"),
+        label: t("userManagement.bulkSetRole") || "Set Role",
+        onClick: (selectedRows) => {
+          setSelectedUsersForBulkRole(selectedRows);
+          setSelectedBulkRole("CLIENT");
+          setBulkRoleModalOpen(true);
+        },
         variant: "outline",
       },
       {
-        label: t("userManagement.bulkSetTech") || "Set Tech",
-        onClick: (selectedRows) => requestBulkRoleChange(selectedRows, currentUserId, "TECHNICIAN"),
-        variant: "outline",
-      },
-      {
-        label: t("userManagement.bulkSetClient") || "Set Client",
-        onClick: (selectedRows) => requestBulkRoleChange(selectedRows, currentUserId, "CLIENT"),
+        label: t("userManagement.bulkSetClientType") || "Set Client Type",
+        onClick: (selectedRows) => {
+          setSelectedUsersForBulkClientType(selectedRows);
+          setSelectedBulkClientType("CLIENT");
+          setBulkClientTypeModalOpen(true);
+        },
         variant: "outline",
       },
     ],
@@ -258,36 +295,48 @@ export function UserManagementPage() {
   const confirmationTitle = confirmation.isBulk
     ? confirmation.type === "role"
       ? t("userManagement.confirmBulkRoleTitle")
-      : t("userManagement.confirmBulkStatusTitle")
+      : confirmation.type === "clientType"
+        ? t("userManagement.confirmBulkClientTypeTitle") || "Change Client Type for Selected Users"
+        : t("userManagement.confirmBulkStatusTitle")
     : confirmation.type === "role"
       ? t("userManagement.confirmRoleTitle")
-      : t("userManagement.confirmStatusTitle");
+      : confirmation.type === "clientType"
+        ? t("userManagement.confirmClientTypeTitle") || "Change User Client Type"
+        : t("userManagement.confirmStatusTitle");
 
   const confirmationDescription = confirmation.isBulk
     ? confirmation.type === "role"
       ? t("userManagement.confirmBulkRoleChange")
           .replace("{count}", String(confirmation.userCount ?? 0))
           .replace("{role}", getRoleLabel(confirmation.newValue as ManagedUser["role"]))
-      : t("userManagement.confirmBulkStatusChange")
-          .replace("{count}", String(confirmation.userCount ?? 0))
-          .replace(
-            "{status}",
-            confirmation.newValue
-              ? t("userManagement.active").toLowerCase()
-              : t("userManagement.inactive").toLowerCase()
-          )
+      : confirmation.type === "clientType"
+        ? (t("userManagement.confirmBulkClientTypeChange") || "Are you sure you want to change the client type of {count} selected user(s) to {type}?")
+            .replace("{count}", String(confirmation.userCount ?? 0))
+            .replace("{type}", getClientTypeLabel(String(confirmation.newValue)))
+        : t("userManagement.confirmBulkStatusChange")
+            .replace("{count}", String(confirmation.userCount ?? 0))
+            .replace(
+              "{status}",
+              confirmation.newValue
+                ? t("userManagement.active").toLowerCase()
+                : t("userManagement.inactive").toLowerCase()
+            )
     : confirmation.type === "role"
       ? t("userManagement.confirmRoleChange")
           .replace("{name}", confirmation.userName || "")
           .replace("{role}", getRoleLabel(confirmation.newValue as ManagedUser["role"]))
-      : t("userManagement.confirmStatusChange")
-          .replace("{name}", confirmation.userName || "")
-          .replace(
-            "{status}",
-            confirmation.newValue
-              ? t("userManagement.active").toLowerCase()
-              : t("userManagement.inactive").toLowerCase()
-          );
+      : confirmation.type === "clientType"
+        ? (t("userManagement.confirmClientTypeChange") || "Are you sure you want to change {name}'s client type to {type}?")
+            .replace("{name}", confirmation.userName || "")
+            .replace("{type}", getClientTypeLabel(String(confirmation.newValue)))
+        : t("userManagement.confirmStatusChange")
+            .replace("{name}", confirmation.userName || "")
+            .replace(
+              "{status}",
+              confirmation.newValue
+                ? t("userManagement.active").toLowerCase()
+                : t("userManagement.inactive").toLowerCase()
+            );
 
   return (
     <Page
@@ -342,6 +391,111 @@ export function UserManagementPage() {
         }}
         className="mt-6"
       />
+
+      {/* Bulk Role Modal */}
+      <Dialog open={bulkRoleModalOpen} onOpenChange={setBulkRoleModalOpen}>
+        <DialogContent className="sm:max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100">
+          <DialogHeader>
+            <DialogTitle className="text-zinc-900 dark:text-zinc-100">
+              {t("userManagement.bulkSetRoleModalTitle") || "Set User Role"}
+            </DialogTitle>
+            <DialogDescription className="text-zinc-500 dark:text-zinc-400">
+              {(t("userManagement.bulkSetRoleModalDesc") || "Choose a role to apply to the {count} selected user(s).")
+                .replace("{count}", String(selectedUsersForBulkRole.length))}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-3">
+            <label htmlFor="bulk-role-select" className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
+              {t("userManagement.selectRole") || "Select Role"}
+            </label>
+            <select
+              id="bulk-role-select"
+              value={selectedBulkRole}
+              onChange={(e) => setSelectedBulkRole(e.target.value as UserRole)}
+              className="w-full h-10 px-3 py-2 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
+            >
+              <option value="CLIENT">{t("userManagement.roleClient") || "Client"}</option>
+              <option value="TECHNICIAN">{t("userManagement.roleTech") || "Technician"}</option>
+              <option value="ADMIN">{t("userManagement.roleAdmin") || "Admin"}</option>
+            </select>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setBulkRoleModalOpen(false)}
+              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+            >
+              {t("userManagement.cancel") || "Cancel"}
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                setBulkRoleModalOpen(false);
+                requestBulkRoleChange(selectedUsersForBulkRole, currentUserId, selectedBulkRole);
+              }}
+              className="bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            >
+              {t("userManagement.confirm") || "Confirm"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Client Type Modal */}
+      <Dialog open={bulkClientTypeModalOpen} onOpenChange={setBulkClientTypeModalOpen}>
+        <DialogContent className="sm:max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100">
+          <DialogHeader>
+            <DialogTitle className="text-zinc-900 dark:text-zinc-100">
+              {t("userManagement.bulkSetClientTypeModalTitle") || "Set Client Type"}
+            </DialogTitle>
+            <DialogDescription className="text-zinc-500 dark:text-zinc-400">
+              {(t("userManagement.bulkSetClientTypeModalDesc") || "Choose a client type to apply to the {count} selected user(s).")
+                .replace("{count}", String(selectedUsersForBulkClientType.length))}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-3">
+            <label htmlFor="bulk-client-type-select" className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
+              {t("userManagement.selectClientType") || "Select Client Type"}
+            </label>
+            <select
+              id="bulk-client-type-select"
+              value={selectedBulkClientType}
+              onChange={(e) => setSelectedBulkClientType(e.target.value as ClientType)}
+              className="w-full h-10 px-3 py-2 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
+            >
+              <option value="CLIENT">{t("userManagement.clientTypeCLIENT") || "Standard Client"}</option>
+              <option value="ENTERPRISE">{t("userManagement.clientTypeENTERPRISE") || "Enterprise Client"}</option>
+              <option value="STUDENT">{t("userManagement.clientTypeSTUDENT") || "Student Starter"}</option>
+              <option value="OTHER">{t("userManagement.clientTypeOTHER") || "Other / Custom"}</option>
+            </select>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setBulkClientTypeModalOpen(false)}
+              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+            >
+              {t("userManagement.cancel") || "Cancel"}
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                setBulkClientTypeModalOpen(false);
+                requestBulkClientTypeChange(selectedUsersForBulkClientType, currentUserId, selectedBulkClientType);
+              }}
+              className="bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            >
+              {t("userManagement.confirm") || "Confirm"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Confirmation Dialog */}
       <AlertDialog

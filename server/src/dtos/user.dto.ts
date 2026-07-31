@@ -59,3 +59,21 @@ export const BulkUpdateUserRoleDTO = z.object({
 });
 export type BulkUpdateUserRoleInput = z.infer<typeof BulkUpdateUserRoleDTO>;
 
+export const UpdateUserClientTypeDTO = z.object({
+  clientType: z.enum(['CLIENT', 'ENTERPRISE', 'STUDENT', 'OTHER'], {
+    required_error: 'Client type is required',
+    invalid_type_error: 'Client type must be CLIENT, ENTERPRISE, STUDENT, or OTHER',
+  }),
+});
+export type UpdateUserClientTypeInput = z.infer<typeof UpdateUserClientTypeDTO>;
+
+export const BulkUpdateUserClientTypeDTO = z.object({
+  userIds: z.array(z.string().uuid({ message: 'Each user ID must be a valid UUID' })).min(1, 'At least one user ID is required'),
+  clientType: z.enum(['CLIENT', 'ENTERPRISE', 'STUDENT', 'OTHER'], {
+    required_error: 'Client type is required',
+    invalid_type_error: 'Client type must be CLIENT, ENTERPRISE, STUDENT, or OTHER',
+  }),
+});
+export type BulkUpdateUserClientTypeInput = z.infer<typeof BulkUpdateUserClientTypeDTO>;
+
+

@@ -4,6 +4,7 @@ import { userService } from "@/services/userService";
 import type {
   ManagedUser,
   UserRole,
+  ClientType,
   UserStats,
 } from "../services/userService";
 
@@ -14,7 +15,7 @@ export type StatusFilter = "all" | "active" | "inactive";
 
 export interface ConfirmationState {
   open: boolean;
-  type: "role" | "status";
+  type: "role" | "status" | "clientType";
   isBulk?: boolean;
   userId?: string;
   userName?: string;
@@ -173,6 +174,40 @@ export function useUserManagement() {
     []
   );
 
+  const requestClientTypeChange = useCallback(
+    (userId: string, userName: string, newClientType: ClientType) => {
+      setConfirmation({
+        open: true,
+        type: "clientType",
+        isBulk: false,
+        userId,
+        userName,
+        newValue: newClientType,
+      });
+    },
+    []
+  );
+
+  const requestBulkClientTypeChange = useCallback(
+    (selectedUsers: ManagedUser[], currentUserId: string, newClientType: ClientType) => {
+      const validUserIds = selectedUsers
+        .map((u) => u.id)
+        .filter((id) => id !== currentUserId);
+
+      if (validUserIds.length === 0) return;
+
+      setConfirmation({
+        open: true,
+        type: "clientType",
+        isBulk: true,
+        userIds: validUserIds,
+        userCount: validUserIds.length,
+        newValue: newClientType,
+      });
+    },
+    []
+  );
+
   const requestBulkRoleChange = useCallback(
     (selectedUsers: ManagedUser[], currentUserId: string, newRole: UserRole) => {
       const validUserIds = selectedUsers
@@ -229,6 +264,11 @@ export function useUserManagement() {
             confirmation.userIds!,
             confirmation.newValue as UserRole
           );
+        } else if (confirmation.type === "clientType") {
+          await userService.bulkUpdateClientType(
+            confirmation.userIds!,
+            confirmation.newValue as ClientType
+          );
         } else {
           await userService.bulkUpdateStatus(
             confirmation.userIds!,
@@ -240,6 +280,11 @@ export function useUserManagement() {
           await userService.updateUserRole(
             confirmation.userId!,
             confirmation.newValue as UserRole
+          );
+        } else if (confirmation.type === "clientType") {
+          await userService.updateUserClientType(
+            confirmation.userId!,
+            confirmation.newValue as ClientType
           );
         } else {
           await userService.toggleUserStatus(
@@ -268,6 +313,20 @@ export function useUserManagement() {
         CLIENT: t("userManagement.roleClient"),
       };
       return labels[role] || role;
+    },
+    [t]
+  );
+
+  // Utility: format client type label
+  const getClientTypeLabel = useCallback(
+    (clientType: string): string => {
+      const labels: Record<string, string> = {
+        CLIENT: t("userManagement.clientTypeCLIENT") || t("register.clientTypeCLIENT") || "Standard Client",
+        ENTERPRISE: t("userManagement.clientTypeENTERPRISE") || t("register.clientTypeENTERPRISE") || "Enterprise Client",
+        STUDENT: t("userManagement.clientTypeSTUDENT") || t("register.clientTypeSTUDENT") || "Student Starter",
+        OTHER: t("userManagement.clientTypeOTHER") || t("register.clientTypeOTHER") || "Other / Custom",
+      };
+      return labels[clientType] || clientType;
     },
     [t]
   );
@@ -314,12 +373,15 @@ export function useUserManagement() {
     confirmation,
     requestRoleChange,
     requestStatusToggle,
+    requestClientTypeChange,
     requestBulkRoleChange,
     requestBulkStatusToggle,
+    requestBulkClientTypeChange,
     cancelConfirmation,
     executeConfirmation,
     // Utilities
     getRoleLabel,
+    getClientTypeLabel,
     formatDate,
   };
 }

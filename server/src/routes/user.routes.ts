@@ -10,6 +10,8 @@ import {
   UpdateUserStatusDTO,
   BulkUpdateUserRoleDTO,
   BulkUpdateUserStatusDTO,
+  UpdateUserClientTypeDTO,
+  BulkUpdateUserClientTypeDTO,
 } from '../dtos/user.dto';
 import { UserRole } from '../types';
 import { upload } from '../middleware/uploadMiddleware';
@@ -43,6 +45,14 @@ router.patch(
   (req, res) => userController.bulkUpdateRole(req, res),
 );
 
+/** PATCH /api/v1/users/bulk/client-type — Bulk update user client type (Admin only) */
+router.patch(
+  '/bulk/client-type',
+  rbacMiddleware(UserRole.ADMIN),
+  validate(BulkUpdateUserClientTypeDTO),
+  (req, res) => userController.bulkUpdateClientType(req, res),
+);
+
 /** GET /api/v1/users — List all users with filters (Admin only) */
 router.get(
   '/',
@@ -65,6 +75,15 @@ router.patch(
   validate(UpdateUserStatusDTO),
   (req, res) => userController.toggleStatus(req, res),
 );
+
+/** PATCH /api/v1/users/:id/client-type — Update user client type (Admin only) */
+router.patch(
+  '/:id/client-type',
+  rbacMiddleware(UserRole.ADMIN),
+  validate(UpdateUserClientTypeDTO),
+  (req, res) => userController.updateClientType(req, res),
+);
+
 
 
 // ---- Existing User Routes ----

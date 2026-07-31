@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { MoreHorizontal, ShieldCheck, Wrench, User, UserX, UserCheck } from "lucide-react";
+import { MoreHorizontal, ShieldCheck, Wrench, User, UserX, UserCheck, Building2, GraduationCap, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,13 +10,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { ManagedUser, UserRole } from "@/services/userService";
+import type { ManagedUser, UserRole, ClientType } from "@/services/userService";
 
 interface UserActionsMenuProps {
   user: ManagedUser;
   currentUserId: string;
   onRoleChange: (userId: string, userName: string, newRole: UserRole) => void;
   onStatusToggle: (userId: string, userName: string, newStatus: boolean) => void;
+  onClientTypeChange: (userId: string, userName: string, newClientType: ClientType) => void;
 }
 
 const ROLE_OPTIONS: { value: UserRole; icon: React.ComponentType<{ className?: string }>; labelKey: string }[] = [
@@ -25,11 +26,19 @@ const ROLE_OPTIONS: { value: UserRole; icon: React.ComponentType<{ className?: s
   { value: "CLIENT", icon: User, labelKey: "userManagement.roleClient" },
 ];
 
+const CLIENT_TYPE_OPTIONS: { value: ClientType; icon: React.ComponentType<{ className?: string }>; labelKey: string }[] = [
+  { value: "CLIENT", icon: User, labelKey: "register.clientTypeCLIENT" },
+  { value: "ENTERPRISE", icon: Building2, labelKey: "register.clientTypeENTERPRISE" },
+  { value: "STUDENT", icon: GraduationCap, labelKey: "register.clientTypeSTUDENT" },
+  { value: "OTHER", icon: Tag, labelKey: "register.clientTypeOTHER" },
+];
+
 export function UserActionsMenu({
   user,
   currentUserId,
   onRoleChange,
   onStatusToggle,
+  onClientTypeChange,
 }: UserActionsMenuProps) {
   const { t } = useTranslation();
 
@@ -43,7 +52,7 @@ export function UserActionsMenu({
           <span className="sr-only">{t("userManagement.actions")}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
+      <DropdownMenuContent align="end" className="w-52">
         <DropdownMenuLabel className="text-[10px] uppercase text-zinc-400 tracking-wider font-bold">
           {t("userManagement.changeRole")}
         </DropdownMenuLabel>
@@ -58,6 +67,28 @@ export function UserActionsMenu({
               <Icon className="h-3.5 w-3.5" />
               {t(labelKey)}
               {user.role === value && (
+                <span className="ml-auto text-[9px] text-zinc-400">
+                  {t("userManagement.current")}
+                </span>
+              )}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel className="text-[10px] uppercase text-zinc-400 tracking-wider font-bold">
+          {t("userManagement.changeClientType") || "Client Type"}
+        </DropdownMenuLabel>
+        <DropdownMenuGroup>
+          {CLIENT_TYPE_OPTIONS.map(({ value, icon: Icon, labelKey }) => (
+            <DropdownMenuItem
+              key={value}
+              disabled={user.client_type === value}
+              onClick={() => onClientTypeChange(user.id, user.name, value)}
+              className="text-xs gap-2"
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {t(labelKey)}
+              {user.client_type === value && (
                 <span className="ml-auto text-[9px] text-zinc-400">
                   {t("userManagement.current")}
                 </span>
@@ -89,3 +120,4 @@ export function UserActionsMenu({
     </DropdownMenu>
   );
 }
+

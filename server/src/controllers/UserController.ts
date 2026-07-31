@@ -7,6 +7,8 @@ import {
   UpdateUserStatusInput,
   BulkUpdateUserStatusInput,
   BulkUpdateUserRoleInput,
+  UpdateUserClientTypeInput,
+  BulkUpdateUserClientTypeInput,
 } from '../dtos/user.dto';
 import { UserRole } from '../types';
 
@@ -108,7 +110,29 @@ export class UserController {
     );
     res.json({ success: true, data: result });
   }
+
+  async updateClientType(req: Request, res: Response): Promise<void> {
+    const id = req.params.id as string;
+    const data = req.body as UpdateUserClientTypeInput;
+    const user = await userService.updateUserClientType(
+      req.user!.userId,
+      id,
+      data.clientType
+    );
+    res.json({ success: true, data: user });
+  }
+
+  async bulkUpdateClientType(req: Request, res: Response): Promise<void> {
+    const data = req.body as BulkUpdateUserClientTypeInput;
+    const result = await userService.bulkUpdateClientType(
+      req.user!.userId,
+      data.userIds,
+      data.clientType
+    );
+    res.json({ success: true, data: result });
+  }
 }
+
 
 
 export const userController = new UserController();

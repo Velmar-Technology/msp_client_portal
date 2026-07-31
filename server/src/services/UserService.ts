@@ -171,6 +171,34 @@ export class UserService {
     return { updatedCount };
   }
 
+  async updateUserClientType(
+    _adminUserId: string,
+    targetUserId: string,
+    newClientType: string
+  ): Promise<Omit<User, 'password_hash'>> {
+    const target = await userRepository.findById(targetUserId);
+    if (!target) throw AppError.notFound('User not found');
+
+    const updated = await userRepository.updateClientType(targetUserId, newClientType);
+    if (!updated) throw AppError.internal('Failed to update user client type');
+
+    const { password_hash, ...user } = updated;
+    return user;
+  }
+
+  async bulkUpdateClientType(
+    _adminUserId: string,
+    targetUserIds: string[],
+    newClientType: string
+  ): Promise<{ updatedCount: number }> {
+    if (targetUserIds.length === 0) {
+      return { updatedCount: 0 };
+    }
+    const updatedCount = await userRepository.bulkUpdateClientType(targetUserIds, newClientType);
+    return { updatedCount };
+  }
+
+
 
   async getUserStats(): Promise<UserStats> {
     const [byRole, byStatus] = await Promise.all([

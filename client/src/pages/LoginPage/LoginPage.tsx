@@ -111,7 +111,10 @@ export function LoginPage() {
                   className="h-10 md:h-12 w-auto object-contain dark:brightness-110"
                 />
                 <div className="text-center">
-                  <h1 className="text-xl md:text-2xl font-bold tracking-tight mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+                  <h1
+                    className="text-xl md:text-2xl font-bold tracking-tight mb-1"
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
                     {t("login.welcome")}
                   </h1>
                   <p className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400">{t("login.signInToPortal")}</p>
@@ -141,7 +144,7 @@ export function LoginPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder={t("login.emailPlaceholder")}
                     required
-                    className="w-full h-9 sm:h-10 px-3 py-2 border-zinc-200 dark:border-zinc-800 rounded-lg text-sm bg-zinc-50 dark:bg-zinc-950 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
+                    className="w-full h-9 sm:h-10 px-3 py-2 border-zinc-200 dark:border-zinc-800 rounded-lg text-sm bg-zinc-50 dark:bg-zinc-950! focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
                   />
                 </div>
 

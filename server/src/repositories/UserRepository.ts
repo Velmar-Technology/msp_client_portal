@@ -132,6 +132,26 @@ export class UserRepository extends BaseRepository<User> {
     return results.length;
   }
 
+  async updateClientType(id: string, clientType: string): Promise<User | null> {
+    const results = await db
+      .update(users)
+      .set({ client_type: clientType, updated_at: sql`NOW()` })
+      .where(eq(users.id, id))
+      .returning();
+    return (results[0] as User) || null;
+  }
+
+  async bulkUpdateClientType(ids: string[], clientType: string): Promise<number> {
+    if (ids.length === 0) return 0;
+    const results = await db
+      .update(users)
+      .set({ client_type: clientType, updated_at: sql`NOW()` })
+      .where(inArray(users.id, ids))
+      .returning();
+    return results.length;
+  }
+
+
 
   async findByEmail(email: string): Promise<User | null> {
     const results = await db.select().from(users).where(eq(users.email, email));

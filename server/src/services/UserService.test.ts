@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => {
     updatePassword: vi.fn(),
     bulkUpdateStatus: vi.fn(),
     bulkUpdateRole: vi.fn(),
+    updateClientType: vi.fn(),
+    bulkUpdateClientType: vi.fn(),
     hashPassword: vi.fn(),
     comparePassword: vi.fn(),
   };
@@ -26,6 +28,8 @@ vi.mock('../repositories/UserRepository', () => {
       updatePassword: mocks.updatePassword,
       bulkUpdateStatus: mocks.bulkUpdateStatus,
       bulkUpdateRole: mocks.bulkUpdateRole,
+      updateClientType: mocks.updateClientType,
+      bulkUpdateClientType: mocks.bulkUpdateClientType,
     },
   };
 });
@@ -39,7 +43,6 @@ vi.mock('../utils/passwordUtils', () => {
 });
 
 import { userService } from './UserService';
-import { AppError } from '../utils/AppError';
 import { UserRole } from '../types';
 
 describe('UserService', () => {
@@ -274,5 +277,60 @@ describe('UserService', () => {
       expect(result).toEqual({ updatedCount: 2 });
     });
   });
+
+  describe('updateUserClientType', () => {
+    it('should update user client type and return user omitting password_hash', async () => {
+      const mockUser = {
+        id: 'user-1',
+        email: 'user@example.com',
+        client_type: 'ENTERPRISE',
+        password_hash: 'hashed',
+      };
+      mocks.findById.mockResolvedValue(mockUser);
+      mocks.updateClientType.mockResolvedValue(mockUser);
+
+      const result = await userService.updateUserClientType('admin-1', 'user-1', 'ENTERPRISE');
+
+      expect(mocks.findById).toHaveBeenCalledWith('user-1');
+      expect(mocks.updateClientType).toHaveBeenCalledWith('user-1', 'ENTERPRISE');
+      expect(result).toEqual({
+        id: 'user-1',
+        email: 'user@example.com',
+        client_type: 'ENTERPRISE',
+      });
+      expect((result as any).password_hash).toBeUndefined();
+    });
+
+    it('should throw not found AppError if target user does not exist', async () => {
+      mocks.findById.mockResolvedValue(null);
+
+      await expect(
+        userService.updateUserClientType('admin-1', 'user-1', 'ENTERPRISE')
+      ).rejects.toMatchObject({
+        message: 'User not found',
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
+    });
+  });
+
+  describe('bulkUpdateClientType', () => {
+    it('should update client type for target users', async () => {
+      mocks.bulkUpdateClientType.mockResolvedValue(2);
+
+      const result = await userService.bulkUpdateClientType('admin-1', ['user-2', 'user-3'], 'ENTERPRISE');
+
+      expect(mocks.bulkUpdateClientType).toHaveBeenCalledWith(['user-2', 'user-3'], 'ENTERPRISE');
+      expect(result).toEqual({ updatedCount: 2 });
+    });
+
+    it('should return updatedCount 0 if empty user array', async () => {
+      const result = await userService.bulkUpdateClientType('admin-1', [], 'ENTERPRISE');
+
+      expect(mocks.bulkUpdateClientType).not.toHaveBeenCalled();
+      expect(result).toEqual({ updatedCount: 0 });
+    });
+  });
 });
+
 

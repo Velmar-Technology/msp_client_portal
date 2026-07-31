@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => {
     updateProfile: vi.fn(),
     bulkUpdateStatus: vi.fn(),
     bulkUpdateRole: vi.fn(),
+    updateUserClientType: vi.fn(),
+    bulkUpdateClientType: vi.fn(),
   };
 });
 
@@ -15,6 +17,8 @@ vi.mock('../services/UserService', () => {
       updateProfile: mocks.updateProfile,
       bulkUpdateStatus: mocks.bulkUpdateStatus,
       bulkUpdateRole: mocks.bulkUpdateRole,
+      updateUserClientType: mocks.updateUserClientType,
+      bulkUpdateClientType: mocks.bulkUpdateClientType,
     },
   };
 });
@@ -124,5 +128,54 @@ describe('UserController', () => {
       });
     });
   });
+
+  describe('updateClientType', () => {
+    it('should call userService.updateUserClientType and return updated user', async () => {
+      const req = {
+        user: { userId: 'admin-1' },
+        params: { id: 'u-1' },
+        body: { clientType: 'ENTERPRISE' },
+      } as unknown as Request;
+
+      const res = {
+        json: vi.fn(),
+      } as unknown as Response;
+
+      const mockUpdatedUser = { id: 'u-1', client_type: 'ENTERPRISE' };
+      mocks.updateUserClientType.mockResolvedValue(mockUpdatedUser);
+
+      await userController.updateClientType(req, res);
+
+      expect(mocks.updateUserClientType).toHaveBeenCalledWith('admin-1', 'u-1', 'ENTERPRISE');
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        data: mockUpdatedUser,
+      });
+    });
+  });
+
+  describe('bulkUpdateClientType', () => {
+    it('should call userService.bulkUpdateClientType and return result', async () => {
+      const req = {
+        user: { userId: 'admin-1' },
+        body: { userIds: ['u-1', 'u-2'], clientType: 'ENTERPRISE' },
+      } as unknown as Request;
+
+      const res = {
+        json: vi.fn(),
+      } as unknown as Response;
+
+      mocks.bulkUpdateClientType.mockResolvedValue({ updatedCount: 2 });
+
+      await userController.bulkUpdateClientType(req, res);
+
+      expect(mocks.bulkUpdateClientType).toHaveBeenCalledWith('admin-1', ['u-1', 'u-2'], 'ENTERPRISE');
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        data: { updatedCount: 2 },
+      });
+    });
+  });
 });
+
 

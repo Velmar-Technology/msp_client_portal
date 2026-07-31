@@ -208,7 +208,7 @@ export class MaintenanceService {
       throw AppError.forbidden('Only technicians or administrators can delete maintenance schedules');
     }
 
-    const effectiveTenantId = user.role === UserRole.CLIENT ? tenantId : undefined;
+    const effectiveTenantId = (user.role as UserRole) === UserRole.CLIENT ? tenantId : undefined;
     const existing = await maintenanceRepository.findByIdWithDetails(id, effectiveTenantId);
     if (!existing) {
       throw AppError.notFound('Maintenance schedule not found');

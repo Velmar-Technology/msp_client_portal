@@ -10,6 +10,7 @@ export interface ChangePasswordPayload {
 // ---- Admin User Management Types ----
 
 export type UserRole = 'CLIENT' | 'TECHNICIAN' | 'ADMIN';
+export type ClientType = 'CLIENT' | 'ENTERPRISE' | 'STUDENT' | 'OTHER';
 
 export interface ManagedUser {
   id: string;
@@ -129,6 +130,16 @@ export const userService = {
 
   async bulkUpdateRole(userIds: string[], role: UserRole): Promise<{ updatedCount: number }> {
     const response = await api.patch('/users/bulk/role', { userIds, role });
+    return response.data.data;
+  },
+
+  async updateUserClientType(userId: string, clientType: ClientType): Promise<ManagedUser> {
+    const response = await api.patch(`/users/${userId}/client-type`, { clientType });
+    return response.data.data;
+  },
+
+  async bulkUpdateClientType(userIds: string[], clientType: ClientType): Promise<{ updatedCount: number }> {
+    const response = await api.patch('/users/bulk/client-type', { userIds, clientType });
     return response.data.data;
   },
 };
