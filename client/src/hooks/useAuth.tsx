@@ -8,7 +8,7 @@ export interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (
     email: string,
     name: string,
@@ -17,7 +17,7 @@ export interface AuthContextType {
     confirmPassword: string,
     clientType: string
   ) => Promise<void>;
-  loginWithGoogle: (idToken: string, tenantName?: string) => Promise<void>;
+  loginWithGoogle: (idToken: string, tenantName?: string, rememberMe?: boolean) => Promise<void>;
   verifyEmail: (email: string, otp: string) => Promise<void>;
   logout: () => void;
   updateUser: (updatedFields: Partial<AuthUser>) => void;

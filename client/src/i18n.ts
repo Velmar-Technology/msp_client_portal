@@ -3,10 +3,11 @@ import { initReactI18next } from 'react-i18next';
 import enUS from "@/locales/en_US.json";
 import esDO from "@/locales/es_DO.json";
 import { APP_METADATA } from "@/config/metadata";
+import { getAuthItem } from "@/lib/authStorage";
 
 // Retrieve initial language setting from cached user preference or browser setting
 const getInitialLanguage = (): string => {
-  const cachedUser = localStorage.getItem('user');
+  const cachedUser = getAuthItem('user');
   if (cachedUser) {
     try {
       const parsed = JSON.parse(cachedUser);

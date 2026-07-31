@@ -3,6 +3,7 @@ import { devtools } from 'zustand/middleware';
 import { notificationService } from "@/services/notificationService";
 import type { Notification } from "@/services/notificationService";
 import { toast } from 'sonner';
+import { getAuthItem } from '@/lib/authStorage';
 
 export interface NotificationState {
   notifications: Notification[];
@@ -106,7 +107,7 @@ export const useNotificationStore = create<NotificationState>()(
         const { eventSource } = get();
         if (eventSource) return; // Stream already running
 
-        const token = localStorage.getItem('accessToken');
+        const token = getAuthItem('accessToken');
         if (!token) return;
 
         // Use absolute path for SSE connection, letting Vite proxy forward it
@@ -184,7 +185,7 @@ export const useNotificationStore = create<NotificationState>()(
 
           // Retry connection after 5 seconds if still authenticated
           setTimeout(() => {
-            const token = localStorage.getItem('accessToken');
+            const token = getAuthItem('accessToken');
             const currentES = get().eventSource;
             if (token && !currentES) {
               get().startStream();

@@ -7,6 +7,7 @@ import { NotFoundPage } from "@/pages/NotFoundPage";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ReactErrorBoundary } from "@shared/errors";
 import { Toaster } from "@/components/ui/sonner";
+import { useSessionMonitor } from "@/hooks/useSessionMonitor";
 import { protectedRoutes, ProtectedRoute } from "@/protected-routes";
 
 // Redirect if already logged in
@@ -25,6 +26,8 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 export function App() {
+  useSessionMonitor();
+
   return (
     <ReactErrorBoundary>
       <ThemeProvider defaultTheme="system" storageKey="msp-portal-theme">

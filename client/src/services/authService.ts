@@ -1,4 +1,10 @@
 import api from "@/services/api";
+import {
+  getAuthItem,
+  setAuthItem,
+  clearAuthData,
+  setRememberMe,
+} from "@/lib/authStorage";
 
 export interface LoginPayload {
   email: string;
@@ -38,13 +44,21 @@ export interface AuthResponse {
   };
 }
 
+/** Persist tokens + user to the correct store (localStorage or sessionStorage). */
+function persistAuthData(result: AuthResponse): void {
+  setAuthItem('accessToken', result.tokens.accessToken);
+  setAuthItem('refreshToken', result.tokens.refreshToken);
+  setAuthItem('user', JSON.stringify(result.user));
+}
+
 export const authService = {
-  async login(data: LoginPayload): Promise<AuthResponse> {
+  async login(data: LoginPayload, rememberMe = true): Promise<AuthResponse> {
+    // Set the storage preference BEFORE persisting tokens
+    setRememberMe(rememberMe);
+
     const response = await api.post('/auth/login', data);
     const result = response.data.data as AuthResponse;
-    localStorage.setItem('accessToken', result.tokens.accessToken);
-    localStorage.setItem('refreshToken', result.tokens.refreshToken);
-    localStorage.setItem('user', JSON.stringify(result.user));
+    persistAuthData(result);
     return result;
   },
 
@@ -56,29 +70,27 @@ export const authService = {
     await api.post('/auth/verify-email', { email, otp });
   },
 
-  async loginWithGoogle(data: GoogleAuthPayload): Promise<AuthResponse> {
+  async loginWithGoogle(data: GoogleAuthPayload, rememberMe = true): Promise<AuthResponse> {
+    setRememberMe(rememberMe);
+
     const response = await api.post('/auth/google', data);
     const result = response.data.data as AuthResponse;
-    localStorage.setItem('accessToken', result.tokens.accessToken);
-    localStorage.setItem('refreshToken', result.tokens.refreshToken);
-    localStorage.setItem('user', JSON.stringify(result.user));
+    persistAuthData(result);
     return result;
   },
 
   logout(): void {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
+    clearAuthData();
     window.location.href = '/login';
   },
 
   getCurrentUser() {
-    const user = localStorage.getItem('user');
+    const user = getAuthItem('user');
     return user ? JSON.parse(user) : null;
   },
 
   isAuthenticated(): boolean {
-    return !!localStorage.getItem('accessToken');
+    return !!getAuthItem('accessToken');
   },
 
   async forgotPassword(email: string): Promise<void> {
@@ -89,3 +101,4 @@ export const authService = {
     await api.post('/auth/reset-password', { token, password, confirmPassword });
   },
 };
+

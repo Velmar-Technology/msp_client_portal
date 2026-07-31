@@ -297,7 +297,7 @@ export function NotificationPreferencesPage() {
   if (isLoading) {
     return (
       <Page
-        className="max-w-3xl"
+        className="max-w-4xl"
         title={t("notificationPreferences.title", "Notification Preferences")}
         subtitle={t("notificationPreferences.subtitle", "Manage your alert delivery channels")}
       >
@@ -310,7 +310,7 @@ export function NotificationPreferencesPage() {
 
   return (
     <Page
-      className="max-w-3xl"
+      className="max-w-4xl"
       title={t("notificationPreferences.title", "Notification Preferences")}
       subtitle={t("notificationPreferences.subtitle", "Manage your alert delivery channels")}
     >

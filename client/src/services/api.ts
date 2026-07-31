@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { setupAxiosErrorInterceptor } from '@shared/errors';
 import { toast } from 'sonner';
+import { getAuthItem, setAuthItem } from '@/lib/authStorage';
 
 const api = axios.create({
   baseURL: '/api/v1',
@@ -12,7 +13,7 @@ const api = axios.create({
 // Request interceptor — attach JWT token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
+    const token = getAuthItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -49,22 +50,21 @@ setupAxiosErrorInterceptor(api, {
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
+        const refreshToken = getAuthItem('refreshToken');
         if (!refreshToken) throw new Error('No refresh token');
 
         const { data } = await axios.post('/api/v1/auth/refresh', { refreshToken });
         const { accessToken, refreshToken: newRefreshToken } = data.data;
 
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', newRefreshToken);
+        setAuthItem('accessToken', accessToken);
+        setAuthItem('refreshToken', newRefreshToken);
 
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return api(originalRequest);
       } catch {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
+        // Let the shared interceptor's `auth:unauthorized` event
+        // propagate — the useSessionMonitor hook picks it up and
+        // calls the Zustand logout action for a clean state reset.
         throw _clientError;
       }
     }

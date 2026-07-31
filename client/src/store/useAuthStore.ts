@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { authService } from "@/services/authService";
+import { setAuthItem } from "@/lib/authStorage";
 
 export interface AuthUser {
   id: string;
@@ -19,7 +20,7 @@ export interface AuthState {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (
     email: string,
     name: string,
@@ -29,7 +30,7 @@ export interface AuthState {
     clientType: string
   ) => Promise<void>;
   verifyEmail: (email: string, otp: string) => Promise<void>;
-  loginWithGoogle: (idToken: string, tenantName?: string) => Promise<void>;
+  loginWithGoogle: (idToken: string, tenantName?: string, rememberMe?: boolean) => Promise<void>;
   logout: () => void;
   updateUser: (updatedFields: Partial<AuthUser>) => void;
 }
@@ -51,10 +52,10 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
       isAuthenticated: !!getInitialUser(),
 
-      login: async (email, password) => {
+      login: async (email, password, rememberMe = true) => {
         set({ isLoading: true }, false, 'auth/login_request');
         try {
-          const result = await authService.login({ email, password });
+          const result = await authService.login({ email, password }, rememberMe);
           set(
             {
               user: result.user,
@@ -105,10 +106,10 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      loginWithGoogle: async (idToken, tenantName) => {
+      loginWithGoogle: async (idToken, tenantName, rememberMe = true) => {
         set({ isLoading: true }, false, 'auth/google_login_request');
         try {
-          const result = await authService.loginWithGoogle({ idToken, tenantName });
+          const result = await authService.loginWithGoogle({ idToken, tenantName }, rememberMe);
           set(
             {
               user: result.user,
@@ -141,7 +142,7 @@ export const useAuthStore = create<AuthState>()(
           (state) => {
             if (!state.user) return state;
             const updatedUser = { ...state.user, ...updatedFields };
-            localStorage.setItem('user', JSON.stringify(updatedUser));
+            setAuthItem('user', JSON.stringify(updatedUser));
             return { user: updatedUser };
           },
           false,

@@ -9,6 +9,7 @@ import { GoogleLoginButton } from "@/components/auth/GoogleLoginButton";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
+import { getRememberMe } from "@/lib/authStorage";
 
 export function LoginPage() {
   const { t, i18n } = useTranslation();
@@ -19,12 +20,13 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(getRememberMe);
 
   const handleGoogleSuccess = async (idToken: string) => {
     setError("");
     setLoading(true);
     try {
-      await loginWithGoogle(idToken);
+      await loginWithGoogle(idToken, undefined, rememberMe);
       navigate("/dashboard");
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
@@ -49,7 +51,7 @@ export function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      await login(email, password);
+      await login(email, password, rememberMe);
       navigate("/dashboard");
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
@@ -187,6 +189,8 @@ export function LoginPage() {
                   <input
                     type="checkbox"
                     id="remember"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
                     className="rounded border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:ring-0 focus:ring-offset-0 bg-zinc-50 dark:bg-zinc-950 cursor-pointer"
                   />
                   <label

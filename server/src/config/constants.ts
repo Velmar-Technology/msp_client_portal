@@ -12,7 +12,7 @@ export const APP_METADATA = {
   email: 'soporte@velmartech.com.do',
   billingEmail: 'facturacion@velmartech.com.do',
   salesEmail: 'ventas@velmartech.com.do',
-  privacyEmail: 'privacy@velmartech.com.do',
+  privacyEmail: 'privacidad@velmartech.com.do',
   phone: '+1 (849) 925-7586',
   emergencyPhone: '+1 (829) 925-7586',
   supportHours: 'Mon - Fri: 9:00 AM - 4:00 PM EST',
