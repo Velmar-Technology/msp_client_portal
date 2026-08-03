@@ -8,101 +8,101 @@ export interface FAQ {
 export const faqsEn: FAQ[] = [
   {
     id: 1,
-    question: "How do I create a new support ticket?",
-    answer: "To create a support ticket, navigate to the 'Tickets' section in the sidebar menu and click on the 'New Ticket' button. Fill out the form with your issue details, select a category and priority, and submit. You can also track updates and add comments on that same ticket.",
-    category: "tickets"
-  },
-  {
-    id: 2,
-    question: "What is the 1-hour SLA guarantee?",
-    answer: "For critical infrastructure issues and specific hardware warranties under our premium plans, we guarantee a first-response resolution effort or assessment within 1 hour. If we do not respond within this timeframe, the ticket is auto-escalated to tier-2 engineers and service credits may apply.",
+    question: "What is the Velmar MSP Portal?",
+    answer: "The Velmar MSP Portal is your central workspace for managed IT services. From here you can create and track support tickets, manage your service plan and device licenses, activate cloud backups, schedule maintenance, and review your billing — all in one place.",
     category: "general"
   },
   {
+    id: 2,
+    question: "How do I create a new support ticket?",
+    answer: "Navigate to the 'Tickets' section in the sidebar and click the 'New Ticket' button. Fill in a title and description, choose a category (Repair, Warranty, or Service Outage), select a priority and an optional device, then submit. Your ticket is automatically assigned to an available technician, and you can track updates, add comments, and upload attachments from the ticket detail page.",
+    category: "tickets"
+  },
+  {
     id: 3,
-    question: "How do I view and pay my invoices?",
-    answer: "You can view your billing history by clicking on the 'Billing' link in the sidebar or footer. There you will see a history of all invoices, tax breakdowns, and payment statuses. Payments are processed securely via standard institutional protocols configured on your account.",
-    category: "billing"
+    question: "What is the 1-hour SLA and how does it work?",
+    answer: "Warranty and Service Outage tickets receive priority handling: a technician must respond and start working on them within 1 hour of creation. Additionally, these tickets can only be cancelled within 60 minutes of being created. After that window, cancellation is no longer available and the ticket must be worked through the normal process.",
+    category: "general"
   },
   {
     id: 4,
-    question: "How is my server/system configuration monitored?",
-    answer: "Our monitoring agents check server health, CPU load, disk space, and network latency every 60 seconds. If a metric crosses a critical threshold, our system automatically creates a high-priority ticket and alerts your dedicated network administrator.",
-    category: "technical"
+    question: "How do I view and pay my invoices?",
+    answer: "Open the 'Billing' section in the sidebar to see your full invoice history, including amounts, taxes (ITBIS 18%), and payment status. You can pay any open invoice securely with PayPal by clicking 'Pay Now' on the invoice.",
+    category: "billing"
   },
   {
     id: 5,
-    question: "Can I upgrade or downgrade my support plan?",
-    answer: "Yes, you can browse available plans under the 'Plans' tab in the sidebar. To request a plan change, you can submit a ticket under the 'Billing / Plan Update' category, and our account managers will execute the transition at the end of the billing cycle.",
+    question: "How do I change or manage my service plan?",
+    answer: "Go to the 'Plans' page and use the 'Manage Subscription' tab. From there you can add or remove device licenses, switch to a different plan tier, or cancel your subscription. Plan changes and cancellations take effect at the end of your current billing cycle, and payments are processed via PayPal.",
     category: "billing"
   },
   {
     id: 6,
-    question: "What happens if a ticket is marked resolved but the issue persists?",
-    answer: "If the issue returns, you can reopen the ticket within 72 hours by commenting on it directly. After 72 hours, tickets are permanently closed to maintain accurate logging; in that case, please create a new ticket and reference the old ticket number.",
+    question: "How do I cancel a ticket?",
+    answer: "Open the ticket you want to cancel and use the 'Cancel Ticket' action on its detail page. Clients can only cancel their own tickets, and Warranty or Service Outage tickets can only be cancelled within the 1-hour SLA window from when they were created.",
     category: "tickets"
   },
   {
     id: 7,
-    question: "Is multi-factor authentication (MFA) supported?",
-    answer: "Absolutely. Security is our priority. You can configure multi-factor authentication (MFA) from your Profile page to add an extra layer of protection to your client portal account.",
+    question: "How do I activate cloud backup on a device?",
+    answer: "Open the 'Devices' section and generate an activation code for your device slot. Install the MSP Backup Agent on the device, choose 'Enter Activation Code', and enter the temporary 6-digit code. Once activated, your cloud storage is provisioned and you will see your Nextcloud credentials (user and password) to access and manage your backups.",
     category: "technical"
   },
   {
     id: 8,
-    question: "How do I update my profile details?",
-    answer: "Go to the 'Profile' section via the sidebar or by clicking your avatar in the top-right menu. You can update your display name, email, and security settings there.",
-    category: "general"
+    question: "How do I update my profile, notifications, or schedule maintenance?",
+    answer: "Update your name, email, language, password, and avatar from the 'Profile' section. Choose which notification channels you receive (Portal, Email, and WhatsApp) under 'Notifications'. To plan routine checkups on your devices, use the 'Maintenance' section to schedule preventive maintenance with your assigned technician.",
+    category: "technical"
   }
 ];
 
 export const faqsEs: FAQ[] = [
   {
     id: 1,
-    question: "¿Cómo creo un nuevo ticket de soporte?",
-    answer: "Para crear un ticket de soporte, navegue a la sección de 'Tickets' en el menú lateral y haga clic en el botón 'Nuevo Ticket'. Complete el formulario con los detalles del problema, seleccione una categoría y prioridad, y envíelo. También puede realizar el seguimiento de actualizaciones y añadir comentarios en ese mismo ticket.",
-    category: "tickets"
-  },
-  {
-    id: 2,
-    question: "¿Qué es la garantía de SLA de 1 hora?",
-    answer: "Para problemas críticos de infraestructura y garantías de hardware específicas bajo nuestros planes premium, garantizamos un primer esfuerzo de respuesta o evaluación dentro de 1 hora. Si no respondemos en este plazo, el ticket se escala automáticamente a ingenieros de nivel 2 y se pueden aplicar créditos de servicio.",
+    question: "¿Qué es el Portal MSP de Velmar?",
+    answer: "El Portal MSP de Velmar es su espacio de trabajo central para servicios de TI gestionados. Desde aquí puede crear y dar seguimiento a tickets de soporte, gestionar su plan de servicio y licencias de dispositivos, activar respaldos en la nube, programar mantenimientos y revisar su facturación — todo en un solo lugar.",
     category: "general"
   },
   {
+    id: 2,
+    question: "¿Cómo creo un nuevo ticket de soporte?",
+    answer: "Navegue a la sección de 'Tickets' en la barra lateral y haga clic en el botón 'Nuevo Ticket'. Complete un título y descripción, elija una categoría (Reparación, Garantía o Caída de Servicio), seleccione una prioridad y un dispositivo opcional, y envíelo. Su ticket se asigna automáticamente a un técnico disponible, y puede dar seguimiento, añadir comentarios y subir archivos adjuntos desde la página de detalle del ticket.",
+    category: "tickets"
+  },
+  {
     id: 3,
-    question: "¿Cómo puedo ver y pagar mis facturas?",
-    answer: "Puede ver su historial de facturación haciendo clic en el enlace 'Facturación' en la barra lateral o en el pie de página. Allí verá el historial de todas las facturas, desglose de impuestos y estados de pago. Los pagos se procesan de forma segura mediante protocolos institucionales estándar configurados en su cuenta.",
-    category: "billing"
+    question: "¿Qué es el SLA de 1 hora y cómo funciona?",
+    answer: "Los tickets de Garantía y Caída de Servicio reciben manejo prioritario: un técnico debe responder y comenzar a trabajar en ellos dentro de 1 hora desde su creación. Además, estos tickets solo pueden cancelarse dentro de los 60 minutos posteriores a su creación. Pasada esa ventana, la cancelación ya no está disponible y el ticket debe resolverse mediante el proceso normal.",
+    category: "general"
   },
   {
     id: 4,
-    question: "¿Cómo se monitorea la configuración de mi servidor/sistema?",
-    answer: "Nuestros agentes de monitoreo verifican la salud del servidor, la carga de la CPU, el espacio en disco y la latencia de la red cada 60 segundos. Si alguna métrica supera un umbral crítico, nuestro sistema genera automáticamente un ticket de alta prioridad y alerta a su administrador de red dedicado.",
-    category: "technical"
+    question: "¿Cómo puedo ver y pagar mis facturas?",
+    answer: "Abra la sección de 'Facturación' en la barra lateral para ver el historial completo de sus facturas, incluyendo montos, impuestos (ITBIS 18%) y estado de pago. Puede pagar cualquier factura pendiente de forma segura con PayPal haciendo clic en 'Pagar Ahora' en la factura.",
+    category: "billing"
   },
   {
     id: 5,
-    question: "¿Puedo actualizar o bajar de categoría mi plan de soporte?",
-    answer: "Sí, puede explorar los planes disponibles en la pestaña 'Planes' en la barra lateral. Para solicitar un cambio de plan, puede enviar un ticket en la categoría 'Facturación / Actualización de Plan', y nuestros gerentes de cuenta realizarán la transición al final del ciclo de facturación.",
+    question: "¿Cómo cambio o gestiono mi plan de servicio?",
+    answer: "Vaya a la página de 'Planes' y use la pestaña 'Gestionar Suscripción'. Desde allí puede agregar o eliminar licencias de dispositivos, cambiar a un nivel de plan diferente o cancelar su suscripción. Los cambios de plan y cancelaciones tienen efecto al final de su ciclo de facturación actual, y los pagos se procesan mediante PayPal.",
     category: "billing"
   },
   {
     id: 6,
-    question: "¿Qué sucede si un ticket se marca como resuelto pero el problema persiste?",
-    answer: "Si el problema vuelve a ocurrir, puede reabrir el ticket dentro de las 72 horas comentando directamente en él. Después de 72 horas, los tickets se cierran permanentemente para mantener un registro preciso; en ese caso, cree un nuevo ticket y haga referencia al número del ticket anterior.",
+    question: "¿Cómo cancelo un ticket?",
+    answer: "Abra el ticket que desea cancelar y use la acción 'Cancelar Ticket' en su página de detalle. Los clientes solo pueden cancelar sus propios tickets, y los tickets de Garantía o Caída de Servicio solo pueden cancelarse dentro de la ventana de SLA de 1 hora desde su creación.",
     category: "tickets"
   },
   {
     id: 7,
-    question: "¿Se admite la autenticación de múltiples factores (MFA)?",
-    answer: "Absolutamente. La seguridad es nuestra prioridad. Puede configurar la autenticación de múltiples factores (MFA) desde su página de Perfil para agregar una capa adicional de protección a su cuenta de portal de cliente.",
+    question: "¿Cómo activo el respaldo en la nube en un dispositivo?",
+    answer: "Abra la sección de 'Dispositivos' y genere un código de activación para la ranura de su dispositivo. Instale el Agente de Respaldo MSP en el equipo, elija 'Ingresar Código de Activación' e introduzca el código temporal de 6 dígitos. Una vez activado, su almacenamiento en la nube es aprovisionado y verá sus credenciales de Nextcloud (usuario y clave) para acceder y gestionar sus respaldos.",
     category: "technical"
   },
   {
     id: 8,
-    question: "¿Cómo actualizo los detalles de mi perfil?",
-    answer: "Vaya a la sección 'Perfil' a través de la barra lateral o haciendo clic en su avatar en el menú superior derecho. Puede actualizar su nombre para mostrar, correo electrónico y configuración de seguridad allí.",
-    category: "general"
+    question: "¿Cómo actualizo mi perfil, notificaciones o programo mantenimientos?",
+    answer: "Actualice su nombre, correo electrónico, idioma, contraseña y avatar desde la sección de 'Perfil'. Elija qué canales de notificación desea recibir (Portal, Email y WhatsApp) en 'Notificaciones'. Para planificar revisiones rutinarias de sus equipos, use la sección de 'Mantenimiento' y programe mantenimiento preventivo con su técnico asignado.",
+    category: "technical"
   }
 ];
