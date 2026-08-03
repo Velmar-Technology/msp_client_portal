@@ -96,8 +96,10 @@ export class SubscriptionService {
     if (!paypalPlanId) {
       const price = planDetails.price;
       const priceMultiplier = billingCycle === 'annual' ? 12 * 0.8 : 1;
-      const unitPrice = Math.round(price * priceMultiplier * 100) / 100;
-      
+      const subtotal = Math.round(price * priceMultiplier * 100) / 100;
+      const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
+      const unitPriceWithTax = Math.round((subtotal + tax) * 100) / 100;
+
       const planName = `${getLocalizedValue(planDetails.name)} Plan - ${billingCycle === 'annual' ? 'Annual' : 'Monthly'}`;
       const planDesc = `${getLocalizedValue(planDetails.description) || 'Recurring subscription plan'}`;
 
@@ -105,7 +107,7 @@ export class SubscriptionService {
         'MSP-HELPDESK-SUPPORT',
         planName,
         planDesc,
-        unitPrice,
+        unitPriceWithTax,
         billingCycle
       );
 
