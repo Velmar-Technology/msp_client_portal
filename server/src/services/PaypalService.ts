@@ -5,12 +5,13 @@ import { Invoice } from '../types';
 
 export class PaypalService {
   public get baseUrl(): string {
-    if (env.PAYPAL_API_URL) {
+    if (env.PAYPAL_API_URL && env.PAYPAL_API_URL.trim() !== '') {
       return env.PAYPAL_API_URL.replace(/\/+$/, '');
     }
-    return env.NODE_ENV === 'production'
-      ? 'https://api-m.paypal.com'
-      : 'https://api-m.sandbox.paypal.com';
+    const isSandbox = env.NODE_ENV !== 'production' || process.env.PAYPAL_MODE === 'sandbox';
+    return isSandbox
+      ? 'https://api-m.sandbox.paypal.com'
+      : 'https://api-m.paypal.com';
   }
 
   private isMockMode(): boolean {

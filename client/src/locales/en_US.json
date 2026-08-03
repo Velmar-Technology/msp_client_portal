@@ -494,8 +494,8 @@
     "bankAccountsTitle": "CUENTAS BANCARIAS",
     "accountTypeLabel": "Type:",
     "accountNumberLabel": "Account Number:",
-    "typeCorriente": "Corriente (Checking)",
-    "typeAhorro": "Ahorro (Savings)",
+    "typeCorriente": "Corriente",
+    "typeAhorro": "Ahorro",
     "copied": "Copied!",
     "copy": "Copy"
   },

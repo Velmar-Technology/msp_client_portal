@@ -263,9 +263,7 @@ export function usePlansPage() {
         scriptElement.id = scriptId;
         const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID || "test";
         const isMockPaypal = clientId === "test";
-        scriptElement.src = isMockPaypal
-          ? `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD`
-          : `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&vault=true&intent=subscription`;
+        scriptElement.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD`;
         scriptElement.async = true;
         document.body.appendChild(scriptElement);
 
@@ -291,9 +289,6 @@ export function usePlansPage() {
         container.innerHTML = "";
         setPaymentMessage(null);
         try {
-          const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID || "test";
-          const isMockPaypal = clientId === "test";
-
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const buttonConfig: any = {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -307,6 +302,7 @@ export function usePlansPage() {
                   equipmentCount: currentEquipmentCount,
                   billingCycle,
                   paypalOrderId: data.subscriptionID || data.orderID,
+                  paymentMethod: 'card',
                 });
                 setPaymentMessage("Subscription activated successfully!");
                 addToast({
@@ -332,10 +328,7 @@ export function usePlansPage() {
               console.error(err);
               setPaymentMessage("PayPal Checkout encountered an error.");
             },
-          };
-
-          if (isMockPaypal) {
-            buttonConfig.createOrder = async () => {
+            createOrder: async () => {
               if (!acceptedTosRef.current) {
                 addToast({
                   title: "Terms of Service",
@@ -358,33 +351,8 @@ export function usePlansPage() {
                 setPaymentMessage("Failed to prepare checkout.");
                 throw err;
               }
-            };
-          } else {
-            buttonConfig.createSubscription = async () => {
-              if (!acceptedTosRef.current) {
-                addToast({
-                  title: "Terms of Service",
-                  message: "Please accept the Terms of Service before proceeding.",
-                  type: "warning",
-                });
-                throw new Error("Terms of Service not accepted");
-              }
-              setPaymentMessage("Preparing checkout...");
-              try {
-                const response = await subscriptionService.createPaypalSubscription({
-                  plan: currentPlan.id,
-                  equipmentCount: currentEquipmentCount,
-                  billingCycle,
-                });
-                setPaymentMessage("Subscription created. Please approve billing in PayPal window.");
-                return response.subscriptionId;
-              } catch (err) {
-                console.error(err);
-                setPaymentMessage("Failed to prepare checkout.");
-                throw err;
-              }
-            };
-          }
+            },
+          };
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           buttonsInstance = (window as any).paypal.Buttons(buttonConfig);

@@ -41,7 +41,7 @@ const BANK_ACCOUNTS: BankAccountInfo[] = [
     id: "popular",
     name: "Banco Popular",
     accountNumber: "821193257",
-    type: "Corriente (Checking)",
+    type: "Corriente",
     typeKey: "plans.typeCorriente",
     logoBg: "bg-[#003876]",
     borderColor: "border-[#002b66]",
@@ -58,7 +58,7 @@ const BANK_ACCOUNTS: BankAccountInfo[] = [
     id: "banreservas",
     name: "Banreservas",
     accountNumber: "9603579099",
-    type: "Corriente (Checking)",
+    type: "Corriente",
     typeKey: "plans.typeCorriente",
     logoBg: "bg-[#0091DA]",
     borderColor: "border-[#0070a8]",
@@ -66,7 +66,10 @@ const BANK_ACCOUNTS: BankAccountInfo[] = [
     logoSvg: (
       <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current text-white" aria-label="Banreservas Logo">
         <path d="M3 17.5C6 14.5 9 14.5 12 17.5C15 20.5 18 20.5 21 17.5V13.5C18 16.5 15 16.5 12 13.5C9 10.5 6 10.5 3 13.5V17.5Z" />
-        <path d="M3 10.5C6 7.5 9 7.5 12 10.5C15 13.5 18 13.5 21 10.5V6.5C18 9.5 15 9.5 12 6.5C9 3.5 6 3.5 3 6.5V10.5Z" opacity="0.8" />
+        <path
+          d="M3 10.5C6 7.5 9 7.5 12 10.5C15 13.5 18 13.5 21 10.5V6.5C18 9.5 15 9.5 12 6.5C9 3.5 6 3.5 3 6.5V10.5Z"
+          opacity="0.8"
+        />
       </svg>
     ),
   },
@@ -74,11 +77,12 @@ const BANK_ACCOUNTS: BankAccountInfo[] = [
     id: "bhd",
     name: "Banco BHD",
     accountNumber: "29949640016",
-    type: "Ahorro (Savings)",
+    type: "Ahorro",
     typeKey: "plans.typeAhorro",
     logoBg: "bg-[#00875A]",
     borderColor: "border-[#006b47]",
-    badgeBg: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50",
+    badgeBg:
+      "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50",
     logoSvg: (
       <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current text-white" aria-label="Banco BHD Logo">
         <path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.8L18 8v8l-6 3.75L6 16V8l6-3.2z" />
@@ -275,9 +279,7 @@ export function PaymentFields({
                                 {bank.name}
                               </span>
                             </div>
-                            <span
-                              className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${bank.badgeBg}`}
-                            >
+                            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${bank.badgeBg}`}>
                               {t(bank.typeKey) || bank.type}
                             </span>
                           </div>
@@ -287,9 +289,7 @@ export function PaymentFields({
                               <span className="text-[10px] text-zinc-400 font-sans uppercase">
                                 {t("plans.accountNumberLabel") || "No. Cuenta:"}
                               </span>
-                              <span className="font-bold text-zinc-900 dark:text-zinc-100">
-                                {bank.accountNumber}
-                              </span>
+                              <span className="font-bold text-zinc-900 dark:text-zinc-100">{bank.accountNumber}</span>
                             </div>
 
                             <button
