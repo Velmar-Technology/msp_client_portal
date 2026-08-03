@@ -23,7 +23,9 @@ RUN npm run build:packages
 
 # Copy client and build production bundle (invalidates cache for VITE_GOOGLE_CLIENT_ID)
 ARG VITE_GOOGLE_CLIENT_ID
+ARG VITE_APP_VERSION
 ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
+ENV VITE_APP_VERSION=$VITE_APP_VERSION
 
 COPY client ./client
 RUN npm -w client run build

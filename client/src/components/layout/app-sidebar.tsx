@@ -175,6 +175,8 @@ export function AppSidebar() {
 
   const isSpanish = t("dashboard.tableStatus") === "Estado";
 
+  const appVersion = import.meta.env.VITE_APP_VERSION as string | undefined;
+
   return (
     <ShadcnSidebar className="border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
       {/* Header section */}
@@ -209,6 +211,11 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+        {appVersion && (
+          <div className="group-data-[collapsible=icon]:hidden px-3 pb-1 pt-0.5 text-[9px] font-medium text-zinc-400 dark:text-zinc-500">
+            v{appVersion}
+          </div>
+        )}
       </SidebarFooter>
     </ShadcnSidebar>
   );
