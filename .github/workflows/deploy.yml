@@ -80,6 +80,17 @@ jobs:
         env:
           SECRET_VAL: ${{ secrets.VITE_GOOGLE_CLIENT_ID || secrets.GOOGLE_CLIENT_ID }}
 
+      - name: Verify PayPal Client Secret
+        run: |
+          if [ -n "${PAYPAL_SECRET_VAL}" ]; then
+            echo "✅ PayPal client ID secret found for Vite build."
+          else
+            echo "⚠️ WARNING: VITE_PAYPAL_CLIENT_ID secret was not found in GitHub Secrets!"
+            echo "Vite frontend will fall back to the sandbox/test PayPal client ID."
+          fi
+        env:
+          PAYPAL_SECRET_VAL: ${{ secrets.VITE_PAYPAL_CLIENT_ID }}
+
       - name: Build & Push Client Image
         uses: docker/build-push-action@v5
         with:
@@ -89,6 +100,7 @@ jobs:
           build-args: |
             VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID || secrets.GOOGLE_CLIENT_ID }}
             VITE_APP_VERSION=${{ env.CLIENT_VERSION }}
+            VITE_PAYPAL_CLIENT_ID=${{ secrets.VITE_PAYPAL_CLIENT_ID }}
           tags: |
             ghcr.io/${{ env.OWNER_LC }}/msp-helpdesk-client:latest
             ghcr.io/${{ env.OWNER_LC }}/msp-helpdesk-client:${{ github.sha }}
