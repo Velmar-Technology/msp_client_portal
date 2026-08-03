@@ -58,6 +58,15 @@ vi.mock('./PaypalService', () => {
   };
 });
 
+vi.mock('../repositories/UserRepository', () => {
+  return {
+    userRepository: {
+      findById: vi.fn().mockResolvedValue({ id: 'client-1', name: 'John Doe', email: 'john@example.com' }),
+      findByRole: vi.fn().mockResolvedValue([{ id: 'admin-1', name: 'Admin User' }]),
+    },
+  };
+});
+
 vi.mock('./NotificationService', () => {
   return {
     notificationService: {

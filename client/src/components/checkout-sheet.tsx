@@ -1,6 +1,6 @@
-import { useMemo, type SyntheticEvent } from "react";
+import { useMemo, useState, type SyntheticEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Shield } from "lucide-react";
+import { Shield, Copy, Check, Building2 } from "lucide-react";
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { Plan } from "@/services/planService";
@@ -22,6 +22,71 @@ interface CheckoutSheetProps {
   activeSubscriptions: Subscription[];
   getPlanName: (name: string | Record<string, string>) => string;
 }
+
+// Bank Account Information definition for Dominican Banks
+interface BankAccountInfo {
+  id: string;
+  name: string;
+  accountNumber: string;
+  type: string;
+  typeKey: string;
+  logoBg: string;
+  borderColor: string;
+  badgeBg: string;
+  logoSvg: React.ReactNode;
+}
+
+const BANK_ACCOUNTS: BankAccountInfo[] = [
+  {
+    id: "popular",
+    name: "Banco Popular",
+    accountNumber: "821193257",
+    type: "Corriente (Checking)",
+    typeKey: "plans.typeCorriente",
+    logoBg: "bg-[#003876]",
+    borderColor: "border-[#002b66]",
+    badgeBg: "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/50",
+    logoSvg: (
+      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current text-white" aria-label="Banco Popular Logo">
+        <path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zm-9 9h7v7H4v-7zm9 0h7v7h-7v-7z" opacity="0.4" />
+        <path d="M6 6h3v3H6V6zm10 0h2v2h-2V6zM6 16h2v2H6v-2zm9-1h3v3h-3v-3z" />
+        <circle cx="12" cy="12" r="2.5" className="fill-amber-400" />
+      </svg>
+    ),
+  },
+  {
+    id: "banreservas",
+    name: "Banreservas",
+    accountNumber: "9603579099",
+    type: "Corriente (Checking)",
+    typeKey: "plans.typeCorriente",
+    logoBg: "bg-[#0091DA]",
+    borderColor: "border-[#0070a8]",
+    badgeBg: "bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800/50",
+    logoSvg: (
+      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current text-white" aria-label="Banreservas Logo">
+        <path d="M3 17.5C6 14.5 9 14.5 12 17.5C15 20.5 18 20.5 21 17.5V13.5C18 16.5 15 16.5 12 13.5C9 10.5 6 10.5 3 13.5V17.5Z" />
+        <path d="M3 10.5C6 7.5 9 7.5 12 10.5C15 13.5 18 13.5 21 10.5V6.5C18 9.5 15 9.5 12 6.5C9 3.5 6 3.5 3 6.5V10.5Z" opacity="0.8" />
+      </svg>
+    ),
+  },
+  {
+    id: "bhd",
+    name: "Banco BHD",
+    accountNumber: "29949640016",
+    type: "Ahorro (Savings)",
+    typeKey: "plans.typeAhorro",
+    logoBg: "bg-[#00875A]",
+    borderColor: "border-[#006b47]",
+    badgeBg: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50",
+    logoSvg: (
+      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current text-white" aria-label="Banco BHD Logo">
+        <path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.8L18 8v8l-6 3.75L6 16V8l6-3.2z" />
+        <path d="M12 8a3 3 0 100 6 3 3 0 000-6zm0 1.8a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z" />
+      </svg>
+    ),
+  },
+];
 
 // 1. High-Density Order Summary Sub-component
 interface OrderSummaryProps {
@@ -94,6 +159,15 @@ export function PaymentFields({
   handleProcessSubscription,
 }: PaymentFieldsProps) {
   const { t } = useTranslation();
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopy = (text: string, id: string) => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -169,30 +243,117 @@ export function PaymentFields({
               </div>
             </TabsContent>
 
-            <TabsContent value="transfer" className="mt-0">
-              <div className="text-center py-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-950/10 space-y-3">
-                <p className="text-xs text-zinc-500 px-4">{t("plans.transferInstructions")}</p>
+            <TabsContent value="transfer" className="mt-0 space-y-3">
+              <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-950/10 p-3.5 space-y-3">
+                <p className="text-xs text-zinc-500 text-center leading-normal">
+                  {t("plans.transferInstructions") || "Transfer to any of the following accounts:"}
+                </p>
 
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-2 mx-4 rounded-md space-y-1 text-left text-xs font-mono">
-                  <div className="flex justify-between text-zinc-500">
-                    <span>{t("plans.bankLabel") || "Bank:"}</span>
-                    <span className="text-zinc-900 dark:text-zinc-100 font-medium">{t("plans.bankName")}</span>
-                  </div>
-                  <div className="flex justify-between text-zinc-500">
-                    <span>{t("plans.accountLabel") || "Account:"}</span>
-                    <span className="text-zinc-900 dark:text-zinc-100 font-medium">{t("plans.bankAccount")}</span>
-                  </div>
-                  <div className="flex justify-between text-zinc-500 border-t border-zinc-100 dark:border-zinc-800/80 pt-1 mt-1">
-                    <span>{t("plans.referenceLabel") || "Reference:"}</span>
-                    <span className="text-zinc-900 dark:text-zinc-100 font-bold">{reference}</span>
+                {/* CUENTAS BANCARIAS */}
+                <div className="space-y-2 text-left">
+                  <h4 className="text-[11px] font-bold text-zinc-900 dark:text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
+                    <Building2 className="h-3.5 w-3.5 text-zinc-500" />
+                    {t("plans.bankAccountsTitle") || "CUENTAS BANCARIAS"}
+                  </h4>
+
+                  <div className="space-y-2">
+                    {BANK_ACCOUNTS.map((bank) => {
+                      const isCopied = copiedId === bank.id;
+                      return (
+                        <div
+                          key={bank.id}
+                          className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-2.5 space-y-1.5 shadow-2xs transition-all hover:border-zinc-300 dark:hover:border-zinc-700"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={`h-6 w-6 rounded flex items-center justify-center shrink-0 shadow-2xs ${bank.logoBg} ${bank.borderColor}`}
+                              >
+                                {bank.logoSvg}
+                              </div>
+                              <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                                {bank.name}
+                              </span>
+                            </div>
+                            <span
+                              className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${bank.badgeBg}`}
+                            >
+                              {t(bank.typeKey) || bank.type}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-1 border-t border-zinc-100 dark:border-zinc-800/80 text-xs font-mono">
+                            <div className="flex items-center gap-1 text-zinc-600 dark:text-zinc-400">
+                              <span className="text-[10px] text-zinc-400 font-sans uppercase">
+                                {t("plans.accountNumberLabel") || "No. Cuenta:"}
+                              </span>
+                              <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                                {bank.accountNumber}
+                              </span>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(bank.accountNumber, bank.id)}
+                              className="text-[10px] font-sans flex items-center gap-1 px-1.5 py-0.5 rounded text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                              title={t("plans.copy") || "Copy"}
+                            >
+                              {isCopied ? (
+                                <>
+                                  <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                                  <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                                    {t("plans.copied") || "Copied!"}
+                                  </span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="h-3 w-3" />
+                                  <span>{t("plans.copy") || "Copy"}</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
-                <div className="px-4">
+                {/* Reference Box */}
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-2.5 rounded-lg flex items-center justify-between text-xs font-mono">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-zinc-500 font-sans uppercase font-medium">
+                      {t("plans.referenceLabel") || "Reference:"}
+                    </span>
+                    <span className="font-bold text-zinc-900 dark:text-zinc-100">{reference}</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(reference, "reference")}
+                    className="text-[10px] font-sans flex items-center gap-1 px-1.5 py-0.5 rounded text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                  >
+                    {copiedId === "reference" ? (
+                      <>
+                        <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                          {t("plans.copied") || "Copied!"}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3 w-3" />
+                        <span>{t("plans.copy") || "Copy"}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <div>
                   <button
                     onClick={handleProcessSubscription}
                     disabled={subscribeLoading}
-                    className="w-full bg-zinc-900 dark:bg-zinc-100 hover:opacity-90 text-white dark:text-zinc-900 py-1.5 rounded text-xs font-medium transition-opacity disabled:opacity-50 cursor-pointer"
+                    className="w-full bg-zinc-900 dark:bg-zinc-100 hover:opacity-90 text-white dark:text-zinc-900 py-1.5 rounded text-xs font-medium transition-opacity disabled:opacity-50 cursor-pointer shadow-2xs"
                   >
                     {subscribeLoading
                       ? t("plans.processing") || "Processing..."

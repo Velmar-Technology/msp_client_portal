@@ -490,7 +490,14 @@
     "confirmBankTransferIntent": "Confirm Bank Transfer Intent",
     "bankLabel": "Bank:",
     "accountLabel": "Account:",
-    "referenceLabel": "Reference:"
+    "referenceLabel": "Reference:",
+    "bankAccountsTitle": "CUENTAS BANCARIAS",
+    "accountTypeLabel": "Type:",
+    "accountNumberLabel": "Account Number:",
+    "typeCorriente": "Corriente (Checking)",
+    "typeAhorro": "Ahorro (Savings)",
+    "copied": "Copied!",
+    "copy": "Copy"
   },
   "devices": {
     "title": "Devices",

@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => {
     subUpdatePlan: vi.fn(),
     subUpdateStatus: vi.fn(),
     userFindById: vi.fn(),
+    userFindByRole: vi.fn().mockResolvedValue([]),
     planFindById: vi.fn(),
     invoiceFindByNumber: vi.fn(),
     invoiceCreate: vi.fn(),
@@ -75,6 +76,7 @@ vi.mock('../repositories/UserRepository', () => {
   return {
     userRepository: {
       findById: mocks.userFindById,
+      findByRole: mocks.userFindByRole,
     },
   };
 });
@@ -272,7 +274,7 @@ describe('SubscriptionService', () => {
       expect(result).toEqual(mockCreatedSub);
     });
 
-    it('should throw 400 AppError when client subscribes without paypalOrderId', async () => {
+    it('should throw 400 AppError when client subscribes without paypalOrderId and without transfer paymentMethod', async () => {
       const mockUser = {
         id: 'client-123',
         tenant_id: 'tenant-123',
@@ -286,6 +288,47 @@ describe('SubscriptionService', () => {
         statusCode: 400,
         message: 'PayPal order ID is required for checkout',
       });
+    });
+
+    it('should successfully create subscription and PENDING invoice when paymentMethod is transfer without paypalOrderId', async () => {
+      const mockUser = {
+        id: 'client-123',
+        tenant_id: 'tenant-123',
+        role: 'CLIENT',
+      };
+      const mockCreatedSub = {
+        id: 'sub-99',
+        client_id: 'client-123',
+        service_name: 'Velmar Premium Plan (Monthly)',
+        plan: input.plan,
+        equipment_count: input.equipmentCount,
+        tenant_id: 'tenant-123',
+      };
+      const mockPlan = {
+        id: 'PREMIUM',
+        name: 'Premium Support',
+        price: 1299,
+      };
+
+      mocks.userFindById.mockResolvedValue(mockUser);
+      mocks.subCreate.mockResolvedValue(mockCreatedSub);
+      mocks.planFindById.mockResolvedValue(mockPlan);
+      mocks.invoiceFindByNumber.mockResolvedValue(null);
+      mocks.invoiceCreate.mockResolvedValue({ id: 'inv-123', status: 'PENDING' });
+
+      const result = await subscriptionService.createSubscription(
+        { ...input, paymentMethod: 'transfer' },
+        'client-123',
+        'tenant-123'
+      );
+
+      expect(mocks.userFindById).toHaveBeenCalledWith('client-123');
+      expect(mocks.paypalGetOrder).not.toHaveBeenCalled();
+      expect(mocks.invoiceCreate).toHaveBeenCalledWith(expect.objectContaining({
+        client_id: 'client-123',
+        status: 'PENDING',
+      }));
+      expect(result).toEqual(mockCreatedSub);
     });
 
     it('should throw 400 AppError when PayPal payment was not completed', async () => {

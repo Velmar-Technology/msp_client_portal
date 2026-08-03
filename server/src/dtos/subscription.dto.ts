@@ -8,6 +8,7 @@ export const CreateSubscriptionDTO = z.object({
   clientId: z.string().uuid('Invalid client ID format').optional(),
   billingCycle: z.enum(['monthly', 'annual']).default('monthly').optional(),
   paypalOrderId: z.string().optional(),
+  paymentMethod: z.enum(['card', 'transfer']).optional(),
 });
 export type CreateSubscriptionInput = z.infer<typeof CreateSubscriptionDTO>;
 

@@ -8,6 +8,7 @@ import { Invoice, UserRole, InvoiceStatus } from '../types';
 import { paypalService } from './PaypalService';
 import { notificationService } from './NotificationService';
 import { generateInvoicePdf } from '../utils/pdfGenerator';
+import { logger } from '../utils/logger';
 
 export class InvoiceService {
   async getClientInvoices(tenantId: string, userRole: UserRole, page = 1, limit = 20): Promise<{ invoices: Invoice[]; total: number }> {
@@ -57,7 +58,7 @@ export class InvoiceService {
       throw AppError.internal('Failed to update invoice status in database');
     }
 
-    // Trigger in-app notification
+    // Trigger in-app notification to client
     await notificationService.createInAppNotification({
       userId: invoice.client_id,
       title: 'Payment Received',
@@ -66,6 +67,25 @@ export class InvoiceService {
       type: 'INVOICE_PAID',
       tenantId: invoice.tenant_id,
     });
+
+    // Trigger in-app notification to all Admin users
+    try {
+      const adminUsers = await userRepository.findByRole(UserRole.ADMIN);
+      const clientUser = await userRepository.findById(invoice.client_id);
+      const clientName = clientUser?.name || 'A customer';
+      for (const admin of adminUsers) {
+        await notificationService.createInAppNotification({
+          userId: admin.id,
+          title: 'Invoice Payment Received',
+          message: `${clientName} paid $${Number(invoice.total).toFixed(2)} for invoice ${invoice.invoice_number}.`,
+          link: '/billing',
+          type: 'INVOICE_PAID_ADMIN',
+          tenantId: invoice.tenant_id,
+        });
+      }
+    } catch (err) {
+      logger.error('Failed to notify admin of payment success:', err);
+    }
 
     return updatedInvoice;
   }

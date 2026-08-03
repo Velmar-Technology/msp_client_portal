@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { Download, CreditCard, Loader2 } from "lucide-react";
+import { Download, CreditCard, Loader2, Shield } from "lucide-react";
 import { Page } from "@/components/Page";
 import {
   AlertDialog,
@@ -42,7 +42,11 @@ const PayModal = ({
   const [isSuccess, setIsSuccess] = useState(false);
 
   useEffect(() => {
-    if (!isOpen || !invoice) return;
+    if (!isOpen || !invoice) {
+      setPaymentMessage(null);
+      setIsSuccess(false);
+      return;
+    }
 
     let scriptElement: HTMLScriptElement | null = null;
     let buttonsInstance: any = null;
@@ -68,57 +72,60 @@ const PayModal = ({
 
       if (!(window as any).paypal) {
         console.error("PayPal SDK failed to load");
-        setPaymentMessage(t("billing.paymentError"));
+        setPaymentMessage(t("billing.paymentError") || "PayPal SDK failed to load");
         return;
       }
 
-      const container = document.getElementById("paypal-button-container");
+      const container = document.getElementById("paypal-invoice-pay-container");
       if (container) {
         container.innerHTML = "";
         try {
           buttonsInstance = (window as any).paypal.Buttons({
             createOrder: async () => {
-              setPaymentMessage(t("billing.paymentProcessing"));
+              setPaymentMessage(t("billing.paymentProcessing") || "Preparing checkout...");
               try {
                 const { orderId } = await invoiceService.createPaypalOrder(invoice!.id);
                 return orderId;
               } catch (err) {
                 console.error(err);
-                setPaymentMessage(t("billing.paymentError"));
+                setPaymentMessage(t("billing.paymentError") || "Failed to create order");
                 throw err;
               }
             },
             onApprove: async (data: any) => {
-              setPaymentMessage(t("billing.paymentProcessing"));
+              setPaymentMessage(t("billing.paymentProcessing") || "Processing payment...");
               try {
                 const response = await invoiceService.capturePaypalOrder(invoice!.id, data.orderID);
                 if (response.success) {
                   setIsSuccess(true);
-                  setPaymentMessage(t("billing.paymentSuccess"));
+                  setPaymentMessage(t("billing.paymentSuccess") || "Payment approved!");
                   onSuccess();
                 } else {
-                  setPaymentMessage(t("billing.paymentError"));
+                  setPaymentMessage(t("billing.paymentError") || "Payment verification failed");
                 }
               } catch (err) {
                 console.error(err);
-                setPaymentMessage(t("billing.paymentError"));
+                setPaymentMessage(t("billing.paymentError") || "Payment verification failed");
               }
             },
             onError: (err: any) => {
               console.error(err);
-              setPaymentMessage(t("billing.paymentError"));
+              setPaymentMessage(t("billing.paymentError") || "PayPal Checkout error");
             },
           });
-          buttonsInstance.render("#paypal-button-container");
+          buttonsInstance.render("#paypal-invoice-pay-container");
         } catch (err) {
           console.error("Failed to render PayPal buttons", err);
         }
       }
     }
 
-    initializePaypal();
+    const timer = setTimeout(() => {
+      initializePaypal();
+    }, 100);
 
     return () => {
+      clearTimeout(timer);
       if (buttonsInstance && buttonsInstance.close) {
         try {
           buttonsInstance.close();
@@ -133,51 +140,100 @@ const PayModal = ({
 
   return (
     <AlertDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <AlertDialogContent className="sm:max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl p-6 text-zinc-900 dark:text-zinc-100">
-        <AlertDialogHeader>
-          <AlertDialogTitle className="text-lg font-bold">
-            {isSuccess ? t("billing.paymentSuccessTitle") : t("billing.payNow")}
+      <AlertDialogContent className="sm:max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl p-5 text-zinc-900 dark:text-zinc-100">
+        <AlertDialogHeader className="pb-3 border-b border-zinc-200 dark:border-zinc-800">
+          <AlertDialogTitle className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
+            {isSuccess ? t("billing.paymentSuccessTitle") || "Payment Approved" : t("billing.payNow") || "Pay Invoice"}
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-zinc-500 dark:text-zinc-400 text-sm mt-1 leading-normal">
+          <AlertDialogDescription className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 leading-normal">
             {isSuccess
               ? t("billing.paymentSuccessDesc", { amount: Number(invoice.total).toFixed(2) })
               : t("billing.payModalDesc", { amount: Number(invoice.total).toFixed(2), number: invoice.invoice_number })}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        <div className="my-6">
-          {!isSuccess && (
-            <div
-              id="paypal-button-container"
-              className="my-3 min-h-37.5 flex items-center justify-center bg-zinc-50/10 rounded-lg p-4 border border-zinc-200 dark:border-zinc-800 border-dashed"
-            >
-              <span className="text-xs text-zinc-450 dark:text-zinc-500">
-                {t("plans.loadingPayPal") || "Loading PayPal..."}
+        <div className="py-3 space-y-3">
+          {/* Invoice Summary Card */}
+          <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 p-3 text-xs space-y-2">
+            <div className="flex justify-between items-start pb-2 border-b border-zinc-200/60 dark:border-zinc-800/60">
+              <div>
+                <p className="font-semibold text-zinc-900 dark:text-zinc-100 font-mono">{invoice.invoice_number}</p>
+                <p className="text-[10px] text-zinc-500 mt-0.5">
+                  {t("billing.tableDueDate") || "Due Date"}: {new Date(invoice.due_date).toLocaleDateString()}
+                </p>
+              </div>
+              <span className="font-semibold text-zinc-900 dark:text-zinc-100 font-mono">
+                ${Number(invoice.amount).toFixed(2)}
               </span>
+            </div>
+
+            <div className="flex justify-between text-zinc-500 py-0.5">
+              <span>{t("plans.taxes") || "Taxes (18%)"}</span>
+              <span className="font-mono">${Number(invoice.tax_amount).toFixed(2)}</span>
+            </div>
+
+            <div className="border-t border-zinc-200 dark:border-zinc-800 pt-2 flex justify-between items-center text-sm font-semibold">
+              <span className="text-zinc-950 dark:text-zinc-50">{t("plans.total") || "Total"}</span>
+              <span className="text-primary font-bold font-mono">${Number(invoice.total).toFixed(2)}</span>
+            </div>
+          </div>
+
+          {!isSuccess && (
+            <div className="space-y-3">
+              <p className="text-xs text-zinc-500 leading-normal">
+                {t("plans.paypalPaymentNotice") ||
+                  "Please complete your checkout payment securely using PayPal. Once approved, your invoice will mark as paid immediately."}
+              </p>
+
+              {paymentMessage && (
+                <div
+                  className={`py-1.5 px-3 rounded text-[11px] font-medium text-center border ${
+                    paymentMessage.includes("success") || paymentMessage.includes("approved")
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/50"
+                      : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/50 animate-pulse"
+                  }`}
+                >
+                  {paymentMessage}
+                </div>
+              )}
+
+              <div
+                id="paypal-invoice-pay-container"
+                className="my-2 min-h-[120px] flex items-center justify-center bg-zinc-50/50 dark:bg-zinc-900/30 rounded-lg p-3 border border-zinc-200 dark:border-zinc-800 border-dashed"
+              >
+                <span className="text-xs text-zinc-400">
+                  {t("plans.loadingPayPalCheckout") || "Loading PayPal Checkout..."}
+                </span>
+              </div>
             </div>
           )}
 
-          {paymentMessage && (
-            <p
-              className={`text-xs font-semibold text-center mt-3 p-2.5 rounded-lg border ${
-                isSuccess
-                  ? "bg-green-500/10 border-green-500/20 text-green-700 dark:text-green-400"
-                  : paymentMessage === t("billing.paymentProcessing")
-                    ? "bg-zinc-500/10 border-zinc-500/20 text-zinc-700 dark:text-zinc-300"
-                    : "bg-red-500/10 border-red-500/20 text-red-700 dark:text-red-400"
-              }`}
-            >
+          {isSuccess && paymentMessage && (
+            <div className="py-2 px-3 bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/50 rounded-lg text-xs font-semibold text-center">
               {paymentMessage}
-            </p>
+            </div>
           )}
+
+          {/* Security Badge */}
+          <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-950/20 p-2.5 flex items-start gap-2.5">
+            <Shield className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+            <div className="text-left">
+              <p className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100">
+                {t("plans.encryptedTx") || "Encrypted Transaction"}
+              </p>
+              <p className="text-[10px] text-zinc-500 mt-0.5 leading-normal">
+                {t("plans.militaryGradeSecurity") || "256-bit SSL encryption & secure PayPal gateway processing."}
+              </p>
+            </div>
+          </div>
         </div>
 
-        <AlertDialogFooter className="sm:justify-end gap-2">
+        <AlertDialogFooter className="pt-2 border-t border-zinc-200 dark:border-zinc-800 sm:justify-end gap-2">
           <AlertDialogCancel
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold border border-zinc-200 dark:border-zinc-850 hover:bg-zinc-100 dark:hover:bg-zinc-850 rounded-lg transition-colors cursor-pointer"
+            className="px-4 py-1.5 text-xs font-semibold border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg transition-colors cursor-pointer"
           >
-            {isSuccess ? t("common.close") : t("common.cancel")}
+            {isSuccess ? t("common.close") || "Close" : t("common.cancel") || "Cancel"}
           </AlertDialogCancel>
         </AlertDialogFooter>
       </AlertDialogContent>

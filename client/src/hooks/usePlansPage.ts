@@ -539,13 +539,17 @@ export function usePlansPage() {
         equipmentCount: currentEquipmentCount,
         clientId: isAdmin ? selectedClientId : undefined,
         billingCycle,
+        paymentMethod,
       });
 
+      const isTransfer = paymentMethod === "transfer";
       addToast({
-        title: isAdmin ? "Plan Applied" : "Subscribed Successfully",
-        message: isAdmin
-          ? `Successfully applied the ${getPlanName(currentPlan.name)} plan to the customer.`
-          : `Successfully subscribed to the ${getPlanName(currentPlan.name)} plan.`,
+        title: isTransfer ? "Bank Transfer Intent Confirmed" : (isAdmin ? "Plan Applied" : "Subscribed Successfully"),
+        message: isTransfer
+          ? "Your bank transfer intent has been recorded. An invoice has been generated under your Billing page awaiting payment confirmation."
+          : (isAdmin
+            ? `Successfully applied the ${getPlanName(currentPlan.name)} plan to the customer.`
+            : `Successfully subscribed to the ${getPlanName(currentPlan.name)} plan.`),
         type: "success",
       });
       await fetchActiveSubscriptions();
@@ -560,7 +564,7 @@ export function usePlansPage() {
     } finally {
       setSubscribeLoading(false);
     }
-  }, [currentPlan, isAdmin, acceptedTos, selectedClientId, currentEquipmentCount, billingCycle, getPlanName, addToast, fetchActiveSubscriptions]);
+  }, [currentPlan, isAdmin, acceptedTos, selectedClientId, currentEquipmentCount, billingCycle, paymentMethod, getPlanName, addToast, fetchActiveSubscriptions]);
 
   const handleSendQuote = useCallback(async (e: React.MouseEvent) => {
     e.preventDefault();

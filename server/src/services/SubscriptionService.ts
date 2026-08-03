@@ -7,7 +7,7 @@ import { nextcloudService } from './NextcloudService';
 import { AppError } from '../utils/AppError';
 import { logger } from '../utils/logger';
 import { TAX_RATE } from '../config/constants';
-import { Subscription, SubscriptionPlan, SubscriptionStatus, InvoiceStatus } from '../types';
+import { Subscription, SubscriptionPlan, SubscriptionStatus, InvoiceStatus, UserRole } from '../types';
 import { CreateSubscriptionInput, UpdateSubscriptionInput, SendQuoteInput } from '../dtos/subscription.dto';
 import { sendQuotationEmail } from '../utils/emailService';
 import { paypalService } from './PaypalService';
@@ -156,8 +156,9 @@ export class SubscriptionService {
     }
 
     const billingCycle = data.billingCycle || 'monthly';
+    const isBankTransfer = data.paymentMethod === 'transfer';
 
-    // Validate PayPal payment if not done by Admin
+    // Validate PayPal payment if not done by Admin or Bank Transfer
     let renewalDate = new Date();
     if (billingCycle === 'annual') {
       renewalDate.setFullYear(renewalDate.getFullYear() + 1);
@@ -165,7 +166,7 @@ export class SubscriptionService {
       renewalDate.setMonth(renewalDate.getMonth() + 1);
     }
 
-    if (!byAdmin) {
+    if (!byAdmin && !isBankTransfer) {
       if (!data.paypalOrderId) {
         throw AppError.badRequest('PayPal order ID is required for checkout');
       }
@@ -227,12 +228,9 @@ export class SubscriptionService {
       paypal_order_id: data.paypalOrderId,
     });
 
-    if (byAdmin) {
-      const planDetails = await planRepository.findById(data.plan);
-      if (!planDetails) {
-        throw AppError.notFound('Plan not found');
-      }
-
+    // Create Invoice record (PENDING for admin/bank transfer, PAID for completed card checkout)
+    const planDetails = await planRepository.findById(data.plan);
+    if (planDetails) {
       const price = planDetails.price;
       const equipmentCount = data.equipmentCount ?? 1;
       const priceMultiplier = billingCycle === 'annual' ? 12 * 0.8 : 1;
@@ -249,7 +247,11 @@ export class SubscriptionService {
       }
 
       const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + 30);
+      if (isBankTransfer || byAdmin) {
+        dueDate.setDate(dueDate.getDate() + 30);
+      }
+
+      const invoiceStatus = (byAdmin || isBankTransfer) ? InvoiceStatus.PENDING : InvoiceStatus.PAID;
 
       await invoiceRepository.create({
         invoice_number: invoiceNumber,
@@ -259,51 +261,53 @@ export class SubscriptionService {
         total: total,
         due_date: dueDate,
         tenant_id: tenantId,
+        status: invoiceStatus,
       });
-    } else {
-      // Create PAID invoice record for the client's PayPal checkout payment
-      const planDetails = await planRepository.findById(data.plan);
-      if (planDetails) {
-        const price = planDetails.price;
-        const equipmentCount = data.equipmentCount ?? 1;
-        const priceMultiplier = billingCycle === 'annual' ? 12 * 0.8 : 1;
-        const subtotal = Math.round(price * priceMultiplier * equipmentCount * 100) / 100;
-        const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
-        const total = Math.round((subtotal + tax) * 100) / 100;
-
-        let invoiceNumber = '';
-        while (true) {
-          const rand = String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
-          invoiceNumber = `INV-${new Date().getFullYear()}-${rand}`;
-          const existing = await invoiceRepository.findByInvoiceNumber(invoiceNumber);
-          if (!existing) break;
-        }
-
-        const dueDate = new Date();
-        await invoiceRepository.create({
-          invoice_number: invoiceNumber,
-          client_id: clientId,
-          amount: subtotal,
-          tax_amount: tax,
-          total: total,
-          due_date: dueDate,
-          tenant_id: tenantId,
-          status: InvoiceStatus.PAID,
-        });
-      }
     }
 
-    // Trigger in-app notification for subscription activation
+    // Trigger in-app notification for subscription or bank transfer intent
+    const notifTitle = isBankTransfer ? 'Bank Transfer Intent Received' : 'Subscription Activated';
+    const notifMsg = isBankTransfer
+      ? `Your bank transfer request for ${subscription.service_name} was received and an invoice is awaiting payment confirmation.`
+      : `Your subscription to ${subscription.service_name} is now active.`;
+
     await notificationService.createInAppNotification({
       userId: clientId,
-      title: 'Subscription Activated',
-      message: `Your subscription to ${subscription.service_name} is now active.`,
-      type: 'SUBSCRIPTION_ACTIVATED_SUCCESS',
+      title: notifTitle,
+      message: notifMsg,
+      type: isBankTransfer ? 'INVOICE_CREATED' : 'SUBSCRIPTION_ACTIVATED_SUCCESS',
       link: '/billing',
       tenantId,
     }).catch((err) => {
       logger.error('Failed to create in-app notification for subscription activation:', { err });
     });
+
+    // Notify all Admin users about subscription activation or bank transfer intent
+    if (!byAdmin) {
+      try {
+        const adminUsers = await userRepository.findByRole(UserRole.ADMIN);
+        const clientUser = await userRepository.findById(clientId);
+        const clientName = clientUser?.name || 'A customer';
+
+        const adminNotifTitle = isBankTransfer ? 'New Bank Transfer Intent' : 'Subscription Payment Received';
+        const adminNotifMsg = isBankTransfer
+          ? `${clientName} registered a bank transfer intent for ${subscription.service_name}. Awaiting payment confirmation.`
+          : `${clientName} completed payment for subscription ${subscription.service_name}.`;
+
+        for (const admin of adminUsers) {
+          await notificationService.createInAppNotification({
+            userId: admin.id,
+            title: adminNotifTitle,
+            message: adminNotifMsg,
+            link: '/billing',
+            type: isBankTransfer ? 'BANK_TRANSFER_INTENT_ADMIN' : 'SUBSCRIPTION_PAID_ADMIN',
+            tenantId,
+          });
+        }
+      } catch (err) {
+        logger.error('Failed to notify admin of subscription payment:', err);
+      }
+    }
 
     return subscription;
   }
