@@ -217,7 +217,9 @@
     "tableDevice": "Dispositivo",
     "noDevice": "—",
     "modalDeviceLabel": "Dispositivo (Opcional)",
-    "modalDevicePlaceholder": "Seleccionar un dispositivo..."
+    "modalDevicePlaceholder": "Seleccionar un dispositivo...",
+    "modalDeviceLoading": "Cargando dispositivos...",
+    "modalDeviceLoadError": "No se pudieron cargar tus dispositivos. Intenta recargar la página."
   },
   "ticketDetail": {
     "backToTickets": "Volver a Tickets",

@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => {
     equipCreate: vi.fn(),
     equipUpdate: vi.fn(),
     equipFindAllWithDetails: vi.fn(),
+    equipFindActiveByClient: vi.fn(),
     planFindById: vi.fn(),
     ncProvisionUser: vi.fn(),
     ncDeleteUser: vi.fn(),
@@ -33,6 +34,7 @@ vi.mock('../repositories/EquipmentRepository', () => {
       create: mocks.equipCreate,
       update: mocks.equipUpdate,
       findAllWithDetails: mocks.equipFindAllWithDetails,
+      findActiveByClient: mocks.equipFindActiveByClient,
     },
   };
 });
@@ -238,6 +240,51 @@ describe('EquipmentService', () => {
 
       const result = await equipmentService.deactivateSlot(subId, 0, tenantId, true);
       expect(result.status).toBe('PENDING_ACTIVATION');
+    });
+  });
+
+  describe('getActiveDevicesForClient', () => {
+    it('should delegate to findActiveByClient with the client id and tenant id', async () => {
+      const clientId = 'client-123';
+      const mockDevices = [
+        {
+          id: 'slot-1',
+          subscription_id: subId,
+          slot_index: 0,
+          status: 'ACTIVE',
+          device_name: 'Workstation Alpha',
+          tenant_id: tenantId,
+        },
+      ];
+
+      mocks.equipFindActiveByClient.mockResolvedValue(mockDevices);
+
+      const result = await equipmentService.getActiveDevicesForClient(clientId, tenantId);
+
+      expect(mocks.equipFindActiveByClient).toHaveBeenCalledWith(clientId, tenantId);
+      expect(result).toHaveLength(1);
+      expect(result[0].device_name).toBe('Workstation Alpha');
+    });
+
+    it('should surface devices for EXPIRING subscriptions (filtered by repository)', async () => {
+      const clientId = 'client-123';
+      const expiringDevices = [
+        {
+          id: 'slot-expiring',
+          subscription_id: 'sub-expiring',
+          slot_index: 0,
+          status: 'ACTIVE',
+          device_name: 'Expiring Plan Device',
+          tenant_id: tenantId,
+        },
+      ];
+
+      mocks.equipFindActiveByClient.mockResolvedValue(expiringDevices);
+
+      const result = await equipmentService.getActiveDevicesForClient(clientId, tenantId);
+
+      expect(result).toEqual(expiringDevices);
+      expect(mocks.equipFindActiveByClient).toHaveBeenCalledWith(clientId, tenantId);
     });
   });
 

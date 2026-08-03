@@ -217,7 +217,9 @@
     "tableDevice": "Device",
     "noDevice": "—",
     "modalDeviceLabel": "Device (Optional)",
-    "modalDevicePlaceholder": "Select a device..."
+    "modalDevicePlaceholder": "Select a device...",
+    "modalDeviceLoading": "Loading devices...",
+    "modalDeviceLoadError": "Couldn't load your devices. Try refreshing the page."
   },
   "ticketDetail": {
     "backToTickets": "Back to Tickets",

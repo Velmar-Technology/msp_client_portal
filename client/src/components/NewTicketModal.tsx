@@ -20,19 +20,31 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
   const [newPriority, setNewPriority] = useState('MEDIUM');
   const [selectedEquipmentId, setSelectedEquipmentId] = useState('');
   const [devices, setDevices] = useState<SubscriptionEquipment[]>([]);
+  const [devicesLoading, setDevicesLoading] = useState(true);
+  const [devicesFailed, setDevicesFailed] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     async function loadDevices() {
       try {
         const result = await equipmentService.getMyDevices();
-        setDevices(result);
+        if (!cancelled) {
+          setDevices(result);
+          setDevicesFailed(false);
+        }
       } catch (err) {
         console.error('Failed to load devices for ticket modal', err);
+        if (!cancelled) setDevicesFailed(true);
+      } finally {
+        if (!cancelled) setDevicesLoading(false);
       }
     }
     loadDevices();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -137,21 +149,27 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
               </select>
             </div>
           </div>
-          {devices.length > 0 && (
+          {(devicesLoading || devicesFailed || devices.length > 0) && (
             <div>
               <label className="block text-label-md text-on-surface mb-1.5">{t('tickets.modalDeviceLabel')}</label>
-              <select
-                value={selectedEquipmentId}
-                onChange={(e) => setSelectedEquipmentId(e.target.value)}
-                className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary cursor-pointer bg-surface-container-lowest text-on-surface"
-              >
-                <option value="">{t('tickets.modalDevicePlaceholder')}</option>
-                {devices.map((device) => (
-                  <option key={device.id} value={device.id}>
-                    {device.device_name || `Device ${device.slot_index + 1}`}
-                  </option>
-                ))}
-              </select>
+              {devicesLoading ? (
+                <div className="text-label-sm text-on-surface-variant animate-pulse">{t('tickets.modalDeviceLoading')}</div>
+              ) : devicesFailed ? (
+                <div className="text-label-sm text-error">{t('tickets.modalDeviceLoadError')}</div>
+              ) : (
+                <select
+                  value={selectedEquipmentId}
+                  onChange={(e) => setSelectedEquipmentId(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary cursor-pointer bg-surface-container-lowest text-on-surface"
+                >
+                  <option value="">{t('tickets.modalDevicePlaceholder')}</option>
+                  {devices.map((device) => (
+                    <option key={device.id} value={device.id}>
+                      {device.device_name || `Device ${device.slot_index + 1}`}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           )}
 
