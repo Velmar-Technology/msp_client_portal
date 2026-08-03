@@ -262,7 +262,6 @@ export function usePlansPage() {
         scriptElement = document.createElement("script");
         scriptElement.id = scriptId;
         const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID || "test";
-        const isMockPaypal = clientId === "test";
         scriptElement.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD`;
         scriptElement.async = true;
         document.body.appendChild(scriptElement);
