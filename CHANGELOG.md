@@ -2,6 +2,71 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.2.0](https://github.com/eapolancovelmar/msp_client_portal/compare/v1.1.0...v1.2.0) (2026-08-03)
+
+
+### Features
+
+* **admin:** add user management page for admin users ([6d0008b](https://github.com/eapolancovelmar/msp_client_portal/commit/6d0008b6d07c03429da8b8b14a80239d775fbe5e))
+* **auth:** add language switcher on login page and fix viewport spacing ([4eb3432](https://github.com/eapolancovelmar/msp_client_portal/commit/4eb3432e372644dad42e325903e20c87b4a3b2eb))
+* **auth:** add session expiry logout and remember me functionality ([cb72873](https://github.com/eapolancovelmar/msp_client_portal/commit/cb7287390690c9c866f5c507a0e76a1f8d247af4))
+* **auth:** implement OTP verification, modern login UI, and global error handling ([3415f6a](https://github.com/eapolancovelmar/msp_client_portal/commit/3415f6aaf35873718e7d724a483541bfea60a284))
+* **billing:** add invoice download capability with brand logo and i18n ([006bcce](https://github.com/eapolancovelmar/msp_client_portal/commit/006bcce8b89088ca09c1b3e726d88b425ce2d3de))
+* **client:** implement notification preferences i18n and layout improvements ([9d04091](https://github.com/eapolancovelmar/msp_client_portal/commit/9d04091bac112dfc4679800269163abfa5617ae3))
+* **devices:** add bulk operations for OTP generation, deactivation, and CSV export ([ab048ee](https://github.com/eapolancovelmar/msp_client_portal/commit/ab048eee9c06b8fae0bbdba00a6db0672a89142b))
+* **devices:** implement i18n support in DevicesPage and fix test mock ([ee9d014](https://github.com/eapolancovelmar/msp_client_portal/commit/ee9d014a4743cd3b3ce46ad060564bce2d879c74))
+* **devices:** move licensed devices and wizard to a dedicated Devices page ([48ab373](https://github.com/eapolancovelmar/msp_client_portal/commit/48ab373fcb74defe2fdccbb31ccd9ab081682287))
+* **devices:** optimize device slot loading, memoize table rows, and restrict client OTP generation ([eb60a99](https://github.com/eapolancovelmar/msp_client_portal/commit/eb60a9976e1cc8f5b9bd94d833e2a8309f495050))
+* **devices:** show nextcloud storage info in modal via actions menu ([0de1059](https://github.com/eapolancovelmar/msp_client_portal/commit/0de105905cccbf6d8ff993a7ffdfd83471bb6d92))
+* **devices:** style page, add search, dropdown actions, skeletons, and sidebar restructuring ([e66442a](https://github.com/eapolancovelmar/msp_client_portal/commit/e66442a8ef5bdcb89beba327db290e0f96a481f1))
+* **financials:** add log expense dialog, identifiers, pagination, and i18n ([f1c5a64](https://github.com/eapolancovelmar/msp_client_portal/commit/f1c5a64b691fe60c4deae0c755a12df1e84dd16b))
+* **i18n:** centralize metadata and add slot revocation translations ([27de160](https://github.com/eapolancovelmar/msp_client_portal/commit/27de160948f1ad97e2fb6d65ed4f0818c5197db4))
+* implement subscription management system with PayPal order integration and PlansPage UI ([d7697c9](https://github.com/eapolancovelmar/msp_client_portal/commit/d7697c93bf40473c1f48f757ed6e54b2572f1f45))
+* **maintenance,routing:** add device maintenance scheduling and localized 404 page ([2a0ea3b](https://github.com/eapolancovelmar/msp_client_portal/commit/2a0ea3bfa65c3599cdd8dc370a38505f43cbac9b))
+* **notification:** integrate sonner toasts, auto-reconnect sse, and fix tenant id ([8f3d35e](https://github.com/eapolancovelmar/msp_client_portal/commit/8f3d35e4e336ff0ea19f4719c987b9689a619334))
+* **payments:** allow PAYPAL_API_URL override for the PayPal base URL ([12ba789](https://github.com/eapolancovelmar/msp_client_portal/commit/12ba7891bac6ca780f4351e33521d87a3a319fff))
+* **plans:** add codification and parameters to plan features ([6805aa5](https://github.com/eapolancovelmar/msp_client_portal/commit/6805aa5ecf148d358280ae866d8e4abc94f7762b))
+* **plans:** add i18n support for subscription dropdown actions ([38ef06b](https://github.com/eapolancovelmar/msp_client_portal/commit/38ef06b633a5624b95e644d065be9ccaa3c14114))
+* **plans:** add i18n Tabs to the Features section of EditPlanModal ([47e1319](https://github.com/eapolancovelmar/msp_client_portal/commit/47e1319ad2d67a3d9f3434c3035ca3732c503abb))
+* **plans:** allow editing and customizing feature parameters during plan edit ([e839eb0](https://github.com/eapolancovelmar/msp_client_portal/commit/e839eb0fb4ccb23738703b06ef4e6c068fe9b4f4))
+* **plans:** conditional payment methods & layout bypass for legal/help pages ([756dbed](https://github.com/eapolancovelmar/msp_client_portal/commit/756dbed35c6adbb39f82d71dc3fa44d38858ef87))
+* **plans:** convert subscription action button to dropdown menu ([c56bc8b](https://github.com/eapolancovelmar/msp_client_portal/commit/c56bc8b547584d011b857b5b51ca84c2c582f893))
+* **plans:** implement full localization and translate user-facing text ([ccc4992](https://github.com/eapolancovelmar/msp_client_portal/commit/ccc49929ce9e9ffe58f1c35b79da61e151a0443b))
+* **plans:** implement recurring paypal subscriptions and automatic renewal ([e18ef8f](https://github.com/eapolancovelmar/msp_client_portal/commit/e18ef8fc52383317d1a56aa6d187d5cc571bb130))
+* **plans:** integrate shadcn tabs in CheckoutSheet ([8cf3af0](https://github.com/eapolancovelmar/msp_client_portal/commit/8cf3af00cafe3320960c667edcdbb400b7f9d626))
+* **plans:** integrate Tabs component for i18n localization in EditPlanModal ([55445ad](https://github.com/eapolancovelmar/msp_client_portal/commit/55445adaa694aa5e8084313be9a23d87cd21b6cf))
+* **subscriptions:** keep cancelled subscriptions active through period end to avoid partial refunds ([6daf8b3](https://github.com/eapolancovelmar/msp_client_portal/commit/6daf8b36bcccb5e75319caccff81163652b42c96))
+* **tickets:** add device filter to client tickets view ([b6fcca7](https://github.com/eapolancovelmar/msp_client_portal/commit/b6fcca7ab6b3ce5c7294acd8c1ea16506dccf569))
+* **tickets:** show device dropdown for expiring plans and harden modal loading ([76ca04c](https://github.com/eapolancovelmar/msp_client_portal/commit/76ca04c1a939c83c9f03cf24e537f155d5789130))
+* **tos:** implement Dominican terms of service and checkout validation ([940e372](https://github.com/eapolancovelmar/msp_client_portal/commit/940e372f4718eb6375dd5a81ed2a6e513c483b71))
+* **ui:** add i18n showingText to DataTable pagination ([453f22e](https://github.com/eapolancovelmar/msp_client_portal/commit/453f22ed3103e62b51d1be18e5295225cb98b679))
+* **ui:** add settings quick-access popover to TopNav ([6c69e19](https://github.com/eapolancovelmar/msp_client_portal/commit/6c69e192fd923a0f2685c6c2e28858b225fc33cb))
+* **ui:** add welcome dialog on signup success and refactor Terms page ([627f4d6](https://github.com/eapolancovelmar/msp_client_portal/commit/627f4d6911531a9097b7f435795048993edf6d60))
+* **ui:** improve accessibility and consistency of icon-only buttons ([2dca552](https://github.com/eapolancovelmar/msp_client_portal/commit/2dca552a12f577e04cf53149ea5499220a7d8d68))
+* **ui:** standardize datatable filtering, pagination, sorting, and design across all consumers ([a1f4b6a](https://github.com/eapolancovelmar/msp_client_portal/commit/a1f4b6a2a02f009c665f34970e40483795aef716))
+* **users:** allow admin to set client type and group bulk action modals ([974a266](https://github.com/eapolancovelmar/msp_client_portal/commit/974a26640bbbbb29f3b548e9e7e365c45aad408a))
+
+
+### Bug Fixes
+
+* **auth:** add missing otp fields to User type ([419e8ac](https://github.com/eapolancovelmar/msp_client_portal/commit/419e8ac1f866355dafb8db9beaa9636a25a9da62))
+* **auth:** logout user when token is invalid or expired ([203c150](https://github.com/eapolancovelmar/msp_client_portal/commit/203c150f1637baea2ea70cb5b46841f4eeb5a568))
+* **client:** resolve build errors in BillingPage, useAuth, and TicketDetailPage ([e45e8fa](https://github.com/eapolancovelmar/msp_client_portal/commit/e45e8faac0f93f4f5fa73602398a30ee90fd99e3))
+* **client:** resolve client typescript compilation errors ([7912859](https://github.com/eapolancovelmar/msp_client_portal/commit/79128591eb9a3df1bc54ee387282dce35d4ec93e))
+* **client:** resolve typescript unused variable and implicit any errors ([d5249e8](https://github.com/eapolancovelmar/msp_client_portal/commit/d5249e8022c42760f4907a979b5460a0d5d5daf9))
+* **devices:** correct activation button label text in wizard ([ee0d32f](https://github.com/eapolancovelmar/msp_client_portal/commit/ee0d32f4400c4142fb418b2f8164852734dbf5f7))
+* **devices:** enforce role restriction for OTP generation in EquipmentService ([31a91bb](https://github.com/eapolancovelmar/msp_client_portal/commit/31a91bb9f653aac4065e831f821dc2d60228ed8b))
+* **financial:** remove unused React import to fix build failure ([d315982](https://github.com/eapolancovelmar/msp_client_portal/commit/d31598205fb5ca9052f3a706d78648df35e18d8f))
+* **maintenance:** allow cross-tenant scheduling for admin and filter target devices ([048697a](https://github.com/eapolancovelmar/msp_client_portal/commit/048697a9cb0f47793f899636f3e061ae3b3c8227))
+* **plans:** add drag handle title attribute in EditPlanModal ([cd237ab](https://github.com/eapolancovelmar/msp_client_portal/commit/cd237abaaa8b317192a11c8b733341f30aadb9ed))
+* **plans:** interpolate parameters in feature catalog dropdown option labels ([edcd8f3](https://github.com/eapolancovelmar/msp_client_portal/commit/edcd8f344bd00e238ad00259860bd95462c23ecf))
+* **plans:** restore placeholder and move button titles in EditPlanModal ([bf392bd](https://github.com/eapolancovelmar/msp_client_portal/commit/bf392bd9ef7922a9fa9dd89960e9d609c50fcdc6))
+* **plans:** restore standard feature placeholder text in EditPlanModal ([0e2e60e](https://github.com/eapolancovelmar/msp_client_portal/commit/0e2e60e03a12282c753379d7851eb81a1347da61))
+* **server:** remove duplicate fields in User interface ([649ab73](https://github.com/eapolancovelmar/msp_client_portal/commit/649ab73da6f70a4b79bc9d6890d4cee564835cc5))
+* **server:** resolve typecheck and compilation errors in auth and equipment ([72ccc68](https://github.com/eapolancovelmar/msp_client_portal/commit/72ccc68043dd1b318a0a6bae81e5a73dbe11b489))
+* **server:** standardize logging, clean up Nextcloud accounts on subscription changes, and enforce tenant scoping ([588616b](https://github.com/eapolancovelmar/msp_client_portal/commit/588616bf692088f084d4db0d6cbfa8a0094a8d7b))
+* **ui:** improve grid layouts and rename sidebar profile group to account ([8dc690a](https://github.com/eapolancovelmar/msp_client_portal/commit/8dc690a405e53943b3878072bd4c7988e9770959))
+
 ## 1.1.0 (2026-06-30)
 
 
