@@ -48,7 +48,7 @@ export function StorageOverview({ storage, loading, t }: StorageOverviewProps) {
         value={
           <div className="flex-1 flex flex-col items-center justify-center text-center py-6">
             <span className="text-xs text-red-600 dark:text-red-400 font-semibold">
-              {t("dashboard.storageError") || "Failed to retrieve storage status"}
+              {t("dashboard.storageError")}
             </span>
           </div>
         }
@@ -120,7 +120,7 @@ export function StorageOverview({ storage, loading, t }: StorageOverviewProps) {
               <span
                 className={`font-semibold ${isOffline ? "text-red-600 dark:text-red-400 animate-pulse" : "text-zinc-800 dark:text-zinc-200"}`}
               >
-                {isOffline ? t("dashboard.offline") : t("dashboard.online") || "Online"}
+                {isOffline ? t("dashboard.offline") : t("dashboard.online")}
               </span>
             </div>
 
