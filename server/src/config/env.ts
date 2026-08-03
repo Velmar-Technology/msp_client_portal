@@ -54,6 +54,7 @@ const envSchema = z.object({
   // PayPal
   PAYPAL_CLIENT_ID: z.string().default(''),
   PAYPAL_CLIENT_SECRET: z.string().default(''),
+  PAYPAL_API_URL: z.string().default(''),
 });
 
 const parsed = envSchema.safeParse(process.env);

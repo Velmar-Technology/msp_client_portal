@@ -4,7 +4,10 @@ import { AppError } from '../utils/AppError';
 import { Invoice } from '../types';
 
 export class PaypalService {
-  private get baseUrl(): string {
+  public get baseUrl(): string {
+    if (env.PAYPAL_API_URL) {
+      return env.PAYPAL_API_URL.replace(/\/+$/, '');
+    }
     return env.NODE_ENV === 'production'
       ? 'https://api-m.paypal.com'
       : 'https://api-m.sandbox.paypal.com';
