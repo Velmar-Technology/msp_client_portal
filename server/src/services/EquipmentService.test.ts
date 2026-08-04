@@ -3,6 +3,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 const mocks = vi.hoisted(() => {
   return {
     subFindById: vi.fn(),
+    subFindAllActive: vi.fn(),
     equipFindBySubscription: vi.fn(),
     equipFindBySlot: vi.fn(),
     equipFindByOtp: vi.fn(),
@@ -21,6 +22,7 @@ vi.mock('../repositories/SubscriptionRepository', () => {
   return {
     subscriptionRepository: {
       findById: mocks.subFindById,
+      findAllActive: mocks.subFindAllActive,
     },
   };
 });
@@ -410,6 +412,7 @@ describe('EquipmentService', () => {
         }
       ];
 
+      mocks.subFindAllActive.mockResolvedValue([]);
       mocks.equipFindAllWithDetails.mockResolvedValue(mockDevices);
 
       const result = await equipmentService.getAllDevicesForAdmin();

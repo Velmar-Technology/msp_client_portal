@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => {
     notificationCreateInApp: vi.fn().mockResolvedValue(null),
     equipmentFindBySubscription: vi.fn().mockResolvedValue([]),
     equipmentUpdate: vi.fn().mockResolvedValue({}),
+    equipmentCreate: vi.fn().mockResolvedValue({}),
     nextcloudDeleteUser: vi.fn().mockResolvedValue(true),
   };
 });
@@ -30,6 +31,7 @@ vi.mock('../repositories/EquipmentRepository', () => {
     equipmentRepository: {
       findBySubscription: mocks.equipmentFindBySubscription,
       update: mocks.equipmentUpdate,
+      create: mocks.equipmentCreate,
     },
   };
 });

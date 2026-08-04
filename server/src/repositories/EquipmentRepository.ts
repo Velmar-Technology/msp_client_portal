@@ -121,14 +121,25 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
         updated_at: subscriptionEquipment.updated_at,
         client_name: users.name,
         client_email: users.email,
+        client_role: users.role,
         service_name: subscriptions.service_name,
         plan: subscriptions.plan,
         tenant_name: tenants.name,
+        subscription_status: subscriptions.status,
       })
       .from(subscriptionEquipment)
       .innerJoin(subscriptions, eq(subscriptionEquipment.subscription_id, subscriptions.id))
       .innerJoin(users, eq(subscriptions.client_id, users.id))
       .innerJoin(tenants, eq(subscriptionEquipment.tenant_id, tenants.id))
+      .where(
+        and(
+          eq(users.role, 'CLIENT'),
+          or(
+            eq(subscriptions.status, 'ACTIVE'),
+            eq(subscriptions.status, 'EXPIRING')
+          )
+        )
+      )
       .orderBy(desc(subscriptionEquipment.created_at));
     return results;
   }

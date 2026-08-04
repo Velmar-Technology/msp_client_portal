@@ -115,6 +115,19 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     return (results[0] as Subscription) || null;
   }
 
+  async findAllActive(): Promise<Subscription[]> {
+    const results = await db
+      .select()
+      .from(subscriptions)
+      .where(
+        or(
+          eq(subscriptions.status, 'ACTIVE'),
+          eq(subscriptions.status, 'EXPIRING')
+        )
+      );
+    return results as Subscription[];
+  }
+
   async getActiveSubscriptionsWithPlan(tenantId?: string): Promise<any[]> {
     const conditions = [
       or(

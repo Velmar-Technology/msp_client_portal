@@ -18,9 +18,11 @@ export interface SubscriptionEquipment {
   updated_at: string;
   client_name?: string;
   client_email?: string;
+  client_role?: string;
   service_name?: string;
   plan?: string;
   tenant_name?: string;
+  subscription_status?: string;
 }
 
 export const equipmentService = {

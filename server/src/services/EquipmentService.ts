@@ -205,6 +205,10 @@ export class EquipmentService {
    * Get all client devices across all subscriptions and tenants (for Admin view).
    */
   async getAllDevicesForAdmin(): Promise<any[]> {
+    const activeSubs = await subscriptionRepository.findAllActive();
+    for (const sub of activeSubs) {
+      await this.getEquipmentSlots(sub.id, sub.tenant_id, true);
+    }
     return equipmentRepository.findAllWithDetails();
   }
 

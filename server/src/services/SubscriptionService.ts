@@ -230,6 +230,16 @@ export class SubscriptionService {
       paypal_order_id: data.paypalOrderId,
     });
 
+    // Initialize equipment slots for the subscription
+    for (let i = 0; i < data.equipmentCount; i++) {
+      await equipmentRepository.create({
+        subscription_id: subscription.id,
+        slot_index: i,
+        status: 'PENDING_ACTIVATION',
+        tenant_id: tenantId,
+      });
+    }
+
     // Create Invoice record (PENDING for admin/bank transfer, PAID for completed card checkout)
     const planDetails = await planRepository.findById(data.plan);
     if (planDetails) {

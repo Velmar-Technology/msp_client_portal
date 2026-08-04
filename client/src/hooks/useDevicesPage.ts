@@ -43,7 +43,7 @@ export function useDevicesPage() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPage(1);
-  }, [searchTerm, selectedClient, selectedPlan, selectedStatus, selectedSubscriptionId]);
+  }, [searchTerm, selectedClient, selectedStatus, selectedSubscriptionId]);
 
   const fetchActiveSubscriptions = useCallback(async () => {
     if (user?.role !== "CLIENT" && !isAdmin) {
@@ -53,7 +53,12 @@ export function useDevicesPage() {
     setLoading(true);
     try {
       if (isAdmin) {
-        const devices = (await equipmentService.getAllDevicesForAdmin()) || [];
+        const rawDevices = (await equipmentService.getAllDevicesForAdmin()) || [];
+        const devices = rawDevices.filter(
+          (d) =>
+            (!d.subscription_status || d.subscription_status === "ACTIVE" || d.subscription_status === "EXPIRING") &&
+            (!d.client_role || d.client_role === "CLIENT")
+        );
         setAdminDevices(devices);
 
         // Group by subscription_id for compatibility with activation wizard / other operations
@@ -318,16 +323,14 @@ export function useDevicesPage() {
     if (isAdmin) {
       const hasSearch = search.length > 0;
       const hasClientFilter = Boolean(selectedClient && selectedClient !== "all");
-      const hasPlanFilter = Boolean(selectedPlan && selectedPlan !== "all");
       const hasStatusFilter = Boolean(selectedStatus && selectedStatus !== "all");
 
-      if (!hasSearch && !hasClientFilter && !hasPlanFilter && !hasStatusFilter) {
+      if (!hasSearch && !hasClientFilter && !hasStatusFilter) {
         return adminDevices || [];
       }
 
       return (adminDevices || []).filter((device) => {
         if (hasClientFilter && device.tenant_id !== selectedClient) return false;
-        if (hasPlanFilter && device.plan !== selectedPlan) return false;
         if (hasStatusFilter && device.status !== selectedStatus) return false;
 
         if (hasSearch) {
@@ -355,7 +358,7 @@ export function useDevicesPage() {
           (device.device_serial && device.device_serial.toLowerCase().includes(search))
       );
     }
-  }, [adminDevices, subscriptionEquipment, activeSub, searchTerm, isAdmin, selectedClient, selectedPlan, selectedStatus]);
+  }, [adminDevices, subscriptionEquipment, activeSub, searchTerm, isAdmin, selectedClient, selectedStatus]);
 
   // Bulk Operations State
   const [selectedDevices, setSelectedDevices] = useState<Partial<SubscriptionEquipment>[]>([]);
