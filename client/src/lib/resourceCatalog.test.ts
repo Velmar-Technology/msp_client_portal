@@ -2,6 +2,7 @@ import { describe, test, expect } from "vitest";
 import {
   normalizePlan,
   filterResourcesByPlan,
+  filterResourcesByOs,
   RESOURCE_CATALOG,
   PLAN_TIERS,
   type PlanTier,
@@ -76,6 +77,37 @@ describe("filterResourcesByPlan", () => {
     expect(ids).toContain("maintenance-guide");
     expect(ids).not.toContain("security-whitepaper");
     expect(ids).not.toContain("network-manual");
+  });
+});
+
+describe("filterResourcesByOs", () => {
+  test("returns all resources when osFilter is ALL", () => {
+    expect(filterResourcesByOs(RESOURCE_CATALOG, "ALL")).toHaveLength(RESOURCE_CATALOG.length);
+  });
+
+  test("filters Windows-specific software while keeping cross-platform items", () => {
+    const winResources = filterResourcesByOs(RESOURCE_CATALOG, "windows");
+    const ids = winResources.map((r) => r.id);
+    expect(ids).toContain("agent-win");
+    expect(ids).not.toContain("agent-macos");
+    expect(ids).not.toContain("agent-linux");
+    expect(ids).toContain("quickstart");
+  });
+
+  test("filters macOS-specific software while keeping cross-platform items", () => {
+    const macResources = filterResourcesByOs(RESOURCE_CATALOG, "macos");
+    const ids = macResources.map((r) => r.id);
+    expect(ids).toContain("agent-macos");
+    expect(ids).not.toContain("agent-win");
+    expect(ids).not.toContain("agent-linux");
+  });
+
+  test("filters Linux-specific software while keeping cross-platform items", () => {
+    const linuxResources = filterResourcesByOs(RESOURCE_CATALOG, "linux");
+    const ids = linuxResources.map((r) => r.id);
+    expect(ids).toContain("agent-linux");
+    expect(ids).not.toContain("agent-win");
+    expect(ids).not.toContain("agent-macos");
   });
 });
 

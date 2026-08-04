@@ -2,6 +2,12 @@ import { useState } from "react";
 import { X, KeyRound, Loader2, Laptop } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+  InputOTPSeparator,
+} from "@/components/ui/input-otp";
 
 interface ActivateWithOtpModalProps {
   isOpen: boolean;
@@ -62,22 +68,32 @@ export function ActivateWithOtpModal({ isOpen, loading, onClose, onActivate }: A
         <div className="p-5 space-y-4">
           <p className="text-xs text-zinc-500 leading-normal">{t("devices.activateWithCodeDesc")}</p>
 
-          <div>
-            <label htmlFor="activate-otp-code" className="block text-[10px] uppercase font-bold text-zinc-400 mb-1">
+          <div className="flex flex-col items-center">
+            <label htmlFor="activate-otp-code" className="block text-[10px] uppercase font-bold text-zinc-400 mb-2 self-start">
               {t("devices.otpInputLabel")}
             </label>
-            <Input
+            <InputOTP
               id="activate-otp-code"
-              type="text"
-              inputMode="numeric"
-              value={otp}
-              onChange={(e) => handleOtpChange(e.target.value)}
-              placeholder={t("devices.otpInputPlaceholder")}
-              className="w-full bg-card border rounded-md text-base font-mono tracking-widest text-center h-10"
               maxLength={6}
-            />
+              value={otp}
+              onChange={handleOtpChange}
+              disabled={loading}
+              containerClassName="justify-center"
+            >
+              <InputOTPGroup>
+                <InputOTPSlot index={0} className="w-9 h-10 text-base font-mono font-bold" />
+                <InputOTPSlot index={1} className="w-9 h-10 text-base font-mono font-bold" />
+                <InputOTPSlot index={2} className="w-9 h-10 text-base font-mono font-bold" />
+              </InputOTPGroup>
+              <InputOTPSeparator />
+              <InputOTPGroup>
+                <InputOTPSlot index={3} className="w-9 h-10 text-base font-mono font-bold" />
+                <InputOTPSlot index={4} className="w-9 h-10 text-base font-mono font-bold" />
+                <InputOTPSlot index={5} className="w-9 h-10 text-base font-mono font-bold" />
+              </InputOTPGroup>
+            </InputOTP>
             {otp.length > 0 && !isValidOtp && (
-              <p className="text-[10px] text-red-500 mt-1">{t("devices.otpInputInvalid")}</p>
+              <p className="text-[10px] text-red-500 mt-1.5 self-start">{t("devices.otpInputInvalid")}</p>
             )}
           </div>
 

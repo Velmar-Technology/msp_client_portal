@@ -616,6 +616,13 @@
     "subtitle": "Descargue software, manuales y documentación según su plan de soporte.",
     "allPlans": "Todos los Planes",
     "filterByPlan": "Plan",
+    "allOs": "Todos los SO",
+    "filterByOs": "SO",
+    "os": {
+      "windows": "Windows",
+      "macos": "macOS",
+      "linux": "Linux"
+    },
     "searchPlaceholder": "Buscar recursos...",
     "download": "Descargar",
     "downloadStartedTitle": "Descarga Iniciada",

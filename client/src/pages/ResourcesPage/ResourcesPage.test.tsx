@@ -192,7 +192,28 @@ describe("ResourcesPage", () => {
 
     expect(HTMLAnchorElement.prototype.click).toHaveBeenCalled();
     expect(mockToast.success).toHaveBeenCalledWith("Download Started", {
-      description: "Downloading msp-backup-agent-windows.exe",
+      description: "Downloading Nextcloud-34.0.0-x64.msi",
     });
+  });
+
+  test("allows filtering resources by operating system dropdown", async () => {
+    mockUser.role = "ADMIN";
+
+    render(
+      <MemoryRouter>
+        <ResourcesPage />
+      </MemoryRouter>
+    );
+
+    await screen.findByText("MSP Backup Agent – Windows");
+    expect(screen.getByText("MSP Backup Agent – macOS")).toBeInTheDocument();
+
+    const osSelect = screen.getByLabelText("OS");
+    fireEvent.change(osSelect, { target: { value: "macos" } });
+
+    await waitFor(() => {
+      expect(screen.queryByText("MSP Backup Agent – Windows")).toBeNull();
+    });
+    expect(screen.getByText("MSP Backup Agent – macOS")).toBeInTheDocument();
   });
 });

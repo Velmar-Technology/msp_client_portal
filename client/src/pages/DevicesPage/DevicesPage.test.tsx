@@ -105,6 +105,16 @@ vi.mock('@/components/ui/dropdown-menu', () => {
   };
 });
 
+if (typeof window !== 'undefined' && !window.ResizeObserver) {
+  class ResizeObserverMock {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+  window.ResizeObserver = ResizeObserverMock;
+  global.ResizeObserver = ResizeObserverMock;
+}
+
 describe('DevicesPage', () => {
   beforeEach(() => {
     vi.resetAllMocks();
@@ -852,5 +862,81 @@ describe('DevicesPage', () => {
       expect(equipmentService.activateWithOtp).toHaveBeenCalledWith('123456', 'OTP Laptop', 'SN-OTP-01');
       expect(mockToast.success).toHaveBeenCalledWith('Device Activated', expect.any(Object));
     });
+  });
+
+  test('hides bulk Generate OTP action for CLIENT role but displays it for ADMIN role', async () => {
+    mockUser.role = 'CLIENT';
+    const activeSub = {
+      id: 'sub-bulk-1',
+      client_id: 'user-client',
+      service_name: 'Basic Plan',
+      plan: 'BASIC' as const,
+      status: 'ACTIVE' as const,
+      equipment_count: 1,
+      tenant_id: 'tenant-1',
+      created_at: '2026-06-22',
+      updated_at: '2026-06-22',
+    };
+    const mockSlot: SubscriptionEquipment = {
+      id: 'slot-bulk-1',
+      subscription_id: 'sub-bulk-1',
+      slot_index: 0,
+      status: 'PENDING_ACTIVATION',
+      device_name: null,
+      device_serial: null,
+      otp: null,
+      otp_expires_at: null,
+      nextcloud_username: null,
+      nextcloud_password: null,
+      tenant_id: 'tenant-1',
+      created_at: '2026-06-22',
+      updated_at: '2026-06-22',
+    };
+
+    vi.mocked(subscriptionService.getAll).mockResolvedValue([activeSub]);
+    vi.mocked(equipmentService.getMyDevices).mockResolvedValue([mockSlot]);
+
+    const { rerender } = render(
+      <MemoryRouter>
+        <DevicesPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('PENDING ACTIVATION')).toBeInTheDocument();
+    });
+
+    const checkbox = screen.getByRole('checkbox', { name: 'Select row' });
+    fireEvent.click(checkbox);
+
+    expect(screen.queryByRole('button', { name: 'Generate OTPs' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Deactivate Devices' })).toBeInTheDocument();
+
+    mockUser.role = 'ADMIN';
+    vi.mocked(equipmentService.getAllDevicesForAdmin).mockResolvedValue([
+      {
+        ...mockSlot,
+        client_name: 'Client User',
+        tenant_name: 'Tenant 1',
+        client_email: 'client@example.com',
+        plan: 'BASIC',
+        service_name: 'Basic Plan',
+      },
+    ]);
+
+    rerender(
+      <MemoryRouter>
+        <DevicesPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('PENDING ACTIVATION')).toBeInTheDocument();
+    });
+
+    const checkboxes = screen.getAllByRole('checkbox', { name: 'Select row' });
+    fireEvent.click(checkboxes[0]);
+
+    expect(screen.getByRole('button', { name: 'Generate OTPs' })).toBeInTheDocument();
   });
 });

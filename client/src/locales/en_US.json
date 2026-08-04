@@ -617,6 +617,13 @@
     "subtitle": "Download software, manuals, and documentation tailored to your support plan.",
     "allPlans": "All Plans",
     "filterByPlan": "Plan",
+    "allOs": "All OS",
+    "filterByOs": "OS",
+    "os": {
+      "windows": "Windows",
+      "macos": "macOS",
+      "linux": "Linux"
+    },
     "searchPlaceholder": "Search resources...",
     "download": "Download",
     "downloadStartedTitle": "Download Started",

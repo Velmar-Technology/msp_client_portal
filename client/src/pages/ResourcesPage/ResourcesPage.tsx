@@ -28,9 +28,16 @@ function ResourceCard({ item, onDownload }: { item: ResourceItem; onDownload: (i
           </span>
           <div className="min-w-0">
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-50 truncate">{t(item.titleKey)}</h3>
-            <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
-              {t(`resources.cat.${item.category}`)}
-            </p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
+                {t(`resources.cat.${item.category}`)}
+              </p>
+              {item.os && item.os.length > 0 && (
+                <span className="text-[9px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-200/60 dark:border-zinc-800">
+                  {item.os.map((os) => t(`resources.os.${os}`)).join(", ")}
+                </span>
+              )}
+            </div>
           </div>
         </div>
         <span className="shrink-0 text-[10px] font-mono font-semibold text-zinc-400 uppercase bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded px-1.5 py-0.5">
@@ -64,6 +71,9 @@ export function ResourcesPage() {
     selectedPlan,
     setSelectedPlan,
     planFilterOptions,
+    selectedOs,
+    setSelectedOs,
+    osFilterOptions,
     searchTerm,
     setSearchTerm,
     filteredResources,
@@ -101,22 +111,41 @@ export function ResourcesPage() {
               className="pl-8 h-9 text-xs"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <label htmlFor="resources-plan-filter" className="text-[10px] uppercase font-bold text-zinc-400">
-              {t("resources.filterByPlan")}
-            </label>
-            <select
-              id="resources-plan-filter"
-              value={selectedPlan}
-              onChange={(e) => setSelectedPlan(e.target.value as typeof selectedPlan)}
-              className="h-9 px-2.5 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-zinc-400 cursor-pointer font-medium"
-            >
-              {planFilterOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <label htmlFor="resources-os-filter" className="text-[10px] uppercase font-bold text-zinc-400">
+                {t("resources.filterByOs")}
+              </label>
+              <select
+                id="resources-os-filter"
+                value={selectedOs}
+                onChange={(e) => setSelectedOs(e.target.value as typeof selectedOs)}
+                className="h-9 px-2.5 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-zinc-400 cursor-pointer font-medium"
+              >
+                {osFilterOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <label htmlFor="resources-plan-filter" className="text-[10px] uppercase font-bold text-zinc-400">
+                {t("resources.filterByPlan")}
+              </label>
+              <select
+                id="resources-plan-filter"
+                value={selectedPlan}
+                onChange={(e) => setSelectedPlan(e.target.value as typeof selectedPlan)}
+                className="h-9 px-2.5 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-zinc-400 cursor-pointer font-medium"
+              >
+                {planFilterOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -136,7 +165,20 @@ export function ResourcesPage() {
         )}
       </div>
     );
-  }, [loading, searchTerm, setSearchTerm, selectedPlan, setSelectedPlan, planFilterOptions, filteredResources, handleDownload, t]);
+  }, [
+    loading,
+    searchTerm,
+    setSearchTerm,
+    selectedPlan,
+    setSelectedPlan,
+    planFilterOptions,
+    selectedOs,
+    setSelectedOs,
+    osFilterOptions,
+    filteredResources,
+    handleDownload,
+    t,
+  ]);
 
   return (
     <Page title={t("resources.title")} subtitle={t("resources.subtitle")} isLoading={false}>

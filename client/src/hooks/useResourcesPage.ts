@@ -6,10 +6,13 @@ import { toast } from "sonner";
 import {
   RESOURCE_CATALOG,
   PLAN_OPTIONS,
+  OS_OPTIONS,
   filterResourcesByPlan,
+  filterResourcesByOs,
   normalizePlan,
   triggerResourceDownload,
   type PlanTier,
+  type OsFilter,
   type ResourceItem,
 } from "@/lib/resourceCatalog";
 
@@ -22,6 +25,7 @@ export function useResourcesPage() {
 
   const [loading, setLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<PlanFilter>("ALL");
+  const [selectedOs, setSelectedOs] = useState<OsFilter>("ALL");
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
@@ -63,15 +67,20 @@ export function useResourcesPage() {
     return options;
   }, [t]);
 
+  const osFilterOptions = useMemo(() => {
+    return OS_OPTIONS.map((opt) => ({ value: opt.value, label: t(opt.labelKey) }));
+  }, [t]);
+
   const filteredResources = useMemo(() => {
     const showAll = selectedPlan === "ALL";
     const planIds: PlanTier[] = showAll ? [] : [selectedPlan];
     const byPlan = filterResourcesByPlan(RESOURCE_CATALOG, planIds, showAll);
+    const byOs = filterResourcesByOs(byPlan, selectedOs);
 
     const query = searchTerm.trim().toLowerCase();
-    if (!query) return byPlan;
+    if (!query) return byOs;
 
-    return byPlan.filter((resource) => {
+    return byOs.filter((resource) => {
       const title = t(resource.titleKey).toLowerCase();
       const description = t(resource.descriptionKey).toLowerCase();
       return (
@@ -80,7 +89,7 @@ export function useResourcesPage() {
         resource.fileName.toLowerCase().includes(query)
       );
     });
-  }, [selectedPlan, searchTerm, t]);
+  }, [selectedPlan, selectedOs, searchTerm, t]);
 
   const handleDownload = useCallback(
     (item: ResourceItem) => {
@@ -100,6 +109,9 @@ export function useResourcesPage() {
     selectedPlan,
     setSelectedPlan,
     planFilterOptions,
+    selectedOs,
+    setSelectedOs,
+    osFilterOptions,
     searchTerm,
     setSearchTerm,
     filteredResources,

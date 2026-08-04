@@ -509,11 +509,15 @@ export function DevicesPage() {
 
   const bulkActions = useMemo(
     () => [
-      {
-        label: t("devices.bulkGenerateOtp") || "Generate OTPs",
-        onClick: handleBulkGenerateOTP,
-        variant: "default" as const,
-      },
+      ...(isAdmin
+        ? [
+            {
+              label: t("devices.bulkGenerateOtp") || "Generate OTPs",
+              onClick: handleBulkGenerateOTP,
+              variant: "default" as const,
+            },
+          ]
+        : []),
       {
         label: t("devices.bulkDeactivate") || "Deactivate Devices",
         onClick: handleBulkDeactivateClick,
@@ -525,7 +529,7 @@ export function DevicesPage() {
         variant: "outline" as const,
       },
     ],
-    [t, handleBulkGenerateOTP, handleBulkDeactivateClick, handleBulkExportCSV]
+    [isAdmin, t, handleBulkGenerateOTP, handleBulkDeactivateClick, handleBulkExportCSV]
   );
 
   const handleOpenScheduleMaint = useCallback((equip: Partial<SubscriptionEquipment>) => {
