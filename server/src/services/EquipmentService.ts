@@ -99,6 +99,7 @@ export class EquipmentService {
       if (slot.otp_expires_at && slot.otp_expires_at < new Date()) {
         throw AppError.badRequest('Activation code (OTP) has expired');
       }
+      if (!options.byAdmin && slot.tenant_id !== options.tenantId) throw AppError.forbidden('Access denied');
     } else if (options.subscriptionId !== undefined && options.slotIndex !== undefined) {
       // Direct simulation from portal
       slot = await equipmentRepository.findBySlot(options.subscriptionId, options.slotIndex);

@@ -20,6 +20,7 @@
     "myTickets": "My Tickets",
     "allTickets": "All Tickets",
     "devices": "Devices",
+    "resources": "Resources",
     "maintenance": "Maintenance",
     "adminDashboard": "Dashboard",
     "infrastructure": "Service Management",
@@ -598,7 +599,85 @@
     "bulkDeactivateConfirmTitle": "Deactivate Selected Devices",
     "bulkDeactivateConfirmDesc": "Are you sure you want to deactivate {{count}} active device(s)? This action will revoke cloud backup accounts.",
     "noPendingForOtp": "No selected devices require OTP generation.",
-    "noActiveForDeactivate": "No active devices selected for deactivation."
+    "noActiveForDeactivate": "No active devices selected for deactivation.",
+    "activateWithCode": "Activate with Code",
+    "activateWithCodeTitle": "Activate with Activation Code",
+    "activateWithCodeSubtitle": "Redeem a generated OTP",
+    "activateWithCodeDesc": "Enter the 6-digit activation code provided by your support provider, then register the device to provision its cloud backup.",
+    "otpInputLabel": "Activation Code",
+    "otpInputPlaceholder": "e.g. 123456",
+    "otpInputInvalid": "Activation code must be 6 digits.",
+    "activateWithCodeSubmit": "Activate Device",
+    "activateWithCodeSuccessTitle": "Device Activated",
+    "activateWithCodeSuccessDesc": "Device {{name}} successfully activated with the provided activation code.",
+    "activateWithCodeFailed": "Failed to activate the device with the provided code."
+  },
+  "resources": {
+    "title": "Resources",
+    "subtitle": "Download software, manuals, and documentation tailored to your support plan.",
+    "allPlans": "All Plans",
+    "filterByPlan": "Plan",
+    "searchPlaceholder": "Search resources...",
+    "download": "Download",
+    "downloadStartedTitle": "Download Started",
+    "downloadStartedDesc": "Downloading {{fileName}}",
+    "emptyTitle": "No resources found",
+    "emptyDesc": "No resources match the selected plan or search criteria.",
+    "planBasic": "Basic",
+    "planStandard": "Standard",
+    "planAdvanced": "Advanced",
+    "cat": {
+      "software": "Software",
+      "manual": "Manual",
+      "guide": "Guide",
+      "document": "Document"
+    },
+    "res": {
+      "agentWin": {
+        "title": "MSP Backup Agent – Windows",
+        "desc": "Install the backup agent on Windows devices to enable cloud backup and activation."
+      },
+      "agentMacos": {
+        "title": "MSP Backup Agent – macOS",
+        "desc": "Install the backup agent on macOS devices to enable cloud backup and activation."
+      },
+      "agentLinux": {
+        "title": "MSP Backup Agent – Linux",
+        "desc": "Install the backup agent on Debian/Ubuntu based Linux devices to enable cloud backup."
+      },
+      "quickstart": {
+        "title": "Quick Start: Activation & First Backup",
+        "desc": "Step-by-step guide to activate your device with an OTP code and run your first cloud backup."
+      },
+      "nextcloudManual": {
+        "title": "Nextcloud Web Access Manual",
+        "desc": "How to access and manage your cloud files through the Nextcloud web interface."
+      },
+      "slaPolicy": {
+        "title": "SLA & Response Time Policy",
+        "desc": "Official service level agreement, response times, and support escalation procedures."
+      },
+      "basicHandbook": {
+        "title": "Basic Plan: Remote Support Handbook",
+        "desc": "Everything included in the Basic plan and how to request reactive remote support."
+      },
+      "monitoringGuide": {
+        "title": "Monitoring Dashboard Guide",
+        "desc": "Interpret your proactive monitoring dashboard, alerts, and system health reports."
+      },
+      "maintenanceGuide": {
+        "title": "Standard Maintenance Runbook",
+        "desc": "Overview of scheduled preventive maintenance tasks and review cadence in the Standard plan."
+      },
+      "networkManual": {
+        "title": "Network Monitoring Setup Manual",
+        "desc": "Configuration manual for the advanced network monitoring and alerting infrastructure."
+      },
+      "securityWhitepaper": {
+        "title": "Security & vCIO Reviews Whitepaper",
+        "desc": "Comprehensive security posture, hardening, and virtual CIO review outcomes for Advanced plan."
+      }
+    }
   },
   "billing": {
     "title": "Billing History",

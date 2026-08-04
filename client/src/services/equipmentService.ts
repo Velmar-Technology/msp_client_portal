@@ -52,6 +52,15 @@ export const equipmentService = {
     return response.data.data;
   },
 
+  async activateWithOtp(otp: string, deviceName: string, deviceSerial: string): Promise<SubscriptionEquipment> {
+    const response = await api.post('/equipment/activate-with-otp', {
+      otp,
+      deviceName,
+      deviceSerial,
+    });
+    return response.data.data;
+  },
+
   async deactivateSlot(subId: string, slotIndex: number): Promise<SubscriptionEquipment> {
     const response = await api.post(`/equipment/subscriptions/${subId}/slots/${slotIndex}/deactivate`);
     return response.data.data;

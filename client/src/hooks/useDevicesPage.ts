@@ -170,7 +170,7 @@ export function useDevicesPage() {
         description: error.response?.data?.message || error.message || "Failed to generate OTP.",
       });
     }
-  }, [updateDeviceList, user?.role, t]);
+  }, [updateDeviceList, t]);
 
   const handleRevokeEquipment = useCallback(async (subId: string, slotIndex: number) => {
     try {
@@ -235,6 +235,46 @@ export function useDevicesPage() {
       setActivationWizardLoading(false);
     }
   }, [activationWizardSubId, activationWizardSlotIdx, activationDeviceName, activationDeviceSerial, updateDeviceList]);
+
+  // Standalone "Activate with Code" (OTP) flow state
+  const [activateOtpModalOpen, setActivateOtpModalOpen] = useState(false);
+  const [activateOtpLoading, setActivateOtpLoading] = useState(false);
+
+  const handleOpenActivateWithOtp = useCallback(() => {
+    setActivateOtpModalOpen(true);
+  }, []);
+
+  const handleCloseActivateWithOtp = useCallback(() => {
+    if (activateOtpLoading) return;
+    setActivateOtpModalOpen(false);
+  }, [activateOtpLoading]);
+
+  const handleActivateWithOtp = useCallback(
+    async (otp: string, deviceName: string, deviceSerial: string) => {
+      setActivateOtpLoading(true);
+      try {
+        const updatedSlot = await equipmentService.activateWithOtp(otp, deviceName, deviceSerial);
+        if (updatedSlot.subscription_id && updatedSlot.slot_index !== undefined) {
+          updateDeviceList(updatedSlot.subscription_id, updatedSlot.slot_index, updatedSlot);
+        }
+        setActivateOtpModalOpen(false);
+        toast.success(t("devices.activateWithCodeSuccessTitle") || "Device Activated", {
+          description:
+            t("devices.activateWithCodeSuccessDesc", { name: deviceName }) ||
+            `Device ${deviceName} successfully activated with activation code.`,
+        });
+      } catch (err) {
+        console.error("Failed to activate device with OTP:", err);
+        const error = err as { response?: { data?: { message?: string } }; message?: string };
+        toast.error(t("common.error") || "Error", {
+          description: error.response?.data?.message || error.message || t("devices.activateWithCodeFailed") || "Failed to activate device with the provided code.",
+        });
+      } finally {
+        setActivateOtpLoading(false);
+      }
+    },
+    [updateDeviceList, t]
+  );
 
   const activeSub = useMemo(() => {
     return activeSubscriptions.find((sub) => sub.id === selectedSubscriptionId) || activeSubscriptions[0];
@@ -486,6 +526,12 @@ export function useDevicesPage() {
     handleRevokeEquipment,
     handleStartActivationWizard,
     handleWizardActivate,
+    activateOtpModalOpen,
+    setActivateOtpModalOpen,
+    activateOtpLoading,
+    handleOpenActivateWithOtp,
+    handleCloseActivateWithOtp,
+    handleActivateWithOtp,
     isAdmin,
     adminDevices,
     selectedClient,

@@ -18,6 +18,11 @@ router.get('/my-devices', (req, res, next) =>
   equipmentController.getMyDevices(req, res, next)
 );
 
+/** POST /api/v1/equipment/activate-with-otp — Activate a slot by entering a generated OTP code */
+router.post('/activate-with-otp', (req, res, next) =>
+  equipmentController.activateWithOtp(req, res, next)
+);
+
 /** GET /api/v1/equipment/subscriptions/:subId/slots — Get equipment slots */
 router.get('/subscriptions/:subId/slots', (req, res, next) =>
   equipmentController.getSlots(req, res, next)

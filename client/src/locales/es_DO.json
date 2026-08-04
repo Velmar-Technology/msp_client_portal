@@ -20,6 +20,7 @@
     "myTickets": "Mis Tickets",
     "allTickets": "Todos los Tickets",
     "devices": "Dispositivos",
+    "resources": "Recursos",
     "maintenance": "Mantenimiento",
     "adminDashboard": "Panel de Administración",
     "infrastructure": "Gestión de Servicios",
@@ -597,7 +598,85 @@
     "bulkDeactivateConfirmTitle": "Desactivar Dispositivos Seleccionados",
     "bulkDeactivateConfirmDesc": "¿Está seguro de que desea desactivar {{count}} dispositivo(s) activo(s)? Esta acción revocará las cuentas de almacenamiento en la nube.",
     "noPendingForOtp": "Ninguno de los dispositivos seleccionados requiere generación de OTP.",
-    "noActiveForDeactivate": "No hay dispositivos activos seleccionados para desactivar."
+    "noActiveForDeactivate": "No hay dispositivos activos seleccionados para desactivar.",
+    "activateWithCode": "Activar con Código",
+    "activateWithCodeTitle": "Activar con Código de Activación",
+    "activateWithCodeSubtitle": "Canjear un OTP generado",
+    "activateWithCodeDesc": "Ingrese el código de activación de 6 dígitos proporcionado por su proveedor de soporte y registre el dispositivo para aprovisionar su respaldo en la nube.",
+    "otpInputLabel": "Código de Activación",
+    "otpInputPlaceholder": "ej. 123456",
+    "otpInputInvalid": "El código de activación debe tener 6 dígitos.",
+    "activateWithCodeSubmit": "Activar Dispositivo",
+    "activateWithCodeSuccessTitle": "Dispositivo Activado",
+    "activateWithCodeSuccessDesc": "El dispositivo {{name}} fue activado con éxito con el código de activación proporcionado.",
+    "activateWithCodeFailed": "Error al activar el dispositivo con el código proporcionado."
+  },
+  "resources": {
+    "title": "Recursos",
+    "subtitle": "Descargue software, manuales y documentación según su plan de soporte.",
+    "allPlans": "Todos los Planes",
+    "filterByPlan": "Plan",
+    "searchPlaceholder": "Buscar recursos...",
+    "download": "Descargar",
+    "downloadStartedTitle": "Descarga Iniciada",
+    "downloadStartedDesc": "Descargando {{fileName}}",
+    "emptyTitle": "No se encontraron recursos",
+    "emptyDesc": "Ningún recurso coincide con el plan seleccionado o los criterios de búsqueda.",
+    "planBasic": "Básico",
+    "planStandard": "Estándar",
+    "planAdvanced": "Avanzado",
+    "cat": {
+      "software": "Software",
+      "manual": "Manual",
+      "guide": "Guía",
+      "document": "Documento"
+    },
+    "res": {
+      "agentWin": {
+        "title": "Agente de Respaldo MSP – Windows",
+        "desc": "Instale el agente de respaldo en dispositivos Windows para habilitar el respaldo en la nube y la activación."
+      },
+      "agentMacos": {
+        "title": "Agente de Respaldo MSP – macOS",
+        "desc": "Instale el agente de respaldo en dispositivos macOS para habilitar el respaldo en la nube y la activación."
+      },
+      "agentLinux": {
+        "title": "Agente de Respaldo MSP – Linux",
+        "desc": "Instale el agente de respaldo en dispositivos Linux basados en Debian/Ubuntu para habilitar el respaldo en la nube."
+      },
+      "quickstart": {
+        "title": "Inicio Rápido: Activación y Primer Respaldo",
+        "desc": "Guía paso a paso para activar su dispositivo con un código OTP y ejecutar su primer respaldo en la nube."
+      },
+      "nextcloudManual": {
+        "title": "Manual de Acceso Web a Nextcloud",
+        "desc": "Cómo acceder y gestionar sus archivos en la nube a través de la interfaz web de Nextcloud."
+      },
+      "slaPolicy": {
+        "title": "Política de SLA y Tiempos de Respuesta",
+        "desc": "Acuerdo de nivel de servicio oficial, tiempos de respuesta y procedimientos de escalamiento."
+      },
+      "basicHandbook": {
+        "title": "Manual del Plan Básico: Soporte Remoto",
+        "desc": "Todo lo incluido en el plan Básico y cómo solicitar soporte remoto reactivo."
+      },
+      "monitoringGuide": {
+        "title": "Guía del Panel de Monitoreo",
+        "desc": "Interprete su panel de monitoreo proactivo, alertas e informes de salud del sistema."
+      },
+      "maintenanceGuide": {
+        "title": "Runbook de Mantenimiento Estándar",
+        "desc": "Resumen de las tareas de mantenimiento preventivo programado y cadencia de revisiones del plan Estándar."
+      },
+      "networkManual": {
+        "title": "Manual de Configuración de Monitoreo de Red",
+        "desc": "Manual de configuración para la infraestructura avanzada de monitoreo y alertas de red."
+      },
+      "securityWhitepaper": {
+        "title": "Whitepaper de Seguridad y Revisiones vCIO",
+        "desc": "Postura de seguridad integral, endurecimiento y resultados de revisiones de vCIO para el plan Avanzado."
+      }
+    }
   },
   "billing": {
     "title": "Historial de Facturación",

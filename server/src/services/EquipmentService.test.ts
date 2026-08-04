@@ -201,6 +201,109 @@ describe('EquipmentService', () => {
 
       expect(result.status).toBe('ACTIVE');
     });
+
+    it('should activate a slot using an OTP code lookup', async () => {
+      const mockSub = { id: subId, plan: 'PL-002', tenant_id: tenantId, equipment_count: 1 };
+      const mockSlot = { id: 'slot-1', slot_index: 0, status: 'PENDING_ACTIVATION', tenant_id: tenantId };
+
+      mocks.equipFindByOtp.mockResolvedValue(mockSlot);
+      mocks.subFindById.mockResolvedValue(mockSub);
+      mocks.ncProvisionUser.mockResolvedValue('randomPass123');
+      mocks.equipUpdate.mockImplementation((id, data) => Promise.resolve({ id, ...data }));
+
+      const result = await equipmentService.activateSlot({
+        otp: '123456',
+        deviceName: 'Workstation OTP',
+        deviceSerial: 'SN-OTP-01',
+        tenantId,
+      });
+
+      expect(mocks.equipFindByOtp).toHaveBeenCalledWith('123456');
+      expect(result.status).toBe('ACTIVE');
+      expect(result.device_name).toBe('Workstation OTP');
+      expect(result.nextcloud_password).toBe('randomPass123');
+    });
+
+    it('should throw when the OTP is not found', async () => {
+      mocks.equipFindByOtp.mockResolvedValue(null);
+
+      await expect(
+        equipmentService.activateSlot({
+          otp: '000000',
+          deviceName: 'Workstation',
+          deviceSerial: 'SN-1',
+          tenantId,
+        })
+      ).rejects.toThrow('Activation code (OTP) not found or invalid');
+    });
+
+    it('should throw when the OTP has expired', async () => {
+      const mockSlot = {
+        id: 'slot-1',
+        slot_index: 0,
+        status: 'PENDING_ACTIVATION',
+        tenant_id: tenantId,
+        otp_expires_at: new Date(Date.now() - 1000),
+      };
+
+      mocks.equipFindByOtp.mockResolvedValue(mockSlot);
+
+      await expect(
+        equipmentService.activateSlot({
+          otp: '123456',
+          deviceName: 'Workstation',
+          deviceSerial: 'SN-1',
+          tenantId,
+        })
+      ).rejects.toThrow('Activation code (OTP) has expired');
+    });
+
+    it('should deny OTP activation when the slot belongs to another tenant', async () => {
+      const mockSlot = {
+        id: 'slot-1',
+        slot_index: 0,
+        status: 'PENDING_ACTIVATION',
+        tenant_id: 'different-tenant-id',
+        otp_expires_at: new Date(Date.now() + 600000),
+      };
+
+      mocks.equipFindByOtp.mockResolvedValue(mockSlot);
+
+      await expect(
+        equipmentService.activateSlot({
+          otp: '123456',
+          deviceName: 'Workstation',
+          deviceSerial: 'SN-1',
+          tenantId,
+        })
+      ).rejects.toThrow('Access denied');
+    });
+
+    it('should bypass tenant check when activating with OTP as admin', async () => {
+      const mockSub = { id: subId, plan: 'PL-002', tenant_id: 'different-tenant-id', equipment_count: 1 };
+      const mockSlot = {
+        id: 'slot-1',
+        slot_index: 0,
+        status: 'PENDING_ACTIVATION',
+        tenant_id: 'different-tenant-id',
+        otp_expires_at: new Date(Date.now() + 600000),
+      };
+
+      mocks.equipFindByOtp.mockResolvedValue(mockSlot);
+      mocks.subFindById.mockResolvedValue(mockSub);
+      mocks.ncProvisionUser.mockResolvedValue('randomPass123');
+      mocks.equipUpdate.mockImplementation((id, data) => Promise.resolve({ id, ...data }));
+
+      const result = await equipmentService.activateSlot({
+        otp: '123456',
+        deviceName: 'Workstation',
+        deviceSerial: 'SN-1',
+        tenantId,
+        byAdmin: true,
+      });
+
+      expect(result.status).toBe('ACTIVE');
+    });
   });
 
   describe('deactivateSlot', () => {

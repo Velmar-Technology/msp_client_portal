@@ -10,6 +10,7 @@ import {
   Laptop,
   Landmark,
   Calendar,
+  Download,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { subscriptionService } from "@/services/subscriptionService";
@@ -30,6 +31,7 @@ export interface NavItem {
 const clientNavItems: NavItem[] = [
   { to: "/dashboard", icon: LayoutDashboard, labelKey: "dashboard" },
   { to: "/devices", icon: Laptop, labelKey: "devices" },
+  { to: "/resources", icon: Download, labelKey: "resources" },
   { to: "/maintenance", icon: Calendar, labelKey: "maintenance" },
   { to: "/tickets", icon: Ticket, labelKey: "myTickets" },
   {
@@ -65,6 +67,7 @@ const adminNavItems: NavItem[] = [
   { to: "/financial", icon: Landmark, labelKey: "financial" },
   { to: "/admin/users", icon: Users, labelKey: "userManagement" },
   { to: "/devices", icon: Laptop, labelKey: "devices" },
+  { to: "/resources", icon: Download, labelKey: "resources" },
   { to: "/maintenance", icon: Calendar, labelKey: "maintenance" },
   { to: "/tickets", icon: Ticket, labelKey: "allTickets" },
   {

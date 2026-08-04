@@ -1,17 +1,17 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Ticket, CreditCard, HelpCircle, LayoutDashboard, Plus, BookOpen, Bell, User } from "lucide-react";
+import { Ticket as TicketIcon, CreditCard, HelpCircle, LayoutDashboard, Plus, BookOpen, Bell, User, Download } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { ticketService } from "@/services/ticketService";
-import { invoiceService } from "@/services/invoiceService";
-import { faqsEn, faqsEs } from "@/lib/faqs";
+import { ticketService, type Ticket } from "@/services/ticketService";
+import { invoiceService, type Invoice } from "@/services/invoiceService";
+import { faqsEn, faqsEs, type FAQ } from "@/lib/faqs";
 
 export interface PageLink {
   title: string;
   path: string;
-  icon: React.ComponentType<any>;
-  state?: any;
+  icon: React.ComponentType<{ className?: string }>;
+  state?: unknown;
 }
 
 export interface FlatItem {
@@ -20,7 +20,7 @@ export interface FlatItem {
   subtitle?: string;
   badge?: string;
   badgeClass?: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<{ className?: string }>;
   onClick: () => void;
 }
 
@@ -53,9 +53,9 @@ export function useTopNav() {
 
   const [results, setResults] = useState<{
     pages: PageLink[];
-    tickets: any[];
-    invoices: any[];
-    faqs: any[];
+    tickets: Ticket[];
+    invoices: Invoice[];
+    faqs: FAQ[];
   }>({
     pages: [],
     tickets: [],
@@ -66,7 +66,7 @@ export function useTopNav() {
   const settingsRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const invoicesCacheRef = useRef<any[] | null>(null);
+  const invoicesCacheRef = useRef<Invoice[] | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const faqSearchIndexRef = useRef<Array<{ id: number; question: string; answer: string; category: string; searchText: string }>>([]);
 
@@ -131,10 +131,11 @@ export function useTopNav() {
     if (user.role === "CLIENT") {
       pages.push(
         { title: t("nav.dashboard"), path: "/dashboard", icon: LayoutDashboard },
-        { title: t("nav.tickets"), path: "/tickets", icon: Ticket },
+        { title: t("nav.tickets"), path: "/tickets", icon: TicketIcon },
         { title: t("tickets.newTicket"), path: "/tickets", state: { openCreateModal: true }, icon: Plus },
         { title: t("nav.plans"), path: "/plans", icon: BookOpen },
         { title: t("nav.billing"), path: "/billing", icon: CreditCard },
+        { title: t("nav.resources"), path: "/resources", icon: Download },
         { title: t("nav.profile"), path: "/profile", icon: User },
         { title: t("nav.help"), path: "/help", icon: HelpCircle },
         { title: t("nav.notificationPreferences"), path: "/notifications/preferences", icon: Bell }
@@ -142,7 +143,7 @@ export function useTopNav() {
     } else if (user.role === "TECHNICIAN") {
       pages.push(
         { title: t("nav.dashboard"), path: "/tech/dashboard", icon: LayoutDashboard },
-        { title: t("nav.tickets"), path: "/tickets", icon: Ticket },
+        { title: t("nav.tickets"), path: "/tickets", icon: TicketIcon },
         { title: t("nav.profile"), path: "/profile", icon: User },
         { title: t("nav.help"), path: "/help", icon: HelpCircle },
         { title: t("nav.notificationPreferences"), path: "/notifications/preferences", icon: Bell }
@@ -150,9 +151,10 @@ export function useTopNav() {
     } else if (user.role === "ADMIN") {
       pages.push(
         { title: t("nav.dashboard"), path: "/dashboard", icon: LayoutDashboard },
-        { title: t("nav.tickets"), path: "/tickets", icon: Ticket },
+        { title: t("nav.tickets"), path: "/tickets", icon: TicketIcon },
         { title: t("nav.plans"), path: "/plans", icon: BookOpen },
         { title: t("nav.billing"), path: "/billing", icon: CreditCard },
+        { title: t("nav.resources"), path: "/resources", icon: Download },
         { title: t("nav.profile"), path: "/profile", icon: User },
         { title: t("nav.help"), path: "/help", icon: HelpCircle },
         { title: t("nav.notificationPreferences"), path: "/notifications/preferences", icon: Bell }
@@ -196,21 +198,22 @@ export function useTopNav() {
         );
 
         // API search for Tickets with abort signal
-        let matchedTickets: any[] = [];
+        let matchedTickets: Ticket[] = [];
         try {
           const ticketRes = await ticketService.getAll(
             { search: query, limit: 5 },
             { signal: controller.signal }
           );
           matchedTickets = ticketRes.data;
-        } catch (err: any) {
-          if (err.name !== "CanceledError" && err.name !== "AbortError") {
+        } catch (err) {
+          const error = err as { name?: string };
+          if (error.name !== "CanceledError" && error.name !== "AbortError") {
             console.error("Error searching tickets:", err);
           }
         }
 
         // Local search for Invoices using the cached list (instant lookup)
-        let matchedInvoices: any[] = [];
+        let matchedInvoices: Invoice[] = [];
         if (user?.role === "CLIENT" || user?.role === "ADMIN") {
           if (invoicesCacheRef.current) {
             matchedInvoices = invoicesCacheRef.current.filter(
@@ -284,7 +287,7 @@ export function useTopNav() {
         subtitle: `#${tick.id.slice(0, 8)} • ${tick.category}`,
         badge: tick.status,
         badgeClass: statusColorMap[tick.status] || "bg-surface-container text-on-surface-variant",
-        icon: Ticket,
+        icon: TicketIcon,
         onClick: () => {
           navigate(`/tickets/${tick.id}`);
           setIsOpen(false);

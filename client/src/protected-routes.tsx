@@ -19,6 +19,7 @@ import { NotificationPreferencesPage } from "@/pages/NotificationPreferencesPage
 import { DevicesPage } from "@/pages/DevicesPage";
 import { MaintenancePage } from "@/pages/MaintenancePage";
 import { UserManagementPage } from "@/pages/UserManagementPage";
+import { ResourcesPage } from "@/pages/ResourcesPage";
 
 export interface AppRouteConfig {
   path: string;
@@ -37,6 +38,7 @@ export const protectedRoutes: AppRouteConfig[] = [
   { path: "/plans", element: <PlansPage />, allowedRoles: ["CLIENT", "ADMIN"] },
   { path: "/billing", element: <BillingPage />, allowedRoles: ["CLIENT", "ADMIN"] },
   { path: "/devices", element: <DevicesPage />, allowedRoles: ["CLIENT", "ADMIN"] },
+  { path: "/resources", element: <ResourcesPage />, allowedRoles: ["CLIENT", "ADMIN"] },
   { path: "/maintenance", element: <MaintenancePage /> },
 
   // Tech/Admin Routes

@@ -20,6 +20,7 @@ vi.mock('@/services/equipmentService', () => ({
     getMyDevices: vi.fn(),
     generateOTP: vi.fn(),
     activateSlot: vi.fn(),
+    activateWithOtp: vi.fn(),
     deactivateSlot: vi.fn(),
     getAllDevicesForAdmin: vi.fn(),
     getNextcloudInfo: vi.fn(),
@@ -788,6 +789,68 @@ describe('DevicesPage', () => {
           description: expect.stringContaining('Deactivated 1 active device(s).'),
         })
       );
+    });
+  });
+
+  test('activates a device with a standalone OTP code', async () => {
+    mockUser.role = 'CLIENT';
+    vi.mocked(subscriptionService.getAll).mockResolvedValue([
+      {
+        id: 'sub-otp-test',
+        client_id: 'user-client',
+        service_name: 'Basic Support',
+        plan: 'BASIC',
+        status: 'ACTIVE' as const,
+        renewal_date: '2026-07-22T00:00:00.000Z',
+        equipment_count: 1,
+        tenant_id: 'tenant-1',
+        created_at: '2026-06-22',
+        updated_at: '2026-06-22',
+      },
+    ]);
+    vi.mocked(equipmentService.getMyDevices).mockResolvedValue([]);
+
+    vi.mocked(equipmentService.activateWithOtp).mockResolvedValue({
+      id: 'slot-otp-1',
+      subscription_id: 'sub-otp-test',
+      slot_index: 0,
+      status: 'ACTIVE',
+      device_name: 'OTP Laptop',
+      device_serial: 'SN-OTP-01',
+      otp: null,
+      otp_expires_at: null,
+      nextcloud_username: 'nc_otp_user',
+      nextcloud_password: 'nc_otp_pass',
+      tenant_id: 'tenant-1',
+      created_at: '2026-06-22',
+      updated_at: '2026-06-22',
+    });
+
+    render(
+      <MemoryRouter>
+        <DevicesPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('PENDING ACTIVATION')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Activate with Code' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Activate with Activation Code')).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByLabelText('Activation Code'), { target: { value: '123456' } });
+    fireEvent.change(screen.getByLabelText('Device Name / Label'), { target: { value: 'OTP Laptop' } });
+    fireEvent.change(screen.getByLabelText('Device Serial Number'), { target: { value: 'SN-OTP-01' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Activate Device' }));
+
+    await waitFor(() => {
+      expect(equipmentService.activateWithOtp).toHaveBeenCalledWith('123456', 'OTP Laptop', 'SN-OTP-01');
+      expect(mockToast.success).toHaveBeenCalledWith('Device Activated', expect.any(Object));
     });
   });
 });

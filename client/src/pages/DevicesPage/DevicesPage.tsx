@@ -1,5 +1,5 @@
 import { memo, useCallback, useState, useMemo } from "react";
-import { X, Laptop, Loader2, MoreHorizontal, Cloud, Check } from "lucide-react";
+import { X, Laptop, Loader2, MoreHorizontal, Cloud, Check, KeyRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDevicesPage } from "@/hooks/useDevicesPage";
 import type { Subscription } from "@/services/subscriptionService";
@@ -10,6 +10,7 @@ import { DataTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ScheduleMaintenanceModal } from "@/components/maintenance/ScheduleMaintenanceModal";
 import { NextcloudInfoModal } from "@/components/devices/NextcloudInfoModal";
+import { ActivateWithOtpModal } from "@/components/devices/ActivateWithOtpModal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -470,6 +471,11 @@ export function DevicesPage() {
     handleRevokeEquipment,
     handleStartActivationWizard,
     handleWizardActivate,
+    activateOtpModalOpen,
+    activateOtpLoading,
+    handleOpenActivateWithOtp,
+    handleCloseActivateWithOtp,
+    handleActivateWithOtp,
     isAdmin,
     selectedClient,
     setSelectedClient,
@@ -861,6 +867,18 @@ export function DevicesPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
               <div className="lg:col-span-3 space-y-4">
+                {/* Toolbar: Activate with Code */}
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleOpenActivateWithOtp}
+                    className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-md shadow-sm transition-colors cursor-pointer"
+                  >
+                    <KeyRound className="h-3.5 w-3.5 text-zinc-500" />
+                    {t("devices.activateWithCode")}
+                  </button>
+                </div>
+
                 {/* Device List Data Table */}
                 <DataTable
                   columns={equipmentColumns}
@@ -905,6 +923,14 @@ export function DevicesPage() {
         onClose={handleCloseMaintModal}
         onSuccess={handleMaintSuccess}
         isAdminOrTech={isAdmin}
+      />
+
+      {/* Standalone Activate with Code Modal */}
+      <ActivateWithOtpModal
+        isOpen={activateOtpModalOpen}
+        loading={activateOtpLoading}
+        onClose={handleCloseActivateWithOtp}
+        onActivate={handleActivateWithOtp}
       />
 
       {/* Nextcloud Info Modal */}

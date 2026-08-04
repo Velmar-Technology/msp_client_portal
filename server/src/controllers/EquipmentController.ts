@@ -60,6 +60,31 @@ export class EquipmentController {
     }
   }
 
+  async activateWithOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { otp, deviceName, deviceSerial } = req.body;
+
+      if (typeof otp !== 'string' || !/^\d{6}$/.test(otp)) {
+        throw AppError.badRequest('Activation code (OTP) must be a 6-digit numeric code');
+      }
+
+      const slot = await equipmentService.activateSlot({
+        otp,
+        deviceName: (deviceName as string) || `Workstation-${Math.floor(100000 + Math.random() * 900000)}`,
+        deviceSerial: (deviceSerial as string) || `SN-SIM-${Math.floor(100000 + Math.random() * 900000)}`,
+        tenantId: req.user!.tenantId,
+        byAdmin: req.user!.role !== 'CLIENT',
+      });
+
+      res.json({
+        success: true,
+        data: slot,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async deactivateSlot(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const subId = req.params.subId as string;
