@@ -1,5 +1,5 @@
-import React, { useRef, useCallback, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
+import React, { useRef, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 export interface TermSection {
   id: string;
@@ -8,394 +8,590 @@ export interface TermSection {
 }
 
 const termsEn: TermSection[] = [
-    {
-      id: "acceptance",
-      title: "1. Acceptance and Scope of Services",
-      content: (
-        <>
-          <p className="font-bold text-primary mb-2">[User Summary]: By using this Nextcloud-based cloud storage application, you agree to these rules. If you do not agree, you cannot use the service.</p>
-          <p className="mt-2">
-            These Terms of Service constitute a legally binding agreement between Velmar Technology SRL (hereinafter, &quot;the Company&quot;), a commercial entity organized and existing under the laws of the Dominican Republic, with its registered tax ID (RNC), and the Client (hereinafter, &quot;the Client&quot;).
-          </p>
-          <p className="mt-2">
-            By accessing, registering for, or using the Nextcloud-based cloud storage reseller service (hereinafter, &quot;the Service&quot;), the Client represents that they have the legal capacity to enter into agreements and agrees to be unconditionally bound by these Terms of Service.
-          </p>
-        </>
-      )
-    },
-    {
-      id: "verification",
-      title: "2. Account Verification and OTP Security",
-      content: (
-        <>
-          <p className="font-bold text-primary mb-2">[User Summary]: You must verify your email address using a One-Time Password (OTP) before you can log in. Keep your OTP and account credentials secure.</p>
-          <p className="mt-2">
-            To ensure the security and integrity of the Service, the Company requires all new accounts to undergo an identity verification process:
-          </p>
-          <ul className="list-disc pl-5 mt-2 space-y-1">
-            <li><strong>OTP Verification:</strong> Upon registration, the Client must verify their email address by entering a One-Time Password (OTP) sent to their registered email. Unverified accounts will be strictly restricted from accessing the portal or any stored data.</li>
-            <li><strong>Credential Custody:</strong> The Client is solely responsible for maintaining the confidentiality of their login credentials and OTP codes. The Company will never ask for the Client's password or OTP via phone or external channels.</li>
-            <li><strong>Account Recovery:</strong> If the Client loses access to their registered email, the Company reserves the right to require additional corporate documentation (such as a valid RNC certificate) to process manual account recovery requests.</li>
-          </ul>
-        </>
-      )
-    },
-    {
-      id: "data-protection",
-      title: "3. Personal Data Protection (Ley No. 172-13)",
-      content: (
-        <>
-          <p className="font-bold text-primary mb-2">[User Summary]: We only store your files; we do not read them, mine them, or use them for advertising. You are responsible for your users' personal data and handling their access requests. Our technical staff is under strict confidentiality agreements.</p>
-          <p className="mt-2">
-            In compliance with Law No. 172-13 on the Protection of Personal Data in the Dominican Republic, the parties agree to the following parameters:
-          </p>
-          <ul className="list-disc pl-5 mt-2 space-y-1">
-            <li><strong>Roles of the Parties:</strong> The Company acts exclusively as the &quot;Data Processor&quot; (Encargado del Tratamiento) of the data stored within the Nextcloud servers, while the Client holds the status of &quot;Data Controller&quot; (Responsable del Tratamiento). The Client is solely responsible for determining the purposes, content, and use of the personal data it hosts.</li>
-            <li><strong>Confidentiality and NDAs:</strong> All technical and support personnel of the Company who may have access to the Nextcloud technical infrastructure are bound by strict non-disclosure and confidentiality agreements (NDAs) that remain in effect during and after their employment.</li>
-            <li><strong>Prohibition of Data Mining:</strong> The Company strictly and irrevocably prohibits its personnel and systems from performing any data mining (minería de datos), indexing content for advertising purposes, or conducting unauthorized scanning of the Client's files.</li>
-            <li><strong>ARCO Rights:</strong> The Client is directly responsible for ensuring and processing requests from end users to exercise their rights of Access, Rectification, Cancellation, and Opposition (ARCO Rights). If the Company receives such a request, it will immediately forward it to the Client for resolution.</li>
-          </ul>
-        </>
-      )
-    },
-    {
-      id: "acceptable-use",
-      title: "4. Acceptable Use and Cybercrimes (Ley No. 53-07)",
-      content: (
-        <>
-          <p className="font-bold text-primary mb-2">[User Summary]: You must not use the storage to upload malware, scams, child abuse material, or other illegal files. If you do, we will suspend your account immediately and cooperate with government authorities (DICAT and the Public Ministry) if required by a judge.</p>
-          <p className="mt-2">
-            The Client agrees to make lícito use of the Service, in strict compliance with Law No. 53-07 on Cybercrimes and High-Tech Delicts of the Dominican Republic:
-          </p>
-          <ul className="list-disc pl-5 mt-2 space-y-1">
-            <li><strong>Prohibited Actions:</strong> It is strictly forbidden to use the storage to host, distribute, or transmit malware, conduct phishing, commit computer-related fraud, or store illegal material, including but not limited to child sexual abuse material (CSAM) or intellectual property infringing files.</li>
-            <li><strong>Disclaimer of Liability:</strong> The Company does not actively monitor or scan uploaded files. The Client assumes sole civil and criminal liability for all hosted content and holds the Company harmless from any claim arising from violations of Law No. 53-07.</li>
-            <li><strong>Account Suspension &amp; Judicial Cooperation:</strong> Upon reasonable suspicion of illegal activity, the Company reserves the right to suspend the account automatically. The Company will fully cooperate with the High-Tech Crimes Investigation Department (DICAT) of the National Police and the Dominican Public Ministry upon receipt of a valid court order.</li>
-            <li><strong>Account Sharing and Resale Restrictions:</strong> Sharing account credentials, sub-licensing, or reselling storage slots to third parties is strictly prohibited. Subscriptions are personal and limited to the Client's physical organization. Unauthorized resource sharing triggers immediate account suspension.</li>
-            <li><strong>Fair Use I/O and CDN Prohibitions:</strong> The cloud storage is designed for standard collaborative workflows and synchronization. Using the storage to host public distribution sites (CDNs), high-frequency automatic backups from external databases, or repetitive automated script pooling that strains I/O capacity is prohibited. Violations will result in bandwidth throttling or account restrictions.</li>
-          </ul>
-        </>
-      )
-    },
-    {
-      id: "intellectual-property",
-      title: "5. Intellectual Property and Nextcloud Licensing (Ley No. 65-00)",
-      content: (
-        <>
-          <p className="font-bold text-primary mb-2">[User Summary]: You must own the rights or licenses for all files you upload. The app runs on Nextcloud, which is free software licensed under AGPLv3. We do not claim ownership of your files, and you do not own our code.</p>
-          <p className="mt-2">
-            Pursuant to Law No. 65-00 on Copyright of the Dominican Republic, the parties establish:
-          </p>
-          <ul className="list-disc pl-5 mt-2 space-y-1">
-            <li><strong>Client Declaration:</strong> The Client represents and warrants that they possess all copyrights, licenses, and authorizations necessary for the files, documents, and content uploaded or distributed through the Service. The Client will indemnify and hold the Company harmless from any third-party intellectual property infringement claims.</li>
-            <li><strong>Nextcloud License:</strong> The parties acknowledge that the base software used to provide the Service is Nextcloud, distributed under the GNU Affero General Public License version 3 (AGPLv3). The Company grants the Client a limited, non-exclusive, non-transferable sub-license to access the portal interface.</li>
-            <li><strong>Content Ownership:</strong> The Client retains full ownership of all stored files. The Company does not acquire any intellectual property rights over the Client's data.</li>
-          </ul>
-        </>
-      )
-    },
-    {
-      id: "sla",
-      title: "6. Service Level Agreement (SLA) & Maintenance",
-      content: (
-        <>
-          <p className="font-bold text-primary mb-2">[User Summary]: We guarantee 99.5% service availability each month. Scheduled maintenance in the early morning (1:00 AM - 6:00 AM AST) and general local internet provider failures (Claro, Altice, etc.) do not count as downtime. Our support helpdesk response times are active during Dominican business hours, exclude weekends/holidays, and require fair use to prevent abuse.</p>
-          <p className="mt-2">
-            The Company provides high-availability cloud infrastructure under the following terms:
-          </p>
-          <ul className="list-disc pl-5 mt-2 space-y-1">
-            <li><strong>Monthly Availability:</strong> The Company guarantees a Service Level Agreement (SLA) of 99.5% monthly availability.</li>
-            <li><strong>Maintenance Windows:</strong> Scheduled system maintenance is excluded from downtime calculations. These windows will occur during low-traffic hours, specifically between 1:00 AM and 6:00 AM Atlantic Standard Time (AST / Dominican Republic Local Time), and will be notified 24 hours in advance.</li>
-            <li><strong>Local Provider Outages:</strong> Interruptions caused by failures of local Dominican Republic telecommunication and internet service providers (including, but not limited to, Claro Dominicana, Altice Dominicana, Wind Telecom, etc.), or international fiber backbone cuts are excluded from downtime calculations and do not qualify for credits.</li>
-            <li><strong>Helpdesk Support and Ticket Queue Limits:</strong> The Helpdesk and support ticketing system are operated by the designated technical support team. To ensure quality of service and optimal resource allocation, all ticket response SLAs are targets and will be processed sequentially based on queue priority. The Company reserves the right to handle tickets individually rather than concurrently for a single Client.</li>
-            <li><strong>SLA Exclusions and Business Hours:</strong> Ticket response times (SLAs) apply exclusively during business hours (Monday through Friday, 8:00 AM to 5:00 PM AST / Dominican Republic local time), excluding national holidays in the Dominican Republic. Response times are suspended during weekends, holidays, and periods of technical staff rotations, scheduled leaves, or capacity adjustments.</li>
-            <li><strong>Support Fair Use Policy:</strong> To prevent abuse of helpdesk support capacity, Clients are prohibited from sending repetitive or duplicate tickets, submitting spam, or using offensive language. The technical team reserves the right to throttle, deprioritize, or suspend ticketing access for Clients who violate this fair use policy. Support is strictly limited to infrastructure and Nextcloud configuration; training on third-party software, operating systems, or basic computer literacy is excluded.</li>
-            <li><strong>Ticket Priority Classification Abuse:</strong> The Company reserves the sole right to categorize or downgrade ticket priority levels. Abuse of ticket urgency categories (such as classifying minor queries as Critical/P1) to circumvent queue rules will result in warnings, administrative fees, or temporary suspension of SLA guarantees.</li>
-          </ul>
-        </>
-      )
-    },
-    {
-      id: "backup",
-      title: "7. Obligatory Backup and Limitation of Liability",
-      content: (
-        <>
-          <p className="font-bold text-primary mb-2">[User Summary]: While we make automated backups of our servers, you are required to keep local copies of your critical files. If a catastrophic data loss occurs, our maximum financial liability is limited to one month of your subscription fee.</p>
-          <p className="mt-2">
-            In terms of risk management and liability allocation, the parties agree:
-          </p>
-          <ul className="list-disc pl-5 mt-2 space-y-1">
-            <li><strong>Sync Nature of the Service:</strong> The Service is a synchronization and availability tool, not an archive system. The Client is obligated to maintain separate local backups of all critical files.</li>
-            <li><strong>Server Backups:</strong> Although the Company performs daily automated backups of the physical server infrastructure for disaster recovery, it is not responsible for individual synchronization errors, file corruption, or user mistakes.</li>
-            <li><strong>Financial Liability Cap:</strong> In the event of catastrophic data loss, technical failure of hardware, or any event attributable to the Company's negligence, the maximum liability of the Company shall be strictly limited to the amount equivalent to one (1) month of subscription fees paid by the Client.</li>
-          </ul>
-        </>
-      )
-    },
-    {
-      id: "billing",
-      title: "8. Billing, ITBIS, Tax Invoices (NCF), and Grace Periods",
-      content: (
-        <>
-          <p className="font-bold text-primary mb-2">[User Summary]: We bill in Dominican Pesos (DOP) and include 18% ITBIS. We issue tax-valid invoices (NCF) for DGII-registered companies. If payment is late: Day 1: notification; Day 5: read-only access (no uploads); Day 15: full account suspension; Day 30: permanent and irreversible data deletion.</p>
-          <p className="mt-2">
-            Financial transactions and payment defaults are subject to the following rules:
-          </p>
-          <ul className="list-disc pl-5 mt-2 space-y-1">
-            <li><strong>Currency and Taxes:</strong> All subscription fees are billed in Dominican Pesos (DOP) and are subject to the eighteen percent (18%) Tax on Transfer of Industrialized Goods and Services (ITBIS), pursuant to the Dominican Tax Code.</li>
-            <li><strong>NCF Invoices:</strong> The Company issues invoices with Comprobante de Valor Fiscal (NCF) for corporate clients registered with the Directorate General of Internal Taxes (DGII), provided the Client submits their RNC prior to invoicing.</li>
-            <li><strong>Debt Evasion and Affiliate Accounts Restrictions:</strong> The Client is prohibited from registering new accounts under different names, email addresses, or corporate entities (affiliates) to evade outstanding balances, suspension periods, or deletion warnings. The Company reserves the right to link related accounts by RNC, Cédula, IP, or payment profiles, and transfer outstanding debt to the new account or suspend it immediately.</li>
-            <li><strong>Grace Periods &amp; Suspension:</strong> In the event of non-payment, the following timeline applies:
-              <ul className="list-circle pl-5 mt-1 space-y-1">
-                <li><strong>Day 1 of Delay:</strong> Email and in-app notification of unpaid invoice.</li>
-                <li><strong>Day 5 of Delay:</strong> Upload permission suspension. The account is set to "Read-Only" mode.</li>
-                <li><strong>Day 15 of Delay:</strong> Full account suspension. The Client cannot log in or access stored files.</li>
-                <li><strong>Day 30 of Delay:</strong> Irreversible deletion. All files stored on Nextcloud servers will be permanently purged to free disk space, with no liability to the Company.</li>
-              </ul>
-            </li>
-          </ul>
-        </>
-      )
-    },
-    {
-      id: "governing-law",
-      title: "9. Governing Law and Jurisdiction",
-      content: (
-        <>
-          <p className="font-bold text-primary mb-2">[User Summary]: These terms are governed by the laws of the Dominican Republic. Any disputes will be settled exclusively in the courts of San Pedro de Macorís.</p>
-          <p className="mt-2">
-            Any dispute or claim arising from the interpretation or execution of these Terms of Service shall be governed by the laws of the Dominican Republic. Both parties agree to submit to the exclusive jurisdiction of the courts of San Pedro de Macorís, Dominican Republic.
-          </p>
-        </>
-      )
-    },
-    {
-      id: "subscription-plans",
-      title: "10. Special Terms of Subscription Plans",
-      content: (
-        <>
-          <p className="font-bold text-primary mb-2">[User Summary]: Each plan has different prices, cloud storage quotas, and support levels. If your plan includes hardware loans, store discounts, or password managers, you must follow the corresponding rules. Password manager security is your responsibility.</p>
-          <p className="mt-2 font-semibold text-secondary">
-            Pricing and Terms Variation: All plan costs, storage quotas, and benefits are subject to change. Velmar Technology SRL reserves the right to modify these rates and parameters, and undertakes to notify active subscribers at least thirty (30) calendar days in advance via email or the support portal. Adjusted pricing will only apply to future billing cycles.
-          </p>
-          <p className="mt-2">
-            The subscription tiers provided under the Service are subject to the following parameters:
-          </p>
-          <ul className="list-disc pl-5 mt-2 space-y-1">
-            <li><strong>Basic Plan:</strong> Provides reactive remote support and chat, 25 GB of cloud storage, included backups, an 8-hour response SLA, and reactive remote monitoring with security patching.</li>
-            <li><strong>Student Starter Kit:</strong> Tailored for student use. Includes 50 GB of cloud storage, an 8-hour response SLA, monitoring with security patching, and a password manager service (subject to full client liability for master password custody).</li>
-            <li><strong>Standard Plan:</strong> Provides proactive support and regular maintenance, 8x5 helpdesk ticketing support, 25 GB of cloud storage, included backups, an 8-hour response SLA, and remote monitoring with security patching.</li>
-            <li><strong>Premium POS Plan:</strong> Tailored for point-of-sale systems. Includes technical support, an 8-hour response SLA, up to two (2) hours per week of On-Site support (restricted to Santo Domingo and Santiago metro areas), equipment loan under Comodato bailment rules (the Client is responsible for hardware return and custody), and automated backups.</li>
-            <li><strong>Advanced Plan:</strong> Includes all benefits of the Standard Plan, upgraded to 50 GB of cloud storage, a 4-hour response SLA, up to two (2) hours per month of On-Site support, a password manager service, and a non-cumulative 5% discount at the Velmar online or physical store.</li>
-            <li><strong>Custom / Corporate Plan (All-Inclusive):</strong> Available upon custom project quotes. Upgraded to 100 GB of cloud storage, a 1-hour response SLA for P1 tickets, up to two (2) hours per month of On-Site support, dedicated engineer remote support, continuous vulnerability scanning, comprehensive asset lifecycle tracking, executive technical escalation, and a 10% discount at the Velmar store.</li>
-          </ul>
-        </>
-      )
-    }
-  ];
+  {
+    id: "acceptance",
+    title: "1. Acceptance, Scope, and Electronic Contract Formation",
+    content: (
+      <>
+        <p className="font-bold text-primary mb-2">
+          [User Summary]: By registering, entering your verification code (OTP), or paying your invoice, you are
+          digitally signing this contract with full legal validity.
+        </p>
+        <p className="mt-2">
+          <strong>1.1. Scope:</strong> This contract governs the terms for the provision of managed technology services
+          (MSP), cloud data hosting and synchronization based on Nextcloud, remote/on-site technical support, and
+          related services (hereinafter, &quot;THE SERVICE&quot;).
+        </p>
+        <p className="mt-2">
+          <strong>1.2. Electronic Legal Validity:</strong> Pursuant to Articles 6 et seq. of Law No. 126-02 on
+          Electronic Commerce, Documents, and Digital Signatures of the Dominican Republic, the parties acknowledge that
+          electronic acceptance of these Terms (via web registration, OTP code submission, checking verification boxes,
+          or subscription payment) produces the same legal effects as a handwritten signed contract.
+        </p>
+        <p className="mt-2">
+          <strong>1.3. Prevalence of Conditions:</strong> In case of discrepancy between promotional information on the
+          website and this instrument, the provisions of this contract shall prevail.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "verification",
+    title: "2. Registration, OTP Verification, and Account Custody",
+    content: (
+      <>
+        <p className="font-bold text-primary mb-2">
+          [User Summary]: To use the platform, you must verify your email with an OTP code. You are solely responsible
+          for safeguarding your passwords.
+        </p>
+        <p className="mt-2">
+          <strong>2.1. OTP Verification:</strong> To ensure access integrity, THE CLIENT must authenticate their account
+          using a One-Time Password (OTP) sent to their email address. Unverified accounts will not have access to the
+          infrastructure.
+        </p>
+        <p className="mt-2">
+          <strong>2.2. Credential Responsibility:</strong> THE CLIENT is solely responsible for the security of their
+          users, passwords, and master keys. THE COMPANY will never request passwords or OTP codes via telephone or
+          unofficial channels.
+        </p>
+        <p className="mt-2">
+          <strong>2.3. Account Recovery:</strong> In the event of lost access to the primary email address, THE COMPANY
+          will require official corporate documentation (Legal representative's National ID or RNC Certificate) to
+          process manual resets.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "sla",
+    title: "3. Support Hours, Operational Capacity, and Service Level Agreement (SLA)",
+    content: (
+      <>
+        <p className="font-bold text-primary mb-2">
+          [User Summary]: We handle requests exclusively Monday to Friday from 9:00 AM to 4:00 PM. We do not offer 24/7
+          support. "Response time" is the time we take to read and evaluate your ticket, not the final resolution time.
+        </p>
+        <p className="mt-2">
+          <strong>3.1. Business Hours:</strong> Technical support is provided by human personnel exclusively Monday
+          through Friday, from 9:00 AM to 4:00 PM (Atlantic Standard Time - AST / Dominican Republic), excluding
+          official national holidays.
+        </p>
+        <p className="mt-2">
+          <strong>3.2. SLA Calculation:</strong> Requests submitted outside of business hours (after 4:00 PM, weekends,
+          or holidays) will be received by the platform, but the response time (SLA) calculation will begin at 9:00 AM
+          on the following business day.
+        </p>
+        <p className="mt-2">
+          <strong>3.3. Scope of Response Time (SLA):</strong> The SLA assigned to each plan (1h, 2h, or 4h business
+          hours) applies solely to the Initial Response Time or Acknowledgment (ACK) by technical staff. It in no way
+          guarantees final problem resolution within that period, which depends on technical complexity or external
+          telecommunication/power providers.
+        </p>
+        <p className="mt-2">
+          <strong>3.4. Operational Capacity Limitation:</strong> THE CLIENT acknowledges that THE COMPANY operates with
+          defined personnel capacity and sequential ticket assignment based on arrival order and priority. THE COMPANY
+          shall not be liable for delays resulting from extraordinary report accumulation or force majeure events.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "data-protection",
+    title: "4. Personal Data Protection and Confidentiality (Law No. 172-13)",
+    content: (
+      <>
+        <p className="font-bold text-primary mb-2">
+          [User Summary]: Your data belongs to you. We act as technical custodians. We do not read, mine, or sell your
+          files. If a major security breach occurs, we will notify you within 72 hours.
+        </p>
+        <p className="mt-2">
+          <strong>4.1. Capacity of the Parties:</strong> In accordance with Law No. 172-13 on Personal Data Protection,
+          THE CLIENT holds the status of Data Controller for hosted information, while THE COMPANY acts strictly as Data
+          Processor.
+        </p>
+        <p className="mt-2">
+          <strong>4.2. Confidentiality and Data Mining Prohibition:</strong> THE COMPANY prohibits its staff from
+          reading, indexing, commercially using, or data mining files stored by THE CLIENT. Staff with incidental server
+          access are bound by strict non-disclosure agreements.
+        </p>
+        <p className="mt-2">
+          <strong>4.3. Security Breach Protocol:</strong> If a confirmed security breach compromises the confidentiality
+          of THE CLIENT's data, THE COMPANY will notify the registered email address within seventy-two (72) business
+          hours, detailing findings and corrective measures.
+        </p>
+        <p className="mt-2">
+          <strong>4.4. ARCO Rights:</strong> THE CLIENT is directly responsible for managing Access, Rectification,
+          Cancellation, or Opposition (ARCO) requests from their end users.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "acceptable-use",
+    title: "5. Acceptable Use, RMM Monitoring, and Cybercrimes (Law No. 53-07)",
+    content: (
+      <>
+        <p className="font-bold text-primary mb-2">
+          [User Summary]: Uploading viruses, illegal content, or using the cloud for scams is strictly prohibited. You
+          authorize remote monitoring to keep your computer secure. If we detect crimes, we will cooperate with DICAT.
+        </p>
+        <p className="mt-2">
+          <strong>5.1. Criminal Compliance:</strong> THE CLIENT commits to complying with Law No. 53-07 on High-Tech
+          Crimes and Offenses. Storing or distributing malware, ransomware, child abuse material, phishing, defamatory
+          material, or copyright-infringing content is strictly prohibited.
+        </p>
+        <p className="mt-2">
+          <strong>5.2. Express RMM Authorization:</strong> THE CLIENT formally authorizes THE COMPANY to deploy Remote
+          Monitoring and Management (RMM) agents, patch scans, and security audits on their systems. This authorization
+          constitutes express permission under Article 6 of Law No. 53-07.
+        </p>
+        <p className="mt-2">
+          <strong>5.3. Judicial Cooperation (DICAT):</strong> Upon well-founded suspicion of illegal activities or in
+          compliance with orders from the Public Prosecutor's Office or the High-Tech Crimes Investigation Department
+          (DICAT) of the National Police, THE COMPANY may suspend the account and provide required information in
+          accordance with law.
+        </p>
+        <p className="mt-2">
+          <strong>5.4. Fair Network Use:</strong> Using cloud storage as a public Content Delivery Network (CDN) or
+          running automated high-density scripts that degrade server read/write (I/O) speeds is prohibited.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "intellectual-property",
+    title: "6. Intellectual Property and Licensing (Law No. 65-00)",
+    content: (
+      <>
+        <p className="font-bold text-primary mb-2">
+          [User Summary]: You must own or hold rights to the files you upload. The cloud software runs Nextcloud under
+          open-source AGPLv3 licensing.
+        </p>
+        <p className="mt-2">
+          <strong>6.1. Content Ownership:</strong> Pursuant to Copyright Law No. 65-00, THE CLIENT retains exclusive
+          ownership of data and information uploaded to the platform and shall hold THE COMPANY harmless from
+          third-party copyright infringement claims.
+        </p>
+        <p className="mt-2">
+          <strong>6.2. Nextcloud Software:</strong> THE COMPANY provides the service using open-source Nextcloud under
+          the GNU Affero General Public License v3 (AGPLv3). Contracting grants only a non-exclusive, non-transferable
+          sub-license to use the access portal.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "equipment",
+    title: "7. Equipment on Loan (Hardware Bailment / Comodato)",
+    content: (
+      <>
+        <p className="font-bold text-primary mb-2">
+          [User Summary]: If your plan includes loaned equipment (such as in the POS plan), the hardware belongs to
+          Velmar. If you cancel the service, you must return them within 5 days or pay for their replacement.
+        </p>
+        <p className="mt-2">
+          <strong>7.1. Legal Nature:</strong> Equipment delivered on loan (POS or Premium Plans) is governed by bailment
+          / Comodato rules (Articles 1875 et seq. of the Dominican Civil Code). Hardware remains the inalienable
+          property of THE COMPANY.
+        </p>
+        <p className="mt-2">
+          <strong>7.2. Custody and Return:</strong> THE CLIENT assumes legal custody of the equipment. Upon termination
+          of the contractual relationship, hardware must be returned within five (5) business days. In case of damage
+          from misuse, loss, or non-return, THE COMPANY will issue an invoice for replacement at new value.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "backup",
+    title: "8. Backups and Limitation of Liability",
+    content: (
+      <>
+        <p className="font-bold text-primary mb-2">
+          [User Summary]: Always maintain local backups of your critical files. If an unrecoverable failure occurs on
+          our end, our maximum financial liability is limited to 1 month of your subscription fee.
+        </p>
+        <p className="mt-2">
+          <strong>8.1. Local Backup Responsibility:</strong> THE SERVICE is a collaboration and availability tool. THE
+          CLIENT commits to maintaining local or secondary backups of their critical information.
+        </p>
+        <p className="mt-2">
+          <strong>8.2. Financial Liability Cap:</strong> Under Articles 1146 and 1147 of the Dominican Civil Code, for
+          any data loss or service disruption attributable to THE COMPANY's negligence, maximum compensation entitled to
+          THE CLIENT is strictly limited to one (1) month of subscription fees paid for the plan.
+        </p>
+        <p className="mt-2">
+          <strong>8.3. Exemption for Consequential Damages:</strong> THE COMPANY shall not be liable for indirect
+          damages, lost profits, lost sales, commercial losses, or business interruptions of THE CLIENT.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "billing",
+    title: "9. Rates, Invoicing (NCF), Taxes (ITBIS), and Non-Payment System",
+    content: (
+      <>
+        <p className="font-bold text-primary mb-2">
+          [User Summary]: Prices are in USD or DOP plus 18% ITBIS tax. If payment is late: on Day 5 your account becomes
+          read-only, on Day 15 access is suspended, and on Day 30 data is permanently deleted.
+        </p>
+        <p className="mt-2">
+          <strong>9.1. Taxes and Currency:</strong> Rates expressed in US Dollars (USD) or Dominican Pesos (DOP) do not
+          include eighteen percent (18%) ITBIS tax, which will be applied to the final invoice per the Tax Code.
+        </p>
+        <p className="mt-2">
+          <strong>9.2. NCF Issuance:</strong> THE COMPANY will issue Tax Credit Invoices (NCF) provided THE CLIENT
+          supplies a valid RNC before the billing cycle cutoff.
+        </p>
+        <p className="mt-2">
+          <strong>9.3. Non-Payment Suspension Scale:</strong>
+        </p>
+        <ul className="list-disc pl-5 mt-2 space-y-1">
+          <li>
+            <strong>Day 1 of Overdue:</strong> Automated electronic collection notification.
+          </li>
+          <li>
+            <strong>Day 5 of Overdue:</strong> Account changed to &quot;Read-only mode&quot; (no new files can be
+            uploaded or modified).
+          </li>
+          <li>
+            <strong>Day 15 of Overdue:</strong> Full suspension of access to platform and support services.
+          </li>
+          <li>
+            <strong>Day 30 of Overdue:</strong> Permanent technical purge and deletion of data from servers for storage
+            liberation, with zero liability to THE COMPANY.
+          </li>
+        </ul>
+      </>
+    ),
+  },
+  {
+    id: "governing-law",
+    title: "10. Governing Law and Competent Jurisdiction",
+    content: (
+      <>
+        <p className="font-bold text-primary mb-2">
+          [User Summary]: Any legal dispute will be resolved under the laws of the Dominican Republic in the courts of
+          San Pedro de Macorís.
+        </p>
+        <p className="mt-2">
+          <strong>10.1. Legislation:</strong> This contract is governed in its entirety by the laws of the Dominican
+          Republic.
+        </p>
+        <p className="mt-2">
+          <strong>10.2. Jurisdiction:</strong> For any controversy, dispute, or legal claim arising from this agreement,
+          the parties irrevocably agree to submit to the exclusive jurisdiction of the ordinary courts of the Judicial
+          District of San Pedro de Macorís, Dominican Republic, expressly waiving any other jurisdiction that may
+          correspond to them.
+        </p>
+      </>
+    ),
+  },
+];
 
-  const termsEs: TermSection[] = [
-    {
-      id: "acceptance",
-      title: "1. Aceptación y Objeto de los Términos",
-      content: (
-        <>
-          <p className="font-bold text-primary mb-2">[Resumen para el Usuario]: Al usar esta aplicación de almacenamiento en la nube, aceptas nuestras reglas. Si no estás de acuerdo, no la uses.</p>
-          <p className="mt-2">
-            Este documento constituye un contrato legalmente vinculante entre Velmar Technology SRL (en adelante, &quot;la Empresa&quot;), una sociedad comercial organizada y existente bajo las leyes de la República Dominicana, provista de su Registro Nacional de Contribuyentes (RNC), y el Cliente (en adelante, &quot;el Cliente&quot;).
-          </p>
-          <p className="mt-2">
-            Al acceder, registrarse o utilizar el servicio de reventa de almacenamiento en la nube basado en Nextcloud (en adelante, &quot;el Servicio&quot;), el Cliente declara que tiene capacidad legal para contratar y acepta someterse incondicionalmente a los presentes Términos de Servicio.
-          </p>
-        </>
-      )
-    },
-    {
-      id: "verification",
-      title: "2. Verificación de Cuenta y Seguridad OTP",
-      content: (
-        <>
-          <p className="font-bold text-primary mb-2">[Resumen para el Usuario]: Debes verificar tu correo electrónico usando una Contraseña de un Solo Uso (OTP) antes de poder iniciar sesión. Mantén tu OTP y credenciales seguras.</p>
-          <p className="mt-2">
-            Para garantizar la seguridad e integridad del Servicio, la Empresa requiere que todas las cuentas nuevas se sometan a un proceso de verificación de identidad:
-          </p>
-          <ul className="list-disc pl-5 mt-2 space-y-1">
-            <li><strong>Verificación OTP:</strong> Al registrarse, el Cliente debe verificar su dirección de correo electrónico ingresando una Contraseña de un Solo Uso (OTP) enviada a su correo registrado. Las cuentas no verificadas tendrán el acceso estrictamente restringido al portal y a cualquier dato almacenado.</li>
-            <li><strong>Custodia de Credenciales:</strong> El Cliente es el único responsable de mantener la confidencialidad de sus credenciales de acceso y códigos OTP. La Empresa nunca solicitará la contraseña ni el OTP del Cliente por teléfono o canales externos.</li>
-            <li><strong>Recuperación de Cuenta:</strong> Si el Cliente pierde el acceso a su correo registrado, la Empresa se reserva el derecho de requerir documentación corporativa adicional (como un certificado de RNC válido) para procesar solicitudes de recuperación manual de la cuenta.</li>
-          </ul>
-        </>
-      )
-    },
-    {
-      id: "data-protection",
-      title: "3. Marco de Protección de Datos Personales (Ley No. 172-13)",
-      content: (
-        <>
-          <p className="font-bold text-primary mb-2">[Resumen para el Usuario]: Nosotros solo guardamos tus archivos, no los leemos ni los usamos para publicidad. Tú eres responsable de los datos de tus usuarios y de atender sus solicitudes. Nuestro equipo técnico firma acuerdos de confidencialidad y tiene prohibido minar tus datos.</p>
-          <p className="mt-2">
-            En cumplimiento de la Ley No. 172-13 sobre Protección de Datos de Carácter Personal en la República Dominicana, las partes establecen lo siguiente:
-          </p>
-          <ul className="list-disc pl-5 mt-2 space-y-1">
-            <li><strong>Roles de las Partes:</strong> La Empresa actúa exclusivamente en calidad de &quot;Encargado del Tratamiento&quot; de los datos almacenados en los servidores de Nextcloud, mientras que el Cliente ostenta la calidad de &quot;Responsable del Tratamiento&quot;. El Cliente es el único que determina la finalidad, contenido y uso de los datos personales que aloja.</li>
-            <li><strong>Confidencialidad del Personal Técnico:</strong> Todo el personal técnico y de soporte de la Empresa que tenga acceso incidental a la infraestructura técnica de Nextcloud está sujeto a rigurosos acuerdos de confidencialidad y no divulgación (NDAs) vigentes durante y después de su relación laboral.</li>
-            <li><strong>Prohibición Absoluta de Minería de Datos:</strong> La Empresa prohíbe de forma absoluta e irrevocable a su personal y sistemas realizar cualquier actividad de minería de datos (data mining), indexación de contenidos con fines publicitarios o escaneo no autorizado de los archivos del Cliente.</li>
-            <li><strong>Atención de Derechos ARCO:</strong> El Cliente es responsable directo de garantizar y atender el ejercicio de los derechos de Acceso, Rectificación, Cancelación y Oposición (Derechos ARCO) de sus usuarios finales. Si la Empresa recibe alguna solicitud de esta índole, la remitirá inmediatamente al Cliente para su resolución.</li>
-          </ul>
-        </>
-      )
-    },
-    {
-      id: "acceptable-use",
-      title: "4. Uso Aceptable y Delitos Informáticos (Ley No. 53-07)",
-      content: (
-        <>
-          <p className="font-bold text-primary mb-2">[Resumen para el Usuario]: No puedes usar este espacio para subir virus, estafas, pornografía infantil o cosas ilegales. Si lo haces, suspenderemos tu cuenta de inmediato y entregaremos la información a la policía (DICAT) y a la fiscalía si un juez lo ordena.</p>
-          <p className="mt-2">
-            El Cliente se compromete a hacer un uso lícito del Servicio, en estricto cumplimiento de la Ley No. 53-07 sobre Crímenes y Delitos de Alta Tecnología de la República Dominicana:
-          </p>
-          <ul className="list-disc pl-5 mt-2 space-y-1">
-            <li><strong>Prohibiciones:</strong> Queda expresamente prohibido utilizar el almacenamiento para alojar, distribuir o transmitir software malicioso (malware), realizar actividades de suplantación de identidad (phishing), cometer fraudes informáticos, almacenar material ilícito, difamatorio o pornografía infantil.</li>
-            <li><strong>Exención de Responsabilidad:</strong> La Empresa no controla ni supervisa de manera proactiva los archivos subidos al Servicio. Por tanto, el Cliente asume responsabilidad penal y civil exclusiva por cualquier contenido almacenado y exime a la Empresa de cualquier responsabilidad derivada de infracciones a la Ley No. 53-07.</li>
-            <li><strong>Suspensión y Cooperación Judicial:</strong> Ante la sospecha fundada de actividades ilícitas o en respuesta a solicitudes e informes de vulnerabilidad, la Empresa se reserva el derecho de suspender de forma automática e inmediata el acceso al Servicio. Asimismo, cooperará plenamente con el Departamento de Investigación de Crímenes y Delitos de Alta Tecnología (DICAT) de la Policía Nacional y el Ministerio Público dominicano ante órdenes judiciales válidas.</li>
-            <li><strong>Prohibición de Compartición de Cuentas y Reventa:</strong> Queda estrictamente prohibido compartir las credenciales de acceso, sublicenciar o revender cuotas de almacenamiento a terceros no autorizados. Las cuentas son de uso exclusivo para la organización y personal del Cliente. Cualquier violación o compartición no autorizada causará la suspensión del servicio.</li>
-            <li><strong>Límites de Uso Justo de I/O y CDN:</strong> El almacenamiento en la nube está destinado para flujos de trabajo convencionales de colaboración y sincronización. Se prohíbe el uso de la infraestructura como red de distribución de contenidos públicos (CDN), la ejecución de copias de seguridad continuas y masivas de bases de datos externas mediante scripts de alta frecuencia, o actividades de extracción automatizada que afecten la capacidad de lectura/escritura (I/O) del servidor. Incurrir en estas conductas autoriza a la Empresa a limitar el ancho de banda o suspender la cuenta.</li>
-          </ul>
-        </>
-      )
-    },
-    {
-      id: "intellectual-property",
-      title: "5. Propiedad Intelectual y Licencia AGPLv3 (Ley No. 65-00)",
-      content: (
-        <>
-          <p className="font-bold text-primary mb-2">[Resumen para el Usuario]: Asegúrate de tener los derechos de autor de todo lo que subes. La aplicación utiliza Nextcloud, que es software libre bajo licencia AGPLv3, y no reclamamos propiedad sobre tus archivos ni tú sobre nuestro código.</p>
-          <p className="mt-2">
-            En virtud de la Ley No. 65-00 sobre Derecho de Autor de la República Dominicana:
-          </p>
-          <ul className="list-disc pl-5 mt-2 space-y-1">
-            <li><strong>Declaración del Cliente:</strong> El Cliente declara y garantiza que posee todos los derechos de autor, licencias y autorizaciones necesarias para los archivos, documentos y contenidos que sube o distribuye a través del Servicio. El Cliente mantendrá indemne a la Empresa frente a cualquier demanda de terceros por violación de derechos de propiedad intelectual.</li>
-            <li><strong>Licencia Nextcloud:</strong> Las partes reconocen que el software base utilizado para proporcionar el Servicio es Nextcloud, el cual se distribuye y opera bajo la licencia pública GNU Affero General Public License versión 3 (AGPLv3). La Empresa otorga al Cliente una sublicencia limitada, no exclusiva e intransferible para usar la interfaz del portal.</li>
-            <li><strong>Propiedad del Contenido:</strong> El Cliente conserva la propiedad exclusiva de todos sus datos almacenados. La Empresa no adquiere derecho alguno sobre la propiedad intelectual del Cliente.</li>
-          </ul>
-        </>
-      )
-    },
-    {
-      id: "sla",
-      title: "6. Acuerdo de Nivel de Servicio (SLA) y Mantenimiento",
-      content: (
-        <>
-          <p className="font-bold text-primary mb-2">[Resumen para el Usuario]: Te garantizamos que el servicio estará en línea el 99.5% del tiempo cada mes. No cuentan como caídas las ventanas de mantenimiento programadas en la madrugada (1:00 AM a 6:00 AM, hora dominicana) ni los problemas generales de internet con Claro o Altice. Nuestra mesa de ayuda ofrece respuestas en días laborables y horas de oficina dominicanas, suspendiéndose en fines de semana/feriados, y se prohíbe el uso abusivo o reiterado de tickets.</p>
-          <p className="mt-2">
-            La Empresa provee infraestructura en la nube con altos estándares bajo las siguientes condiciones:
-          </p>
-          <ul className="list-disc pl-5 mt-2 space-y-1">
-            <li><strong>Disponibilidad Mensual:</strong> La Empresa garantiza un Acuerdo de Nivel de Servicio (SLA) de disponibilidad del Servicio del 99.5% computado mensualmente.</li>
-            <li><strong>Ventanas de Mantenimiento Excluidas:</strong> Se excluyen del cómputo de disponibilidad las ventanas de mantenimiento técnico programado, las cuales se realizarán preferiblemente en horarios de bajo tráfico, específicamente de 1:00 AM a 6:00 AM, Hora Estándar del Atlántico (AST / Hora de la República Dominicana). Estas ventanas se notificarán con al menos 24 horas de antelación.</li>
-            <li><strong>Fallas Externas Excluidas:</strong> No se considerarán caídas del Servicio ni darán derecho a penalización alguna las interrupciones generales causadas por proveedores locales de telecomunicaciones e internet en la República Dominicana (incluyendo, de manera enunciativa pero no limitativa, Claro Dominicana, Altice Dominicana, Wind Telecom, etc.), o fallas en la red troncal de conectividad internacional.</li>
-            <li><strong>Límites de la Mesa de Ayuda y Cola de Soporte:</strong> La mesa de ayuda y el soporte técnico son atendidos por el personal de soporte técnico designado. Para garantizar la calidad del servicio y la asignación óptima de recursos, los tiempos de respuesta (SLA) se gestionarán de forma secuencial según la prioridad de la cola de tickets. La Empresa se reserva el derecho de procesar los casos de manera individual y no simultánea para un mismo Cliente.</li>
-            <li><strong>Cómputo de Horas y Horario Laboral de Soporte:</strong> Los SLAs de respuesta aplican exclusivamente durante días hábiles y en horario de oficina (lunes a viernes de 8:00 AM a 5:00 PM, hora de la República Dominicana), excluyendo los días feriados oficiales de la República Dominicana. El conteo de tiempo se suspende durante fines de semana, feriados y periodos de rotación de personal, licencias programadas, o ajustes de capacidad operativa.</li>
-            <li><strong>Política de Uso Justo de Soporte:</strong> A fin de evitar la saturación de los canales de soporte, se prohíbe el envío de tickets duplicados, spam o mensajes ofensivos. El equipo técnico se reserva la facultad de limitar el flujo de respuestas, degradar la prioridad de los tickets o suspender temporalmente el acceso al portal de soporte de aquellos clientes que incurran en prácticas abusivas. El soporte se limita a la infraestructura y configuración del servicio Nextcloud, excluyendo la capacitación en sistemas operativos o software de terceros.</li>
-            <li><strong>Abuso en la Priorización de Tickets:</strong> El equipo técnico se reserva la facultad exclusiva de reclasificar o degradar el nivel de prioridad de los reportes. El abuso sistemático de las categorías de urgencia (por ejemplo, catalogar incidentes de baja importancia como Críticos/P1) con el fin de eludir los tiempos de la cola ordinaria conllevará amonestaciones o la suspensión temporal del cómputo de SLA.</li>
-          </ul>
-        </>
-      )
-    },
-    {
-      id: "backup",
-      title: "7. Cláusula de Respaldo Obligatorio (Backup) y Límite de Responsabilidad",
-      content: (
-        <>
-          <p className="font-bold text-primary mb-2">[Resumen para el Usuario]: Aunque hacemos copias de seguridad de los servidores, debes guardar copias locales de tus archivos importantes. Si ocurre una pérdida total de datos por algún fallo grave, lo máximo que te compensaremos será el valor de un mes de tu suscripción.</p>
-          <p className="mt-2">
-            En cuanto a la mitigación de riesgos y la responsabilidad operativa:
-          </p>
-          <ul className="list-disc pl-5 mt-2 space-y-1">
-            <li><strong>Naturaleza del Servicio:</strong> El Servicio es una herramienta de sincronización, colaboración y disponibilidad de archivos en la nube, y no debe considerarse un sistema de archivo en frío o de almacenamiento definitivo absoluto. El Cliente está obligado a mantener copias locales o respaldos externos de sus archivos críticos y sensibles.</li>
-            <li><strong>Copias de Seguridad de la Empresa:</strong> Aunque la Empresa ejecuta respaldos automatizados diarios de la infraestructura física del servidor para recuperación de desastres, no se hace responsable por fallas de sincronización individuales, errores del usuario o archivos corruptos.</li>
-            <li><strong>Límite de Responsabilidad Financiera:</strong> En caso de una pérdida catastrófica de datos, falla técnica insubsanable del hardware o cualquier evento imputable a la negligencia de la Empresa, la responsabilidad civil y financiera máxima de la Empresa frente al Cliente quedará estrictamente limitada al monto equivalente a un (1) mes de suscripción pagada por el Cliente en el plan correspondiente al momento del incidente.</li>
-          </ul>
-        </>
-      )
-    },
-    {
-      id: "billing",
-      title: "8. Política de Pagos, Facturación (NCF) y Escala de Impagos",
-      content: (
-        <>
-          <p className="font-bold text-primary mb-2">[Resumen para el Usuario]: Cobramos en Pesos Dominicanos (DOP) e incluimos el 18% de ITBIS. Si necesitas factura con valor fiscal para la DGII, la emitimos. Si te retrasas en el pago, a partir del día 1 te avisaremos; al día 5 tu cuenta será de solo lectura; al día 15 se suspenderá por completo; y al día 30 borraremos tus datos definitivamente de los servidores.</p>
-          <p className="mt-2">
-            El régimen de pagos, impuestos y suspensión de cuentas se regirá por las siguientes condiciones:
-          </p>
-          <ul className="list-disc pl-5 mt-2 space-y-1">
-            <li><strong>Moneda e Impuestos:</strong> Las tarifas de suscripción se facturan en Pesos Dominicanos (DOP) y están sujetas a la aplicación del dieciocho por ciento (18%) del Impuesto sobre Transferencias de Bienes Industrializados y Servicios (ITBIS), conforme al Código Tributario de la República Dominicana.</li>
-            <li><strong>Emisión de NCF:</strong> La Empresa emitirá facturas con Comprobante de Valor Fiscal (NCF) para las personas jurídicas o físicas debidamente registradas ante la Dirección General de Impuestos Internos (DGII), siempre y cuando el Cliente suministre su RNC correspondiente antes de la facturación.</li>
-            <li><strong>Evasión de Deudas e Inhabilitación de Cuentas Vinculadas:</strong> Se prohíbe la creación de nuevas cuentas de usuario o de facturación bajo nombres alternativos, correos electrónicos distintos o identidades corporativas afiliadas con el fin de evadir balances pendientes, periodos de suspensión o alertas de borrado. La Empresa se reserva el derecho de vincular cuentas asociadas por RNC, Cédula de Identidad, dirección IP o métodos de pago, trasladando el cobro de la deuda a la nueva cuenta o suspendiéndola de inmediato.</li>
-            <li><strong>Proceso de Impago y Escala de Suspensión:</strong> En caso de atraso en el pago, se aplicará el siguiente procedimiento adaptado al mercado dominicano:
-              <ul className="list-circle pl-5 mt-1 space-y-1">
-                <li><strong>Día 1 de atraso:</strong> Emisión de una notificación electrónica automática de cobro al correo registrado del Cliente y aviso directo en la aplicación.</li>
-                <li><strong>Día 5 de atraso:</strong> Suspensión de los permisos de escritura y subida. La cuenta pasará a "Modo de solo lectura" (Read-only), impidiendo subir nuevos archivos o modificar los existentes.</li>
-                <li><strong>Día 15 de atraso:</strong> Suspensión total del acceso. El Cliente y sus usuarios no podrán ingresar a la plataforma ni visualizar los archivos.</li>
-                <li><strong>Día 30 de atraso:</strong> Eliminación definitiva e irreversible. Se procederá con la purga técnica completa de todos los datos alojados en los servidores y cuentas de Nextcloud para liberar espacio en disco, sin que la Empresa asuma responsabilidad alguna por dicha pérdida de información.</li>
-              </ul>
-            </li>
-          </ul>
-        </>
-      )
-    },
-    {
-      id: "governing-law",
-      title: "9. Ley Aplicable y Jurisdicción Dominicana",
-      content: (
-        <>
-          <p className="font-bold text-primary mb-2">[Resumen para el Usuario]: Estos términos se rigen por las leyes de la República Dominicana. Cualquier disputa o desacuerdo se resolverá en los tribunales de San Pedro de Macorís.</p>
-          <p className="mt-2">
-            Cualquier controversia, disputa o reclamación derivada de la interpretación o ejecución de los presentes Términos de Servicio se regirá exclusivamente por las leyes de la República Dominicana.
-          </p>
-          <p className="mt-2">
-            Ambas partes acuerdan someterse a la jurisdicción exclusiva de los tribunales de San Pedro de Macorís, República Dominicana, renunciando a cualquier otro fuero que pudiera corresponderles por razón de sus domicilios presentes o futuros.
-          </p>
-        </>
-      )
-    },
-    {
-      id: "subscription-plans",
-      title: "10. Términos Especiales de los Planes de Suscripción",
-      content: (
-        <>
-          <p className="font-bold text-primary mb-2">[Resumen para el Usuario]: Cada plan tiene un precio, cantidad de almacenamiento y nivel de soporte diferente. Si tu plan incluye préstamo de equipos, descuentos en la tienda o administrador de contraseñas, debes seguir las reglas de devolución y cuidado correspondientes. La seguridad de tu gestor de contraseñas es tu responsabilidad.</p>
-          <p className="mt-2 font-semibold text-secondary">
-            Variación de Costos y Condiciones: Los precios, cuotas de almacenamiento y beneficios asociados a cada plan de suscripción están sujetos a variaciones. Velmar Technology SRL se reserva el derecho de modificar las tarifas y especificaciones de los planes, comprometiéndose a notificar a los clientes activos con al menos treinta (30) días calendario de antelación por correo electrónico o a través del portal de soporte. Las tarifas modificadas se aplicarán únicamente en los períodos de facturación subsecuentes.
-          </p>
-          <p className="mt-2">
-            Los diferentes niveles de planes y suscripciones ofrecidos bajo el Servicio están sujetos a los siguientes parámetros y condiciones específicas:
-          </p>
-          <ul className="list-disc pl-5 mt-2 space-y-1">
-            <li><strong>Plan Básico:</strong> Incluye soporte remoto reactivo y chat, 25 GB de almacenamiento en la nube, copia de seguridad incluida, SLA de respuesta de 8 horas, y monitoreo remoto con parches de seguridad estándar.</li>
-            <li><strong>Kit de Inicio para Estudiantes:</strong> Diseñado para uso académico. Incluye 50 GB de almacenamiento en la nube, SLA de respuesta de 8 horas, monitoreo con parches de seguridad, y servicio de administrador de contraseñas (bajo absoluta responsabilidad del usuario por el resguardo de su clave maestra).</li>
-            <li><strong>Plan Estándar:</strong> Incluye soporte proactivo y mantenimiento regular del sistema, soporte de mesa de ayuda en horario 8x5, 25 GB de almacenamiento en la nube, copia de seguridad incluida, SLA de respuesta de 8 horas, y monitoreo con parches de seguridad.</li>
-            <li><strong>Plan Premium POS:</strong> Especializado para sistemas de puntos de venta. Incluye soporte técnico, SLA de respuesta de 8 horas, soporte On-Site presencial de hasta dos (2) horas semanales (restringido a Santo Domingo y Santiago), préstamo de equipos POS bajo la modalidad de Comodato (el Cliente se obliga a la custodia y devolución del hardware entregado), y copia de seguridad.</li>
-            <li><strong>Plan Avanzado:</strong> Incluye todos los beneficios del Plan Estándar, incrementando la cuota a 50 GB de almacenamiento en la nube, SLA de respuesta de 4 horas, soporte On-Site de hasta dos (2) horas al mes, administrador de contraseñas, y un 5% de descuento no acumulable en compras en la tienda Velmar.</li>
-            <li><strong>Plan Personalizado o Avanzado &quot;Todo Incluido&quot; (Custom / Corporativo):</strong> Sujeto a cotizaciones y contratos a medida. Ofrece 100 GB de almacenamiento en la nube, SLA de respuesta de 1 hora para casos críticos, soporte On-Site de hasta dos (2) horas al mes, soporte de ingeniero dedicado remoto, escaneo continuo de vulnerabilidades en red, seguimiento exhaustivo del ciclo de vida de los activos, escalación jerárquica ejecutiva y un 10% de descuento en la tienda Velmar.</li>
-          </ul>
-        </>
-      )
-    }
-  ];
-
-  
+const termsEs: TermSection[] = [
+  {
+    id: "acceptance",
+    title: "1. Aceptación, Objeto y Formación del Contrato Electrónico",
+    content: (
+      <>
+        <p className="font-bold text-primary mb-2">
+          Al registrarte, ingresar tu código de verificación (OTP) o pagar tu factura, estás firmando digitalmente este
+          contrato con plena validez legal.
+        </p>
+        <p className="mt-2">
+          <strong>1.1. Objeto:</strong> El presente contrato regula los términos para la prestación de servicios
+          gestionados de tecnología (MSP), alojamiento y sincronización de datos en la nube basados en Nextcloud,
+          soporte técnico remoto/presencial y servicios conexos (en adelante, &quot;EL SERVICIO&quot;).
+        </p>
+        <p className="mt-2">
+          <strong>1.2. Validez Legal Electrónica:</strong> Conforme a los artículos 6 y subsiguientes de la Ley No.
+          126-02 sobre Comercio Electrónico, Documentos y Firmas Digitales de la República Dominicana, las partes
+          reconocen que la aceptación electrónica de estos Términos (mediante registro web, envío de código OTP, marcado
+          de casillas de verificación o pago de suscripción) produce los mismos efectos jurídicos que un contrato
+          firmado de manera manuscrita.
+        </p>
+        <p className="mt-2">
+          <strong>1.3. Prevalencia de las Condiciones:</strong> En caso de discrepancia entre la información
+          publicitaria del sitio web y el presente instrumento, prevalecerán las disposiciones de este contrato.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "verification",
+    title: "2. Registro, Verificación OTP y Custodia de Cuentas",
+    content: (
+      <>
+        <p className="font-bold text-primary mb-2">
+          Para usar la plataforma debes verificar tu correo con un código OTP. Eres el único responsable de cuidar tus
+          contraseñas.
+        </p>
+        <p className="mt-2">
+          <strong>2.1. Verificación OTP:</strong> Para garantizar la integridad del acceso, EL CLIENTE debe autenticar
+          su cuenta mediante una Contraseña de un Solo Uso (OTP) enviada a su correo electrónico. Las cuentas no
+          verificadas no tendrán acceso a la infraestructura.
+        </p>
+        <p className="mt-2">
+          <strong>2.2. Responsabilidad de Credenciales:</strong> EL CLIENTE es el único responsable de la seguridad de
+          sus usuarios, contraseñas y claves maestras. LA EMPRESA nunca solicitará contraseñas ni códigos OTP por vía
+          telefónica o canales no oficiales.
+        </p>
+        <p className="mt-2">
+          <strong>2.3. Recuperación de Cuenta:</strong> En caso de pérdida de acceso al correo principal, LA EMPRESA
+          exigirá documentación corporativa oficial (Cédula del representante legal o Certificado de RNC) para procesar
+          el restablecimiento manual.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "sla",
+    title: "3. Horario de Atención, Capacidad Operativa y Niveles de Servicio (SLA)",
+    content: (
+      <>
+        <p className="font-bold text-primary mb-2">
+          Atendemos solicitudes únicamente de Lunes a Viernes de 9:00 AM a 4:00 PM. No ofrecemos soporte 24/7. El
+          &quot;tiempo de respuesta&quot; es el tiempo en que leemos y evaluamos tu ticket, no el tiempo de solución
+          final.
+        </p>
+        <p className="mt-2">
+          <strong>3.1. Jornada Laboral de Atención:</strong> El servicio de soporte técnico es prestado por personal
+          humano exclusivamente en el horario de Lunes a Viernes, de 9:00 AM a 4:00 PM (Hora Estándar del Atlántico -
+          AST / República Dominicana), excluyendo los días feriados oficiales decretados en el país.
+        </p>
+        <p className="mt-2">
+          <strong>3.2. Cómputo de SLAs:</strong> Las solicitudes enviadas fuera de la jornada laboral (después de las
+          4:00 PM, fines de semana o feriados) serán recibidas por la plataforma, pero el cómputo del tiempo de
+          respuesta (SLA) comenzará a correr a partir de las 9:00 AM del siguiente día hábil.
+        </p>
+        <p className="mt-2">
+          <strong>3.3. Alcance del Tiempo de Respuesta (SLA):</strong> El SLA asignado a cada plan (1h, 2h o 4h hábiles)
+          corresponde únicamente al Tiempo de Respuesta Inicial o Acuse de Recibo (ACK) por parte del personal técnico.
+          En ningún caso garantiza la resolución definitiva del problema dentro de dicho lapso, la cual dependerá de la
+          complejidad de la falla técnica o de proveedores externos de telecomunicaciones/energía.
+        </p>
+        <p className="mt-2">
+          <strong>3.4. Limitación de Capacidad Operativa:</strong> EL CLIENTE reconoce que LA EMPRESA opera con
+          capacidad de personal delimitada y asignación secuencial de tickets por orden de llegada y prioridad. LA
+          EMPRESA no responderá por retrasos derivados de acumulaciones extraordinarias de reportes o eventos de fuerza
+          mayor.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "data-protection",
+    title: "4. Protección de Datos Personales y Confidencialidad (Ley No. 172-13)",
+    content: (
+      <>
+        <p className="font-bold text-primary mb-2">
+          Tus datos son tuyos. Nosotros actuamos como custodios técnicos. No leemos, minamos ni vendemos tus archivos.
+          Si ocurre un fallo de seguridad grave, te notificaremos en 72 horas.
+        </p>
+        <p className="mt-2">
+          <strong>4.1. Calidad de las Partes:</strong> De acuerdo con la Ley No. 172-13 sobre Protección de Datos de
+          Carácter Personal, EL CLIENTE ostenta la calidad de Responsable del Tratamiento de la información que aloja, y
+          LA EMPRESA actúa estrictamente como Encargado del Tratamiento.
+        </p>
+        <p className="mt-2">
+          <strong>4.2. Confidencialidad y Prohibición de Minería de Datos:</strong> LA EMPRESA prohíbe a su personal la
+          lectura, indexación, uso comercial o minería de datos (data mining) sobre los archivos almacenados por EL
+          CLIENTE. El personal con acceso incidental a los servidores está sujeto a acuerdos de confidencialidad
+          estrictos.
+        </p>
+        <p className="mt-2">
+          <strong>4.3. Protocolo de Brechas de Seguridad:</strong> En caso de confirmarse una falla de seguridad que
+          comprometa la confidencialidad de los datos de EL CLIENTE, LA EMPRESA notificará al correo registrado en un
+          plazo no mayor a setenta y dos (72) horas hábiles, indicando los hallazgos y las medidas correctivas
+          aplicadas.
+        </p>
+        <p className="mt-2">
+          <strong>4.4. Derechos ARCO:</strong> EL CLIENTE es responsable directo de gestionar las solicitudes de Acceso,
+          Rectificación, Cancelación u Oposición (ARCO) de sus usuarios finales.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "acceptable-use",
+    title: "5. Uso Aceptable, Monitoreo RMM y Delitos Informáticos (Ley No. 53-07)",
+    content: (
+      <>
+        <p className="font-bold text-primary mb-2">
+          Está prohibido subir virus, contenido ilegal o usar la nube para estafas. Autorizas el monitoreo remoto para
+          mantener tu equipo seguro. Si detectamos delitos, cooperaremos con la DICAT.
+        </p>
+        <p className="mt-2">
+          <strong>5.1. Cumplimiento Penal:</strong> EL CLIENTE se obliga a cumplir con la Ley No. 53-07 sobre Crímenes y
+          Delitos de Alta Tecnología. Queda prohibido el almacenamiento o distribución de malware, ransomware,
+          pornografía infantil, phishing, material difamatorio o contenidos que infrinjan derechos de autor.
+        </p>
+        <p className="mt-2">
+          <strong>5.2. Autorización Expresa de RMM:</strong> EL CLIENTE autoriza formalmente a LA EMPRESA a desplegar
+          agentes de Monitoreo y Gestión Remota (RMM), escaneos de parches y auditorías de seguridad en sus equipos.
+          Esta autorización constituye un permiso expreso en los términos del artículo 6 de la Ley No. 53-07.
+        </p>
+        <p className="mt-2">
+          <strong>5.3. Cooperación Judicial (DICAT):</strong> Ante sospechas fundadas de actividades ilícitas o en
+          cumplimiento de órdenes de la Fiscalía o el Departamento de Investigación de Crímenes y Delitos de Alta
+          Tecnología (DICAT) de la Policía Nacional, LA EMPRESA podrá suspender la cuenta y entregar la información
+          requerida conforme a derecho.
+        </p>
+        <p className="mt-2">
+          <strong>5.4. Uso Justo de Red:</strong> Se prohíbe el uso del almacenamiento en la nube como red de
+          distribución masiva de contenidos (CDN público) o la ejecución de scripts automatizados de alta densidad que
+          degraden la velocidad de lectura/escritura (I/O) de los servidores.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "intellectual-property",
+    title: "6. Propiedad Intelectual y Licenciamiento (Ley No. 65-00)",
+    content: (
+      <>
+        <p className="font-bold text-primary mb-2">
+          Debes ser dueño de los archivos que subes. El software de la nube utiliza Nextcloud bajo licencia libre
+          AGPLv3.
+        </p>
+        <p className="mt-2">
+          <strong>6.1. Titularidad del Contenido:</strong> Conforme a la Ley No. 65-00 sobre Derecho de Autor, EL
+          CLIENTE conserva la propiedad exclusiva de los datos e información subidos a la plataforma y mantendrá libre
+          de reclamos a LA EMPRESA por infracciones a derechos de autor de terceros.
+        </p>
+        <p className="mt-2">
+          <strong>6.2. Software Nextcloud:</strong> LA EMPRESA provee el servicio utilizando el software libre Nextcloud
+          bajo la licencia GNU Affero General Public License v3 (AGPLv3). La contratación otorga únicamente una
+          sublicencia de uso no exclusiva e intransferible del portal de acceso.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "equipment",
+    title: "7. Equipos en Comodato (Préstamo de Hardware)",
+    content: (
+      <>
+        <p className="font-bold text-primary mb-2">
+          Si tu plan incluye equipos prestados (como en el plan POS), los equipos son de Velmar. Si cancelas el
+          servicio, debes devolverlos en 5 días o pagar su costo.
+        </p>
+        <p className="mt-2">
+          <strong>7.1. Naturaleza Jurídica:</strong> Los equipos entregados en calidad de préstamo (Planes POS o
+          Premium) se rigen por la figura del Comodato (Artículos 1875 y siguientes del Código Civil Dominicano). El
+          hardware es propiedad inalienable de LA EMPRESA.
+        </p>
+        <p className="mt-2">
+          <strong>7.2. Custodia y Devolución:</strong> EL CLIENTE asume la guarda jurídica del equipo. Al finalizar la
+          relación contractual, deberá devolver el hardware dentro de un plazo máximo de cinco (5) días hábiles. En caso
+          de daño por mal uso, extravío o no restitución, LA EMPRESA emitirá una factura por el valor de reposición a
+          nuevo del equipo.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "backup",
+    title: "8. Copias de Seguridad y Limitación de Responsabilidad",
+    content: (
+      <>
+        <p className="font-bold text-primary mb-2">
+          Mantén siempre copias locales de tus archivos críticos. Si ocurre un fallo insubsanable de nuestro lado,
+          nuestra responsabilidad financiera máxima estará limitada al monto de 1 mes de tu suscripción.
+        </p>
+        <p className="mt-2">
+          <strong>8.1. Responsabilidad de Respaldo Local:</strong> EL SERVICIO es una herramienta de colaboración y
+          disponibilidad. EL CLIENTE se compromete a mantener respaldos locales o secundarios de su información crítica.
+        </p>
+        <p className="mt-2">
+          <strong>8.2. Límite Financiero de Responsabilidad:</strong> En virtud de los artículos 1146 y 1147 del Código
+          Civil Dominicano, ante cualquier evento de pérdida de datos o interrupción imputable a negligencia de LA
+          EMPRESA, la indemnización máxima a la que tendrá derecho EL CLIENTE estará estrictamente limitada a la suma
+          equivalente a un (1) mes de la tarifa pagada en el plan contratado.
+        </p>
+        <p className="mt-2">
+          <strong>8.3. Exoneración por Lucro Cesante:</strong> LA EMPRESA no responderá por daños indirectos, lucro
+          cesante, ventas no realizadas, pérdidas comerciales o paralización de negocios de EL CLIENTE.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "billing",
+    title: "9. Tarifas, Facturación (NCF), Impuestos (ITBIS) y Régimen de Impagos",
+    content: (
+      <>
+        <p className="font-bold text-primary mb-2">
+          Los precios están en USD o DOP más el 18% de ITBIS. Si no pagas a tiempo: al día 5 tu cuenta será de solo
+          lectura, al día 15 se suspenderá el acceso y al día 30 se borrarán los datos definitivamente.
+        </p>
+        <p className="mt-2">
+          <strong>9.1. Impuestos y Moneda:</strong> Las tarifas expresadas en dólares estadounidenses (USD) o pesos
+          dominicanos (DOP) no incluyen el dieciocho por ciento (18%) del Impuesto sobre Transferencias de Bienes
+          Industrializados y Servicios (ITBIS), el cual se aplicará en la factura final conforme al Código Tributario.
+        </p>
+        <p className="mt-2">
+          <strong>9.2. Emisión de NCF:</strong> LA EMPRESA emitirá facturas con Comprobante de Crédito Fiscal (NCF)
+          siempre que EL CLIENTE provea un RNC válido antes del cierre del ciclo de facturación.
+        </p>
+        <p className="mt-2">
+          <strong>9.3. Escala de Suspensión por Impago:</strong>
+        </p>
+        <ul className="list-disc pl-5 mt-2 space-y-1">
+          <li>
+            <strong>Día 1 de Atraso:</strong> Notificación electrónica automática de cobro.
+          </li>
+          <li>
+            <strong>Día 5 de Atraso:</strong> Cambio de cuenta a &quot;Modo de solo lectura&quot; (no se podrán subir ni
+            modificar archivos).
+          </li>
+          <li>
+            <strong>Día 15 de Atraso:</strong> Suspensión total del acceso a la plataforma y servicios de soporte.
+          </li>
+          <li>
+            <strong>Día 30 de Atraso:</strong> Purga y eliminación técnica definitiva de los datos de los servidores
+            para liberación de almacenamiento, sin responsabilidad alguna para LA EMPRESA.
+          </li>
+        </ul>
+      </>
+    ),
+  },
+  {
+    id: "governing-law",
+    title: "10. Ley Aplicable y Jurisdicción Competente",
+    content: (
+      <>
+        <p className="font-bold text-primary mb-2">
+          Cualquier disputa legal se resolverá bajo las leyes de la República Dominicana y en los tribunales de San
+          Pedro de Macorís.
+        </p>
+        <p className="mt-2">
+          <strong>10.1. Legislación:</strong> El presente contrato se rige en su totalidad por las leyes de la República
+          Dominicana.
+        </p>
+        <p className="mt-2">
+          <strong>10.2. Jurisdicción:</strong> Para cualquier controversia, conflicto o reclamación judicial derivada de
+          este acuerdo, las partes acuerdan de manera irrevocable someterse a la competencia exclusiva de la
+          jurisdicción ordinaria de los Tribunales del Distrito Judicial de San Pedro de Macorís, República Dominicana,
+          renunciando expresamente a cualquier otro fuero que pudiera corresponderles.
+        </p>
+      </>
+    ),
+  },
+];
 
 export function useTermsPage() {
   const { t, i18n } = useTranslation();
   const sectionsRef = useRef<Record<string, HTMLDivElement | null>>({});
 
   const scrollToSection = useCallback((id: string) => {
-    sectionsRef.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    sectionsRef.current[id]?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
   const termSections = useMemo(() => {
-    return i18n.language === 'es_DO' ? termsEs : termsEn;
+    return i18n.language === "es_DO" ? termsEs : termsEn;
   }, [i18n.language]);
 
   return {

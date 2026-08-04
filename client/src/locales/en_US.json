@@ -734,14 +734,14 @@
     "hoursDesc": "{{monitoringHours}}"
   },
   "legal": {
-    "termsTitle": "Terms of Service",
+    "termsTitle": "General Terms and Conditions of Service - Velmar Technology SRL",
     "privacyTitle": "Privacy Policy",
     "lastUpdated": "Last updated",
     "effectiveText": "Effective",
     "compliantText": "Compliant Standard",
     "tableOfContents": "Table of Contents",
-    "pleaseNote": "Please note",
-    "termsAlertText": "This agreement governs all access to the {{portalName}}. By logging in or utilizing any tools inside, you consent to these parameters.",
+    "pleaseNote": "Plain Language Summary",
+    "termsAlertText": "This document contains the rules for using our cloud infrastructure, technical support, and maintenance services. By contracting or using our platform, you accept these conditions. Our human support hours are strictly Monday through Friday, 9:00 AM to 4:00 PM (Dominican time).",
     "privacyAlertTitle": "Secure Infrastructure:",
     "privacyAlertText": "We encrypt all server monitoring credentials, log files, and tickets using industry standard {{securityStandard}} protocols."
   },

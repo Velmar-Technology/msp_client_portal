@@ -733,14 +733,13 @@
     "hoursDesc": "{{monitoringHours}}"
   },
   "legal": {
-    "termsTitle": "Términos de Servicio",
+    "termsTitle": "Términos y Condiciones Generales del Servicio - Velmar Technology SRL",
     "privacyTitle": "Política de Privacidad",
     "lastUpdated": "Última actualización",
     "effectiveText": "Vigente",
     "compliantText": "Estándar de Cumplimiento",
     "tableOfContents": "Tabla de Contenidos",
-    "pleaseNote": "Tenga en cuenta",
-    "termsAlertText": "Este acuerdo rige todo acceso al {{portalName}}. Al iniciar sesión o utilizar cualquier herramienta en su interior, usted acepta estos parámetros.",
+    "termsAlertText": "Este documento contiene las reglas de uso de nuestros servicios de infraestructura en la nube, soporte técnico y mantenimiento. Al contratar o usar nuestra plataforma, aceptas estas condiciones. Nuestro horario de atención humana es únicamente de Lunes a Viernes, de 9:00 AM a 4:00 PM (hora dominicana).",
     "privacyAlertTitle": "Infraestructura Segura:",
     "privacyAlertText": "Encriptamos todas las credenciales de monitoreo de servidores, archivos de registro y tickets utilizando protocolos {{securityStandard}} estándar de la industria."
   },

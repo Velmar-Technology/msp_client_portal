@@ -38,34 +38,38 @@ export function usePlansPage() {
   const getPlanName = useCallback((name: string | Record<string, string>) => getLocalizedValue(name), [getLocalizedValue]);
   const getPlanDescription = useCallback((desc: string | Record<string, string> | null | undefined) => getLocalizedValue(desc), [getLocalizedValue]);
 
-  const getFeatureText = useCallback((featureOrText: PlanFeature | string | Record<string, string>) => {
-    if (typeof featureOrText === "object" && featureOrText !== null && "included" in featureOrText) {
-      const feature = featureOrText as PlanFeature;
-      if (feature.code) {
-        const key = `plans.features.${feature.code}`;
-        const translated = t(key, feature.params || {});
-        if (translated !== key) {
+  const getFeatureText = useCallback(
+    (featureOrText: PlanFeature | string | Record<string, string>) => {
+      if (typeof featureOrText === "object" && featureOrText !== null && "included" in featureOrText) {
+        const feature = featureOrText as PlanFeature;
+        if (feature.text) {
+          const locText = getLocalizedValue(feature.text);
+          if (locText) return locText;
+        }
+        if (feature.code) {
+          const key = `plans.features.${feature.code}`;
+          const translated = t(key, feature.params || {});
+          if (translated !== key) {
+            return translated;
+          }
+        }
+        return feature.code || "";
+      }
+
+      const val = featureOrText as string | Record<string, string>;
+      if (typeof val !== "string") {
+        return getLocalizedValue(val);
+      }
+      if (/^[a-zA-Z0-9_]+$/.test(val)) {
+        const translated = t(`plans.features.${val}`);
+        if (translated !== `plans.features.${val}`) {
           return translated;
         }
       }
-      if (feature.text) {
-        return getLocalizedValue(feature.text);
-      }
-      return feature.code || "";
-    }
-
-    const val = featureOrText as string | Record<string, string>;
-    if (typeof val !== "string") {
-      return getLocalizedValue(val);
-    }
-    if (/^[a-zA-Z0-9_]+$/.test(val)) {
-      const translated = t(`plans.features.${val}`);
-      if (translated !== `plans.features.${val}`) {
-        return translated;
-      }
-    }
-    return val;
-  }, [getLocalizedValue, t]);
+      return val;
+    },
+    [getLocalizedValue, t],
+  );
 
   const [userSelectedPlan, setUserSelectedPlan] = useState<string | null>(null);
   const [equipmentCounts, setEquipmentCounts] = useState<Record<string, number>>({});
