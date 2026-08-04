@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.3.0](https://github.com/eapolancovelmar/msp_client_portal/compare/v1.2.1...v1.3.0) (2026-08-04)
+
+
+### Features
+
+* **billing:** add bank accounts to checkout and handle bank transfer invoice flow with admin notifications ([03eb0c0](https://github.com/eapolancovelmar/msp_client_portal/commit/03eb0c07d5a43d9597f918e569b89b3c17820066))
+* **ci:** add manual deploy trigger with version fallback ([fe87f2c](https://github.com/eapolancovelmar/msp_client_portal/commit/fe87f2c939ccdfc3e15ac474bc98fafe2c57414d))
+* **devices:** add OTP device activation modal and update resource catalog filters ([4b019c9](https://github.com/eapolancovelmar/msp_client_portal/commit/4b019c98976e073b646bd1308c96b5b187cec368))
+* **devices:** add standalone OTP activation modal and downloadable resources catalog ([644480e](https://github.com/eapolancovelmar/msp_client_portal/commit/644480e4a64e4ebf69ac1aae5666fc890c4bdfbd))
+
+
+### Bug Fixes
+
+* **billing:** include 18% tax in paypal subscription plan pricing to match checkout total ([0d13f9b](https://github.com/eapolancovelmar/msp_client_portal/commit/0d13f9be46e2d3aafeadbcb437d0b83ca6eb3f19))
+* **ci:** pass VITE_PAYPAL_CLIENT_ID secret into production client build ([e93462b](https://github.com/eapolancovelmar/msp_client_portal/commit/e93462bc4a67c0da4ac749526df978a5fdf1797b))
+* **dashboard:** add online and storageError keys to i18n locales ([c7c3360](https://github.com/eapolancovelmar/msp_client_portal/commit/c7c33602a98002ea6dc70f9abd92029b5ee98b62))
+* **paypal:** standardize js sdk intent mode and improve environment url resolution ([6a1f3a6](https://github.com/eapolancovelmar/msp_client_portal/commit/6a1f3a6ed35e7aebaf2e181f5d4bd130280fe6ce))
+
 ## 1.2.1 (2026-08-03)
 
 
