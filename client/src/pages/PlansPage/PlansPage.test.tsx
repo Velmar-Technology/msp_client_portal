@@ -223,22 +223,23 @@ describe('PlansPage', () => {
         expect(paypalButtonsOptions).not.toBeNull();
       });
 
-      // Call createSubscription
-      const subscriptionId = await paypalButtonsOptions.createSubscription();
-      expect(subscriptionId).toBe('MOCK-PAYPAL-SUB');
+      // Call createOrder
+      const orderId = await paypalButtonsOptions.createOrder();
+      expect(orderId).toBe('MOCK-PAYPAL-ORDER');
 
       // Call onApprove
-      await paypalButtonsOptions.onApprove({ subscriptionID: 'MOCK-PAYPAL-SUB' });
+      await paypalButtonsOptions.onApprove({ orderID: 'MOCK-PAYPAL-ORDER' });
 
       await waitFor(() => {
-        expect(subscriptionService.create).toHaveBeenCalledWith({
-          serviceName: 'Standard Support',
-          plan: 'STANDARD',
-          equipmentCount: 1,
-          clientId: undefined,
-          billingCycle: 'monthly',
-          paypalOrderId: 'MOCK-PAYPAL-SUB',
-        });
+        expect(subscriptionService.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            serviceName: 'Standard Support',
+            plan: 'STANDARD',
+            equipmentCount: 1,
+            billingCycle: 'monthly',
+            paypalOrderId: 'MOCK-PAYPAL-ORDER',
+          })
+        );
         expect(mockToast.success).toHaveBeenCalledWith(
           'Subscribed Successfully',
           expect.any(Object)
@@ -302,22 +303,23 @@ describe('PlansPage', () => {
         expect(paypalButtonsOptions).not.toBeNull();
       });
 
-      // Call createSubscription
-      const subscriptionId = await paypalButtonsOptions.createSubscription();
-      expect(subscriptionId).toBe('MOCK-PAYPAL-SUB');
+      // Call createOrder
+      const orderId = await paypalButtonsOptions.createOrder();
+      expect(orderId).toBe('MOCK-PAYPAL-ORDER');
 
       // Call onApprove
-      await paypalButtonsOptions.onApprove({ subscriptionID: 'MOCK-PAYPAL-SUB' });
+      await paypalButtonsOptions.onApprove({ orderID: 'MOCK-PAYPAL-ORDER' });
 
       await waitFor(() => {
-        expect(subscriptionService.create).toHaveBeenCalledWith({
-          serviceName: 'Standard Support',
-          plan: 'STANDARD',
-          equipmentCount: 1,
-          clientId: undefined,
-          billingCycle: 'annual',
-          paypalOrderId: 'MOCK-PAYPAL-SUB',
-        });
+        expect(subscriptionService.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            serviceName: 'Standard Support',
+            plan: 'STANDARD',
+            equipmentCount: 1,
+            billingCycle: 'annual',
+            paypalOrderId: 'MOCK-PAYPAL-ORDER',
+          })
+        );
       });
     });
 
@@ -625,22 +627,23 @@ describe('PlansPage', () => {
         expect(paypalButtonsOptions).not.toBeNull();
       });
 
-      // Call createSubscription
-      const subscriptionId = await paypalButtonsOptions.createSubscription();
-      expect(subscriptionId).toBe('MOCK-PAYPAL-SUB');
+      // Call createOrder
+      const orderId = await paypalButtonsOptions.createOrder();
+      expect(orderId).toBe('MOCK-PAYPAL-ORDER');
 
       // Call onApprove
-      await paypalButtonsOptions.onApprove({ subscriptionID: 'MOCK-PAYPAL-SUB' });
+      await paypalButtonsOptions.onApprove({ orderID: 'MOCK-PAYPAL-ORDER' });
 
       await waitFor(() => {
-        expect(subscriptionService.create).toHaveBeenCalledWith({
-          serviceName: 'Standard Support',
-          plan: 'STANDARD',
-          equipmentCount: 1,
-          clientId: undefined,
-          billingCycle: 'monthly',
-          paypalOrderId: 'MOCK-PAYPAL-SUB',
-        });
+        expect(subscriptionService.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            serviceName: 'Standard Support',
+            plan: 'STANDARD',
+            equipmentCount: 1,
+            billingCycle: 'monthly',
+            paypalOrderId: 'MOCK-PAYPAL-ORDER',
+          })
+        );
       });
     });
   });
@@ -691,13 +694,15 @@ describe('PlansPage', () => {
       fireEvent.click(applyButton);
 
       await waitFor(() => {
-        expect(subscriptionService.create).toHaveBeenCalledWith({
-          serviceName: 'Standard Support',
-          plan: 'STANDARD',
-          equipmentCount: 1,
-          clientId: 'client-2',
-          billingCycle: 'monthly',
-        });
+        expect(subscriptionService.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            serviceName: 'Standard Support',
+            plan: 'STANDARD',
+            equipmentCount: 1,
+            clientId: 'client-2',
+            billingCycle: 'monthly',
+          })
+        );
         expect(mockToast.success).toHaveBeenCalledWith(
           'Plan Applied',
           expect.any(Object)

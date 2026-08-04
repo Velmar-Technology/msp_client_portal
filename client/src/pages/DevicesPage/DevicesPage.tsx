@@ -529,7 +529,7 @@ export function DevicesPage() {
         variant: "outline" as const,
       },
     ],
-    [isAdmin, t, handleBulkGenerateOTP, handleBulkDeactivateClick, handleBulkExportCSV]
+    [isAdmin, t, handleBulkGenerateOTP, handleBulkDeactivateClick, handleBulkExportCSV],
   );
 
   const handleOpenScheduleMaint = useCallback((equip: Partial<SubscriptionEquipment>) => {
@@ -781,20 +781,6 @@ export function DevicesPage() {
   const filtersConfig = useMemo(() => {
     if (!isAdmin) return undefined;
     return [
-      {
-        id: "client",
-        value: selectedClient,
-        onChange: setSelectedClient,
-        options: clientFilterOptions,
-        placeholder: t("devices.filterAllClients"),
-      },
-      {
-        id: "plan",
-        value: selectedPlan,
-        onChange: setSelectedPlan,
-        options: planFilterOptions,
-        placeholder: t("devices.filterAllPlans"),
-      },
       {
         id: "status",
         value: selectedStatus,

@@ -524,14 +524,12 @@ describe('DevicesPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Workstation Alpha')).toBeInTheDocument();
       expect(screen.getByText('John Mitchell')).toBeInTheDocument();
-      expect(screen.getAllByText('Acme Corp').length).toBe(2);
+      expect(screen.getAllByText('Acme Corp').length).toBe(1);
       expect(screen.getByText('Lisa Park')).toBeInTheDocument();
-      expect(screen.getAllByText('Beta Industries').length).toBe(2);
+      expect(screen.getAllByText('Beta Industries').length).toBe(1);
     });
 
-    // Check filters are rendered
-    expect(screen.getByText('All Clients')).toBeInTheDocument();
-    expect(screen.getByText('All Plans')).toBeInTheDocument();
+    // Check status filter is rendered
     expect(screen.getByText('All Statuses')).toBeInTheDocument();
 
     // Reset mockUser role to CLIENT for next tests
