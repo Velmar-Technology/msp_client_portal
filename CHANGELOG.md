@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.3.1](https://github.com/eapolancovelmar/msp_client_portal/compare/v1.3.0...v1.3.1) (2026-08-05)
+
+
+### Features
+
+* **auth:** add whatsapp otp signup and phone number field to profile ([c8a0a93](https://github.com/eapolancovelmar/msp_client_portal/commit/c8a0a9322a9e88cb3717fffc5c3b028fc030c06c))
+* **billing:** add admin mark as paid, plan activation, and invoice details modal ([afbf48c](https://github.com/eapolancovelmar/msp_client_portal/commit/afbf48c4c9f83d7c01fdffce1123916b384f1085))
+* **billing:** show invoice line items in invoice details modal ([c8cf1ea](https://github.com/eapolancovelmar/msp_client_portal/commit/c8cf1ea04044bc6f245be1b65fc65c25fe7030f8))
+* **plans:** allow soft delete of plans and filter inactive plans from plans page ([faa73ac](https://github.com/eapolancovelmar/msp_client_portal/commit/faa73acc5ffd981899aa160739ba95b6e17c1a9b))
+* **terms:** update ToS contract page and sync database plan features ([26b88b6](https://github.com/eapolancovelmar/msp_client_portal/commit/26b88b60fc83b72df1f0d37ca6f367c261e887c5))
+
+
+### Bug Fixes
+
+* **client:** resolve typescript build errors in input-otp, useTopNav, and vite.config ([6cc35fa](https://github.com/eapolancovelmar/msp_client_portal/commit/6cc35faab727143e46b512456018fa391e8abf46))
+
 ## [1.3.0](https://github.com/eapolancovelmar/msp_client_portal/compare/v1.2.1...v1.3.0) (2026-08-04)
 
 
