@@ -9,6 +9,7 @@ export function useProfile() {
 
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
+  const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || "");
   const [language, setLanguage] = useState(user?.language || "en_US");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -87,8 +88,8 @@ export function useProfile() {
     setMessage("");
     setMessageType("");
     try {
-      await userService.updateProfile({ name, email, language });
-      updateUser({ name, email, language });
+      await userService.updateProfile({ name, email, language, phoneNumber });
+      updateUser({ name, email, language, phoneNumber });
       await i18n.changeLanguage(language);
       setMessage(t("profile.success"));
       setMessageType("success");
@@ -98,7 +99,7 @@ export function useProfile() {
     } finally {
       setSaving(false);
     }
-  }, [name, email, language, t, i18n, updateUser]);
+  }, [name, email, language, phoneNumber, t, i18n, updateUser]);
 
   const formatRelativeTime = useCallback((isoDate: string): string => {
     const now = Date.now();
@@ -151,6 +152,7 @@ export function useProfile() {
     user,
     name, setName,
     email, setEmail,
+    phoneNumber, setPhoneNumber,
     language, setLanguage,
     saving,
     message, messageType,

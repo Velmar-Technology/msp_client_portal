@@ -13,6 +13,7 @@ export const RegisterDTO = z.object({
   clientType: z.enum(['CLIENT', 'ENTERPRISE', 'STUDENT', 'OTHER'], {
     errorMap: () => ({ message: 'Client type must be CLIENT, ENTERPRISE, STUDENT, or OTHER' }),
   }),
+  phoneNumber: z.string().max(50).optional(),
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')

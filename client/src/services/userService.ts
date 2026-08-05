@@ -58,12 +58,13 @@ export const userService = {
     return response.data.data;
   },
 
-  async updateProfile(data: { name?: string; email?: string; language?: string; avatarUrl?: string | null }): Promise<Record<string, unknown>> {
+  async updateProfile(data: { name?: string; email?: string; language?: string; avatarUrl?: string | null; phoneNumber?: string | null }): Promise<Record<string, unknown>> {
     const payload = {
       name: data.name,
       email: data.email,
       language: data.language,
       avatar_url: data.avatarUrl,
+      phone_number: data.phoneNumber,
     };
     const response = await api.patch('/users/me', payload);
     return response.data.data;

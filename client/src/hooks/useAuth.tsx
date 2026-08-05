@@ -15,7 +15,8 @@ export interface AuthContextType {
     tenantName: string,
     password: string,
     confirmPassword: string,
-    clientType: string
+    clientType: string,
+    phoneNumber?: string
   ) => Promise<void>;
   loginWithGoogle: (idToken: string, tenantName?: string, rememberMe?: boolean) => Promise<void>;
   verifyEmail: (email: string, otp: string) => Promise<void>;

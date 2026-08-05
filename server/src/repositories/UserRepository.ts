@@ -215,6 +215,11 @@ export class UserRepository extends BaseRepository<User> {
     return results as User[];
   }
 
+  async findByPhoneNumber(phoneNumber: string): Promise<User | null> {
+    const results = await db.select().from(users).where(eq(users.phone_number, phoneNumber));
+    return (results[0] as User) || null;
+  }
+
   async create(data: {
     email: string;
     name: string;
@@ -223,6 +228,7 @@ export class UserRepository extends BaseRepository<User> {
     language?: string;
     tenant_id: string;
     client_type?: string;
+    phone_number?: string;
   }): Promise<User> {
     const results = await db
       .insert(users)
@@ -234,17 +240,19 @@ export class UserRepository extends BaseRepository<User> {
         language: data.language || 'en_US',
         tenant_id: data.tenant_id,
         client_type: data.client_type || 'CLIENT',
+        phone_number: data.phone_number || null,
       })
       .returning();
     return results[0] as User;
   }
 
-  async updateProfile(id: string, data: Partial<Pick<User, 'name' | 'email' | 'language' | 'avatar_url'>>): Promise<User | null> {
+  async updateProfile(id: string, data: Partial<Pick<User, 'name' | 'email' | 'language' | 'avatar_url' | 'phone_number'>>): Promise<User | null> {
     const updateData: any = {};
     if (data.name !== undefined) updateData.name = data.name;
     if (data.email !== undefined) updateData.email = data.email;
     if (data.language !== undefined) updateData.language = data.language;
     if (data.avatar_url !== undefined) updateData.avatar_url = data.avatar_url;
+    if (data.phone_number !== undefined) updateData.phone_number = data.phone_number;
 
     if (Object.keys(updateData).length === 0) return this.findById(id);
 

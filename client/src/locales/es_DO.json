@@ -73,7 +73,8 @@
     "updatePassword": "Actualizar Contraseña",
     "avatarInput": "Entrada de carga de avatar",
     "avatarSuccess": "Foto de perfil actualizada exitosamente",
-    "avatarError": "Error al subir la foto de perfil"
+    "avatarError": "Error al subir la foto de perfil",
+    "phoneNumber": "Número de Teléfono (WhatsApp)"
   },
   "dashboard": {
     "systemOverview": "Resumen del Sistema",
@@ -157,7 +158,9 @@
     "nameMin": "El nombre debe tener al menos 2 caracteres",
     "tenantMin": "El nombre de la empresa debe tener al menos 2 caracteres",
     "emailInvalid": "Correo electrónico no válido",
-    "passwordMin": "La contraseña debe tener al menos 8 caracteres"
+    "passwordMin": "La contraseña debe tener al menos 8 caracteres",
+    "phoneNumber": "Número de Teléfono (OTP vía WhatsApp)",
+    "whatsappOtpBadge": "OTP vía WhatsApp"
   },
   "tickets": {
     "title": "Tickets de Soporte",

@@ -61,3 +61,29 @@ export async function sendTicketStatusWhatsApp(
     type: 'WHATSAPP',
   });
 }
+
+/**
+ * Send account verification OTP code via WhatsApp.
+ */
+export async function sendOTPWhatsApp(
+  phoneNumber: string,
+  otp: string
+): Promise<void> {
+  const message = [
+    `🔐 *Velmar Technology SRL — Account Verification*`,
+    ``,
+    `Your verification code is: *${otp}*`,
+    ``,
+    `This code will expire in 15 minutes. Please do not share this code with anyone.`,
+    ``,
+    `_This is an automated message._`,
+  ].join('\n');
+
+  await sendWhatsApp({
+    to: phoneNumber,
+    subject: 'Account Verification OTP',
+    body: message,
+    type: 'WHATSAPP',
+  });
+}
+

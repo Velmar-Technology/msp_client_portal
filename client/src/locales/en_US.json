@@ -73,7 +73,8 @@
     "updatePassword": "Update Password",
     "avatarInput": "Avatar upload input",
     "avatarSuccess": "Profile picture updated successfully",
-    "avatarError": "Failed to upload profile picture"
+    "avatarError": "Failed to upload profile picture",
+    "phoneNumber": "Phone Number (WhatsApp)"
   },
   "dashboard": {
     "systemOverview": "System Overview",
@@ -157,7 +158,9 @@
     "nameMin": "Name must be at least 2 characters",
     "tenantMin": "Company name must be at least 2 characters",
     "emailInvalid": "Invalid email address",
-    "passwordMin": "Password must be at least 8 characters"
+    "passwordMin": "Password must be at least 8 characters",
+    "phoneNumber": "Phone Number (WhatsApp OTP)",
+    "whatsappOtpBadge": "OTP via WhatsApp"
   },
   "tickets": {
     "title": "Support Tickets",

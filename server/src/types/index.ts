@@ -85,6 +85,7 @@ export interface User {
   last_login_ip: string | null;
   tenant_id: string;
   client_type: string;
+  phone_number?: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -322,7 +323,6 @@ export interface SubscriptionEquipment {
   updated_at: Date;
 }
 
-
 export interface Expense {
   id: string;
   amount: number;
@@ -371,4 +371,3 @@ export interface DeviceMaintenance {
   assigned_tech_name?: string | null;
   service_name?: string | null;
 }
-

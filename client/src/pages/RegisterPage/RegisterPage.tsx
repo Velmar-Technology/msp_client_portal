@@ -41,6 +41,7 @@ export function RegisterPage() {
       message: 'Client type is required',
     }),
     email: z.string().email(t('register.emailInvalid') || 'Invalid email address'),
+    phoneNumber: z.string().optional(),
     password: z.string().min(8, t('register.passwordMin') || 'Password must be at least 8 characters'),
     confirmPassword: z.string()
   }).refine((data) => data.password === data.confirmPassword, {
@@ -61,6 +62,7 @@ export function RegisterPage() {
       tenantName: '',
       clientType: 'CLIENT',
       email: '',
+      phoneNumber: '',
       password: '',
       confirmPassword: ''
     }
@@ -94,10 +96,17 @@ export function RegisterPage() {
     setError('');
     setLoading(true);
     try {
-      await register(data.email, data.name, data.tenantName, data.password, data.confirmPassword, data.clientType);
+      await register(data.email, data.name, data.tenantName, data.password, data.confirmPassword, data.clientType, data.phoneNumber);
       setRegisteredEmail(data.email);
       setShowOtpForm(true);
-      setSuccessMessage('Registration successful. Please enter the 6-digit code sent to your email.');
+      const otpSentText = data.phoneNumber
+        ? (i18n.language === 'es_DO'
+            ? 'Registro exitoso. Revisa tu WhatsApp o correo electrónico para ingresar el código OTP de 6 dígitos.'
+            : 'Registration successful. Please enter the 6-digit OTP sent to your WhatsApp / email.')
+        : (i18n.language === 'es_DO'
+            ? 'Registro exitoso. Revisa tu correo electrónico para ingresar el código OTP de 6 dígitos.'
+            : 'Registration successful. Please enter the 6-digit code sent to your email.');
+      setSuccessMessage(otpSentText);
     } catch (err: unknown) {
       const error = err as {
         response?: {
@@ -312,6 +321,29 @@ export function RegisterPage() {
                     id="reg-email"
                     type="email"
                     placeholder={t('login.emailPlaceholder')}
+                    className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm bg-zinc-50 dark:bg-zinc-950 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-600 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600 text-zinc-900 dark:text-zinc-100 shadow-sm"
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+
+            <Controller
+              name="phoneNumber"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="reg-phone" className="block text-[10px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                    <span>{t('register.phoneNumber', 'Phone Number (WhatsApp OTP)')}</span>
+                    <span className="text-[9px] font-normal text-emerald-600 dark:text-emerald-400 lowercase">{t('register.whatsappOtpBadge', 'OTP via WhatsApp')}</span>
+                  </FieldLabel>
+                  <Input
+                    {...field}
+                    id="reg-phone"
+                    type="tel"
+                    placeholder="+1 (809) 000-0000"
                     className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm bg-zinc-50 dark:bg-zinc-950 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-600 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600 text-zinc-900 dark:text-zinc-100 shadow-sm"
                   />
                   {fieldState.invalid && (

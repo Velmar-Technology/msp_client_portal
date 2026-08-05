@@ -62,6 +62,7 @@ export const users = pgTable(
       .references(() => tenants.id, { onDelete: 'cascade' })
       .notNull(),
     client_type: varchar('client_type', { length: 50 }).default('CLIENT').notNull(),
+    phone_number: varchar('phone_number', { length: 50 }),
     created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
     updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
   },

@@ -11,6 +11,7 @@ export interface AuthUser {
   language: string;
   tenantId: string;
   clientType?: string;
+  phoneNumber?: string | null;
   avatarUrl?: string | null;
   lastLoginAt?: string | null;
   lastLoginIp?: string | null;
@@ -27,7 +28,8 @@ export interface AuthState {
     tenantName: string,
     password: string,
     confirmPassword: string,
-    clientType: string
+    clientType: string,
+    phoneNumber?: string
   ) => Promise<void>;
   verifyEmail: (email: string, otp: string) => Promise<void>;
   loginWithGoogle: (idToken: string, tenantName?: string, rememberMe?: boolean) => Promise<void>;
@@ -71,7 +73,7 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      register: async (email, name, tenantName, password, confirmPassword, clientType) => {
+      register: async (email, name, tenantName, password, confirmPassword, clientType, phoneNumber) => {
         set({ isLoading: true }, false, 'auth/register_request');
         try {
           await authService.register({
@@ -81,6 +83,7 @@ export const useAuthStore = create<AuthState>()(
             password,
             confirmPassword,
             clientType,
+            phoneNumber,
           });
           set(
             {

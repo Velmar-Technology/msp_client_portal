@@ -11,11 +11,13 @@ import { OAuth2Client } from 'google-auth-library';
 import crypto from 'crypto';
 
 
+import { sendOTPWhatsApp } from '../utils/whatsappService';
+
 export class AuthService {
   /**
    * Register a new user account.
    */
-  async register(data: RegisterInput): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null; clientType: string }, message: string }> {
+  async register(data: RegisterInput): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null; clientType: string; phoneNumber: string | null }, message: string }> {
     // Check for existing user
     const existing = await userRepository.findByEmail(data.email);
     if (existing) {
@@ -55,6 +57,7 @@ export class AuthService {
       role: UserRole.CLIENT,
       tenant_id: tenant.id,
       client_type: data.clientType,
+      phone_number: data.phoneNumber,
     });
 
     logger.info('New user and tenant registered', { userId: user.id, email: user.email, tenantId: tenant.id });
@@ -65,18 +68,32 @@ export class AuthService {
     expiresAt.setMinutes(expiresAt.getMinutes() + 15); // OTP expires in 15 mins
     
     await userRepository.setOTP(user.id, otp, expiresAt);
-    logger.info('Email verification OTP generated', { userId: user.id, otp });
+    logger.info('Email/WhatsApp verification OTP generated', { userId: user.id, otp });
+
+    // If phone number was provided, send OTP via WhatsApp
+    if (data.phoneNumber) {
+      try {
+        await sendOTPWhatsApp(data.phoneNumber, otp);
+        logger.info('WhatsApp verification OTP sent', { userId: user.id, phoneNumber: data.phoneNumber });
+      } catch (err: any) {
+        logger.error('Failed to send WhatsApp OTP', { userId: user.id, error: err?.message });
+      }
+    }
+
+    const message = data.phoneNumber
+      ? 'Registration successful. Please check your WhatsApp / email to verify your account.'
+      : 'Registration successful. Please check your email to verify your account.';
 
     return {
-      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id, avatarUrl: user.avatar_url, clientType: user.client_type },
-      message: 'Registration successful. Please check your email to verify your account.',
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id, avatarUrl: user.avatar_url, clientType: user.client_type, phoneNumber: user.phone_number ?? null },
+      message,
     };
   }
 
   /**
    * Authenticate user with email and password.
    */
-  async login(data: LoginInput, ipAddress: string): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null; lastLoginAt: string | null; lastLoginIp: string | null; clientType: string }; tokens: AuthTokens }> {
+  async login(data: LoginInput, ipAddress: string): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null; lastLoginAt: string | null; lastLoginIp: string | null; clientType: string; phoneNumber: string | null }; tokens: AuthTokens }> {
     const user = await userRepository.findByEmail(data.email);
     if (!user) {
       throw AppError.unauthorized('Invalid email or password');
@@ -112,7 +129,7 @@ export class AuthService {
     });
 
     return {
-      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id, avatarUrl: user.avatar_url, lastLoginAt: previousLoginAt, lastLoginIp: previousLoginIp, clientType: user.client_type },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id, avatarUrl: user.avatar_url, lastLoginAt: previousLoginAt, lastLoginIp: previousLoginIp, clientType: user.client_type, phoneNumber: user.phone_number ?? null },
       tokens,
     };
   }
@@ -121,7 +138,7 @@ export class AuthService {
    * Authenticate or register a user with Google OAuth.
    */
   async googleAuth(data: GoogleAuthInput, ipAddress: string): Promise<{
-    user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null; lastLoginAt: string | null; lastLoginIp: string | null; clientType: string };
+    user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null; lastLoginAt: string | null; lastLoginIp: string | null; clientType: string; phoneNumber: string | null };
     tokens: AuthTokens;
     isNewUser: boolean;
   }> {
@@ -220,7 +237,7 @@ export class AuthService {
     });
 
     return {
-      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id, avatarUrl: user.avatar_url, lastLoginAt: previousLoginAt, lastLoginIp: previousLoginIp, clientType: user.client_type },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id, avatarUrl: user.avatar_url, lastLoginAt: previousLoginAt, lastLoginIp: previousLoginIp, clientType: user.client_type, phoneNumber: user.phone_number ?? null },
       tokens,
       isNewUser,
     };

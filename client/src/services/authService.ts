@@ -18,6 +18,7 @@ export interface RegisterPayload {
   password: string;
   confirmPassword: string;
   clientType: string;
+  phoneNumber?: string;
 }
 
 export interface GoogleAuthPayload {
@@ -34,6 +35,7 @@ export interface AuthResponse {
     language: string;
     tenantId: string;
     clientType?: string;
+    phoneNumber?: string | null;
     avatarUrl?: string | null;
     lastLoginAt?: string | null;
     lastLoginIp?: string | null;

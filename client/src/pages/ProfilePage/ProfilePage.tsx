@@ -5,6 +5,7 @@ import {
   Save,
   User,
   Mail,
+  Phone,
   ShieldCheck,
   Globe,
   CheckCircle2,
@@ -17,6 +18,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
+import type { AuthUser } from "@/store/useAuthStore";
 
 /* --- Sub-Components --- */
 
@@ -42,7 +44,7 @@ const StatusAlert = ({ message, type }: { message: string; type: "success" | "er
 };
 
 interface ProfileIdentityCardProps {
-  user: any;
+  user: AuthUser | null;
   lastLoginText: string;
   uploadingAvatar: boolean;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
@@ -114,7 +116,7 @@ const ProfileIdentityCard = ({
 };
 
 const AccountDetailsForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) => {
-  const { t, name, setName, email, setEmail, language, setLanguage, saving, message, messageType, handleSave } = hook;
+  const { t, name, setName, email, setEmail, phoneNumber, setPhoneNumber, language, setLanguage, saving, message, messageType, handleSave } = hook;
 
   return (
     <form
@@ -162,7 +164,24 @@ const AccountDetailsForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
             />
           </div>
 
-          <div className="md:col-span-2">
+          <div>
+            <label
+              htmlFor="profile-phone"
+              className="mb-1.5 flex items-center gap-2 text-xs font-medium text-zinc-700 dark:text-zinc-300"
+            >
+              <Phone className="h-3.5 w-3.5" /> {t("profile.phoneNumber", "Phone Number (WhatsApp)")}
+            </label>
+            <Input
+              id="profile-phone"
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="+1 (809) 000-0000"
+              className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 transition-all focus:border-zinc-400 dark:focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+            />
+          </div>
+
+          <div>
             <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-zinc-700 dark:text-zinc-300">
               <Globe className="h-3.5 w-3.5" /> {t("profile.languageSetting")}
             </label>
