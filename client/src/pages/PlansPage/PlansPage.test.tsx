@@ -789,7 +789,7 @@ describe('PlansPage', () => {
         updatePlan: vi.fn(),
       } as unknown as ReturnType<typeof usePlanStore>);
 
-      // 1. Render as Admin (should see the inactive plan with Disabled badge)
+      // 1. Render as Admin (should NOT see the inactive/soft-deleted plan)
       const { rerender } = render(
         <MemoryRouter>
           <PlansPage />
@@ -797,8 +797,8 @@ describe('PlansPage', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('Disabled Plan')).toBeInTheDocument();
-        expect(screen.getByText('Disabled')).toBeInTheDocument();
+        expect(screen.queryByText('Disabled Plan')).not.toBeInTheDocument();
+        expect(screen.queryByText('Disabled')).not.toBeInTheDocument();
       });
 
       // 2. Render as Standard CLIENT (should NOT see the inactive plan)
