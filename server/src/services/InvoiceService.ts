@@ -4,13 +4,26 @@ import { tenantRepository } from '../repositories/TenantRepository';
 import { subscriptionRepository } from '../repositories/SubscriptionRepository';
 import { expenseRepository } from '../repositories/ExpenseRepository';
 import { AppError } from '../utils/AppError';
-import { Invoice, UserRole, InvoiceStatus } from '../types';
+import { Invoice, UserRole, InvoiceStatus, SubscriptionStatus } from '../types';
 import { paypalService } from './PaypalService';
 import { notificationService } from './NotificationService';
 import { generateInvoicePdf } from '../utils/pdfGenerator';
 import { logger } from '../utils/logger';
 
 export class InvoiceService {
+  private async activateExpiredSubscriptionsForClient(clientId: string, tenantId: string): Promise<void> {
+    try {
+      const clientSubs = await subscriptionRepository.findByClient(clientId, tenantId);
+      for (const sub of clientSubs) {
+        if (sub.status === SubscriptionStatus.EXPIRED) {
+          await subscriptionRepository.updateStatus(sub.id, SubscriptionStatus.ACTIVE);
+        }
+      }
+    } catch (err) {
+      logger.error('Failed to activate expired subscriptions for client:', err);
+    }
+  }
+
   async getClientInvoices(tenantId: string, userRole: UserRole, page = 1, limit = 20): Promise<{ invoices: Invoice[]; total: number }> {
     const offset = (page - 1) * limit;
     if (userRole === UserRole.ADMIN) {
@@ -58,6 +71,8 @@ export class InvoiceService {
       throw AppError.internal('Failed to update invoice status in database');
     }
 
+    await this.activateExpiredSubscriptionsForClient(invoice.client_id, invoice.tenant_id);
+
     // Trigger in-app notification to client
     await notificationService.createInAppNotification({
       userId: invoice.client_id,
@@ -86,6 +101,36 @@ export class InvoiceService {
     } catch (err) {
       logger.error('Failed to notify admin of payment success:', err);
     }
+
+    return updatedInvoice;
+  }
+
+  async markAsPaid(id: string, tenantId: string, userRole: UserRole): Promise<Invoice> {
+    if (userRole !== UserRole.ADMIN) {
+      throw AppError.forbidden('Only administrators can mark invoices as paid manually');
+    }
+
+    const invoice = await this.getInvoiceById(id, tenantId, userRole);
+    if (invoice.status === InvoiceStatus.PAID) {
+      return invoice;
+    }
+
+    const updatedInvoice = await invoiceRepository.updateStatus(id, InvoiceStatus.PAID);
+    if (!updatedInvoice) {
+      throw AppError.internal('Failed to update invoice status in database');
+    }
+
+    await this.activateExpiredSubscriptionsForClient(invoice.client_id, invoice.tenant_id);
+
+    // Trigger in-app notification to client
+    await notificationService.createInAppNotification({
+      userId: invoice.client_id,
+      title: 'Payment Confirmed',
+      message: `Your payment of $${Number(invoice.total).toFixed(2)} for invoice ${invoice.invoice_number} has been confirmed.`,
+      link: '/billing',
+      type: 'INVOICE_PAID',
+      tenantId: invoice.tenant_id,
+    });
 
     return updatedInvoice;
   }

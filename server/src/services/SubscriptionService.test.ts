@@ -326,6 +326,9 @@ describe('SubscriptionService', () => {
 
       expect(mocks.userFindById).toHaveBeenCalledWith('client-123');
       expect(mocks.paypalGetOrder).not.toHaveBeenCalled();
+      expect(mocks.subCreate).toHaveBeenCalledWith(expect.objectContaining({
+        status: SubscriptionStatus.EXPIRED,
+      }));
       expect(mocks.invoiceCreate).toHaveBeenCalledWith(expect.objectContaining({
         client_id: 'client-123',
         status: 'PENDING',

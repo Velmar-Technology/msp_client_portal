@@ -34,6 +34,11 @@ export const invoiceService = {
     return response.data;
   },
 
+  async markAsPaid(id: string): Promise<{ success: boolean; data: Invoice }> {
+    const response = await api.patch(`/invoices/${id}/mark-paid`);
+    return response.data;
+  },
+
   async downloadInvoice(id: string, lang?: string): Promise<Blob> {
     const response = await api.get(`/invoices/${id}/download`, {
       params: lang ? { lang } : {},

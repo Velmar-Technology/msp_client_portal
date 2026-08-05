@@ -49,6 +49,15 @@ export class InvoiceController {
     res.json({ success: true, data: invoice });
   }
 
+  async markAsPaid(req: Request, res: Response): Promise<void> {
+    const invoice = await invoiceService.markAsPaid(
+      req.params.id as string,
+      req.user!.tenantId,
+      req.user!.role as UserRole
+    );
+    res.json({ success: true, data: invoice });
+  }
+
   async download(req: Request, res: Response): Promise<void> {
     const lang = req.query.lang as string;
     const { pdfBuffer, invoiceNumber } = await invoiceService.downloadInvoice(

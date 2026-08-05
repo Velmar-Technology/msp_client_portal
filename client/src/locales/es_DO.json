@@ -720,7 +720,12 @@
     "modalPayTitle": "Pagar Factura {{number}}",
     "modalPayDesc": "Por favor revise el monto a pagar y proceda a pagar de forma segura con PayPal.",
     "amountDue": "Monto a Pagar",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "markAsPaid": "Marcar como Pagada",
+    "confirmMarkPaidTitle": "Confirmar Pago",
+    "confirmMarkPaidDesc": "¿Está seguro de marcar la factura {{number}} (${{amount}}) como pagada? Confirme que se ha recibido la transferencia bancaria manual y active los planes asociados.",
+    "markPaidSuccess": "Factura marcada como pagada con éxito.",
+    "invoiceDetails": "Detalles de Factura"
   },
   "help": {
     "title": "Ayuda y Documentación",

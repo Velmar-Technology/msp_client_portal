@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { Download, CreditCard, Loader2, Shield } from "lucide-react";
+import { useLocation } from "react-router-dom";
+import { Download, CreditCard, Loader2, Shield, CheckCircle, FileText, Eye } from "lucide-react";
 import { Page } from "@/components/Page";
 import {
   AlertDialog,
@@ -12,6 +13,7 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { useBilling } from "@/hooks/useBilling";
+import { useAuth } from "@/hooks/useAuth";
 import type { Invoice } from "@/services/invoiceService";
 import { invoiceService } from "@/services/invoiceService";
 import { DataTable } from "@/components/ui/data-table";
@@ -241,9 +243,216 @@ const PayModal = ({
   );
 };
 
+const MarkPaidConfirmModal = ({
+  isOpen,
+  onClose,
+  invoice,
+  onConfirm,
+  loading,
+  t,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  invoice: Invoice | null;
+  onConfirm: () => void;
+  loading: boolean;
+  t: (key: string, options?: any) => string;
+}) => {
+  if (!invoice) return null;
+
+  return (
+    <AlertDialog open={isOpen} onOpenChange={(open) => !open && !loading && onClose()}>
+      <AlertDialogContent className="sm:max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl p-5 text-zinc-900 dark:text-zinc-100">
+        <AlertDialogHeader className="pb-3 border-b border-zinc-200 dark:border-zinc-800">
+          <AlertDialogTitle className="text-sm font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
+            <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            {t("billing.confirmMarkPaidTitle") || "Confirm Payment"}
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed">
+            {t("billing.confirmMarkPaidDesc", {
+              number: invoice.invoice_number,
+              amount: Number(invoice.total).toFixed(2),
+            }) ||
+              `Are you sure you want to mark invoice ${invoice.invoice_number} ($${Number(invoice.total).toFixed(2)}) as paid? Confirm that manual wire transfer has been received.`}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
+        <AlertDialogFooter className="pt-3 border-t border-zinc-200 dark:border-zinc-800 sm:justify-end gap-2">
+          <AlertDialogCancel
+            onClick={onClose}
+            disabled={loading}
+            className="px-4 py-1.5 text-xs font-semibold border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg transition-colors cursor-pointer"
+          >
+            {t("common.cancel") || "Cancel"}
+          </AlertDialogCancel>
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            className="px-4 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+          >
+            {loading ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <CheckCircle className="h-3.5 w-3.5" />
+            )}
+            {t("billing.markAsPaid") || "Mark as Paid"}
+          </button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+};
+
+const InvoiceDetailsModal = ({
+  isOpen,
+  onClose,
+  invoice,
+  onDownload,
+  onPay,
+  onMarkPaid,
+  downloading,
+  isClient,
+  isAdmin,
+  t,
+  getStatusLabel,
+  formatDate,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  invoice: Invoice | null;
+  onDownload: (inv: Invoice) => void;
+  onPay: (inv: Invoice) => void;
+  onMarkPaid: (inv: Invoice) => void;
+  downloading: boolean;
+  isClient: boolean;
+  isAdmin: boolean;
+  t: (key: string, options?: any) => string;
+  getStatusLabel: (status: string) => string;
+  formatDate: (dateStr: string) => string;
+}) => {
+  if (!invoice) return null;
+
+  const isUnpaid = invoice.status === "PENDING" || invoice.status === "OVERDUE";
+
+  return (
+    <AlertDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <AlertDialogContent className="sm:max-w-lg bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-6 text-zinc-900 dark:text-zinc-100">
+        <AlertDialogHeader className="pb-4 border-b border-zinc-200 dark:border-zinc-800 flex flex-row items-center justify-between">
+          <div>
+            <AlertDialogTitle className="text-base font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
+              <FileText className="h-4.5 w-4.5 text-zinc-500" />
+              {t("billing.invoiceDetails") || "Invoice Details"}
+            </AlertDialogTitle>
+            <p className="text-xs text-zinc-500 font-mono mt-0.5">{invoice.invoice_number}</p>
+          </div>
+          <span
+            className={`px-2.5 py-1 text-xs font-semibold rounded-md border ${
+              statusColor[invoice.status]
+            }`}
+          >
+            {getStatusLabel(invoice.status)}
+          </span>
+        </AlertDialogHeader>
+
+        <div className="py-4 space-y-4">
+          <div className="grid grid-cols-2 gap-4 text-xs">
+            <div className="bg-zinc-50/50 dark:bg-zinc-900/40 p-3 rounded-lg border border-zinc-100 dark:border-zinc-800/80">
+              <span className="text-zinc-400 block text-[10px] uppercase font-bold tracking-wider">
+                {t("billing.tableDate") || "Invoice Date"}
+              </span>
+              <span className="font-mono font-medium text-zinc-800 dark:text-zinc-200 mt-1 block">
+                {formatDate(invoice.invoice_date)}
+              </span>
+            </div>
+            <div className="bg-zinc-50/50 dark:bg-zinc-900/40 p-3 rounded-lg border border-zinc-100 dark:border-zinc-800/80">
+              <span className="text-zinc-400 block text-[10px] uppercase font-bold tracking-wider">
+                {t("billing.tableDueDate") || "Due Date"}
+              </span>
+              <span className="font-mono font-medium text-zinc-800 dark:text-zinc-200 mt-1 block">
+                {formatDate(invoice.due_date)}
+              </span>
+            </div>
+          </div>
+
+          {/* Amount Breakdown Card */}
+          <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 p-4 text-xs space-y-2.5">
+            <div className="flex justify-between items-center text-zinc-600 dark:text-zinc-400">
+              <span>{t("billing.tableAmount") || "Subtotal"}</span>
+              <span className="font-mono font-medium">${Number(invoice.amount).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between items-center text-zinc-600 dark:text-zinc-400">
+              <span>{t("billing.tableTax") || "Tax (18%)"}</span>
+              <span className="font-mono font-medium">${Number(invoice.tax_amount).toFixed(2)}</span>
+            </div>
+            <div className="border-t border-zinc-200 dark:border-zinc-800 pt-2.5 flex justify-between items-center text-sm font-semibold">
+              <span className="text-zinc-950 dark:text-zinc-50">{t("billing.tableTotal") || "Total"}</span>
+              <span className="text-primary font-bold font-mono text-base">${Number(invoice.total).toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+
+        <AlertDialogFooter className="pt-3 border-t border-zinc-200 dark:border-zinc-800 sm:justify-between items-center gap-2 flex-col-reverse sm:flex-row">
+          <button
+            onClick={() => onDownload(invoice)}
+            disabled={downloading}
+            className="px-3.5 py-1.5 text-xs font-semibold border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300 disabled:opacity-50"
+          >
+            {downloading ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Download className="h-3.5 w-3.5" />
+            )}
+            {t("billing.downloadInvoice") || "Download PDF"}
+          </button>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <AlertDialogCancel
+              onClick={onClose}
+              className="px-3.5 py-1.5 text-xs font-semibold border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg transition-colors cursor-pointer"
+            >
+              {t("common.close") || "Close"}
+            </AlertDialogCancel>
+
+            {isUnpaid && isClient && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onPay(invoice);
+                }}
+                className="px-3.5 py-1.5 text-xs font-semibold bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 rounded-lg transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+              >
+                <CreditCard className="h-3.5 w-3.5" />
+                {t("billing.payNow") || "Pay Now"}
+              </button>
+            )}
+
+            {isUnpaid && isAdmin && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onMarkPaid(invoice);
+                }}
+                className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+              >
+                <CheckCircle className="h-3.5 w-3.5" />
+                {t("billing.markAsPaid") || "Mark as Paid"}
+              </button>
+            )}
+          </div>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+};
+
 /* --- Main Component --- */
 
 export function BillingPage() {
+  const { user } = useAuth();
+  const location = useLocation();
+  const isClient = user?.role === "CLIENT";
+  const isAdmin = user?.role === "ADMIN";
+
   const {
     t,
     i18n,
@@ -265,8 +474,29 @@ export function BillingPage() {
     handleDownload,
     openPayModal,
     closePayModal,
+    selectedInvoiceToMarkPaid,
+    showMarkPaidModal,
+    markingPaid,
+    openMarkPaidModal,
+    closeMarkPaidModal,
+    handleMarkAsPaid,
+    allInvoices,
+    selectedInvoiceDetails,
+    showDetailsModal,
+    openDetailsModal,
+    closeDetailsModal,
     fetchInvoices,
   } = useBilling();
+
+  useEffect(() => {
+    const state = location.state as { invoiceId?: string } | undefined;
+    if (state?.invoiceId && allInvoices.length > 0) {
+      const found = allInvoices.find((inv) => inv.id === state.invoiceId);
+      if (found) {
+        openDetailsModal(found);
+      }
+    }
+  }, [location.state, allInvoices, openDetailsModal]);
 
   const getStatusLabel = useCallback(
     (status: string) => {
@@ -301,9 +531,12 @@ export function BillingPage() {
           </span>
         ),
         cell: ({ row }) => (
-          <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 font-mono">
+          <button
+            onClick={() => openDetailsModal(row.original)}
+            className="text-sm font-medium text-zinc-900 dark:text-zinc-100 hover:text-primary dark:hover:text-primary hover:underline font-mono text-left cursor-pointer"
+          >
             {row.original.invoice_number}
-          </span>
+          </button>
         ),
       },
       {
@@ -398,6 +631,13 @@ export function BillingPage() {
         cell: ({ row }) => (
           <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
             <button
+              onClick={() => openDetailsModal(row.original)}
+              className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition-colors cursor-pointer"
+              title={t("billing.invoiceDetails") || "View Details"}
+            >
+              <Eye className="h-4 w-4" />
+            </button>
+            <button
               onClick={() => handleDownload(row.original)}
               disabled={downloadingId === row.original.id}
               className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition-colors cursor-pointer disabled:opacity-50"
@@ -410,20 +650,34 @@ export function BillingPage() {
               )}
             </button>
             {(row.original.status === "PENDING" || row.original.status === "OVERDUE") && (
-              <button
-                onClick={() => openPayModal(row.original)}
-                className="px-3 py-1.5 rounded-md bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-xs font-semibold shadow-sm transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer"
-                title={t("billing.payNow")}
-              >
-                <CreditCard className="h-3.5 w-3.5" />
-                {t("billing.payNow")}
-              </button>
+              <>
+                {isClient && (
+                  <button
+                    onClick={() => openPayModal(row.original)}
+                    className="px-3 py-1.5 rounded-md bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-xs font-semibold shadow-sm transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer"
+                    title={t("billing.payNow")}
+                  >
+                    <CreditCard className="h-3.5 w-3.5" />
+                    {t("billing.payNow")}
+                  </button>
+                )}
+                {isAdmin && (
+                  <button
+                    onClick={() => openMarkPaidModal(row.original)}
+                    className="px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer"
+                    title={t("billing.markAsPaid") || "Mark as Paid"}
+                  >
+                    <CheckCircle className="h-3.5 w-3.5" />
+                    {t("billing.markAsPaid") || "Mark as Paid"}
+                  </button>
+                )}
+              </>
             )}
           </div>
         ),
       },
     ],
-    [t, downloadingId, handleDownload, openPayModal, formatDate, getStatusLabel],
+    [t, downloadingId, handleDownload, openPayModal, openMarkPaidModal, openDetailsModal, formatDate, getStatusLabel, isClient, isAdmin],
   );
 
   return (
@@ -460,11 +714,33 @@ export function BillingPage() {
           onLimitChange: handleLimitChange,
         }}
       />
+      <InvoiceDetailsModal
+        isOpen={showDetailsModal}
+        onClose={closeDetailsModal}
+        invoice={selectedInvoiceDetails}
+        onDownload={handleDownload}
+        onPay={openPayModal}
+        onMarkPaid={openMarkPaidModal}
+        downloading={downloadingId === selectedInvoiceDetails?.id}
+        isClient={isClient}
+        isAdmin={isAdmin}
+        t={t}
+        getStatusLabel={getStatusLabel}
+        formatDate={formatDate}
+      />
       <PayModal
         isOpen={showPayModal}
         onClose={closePayModal}
         invoice={selectedInvoice}
         onSuccess={fetchInvoices}
+        t={t}
+      />
+      <MarkPaidConfirmModal
+        isOpen={showMarkPaidModal}
+        onClose={closeMarkPaidModal}
+        invoice={selectedInvoiceToMarkPaid}
+        onConfirm={handleMarkAsPaid}
+        loading={markingPaid}
         t={t}
       />
     </Page>

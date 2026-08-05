@@ -228,6 +228,7 @@ export class SubscriptionService {
       renewal_date: renewalDate,
       tenant_id: tenantId,
       paypal_order_id: data.paypalOrderId,
+      status: isBankTransfer ? SubscriptionStatus.EXPIRED : SubscriptionStatus.ACTIVE,
     });
 
     // Initialize equipment slots for the subscription

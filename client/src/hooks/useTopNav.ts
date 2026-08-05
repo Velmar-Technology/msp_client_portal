@@ -217,8 +217,9 @@ export function useTopNav() {
           if (invoicesCacheRef.current) {
             matchedInvoices = invoicesCacheRef.current.filter(
               (inv) =>
-                inv.invoice_number.toLowerCase().includes(queryLower) ||
-                inv.total.toString().includes(query)
+                (inv.id && inv.id.toLowerCase().includes(queryLower)) ||
+                (inv.invoice_number && inv.invoice_number.toLowerCase().includes(queryLower)) ||
+                (inv.total != null && String(inv.total).toLowerCase().includes(queryLower))
             );
           }
         }
@@ -299,12 +300,12 @@ export function useTopNav() {
       flat.push({
         type: "invoice",
         title: inv.invoice_number,
-        subtitle: `$${inv.total.toFixed(2)} • ${new Date(inv.invoice_date).toLocaleDateString()}`,
+        subtitle: `$${Number(inv.total).toFixed(2)} • ${new Date(inv.invoice_date).toLocaleDateString()}`,
         badge: inv.status,
         badgeClass: invoiceStatusColorMap[inv.status] || "bg-surface-container text-on-surface-variant",
         icon: CreditCard,
         onClick: () => {
-          navigate("/billing");
+          navigate("/billing", { state: { invoiceId: inv.id } });
           setIsOpen(false);
           setSearchQuery("");
         },

@@ -47,6 +47,7 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     renewal_date: Date;
     tenant_id: string;
     paypal_order_id?: string;
+    status?: SubscriptionStatus;
   }): Promise<Subscription> {
     const results = await db
       .insert(subscriptions)
@@ -58,6 +59,7 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
         renewal_date: data.renewal_date,
         tenant_id: data.tenant_id,
         paypal_order_id: data.paypal_order_id,
+        ...(data.status ? { status: data.status } : {}),
       })
       .returning();
     return results[0] as Subscription;

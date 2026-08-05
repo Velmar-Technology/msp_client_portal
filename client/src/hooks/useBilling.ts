@@ -16,6 +16,11 @@ export function useBilling() {
 
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [showPayModal, setShowPayModal] = useState(false);
+  const [selectedInvoiceToMarkPaid, setSelectedInvoiceToMarkPaid] = useState<Invoice | null>(null);
+  const [showMarkPaidModal, setShowMarkPaidModal] = useState(false);
+  const [selectedInvoiceDetails, setSelectedInvoiceDetails] = useState<Invoice | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [markingPaid, setMarkingPaid] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const fetchInvoices = useCallback(async () => {
@@ -66,6 +71,40 @@ export function useBilling() {
     setShowPayModal(false);
     setSelectedInvoice(null);
   }, []);
+
+  const openMarkPaidModal = useCallback((inv: Invoice) => {
+    setSelectedInvoiceToMarkPaid(inv);
+    setShowMarkPaidModal(true);
+  }, []);
+
+  const closeMarkPaidModal = useCallback(() => {
+    setShowMarkPaidModal(false);
+    setSelectedInvoiceToMarkPaid(null);
+  }, []);
+
+  const openDetailsModal = useCallback((inv: Invoice) => {
+    setSelectedInvoiceDetails(inv);
+    setShowDetailsModal(true);
+  }, []);
+
+  const closeDetailsModal = useCallback(() => {
+    setShowDetailsModal(false);
+    setSelectedInvoiceDetails(null);
+  }, []);
+
+  const handleMarkAsPaid = useCallback(async () => {
+    if (!selectedInvoiceToMarkPaid) return;
+    setMarkingPaid(true);
+    try {
+      await invoiceService.markAsPaid(selectedInvoiceToMarkPaid.id);
+      await fetchInvoices();
+      closeMarkPaidModal();
+    } catch (err) {
+      console.error('Failed to mark invoice as paid', err);
+    } finally {
+      setMarkingPaid(false);
+    }
+  }, [selectedInvoiceToMarkPaid, fetchInvoices, closeMarkPaidModal]);
 
   // Client-side filtered list
   const filteredInvoices = allInvoices.filter((inv) => {
@@ -126,6 +165,16 @@ export function useBilling() {
     handleDownload,
     openPayModal,
     closePayModal,
+    selectedInvoiceToMarkPaid,
+    showMarkPaidModal,
+    markingPaid,
+    openMarkPaidModal,
+    closeMarkPaidModal,
+    allInvoices,
+    selectedInvoiceDetails,
+    showDetailsModal,
+    openDetailsModal,
+    closeDetailsModal,
     fetchInvoices,
   };
 }

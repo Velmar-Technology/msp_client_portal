@@ -16,6 +16,8 @@ const mocks = vi.hoisted(() => {
     getAllForStats: vi.fn(),
     getActiveSubscriptionsWithPlan: vi.fn(),
     getExpensesForStats: vi.fn(),
+    subFindByClient: vi.fn().mockResolvedValue([]),
+    subUpdateStatus: vi.fn().mockResolvedValue({}),
   };
 });
 
@@ -37,6 +39,8 @@ vi.mock('../repositories/SubscriptionRepository', () => {
   return {
     subscriptionRepository: {
       getActiveSubscriptionsWithPlan: mocks.getActiveSubscriptionsWithPlan,
+      findByClient: mocks.subFindByClient,
+      updateStatus: mocks.subUpdateStatus,
     },
   };
 });
@@ -260,6 +264,47 @@ describe('InvoiceService', () => {
       expect(result.kpis.find(k => k.key === 'revenue')?.value).toBe('$177.00');
       expect(result.kpis.find(k => k.key === 'mrr')?.value).toBe('$60.00');
       expect(result.kpis.find(k => k.key === 'expenses')?.value).toBe('$150.00');
+    });
+  });
+
+  describe('markAsPaid', () => {
+    it('should throw forbidden error if role is not ADMIN', async () => {
+      await expect(
+        invoiceService.markAsPaid('inv-123', 'tenant-1', UserRole.CLIENT)
+      ).rejects.toMatchObject({
+        statusCode: 403,
+        message: 'Only administrators can mark invoices as paid manually',
+      });
+    });
+
+    it('should mark invoice as paid, activate expired subscriptions, and send notification', async () => {
+      mocks.findById.mockResolvedValue(mockInvoice);
+      const paidInvoice = { ...mockInvoice, status: InvoiceStatus.PAID };
+      mocks.updateStatus.mockResolvedValue(paidInvoice);
+      mocks.subFindByClient.mockResolvedValue([
+        { id: 'sub-1', status: SubscriptionStatus.EXPIRED },
+      ]);
+
+      const result = await invoiceService.markAsPaid('inv-123', 'tenant-1', UserRole.ADMIN);
+
+      expect(mocks.updateStatus).toHaveBeenCalledWith('inv-123', InvoiceStatus.PAID);
+      expect(mocks.subFindByClient).toHaveBeenCalledWith('client-1', 'tenant-1');
+      expect(mocks.subUpdateStatus).toHaveBeenCalledWith('sub-1', SubscriptionStatus.ACTIVE);
+      expect(mocks.createInAppNotification).toHaveBeenCalledWith(expect.objectContaining({
+        userId: 'client-1',
+        title: 'Payment Confirmed',
+      }));
+      expect(result).toEqual(paidInvoice);
+    });
+
+    it('should return immediately if invoice is already paid', async () => {
+      const paidInvoice = { ...mockInvoice, status: InvoiceStatus.PAID };
+      mocks.findById.mockResolvedValue(paidInvoice);
+
+      const result = await invoiceService.markAsPaid('inv-123', 'tenant-1', UserRole.ADMIN);
+
+      expect(result).toEqual(paidInvoice);
+      expect(mocks.updateStatus).not.toHaveBeenCalled();
     });
   });
 });

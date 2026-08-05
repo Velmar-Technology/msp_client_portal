@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { invoiceController } from '../controllers/InvoiceController';
 import { authMiddleware } from '../middleware/authMiddleware';
+import { rbacMiddleware } from '../middleware/rbacMiddleware';
+import { UserRole } from '../types';
 
 const router = Router();
 
@@ -20,6 +22,9 @@ router.post('/:id/create-paypal-order', (req, res) => invoiceController.createPa
 
 /** POST /api/v1/invoices/:id/capture-paypal-order — Capture PayPal order */
 router.post('/:id/capture-paypal-order', (req, res) => invoiceController.capturePaypalOrder(req, res));
+
+/** PATCH /api/v1/invoices/:id/mark-paid — Mark invoice as paid (Admin only) */
+router.patch('/:id/mark-paid', rbacMiddleware(UserRole.ADMIN), (req, res) => invoiceController.markAsPaid(req, res));
 
 /** GET /api/v1/invoices/:id/download — Download invoice PDF */
 router.get('/:id/download', (req, res) => invoiceController.download(req, res));
