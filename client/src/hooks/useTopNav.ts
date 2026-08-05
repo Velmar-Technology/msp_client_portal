@@ -68,7 +68,7 @@ export function useTopNav() {
   const containerRef = useRef<HTMLDivElement>(null);
   const invoicesCacheRef = useRef<Invoice[] | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const faqSearchIndexRef = useRef<Array<{ id: number; question: string; answer: string; category: string; searchText: string }>>([]);
+  const faqSearchIndexRef = useRef<Array<FAQ & { searchText: string }>>([]);
 
   // Pre-index FAQs when language changes
   useEffect(() => {
@@ -168,7 +168,6 @@ export function useTopNav() {
     if (!searchQuery.trim()) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults({ pages: [], tickets: [], invoices: [], faqs: [] });
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoading(false);
       return;
     }
