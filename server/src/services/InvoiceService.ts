@@ -24,17 +24,52 @@ export class InvoiceService {
     }
   }
 
-  async getClientInvoices(tenantId: string, userRole: UserRole, page = 1, limit = 20): Promise<{ invoices: Invoice[]; total: number }> {
+  async getClientInvoices(tenantId: string, userRole: UserRole, page = 1, limit = 20): Promise<{ invoices: (Invoice & { line_items?: Array<{ description: string; quantity: number; unit_price: number }> })[]; total: number }> {
     const offset = (page - 1) * limit;
+    let rawInvoices: Invoice[];
+    let total: number;
+
     if (userRole === UserRole.ADMIN) {
-      const invoices = await invoiceRepository.findAll(limit, offset);
-      const total = await invoiceRepository.count();
-      return { invoices, total };
+      rawInvoices = await invoiceRepository.findAll(limit, offset);
+      total = await invoiceRepository.count();
     } else {
-      const invoices = await invoiceRepository.findByTenant(tenantId, limit, offset);
-      const total = await invoiceRepository.countByTenant(tenantId);
-      return { invoices, total };
+      rawInvoices = await invoiceRepository.findByTenant(tenantId, limit, offset);
+      total = await invoiceRepository.countByTenant(tenantId);
     }
+
+    // Enrich invoices with line items from related subscriptions
+    const enriched = await Promise.all(rawInvoices.map(async (inv) => {
+      try {
+        const subs = await subscriptionRepository.findByClient(inv.client_id, inv.tenant_id);
+        // Find the subscription created closest to the invoice creation date
+        const invCreatedAt = new Date(inv.created_at || inv.invoice_date).getTime();
+        let bestMatch = subs[0];
+        let bestDiff = Infinity;
+        for (const sub of subs) {
+          const subCreatedAt = new Date(sub.created_at || '').getTime();
+          const diff = Math.abs(subCreatedAt - invCreatedAt);
+          if (diff < bestDiff) {
+            bestDiff = diff;
+            bestMatch = sub;
+          }
+        }
+        if (bestMatch) {
+          return {
+            ...inv,
+            line_items: [{
+              description: bestMatch.service_name,
+              quantity: bestMatch.equipment_count || 1,
+              unit_price: Number(inv.amount) / (bestMatch.equipment_count || 1),
+            }],
+          };
+        }
+      } catch {
+        // Silently fall through — line_items will be undefined
+      }
+      return inv;
+    }));
+
+    return { invoices: enriched, total };
   }
 
   async getInvoiceById(id: string, tenantId: string, userRole: UserRole): Promise<Invoice> {

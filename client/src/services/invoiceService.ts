@@ -1,5 +1,11 @@
 import api from "@/services/api";
 
+export interface InvoiceLineItem {
+  description: string;
+  quantity: number;
+  unit_price: number;
+}
+
 export interface Invoice {
   id: string;
   invoice_number: string;
@@ -11,6 +17,7 @@ export interface Invoice {
   invoice_date: string;
   due_date: string;
   created_at: string;
+  line_items?: InvoiceLineItem[];
 }
 
 export const invoiceService = {

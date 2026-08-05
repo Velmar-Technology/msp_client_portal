@@ -726,7 +726,11 @@
     "confirmMarkPaidTitle": "Confirm Payment",
     "confirmMarkPaidDesc": "Are you sure you want to mark invoice {{number}} (${{amount}}) as paid? Confirm that manual wire transfer has been received and activate associated plans.",
     "markPaidSuccess": "Invoice marked as paid successfully.",
-    "invoiceDetails": "Invoice Details"
+    "invoiceDetails": "Invoice Details",
+    "itemDescription": "Description",
+    "itemQty": "Qty",
+    "itemUnitPrice": "Unit Price",
+    "itemAmount": "Amount"
   },
   "help": {
     "title": "Help & Documentation",

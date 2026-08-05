@@ -374,7 +374,38 @@ const InvoiceDetailsModal = ({
             </div>
           </div>
 
-          {/* Amount Breakdown Card */}
+          {/* Line Items Table */}
+          {invoice.line_items && invoice.line_items.length > 0 && (
+            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 overflow-hidden">
+              <div className="grid grid-cols-12 gap-2 px-4 py-2.5 bg-zinc-100/80 dark:bg-zinc-800/60 text-[10px] uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400">
+                <span className="col-span-6">{t("billing.itemDescription") || "Description"}</span>
+                <span className="col-span-2 text-center">{t("billing.itemQty") || "Qty"}</span>
+                <span className="col-span-2 text-right">{t("billing.itemUnitPrice") || "Unit Price"}</span>
+                <span className="col-span-2 text-right">{t("billing.itemAmount") || "Amount"}</span>
+              </div>
+              {invoice.line_items.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="grid grid-cols-12 gap-2 px-4 py-3 text-xs border-t border-zinc-100 dark:border-zinc-800/60"
+                >
+                  <span className="col-span-6 text-zinc-800 dark:text-zinc-200 font-medium truncate" title={item.description}>
+                    {item.description}
+                  </span>
+                  <span className="col-span-2 text-center text-zinc-600 dark:text-zinc-400 font-mono">
+                    {item.quantity}
+                  </span>
+                  <span className="col-span-2 text-right text-zinc-600 dark:text-zinc-400 font-mono">
+                    ${Number(item.unit_price).toFixed(2)}
+                  </span>
+                  <span className="col-span-2 text-right text-zinc-800 dark:text-zinc-200 font-mono font-medium">
+                    ${(Number(item.unit_price) * item.quantity).toFixed(2)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Amount Summary */}
           <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 p-4 text-xs space-y-2.5">
             <div className="flex justify-between items-center text-zinc-600 dark:text-zinc-400">
               <span>{t("billing.tableAmount") || "Subtotal"}</span>
