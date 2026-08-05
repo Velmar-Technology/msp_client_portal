@@ -70,7 +70,7 @@ export function FinancialPage() {
             size="sm"
             onClick={handleExport}
             disabled={isExporting}
-            className="h-7 flex items-center gap-1 px-3 text-xs font-medium bg-white hover:bg-zinc-50 text-zinc-700 border-zinc-800 cursor-pointer dark:border-zinc-800 dark:bg-zinc-900 hover:text-zinc-900 dark:hover:bg-zinc-800/80 dark:border-zinc-850 dark:text-zinc-300 dark:hover:text-zinc-100"
+            className="h-7 flex items-center gap-1 px-3 text-xs font-medium bg-white hover:bg-zinc-50 text-zinc-700 border-zinc-200 cursor-pointer dark:border-zinc-800 dark:bg-zinc-900 hover:text-zinc-900 dark:hover:bg-zinc-800/80 dark:border-zinc-850 dark:text-zinc-300 dark:hover:text-zinc-100"
           >
             <Download className={`h-3 w-3 text-zinc-500 dark:text-zinc-400 ${isExporting ? "animate-spin" : ""}`} />
             {isExporting ? t("financial.exporting") : t("financial.export")}

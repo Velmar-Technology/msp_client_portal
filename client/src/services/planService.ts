@@ -40,4 +40,9 @@ export const planService = {
     const response = await api.patch(`/plans/${id}`, data);
     return response.data.data;
   },
+
+  async delete(id: string): Promise<Plan> {
+    const response = await api.delete(`/plans/${id}`);
+    return response.data.data;
+  },
 };

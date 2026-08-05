@@ -169,7 +169,7 @@ const AccountDetailsForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
-              className="w-full cursor-pointer rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 transition-all focus:border-zinc-400 dark:focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+              className="w-full cursor-pointer rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-1.5 text-xs text-zinc-900 dark:text-zinc-100 transition-all focus:border-zinc-400 dark:focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
             >
               <option value="en_US">{t("profile.languages.en_US")}</option>
               <option value="es_DO">{t("profile.languages.es_DO")}</option>

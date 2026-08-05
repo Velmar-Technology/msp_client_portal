@@ -500,7 +500,14 @@
     "typeCorriente": "Corriente",
     "typeAhorro": "Ahorro",
     "copied": "Copied!",
-    "copy": "Copy"
+    "copy": "Copy",
+    "deleteConfirm": "Are you sure you want to deactivate/soft-delete this plan?",
+    "deleteSuccessTitle": "Plan Deactivated",
+    "deleteSuccessMsg": "Plan {{id}} has been soft-deleted.",
+    "deleteErrorTitle": "Deactivation Failed",
+    "deletePlan": "Delete Plan",
+    "softDelete": "Soft Delete",
+    "deleteAction": "Delete"
   },
   "devices": {
     "title": "Devices",

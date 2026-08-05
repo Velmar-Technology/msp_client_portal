@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => {
     getPlanById: vi.fn(),
     updatePlan: vi.fn(),
     createPlan: vi.fn(),
+    softDeletePlan: vi.fn(),
   };
 });
 
@@ -17,6 +18,7 @@ vi.mock('../services/PlanService', () => {
       getPlanById: mocks.getPlanById,
       updatePlan: mocks.updatePlan,
       createPlan: mocks.createPlan,
+      softDeletePlan: mocks.softDeletePlan,
     },
   };
 });
@@ -154,6 +156,28 @@ describe('PlanController', () => {
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: newPlan,
+      });
+    });
+  });
+
+  describe('delete', () => {
+    it('should soft delete a plan and return success status and updated plan data', async () => {
+      const deletedPlan = { id: 'BASIC', price: 299, name: 'Basic', active: false };
+      mocks.softDeletePlan.mockResolvedValue(deletedPlan);
+
+      const req = {
+        params: { id: 'BASIC' },
+      } as unknown as Request;
+      const res = {
+        json: vi.fn(),
+      } as unknown as Response;
+
+      await planController.delete(req, res);
+
+      expect(mocks.softDeletePlan).toHaveBeenCalledWith('BASIC');
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        data: deletedPlan,
       });
     });
   });

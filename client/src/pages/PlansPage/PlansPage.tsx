@@ -104,6 +104,7 @@ export function PlansPage() {
     handleDrop,
     handleDragEnd,
     handleSavePlan,
+    handleDeletePlan,
   } = usePlansPage();
 
   const getStatusColor = (status: string) => {
@@ -395,6 +396,7 @@ export function PlansPage() {
                 activeSubscriptions={activeSubscriptions}
                 onSelect={setUserSelectedPlan}
                 onEdit={handleEditClick}
+                onDelete={handleDeletePlan}
                 onAdjustEquipmentCount={handleAdjustEquipmentCount}
                 getPlanName={getPlanName}
                 getPlanDescription={getPlanDescription}
@@ -720,6 +722,7 @@ export function PlansPage() {
           onDragOver={handleDragOver}
           onDrop={handleDrop}
           onDragEnd={handleDragEnd}
+          onDeletePlan={handleDeletePlan}
         />
       )}
     </Page>

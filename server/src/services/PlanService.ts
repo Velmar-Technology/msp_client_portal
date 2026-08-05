@@ -44,6 +44,15 @@ export class PlanService {
     if (!updated) throw AppError.internal('Failed to update plan');
     return updated;
   }
+
+  async softDeletePlan(id: string): Promise<Plan> {
+    const plan = await planRepository.findById(id);
+    if (!plan) throw AppError.notFound('Plan not found');
+
+    const updated = await planRepository.update(id, { active: false });
+    if (!updated) throw AppError.internal('Failed to soft delete plan');
+    return updated;
+  }
 }
 
 export const planService = new PlanService();

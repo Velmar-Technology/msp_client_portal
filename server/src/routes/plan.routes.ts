@@ -32,4 +32,11 @@ router.patch(
   (req, res) => planController.update(req, res)
 );
 
+/** DELETE /api/v1/plans/:id — Soft delete plan (Admin only) */
+router.delete(
+  '/:id',
+  rbacMiddleware(UserRole.ADMIN),
+  (req, res) => planController.delete(req, res)
+);
+
 export default router;

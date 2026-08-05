@@ -13,7 +13,7 @@ import { FEATURE_CATALOG } from "@/constants/featureCatalog";
 export function usePlansPage() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
-  const { plans, loading, fetchPlans, updatePlan, createPlan } = usePlanStore();
+  const { plans, loading, fetchPlans, updatePlan, createPlan, deletePlan } = usePlanStore();
 
   const addToast = useCallback(({ title, message, type }: { title: string; message: string; type?: 'success' | 'error' | 'warning' | 'info' }) => {
     const tType = type || 'info';
@@ -122,10 +122,11 @@ export function usePlansPage() {
 
   const filteredPlans = useMemo(() => {
     return plans.filter((plan) => {
+      if (plan.active === false) return false;
       if (isAdmin || user?.role === "TECHNICIAN") return true;
       const userClientType = user?.clientType || "CLIENT";
       const planClientType = plan.client_type || "CLIENT";
-      return plan.active !== false && planClientType === userClientType;
+      return planClientType === userClientType;
     });
   }, [plans, isAdmin, user?.role, user?.clientType]);
 
@@ -982,6 +983,30 @@ export function usePlansPage() {
     }
   }, [editingPlan, isCreateMode, editId, editName, editDescription, editPrice, editRecommended, editClientType, editActive, editFeatures, cleanBilingualRecord, getPlanName, createPlan, updatePlan, addToast]);
 
+  const handleDeletePlan = useCallback(async (planId: string) => {
+    const confirmDelete = window.confirm(
+      t("plans.deleteConfirm") || "Are you sure you want to deactivate/soft-delete this plan?"
+    );
+    if (!confirmDelete) return;
+
+    try {
+      await deletePlan(planId);
+      addToast({
+        title: t("plans.deleteSuccessTitle") || "Plan Deactivated",
+        message: t("plans.deleteSuccessMsg", { id: planId }) || `Plan ${planId} has been soft-deleted.`,
+        type: "success",
+      });
+    } catch (err) {
+      console.error("Failed to delete plan:", err);
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      addToast({
+        title: t("plans.deleteErrorTitle") || "Deactivation Failed",
+        message: error.response?.data?.message || error.message || "Failed to soft delete plan.",
+        type: "error",
+      });
+    }
+  }, [t, deletePlan, addToast]);
+
   return {
     t,
     i18n,
@@ -1070,6 +1095,7 @@ export function usePlansPage() {
     handleDrop,
     handleDragEnd,
     handleSavePlan,
+    handleDeletePlan,
     fetchActiveSubscriptions,
     addToast,
   };

@@ -1,4 +1,4 @@
-import { Check, X, Edit } from "lucide-react";
+import { Check, X, Edit, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Plan, PlanFeature } from "@/services/planService";
 import type { Subscription } from "@/services/subscriptionService";
@@ -12,6 +12,7 @@ interface PlanCardProps {
   activeSubscriptions: Subscription[];
   onSelect: (planId: string) => void;
   onEdit: (plan: Plan) => void;
+  onDelete?: (planId: string) => void;
   onAdjustEquipmentCount: (planId: string, delta: number) => void;
   getPlanName: (name: string | Record<string, string>) => string;
   getPlanDescription: (desc: string | Record<string, string> | null | undefined) => string;
@@ -28,6 +29,7 @@ export function PlanCard({
   activeSubscriptions,
   onSelect,
   onEdit,
+  onDelete,
   onAdjustEquipmentCount,
   getPlanName,
   getPlanDescription,
@@ -81,17 +83,33 @@ export function PlanCard({
             )}
 
             {isAdmin && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(plan);
-                }}
-                className="bg-white hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer flex items-center gap-1 shrink-0"
-              >
-                <Edit className="h-3 w-3" />
-                {t("plans.editAction") || "Edit"}
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(plan);
+                  }}
+                  className="bg-white hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+                >
+                  <Edit className="h-3 w-3" />
+                  {t("plans.editAction") || "Edit"}
+                </button>
+                {onDelete && !isPlanDisabled && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(plan.id);
+                    }}
+                    className="bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/60 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+                    title={t("plans.softDelete") || "Soft Delete"}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    {t("plans.deleteAction") || "Delete"}
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>

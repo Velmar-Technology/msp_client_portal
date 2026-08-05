@@ -25,6 +25,11 @@ export class PlanController {
     const plan = await planService.updatePlan(req.params.id as string, data);
     res.json({ success: true, data: plan });
   }
+
+  async delete(req: Request, res: Response): Promise<void> {
+    const plan = await planService.softDeletePlan(req.params.id as string);
+    res.json({ success: true, data: plan });
+  }
 }
 
 export const planController = new PlanController();

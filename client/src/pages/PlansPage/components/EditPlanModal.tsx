@@ -41,6 +41,7 @@ interface EditPlanModalProps {
   onDragOver: (e: React.DragEvent, index: number) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
   onDragEnd: () => void;
+  onDeletePlan?: (planId: string) => void;
 }
 
 export function EditPlanModal({
@@ -78,6 +79,7 @@ export function EditPlanModal({
   onDragOver,
   onDrop,
   onDragEnd,
+  onDeletePlan,
 }: EditPlanModalProps) {
   const { t } = useTranslation();
   const [activeLang, setActiveLang] = useState<'en_US' | 'es_DO'>('en_US');
@@ -464,20 +466,37 @@ export function EditPlanModal({
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-2.5 border-t border-zinc-200 dark:border-zinc-800 flex justify-end gap-2 bg-zinc-100/50 dark:bg-zinc-900/60">
-          <button
-            onClick={onClose}
-            className="px-3 py-1 border border-zinc-200 hover:bg-zinc-100 dark:border-zinc-800 rounded text-xs font-semibold cursor-pointer text-zinc-700 dark:text-zinc-300"
-          >
-            {t('plans.cancel') || 'Cancel'}
-          </button>
-          <button
-            onClick={onSave}
-            disabled={saveLoading}
-            className="px-3.5 py-1 bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950 rounded text-xs font-semibold hover:opacity-90 transition-opacity flex items-center gap-1 disabled:opacity-50 cursor-pointer shadow-sm"
-          >
-            {saveLoading ? (t('plans.saving') || 'Saving...') : isCreateMode ? (t('plans.createPlan') || 'Create Plan') : (t('plans.saveChanges') || 'Save Changes')}
-          </button>
+        <div className="px-4 py-2.5 border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-100/50 dark:bg-zinc-900/60">
+          <div>
+            {!isCreateMode && onDeletePlan && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onDeletePlan(editingPlan.id);
+                }}
+                className="px-2.5 py-1 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/60 rounded text-xs font-semibold cursor-pointer flex items-center gap-1 transition-colors"
+              >
+                <Trash2 className="h-3 w-3" />
+                {t('plans.deletePlan') || 'Delete Plan'}
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className="px-3 py-1 border border-zinc-200 hover:bg-zinc-100 dark:border-zinc-800 rounded text-xs font-semibold cursor-pointer text-zinc-700 dark:text-zinc-300"
+            >
+              {t('plans.cancel') || 'Cancel'}
+            </button>
+            <button
+              onClick={onSave}
+              disabled={saveLoading}
+              className="px-3.5 py-1 bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950 rounded text-xs font-semibold hover:opacity-90 transition-opacity flex items-center gap-1 disabled:opacity-50 cursor-pointer shadow-sm"
+            >
+              {saveLoading ? (t('plans.saving') || 'Saving...') : isCreateMode ? (t('plans.createPlan') || 'Create Plan') : (t('plans.saveChanges') || 'Save Changes')}
+            </button>
+          </div>
         </div>
       </div>
     </div>

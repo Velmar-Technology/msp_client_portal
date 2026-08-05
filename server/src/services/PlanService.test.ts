@@ -190,4 +190,42 @@ describe('PlanService', () => {
       expect(mocks.create).not.toHaveBeenCalled();
     });
   });
+
+  describe('softDeletePlan', () => {
+    it('should set active to false and return updated plan', async () => {
+      const mockPlan = { id: 'BASIC', price: 299, name: 'Basic', active: true };
+      const updatedPlan = { ...mockPlan, active: false };
+      mocks.findById.mockResolvedValue(mockPlan);
+      mocks.update.mockResolvedValue(updatedPlan);
+
+      const result = await planService.softDeletePlan('BASIC');
+
+      expect(mocks.findById).toHaveBeenCalledWith('BASIC');
+      expect(mocks.update).toHaveBeenCalledWith('BASIC', { active: false });
+      expect(result).toEqual(updatedPlan);
+    });
+
+    it('should throw 404 AppError if plan is not found', async () => {
+      mocks.findById.mockResolvedValue(null);
+
+      await expect(planService.softDeletePlan('NONEXISTENT')).rejects.toMatchObject({
+        message: 'Plan not found',
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
+      expect(mocks.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw 500 AppError if database update fails', async () => {
+      const mockPlan = { id: 'BASIC', price: 299, name: 'Basic', active: true };
+      mocks.findById.mockResolvedValue(mockPlan);
+      mocks.update.mockResolvedValue(null);
+
+      await expect(planService.softDeletePlan('BASIC')).rejects.toMatchObject({
+        message: 'Failed to soft delete plan',
+        statusCode: 500,
+        code: 'INTERNAL_ERROR',
+      });
+    });
+  });
 });

@@ -15,6 +15,7 @@ export interface PlanState {
     id: string,
     data: Partial<Omit<Plan, 'id' | 'created_at' | 'updated_at'>>
   ) => Promise<void>;
+  deletePlan: (id: string) => Promise<void>;
 }
 
 export const usePlanStore = create<PlanState>()(
@@ -81,6 +82,29 @@ export const usePlanStore = create<PlanState>()(
             { loading: false, error: error.message || 'Failed to update plan' },
             false,
             'plans/update_failure'
+          );
+          throw err;
+        }
+      },
+
+      deletePlan: async (id) => {
+        set({ loading: true, error: null }, false, 'plans/delete_request');
+        try {
+          const updatedPlan = await planService.delete(id);
+          set(
+            (state) => ({
+              plans: state.plans.map((p) => (p.id === id ? updatedPlan : p)),
+              loading: false,
+            }),
+            false,
+            'plans/delete_success'
+          );
+        } catch (err) {
+          const error = err as Error;
+          set(
+            { loading: false, error: error.message || 'Failed to delete plan' },
+            false,
+            'plans/delete_failure'
           );
           throw err;
         }

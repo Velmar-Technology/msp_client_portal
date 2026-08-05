@@ -500,7 +500,14 @@
     "typeCorriente": "Corriente",
     "typeAhorro": "Ahorro",
     "copied": "¡Copiado!",
-    "copy": "Copiar"
+    "copy": "Copiar",
+    "deleteConfirm": "¿Está seguro de que desea desactivar/eliminar suavemente este plan?",
+    "deleteSuccessTitle": "Plan Desactivado",
+    "deleteSuccessMsg": "El plan {{id}} ha sido desactivado.",
+    "deleteErrorTitle": "Fallo al Desactivar",
+    "deletePlan": "Eliminar Plan",
+    "softDelete": "Desactivar Plan",
+    "deleteAction": "Eliminar"
   },
   "devices": {
     "title": "Dispositivos",
