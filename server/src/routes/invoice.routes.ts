@@ -26,6 +26,9 @@ router.post('/:id/capture-paypal-order', (req, res) => invoiceController.capture
 /** PATCH /api/v1/invoices/:id/mark-paid — Mark invoice as paid (Admin only) */
 router.patch('/:id/mark-paid', rbacMiddleware(UserRole.ADMIN), (req, res) => invoiceController.markAsPaid(req, res));
 
+/** PATCH /api/v1/invoices/:id/cancel — Cancel a pending invoice */
+router.patch('/:id/cancel', (req, res) => invoiceController.cancel(req, res));
+
 /** GET /api/v1/invoices/:id/download — Download invoice PDF */
 router.get('/:id/download', (req, res) => invoiceController.download(req, res));
 

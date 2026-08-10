@@ -256,13 +256,13 @@ export function generateInvoicePdf(
   let statusText = String(invoice.status);
   let statusColor = '0.95 0.6 0.1'; // Amber/Orange for pending
   if (invoice.status === 'PAID') {
-    statusText = language === 'es_DO' ? 'PAGADA' : 'PAID';
+    statusText = language === 'es_DO' ? 'Pagada' : 'Paid';
     statusColor = '0.15 0.65 0.35'; // Cool green
   } else if (invoice.status === 'OVERDUE') {
-    statusText = language === 'es_DO' ? 'VENCIDA' : 'OVERDUE';
+    statusText = language === 'es_DO' ? 'Vencida' : 'Overdue';
     statusColor = '0.85 0.18 0.18'; // Red
   } else {
-    statusText = language === 'es_DO' ? 'PENDIENTE' : 'PENDING';
+    statusText = language === 'es_DO' ? 'Pendiente' : 'Pending';
   }
 
   const escapedStatus = escapePdfText(statusText);

@@ -13,7 +13,7 @@ export interface Invoice {
   amount: number;
   tax_amount: number;
   total: number;
-  status: 'PENDING' | 'PAID' | 'OVERDUE';
+  status: 'PENDING' | 'PAID' | 'OVERDUE' | 'CANCELLED';
   invoice_date: string;
   due_date: string;
   created_at: string;
@@ -62,6 +62,11 @@ export const invoiceService = {
   }> {
     const response = await api.get('/invoices/financial-stats', { params: { range } });
     return response.data.data;
+  },
+
+  async cancelInvoice(id: string, reason?: string): Promise<{ success: boolean; data: Invoice }> {
+    const response = await api.patch(`/invoices/${id}/cancel`, { reason });
+    return response.data;
   },
 };
 

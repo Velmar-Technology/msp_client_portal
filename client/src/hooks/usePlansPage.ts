@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo, type SyntheticEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from "@/hooks/useAuth";
 import { usePlanStore } from "@/store/usePlanStore";
@@ -13,6 +14,7 @@ import { FEATURE_CATALOG } from "@/constants/featureCatalog";
 export function usePlansPage() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { plans, loading, fetchPlans, updatePlan, createPlan, deletePlan } = usePlanStore();
 
   const addToast = useCallback(({ title, message, type }: { title: string; message: string; type?: 'success' | 'error' | 'warning' | 'info' }) => {
@@ -525,6 +527,9 @@ export function usePlansPage() {
         type: "success",
       });
       await fetchActiveSubscriptions();
+      if (isTransfer) {
+        navigate('/billing');
+      }
     } catch (err) {
       console.error("Failed to create subscription:", err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
@@ -536,7 +541,7 @@ export function usePlansPage() {
     } finally {
       setSubscribeLoading(false);
     }
-  }, [currentPlan, isAdmin, acceptedTos, selectedClientId, currentEquipmentCount, billingCycle, paymentMethod, getPlanName, addToast, fetchActiveSubscriptions]);
+  }, [currentPlan, isAdmin, acceptedTos, selectedClientId, currentEquipmentCount, billingCycle, paymentMethod, getPlanName, addToast, fetchActiveSubscriptions, navigate]);
 
   const handleSendQuote = useCallback(async (e: React.MouseEvent) => {
     e.preventDefault();

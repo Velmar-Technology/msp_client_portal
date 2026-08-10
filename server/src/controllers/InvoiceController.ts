@@ -58,6 +58,18 @@ export class InvoiceController {
     res.json({ success: true, data: invoice });
   }
 
+  async cancel(req: Request, res: Response): Promise<void> {
+    const reason = req.body?.reason as string | undefined;
+    const invoice = await invoiceService.cancelInvoice(
+      req.params.id as string,
+      req.user!.tenantId,
+      req.user!.role as UserRole,
+      req.user!.userId,
+      reason
+    );
+    res.json({ success: true, data: invoice });
+  }
+
   async download(req: Request, res: Response): Promise<void> {
     const lang = req.query.lang as string;
     const { pdfBuffer, invoiceNumber } = await invoiceService.downloadInvoice(

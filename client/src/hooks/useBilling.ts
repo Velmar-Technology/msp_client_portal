@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { invoiceService } from "@/services/invoiceService";
 import type { Invoice } from "@/services/invoiceService";
@@ -21,6 +21,9 @@ export function useBilling() {
   const [selectedInvoiceDetails, setSelectedInvoiceDetails] = useState<Invoice | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [markingPaid, setMarkingPaid] = useState(false);
+  const [selectedInvoiceToCancel, setSelectedInvoiceToCancel] = useState<Invoice | null>(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const fetchInvoices = useCallback(async () => {
@@ -106,8 +109,40 @@ export function useBilling() {
     }
   }, [selectedInvoiceToMarkPaid, fetchInvoices, closeMarkPaidModal]);
 
-  // Client-side filtered list
-  const filteredInvoices = allInvoices.filter((inv) => {
+  const openCancelModal = useCallback((inv: Invoice) => {
+    setSelectedInvoiceToCancel(inv);
+    setShowCancelModal(true);
+  }, []);
+
+  const closeCancelModal = useCallback(() => {
+    setShowCancelModal(false);
+    setSelectedInvoiceToCancel(null);
+  }, []);
+
+  const handleCancelInvoice = useCallback(async (reason?: string) => {
+    if (!selectedInvoiceToCancel) return;
+    setCancelling(true);
+    try {
+      await invoiceService.cancelInvoice(selectedInvoiceToCancel.id, reason);
+      await fetchInvoices();
+      closeCancelModal();
+    } catch (err) {
+      console.error('Failed to cancel invoice', err);
+    } finally {
+      setCancelling(false);
+    }
+  }, [selectedInvoiceToCancel, fetchInvoices, closeCancelModal]);
+
+  // Client-side sorted and filtered list
+  const sortedInvoices = useMemo(() => {
+    return [...allInvoices].sort((a, b) => {
+      const dateA = new Date(a.created_at || a.invoice_date).getTime();
+      const dateB = new Date(b.created_at || b.invoice_date).getTime();
+      return dateB - dateA;
+    });
+  }, [allInvoices]);
+
+  const filteredInvoices = sortedInvoices.filter((inv) => {
     if (statusFilter && inv.status !== statusFilter) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -170,6 +205,13 @@ export function useBilling() {
     markingPaid,
     openMarkPaidModal,
     closeMarkPaidModal,
+    handleMarkAsPaid,
+    selectedInvoiceToCancel,
+    showCancelModal,
+    cancelling,
+    openCancelModal,
+    closeCancelModal,
+    handleCancelInvoice,
     allInvoices,
     selectedInvoiceDetails,
     showDetailsModal,

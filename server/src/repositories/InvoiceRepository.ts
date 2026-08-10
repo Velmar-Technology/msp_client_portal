@@ -13,7 +13,7 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
       .select()
       .from(invoices)
       .where(eq(invoices.tenant_id, tenantId))
-      .orderBy(desc(invoices.invoice_date))
+      .orderBy(desc(invoices.created_at))
       .limit(limit)
       .offset(offset);
     return results as Invoice[];
@@ -76,12 +76,12 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
         .select()
         .from(invoices)
         .where(eq(invoices.tenant_id, tenantId))
-        .orderBy(desc(invoices.invoice_date))) as Invoice[];
+        .orderBy(desc(invoices.created_at))) as Invoice[];
     }
     return (await db
       .select()
       .from(invoices)
-      .orderBy(desc(invoices.invoice_date))) as Invoice[];
+      .orderBy(desc(invoices.created_at))) as Invoice[];
   }
 }
 

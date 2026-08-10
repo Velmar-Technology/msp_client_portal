@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => {
     capturePaypalOrder: vi.fn(),
     paypalCreateOrder: vi.fn(),
     paypalCaptureOrder: vi.fn(),
-    createInAppNotification: vi.fn(),
+    createInAppNotification: vi.fn().mockResolvedValue({}),
     getAllForStats: vi.fn(),
     getActiveSubscriptionsWithPlan: vi.fn(),
     getExpensesForStats: vi.fn(),
@@ -305,6 +305,61 @@ describe('InvoiceService', () => {
 
       expect(result).toEqual(paidInvoice);
       expect(mocks.updateStatus).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('cancelInvoice', () => {
+    it('should throw badRequest error if invoice is already paid', async () => {
+      mocks.findById.mockResolvedValue({ ...mockInvoice, status: InvoiceStatus.PAID });
+      await expect(
+        invoiceService.cancelInvoice('inv-123', 'tenant-1', UserRole.ADMIN, 'admin-1')
+      ).rejects.toMatchObject({
+        statusCode: 400,
+        message: 'Cannot cancel an already paid invoice',
+      });
+    });
+
+    it('should return immediately if invoice is already cancelled', async () => {
+      const cancelledInvoice = { ...mockInvoice, status: InvoiceStatus.CANCELLED };
+      mocks.findById.mockResolvedValue(cancelledInvoice);
+
+      const result = await invoiceService.cancelInvoice('inv-123', 'tenant-1', UserRole.ADMIN, 'admin-1');
+
+      expect(result).toEqual(cancelledInvoice);
+      expect(mocks.updateStatus).not.toHaveBeenCalled();
+    });
+
+    it('should cancel pending invoice, update EXPIRED subscription to CANCELLED, and notify client', async () => {
+      mocks.findById.mockResolvedValue(mockInvoice);
+      const cancelledInvoice = { ...mockInvoice, status: InvoiceStatus.CANCELLED };
+      mocks.updateStatus.mockResolvedValue(cancelledInvoice);
+      mocks.subFindByClient.mockResolvedValue([
+        { id: 'sub-1', status: SubscriptionStatus.EXPIRED, created_at: mockInvoice.invoice_date },
+      ]);
+
+      const result = await invoiceService.cancelInvoice('inv-123', 'tenant-1', UserRole.ADMIN, 'admin-1', 'Bank cancellation');
+
+      expect(mocks.updateStatus).toHaveBeenCalledWith('inv-123', InvoiceStatus.CANCELLED);
+      expect(mocks.subUpdateStatus).toHaveBeenCalledWith('sub-1', SubscriptionStatus.CANCELLED);
+      expect(mocks.createInAppNotification).toHaveBeenCalledWith(expect.objectContaining({
+        userId: 'client-1',
+        title: 'Invoice Cancelled',
+      }));
+      expect(result).toEqual(cancelledInvoice);
+    });
+
+    it('should notify admins if client self-cancels an invoice', async () => {
+      mocks.findById.mockResolvedValue(mockInvoice);
+      const cancelledInvoice = { ...mockInvoice, status: InvoiceStatus.CANCELLED };
+      mocks.updateStatus.mockResolvedValue(cancelledInvoice);
+      mocks.subFindByClient.mockResolvedValue([]);
+
+      await invoiceService.cancelInvoice('inv-123', 'tenant-1', UserRole.CLIENT, 'client-1', 'Decided not to pay');
+
+      expect(mocks.createInAppNotification).toHaveBeenCalledWith(expect.objectContaining({
+        userId: 'admin-1',
+        title: 'Invoice Cancelled by Client',
+      }));
     });
   });
 });

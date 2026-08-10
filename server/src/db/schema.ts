@@ -29,7 +29,7 @@ export const ticketCategoryEnum = pgEnum('ticket_category', ['REPAIR', 'WARRANTY
 export const ticketPriorityEnum = pgEnum('ticket_priority', ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']);
 export const subscriptionPlanEnum = pgEnum('subscription_plan', ['BASIC', 'STANDARD', 'PREMIUM']);
 export const subscriptionStatusEnum = pgEnum('subscription_status', ['ACTIVE', 'EXPIRING', 'EXPIRED', 'CANCELLED']);
-export const invoiceStatusEnum = pgEnum('invoice_status', ['PENDING', 'PAID', 'OVERDUE']);
+export const invoiceStatusEnum = pgEnum('invoice_status', ['PENDING', 'PAID', 'OVERDUE', 'CANCELLED']);
 
 // ---- Tenants ----
 export const tenants = pgTable('tenants', {

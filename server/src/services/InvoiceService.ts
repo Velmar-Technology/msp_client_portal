@@ -170,6 +170,80 @@ export class InvoiceService {
     return updatedInvoice;
   }
 
+  async cancelInvoice(id: string, tenantId: string, userRole: UserRole, userId: string, reason?: string): Promise<Invoice> {
+    const invoice = await this.getInvoiceById(id, tenantId, userRole);
+
+    if (invoice.status === InvoiceStatus.PAID) {
+      throw AppError.badRequest('Cannot cancel an already paid invoice');
+    }
+    if (invoice.status === InvoiceStatus.CANCELLED) {
+      return invoice;
+    }
+
+    const updatedInvoice = await invoiceRepository.updateStatus(id, InvoiceStatus.CANCELLED);
+    if (!updatedInvoice) {
+      throw AppError.internal('Failed to update invoice status in database');
+    }
+
+    // Cancel the related subscription if it's still in EXPIRED state (bank transfer intent)
+    try {
+      const clientSubs = await subscriptionRepository.findByClient(invoice.client_id, invoice.tenant_id);
+      const invCreatedAt = new Date(invoice.created_at || invoice.invoice_date).getTime();
+      let bestMatch = clientSubs[0];
+      let bestDiff = Infinity;
+      for (const sub of clientSubs) {
+        if (sub.status !== SubscriptionStatus.EXPIRED) continue;
+        const subCreatedAt = new Date(sub.created_at || '').getTime();
+        const diff = Math.abs(subCreatedAt - invCreatedAt);
+        if (diff < bestDiff) {
+          bestDiff = diff;
+          bestMatch = sub;
+        }
+      }
+      if (bestMatch && bestMatch.status === SubscriptionStatus.EXPIRED) {
+        await subscriptionRepository.updateStatus(bestMatch.id, SubscriptionStatus.CANCELLED);
+      }
+    } catch (err) {
+      logger.error('Failed to cancel related subscription for cancelled invoice:', err);
+    }
+
+    // Notify the client that their invoice was cancelled
+    const reasonSuffix = reason ? ` Reason: ${reason}` : '';
+    await notificationService.createInAppNotification({
+      userId: invoice.client_id,
+      title: 'Invoice Cancelled',
+      message: `Invoice ${invoice.invoice_number} ($${Number(invoice.total).toFixed(2)}) has been cancelled.${reasonSuffix}`,
+      link: '/billing',
+      type: 'INVOICE_CANCELLED',
+      tenantId: invoice.tenant_id,
+    }).catch((err) => {
+      logger.error('Failed to send invoice cancellation notification to client:', err);
+    });
+
+    // Notify admins if a client self-cancelled
+    if (userRole !== UserRole.ADMIN) {
+      try {
+        const adminUsers = await userRepository.findByRole(UserRole.ADMIN);
+        const clientUser = await userRepository.findById(userId);
+        const clientName = clientUser?.name || 'A customer';
+        for (const admin of adminUsers) {
+          await notificationService.createInAppNotification({
+            userId: admin.id,
+            title: 'Invoice Cancelled by Client',
+            message: `${clientName} cancelled invoice ${invoice.invoice_number} ($${Number(invoice.total).toFixed(2)}).${reasonSuffix}`,
+            link: '/billing',
+            type: 'INVOICE_CANCELLED_ADMIN',
+            tenantId: invoice.tenant_id,
+          });
+        }
+      } catch (err) {
+        logger.error('Failed to notify admins of invoice cancellation:', err);
+      }
+    }
+
+    return updatedInvoice;
+  }
+
   async downloadInvoice(id: string, tenantId: string, userRole: UserRole, lang?: string): Promise<{ pdfBuffer: Buffer; invoiceNumber: string }> {
     const invoice = await this.getInvoiceById(id, tenantId, userRole);
 

@@ -47,11 +47,7 @@ const BANK_ACCOUNTS: BankAccountInfo[] = [
     borderColor: "border-[#002b66]",
     badgeBg: "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/50",
     logoSvg: (
-      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current text-white" aria-label="Banco Popular Logo">
-        <path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zm-9 9h7v7H4v-7zm9 0h7v7h-7v-7z" opacity="0.4" />
-        <path d="M6 6h3v3H6V6zm10 0h2v2h-2V6zM6 16h2v2H6v-2zm9-1h3v3h-3v-3z" />
-        <circle cx="12" cy="12" r="2.5" className="fill-amber-400" />
-      </svg>
+      <img src="/popular.png" alt="Banco Popular Logo" className="w-full h-full object-cover rounded" />
     ),
   },
   {
@@ -64,13 +60,7 @@ const BANK_ACCOUNTS: BankAccountInfo[] = [
     borderColor: "border-[#0070a8]",
     badgeBg: "bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800/50",
     logoSvg: (
-      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current text-white" aria-label="Banreservas Logo">
-        <path d="M3 17.5C6 14.5 9 14.5 12 17.5C15 20.5 18 20.5 21 17.5V13.5C18 16.5 15 16.5 12 13.5C9 10.5 6 10.5 3 13.5V17.5Z" />
-        <path
-          d="M3 10.5C6 7.5 9 7.5 12 10.5C15 13.5 18 13.5 21 10.5V6.5C18 9.5 15 9.5 12 6.5C9 3.5 6 3.5 3 6.5V10.5Z"
-          opacity="0.8"
-        />
-      </svg>
+      <img src="/banreservas.jpg" alt="Banreservas Logo" className="w-full h-full object-cover rounded" />
     ),
   },
   {
@@ -84,10 +74,7 @@ const BANK_ACCOUNTS: BankAccountInfo[] = [
     badgeBg:
       "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50",
     logoSvg: (
-      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current text-white" aria-label="Banco BHD Logo">
-        <path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.8L18 8v8l-6 3.75L6 16V8l6-3.2z" />
-        <path d="M12 8a3 3 0 100 6 3 3 0 000-6zm0 1.8a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z" />
-      </svg>
+      <img src="/bhd.png" alt="Banco BHD Logo" className="w-full h-full object-cover rounded" />
     ),
   },
 ];
