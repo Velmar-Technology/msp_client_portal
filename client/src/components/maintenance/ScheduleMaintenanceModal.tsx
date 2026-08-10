@@ -50,7 +50,7 @@ export function ScheduleMaintenanceModal({
       setTitle(
         t("maintenance.defaultTitle", {
           name: equipment.device_name || t("devices.unnamedDevice"),
-        })
+        }),
       );
     } else if (provisionedEquipment.length > 0) {
       if (!selectedEquipId || !provisionedEquipment.some((e) => e.id === selectedEquipId)) {
@@ -58,7 +58,7 @@ export function ScheduleMaintenanceModal({
         setTitle(
           t("maintenance.defaultTitle", {
             name: provisionedEquipment[0].device_name || t("devices.unnamedDevice"),
-          })
+          }),
         );
       }
     } else {
@@ -117,7 +117,7 @@ export function ScheduleMaintenanceModal({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-white dark:bg-card border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-50 dark:bg-zinc-900/50">
           <div className="flex items-center gap-2">
@@ -125,9 +125,7 @@ export function ScheduleMaintenanceModal({
               <Wrench className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
-                {t("maintenance.modalTitle")}
-              </h3>
+              <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{t("maintenance.modalTitle")}</h3>
               <p className="text-[10px] text-zinc-500">{t("maintenance.modalSubtitle")}</p>
             </div>
           </div>
@@ -159,7 +157,7 @@ export function ScheduleMaintenanceModal({
                     setTitle(
                       t("maintenance.defaultTitle", {
                         name: selectedEq.device_name || t("devices.unnamedDevice"),
-                      })
+                      }),
                     );
                   }
                 }}
@@ -167,7 +165,8 @@ export function ScheduleMaintenanceModal({
               >
                 {provisionedEquipment.map((eq) => (
                   <option key={eq.id} value={eq.id}>
-                    {eq.device_name || t("devices.unnamedDevice")} ({eq.device_serial || t("devices.noSerial")}) - {eq.client_name || ""}
+                    {eq.device_name || t("devices.unnamedDevice")} ({eq.device_serial || t("devices.noSerial")}) -{" "}
+                    {eq.client_name || ""}
                   </option>
                 ))}
               </select>

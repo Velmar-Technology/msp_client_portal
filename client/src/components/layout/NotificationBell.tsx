@@ -1,7 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from "react";
 import { useNotificationStore } from "@/store/useNotificationStore";
-import { Bell, Check, Ticket, MessageSquare, ShieldAlert, CheckSquare, RefreshCw, Settings2, Trash2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import {
+  Bell,
+  Check,
+  Ticket,
+  MessageSquare,
+  ShieldAlert,
+  CheckSquare,
+  RefreshCw,
+  Settings2,
+  Trash2,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 function formatDistanceToNow(dateString: string): string {
   const date = new Date(dateString);
@@ -11,10 +21,10 @@ function formatDistanceToNow(dateString: string): string {
   const diffHours = Math.floor(diffMins / 60);
   const diffDays = Math.floor(diffHours / 24);
 
-  if (diffMins < 1) return 'Just now';
+  if (diffMins < 1) return "Just now";
   if (diffMins < 60) return `${diffMins}m ago`;
   if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays === 1) return 'Yesterday';
+  if (diffDays === 1) return "Yesterday";
   return `${diffDays}d ago`;
 }
 
@@ -23,14 +33,8 @@ export function NotificationBell() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  const {
-    notifications,
-    unreadCount,
-    markAsRead,
-    markAllAsRead,
-    clearNotifications,
-    fetchNotifications,
-  } = useNotificationStore();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications, fetchNotifications } =
+    useNotificationStore();
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -39,9 +43,9 @@ export function NotificationBell() {
         setIsOpen(false);
       }
     }
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -55,35 +59,35 @@ export function NotificationBell() {
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'TICKET_CREATED':
+      case "TICKET_CREATED":
         return {
-          bg: 'bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800',
-          text: 'text-emerald-700 dark:text-emerald-400',
+          bg: "bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800",
+          text: "text-emerald-700 dark:text-emerald-400",
           Icon: Ticket,
         };
-      case 'TICKET_ASSIGNED':
+      case "TICKET_ASSIGNED":
         return {
-          bg: 'bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800',
-          text: 'text-blue-700 dark:text-blue-400',
+          bg: "bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800",
+          text: "text-blue-700 dark:text-blue-400",
           Icon: CheckSquare,
         };
-      case 'TICKET_STATUS_CHANGED':
-      case 'TICKET_CANCELLED':
+      case "TICKET_STATUS_CHANGED":
+      case "TICKET_CANCELLED":
         return {
-          bg: 'bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800',
-          text: 'text-amber-700 dark:text-amber-400',
+          bg: "bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800",
+          text: "text-amber-700 dark:text-amber-400",
           Icon: ShieldAlert,
         };
-      case 'NEW_REPLY':
+      case "NEW_REPLY":
         return {
-          bg: 'bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800',
-          text: 'text-indigo-700 dark:text-indigo-400',
+          bg: "bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800",
+          text: "text-indigo-700 dark:text-indigo-400",
           Icon: MessageSquare,
         };
       default:
         return {
-          bg: 'bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700',
-          text: 'text-zinc-600 dark:text-zinc-400',
+          bg: "bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700",
+          text: "text-zinc-600 dark:text-zinc-400",
           Icon: Bell,
         };
     }
@@ -109,7 +113,7 @@ export function NotificationBell() {
         <Bell className="h-4 w-4" />
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-0.5 bg-red-600 text-white dark:bg-red-500 text-[8px] font-bold rounded-full flex items-center justify-center animate-pulse border-2 border-white dark:border-zinc-950 box-content">
-            {unreadCount > 99 ? '99+' : unreadCount}
+            {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
       </button>
@@ -120,7 +124,9 @@ export function NotificationBell() {
           {/* Header */}
           <div className="flex justify-between items-center px-4 py-3 border-b border-zinc-100 dark:border-zinc-900 bg-zinc-50/50 dark:bg-zinc-950/50">
             <div className="flex items-center gap-2">
-              <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">Notifications</h3>
+              <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">
+                Notifications
+              </h3>
               {unreadCount > 0 && (
                 <span className="px-1.5 py-0.5 bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-[9px] font-bold rounded-sm uppercase tracking-wider">
                   {unreadCount} unread
@@ -135,7 +141,6 @@ export function NotificationBell() {
                   title="Mark all as read"
                 >
                   <Check className="h-3 w-3" />
-                  <span>Read all</span>
                 </button>
               )}
               {notifications.length > 0 && (
@@ -145,7 +150,6 @@ export function NotificationBell() {
                   title="Clear all notifications"
                 >
                   <Trash2 className="h-3 w-3" />
-                  <span>Clear</span>
                 </button>
               )}
               <button
@@ -176,17 +180,21 @@ export function NotificationBell() {
                     key={notif.id}
                     onClick={() => handleNotificationClick(notif.id, notif.link)}
                     className={`flex gap-3 px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors cursor-pointer relative ${
-                      !notif.read ? 'bg-zinc-50/50 dark:bg-zinc-900/20' : ''
+                      !notif.read ? "bg-zinc-50/50 dark:bg-zinc-900/20" : ""
                     }`}
                   >
                     {/* Icon container */}
-                    <div className={`w-8 h-8 rounded-sm ${conf.bg} ${conf.text} flex items-center justify-center shrink-0 mt-0.5 shadow-sm`}>
+                    <div
+                      className={`w-8 h-8 rounded-sm ${conf.bg} ${conf.text} flex items-center justify-center shrink-0 mt-0.5 shadow-sm`}
+                    >
                       <conf.Icon className="h-4 w-4" />
                     </div>
 
                     {/* Content text */}
                     <div className="flex-1 pr-4 min-w-0">
-                      <p className={`text-xs text-zinc-900 dark:text-zinc-100 leading-tight truncate ${!notif.read ? 'font-bold' : 'font-medium'}`}>
+                      <p
+                        className={`text-xs text-zinc-900 dark:text-zinc-100 leading-tight truncate ${!notif.read ? "font-bold" : "font-medium"}`}
+                      >
                         {notif.title}
                       </p>
                       <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug mt-1 line-clamp-2">
@@ -212,7 +220,7 @@ export function NotificationBell() {
             <button
               onClick={() => {
                 setIsOpen(false);
-                navigate('/notifications/preferences');
+                navigate("/notifications/preferences");
               }}
               className="flex items-center justify-center gap-1.5 w-full py-2.5 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 dark:hover:text-zinc-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer uppercase tracking-wider"
             >

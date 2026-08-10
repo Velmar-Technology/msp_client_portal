@@ -412,7 +412,7 @@ const InvoiceDetailsModal = ({
 
   return (
     <AlertDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <AlertDialogContent className="sm:max-w-lg bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-6 text-zinc-900 dark:text-zinc-100">
+      <AlertDialogContent className="sm:max-w-lg bg-white dark:bg-card border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-6 text-zinc-900 dark:text-zinc-100">
         <AlertDialogHeader className="pb-4 border-b border-zinc-200 dark:border-zinc-800 flex flex-row items-center justify-between">
           <div>
             <AlertDialogTitle className="text-base font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
