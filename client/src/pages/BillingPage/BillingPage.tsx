@@ -16,7 +16,7 @@ import { useBilling } from "@/hooks/useBilling";
 import { useAuth } from "@/hooks/useAuth";
 import type { Invoice } from "@/services/invoiceService";
 import { invoiceService } from "@/services/invoiceService";
-import { DataTable } from "@/components/ui/data-table";
+import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 
 /* --- Sub-Components --- */
@@ -647,11 +647,7 @@ export function BillingPage() {
     () => [
       {
         accessorKey: "invoice_number",
-        header: () => (
-          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-            {t("billing.tableInvoiceNo")}
-          </span>
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("billing.tableInvoiceNo")} />,
         cell: ({ row }) => (
           <button
             onClick={() => openDetailsModal(row.original)}
@@ -663,11 +659,7 @@ export function BillingPage() {
       },
       {
         accessorKey: "invoice_date",
-        header: () => (
-          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-            {t("billing.tableDate")}
-          </span>
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("billing.tableDate")} />,
         cell: ({ row }) => (
           <span className="text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap font-mono">
             {formatDate(row.original.invoice_date)}
@@ -676,11 +668,7 @@ export function BillingPage() {
       },
       {
         accessorKey: "due_date",
-        header: () => (
-          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-            {t("billing.tableDueDate")}
-          </span>
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("billing.tableDueDate")} />,
         cell: ({ row }) => (
           <span className="text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap font-mono">
             {formatDate(row.original.due_date)}
@@ -689,11 +677,9 @@ export function BillingPage() {
       },
       {
         accessorKey: "amount",
-        header: () => (
-          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-            {t("billing.tableAmount")}
-          </span>
-        ),
+        accessorFn: (row) => Number(row.amount),
+        id: "amount",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("billing.tableAmount")} />,
         cell: ({ row }) => (
           <span className="text-sm text-zinc-900 dark:text-zinc-100 font-mono">
             ${Number(row.original.amount).toFixed(2)}
@@ -702,11 +688,9 @@ export function BillingPage() {
       },
       {
         accessorKey: "tax_amount",
-        header: () => (
-          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-            {t("billing.tableTax")}
-          </span>
-        ),
+        accessorFn: (row) => Number(row.tax_amount),
+        id: "tax_amount",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("billing.tableTax")} />,
         cell: ({ row }) => (
           <span className="text-sm text-zinc-500 dark:text-zinc-400 font-mono">
             ${Number(row.original.tax_amount).toFixed(2)}
@@ -715,11 +699,9 @@ export function BillingPage() {
       },
       {
         accessorKey: "total",
-        header: () => (
-          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-            {t("billing.tableTotal")}
-          </span>
-        ),
+        accessorFn: (row) => Number(row.total),
+        id: "total",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("billing.tableTotal")} />,
         cell: ({ row }) => (
           <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 font-mono">
             ${Number(row.original.total).toFixed(2)}
@@ -728,11 +710,7 @@ export function BillingPage() {
       },
       {
         accessorKey: "status",
-        header: () => (
-          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-            {t("billing.tableStatus")}
-          </span>
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("billing.tableStatus")} />,
         cell: ({ row }) => (
           <span
             className={`px-2 py-1 inline-flex text-xs font-semibold rounded-md border ${
@@ -745,6 +723,7 @@ export function BillingPage() {
       },
       {
         id: "actions",
+        enableSorting: false,
         header: () => (
           <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
             {t("billing.tableActions")}
@@ -829,6 +808,7 @@ export function BillingPage() {
         data={invoices}
         loading={loading}
         noDataMessage={t("billing.noInvoices")}
+        defaultSorting={[{ id: "invoice_date", desc: true }]}
         search={{
           value: search,
           onChange: handleSearchChange,

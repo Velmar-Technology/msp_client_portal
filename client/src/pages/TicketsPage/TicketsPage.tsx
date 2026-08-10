@@ -7,7 +7,7 @@ import type { Ticket, TicketResponse } from "@/services/ticketService";
 import { Page } from "@/components/Page";
 import { NewTicketModal } from "@/components/NewTicketModal";
 import type { ColumnDef } from "@tanstack/react-table";
-import { DataTable } from "@/components/ui/data-table";
+import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -196,29 +196,19 @@ export function TicketsPage() {
     () => [
       {
         accessorKey: "title",
-        header: () => (
-          <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t("tickets.tableTitle")}</span>
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("tickets.tableTitle")} />,
         cell: ({ row }) => <TicketTitleWithHoverCard ticket={row.original} />,
       },
       {
         accessorKey: "category",
-        header: () => (
-          <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
-            {t("tickets.tableCategory")}
-          </span>
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("tickets.tableCategory")} />,
         cell: ({ row }) => (
           <span className="text-xs text-zinc-500 dark:text-zinc-400">{getCategoryLabel(row.original.category)}</span>
         ),
       },
       {
         accessorKey: "priority",
-        header: () => (
-          <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
-            {t("tickets.tablePriority")}
-          </span>
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("tickets.tablePriority")} />,
         cell: ({ row }) => (
           <span className={`text-[11px] font-medium ${priorityColor[row.original.priority]}`}>
             {getPriorityLabel(row.original.priority)}
@@ -227,9 +217,7 @@ export function TicketsPage() {
       },
       {
         accessorKey: "status",
-        header: () => (
-          <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t("tickets.tableStatus")}</span>
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("tickets.tableStatus")} />,
         cell: ({ row }) => (
           <span className={`px-1.5 py-0.5 rounded text-[10px] border font-semibold ${statusColor[row.original.status]}`}>
             {getStatusLabel(row.original.status)}
@@ -238,25 +226,23 @@ export function TicketsPage() {
       },
       {
         accessorKey: "assigned_to",
-        header: () => (
-          <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t("tickets.assignedTo")}</span>
-        ),
+        accessorFn: (row) => row.assigned_tech_name || t("tickets.unassigned"),
+        id: "assigned_to",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("tickets.assignedTo")} />,
         cell: ({ row }) => <span className="text-xs text-zinc-500 dark:text-zinc-400">{row.original.assigned_tech_name || t("tickets.unassigned")}</span>,
       },
       {
         accessorKey: "device_name",
-        header: () => (
-          <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t("tickets.tableDevice")}</span>
-        ),
+        accessorFn: (row) => row.device_name || t("tickets.noDevice"),
+        id: "device_name",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("tickets.tableDevice")} />,
         cell: ({ row }) => (
           <span className="text-xs text-zinc-500 dark:text-zinc-400">{row.original.device_name || t("tickets.noDevice")}</span>
         ),
       },
       {
         accessorKey: "created_at",
-        header: () => (
-          <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t("tickets.tableCreated")}</span>
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("tickets.tableCreated")} />,
         cell: ({ row }) => (
           <span className="text-xs text-zinc-500 dark:text-zinc-400">
             {new Date(row.original.created_at).toLocaleDateString(i18n.language === "es_DO" ? "es-DO" : "en-US", {
@@ -269,6 +255,7 @@ export function TicketsPage() {
       },
       {
         id: "actions",
+        enableSorting: false,
         header: () => (
           <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider block text-right">
             {t("techDashboard.tableStatus") === "Estado" ? "Acciones" : "Actions"}
@@ -344,6 +331,7 @@ export function TicketsPage() {
         onRowClick={(ticket) => navigate(`/tickets/${ticket.id}`)}
         enableRowSelection={true}
         onSelectedRowsChange={setSelectedTickets}
+        defaultSorting={[{ id: "created_at", desc: true }]}
         search={{
           value: search,
           onChange: setSearch,

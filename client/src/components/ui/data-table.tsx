@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
-import type { ColumnDef, RowSelectionState, SortingState, Column } from "@tanstack/react-table";
+import type { ColumnDef, RowSelectionState, SortingState, Column, OnChangeFn } from "@tanstack/react-table";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 
 interface DataTableColumnHeaderProps<TData, TValue> {
   column: Column<TData, TValue>;
-  title: string;
+  title: React.ReactNode;
   className?: string;
 }
 
@@ -39,22 +39,24 @@ export function DataTableColumnHeader<TData, TValue>({
     );
   }
 
+  const isSorted = column.getIsSorted();
+
   return (
     <button
       type="button"
       onClick={column.getToggleSortingHandler()}
       className={cn(
-        "inline-flex items-center gap-1 text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-wider cursor-pointer hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors select-none",
+        "inline-flex items-center gap-1 text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-wider cursor-pointer hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors select-none group",
         className,
       )}
     >
       {title}
-      {column.getIsSorted() === "asc" ? (
-        <ArrowUp className="h-3 w-3" />
-      ) : column.getIsSorted() === "desc" ? (
-        <ArrowDown className="h-3 w-3" />
+      {isSorted === "asc" ? (
+        <ArrowUp className="h-3 w-3 text-zinc-800 dark:text-zinc-100" />
+      ) : isSorted === "desc" ? (
+        <ArrowDown className="h-3 w-3 text-zinc-800 dark:text-zinc-100" />
       ) : (
-        <ArrowUpDown className="h-3 w-3 opacity-40" />
+        <ArrowUpDown className="h-3 w-3 opacity-40 group-hover:opacity-70" />
       )}
     </button>
   );
@@ -103,6 +105,11 @@ interface DataTableProps<TData, TValue> {
     placeholder?: string;
   };
   filters?: DataTableFilter[];
+  sorting?: SortingState;
+  defaultSorting?: SortingState;
+  onSortingChange?: (sorting: SortingState) => void;
+  enableSorting?: boolean;
+  manualSorting?: boolean;
 }
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -120,9 +127,24 @@ export function DataTable<TData, TValue>({
   pagination,
   search,
   filters,
+  sorting: sortingProp,
+  defaultSorting,
+  onSortingChange,
+  enableSorting = true,
+  manualSorting = false,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [internalSorting, setInternalSorting] = useState<SortingState>(defaultSorting || []);
+
+  const sorting = sortingProp !== undefined ? sortingProp : internalSorting;
+
+  const handleSortingChange: OnChangeFn<SortingState> = (updaterOrValue) => {
+    const nextSorting = typeof updaterOrValue === "function" ? updaterOrValue(sorting) : updaterOrValue;
+    if (sortingProp === undefined) {
+      setInternalSorting(nextSorting);
+    }
+    onSortingChange?.(nextSorting);
+  };
 
   const finalColumns = useMemo(() => {
     if (!enableRowSelection) return columns;
@@ -160,10 +182,12 @@ export function DataTable<TData, TValue>({
       sorting,
     },
     enableRowSelection,
+    enableSorting,
+    manualSorting,
     onRowSelectionChange: setRowSelection,
-    onSortingChange: setSorting,
+    onSortingChange: handleSortingChange,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    getSortedRowModel: manualSorting ? undefined : getSortedRowModel(),
   });
 
   // Clear selection if data changes (e.g. after paginating or reloading)
@@ -258,11 +282,20 @@ export function DataTable<TData, TValue>({
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableHead>
-                ))}
+                {headerGroup.headers.map((header) => {
+                  const rawHeader = header.column.columnDef.header;
+                  const isStringHeader = typeof rawHeader === "string";
+
+                  return (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder ? null : isStringHeader ? (
+                        <DataTableColumnHeader column={header.column} title={rawHeader} />
+                      ) : (
+                        flexRender(rawHeader, header.getContext())
+                      )}
+                    </TableHead>
+                  );
+                })}
               </TableRow>
             ))}
           </TableHeader>
@@ -355,3 +388,4 @@ export function DataTable<TData, TValue>({
     </div>
   );
 }
+
