@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.3.2](https://github.com/eapolancovelmar/msp_client_portal/compare/v1.3.1...v1.3.2) (2026-08-10)
+
+
+### Features
+
+* **billing:** add invoice cancellation, automatic navigation, and created_at sorting ([7d819f1](https://github.com/eapolancovelmar/msp_client_portal/commit/7d819f108ad6eb5be41232240e3f3ce3fdea630a))
+* **billing:** add store discount, updated terms, and 3-day invoice due email notification rate-limiting ([ee7cc3d](https://github.com/eapolancovelmar/msp_client_portal/commit/ee7cc3d13de4fbe8fcc77719cf885cb9a70cd683))
+* **tickets:** refactor NewTicketModal to use AlertDialog and text-sm typography ([465cb67](https://github.com/eapolancovelmar/msp_client_portal/commit/465cb671c1cedba4bc41d6db6a221b16cbead1cd))
+* **ui:** add column sorting support to DataTable, TicketsPage, and BillingPage ([2c1dafa](https://github.com/eapolancovelmar/msp_client_portal/commit/2c1dafaf01af0bd173ed1ee3771bf8f3235b1d79))
+
 ## [1.3.1](https://github.com/eapolancovelmar/msp_client_portal/compare/v1.3.0...v1.3.1) (2026-08-05)
 
 
