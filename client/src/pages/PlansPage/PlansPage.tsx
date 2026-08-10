@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { ChevronDown, Plus, Minus, RefreshCw, Mail, Ban } from "lucide-react";
+import { ChevronDown, Plus, Minus, RefreshCw, Mail, Ban, ShoppingBag, Info } from "lucide-react";
 import { Page } from "@/components/Page";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Subscription } from "@/services/subscriptionService";
@@ -111,8 +111,7 @@ export function PlansPage() {
     const colors: Record<string, string> = {
       ACTIVE:
         "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/10",
-      EXPIRING:
-        "bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400 dark:border-amber-500/10",
+      EXPIRING: "bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400 dark:border-amber-500/10",
       CANCELLED:
         "bg-zinc-100 text-zinc-500 border-zinc-200 dark:bg-zinc-800/60 dark:text-zinc-400 dark:border-zinc-700/80",
     };
@@ -277,7 +276,9 @@ export function PlansPage() {
                 <DropdownMenuItem
                   onClick={() => {
                     toast.info(t("plans.contactSupportTitle") || "Contact Support", {
-                      description: t("plans.contactSupportMsg", { email: "soporte@velmartech.com.do" }) || "Need assistance? Email: soporte@velmartech.com.do",
+                      description:
+                        t("plans.contactSupportMsg", { email: "soporte@velmartech.com.do" }) ||
+                        "Need assistance? Email: soporte@velmartech.com.do",
                     });
                     window.location.href = "mailto:soporte@velmartech.com.do?subject=Subscription Support Request";
                   }}
@@ -371,10 +372,18 @@ export function PlansPage() {
       {isAdmin || activeTab === "browse" ? (
         <>
           {/* Billing Cycle Switcher & Admin Actions */}
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-3.5 mb-6">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-3.5 mb-4">
             <div className="flex justify-center">
               <BillingCycleSwitcher billingCycle={billingCycle} setBillingCycle={setBillingCycle} />
             </div>
+          </div>
+
+          {/* Velmar Store Discount Perk Banner */}
+          <div className="mb-6 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500/10 via-amber-500/15 to-amber-500/10 border border-amber-500/20 dark:border-amber-500/30 rounded-lg py-2 px-4 text-xs font-semibold text-amber-800 dark:text-amber-300 max-w-2xl mx-auto shadow-xs">
+            <ShoppingBag className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+            <span>
+              {t("plans.storeDiscountBanner") || "Exclusive Subscriber Perk: Enjoy up to 10% discount at Velmar Store!"}
+            </span>
           </div>
 
           {/* Plan Cards */}
@@ -498,24 +507,29 @@ export function PlansPage() {
                           })}
                         </p>
                       </div>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
-                        activeSub.status === "EXPIRING"
-                          ? "bg-amber-500/20 text-amber-800 border-amber-300 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800"
-                          : "bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950 border-zinc-950 dark:border-zinc-200"
-                      }`}>
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                          activeSub.status === "EXPIRING"
+                            ? "bg-amber-500/20 text-amber-800 border-amber-300 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800"
+                            : "bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950 border-zinc-950 dark:border-zinc-200"
+                        }`}
+                      >
                         {activeSub.status === "EXPIRING"
                           ? (t("plans.expiringStatus") || "CANCEL PENDING").toUpperCase()
-                          : (t("plans.activeStatus")?.toUpperCase() || "ACTIVE")}
+                          : t("plans.activeStatus")?.toUpperCase() || "ACTIVE"}
                       </span>
                     </div>
 
                     {activeSub.status === "EXPIRING" && (
                       <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-md text-xs text-amber-800 dark:text-amber-300">
-                        <p className="font-semibold">{t("plans.cancellingPeriodEndTitle") || "Subscription Cancellation Scheduled"}</p>
+                        <p className="font-semibold">
+                          {t("plans.cancellingPeriodEndTitle") || "Subscription Cancellation Scheduled"}
+                        </p>
                         <p className="text-[11px] opacity-90 mt-0.5">
                           {t("plans.cancellingPeriodEndDesc", {
                             date: activeSub.renewal_date ? new Date(activeSub.renewal_date).toLocaleDateString() : "",
-                          }) || `Your plan will remain active through ${activeSub.renewal_date ? new Date(activeSub.renewal_date).toLocaleDateString() : "the end of your paid billing period"}. No further renewal payments will be charged.`}
+                          }) ||
+                            `Your plan will remain active through ${activeSub.renewal_date ? new Date(activeSub.renewal_date).toLocaleDateString() : "the end of your paid billing period"}. No further renewal payments will be charged.`}
                         </p>
                       </div>
                     )}
@@ -629,6 +643,14 @@ export function PlansPage() {
                           </div>
                           <div className="flex justify-between items-center text-xs">
                             <span className="text-zinc-500 dark:text-zinc-400 font-medium">
+                              {t("plans.storeDiscountSummaryLabel") || "Velmar Store Discount"}
+                            </span>
+                            <span className="font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wide text-[9px] px-1 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded">
+                              {t("plans.upTo10PercentOff") || "Up to 10% Off"}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-zinc-500 dark:text-zinc-400 font-medium">
                               {t("plans.additionalDevices", { count: additionalDevicesCount })}
                             </span>
                             <span className="font-semibold text-zinc-900 dark:text-zinc-100 font-mono">
@@ -684,6 +706,15 @@ export function PlansPage() {
           );
         })()
       )}
+
+      {/* Legal & SLA Disclaimer Footnote */}
+      <div className="mt-8 pt-4 border-t border-zinc-200/80 dark:border-zinc-800/80 text-zinc-500 dark:text-zinc-400 text-[11px] leading-relaxed flex items-start gap-2 max-w-4xl mx-auto">
+        <Info className="h-4 w-4 shrink-0 text-zinc-400 dark:text-zinc-500 mt-0.5" />
+        <p>
+          {t("plans.footnoteText") ||
+            "Velmar Technology SRL presta servicios de soporte en horario corporativo de Lunes a Viernes de 9:00 AM a 4:00 PM (hora de la República Dominicana). Los tiempos de respuesta (SLA) representan el compromiso de evaluación inicial de la solicitud dentro del horario hábil establecido y no constituyen una garantía de solución inmediata o de disponibilidad de soporte fuera de jornada. Precios no incluyen ITBIS."}
+        </p>
+      </div>
 
       {/* Plan Edit Modal */}
       {editingPlan && (

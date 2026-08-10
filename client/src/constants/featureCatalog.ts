@@ -145,6 +145,14 @@ export const FEATURE_CATALOG: FeatureCatalogItem[] = [
     labelKey: 'plans.features.PHISHING_TRAINING',
   },
   {
+    code: 'STORE_DISCOUNT',
+    labelKey: 'plans.features.STORE_DISCOUNT',
+    defaultParams: { percent: '10%' },
+    paramSchema: [
+      { key: 'percent', label: 'Discount Percent', type: 'select', options: ['5%', '10%', '15%'], defaultValue: '10%' },
+    ],
+  },
+  {
     code: 'CUSTOM_FEATURE',
     labelKey: 'plans.features.CUSTOM_FEATURE',
   },

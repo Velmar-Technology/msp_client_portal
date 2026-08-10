@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
 import { env } from '../config/env';
 import { logger } from './logger';
-import { NotificationPayload, Ticket, Plan } from '../types';
+import { NotificationPayload, Ticket, Plan, Invoice } from '../types';
 
 /**
  * Email service using Nodemailer.
@@ -656,6 +656,110 @@ export async function sendQuotationEmail(
     subject: isSpanish
       ? `Cotización de Plan de Soporte - ${planName}`
       : `Support Plan Quotation - ${planName}`,
+    body,
+    type: 'EMAIL',
+  });
+}
+
+/**
+ * Send an invoice payment due email notification to the client.
+ */
+export async function sendInvoiceDueEmail(
+  clientEmail: string,
+  clientName: string,
+  invoice: Invoice,
+  language: string,
+): Promise<void> {
+  const isSpanish = language.startsWith('es');
+  const portalUrl = `${env.CORS_ORIGIN || 'http://localhost:5173'}/billing`;
+
+  const formattedTotal = `$${Number(invoice.total).toFixed(2)}`;
+  const dueDateStr = new Date(invoice.due_date).toLocaleDateString(isSpanish ? 'es-DO' : 'en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+
+  const preheader = isSpanish
+    ? `Recordatorio de pago pendiente para la factura ${invoice.invoice_number} por un total de ${formattedTotal}.`
+    : `Payment reminder for invoice ${invoice.invoice_number} totaling ${formattedTotal}.`;
+
+  const title = isSpanish ? 'Recordatorio de Pago de Factura' : 'Invoice Payment Reminder';
+
+  const contentHtml = isSpanish ? `
+    <h2 style="color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">Hola ${clientName},</h2>
+    <p style="font-size: 15px; color: #475569; margin-top: 0; margin-bottom: 24px;">
+      Le recordamos que la factura <strong>${invoice.invoice_number}</strong> tiene un pago pendiente con fecha de vencimiento ${dueDateStr}.
+    </p>
+
+    <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+      <h3 style="color: #1E293B; font-size: 16px; font-weight: 700; margin-top: 0; margin-bottom: 16px; border-bottom: 1px solid #E2E8F0; padding-bottom: 8px;">
+        Detalles de la Factura
+      </h3>
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+        <tr>
+          <td style="padding: 6px 0; color: #64748B; width: 150px; font-weight: 500;">Número de Factura:</td>
+          <td style="padding: 6px 0; color: #0F172A; font-weight: 600; font-family: monospace;">${invoice.invoice_number}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #64748B; font-weight: 500;">Fecha de Vencimiento:</td>
+          <td style="padding: 6px 0; color: #0F172A;">${dueDateStr}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #64748B; font-weight: 500;">Estado:</td>
+          <td style="padding: 6px 0; color: #D97706; font-weight: 700;">${invoice.status}</td>
+        </tr>
+        <tr style="border-top: 2px solid #1E293B;">
+          <td style="padding: 10px 0; color: #0F172A; font-weight: 700; font-size: 16px;">Monto Total Pendiente:</td>
+          <td style="padding: 10px 0; color: #4F46E5; font-weight: 700; font-size: 18px;">${formattedTotal}</td>
+        </tr>
+      </table>
+    </div>
+    <p style="font-size: 13px; color: #64748B; margin-top: 0;">
+      Nota: Para evitar interrupciones en el servicio, por favor efectúe el pago a través del portal de clientes.
+    </p>
+  ` : `
+    <h2 style="color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">Hello ${clientName},</h2>
+    <p style="font-size: 15px; color: #475569; margin-top: 0; margin-bottom: 24px;">
+      This is a friendly reminder that payment for invoice <strong>${invoice.invoice_number}</strong> is due on ${dueDateStr}.
+    </p>
+
+    <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+      <h3 style="color: #1E293B; font-size: 16px; font-weight: 700; margin-top: 0; margin-bottom: 16px; border-bottom: 1px solid #E2E8F0; padding-bottom: 8px;">
+        Invoice Details
+      </h3>
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+        <tr>
+          <td style="padding: 6px 0; color: #64748B; width: 150px; font-weight: 500;">Invoice Number:</td>
+          <td style="padding: 6px 0; color: #0F172A; font-weight: 600; font-family: monospace;">${invoice.invoice_number}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #64748B; font-weight: 500;">Due Date:</td>
+          <td style="padding: 6px 0; color: #0F172A;">${dueDateStr}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #64748B; font-weight: 500;">Status:</td>
+          <td style="padding: 6px 0; color: #D97706; font-weight: 700;">${invoice.status}</td>
+        </tr>
+        <tr style="border-top: 2px solid #1E293B;">
+          <td style="padding: 10px 0; color: #0F172A; font-weight: 700; font-size: 16px;">Total Due:</td>
+          <td style="padding: 10px 0; color: #4F46E5; font-weight: 700; font-size: 18px;">${formattedTotal}</td>
+        </tr>
+      </table>
+    </div>
+    <p style="font-size: 13px; color: #64748B; margin-top: 0;">
+      Note: To prevent service interruption, please complete payment via the client portal.
+    </p>
+  `;
+
+  const actionText = isSpanish ? 'Pagar Factura en Portal' : 'Pay Invoice in Portal';
+  const body = getEmailLayout(preheader, title, contentHtml, portalUrl, actionText);
+
+  await sendEmail({
+    to: clientEmail,
+    subject: isSpanish
+      ? `Recordatorio de Pago: Factura ${invoice.invoice_number}`
+      : `Payment Reminder: Invoice ${invoice.invoice_number}`,
     body,
     type: 'EMAIL',
   });

@@ -171,6 +171,7 @@ export interface Invoice {
   invoice_date: Date;
   due_date: Date;
   tenant_id: string;
+  last_email_sent_at?: Date | string | null;
   created_at: Date;
 }
 

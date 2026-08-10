@@ -5,6 +5,7 @@ import { equipmentRepository } from '../repositories/EquipmentRepository';
 import { nextcloudService } from './NextcloudService';
 import { paypalService } from './PaypalService';
 import { notificationService } from './NotificationService';
+import { invoiceService } from './InvoiceService';
 import { logger } from '../utils/logger';
 import { TAX_RATE } from '../config/constants';
 import { InvoiceStatus, SubscriptionStatus, Subscription } from '../types';
@@ -47,7 +48,14 @@ export class SubscriptionScheduler {
   async checkAndRenewSubscriptions(): Promise<void> {
     const now = new Date();
     
-    // Find active/expiring subscriptions where renewal date is in the past
+    // 1. Process due invoice email reminders with 3-day rate limiting to prevent spam
+    try {
+      await invoiceService.checkAndSendDueInvoiceNotifications(now);
+    } catch (err) {
+      logger.error('Error checking and sending due invoice email notifications', { err });
+    }
+
+    // 2. Find active/expiring subscriptions where renewal date is in the past
     const subsToRenew = await subscriptionRepository.findPendingRenewal(now);
 
     if (subsToRenew.length === 0) {

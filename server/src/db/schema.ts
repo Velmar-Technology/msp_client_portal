@@ -243,6 +243,7 @@ export const invoices = pgTable(
     tenant_id: uuid('tenant_id')
       .references(() => tenants.id, { onDelete: 'cascade' })
       .notNull(),
+    last_email_sent_at: timestamp('last_email_sent_at', { withTimezone: true }),
     created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
   },
   (table) => [

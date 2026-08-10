@@ -180,6 +180,8 @@ describe('PlansPage', () => {
 
       expect(screen.getByRole('heading', { name: 'Basic Support' })).toBeInTheDocument();
       expect(screen.getByRole('heading', { name: 'Standard Support' })).toBeInTheDocument();
+      expect(screen.getByText(/up to 10% discount at Velmar Store/i)).toBeInTheDocument();
+      expect(screen.getByText(/Velmar Technology SRL/i)).toBeInTheDocument();
 
       // Click Proceed to Checkout to mount the Sheet
       const checkoutBtn = screen.getByRole('button', { name: /Proceed to Checkout/i });

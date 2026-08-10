@@ -36,6 +36,8 @@ vi.mock('../repositories/InvoiceRepository', () => {
     invoiceRepository: {
       findByInvoiceNumber: mocks.invoiceFindByNumber,
       create: mocks.invoiceCreate,
+      findPendingDueInvoices: vi.fn().mockResolvedValue([]),
+      updateLastEmailSentAt: vi.fn().mockResolvedValue({}),
     },
   };
 });

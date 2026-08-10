@@ -186,13 +186,10 @@ const termsEn: TermSection[] = [
     content: (
       <>
         <p className="font-bold text-primary mb-2">
-          [User Summary]: If your plan includes loaned equipment (such as in the POS plan), the hardware belongs to
-          Velmar. If you cancel the service, you must return them within 5 days or pay for their replacement.
+          [User Summary]: If your plan includes loaned equipment (such as in the POS plan), equipment lending becomes available after one (1) month of active subscription. The hardware belongs to Velmar. If you cancel the service, you must return them within 5 days or pay for their replacement.
         </p>
         <p className="mt-2">
-          <strong>7.1. Legal Nature:</strong> Equipment delivered on loan (POS or Premium Plans) is governed by bailment
-          / Comodato rules (Articles 1875 et seq. of the Dominican Civil Code). Hardware remains the inalienable
-          property of THE COMPANY.
+          <strong>7.1. Legal Nature & Availability:</strong> Equipment delivered on loan (POS or Premium Plans) becomes available to THE CLIENT after completing one (1) month of active subscription and is governed by bailment / Comodato rules (Articles 1875 et seq. of the Dominican Civil Code). Hardware remains the inalienable property of THE COMPANY.
         </p>
         <p className="mt-2">
           <strong>7.2. Custody and Return:</strong> THE CLIENT assumes legal custody of the equipment. Upon termination
@@ -475,13 +472,10 @@ const termsEs: TermSection[] = [
     content: (
       <>
         <p className="font-bold text-primary mb-2">
-          Si tu plan incluye equipos prestados (como en el plan POS), los equipos son de Velmar. Si cancelas el
-          servicio, debes devolverlos en 5 días o pagar su costo.
+          Si tu plan incluye equipos prestados (como en el plan POS), el préstamo de equipos estará disponible después de un (1) mes de suscripción activa. Los equipos son de Velmar. Si cancelas el servicio, debes devolverlos en 5 días o pagar su costo.
         </p>
         <p className="mt-2">
-          <strong>7.1. Naturaleza Jurídica:</strong> Los equipos entregados en calidad de préstamo (Planes POS o
-          Premium) se rigen por la figura del Comodato (Artículos 1875 y siguientes del Código Civil Dominicano). El
-          hardware es propiedad inalienable de LA EMPRESA.
+          <strong>7.1. Naturaleza Jurídica y Disponibilidad:</strong> Los equipos entregados en calidad de préstamo (Planes POS o Premium) estarán disponibles para EL CLIENTE tras cumplir un (1) mes de suscripción activa y se rigen por la figura del Comodato (Artículos 1875 y siguientes del Código Civil Dominicano). El hardware es propiedad inalienable de LA EMPRESA.
         </p>
         <p className="mt-2">
           <strong>7.2. Custodia y Devolución:</strong> EL CLIENTE asume la guarda jurídica del equipo. Al finalizar la

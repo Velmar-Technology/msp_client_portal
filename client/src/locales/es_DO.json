@@ -353,6 +353,10 @@
       "name": "Premium",
       "description": "Cobertura completa, mitigación de riesgos y continuidad del negocio."
     },
+    "storeDiscountBanner": "¡Beneficio Exclusivo!: Disfruta hasta un 10% de descuento en Tienda Velmar.",
+    "storeDiscountSummaryLabel": "Descuento Tienda Velmar",
+    "upTo10PercentOff": "Hasta 10% Descuento",
+    "footnoteText": "Velmar Technology SRL presta servicios de soporte en horario corporativo de Lunes a Viernes de 9:00 AM a 4:00 PM (hora de la República Dominicana). Los tiempos de respuesta (SLA) representan el compromiso de evaluación inicial de la solicitud dentro del horario hábil establecido y no constituyen una garantía de solución inmediata o de disponibilidad de soporte fuera de jornada. Precios no incluyen ITBIS.",
     "features": {
       "remoteSupport": "Soporte Remoto 8×5",
       "basicMonitoring": "Monitoreo Básico (Ping/Puerto)",
@@ -388,6 +392,7 @@
       "DARK_WEB_MONITORING": "Monitoreo de Dark Web",
       "PASSWORD_DARK_WEB": "Gestor de Contraseñas y Monitoreo de Dark Web",
       "PHISHING_TRAINING": "Capacitación en Concientización sobre Phishing",
+      "STORE_DISCOUNT": "Hasta {{percent}} de descuento en Tienda Velmar",
       "CUSTOM_FEATURE": "Característica Personalizada"
     },
     "actions": "Acciones",

@@ -8,6 +8,7 @@ import { Invoice, UserRole, InvoiceStatus, SubscriptionStatus } from '../types';
 import { paypalService } from './PaypalService';
 import { notificationService } from './NotificationService';
 import { generateInvoicePdf } from '../utils/pdfGenerator';
+import { sendInvoiceDueEmail } from '../utils/emailService';
 import { logger } from '../utils/logger';
 
 export class InvoiceService {
@@ -467,6 +468,71 @@ export class InvoiceService {
       expenseCategories,
       transactions: txns,
     };
+  }
+
+  /**
+   * Minimum interval required between due payment notification emails to prevent spamming users.
+   * Set to 3 days (3 * 24 * 60 * 60 * 1000 ms).
+   */
+  readonly MIN_NOTIFICATION_INTERVAL_MS = 3 * 24 * 60 * 60 * 1000;
+
+  /**
+   * Helper to evaluate whether an email notification is allowed based on the 3-day anti-spam window.
+   */
+  isEligibleForEmailNotification(lastSentAt: Date | string | null | undefined, now = new Date()): boolean {
+    if (!lastSentAt) return true;
+    const lastSentMs = new Date(lastSentAt).getTime();
+    return (now.getTime() - lastSentMs) >= this.MIN_NOTIFICATION_INTERVAL_MS;
+  }
+
+  /**
+   * Sends an invoice due payment notification via email if at least 3 days have elapsed
+   * since the last notification email to avoid spamming the user.
+   */
+  async processDueInvoiceEmailNotification(invoice: Invoice, now = new Date()): Promise<boolean> {
+    if (invoice.status === InvoiceStatus.PAID || invoice.status === InvoiceStatus.CANCELLED) {
+      return false;
+    }
+
+    if (!this.isEligibleForEmailNotification(invoice.last_email_sent_at, now)) {
+      logger.info(`Skipped email reminder for invoice ${invoice.invoice_number}: Notification sent within the last 3 days.`, {
+        invoiceId: invoice.id,
+        lastSentAt: invoice.last_email_sent_at,
+      });
+      return false;
+    }
+
+    const client = await userRepository.findById(invoice.client_id);
+    if (!client || !client.email) {
+      logger.warn(`Could not send due email for invoice ${invoice.id}: Client email not found`);
+      return false;
+    }
+
+    await sendInvoiceDueEmail(client.email, client.name, invoice, client.language || 'en_US');
+    await invoiceRepository.updateLastEmailSentAt(invoice.id, now);
+
+    logger.info(`Due payment email notification successfully sent for invoice ${invoice.invoice_number} to ${client.email}`);
+    return true;
+  }
+
+  /**
+   * Scans pending & overdue invoices and dispatches due payment email notifications
+   * for invoices that have not been notified in the past 3 days.
+   */
+  async checkAndSendDueInvoiceNotifications(now = new Date()): Promise<number> {
+    const pendingInvoices = await invoiceRepository.findPendingDueInvoices();
+    let sentCount = 0;
+
+    for (const inv of pendingInvoices) {
+      try {
+        const sent = await this.processDueInvoiceEmailNotification(inv, now);
+        if (sent) sentCount++;
+      } catch (err) {
+        logger.error(`Error processing due email notification for invoice ${inv.id}`, { err });
+      }
+    }
+
+    return sentCount;
   }
 }
 

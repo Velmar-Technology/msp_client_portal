@@ -1,7 +1,7 @@
 import { BaseRepository } from './BaseRepository';
 import { Invoice, InvoiceStatus } from '../types';
 import { db, invoices } from '../db';
-import { eq, desc, count } from 'drizzle-orm';
+import { eq, desc, count, inArray } from 'drizzle-orm';
 
 export class InvoiceRepository extends BaseRepository<Invoice> {
   constructor() {
@@ -36,6 +36,7 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
     due_date: Date;
     tenant_id: string;
     status?: InvoiceStatus;
+    last_email_sent_at?: Date | null;
   }): Promise<Invoice> {
     const results = await db
       .insert(invoices)
@@ -48,6 +49,7 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
         due_date: data.due_date,
         tenant_id: data.tenant_id,
         status: data.status,
+        last_email_sent_at: data.last_email_sent_at,
       })
       .returning();
     return results[0] as Invoice;
@@ -60,6 +62,24 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
       .where(eq(invoices.id, id))
       .returning();
     return (results[0] as Invoice) || null;
+  }
+
+  async updateLastEmailSentAt(id: string, sentAt: Date): Promise<Invoice | null> {
+    const results = await db
+      .update(invoices)
+      .set({ last_email_sent_at: sentAt })
+      .where(eq(invoices.id, id))
+      .returning();
+    return (results[0] as Invoice) || null;
+  }
+
+  async findPendingDueInvoices(): Promise<Invoice[]> {
+    const results = await db
+      .select()
+      .from(invoices)
+      .where(inArray(invoices.status, [InvoiceStatus.PENDING, InvoiceStatus.OVERDUE]))
+      .orderBy(desc(invoices.created_at));
+    return results as Invoice[];
   }
 
   async countByTenant(tenantId: string): Promise<number> {

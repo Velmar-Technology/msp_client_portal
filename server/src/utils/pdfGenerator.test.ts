@@ -60,6 +60,6 @@ describe('PDF Generator', () => {
     const pdfString = pdfBuffer.toString('binary');
     expect(pdfString).toContain('FACTURA');
     expect(pdfString).toContain('No. Factura:');
-    expect(pdfString).toContain('PENDIENTE');
+    expect(pdfString).toContain('Pendiente');
   });
 });

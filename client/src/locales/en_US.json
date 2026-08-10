@@ -353,6 +353,10 @@
       "name": "Premium",
       "description": "Full coverage, risk mitigation, and business continuity."
     },
+    "storeDiscountBanner": "Exclusive Subscriber Perk: Enjoy up to 10% discount at Velmar Store!",
+    "storeDiscountSummaryLabel": "Velmar Store Discount",
+    "upTo10PercentOff": "Up to 10% Off",
+    "footnoteText": "Velmar Technology SRL provides support services during corporate business hours Monday through Friday from 9:00 AM to 4:00 PM (Dominican Republic time). Response times (SLA) represent the commitment for initial request evaluation within established business hours and do not constitute a guarantee of immediate resolution or off-hours support availability. Prices do not include ITBIS tax.",
     "features": {
       "remoteSupport": "Remote Support 8×5",
       "basicMonitoring": "Basic Monitoring (Ping/Port)",
@@ -388,6 +392,7 @@
       "DARK_WEB_MONITORING": "Dark Web Monitoring",
       "PASSWORD_DARK_WEB": "Password Manager & Dark Web Monitoring",
       "PHISHING_TRAINING": "Phishing Awareness Training",
+      "STORE_DISCOUNT": "Up to {{percent}} discount at Velmar Store",
       "CUSTOM_FEATURE": "Custom Feature"
     },
     "actions": "Actions",
