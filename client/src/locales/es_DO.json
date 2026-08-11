@@ -42,6 +42,24 @@
     "navigation": "Página de Navegación",
     "quickLink": "Acción Rápida"
   },
+  "notifications": {
+    "title": "Notificaciones",
+    "toggleAria": "Alternar notificaciones",
+    "unreadCount": "{{count}} sin leer",
+    "markAllRead": "Marcar todo como leído",
+    "clearTray": "Limpiar notificaciones",
+    "refresh": "Actualizar notificaciones",
+    "allCaughtUp": "¡Todo al día!",
+    "noNotifications": "No hay notificaciones aún.",
+    "managePreferences": "Gestionar Preferencias",
+    "time": {
+      "justNow": "Ahora mismo",
+      "minsAgo": "hace {{count}}m",
+      "hoursAgo": "hace {{count}}h",
+      "yesterday": "Ayer",
+      "daysAgo": "hace {{count}}d"
+    }
+  },
   "profile": {
     "title": "Perfil",
     "subtitle": "Administre la configuración de su cuenta",

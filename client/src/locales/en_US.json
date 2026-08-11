@@ -42,6 +42,24 @@
     "navigation": "Navigation Page",
     "quickLink": "Quick Action"
   },
+  "notifications": {
+    "title": "Notifications",
+    "toggleAria": "Toggle notifications",
+    "unreadCount": "{{count}} unread",
+    "markAllRead": "Mark all as read",
+    "clearTray": "Clear notifications",
+    "refresh": "Refresh notifications",
+    "allCaughtUp": "All caught up!",
+    "noNotifications": "No notifications yet.",
+    "managePreferences": "Manage Preferences",
+    "time": {
+      "justNow": "Just now",
+      "minsAgo": "{{count}}m ago",
+      "hoursAgo": "{{count}}h ago",
+      "yesterday": "Yesterday",
+      "daysAgo": "{{count}}d ago"
+    }
+  },
   "profile": {
     "title": "Profile",
     "subtitle": "Manage your account settings",

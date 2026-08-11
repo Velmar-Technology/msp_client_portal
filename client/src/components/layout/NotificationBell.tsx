@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useNotificationStore } from "@/store/useNotificationStore";
+import { useTranslation } from "react-i18next";
 import {
   Bell,
   Check,
@@ -13,7 +14,10 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-function formatDistanceToNow(dateString: string): string {
+function formatDistanceToNow(
+  dateString: string,
+  t: (key: string, options?: Record<string, unknown>) => string
+): string {
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -21,14 +25,15 @@ function formatDistanceToNow(dateString: string): string {
   const diffHours = Math.floor(diffMins / 60);
   const diffDays = Math.floor(diffHours / 24);
 
-  if (diffMins < 1) return "Just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays === 1) return "Yesterday";
-  return `${diffDays}d ago`;
+  if (diffMins < 1) return t("notifications.time.justNow", "Just now");
+  if (diffMins < 60) return t("notifications.time.minsAgo", "{{count}}m ago", { count: diffMins });
+  if (diffHours < 24) return t("notifications.time.hoursAgo", "{{count}}h ago", { count: diffHours });
+  if (diffDays === 1) return t("notifications.time.yesterday", "Yesterday");
+  return t("notifications.time.daysAgo", "{{count}}d ago", { count: diffDays });
 }
 
 export function NotificationBell() {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -126,7 +131,7 @@ export function NotificationBell() {
             ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
             : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100"
         }`}
-        aria-label="Toggle notifications"
+        aria-label={t("notifications.toggleAria", "Toggle notifications")}
       >
         <Bell className="h-4 w-4" />
         {bellUnreadCount > 0 && (
@@ -143,11 +148,11 @@ export function NotificationBell() {
           <div className="flex justify-between items-center px-4 py-3 border-b border-zinc-100 dark:border-zinc-900 bg-zinc-50/50 dark:bg-zinc-950/50">
             <div className="flex items-center gap-2">
               <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">
-                Notifications
+                {t("notifications.title", "Notifications")}
               </h3>
               {bellUnreadCount > 0 && (
                 <span className="px-1.5 py-0.5 bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-[9px] font-bold rounded-sm uppercase tracking-wider">
-                  {bellUnreadCount} unread
+                  {t("notifications.unreadCount", "{{count}} unread", { count: bellUnreadCount })}
                 </span>
               )}
             </div>
@@ -156,7 +161,7 @@ export function NotificationBell() {
                 <button
                   onClick={() => markAllAsRead()}
                   className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-sm transition-colors cursor-pointer uppercase tracking-wider"
-                  title="Mark all as read"
+                  title={t("notifications.markAllRead", "Mark all as read")}
                 >
                   <Check className="h-3 w-3" />
                 </button>
@@ -165,7 +170,7 @@ export function NotificationBell() {
                 <button
                   onClick={() => dismissBellTray()}
                   className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-sm transition-colors cursor-pointer uppercase tracking-wider"
-                  title="Clear bell tray"
+                  title={t("notifications.clearTray", "Clear notifications")}
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>
@@ -173,7 +178,7 @@ export function NotificationBell() {
               <button
                 onClick={() => fetchNotifications()}
                 className="p-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 dark:hover:text-zinc-100 dark:hover:bg-zinc-800 rounded-sm transition-colors cursor-pointer"
-                title="Refresh notifications"
+                title={t("notifications.refresh", "Refresh notifications")}
               >
                 <RefreshCw className="h-3.5 w-3.5" />
               </button>
@@ -187,8 +192,12 @@ export function NotificationBell() {
                 <div className="w-10 h-10 rounded-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center text-zinc-400 dark:text-zinc-500 mb-3">
                   <Bell className="h-4 w-4" />
                 </div>
-                <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">All caught up!</p>
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">No notifications yet.</p>
+                <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                  {t("notifications.allCaughtUp", "All caught up!")}
+                </p>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  {t("notifications.noNotifications", "No notifications yet.")}
+                </p>
               </div>
             ) : (
               bellNotifications.map((notif) => {
@@ -219,7 +228,7 @@ export function NotificationBell() {
                         {notif.message}
                       </p>
                       <span className="text-[9px] text-zinc-400 dark:text-zinc-500 font-mono block mt-1.5 uppercase tracking-wider">
-                        {formatDistanceToNow(notif.created_at)}
+                        {formatDistanceToNow(notif.created_at, t)}
                       </span>
                     </div>
 
@@ -243,7 +252,7 @@ export function NotificationBell() {
               className="flex items-center justify-center gap-1.5 w-full py-2.5 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 dark:hover:text-zinc-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer uppercase tracking-wider"
             >
               <Settings2 className="h-3.5 w-3.5" />
-              <span>Manage Preferences</span>
+              <span>{t("notifications.managePreferences", "Manage Preferences")}</span>
             </button>
           </div>
         </div>
