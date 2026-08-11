@@ -332,7 +332,11 @@ export function NotificationPreferencesPage() {
             <History className="h-3.5 w-3.5" />
             <span>{t("notificationPreferences.tabHistory", "Notification History")}</span>
             {unreadCount > 0 && (
-              <span className="ml-1 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-1.5 py-0.2 text-[10px] font-semibold">
+              <span
+                className="ml-1 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-1.5 py-0.2 text-[10px] font-semibold"
+                title={t("notifications.unreadCount", "{{count}} unread", { count: unreadCount })}
+                aria-label={t("notifications.unreadCount", "{{count}} unread", { count: unreadCount })}
+              >
                 {unreadCount}
               </span>
             )}
