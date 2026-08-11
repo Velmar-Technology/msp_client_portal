@@ -1,0 +1,153 @@
+import { PlanRepository, planRepository } from '../repositories/PlanRepository';
+import { PaypalService, paypalService } from './PaypalService';
+import { BillingPricingService, billingPricingService } from './BillingPricingService';
+import { AppError } from '../utils/AppError';
+import { env } from '../config/env';
+
+function getLocalizedValue(val: any): string {
+  if (!val) return '';
+  if (typeof val === 'string') return val;
+  if (val.en_US) return val.en_US;
+  if (val.es_DO) return val.es_DO;
+  const keys = Object.keys(val);
+  if (keys.length > 0) return val[keys[0]];
+  return '';
+}
+
+export class SubscriptionPaymentService {
+  constructor(
+    private planRepo: PlanRepository = planRepository,
+    private paypalSvc: PaypalService = paypalService,
+    private pricingSvc: BillingPricingService = billingPricingService
+  ) {}
+
+  async createPaypalOrderForSubscription(data: {
+    plan: string;
+    equipmentCount: number;
+    billingCycle?: 'monthly' | 'annual';
+    currentSubscriptionId?: string;
+  }): Promise<{ orderId: string }> {
+    const planDetails = await this.planRepo.findById(data.plan);
+    if (!planDetails) {
+      throw AppError.notFound('Plan not found');
+    }
+
+    const price = planDetails.price;
+    const equipmentCount = data.equipmentCount ?? 1;
+    const billingCycle = data.billingCycle || 'monthly';
+    let total = 0;
+    let description = '';
+
+    if (data.currentSubscriptionId) {
+      const additionalCount = equipmentCount - data.equipmentCount;
+      if (additionalCount <= 0) {
+        throw AppError.badRequest('New equipment count must be greater than current count for an upgrade payment');
+      }
+      description = `Upgrade for ${planDetails.name} - Adding ${additionalCount} Equipment`;
+      total = this.pricingSvc.calculateUpgradePricing(price, additionalCount, billingCycle).total;
+    } else {
+      total = this.pricingSvc.calculatePricing(price, equipmentCount, billingCycle).total;
+      description = `${planDetails.name} Subscription - ${equipmentCount} Equipment (${billingCycle === 'annual' ? 'Annually' : 'Monthly'})`;
+    }
+
+    const referenceId = `SUB-${planDetails.id}-${Date.now()}`;
+    const order = await this.paypalSvc.createOrderForAmount(total, description, referenceId);
+    return { orderId: order.id };
+  }
+
+  async createPaypalSubscription(data: {
+    plan: string;
+    equipmentCount: number;
+    billingCycle?: 'monthly' | 'annual';
+  }): Promise<{ subscriptionId: string; approveUrl: string }> {
+    const planDetails = await this.planRepo.findById(data.plan);
+    if (!planDetails) {
+      throw AppError.notFound('Plan not found');
+    }
+
+    const billingCycle = data.billingCycle || 'monthly';
+    const equipmentCount = data.equipmentCount ?? 1;
+
+    await this.paypalSvc.createProduct(
+      'MSP Helpdesk Support Service',
+      'Premium technical support and device slots monitoring service'
+    );
+
+    let paypalPlanId = billingCycle === 'annual' ? planDetails.paypal_plan_id_annual : planDetails.paypal_plan_id_monthly;
+
+    if (!paypalPlanId) {
+      const price = planDetails.price;
+      const unitPriceWithTax = this.pricingSvc.calculatePricing(price, 1, billingCycle).total;
+
+      const planName = `${getLocalizedValue(planDetails.name)} Plan - ${billingCycle === 'annual' ? 'Annual' : 'Monthly'}`;
+      const planDesc = `${getLocalizedValue(planDetails.description) || 'Recurring subscription plan'}`;
+
+      paypalPlanId = await this.paypalSvc.createPlan(
+        'MSP-HELPDESK-SUPPORT',
+        planName,
+        planDesc,
+        unitPriceWithTax,
+        billingCycle
+      );
+
+      if (billingCycle === 'annual') {
+        await this.planRepo.update(planDetails.id, { paypal_plan_id_annual: paypalPlanId });
+      } else {
+        await this.planRepo.update(planDetails.id, { paypal_plan_id_monthly: paypalPlanId });
+      }
+    }
+
+    const returnUrl = `${env.CORS_ORIGIN}/plans?success=true`;
+    const cancelUrl = `${env.CORS_ORIGIN}/plans?cancel=true`;
+
+    const paypalSubscription = await this.paypalSvc.createSubscription(
+      paypalPlanId!,
+      equipmentCount,
+      returnUrl,
+      cancelUrl
+    );
+
+    return {
+      subscriptionId: paypalSubscription.id,
+      approveUrl: paypalSubscription.approveUrl,
+    };
+  }
+
+  async verifyPaypalOrderPayment(paypalOrderId: string, expectedTotal: number): Promise<void> {
+    const order = await this.paypalSvc.getOrder(paypalOrderId);
+    if (order.status === 'APPROVED') {
+      const capture = await this.paypalSvc.captureOrder(paypalOrderId);
+      order.status = capture.status;
+    }
+
+    if (order.status !== 'COMPLETED') {
+      throw AppError.badRequest('PayPal payment was not completed');
+    }
+
+    const purchaseUnit = order.purchase_units?.[0];
+    const paidAmount = Number(purchaseUnit?.amount?.value);
+    if (isNaN(paidAmount) || Math.abs(paidAmount - expectedTotal) > 0.05) {
+      throw AppError.badRequest(`Paid amount $${paidAmount} does not match expected subscription cost $${expectedTotal}`);
+    }
+  }
+
+  async verifyPaypalUpgradePayment(paypalOrderId: string, expectedUpgradeTotal: number): Promise<void> {
+    const order = await this.paypalSvc.getOrder(paypalOrderId);
+    if (order.status === 'APPROVED') {
+      const capture = await this.paypalSvc.captureOrder(paypalOrderId);
+      order.status = capture.status;
+    }
+
+    if (order.status !== 'COMPLETED') {
+      throw AppError.badRequest('PayPal payment for device upgrade was not completed');
+    }
+
+    const purchaseUnit = order.purchase_units?.[0];
+    const paidAmount = Number(purchaseUnit?.amount?.value);
+    if (isNaN(paidAmount) || Math.abs(paidAmount - expectedUpgradeTotal) > 0.05) {
+      throw AppError.badRequest(`Paid upgrade amount $${paidAmount} does not match expected upgrade cost $${expectedUpgradeTotal}`);
+    }
+  }
+}
+
+export const subscriptionPaymentService = new SubscriptionPaymentService();
