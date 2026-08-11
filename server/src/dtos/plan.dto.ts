@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { PlanClientType } from '../types';
+import { DEFAULT_LIMIT, DEFAULT_PAGE, MAX_LIMIT } from '../config/constants';
 
 export const FeatureSchema = z.object({
   code: z.string().optional(),
@@ -13,7 +15,7 @@ export const CreatePlanDTO = z.object({
   description: z.union([z.string(), z.record(z.string())]).nullable().optional(),
   price: z.coerce.number().int().min(0, 'Price must be 0 or greater'),
   recommended: z.boolean().default(false).optional(),
-  client_type: z.enum(['CLIENT', 'ENTERPRISE', 'STUDENT', 'OTHER']).default('CLIENT').optional(),
+  client_type: z.nativeEnum(PlanClientType).default(PlanClientType.CLIENT).optional(),
   active: z.boolean().default(true).optional(),
   features: z.array(FeatureSchema).default([]),
 });
@@ -25,9 +27,17 @@ export const UpdatePlanDTO = z.object({
   description: z.union([z.string(), z.record(z.string())]).nullable().optional(),
   price: z.coerce.number().int().min(0, 'Price must be 0 or greater').optional(),
   recommended: z.boolean().optional(),
-  client_type: z.enum(['CLIENT', 'ENTERPRISE', 'STUDENT', 'OTHER']).optional(),
+  client_type: z.nativeEnum(PlanClientType).optional(),
   active: z.boolean().optional(),
   features: z.array(FeatureSchema).optional(),
 });
 
 export type UpdatePlanInput = z.infer<typeof UpdatePlanDTO>;
+
+export const PlanQueryDTO = z.object({
+  search: z.string().optional(),
+  clientType: z.nativeEnum(PlanClientType).optional(),
+  page: z.coerce.number().int().positive().optional().default(DEFAULT_PAGE),
+  limit: z.coerce.number().int().positive().max(MAX_LIMIT).optional().default(DEFAULT_LIMIT),
+});
+export type PlanQueryInput = z.infer<typeof PlanQueryDTO>;

@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 
 const mocks = vi.hoisted(() => {
   return {
-    getAllPlans: vi.fn(),
+    listPlans: vi.fn(),
     getPlanById: vi.fn(),
     updatePlan: vi.fn(),
     createPlan: vi.fn(),
@@ -11,11 +11,18 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock('../services/PlanService', () => {
+vi.mock('../services/PlanQueryService', () => {
   return {
-    planService: {
-      getAllPlans: mocks.getAllPlans,
+    planQueryService: {
+      listPlans: mocks.listPlans,
       getPlanById: mocks.getPlanById,
+    },
+  };
+});
+
+vi.mock('../services/PlanAdminService', () => {
+  return {
+    planAdminService: {
       updatePlan: mocks.updatePlan,
       createPlan: mocks.createPlan,
       softDeletePlan: mocks.softDeletePlan,
@@ -25,114 +32,97 @@ vi.mock('../services/PlanService', () => {
 
 import { planController } from './PlanController';
 
+const baseUser = { userId: 'u1', role: 'CLIENT', tenantId: 't1' };
+
 describe('PlanController', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('getAll', () => {
-    it('should return all plans with success status', async () => {
+    it('should return plans with success status and pagination', async () => {
       const mockPlans = [
-        { id: 'BASIC', price: 299, name: 'Basic' },
-        { id: 'STANDARD', price: 599, name: 'Standard' },
+        { id: 'PL-001', price: 18, name: 'Basic' },
+        { id: 'PL-002', price: 42, name: 'Standard' },
       ];
-      mocks.getAllPlans.mockResolvedValue(mockPlans);
+      mocks.listPlans.mockResolvedValue({ plans: mockPlans, total: 2 });
 
-      const req = {} as Request;
-      const res = {
-        json: vi.fn(),
-      } as unknown as Response;
+      const req = { user: baseUser, query: {} } as unknown as Request;
+      const res = { json: vi.fn() } as unknown as Response;
 
       await planController.getAll(req, res);
 
-      expect(mocks.getAllPlans).toHaveBeenCalledWith(false);
+      expect(mocks.listPlans).toHaveBeenCalledWith({}, { userId: 'u1', role: 'CLIENT', tenantId: 't1' });
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockPlans,
+        pagination: { page: 1, limit: 20, total: 2, totalPages: 1 },
       });
     });
 
-    it('should include inactive plans for admin', async () => {
-      const mockPlans = [
-        { id: 'BASIC', price: 299, name: 'Basic' },
-        { id: 'STANDARD', price: 599, name: 'Standard' },
-      ];
-      mocks.getAllPlans.mockResolvedValue(mockPlans);
+    it('should forward query filters and pagination values', async () => {
+      mocks.listPlans.mockResolvedValue({ plans: [], total: 0 });
 
       const req = {
-        user: { role: 'ADMIN' }
+        user: baseUser,
+        query: { search: 'basic', page: '2', limit: '5' },
       } as unknown as Request;
-      const res = {
-        json: vi.fn(),
-      } as unknown as Response;
+      const res = { json: vi.fn() } as unknown as Response;
 
       await planController.getAll(req, res);
 
-      expect(mocks.getAllPlans).toHaveBeenCalledWith(true);
-    });
-
-    it('should include inactive plans for technician', async () => {
-      const mockPlans = [
-        { id: 'BASIC', price: 299, name: 'Basic' },
-        { id: 'STANDARD', price: 599, name: 'Standard' },
-      ];
-      mocks.getAllPlans.mockResolvedValue(mockPlans);
-
-      const req = {
-        user: { role: 'TECHNICIAN' }
-      } as unknown as Request;
-      const res = {
-        json: vi.fn(),
-      } as unknown as Response;
-
-      await planController.getAll(req, res);
-
-      expect(mocks.getAllPlans).toHaveBeenCalledWith(true);
+      expect(mocks.listPlans).toHaveBeenCalledWith(
+        { search: 'basic', page: '2', limit: '5' },
+        { userId: 'u1', role: 'CLIENT', tenantId: 't1' }
+      );
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ pagination: { page: '2', limit: '5', total: 0, totalPages: 0 } })
+      );
     });
   });
 
   describe('getById', () => {
     it('should return a plan with success status', async () => {
-      const mockPlan = { id: 'BASIC', price: 299, name: 'Basic' };
+      const mockPlan = { id: 'PL-001', price: 18, name: 'Basic' };
       mocks.getPlanById.mockResolvedValue(mockPlan);
 
       const req = {
-        params: { id: 'BASIC' },
+        user: baseUser,
+        params: { id: 'PL-001' },
       } as unknown as Request;
-      const res = {
-        json: vi.fn(),
-      } as unknown as Response;
+      const res = { json: vi.fn() } as unknown as Response;
 
       await planController.getById(req, res);
 
-      expect(mocks.getPlanById).toHaveBeenCalledWith('BASIC');
-      expect(res.json).toHaveBeenCalledWith({
-        success: true,
-        data: mockPlan,
+      expect(mocks.getPlanById).toHaveBeenCalledWith('PL-001', {
+        userId: 'u1',
+        role: 'CLIENT',
+        tenantId: 't1',
       });
+      expect(res.json).toHaveBeenCalledWith({ success: true, data: mockPlan });
     });
   });
 
   describe('update', () => {
     it('should update a plan and return success status and updated data', async () => {
-      const updatedPlan = { id: 'BASIC', price: 349, name: 'Basic Plus' };
+      const updatedPlan = { id: 'PL-001', price: 349, name: 'Basic Plus' };
       mocks.updatePlan.mockResolvedValue(updatedPlan);
 
       const req = {
-        params: { id: 'BASIC' },
+        user: baseUser,
+        params: { id: 'PL-001' },
         body: { name: 'Basic Plus', price: 349 },
       } as unknown as Request;
-      const res = {
-        json: vi.fn(),
-      } as unknown as Response;
+      const res = { json: vi.fn() } as unknown as Response;
 
       await planController.update(req, res);
 
-      expect(mocks.updatePlan).toHaveBeenCalledWith('BASIC', { name: 'Basic Plus', price: 349 });
-      expect(res.json).toHaveBeenCalledWith({
-        success: true,
-        data: updatedPlan,
-      });
+      expect(mocks.updatePlan).toHaveBeenCalledWith(
+        'PL-001',
+        { name: 'Basic Plus', price: 349 },
+        { userId: 'u1', role: 'CLIENT', tenantId: 't1' }
+      );
+      expect(res.json).toHaveBeenCalledWith({ success: true, data: updatedPlan });
     });
   });
 
@@ -142,6 +132,7 @@ describe('PlanController', () => {
       mocks.createPlan.mockResolvedValue(newPlan);
 
       const req = {
+        user: baseUser,
         body: { id: 'PL-NEW', price: 15, name: 'New Plan' },
       } as unknown as Request;
       const res = {
@@ -151,34 +142,34 @@ describe('PlanController', () => {
 
       await planController.create(req, res);
 
-      expect(mocks.createPlan).toHaveBeenCalledWith({ id: 'PL-NEW', price: 15, name: 'New Plan' });
+      expect(mocks.createPlan).toHaveBeenCalledWith(
+        { id: 'PL-NEW', price: 15, name: 'New Plan' },
+        { userId: 'u1', role: 'CLIENT', tenantId: 't1' }
+      );
       expect(res.status).toHaveBeenCalledWith(201);
-      expect(res.json).toHaveBeenCalledWith({
-        success: true,
-        data: newPlan,
-      });
+      expect(res.json).toHaveBeenCalledWith({ success: true, data: newPlan });
     });
   });
 
   describe('delete', () => {
     it('should soft delete a plan and return success status and updated plan data', async () => {
-      const deletedPlan = { id: 'BASIC', price: 299, name: 'Basic', active: false };
+      const deletedPlan = { id: 'PL-001', price: 18, name: 'Basic', active: false };
       mocks.softDeletePlan.mockResolvedValue(deletedPlan);
 
       const req = {
-        params: { id: 'BASIC' },
+        user: baseUser,
+        params: { id: 'PL-001' },
       } as unknown as Request;
-      const res = {
-        json: vi.fn(),
-      } as unknown as Response;
+      const res = { json: vi.fn() } as unknown as Response;
 
       await planController.delete(req, res);
 
-      expect(mocks.softDeletePlan).toHaveBeenCalledWith('BASIC');
-      expect(res.json).toHaveBeenCalledWith({
-        success: true,
-        data: deletedPlan,
+      expect(mocks.softDeletePlan).toHaveBeenCalledWith('PL-001', {
+        userId: 'u1',
+        role: 'CLIENT',
+        tenantId: 't1',
       });
+      expect(res.json).toHaveBeenCalledWith({ success: true, data: deletedPlan });
     });
   });
 });

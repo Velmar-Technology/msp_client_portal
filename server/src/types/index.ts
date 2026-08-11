@@ -34,19 +34,6 @@ export enum TicketPriority {
   CRITICAL = 'CRITICAL',
 }
 
-export enum SubscriptionPlan {
-  BASIC = 'BASIC',
-  STANDARD = 'STANDARD',
-  PREMIUM = 'PREMIUM',
-  PL_001 = 'PL-001',
-  PL_002 = 'PL-002',
-  PL_003 = 'PL-003',
-  PL_004 = 'PL-004',
-  PL_005 = 'PL-005',
-  PL_006 = 'PL-006',
-  PL_007 = 'PL-007',
-}
-
 export enum SubscriptionStatus {
   ACTIVE = 'ACTIVE',
   EXPIRING = 'EXPIRING',
@@ -152,7 +139,7 @@ export interface Subscription {
   id: string;
   client_id: string;
   service_name: string;
-  plan: SubscriptionPlan;
+  plan: string;
   status: SubscriptionStatus;
   renewal_date: Date;
   equipment_count: number;
@@ -335,6 +322,13 @@ export interface NotificationPreference {
 
 // ---- Plan Types ----
 
+export enum PlanClientType {
+  CLIENT = 'CLIENT',
+  ENTERPRISE = 'ENTERPRISE',
+  STUDENT = 'STUDENT',
+  OTHER = 'OTHER',
+}
+
 export interface PlanFeature {
   code?: string;
   params?: Record<string, any>;
@@ -349,12 +343,20 @@ export interface Plan {
   price: number;
   features: PlanFeature[];
   recommended: boolean;
-  client_type: string;
+  client_type: PlanClientType;
   active: boolean;
   paypal_plan_id_monthly?: string | null;
   paypal_plan_id_annual?: string | null;
   created_at: Date;
   updated_at: Date;
+}
+
+export interface PlanFilters {
+  search?: string;
+  clientType?: PlanClientType;
+  includeInactive?: boolean;
+  page?: number;
+  limit?: number;
 }
 
 export interface SubscriptionEquipment {

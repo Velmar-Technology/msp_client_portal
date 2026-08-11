@@ -28,7 +28,6 @@ export const ticketStatusEnum = pgEnum('ticket_status', [
 ]);
 export const ticketCategoryEnum = pgEnum('ticket_category', ['REPAIR', 'WARRANTY', 'SERVICE_OUTAGE', 'PREVENTATIVE_MAINTENANCE']);
 export const ticketPriorityEnum = pgEnum('ticket_priority', ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']);
-export const subscriptionPlanEnum = pgEnum('subscription_plan', ['BASIC', 'STANDARD', 'PREMIUM']);
 export const subscriptionStatusEnum = pgEnum('subscription_status', ['ACTIVE', 'EXPIRING', 'EXPIRED', 'CANCELLED']);
 export const invoiceStatusEnum = pgEnum('invoice_status', ['PENDING', 'PAID', 'OVERDUE', 'CANCELLED']);
 
@@ -207,7 +206,9 @@ export const subscriptions = pgTable(
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
     service_name: varchar('service_name', { length: 255 }).notNull(),
-    plan: varchar('plan', { length: 50 }).default('PL-001').notNull(),
+    plan: varchar('plan', { length: 50 })
+      .references(() => plans.id, { onUpdate: 'cascade' })
+      .notNull(),
     status: subscriptionStatusEnum('status').default('ACTIVE').notNull(),
     renewal_date: timestamp('renewal_date', { withTimezone: true }).notNull(),
     equipment_count: integer('equipment_count').default(1).notNull(),

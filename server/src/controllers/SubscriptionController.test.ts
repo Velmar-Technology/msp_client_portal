@@ -33,7 +33,6 @@ vi.mock('../repositories/UserRepository', () => {
 });
 
 import { subscriptionController } from './SubscriptionController';
-import { SubscriptionPlan } from '../types';
 
 describe('SubscriptionController', () => {
   beforeEach(() => {
@@ -88,7 +87,7 @@ describe('SubscriptionController', () => {
   describe('create', () => {
     const input = {
       serviceName: 'Premium Helpdesk',
-      plan: SubscriptionPlan.PREMIUM,
+      plan: 'PL-001',
       equipmentCount: 3,
     };
 
@@ -172,12 +171,12 @@ describe('SubscriptionController', () => {
 
   describe('update', () => {
     it('should update subscription details', async () => {
-      const mockSub = { id: 'sub-1', plan: SubscriptionPlan.STANDARD };
+      const mockSub = { id: 'sub-1', plan: 'PL-002' };
       mocks.updateSubscription.mockResolvedValue(mockSub);
 
       const req = {
         params: { id: 'sub-1' },
-        body: { plan: SubscriptionPlan.STANDARD },
+        body: { plan: 'PL-002' },
         user: { tenantId: 'tenant-123' },
       } as unknown as Request;
       const res = {
@@ -188,7 +187,7 @@ describe('SubscriptionController', () => {
 
       expect(mocks.updateSubscription).toHaveBeenCalledWith(
         'sub-1',
-        { plan: SubscriptionPlan.STANDARD },
+        { plan: 'PL-002' },
         'tenant-123',
         false
       );

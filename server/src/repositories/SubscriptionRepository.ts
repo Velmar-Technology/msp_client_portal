@@ -1,5 +1,5 @@
 import { BaseRepository } from './BaseRepository';
-import { Subscription, SubscriptionPlan, SubscriptionStatus } from '../types';
+import { Subscription, SubscriptionStatus } from '../types';
 import { db, subscriptions, plans } from '../db';
 import { eq, desc, and, or, lt } from 'drizzle-orm';
 
@@ -42,7 +42,7 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
   async create(data: {
     client_id: string;
     service_name: string;
-    plan: SubscriptionPlan;
+    plan: string;
     equipment_count: number;
     renewal_date: Date;
     tenant_id: string;
@@ -65,7 +65,7 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     return results[0] as Subscription;
   }
 
-  async updatePlan(id: string, plan: SubscriptionPlan, equipmentCount?: number): Promise<Subscription | null> {
+  async updatePlan(id: string, plan: string, equipmentCount?: number): Promise<Subscription | null> {
     const updateData: any = { plan };
     if (equipmentCount !== undefined) {
       updateData.equipment_count = equipmentCount;

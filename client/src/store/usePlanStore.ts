@@ -1,13 +1,13 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { planService } from "@/services/planService";
-import type { Plan } from "@/services/planService";
+import type { Plan, PlanFilters } from "@/services/planService";
 
 export interface PlanState {
   plans: Plan[];
   loading: boolean;
   error: string | null;
-  fetchPlans: () => Promise<void>;
+  fetchPlans: (filters?: PlanFilters) => Promise<void>;
   createPlan: (
     data: Omit<Plan, 'created_at' | 'updated_at'>
   ) => Promise<void>;
@@ -25,10 +25,10 @@ export const usePlanStore = create<PlanState>()(
       loading: false,
       error: null,
 
-      fetchPlans: async () => {
+      fetchPlans: async (filters?: PlanFilters) => {
         set({ loading: true, error: null }, false, 'plans/fetch_request');
         try {
-          const plans = await planService.getAll();
+          const plans = await planService.getAll({ limit: 100, ...filters });
           set({ plans, loading: false }, false, 'plans/fetch_success');
         } catch (err) {
           const error = err as Error;

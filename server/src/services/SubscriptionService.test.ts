@@ -109,7 +109,7 @@ vi.mock('./NotificationService', () => {
 });
 
 import { subscriptionService } from './SubscriptionService';
-import { SubscriptionPlan, SubscriptionStatus } from '../types';
+import { SubscriptionStatus } from '../types';
 
 describe('SubscriptionService', () => {
   beforeEach(() => {
@@ -166,7 +166,7 @@ describe('SubscriptionService', () => {
   describe('createSubscription', () => {
     const input = {
       serviceName: 'Velmar Premium Plan',
-      plan: SubscriptionPlan.PREMIUM,
+      plan: 'PL-001',
       equipmentCount: 5,
     };
 
@@ -596,7 +596,7 @@ describe('SubscriptionService', () => {
       id: 'sub-1',
       tenant_id: 'tenant-123',
       service_name: 'Basic Support (Monthly)',
-      plan: SubscriptionPlan.BASIC,
+      plan: 'BASIC',
       status: SubscriptionStatus.ACTIVE,
       equipment_count: 2,
     };

@@ -75,13 +75,6 @@ export const ALLOWED_MIME_TYPES = [
   'video/mp4',
 ];
 
-/** Plan pricing */
-export const PLAN_PRICES = {
-  BASIC: 299,
-  STANDARD: 599,
-  PREMIUM: 1299,
-} as const;
-
 /** Tax rate */
 export const TAX_RATE = 0.18; // 18% ITBIS
 

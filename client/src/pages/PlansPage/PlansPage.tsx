@@ -22,9 +22,12 @@ export function PlansPage() {
   const {
     t,
     i18n,
+    user,
     loading,
     isAdmin,
     filteredPlans,
+    clientTypeFilter,
+    setClientTypeFilter,
     selectedPlan,
     setUserSelectedPlan,
     equipmentCounts,
@@ -376,6 +379,28 @@ export function PlansPage() {
             <div className="flex justify-center">
               <BillingCycleSwitcher billingCycle={billingCycle} setBillingCycle={setBillingCycle} />
             </div>
+            {(isAdmin || user?.role === "TECHNICIAN") && (
+              <div className="flex items-center gap-2">
+                <label
+                  htmlFor="client-type-filter"
+                  className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
+                >
+                  {t("plans.audience") || "Audience"}
+                </label>
+                <select
+                  id="client-type-filter"
+                  value={clientTypeFilter}
+                  onChange={(e) => setClientTypeFilter(e.target.value as "ALL" | typeof clientTypeFilter)}
+                  className="h-8 px-2 border rounded text-xs bg-card text-zinc-900 dark:text-zinc-100 border-zinc-200 dark:border-zinc-800 focus:outline-none"
+                >
+                  <option value="ALL">{t("plans.allAudiences") || "All plans"}</option>
+                  <option value="CLIENT">{t("plans.clientTypes.standard") || "Standard Client"}</option>
+                  <option value="ENTERPRISE">{t("plans.clientTypes.enterprise") || "Enterprise Client"}</option>
+                  <option value="STUDENT">{t("plans.clientTypes.student") || "Student Starter"}</option>
+                  <option value="OTHER">{t("plans.clientTypes.other") || "Other / Custom"}</option>
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Velmar Store Discount Perk Banner */}

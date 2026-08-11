@@ -7,7 +7,7 @@ import { nextcloudService, NextcloudService } from './NextcloudService';
 import { AppError } from '../utils/AppError';
 import { logger } from '../utils/logger';
 import { TAX_RATE } from '../config/constants';
-import { Subscription, SubscriptionPlan, SubscriptionStatus, InvoiceStatus, UserRole } from '../types';
+import { Subscription, SubscriptionStatus, InvoiceStatus, UserRole } from '../types';
 import { CreateSubscriptionInput, UpdateSubscriptionInput, SendQuoteInput } from '../dtos/subscription.dto';
 import { paypalService, PaypalService } from './PaypalService';
 import { env } from '../config/env';
@@ -243,7 +243,7 @@ export class SubscriptionService {
     const subscription = await this.subscriptionRepo.create({
       client_id: clientId,
       service_name: formattedServiceName,
-      plan: data.plan as SubscriptionPlan,
+      plan: data.plan,
       equipment_count: data.equipmentCount,
       renewal_date: renewalDate,
       tenant_id: tenantId,
@@ -414,7 +414,7 @@ export class SubscriptionService {
         }
       }
 
-      const res = await this.subscriptionRepo.updatePlan(sub.id, newPlan as SubscriptionPlan, newCount);
+      const res = await this.subscriptionRepo.updatePlan(sub.id, newPlan, newCount);
       if (!res) throw AppError.internal('Failed to update subscription');
       updated = res;
     }

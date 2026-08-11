@@ -1,5 +1,8 @@
 import api from "@/services/api";
 
+export const PLAN_CLIENT_TYPES = ["CLIENT", "ENTERPRISE", "STUDENT", "OTHER"] as const;
+export type PlanClientType = (typeof PLAN_CLIENT_TYPES)[number];
+
 export interface PlanFeature {
   code?: string;
   params?: Record<string, string | number | boolean>;
@@ -14,15 +17,28 @@ export interface Plan {
   price: number;
   features: PlanFeature[];
   recommended: boolean;
-  client_type: string;
+  client_type: PlanClientType;
   active: boolean;
   created_at: string;
   updated_at: string;
 }
 
+export interface PlanFilters {
+  search?: string;
+  clientType?: PlanClientType;
+  page?: number;
+  limit?: number;
+}
+
 export const planService = {
-  async getAll(): Promise<Plan[]> {
-    const response = await api.get('/plans');
+  async getAll(filters: PlanFilters = {}): Promise<Plan[]> {
+    const params = new URLSearchParams();
+    if (filters.search) params.set("search", filters.search);
+    if (filters.clientType) params.set("clientType", filters.clientType);
+    if (filters.page) params.set("page", String(filters.page));
+    if (filters.limit) params.set("limit", String(filters.limit));
+    const qs = params.toString();
+    const response = await api.get(`/plans${qs ? `?${qs}` : ""}`);
     return response.data.data;
   },
 

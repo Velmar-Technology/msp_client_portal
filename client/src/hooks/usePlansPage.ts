@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from "@/hooks/useAuth";
 import { usePlanStore } from "@/store/usePlanStore";
 import { toast } from 'sonner';
-import type { Plan, PlanFeature } from "@/services/planService";
+import type { Plan, PlanFeature, PlanFilters, PlanClientType } from "@/services/planService";
 import { userService } from "@/services/userService";
 import { subscriptionService } from "@/services/subscriptionService";
 import type { Subscription } from "@/services/subscriptionService";
@@ -127,15 +127,20 @@ export function usePlansPage() {
 
   const isAdmin = user?.role === "ADMIN";
 
+  const [clientTypeFilter, setClientTypeFilter] = useState<"ALL" | PlanClientType>("ALL");
+
   const filteredPlans = useMemo(() => {
     return plans.filter((plan) => {
       if (plan.active === false) return false;
-      if (isAdmin || user?.role === "TECHNICIAN") return true;
+      if (isAdmin || user?.role === "TECHNICIAN") {
+        if (clientTypeFilter !== "ALL" && (plan.client_type || "CLIENT") !== clientTypeFilter) return false;
+        return true;
+      }
       const userClientType = user?.clientType || "CLIENT";
       const planClientType = plan.client_type || "CLIENT";
       return planClientType === userClientType;
     });
-  }, [plans, isAdmin, user?.role, user?.clientType]);
+  }, [plans, isAdmin, user?.role, user?.clientType, clientTypeFilter]);
 
   const fetchActiveSubscriptions = useCallback(async () => {
     if (isAdmin || user?.role !== "CLIENT") return;
@@ -163,8 +168,10 @@ export function usePlansPage() {
   }, [isAdmin, user]);
 
   useEffect(() => {
-    fetchPlans().catch((err) => console.error("Failed to fetch plans:", err));
-  }, [fetchPlans]);
+    const filters: PlanFilters =
+      clientTypeFilter === "ALL" ? {} : { clientType: clientTypeFilter };
+    fetchPlans(filters).catch((err) => console.error("Failed to fetch plans:", err));
+  }, [fetchPlans, clientTypeFilter]);
 
   // Set default equipment counts when plans are loaded
   useEffect(() => {
@@ -952,7 +959,7 @@ export function usePlansPage() {
           description: finalDescription.en_US ? finalDescription : null,
           price: editPrice,
           recommended: editRecommended,
-          client_type: editClientType,
+          client_type: editClientType as PlanClientType,
           active: editActive,
           features: filteredFeatures,
         });
@@ -968,7 +975,7 @@ export function usePlansPage() {
           description: finalDescription.en_US ? finalDescription : null,
           price: editPrice,
           recommended: editRecommended,
-          client_type: editClientType,
+          client_type: editClientType as PlanClientType,
           active: editActive,
           features: filteredFeatures,
         });
@@ -1025,6 +1032,8 @@ export function usePlansPage() {
     loading,
     isAdmin,
     filteredPlans,
+    clientTypeFilter,
+    setClientTypeFilter,
     selectedPlan,
     userSelectedPlan,
     setUserSelectedPlan,

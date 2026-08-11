@@ -1,7 +1,7 @@
 import { BaseRepository } from './BaseRepository';
-import { Plan } from '../types';
+import { Plan, PlanFilters } from '../types';
 import { db, plans } from '../db';
-import { eq } from 'drizzle-orm';
+import { eq, and, ilike, asc, count, SQL } from 'drizzle-orm';
 
 export class PlanRepository extends BaseRepository<Plan> {
   constructor() {
@@ -29,6 +29,41 @@ export class PlanRepository extends BaseRepository<Plan> {
       .where(eq(plans.id, id))
       .returning();
     return (results[0] as Plan) || null;
+  }
+
+  async findWithFilters(filters: PlanFilters): Promise<{ plans: Plan[]; total: number }> {
+    const conditions: (SQL | undefined)[] = [];
+
+    if (filters.includeInactive === false) {
+      conditions.push(eq(plans.active, true));
+    }
+    if (filters.clientType) {
+      conditions.push(eq(plans.client_type, filters.clientType));
+    }
+    if (filters.search) {
+      conditions.push(ilike(plans.id, `%${filters.search}%`));
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    const page = filters.page || 1;
+    const limit = filters.limit || 20;
+    const offset = (page - 1) * limit;
+
+    const countResult = await db
+      .select({ val: count() })
+      .from(plans)
+      .where(whereClause);
+    const total = countResult[0]?.val ?? 0;
+
+    const results = await db
+      .select()
+      .from(plans)
+      .where(whereClause)
+      .orderBy(asc(plans.price), asc(plans.id))
+      .limit(limit)
+      .offset(offset);
+
+    return { plans: results as Plan[], total };
   }
 }
 

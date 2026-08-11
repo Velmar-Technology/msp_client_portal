@@ -43,6 +43,15 @@ export function PlanCard({
   const priceVal = billingCycle === "annual" ? plan.price * 0.8 : plan.price;
   const isCurrentlyActive = !isAdmin && activeSubscriptions.some((sub) => sub.plan === plan.id);
 
+  const CLIENT_TYPE_LABEL_KEYS: Record<string, string> = {
+    CLIENT: "plans.clientTypes.standard",
+    ENTERPRISE: "plans.clientTypes.enterprise",
+    STUDENT: "plans.clientTypes.student",
+    OTHER: "plans.clientTypes.other",
+  };
+  const clientTypeLabelKey =
+    CLIENT_TYPE_LABEL_KEYS[plan.client_type || "CLIENT"] || "plans.clientTypes.other";
+
   return (
     <div
       onClick={() => onSelect(plan.id)}
@@ -67,6 +76,9 @@ export function PlanCard({
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="inline-block px-1.5 py-0.5 border border-zinc-200 dark:border-zinc-800 rounded font-mono text-[9px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 bg-white/60 dark:bg-zinc-900/60">
               {getTierLabel(plan.id)}
+            </span>
+            <span className="inline-block px-1.5 py-0.5 border border-zinc-200 dark:border-zinc-800 rounded text-[9px] font-semibold tracking-wide text-zinc-500 dark:text-zinc-400 bg-white/60 dark:bg-zinc-900/60">
+              {t(clientTypeLabelKey)}
             </span>
             {isPlanDisabled && (
               <span className="bg-red-500/10 text-red-700 border border-red-500/20 dark:text-red-400 dark:border-red-500/20 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">

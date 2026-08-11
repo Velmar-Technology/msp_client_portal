@@ -476,6 +476,8 @@
       "student": "Student Starter",
       "other": "Other / Custom"
     },
+    "audience": "Audience",
+    "allAudiences": "All plans",
     "planNameLabel": "Plan Name",
     "monthlyPriceLabel": "Monthly Price ($)",
     "descriptionLabel": "Description",

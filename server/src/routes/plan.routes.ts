@@ -3,15 +3,15 @@ import { planController } from '../controllers/PlanController';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { rbacMiddleware } from '../middleware/rbacMiddleware';
 import { validate } from '../middleware/validationMiddleware';
-import { CreatePlanDTO, UpdatePlanDTO } from '../dtos/plan.dto';
+import { CreatePlanDTO, UpdatePlanDTO, PlanQueryDTO } from '../dtos/plan.dto';
 import { UserRole } from '../types';
 
 const router = Router();
 
 router.use(authMiddleware);
 
-/** GET /api/v1/plans — List all plans */
-router.get('/', (req, res) => planController.getAll(req, res));
+/** GET /api/v1/plans — List plans (filtered by role) */
+router.get('/', validate(PlanQueryDTO, 'query'), (req, res) => planController.getAll(req, res));
 
 /** GET /api/v1/plans/:id — Get plan details */
 router.get('/:id', (req, res) => planController.getById(req, res));
