@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env';
-import { userRepository } from '../repositories/UserRepository';
-import { tenantRepository } from '../repositories/TenantRepository';
+import { userRepository, UserRepository } from '../repositories/UserRepository';
+import { tenantRepository, TenantRepository } from '../repositories/TenantRepository';
 import { hashPassword, comparePassword } from '../utils/passwordUtils';
 import { AppError } from '../utils/AppError';
 import { logger } from '../utils/logger';
@@ -14,12 +14,16 @@ import crypto from 'crypto';
 import { sendOTPWhatsApp } from '../utils/whatsappService';
 
 export class AuthService {
+  constructor(
+    private userRepo: UserRepository = userRepository,
+    private tenantRepo: TenantRepository = tenantRepository,
+  ) {}
   /**
    * Register a new user account.
    */
   async register(data: RegisterInput): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null; clientType: string; phoneNumber: string | null }, message: string }> {
     // Check for existing user
-    const existing = await userRepository.findByEmail(data.email);
+    const existing = await this.userRepo.findByEmail(data.email);
     if (existing) {
       throw AppError.conflict('An account with this email already exists');
     }
@@ -35,22 +39,22 @@ export class AuthService {
     }
 
     // Check for existing tenant name or subdomain
-    const existingTenantBySubdomain = await tenantRepository.findBySubdomain(subdomain);
+    const existingTenantBySubdomain = await this.tenantRepo.findBySubdomain(subdomain);
     if (existingTenantBySubdomain) {
       throw AppError.conflict('A company with this name or subdomain is already registered');
     }
 
-    const existingTenantByName = await tenantRepository.findByName(data.tenantName);
+    const existingTenantByName = await this.tenantRepo.findByName(data.tenantName);
     if (existingTenantByName) {
       throw AppError.conflict('A company with this name or subdomain is already registered');
     }
 
     // Create a new Tenant
-    const tenant = await tenantRepository.create(data.tenantName, subdomain);
+    const tenant = await this.tenantRepo.create(data.tenantName, subdomain);
 
     // Hash password and create user linked to the new tenant
     const password_hash = await hashPassword(data.password);
-    const user = await userRepository.create({
+    const user = await this.userRepo.create({
       email: data.email,
       name: data.name,
       password_hash,
@@ -67,7 +71,7 @@ export class AuthService {
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 15); // OTP expires in 15 mins
     
-    await userRepository.setOTP(user.id, otp, expiresAt);
+    await this.userRepo.setOTP(user.id, otp, expiresAt);
     logger.info('Email/WhatsApp verification OTP generated', { userId: user.id, otp });
 
     // If phone number was provided, send OTP via WhatsApp
@@ -94,7 +98,7 @@ export class AuthService {
    * Authenticate user with email and password.
    */
   async login(data: LoginInput, ipAddress: string): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null; lastLoginAt: string | null; lastLoginIp: string | null; clientType: string; phoneNumber: string | null }; tokens: AuthTokens }> {
-    const user = await userRepository.findByEmail(data.email);
+    const user = await this.userRepo.findByEmail(data.email);
     if (!user) {
       throw AppError.unauthorized('Invalid email or password');
     }
@@ -117,7 +121,7 @@ export class AuthService {
     const previousLoginIp = user.last_login_ip;
 
     // Update last login timestamp and IP
-    await userRepository.updateLastLogin(user.id, ipAddress);
+    await this.userRepo.updateLastLogin(user.id, ipAddress);
 
     logger.info('User logged in', { userId: user.id, email: user.email, tenantId: user.tenant_id });
 
@@ -175,7 +179,7 @@ export class AuthService {
     }
 
     // Check if user exists
-    let user = await userRepository.findByEmail(email);
+    let user = await this.userRepo.findByEmail(email);
     let isNewUser = false;
 
     // Capture previous login data before updating
@@ -193,21 +197,21 @@ export class AuthService {
 
       // Automatically resolve subdomain collisions
       let subdomain = baseSubdomain;
-      let existingTenant = await tenantRepository.findBySubdomain(subdomain);
+      let existingTenant = await this.tenantRepo.findBySubdomain(subdomain);
       let suffix = 1;
       while (existingTenant) {
         subdomain = `${baseSubdomain}-${suffix}`;
-        existingTenant = await tenantRepository.findBySubdomain(subdomain);
+        existingTenant = await this.tenantRepo.findBySubdomain(subdomain);
         suffix++;
       }
 
-      const tenant = await tenantRepository.create(rawTenantName, subdomain);
+      const tenant = await this.tenantRepo.create(rawTenantName, subdomain);
 
       // Generate a secure random password
       const randomPassword = crypto.randomBytes(32).toString('hex');
       const password_hash = await hashPassword(randomPassword);
 
-      user = await userRepository.create({
+      user = await this.userRepo.create({
         email,
         name,
         password_hash,
@@ -216,7 +220,7 @@ export class AuthService {
       });
 
       // Automatically verify email for Google OAuth users
-      await userRepository.verifyEmail(user.id);
+      await this.userRepo.verifyEmail(user.id);
 
       logger.info('New user registered via Google OAuth', { userId: user.id, email: user.email, tenantId: tenant.id });
     } else {
@@ -227,7 +231,7 @@ export class AuthService {
     }
 
     // Update last login timestamp and IP
-    await userRepository.updateLastLogin(user.id, ipAddress);
+    await this.userRepo.updateLastLogin(user.id, ipAddress);
 
     const tokens = this.generateTokens({
       userId: user.id,
@@ -250,7 +254,7 @@ export class AuthService {
   async refreshToken(refreshToken: string): Promise<AuthTokens> {
     try {
       const decoded = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET) as JwtPayload;
-      const user = await userRepository.findById(decoded.userId);
+      const user = await this.userRepo.findById(decoded.userId);
       if (!user || !user.is_active) {
         throw AppError.unauthorized('Invalid refresh token');
       }
@@ -274,7 +278,7 @@ export class AuthService {
    * Verify user's email using a valid OTP.
    */
   async verifyEmail(email: string, otp: string): Promise<void> {
-    const user = await userRepository.findByEmail(email);
+    const user = await this.userRepo.findByEmail(email);
     if (!user) {
       throw AppError.badRequest('Invalid email or OTP');
     }
@@ -291,7 +295,7 @@ export class AuthService {
       throw AppError.badRequest('OTP has expired');
     }
 
-    await userRepository.verifyEmail(user.id);
+    await this.userRepo.verifyEmail(user.id);
     logger.info('Email verified successfully via OTP', { userId: user.id });
   }
 
@@ -299,7 +303,7 @@ export class AuthService {
    * Initiate password reset flow (stub — sends email with token).
    */
   async forgotPassword(email: string): Promise<void> {
-    const user = await userRepository.findByEmail(email);
+    const user = await this.userRepo.findByEmail(email);
     if (!user) {
       // Don't reveal whether email exists
       logger.debug('Password reset requested for non-existent email', { email });
@@ -320,7 +324,7 @@ export class AuthService {
     try {
       const decoded = jwt.verify(token, env.JWT_SECRET) as { userId: string };
       const password_hash = await hashPassword(newPassword);
-      await userRepository.updatePassword(decoded.userId, password_hash);
+      await this.userRepo.updatePassword(decoded.userId, password_hash);
       logger.info('Password reset successfully', { userId: decoded.userId });
     } catch {
       throw AppError.badRequest('Invalid or expired reset token');

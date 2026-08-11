@@ -1,21 +1,27 @@
-import { equipmentRepository } from '../repositories/EquipmentRepository';
-import { subscriptionRepository } from '../repositories/SubscriptionRepository';
-import { planRepository } from '../repositories/PlanRepository';
-import { nextcloudService } from './NextcloudService';
+import { equipmentRepository, EquipmentRepository } from '../repositories/EquipmentRepository';
+import { subscriptionRepository, SubscriptionRepository } from '../repositories/SubscriptionRepository';
+import { planRepository, PlanRepository } from '../repositories/PlanRepository';
+import { nextcloudService, NextcloudService } from './NextcloudService';
 import { AppError } from '../utils/AppError';
 import { logger } from '../utils/logger';
 import { SubscriptionEquipment } from '../types';
 
 export class EquipmentService {
+  constructor(
+    private equipmentRepo: EquipmentRepository = equipmentRepository,
+    private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
+    private planRepo: PlanRepository = planRepository,
+    private nextcloudSvc: NextcloudService = nextcloudService,
+  ) {}
   /**
    * Retrieves or initializes equipment slots for a subscription
    */
   async getEquipmentSlots(subscriptionId: string, tenantId: string, byAdmin = false): Promise<SubscriptionEquipment[]> {
-    const sub = await subscriptionRepository.findById(subscriptionId);
+    const sub = await this.subscriptionRepo.findById(subscriptionId);
     if (!sub) throw AppError.notFound('Subscription not found');
     if (!byAdmin && sub.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
 
-    let slots = await equipmentRepository.findBySubscription(subscriptionId);
+    let slots = await this.equipmentRepo.findBySubscription(subscriptionId);
     const count = sub.equipment_count;
 
     // Initialize missing slots
@@ -23,7 +29,7 @@ export class EquipmentService {
       const existingIndices = new Set(slots.map((s) => s.slot_index));
       for (let i = 0; i < count; i++) {
         if (!existingIndices.has(i)) {
-          const newSlot = await equipmentRepository.create({
+          const newSlot = await this.equipmentRepo.create({
             subscription_id: subscriptionId,
             slot_index: i,
             status: 'PENDING_ACTIVATION',
@@ -49,7 +55,7 @@ export class EquipmentService {
     // Ensure slots are initialized
     await this.getEquipmentSlots(subscriptionId, tenantId, byAdmin);
 
-    const slot = await equipmentRepository.findBySlot(subscriptionId, slotIndex);
+    const slot = await this.equipmentRepo.findBySlot(subscriptionId, slotIndex);
     if (!slot) throw AppError.notFound('Equipment slot not found');
     if (!byAdmin && slot.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
 
@@ -60,13 +66,13 @@ export class EquipmentService {
     // If there was an active Nextcloud user, clean it up
     if (slot.nextcloud_username) {
       try {
-        await nextcloudService.deleteUser(slot.nextcloud_username);
+        await this.nextcloudSvc.deleteUser(slot.nextcloud_username);
       } catch (err) {
         logger.warn('Failed to delete user on Nextcloud during OTP generation', { err });
       }
     }
 
-    const updated = await equipmentRepository.update(slot.id, {
+    const updated = await this.equipmentRepo.update(slot.id, {
       status: 'PENDING_ACTIVATION',
       otp,
       otp_expires_at: expiresAt,
@@ -94,7 +100,7 @@ export class EquipmentService {
     let slot: SubscriptionEquipment | null = null;
 
     if (options.otp) {
-      slot = await equipmentRepository.findByOtp(options.otp);
+      slot = await this.equipmentRepo.findByOtp(options.otp);
       if (!slot) throw AppError.notFound('Activation code (OTP) not found or invalid');
       if (slot.otp_expires_at && slot.otp_expires_at < new Date()) {
         throw AppError.badRequest('Activation code (OTP) has expired');
@@ -102,14 +108,14 @@ export class EquipmentService {
       if (!options.byAdmin && slot.tenant_id !== options.tenantId) throw AppError.forbidden('Access denied');
     } else if (options.subscriptionId !== undefined && options.slotIndex !== undefined) {
       // Direct simulation from portal
-      slot = await equipmentRepository.findBySlot(options.subscriptionId, options.slotIndex);
+      slot = await this.equipmentRepo.findBySlot(options.subscriptionId, options.slotIndex);
       if (!slot) throw AppError.notFound('Slot not found');
       if (!options.byAdmin && slot.tenant_id !== options.tenantId) throw AppError.forbidden('Access denied');
     } else {
       throw AppError.badRequest('Must provide either OTP or SubscriptionId + SlotIndex');
     }
 
-    const sub = await subscriptionRepository.findById(slot.subscription_id);
+    const sub = await this.subscriptionRepo.findById(slot.subscription_id);
     if (!sub) throw AppError.notFound('Subscription not found');
 
     // 1. Resolve storage quota
@@ -119,7 +125,7 @@ export class EquipmentService {
     else if (sub.plan.includes('PL-003')) quota = '100 GB';
     else {
       // Find quota from features dynamic text
-      const planDetails = await planRepository.findById(sub.plan);
+      const planDetails = await this.planRepo.findById(sub.plan);
       if (planDetails) {
         const feature = planDetails.features.find((f: any) =>
           f.code === 'CLOUD_STORAGE' || (f.text && f.text.toString().toLowerCase().includes('storage'))
@@ -140,7 +146,7 @@ export class EquipmentService {
     let nextcloudPassword = '';
 
     try {
-      nextcloudPassword = await nextcloudService.provisionUser({
+      nextcloudPassword = await this.nextcloudSvc.provisionUser({
         username: nextcloudUsername,
         quota,
         displayName: `${options.deviceName} (${options.deviceSerial})`,
@@ -151,7 +157,7 @@ export class EquipmentService {
     }
 
     // 3. Mark slot as active
-    const updated = await equipmentRepository.update(slot.id, {
+    const updated = await this.equipmentRepo.update(slot.id, {
       status: 'ACTIVE',
       device_name: options.deviceName,
       device_serial: options.deviceSerial,
@@ -168,20 +174,20 @@ export class EquipmentService {
    * Deactivates/revokes an equipment slot and deletes its Nextcloud account
    */
   async deactivateSlot(subscriptionId: string, slotIndex: number, tenantId: string, byAdmin = false): Promise<SubscriptionEquipment> {
-    const slot = await equipmentRepository.findBySlot(subscriptionId, slotIndex);
+    const slot = await this.equipmentRepo.findBySlot(subscriptionId, slotIndex);
     if (!slot) throw AppError.notFound('Slot not found');
     if (!byAdmin && slot.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
 
     // Clean up Nextcloud user account
     if (slot.nextcloud_username) {
       try {
-        await nextcloudService.deleteUser(slot.nextcloud_username);
+        await this.nextcloudSvc.deleteUser(slot.nextcloud_username);
       } catch (err) {
         logger.error('Failed to delete Nextcloud user during deactivation', { err });
       }
     }
 
-    const updated = await equipmentRepository.update(slot.id, {
+    const updated = await this.equipmentRepo.update(slot.id, {
       status: 'PENDING_ACTIVATION',
       device_name: null,
       device_serial: null,
@@ -198,18 +204,18 @@ export class EquipmentService {
    * Get all active devices (equipment) for a client across their active subscriptions.
    */
   async getActiveDevicesForClient(clientId: string, tenantId: string): Promise<SubscriptionEquipment[]> {
-    return equipmentRepository.findActiveByClient(clientId, tenantId);
+    return this.equipmentRepo.findActiveByClient(clientId, tenantId);
   }
 
   /**
    * Get all client devices across all subscriptions and tenants (for Admin view).
    */
   async getAllDevicesForAdmin(): Promise<any[]> {
-    const activeSubs = await subscriptionRepository.findAllActive();
+    const activeSubs = await this.subscriptionRepo.findAllActive();
     for (const sub of activeSubs) {
       await this.getEquipmentSlots(sub.id, sub.tenant_id, true);
     }
-    return equipmentRepository.findAllWithDetails();
+    return this.equipmentRepo.findAllWithDetails();
   }
 
   /**
@@ -229,7 +235,7 @@ export class EquipmentService {
     device_serial: string | null;
     status: string;
   }> {
-    const slot = await equipmentRepository.findBySlot(subscriptionId, slotIndex);
+    const slot = await this.equipmentRepo.findBySlot(subscriptionId, slotIndex);
     if (!slot) throw AppError.notFound('Slot not found');
     if (!byAdmin && slot.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
 
@@ -238,7 +244,7 @@ export class EquipmentService {
 
     if (slot.status === 'ACTIVE' && slot.nextcloud_username) {
       try {
-        const quota = await nextcloudService.getUserStorage(slot.nextcloud_username);
+        const quota = await this.nextcloudSvc.getUserStorage(slot.nextcloud_username);
         used = quota.used;
         total = quota.total;
       } catch (err) {

@@ -5,6 +5,7 @@ import {
 } from '../types';
 import {
   notificationPreferenceRepository,
+  NotificationPreferenceRepository,
   DEFAULT_PREFERENCES,
 } from '../repositories/NotificationPreferenceRepository';
 import { logger } from '../utils/logger';
@@ -19,12 +20,13 @@ const FORCE_IN_APP_EVENTS: NotificationEventType[] = [
 ];
 
 export class NotificationPreferenceService {
+  constructor(private preferenceRepo: NotificationPreferenceRepository = notificationPreferenceRepository) {}
   /**
    * Get the user's effective notification preferences.
    * Returns defaults for users who haven't customized yet.
    */
   async getPreferences(userId: string): Promise<NotificationPreferencesMap> {
-    return notificationPreferenceRepository.getEffectivePreferences(userId);
+    return this.preferenceRepo.getEffectivePreferences(userId);
   }
 
   /**
@@ -51,7 +53,7 @@ export class NotificationPreferenceService {
     }
 
     logger.info(`Updating notification preferences for user ${userId}`);
-    return notificationPreferenceRepository.upsert(userId, tenantId, preferences);
+    return this.preferenceRepo.upsert(userId, tenantId, preferences);
   }
 
   /**
@@ -64,7 +66,7 @@ export class NotificationPreferenceService {
     channel: 'in_app' | 'email' | 'whatsapp'
   ): Promise<boolean> {
     try {
-      const prefs = await notificationPreferenceRepository.getEffectivePreferences(userId);
+      const prefs = await this.preferenceRepo.getEffectivePreferences(userId);
       const eventPrefs = prefs[eventType];
       if (!eventPrefs) return true; // Unknown event type → allow (safe default)
       return eventPrefs[channel];

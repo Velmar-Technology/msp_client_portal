@@ -1,12 +1,12 @@
-import { subscriptionRepository } from '../repositories/SubscriptionRepository';
-import { planRepository } from '../repositories/PlanRepository';
-import { invoiceRepository } from '../repositories/InvoiceRepository';
-import { equipmentRepository } from '../repositories/EquipmentRepository';
-import { userRepository } from '../repositories/UserRepository';
-import { nextcloudService } from './NextcloudService';
-import { paypalService } from './PaypalService';
-import { notificationService } from './NotificationService';
-import { invoiceService } from './InvoiceService';
+import { subscriptionRepository, SubscriptionRepository } from '../repositories/SubscriptionRepository';
+import { planRepository, PlanRepository } from '../repositories/PlanRepository';
+import { invoiceRepository, InvoiceRepository } from '../repositories/InvoiceRepository';
+import { equipmentRepository, EquipmentRepository } from '../repositories/EquipmentRepository';
+import { userRepository, UserRepository } from '../repositories/UserRepository';
+import { nextcloudService, NextcloudService } from './NextcloudService';
+import { paypalService, PaypalService } from './PaypalService';
+import { notificationService, NotificationService } from './NotificationService';
+import { invoiceService, InvoiceService } from './InvoiceService';
 import { sendInvoiceDueEmail } from '../utils/emailService';
 import { logger } from '../utils/logger';
 import { TAX_RATE } from '../config/constants';
@@ -15,6 +15,18 @@ import { InvoiceStatus, SubscriptionStatus, Subscription } from '../types';
 export class SubscriptionScheduler {
   private intervalId: NodeJS.Timeout | null = null;
   private isProcessing = false;
+
+  constructor(
+    private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
+    private planRepo: PlanRepository = planRepository,
+    private invoiceRepo: InvoiceRepository = invoiceRepository,
+    private equipmentRepo: EquipmentRepository = equipmentRepository,
+    private userRepo: UserRepository = userRepository,
+    private nextcloudSvc: NextcloudService = nextcloudService,
+    private paypalSvc: PaypalService = paypalService,
+    private notifSvc: NotificationService = notificationService,
+    private invoiceSvc: InvoiceService = invoiceService,
+  ) {}
 
   start(intervalMs = 15000): void {
     if (this.intervalId) return;
@@ -56,13 +68,13 @@ export class SubscriptionScheduler {
     
     // 1. Process due invoice email reminders with 3-day rate limiting to prevent spam
     try {
-      await invoiceService.checkAndSendDueInvoiceNotifications(now);
+      await this.invoiceSvc.checkAndSendDueInvoiceNotifications(now);
     } catch (err) {
       logger.error('Error checking and sending due invoice email notifications', { err });
     }
 
     // 2. Find active/expiring subscriptions where renewal date is in the past
-    const subsToRenew = await subscriptionRepository.findPendingRenewal(now);
+    const subsToRenew = await this.subscriptionRepo.findPendingRenewal(now);
 
     if (subsToRenew.length === 0) {
       return;
@@ -85,18 +97,18 @@ export class SubscriptionScheduler {
     // Handle subscriptions that were set to EXPIRING (cancelled by user at end of billing cycle)
     if (sub.status === SubscriptionStatus.EXPIRING) {
       logger.info(`Subscription ${sub.id} reached end of paid billing period (${sub.renewal_date}). Finalizing cancellation.`);
-      await subscriptionRepository.updateStatus(sub.id, SubscriptionStatus.CANCELLED);
+      await this.subscriptionRepo.updateStatus(sub.id, SubscriptionStatus.CANCELLED);
 
       // Clean up Nextcloud accounts for active slots
-      const slots = await equipmentRepository.findBySubscription(sub.id);
+      const slots = await this.equipmentRepo.findBySubscription(sub.id);
       for (const slot of slots) {
         if (slot.nextcloud_username) {
           try {
-            await nextcloudService.deleteUser(slot.nextcloud_username);
+            await this.nextcloudSvc.deleteUser(slot.nextcloud_username);
           } catch (err) {
             logger.error(`Failed to delete Nextcloud user ${slot.nextcloud_username} during scheduler cancellation`, { err });
           }
-          await equipmentRepository.update(slot.id, {
+          await this.equipmentRepo.update(slot.id, {
             status: 'PENDING_ACTIVATION',
             device_name: null,
             device_serial: null,
@@ -108,7 +120,7 @@ export class SubscriptionScheduler {
         }
       }
 
-      await notificationService.createInAppNotification({
+      await this.notifSvc.createInAppNotification({
         userId: sub.client_id,
         title: 'Subscription Cancelled',
         message: `Your subscription to ${sub.service_name} has reached the end of its billing cycle and is now inactive.`,
@@ -119,7 +131,7 @@ export class SubscriptionScheduler {
       return;
     }
 
-    const planDetails = await planRepository.findById(sub.plan);
+    const planDetails = await this.planRepo.findById(sub.plan);
     if (!planDetails) {
       logger.error(`Plan ${sub.plan} not found for subscription ${sub.id}`);
       return;
@@ -141,15 +153,15 @@ export class SubscriptionScheduler {
         logger.info(`[PayPal Mock] Simulating renewal for ${sub.paypal_order_id}, next renewal: ${newRenewalDate.toISOString()}`);
       } else {
         // Real PayPal Subscription: fetch latest billing status
-        const payPalSub = await paypalService.getSubscription(sub.paypal_order_id);
+        const payPalSub = await this.paypalSvc.getSubscription(sub.paypal_order_id);
         
         if (payPalSub.status !== 'ACTIVE' && payPalSub.status !== 'APPROVED') {
           // Subscription was cancelled or suspended in PayPal
           logger.warn(`PayPal subscription ${sub.paypal_order_id} is no longer active (status: ${payPalSub.status}). Cancelling locally.`);
-          await subscriptionRepository.updateStatus(sub.id, SubscriptionStatus.CANCELLED);
+          await this.subscriptionRepo.updateStatus(sub.id, SubscriptionStatus.CANCELLED);
           isActive = false;
           
-          await notificationService.createInAppNotification({
+          await this.notifSvc.createInAppNotification({
             userId: sub.client_id,
             title: 'Subscription Cancelled',
             message: `Your subscription to ${sub.service_name} has been cancelled because of payment failure or cancellation on PayPal.`,
@@ -180,7 +192,7 @@ export class SubscriptionScheduler {
 
     if (isActive) {
       // 1. Update subscription renewal date in database
-      await subscriptionRepository.updateRenewal(sub.id, newRenewalDate, SubscriptionStatus.ACTIVE);
+      await this.subscriptionRepo.updateRenewal(sub.id, newRenewalDate, SubscriptionStatus.ACTIVE);
 
       // 2. Create paid invoice record for the new cycle
       const price = planDetails.price;
@@ -194,11 +206,11 @@ export class SubscriptionScheduler {
       while (true) {
         const rand = String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
         invoiceNumber = `INV-${new Date().getFullYear()}-${rand}`;
-        const existing = await invoiceRepository.findByInvoiceNumber(invoiceNumber);
+        const existing = await this.invoiceRepo.findByInvoiceNumber(invoiceNumber);
         if (!existing) break;
       }
 
-      const createdInvoice = await invoiceRepository.create({
+      const createdInvoice = await this.invoiceRepo.create({
         invoice_number: invoiceNumber,
         client_id: sub.client_id,
         amount: subtotal,
@@ -210,7 +222,7 @@ export class SubscriptionScheduler {
       });
 
       // 3. Send notification to the user
-      await notificationService.createInAppNotification({
+      await this.notifSvc.createInAppNotification({
         userId: sub.client_id,
         title: 'Subscription Renewed',
         message: `Your subscription to ${sub.service_name} has been renewed successfully. Next billing date: ${newRenewalDate.toLocaleDateString()}.`,
@@ -221,7 +233,7 @@ export class SubscriptionScheduler {
 
       // 4. Dispatch billing email notification to the client
       try {
-        const clientUser = await userRepository.findById(sub.client_id);
+        const clientUser = await this.userRepo.findById(sub.client_id);
         if (clientUser && clientUser.email) {
           await sendInvoiceDueEmail(clientUser.email, clientUser.name, createdInvoice, clientUser.language || 'en');
         }

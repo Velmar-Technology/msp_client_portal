@@ -1,18 +1,18 @@
-import { subscriptionRepository } from '../repositories/SubscriptionRepository';
-import { userRepository } from '../repositories/UserRepository';
-import { planRepository } from '../repositories/PlanRepository';
-import { invoiceRepository } from '../repositories/InvoiceRepository';
-import { equipmentRepository } from '../repositories/EquipmentRepository';
-import { nextcloudService } from './NextcloudService';
+import { subscriptionRepository, SubscriptionRepository } from '../repositories/SubscriptionRepository';
+import { userRepository, UserRepository } from '../repositories/UserRepository';
+import { planRepository, PlanRepository } from '../repositories/PlanRepository';
+import { invoiceRepository, InvoiceRepository } from '../repositories/InvoiceRepository';
+import { equipmentRepository, EquipmentRepository } from '../repositories/EquipmentRepository';
+import { nextcloudService, NextcloudService } from './NextcloudService';
 import { AppError } from '../utils/AppError';
 import { logger } from '../utils/logger';
 import { TAX_RATE } from '../config/constants';
 import { Subscription, SubscriptionPlan, SubscriptionStatus, InvoiceStatus, UserRole } from '../types';
 import { CreateSubscriptionInput, UpdateSubscriptionInput, SendQuoteInput } from '../dtos/subscription.dto';
-import { paypalService } from './PaypalService';
+import { paypalService, PaypalService } from './PaypalService';
 import { env } from '../config/env';
-import { notificationService } from './NotificationService';
-import { subscriptionQuotationService } from './SubscriptionQuotationService';
+import { notificationService, NotificationService } from './NotificationService';
+import { subscriptionQuotationService, SubscriptionQuotationService } from './SubscriptionQuotationService';
 
 function getLocalizedValue(val: any): string {
   if (!val) return '';
@@ -25,8 +25,20 @@ function getLocalizedValue(val: any): string {
 }
 
 export class SubscriptionService {
+  constructor(
+    private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
+    private userRepo: UserRepository = userRepository,
+    private planRepo: PlanRepository = planRepository,
+    private invoiceRepo: InvoiceRepository = invoiceRepository,
+    private equipmentRepo: EquipmentRepository = equipmentRepository,
+    private nextcloudSvc: NextcloudService = nextcloudService,
+    private paypalSvc: PaypalService = paypalService,
+    private notifSvc: NotificationService = notificationService,
+    private quotationSvc: SubscriptionQuotationService = subscriptionQuotationService,
+  ) {}
+
   async getClientTenantId(clientId: string): Promise<string> {
-    const clientUser = await userRepository.findById(clientId);
+    const clientUser = await this.userRepo.findById(clientId);
     if (!clientUser) {
       throw AppError.notFound('Client user not found');
     }
@@ -34,18 +46,18 @@ export class SubscriptionService {
   }
 
   async getClientSubscriptions(tenantId: string): Promise<Subscription[]> {
-    return subscriptionRepository.findByTenant(tenantId);
+    return this.subscriptionRepo.findByTenant(tenantId);
   }
 
   async getSubscriptionById(id: string, tenantId: string): Promise<Subscription> {
-    const sub = await subscriptionRepository.findById(id);
+    const sub = await this.subscriptionRepo.findById(id);
     if (!sub) throw AppError.notFound('Subscription not found');
     if (sub.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
     return sub;
   }
 
   async createPaypalOrderForSubscription(data: { plan: string; equipmentCount: number; billingCycle?: 'monthly' | 'annual'; currentSubscriptionId?: string }): Promise<{ orderId: string }> {
-    const planDetails = await planRepository.findById(data.plan);
+    const planDetails = await this.planRepo.findById(data.plan);
     if (!planDetails) {
       throw AppError.notFound('Plan not found');
     }
@@ -58,7 +70,7 @@ export class SubscriptionService {
     let description = '';
 
     if (data.currentSubscriptionId) {
-      const existingSub = await subscriptionRepository.findById(data.currentSubscriptionId);
+      const existingSub = await this.subscriptionRepo.findById(data.currentSubscriptionId);
       if (!existingSub) throw AppError.notFound('Subscription not found');
 
       const additionalCount = equipmentCount - existingSub.equipment_count;
@@ -78,13 +90,13 @@ export class SubscriptionService {
     }
 
     const referenceId = `SUB-${planDetails.id}-${Date.now()}`;
-    const order = await paypalService.createOrderForAmount(total, description, referenceId);
+    const order = await this.paypalSvc.createOrderForAmount(total, description, referenceId);
 
     return { orderId: order.id };
   }
 
   async createPaypalSubscription(data: { plan: string; equipmentCount: number; billingCycle?: 'monthly' | 'annual' }): Promise<{ subscriptionId: string; approveUrl: string }> {
-    const planDetails = await planRepository.findById(data.plan);
+    const planDetails = await this.planRepo.findById(data.plan);
     if (!planDetails) {
       throw AppError.notFound('Plan not found');
     }
@@ -93,7 +105,7 @@ export class SubscriptionService {
     const equipmentCount = data.equipmentCount ?? 1;
 
     // 1. Get or create the PayPal Catalog Product
-    await paypalService.createProduct(
+    await this.paypalSvc.createProduct(
       'MSP Helpdesk Support Service',
       'Premium technical support and device slots monitoring service'
     );
@@ -111,7 +123,7 @@ export class SubscriptionService {
       const planName = `${getLocalizedValue(planDetails.name)} Plan - ${billingCycle === 'annual' ? 'Annual' : 'Monthly'}`;
       const planDesc = `${getLocalizedValue(planDetails.description) || 'Recurring subscription plan'}`;
 
-      paypalPlanId = await paypalService.createPlan(
+      paypalPlanId = await this.paypalSvc.createPlan(
         'MSP-HELPDESK-SUPPORT',
         planName,
         planDesc,
@@ -121,9 +133,9 @@ export class SubscriptionService {
 
       // Cache the PayPal Plan ID in our database
       if (billingCycle === 'annual') {
-        await planRepository.update(planDetails.id, { paypal_plan_id_annual: paypalPlanId });
+        await this.planRepo.update(planDetails.id, { paypal_plan_id_annual: paypalPlanId });
       } else {
-        await planRepository.update(planDetails.id, { paypal_plan_id_monthly: paypalPlanId });
+        await this.planRepo.update(planDetails.id, { paypal_plan_id_monthly: paypalPlanId });
       }
     }
 
@@ -131,7 +143,7 @@ export class SubscriptionService {
     const returnUrl = `${env.CORS_ORIGIN}/plans?success=true`;
     const cancelUrl = `${env.CORS_ORIGIN}/plans?cancel=true`;
 
-    const paypalSubscription = await paypalService.createSubscription(
+    const paypalSubscription = await this.paypalSvc.createSubscription(
       paypalPlanId!,
       equipmentCount,
       returnUrl,
@@ -145,21 +157,21 @@ export class SubscriptionService {
   }
 
   async createSubscription(data: CreateSubscriptionInput, clientId: string, tenantId: string, byAdmin = false): Promise<Subscription> {
-    const clientUser = await userRepository.findById(clientId);
+    const clientUser = await this.userRepo.findById(clientId);
     if (!clientUser) throw AppError.notFound('Client user not found');
     if (clientUser.tenant_id !== tenantId) throw AppError.forbidden('Client does not belong to this tenant');
     if (clientUser.role !== 'CLIENT') throw AppError.badRequest('Target user must have CLIENT role');
 
     // Idempotency: Check if this PayPal order was already processed
     if (data.paypalOrderId) {
-      const existingSub = await subscriptionRepository.findByPaypalOrderId(data.paypalOrderId);
+      const existingSub = await this.subscriptionRepo.findByPaypalOrderId(data.paypalOrderId);
       if (existingSub) {
         return existingSub;
       }
     }
 
     // Double plan check: Ensure client doesn't buy the same plan twice
-    const existingSubs = await subscriptionRepository.findByClient(clientId, tenantId);
+    const existingSubs = await this.subscriptionRepo.findByClient(clientId, tenantId);
     const hasActivePlan = existingSubs.some((sub) => sub.plan === data.plan && sub.status === 'ACTIVE');
     if (hasActivePlan) {
       throw AppError.badRequest(`You already have an active subscription for the ${data.plan} plan. Please modify your existing subscription instead.`);
@@ -183,7 +195,7 @@ export class SubscriptionService {
 
       if (data.paypalOrderId.startsWith('I-') || data.paypalOrderId.startsWith('MOCK-SUB-')) {
         // PayPal Subscription Flow
-        const subDetails = await paypalService.getSubscription(data.paypalOrderId);
+        const subDetails = await this.paypalSvc.getSubscription(data.paypalOrderId);
         if (subDetails.status !== 'ACTIVE' && subDetails.status !== 'APPROVED') {
           throw AppError.badRequest(`PayPal subscription is not active (status: ${subDetails.status})`);
         }
@@ -192,9 +204,9 @@ export class SubscriptionService {
         }
       } else {
         // Legacy checkout/order payment verification
-        const order = await paypalService.getOrder(data.paypalOrderId);
+        const order = await this.paypalSvc.getOrder(data.paypalOrderId);
         if (order.status === 'APPROVED') {
-          const capture = await paypalService.captureOrder(data.paypalOrderId);
+          const capture = await this.paypalSvc.captureOrder(data.paypalOrderId);
           order.status = capture.status;
         }
 
@@ -202,7 +214,7 @@ export class SubscriptionService {
           throw AppError.badRequest('PayPal payment was not completed');
         }
 
-        const planDetails = await planRepository.findById(data.plan);
+        const planDetails = await this.planRepo.findById(data.plan);
         if (!planDetails) {
           throw AppError.notFound('Plan not found');
         }
@@ -228,7 +240,7 @@ export class SubscriptionService {
       formattedServiceName = `${formattedServiceName}${suffix}`;
     }
 
-    const subscription = await subscriptionRepository.create({
+    const subscription = await this.subscriptionRepo.create({
       client_id: clientId,
       service_name: formattedServiceName,
       plan: data.plan as SubscriptionPlan,
@@ -241,7 +253,7 @@ export class SubscriptionService {
 
     // Initialize equipment slots for the subscription
     for (let i = 0; i < data.equipmentCount; i++) {
-      await equipmentRepository.create({
+      await this.equipmentRepo.create({
         subscription_id: subscription.id,
         slot_index: i,
         status: 'PENDING_ACTIVATION',
@@ -250,7 +262,7 @@ export class SubscriptionService {
     }
 
     // Create Invoice record (PENDING for admin/bank transfer, PAID for completed card checkout)
-    const planDetails = await planRepository.findById(data.plan);
+    const planDetails = await this.planRepo.findById(data.plan);
     if (planDetails) {
       const price = planDetails.price;
       const equipmentCount = data.equipmentCount ?? 1;
@@ -263,7 +275,7 @@ export class SubscriptionService {
       while (true) {
         const rand = String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
         invoiceNumber = `INV-${new Date().getFullYear()}-${rand}`;
-        const existing = await invoiceRepository.findByInvoiceNumber(invoiceNumber);
+        const existing = await this.invoiceRepo.findByInvoiceNumber(invoiceNumber);
         if (!existing) break;
       }
 
@@ -274,7 +286,7 @@ export class SubscriptionService {
 
       const invoiceStatus = (byAdmin || isBankTransfer) ? InvoiceStatus.PENDING : InvoiceStatus.PAID;
 
-      await invoiceRepository.create({
+      await this.invoiceRepo.create({
         invoice_number: invoiceNumber,
         client_id: clientId,
         amount: subtotal,
@@ -292,7 +304,7 @@ export class SubscriptionService {
       ? `Your bank transfer request for ${subscription.service_name} was received and an invoice is awaiting payment confirmation.`
       : `Your subscription to ${subscription.service_name} is now active.`;
 
-    await notificationService.createInAppNotification({
+    await this.notifSvc.createInAppNotification({
       userId: clientId,
       title: notifTitle,
       message: notifMsg,
@@ -306,8 +318,8 @@ export class SubscriptionService {
     // Notify all Admin users about subscription activation or bank transfer intent
     if (!byAdmin) {
       try {
-        const adminUsers = await userRepository.findByRole(UserRole.ADMIN);
-        const clientUser = await userRepository.findById(clientId);
+        const adminUsers = await this.userRepo.findByRole(UserRole.ADMIN);
+        const clientUser = await this.userRepo.findById(clientId);
         const clientName = clientUser?.name || 'A customer';
 
         const adminNotifTitle = isBankTransfer ? 'New Bank Transfer Intent' : 'Subscription Payment Received';
@@ -316,7 +328,7 @@ export class SubscriptionService {
           : `${clientName} completed payment for subscription ${subscription.service_name}.`;
 
         for (const admin of adminUsers) {
-          await notificationService.createInAppNotification({
+          await this.notifSvc.createInAppNotification({
             userId: admin.id,
             title: adminNotifTitle,
             message: adminNotifMsg,
@@ -344,16 +356,16 @@ export class SubscriptionService {
       if (!byAdmin && newCount !== sub.equipment_count) {
         if (sub.paypal_order_id && (sub.paypal_order_id.startsWith('I-') || sub.paypal_order_id.startsWith('MOCK-SUB-'))) {
           // PayPal Subscription quantity update (supports upgrades and downgrades)
-          await paypalService.updateSubscriptionQuantity(sub.paypal_order_id, newCount);
+          await this.paypalSvc.updateSubscriptionQuantity(sub.paypal_order_id, newCount);
         } else if (newCount > sub.equipment_count) {
           // Legacy check for one-time order upgrades
           if (!data.paypalOrderId) {
             throw AppError.badRequest('PayPal order ID is required to add more devices');
           }
 
-          const order = await paypalService.getOrder(data.paypalOrderId);
+          const order = await this.paypalSvc.getOrder(data.paypalOrderId);
           if (order.status === 'APPROVED') {
-            const capture = await paypalService.captureOrder(data.paypalOrderId);
+            const capture = await this.paypalSvc.captureOrder(data.paypalOrderId);
             order.status = capture.status;
           }
 
@@ -361,7 +373,7 @@ export class SubscriptionService {
             throw AppError.badRequest('PayPal payment for device upgrade was not completed');
           }
 
-          const planDetails = await planRepository.findById(newPlan);
+          const planDetails = await this.planRepo.findById(newPlan);
           if (!planDetails) throw AppError.notFound('Plan not found');
 
           const billingCycle = (sub.service_name.includes('Annual') || sub.service_name.includes('Anual')) ? 'annual' : 'monthly';
@@ -381,15 +393,15 @@ export class SubscriptionService {
 
       if (newCount < sub.equipment_count) {
         // Clean up excess slots if downgraded
-        const slots = await equipmentRepository.findBySubscription(sub.id);
+        const slots = await this.equipmentRepo.findBySubscription(sub.id);
         for (const slot of slots) {
           if (slot.slot_index >= newCount && slot.nextcloud_username) {
             try {
-              await nextcloudService.deleteUser(slot.nextcloud_username);
+              await this.nextcloudSvc.deleteUser(slot.nextcloud_username);
             } catch (err) {
               logger.error(`Failed to delete Nextcloud user ${slot.nextcloud_username} during downgrade`, { err });
             }
-            await equipmentRepository.update(slot.id, {
+            await this.equipmentRepo.update(slot.id, {
               status: 'PENDING_ACTIVATION',
               device_name: null,
               device_serial: null,
@@ -402,7 +414,7 @@ export class SubscriptionService {
         }
       }
 
-      const res = await subscriptionRepository.updatePlan(sub.id, newPlan as SubscriptionPlan, newCount);
+      const res = await this.subscriptionRepo.updatePlan(sub.id, newPlan as SubscriptionPlan, newCount);
       if (!res) throw AppError.internal('Failed to update subscription');
       updated = res;
     }
@@ -417,15 +429,15 @@ export class SubscriptionService {
           targetStatus = SubscriptionStatus.EXPIRING;
         } else {
           // If immediately transitioning to CANCELLED, clean up all equipment Nextcloud accounts
-          const slots = await equipmentRepository.findBySubscription(sub.id);
+          const slots = await this.equipmentRepo.findBySubscription(sub.id);
           for (const slot of slots) {
             if (slot.nextcloud_username) {
               try {
-                await nextcloudService.deleteUser(slot.nextcloud_username);
+                await this.nextcloudSvc.deleteUser(slot.nextcloud_username);
               } catch (err) {
                 logger.error(`Failed to delete Nextcloud user ${slot.nextcloud_username} during cancellation`, { err });
               }
-              await equipmentRepository.update(slot.id, {
+              await this.equipmentRepo.update(slot.id, {
                 status: 'PENDING_ACTIVATION',
                 device_name: null,
                 device_serial: null,
@@ -441,14 +453,14 @@ export class SubscriptionService {
         // Cancel PayPal recurring billing if linked
         if (sub.paypal_order_id && (sub.paypal_order_id.startsWith('I-') || sub.paypal_order_id.startsWith('MOCK-SUB-'))) {
           try {
-            await paypalService.cancelSubscription(sub.paypal_order_id, 'Cancelled by user request at end of billing period');
+            await this.paypalSvc.cancelSubscription(sub.paypal_order_id, 'Cancelled by user request at end of billing period');
           } catch (err) {
             logger.error(`Failed to cancel PayPal subscription ${sub.paypal_order_id}:`, { err });
           }
         }
       }
 
-      const res = await subscriptionRepository.updateStatus(sub.id, targetStatus);
+      const res = await this.subscriptionRepo.updateStatus(sub.id, targetStatus);
       if (!res) throw AppError.internal('Failed to update subscription status');
       updated = res;
     }
@@ -457,7 +469,7 @@ export class SubscriptionService {
   }
 
   async sendQuotation(data: SendQuoteInput, senderUserId: string, senderTenantId: string, role: string): Promise<void> {
-    return subscriptionQuotationService.sendQuotation(data, senderUserId, senderTenantId, role);
+    return this.quotationSvc.sendQuotation(data, senderUserId, senderTenantId, role);
   }
 }
 

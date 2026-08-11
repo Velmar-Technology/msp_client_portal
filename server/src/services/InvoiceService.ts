@@ -3,7 +3,7 @@ import { subscriptionRepository, SubscriptionRepository } from '../repositories/
 import { expenseRepository, ExpenseRepository } from '../repositories/ExpenseRepository';
 import { AppError } from '../utils/AppError';
 import { Invoice, UserRole, InvoiceStatus, SubscriptionStatus } from '../types';
-import { paypalService } from './PaypalService';
+import { paypalService, PaypalService } from './PaypalService';
 import { logger } from '../utils/logger';
 import { invoicePdfService, InvoicePdfService } from './InvoicePdfService';
 import { invoiceNotificationService, InvoiceNotificationService } from './InvoiceNotificationService';
@@ -14,6 +14,7 @@ export class InvoiceService {
     private invoiceRepo: InvoiceRepository = invoiceRepository,
     private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
     private expenseRepo: ExpenseRepository = expenseRepository,
+    private paypalSvc: PaypalService = paypalService,
     private pdfService: InvoicePdfService = invoicePdfService,
     private notifService: InvoiceNotificationService = invoiceNotificationService,
     private accessPolicy: InvoiceAccessPolicy = invoiceAccessPolicy,
@@ -90,7 +91,7 @@ export class InvoiceService {
     if (invoice.status === InvoiceStatus.PAID) {
       throw AppError.badRequest('Invoice is already paid');
     }
-    const order = await paypalService.createOrder(invoice);
+    const order = await this.paypalSvc.createOrder(invoice);
     return { orderId: order.id };
   }
 
@@ -100,7 +101,7 @@ export class InvoiceService {
       return invoice;
     }
 
-    const captureResult = await paypalService.captureOrder(paypalOrderId);
+    const captureResult = await this.paypalSvc.captureOrder(paypalOrderId);
     if (captureResult.status !== 'COMPLETED') {
       throw AppError.badRequest('PayPal payment was not completed');
     }

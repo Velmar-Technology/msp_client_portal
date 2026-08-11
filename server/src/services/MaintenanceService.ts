@@ -1,13 +1,19 @@
-import { maintenanceRepository } from '../repositories/MaintenanceRepository';
-import { equipmentRepository } from '../repositories/EquipmentRepository';
-import { subscriptionRepository } from '../repositories/SubscriptionRepository';
+import { maintenanceRepository, MaintenanceRepository } from '../repositories/MaintenanceRepository';
+import { equipmentRepository, EquipmentRepository } from '../repositories/EquipmentRepository';
+import { subscriptionRepository, SubscriptionRepository } from '../repositories/SubscriptionRepository';
 import { AppError } from '../utils/AppError';
 import { logger } from '../utils/logger';
 import { DeviceMaintenance, UserRole, MaintenanceStatus, MaintenanceType } from '../types';
 import { CreateMaintenanceInput, UpdateMaintenanceInput, MaintenanceQueryInput } from '../dtos/maintenance.dto';
-import { notificationService } from './NotificationService';
+import { notificationService, NotificationService } from './NotificationService';
 
 export class MaintenanceService {
+  constructor(
+    private maintenanceRepo: MaintenanceRepository = maintenanceRepository,
+    private equipmentRepo: EquipmentRepository = equipmentRepository,
+    private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
+    private notifSvc: NotificationService = notificationService,
+  ) {}
   async getMaintenances(
     tenantId: string,
     user: { id: string; role: UserRole },
@@ -55,7 +61,7 @@ export class MaintenanceService {
     }
 
     const effectiveTenantId = user.role === UserRole.CLIENT ? tenantId : undefined;
-    const items = await maintenanceRepository.findByTenant(effectiveTenantId, filters);
+    const items = await this.maintenanceRepo.findByTenant(effectiveTenantId, filters);
 
     // Auto-mark overdue statuses if scheduled date has passed and status is still SCHEDULED
     const now = new Date();
@@ -71,7 +77,7 @@ export class MaintenanceService {
 
   async getMaintenanceById(id: string, tenantId: string, user: { id: string; role: UserRole }): Promise<DeviceMaintenance> {
     const effectiveTenantId = user.role === UserRole.CLIENT ? tenantId : undefined;
-    const item = await maintenanceRepository.findByIdWithDetails(id, effectiveTenantId);
+    const item = await this.maintenanceRepo.findByIdWithDetails(id, effectiveTenantId);
     if (!item) {
       throw AppError.notFound('Maintenance schedule not found');
     }
@@ -86,7 +92,7 @@ export class MaintenanceService {
     user: { id: string; role: UserRole },
     data: CreateMaintenanceInput
   ): Promise<DeviceMaintenance> {
-    const equipment = await equipmentRepository.findById(data.equipmentId);
+    const equipment = await this.equipmentRepo.findById(data.equipmentId);
     if (!equipment) {
       throw AppError.notFound('Device / Equipment slot not found');
     }
@@ -94,7 +100,7 @@ export class MaintenanceService {
       throw AppError.forbidden('Access denied');
     }
 
-    const subscription = await subscriptionRepository.findById(equipment.subscription_id);
+    const subscription = await this.subscriptionRepo.findById(equipment.subscription_id);
     if (!subscription) {
       throw AppError.notFound('Associated subscription not found');
     }
@@ -123,7 +129,7 @@ export class MaintenanceService {
     const defaultTitle = data.title || `Routine Device Maintenance - ${deviceDisplayName}`;
     const targetTenantId = user.role === UserRole.CLIENT ? tenantId : equipment.tenant_id;
 
-    const newMaintenance = await maintenanceRepository.create({
+    const newMaintenance = await this.maintenanceRepo.create({
       equipment_id: equipment.id,
       subscription_id: subscription.id,
       client_id: subscription.client_id,
@@ -139,7 +145,7 @@ export class MaintenanceService {
 
     // Send in-app notification to client if scheduled by admin/tech
     if (user.role !== UserRole.CLIENT) {
-      await notificationService.createInAppNotification({
+      await this.notifSvc.createInAppNotification({
         userId: subscription.client_id,
         tenantId: targetTenantId,
         title: 'Device Maintenance Scheduled',
@@ -148,7 +154,7 @@ export class MaintenanceService {
       }).catch((err) => logger.error('Failed to send maintenance notification:', { err }));
     }
 
-    return (await maintenanceRepository.findByIdWithDetails(newMaintenance.id, targetTenantId)) || newMaintenance;
+    return (await this.maintenanceRepo.findByIdWithDetails(newMaintenance.id, targetTenantId)) || newMaintenance;
   }
 
   async updateMaintenance(
@@ -158,7 +164,7 @@ export class MaintenanceService {
     data: UpdateMaintenanceInput
   ): Promise<DeviceMaintenance> {
     const effectiveTenantId = user.role === UserRole.CLIENT ? tenantId : undefined;
-    const existing = await maintenanceRepository.findByIdWithDetails(id, effectiveTenantId);
+    const existing = await this.maintenanceRepo.findByIdWithDetails(id, effectiveTenantId);
     if (!existing) {
       throw AppError.notFound('Maintenance schedule not found');
     }
@@ -186,12 +192,12 @@ export class MaintenanceService {
       updatePayload.notes = data.notes;
     }
 
-    await maintenanceRepository.update(id, updatePayload);
-    const updated = await maintenanceRepository.findByIdWithDetails(id, effectiveTenantId);
+    await this.maintenanceRepo.update(id, updatePayload);
+    const updated = await this.maintenanceRepo.findByIdWithDetails(id, effectiveTenantId);
 
     // If status changed to COMPLETED, optionally notify client
     if (data.status === MaintenanceStatus.COMPLETED && existing.status !== MaintenanceStatus.COMPLETED) {
-      await notificationService.createInAppNotification({
+      await this.notifSvc.createInAppNotification({
         userId: existing.client_id,
         tenantId: existing.tenant_id,
         title: 'Device Maintenance Completed',
@@ -209,12 +215,12 @@ export class MaintenanceService {
     }
 
     const effectiveTenantId = (user.role as UserRole) === UserRole.CLIENT ? tenantId : undefined;
-    const existing = await maintenanceRepository.findByIdWithDetails(id, effectiveTenantId);
+    const existing = await this.maintenanceRepo.findByIdWithDetails(id, effectiveTenantId);
     if (!existing) {
       throw AppError.notFound('Maintenance schedule not found');
     }
 
-    const success = await maintenanceRepository.delete(id, effectiveTenantId);
+    const success = await this.maintenanceRepo.delete(id, effectiveTenantId);
     return { success };
   }
 }

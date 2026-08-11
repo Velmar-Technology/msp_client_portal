@@ -1,4 +1,4 @@
-import { userRepository } from '../repositories/UserRepository';
+import { userRepository, UserRepository } from '../repositories/UserRepository';
 import type { UserListFilters } from '../repositories/UserRepository';
 import { AppError } from '../utils/AppError';
 import { User, UserRole } from '../types';
@@ -20,8 +20,10 @@ export interface UserStats {
 }
 
 export class UserService {
+  constructor(private userRepo: UserRepository = userRepository) {}
+
   async getProfile(userId: string): Promise<Omit<User, 'password_hash'>> {
-    const user = await userRepository.findById(userId);
+    const user = await this.userRepo.findById(userId);
     if (!user) throw AppError.notFound('User not found');
     const { password_hash, ...profile } = user;
     return profile;
@@ -29,20 +31,20 @@ export class UserService {
 
   async updateProfile(userId: string, data: UpdateProfileInput): Promise<Omit<User, 'password_hash'>> {
     if (data.email) {
-      const existing = await userRepository.findByEmail(data.email);
+      const existing = await this.userRepo.findByEmail(data.email);
       if (existing && existing.id !== userId) {
         throw AppError.conflict('Email already in use');
       }
     }
 
-    const updated = await userRepository.updateProfile(userId, data);
+    const updated = await this.userRepo.updateProfile(userId, data);
     if (!updated) throw AppError.internal('Failed to update profile');
     const { password_hash, ...profile } = updated;
     return profile;
   }
 
   async changePassword(userId: string, data: ChangePasswordInput): Promise<void> {
-    const user = await userRepository.findById(userId);
+    const user = await this.userRepo.findById(userId);
     if (!user) throw AppError.notFound('User not found');
 
     const isValid = await comparePassword(data.currentPassword, user.password_hash);
@@ -51,16 +53,16 @@ export class UserService {
     }
 
     const hashed = await hashPassword(data.newPassword);
-    await userRepository.updatePassword(userId, hashed);
+    await this.userRepo.updatePassword(userId, hashed);
   }
 
   async getTechnicians(): Promise<Omit<User, 'password_hash'>[]> {
-    const techs = await userRepository.findByRole(UserRole.TECHNICIAN);
+    const techs = await this.userRepo.findByRole(UserRole.TECHNICIAN);
     return techs.map(({ password_hash, ...t }) => t);
   }
 
   async getClients(): Promise<Omit<User, 'password_hash'>[]> {
-    const clients = await userRepository.findAllClients();
+    const clients = await this.userRepo.findAllClients();
     return clients.map(({ password_hash, ...c }) => c);
   }
 
@@ -93,8 +95,8 @@ export class UserService {
     }
 
     const [usersData, total] = await Promise.all([
-      userRepository.findAllWithFilters(filters),
-      userRepository.countWithFilters(filters),
+      this.userRepo.findAllWithFilters(filters),
+      this.userRepo.countWithFilters(filters),
     ]);
 
     const totalPages = Math.ceil(total / limit);
@@ -116,10 +118,10 @@ export class UserService {
       throw AppError.forbidden('You cannot change your own role');
     }
 
-    const target = await userRepository.findById(targetUserId);
+    const target = await this.userRepo.findById(targetUserId);
     if (!target) throw AppError.notFound('User not found');
 
-    const updated = await userRepository.updateRole(targetUserId, newRole);
+    const updated = await this.userRepo.updateRole(targetUserId, newRole);
     if (!updated) throw AppError.internal('Failed to update user role');
 
     const { password_hash, ...user } = updated;
@@ -135,10 +137,10 @@ export class UserService {
       throw AppError.forbidden('You cannot change your own status');
     }
 
-    const target = await userRepository.findById(targetUserId);
+    const target = await this.userRepo.findById(targetUserId);
     if (!target) throw AppError.notFound('User not found');
 
-    const updated = await userRepository.updateStatus(targetUserId, isActive);
+    const updated = await this.userRepo.updateStatus(targetUserId, isActive);
     if (!updated) throw AppError.internal('Failed to update user status');
 
     const { password_hash, ...user } = updated;
@@ -154,7 +156,7 @@ export class UserService {
     if (validIds.length === 0) {
       return { updatedCount: 0 };
     }
-    const updatedCount = await userRepository.bulkUpdateStatus(validIds, isActive);
+    const updatedCount = await this.userRepo.bulkUpdateStatus(validIds, isActive);
     return { updatedCount };
   }
 
@@ -167,7 +169,7 @@ export class UserService {
     if (validIds.length === 0) {
       return { updatedCount: 0 };
     }
-    const updatedCount = await userRepository.bulkUpdateRole(validIds, newRole);
+    const updatedCount = await this.userRepo.bulkUpdateRole(validIds, newRole);
     return { updatedCount };
   }
 
@@ -176,10 +178,10 @@ export class UserService {
     targetUserId: string,
     newClientType: string
   ): Promise<Omit<User, 'password_hash'>> {
-    const target = await userRepository.findById(targetUserId);
+    const target = await this.userRepo.findById(targetUserId);
     if (!target) throw AppError.notFound('User not found');
 
-    const updated = await userRepository.updateClientType(targetUserId, newClientType);
+    const updated = await this.userRepo.updateClientType(targetUserId, newClientType);
     if (!updated) throw AppError.internal('Failed to update user client type');
 
     const { password_hash, ...user } = updated;
@@ -194,7 +196,7 @@ export class UserService {
     if (targetUserIds.length === 0) {
       return { updatedCount: 0 };
     }
-    const updatedCount = await userRepository.bulkUpdateClientType(targetUserIds, newClientType);
+    const updatedCount = await this.userRepo.bulkUpdateClientType(targetUserIds, newClientType);
     return { updatedCount };
   }
 
@@ -202,8 +204,8 @@ export class UserService {
 
   async getUserStats(): Promise<UserStats> {
     const [byRole, byStatus] = await Promise.all([
-      userRepository.countByRole(),
-      userRepository.countByStatus(),
+      this.userRepo.countByRole(),
+      this.userRepo.countByStatus(),
     ]);
 
     const total = Object.values(byRole).reduce((sum, count) => sum + count, 0);

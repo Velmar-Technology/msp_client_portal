@@ -1,9 +1,11 @@
-import { ticketService } from './TicketService';
+import { ticketService, TicketService } from './TicketService';
 import { logger } from '../utils/logger';
 
 export class EscalationScheduler {
   private intervalId: NodeJS.Timeout | null = null;
   private isProcessing = false;
+
+  constructor(private ticketSvc: TicketService = ticketService) {}
 
   start(intervalMs = 60000): void {
     if (this.intervalId) return;
@@ -37,7 +39,7 @@ export class EscalationScheduler {
   }
 
   async process(): Promise<void> {
-    const { escalated } = await ticketService.processPendingEscalations();
+    const { escalated } = await this.ticketSvc.processPendingEscalations();
     if (escalated > 0) {
       logger.info(`Escalation sweep escalated ${escalated} ticket(s)`);
     }

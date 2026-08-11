@@ -8,8 +8,8 @@ import {
 } from '../utils/emailService';
 import { sendTicketStatusWhatsApp } from '../utils/whatsappService';
 import { logger } from '../utils/logger';
-import { notificationRepository } from '../repositories/NotificationRepository';
-import { notificationPreferenceService } from './NotificationPreferenceService';
+import { notificationRepository, NotificationRepository } from '../repositories/NotificationRepository';
+import { notificationPreferenceService, NotificationPreferenceService } from './NotificationPreferenceService';
 
 /**
  * Notification Service — Orchestrates multi-channel and in-app notifications.
@@ -20,6 +20,11 @@ import { notificationPreferenceService } from './NotificationPreferenceService';
 export class NotificationService {
   // In-memory registry of active SSE connections: userId -> Response[]
   private sseClients = new Map<string, Response[]>();
+
+  constructor(
+    private notificationRepo: NotificationRepository = notificationRepository,
+    private preferenceSvc: NotificationPreferenceService = notificationPreferenceService,
+  ) {}
 
   /**
    * Register a user's SSE connection.
@@ -98,7 +103,7 @@ export class NotificationService {
     tenantId: string;
   }): Promise<Notification | null> {
     try {
-      const notification = await notificationRepository.create({
+      const notification = await this.notificationRepo.create({
         user_id: data.userId,
         title: data.title,
         message: data.message,
@@ -126,7 +131,7 @@ export class NotificationService {
     const eventType: NotificationEventType = 'TICKET_CREATED';
 
     // 1. Send Email Notification (if user allows it)
-    if (await notificationPreferenceService.shouldNotify(client.id, eventType, 'email')) {
+    if (await this.preferenceSvc.shouldNotify(client.id, eventType, 'email')) {
       try {
         await sendTicketCreatedEmail(client.email, client.name, ticket);
       } catch (error) {
@@ -135,7 +140,7 @@ export class NotificationService {
     }
 
     // 2. Send In-App Notification to the client (if user allows it)
-    if (await notificationPreferenceService.shouldNotify(client.id, eventType, 'in_app')) {
+    if (await this.preferenceSvc.shouldNotify(client.id, eventType, 'in_app')) {
       await this.createInAppNotification({
         userId: client.id,
         title: 'Ticket Created successfully',
@@ -150,7 +155,7 @@ export class NotificationService {
     // 3. Send In-App Notification to the assigned technician (if auto-assigned)
     if (ticket.assigned_tech_id) {
       const assignEventType: NotificationEventType = 'TICKET_ASSIGNED';
-      if (await notificationPreferenceService.shouldNotify(ticket.assigned_tech_id, assignEventType, 'in_app')) {
+      if (await this.preferenceSvc.shouldNotify(ticket.assigned_tech_id, assignEventType, 'in_app')) {
         await this.createInAppNotification({
           userId: ticket.assigned_tech_id,
           title: 'New Ticket Auto-Assigned',
@@ -181,7 +186,7 @@ export class NotificationService {
     const combinedNotes = notes ? `${defaultMsg}\n\nNotes: ${notes}` : defaultMsg;
 
     // 1. Email & WhatsApp (check preferences per channel)
-    if (await notificationPreferenceService.shouldNotify(client.id, eventType, 'email')) {
+    if (await this.preferenceSvc.shouldNotify(client.id, eventType, 'email')) {
       try {
         await sendTicketStatusChangedEmail(client.email, client.name, ticket, combinedNotes);
       } catch (error) {
@@ -193,7 +198,7 @@ export class NotificationService {
       }
     }
 
-    if (await notificationPreferenceService.shouldNotify(client.id, eventType, 'whatsapp')) {
+    if (await this.preferenceSvc.shouldNotify(client.id, eventType, 'whatsapp')) {
       try {
         await sendTicketStatusWhatsApp(client.email, ticket.id, ticket.status, combinedNotes);
       } catch (error) {
@@ -206,7 +211,7 @@ export class NotificationService {
     }
 
     // 2. In-App Notification to Client
-    if (await notificationPreferenceService.shouldNotify(client.id, eventType, 'in_app')) {
+    if (await this.preferenceSvc.shouldNotify(client.id, eventType, 'in_app')) {
       await this.createInAppNotification({
         userId: client.id,
         title: `Ticket Status: ${ticket.status}`,
@@ -221,7 +226,7 @@ export class NotificationService {
     // 3. In-App Notification to Assigned Technician (if ticket was cancelled by client)
     if (ticket.status === 'CANCELLED' && ticket.assigned_tech_id) {
       const cancelEventType: NotificationEventType = 'TICKET_CANCELLED';
-      if (await notificationPreferenceService.shouldNotify(ticket.assigned_tech_id, cancelEventType, 'in_app')) {
+      if (await this.preferenceSvc.shouldNotify(ticket.assigned_tech_id, cancelEventType, 'in_app')) {
         await this.createInAppNotification({
           userId: ticket.assigned_tech_id,
           title: 'Ticket Cancelled by Client',
@@ -242,7 +247,7 @@ export class NotificationService {
     const eventType: NotificationEventType = 'TICKET_ASSIGNED';
 
     // 1. Email
-    if (await notificationPreferenceService.shouldNotify(technician.id, eventType, 'email')) {
+    if (await this.preferenceSvc.shouldNotify(technician.id, eventType, 'email')) {
       try {
         await sendTicketAssignedEmail(technician.email, technician.name, ticket);
       } catch (error) {
@@ -251,7 +256,7 @@ export class NotificationService {
     }
 
     // 2. In-App Notification
-    if (await notificationPreferenceService.shouldNotify(technician.id, eventType, 'in_app')) {
+    if (await this.preferenceSvc.shouldNotify(technician.id, eventType, 'in_app')) {
       await this.createInAppNotification({
         userId: technician.id,
         title: 'Ticket Assigned',
@@ -271,7 +276,7 @@ export class NotificationService {
     const eventType: NotificationEventType = 'NEW_REPLY';
 
     // 1. Email
-    if (await notificationPreferenceService.shouldNotify(recipient.id, eventType, 'email')) {
+    if (await this.preferenceSvc.shouldNotify(recipient.id, eventType, 'email')) {
       try {
         await sendTicketResponseEmail(recipient.email, recipient.name, senderName, ticket, message);
       } catch (error) {
@@ -280,7 +285,7 @@ export class NotificationService {
     }
 
     // 2. In-App Notification
-    if (await notificationPreferenceService.shouldNotify(recipient.id, eventType, 'in_app')) {
+    if (await this.preferenceSvc.shouldNotify(recipient.id, eventType, 'in_app')) {
       const shortMessage = message.length > 80 ? message.substring(0, 80) + '...' : message;
       await this.createInAppNotification({
         userId: recipient.id,
@@ -295,23 +300,23 @@ export class NotificationService {
   }
 
   async getUserNotifications(userId: string): Promise<Notification[]> {
-    return notificationRepository.findByUser(userId);
+    return this.notificationRepo.findByUser(userId);
   }
 
   async getUnreadCount(userId: string): Promise<number> {
-    return notificationRepository.getUnreadCount(userId);
+    return this.notificationRepo.getUnreadCount(userId);
   }
 
   async markAsRead(id: string, userId: string): Promise<Notification | null> {
-    return notificationRepository.markAsRead(id, userId);
+    return this.notificationRepo.markAsRead(id, userId);
   }
 
   async markAllAsRead(userId: string): Promise<number> {
-    return notificationRepository.markAllAsRead(userId);
+    return this.notificationRepo.markAllAsRead(userId);
   }
 
   async clearAllForUser(userId: string): Promise<number> {
-    return notificationRepository.deleteAllForUser(userId);
+    return this.notificationRepo.deleteAllForUser(userId);
   }
 }
 

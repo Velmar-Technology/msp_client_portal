@@ -35,22 +35,22 @@ Clean Architecture mandates that source code dependencies must strictly point **
 
 2. **Use Cases / Service Layer (`server/src/services/`)**:
    - Houses application business logic: ticket quota validation, 1-hour SLA cancellation enforcement, technician round-robin allocation, subscription renewal calculations, and payment handling.
-   - *Compliance*: **VIOLATED**. High-level services directly instantiate low-level concrete singletons, and `AssignmentService` imports framework DB drivers directly.
+   - *Compliance*: **RESOLVED**. Every service exposes constructor injection with default singleton dependencies (e.g., `constructor(private userRepo: UserRepository = userRepository)`), so high-level use cases no longer hard-couple to low-level concrete singletons. `AssignmentService` and its strategies access the database exclusively through `RoundRobinRepository`, `TicketRepository`, and `UserRepository` — no service imports `../db` directly.
 
 3. **Interface Adapters (`server/src/controllers/`, `server/src/repositories/`, `client/src/services/`)**:
    - Controllers translate HTTP requests/responses into service inputs/outputs. Repositories translate Drizzle ORM queries into typed domain objects.
-   - *Compliance*: **VIOLATED**. Controllers bypass services to call repositories directly (`NotificationController`, `SubscriptionController`).
+   - *Compliance*: **RESOLVED**. No controller imports a repository or the `db` pool directly; all data access flows through the service layer.
 
 4. **Frameworks & Drivers (`server/src/routes/`, `server/src/db/`, `client/src/components/`)**:
    - Contains Express routes, database connection pool (`db.ts`), email/WhatsApp utility drivers, and React UI components.
-   - *Compliance*: **VIOLATED**. Framework details (Drizzle ORM, static bank dataset) leak into domain services and UI components.
+   - *Compliance*: **RESOLVED**. Framework-specific code (Drizzle ORM access, static bank account data) no longer leaks into domain services or UI feature components — it is confined to `server/src/db/`, repositories, and `client/src/constants/`.
 
 ### Architectural Boundary Leaks Identified
 
-* **Service-to-DB Boundary Leak**: `server/src/services/AssignmentService.ts` directly imports `db` and `roundRobinState` from `../db` and executes raw Drizzle ORM queries (`db.select()`, `db.insert()`), bypassing the Repository layer entirely and violating the Dependency Rule.
-* **Controller-to-Repository Leak**: `server/src/controllers/NotificationController.ts` imports `notificationRepository` directly to perform data fetching and state mutations (`findByUser`, `markAsRead`, `deleteAllForUser`), skipping the Service layer. Similarly, `server/src/controllers/SubscriptionController.ts` imports `userRepository` directly.
-* **Direct Concrete Service Coupling (DIP Violation)**: `InvoiceService.ts`, `TicketService.ts`, and `SubscriptionService.ts` depend directly on concrete singleton instances (`paypalService`, `notificationService`, `ticketRepository`) instead of injected abstractions or interfaces.
-* **UI Infrastructure Leak**: `client/src/components/checkout-sheet.tsx` defines static Dominican bank account details (`BANK_ACCOUNTS`) and manual line-item tax calculations inline within UI layout logic.
+* **Service-to-DB Boundary Leak** *(RESOLVED)*: `server/src/services/AssignmentService.ts` historically imported `db` and `roundRobinState` from `../db` and executed raw Drizzle ORM queries (`db.select()`, `db.insert()`), bypassing the Repository layer entirely and violating the Dependency Rule. Now encapsulated in `RoundRobinRepository` (`server/src/repositories/RoundRobinRepository.ts`); `AssignmentService` depends strictly on `IAssignmentStrategy` and repositories.
+* **Controller-to-Repository Leak** *(RESOLVED)*: `server/src/controllers/NotificationController.ts` historically imported `notificationRepository` directly to perform data fetching and state mutations (`findByUser`, `markAsRead`, `deleteAllForUser`), skipping the Service layer; `SubscriptionController.ts` imported `userRepository` directly. Both now route exclusively through `NotificationService` (`getUserNotifications`, `markAsRead`, `markAllAsRead`, `clearAllForUser`) and `SubscriptionService` (`getClientTenantId`).
+* **Direct Concrete Service Coupling (DIP Violation)** *(RESOLVED)*: `InvoiceService.ts`, `TicketService.ts`, and `SubscriptionService.ts` previously depended directly on concrete singleton instances (`paypalService`, `notificationService`, `ticketRepository`) instead of injected dependencies. All services in `server/src/services/` now accept dependencies via constructor injection with default singleton instances, e.g. `constructor(private paypalSvc: PaypalService = paypalService)`. No service method references a module-level singleton directly.
+* **UI Infrastructure Leak** *(RESOLVED)*: `client/src/components/checkout-sheet.tsx` historically defined static Dominican bank account details (`BANK_ACCOUNTS`) and manual line-item tax calculations inline within UI layout logic. Bank account dataset moved to `client/src/constants/bankAccounts.tsx`; checkout UI split into `OrderSummary` and `PaymentFields` (`client/src/components/checkout/`).
 
 ---
 
@@ -173,7 +173,9 @@ All prioritized refactoring targets identified in the initial audit have been re
 4. **`client/src/components/checkout-sheet.tsx` [COMPLETED]**:
    - Extracted static Dominican bank account dataset to `client/src/constants/bankAccounts.tsx`. Separated UI into `OrderSummary` and `PaymentFields`.
 5. **`server/src/services/TicketService.ts` [COMPLETED]**:
-   - Introduced `UserContext` parameter object to eliminate parameter bloat and extracted quota checks into `TicketQuotaService`.
+   - Introduced `UserContext` parameter object to eliminate parameter bloater and extracted quota checks into `TicketQuotaService`.
+6. **Full Service-Layer DI Sweep [COMPLETED]**:
+   - Standardized constructor injection (with default singleton instances) across every remaining service: `SubscriptionService`, `InvoiceService`, `MaintenanceService`, `EquipmentService`, `SubscriptionScheduler`, `EscalationScheduler`, `NotificationService`, `AuthService`, `UserService`, `PlanService`, `ExpenseService`, `NotificationPreferenceService`. No service method references a module-level singleton or the `db` pool directly.
 
 ---
 
@@ -230,27 +232,7 @@ All prioritized refactoring targets identified in the initial audit have been re
 
 ## ⛺ Boy Scout Refactoring Targets
 
-Prioritized cleanup targets that future agents must refactor before implementing new feature code:
-
-1. **`server/src/services/AssignmentService.ts` [CRITICAL]**:
-   - *Issue*: Direct DB import (`import { db, roundRobinState } from '../db'`) and raw ORM queries inside service layer.
-   - *Refactoring Target*: Create `RoundRobinRepository` in `server/src/repositories/RoundRobinRepository.ts` to encapsulate `round_robin_state` table queries. Inject or call `RoundRobinRepository` from `AssignmentService`.
-
-2. **`server/src/controllers/NotificationController.ts` & `SubscriptionController.ts` [HIGH]**:
-   - *Issue*: Controllers bypass Service layer to call repositories directly (`notificationRepository`, `userRepository`).
-   - *Refactoring Target*: Introduce service layer methods in `NotificationService` (`getUserNotifications`, `markAsRead`, `clearAll`) and move user lookups into `SubscriptionService`. Ensure controllers ONLY call services.
-
-3. **`server/src/services/InvoiceService.ts` & `SubscriptionService.ts` [HIGH]**:
-   - *Issue*: 500+ line god classes violating SRP, mixing domain rules with PDF generation, PayPal API, Nodemailer, and silent error swallowing (`try {} catch {}`).
-   - *Refactoring Target*: Extract `InvoicePdfService`, `BillingNotificationService`, and `PaypalPaymentHandler`. Replace silent catch blocks with explicit error logging or custom error boundaries.
-
-4. **`client/src/components/checkout-sheet.tsx` [HIGH]**:
-   - *Issue*: 14-prop parameter bloat on `CheckoutSheetProps`, inline static Dominican bank account dataset, inline tax calculations.
-   - *Refactoring Target*: Move static bank account definitions to `client/src/constants/bankAccounts.ts`. Refactor state into a Zustand store or custom hook (`useCheckoutFlow`). Group related props into a `CheckoutContext` object.
-
-5. **`server/src/services/TicketService.ts` [MEDIUM]**:
-   - *Issue*: Parameter bloat (methods taking 4-6 parameters) and dual responsibility in `enforceTicketLimit`.
-   - *Refactoring Target*: Combine `userId`, `userRole`, `tenantId` into a single typed context parameter: `type UserContext = { userId: string; role: UserRole; tenantId: string }`. Extract quota validation into a dedicated `TicketQuotaService`.
+All prioritized cleanup targets from the initial audit are **COMPLETED** (see **Refactoring Accomplishments** above). No outstanding refactoring targets remain for the layered monolith boundaries described in this document.
 
 ---
 
