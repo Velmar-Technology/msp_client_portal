@@ -7,12 +7,14 @@ const mocks = vi.hoisted(() => {
     ticketAssignTech: vi.fn(),
     countClientTicketsInCurrentMonth: vi.fn(),
     countEquipmentTicketsInCurrentMonth: vi.fn(),
+    findPendingEscalations: vi.fn(),
     eventCreate: vi.fn(),
     userFindById: vi.fn(),
     subFindByClient: vi.fn(),
     planFindById: vi.fn(),
     getNextTechnician: vi.fn(),
     onTicketCreated: vi.fn(),
+    responseFindByTicket: vi.fn(),
   };
 });
 
@@ -24,6 +26,7 @@ vi.mock('../repositories/TicketRepository', () => {
       assignTechnician: mocks.ticketAssignTech,
       countClientTicketsInCurrentMonth: mocks.countClientTicketsInCurrentMonth,
       countEquipmentTicketsInCurrentMonth: mocks.countEquipmentTicketsInCurrentMonth,
+      findPendingEscalations: mocks.findPendingEscalations,
     },
   };
 });
@@ -40,7 +43,7 @@ vi.mock('../repositories/TicketResponseRepository', () => {
   return {
     ticketResponseRepository: {
       create: vi.fn(),
-      findByTicket: vi.fn(),
+      findByTicket: mocks.responseFindByTicket,
     },
   };
 });
@@ -239,6 +242,146 @@ describe('TicketService', () => {
       const result = await ticketService.createTicket(createInput, clientId, tenantId);
 
       expect(result).toEqual(createdTicket);
+    });
+  });
+
+  describe('enforceEscalation', () => {
+    const buildTicket = (overrides: Partial<any> = {}) => ({
+      id: 'ticket-escal-1',
+      title: 'Server is down',
+      description: 'Main server stopped responding',
+      category: TicketCategory.SERVICE_OUTAGE,
+      priority: TicketPriority.CRITICAL,
+      status: TicketStatus.OPEN,
+      client_id: 'client-123',
+      assigned_tech_id: null,
+      equipment_id: null,
+      tenant_id: 'tenant-456',
+      created_at: new Date(Date.now() - 11 * 60 * 1000),
+      updated_at: new Date(),
+      ...overrides,
+    });
+
+    it('escalates an unworked CRITICAL ticket older than 10 minutes to a Tier 2 specialist', async () => {
+      mocks.ticketFindById.mockResolvedValue(buildTicket());
+      mocks.getNextTechnician.mockResolvedValue({ id: 'tech-tier2', name: 'Senior', specialty: 'Tier 2' });
+      mocks.ticketAssignTech.mockResolvedValue(buildTicket({ assigned_tech_id: 'tech-tier2' }));
+      mocks.ticketFindById.mockResolvedValueOnce(buildTicket()).mockResolvedValueOnce(
+        buildTicket({ assigned_tech_id: 'tech-tier2' })
+      );
+
+      const result = await ticketService.enforceEscalation('ticket-escal-1');
+
+      expect(mocks.getNextTechnician).toHaveBeenCalledWith(TicketCategory.SERVICE_OUTAGE, 'Tier 2', TicketPriority.CRITICAL);
+      expect(mocks.ticketAssignTech).toHaveBeenCalledWith('ticket-escal-1', 'tech-tier2');
+      expect(mocks.eventCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ notes: expect.stringContaining('Escalated to Tier 2') })
+      );
+      expect(result?.assigned_tech_id).toBe('tech-tier2');
+    });
+
+    it('does not escalate a ticket still within its priority SLA threshold', async () => {
+      mocks.ticketFindById.mockResolvedValue(
+        buildTicket({ created_at: new Date(Date.now() - 5 * 60 * 1000) })
+      );
+
+      const result = await ticketService.enforceEscalation('ticket-escal-1');
+
+      expect(result).toBeNull();
+      expect(mocks.getNextTechnician).not.toHaveBeenCalled();
+      expect(mocks.ticketAssignTech).not.toHaveBeenCalled();
+    });
+
+    it('skips escalation when the ticket is already assigned to a Tier 2 specialist', async () => {
+      mocks.ticketFindById.mockResolvedValue(buildTicket({ assigned_tech_id: 'tech-tier2' }));
+      mocks.userFindById.mockResolvedValue({ id: 'tech-tier2', name: 'Senior', specialty: 'Tier 2' });
+      mocks.responseFindByTicket.mockResolvedValue([]);
+
+      const result = await ticketService.enforceEscalation('ticket-escal-1');
+
+      expect(result).toBeNull();
+      expect(mocks.getNextTechnician).not.toHaveBeenCalled();
+    });
+
+    it('skips escalation when the ticket has been worked (has responses)', async () => {
+      mocks.ticketFindById.mockResolvedValue(buildTicket({ assigned_tech_id: 'tech-1' }));
+      mocks.userFindById.mockResolvedValue({ id: 'tech-1', name: 'Alice', specialty: null });
+      mocks.responseFindByTicket.mockResolvedValue([{ id: 'resp-1' }]);
+
+      const result = await ticketService.enforceEscalation('ticket-escal-1');
+
+      expect(result).toBeNull();
+      expect(mocks.getNextTechnician).not.toHaveBeenCalled();
+    });
+
+    it('does not escalate a non-OPEN ticket', async () => {
+      mocks.ticketFindById.mockResolvedValue(buildTicket({ status: TicketStatus.IN_PROGRESS }));
+
+      const result = await ticketService.enforceEscalation('ticket-escal-1');
+
+      expect(result).toBeNull();
+      expect(mocks.getNextTechnician).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('processPendingEscalations', () => {
+    it('escalates eligible pending candidates and returns the count', async () => {
+      mocks.findPendingEscalations.mockResolvedValue([
+        {
+          id: 'ticket-a',
+          priority: TicketPriority.HIGH,
+          status: TicketStatus.OPEN,
+          category: TicketCategory.REPAIR,
+          assigned_tech_id: null,
+          tenant_id: 'tenant-456',
+          created_at: new Date(Date.now() - 25 * 60 * 1000),
+          responseCount: 0,
+        },
+      ]);
+      mocks.ticketFindById.mockResolvedValue({
+        id: 'ticket-a',
+        title: 'Slow network',
+        description: 'Network slowness reported',
+        category: TicketCategory.REPAIR,
+        priority: TicketPriority.HIGH,
+        status: TicketStatus.OPEN,
+        client_id: 'client-123',
+        assigned_tech_id: null,
+        equipment_id: null,
+        tenant_id: 'tenant-456',
+        created_at: new Date(Date.now() - 25 * 60 * 1000),
+        updated_at: new Date(),
+      });
+      mocks.getNextTechnician.mockResolvedValue({ id: 'tech-tier2', name: 'Senior', specialty: 'Tier 2' });
+      mocks.ticketAssignTech.mockResolvedValue({
+        id: 'ticket-a',
+        assigned_tech_id: 'tech-tier2',
+      });
+
+      const result = await ticketService.processPendingEscalations();
+
+      expect(result.escalated).toBe(1);
+      expect(mocks.getNextTechnician).toHaveBeenCalledWith(TicketCategory.REPAIR, 'Tier 2', TicketPriority.HIGH);
+    });
+
+    it('honors the tenantId scope when sweeping candidates', async () => {
+      mocks.findPendingEscalations.mockResolvedValue([
+        {
+          id: 'ticket-b',
+          priority: TicketPriority.LOW,
+          status: TicketStatus.OPEN,
+          category: TicketCategory.REPAIR,
+          assigned_tech_id: null,
+          tenant_id: 'tenant-other',
+          created_at: new Date(Date.now() - 130 * 60 * 1000),
+          responseCount: 0,
+        },
+      ]);
+
+      const result = await ticketService.processPendingEscalations('tenant-456');
+
+      expect(result.escalated).toBe(0);
+      expect(mocks.getNextTechnician).not.toHaveBeenCalled();
     });
   });
 });

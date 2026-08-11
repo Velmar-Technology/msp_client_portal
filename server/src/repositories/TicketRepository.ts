@@ -1,7 +1,7 @@
 import { BaseRepository } from './BaseRepository';
-import { Ticket, TicketAttachment, TicketFilters, TicketStatus, TicketCategory, TicketPriority } from '../types';
-import { db, tickets, users, ticketAttachments, subscriptionEquipment } from '../db';
-import { eq, ne, gte, and, or, ilike, desc, asc, count, SQL, isNull, isNotNull } from 'drizzle-orm';
+import { Ticket, TicketAttachment, TicketFilters, TicketStatus, TicketCategory, TicketPriority, EscalationCandidate } from '../types';
+import { db, tickets, users, ticketAttachments, ticketResponses, subscriptionEquipment } from '../db';
+import { eq, ne, gte, and, or, ilike, desc, asc, count, lt, inArray, SQL, isNull, isNotNull } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
 export class TicketRepository extends BaseRepository<Ticket> {
@@ -86,6 +86,40 @@ export class TicketRepository extends BaseRepository<Ticket> {
       .limit(limit)
       .offset(offset);
     return results as Ticket[];
+  }
+
+  async findOpenTicketsForTechnicians(techIds: string[]): Promise<Ticket[]> {
+    if (techIds.length === 0) return [];
+    const results = await db
+      .select()
+      .from(tickets)
+      .where(
+        and(
+          inArray(tickets.assigned_tech_id, techIds),
+          or(eq(tickets.status, TicketStatus.OPEN), eq(tickets.status, TicketStatus.IN_PROGRESS))
+        )
+      );
+    return results as Ticket[];
+  }
+
+  async findPendingEscalations(cutoff: Date): Promise<EscalationCandidate[]> {
+    const results = await db
+      .select({
+        id: tickets.id,
+        priority: tickets.priority,
+        status: tickets.status,
+        category: tickets.category,
+        assigned_tech_id: tickets.assigned_tech_id,
+        tenant_id: tickets.tenant_id,
+        created_at: tickets.created_at,
+        responseCount: count(ticketResponses.id),
+      })
+      .from(tickets)
+      .leftJoin(ticketResponses, eq(ticketResponses.ticket_id, tickets.id))
+      .where(and(eq(tickets.status, TicketStatus.OPEN), lt(tickets.created_at, cutoff)))
+      .groupBy(tickets.id);
+
+    return results as unknown as EscalationCandidate[];
   }
 
   async findWithFilters(filters: TicketFilters): Promise<{ tickets: Ticket[]; total: number }> {

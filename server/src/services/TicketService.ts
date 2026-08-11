@@ -8,6 +8,7 @@ import { ticketQuotaService, TicketQuotaService } from './TicketQuotaService';
 import { ticketAccessPolicy, TicketAccessPolicy, UserContext } from '../policies/TicketAccessPolicy';
 import { AppError } from '../utils/AppError';
 import { logger } from '../utils/logger';
+import { ESCALATION_THRESHOLDS_MS, TIER_2_SPECIALTY } from '../config/constants';
 import {
   Ticket,
   TicketAttachment,
@@ -16,6 +17,7 @@ import {
   TicketStatus,
   TicketCategory,
   TicketFilters,
+  TicketPriority,
   UserRole,
 } from '../types';
 import { CreateTicketInput, UpdateTicketStatusInput } from '../dtos/ticket.dto';
@@ -63,7 +65,7 @@ export class TicketService {
       tenant_id: tenantId,
     });
 
-    const technician = await this.assignmentSvc.getNextTechnician(data.category);
+    const technician = await this.assignmentSvc.getNextTechnician(data.category, undefined, (data.priority ?? TicketPriority.MEDIUM) as unknown as TicketPriority);
     if (technician) {
       await this.ticketRepo.assignTechnician(ticket.id, technician.id);
       ticket.assigned_tech_id = technician.id;
@@ -76,6 +78,101 @@ export class TicketService {
     }
 
     return ticket;
+  }
+
+  /**
+   * Enforce dynamic priority-weighted SLA escalation (BL-104).
+   * Escalates an OPEN, unworked ticket to a Tier 2 specialist once its
+   * priority threshold (CRITICAL=10m, HIGH=20m, MEDIUM=45m, LOW=120m) is exceeded.
+   */
+  async enforceEscalation(ticketId: string): Promise<Ticket | null> {
+    const ticket = await this.ticketRepo.findById(ticketId);
+    if (!ticket) {
+      throw AppError.notFound('Ticket not found');
+    }
+
+    if (ticket.status !== TicketStatus.OPEN) {
+      return null;
+    }
+
+    const threshold = ESCALATION_THRESHOLDS_MS[ticket.priority];
+    if (!threshold) {
+      return null;
+    }
+
+    if (Date.now() - new Date(ticket.created_at).getTime() <= threshold) {
+      return null;
+    }
+
+    if (!(await this.isUnworked(ticket))) {
+      return null;
+    }
+
+    if (ticket.assigned_tech_id) {
+      const current = await this.userRepo.findById(ticket.assigned_tech_id);
+      if (current && current.specialty && current.specialty.includes(TIER_2_SPECIALTY)) {
+        logger.info('Ticket already assigned to a Tier 2 specialist, skipping escalation', { ticketId });
+        return null;
+      }
+    }
+
+    const technician = await this.assignmentSvc.getNextTechnician(ticket.category, TIER_2_SPECIALTY, ticket.priority);
+    if (!technician) {
+      logger.warn('No Tier 2 specialist available for escalation', { ticketId });
+      return null;
+    }
+
+    const updated = await this.ticketRepo.assignTechnician(ticketId, technician.id);
+    if (!updated) {
+      throw AppError.internal('Failed to assign technician during escalation');
+    }
+
+    await this.eventRepo.create({
+      ticket_id: ticketId,
+      old_status: ticket.status,
+      new_status: ticket.status,
+      changed_by: ticket.client_id,
+      notes: `Escalated to Tier 2 specialist (${technician.name}) after priority SLA threshold`,
+      tenant_id: ticket.tenant_id,
+    });
+
+    const fullUpdatedTicket = await this.ticketRepo.findById(ticketId) || updated;
+    await this.notifSvc.onTicketAssigned(fullUpdatedTicket, technician);
+
+    logger.info('Ticket escalated to Tier 2', { ticketId, techId: technician.id, priority: ticket.priority });
+    return fullUpdatedTicket;
+  }
+
+  /**
+   * Sweep all pending escalation candidates (optionally scoped to a tenant)
+   * and apply priority-weighted SLA escalation to each.
+   */
+  async processPendingEscalations(tenantId?: string): Promise<{ escalated: number }> {
+    const minThreshold = Math.min(...Object.values(ESCALATION_THRESHOLDS_MS));
+    const cutoff = new Date(Date.now() - minThreshold);
+    const candidates = await this.ticketRepo.findPendingEscalations(cutoff);
+
+    let escalated = 0;
+    for (const candidate of candidates) {
+      if (tenantId && candidate.tenant_id !== tenantId) continue;
+      try {
+        const result = await this.enforceEscalation(candidate.id);
+        if (result) escalated += 1;
+      } catch (err) {
+        logger.error('Failed to escalate ticket', { ticketId: candidate.id, error: err });
+      }
+    }
+
+    if (escalated > 0) {
+      logger.info(`Processed pending escalations: ${escalated} ticket(s) escalated`, { tenantId });
+    }
+    return { escalated };
+  }
+
+  private async isUnworked(ticket: Ticket): Promise<boolean> {
+    if (!ticket.assigned_tech_id) return true;
+    const responses = await this.responseRepo.findByTicket(ticket.id);
+    return responses.length === 0;
   }
 
   async getTicketById(ticketId: string, ctx: UserContext): Promise<Ticket>;

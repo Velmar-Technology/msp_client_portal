@@ -23,6 +23,35 @@ export const APP_METADATA = {
 /** SLA window in milliseconds — 1 hour for warranty/service ticket modifications */
 export const SLA_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
+/** Priority-weighted open-ticket load factors for capacity-aware routing */
+export const PRIORITY_WEIGHTS = {
+  CRITICAL: 4.0,
+  HIGH: 2.0,
+  MEDIUM: 1.0,
+  LOW: 0.5,
+} as const;
+
+/** Capacity threshold: when every specialist's weighted load exceeds this, fall back to the general pool */
+export const LOAD_CAPACITY_THRESHOLD = 15.0;
+
+/** Reserved specialty used to identify Tier 2 escalation specialists */
+export const TIER_2_SPECIALTY = 'Tier 2';
+
+/** Dynamic priority-based SLA escalation thresholds (milliseconds) */
+export const ESCALATION_THRESHOLDS_MS = {
+  CRITICAL: 10 * 60 * 1000, // 10 minutes
+  HIGH: 20 * 60 * 1000,     // 20 minutes
+  MEDIUM: 45 * 60 * 1000,   // 45 minutes
+  LOW: 120 * 60 * 1000,     // 120 minutes
+} as const;
+
+/** RMM alert noise reduction & self-healing constants */
+export const RMM_DEDUP_WINDOW_MS = 15 * 60 * 1000;   // 15 minutes
+export const RMM_FLAP_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
+export const RMM_FLAP_THRESHOLD = 3;
+export const RMM_SELF_HEAL_MAX_MS = 300 * 1000;      // 300 seconds
+export const FLAPPING_ALERT_TAG = '[FLAPPING_ALERT]';
+
 /** Default pagination */
 export const DEFAULT_PAGE = 1;
 export const DEFAULT_LIMIT = 20;
@@ -59,6 +88,7 @@ export const STATUS_TRANSITIONS: Record<string, string[]> = {
   IN_PROGRESS: ['AWAITING_PAYMENT', 'RESOLVED', 'OPEN'],
   AWAITING_PAYMENT: ['IN_PROGRESS', 'RESOLVED'],
   RESOLVED: ['CLOSED', 'OPEN'],
+  RESOLVED_AUTOMATED: ['RESOLVED', 'CLOSED'],
   CLOSED: [],
   CANCELLED: [],
 };

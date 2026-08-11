@@ -270,6 +270,7 @@ export async function sendTicketStatusChangedEmail(
     IN_PROGRESS: { bg: '#E0E7FF', text: '#3730A3', label: 'In Progress' },
     AWAITING_PAYMENT: { bg: '#FEF3C7', text: '#92400E', label: 'Awaiting Payment' },
     RESOLVED: { bg: '#D1FAE5', text: '#065F46', label: 'Resolved' },
+    RESOLVED_AUTOMATED: { bg: '#D1FAE5', text: '#065F46', label: 'Resolved Automatically' },
     CLOSED: { bg: '#F1F5F9', text: '#475569', label: 'Closed' },
     CANCELLED: { bg: '#FEE2E2', text: '#991B1B', label: 'Cancelled' },
   };

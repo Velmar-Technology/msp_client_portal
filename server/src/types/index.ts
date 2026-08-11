@@ -15,6 +15,7 @@ export enum TicketStatus {
   IN_PROGRESS = 'IN_PROGRESS',
   AWAITING_PAYMENT = 'AWAITING_PAYMENT',
   RESOLVED = 'RESOLVED',
+  RESOLVED_AUTOMATED = 'RESOLVED_AUTOMATED',
   CLOSED = 'CLOSED',
   CANCELLED = 'CANCELLED',
 }
@@ -23,6 +24,7 @@ export enum TicketCategory {
   REPAIR = 'REPAIR',
   WARRANTY = 'WARRANTY',
   SERVICE_OUTAGE = 'SERVICE_OUTAGE',
+  PREVENTATIVE_MAINTENANCE = 'PREVENTATIVE_MAINTENANCE',
 }
 
 export enum TicketPriority {
@@ -179,6 +181,39 @@ export interface RoundRobinState {
   category: string;
   last_assigned_tech_id: string;
   updated_at: Date;
+}
+
+export interface RmmAlert {
+  id: string;
+  alert_type: string;
+  asset_id: string;
+  received_at: Date;
+  ticket_id: string | null;
+  tenant_id: string;
+  created_at: Date;
+}
+
+export interface RmmAlertInput {
+  alertType: string;
+  assetId: string;
+  clientId: string;
+  tenantId: string;
+  executionTimeMs: number;
+  priority?: TicketPriority;
+  title?: string;
+  description?: string;
+  createdByUserId?: string;
+}
+
+export interface EscalationCandidate {
+  id: string;
+  priority: TicketPriority;
+  status: TicketStatus;
+  category: TicketCategory;
+  assigned_tech_id: string | null;
+  tenant_id: string;
+  created_at: Date;
+  responseCount: number;
 }
 
 // ---- API Response Types ----

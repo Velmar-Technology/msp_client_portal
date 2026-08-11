@@ -5,8 +5,8 @@ export interface Ticket {
   id: string;
   title: string;
   description: string;
-  category: 'REPAIR' | 'WARRANTY' | 'SERVICE_OUTAGE';
-  status: 'OPEN' | 'IN_PROGRESS' | 'AWAITING_PAYMENT' | 'RESOLVED' | 'CLOSED' | 'CANCELLED';
+  category: 'REPAIR' | 'WARRANTY' | 'SERVICE_OUTAGE' | 'PREVENTATIVE_MAINTENANCE';
+  status: 'OPEN' | 'IN_PROGRESS' | 'AWAITING_PAYMENT' | 'RESOLVED' | 'RESOLVED_AUTOMATED' | 'CLOSED' | 'CANCELLED';
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   client_id: string;
   assigned_tech_id: string | null;

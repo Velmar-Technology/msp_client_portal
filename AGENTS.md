@@ -78,8 +78,14 @@ Clean Architecture mandates that source code dependencies must strictly point **
 * **BL-103: Alert Noise Reduction & Auto-Remediation** (`AlertService.processRMMAlert`)
   * **Condition**: RMM alerts occurring within a 15-minute window for the same asset are deduplicated into a single parent ticket.
   * **Self-Healing**: Automated scripts that resolve issues within $300\text{ seconds}$ auto-close the ticket as `RESOLVED_AUTOMATED` without dispatcher intervention.
-* **BL-104: Time-Based Tier Escalation** (`TicketService.enforceEscalation`)
-  * **Condition**: If a Tier 1 ticket remains unassigned or unworked past $T_{\text{threshold}} = 45\text{ mins}$, it escalates automatically to Tier 2 and flags the primary dispatcher.
+  * **Flapping Override** (Rule 1.1): Alerts that trigger $\ge 3$ times for the same `(alertType, assetId)` within a rolling 24-hour window bypass auto-close, open a `PREVENTATIVE_MAINTENANCE` ticket tagged `[FLAPPING_ALERT]`, and route directly to Tier 2.
+* **BL-104: Time-Based Tier Escalation** (`TicketService.enforceEscalation`, `processPendingEscalations`)
+  * **Condition** (Rule 1.2): An OPEN, unworked ticket (unassigned or without responses) escalates to a Tier 2 specialist once its priority threshold is exceeded: CRITICAL = 10m, HIGH = 20m, MEDIUM = 45m, LOW = 120m.
+  * **Routing** (Rule 1.3): `CapacityWeightedAssignmentStrategy` routes to the technician minimizing weighted open load ($\text{P1}=4.0$, $\text{P2}=2.0$, $\text{P3}=1.0$, $\text{P4}=0.5$), falling back to the general active pool when all specialists exceed a 15.0 capacity threshold.
+* **KPIs (Rule 1.4)**:
+  * $NRR = \frac{TotalAlerts - HumanTouchTickets}{TotalAlerts}$ (Noise Reduction Ratio).
+  * $SHE = \frac{AutoClosed}{AutoClosed + FlappingOverrides}$ (Self-Healing Efficiency).
+  * $FCR_A = \frac{AutomatedResolved}{TotalTicketsIngested}$ (Automated First Contact Resolution).
 
 ### Module 2: Subscriptions, Licensing & True-Ups
 

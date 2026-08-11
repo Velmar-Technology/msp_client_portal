@@ -22,10 +22,11 @@ export const ticketStatusEnum = pgEnum('ticket_status', [
   'IN_PROGRESS',
   'AWAITING_PAYMENT',
   'RESOLVED',
+  'RESOLVED_AUTOMATED',
   'CLOSED',
   'CANCELLED',
 ]);
-export const ticketCategoryEnum = pgEnum('ticket_category', ['REPAIR', 'WARRANTY', 'SERVICE_OUTAGE']);
+export const ticketCategoryEnum = pgEnum('ticket_category', ['REPAIR', 'WARRANTY', 'SERVICE_OUTAGE', 'PREVENTATIVE_MAINTENANCE']);
 export const ticketPriorityEnum = pgEnum('ticket_priority', ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']);
 export const subscriptionPlanEnum = pgEnum('subscription_plan', ['BASIC', 'STANDARD', 'PREMIUM']);
 export const subscriptionStatusEnum = pgEnum('subscription_status', ['ACTIVE', 'EXPIRING', 'EXPIRED', 'CANCELLED']);
@@ -260,6 +261,26 @@ export const roundRobinState = pgTable('round_robin_state', {
   last_assigned_tech_id: uuid('last_assigned_tech_id').references(() => users.id),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
+
+// ---- RMM Alerts ----
+export const rmmAlerts = pgTable(
+  'rmm_alerts',
+  {
+    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    alert_type: varchar('alert_type', { length: 255 }).notNull(),
+    asset_id: varchar('asset_id', { length: 255 }).notNull(),
+    received_at: timestamp('received_at', { withTimezone: true }).notNull(),
+    ticket_id: uuid('ticket_id').references(() => tickets.id, { onDelete: 'set null' }),
+    tenant_id: uuid('tenant_id')
+      .references(() => tenants.id, { onDelete: 'cascade' })
+      .notNull(),
+    created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    index('idx_rmm_alerts_lookup').on(table.alert_type, table.asset_id, table.received_at),
+    index('idx_rmm_alerts_tenant').on(table.tenant_id),
+  ]
+);
 
 // ---- Notifications ----
 export const notifications = pgTable(

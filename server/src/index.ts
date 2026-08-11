@@ -72,6 +72,10 @@ async function startServer(): Promise<void> {
       // Start background subscriptions renewal scheduler
       const { subscriptionScheduler } = require('./services/SubscriptionScheduler');
       subscriptionScheduler.start();
+
+      // Start background SLA escalation scheduler
+      const { escalationScheduler } = require('./services/EscalationScheduler');
+      escalationScheduler.start();
     });
   } catch (error) {
     logger.error('Failed to start server', { error });
