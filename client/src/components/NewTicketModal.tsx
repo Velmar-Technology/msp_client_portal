@@ -1,5 +1,5 @@
 import { useState, useEffect, memo } from "react";
-import { Send, X } from "lucide-react";
+import { X } from "lucide-react";
 import { ticketService } from "@/services/ticketService";
 import { equipmentService } from "@/services/equipmentService";
 import type { SubscriptionEquipment } from "@/services/equipmentService";
