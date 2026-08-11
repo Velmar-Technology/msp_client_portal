@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { userService } from "@/services/userService";
 
@@ -12,8 +13,6 @@ export function useProfile() {
   const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || "");
   const [language, setLanguage] = useState(user?.language || "en_US");
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState<"success" | "error" | "">("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -22,8 +21,6 @@ export function useProfile() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
-  const [pwMessage, setPwMessage] = useState("");
-  const [pwMessageType, setPwMessageType] = useState<"success" | "error" | "">("");
 
   const handleAvatarClick = useCallback(() => {
     fileInputRef.current?.click();
@@ -34,16 +31,12 @@ export function useProfile() {
     if (!file) return;
 
     setUploadingAvatar(true);
-    setMessage("");
-    setMessageType("");
     try {
       const result = await userService.uploadAvatar(file);
       updateUser({ avatarUrl: result.avatarUrl });
-      setMessage(t("profile.avatarSuccess", "Profile picture updated successfully"));
-      setMessageType("success");
+      toast.success(t("profile.avatarSuccess", "Profile picture updated successfully"));
     } catch {
-      setMessage(t("profile.avatarError", "Failed to upload profile picture"));
-      setMessageType("error");
+      toast.error(t("profile.avatarError", "Failed to upload profile picture"));
     } finally {
       setUploadingAvatar(false);
       if (e.target) e.target.value = "";
@@ -53,30 +46,24 @@ export function useProfile() {
   const handlePasswordChange = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword.length < 8) {
-      setPwMessage(t("profile.passwordMin"));
-      setPwMessageType("error");
+      toast.error(t("profile.passwordMin"));
       return;
     }
     if (newPassword !== confirmPassword) {
-      setPwMessage(t("profile.passwordsMismatch"));
-      setPwMessageType("error");
+      toast.error(t("profile.passwordsMismatch"));
       return;
     }
     setChangingPassword(true);
-    setPwMessage("");
-    setPwMessageType("");
     try {
       await userService.changePassword({ currentPassword, newPassword, confirmPassword });
-      setPwMessage(t("profile.passwordSuccess"));
-      setPwMessageType("success");
+      toast.success(t("profile.passwordSuccess"));
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (err) {
       const error = err as { response?: { data?: { message?: string } } };
       const errMsg = error?.response?.data?.message || t("profile.passwordError");
-      setPwMessage(errMsg);
-      setPwMessageType("error");
+      toast.error(errMsg);
     } finally {
       setChangingPassword(false);
     }
@@ -85,17 +72,13 @@ export function useProfile() {
   const handleSave = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    setMessage("");
-    setMessageType("");
     try {
       await userService.updateProfile({ name, email, language, phoneNumber });
       updateUser({ name, email, language, phoneNumber });
       await i18n.changeLanguage(language);
-      setMessage(t("profile.success"));
-      setMessageType("success");
+      toast.success(t("profile.success"));
     } catch {
-      setMessage(t("profile.error"));
-      setMessageType("error");
+      toast.error(t("profile.error"));
     } finally {
       setSaving(false);
     }
@@ -147,6 +130,17 @@ export function useProfile() {
       })
     : t("profile.lastLoginNever");
 
+  const isDirty =
+    name !== (user?.name || "") ||
+    email !== (user?.email || "") ||
+    phoneNumber !== (user?.phoneNumber || "") ||
+    language !== (user?.language || "en_US");
+
+  const isPasswordDirty =
+    currentPassword.length > 0 ||
+    newPassword.length > 0 ||
+    confirmPassword.length > 0;
+
   return {
     t,
     user,
@@ -155,14 +149,14 @@ export function useProfile() {
     phoneNumber, setPhoneNumber,
     language, setLanguage,
     saving,
-    message, messageType,
+    isDirty,
     fileInputRef,
     uploadingAvatar,
     currentPassword, setCurrentPassword,
     newPassword, setNewPassword,
     confirmPassword, setConfirmPassword,
     changingPassword,
-    pwMessage, pwMessageType,
+    isPasswordDirty,
     lastLoginText,
     handleAvatarClick,
     handleAvatarChange,
@@ -170,3 +164,4 @@ export function useProfile() {
     handleSave,
   };
 }
+

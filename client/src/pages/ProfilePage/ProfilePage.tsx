@@ -1,5 +1,4 @@
 import { Page } from "@/components/Page";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import {
   Save,
@@ -8,8 +7,6 @@ import {
   Phone,
   ShieldCheck,
   Globe,
-  CheckCircle2,
-  AlertCircle,
   Lock,
   Key,
   Clock,
@@ -21,27 +18,6 @@ import { useProfile } from "@/hooks/useProfile";
 import type { AuthUser } from "@/store/useAuthStore";
 
 /* --- Sub-Components --- */
-
-const StatusAlert = ({ message, type }: { message: string; type: "success" | "error" | "" }) => {
-  if (!message || !type) return null;
-
-  return (
-    <Alert
-      variant={type === "success" ? "default" : "destructive"}
-      className={`mb-6 px-3 py-2 ${type === "success" ? "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900" : ""}`}
-    >
-      {type === "success" ? (
-        <CheckCircle2 className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
-      ) : (
-        <AlertCircle className="h-4 w-4" />
-      )}
-      <AlertTitle className="text-sm font-medium dark:text-zinc-100">
-        {type === "success" ? "Success" : "Error"}
-      </AlertTitle>
-      <AlertDescription className="text-xs dark:text-zinc-300">{message}</AlertDescription>
-    </Alert>
-  );
-};
 
 interface ProfileIdentityCardProps {
   user: AuthUser | null;
@@ -116,7 +92,7 @@ const ProfileIdentityCard = ({
 };
 
 const AccountDetailsForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) => {
-  const { t, name, setName, email, setEmail, phoneNumber, setPhoneNumber, language, setLanguage, saving, message, messageType, handleSave } = hook;
+  const { t, name, setName, email, setEmail, phoneNumber, setPhoneNumber, language, setLanguage, saving, isDirty, handleSave } = hook;
 
   return (
     <form
@@ -127,8 +103,6 @@ const AccountDetailsForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t("profile.accountDetails")}</h3>
       </div>
       <div className="p-6">
-        <StatusAlert message={message} type={messageType} />
-
         <div className="grid gap-6 md:grid-cols-2">
           <div>
             <label
@@ -196,16 +170,18 @@ const AccountDetailsForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
           </div>
         </div>
 
-        <div className="mt-6 flex justify-end">
-          <button
-            type="submit"
-            disabled={saving}
-            className="flex cursor-pointer items-center gap-2 rounded-md bg-zinc-900 dark:bg-zinc-100 px-4 py-2 text-xs font-semibold text-white dark:text-zinc-900 shadow-sm transition-all hover:bg-zinc-800 dark:hover:bg-zinc-200 active:scale-95 disabled:cursor-not-allowed disabled:bg-zinc-300 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-500"
-          >
-            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-            {saving ? t("profile.saving") : t("profile.saveChanges")}
-          </button>
-        </div>
+        {isDirty && (
+          <div className="mt-6 flex justify-end">
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex cursor-pointer items-center gap-2 rounded-md bg-zinc-900 dark:bg-zinc-100 px-4 py-2 text-xs font-semibold text-white dark:text-zinc-900 shadow-sm transition-all hover:bg-zinc-800 dark:hover:bg-zinc-200 active:scale-95 disabled:cursor-not-allowed disabled:bg-zinc-300 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-500"
+            >
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+              {saving ? t("profile.saving") : t("profile.saveChanges")}
+            </button>
+          </div>
+        )}
       </div>
     </form>
   );
@@ -221,8 +197,7 @@ const ChangePasswordForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
     confirmPassword,
     setConfirmPassword,
     changingPassword,
-    pwMessage,
-    pwMessageType,
+    isPasswordDirty,
     handlePasswordChange,
   } = hook;
 
@@ -235,8 +210,6 @@ const ChangePasswordForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t("profile.changePassword")}</h3>
       </div>
       <div className="p-6">
-        <StatusAlert message={pwMessage} type={pwMessageType} />
-
         <div className="space-y-4">
           <div>
             <label
@@ -252,7 +225,6 @@ const ChangePasswordForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
               onChange={(e) => setCurrentPassword(e.target.value)}
               className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 transition-all focus:border-zinc-400 dark:focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
               placeholder="••••••••••••"
-              required
             />
           </div>
 
@@ -271,7 +243,6 @@ const ChangePasswordForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
                 onChange={(e) => setNewPassword(e.target.value)}
                 className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 transition-all focus:border-zinc-400 dark:focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
                 placeholder="Min. 8 characters"
-                required
               />
             </div>
 
@@ -289,7 +260,6 @@ const ChangePasswordForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 transition-all focus:border-zinc-400 dark:focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
                 placeholder="Repeat new password"
-                required
               />
             </div>
           </div>
@@ -300,14 +270,16 @@ const ChangePasswordForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
             <Info className="h-3.5 w-3.5 shrink-0" />
             {t("profile.passwordRequirements")}
           </p>
-          <button
-            type="submit"
-            disabled={changingPassword}
-            className="flex cursor-pointer self-end sm:self-auto items-center gap-2 rounded-md bg-zinc-900 dark:bg-zinc-100 px-4 py-2 text-xs font-semibold text-white dark:text-zinc-900 shadow-sm transition-all hover:bg-zinc-800 dark:hover:bg-zinc-200 active:scale-95 disabled:cursor-not-allowed disabled:bg-zinc-300 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-500"
-          >
-            {changingPassword ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Key className="h-3.5 w-3.5" />}
-            {changingPassword ? t("profile.saving") : t("profile.updatePassword")}
-          </button>
+          {isPasswordDirty && (
+            <button
+              type="submit"
+              disabled={changingPassword}
+              className="flex cursor-pointer self-end sm:self-auto items-center gap-2 rounded-md bg-zinc-900 dark:bg-zinc-100 px-4 py-2 text-xs font-semibold text-white dark:text-zinc-900 shadow-sm transition-all hover:bg-zinc-800 dark:hover:bg-zinc-200 active:scale-95 disabled:cursor-not-allowed disabled:bg-zinc-300 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-500"
+            >
+              {changingPassword ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Key className="h-3.5 w-3.5" />}
+              {changingPassword ? t("profile.saving") : t("profile.updatePassword")}
+            </button>
+          )}
         </div>
       </div>
     </form>
