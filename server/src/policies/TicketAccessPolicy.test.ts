@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ticketAccessPolicy, TicketAccessPolicy } from './TicketAccessPolicy';
 import { Ticket, TicketCategory, TicketFilters, TicketStatus, UserContext, UserRole } from '../types';
 
