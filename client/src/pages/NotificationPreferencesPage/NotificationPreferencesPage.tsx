@@ -153,10 +153,14 @@ const PreferenceRow = ({
             enabled={preferences[channel.key]}
             locked={isLocked(event.key, channel.key)}
             onClick={() => onToggle(event.key, channel.key)}
-            ariaLabel={t("notificationPreferences.toggleAriaLabel", {
-              channel: t(`notificationPreferences.channels.${channel.key}`, channel.label),
-              event: t(`notificationPreferences.events.${event.key}.label`, event.label),
-            })}
+            ariaLabel={t(
+              "notificationPreferences.toggleAriaLabel",
+              "Toggle {{channel}} for {{event}}",
+              {
+                channel: t(`notificationPreferences.channels.${channel.key}`, channel.label),
+                event: t(`notificationPreferences.events.${event.key}.label`, event.label),
+              }
+            )}
           />
         </div>
       ))}

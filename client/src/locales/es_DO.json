@@ -60,6 +60,82 @@
       "daysAgo": "hace {{count}}d"
     }
   },
+  "notificationHistory": {
+    "searchPlaceholder": "Buscar notificaciones...",
+    "refresh": "Actualizar",
+    "refreshTooltip": "Actualizar notificaciones",
+    "markAllRead": "Marcar todas como leídas",
+    "clearAll": "Borrar historial",
+    "clearConfirmTitle": "¿Borrar todas las notificaciones?",
+    "clearConfirmDesc": "Esta acción eliminará permanentemente todo el historial de notificaciones de su cuenta. Esto no se puede deshacer.",
+    "confirmClear": "Borrar historial",
+    "filters": "Filtros",
+    "statusPlaceholder": "Estado",
+    "allStatus": "Todos los estados",
+    "unreadOnly": "No leídas",
+    "readOnly": "Leídas",
+    "unreadTooltip": "No leída",
+    "eventTypePlaceholder": "Tipo de evento",
+    "allTypes": "Todos los tipos de evento",
+    "ticketCreated": "Ticket Creado",
+    "ticketAssigned": "Ticket Asignado",
+    "statusChanged": "Estado Cambiado",
+    "ticketCancelled": "Ticket Cancelado",
+    "newReply": "Nueva Respuesta",
+    "other": "Otro",
+    "showingCount": "Mostrando {{count}} de {{total}}",
+    "emptyTitle": "No se encontraron notificaciones",
+    "emptyFilterDesc": "Ninguna notificación coincide con sus criterios de búsqueda y filtro.",
+    "emptyDesc": "Aún no tiene historial de notificaciones.",
+    "view": "Ver",
+    "markRead": "Marcar leída"
+  },
+  "notificationPreferences": {
+    "title": "Notificaciones y Preferencias",
+    "subtitle": "Gestione los canales de entrega y consulte el historial de alertas",
+    "tabChannels": "Canales de Entrega",
+    "tabHistory": "Historial de Notificaciones",
+    "deliveryChannels": "Canales de Entrega",
+    "deliveryChannelsDesc": "Controle qué canales reciben notificaciones para cada tipo de evento. Los eventos críticos del sistema siempre entregan notificaciones en la aplicación.",
+    "eventType": "Tipo de Evento",
+    "toggleAriaLabel": "Alternar {{channel}} para {{event}}",
+    "lockedTogglesInfo": "Los interruptores bloqueados no se pueden desactivar.",
+    "saved": "Guardado",
+    "error": "Error",
+    "unsavedChanges": "Cambios sin guardar",
+    "saving": "Guardando...",
+    "saveChanges": "Guardar Cambios",
+    "loadFailed": "Error al cargar las preferencias de notificación",
+    "saveSuccess": "Preferencias de notificación actualizadas exitosamente",
+    "saveFailed": "Error al guardar las preferencias de notificación",
+    "channels": {
+      "in_app": "En la App",
+      "email": "Correo Electrónico",
+      "whatsapp": "WhatsApp"
+    },
+    "events": {
+      "TICKET_CREATED": {
+        "label": "Ticket Creado",
+        "description": "Cuando se abre un nuevo ticket de soporte"
+      },
+      "TICKET_ASSIGNED": {
+        "label": "Ticket Asignado",
+        "description": "Cuando se asigna un ticket a un técnico"
+      },
+      "TICKET_STATUS_CHANGED": {
+        "label": "Estado Cambiado",
+        "description": "Cuando se actualiza el estado de un ticket"
+      },
+      "TICKET_CANCELLED": {
+        "label": "Ticket Cancelado",
+        "description": "Cuando se cancela un ticket"
+      },
+      "NEW_REPLY": {
+        "label": "Nueva Respuesta",
+        "description": "Cuando alguien responde a su ticket"
+      }
+    }
+  },
   "profile": {
     "title": "Perfil",
     "subtitle": "Administre la configuración de su cuenta",

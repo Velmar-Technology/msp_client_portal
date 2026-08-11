@@ -60,6 +60,82 @@
       "daysAgo": "{{count}}d ago"
     }
   },
+  "notificationHistory": {
+    "searchPlaceholder": "Search notifications...",
+    "refresh": "Refresh",
+    "refreshTooltip": "Refresh notifications",
+    "markAllRead": "Mark all read",
+    "clearAll": "Clear history",
+    "clearConfirmTitle": "Clear all notifications?",
+    "clearConfirmDesc": "This action will permanently delete all notification history records for your account. This cannot be undone.",
+    "confirmClear": "Clear History",
+    "filters": "Filters",
+    "statusPlaceholder": "Status",
+    "allStatus": "All Status",
+    "unreadOnly": "Unread",
+    "readOnly": "Read",
+    "unreadTooltip": "Unread",
+    "eventTypePlaceholder": "Event Type",
+    "allTypes": "All Event Types",
+    "ticketCreated": "Ticket Created",
+    "ticketAssigned": "Ticket Assigned",
+    "statusChanged": "Status Changed",
+    "ticketCancelled": "Ticket Cancelled",
+    "newReply": "New Reply",
+    "other": "Other",
+    "showingCount": "Showing {{count}} of {{total}}",
+    "emptyTitle": "No Notifications Found",
+    "emptyFilterDesc": "No notifications match your search and filter criteria.",
+    "emptyDesc": "You don't have any notification history yet.",
+    "view": "View",
+    "markRead": "Mark read"
+  },
+  "notificationPreferences": {
+    "title": "Notifications & Preferences",
+    "subtitle": "Manage delivery channels and view alert history",
+    "tabChannels": "Delivery Channels",
+    "tabHistory": "Notification History",
+    "deliveryChannels": "Delivery Channels",
+    "deliveryChannelsDesc": "Control which channels receive notifications for each event type. Critical system events always deliver in-app notifications.",
+    "eventType": "Event Type",
+    "toggleAriaLabel": "Toggle {{channel}} for {{event}}",
+    "lockedTogglesInfo": "Locked toggles cannot be disabled.",
+    "saved": "Saved",
+    "error": "Error",
+    "unsavedChanges": "Unsaved changes",
+    "saving": "Saving...",
+    "saveChanges": "Save Changes",
+    "loadFailed": "Failed to load notification preferences",
+    "saveSuccess": "Notification preferences updated successfully",
+    "saveFailed": "Failed to save notification preferences",
+    "channels": {
+      "in_app": "In-App",
+      "email": "Email",
+      "whatsapp": "WhatsApp"
+    },
+    "events": {
+      "TICKET_CREATED": {
+        "label": "Ticket Created",
+        "description": "When a new support ticket is opened"
+      },
+      "TICKET_ASSIGNED": {
+        "label": "Ticket Assigned",
+        "description": "When a ticket is assigned to a technician"
+      },
+      "TICKET_STATUS_CHANGED": {
+        "label": "Status Changed",
+        "description": "When a ticket status is updated"
+      },
+      "TICKET_CANCELLED": {
+        "label": "Ticket Cancelled",
+        "description": "When a ticket is cancelled"
+      },
+      "NEW_REPLY": {
+        "label": "New Reply",
+        "description": "When someone replies to your ticket"
+      }
+    }
+  },
   "profile": {
     "title": "Profile",
     "subtitle": "Manage your account settings",

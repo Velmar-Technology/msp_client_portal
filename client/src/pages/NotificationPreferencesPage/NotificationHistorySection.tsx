@@ -52,37 +52,43 @@ function getNotificationBadgeInfo(type: string) {
   switch (type) {
     case "TICKET_CREATED":
       return {
-        label: "Ticket Created",
+        labelKey: "notificationHistory.ticketCreated",
+        defaultLabel: "Ticket Created",
         icon: Ticket,
         className: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800",
       };
     case "TICKET_ASSIGNED":
       return {
-        label: "Ticket Assigned",
+        labelKey: "notificationHistory.ticketAssigned",
+        defaultLabel: "Ticket Assigned",
         icon: UserCheck,
         className: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800",
       };
     case "TICKET_STATUS_CHANGED":
       return {
-        label: "Status Changed",
+        labelKey: "notificationHistory.statusChanged",
+        defaultLabel: "Status Changed",
         icon: RefreshCw,
         className: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800",
       };
     case "TICKET_CANCELLED":
       return {
-        label: "Ticket Cancelled",
+        labelKey: "notificationHistory.ticketCancelled",
+        defaultLabel: "Ticket Cancelled",
         icon: XCircle,
         className: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800",
       };
     case "NEW_REPLY":
       return {
-        label: "New Reply",
+        labelKey: "notificationHistory.newReply",
+        defaultLabel: "New Reply",
         icon: MessageCircle,
         className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800",
       };
     default:
       return {
-        label: type,
+        labelKey: "notificationHistory.other",
+        defaultLabel: type,
         icon: Bell,
         className: "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800",
       };
@@ -95,7 +101,7 @@ interface NotificationItemProps {
 }
 
 function NotificationItem({ notification, onMarkAsRead }: NotificationItemProps) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const badge = getNotificationBadgeInfo(notification.type);
   const BadgeIcon = badge.icon;
 
@@ -119,10 +125,13 @@ function NotificationItem({ notification, onMarkAsRead }: NotificationItemProps)
             <span
               className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${badge.className}`}
             >
-              {badge.label}
+              {t(badge.labelKey, badge.defaultLabel)}
             </span>
             {!notification.read && (
-              <span className="h-2 w-2 rounded-full bg-zinc-900 dark:bg-zinc-100" title="Unread" />
+              <span
+                className="h-2 w-2 rounded-full bg-zinc-900 dark:bg-zinc-100"
+                title={t("notificationHistory.unreadTooltip", "Unread")}
+              />
             )}
           </div>
           <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed break-words">
@@ -145,7 +154,7 @@ function NotificationItem({ notification, onMarkAsRead }: NotificationItemProps)
               window.location.href = notification.link!;
             }}
           >
-            <span>View</span>
+            <span>{t("notificationHistory.view", "View")}</span>
             <ExternalLink className="h-3 w-3" />
           </Button>
         )}
@@ -157,7 +166,7 @@ function NotificationItem({ notification, onMarkAsRead }: NotificationItemProps)
             onClick={() => onMarkAsRead(notification.id)}
           >
             <Check className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Mark read</span>
+            <span className="hidden sm:inline">{t("notificationHistory.markRead", "Mark read")}</span>
           </Button>
         )}
       </div>
@@ -209,7 +218,7 @@ export function NotificationHistorySection() {
               onClick={handleRefresh}
               disabled={isLoading}
               className="h-8 gap-1.5 text-xs"
-              title="Refresh notifications"
+              title={t("notificationHistory.refreshTooltip", "Refresh notifications")}
             >
               <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
               <span className="hidden sm:inline">{t("notificationHistory.refresh", "Refresh")}</span>
@@ -269,7 +278,7 @@ export function NotificationHistorySection() {
 
           <Select value={readFilter} onValueChange={(val) => setReadFilter(val as ReadFilter)}>
             <SelectTrigger size="sm" className="h-7 text-xs w-[110px]">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder={t("notificationHistory.statusPlaceholder", "Status")} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">{t("notificationHistory.allStatus", "All Status")}</SelectItem>
@@ -280,7 +289,7 @@ export function NotificationHistorySection() {
 
           <Select value={typeFilter} onValueChange={(val) => setTypeFilter(val as TypeFilter)}>
             <SelectTrigger size="sm" className="h-7 text-xs w-[170px]">
-              <SelectValue placeholder="Event Type" />
+              <SelectValue placeholder={t("notificationHistory.eventTypePlaceholder", "Event Type")} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">{t("notificationHistory.allTypes", "All Event Types")}</SelectItem>
