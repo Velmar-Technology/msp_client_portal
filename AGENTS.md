@@ -4,7 +4,7 @@
 
 The **MSP Client Portal** (`msp_client_portal`) is a multi-tenant Managed Service Provider software platform designed to manage helpdesk support tickets, technician dispatch, device/equipment inventories, client subscription plans, recurring invoicing, cloud backups, and scheduled maintenance operations.
 
-Architecturally, the application is structured as a **Layered Monolith** (PERN Stack: PostgreSQL, Express, React, Node.js with Drizzle ORM and Vite/Tailwind v4). While the folder layout visually segregates routes, controllers, services, and repositories, an audit based on **Uncle Bob’s Clean Architecture & Clean Code principles** reveals architectural boundary leaks, violation of the Dependency Rule, parameter bloat, god-class services, and direct coupling to framework components.
+Architecturally, the application is structured as a **Layered Monolith** (PERN Stack: PostgreSQL, Express, React, Node.js with Drizzle ORM and Vite/Tailwind v4). The folder layout segregates routes, controllers, services, and repositories, and the codebase adheres to **Uncle Bob’s Clean Architecture & Clean Code principles**: the Dependency Rule is enforced, services rely on constructor-injected dependencies, and all data access flows through the repository layer.
 
 This document serves as the master specification, architectural health report, and boundary enforcement guide for all human developers and AI agents operating on this codebase.
 
@@ -35,22 +35,15 @@ Clean Architecture mandates that source code dependencies must strictly point **
 
 2. **Use Cases / Service Layer (`server/src/services/`)**:
    - Houses application business logic: ticket quota validation, 1-hour SLA cancellation enforcement, technician round-robin allocation, subscription renewal calculations, and payment handling.
-   - *Compliance*: **RESOLVED**. Every service exposes constructor injection with default singleton dependencies (e.g., `constructor(private userRepo: UserRepository = userRepository)`), so high-level use cases no longer hard-couple to low-level concrete singletons. `AssignmentService` and its strategies access the database exclusively through `RoundRobinRepository`, `TicketRepository`, and `UserRepository` — no service imports `../db` directly.
+   - *Compliance*: Every service exposes constructor injection with default singleton dependencies (e.g., `constructor(private userRepo: UserRepository = userRepository)`), so high-level use cases do not hard-couple to low-level concrete singletons. `AssignmentService` and its strategies access the database exclusively through `RoundRobinRepository`, `TicketRepository`, and `UserRepository` — no service imports `../db` directly.
 
 3. **Interface Adapters (`server/src/controllers/`, `server/src/repositories/`, `client/src/services/`)**:
    - Controllers translate HTTP requests/responses into service inputs/outputs. Repositories translate Drizzle ORM queries into typed domain objects.
-   - *Compliance*: **RESOLVED**. No controller imports a repository or the `db` pool directly; all data access flows through the service layer.
+   - *Compliance*: No controller imports a repository or the `db` pool directly; all data access flows through the service layer.
 
 4. **Frameworks & Drivers (`server/src/routes/`, `server/src/db/`, `client/src/components/`)**:
    - Contains Express routes, database connection pool (`db.ts`), email/WhatsApp utility drivers, and React UI components.
-   - *Compliance*: **RESOLVED**. Framework-specific code (Drizzle ORM access, static bank account data) no longer leaks into domain services or UI feature components — it is confined to `server/src/db/`, repositories, and `client/src/constants/`.
-
-### Architectural Boundary Leaks Identified
-
-* **Service-to-DB Boundary Leak** *(RESOLVED)*: `server/src/services/AssignmentService.ts` historically imported `db` and `roundRobinState` from `../db` and executed raw Drizzle ORM queries (`db.select()`, `db.insert()`), bypassing the Repository layer entirely and violating the Dependency Rule. Now encapsulated in `RoundRobinRepository` (`server/src/repositories/RoundRobinRepository.ts`); `AssignmentService` depends strictly on `IAssignmentStrategy` and repositories.
-* **Controller-to-Repository Leak** *(RESOLVED)*: `server/src/controllers/NotificationController.ts` historically imported `notificationRepository` directly to perform data fetching and state mutations (`findByUser`, `markAsRead`, `deleteAllForUser`), skipping the Service layer; `SubscriptionController.ts` imported `userRepository` directly. Both now route exclusively through `NotificationService` (`getUserNotifications`, `markAsRead`, `markAllAsRead`, `clearAllForUser`) and `SubscriptionService` (`getClientTenantId`).
-* **Direct Concrete Service Coupling (DIP Violation)** *(RESOLVED)*: `InvoiceService.ts`, `TicketService.ts`, and `SubscriptionService.ts` previously depended directly on concrete singleton instances (`paypalService`, `notificationService`, `ticketRepository`) instead of injected dependencies. All services in `server/src/services/` now accept dependencies via constructor injection with default singleton instances, e.g. `constructor(private paypalSvc: PaypalService = paypalService)`. No service method references a module-level singleton directly.
-* **UI Infrastructure Leak** *(RESOLVED)*: `client/src/components/checkout-sheet.tsx` historically defined static Dominican bank account details (`BANK_ACCOUNTS`) and manual line-item tax calculations inline within UI layout logic. Bank account dataset moved to `client/src/constants/bankAccounts.tsx`; checkout UI split into `OrderSummary` and `PaymentFields` (`client/src/components/checkout/`).
+   - *Compliance*: Framework-specific code (Drizzle ORM access, static bank account data) is confined to `server/src/db/`, repositories, and `client/src/constants/` — it does not leak into domain services or UI feature components.
 
 ---
 
@@ -128,57 +121,6 @@ Clean Architecture mandates that source code dependencies must strictly point **
 
 ---
 
-## 🧩 SOLID & Clean Code Audit (Status: RESOLVED ✅)
-
-### Single Responsibility Principle (SRP)
-* **`server/src/services/InvoiceService.ts` [RESOLVED]**: Extracted `InvoicePdfService` for PDF generation wrapping and `InvoiceNotificationService` for invoice due emails, anti-spam window checks, payment confirmation, and cancellation notifications.
-* **`server/src/services/SubscriptionService.ts` [RESOLVED]**: Extracted `SubscriptionQuotationService` for quote handling and email dispatches.
-* **`server/src/services/TicketService.ts` [RESOLVED]**: Extracted `TicketQuotaService` for subscription monthly ticket limit validations.
-* **`client/src/components/checkout-sheet.tsx` [RESOLVED]**: Extracted Dominican bank account dataset (`bankAccounts.tsx`), `OrderSummary.tsx`, and `PaymentFields.tsx` subcomponents, consolidating props into structured interfaces.
-
-### Open/Closed & Liskov Substitution Principles (OCP / LSP)
-* **Role-Based Conditional Branching [RESOLVED]**: Introduced `TicketAccessPolicy` and `InvoiceAccessPolicy` (`server/src/policies/`) to encapsulate tenant isolation, client self-cancellation constraints, ticket scoping, and admin authorization rules.
-* **Category Routing [RESOLVED]**: Introduced `IAssignmentStrategy` interface and `RoundRobinAssignmentStrategy` (`server/src/services/strategies/AssignmentStrategy.ts`), enabling open-ended assignment strategy extensions.
-
-### Dependency Inversion Principle (DIP)
-* **Direct Concrete Imports & Repository Boundaries [RESOLVED]**:
-  - `NotificationController.ts` interacts exclusively with `NotificationService` methods (`getUserNotifications`, `markAsRead`, `markAllAsRead`, `clearAllForUser`).
-  - `SubscriptionController.ts` delegates client tenant resolution to `subscriptionService.getClientTenantId()`.
-* **Direct ORM Coupling [RESOLVED]**: Created `RoundRobinRepository` (`server/src/repositories/RoundRobinRepository.ts`) to encapsulate Drizzle ORM operations on `round_robin_state`. `AssignmentService` now depends strictly on `IAssignmentStrategy` and `RoundRobinRepository`.
-
-### Function & Naming Smells
-* **Long Functions (>20 lines) [RESOLVED]**: Refactored long functions across `TicketService.ts`, `InvoiceService.ts`, `SubscriptionService.ts`, and `checkout-sheet.tsx` into small, focused single-responsibility helper methods (<20 lines).
-* **Excessive Parameter Counts (>3 arguments) [RESOLVED]**:
-  - Consolidated `userId`, `userRole`, `tenantId` parameters into a single typed `UserContext` parameter object (`type UserContext = { userId: string; role: UserRole; tenantId: string }`) across `TicketService.ts` and `TicketController.ts`.
-  - Grouped 14 props in `checkout-sheet.tsx` into structured `CheckoutSheetProps` interfaces.
-* **Command-Query Separation (CQS) Violations [RESOLVED]**:
-  - `InvoiceService.getClientInvoices`: Isolated line item calculation into dedicated helper methods and removed inline state mutations.
-  - `TicketService.getTicketById`: Read queries now perform access checks via `TicketAccessPolicy` without throwing unexpected inline exceptions.
-* **Dirty Comments & Error Swallowing [RESOLVED]**:
-  - Replaced silent `catch {}` block in `InvoiceService.getClientInvoices` with explicit `logger.warn` logging.
-  - Cleaned up unfulfilled `// TODO` comments in `server/src/utils/whatsappService.ts` and `server/src/services/AuthService.ts`.
-
----
-
-## ⛺ Refactoring Accomplishments (Boy Scout Rule)
-
-All prioritized refactoring targets identified in the initial audit have been refactored, tested, and verified:
-
-1. **`server/src/services/AssignmentService.ts` [COMPLETED]**:
-   - Encapsulated `round_robin_state` Drizzle ORM queries inside `RoundRobinRepository`. Removed direct `db` import from service layer. Introduced `IAssignmentStrategy`.
-2. **`server/src/controllers/NotificationController.ts` & `SubscriptionController.ts` [COMPLETED]**:
-   - Eliminated repository bypasses in controllers by routing all operations through `NotificationService` and `SubscriptionService`.
-3. **`server/src/services/InvoiceService.ts` & `SubscriptionService.ts` [COMPLETED]**:
-   - Extracted `InvoicePdfService`, `InvoiceNotificationService`, and `SubscriptionQuotationService`. Replaced silent error swallows with explicit logger warnings.
-4. **`client/src/components/checkout-sheet.tsx` [COMPLETED]**:
-   - Extracted static Dominican bank account dataset to `client/src/constants/bankAccounts.tsx`. Separated UI into `OrderSummary` and `PaymentFields`.
-5. **`server/src/services/TicketService.ts` [COMPLETED]**:
-   - Introduced `UserContext` parameter object to eliminate parameter bloater and extracted quota checks into `TicketQuotaService`.
-6. **Full Service-Layer DI Sweep [COMPLETED]**:
-   - Standardized constructor injection (with default singleton instances) across every remaining service: `SubscriptionService`, `InvoiceService`, `MaintenanceService`, `EquipmentService`, `SubscriptionScheduler`, `EscalationScheduler`, `NotificationService`, `AuthService`, `UserService`, `PlanService`, `ExpenseService`, `NotificationPreferenceService`. No service method references a module-level singleton or the `db` pool directly.
-
----
-
 ## 🔄 Core Data Journeys & State Changes (Command-Query Separation)
 
 ### Journey 1: Ticket Creation & Round-Robin Auto-Assignment
@@ -230,12 +172,6 @@ All prioritized refactoring targets identified in the initial audit have been re
 
 ---
 
-## ⛺ Boy Scout Refactoring Targets
-
-All prioritized cleanup targets from the initial audit are **COMPLETED** (see **Refactoring Accomplishments** above). No outstanding refactoring targets remain for the layered monolith boundaries described in this document.
-
----
-
 ## 🛠️ Workspace Directory & Layer Boundaries
 
 To maintain boundary enforcement and DIP, all future agent work must adhere to these folder responsibilities and import rules:
@@ -279,3 +215,49 @@ client/src/
 5. **Client UI Component Layer (`client/src/components/`)**:
    - **Mandatory UI Rule**: All UI elements (Buttons, Inputs, Selects, Dialogs, Cards, Tables, Badges, Tabs, Tooltips, Labels, Checkboxes) **MUST strictly use `shadcn/ui` components from `client/src/components/ui/`**.
    - **Forbidden Imports**: Raw unstyled HTML primitives (`<button>`, `<input>`, `<select>`, `<dialog>`) when a `shadcn/ui` primitive is available.
+
+---
+
+## 🧹 Uncle Bob's Rules (Robert C. Martin)
+
+The following rules from *Clean Code*, *Clean Architecture*, and *The Clean Coder* are mandatory for all human developers and AI agents operating on this codebase.
+
+### 1. The Boy Scout Rule
+> *"Always leave the code cleaner than you found it."*
+
+When opening a file to fix a bug or add a feature, if you spot a poorly named variable or an overly long function, refactor it on the spot. This prevents technical debt from accumulating over time.
+
+### 2. The Three Rules of TDD (Test-Driven Development)
+Strict cycle — no exceptions:
+1. **No production code** will be written unless it is to make a failing unit test pass.
+2. **No more than one unit test** will be written beyond what is sufficient to fail (compilation errors count as failure).
+3. **No more production code** will be written than strictly necessary to make the failing test pass.
+
+### 3. The S.O.L.I.D. Principles
+- **S (Single Responsibility)**: A class or module must have one, and only one, reason to change.
+- **O (Open/Closed)**: Software must be open to extension, but closed to modification.
+- **L (Liskov Substitution)**: Derived types must be substitutable for their base types without breaking the application.
+- **I (Interface Segregation)**: Prefer many small, specific interfaces over one large, multi-purpose interface.
+- **D (Dependency Inversion)**: Depend on abstractions, not on concrete implementations.
+
+### 4. Clean Code Rules
+
+**🧼 Functions**
+- **Small**: An ideal function should be between 4 and 20 lines.
+- **Do one thing**: If a function validates input, transforms data, and saves to the database, it is doing too much.
+- **Few arguments**: Zero is ideal (niladic). One or two is acceptable. Three requires justification; more than three must be avoided (pass them as an object).
+- **Command-Query Separation (CQS)**: A function must either do something (command) or answer something (query), never both.
+
+**🏷️ Naming**
+- Use intention-revealing names (avoid `x`, `temp`, `data`).
+- Variables/classes are nouns; functions are verbs.
+- Prefer names that are easy to pronounce and easy to search for in the editor.
+
+**💬 Comments**
+> *"Don't comment bad code — rewrite it."*
+
+Code must explain itself. Comments are only allowed when strictly necessary to explain the *why* of a decision, never the *what* or the *how*.
+
+### 5. The Dependency Rule (Clean Architecture)
+- Source code dependencies may only point **inward** toward high-level business rules.
+- Inner layers (entities, use cases) must know nothing about outer layers (database, web framework, UI).
