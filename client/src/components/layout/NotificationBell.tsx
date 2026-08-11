@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useNotificationStore } from "@/store/useNotificationStore";
 import { useTranslation } from "react-i18next";
+import { formatRelativeTime } from "@/lib/formatRelativeTime";
 import {
   Bell,
   Check,
@@ -14,26 +15,8 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-function formatDistanceToNow(
-  dateString: string,
-  t: (key: string, options?: Record<string, unknown>) => string
-): string {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffMins < 1) return t("notifications.time.justNow", "Just now");
-  if (diffMins < 60) return t("notifications.time.minsAgo", "{{count}}m ago", { count: diffMins });
-  if (diffHours < 24) return t("notifications.time.hoursAgo", "{{count}}h ago", { count: diffHours });
-  if (diffDays === 1) return t("notifications.time.yesterday", "Yesterday");
-  return t("notifications.time.daysAgo", "{{count}}d ago", { count: diffDays });
-}
-
 export function NotificationBell() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -228,7 +211,7 @@ export function NotificationBell() {
                         {notif.message}
                       </p>
                       <span className="text-[9px] text-zinc-400 dark:text-zinc-500 font-mono block mt-1.5 uppercase tracking-wider">
-                        {formatDistanceToNow(notif.created_at, t)}
+                        {formatRelativeTime(notif.created_at, i18n.language)}
                       </span>
                     </div>
 

@@ -46,28 +46,7 @@ import {
   EmptyMedia,
 } from "@/components/ui/empty";
 
-function formatRelativeTime(dateString: string): string {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-  if (isNaN(diffInSeconds)) return dateString;
-
-  if (diffInSeconds < 60) return "Just now";
-  const diffInMinutes = Math.floor(diffInSeconds / 60);
-  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-  const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) return `${diffInHours}h ago`;
-  const diffInDays = Math.floor(diffInHours / 24);
-  if (diffInDays < 7) return `${diffInDays}d ago`;
-
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import { formatRelativeTime } from "@/lib/formatRelativeTime";
 
 function getNotificationBadgeInfo(type: string) {
   switch (type) {
@@ -116,6 +95,7 @@ interface NotificationItemProps {
 }
 
 function NotificationItem({ notification, onMarkAsRead }: NotificationItemProps) {
+  const { i18n } = useTranslation();
   const badge = getNotificationBadgeInfo(notification.type);
   const BadgeIcon = badge.icon;
 
@@ -150,7 +130,7 @@ function NotificationItem({ notification, onMarkAsRead }: NotificationItemProps)
           </p>
           <div className="flex items-center gap-2 pt-0.5 text-[11px] text-zinc-400 dark:text-zinc-500">
             <Clock className="h-3 w-3" />
-            <span>{formatRelativeTime(notification.created_at)}</span>
+            <span>{formatRelativeTime(notification.created_at, i18n.language)}</span>
           </div>
         </div>
       </div>
