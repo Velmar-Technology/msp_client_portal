@@ -1,5 +1,6 @@
 import { memo, useCallback, useState, useMemo } from "react";
-import { X, Laptop, Loader2, MoreHorizontal, Cloud, Check, KeyRound } from "lucide-react";
+import { X, Laptop, Loader2, MoreHorizontal, Cloud, Check, KeyRound, Copy } from "lucide-react";
+import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { useDevicesPage } from "@/hooks/useDevicesPage";
 import type { Subscription } from "@/services/subscriptionService";
@@ -103,6 +104,90 @@ export const SubscriptionSelector = memo(function SubscriptionSelector({
   );
 });
 
+// 3. Easy-Copy OTP Code Badge Sub-component
+interface OtpCodeBadgeProps {
+  otp: string;
+  expiresAt?: string | null;
+  compact?: boolean;
+}
+
+export const OtpCodeBadge = memo(function OtpCodeBadge({
+  otp,
+  expiresAt,
+  compact = false,
+}: OtpCodeBadgeProps) {
+  const { t } = useTranslation();
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      navigator.clipboard.writeText(otp);
+      setCopied(true);
+      toast.success(t("devices.otpCopied") || "OTP copied to clipboard!");
+      setTimeout(() => setCopied(false), 2000);
+    },
+    [otp, t],
+  );
+
+  if (compact) {
+    return (
+      <div className="bg-zinc-50 dark:bg-zinc-900/30 p-2 rounded border border-zinc-200 dark:border-zinc-800 max-w-[190px]">
+        <div className="flex items-center justify-between gap-1.5">
+          <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 font-mono select-all">
+            {t("devices.otpLabel")} {otp}
+          </p>
+          <button
+            type="button"
+            onClick={handleCopy}
+            title={t("devices.copyOtp") || "Copy OTP"}
+            aria-label={t("devices.copyOtp") || "Copy OTP"}
+            className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer shrink-0"
+          >
+            {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+          </button>
+        </div>
+        {expiresAt && (
+          <p className="text-[9px] text-zinc-400 mt-0.5">
+            {t("devices.otpExpires", {
+              date: new Date(expiresAt).toLocaleString(),
+            })}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-zinc-50/50 dark:bg-zinc-950/20 p-4 rounded-md border border-zinc-200 dark:border-zinc-800 text-center space-y-1.5">
+      <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
+        {t("devices.wizardStep1TempCode")}
+      </p>
+      <div className="flex items-center justify-center gap-2 my-1.5">
+        <p className="text-3xl font-extrabold text-primary font-mono tracking-widest select-all">
+          {otp}
+        </p>
+        <button
+          type="button"
+          onClick={handleCopy}
+          title={t("devices.copyOtp") || "Copy OTP"}
+          aria-label={t("devices.copyOtp") || "Copy OTP"}
+          className="p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-md transition-colors text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer shrink-0"
+        >
+          {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+        </button>
+      </div>
+      {expiresAt && (
+        <p className="text-[10px] text-zinc-400 font-medium">
+          {t("devices.wizardStep1Expires", {
+            date: new Date(expiresAt).toLocaleString(),
+          })}
+        </p>
+      )}
+    </div>
+  );
+});
+
 // 4. Decoupled Activation Wizard Modal Sub-component
 interface ActivationWizardModalProps {
   slotIdx: number;
@@ -193,30 +278,21 @@ export const ActivationWizardModal = memo(function ActivationWizardModal({
                 <li>{t("devices.wizardStep1Instruction3")}</li>
               </ol>
 
-              <div className="bg-zinc-50/50 dark:bg-zinc-950/20 p-4 rounded-md border border-zinc-200 dark:border-zinc-800 text-center space-y-1.5">
-                <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
-                  {t("devices.wizardStep1TempCode")}
-                </p>
-                {currentSlot?.otp ? (
-                  <>
-                    <p className="text-3xl font-extrabold text-primary font-mono tracking-widest select-all my-1.5">
-                      {currentSlot.otp}
-                    </p>
-                    <p className="text-[10px] text-zinc-400 font-medium">
-                      {t("devices.wizardStep1Expires", {
-                        date: currentSlot.otp_expires_at ? new Date(currentSlot.otp_expires_at).toLocaleString() : "",
-                      })}
-                    </p>
-                  </>
-                ) : (
+              {currentSlot?.otp ? (
+                <OtpCodeBadge otp={currentSlot.otp} expiresAt={currentSlot.otp_expires_at} compact={false} />
+              ) : (
+                <div className="bg-zinc-50/50 dark:bg-zinc-950/20 p-4 rounded-md border border-zinc-200 dark:border-zinc-800 text-center space-y-1.5">
+                  <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
+                    {t("devices.wizardStep1TempCode")}
+                  </p>
                   <div className="py-3 flex flex-col items-center gap-1.5">
                     <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
                     <p className="text-[10px] text-zinc-400 animate-pulse font-medium">
                       {t("devices.wizardStep1Generating")}
                     </p>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
               <div className="flex justify-end gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
                 <button
@@ -676,18 +752,7 @@ export function DevicesPage() {
           );
         }
         if (equip.otp) {
-          return (
-            <div className="bg-zinc-50 dark:bg-zinc-900/30 p-2 rounded border border-zinc-200 dark:border-zinc-800 max-w-[180px]">
-              <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 font-mono select-all">
-                {t("devices.otpLabel")} {equip.otp}
-              </p>
-              <p className="text-[9px] text-zinc-400 mt-0.5">
-                {t("devices.otpExpires", {
-                  date: equip.otp_expires_at ? new Date(equip.otp_expires_at).toLocaleString() : "",
-                })}
-              </p>
-            </div>
-          );
+          return <OtpCodeBadge otp={equip.otp} expiresAt={equip.otp_expires_at} compact={true} />;
         }
         return <p className="text-xs text-zinc-455 italic">{t("devices.emptyLicenseSlot")}</p>;
       },

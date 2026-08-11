@@ -151,7 +151,7 @@ export function NextcloudInfoModal({
                 </p>
                 <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-3 rounded-md space-y-2 font-mono text-xs">
                   {/* User */}
-                  <div className="flex justify-between items-center bg-zinc-50 dark:bg-zinc-950 p-2 rounded border border-zinc-100 dark:border-zinc-850">
+                  <div className="flex justify-between items-center bg-zinc-50 dark:bg-zinc-950 p-2 rounded border border-zinc-100 dark:border-zinc-800">
                     <div className="truncate mr-2">
                       <span className="text-zinc-400 text-[10px] block font-sans">{t("devices.wizardStep3User")}</span>
                       <span className="text-zinc-900 dark:text-zinc-100 font-semibold select-all">{username}</span>
@@ -161,15 +161,21 @@ export function NextcloudInfoModal({
                       className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors text-zinc-500 cursor-pointer shrink-0"
                       title="Copy username"
                     >
-                      {copiedField === "user" ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                      {copiedField === "user" ? (
+                        <Check className="h-3.5 w-3.5 text-emerald-500" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
                     </button>
                   </div>
 
                   {/* Password */}
                   {info?.nextcloud_password && (
-                    <div className="flex justify-between items-center bg-zinc-50 dark:bg-zinc-950 p-2 rounded border border-zinc-100 dark:border-zinc-850">
+                    <div className="flex justify-between items-center bg-zinc-50 dark:bg-zinc-950 p-2 rounded border border-zinc-100 dark:border-zinc-800">
                       <div className="truncate mr-2">
-                        <span className="text-zinc-400 text-[10px] block font-sans">{t("devices.wizardStep3Pass")}</span>
+                        <span className="text-zinc-400 text-[10px] block font-sans">
+                          {t("devices.wizardStep3Pass")}
+                        </span>
                         <span className="text-zinc-900 dark:text-zinc-100 font-semibold select-all">
                           {info.nextcloud_password}
                         </span>
@@ -199,7 +205,8 @@ export function NextcloudInfoModal({
                   </p>
                   {total > 0 && (
                     <span className="text-[10px] font-mono text-zinc-500">
-                      {t("devices.usedLabel", { size: formatSize(used) })} / {t("devices.totalLabel", { size: formatSize(total), percentage })}
+                      {t("devices.usedLabel", { size: formatSize(used) })} /{" "}
+                      {t("devices.totalLabel", { size: formatSize(total), percentage })}
                     </span>
                   )}
                 </div>

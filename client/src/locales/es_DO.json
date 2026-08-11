@@ -681,6 +681,8 @@
     "noSerial": "Sin Serie",
     "otpLabel": "OTP:",
     "otpExpires": "Vence: {{date}}",
+    "copyOtp": "Copiar OTP",
+    "otpCopied": "¡OTP copiado al portapapeles!",
     "emptyLicenseSlot": "Ranura de licencia vacía",
     "nextcloudBackupTitle": "☁️ Respaldo Nextcloud:",
     "usedLabel": "Usado: {{size}}",

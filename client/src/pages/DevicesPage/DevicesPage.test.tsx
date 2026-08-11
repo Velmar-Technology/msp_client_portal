@@ -943,4 +943,51 @@ describe('DevicesPage', () => {
 
     expect(screen.getByRole('button', { name: 'Generate OTPs' })).toBeInTheDocument();
   });
+
+  test('copies OTP code to clipboard when copy button is clicked', async () => {
+    const writeTextMock = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: writeTextMock,
+      },
+    });
+
+    mockUser.role = 'ADMIN';
+    const mockSlots: SubscriptionEquipment[] = [
+      {
+        id: 'slot-otp-1',
+        subscription_id: 'sub-basic',
+        slot_index: 0,
+        status: 'PENDING_ACTIVATION',
+        device_name: null,
+        device_serial: null,
+        otp: '987654',
+        otp_expires_at: new Date(Date.now() + 600000).toISOString(),
+        tenant_id: 'tenant-1',
+        client_name: 'John Doe',
+        tenant_name: 'Tenant 1',
+        plan: 'BASIC',
+        service_name: 'Basic Plan',
+      },
+    ];
+
+    vi.mocked(subscriptionService.getAll).mockResolvedValue([]);
+    vi.mocked(equipmentService.getAllDevicesForAdmin).mockResolvedValue(mockSlots);
+
+    render(
+      <MemoryRouter>
+        <DevicesPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('OTP: 987654')).toBeInTheDocument();
+    });
+
+    const copyBtn = screen.getByRole('button', { name: 'Copy OTP' });
+    fireEvent.click(copyBtn);
+
+    expect(writeTextMock).toHaveBeenCalledWith('987654');
+    expect(mockToast.success).toHaveBeenCalledWith('OTP copied to clipboard!');
+  });
 });
