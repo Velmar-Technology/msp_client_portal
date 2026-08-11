@@ -37,6 +37,9 @@ export const LOAD_CAPACITY_THRESHOLD = 15.0;
 /** Reserved specialty used to identify Tier 2 escalation specialists */
 export const TIER_2_SPECIALTY = 'Tier 2';
 
+/** Plan feature code that gates monthly ticket quotas (BL-201) */
+export const HELPDESK_SUPPORT_FEATURE_CODE = 'HELPDESK_SUPPORT';
+
 /** Dynamic priority-based SLA escalation thresholds (milliseconds) */
 export const ESCALATION_THRESHOLDS_MS = {
   CRITICAL: 10 * 60 * 1000, // 10 minutes
@@ -82,13 +85,15 @@ export const PLAN_PRICES = {
 /** Tax rate */
 export const TAX_RATE = 0.18; // 18% ITBIS
 
+import { TicketStatus } from '../types';
+
 /** Ticket status transitions allowed */
-export const STATUS_TRANSITIONS: Record<string, string[]> = {
-  OPEN: ['IN_PROGRESS', 'CANCELLED'],
-  IN_PROGRESS: ['AWAITING_PAYMENT', 'RESOLVED', 'OPEN'],
-  AWAITING_PAYMENT: ['IN_PROGRESS', 'RESOLVED'],
-  RESOLVED: ['CLOSED', 'OPEN'],
-  RESOLVED_AUTOMATED: ['RESOLVED', 'CLOSED'],
-  CLOSED: [],
-  CANCELLED: [],
+export const STATUS_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
+  [TicketStatus.OPEN]: [TicketStatus.IN_PROGRESS, TicketStatus.CANCELLED],
+  [TicketStatus.IN_PROGRESS]: [TicketStatus.AWAITING_PAYMENT, TicketStatus.RESOLVED, TicketStatus.OPEN],
+  [TicketStatus.AWAITING_PAYMENT]: [TicketStatus.IN_PROGRESS, TicketStatus.RESOLVED],
+  [TicketStatus.RESOLVED]: [TicketStatus.CLOSED, TicketStatus.OPEN],
+  [TicketStatus.RESOLVED_AUTOMATED]: [TicketStatus.RESOLVED, TicketStatus.CLOSED],
+  [TicketStatus.CLOSED]: [],
+  [TicketStatus.CANCELLED]: [],
 };

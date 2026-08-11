@@ -1,12 +1,8 @@
-import { Ticket, TicketFilters, TicketStatus, UserRole } from '../types';
+import { Ticket, TicketFilters, TicketStatus, UserContext, UserRole } from '../types';
 import { AppError } from '../utils/AppError';
 import { SLA_WINDOW_MS, STATUS_TRANSITIONS } from '../config/constants';
 
-export interface UserContext {
-  userId: string;
-  role: UserRole;
-  tenantId: string;
-}
+export type { UserContext };
 
 export class TicketAccessPolicy {
   assertReadAccess(ticket: Ticket, ctx: UserContext): void {

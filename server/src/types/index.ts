@@ -248,6 +248,21 @@ export interface JwtPayload {
   tenantId: string;
 }
 
+/** Authenticated caller identity used to scope every ticket use case. */
+export interface UserContext {
+  userId: string;
+  role: UserRole;
+  tenantId: string;
+}
+
+/** Uploaded file metadata produced by the multer upload driver. */
+export interface UploadedFile {
+  filename: string;
+  path: string;
+  mimetype: string;
+  size: number;
+}
+
 export interface AuthTokens {
   accessToken: string;
   refreshToken: string;

@@ -57,7 +57,8 @@ vi.mock('../utils/logger', () => ({
 }));
 
 import { AssignmentService, assignmentService } from './AssignmentService';
-import { RoundRobinAssignmentStrategy, CapacityWeightedAssignmentStrategy } from './strategies/AssignmentStrategy';
+import { RoundRobinAssignmentStrategy } from './strategies/RoundRobinAssignmentStrategy';
+import { CapacityWeightedAssignmentStrategy } from './strategies/CapacityWeightedAssignmentStrategy';
 
 describe('AssignmentService', () => {
   const createMockUser = (id: string, name: string, specialty?: string): User => ({
@@ -262,7 +263,7 @@ describe('AssignmentService', () => {
         createMockTicket(mockTech2.id, TicketPriority.LOW),
       ]);
 
-      const result = await capacity().getNextTechnician(TicketCategory.REPAIR);
+      const result = await capacity().assignNext(TicketCategory.REPAIR);
 
       expect(result).toEqual(mockTech2);
       expect(mocks.findOpenTicketsForTechnicians).toHaveBeenCalledWith([mockTech1.id, mockTech2.id]);
@@ -278,7 +279,7 @@ describe('AssignmentService', () => {
         createMockTicket(mockTech2.id, TicketPriority.LOW),
       ]);
 
-      const result = await capacity().getNextTechnician(TicketCategory.REPAIR);
+      const result = await capacity().assignNext(TicketCategory.REPAIR);
 
       // tech-1 load = 4.0 * 4 = 16.0 (> 15.0), tech-2 load = 0.5
       expect(result).toEqual(mockTech2);
@@ -294,7 +295,7 @@ describe('AssignmentService', () => {
         createMockTicket(mockTech1.id, TicketPriority.CRITICAL),
       ]);
 
-      const result = await capacity().getNextTechnician(TicketCategory.REPAIR, 'Network');
+      const result = await capacity().assignNext(TicketCategory.REPAIR, 'Network');
 
       expect(mocks.loggerWarn).toHaveBeenCalledWith(
         'All specialists exceed capacity threshold, falling back to general pool',
@@ -308,7 +309,7 @@ describe('AssignmentService', () => {
       mocks.findTechniciansBySpecialty.mockResolvedValue([]);
       mocks.findActiveTechnicians.mockResolvedValue([mockTech3]);
 
-      const result = await capacity().getNextTechnician(TicketCategory.WARRANTY, 'Cybersecurity');
+      const result = await capacity().assignNext(TicketCategory.WARRANTY, 'Cybersecurity');
 
       expect(result).toEqual(mockTech3);
       expect(mocks.findTechniciansBySpecialty).toHaveBeenCalledWith('Cybersecurity');
@@ -318,7 +319,7 @@ describe('AssignmentService', () => {
     it('returns null when no technicians are available', async () => {
       mocks.findActiveTechnicians.mockResolvedValue([]);
 
-      const result = await capacity().getNextTechnician(TicketCategory.REPAIR);
+      const result = await capacity().assignNext(TicketCategory.REPAIR);
 
       expect(result).toBeNull();
       expect(mocks.loggerWarn).toHaveBeenCalledWith('No active technicians available for assignment');
@@ -327,7 +328,7 @@ describe('AssignmentService', () => {
     it('threads the ticket priority through to the strategy', async () => {
       mocks.findActiveTechnicians.mockResolvedValue([mockTech1]);
 
-      const result = await new AssignmentService().getNextTechnician(TicketCategory.REPAIR, undefined, TicketPriority.CRITICAL);
+      const result = await new AssignmentService().assignNext(TicketCategory.REPAIR, undefined, TicketPriority.CRITICAL);
 
       expect(result).toEqual(mockTech1);
       expect(mocks.loggerInfo).toHaveBeenCalledWith(
@@ -342,3 +343,4 @@ describe('AssignmentService', () => {
     expect(new AssignmentService()).toBeInstanceOf(AssignmentService);
   });
 });
+

@@ -1,7 +1,13 @@
 import { Request, Response } from 'express';
-import { ticketService, UserContext } from '../services/TicketService';
+import { ticketCreationService } from '../services/TicketCreationService';
+import { ticketQueryService } from '../services/TicketQueryService';
+import { ticketStatusService } from '../services/TicketStatusService';
+import { ticketAssignmentService } from '../services/TicketAssignmentService';
+import { ticketResponseService } from '../services/TicketResponseService';
+import { ticketAttachmentService } from '../services/TicketAttachmentService';
 import { CreateTicketInput, UpdateTicketStatusInput, TicketQueryInput, CreateTicketResponseInput } from '../dtos/ticket.dto';
-import { UserRole } from '../types';
+import { DEFAULT_LIMIT, DEFAULT_PAGE } from '../config/constants';
+import { UserContext, UserRole } from '../types';
 
 export class TicketController {
   private getUserContext(req: Request): UserContext {
@@ -14,17 +20,17 @@ export class TicketController {
 
   async create(req: Request, res: Response): Promise<void> {
     const data = req.body as CreateTicketInput;
-    const ticket = await ticketService.createTicket(data, req.user!.userId, req.user!.tenantId);
+    const ticket = await ticketCreationService.createTicket(data, this.getUserContext(req));
     res.status(201).json({ success: true, data: ticket });
   }
 
   async getAll(req: Request, res: Response): Promise<void> {
     const filters = req.query as unknown as TicketQueryInput;
     const ctx = this.getUserContext(req);
-    const { tickets, total } = await ticketService.getTickets(filters, ctx);
+    const { tickets, total } = await ticketQueryService.getTickets(filters, ctx);
 
-    const page = filters.page || 1;
-    const limit = filters.limit || 20;
+    const page = filters.page || DEFAULT_PAGE;
+    const limit = filters.limit || DEFAULT_LIMIT;
 
     res.json({
       success: true,
@@ -39,27 +45,26 @@ export class TicketController {
   }
 
   async getById(req: Request, res: Response): Promise<void> {
-    const ctx = this.getUserContext(req);
-    const ticket = await ticketService.getTicketById(req.params.id as string, ctx);
+    const ticket = await ticketQueryService.getTicketById(req.params.id as string, this.getUserContext(req));
     res.json({ success: true, data: ticket });
   }
 
   async updateStatus(req: Request, res: Response): Promise<void> {
     const data = req.body as UpdateTicketStatusInput;
-    const ctx = this.getUserContext(req);
-    const ticket = await ticketService.updateTicketStatus(req.params.id as string, data, ctx);
+    const ticket = await ticketStatusService.updateStatus(req.params.id as string, data, this.getUserContext(req));
     res.json({ success: true, data: ticket });
   }
 
   async getTimeline(req: Request, res: Response): Promise<void> {
-    const ctx = this.getUserContext(req);
-    const events = await ticketService.getTicketTimeline(req.params.id as string, ctx);
+    const events = await ticketStatusService.getTicketTimeline(req.params.id as string, this.getUserContext(req));
     res.json({ success: true, data: events });
   }
 
   async getAttachments(req: Request, res: Response): Promise<void> {
-    const ctx = this.getUserContext(req);
-    const attachments = await ticketService.getTicketAttachments(req.params.id as string, ctx);
+    const attachments = await ticketAttachmentService.getTicketAttachments(
+      req.params.id as string,
+      this.getUserContext(req)
+    );
     res.json({ success: true, data: attachments });
   }
 
@@ -69,8 +74,7 @@ export class TicketController {
       return;
     }
 
-    const ctx = this.getUserContext(req);
-    const attachment = await ticketService.addAttachment(
+    const attachment = await ticketAttachmentService.addAttachment(
       req.params.id as string,
       {
         filename: req.file.originalname,
@@ -78,21 +82,20 @@ export class TicketController {
         mimetype: req.file.mimetype,
         size: req.file.size,
       },
-      ctx,
+      this.getUserContext(req),
     );
 
     res.status(201).json({ success: true, data: attachment });
   }
 
   async getStatusSummary(req: Request, res: Response): Promise<void> {
-    const ctx = this.getUserContext(req);
-    const summary = await ticketService.getStatusSummary(ctx);
+    const summary = await ticketQueryService.getStatusSummary(this.getUserContext(req));
     res.json({ success: true, data: summary });
   }
 
   async assign(req: Request, res: Response): Promise<void> {
     const { technicianId } = req.body as { technicianId: string };
-    const ticket = await ticketService.assignTicket(
+    const ticket = await ticketAssignmentService.assignTicket(
       req.params.id as string,
       technicianId,
       req.user!.userId,
@@ -101,19 +104,20 @@ export class TicketController {
   }
 
   async getResponses(req: Request, res: Response): Promise<void> {
-    const ctx = this.getUserContext(req);
-    const responses = await ticketService.getTicketResponses(req.params.id as string, ctx);
+    const responses = await ticketResponseService.getTicketResponses(
+      req.params.id as string,
+      this.getUserContext(req)
+    );
     res.json({ success: true, data: responses });
   }
 
   async createResponse(req: Request, res: Response): Promise<void> {
     const data = req.body as CreateTicketResponseInput;
     const files = (req.files as Express.Multer.File[]) || [];
-    const ctx = this.getUserContext(req);
-    const response = await ticketService.addTicketResponse(
+    const response = await ticketResponseService.addTicketResponse(
       req.params.id as string,
       data.message,
-      ctx,
+      this.getUserContext(req),
       files.map((f) => ({
         filename: f.originalname,
         path: f.path,

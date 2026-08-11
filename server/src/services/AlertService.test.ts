@@ -4,11 +4,9 @@ const mocks = vi.hoisted(() => {
   return {
     countInWindow: vi.fn(),
     rmmAlertCreate: vi.fn(),
-    ticketCreate: vi.fn(),
     ticketUpdateStatus: vi.fn(),
-    ticketAssignTech: vi.fn(),
     eventCreate: vi.fn(),
-    getNextTechnician: vi.fn(),
+    createTicketFromAlert: vi.fn(),
   };
 });
 
@@ -24,9 +22,7 @@ vi.mock('../repositories/RmmAlertRepository', () => {
 vi.mock('../repositories/TicketRepository', () => {
   return {
     ticketRepository: {
-      create: mocks.ticketCreate,
       updateStatus: mocks.ticketUpdateStatus,
-      assignTechnician: mocks.ticketAssignTech,
     },
   };
 });
@@ -39,10 +35,10 @@ vi.mock('../repositories/TicketEventRepository', () => {
   };
 });
 
-vi.mock('./AssignmentService', () => {
+vi.mock('./TicketCreationService', () => {
   return {
-    assignmentService: {
-      getNextTechnician: mocks.getNextTechnician,
+    ticketCreationService: {
+      createTicketFromAlert: mocks.createTicketFromAlert,
     },
   };
 });
@@ -88,36 +84,37 @@ describe('AlertService', () => {
       const result = await alertService.processRMMAlert(baseInput);
 
       expect(result.status).toBe('DEDUPLICATED');
-      expect(mocks.ticketCreate).not.toHaveBeenCalled();
+      expect(mocks.createTicketFromAlert).not.toHaveBeenCalled();
       expect(mocks.rmmAlertCreate).not.toHaveBeenCalled();
     });
 
     it('opens a flapping ticket with PREVENTATIVE_MAINTENANCE, FLAPPING_ALERT tag, and Tier 2 routing when count >= 3 in 24h', async () => {
       mocks.countInWindow.mockResolvedValueOnce(0).mockResolvedValueOnce(3);
-      mocks.ticketCreate.mockResolvedValue(
+      mocks.createTicketFromAlert.mockResolvedValue(
         createdTicket({ category: TicketCategory.PREVENTATIVE_MAINTENANCE, title: '[FLAPPING_ALERT] Disk full on server' })
       );
-      mocks.getNextTechnician.mockResolvedValue({ id: 'tech-2', name: 'Tier2 Tech', specialty: 'Tier 2' });
 
       const result = await alertService.processRMMAlert(baseInput);
 
       expect(result.status).toBe('FLAPPING');
       const ticket = (result as { ticket: any }).ticket;
       expect(ticket.category).toBe(TicketCategory.PREVENTATIVE_MAINTENANCE);
-      expect(ticket.status).toBe(TicketStatus.OPEN);
       expect(ticket.title).toContain('[FLAPPING_ALERT]');
       expect(mocks.rmmAlertCreate).toHaveBeenCalledTimes(1);
-      expect(mocks.getNextTechnician).toHaveBeenCalledWith(
-        TicketCategory.PREVENTATIVE_MAINTENANCE,
-        'Tier 2',
-        TicketPriority.MEDIUM
+      expect(mocks.createTicketFromAlert).toHaveBeenCalledWith(
+        baseInput,
+        expect.objectContaining({
+          status: TicketStatus.OPEN,
+          category: TicketCategory.PREVENTATIVE_MAINTENANCE,
+          tag: '[FLAPPING_ALERT]',
+          assignment: { mode: 'specialty', specialty: 'Tier 2' },
+        })
       );
-      expect(mocks.ticketAssignTech).toHaveBeenCalledWith('ticket-1', 'tech-2');
     });
 
     it('bypasses auto-close even when execution time is under 300s if flapping is detected', async () => {
       mocks.countInWindow.mockResolvedValueOnce(0).mockResolvedValueOnce(4);
-      mocks.ticketCreate.mockResolvedValue(
+      mocks.createTicketFromAlert.mockResolvedValue(
         createdTicket({ category: TicketCategory.PREVENTATIVE_MAINTENANCE, title: '[FLAPPING_ALERT] Disk full on server' })
       );
 
@@ -130,10 +127,8 @@ describe('AlertService', () => {
 
     it('auto-closes with RESOLVED_AUTOMATED when self-healed within 300s and count < 3', async () => {
       mocks.countInWindow.mockResolvedValueOnce(0).mockResolvedValueOnce(1);
-      mocks.ticketCreate.mockResolvedValue(createdTicket());
-      mocks.ticketUpdateStatus.mockResolvedValue(
-        createdTicket({ status: TicketStatus.RESOLVED_AUTOMATED })
-      );
+      mocks.createTicketFromAlert.mockResolvedValue(createdTicket());
+      mocks.ticketUpdateStatus.mockResolvedValue(createdTicket({ status: TicketStatus.RESOLVED_AUTOMATED }));
 
       const result = await alertService.processRMMAlert({ ...baseInput, executionTimeMs: 250 });
 
@@ -141,13 +136,18 @@ describe('AlertService', () => {
       const ticket = (result as { ticket: any }).ticket;
       expect(ticket.status).toBe(TicketStatus.RESOLVED_AUTOMATED);
       expect(mocks.ticketUpdateStatus).toHaveBeenCalledWith('ticket-1', TicketStatus.RESOLVED_AUTOMATED);
-      expect(mocks.ticketAssignTech).not.toHaveBeenCalled();
+      expect(mocks.createTicketFromAlert).toHaveBeenCalledWith(
+        { ...baseInput, executionTimeMs: 250 },
+        expect.objectContaining({
+          category: TicketCategory.REPAIR,
+          assignment: null,
+        })
+      );
     });
 
     it('creates a normal OPEN ticket when not flapping and not self-healed', async () => {
       mocks.countInWindow.mockResolvedValueOnce(0).mockResolvedValueOnce(2);
-      mocks.ticketCreate.mockResolvedValue(createdTicket());
-      mocks.getNextTechnician.mockResolvedValue({ id: 'tech-1', name: 'General Tech' });
+      mocks.createTicketFromAlert.mockResolvedValue(createdTicket());
 
       const result = await alertService.processRMMAlert({ ...baseInput, executionTimeMs: 600000 });
 
@@ -155,8 +155,14 @@ describe('AlertService', () => {
       const ticket = (result as { ticket: any }).ticket;
       expect(ticket.status).toBe(TicketStatus.OPEN);
       expect(ticket.category).toBe(TicketCategory.REPAIR);
-      expect(mocks.getNextTechnician).toHaveBeenCalledWith(TicketCategory.REPAIR, undefined, TicketPriority.MEDIUM);
-      expect(mocks.ticketAssignTech).toHaveBeenCalled();
+      expect(mocks.createTicketFromAlert).toHaveBeenCalledWith(
+        { ...baseInput, executionTimeMs: 600000 },
+        expect.objectContaining({
+          status: TicketStatus.OPEN,
+          category: TicketCategory.REPAIR,
+          assignment: { mode: 'general' },
+        })
+      );
     });
   });
 

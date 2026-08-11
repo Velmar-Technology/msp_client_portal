@@ -1,17 +1,11 @@
 import { User, TicketCategory, TicketPriority } from '../types';
-import { IAssignmentStrategy, CapacityWeightedAssignmentStrategy } from './strategies/AssignmentStrategy';
+import { IAssignmentStrategy } from './strategies/IAssignmentStrategy';
+import { CapacityWeightedAssignmentStrategy } from './strategies/CapacityWeightedAssignmentStrategy';
 
-/**
- * Assignment Service — Implements Strategy-based distribution
- * with specialty-based filtering for technician assignment.
- */
 export class AssignmentService {
   constructor(private strategy: IAssignmentStrategy = new CapacityWeightedAssignmentStrategy()) {}
 
-  /**
-   * Get the next technician to assign a ticket to.
-   */
-  async getNextTechnician(
+  async assignNext(
     category: TicketCategory,
     requestedSpecialty?: string,
     priority?: TicketPriority,
