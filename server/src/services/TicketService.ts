@@ -2,6 +2,8 @@ import { ticketRepository } from '../repositories/TicketRepository';
 import { ticketEventRepository } from '../repositories/TicketEventRepository';
 import { ticketResponseRepository } from '../repositories/TicketResponseRepository';
 import { userRepository } from '../repositories/UserRepository';
+import { subscriptionRepository } from '../repositories/SubscriptionRepository';
+import { planRepository } from '../repositories/PlanRepository';
 import { assignmentService } from './AssignmentService';
 import { notificationService } from './NotificationService';
 import { AppError } from '../utils/AppError';
@@ -24,6 +26,9 @@ export class TicketService {
    * Create a new ticket and auto-assign a technician via Round-Robin.
    */
   async createTicket(data: CreateTicketInput, clientId: string, tenantId: string): Promise<Ticket> {
+    // Validate ticket limit per active subscription plan (measured by device / account)
+    await this.enforceTicketLimit(clientId, tenantId, data.equipmentId);
+
     // Create the ticket linked to the tenant
     const ticket = await ticketRepository.create({
       title: data.title,
@@ -282,6 +287,63 @@ export class TicketService {
     await notificationService.onTicketAssigned(fullUpdatedTicket, technician);
 
     return fullUpdatedTicket;
+  }
+
+  /**
+   * Enforce monthly ticket limits based on client subscription plan (measured by device/account).
+   */
+  private async enforceTicketLimit(clientId: string, tenantId: string, equipmentId?: string): Promise<void> {
+    const subs = await subscriptionRepository.findByClient(clientId, tenantId);
+    const activeSubs = subs.filter((s) => s.status === 'ACTIVE' || s.status === 'EXPIRING');
+
+    if (activeSubs.length === 0) return;
+
+    let hasUnlimited = false;
+    let maxNumericLimit = 0;
+    let checkedAnyFeature = false;
+
+    for (const sub of activeSubs) {
+      const plan = await planRepository.findById(sub.plan);
+      if (!plan || !Array.isArray(plan.features)) continue;
+
+      for (const feat of plan.features as any[]) {
+        if (feat.code === 'HELPDESK_SUPPORT' && feat.included !== false) {
+          checkedAnyFeature = true;
+          const limitVal = feat.params?.limit;
+          if (!limitVal || limitVal === 'Unlimited') {
+            hasUnlimited = true;
+            break;
+          }
+          const parsed = parseInt(String(limitVal), 10);
+          if (!isNaN(parsed) && parsed > 0) {
+            if (parsed > maxNumericLimit) {
+              maxNumericLimit = parsed;
+            }
+          }
+        }
+      }
+      if (hasUnlimited) break;
+    }
+
+    if (checkedAnyFeature && !hasUnlimited && maxNumericLimit > 0) {
+      if (equipmentId) {
+        const deviceTicketCount = await ticketRepository.countEquipmentTicketsInCurrentMonth(equipmentId);
+        if (deviceTicketCount >= maxNumericLimit) {
+          throw AppError.forbidden(
+            `Monthly ticket limit reached for this device (${deviceTicketCount}/${maxNumericLimit}). Your plan allows up to ${maxNumericLimit} tickets per device per month.`,
+            'TICKET_LIMIT_EXCEEDED'
+          );
+        }
+      } else {
+        const clientTicketCount = await ticketRepository.countClientTicketsInCurrentMonth(clientId);
+        if (clientTicketCount >= maxNumericLimit) {
+          throw AppError.forbidden(
+            `Monthly ticket limit reached (${clientTicketCount}/${maxNumericLimit}). Your subscription plan allows up to ${maxNumericLimit} tickets per month.`,
+            'TICKET_LIMIT_EXCEEDED'
+          );
+        }
+      }
+    }
   }
 
   /**

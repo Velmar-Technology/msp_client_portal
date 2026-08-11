@@ -81,6 +81,9 @@ describe("ResourcesPage", () => {
     vi.resetAllMocks();
     mockUser.role = "CLIENT";
     vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    window.HTMLElement.prototype.scrollIntoView = vi.fn();
+    window.HTMLElement.prototype.hasPointerCapture = vi.fn();
+    window.HTMLElement.prototype.releasePointerCapture = vi.fn();
   });
 
   afterEach(() => {
@@ -114,7 +117,10 @@ describe("ResourcesPage", () => {
     await screen.findByText("MSP Backup Agent – Windows");
 
     const select = screen.getByLabelText("Plan");
-    fireEvent.change(select, { target: { value: "PL-003" } });
+    fireEvent.click(select);
+
+    const option = await screen.findByRole("option", { name: "Advanced" });
+    fireEvent.click(option);
 
     await waitFor(() => {
       expect(screen.getByText("Security & vCIO Reviews Whitepaper")).toBeInTheDocument();
@@ -135,8 +141,7 @@ describe("ResourcesPage", () => {
     expect(await screen.findByText("MSP Backup Agent – Windows")).toBeInTheDocument();
     expect(screen.getByText("Basic Plan: Remote Support Handbook")).toBeInTheDocument();
     expect(screen.getByText("Security & vCIO Reviews Whitepaper")).toBeInTheDocument();
-    expect(screen.getByLabelText("Plan")).toHaveValue("ALL");
-    expect(screen.getByRole("option", { name: "All Plans" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Plan")).toHaveTextContent("All Plans");
   });
 
   test("search narrows the resource list", async () => {
@@ -209,11 +214,36 @@ describe("ResourcesPage", () => {
     expect(screen.getByText("MSP Backup Agent – macOS")).toBeInTheDocument();
 
     const osSelect = screen.getByLabelText("OS");
-    fireEvent.change(osSelect, { target: { value: "macos" } });
+    fireEvent.click(osSelect);
+
+    const option = await screen.findByRole("option", { name: "macOS" });
+    fireEvent.click(option);
 
     await waitFor(() => {
       expect(screen.queryByText("MSP Backup Agent – Windows")).toBeNull();
     });
     expect(screen.getByText("MSP Backup Agent – macOS")).toBeInTheDocument();
+  });
+
+  test("toggles between tiled and list view modes", async () => {
+    mockUser.role = "ADMIN";
+
+    render(
+      <MemoryRouter>
+        <ResourcesPage />
+      </MemoryRouter>
+    );
+
+    await screen.findByText("MSP Backup Agent – Windows");
+
+    const listBtn = screen.getByRole("button", { name: "List" });
+    fireEvent.click(listBtn);
+
+    expect(screen.getByText("MSP Backup Agent – Windows")).toBeInTheDocument();
+
+    const tiledBtn = screen.getByRole("button", { name: "Tiled" });
+    fireEvent.click(tiledBtn);
+
+    expect(screen.getByText("MSP Backup Agent – Windows")).toBeInTheDocument();
   });
 });

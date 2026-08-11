@@ -1,7 +1,7 @@
 import { BaseRepository } from './BaseRepository';
 import { Ticket, TicketAttachment, TicketFilters, TicketStatus, TicketCategory, TicketPriority } from '../types';
 import { db, tickets, users, ticketAttachments, subscriptionEquipment } from '../db';
-import { eq, and, or, ilike, desc, asc, count, SQL, isNull, isNotNull } from 'drizzle-orm';
+import { eq, ne, gte, and, or, ilike, desc, asc, count, SQL, isNull, isNotNull } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
 export class TicketRepository extends BaseRepository<Ticket> {
@@ -258,6 +258,44 @@ export class TicketRepository extends BaseRepository<Ticket> {
       .where(and(eq(ticketAttachments.ticket_id, ticketId), isNotNull(ticketAttachments.response_id)))
       .orderBy(asc(ticketAttachments.uploaded_at));
     return results as TicketAttachment[];
+  }
+
+  async countClientTicketsInCurrentMonth(clientId: string): Promise<number> {
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const countResult = await db
+      .select({ val: count() })
+      .from(tickets)
+      .where(
+        and(
+          eq(tickets.client_id, clientId),
+          gte(tickets.created_at, startOfMonth),
+          ne(tickets.status, TicketStatus.CANCELLED)
+        )
+      );
+
+    return countResult[0]?.val ?? 0;
+  }
+
+  async countEquipmentTicketsInCurrentMonth(equipmentId: string): Promise<number> {
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const countResult = await db
+      .select({ val: count() })
+      .from(tickets)
+      .where(
+        and(
+          eq(tickets.equipment_id, equipmentId),
+          gte(tickets.created_at, startOfMonth),
+          ne(tickets.status, TicketStatus.CANCELLED)
+        )
+      );
+
+    return countResult[0]?.val ?? 0;
   }
 }
 

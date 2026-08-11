@@ -119,6 +119,11 @@ describe('DevicesPage', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockUser.role = 'CLIENT';
+    if (typeof window !== 'undefined') {
+      window.HTMLElement.prototype.scrollIntoView = vi.fn();
+      window.HTMLElement.prototype.hasPointerCapture = vi.fn();
+      window.HTMLElement.prototype.releasePointerCapture = vi.fn();
+    }
   });
 
   test('renders empty state when client has no active subscriptions', async () => {
@@ -392,15 +397,16 @@ describe('DevicesPage', () => {
       expect(screen.getByLabelText('Select Subscription to Manage Devices')).toBeInTheDocument();
     });
 
-    // Verify both options are present
-    const select = screen.getByLabelText('Select Subscription to Manage Devices') as HTMLSelectElement;
-    expect(select.options.length).toBe(2);
-    expect(select.options[0].text).toBe('Basic Support (1 Devices)');
-    expect(select.options[1].text).toBe('Standard Support (2 Devices)');
+    const trigger = screen.getByLabelText('Select Subscription to Manage Devices');
+    fireEvent.click(trigger);
+
+    expect(await screen.findByRole('option', { name: 'Basic Support (1 Devices)' })).toBeInTheDocument();
+    const secondOption = screen.getByRole('option', { name: 'Standard Support (2 Devices)' });
+    expect(secondOption).toBeInTheDocument();
 
     // Switch selection
-    fireEvent.change(select, { target: { value: 'sub-standard' } });
-    expect(select.value).toBe('sub-standard');
+    fireEvent.click(secondOption);
+    expect(trigger).toHaveTextContent('Standard Support (2 Devices)');
   });
 
   test('filters device slots by device ID (id) using the search bar', async () => {

@@ -31,6 +31,8 @@ The following roles are referenced in the monorepo's workflows and guidelines to
 - Always initiate `sequential-thinking` before implementing features.
 - Cross-reference new framework code via `context7` to stop hallucinations.
 - Query `stitch` for layout specs and use `shadcn` MCP tools for UI components.
+- **Mandatory UI Component Rule:** Always use `shadcn/ui` components (from `client/src/components/ui/`) for every UI element case needed within the `client/src/components/` folder.
+
 
 ## 1. Project Architecture
 This project is a **Layered Monolith** using the **PERN Stack** (PostgreSQL, Express, React, Node.js). All code (frontend and backend) resides in this single monorepo with strict separation of concerns.
@@ -80,6 +82,12 @@ Respect the following structure when generating or modifying files:
 - **Repositories (`repositories/`):** The ONLY layer authorized to interact with PostgreSQL. Services call repositories. Repositories return typed data.
 - **Data flow:** Route → Controller → Service → Repository → DB (and back).
 
+## 4.1 Frontend Component Rules (CRITICAL)
+- **Component Organization:** All UI feature components MUST reside in `client/src/components/` structured by feature or domain (e.g., `auth/`, `layout/`, `dashboard/`, `users/`, `devices/`, `maintenance/`, `billing/`, `financial/`, etc.) alongside UI primitives in `client/src/components/ui/`.
+- **Mandatory `shadcn/ui` Component Usage:** For every UI element case needed within the `client/src/components/` folder (such as Buttons, Inputs, Select menus, Dialogs/Modals, Sheets, Cards, Tables, DropdownMenus, Badges, Tabs, Tooltips, Labels, Checkboxes, etc.), agents MUST strictly use `shadcn/ui` components located in `client/src/components/ui/`.
+- **No Unstyled Native Controls:** Raw unstyled HTML primitives (e.g., native `<button>`, `<input>`, `<select>`, `<dialog>`) MUST NOT be used when a corresponding `shadcn/ui` component is available or can be added.
+- **Missing Primitives:** If a required UI primitive does not exist in `client/src/components/ui/`, agents MUST query `shadcn` MCP tools or add/generate the primitive into `client/src/components/ui/` first before building or modifying feature components.
+
 ## 5. Business Rules to Consider
 When generating code for modules, keep the system's functional context in mind:
 
@@ -110,9 +118,9 @@ When generating code for modules, keep the system's functional context in mind:
 ## 7. Code Style & Technical Conventions
 
 - **TypeScript:** Strict mode enabled. Never use `any`. Never use `@ts-ignore` or `@ts-expect-error`. Prefer explicit types over inference for function signatures.
-- **Components:** Functional components only (no class components). Use React hooks for state and side effects.
+- **Components:** Functional components only (no class components). Use React hooks for state and side effects. **MANDATORY `shadcn/ui` usage:** Every UI component built or modified inside `client/src/components/` MUST strictly use `shadcn/ui` primitives (located in `client/src/components/ui/`) for all applicable UI element cases (e.g. Buttons, Cards, Dialogs, Inputs, Selects, Tables, Badges, Tabs, Tooltips, DropdownMenus, Forms, Labels, Sheets, etc.) instead of raw unstyled HTML elements.
 - **State management:** Use Zustand stores in `client/src/store/`. Avoid prop drilling beyond 2 levels.
-- **Styling:** Tailwind CSS v4 (no `tailwind.config.js` needed). Use the `cn()` utility from `client/src/lib/utils.ts` for conditional class merging. Use shadcn/ui primitives from `client/src/components/ui/`.
+- **Styling:** Tailwind CSS v4 (no `tailwind.config.js` needed). Use the `cn()` utility from `client/src/lib/utils.ts` for conditional class merging. Always use `shadcn/ui` primitives from `client/src/components/ui/` for all UI design requirements.
 - **Internationalization:** All user-facing strings go through i18next (`t()` function). Translation files in `client/src/locales/` (en_US + es_DO).
 - **API calls:** Always use the shared Axios instance in `client/src/services/api.ts` (handles JWT token injection and refresh).
 - **Validation:** Zod schemas in `server/src/dtos/` for backend. react-hook-form + Zod resolvers on the frontend.

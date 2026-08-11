@@ -67,6 +67,11 @@ export function usePlansPage() {
         if (translated !== `plans.features.${val}`) {
           return translated;
         }
+        const upperSnake = val.replace(/([A-Z])/g, "_$1").toUpperCase();
+        const translatedUpper = t(`plans.features.${upperSnake}`);
+        if (translatedUpper !== `plans.features.${upperSnake}`) {
+          return translatedUpper;
+        }
       }
       return val;
     },

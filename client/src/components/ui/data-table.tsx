@@ -11,6 +11,7 @@ import { Empty, EmptyHeader, EmptyTitle, EmptyMedia } from "@/components/ui/empt
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // ─── Canonical Column Header ────────────────────────────────────────────────
 // Re-usable header component with standardized styling and optional sort toggle.
@@ -229,19 +230,29 @@ export function DataTable<TData, TValue>({
           )}
           {filters &&
             filters.map((filter) => (
-              <select
-                key={filter.id}
-                value={filter.value}
-                onChange={(e) => filter.onChange(e.target.value)}
-                className="px-2.5 h-8.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs focus:outline-none focus:border-zinc-400 cursor-pointer text-zinc-900 dark:text-zinc-100 font-medium"
-              >
-                {filter.placeholder && <option value="">{filter.placeholder}</option>}
-                {filter.options.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+              <div key={filter.id} className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-800">
+                <Select value={filter.value || "all"} onValueChange={(val) => filter.onChange(val === "all" ? "" : val)}>
+                  <SelectTrigger
+                    id={`filter-${filter.id}`}
+                    aria-label={filter.placeholder || filter.id}
+                    className="h-7.5 px-2.5 rounded text-xs font-semibold bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5"
+                  >
+                    <SelectValue placeholder={filter.placeholder || "Select..."} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800">
+                    {filter.placeholder && (
+                      <SelectItem value="all" className="text-xs font-medium cursor-pointer">
+                        {filter.placeholder}
+                      </SelectItem>
+                    )}
+                    {filter.options.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value} className="text-xs font-medium cursor-pointer">
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             ))}
         </div>
       )}

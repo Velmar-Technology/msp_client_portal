@@ -5,7 +5,7 @@ import { useTicketsPage } from "@/hooks/useTicketsPage";
 import { ticketService } from "@/services/ticketService";
 import type { Ticket, TicketResponse } from "@/services/ticketService";
 import { Page } from "@/components/Page";
-import { NewTicketModal } from "@/components/NewTicketModal";
+import { NewTicketModal } from "@/components/new-ticket-modal";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
 import {

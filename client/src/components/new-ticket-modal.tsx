@@ -6,6 +6,8 @@ import type { SubscriptionEquipment } from "@/services/equipmentService";
 import { useTranslation } from "react-i18next";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -133,7 +135,7 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
           </div>
           <div>
             <label className="block text-sm font-medium text-on-surface mb-1.5">{t("tickets.modalDescLabel")}</label>
-            <textarea
+            <Textarea
               value={newDesc}
               onChange={(e) => setNewDesc(e.target.value)}
               placeholder={t("tickets.modalDescPlaceholder")}
@@ -204,13 +206,14 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
             <label className="block text-sm font-medium text-on-surface mb-1.5">{t("tickets.attachmentsLabel")}</label>
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() => document.getElementById("modal-file-input")?.click()}
                   className="px-4 py-2 border border-outline-variant rounded-lg text-sm text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer bg-surface-container-low"
                 >
                   {t("tickets.selectFiles")}
-                </button>
+                </Button>
                 <Input
                   id="modal-file-input"
                   type="file"
@@ -234,17 +237,19 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
                         key={idx}
                         className="flex justify-between items-center text-sm bg-surface-container-lowest px-2 py-1 rounded border border-outline-variant/30"
                       >
-                        <span className="truncate max-w-[220px]" title={file.name}>
+                        <span className="truncate max-w-55" title={file.name}>
                           {file.name}
                         </span>
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="icon-xs"
                           onClick={() => removeFile(idx)}
                           className="text-error hover:text-error/80 cursor-pointer p-0.5"
                           aria-label={`${t("tickets.removeAttachment")} ${file.name}`}
                         >
                           <X className="h-3.5 w-3.5" />
-                        </button>
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -259,13 +264,13 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
             >
               {t("tickets.modalCancel")}
             </AlertDialogCancel>
-            <button
+            <Button
               type="submit"
               disabled={submitting}
               className="flex-1 bg-primary text-on-primary rounded-lg text-sm hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer font-medium"
             >
               {submitting ? t("tickets.modalCreating") : t("tickets.modalCreate")}
-            </button>
+            </Button>
           </AlertDialogFooter>
         </form>
       </AlertDialogContent>

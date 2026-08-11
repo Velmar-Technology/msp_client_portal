@@ -15,7 +15,7 @@ export const FEATURE_CATALOG: FeatureCatalogItem[] = [
   {
     code: 'HELPDESK_SUPPORT',
     labelKey: 'plans.features.HELPDESK_SUPPORT',
-    defaultParams: { type: '8x5' },
+    defaultParams: { type: '8x5', limit: 'Unlimited' },
     paramSchema: [
       {
         key: 'type',
@@ -23,6 +23,13 @@ export const FEATURE_CATALOG: FeatureCatalogItem[] = [
         type: 'select',
         options: ['Chat & Remote Only', '8x5', '24/7/365', 'Dedicated Engineer', 'VIP Concierge', 'Self-Serve / Community'],
         defaultValue: '8x5',
+      },
+      {
+        key: 'limit',
+        label: 'Ticket Limit',
+        type: 'select',
+        options: ['5', '10', '20', '50', '100', 'Unlimited'],
+        defaultValue: 'Unlimited',
       },
     ],
   },

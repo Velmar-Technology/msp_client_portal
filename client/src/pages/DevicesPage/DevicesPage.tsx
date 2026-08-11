@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -77,21 +78,27 @@ export const SubscriptionSelector = memo(function SubscriptionSelector({
       <label htmlFor="active-sub-select-devices" className="block text-[10px] uppercase font-bold text-zinc-400 mb-1.5">
         {t("devices.selectSubscription")}
       </label>
-      <select
-        id="active-sub-select-devices"
-        value={selectedId}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full h-8 px-2.5 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-zinc-400 cursor-pointer font-medium"
-      >
-        {subscriptions.map((sub) => (
-          <option key={sub.id} value={sub.id}>
-            {t("devices.subOptionLabel", {
-              name: sub.service_name,
-              devicesStr: t("plans.devicesCount", { count: sub.equipment_count }),
-            })}
-          </option>
-        ))}
-      </select>
+      <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-800">
+        <Select value={selectedId} onValueChange={onChange}>
+          <SelectTrigger
+            id="active-sub-select-devices"
+            aria-label={t("devices.selectSubscription")}
+            className="w-full h-8 px-2.5 rounded text-xs font-semibold bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5 justify-between"
+          >
+            <SelectValue placeholder={t("devices.selectSubscription")} />
+          </SelectTrigger>
+          <SelectContent className="bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800">
+            {subscriptions.map((sub) => (
+              <SelectItem key={sub.id} value={sub.id} className="text-xs font-medium cursor-pointer">
+                {t("devices.subOptionLabel", {
+                  name: sub.service_name,
+                  devicesStr: t("plans.devicesCount", { count: sub.equipment_count }),
+                })}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 });
