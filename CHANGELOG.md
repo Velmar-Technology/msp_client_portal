@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.3.3](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.2.1...v1.3.3) (2026-08-11)
+
+
+### Features
+
+* **auth:** add whatsapp otp signup and phone number field to profile ([c8a0a93](https://github.com/Velmar-Technology/msp_client_portal/commit/c8a0a9322a9e88cb3717fffc5c3b028fc030c06c))
+* **billing:** add admin mark as paid, plan activation, and invoice details modal ([afbf48c](https://github.com/Velmar-Technology/msp_client_portal/commit/afbf48c4c9f83d7c01fdffce1123916b384f1085))
+* **billing:** add bank accounts to checkout and handle bank transfer invoice flow with admin notifications ([03eb0c0](https://github.com/Velmar-Technology/msp_client_portal/commit/03eb0c07d5a43d9597f918e569b89b3c17820066))
+* **billing:** add invoice cancellation, automatic navigation, and created_at sorting ([7d819f1](https://github.com/Velmar-Technology/msp_client_portal/commit/7d819f108ad6eb5be41232240e3f3ce3fdea630a))
+* **billing:** add store discount, updated terms, and 3-day invoice due email notification rate-limiting ([ee7cc3d](https://github.com/Velmar-Technology/msp_client_portal/commit/ee7cc3d13de4fbe8fcc77719cf885cb9a70cd683))
+* **billing:** show invoice line items in invoice details modal ([c8cf1ea](https://github.com/Velmar-Technology/msp_client_portal/commit/c8cf1ea04044bc6f245be1b65fc65c25fe7030f8))
+* **ci:** add manual deploy trigger with version fallback ([fe87f2c](https://github.com/Velmar-Technology/msp_client_portal/commit/fe87f2c939ccdfc3e15ac474bc98fafe2c57414d))
+* **devices:** add OTP device activation modal and update resource catalog filters ([4b019c9](https://github.com/Velmar-Technology/msp_client_portal/commit/4b019c98976e073b646bd1308c96b5b187cec368))
+* **devices:** add standalone OTP activation modal and downloadable resources catalog ([644480e](https://github.com/Velmar-Technology/msp_client_portal/commit/644480e4a64e4ebf69ac1aae5666fc890c4bdfbd))
+* **plans:** allow soft delete of plans and filter inactive plans from plans page ([faa73ac](https://github.com/Velmar-Technology/msp_client_portal/commit/faa73acc5ffd981899aa160739ba95b6e17c1a9b))
+* **terms:** update ToS contract page and sync database plan features ([26b88b6](https://github.com/Velmar-Technology/msp_client_portal/commit/26b88b60fc83b72df1f0d37ca6f367c261e887c5))
+* **tickets:** refactor NewTicketModal to use AlertDialog and text-sm typography ([465cb67](https://github.com/Velmar-Technology/msp_client_portal/commit/465cb671c1cedba4bc41d6db6a221b16cbead1cd))
+* **ui:** add column sorting support to DataTable, TicketsPage, and BillingPage ([2c1dafa](https://github.com/Velmar-Technology/msp_client_portal/commit/2c1dafaf01af0bd173ed1ee3771bf8f3235b1d79))
+
+
+### Bug Fixes
+
+* **billing:** include 18% tax in paypal subscription plan pricing to match checkout total ([0d13f9b](https://github.com/Velmar-Technology/msp_client_portal/commit/0d13f9be46e2d3aafeadbcb437d0b83ca6eb3f19))
+* **ci:** pass VITE_PAYPAL_CLIENT_ID secret into production client build ([e93462b](https://github.com/Velmar-Technology/msp_client_portal/commit/e93462bc4a67c0da4ac749526df978a5fdf1797b))
+* **client:** remove unused Send import from NewTicketModal ([b8c9a37](https://github.com/Velmar-Technology/msp_client_portal/commit/b8c9a374db59c7421e482fa1d2b14a65ef26ded6))
+* **client:** resolve typescript build errors in input-otp, useTopNav, and vite.config ([6cc35fa](https://github.com/Velmar-Technology/msp_client_portal/commit/6cc35faab727143e46b512456018fa391e8abf46))
+* **dashboard:** add online and storageError keys to i18n locales ([c7c3360](https://github.com/Velmar-Technology/msp_client_portal/commit/c7c33602a98002ea6dc70f9abd92029b5ee98b62))
+* **paypal:** standardize js sdk intent mode and improve environment url resolution ([6a1f3a6](https://github.com/Velmar-Technology/msp_client_portal/commit/6a1f3a6ed35e7aebaf2e181f5d4bd130280fe6ce))
+
 ## [1.3.2](https://github.com/eapolancovelmar/msp_client_portal/compare/v1.3.1...v1.3.2) (2026-08-10)
 
 
