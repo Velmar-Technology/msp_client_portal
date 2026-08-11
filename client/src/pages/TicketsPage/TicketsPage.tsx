@@ -215,6 +215,12 @@ export function TicketsPage() {
             {getPriorityLabel(row.original.priority)}
           </span>
         ),
+        sortingFn: (rowA, rowB, columnId) => {
+          const weight: Record<string, number> = { LOW: 1, MEDIUM: 2, HIGH: 3, CRITICAL: 4 };
+          const a = weight[rowA.getValue<string>(columnId)] || 0;
+          const b = weight[rowB.getValue<string>(columnId)] || 0;
+          return a - b;
+        },
       },
       {
         accessorKey: "status",
@@ -226,16 +232,14 @@ export function TicketsPage() {
         ),
       },
       {
-        accessorKey: "assigned_to",
-        accessorFn: (row) => row.assigned_tech_name || t("tickets.unassigned"),
         id: "assigned_to",
+        accessorFn: (row) => row.assigned_tech_name || t("tickets.unassigned"),
         header: ({ column }) => <DataTableColumnHeader column={column} title={t("tickets.assignedTo")} />,
         cell: ({ row }) => <span className="text-xs text-zinc-500 dark:text-zinc-400">{row.original.assigned_tech_name || t("tickets.unassigned")}</span>,
       },
       {
-        accessorKey: "device_name",
-        accessorFn: (row) => row.device_name || t("tickets.noDevice"),
         id: "device_name",
+        accessorFn: (row) => row.device_name || t("tickets.noDevice"),
         header: ({ column }) => <DataTableColumnHeader column={column} title={t("tickets.tableDevice")} />,
         cell: ({ row }) => (
           <span className="text-xs text-zinc-500 dark:text-zinc-400">{row.original.device_name || t("tickets.noDevice")}</span>

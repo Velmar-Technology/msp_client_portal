@@ -6,7 +6,7 @@ import type { Subscription } from "@/services/subscriptionService";
 import type { SubscriptionEquipment } from "@/services/equipmentService";
 import { Page } from "@/components/Page";
 import { Input } from "@/components/ui/input";
-import { DataTable } from "@/components/ui/data-table";
+import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ScheduleMaintenanceModal } from "@/components/maintenance/ScheduleMaintenanceModal";
 import { NextcloudInfoModal } from "@/components/devices/NextcloudInfoModal";
@@ -501,6 +501,8 @@ export function DevicesPage() {
     handleBulkDeactivateClick,
     confirmBulkDeactivate,
     handleBulkExportCSV,
+    sorting,
+    setSorting,
   } = useDevicesPage();
 
   const [maintModalEquip, setMaintModalEquip] = useState<Partial<SubscriptionEquipment> | null>(null);
@@ -574,11 +576,8 @@ export function DevicesPage() {
     if (isAdmin) {
       cols.push({
         id: "clientInfo",
-        header: () => (
-          <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
-            {t("devices.tableClientTenant")}
-          </span>
-        ),
+        accessorFn: (row) => row.client_name || row.tenant_name || "",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("devices.tableClientTenant")} />,
         cell: ({ row }) => {
           const equip = row.original;
           return (
@@ -601,11 +600,8 @@ export function DevicesPage() {
     // Add Slot number
     cols.push({
       id: "slotNumber",
-      header: () => (
-        <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
-          {t("devices.tableSlot")}
-        </span>
-      ),
+      accessorFn: (row) => (row.slot_index !== undefined ? row.slot_index + 1 : 0),
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("devices.tableSlot")} />,
       cell: ({ row }) => {
         const equip = row.original;
         return (
@@ -629,11 +625,8 @@ export function DevicesPage() {
     if (isAdmin) {
       cols.push({
         id: "planInfo",
-        header: () => (
-          <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
-            {t("devices.tablePlanService")}
-          </span>
-        ),
+        accessorFn: (row) => row.plan || "",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("devices.tablePlanService")} />,
         cell: ({ row }) => {
           const equip = row.original;
           return (
@@ -650,11 +643,7 @@ export function DevicesPage() {
     // Add Status
     cols.push({
       accessorKey: "status",
-      header: () => (
-        <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
-          {t("devices.tableStatus")}
-        </span>
-      ),
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("devices.tableStatus")} />,
       cell: ({ row }) => {
         const status = row.getValue("status") as string;
         return status === "ACTIVE" ? (
@@ -672,11 +661,8 @@ export function DevicesPage() {
     // Add Device Details
     cols.push({
       id: "deviceDetails",
-      header: () => (
-        <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
-          {t("devices.tableDeviceDetails")}
-        </span>
-      ),
+      accessorFn: (row) => row.device_name || row.otp || "",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("devices.tableDeviceDetails")} />,
       cell: ({ row }) => {
         const equip = row.original;
         if (equip.status === "ACTIVE") {
@@ -710,11 +696,8 @@ export function DevicesPage() {
     // Add Cloud Backup Account
     cols.push({
       id: "backupAccount",
-      header: () => (
-        <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
-          {t("devices.tableCloudBackup")}
-        </span>
-      ),
+      accessorFn: (row) => (row.status === "ACTIVE" && row.nextcloud_username ? 1 : 0),
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("devices.tableCloudBackup")} />,
       cell: ({ row }) => {
         const equip = row.original;
         if (equip.status === "ACTIVE" && equip.nextcloud_username) {
@@ -734,6 +717,7 @@ export function DevicesPage() {
     // Add Actions
     cols.push({
       id: "actions",
+      enableSorting: false,
       header: () => (
         <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
           {t("devices.tableActions")}
@@ -877,6 +861,8 @@ export function DevicesPage() {
                   enableRowSelection={true}
                   onSelectedRowsChange={setSelectedDevices}
                   bulkActions={bulkActions}
+                  sorting={sorting}
+                  onSortingChange={setSorting}
                 />
               </div>
             </div>

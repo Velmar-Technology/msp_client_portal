@@ -7,6 +7,7 @@ import { subscriptionService } from "@/services/subscriptionService";
 import type { Subscription } from "@/services/subscriptionService";
 import { equipmentService } from "@/services/equipmentService";
 import type { SubscriptionEquipment } from "@/services/equipmentService";
+import type { SortingState } from "@tanstack/react-table";
 
 export function useDevicesPage() {
   const { t } = useTranslation();
@@ -360,6 +361,50 @@ export function useDevicesPage() {
     }
   }, [adminDevices, subscriptionEquipment, activeSub, searchTerm, isAdmin, selectedClient, selectedStatus]);
 
+  // Datatable Sorting State
+  const [sorting, setSorting] = useState<SortingState>([]);
+
+  const sortedEquipment = useMemo(() => {
+    if (sorting.length === 0) return filteredEquipment;
+    const result = [...filteredEquipment];
+    const sort = sorting[0];
+    const { id, desc } = sort;
+
+    result.sort((a, b) => {
+      let valA: string | number = "";
+      let valB: string | number = "";
+
+      if (id === "clientInfo") {
+        valA = a.client_name || a.tenant_name || "";
+        valB = b.client_name || b.tenant_name || "";
+      } else if (id === "slotNumber") {
+        valA = a.slot_index !== undefined ? a.slot_index + 1 : 0;
+        valB = b.slot_index !== undefined ? b.slot_index + 1 : 0;
+      } else if (id === "planInfo") {
+        valA = a.plan || "";
+        valB = b.plan || "";
+      } else if (id === "status") {
+        valA = a.status || "";
+        valB = b.status || "";
+      } else if (id === "deviceDetails") {
+        valA = a.device_name || a.otp || "";
+        valB = b.device_name || b.otp || "";
+      } else if (id === "backupAccount") {
+        valA = a.status === "ACTIVE" && a.nextcloud_username ? 1 : 0;
+        valB = b.status === "ACTIVE" && b.nextcloud_username ? 1 : 0;
+      }
+
+      if (typeof valA === "number" && typeof valB === "number") {
+        return desc ? valB - valA : valA - valB;
+      }
+
+      const comp = String(valA).localeCompare(String(valB));
+      return desc ? -comp : comp;
+    });
+
+    return result;
+  }, [filteredEquipment, sorting]);
+
   // Bulk Operations State
   const [selectedDevices, setSelectedDevices] = useState<Partial<SubscriptionEquipment>[]>([]);
   const [showBulkDeactivateAlert, setShowBulkDeactivateAlert] = useState(false);
@@ -367,13 +412,13 @@ export function useDevicesPage() {
   const [bulkProcessing, setBulkProcessing] = useState(false);
 
   const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil(filteredEquipment.length / limit));
-  }, [filteredEquipment.length, limit]);
+    return Math.max(1, Math.ceil(sortedEquipment.length / limit));
+  }, [sortedEquipment.length, limit]);
 
   const paginatedEquipment = useMemo(() => {
     const startIndex = (page - 1) * limit;
-    return filteredEquipment.slice(startIndex, startIndex + limit);
-  }, [filteredEquipment, page, limit]);
+    return sortedEquipment.slice(startIndex, startIndex + limit);
+  }, [sortedEquipment, page, limit]);
 
   const handleBulkGenerateOTP = useCallback(
     async (selected: Partial<SubscriptionEquipment>[]) => {
@@ -563,5 +608,7 @@ export function useDevicesPage() {
     handleBulkDeactivateClick,
     confirmBulkDeactivate,
     handleBulkExportCSV,
+    sorting,
+    setSorting,
   };
 }
