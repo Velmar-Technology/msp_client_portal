@@ -46,6 +46,8 @@
     "title": "Notifications",
     "toggleAria": "Toggle notifications",
     "unreadCount": "{{count}} unread",
+    "unreadCount_one": "{{count}} unread",
+    "unreadCount_other": "{{count}} unread",
     "markAllRead": "Mark all as read",
     "clearTray": "Clear notifications",
     "refresh": "Refresh notifications",
@@ -949,52 +951,6 @@
     "processing": "Processing...",
     "noUsers": "No users found",
     "pageOf": "Page {page} of {total}"
-  },
-
-  "notificationPreferences": {
-    "title": "Notification Preferences",
-    "subtitle": "Manage your alert delivery channels",
-    "loading": "Loading...",
-    "eventType": "Event Type",
-    "lockedTogglesInfo": "Locked toggles cannot be disabled.",
-    "deliveryChannels": "Delivery Channels",
-    "deliveryChannelsDesc": "Control which channels receive notifications for each event type. Critical system events always deliver in-app notifications.",
-    "saved": "Saved",
-    "error": "Error",
-    "unsavedChanges": "Unsaved changes",
-    "saving": "Saving...",
-    "saveChanges": "Save Changes",
-    "toggleAriaLabel": "Toggle {{channel}} for {{event}}",
-    "loadFailed": "Failed to load notification preferences.",
-    "saveSuccess": "Preferences saved successfully.",
-    "saveFailed": "Failed to save preferences. Please try again.",
-    "events": {
-      "TICKET_CREATED": {
-        "label": "Ticket Created",
-        "description": "When a new support ticket is opened"
-      },
-      "TICKET_ASSIGNED": {
-        "label": "Ticket Assigned",
-        "description": "When a ticket is assigned to a technician"
-      },
-      "TICKET_STATUS_CHANGED": {
-        "label": "Status Changed",
-        "description": "When a ticket status is updated"
-      },
-      "TICKET_CANCELLED": {
-        "label": "Ticket Cancelled",
-        "description": "When a ticket is cancelled"
-      },
-      "NEW_REPLY": {
-        "label": "New Reply",
-        "description": "When someone replies to your ticket"
-      }
-    },
-    "channels": {
-      "in_app": "Portal",
-      "email": "Email",
-      "whatsapp": "WhatsApp"
-    }
   },
   "financial": {
 

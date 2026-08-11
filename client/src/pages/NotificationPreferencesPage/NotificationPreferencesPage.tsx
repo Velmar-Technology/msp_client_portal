@@ -153,14 +153,11 @@ const PreferenceRow = ({
             enabled={preferences[channel.key]}
             locked={isLocked(event.key, channel.key)}
             onClick={() => onToggle(event.key, channel.key)}
-            ariaLabel={t(
-              "notificationPreferences.toggleAriaLabel",
-              "Toggle {{channel}} for {{event}}",
-              {
-                channel: t(`notificationPreferences.channels.${channel.key}`, channel.label),
-                event: t(`notificationPreferences.events.${event.key}.label`, event.label),
-              }
-            )}
+            ariaLabel={t("notificationPreferences.toggleAriaLabel", {
+              defaultValue: "Toggle {{channel}} for {{event}}",
+              channel: t(`notificationPreferences.channels.${channel.key}`, channel.label),
+              event: t(`notificationPreferences.events.${event.key}.label`, event.label),
+            })}
           />
         </div>
       ))}
@@ -253,7 +250,7 @@ const StatusBanner = ({ message, type }: { message: string; type: "success" | "e
       <AlertTitle className="text-sm font-medium dark:text-zinc-100">
         {type === "success" ? t("notificationPreferences.saved", "Saved") : t("notificationPreferences.error", "Error")}
       </AlertTitle>
-      <AlertDescription className="text-xs dark:text-zinc-300">{message}</AlertDescription>
+      <AlertDescription className="text-xs dark:text-zinc-300">{t(message, message)}</AlertDescription>
     </Alert>
   );
 };
@@ -334,8 +331,8 @@ export function NotificationPreferencesPage() {
             {unreadCount > 0 && (
               <span
                 className="ml-1 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-1.5 py-0.2 text-[10px] font-semibold"
-                title={t("notifications.unreadCount", "{{count}} unread", { count: unreadCount })}
-                aria-label={t("notifications.unreadCount", "{{count}} unread", { count: unreadCount })}
+                title={t("notifications.unreadCount", { count: unreadCount, defaultValue: "{{count}} unread" })}
+                aria-label={t("notifications.unreadCount", { count: unreadCount, defaultValue: "{{count}} unread" })}
               >
                 {unreadCount}
               </span>

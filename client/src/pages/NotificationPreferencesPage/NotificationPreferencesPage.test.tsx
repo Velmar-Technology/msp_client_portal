@@ -5,6 +5,57 @@ import { MemoryRouter } from 'react-router-dom';
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
 import { useNotificationStore } from '@/store/useNotificationStore';
 
+import enTranslations from '@/locales/en_US.json';
+import esTranslations from '@/locales/es_DO.json';
+
+let currentLanguage = 'en_US';
+
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, param2?: any, param3?: any) => {
+      let defaultValue: string | undefined;
+      let options: Record<string, any> | undefined;
+
+      if (typeof param2 === 'string') {
+        defaultValue = param2;
+        options = param3;
+      } else if (typeof param2 === 'object') {
+        options = param2;
+        defaultValue = options?.defaultValue;
+      }
+
+      const dict = currentLanguage === 'es_DO' ? esTranslations : enTranslations;
+      const parts = key.split('.');
+      let current: any = dict;
+      for (const part of parts) {
+        if (current && typeof current === 'object' && part in current) {
+          current = current[part];
+        } else {
+          current = undefined;
+          break;
+        }
+      }
+
+      let res = typeof current === 'string' ? current : (defaultValue || key);
+
+      if (options && typeof options === 'object') {
+        for (const k of Object.keys(options)) {
+          res = res.replace(new RegExp(`{{\\s*${k}\\s*}}`, 'g'), String(options[k]));
+        }
+      }
+      return res;
+    },
+    i18n: {
+      get language() {
+        return currentLanguage;
+      },
+      changeLanguage: (lng: string) => {
+        currentLanguage = lng;
+      },
+    },
+  }),
+}));
+
 vi.mock('@/hooks/useNotificationPreferences');
 vi.mock('@/store/useNotificationStore');
 vi.mock('./NotificationHistorySection', () => ({
@@ -108,7 +159,7 @@ describe('NotificationPreferencesPage i18n & behavior', () => {
     expect(mockHandleSave).toHaveBeenCalledTimes(1);
   });
 
-  test('renders Notification History tab trigger and badge', () => {
+  test('renders Notification History tab trigger and badge with i18n title and aria-label', () => {
     render(
       <MemoryRouter>
         <NotificationPreferencesPage />
@@ -117,6 +168,33 @@ describe('NotificationPreferencesPage i18n & behavior', () => {
 
     const historyTab = screen.getByRole('tab', { name: /notification history/i });
     expect(historyTab).toBeInTheDocument();
-    expect(screen.getByText('3')).toBeInTheDocument();
+    
+    const badge = screen.getByText('3');
+    expect(badge).toBeInTheDocument();
+    expect(badge).toHaveAttribute('title', '3 unread');
+    expect(badge).toHaveAttribute('aria-label', '3 unread');
+  });
+
+  test('renders StatusBanner message translated', () => {
+    mockUseNotificationPreferences.mockReturnValue({
+      preferences: defaultPreferences,
+      isLoading: false,
+      isSaving: false,
+      message: 'notificationPreferences.saveSuccess',
+      messageType: 'success',
+      hasChanges: false,
+      handleToggle: mockHandleToggle,
+      handleSave: mockHandleSave,
+      isLocked: mockIsLocked,
+    });
+
+    render(
+      <MemoryRouter>
+        <NotificationPreferencesPage />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Saved')).toBeInTheDocument();
+    expect(screen.getByText('Notification preferences updated successfully')).toBeInTheDocument();
   });
 });
