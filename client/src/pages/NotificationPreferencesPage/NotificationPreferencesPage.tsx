@@ -1,5 +1,8 @@
+import { useState } from "react";
 import { Page } from "@/components/Page";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Bell,
   Mail,
@@ -14,6 +17,8 @@ import {
   MessageCircle,
   Lock,
   Loader2,
+  History,
+  Sliders,
 } from "lucide-react";
 import {
   type NotificationPreferencesMap,
@@ -21,7 +26,9 @@ import {
   type ChannelPreference,
 } from "../../services/notificationPreferenceService";
 import { useNotificationPreferences } from "@/hooks/useNotificationPreferences";
+import { useNotificationStore } from "@/store/useNotificationStore";
 import { useTranslation } from "react-i18next";
+import { NotificationHistorySection } from "./NotificationHistorySection";
 
 /**
  * Event definitions for the preference matrix.
@@ -90,13 +97,15 @@ const ToggleSwitch = ({
   onClick: () => void;
   ariaLabel: string;
 }) => (
-  <button
+  <Button
     type="button"
+    variant="ghost"
+    size="sm"
     onClick={onClick}
     disabled={locked && enabled}
     aria-label={ariaLabel}
     className={`
-      relative inline-flex h-4 w-7 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:ring-offset-2 dark:focus:ring-offset-zinc-950
+      relative h-4 w-7 p-0 rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:ring-offset-2 dark:focus:ring-offset-zinc-950
       ${enabled ? "bg-zinc-900 dark:bg-zinc-100" : "bg-zinc-200 dark:bg-zinc-700"}
       ${locked && enabled ? "cursor-not-allowed opacity-50" : ""}
     `}
@@ -104,10 +113,10 @@ const ToggleSwitch = ({
     <span
       className={`
         inline-block h-3 w-3 transform rounded-full transition duration-200 ease-in-out shadow-sm
-        ${enabled ? "translate-x-3.5 bg-white dark:bg-zinc-900" : "translate-x-0.5 bg-white dark:bg-zinc-300"}
+        ${enabled ? "translate-x-1.5 bg-white dark:bg-zinc-900" : "-translate-x-1.5 bg-white dark:bg-zinc-300"}
       `}
     />
-  </button>
+  </Button>
 );
 
 const PreferenceRow = ({
@@ -215,7 +224,7 @@ const HeaderInfo = () => {
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           {t(
             "notificationPreferences.deliveryChannelsDesc",
-            "Control which channels receive notifications for each event type. Critical system events always deliver in-app notifications.",
+            "Control which channels receive notifications for each event type. Critical system events always deliver in-app notifications."
           )}
         </p>
       </div>
@@ -265,24 +274,17 @@ const ActionFooter = ({
           </span>
         )}
       </div>
-      <button
+      <Button
         type="button"
         onClick={onSave}
         disabled={isSaving || !hasChanges}
-        className={`
-          flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium shadow-sm transition-all
-          ${
-            isSaving || !hasChanges
-              ? "cursor-not-allowed bg-zinc-300 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500"
-              : "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 active:scale-95"
-          }
-        `}
+        className="gap-2 text-xs"
       >
         {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
         {isSaving
           ? t("notificationPreferences.saving", "Saving...")
           : t("notificationPreferences.saveChanges", "Save Changes")}
-      </button>
+      </Button>
     </div>
   );
 };
@@ -291,15 +293,17 @@ const ActionFooter = ({
 
 export function NotificationPreferencesPage() {
   const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<string>("channels");
   const { preferences, isLoading, isSaving, message, messageType, hasChanges, handleToggle, handleSave, isLocked } =
     useNotificationPreferences();
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
 
   if (isLoading) {
     return (
       <Page
         className="max-w-4xl"
-        title={t("notificationPreferences.title", "Notification Preferences")}
-        subtitle={t("notificationPreferences.subtitle", "Manage your alert delivery channels")}
+        title={t("notificationPreferences.title", "Notifications & Preferences")}
+        subtitle={t("notificationPreferences.subtitle", "Manage delivery channels and view alert history")}
       >
         <div className="flex min-h-[400px] items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-zinc-400 dark:text-zinc-600" />
@@ -311,17 +315,41 @@ export function NotificationPreferencesPage() {
   return (
     <Page
       className="max-w-4xl"
-      title={t("notificationPreferences.title", "Notification Preferences")}
-      subtitle={t("notificationPreferences.subtitle", "Manage your alert delivery channels")}
+      title={t("notificationPreferences.title", "Notifications & Preferences")}
+      subtitle={t("notificationPreferences.subtitle", "Manage delivery channels and view alert history")}
     >
-      <div className="flex flex-col">
-        <HeaderInfo />
-        <StatusBanner message={message} type={messageType} />
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="channels" className="gap-2">
+            <Sliders className="h-3.5 w-3.5" />
+            <span>{t("notificationPreferences.tabChannels", "Delivery Channels")}</span>
+          </TabsTrigger>
+          <TabsTrigger value="history" className="gap-2 relative">
+            <History className="h-3.5 w-3.5" />
+            <span>{t("notificationPreferences.tabHistory", "Notification History")}</span>
+            {unreadCount > 0 && (
+              <span className="ml-1 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-1.5 py-0.2 text-[10px] font-semibold">
+                {unreadCount}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
 
-        {preferences && <PreferenceMatrix preferences={preferences} onToggle={handleToggle} isLocked={isLocked} />}
+        <TabsContent value="channels">
+          <div className="flex flex-col">
+            <HeaderInfo />
+            <StatusBanner message={message} type={messageType} />
 
-        <ActionFooter hasChanges={hasChanges} isSaving={isSaving} onSave={handleSave} />
-      </div>
+            {preferences && <PreferenceMatrix preferences={preferences} onToggle={handleToggle} isLocked={isLocked} />}
+
+            <ActionFooter hasChanges={hasChanges} isSaving={isSaving} onSave={handleSave} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="history">
+          <NotificationHistorySection />
+        </TabsContent>
+      </Tabs>
     </Page>
   );
 }
