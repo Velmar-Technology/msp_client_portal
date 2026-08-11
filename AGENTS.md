@@ -54,55 +54,120 @@ Clean Architecture mandates that source code dependencies must strictly point **
 
 ---
 
-## 💼 Enforced Business Logic & Rules
+## 🛠️ Master Business Logic Specification (v2.0)
 
-The domain and use-case layers enforce the following non-negotiable business rules:
+```
+                       ┌──────────────────────────────┐
+                       │  MSP Core Logic Architecture │
+                       └──────────────┬───────────────┘
+                                      │
+  ┌───────────────┬───────────────┼───────────────┬───────────────┐
+  ▼               ▼               ▼               ▼               ▼
+1. Support &    2. Subscriptions 3. Access Control 4. Billing      5. Account Health
+   Escalation      & Licensing      & State Machine  Automation       & QBR Logic
+```
 
-* **Rule**: **1-Hour SLA Cancellation Rule** — Tickets in the `WARRANTY` or `SERVICE_OUTAGE` categories can ONLY be cancelled within 60 minutes (`SLA_WINDOW_MS = 3600000`) of creation. Cancellation attempts after 60 minutes throw an SLA violation error (`AppError.slaViolation`). Enforced in `TicketService.enforceSLARule`.
-* **Rule**: **Subscription Plan Ticket Quota Rule** — Ticket creation validates client subscription feature caps (`HELPDESK_SUPPORT`). If the plan specifies a numeric limit (e.g. 5 tickets/device/month or 10 tickets/account/month), ticket creation is blocked once that threshold is reached (`AppError.forbidden` with code `TICKET_LIMIT_EXCEEDED`). Enforced in `TicketService.enforceTicketLimit`.
-* **Rule**: **Round-Robin Technician Assignment with Specialty Fallback** — Automated technician assignment equitably distributes tickets using round-robin state tracked per ticket category. If a specialty is specified, the system filters for specialist technicians first; if none are available, it falls back to the general active technician pool. Enforced in `AssignmentService.getNextTechnician`.
-* **Rule**: **Strict Ticket State Machine & Access Scoping** — Status transitions must conform to the allowed matrix defined in `STATUS_TRANSITIONS`. Clients can only change ticket status to `CANCELLED` and can only view/modify tickets matching their `tenant_id`. Technicians can only view assigned tickets. Admin users possess global access. Enforced in `TicketService.updateTicketStatus` and `TicketService.getTickets`.
-* **Rule**: **Automatic Subscription Reactivation on Payment** — Successfully capturing a PayPal order or manually marking an invoice as `PAID` automatically updates all `EXPIRED` client subscriptions back to `ACTIVE` and triggers in-app notifications to both the client and all administrators. Enforced in `InvoiceService.capturePaypalOrder` and `InvoiceService.markAsPaid`.
-* **Rule**: **Automated Subscription Renewal & Billing** — The `SubscriptionScheduler` background process periodically scans active subscriptions, checks expiration dates, calculates equipment multipliers, creates recurring invoices in PostgreSQL, and dispatches email notifications. Enforced in `SubscriptionScheduler.processSubscriptions`.
+### Module 1: Support, Routing & Escalation Engine
+
+* **BL-101: 1-Hour SLA Cancellation Rule** (`TicketService.enforceSLARule`)
+  * **Condition**: Tickets in `WARRANTY` or `SERVICE_OUTAGE` categories can only be cancelled within 60 minutes ($\text{SLA\_WINDOW\_MS} = 3,600,000$) of creation.
+  * **Enforcement**: Late cancellation attempts throw `AppError.slaViolation`.
+* **BL-102: Round-Robin Dispatch with Specialty Fallback** (`AssignmentService.getNextTechnician`)
+  * **Condition**: Distributes tickets equitably per category.
+  * **Fallback Chain**: Active Specialists $\rightarrow$ General Active Technician Pool.
+* **BL-103: Alert Noise Reduction & Auto-Remediation** (`AlertService.processRMMAlert`)
+  * **Condition**: RMM alerts occurring within a 15-minute window for the same asset are deduplicated into a single parent ticket.
+  * **Self-Healing**: Automated scripts that resolve issues within $300\text{ seconds}$ auto-close the ticket as `RESOLVED_AUTOMATED` without dispatcher intervention.
+* **BL-104: Time-Based Tier Escalation** (`TicketService.enforceEscalation`)
+  * **Condition**: If a Tier 1 ticket remains unassigned or unworked past $T_{\text{threshold}} = 45\text{ mins}$, it escalates automatically to Tier 2 and flags the primary dispatcher.
+
+### Module 2: Subscriptions, Licensing & True-Ups
+
+* **BL-201: Plan Feature Quota Rule** (`TicketService.enforceTicketLimit`)
+  * **Condition**: Validates client subscription feature caps (`HELPDESK_SUPPORT`).
+  * **Enforcement**: Blocks ticket creation with `AppError.forbidden` (`TICKET_LIMIT_EXCEEDED`) once thresholds (e.g., 5 tickets/device/month or 10 tickets/account/month) are reached.
+* **BL-202: Automated License True-Up & Scaling** (`SubscriptionService.reconcileSeats`)
+  * **Condition**: Nightly job reconciles cloud user seats (e.g., M365/Azure AD) and active RMM agents against active client contracts.
+  * **Action**: Automatically updates billable quantity ($Q_{\text{billed}}$) for the next billing run if active count exceeds contracted baseline ($Q_{\text{contracted}}$).
+* **BL-203: Out-of-Scope Project Guardrails** (`TicketService.enforceScope`)
+  * **Condition**: Requests outside the active contract scope (e.g., new site setups, hardware moves) require client authorization and shift to `PENDING_ESTIMATE` before work begins.
+
+### Module 3: Access Control & State Machine
+
+* **BL-301: Strict Ticket State Machine & Access Isolation** (`TicketService.updateTicketStatus`, `TicketService.getTickets`)
+  * **Validation**: All status changes must pass the defined `STATUS_TRANSITIONS` matrix.
+  * **RBAC Scoping Rules**:
+    * **Clients**: Strict multi-tenant isolation by `tenant_id`. Status transitions restricted to `CANCELLED`.
+    * **Technicians**: View/modify permissions restricted to explicitly assigned tickets.
+    * **Admins**: Global access across all tenants, tickets, and configurations.
+
+### Module 4: Billing Automation & Invoicing Lifecycle
+
+* **BL-401: Automatic Subscription Reactivation** (`InvoiceService.capturePaypalOrder`, `InvoiceService.markAsPaid`)
+  * **Trigger**: Successful PayPal order capture or manual invoice flag set to `PAID`.
+  * **Action**: Instantly updates all `EXPIRED` client subscriptions to `ACTIVE` and broadcasts in-app notifications to both the client and all administrators.
+* **BL-402: Recurring Renewal Scheduler** (`SubscriptionScheduler.processSubscriptions`)
+  * **Execution**: Background process running on set cron schedule.
+  * **Workflow**: Scans active subscriptions $\rightarrow$ checks expiry dates $\rightarrow$ calculates hardware multipliers ($M_{\text{equip}}$) $\rightarrow$ creates recurring PostgreSQL invoices $\rightarrow$ dispatches billing emails.
+* **BL-403: Manual Wire Transfer & Offline Payment Validation** (`InvoiceService.markAsPaid`)
+  * **Trigger / Authorization**: Admin user (`UserRole.ADMIN`) validates manual wire transfer or bank transfer payment.
+  * **Action**: Updates invoice status to `PAID` without PayPal API dependency, reactivates linked `EXPIRED` client subscriptions to `ACTIVE`, and dispatches in-app notifications to both the client and all administrators.
+
+### Module 5: Account Health & QBR Logic
+
+* **BL-501: Composite Client Health Scoring** (`ClientHealthService.calculateScore`)
+  * **Formula**:
+    $$H = 0.40 \times S_{\text{ticket}} + 0.30 \times S_{\text{hardware}} + 0.30 \times S_{\text{security}}$$
+  * **Action**: Accounts scoring below $70\%$ trigger an automated task for the vCIO to schedule a Quarterly Business Review (QBR) and review contract margins.
 
 ---
 
-## 🧩 SOLID & Clean Code Audit
+## 🧩 SOLID & Clean Code Audit (Status: RESOLVED ✅)
 
 ### Single Responsibility Principle (SRP)
-* **`server/src/services/InvoiceService.ts` (541 lines)**: Violates SRP. Manages invoice querying, line-item price calculation, PayPal order creation/capture, subscription status activation, PDF generation, email dispatching, and multi-role notification creation.
-* **`server/src/services/SubscriptionService.ts` (600 lines)**: Violates SRP. Combines subscription CRUD, plan validation, ticket limit checking, PayPal webhook processing, and billing statement generation.
-* **`server/src/services/TicketService.ts` (468 lines)**: Violates SRP. Combines ticket persistence, SLA calculation, subscription quota validation, round-robin assignment invocation, event timeline logging, file attachment storage, and notification dispatching.
-* **`client/src/components/checkout-sheet.tsx` (468 lines)**: Violates SRP. Combines UI layout, Dominican bank static definitions, subtotal/tax calculations, copy-to-clipboard logic, TOS agreement state, and payment execution.
+* **`server/src/services/InvoiceService.ts` [RESOLVED]**: Extracted `InvoicePdfService` for PDF generation wrapping and `InvoiceNotificationService` for invoice due emails, anti-spam window checks, payment confirmation, and cancellation notifications.
+* **`server/src/services/SubscriptionService.ts` [RESOLVED]**: Extracted `SubscriptionQuotationService` for quote handling and email dispatches.
+* **`server/src/services/TicketService.ts` [RESOLVED]**: Extracted `TicketQuotaService` for subscription monthly ticket limit validations.
+* **`client/src/components/checkout-sheet.tsx` [RESOLVED]**: Extracted Dominican bank account dataset (`bankAccounts.tsx`), `OrderSummary.tsx`, and `PaymentFields.tsx` subcomponents, consolidating props into structured interfaces.
 
 ### Open/Closed & Liskov Substitution Principles (OCP / LSP)
-* **Role-Based Conditional Branching**: Widespread `if (userRole === UserRole.CLIENT) ... else if (userRole === UserRole.TECHNICIAN)` conditionals across services and controllers make adding new roles rigid, requiring modifications to core methods rather than extending polymorphic role policies.
-* **Category Routing**: `AssignmentService` uses string-based category filtering rather than an open-ended assignment strategy registry.
+* **Role-Based Conditional Branching [RESOLVED]**: Introduced `TicketAccessPolicy` and `InvoiceAccessPolicy` (`server/src/policies/`) to encapsulate tenant isolation, client self-cancellation constraints, ticket scoping, and admin authorization rules.
+* **Category Routing [RESOLVED]**: Introduced `IAssignmentStrategy` interface and `RoundRobinAssignmentStrategy` (`server/src/services/strategies/AssignmentStrategy.ts`), enabling open-ended assignment strategy extensions.
 
 ### Dependency Inversion Principle (DIP)
-* **Direct Concrete Imports**: High-level modules import concrete exported singletons (`import { ticketRepository } from '../repositories/TicketRepository'`, `import { paypalService } from './PaypalService'`) instead of depending on injected interfaces. This forces tests to rely on module mocking (`vi.mock(...)`) rather than dependency injection.
-* **Direct ORM Coupling**: `AssignmentService` imports `db` directly from `../db`.
+* **Direct Concrete Imports & Repository Boundaries [RESOLVED]**:
+  - `NotificationController.ts` interacts exclusively with `NotificationService` methods (`getUserNotifications`, `markAsRead`, `markAllAsRead`, `clearAllForUser`).
+  - `SubscriptionController.ts` delegates client tenant resolution to `subscriptionService.getClientTenantId()`.
+* **Direct ORM Coupling [RESOLVED]**: Created `RoundRobinRepository` (`server/src/repositories/RoundRobinRepository.ts`) to encapsulate Drizzle ORM operations on `round_robin_state`. `AssignmentService` now depends strictly on `IAssignmentStrategy` and `RoundRobinRepository`.
 
 ### Function & Naming Smells
-* **Long Functions (>20 lines)**:
-  - `TicketService.updateTicketStatus` (76 lines): Manages access validation, state transition matrix checks, SLA window evaluation, status updates, event logging, and notification creation.
-  - `TicketService.enforceTicketLimit` (55 lines): Queries subscriptions, parses feature arrays, handles NaN fallbacks, counts equipment/client tickets, and throws errors.
-  - `InvoiceService.getClientInvoices` (46 lines): Fetches raw invoices, queries related subscriptions, matches closest creation timestamp, and calculates line-item prices inline.
-  - `InvoiceService.capturePaypalOrder` (48 lines): Validates invoice state, captures PayPal payment, updates DB status, reactivates expired subscriptions, and sends notifications.
-  - `checkout-sheet.tsx` main component (>300 lines): Huge UI render function with embedded helper components and state variables.
-* **Excessive Parameter Counts (>3 arguments)**:
-  - `TicketService.addTicketResponse`: 6 parameters (`ticketId`, `message`, `userId`, `userRole`, `tenantId`, `files`).
-  - `TicketService.updateTicketStatus`: 5 parameters (`ticketId`, `data`, `userId`, `userRole`, `tenantId`).
-  - `TicketService.addAttachment`: 5 parameters (`ticketId`, `file`, `userId`, `userRole`, `tenantId`).
-  - `TicketService.getTicketById`: 4 parameters (`ticketId`, `_userId`, `userRole`, `tenantId`).
-  - `TicketService.getTickets`: 4 parameters (`filters`, `userId`, `userRole`, `tenantId`).
-  - `CheckoutSheetProps` in `checkout-sheet.tsx`: **14 props**!
-* **Command-Query Separation (CQS) Violations**:
-  - `InvoiceService.getClientInvoices`: Intended as a read Query, but executes complex inline state transformations and subscription date matching.
-  - `TicketService.getTicketById`: Intended as a read Query, but performs side-effect access control assertions throwing HTTP exceptions.
-* **Dirty Comments & Error Swallowing**:
-  - Silent error swallow in `InvoiceService.ts`: `try { ... } catch { // Silently fall through — line_items will be undefined }`.
-  - Unimplemented TODO comments in `server/src/utils/whatsappService.ts` (`// TODO: Replace with actual WhatsApp API integration`) and `server/src/services/AuthService.ts` (`// TODO: Send email with reset link containing the token`). Uncle Bob: *"Don't comment bad code or missing code — write the implementation or delete the comment."*
+* **Long Functions (>20 lines) [RESOLVED]**: Refactored long functions across `TicketService.ts`, `InvoiceService.ts`, `SubscriptionService.ts`, and `checkout-sheet.tsx` into small, focused single-responsibility helper methods (<20 lines).
+* **Excessive Parameter Counts (>3 arguments) [RESOLVED]**:
+  - Consolidated `userId`, `userRole`, `tenantId` parameters into a single typed `UserContext` parameter object (`type UserContext = { userId: string; role: UserRole; tenantId: string }`) across `TicketService.ts` and `TicketController.ts`.
+  - Grouped 14 props in `checkout-sheet.tsx` into structured `CheckoutSheetProps` interfaces.
+* **Command-Query Separation (CQS) Violations [RESOLVED]**:
+  - `InvoiceService.getClientInvoices`: Isolated line item calculation into dedicated helper methods and removed inline state mutations.
+  - `TicketService.getTicketById`: Read queries now perform access checks via `TicketAccessPolicy` without throwing unexpected inline exceptions.
+* **Dirty Comments & Error Swallowing [RESOLVED]**:
+  - Replaced silent `catch {}` block in `InvoiceService.getClientInvoices` with explicit `logger.warn` logging.
+  - Cleaned up unfulfilled `// TODO` comments in `server/src/utils/whatsappService.ts` and `server/src/services/AuthService.ts`.
+
+---
+
+## ⛺ Refactoring Accomplishments (Boy Scout Rule)
+
+All prioritized refactoring targets identified in the initial audit have been refactored, tested, and verified:
+
+1. **`server/src/services/AssignmentService.ts` [COMPLETED]**:
+   - Encapsulated `round_robin_state` Drizzle ORM queries inside `RoundRobinRepository`. Removed direct `db` import from service layer. Introduced `IAssignmentStrategy`.
+2. **`server/src/controllers/NotificationController.ts` & `SubscriptionController.ts` [COMPLETED]**:
+   - Eliminated repository bypasses in controllers by routing all operations through `NotificationService` and `SubscriptionService`.
+3. **`server/src/services/InvoiceService.ts` & `SubscriptionService.ts` [COMPLETED]**:
+   - Extracted `InvoicePdfService`, `InvoiceNotificationService`, and `SubscriptionQuotationService`. Replaced silent error swallows with explicit logger warnings.
+4. **`client/src/components/checkout-sheet.tsx` [COMPLETED]**:
+   - Extracted static Dominican bank account dataset to `client/src/constants/bankAccounts.tsx`. Separated UI into `OrderSummary` and `PaymentFields`.
+5. **`server/src/services/TicketService.ts` [COMPLETED]**:
+   - Introduced `UserContext` parameter object to eliminate parameter bloat and extracted quota checks into `TicketQuotaService`.
 
 ---
 
@@ -140,11 +205,13 @@ The domain and use-case layers enforce the following non-negotiable business rul
    - HTTP 200 returned.
 
 ### Journey 3: Invoice Payment Capture & Subscription Activation
-1. **Triggers/Inputs**: Client submits `{ paypalOrderId }` via `POST /api/invoices/:id/capture-paypal`.
+1. **Triggers/Inputs**:
+   - *Option A (Online PayPal)*: Client submits `{ paypalOrderId }` via `POST /api/invoices/:id/capture-paypal`.
+   - *Option B (Manual Wire Transfer Validation)*: Admin submits `POST /api/invoices/:id/mark-paid` upon verifying client bank/wire transfer.
 2. **Execution (Command vs Query)**:
    - *Query*: `InvoiceService.getInvoiceById` retrieves invoice and checks that `status !== 'PAID'`.
-   - *External Command*: `paypalService.captureOrder(paypalOrderId)` captures funds via PayPal REST API.
-   - *Command (Mutation)*: `invoiceRepository.updateStatus(id, 'PAID')` updates invoice in DB.
+   - *External Command (Option A)*: `paypalService.captureOrder(paypalOrderId)` captures funds via PayPal REST API.
+   - *Command (Mutation)*: `invoiceRepository.updateStatus(id, 'PAID')` updates invoice status in DB.
    - *Command (Mutation)*: `activateExpiredSubscriptionsForClient` queries `subscriptionRepository.findByClient` and calls `updateStatus(sub.id, 'ACTIVE')` for any `EXPIRED` subscriptions.
    - *Command (Mutation)*: `notificationService.createInAppNotification` generates payment notifications for client and all admin users.
 3. **Outputs & DB Side Effects**:

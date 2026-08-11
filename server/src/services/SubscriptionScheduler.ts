@@ -2,10 +2,12 @@ import { subscriptionRepository } from '../repositories/SubscriptionRepository';
 import { planRepository } from '../repositories/PlanRepository';
 import { invoiceRepository } from '../repositories/InvoiceRepository';
 import { equipmentRepository } from '../repositories/EquipmentRepository';
+import { userRepository } from '../repositories/UserRepository';
 import { nextcloudService } from './NextcloudService';
 import { paypalService } from './PaypalService';
 import { notificationService } from './NotificationService';
 import { invoiceService } from './InvoiceService';
+import { sendInvoiceDueEmail } from '../utils/emailService';
 import { logger } from '../utils/logger';
 import { TAX_RATE } from '../config/constants';
 import { InvoiceStatus, SubscriptionStatus, Subscription } from '../types';
@@ -43,6 +45,10 @@ export class SubscriptionScheduler {
       this.intervalId = null;
       logger.info('Subscription Scheduler stopped');
     }
+  }
+
+  async processSubscriptions(): Promise<void> {
+    return this.checkAndRenewSubscriptions();
   }
 
   async checkAndRenewSubscriptions(): Promise<void> {
@@ -192,7 +198,7 @@ export class SubscriptionScheduler {
         if (!existing) break;
       }
 
-      await invoiceRepository.create({
+      const createdInvoice = await invoiceRepository.create({
         invoice_number: invoiceNumber,
         client_id: sub.client_id,
         amount: subtotal,
@@ -212,6 +218,16 @@ export class SubscriptionScheduler {
         type: 'SUBSCRIPTION_RENEWED',
         tenantId: sub.tenant_id,
       });
+
+      // 4. Dispatch billing email notification to the client
+      try {
+        const clientUser = await userRepository.findById(sub.client_id);
+        if (clientUser && clientUser.email) {
+          await sendInvoiceDueEmail(clientUser.email, clientUser.name, createdInvoice, clientUser.language || 'en');
+        }
+      } catch (err) {
+        logger.error(`Failed to send billing email for renewed subscription ${sub.id}`, { err });
+      }
 
       logger.info(`Subscription ${sub.id} renewed successfully. Next renewal: ${newRenewalDate.toISOString()}`);
     }

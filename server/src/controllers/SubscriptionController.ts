@@ -1,8 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { subscriptionService } from '../services/SubscriptionService';
 import { CreateSubscriptionInput, UpdateSubscriptionInput, SendQuoteInput, CreatePaypalOrderInput } from '../dtos/subscription.dto';
-import { userRepository } from '../repositories/UserRepository';
-import { AppError } from '../utils/AppError';
 
 export class SubscriptionController {
   async getAll(req: Request, res: Response): Promise<void> {
@@ -17,17 +15,15 @@ export class SubscriptionController {
 
   async create(req: Request, res: Response): Promise<void> {
     const data = req.body as CreateSubscriptionInput;
+    const byAdmin = req.user!.role === 'ADMIN' && !!data.clientId;
     let targetClientId = req.user!.userId;
     let targetTenantId = req.user!.tenantId;
-    if (req.user!.role === 'ADMIN' && data.clientId) {
+
+    if (byAdmin && data.clientId) {
       targetClientId = data.clientId;
-      const clientUser = await userRepository.findById(targetClientId);
-      if (!clientUser) {
-        throw AppError.notFound('Client user not found');
-      }
-      targetTenantId = clientUser.tenant_id;
+      targetTenantId = await subscriptionService.getClientTenantId(targetClientId);
     }
-    const byAdmin = req.user!.role === 'ADMIN' && !!data.clientId;
+
     const subscription = await subscriptionService.createSubscription(data, targetClientId, targetTenantId, byAdmin);
     res.status(201).json({ success: true, data: subscription });
   }

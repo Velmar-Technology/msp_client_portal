@@ -10,6 +10,26 @@ const mocks = vi.hoisted(() => {
     invoiceCreate: vi.fn(),
     paypalGetSubscription: vi.fn(),
     createInAppNotification: vi.fn(),
+    sendInvoiceDueEmail: vi.fn().mockResolvedValue({}),
+  };
+});
+
+vi.mock('../repositories/UserRepository', () => {
+  return {
+    userRepository: {
+      findById: vi.fn().mockResolvedValue({
+        id: 'client-999',
+        name: 'John Client',
+        email: 'client@example.com',
+        language: 'en',
+      }),
+    },
+  };
+});
+
+vi.mock('../utils/emailService', () => {
+  return {
+    sendInvoiceDueEmail: mocks.sendInvoiceDueEmail,
   };
 });
 
@@ -95,6 +115,7 @@ describe('SubscriptionScheduler', () => {
     mocks.subFindPendingRenewal.mockResolvedValue([mockSub]);
     mocks.planFindById.mockResolvedValue(mockPlan);
     mocks.invoiceFindByNumber.mockResolvedValue(null);
+    mocks.invoiceCreate.mockImplementation((data: any) => Promise.resolve({ id: 'inv-created-123', ...data }));
     mocks.subUpdateRenewal.mockResolvedValue(mockSub);
 
     await subscriptionScheduler.checkAndRenewSubscriptions();
@@ -114,6 +135,18 @@ describe('SubscriptionScheduler', () => {
         title: 'Subscription Renewed',
       })
     );
+    expect(mocks.sendInvoiceDueEmail).toHaveBeenCalledWith(
+      'client@example.com',
+      'John Client',
+      expect.anything(),
+      'en'
+    );
+  });
+
+  it('should expose processSubscriptions method as primary renewal entrypoint', async () => {
+    mocks.subFindPendingRenewal.mockResolvedValue([]);
+    await subscriptionScheduler.processSubscriptions();
+    expect(mocks.subFindPendingRenewal).toHaveBeenCalled();
   });
 
   it('should successfully renew a real PayPal subscription if PayPal advanced billing time', async () => {

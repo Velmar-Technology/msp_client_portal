@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => {
     getSubscriptionById: vi.fn(),
     createSubscription: vi.fn(),
     updateSubscription: vi.fn(),
+    getClientTenantId: vi.fn(),
     userFindById: vi.fn(),
   };
 });
@@ -18,6 +19,7 @@ vi.mock('../services/SubscriptionService', () => {
       getSubscriptionById: mocks.getSubscriptionById,
       createSubscription: mocks.createSubscription,
       updateSubscription: mocks.updateSubscription,
+      getClientTenantId: mocks.getClientTenantId,
     },
   };
 });
@@ -121,7 +123,7 @@ describe('SubscriptionController', () => {
     it('should use specified clientId when roles is ADMIN and clientId is provided', async () => {
       const mockSub = { id: 'sub-1', client_id: 'client-456' };
       mocks.createSubscription.mockResolvedValue(mockSub);
-      mocks.userFindById.mockResolvedValue({ id: 'client-456', tenant_id: 'tenant-456' });
+      mocks.getClientTenantId.mockResolvedValue('tenant-456');
 
       const req = {
         body: { ...input, clientId: 'client-456' }, // ADMIN overrides
@@ -134,7 +136,7 @@ describe('SubscriptionController', () => {
 
       await subscriptionController.create(req, res);
 
-      expect(mocks.userFindById).toHaveBeenCalledWith('client-456');
+      expect(mocks.getClientTenantId).toHaveBeenCalledWith('client-456');
       expect(mocks.createSubscription).toHaveBeenCalledWith(
         expect.objectContaining(input),
         'client-456', // Matches req.body.clientId

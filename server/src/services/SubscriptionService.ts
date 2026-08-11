@@ -9,10 +9,10 @@ import { logger } from '../utils/logger';
 import { TAX_RATE } from '../config/constants';
 import { Subscription, SubscriptionPlan, SubscriptionStatus, InvoiceStatus, UserRole } from '../types';
 import { CreateSubscriptionInput, UpdateSubscriptionInput, SendQuoteInput } from '../dtos/subscription.dto';
-import { sendQuotationEmail } from '../utils/emailService';
 import { paypalService } from './PaypalService';
 import { env } from '../config/env';
 import { notificationService } from './NotificationService';
+import { subscriptionQuotationService } from './SubscriptionQuotationService';
 
 function getLocalizedValue(val: any): string {
   if (!val) return '';
@@ -25,6 +25,14 @@ function getLocalizedValue(val: any): string {
 }
 
 export class SubscriptionService {
+  async getClientTenantId(clientId: string): Promise<string> {
+    const clientUser = await userRepository.findById(clientId);
+    if (!clientUser) {
+      throw AppError.notFound('Client user not found');
+    }
+    return clientUser.tenant_id;
+  }
+
   async getClientSubscriptions(tenantId: string): Promise<Subscription[]> {
     return subscriptionRepository.findByTenant(tenantId);
   }
@@ -449,59 +457,7 @@ export class SubscriptionService {
   }
 
   async sendQuotation(data: SendQuoteInput, senderUserId: string, senderTenantId: string, role: string): Promise<void> {
-    let recipientEmail = '';
-    let recipientName = '';
-    let recipientLanguage = 'en_US';
-
-    if (data.unregisteredEmail) {
-      recipientEmail = data.unregisteredEmail;
-      recipientName = data.unregisteredName || 'Valued Customer';
-      
-      const senderUser = await userRepository.findById(senderUserId);
-      if (senderUser) {
-        recipientLanguage = senderUser.language || 'en_US';
-      }
-    } else {
-      let targetClientId = senderUserId;
-      if (role === 'ADMIN' && data.clientId) {
-        targetClientId = data.clientId;
-      }
-      const clientUser = await userRepository.findById(targetClientId);
-      if (!clientUser) {
-        throw AppError.notFound('Client user not found');
-      }
-      if (clientUser.tenant_id !== senderTenantId && role !== 'ADMIN') {
-        throw AppError.forbidden('Client does not belong to this tenant');
-      }
-      recipientEmail = clientUser.email;
-      recipientName = clientUser.name;
-      recipientLanguage = clientUser.language || 'en_US';
-    }
-
-    const planDetails = await planRepository.findById(data.plan);
-    if (!planDetails) {
-      throw AppError.notFound('Plan not found');
-    }
-
-    const billingCycle = data.billingCycle || 'monthly';
-    const price = planDetails.price;
-    const equipmentCount = data.equipmentCount;
-    const priceMultiplier = billingCycle === 'annual' ? 12 * 0.8 : 1;
-    const subtotal = Math.round(price * priceMultiplier * equipmentCount * 100) / 100;
-    const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
-    const total = Math.round((subtotal + tax) * 100) / 100;
-
-    await sendQuotationEmail(
-      recipientEmail,
-      recipientName,
-      planDetails,
-      billingCycle,
-      equipmentCount,
-      subtotal,
-      tax,
-      total,
-      recipientLanguage
-    );
+    return subscriptionQuotationService.sendQuotation(data, senderUserId, senderTenantId, role);
   }
 }
 

@@ -1,23 +1,30 @@
-import { invoiceRepository } from '../repositories/InvoiceRepository';
-import { userRepository } from '../repositories/UserRepository';
-import { tenantRepository } from '../repositories/TenantRepository';
-import { subscriptionRepository } from '../repositories/SubscriptionRepository';
-import { expenseRepository } from '../repositories/ExpenseRepository';
+import { invoiceRepository, InvoiceRepository } from '../repositories/InvoiceRepository';
+import { subscriptionRepository, SubscriptionRepository } from '../repositories/SubscriptionRepository';
+import { expenseRepository, ExpenseRepository } from '../repositories/ExpenseRepository';
 import { AppError } from '../utils/AppError';
 import { Invoice, UserRole, InvoiceStatus, SubscriptionStatus } from '../types';
 import { paypalService } from './PaypalService';
-import { notificationService } from './NotificationService';
-import { generateInvoicePdf } from '../utils/pdfGenerator';
-import { sendInvoiceDueEmail } from '../utils/emailService';
 import { logger } from '../utils/logger';
+import { invoicePdfService, InvoicePdfService } from './InvoicePdfService';
+import { invoiceNotificationService, InvoiceNotificationService } from './InvoiceNotificationService';
+import { invoiceAccessPolicy, InvoiceAccessPolicy } from '../policies/InvoiceAccessPolicy';
 
 export class InvoiceService {
+  constructor(
+    private invoiceRepo: InvoiceRepository = invoiceRepository,
+    private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
+    private expenseRepo: ExpenseRepository = expenseRepository,
+    private pdfService: InvoicePdfService = invoicePdfService,
+    private notifService: InvoiceNotificationService = invoiceNotificationService,
+    private accessPolicy: InvoiceAccessPolicy = invoiceAccessPolicy,
+  ) {}
+
   private async activateExpiredSubscriptionsForClient(clientId: string, tenantId: string): Promise<void> {
     try {
-      const clientSubs = await subscriptionRepository.findByClient(clientId, tenantId);
+      const clientSubs = await this.subscriptionRepo.findByClient(clientId, tenantId);
       for (const sub of clientSubs) {
         if (sub.status === SubscriptionStatus.EXPIRED) {
-          await subscriptionRepository.updateStatus(sub.id, SubscriptionStatus.ACTIVE);
+          await this.subscriptionRepo.updateStatus(sub.id, SubscriptionStatus.ACTIVE);
         }
       }
     } catch (err) {
@@ -27,58 +34,54 @@ export class InvoiceService {
 
   async getClientInvoices(tenantId: string, userRole: UserRole, page = 1, limit = 20): Promise<{ invoices: (Invoice & { line_items?: Array<{ description: string; quantity: number; unit_price: number }> })[]; total: number }> {
     const offset = (page - 1) * limit;
-    let rawInvoices: Invoice[];
-    let total: number;
+    const isAdmin = userRole === UserRole.ADMIN;
+    
+    const rawInvoices = isAdmin
+      ? await this.invoiceRepo.findAll(limit, offset)
+      : await this.invoiceRepo.findByTenant(tenantId, limit, offset);
 
-    if (userRole === UserRole.ADMIN) {
-      rawInvoices = await invoiceRepository.findAll(limit, offset);
-      total = await invoiceRepository.count();
-    } else {
-      rawInvoices = await invoiceRepository.findByTenant(tenantId, limit, offset);
-      total = await invoiceRepository.countByTenant(tenantId);
-    }
+    const total = isAdmin
+      ? await this.invoiceRepo.count()
+      : await this.invoiceRepo.countByTenant(tenantId);
 
-    // Enrich invoices with line items from related subscriptions
-    const enriched = await Promise.all(rawInvoices.map(async (inv) => {
-      try {
-        const subs = await subscriptionRepository.findByClient(inv.client_id, inv.tenant_id);
-        // Find the subscription created closest to the invoice creation date
-        const invCreatedAt = new Date(inv.created_at || inv.invoice_date).getTime();
-        let bestMatch = subs[0];
-        let bestDiff = Infinity;
-        for (const sub of subs) {
-          const subCreatedAt = new Date(sub.created_at || '').getTime();
-          const diff = Math.abs(subCreatedAt - invCreatedAt);
-          if (diff < bestDiff) {
-            bestDiff = diff;
-            bestMatch = sub;
-          }
-        }
-        if (bestMatch) {
-          return {
-            ...inv,
-            line_items: [{
-              description: bestMatch.service_name,
-              quantity: bestMatch.equipment_count || 1,
-              unit_price: Number(inv.amount) / (bestMatch.equipment_count || 1),
-            }],
-          };
-        }
-      } catch {
-        // Silently fall through — line_items will be undefined
-      }
-      return inv;
-    }));
-
+    const enriched = await Promise.all(rawInvoices.map((inv) => this.enrichInvoiceWithLineItems(inv)));
     return { invoices: enriched, total };
   }
 
-  async getInvoiceById(id: string, tenantId: string, userRole: UserRole): Promise<Invoice> {
-    const invoice = await invoiceRepository.findById(id);
-    if (!invoice) throw AppError.notFound('Invoice not found');
-    if (userRole === UserRole.CLIENT && invoice.tenant_id !== tenantId) {
-      throw AppError.forbidden('Access denied');
+  private async enrichInvoiceWithLineItems(inv: Invoice): Promise<Invoice & { line_items?: Array<{ description: string; quantity: number; unit_price: number }> }> {
+    try {
+      const subs = await this.subscriptionRepo.findByClient(inv.client_id, inv.tenant_id);
+      const invCreatedAt = new Date(inv.created_at || inv.invoice_date).getTime();
+      let bestMatch = subs[0];
+      let bestDiff = Infinity;
+      for (const sub of subs) {
+        const subCreatedAt = new Date(sub.created_at || '').getTime();
+        const diff = Math.abs(subCreatedAt - invCreatedAt);
+        if (diff < bestDiff) {
+          bestDiff = diff;
+          bestMatch = sub;
+        }
+      }
+      if (bestMatch) {
+        return {
+          ...inv,
+          line_items: [{
+            description: bestMatch.service_name,
+            quantity: bestMatch.equipment_count || 1,
+            unit_price: Number(inv.amount) / (bestMatch.equipment_count || 1),
+          }],
+        };
+      }
+    } catch (err) {
+      logger.warn(`Could not enrich invoice ${inv.id} line items`, { err });
     }
+    return inv;
+  }
+
+  async getInvoiceById(id: string, tenantId: string, userRole: UserRole): Promise<Invoice> {
+    const invoice = await this.invoiceRepo.findById(id);
+    if (!invoice) throw AppError.notFound('Invoice not found');
+    this.accessPolicy.assertAccess(invoice, tenantId, userRole);
     return invoice;
   }
 
@@ -102,71 +105,32 @@ export class InvoiceService {
       throw AppError.badRequest('PayPal payment was not completed');
     }
 
-    const updatedInvoice = await invoiceRepository.updateStatus(id, InvoiceStatus.PAID);
+    const updatedInvoice = await this.invoiceRepo.updateStatus(id, InvoiceStatus.PAID);
     if (!updatedInvoice) {
       throw AppError.internal('Failed to update invoice status in database');
     }
 
     await this.activateExpiredSubscriptionsForClient(invoice.client_id, invoice.tenant_id);
-
-    // Trigger in-app notification to client
-    await notificationService.createInAppNotification({
-      userId: invoice.client_id,
-      title: 'Payment Received',
-      message: `Your payment of $${Number(invoice.total).toFixed(2)} for invoice ${invoice.invoice_number} has been processed successfully.`,
-      link: '/billing',
-      type: 'INVOICE_PAID',
-      tenantId: invoice.tenant_id,
-    });
-
-    // Trigger in-app notification to all Admin users
-    try {
-      const adminUsers = await userRepository.findByRole(UserRole.ADMIN);
-      const clientUser = await userRepository.findById(invoice.client_id);
-      const clientName = clientUser?.name || 'A customer';
-      for (const admin of adminUsers) {
-        await notificationService.createInAppNotification({
-          userId: admin.id,
-          title: 'Invoice Payment Received',
-          message: `${clientName} paid $${Number(invoice.total).toFixed(2)} for invoice ${invoice.invoice_number}.`,
-          link: '/billing',
-          type: 'INVOICE_PAID_ADMIN',
-          tenantId: invoice.tenant_id,
-        });
-      }
-    } catch (err) {
-      logger.error('Failed to notify admin of payment success:', err);
-    }
+    await this.notifService.notifyPaymentReceived(invoice);
 
     return updatedInvoice;
   }
 
   async markAsPaid(id: string, tenantId: string, userRole: UserRole): Promise<Invoice> {
-    if (userRole !== UserRole.ADMIN) {
-      throw AppError.forbidden('Only administrators can mark invoices as paid manually');
-    }
+    this.accessPolicy.assertAdmin(userRole, 'Only administrators can mark invoices as paid manually');
 
     const invoice = await this.getInvoiceById(id, tenantId, userRole);
     if (invoice.status === InvoiceStatus.PAID) {
       return invoice;
     }
 
-    const updatedInvoice = await invoiceRepository.updateStatus(id, InvoiceStatus.PAID);
+    const updatedInvoice = await this.invoiceRepo.updateStatus(id, InvoiceStatus.PAID);
     if (!updatedInvoice) {
       throw AppError.internal('Failed to update invoice status in database');
     }
 
     await this.activateExpiredSubscriptionsForClient(invoice.client_id, invoice.tenant_id);
-
-    // Trigger in-app notification to client
-    await notificationService.createInAppNotification({
-      userId: invoice.client_id,
-      title: 'Payment Confirmed',
-      message: `Your payment of $${Number(invoice.total).toFixed(2)} for invoice ${invoice.invoice_number} has been confirmed.`,
-      link: '/billing',
-      type: 'INVOICE_PAID',
-      tenantId: invoice.tenant_id,
-    });
+    await this.notifService.notifyManualPaymentConfirmed(invoice);
 
     return updatedInvoice;
   }
@@ -181,14 +145,20 @@ export class InvoiceService {
       return invoice;
     }
 
-    const updatedInvoice = await invoiceRepository.updateStatus(id, InvoiceStatus.CANCELLED);
+    const updatedInvoice = await this.invoiceRepo.updateStatus(id, InvoiceStatus.CANCELLED);
     if (!updatedInvoice) {
       throw AppError.internal('Failed to update invoice status in database');
     }
 
-    // Cancel the related subscription if it's still in EXPIRED state (bank transfer intent)
+    await this.cancelRelatedSubscriptionIfExpired(invoice);
+    await this.notifService.notifyInvoiceCancelled(invoice, userId, userRole, reason);
+
+    return updatedInvoice;
+  }
+
+  private async cancelRelatedSubscriptionIfExpired(invoice: Invoice): Promise<void> {
     try {
-      const clientSubs = await subscriptionRepository.findByClient(invoice.client_id, invoice.tenant_id);
+      const clientSubs = await this.subscriptionRepo.findByClient(invoice.client_id, invoice.tenant_id);
       const invCreatedAt = new Date(invoice.created_at || invoice.invoice_date).getTime();
       let bestMatch = clientSubs[0];
       let bestDiff = Infinity;
@@ -202,86 +172,26 @@ export class InvoiceService {
         }
       }
       if (bestMatch && bestMatch.status === SubscriptionStatus.EXPIRED) {
-        await subscriptionRepository.updateStatus(bestMatch.id, SubscriptionStatus.CANCELLED);
+        await this.subscriptionRepo.updateStatus(bestMatch.id, SubscriptionStatus.CANCELLED);
       }
     } catch (err) {
       logger.error('Failed to cancel related subscription for cancelled invoice:', err);
     }
-
-    // Notify the client that their invoice was cancelled
-    const reasonSuffix = reason ? ` Reason: ${reason}` : '';
-    await notificationService.createInAppNotification({
-      userId: invoice.client_id,
-      title: 'Invoice Cancelled',
-      message: `Invoice ${invoice.invoice_number} ($${Number(invoice.total).toFixed(2)}) has been cancelled.${reasonSuffix}`,
-      link: '/billing',
-      type: 'INVOICE_CANCELLED',
-      tenantId: invoice.tenant_id,
-    }).catch((err) => {
-      logger.error('Failed to send invoice cancellation notification to client:', err);
-    });
-
-    // Notify admins if a client self-cancelled
-    if (userRole !== UserRole.ADMIN) {
-      try {
-        const adminUsers = await userRepository.findByRole(UserRole.ADMIN);
-        const clientUser = await userRepository.findById(userId);
-        const clientName = clientUser?.name || 'A customer';
-        for (const admin of adminUsers) {
-          await notificationService.createInAppNotification({
-            userId: admin.id,
-            title: 'Invoice Cancelled by Client',
-            message: `${clientName} cancelled invoice ${invoice.invoice_number} ($${Number(invoice.total).toFixed(2)}).${reasonSuffix}`,
-            link: '/billing',
-            type: 'INVOICE_CANCELLED_ADMIN',
-            tenantId: invoice.tenant_id,
-          });
-        }
-      } catch (err) {
-        logger.error('Failed to notify admins of invoice cancellation:', err);
-      }
-    }
-
-    return updatedInvoice;
   }
 
   async downloadInvoice(id: string, tenantId: string, userRole: UserRole, lang?: string): Promise<{ pdfBuffer: Buffer; invoiceNumber: string }> {
     const invoice = await this.getInvoiceById(id, tenantId, userRole);
-
-    const client = await userRepository.findById(invoice.client_id);
-    if (!client) throw AppError.notFound('Client not found');
-
-    const tenant = await tenantRepository.findById(invoice.tenant_id);
-    if (!tenant) throw AppError.notFound('Tenant not found');
-
-    const finalLang = lang || client.language || 'en_US';
-
-    const pdfBuffer = generateInvoicePdf(
-      invoice,
-      client.name,
-      client.email,
-      tenant.name,
-      finalLang
-    );
-
-    return {
-      pdfBuffer,
-      invoiceNumber: invoice.invoice_number,
-    };
+    return this.pdfService.generatePdf(invoice, lang);
   }
 
   async getFinancialStats(tenantId: string, userRole: UserRole, range: '30_days' | 'quarter' | 'year') {
     const isClient = userRole === UserRole.CLIENT;
-    const allInvoices = await invoiceRepository.getAllForStats(isClient ? tenantId : undefined);
-
+    const allInvoices = await this.invoiceRepo.getAllForStats(isClient ? tenantId : undefined);
     const referenceDate = allInvoices.length > 0 ? new Date(allInvoices[0].invoice_date) : new Date();
 
     let rangeMs = 30 * 24 * 60 * 60 * 1000;
-    if (range === 'quarter') {
-      rangeMs = 90 * 24 * 60 * 60 * 1000;
-    } else if (range === 'year') {
-      rangeMs = 365 * 24 * 60 * 60 * 1000;
-    }
+    if (range === 'quarter') rangeMs = 90 * 24 * 60 * 60 * 1000;
+    else if (range === 'year') rangeMs = 365 * 24 * 60 * 60 * 1000;
 
     const currentPeriodStart = new Date(referenceDate.getTime() - rangeMs);
     const previousPeriodStart = new Date(referenceDate.getTime() - 2 * rangeMs);
@@ -300,8 +210,7 @@ export class InvoiceService {
       }
     }
 
-    const activeSubs = await subscriptionRepository.getActiveSubscriptionsWithPlan(isClient ? tenantId : undefined);
-
+    const activeSubs = await this.subscriptionRepo.getActiveSubscriptionsWithPlan(isClient ? tenantId : undefined);
     let currentMRR = 0;
     let previousMRR = 0;
 
@@ -317,8 +226,7 @@ export class InvoiceService {
       }
     }
 
-    const dbExpenses = await expenseRepository.getAllForStats(isClient ? tenantId : undefined);
-
+    const dbExpenses = await this.expenseRepo.getAllForStats(isClient ? tenantId : undefined);
     let currentExpenses = 0;
     let previousExpenses = 0;
 
@@ -338,24 +246,15 @@ export class InvoiceService {
       if (prev === 0) return { trend: '+0.0%', isPositive: true };
       const diff = ((curr - prev) / prev) * 100;
       const sign = diff >= 0 ? '+' : '';
-      return {
-        trend: `${sign}${diff.toFixed(1)}%`,
-        isPositive: diff >= 0,
-      };
+      return { trend: `${sign}${diff.toFixed(1)}%`, isPositive: diff >= 0 };
     };
 
     const revTrend = calculateTrend(currentRevenue, previousRevenue);
     const mrrTrend = calculateTrend(currentMRR, previousMRR);
     const expDiff = previousExpenses > 0 ? ((currentExpenses - previousExpenses) / previousExpenses) * 100 : 0;
-    const expTrend = {
-      trend: `${expDiff >= 0 ? '+' : ''}${expDiff.toFixed(1)}%`,
-      isPositive: expDiff <= 0,
-    };
+    const expTrend = { trend: `${expDiff >= 0 ? '+' : ''}${expDiff.toFixed(1)}%`, isPositive: expDiff <= 0 };
     const marginDiff = currentMargin - previousMargin;
-    const marginTrend = {
-      trend: `${marginDiff >= 0 ? '+' : ''}${marginDiff.toFixed(1)}%`,
-      isPositive: marginDiff >= 0,
-    };
+    const marginTrend = { trend: `${marginDiff >= 0 ? '+' : ''}${marginDiff.toFixed(1)}%`, isPositive: marginDiff >= 0 };
 
     const kpis = [
       { key: 'revenue', titleKey: 'revenue', value: `$${currentRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, trend: revTrend.trend, isPositiveTrend: revTrend.isPositive },
@@ -366,7 +265,6 @@ export class InvoiceService {
 
     const monthlyData: any[] = [];
     const shortMonthNames = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-
     const refYear = referenceDate.getFullYear();
     const refMonth = referenceDate.getMonth();
 
@@ -394,35 +292,20 @@ export class InvoiceService {
         }
       }
 
-      monthlyData.push({
-        month: monthLabel,
-        revenue: monthRevenue,
-        expenses: monthExpenses,
-      });
+      monthlyData.push({ month: monthLabel, revenue: monthRevenue, expenses: monthExpenses });
     }
 
-    const categoriesSum: Record<string, number> = {
-      cloudInfra: 0,
-      salaries: 0,
-      marketing: 0,
-      officeSpace: 0,
-      other: 0,
-    };
-
+    const categoriesSum: Record<string, number> = { cloudInfra: 0, salaries: 0, marketing: 0, officeSpace: 0, other: 0 };
     for (const exp of dbExpenses) {
       const expDate = new Date(exp.expense_date);
       if (expDate >= currentPeriodStart && expDate <= referenceDate) {
         const cat = exp.category;
-        if (categoriesSum[cat] !== undefined) {
-          categoriesSum[cat] += Number(exp.amount);
-        } else {
-          categoriesSum.other += Number(exp.amount);
-        }
+        if (categoriesSum[cat] !== undefined) categoriesSum[cat] += Number(exp.amount);
+        else categoriesSum.other += Number(exp.amount);
       }
     }
 
     const totalExpVal = Object.values(categoriesSum).reduce((a, b) => a + b, 0);
-
     const expenseCategories = [
       { nameKey: 'cloudInfra', value: categoriesSum.cloudInfra, percentage: totalExpVal > 0 ? Math.round((categoriesSum.cloudInfra / totalExpVal) * 100) : 0, color: '#10b981' },
       { nameKey: 'salaries', value: categoriesSum.salaries, percentage: totalExpVal > 0 ? Math.round((categoriesSum.salaries / totalExpVal) * 100) : 0, color: '#71717a' },
@@ -462,79 +345,25 @@ export class InvoiceService {
 
     txns.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-    return {
-      kpis,
-      monthlyData,
-      expenseCategories,
-      transactions: txns,
-    };
+    return { kpis, monthlyData, expenseCategories, transactions: txns };
   }
 
-  /**
-   * Minimum interval required between due payment notification emails to prevent spamming users.
-   * Set to 3 days (3 * 24 * 60 * 60 * 1000 ms).
-   */
-  readonly MIN_NOTIFICATION_INTERVAL_MS = 3 * 24 * 60 * 60 * 1000;
+  // Delegation helpers for anti-spam & email notifications
+  get MIN_NOTIFICATION_INTERVAL_MS() {
+    return this.notifService.MIN_NOTIFICATION_INTERVAL_MS;
+  }
 
-  /**
-   * Helper to evaluate whether an email notification is allowed based on the 3-day anti-spam window.
-   */
   isEligibleForEmailNotification(lastSentAt: Date | string | null | undefined, now = new Date()): boolean {
-    if (!lastSentAt) return true;
-    const lastSentMs = new Date(lastSentAt).getTime();
-    return (now.getTime() - lastSentMs) >= this.MIN_NOTIFICATION_INTERVAL_MS;
+    return this.notifService.isEligibleForEmailNotification(lastSentAt, now);
   }
 
-  /**
-   * Sends an invoice due payment notification via email if at least 3 days have elapsed
-   * since the last notification email to avoid spamming the user.
-   */
   async processDueInvoiceEmailNotification(invoice: Invoice, now = new Date()): Promise<boolean> {
-    if (invoice.status === InvoiceStatus.PAID || invoice.status === InvoiceStatus.CANCELLED) {
-      return false;
-    }
-
-    if (!this.isEligibleForEmailNotification(invoice.last_email_sent_at, now)) {
-      logger.info(`Skipped email reminder for invoice ${invoice.invoice_number}: Notification sent within the last 3 days.`, {
-        invoiceId: invoice.id,
-        lastSentAt: invoice.last_email_sent_at,
-      });
-      return false;
-    }
-
-    const client = await userRepository.findById(invoice.client_id);
-    if (!client || !client.email) {
-      logger.warn(`Could not send due email for invoice ${invoice.id}: Client email not found`);
-      return false;
-    }
-
-    await sendInvoiceDueEmail(client.email, client.name, invoice, client.language || 'en_US');
-    await invoiceRepository.updateLastEmailSentAt(invoice.id, now);
-
-    logger.info(`Due payment email notification successfully sent for invoice ${invoice.invoice_number} to ${client.email}`);
-    return true;
+    return this.notifService.processDueInvoiceEmailNotification(invoice, now);
   }
 
-  /**
-   * Scans pending & overdue invoices and dispatches due payment email notifications
-   * for invoices that have not been notified in the past 3 days.
-   */
   async checkAndSendDueInvoiceNotifications(now = new Date()): Promise<number> {
-    const pendingInvoices = await invoiceRepository.findPendingDueInvoices();
-    let sentCount = 0;
-
-    for (const inv of pendingInvoices) {
-      try {
-        const sent = await this.processDueInvoiceEmailNotification(inv, now);
-        if (sent) sentCount++;
-      } catch (err) {
-        logger.error(`Error processing due email notification for invoice ${inv.id}`, { err });
-      }
-    }
-
-    return sentCount;
+    return this.notifService.checkAndSendDueInvoiceNotifications(now);
   }
 }
 
 export const invoiceService = new InvoiceService();
-

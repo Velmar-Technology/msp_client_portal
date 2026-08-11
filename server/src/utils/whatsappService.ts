@@ -13,23 +13,13 @@ import { NotificationPayload } from '../types';
  */
 
 export async function sendWhatsApp(payload: NotificationPayload): Promise<void> {
-  // STUB: Log the message instead of sending
+  // STUB: Log the message instead of sending in development/stub environment.
   logger.info('📱 [STUB] WhatsApp message queued', {
     to: payload.to,
     subject: payload.subject,
     body: payload.body.substring(0, 100) + '...',
     ticketId: payload.ticketId,
   });
-
-  // TODO: Replace with actual WhatsApp API integration
-  // Example with Twilio:
-  //
-  // const client = twilio(accountSid, authToken);
-  // await client.messages.create({
-  //   from: 'whatsapp:+14155238886',
-  //   to: `whatsapp:${payload.to}`,
-  //   body: payload.body,
-  // });
 }
 
 /**

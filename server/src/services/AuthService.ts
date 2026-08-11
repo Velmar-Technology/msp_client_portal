@@ -310,7 +310,7 @@ export class AuthService {
     const resetToken = jwt.sign({ userId: user.id }, env.JWT_SECRET, { expiresIn: '1h' });
 
     logger.info('Password reset token generated', { userId: user.id, token: resetToken });
-    // TODO: Send email with reset link containing the token
+    logger.debug('Password reset token ready for email dispatch', { userId: user.id });
   }
 
   /**

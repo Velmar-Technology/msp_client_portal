@@ -293,6 +293,26 @@ export class NotificationService {
       });
     }
   }
+
+  async getUserNotifications(userId: string): Promise<Notification[]> {
+    return notificationRepository.findByUser(userId);
+  }
+
+  async getUnreadCount(userId: string): Promise<number> {
+    return notificationRepository.getUnreadCount(userId);
+  }
+
+  async markAsRead(id: string, userId: string): Promise<Notification | null> {
+    return notificationRepository.markAsRead(id, userId);
+  }
+
+  async markAllAsRead(userId: string): Promise<number> {
+    return notificationRepository.markAllAsRead(userId);
+  }
+
+  async clearAllForUser(userId: string): Promise<number> {
+    return notificationRepository.deleteAllForUser(userId);
+  }
 }
 
 export const notificationService = new NotificationService();

@@ -1,14 +1,13 @@
-import { ticketRepository } from '../repositories/TicketRepository';
-import { ticketEventRepository } from '../repositories/TicketEventRepository';
-import { ticketResponseRepository } from '../repositories/TicketResponseRepository';
-import { userRepository } from '../repositories/UserRepository';
-import { subscriptionRepository } from '../repositories/SubscriptionRepository';
-import { planRepository } from '../repositories/PlanRepository';
-import { assignmentService } from './AssignmentService';
-import { notificationService } from './NotificationService';
+import { ticketRepository, TicketRepository } from '../repositories/TicketRepository';
+import { ticketEventRepository, TicketEventRepository } from '../repositories/TicketEventRepository';
+import { ticketResponseRepository, TicketResponseRepository } from '../repositories/TicketResponseRepository';
+import { userRepository, UserRepository } from '../repositories/UserRepository';
+import { assignmentService, AssignmentService } from './AssignmentService';
+import { notificationService, NotificationService } from './NotificationService';
+import { ticketQuotaService, TicketQuotaService } from './TicketQuotaService';
+import { ticketAccessPolicy, TicketAccessPolicy, UserContext } from '../policies/TicketAccessPolicy';
 import { AppError } from '../utils/AppError';
 import { logger } from '../utils/logger';
-import { SLA_WINDOW_MS, STATUS_TRANSITIONS } from '../config/constants';
 import {
   Ticket,
   TicketAttachment,
@@ -21,16 +20,31 @@ import {
 } from '../types';
 import { CreateTicketInput, UpdateTicketStatusInput } from '../dtos/ticket.dto';
 
-export class TicketService {
-  /**
-   * Create a new ticket and auto-assign a technician via Round-Robin.
-   */
-  async createTicket(data: CreateTicketInput, clientId: string, tenantId: string): Promise<Ticket> {
-    // Validate ticket limit per active subscription plan (measured by device / account)
-    await this.enforceTicketLimit(clientId, tenantId, data.equipmentId);
+export type { UserContext };
 
-    // Create the ticket linked to the tenant
-    const ticket = await ticketRepository.create({
+export class TicketService {
+  constructor(
+    private ticketRepo: TicketRepository = ticketRepository,
+    private eventRepo: TicketEventRepository = ticketEventRepository,
+    private responseRepo: TicketResponseRepository = ticketResponseRepository,
+    private userRepo: UserRepository = userRepository,
+    private assignmentSvc: AssignmentService = assignmentService,
+    private notifSvc: NotificationService = notificationService,
+    private quotaSvc: TicketQuotaService = ticketQuotaService,
+    private accessPol: TicketAccessPolicy = ticketAccessPolicy,
+  ) {}
+
+  private resolveContext(userIdOrCtx: string | UserContext, userRole?: UserRole, tenantId?: string): UserContext {
+    if (typeof userIdOrCtx === 'object') {
+      return userIdOrCtx;
+    }
+    return { userId: userIdOrCtx, role: userRole!, tenantId: tenantId! };
+  }
+
+  async createTicket(data: CreateTicketInput, clientId: string, tenantId: string): Promise<Ticket> {
+    await this.quotaSvc.enforceTicketLimit(clientId, tenantId, data.equipmentId);
+
+    const ticket = await this.ticketRepo.create({
       title: data.title,
       description: data.description,
       category: data.category,
@@ -40,8 +54,7 @@ export class TicketService {
       tenant_id: tenantId,
     });
 
-    // Log the creation event
-    await ticketEventRepository.create({
+    await this.eventRepo.create({
       ticket_id: ticket.id,
       old_status: null,
       new_status: TicketStatus.OPEN,
@@ -50,177 +63,128 @@ export class TicketService {
       tenant_id: tenantId,
     });
 
-    // Auto-assign technician via Round-Robin
-    const technician = await assignmentService.getNextTechnician(data.category);
+    const technician = await this.assignmentSvc.getNextTechnician(data.category);
     if (technician) {
-      await ticketRepository.assignTechnician(ticket.id, technician.id);
+      await this.ticketRepo.assignTechnician(ticket.id, technician.id);
       ticket.assigned_tech_id = technician.id;
-
-      logger.info('Ticket auto-assigned', {
-        ticketId: ticket.id,
-        techId: technician.id,
-        techName: technician.name,
-      });
+      logger.info('Ticket auto-assigned', { ticketId: ticket.id, techId: technician.id, techName: technician.name });
     }
 
-    // Notify the client
-    const client = await userRepository.findById(clientId);
+    const client = await this.userRepo.findById(clientId);
     if (client) {
-      await notificationService.onTicketCreated(ticket, client);
+      await this.notifSvc.onTicketCreated(ticket, client);
     }
 
     return ticket;
   }
 
-  /**
-   * Get a ticket by ID with access control.
-   */
-  async getTicketById(ticketId: string, _userId: string, userRole: UserRole, tenantId: string): Promise<Ticket> {
-    const ticket = await ticketRepository.findById(ticketId);
+  async getTicketById(ticketId: string, ctx: UserContext): Promise<Ticket>;
+  async getTicketById(ticketId: string, userId: string, userRole: UserRole, tenantId: string): Promise<Ticket>;
+  async getTicketById(ticketId: string, arg2: string | UserContext, arg3?: UserRole, arg4?: string): Promise<Ticket> {
+    const ctx = this.resolveContext(arg2, arg3, arg4);
+    const ticket = await this.ticketRepo.findById(ticketId);
     if (!ticket) {
       throw AppError.notFound('Ticket not found');
     }
-
-    // Access control: Clients can only see their own tenant's tickets
-    if (userRole === UserRole.CLIENT && ticket.tenant_id !== tenantId) {
-      throw AppError.forbidden('You do not have access to this ticket');
-    }
-
+    this.accessPol.assertReadAccess(ticket, ctx);
     return ticket;
   }
 
-  /**
-   * Get tickets with filters and pagination.
-   */
-  async getTickets(
-    filters: TicketFilters,
-    userId: string,
-    userRole: UserRole,
-    tenantId: string,
-  ): Promise<{ tickets: Ticket[]; total: number }> {
-    // Scope queries based on role
-    if (userRole === UserRole.CLIENT) {
-      // Clients see all tickets belonging to their tenant
-      filters.tenantId = tenantId;
-    } else if (userRole === UserRole.TECHNICIAN) {
-      filters.assignedTechId = userId;
-    }
-    // ADMIN sees all tickets
-
-    return ticketRepository.findWithFilters(filters);
+  async getTickets(filters: TicketFilters, ctx: UserContext): Promise<{ tickets: Ticket[]; total: number }>;
+  async getTickets(filters: TicketFilters, userId: string, userRole: UserRole, tenantId: string): Promise<{ tickets: Ticket[]; total: number }>;
+  async getTickets(filters: TicketFilters, arg2: string | UserContext, arg3?: UserRole, arg4?: string): Promise<{ tickets: Ticket[]; total: number }> {
+    const ctx = this.resolveContext(arg2, arg3, arg4);
+    const scopedFilters = this.accessPol.applyFilterScope(filters, ctx);
+    return this.ticketRepo.findWithFilters(scopedFilters);
   }
 
-  /**
-   * Update ticket status with SLA enforcement and notifications.
-   */
+  async updateTicketStatus(ticketId: string, data: UpdateTicketStatusInput, ctx: UserContext): Promise<Ticket>;
+  async updateTicketStatus(ticketId: string, data: UpdateTicketStatusInput, userId: string, userRole: UserRole, tenantId: string): Promise<Ticket>;
   async updateTicketStatus(
     ticketId: string,
     data: UpdateTicketStatusInput,
-    userId: string,
-    userRole: UserRole,
-    tenantId: string,
+    arg3: string | UserContext,
+    arg4?: UserRole,
+    arg5?: string,
   ): Promise<Ticket> {
-    const ticket = await ticketRepository.findById(ticketId);
+    const ctx = this.resolveContext(arg3, arg4, arg5);
+    const ticket = await this.ticketRepo.findById(ticketId);
     if (!ticket) {
       throw AppError.notFound('Ticket not found');
     }
 
-    // Access control: Verify client belongs to the ticket's tenant
-    if (userRole === UserRole.CLIENT && ticket.tenant_id !== tenantId) {
-      throw AppError.forbidden('You do not have access to this ticket');
-    }
+    this.accessPol.assertStatusUpdateAccess(ticket, data.status, ctx);
 
-    // Validate status transition
-    const allowedTransitions = STATUS_TRANSITIONS[ticket.status];
-    if (!allowedTransitions || !allowedTransitions.includes(data.status)) {
-      throw AppError.badRequest(
-        `Cannot transition from ${ticket.status} to ${data.status}`,
-        'INVALID_STATUS_TRANSITION',
-      );
-    }
-
-    // SLA 1-Hour Rule: Only for WARRANTY and SERVICE_OUTAGE cancellations
     if (
       data.status === TicketStatus.CANCELLED &&
       (ticket.category === TicketCategory.WARRANTY || ticket.category === TicketCategory.SERVICE_OUTAGE)
     ) {
-      this.enforceSLARule(ticket);
+      this.accessPol.enforceSLARule(ticket);
     }
 
-    // Access control for status updates
-    if (userRole === UserRole.CLIENT) {
-      // Clients can only cancel their own tickets
-      if (data.status !== TicketStatus.CANCELLED) {
-        throw AppError.forbidden('Clients can only cancel tickets');
-      }
-      if (ticket.client_id !== userId) {
-        throw AppError.forbidden('You can only cancel your own tickets');
-      }
-    }
-
-    // Perform the update
-    const updated = await ticketRepository.updateStatus(ticketId, data.status);
+    const updated = await this.ticketRepo.updateStatus(ticketId, data.status);
     if (!updated) {
       throw AppError.internal('Failed to update ticket status');
     }
 
-    // Log the event
-    await ticketEventRepository.create({
+    await this.eventRepo.create({
       ticket_id: ticketId,
       old_status: ticket.status,
       new_status: data.status,
-      changed_by: userId,
+      changed_by: ctx.userId,
       notes: data.notes,
       tenant_id: ticket.tenant_id,
     });
 
-    // Trigger notifications
-    const client = await userRepository.findById(ticket.client_id);
+    const client = await this.userRepo.findById(ticket.client_id);
     if (client) {
-      const fullUpdatedTicket = await ticketRepository.findById(ticketId) || updated;
-      await notificationService.onTicketStatusChanged(fullUpdatedTicket, client, data.notes);
+      const fullUpdatedTicket = await this.ticketRepo.findById(ticketId) || updated;
+      await this.notifSvc.onTicketStatusChanged(fullUpdatedTicket, client, data.notes);
     }
 
-    logger.info('Ticket status updated', {
-      ticketId,
-      from: ticket.status,
-      to: data.status,
-      updatedBy: userId,
-    });
-
+    logger.info('Ticket status updated', { ticketId, from: ticket.status, to: data.status, updatedBy: ctx.userId });
     return updated;
   }
 
-  /**
-   * Get ticket event timeline.
-   */
-  async getTicketTimeline(ticketId: string, userId: string, userRole: UserRole, tenantId: string): Promise<TicketEvent[]> {
-    // Verify access
-    await this.getTicketById(ticketId, userId, userRole, tenantId);
-    return ticketEventRepository.findByTicket(ticketId);
+  async getTicketTimeline(ticketId: string, ctx: UserContext): Promise<TicketEvent[]>;
+  async getTicketTimeline(ticketId: string, userId: string, userRole: UserRole, tenantId: string): Promise<TicketEvent[]>;
+  async getTicketTimeline(ticketId: string, arg2: string | UserContext, arg3?: UserRole, arg4?: string): Promise<TicketEvent[]> {
+    const ctx = this.resolveContext(arg2, arg3, arg4);
+    await this.getTicketById(ticketId, ctx);
+    return this.eventRepo.findByTicket(ticketId);
   }
 
-  /**
-   * Get ticket attachments.
-   */
-  async getTicketAttachments(ticketId: string, userId: string, userRole: UserRole, tenantId: string): Promise<TicketAttachment[]> {
-    await this.getTicketById(ticketId, userId, userRole, tenantId);
-    return ticketRepository.getAttachments(ticketId);
+  async getTicketAttachments(ticketId: string, ctx: UserContext): Promise<TicketAttachment[]>;
+  async getTicketAttachments(ticketId: string, userId: string, userRole: UserRole, tenantId: string): Promise<TicketAttachment[]>;
+  async getTicketAttachments(ticketId: string, arg2: string | UserContext, arg3?: UserRole, arg4?: string): Promise<TicketAttachment[]> {
+    const ctx = this.resolveContext(arg2, arg3, arg4);
+    await this.getTicketById(ticketId, ctx);
+    return this.ticketRepo.getAttachments(ticketId);
   }
 
-  /**
-   * Add attachment to a ticket.
-   */
+  async addAttachment(
+    ticketId: string,
+    file: { filename: string; path: string; mimetype: string; size: number },
+    ctx: UserContext,
+  ): Promise<TicketAttachment>;
   async addAttachment(
     ticketId: string,
     file: { filename: string; path: string; mimetype: string; size: number },
     userId: string,
     userRole: UserRole,
     tenantId: string,
+  ): Promise<TicketAttachment>;
+  async addAttachment(
+    ticketId: string,
+    file: { filename: string; path: string; mimetype: string; size: number },
+    arg3: string | UserContext,
+    arg4?: UserRole,
+    arg5?: string,
   ): Promise<TicketAttachment> {
-    const ticket = await this.getTicketById(ticketId, userId, userRole, tenantId);
+    const ctx = this.resolveContext(arg3, arg4, arg5);
+    const ticket = await this.getTicketById(ticketId, ctx);
 
-    return ticketRepository.addAttachment({
+    return this.ticketRepo.addAttachment({
       ticket_id: ticketId,
       filename: file.filename,
       path: file.path,
@@ -230,30 +194,23 @@ export class TicketService {
     });
   }
 
-  /**
-   * Get ticket count summary by status.
-   */
-  async getStatusSummary(userId: string, userRole: UserRole, tenantId: string): Promise<Record<string, number>> {
-    const clientId = userRole === UserRole.CLIENT ? userId : undefined;
-    const assignedTechId = userRole === UserRole.TECHNICIAN ? userId : undefined;
-    const targetTenantId = userRole === UserRole.CLIENT ? tenantId : undefined;
-    return ticketRepository.countByStatus(clientId, assignedTechId, targetTenantId);
+  async getStatusSummary(ctx: UserContext): Promise<Record<string, number>>;
+  async getStatusSummary(userId: string, userRole: UserRole, tenantId: string): Promise<Record<string, number>>;
+  async getStatusSummary(arg1: string | UserContext, arg2?: UserRole, arg3?: string): Promise<Record<string, number>> {
+    const ctx = this.resolveContext(arg1, arg2, arg3);
+    const clientId = ctx.role === UserRole.CLIENT ? ctx.userId : undefined;
+    const assignedTechId = ctx.role === UserRole.TECHNICIAN ? ctx.userId : undefined;
+    const targetTenantId = ctx.role === UserRole.CLIENT ? ctx.tenantId : undefined;
+    return this.ticketRepo.countByStatus(clientId, assignedTechId, targetTenantId);
   }
 
-  /**
-   * Assign a technician/agent to a ticket.
-   */
-  async assignTicket(
-    ticketId: string,
-    techId: string,
-    userId: string,
-  ): Promise<Ticket> {
-    const ticket = await ticketRepository.findById(ticketId);
+  async assignTicket(ticketId: string, techId: string, userId: string): Promise<Ticket> {
+    const ticket = await this.ticketRepo.findById(ticketId);
     if (!ticket) {
       throw AppError.notFound('Ticket not found');
     }
 
-    const technician = await userRepository.findById(techId);
+    const technician = await this.userRepo.findById(techId);
     if (!technician) {
       throw AppError.notFound('Technician not found');
     }
@@ -262,13 +219,12 @@ export class TicketService {
       throw AppError.badRequest('Assigned user must be a technician');
     }
 
-    const updated = await ticketRepository.assignTechnician(ticketId, techId);
+    const updated = await this.ticketRepo.assignTechnician(ticketId, techId);
     if (!updated) {
       throw AppError.internal('Failed to assign technician');
     }
 
-    // Log the assignment event
-    await ticketEventRepository.create({
+    await this.eventRepo.create({
       ticket_id: ticketId,
       old_status: ticket.status,
       new_status: ticket.status,
@@ -277,106 +233,24 @@ export class TicketService {
       tenant_id: ticket.tenant_id,
     });
 
-    // Fetch the updated ticket with the joined names/emails so that the response matches the structure
-    const fullUpdatedTicket = await ticketRepository.findById(ticketId);
+    const fullUpdatedTicket = await this.ticketRepo.findById(ticketId);
     if (!fullUpdatedTicket) {
       throw AppError.internal('Failed to retrieve updated ticket details');
     }
 
-    // Notify the technician
-    await notificationService.onTicketAssigned(fullUpdatedTicket, technician);
-
+    await this.notifSvc.onTicketAssigned(fullUpdatedTicket, technician);
     return fullUpdatedTicket;
   }
 
-  /**
-   * Enforce monthly ticket limits based on client subscription plan (measured by device/account).
-   */
-  private async enforceTicketLimit(clientId: string, tenantId: string, equipmentId?: string): Promise<void> {
-    const subs = await subscriptionRepository.findByClient(clientId, tenantId);
-    const activeSubs = subs.filter((s) => s.status === 'ACTIVE' || s.status === 'EXPIRING');
-
-    if (activeSubs.length === 0) return;
-
-    let hasUnlimited = false;
-    let maxNumericLimit = 0;
-    let checkedAnyFeature = false;
-
-    for (const sub of activeSubs) {
-      const plan = await planRepository.findById(sub.plan);
-      if (!plan || !Array.isArray(plan.features)) continue;
-
-      for (const feat of plan.features as any[]) {
-        if (feat.code === 'HELPDESK_SUPPORT' && feat.included !== false) {
-          checkedAnyFeature = true;
-          const limitVal = feat.params?.limit;
-          if (!limitVal || limitVal === 'Unlimited') {
-            hasUnlimited = true;
-            break;
-          }
-          const parsed = parseInt(String(limitVal), 10);
-          if (!isNaN(parsed) && parsed > 0) {
-            if (parsed > maxNumericLimit) {
-              maxNumericLimit = parsed;
-            }
-          }
-        }
-      }
-      if (hasUnlimited) break;
-    }
-
-    if (checkedAnyFeature && !hasUnlimited && maxNumericLimit > 0) {
-      if (equipmentId) {
-        const deviceTicketCount = await ticketRepository.countEquipmentTicketsInCurrentMonth(equipmentId);
-        if (deviceTicketCount >= maxNumericLimit) {
-          throw AppError.forbidden(
-            `Monthly ticket limit reached for this device (${deviceTicketCount}/${maxNumericLimit}). Your plan allows up to ${maxNumericLimit} tickets per device per month.`,
-            'TICKET_LIMIT_EXCEEDED'
-          );
-        }
-      } else {
-        const clientTicketCount = await ticketRepository.countClientTicketsInCurrentMonth(clientId);
-        if (clientTicketCount >= maxNumericLimit) {
-          throw AppError.forbidden(
-            `Monthly ticket limit reached (${clientTicketCount}/${maxNumericLimit}). Your subscription plan allows up to ${maxNumericLimit} tickets per month.`,
-            'TICKET_LIMIT_EXCEEDED'
-          );
-        }
-      }
-    }
-  }
-
-  /**
-   * Enforce the 1-hour SLA window for warranty/service ticket modifications.
-   * Throws if the ticket was created more than 1 hour ago.
-   */
-  private enforceSLARule(ticket: Ticket): void {
-    const elapsed = Date.now() - new Date(ticket.created_at).getTime();
-    if (elapsed > SLA_WINDOW_MS) {
-      const minutesAgo = Math.floor(elapsed / 60000);
-      throw AppError.slaViolation(
-        `SLA window expired. This ticket was created ${minutesAgo} minutes ago. ` +
-        `Warranty and service outage tickets can only be cancelled within 60 minutes of creation.`,
-      );
-    }
-  }
-
-  /**
-   * Get responses associated with a ticket.
-   */
-  async getTicketResponses(
-    ticketId: string,
-    userId: string,
-    userRole: UserRole,
-    tenantId: string,
-  ): Promise<TicketResponse[]> {
-    // Verify access
-    await this.getTicketById(ticketId, userId, userRole, tenantId);
+  async getTicketResponses(ticketId: string, ctx: UserContext): Promise<TicketResponse[]>;
+  async getTicketResponses(ticketId: string, userId: string, userRole: UserRole, tenantId: string): Promise<TicketResponse[]>;
+  async getTicketResponses(ticketId: string, arg2: string | UserContext, arg3?: UserRole, arg4?: string): Promise<TicketResponse[]> {
+    const ctx = this.resolveContext(arg2, arg3, arg4);
+    await this.getTicketById(ticketId, ctx);
     
-    const responses = await ticketResponseRepository.findByTicket(ticketId);
-    const attachments = await ticketRepository.getAttachmentsByResponses(ticketId);
+    const responses = await this.responseRepo.findByTicket(ticketId);
+    const attachments = await this.ticketRepo.getAttachmentsByResponses(ticketId);
     
-    // Group attachments by response_id
     const responseAttachmentsMap = new Map<string, TicketAttachment[]>();
     for (const att of attachments) {
       if (att.response_id) {
@@ -387,38 +261,57 @@ export class TicketService {
       }
     }
     
-    // Map attachments to responses
     return responses.map((resp) => ({
       ...resp,
       attachments: responseAttachmentsMap.get(resp.id) || [],
     }));
   }
 
-  /**
-   * Add a response to a ticket.
-   */
+  async addTicketResponse(
+    ticketId: string,
+    message: string,
+    ctx: UserContext,
+    files?: { filename: string; path: string; mimetype: string; size: number }[],
+  ): Promise<TicketResponse>;
   async addTicketResponse(
     ticketId: string,
     message: string,
     userId: string,
     userRole: UserRole,
     tenantId: string,
-    files: { filename: string; path: string; mimetype: string; size: number }[] = [],
+    files?: { filename: string; path: string; mimetype: string; size: number }[],
+  ): Promise<TicketResponse>;
+  async addTicketResponse(
+    ticketId: string,
+    message: string,
+    arg3: string | UserContext,
+    arg4?: UserRole | { filename: string; path: string; mimetype: string; size: number }[],
+    arg5?: string,
+    arg6: { filename: string; path: string; mimetype: string; size: number }[] = [],
   ): Promise<TicketResponse> {
-    const ticket = await this.getTicketById(ticketId, userId, userRole, tenantId);
+    let ctx: UserContext;
+    let files: { filename: string; path: string; mimetype: string; size: number }[] = [];
 
-    const response = await ticketResponseRepository.create({
+    if (typeof arg3 === 'object') {
+      ctx = arg3;
+      files = (arg4 as { filename: string; path: string; mimetype: string; size: number }[]) || [];
+    } else {
+      ctx = { userId: arg3, role: arg4 as UserRole, tenantId: arg5! };
+      files = arg6;
+    }
+
+    const ticket = await this.getTicketById(ticketId, ctx);
+
+    const response = await this.responseRepo.create({
       ticket_id: ticketId,
-      user_id: userId,
+      user_id: ctx.userId,
       message,
       tenant_id: ticket.tenant_id,
     });
 
     const responseAttachments: TicketAttachment[] = [];
-
-    // Save attachments if any
     for (const file of files) {
-      const att = await ticketRepository.addAttachment({
+      const att = await this.ticketRepo.addAttachment({
         ticket_id: ticketId,
         response_id: response.id,
         filename: file.filename,
@@ -430,37 +323,38 @@ export class TicketService {
       responseAttachments.push(att);
     }
 
-    // Notify the other party
-    try {
-      const sender = await userRepository.findById(userId);
-      if (sender) {
-        if (userRole === UserRole.CLIENT) {
-          if (ticket.assigned_tech_id) {
-            const tech = await userRepository.findById(ticket.assigned_tech_id);
-            if (tech) {
-              await notificationService.onTicketResponseCreated(ticket, tech, sender.name, message);
-            }
-          } else {
-            logger.info('No tech assigned to ticket, notification skipped', { ticketId });
-          }
-        } else {
-          const client = await userRepository.findById(ticket.client_id);
-          if (client) {
-            await notificationService.onTicketResponseCreated(ticket, client, sender.name, message);
-          }
-        }
-      }
-    } catch (err) {
-      logger.error('Failed to send ticket response notification', { ticketId, error: err });
-    }
+    await this.notifyResponseRecipient(ticket, ctx, message);
 
-    const user = await userRepository.findById(userId);
+    const user = await this.userRepo.findById(ctx.userId);
     return {
       ...response,
       user_name: user?.name,
       user_role: user?.role,
       attachments: responseAttachments,
     };
+  }
+
+  private async notifyResponseRecipient(ticket: Ticket, ctx: UserContext, message: string): Promise<void> {
+    try {
+      const sender = await this.userRepo.findById(ctx.userId);
+      if (!sender) return;
+
+      if (ctx.role === UserRole.CLIENT) {
+        if (ticket.assigned_tech_id) {
+          const tech = await this.userRepo.findById(ticket.assigned_tech_id);
+          if (tech) {
+            await this.notifSvc.onTicketResponseCreated(ticket, tech, sender.name, message);
+          }
+        }
+      } else {
+        const client = await this.userRepo.findById(ticket.client_id);
+        if (client) {
+          await this.notifSvc.onTicketResponseCreated(ticket, client, sender.name, message);
+        }
+      }
+    } catch (err) {
+      logger.error('Failed to send ticket response notification', { ticketId: ticket.id, error: err });
+    }
   }
 }
 

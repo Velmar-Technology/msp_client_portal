@@ -294,6 +294,11 @@ describe('InvoiceService', () => {
         userId: 'client-1',
         title: 'Payment Confirmed',
       }));
+      expect(mocks.createInAppNotification).toHaveBeenCalledWith(expect.objectContaining({
+        userId: 'admin-1',
+        title: 'Invoice Payment Confirmed',
+        type: 'INVOICE_PAID_ADMIN',
+      }));
       expect(result).toEqual(paidInvoice);
     });
 
