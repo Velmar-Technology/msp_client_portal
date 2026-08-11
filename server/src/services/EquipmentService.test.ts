@@ -450,4 +450,43 @@ describe('EquipmentService', () => {
       expect(result.nextcloud_total_bytes).toBe(10240);
     });
   });
+
+  describe('generateNumericOTP', () => {
+    it('should generate a numeric string of requested digits', () => {
+      const otp = equipmentService.generateNumericOTP(6);
+      expect(otp).toMatch(/^\d{6}$/);
+    });
+
+    it('should default to 6 digits', () => {
+      const otp = equipmentService.generateNumericOTP();
+      expect(otp).toHaveLength(6);
+    });
+  });
+
+  describe('resolveStorageQuota', () => {
+    it('should return 25 GB for PL-001 plan', async () => {
+      const quota = await equipmentService.resolveStorageQuota('PL-001');
+      expect(quota).toBe('25 GB');
+    });
+
+    it('should return 50 GB for PL-002 plan', async () => {
+      const quota = await equipmentService.resolveStorageQuota('PL-002');
+      expect(quota).toBe('50 GB');
+    });
+
+    it('should return 100 GB for PL-003 plan', async () => {
+      const quota = await equipmentService.resolveStorageQuota('PL-003');
+      expect(quota).toBe('100 GB');
+    });
+
+    it('should query plan repository and parse storage text for unknown plan IDs', async () => {
+      mocks.planFindById.mockResolvedValue({
+        id: 'CUSTOM-PLAN',
+        features: [{ code: 'CLOUD_STORAGE', params: { limit: 500, unit: 'GB' } }],
+      });
+      const quota = await equipmentService.resolveStorageQuota('CUSTOM-PLAN');
+      expect(quota).toBe('500 GB');
+    });
+  });
 });
+

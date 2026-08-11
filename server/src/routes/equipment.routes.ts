@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { equipmentController } from '../controllers/EquipmentController';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { rbacMiddleware } from '../middleware/rbacMiddleware';
+import { validate } from '../middleware/validationMiddleware';
+import { ActivateWithOtpDTO } from '../dtos/equipment.dto';
 import { UserRole } from '../types';
 
 const router = Router();
@@ -19,7 +21,7 @@ router.get('/my-devices', (req, res, next) =>
 );
 
 /** POST /api/v1/equipment/activate-with-otp — Activate a slot by entering a generated OTP code */
-router.post('/activate-with-otp', (req, res, next) =>
+router.post('/activate-with-otp', validate(ActivateWithOtpDTO, 'body'), (req, res, next) =>
   equipmentController.activateWithOtp(req, res, next)
 );
 
@@ -49,3 +51,4 @@ router.get('/subscriptions/:subId/slots/:slotIndex/nextcloud', (req, res, next) 
 );
 
 export default router;
+

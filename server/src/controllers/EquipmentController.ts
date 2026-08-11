@@ -1,13 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
-import { equipmentService } from '../services/EquipmentService';
+import { equipmentService, EquipmentService } from '../services/EquipmentService';
 import { AppError } from '../utils/AppError';
 
 export class EquipmentController {
+  constructor(private equipmentSvc: EquipmentService = equipmentService) {}
+
   async getSlots(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const subId = req.params.subId as string;
       const byAdmin = req.user!.role === 'ADMIN';
-      const slots = await equipmentService.getEquipmentSlots(subId, req.user!.tenantId, byAdmin);
+      const slots = await this.equipmentSvc.getEquipmentSlots(subId, req.user!.tenantId, byAdmin);
       res.json({
         success: true,
         data: slots,
@@ -25,7 +27,7 @@ export class EquipmentController {
       const subId = req.params.subId as string;
       const slotIndex = parseInt(req.params.slotIndex as string, 10);
       const byAdmin = req.user!.role === 'ADMIN' || req.user!.role === 'TECHNICIAN';
-      const slot = await equipmentService.generateSlotOTP(subId, slotIndex, req.user!.tenantId, byAdmin);
+      const slot = await this.equipmentSvc.generateSlotOTP(subId, slotIndex, req.user!.tenantId, byAdmin);
       res.json({
         success: true,
         data: slot,
@@ -42,7 +44,7 @@ export class EquipmentController {
       const { deviceName, deviceSerial } = req.body;
       const byAdmin = req.user!.role === 'ADMIN';
 
-      const slot = await equipmentService.activateSlot({
+      const slot = await this.equipmentSvc.activateSlot({
         subscriptionId: subId,
         slotIndex,
         deviceName: (deviceName as string) || `Workstation-${slotIndex + 1}`,
@@ -68,7 +70,7 @@ export class EquipmentController {
         throw AppError.badRequest('Activation code (OTP) must be a 6-digit numeric code');
       }
 
-      const slot = await equipmentService.activateSlot({
+      const slot = await this.equipmentSvc.activateSlot({
         otp,
         deviceName: (deviceName as string) || `Workstation-${Math.floor(100000 + Math.random() * 900000)}`,
         deviceSerial: (deviceSerial as string) || `SN-SIM-${Math.floor(100000 + Math.random() * 900000)}`,
@@ -90,7 +92,7 @@ export class EquipmentController {
       const subId = req.params.subId as string;
       const slotIndex = parseInt(req.params.slotIndex as string, 10);
       const byAdmin = req.user!.role === 'ADMIN';
-      const slot = await equipmentService.deactivateSlot(subId, slotIndex, req.user!.tenantId, byAdmin);
+      const slot = await this.equipmentSvc.deactivateSlot(subId, slotIndex, req.user!.tenantId, byAdmin);
       res.json({
         success: true,
         data: slot,
@@ -102,7 +104,7 @@ export class EquipmentController {
 
   async getMyDevices(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const devices = await equipmentService.getActiveDevicesForClient(
+      const devices = await this.equipmentSvc.getActiveDevicesForClient(
         req.user!.userId,
         req.user!.tenantId
       );
@@ -117,7 +119,7 @@ export class EquipmentController {
 
   async getAllDevicesForAdmin(_req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const devices = await equipmentService.getAllDevicesForAdmin();
+      const devices = await this.equipmentSvc.getAllDevicesForAdmin();
       res.json({
         success: true,
         data: devices,
@@ -132,7 +134,7 @@ export class EquipmentController {
       const subId = req.params.subId as string;
       const slotIndex = parseInt(req.params.slotIndex as string, 10);
       const byAdmin = req.user!.role === 'ADMIN';
-      const info = await equipmentService.getNextcloudInfo(subId, slotIndex, req.user!.tenantId, byAdmin);
+      const info = await this.equipmentSvc.getNextcloudInfo(subId, slotIndex, req.user!.tenantId, byAdmin);
       res.json({
         success: true,
         data: info,
@@ -144,3 +146,4 @@ export class EquipmentController {
 }
 
 export const equipmentController = new EquipmentController();
+

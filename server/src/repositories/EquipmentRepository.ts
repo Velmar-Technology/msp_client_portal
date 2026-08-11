@@ -1,5 +1,5 @@
 import { BaseRepository } from './BaseRepository';
-import { SubscriptionEquipment } from '../types';
+import { SubscriptionEquipment, EquipmentWithDetails } from '../types';
 import { db, subscriptionEquipment, subscriptions, users, tenants } from '../db';
 import { eq, and, or, desc } from 'drizzle-orm';
 
@@ -103,7 +103,7 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
     return results as SubscriptionEquipment[];
   }
 
-  async findAllWithDetails(): Promise<any[]> {
+  async findAllWithDetails(): Promise<EquipmentWithDetails[]> {
     const results = await db
       .select({
         id: subscriptionEquipment.id,
@@ -141,7 +141,7 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
         )
       )
       .orderBy(desc(subscriptionEquipment.created_at));
-    return results;
+    return results as EquipmentWithDetails[];
   }
 }
 

@@ -377,6 +377,18 @@ export interface SubscriptionEquipment {
   updated_at: Date;
 }
 
+export interface EquipmentWithDetails extends SubscriptionEquipment {
+  client_name: string;
+  client_email: string;
+  client_role: string;
+  service_name: string;
+  plan: string;
+  tenant_name: string;
+  subscription_status: string;
+}
+
+
+
 export interface Expense {
   id: string;
   amount: number;

@@ -4,7 +4,27 @@ import { planRepository, PlanRepository } from '../repositories/PlanRepository';
 import { nextcloudService, NextcloudService } from './NextcloudService';
 import { AppError } from '../utils/AppError';
 import { logger } from '../utils/logger';
-import { SubscriptionEquipment } from '../types';
+import { SubscriptionEquipment, EquipmentWithDetails } from '../types';
+
+export interface ActivateSlotOptions {
+  subscriptionId?: string;
+  slotIndex?: number;
+  otp?: string;
+  deviceName: string;
+  deviceSerial: string;
+  tenantId: string;
+  byAdmin?: boolean;
+}
+
+export interface NextcloudStorageInfo {
+  nextcloud_username: string | null;
+  nextcloud_password: string | null;
+  nextcloud_used_bytes: number;
+  nextcloud_total_bytes: number;
+  device_name: string | null;
+  device_serial: string | null;
+  status: string;
+}
 
 export class EquipmentService {
   constructor(
@@ -13,63 +33,76 @@ export class EquipmentService {
     private planRepo: PlanRepository = planRepository,
     private nextcloudSvc: NextcloudService = nextcloudService,
   ) {}
+
   /**
-   * Retrieves or initializes equipment slots for a subscription
+   * Utility helper to generate a numeric OTP string.
+   */
+  generateNumericOTP(digits = 6): string {
+    const min = Math.pow(10, digits - 1);
+    const max = Math.pow(10, digits) - 1;
+    return String(Math.floor(min + Math.random() * (max - min + 1)));
+  }
+
+  /**
+   * Internal command method to initialize missing slots for a subscription.
+   */
+  private async ensureSlotsInitialized(
+    subscriptionId: string,
+    targetCount: number,
+    tenantId: string,
+    existingSlots: SubscriptionEquipment[]
+  ): Promise<SubscriptionEquipment[]> {
+    if (existingSlots.length >= targetCount) {
+      return existingSlots;
+    }
+    const slots = [...existingSlots];
+    const existingIndices = new Set(slots.map((s) => s.slot_index));
+    for (let i = 0; i < targetCount; i++) {
+      if (!existingIndices.has(i)) {
+        const newSlot = await this.equipmentRepo.create({
+          subscription_id: subscriptionId,
+          slot_index: i,
+          status: 'PENDING_ACTIVATION',
+          tenant_id: tenantId,
+        });
+        slots.push(newSlot);
+      }
+    }
+    slots.sort((a, b) => a.slot_index - b.slot_index);
+    return slots;
+  }
+
+  /**
+   * Retrieves equipment slots for a subscription, creating missing slots if necessary.
    */
   async getEquipmentSlots(subscriptionId: string, tenantId: string, byAdmin = false): Promise<SubscriptionEquipment[]> {
     const sub = await this.subscriptionRepo.findById(subscriptionId);
     if (!sub) throw AppError.notFound('Subscription not found');
     if (!byAdmin && sub.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
 
-    let slots = await this.equipmentRepo.findBySubscription(subscriptionId);
-    const count = sub.equipment_count;
-
-    // Initialize missing slots
-    if (slots.length < count) {
-      const existingIndices = new Set(slots.map((s) => s.slot_index));
-      for (let i = 0; i < count; i++) {
-        if (!existingIndices.has(i)) {
-          const newSlot = await this.equipmentRepo.create({
-            subscription_id: subscriptionId,
-            slot_index: i,
-            status: 'PENDING_ACTIVATION',
-            tenant_id: tenantId,
-          });
-          slots.push(newSlot);
-        }
-      }
-      // Re-sort slots by slot_index
-      slots.sort((a, b) => a.slot_index - b.slot_index);
-    }
-
-    return slots.slice(0, count);
+    const existingSlots = await this.equipmentRepo.findBySubscription(subscriptionId);
+    const allSlots = await this.ensureSlotsInitialized(subscriptionId, sub.equipment_count, tenantId, existingSlots);
+    return allSlots.slice(0, sub.equipment_count);
   }
 
   /**
-   * Generates a 6-digit OTP for slot activation
+   * Generates a 6-digit OTP for slot activation.
    */
   async generateSlotOTP(subscriptionId: string, slotIndex: number, tenantId: string, byAdmin = false): Promise<SubscriptionEquipment> {
     if (!byAdmin) {
       throw AppError.forbidden('Client users are not authorized to generate activation codes');
     }
-    // Ensure slots are initialized
     await this.getEquipmentSlots(subscriptionId, tenantId, byAdmin);
 
     const slot = await this.equipmentRepo.findBySlot(subscriptionId, slotIndex);
     if (!slot) throw AppError.notFound('Equipment slot not found');
     if (!byAdmin && slot.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
 
-    // Generate random 6-digit OTP
-    const otp = String(Math.floor(100000 + Math.random() * 900000));
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours validity
+    const otp = this.generateNumericOTP(6);
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    // If there was an active Nextcloud user, clean it up
     if (slot.nextcloud_username) {
-      try {
-        await this.nextcloudSvc.deleteUser(slot.nextcloud_username);
-      } catch (err) {
-        logger.warn('Failed to delete user on Nextcloud during OTP generation', { err });
-      }
+      await this.cleanupNextcloudUser(slot.nextcloud_username);
     }
 
     const updated = await this.equipmentRepo.update(slot.id, {
@@ -81,110 +114,124 @@ export class EquipmentService {
       nextcloud_username: null,
       nextcloud_password: null,
     });
-
     return updated!;
   }
 
   /**
-   * Activates a slot (can be called by OTP lookup or by direct simulation)
+   * Safely attempts to remove Nextcloud user account without breaking workflow.
    */
-  async activateSlot(options: {
-    subscriptionId?: string;
-    slotIndex?: number;
-    otp?: string;
-    deviceName: string;
-    deviceSerial: string;
-    tenantId: string;
-    byAdmin?: boolean;
-  }): Promise<SubscriptionEquipment> {
-    let slot: SubscriptionEquipment | null = null;
+  private async cleanupNextcloudUser(username: string): Promise<void> {
+    try {
+      await this.nextcloudSvc.deleteUser(username);
+    } catch (err) {
+      logger.warn('Failed to delete Nextcloud user', { username, err });
+    }
+  }
 
+  /**
+   * Resolves target slot for activation based on OTP or subscriptionId + slotIndex.
+   */
+  private async resolveSlotToActivate(options: ActivateSlotOptions): Promise<SubscriptionEquipment> {
     if (options.otp) {
-      slot = await this.equipmentRepo.findByOtp(options.otp);
+      const slot = await this.equipmentRepo.findByOtp(options.otp);
       if (!slot) throw AppError.notFound('Activation code (OTP) not found or invalid');
       if (slot.otp_expires_at && slot.otp_expires_at < new Date()) {
         throw AppError.badRequest('Activation code (OTP) has expired');
       }
       if (!options.byAdmin && slot.tenant_id !== options.tenantId) throw AppError.forbidden('Access denied');
-    } else if (options.subscriptionId !== undefined && options.slotIndex !== undefined) {
-      // Direct simulation from portal
-      slot = await this.equipmentRepo.findBySlot(options.subscriptionId, options.slotIndex);
+      return slot;
+    }
+    if (options.subscriptionId !== undefined && options.slotIndex !== undefined) {
+      const slot = await this.equipmentRepo.findBySlot(options.subscriptionId, options.slotIndex);
       if (!slot) throw AppError.notFound('Slot not found');
       if (!options.byAdmin && slot.tenant_id !== options.tenantId) throw AppError.forbidden('Access denied');
-    } else {
-      throw AppError.badRequest('Must provide either OTP or SubscriptionId + SlotIndex');
+      return slot;
     }
+    throw AppError.badRequest('Must provide either OTP or SubscriptionId + SlotIndex');
+  }
 
+  /**
+   * Resolves storage quota string from subscription plan or plan details.
+   */
+  async resolveStorageQuota(planId: string): Promise<string> {
+    if (planId.includes('PL-001')) return '25 GB';
+    if (planId.includes('PL-002')) return '50 GB';
+    if (planId.includes('PL-003')) return '100 GB';
+
+    const planDetails = await this.planRepo.findById(planId);
+    if (!planDetails) return '25 GB';
+
+    const feature = planDetails.features.find((f: any) =>
+      f.code === 'CLOUD_STORAGE' || (f.text && f.text.toString().toLowerCase().includes('storage'))
+    );
+    if (!feature) return '25 GB';
+
+    if (feature.code === 'CLOUD_STORAGE' && feature.params?.limit && feature.params?.unit) {
+      return `${feature.params.limit} ${feature.params.unit}`;
+    }
+    if (feature.text) {
+      const match = feature.text.toString().match(/(\d+\s*[G|T]B)/i);
+      if (match) return match[1];
+    }
+    return '25 GB';
+  }
+
+  /**
+   * Provisions Nextcloud user credentials with safe fallback on failure.
+   */
+  private async provisionNextcloudUser(
+    username: string,
+    quota: string,
+    displayName: string
+  ): Promise<string> {
+    try {
+      return await this.nextcloudSvc.provisionUser({
+        username,
+        quota,
+        displayName,
+      });
+    } catch (error) {
+      logger.error('Failed to provision Nextcloud user. Falling back to mock credentials in dev.', { error });
+      return 'mockPass-' + Math.random().toString(36).slice(-8);
+    }
+  }
+
+  /**
+   * Activates a slot (via OTP lookup or direct simulation).
+   */
+  async activateSlot(options: ActivateSlotOptions): Promise<SubscriptionEquipment> {
+    const slot = await this.resolveSlotToActivate(options);
     const sub = await this.subscriptionRepo.findById(slot.subscription_id);
     if (!sub) throw AppError.notFound('Subscription not found');
 
-    // 1. Resolve storage quota
-    let quota = '25 GB'; // default plan quota
-    if (sub.plan.includes('PL-001')) quota = '25 GB';
-    else if (sub.plan.includes('PL-002')) quota = '50 GB';
-    else if (sub.plan.includes('PL-003')) quota = '100 GB';
-    else {
-      // Find quota from features dynamic text
-      const planDetails = await this.planRepo.findById(sub.plan);
-      if (planDetails) {
-        const feature = planDetails.features.find((f: any) =>
-          f.code === 'CLOUD_STORAGE' || (f.text && f.text.toString().toLowerCase().includes('storage'))
-        );
-        if (feature) {
-          if (feature.code === 'CLOUD_STORAGE' && feature.params?.limit && feature.params?.unit) {
-            quota = `${feature.params.limit} ${feature.params.unit}`;
-          } else if (feature.text) {
-            const match = feature.text.toString().match(/(\d+\s*[G|T]B)/i);
-            if (match) quota = match[1];
-          }
-        }
-      }
-    }
+    const quota = await this.resolveStorageQuota(sub.plan);
+    const username = `client_${sub.tenant_id.slice(0, 8)}_slot_${slot.slot_index + 1}`;
+    const displayName = `${options.deviceName} (${options.deviceSerial})`;
+    const password = await this.provisionNextcloudUser(username, quota, displayName);
 
-    // 2. Generate Nextcloud user credentials
-    const nextcloudUsername = `client_${sub.tenant_id.slice(0, 8)}_slot_${slot.slot_index + 1}`;
-    let nextcloudPassword = '';
-
-    try {
-      nextcloudPassword = await this.nextcloudSvc.provisionUser({
-        username: nextcloudUsername,
-        quota,
-        displayName: `${options.deviceName} (${options.deviceSerial})`,
-      });
-    } catch (error: any) {
-      logger.error('Failed to provision Nextcloud user. Falling back to mock credentials in dev.', { error });
-      nextcloudPassword = 'mockPass-' + Math.random().toString(36).slice(-8);
-    }
-
-    // 3. Mark slot as active
     const updated = await this.equipmentRepo.update(slot.id, {
       status: 'ACTIVE',
       device_name: options.deviceName,
       device_serial: options.deviceSerial,
       otp: null,
       otp_expires_at: null,
-      nextcloud_username: nextcloudUsername,
-      nextcloud_password: nextcloudPassword,
+      nextcloud_username: username,
+      nextcloud_password: password,
     });
 
     return updated!;
   }
 
   /**
-   * Deactivates/revokes an equipment slot and deletes its Nextcloud account
+   * Deactivates/revokes an equipment slot and deletes its Nextcloud account.
    */
   async deactivateSlot(subscriptionId: string, slotIndex: number, tenantId: string, byAdmin = false): Promise<SubscriptionEquipment> {
     const slot = await this.equipmentRepo.findBySlot(subscriptionId, slotIndex);
     if (!slot) throw AppError.notFound('Slot not found');
     if (!byAdmin && slot.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
 
-    // Clean up Nextcloud user account
     if (slot.nextcloud_username) {
-      try {
-        await this.nextcloudSvc.deleteUser(slot.nextcloud_username);
-      } catch (err) {
-        logger.error('Failed to delete Nextcloud user during deactivation', { err });
-      }
+      await this.cleanupNextcloudUser(slot.nextcloud_username);
     }
 
     const updated = await this.equipmentRepo.update(slot.id, {
@@ -201,16 +248,16 @@ export class EquipmentService {
   }
 
   /**
-   * Get all active devices (equipment) for a client across their active subscriptions.
+   * Gets all active devices (equipment) for a client across their active subscriptions.
    */
   async getActiveDevicesForClient(clientId: string, tenantId: string): Promise<SubscriptionEquipment[]> {
     return this.equipmentRepo.findActiveByClient(clientId, tenantId);
   }
 
   /**
-   * Get all client devices across all subscriptions and tenants (for Admin view).
+   * Gets all client devices across all subscriptions and tenants (for Admin view).
    */
-  async getAllDevicesForAdmin(): Promise<any[]> {
+  async getAllDevicesForAdmin(): Promise<EquipmentWithDetails[]> {
     const activeSubs = await this.subscriptionRepo.findAllActive();
     for (const sub of activeSubs) {
       await this.getEquipmentSlots(sub.id, sub.tenant_id, true);
@@ -219,22 +266,14 @@ export class EquipmentService {
   }
 
   /**
-   * Get Nextcloud credentials and live storage info for a specific slot on demand.
+   * Gets Nextcloud credentials and live storage info for a specific slot on demand.
    */
   async getNextcloudInfo(
     subscriptionId: string,
     slotIndex: number,
     tenantId: string,
     byAdmin = false
-  ): Promise<{
-    nextcloud_username: string | null;
-    nextcloud_password: string | null;
-    nextcloud_used_bytes: number;
-    nextcloud_total_bytes: number;
-    device_name: string | null;
-    device_serial: string | null;
-    status: string;
-  }> {
+  ): Promise<NextcloudStorageInfo> {
     const slot = await this.equipmentRepo.findBySlot(subscriptionId, slotIndex);
     if (!slot) throw AppError.notFound('Slot not found');
     if (!byAdmin && slot.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
@@ -265,3 +304,4 @@ export class EquipmentService {
 }
 
 export const equipmentService = new EquipmentService();
+
