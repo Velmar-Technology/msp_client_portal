@@ -5,16 +5,29 @@ import type { Notification } from "@/services/notificationService";
 import { toast } from 'sonner';
 import { getAuthItem } from '@/lib/authStorage';
 
+const BELL_CLEARED_KEY = 'msp_bell_cleared_at';
+
+function getStoredBellClearedAt(): number | null {
+  try {
+    const val = localStorage.getItem(BELL_CLEARED_KEY);
+    return val ? parseInt(val, 10) : null;
+  } catch {
+    return null;
+  }
+}
+
 export interface NotificationState {
   notifications: Notification[];
   unreadCount: number;
   isLoading: boolean;
   eventSource: EventSource | null;
+  bellClearedAt: number | null;
 
   fetchNotifications: () => Promise<void>;
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   clearNotifications: () => Promise<void>;
+  dismissBellTray: () => void;
   
   startStream: () => void;
   stopStream: () => void;
@@ -27,6 +40,7 @@ export const useNotificationStore = create<NotificationState>()(
       unreadCount: 0,
       isLoading: false,
       eventSource: null,
+      bellClearedAt: getStoredBellClearedAt(),
 
       fetchNotifications: async () => {
         set({ isLoading: true }, false, 'notifications/fetch_request');
@@ -101,7 +115,15 @@ export const useNotificationStore = create<NotificationState>()(
         }
       },
 
-
+      dismissBellTray: () => {
+        const now = Date.now();
+        try {
+          localStorage.setItem(BELL_CLEARED_KEY, now.toString());
+        } catch (e) {
+          console.error('Failed to save bell cleared timestamp', e);
+        }
+        set({ bellClearedAt: now }, false, 'notifications/dismiss_bell_tray');
+      },
 
       startStream: () => {
         const { eventSource } = get();
@@ -132,7 +154,6 @@ export const useNotificationStore = create<NotificationState>()(
             }, false, 'notifications/stream_received');
 
             // 2. Generate a premium Toast message for the client in real-time
-            // Map types to beautiful labels and color variants
             let toastType: 'info' | 'success' | 'warning' | 'error' = 'info';
             if (newNotif.type.includes('SUCCESS') || newNotif.type === 'TICKET_CREATED' || newNotif.type === 'RESOLVED') {
               toastType = 'success';
@@ -176,14 +197,11 @@ export const useNotificationStore = create<NotificationState>()(
           set({ eventSource: null }, false, 'notifications/stream_error');
 
           try {
-            // Trigger a call to fetch notifications. This uses the Axios 'api' instance.
-            // If the current token is expired, Axios interceptors will auto-refresh it in the background.
             await notificationService.getAll();
           } catch (error) {
             console.error('Failed to trigger token auto-refresh during SSE reconnect:', error);
           }
 
-          // Retry connection after 5 seconds if still authenticated
           setTimeout(() => {
             const token = getAuthItem('accessToken');
             const currentES = get().eventSource;

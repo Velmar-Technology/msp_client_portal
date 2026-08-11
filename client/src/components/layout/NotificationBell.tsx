@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNotificationStore } from "@/store/useNotificationStore";
 import {
   Bell,
@@ -33,8 +33,26 @@ export function NotificationBell() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications, fetchNotifications } =
-    useNotificationStore();
+  const {
+    notifications,
+    markAsRead,
+    markAllAsRead,
+    dismissBellTray,
+    fetchNotifications,
+    bellClearedAt,
+  } = useNotificationStore();
+
+  const bellNotifications = useMemo(() => {
+    if (!bellClearedAt) return notifications;
+    return notifications.filter((n) => {
+      const time = new Date(n.created_at).getTime();
+      return isNaN(time) || time > bellClearedAt;
+    });
+  }, [notifications, bellClearedAt]);
+
+  const bellUnreadCount = useMemo(() => {
+    return bellNotifications.filter((n) => !n.read).length;
+  }, [bellNotifications]);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -111,9 +129,9 @@ export function NotificationBell() {
         aria-label="Toggle notifications"
       >
         <Bell className="h-4 w-4" />
-        {unreadCount > 0 && (
+        {bellUnreadCount > 0 && (
           <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-0.5 bg-red-600 text-white dark:bg-red-500 text-[8px] font-bold rounded-full flex items-center justify-center animate-pulse border-2 border-white dark:border-zinc-950 box-content">
-            {unreadCount > 99 ? "99+" : unreadCount}
+            {bellUnreadCount > 99 ? "99+" : bellUnreadCount}
           </span>
         )}
       </button>
@@ -127,14 +145,14 @@ export function NotificationBell() {
               <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">
                 Notifications
               </h3>
-              {unreadCount > 0 && (
+              {bellUnreadCount > 0 && (
                 <span className="px-1.5 py-0.5 bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-[9px] font-bold rounded-sm uppercase tracking-wider">
-                  {unreadCount} unread
+                  {bellUnreadCount} unread
                 </span>
               )}
             </div>
             <div className="flex items-center gap-0.5">
-              {unreadCount > 0 && (
+              {bellUnreadCount > 0 && (
                 <button
                   onClick={() => markAllAsRead()}
                   className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-sm transition-colors cursor-pointer uppercase tracking-wider"
@@ -143,11 +161,11 @@ export function NotificationBell() {
                   <Check className="h-3 w-3" />
                 </button>
               )}
-              {notifications.length > 0 && (
+              {bellNotifications.length > 0 && (
                 <button
-                  onClick={() => clearNotifications()}
+                  onClick={() => dismissBellTray()}
                   className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-sm transition-colors cursor-pointer uppercase tracking-wider"
-                  title="Clear all notifications"
+                  title="Clear bell tray"
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>
@@ -164,7 +182,7 @@ export function NotificationBell() {
 
           {/* List Content */}
           <div className="max-h-[380px] overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-900 custom-scrollbar bg-white dark:bg-zinc-950">
-            {notifications.length === 0 ? (
+            {bellNotifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
                 <div className="w-10 h-10 rounded-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center text-zinc-400 dark:text-zinc-500 mb-3">
                   <Bell className="h-4 w-4" />
@@ -173,7 +191,7 @@ export function NotificationBell() {
                 <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">No notifications yet.</p>
               </div>
             ) : (
-              notifications.map((notif) => {
+              bellNotifications.map((notif) => {
                 const conf = getNotificationIcon(notif.type);
                 return (
                   <div
