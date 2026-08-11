@@ -32,6 +32,7 @@ import {
 import { useMaintenance } from "@/hooks/useMaintenance";
 import { ScheduleMaintenanceModal } from "@/components/maintenance/ScheduleMaintenanceModal";
 import type { DeviceMaintenance, MaintenanceStatus } from "@/services/maintenanceService";
+import { cn } from "@/lib/utils";
 
 export function MaintenancePage() {
   const { i18n } = useTranslation();
@@ -170,7 +171,11 @@ export function MaintenancePage() {
   const listColumns: ColumnDef<DeviceMaintenance>[] = [
     {
       id: "scheduledDate",
-      header: () => <span className="uppercase text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">{t("maintenance.tableDate")}</span>,
+      header: () => (
+        <span className="uppercase text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">
+          {t("maintenance.tableDate")}
+        </span>
+      ),
       cell: ({ row }) => {
         const item = row.original;
         const d = new Date(item.scheduled_date);
@@ -188,12 +193,18 @@ export function MaintenancePage() {
     },
     {
       id: "deviceInfo",
-      header: () => <span className="uppercase text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">{t("maintenance.tableDevice")}</span>,
+      header: () => (
+        <span className="uppercase text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">
+          {t("maintenance.tableDevice")}
+        </span>
+      ),
       cell: ({ row }) => {
         const item = row.original;
         return (
           <div className="space-y-0.5">
-            <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">{item.device_name || t("devices.unnamedDevice")}</p>
+            <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+              {item.device_name || t("devices.unnamedDevice")}
+            </p>
             {item.device_serial && <p className="text-[10px] text-zinc-400 font-mono">{item.device_serial}</p>}
             {item.service_name && <p className="text-[9px] text-zinc-500 italic">{item.service_name}</p>}
           </div>
@@ -202,20 +213,30 @@ export function MaintenancePage() {
     },
     {
       id: "clientInfo",
-      header: () => <span className="uppercase text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">{t("maintenance.tableClient")}</span>,
+      header: () => (
+        <span className="uppercase text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">
+          {t("maintenance.tableClient")}
+        </span>
+      ),
       cell: ({ row }) => {
         const item = row.original;
         return (
           <div className="space-y-0.5">
             <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100">{item.client_name || "—"}</p>
-            {item.client_email && <p className="text-[10px] text-zinc-400 truncate max-w-[150px]">{item.client_email}</p>}
+            {item.client_email && (
+              <p className="text-[10px] text-zinc-400 truncate max-w-[150px]">{item.client_email}</p>
+            )}
           </div>
         );
       },
     },
     {
       id: "assignedTech",
-      header: () => <span className="uppercase text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">{t("maintenance.tableTech")}</span>,
+      header: () => (
+        <span className="uppercase text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">
+          {t("maintenance.tableTech")}
+        </span>
+      ),
       cell: ({ row }) => {
         const item = row.original;
         return item.assigned_tech_name ? (
@@ -230,12 +251,20 @@ export function MaintenancePage() {
     },
     {
       accessorKey: "status",
-      header: () => <span className="uppercase text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">{t("maintenance.tableStatus")}</span>,
+      header: () => (
+        <span className="uppercase text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">
+          {t("maintenance.tableStatus")}
+        </span>
+      ),
       cell: ({ row }) => getStatusBadge(row.getValue("status")),
     },
     {
       id: "actions",
-      header: () => <span className="uppercase text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-wider text-right">{t("common.actions")}</span>,
+      header: () => (
+        <span className="uppercase text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-wider text-right">
+          {t("common.actions")}
+        </span>
+      ),
       cell: ({ row }) => {
         const item = row.original;
         return (
@@ -246,7 +275,10 @@ export function MaintenancePage() {
                   <MoreHorizontal className="h-3.5 w-3.5 text-zinc-500" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
+              <DropdownMenuContent
+                align="end"
+                className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800"
+              >
                 <DropdownMenuLabel className="text-xs">{t("maintenance.actionsLabel")}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => setSelectedEventDetails(item)} className="cursor-pointer text-xs">
@@ -283,11 +315,7 @@ export function MaintenancePage() {
   ];
 
   return (
-    <Page
-      title={t("nav.maintenance")}
-      subtitle={t("maintenance.subtitle")}
-      isLoading={loading}
-    >
+    <Page title={t("nav.maintenance")} subtitle={t("maintenance.subtitle")} isLoading={loading}>
       <div className="space-y-4">
         {/* Top Control Bar */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white dark:bg-zinc-950 p-4 border border-zinc-200 dark:border-zinc-800 rounded-sm shadow-sm">
@@ -315,36 +343,40 @@ export function MaintenancePage() {
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
-            <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 capitalize">
-              {monthYearTitle}
-            </h2>
+            <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 capitalize">{monthYearTitle}</h2>
           </div>
 
           {/* Action & View Controls */}
           <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end">
             {/* View Mode Toggle */}
-            <div className="flex items-center p-0.5 border border-zinc-200 dark:border-zinc-800 rounded-lg bg-zinc-100 dark:bg-zinc-900">
+            <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-800">
               <button
+                type="button"
                 onClick={() => setViewMode("CALENDAR")}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                title={t("maintenance.viewCalendar")}
+                aria-label={t("maintenance.viewCalendar")}
+                className={cn(
+                  "p-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer",
                   viewMode === "CALENDAR"
-                    ? "bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 shadow-sm"
-                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
-                }`}
+                    ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-xs"
+                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200",
+                )}
               >
-                <LayoutGrid className="h-3.5 w-3.5" />
-                <span>{t("maintenance.viewCalendar")}</span>
+                <LayoutGrid className="h-4 w-4" />
               </button>
               <button
+                type="button"
                 onClick={() => setViewMode("LIST")}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                title={t("maintenance.viewList")}
+                aria-label={t("maintenance.viewList")}
+                className={cn(
+                  "p-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer",
                   viewMode === "LIST"
-                    ? "bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 shadow-sm"
-                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
-                }`}
+                    ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-xs"
+                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200",
+                )}
               >
-                <ListIcon className="h-3.5 w-3.5" />
-                <span>{t("maintenance.viewList")}</span>
+                <ListIcon className="h-4 w-4" />
               </button>
             </div>
 
@@ -361,53 +393,53 @@ export function MaintenancePage() {
 
         {/* Filters Toolbar - Calendar view only */}
         {viewMode === "CALENDAR" && (
-        <div className="bg-white dark:bg-zinc-950 p-3 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm flex flex-col md:flex-row gap-3 items-center justify-between">
-          <div className="relative w-full md:max-w-xs">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
-            <Input
-              type="text"
-              placeholder={t("maintenance.searchPlaceholder")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 h-8 bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-xs"
-            />
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-            {/* Status Filter */}
-            <div className="flex items-center gap-1.5">
-              <ListFilter className="h-3.5 w-3.5 text-zinc-400" />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="h-8 px-2 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200 focus:outline-none cursor-pointer"
-              >
-                <option value="ALL">{t("maintenance.filterAllStatuses")}</option>
-                <option value="SCHEDULED">{t("maintenance.statusScheduled")}</option>
-                <option value="IN_PROGRESS">{t("maintenance.statusInProgress")}</option>
-                <option value="COMPLETED">{t("maintenance.statusCompleted")}</option>
-                <option value="OVERDUE">{t("maintenance.statusOverdue")}</option>
-                <option value="CANCELLED">{t("maintenance.statusCancelled")}</option>
-              </select>
+          <div className="bg-white dark:bg-zinc-950 p-3 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm flex flex-col md:flex-row gap-3 items-center justify-between">
+            <div className="relative w-full md:max-w-xs">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
+              <Input
+                type="text"
+                placeholder={t("maintenance.searchPlaceholder")}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-8 pr-3 h-8 bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-xs"
+              />
             </div>
 
-            {/* Tech Filter (Admin/Tech) */}
-            {isAdminOrTech && uniqueTechnicians.length > 0 && (
-              <select
-                value={selectedTechFilter}
-                onChange={(e) => setSelectedTechFilter(e.target.value)}
-                className="h-8 px-2 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200 focus:outline-none cursor-pointer"
-              >
-                <option value="ALL">{t("maintenance.filterAllTechs")}</option>
-                {uniqueTechnicians.map((tech) => (
-                  <option key={tech.id} value={tech.id}>
-                    {tech.name}
-                  </option>
-                ))}
-              </select>
-            )}
+            <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+              {/* Status Filter */}
+              <div className="flex items-center gap-1.5">
+                <ListFilter className="h-3.5 w-3.5 text-zinc-400" />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="h-8 px-2 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200 focus:outline-none cursor-pointer"
+                >
+                  <option value="ALL">{t("maintenance.filterAllStatuses")}</option>
+                  <option value="SCHEDULED">{t("maintenance.statusScheduled")}</option>
+                  <option value="IN_PROGRESS">{t("maintenance.statusInProgress")}</option>
+                  <option value="COMPLETED">{t("maintenance.statusCompleted")}</option>
+                  <option value="OVERDUE">{t("maintenance.statusOverdue")}</option>
+                  <option value="CANCELLED">{t("maintenance.statusCancelled")}</option>
+                </select>
+              </div>
+
+              {/* Tech Filter (Admin/Tech) */}
+              {isAdminOrTech && uniqueTechnicians.length > 0 && (
+                <select
+                  value={selectedTechFilter}
+                  onChange={(e) => setSelectedTechFilter(e.target.value)}
+                  className="h-8 px-2 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200 focus:outline-none cursor-pointer"
+                >
+                  <option value="ALL">{t("maintenance.filterAllTechs")}</option>
+                  {uniqueTechnicians.map((tech) => (
+                    <option key={tech.id} value={tech.id}>
+                      {tech.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
           </div>
-        </div>
         )}
 
         {/* CALENDAR VIEW GRID */}
@@ -429,7 +461,7 @@ export function MaintenancePage() {
               {calendarDays.map((dayItem, idx) => {
                 const isToday = dayItem.date.toDateString() === new Date().toDateString();
                 const dayMaintenances = filteredMaintenances.filter(
-                  (m) => new Date(m.scheduled_date).toDateString() === dayItem.date.toDateString()
+                  (m) => new Date(m.scheduled_date).toDateString() === dayItem.date.toDateString(),
                 );
 
                 return (
@@ -447,8 +479,8 @@ export function MaintenancePage() {
                           isToday
                             ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900"
                             : dayItem.isCurrentMonth
-                            ? "text-zinc-700 dark:text-zinc-300"
-                            : "text-zinc-400 dark:text-zinc-600"
+                              ? "text-zinc-700 dark:text-zinc-300"
+                              : "text-zinc-400 dark:text-zinc-600"
                         }`}
                       >
                         {dayItem.date.getDate()}
@@ -474,10 +506,10 @@ export function MaintenancePage() {
                             m.status === "COMPLETED"
                               ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/50"
                               : m.status === "IN_PROGRESS"
-                              ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900/50"
-                              : m.status === "OVERDUE"
-                              ? "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900/50"
-                              : "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900/50"
+                                ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900/50"
+                                : m.status === "OVERDUE"
+                                  ? "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900/50"
+                                  : "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900/50"
                           }`}
                           title={`${m.title} - ${m.device_name || ""}`}
                         >
@@ -507,7 +539,7 @@ export function MaintenancePage() {
               search={{
                 value: searchQuery,
                 onChange: handleSearchChange,
-                placeholder: t("maintenance.searchPlaceholder")
+                placeholder: t("maintenance.searchPlaceholder"),
               }}
               filters={[
                 {
@@ -521,15 +553,19 @@ export function MaintenancePage() {
                     { value: "OVERDUE", label: t("maintenance.statusOverdue") },
                     { value: "CANCELLED", label: t("maintenance.statusCancelled") },
                   ],
-                  placeholder: t("maintenance.filterAllStatuses")
+                  placeholder: t("maintenance.filterAllStatuses"),
                 },
-                ...(isAdminOrTech && uniqueTechnicians.length > 0 ? [{
-                  id: "tech",
-                  value: selectedTechFilter === "ALL" ? "" : selectedTechFilter,
-                  onChange: (val: string) => handleTechFilterChange(val || "ALL"),
-                  options: uniqueTechnicians.map((tech) => ({ value: tech.id, label: tech.name })),
-                  placeholder: t("maintenance.filterAllTechs")
-                }] : [])
+                ...(isAdminOrTech && uniqueTechnicians.length > 0
+                  ? [
+                      {
+                        id: "tech",
+                        value: selectedTechFilter === "ALL" ? "" : selectedTechFilter,
+                        onChange: (val: string) => handleTechFilterChange(val || "ALL"),
+                        options: uniqueTechnicians.map((tech) => ({ value: tech.id, label: tech.name })),
+                        placeholder: t("maintenance.filterAllTechs"),
+                      },
+                    ]
+                  : []),
               ]}
               pagination={{
                 page: listPage,

@@ -727,9 +727,9 @@
   "resources": {
     "title": "Recursos",
     "subtitle": "Descargue software, manuales y documentación según su plan de soporte.",
-    "allPlans": "Todos los Planes",
+    "allPlans": "Todos",
     "filterByPlan": "Plan",
-    "allOs": "Todos los SO",
+    "allOs": "Todos",
     "filterByOs": "SO",
     "os": {
       "windows": "Windows",

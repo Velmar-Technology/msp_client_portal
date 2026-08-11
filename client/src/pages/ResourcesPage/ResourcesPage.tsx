@@ -172,7 +172,10 @@ export function ResourcesPage() {
           <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
-                <label htmlFor="resources-os-filter" className="text-[10px] uppercase font-bold text-zinc-400 select-none">
+                <label
+                  htmlFor="resources-os-filter"
+                  className="text-[10px] uppercase font-bold text-zinc-400 select-none"
+                >
                   {t("resources.filterByOs")}
                 </label>
                 <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-800">
@@ -195,7 +198,10 @@ export function ResourcesPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <label htmlFor="resources-plan-filter" className="text-[10px] uppercase font-bold text-zinc-400 select-none">
+                <label
+                  htmlFor="resources-plan-filter"
+                  className="text-[10px] uppercase font-bold text-zinc-400 select-none"
+                >
                   {t("resources.filterByPlan")}
                 </label>
                 <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-800">
@@ -230,11 +236,11 @@ export function ResourcesPage() {
                   "p-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer",
                   viewMode === "tiled"
                     ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-xs"
-                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200",
                 )}
               >
                 <LayoutGrid className="h-4 w-4" />
-                <span className="hidden md:inline">{t("resources.viewTiled")}</span>
+                {/* <span className="hidden md:inline">{t("resources.viewTiled")}</span> */}
               </button>
               <button
                 type="button"
@@ -245,11 +251,11 @@ export function ResourcesPage() {
                   "p-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer",
                   viewMode === "list"
                     ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-xs"
-                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200",
                 )}
               >
                 <List className="h-4 w-4" />
-                <span className="hidden md:inline">{t("resources.viewList")}</span>
+                {/* <span className="hidden md:inline">{t("resources.viewList")}</span> */}
               </button>
             </div>
           </div>
