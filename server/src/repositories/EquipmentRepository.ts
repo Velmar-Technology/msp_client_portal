@@ -1,7 +1,7 @@
 import { BaseRepository } from './BaseRepository';
 import { SubscriptionEquipment, EquipmentWithDetails } from '../types';
-import { db, subscriptionEquipment, subscriptions, users, tenants } from '../db';
-import { eq, and, or, desc } from 'drizzle-orm';
+import { db, subscriptionEquipment, subscriptions, users, tenants, rmmDeviceTelemetry } from '../db';
+import { eq, and, or, desc, sql } from 'drizzle-orm';
 
 export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
   constructor() {
@@ -10,8 +10,23 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
 
   async findBySubscription(subscriptionId: string): Promise<SubscriptionEquipment[]> {
     const results = await db
-      .select()
+      .select({
+        id: subscriptionEquipment.id,
+        subscription_id: subscriptionEquipment.subscription_id,
+        slot_index: subscriptionEquipment.slot_index,
+        status: subscriptionEquipment.status,
+        device_name: subscriptionEquipment.device_name,
+        device_serial: subscriptionEquipment.device_serial,
+        otp: subscriptionEquipment.otp,
+        otp_expires_at: subscriptionEquipment.otp_expires_at,
+        nextcloud_username: subscriptionEquipment.nextcloud_username,
+        nextcloud_password: subscriptionEquipment.nextcloud_password,
+        tenant_id: subscriptionEquipment.tenant_id,
+        created_at: subscriptionEquipment.created_at,
+        updated_at: sql<Date>`COALESCE(${rmmDeviceTelemetry.last_sync_at}, ${rmmDeviceTelemetry.updated_at}, ${subscriptionEquipment.updated_at})`.as('updated_at'),
+      })
       .from(subscriptionEquipment)
+      .leftJoin(rmmDeviceTelemetry, eq(subscriptionEquipment.id, rmmDeviceTelemetry.equipment_id))
       .where(eq(subscriptionEquipment.subscription_id, subscriptionId))
       .orderBy(subscriptionEquipment.slot_index);
     return results as SubscriptionEquipment[];
@@ -84,9 +99,10 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
         nextcloud_password: subscriptionEquipment.nextcloud_password,
         tenant_id: subscriptionEquipment.tenant_id,
         created_at: subscriptionEquipment.created_at,
-        updated_at: subscriptionEquipment.updated_at,
+        updated_at: sql<Date>`COALESCE(${rmmDeviceTelemetry.last_sync_at}, ${rmmDeviceTelemetry.updated_at}, ${subscriptionEquipment.updated_at})`.as('updated_at'),
       })
       .from(subscriptionEquipment)
+      .leftJoin(rmmDeviceTelemetry, eq(subscriptionEquipment.id, rmmDeviceTelemetry.equipment_id))
       .innerJoin(subscriptions, eq(subscriptionEquipment.subscription_id, subscriptions.id))
       .where(
         and(
@@ -118,7 +134,7 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
         nextcloud_password: subscriptionEquipment.nextcloud_password,
         tenant_id: subscriptionEquipment.tenant_id,
         created_at: subscriptionEquipment.created_at,
-        updated_at: subscriptionEquipment.updated_at,
+        updated_at: sql<Date>`COALESCE(${rmmDeviceTelemetry.last_sync_at}, ${rmmDeviceTelemetry.updated_at}, ${subscriptionEquipment.updated_at})`.as('updated_at'),
         client_name: users.name,
         client_email: users.email,
         client_role: users.role,
@@ -128,6 +144,7 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
         subscription_status: subscriptions.status,
       })
       .from(subscriptionEquipment)
+      .leftJoin(rmmDeviceTelemetry, eq(subscriptionEquipment.id, rmmDeviceTelemetry.equipment_id))
       .innerJoin(subscriptions, eq(subscriptionEquipment.subscription_id, subscriptions.id))
       .innerJoin(users, eq(subscriptions.client_id, users.id))
       .innerJoin(tenants, eq(subscriptionEquipment.tenant_id, tenants.id))
@@ -167,9 +184,10 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
         nextcloud_password: subscriptionEquipment.nextcloud_password,
         tenant_id: subscriptionEquipment.tenant_id,
         created_at: subscriptionEquipment.created_at,
-        updated_at: subscriptionEquipment.updated_at,
+        updated_at: sql<Date>`COALESCE(${rmmDeviceTelemetry.last_sync_at}, ${rmmDeviceTelemetry.updated_at}, ${subscriptionEquipment.updated_at})`.as('updated_at'),
       })
       .from(subscriptionEquipment)
+      .leftJoin(rmmDeviceTelemetry, eq(subscriptionEquipment.id, rmmDeviceTelemetry.equipment_id))
       .where(
         and(
           eq(subscriptionEquipment.status, 'ACTIVE'),

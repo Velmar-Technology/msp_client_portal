@@ -32,6 +32,9 @@ describe('RmmPatchService', () => {
     mockEquipRepo = {
       findById: vi.fn().mockResolvedValue({ id: equipmentId, tenant_id: tenantId, device_name: 'Server-01' }),
       findByTenant: vi.fn().mockResolvedValue([]),
+      findByTenantId: vi.fn().mockResolvedValue([]),
+      findAllWithDetails: vi.fn().mockResolvedValue([]),
+      update: vi.fn().mockResolvedValue({ id: equipmentId, updated_at: new Date() }),
     };
 
     mockSubRepo = {

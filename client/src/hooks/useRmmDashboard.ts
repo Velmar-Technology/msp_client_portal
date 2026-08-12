@@ -55,9 +55,9 @@ export const useRmmDashboard = (): UseRmmDashboardReturn => {
   const [limit, setLimit] = useState<number>(10);
   const [selectedDevices, setSelectedDevices] = useState<SubscriptionEquipment[]>([]);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (isSilent = false) => {
     try {
-      setLoading(true);
+      if (!isSilent) setLoading(true);
       const [overviewData, devicesData] = await Promise.all([
         rmmService.getOverview(),
         equipmentService.getMyDevices(),
@@ -66,14 +66,21 @@ export const useRmmDashboard = (): UseRmmDashboardReturn => {
       setDevices(devicesData);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to load RMM telemetry data';
-      toast.error(message);
+      if (!isSilent) toast.error(message);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     fetchData();
+
+    // Real-Time Telemetry Auto-Polling (every 30 seconds)
+    const intervalId = setInterval(() => {
+      fetchData(true);
+    }, 30000);
+
+    return () => clearInterval(intervalId);
   }, [fetchData]);
 
   // Reset pagination on search or filter change
@@ -118,6 +125,9 @@ export const useRmmDashboard = (): UseRmmDashboardReturn => {
       } else if (id === 'device_serial') {
         valA = (a.device_serial || '').toLowerCase();
         valB = (b.device_serial || '').toLowerCase();
+      } else if (id === 'last_checked') {
+        valA = new Date(a.updated_at || a.created_at || 0).getTime();
+        valB = new Date(b.updated_at || b.created_at || 0).getTime();
       } else if (id === 'status') {
         valA = a.status;
         valB = b.status;
@@ -146,9 +156,21 @@ export const useRmmDashboard = (): UseRmmDashboardReturn => {
     try {
       setScanningMap((prev) => ({ ...prev, [equipmentId]: true }));
       toast.info('Triggering Zabbix telemetry scan...');
-      await rmmService.triggerScan(equipmentId);
+      const telemetry = await rmmService.triggerScan(equipmentId);
       toast.success('Device telemetry synchronized with Zabbix!');
-      await fetchData();
+
+      const nowIso = new Date().toISOString();
+      const updatedTimestamp = telemetry?.last_sync_at || telemetry?.updated_at || nowIso;
+
+      setDevices((prev) =>
+        prev.map((d) =>
+          d.id === equipmentId
+            ? { ...d, updated_at: updatedTimestamp }
+            : d
+        )
+      );
+
+      await fetchData(true);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to scan device via Zabbix agent';
       toast.error(message);
@@ -163,7 +185,18 @@ export const useRmmDashboard = (): UseRmmDashboardReturn => {
     try {
       await Promise.all(selectedList.map((dev) => rmmService.triggerScan(dev.id)));
       toast.success(`Zabbix telemetry synchronized for ${selectedList.length} device(s)!`);
-      await fetchData();
+
+      const nowIso = new Date().toISOString();
+      const selectedIds = new Set(selectedList.map((dev) => dev.id));
+      setDevices((prev) =>
+        prev.map((d) =>
+          selectedIds.has(d.id)
+            ? { ...d, updated_at: nowIso }
+            : d
+        )
+      );
+
+      await fetchData(true);
     } catch (err: unknown) {
       toast.error('Bulk Zabbix telemetry scan failed');
     }

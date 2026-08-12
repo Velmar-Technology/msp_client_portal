@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,7 @@ export const PatchManagementModal: React.FC<PatchManagementModalProps> = ({
   deviceName,
   onPatchesUpdated,
 }) => {
+  const { t } = useTranslation();
   const {
     patches,
     loading,
@@ -44,16 +46,18 @@ export const PatchManagementModal: React.FC<PatchManagementModalProps> = ({
     onPatchesUpdated,
   });
 
+  const displayDeviceName = deviceName || t("rmm.modalEquipmentDevice");
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl w-full bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 p-5 shadow-xl sm:rounded-lg">
         <DialogHeader className="space-y-1 pb-1">
           <DialogTitle className="flex items-center gap-2 text-base font-semibold text-zinc-900 dark:text-zinc-100">
             <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <span>Patch Management — {deviceName || 'Equipment Device'}</span>
+            <span>{t("rmm.modalTitle", { deviceName: displayDeviceName })}</span>
           </DialogTitle>
           <DialogDescription className="text-xs text-zinc-500 dark:text-zinc-400">
-            Inspect missing security vulnerabilities, OS updates, and execute remote patch installation through Zabbix RMM agent.
+            {t("rmm.modalSubtitle")}
           </DialogDescription>
         </DialogHeader>
 
@@ -77,7 +81,7 @@ export const PatchManagementModal: React.FC<PatchManagementModalProps> = ({
             onClick={() => onOpenChange(false)}
             className="h-8 text-xs font-medium border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-700 dark:text-zinc-300"
           >
-            Close
+            {t("rmm.modalClose")}
           </Button>
 
           <Button
@@ -91,7 +95,7 @@ export const PatchManagementModal: React.FC<PatchManagementModalProps> = ({
             ) : (
               <ShieldCheck className="w-3.5 h-3.5" />
             )}
-            <span>Install {selectedCount} Selected Update(s)</span>
+            <span>{t("rmm.modalInstallSelected", { count: selectedCount })}</span>
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -116,6 +116,9 @@ export class RmmPatchService {
       last_sync_at: new Date(),
     });
 
+    // Touch equipment row so subscription_equipment.updated_at reflects the latest scan timestamp
+    await this.equipRepo.update(equipmentId, {});
+
     return telemetry;
   }
 

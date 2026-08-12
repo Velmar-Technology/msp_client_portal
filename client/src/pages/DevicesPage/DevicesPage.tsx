@@ -889,8 +889,8 @@ export function DevicesPage() {
     <Page title={t("nav.devices")} subtitle={t("devices.subtitle")} isLoading={false}>
       <Tabs defaultValue="devices" className="space-y-4">
         <TabsList className="w-fit">
-          <TabsTrigger value="devices">Device Inventory & Slots</TabsTrigger>
-          <TabsTrigger value="rmm">RMM Monitoring & Patches (Zabbix)</TabsTrigger>
+          <TabsTrigger value="devices">{t("rmm.tabInventory")}</TabsTrigger>
+          <TabsTrigger value="rmm">{t("rmm.tabRmm")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="devices">

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RefreshCw } from 'lucide-react';
@@ -27,11 +28,13 @@ export const PatchTable: React.FC<PatchTableProps> = ({
   onSelectAllPending,
   onTogglePatch,
 }) => {
+  const { t } = useTranslation();
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12 text-zinc-500 dark:text-zinc-400 gap-2 text-xs font-medium">
         <RefreshCw className="w-4 h-4 animate-spin text-zinc-400 dark:text-zinc-500" />
-        <span>Scanning device patch inventory via Zabbix agent...</span>
+        <span>{t("rmm.modalScanning")}</span>
       </div>
     );
   }
@@ -50,16 +53,16 @@ export const PatchTable: React.FC<PatchTableProps> = ({
               />
             </TableHead>
             <TableHead className="py-2 px-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
-              Advisory ID
+              {t("rmm.tableAdvisoryId")}
             </TableHead>
             <TableHead className="py-2 px-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
-              Title & Description
+              {t("rmm.tableTitleDesc")}
             </TableHead>
             <TableHead className="py-2 px-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
-              Severity
+              {t("rmm.tableSeverity")}
             </TableHead>
             <TableHead className="py-2 px-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
-              Status
+              {t("rmm.tableStatus")}
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -67,7 +70,7 @@ export const PatchTable: React.FC<PatchTableProps> = ({
           {patches.length === 0 ? (
             <TableRow>
               <TableCell colSpan={5} className="text-center py-10 text-xs text-zinc-500 dark:text-zinc-400">
-                No patch advisories found for this device.
+                {t("rmm.modalNoAdvisories")}
               </TableCell>
             </TableRow>
           ) : (
@@ -95,8 +98,8 @@ export const PatchTable: React.FC<PatchTableProps> = ({
                     <p className="font-medium text-xs text-zinc-900 dark:text-zinc-100 truncate">{patch.title}</p>
                     <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
                       {patch.installed_at
-                        ? `Installed on ${new Date(patch.installed_at).toLocaleDateString()}`
-                        : 'Ready for deployment'}
+                        ? t("rmm.installedOn", { date: new Date(patch.installed_at).toLocaleDateString() })
+                        : t("rmm.readyForDeployment")}
                     </p>
                   </TableCell>
                   <TableCell className="py-2 px-3">

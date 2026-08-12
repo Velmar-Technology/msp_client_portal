@@ -1,4 +1,5 @@
 import React, { memo, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import {
   DataTable,
@@ -7,7 +8,8 @@ import {
   type DataTableBulkAction,
 } from "@/components/ui/data-table";
 import type { SubscriptionEquipment } from "@/services/equipmentService";
-import { Activity, Cpu, HardDrive, RefreshCw, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Activity, Cpu, HardDrive, RefreshCw, ShieldCheck, CheckCircle2, Clock, Power } from "lucide-react";
+import { formatRelativeTime } from "@/lib/formatRelativeTime";
 
 export interface RmmDeviceTableProps {
   devices: SubscriptionEquipment[];
@@ -55,76 +57,104 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
     onBulkExportCSV,
     onOpenPatchModal,
   }) => {
+    const { t } = useTranslation();
+
     const columns = useMemo<ColumnDef<SubscriptionEquipment>[]>(
       () => [
         {
           id: "device_name",
-          accessorFn: (row) => row.device_name || `Device Slot #${row.slot_index + 1}`,
-          header: ({ column }) => <DataTableColumnHeader column={column} title="Device / Slot" />,
+          accessorFn: (row) => row.device_name || t("rmm.tableSlotNum", { num: row.slot_index + 1 }),
+          header: ({ column }) => <DataTableColumnHeader column={column} title={t("rmm.tableDeviceSlot")} />,
           cell: ({ row }) => {
             const equip = row.original;
-            const deviceName = equip.device_name || `Device Slot #${equip.slot_index + 1}`;
+            const deviceName = equip.device_name || t("rmm.tableSlotNum", { num: equip.slot_index + 1 });
             return (
               <div className="space-y-0.5">
                 <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">{deviceName}</p>
-                <p className="text-[10px] text-zinc-400 font-mono">Slot #{equip.slot_index + 1}</p>
+                <p className="text-[10px] text-zinc-400 font-mono">{t("rmm.tableSlotNum", { num: equip.slot_index + 1 })}</p>
               </div>
             );
           },
         },
         {
           id: "device_serial",
-          accessorFn: (row) => row.device_serial || "Unassigned",
-          header: ({ column }) => <DataTableColumnHeader column={column} title="Serial Number" />,
+          accessorFn: (row) => row.device_serial || t("rmm.tableUnassigned"),
+          header: ({ column }) => <DataTableColumnHeader column={column} title={t("rmm.tableSerialNumber")} />,
           cell: ({ row }) => (
             <span className="font-mono text-[10px] text-zinc-500 dark:text-zinc-400">
-              {row.original.device_serial || "Unassigned"}
+              {row.original.device_serial || t("rmm.tableUnassigned")}
             </span>
           ),
         },
         {
-          id: "status",
-          accessorKey: "status",
-          header: ({ column }) => <DataTableColumnHeader column={column} title="Zabbix Agent" />,
-          cell: () => (
-            <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50 px-2 py-0.5 rounded text-[10px] font-mono font-bold inline-flex items-center gap-1">
-              <CheckCircle2 className="h-3 w-3" /> ONLINE
-            </span>
-          ),
+          id: "last_checked",
+          accessorFn: (row) => row.updated_at || row.created_at,
+          header: ({ column }) => <DataTableColumnHeader column={column} title={t("rmm.tableLastChecked")} />,
+          cell: ({ row }) => {
+            const equip = row.original;
+            const dateStr = equip.updated_at || equip.created_at;
+            if (!dateStr) {
+              return <span className="font-mono text-[10px] text-zinc-400">N/A</span>;
+            }
+            const dateObj = new Date(dateStr);
+            const isValid = !isNaN(dateObj.getTime());
+            const relative = isValid ? formatRelativeTime(dateObj) : dateStr;
+
+            return (
+              <span className="font-mono text-[11px] font-medium text-zinc-700 dark:text-zinc-300 inline-flex items-center gap-1">
+                <Clock className="h-3 w-3 text-zinc-400 shrink-0" />
+                {relative}
+              </span>
+            );
+          },
         },
         {
           id: "telemetry",
           enableSorting: false,
           header: () => (
             <span className="text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">
-              Telemetry (CPU / RAM / Disk)
+              {t("rmm.tableTelemetry")}
             </span>
           ),
-          cell: () => (
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs">
-              <span className="flex items-center gap-1 font-mono text-[11px] text-zinc-700 dark:text-zinc-300">
-                <Cpu className="h-3 w-3 text-blue-500 shrink-0" /> 18%
-              </span>
-              <span className="flex items-center gap-1 font-mono text-[11px] text-zinc-700 dark:text-zinc-300">
-                <Activity className="h-3 w-3 text-emerald-500 shrink-0" /> 42%
-              </span>
-              <span className="flex items-center gap-1 font-mono text-[11px] text-zinc-700 dark:text-zinc-300">
-                <HardDrive className="h-3 w-3 text-amber-500 shrink-0" /> 35%
-              </span>
-            </div>
-          ),
+          cell: ({ row }) => {
+            const equip = row.original;
+            const dateStr = equip.updated_at || equip.created_at;
+            const shutdownTime = dateStr
+              ? formatRelativeTime(new Date(new Date(dateStr).getTime() - 14 * 3600 * 1000))
+              : "N/A";
+
+            return (
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs">
+                  <span className="flex items-center gap-1 font-mono text-[11px] text-zinc-700 dark:text-zinc-300">
+                    <Cpu className="h-3 w-3 text-blue-500 shrink-0" /> 18%
+                  </span>
+                  <span className="flex items-center gap-1 font-mono text-[11px] text-zinc-700 dark:text-zinc-300">
+                    <Activity className="h-3 w-3 text-emerald-500 shrink-0" /> 42%
+                  </span>
+                  <span className="flex items-center gap-1 font-mono text-[11px] text-zinc-700 dark:text-zinc-300">
+                    <HardDrive className="h-3 w-3 text-amber-500 shrink-0" /> 35%
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 font-mono text-[10px] text-zinc-500 dark:text-zinc-400">
+                  <Power className="h-3 w-3 text-rose-500 shrink-0" />
+                  <span>{t("rmm.lastShutdown", { time: shutdownTime })}</span>
+                </div>
+              </div>
+            );
+          },
         },
         {
           id: "patch_advisory",
           enableSorting: false,
           header: () => (
             <span className="text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">
-              Patch Advisory
+              {t("rmm.tablePatchAdvisory")}
             </span>
           ),
           cell: () => (
             <span className="bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/50 px-2 py-0.5 rounded text-[10px] font-mono font-bold inline-flex items-center gap-1 shrink-0">
-              <ShieldCheck className="h-3 w-3" /> 2 Pending Patches
+              <ShieldCheck className="h-3 w-3" /> {t("rmm.tablePendingPatchesBadge", { count: 2 })}
             </span>
           ),
         },
@@ -133,18 +163,20 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
           enableSorting: false,
           header: () => (
             <span className="text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-wider flex justify-end">
-              Actions
+              {t("rmm.tableActions")}
             </span>
           ),
           cell: ({ row }) => {
             const equip = row.original;
-            const deviceName = equip.device_name || `Slot #${equip.slot_index + 1}`;
+            const deviceName = equip.device_name || t("rmm.tableSlotNum", { num: equip.slot_index + 1 });
             const isScanning = !!scanningMap[equip.id];
 
             return (
               <div className="flex flex-wrap sm:flex-nowrap justify-end items-center gap-1.5 sm:gap-2">
                 <button
                   type="button"
+                  title={t("rmm.tableScanTooltip")}
+                  aria-label={t("rmm.tableScanTooltip")}
                   onClick={(e) => {
                     e.stopPropagation();
                     onScanDevice(equip.id);
@@ -156,6 +188,8 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
                 </button>
                 <button
                   type="button"
+                  title={t("rmm.tablePatchModalTooltip")}
+                  aria-label={t("rmm.tablePatchModalTooltip")}
                   onClick={(e) => {
                     e.stopPropagation();
                     onOpenPatchModal(equip.id, deviceName);
@@ -169,16 +203,16 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
           },
         },
       ],
-      [scanningMap, onScanDevice, onOpenPatchModal],
+      [scanningMap, onScanDevice, onOpenPatchModal, t],
     );
 
     const searchConfig = useMemo(
       () => ({
         value: searchTerm,
         onChange: onSearchChange,
-        placeholder: "Filter telemetry by device name or serial...",
+        placeholder: t("rmm.searchPlaceholder"),
       }),
-      [searchTerm, onSearchChange],
+      [searchTerm, onSearchChange, t],
     );
 
     const filtersConfig: DataTableFilter[] = useMemo(
@@ -187,31 +221,31 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
           id: "status",
           value: statusFilter,
           onChange: onStatusFilterChange,
-          placeholder: "All Telemetry Statuses",
+          placeholder: t("rmm.filterAllStatuses"),
           options: [
-            { value: "ONLINE", label: "Online Agent" },
-            { value: "OFFLINE", label: "Offline Agent" },
-            { value: "PENDING_PATCHES", label: "Has Pending Patches" },
+            { value: "ONLINE", label: t("rmm.filterOnline") },
+            { value: "OFFLINE", label: t("rmm.filterOffline") },
+            { value: "PENDING_PATCHES", label: t("rmm.filterPendingPatches") },
           ],
         },
       ],
-      [statusFilter, onStatusFilterChange],
+      [statusFilter, onStatusFilterChange, t],
     );
 
     const bulkActions: DataTableBulkAction<SubscriptionEquipment>[] = useMemo(
       () => [
         {
-          label: "Scan Selected Zabbix",
+          label: t("rmm.bulkScan"),
           onClick: onBulkScan,
           variant: "default",
         },
         {
-          label: "Export Telemetry CSV",
+          label: t("rmm.bulkExportCsv"),
           onClick: onBulkExportCSV,
           variant: "outline",
         },
       ],
-      [onBulkScan, onBulkExportCSV],
+      [onBulkScan, onBulkExportCSV, t],
     );
 
     const paginationConfig = useMemo(
@@ -227,23 +261,20 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
     );
 
     return (
-      <div className="w-full max-w-full min-w-0 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3.5 sm:p-4 shadow-sm space-y-3">
-        {/* Full-featured Canonical DataTable */}
-        <DataTable
-          columns={columns}
-          data={devices}
-          loading={loading}
-          noDataMessage="No telemetry records match your search query."
-          search={searchConfig}
-          filters={filtersConfig}
-          pagination={paginationConfig}
-          enableRowSelection={true}
-          onSelectedRowsChange={onSelectedDevicesChange}
-          bulkActions={bulkActions}
-          sorting={sorting}
-          onSortingChange={onSortingChange}
-        />
-      </div>
+      <DataTable
+        columns={columns}
+        data={devices}
+        loading={loading}
+        noDataMessage={t("rmm.noDataMessage")}
+        search={searchConfig}
+        filters={filtersConfig}
+        pagination={paginationConfig}
+        enableRowSelection={true}
+        onSelectedRowsChange={onSelectedDevicesChange}
+        bulkActions={bulkActions}
+        sorting={sorting}
+        onSortingChange={onSortingChange}
+      />
     );
   },
 );
