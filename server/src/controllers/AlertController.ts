@@ -8,6 +8,15 @@ export class AlertController {
     const result = await alertService.processRMMAlert(data);
     res.status(201).json({ success: true, data: result });
   }
+
+  async processZabbixWebhook(req: Request, res: Response): Promise<void> {
+    const user = (req as any).user;
+    const tenantId = user?.tenantId || user?.tenant_id || req.body.tenantId;
+    const userId = user?.userId || user?.id || req.body.clientId;
+    const result = await alertService.processZabbixWebhook(req.body, tenantId, userId);
+    res.status(200).json({ success: true, data: result });
+  }
 }
 
 export const alertController = new AlertController();
+

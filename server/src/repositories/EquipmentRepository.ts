@@ -143,6 +143,15 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
       .orderBy(desc(subscriptionEquipment.created_at));
     return results as EquipmentWithDetails[];
   }
+
+  async findByTenantId(tenantId: string): Promise<SubscriptionEquipment[]> {
+    const results = await db
+      .select()
+      .from(subscriptionEquipment)
+      .where(eq(subscriptionEquipment.tenant_id, tenantId));
+    return results as SubscriptionEquipment[];
+  }
 }
+
 
 export const equipmentRepository = new EquipmentRepository();

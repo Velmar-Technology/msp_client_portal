@@ -437,3 +437,75 @@ export interface DeviceMaintenance {
   assigned_tech_name?: string | null;
   service_name?: string | null;
 }
+
+// ---- RMM & Patch Management Types ----
+
+export enum RmmPatchStatus {
+  PENDING = 'PENDING',
+  INSTALLING = 'INSTALLING',
+  INSTALLED = 'INSTALLED',
+  FAILED = 'FAILED',
+}
+
+export enum RmmPatchSeverity {
+  CRITICAL = 'CRITICAL',
+  HIGH = 'HIGH',
+  MEDIUM = 'MEDIUM',
+  LOW = 'LOW',
+}
+
+export interface RmmPatchItem {
+  id: string;
+  equipment_id: string;
+  patch_id: string;
+  title: string;
+  severity: RmmPatchSeverity | string;
+  status: RmmPatchStatus | string;
+  release_date?: Date | null;
+  installed_at?: Date | null;
+  tenant_id: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface RmmDeviceTelemetry {
+  id: string;
+  equipment_id: string;
+  zabbix_host_id: string | null;
+  agent_status: 'ONLINE' | 'OFFLINE' | 'UNKNOWN' | string;
+  cpu_usage: number;
+  memory_usage: number;
+  disk_usage: number;
+  pending_patch_count: number;
+  last_sync_at: Date | null;
+  tenant_id: string;
+  created_at: Date;
+  updated_at: Date;
+  device_name?: string | null;
+  device_serial?: string | null;
+}
+
+export interface ZabbixWebhookPayload {
+  eventid?: string | number;
+  triggername?: string;
+  alertType?: string;
+  hostname?: string;
+  assetId?: string;
+  severity?: string | number;
+  executionTimeMs?: number;
+  tenantId?: string;
+  clientId?: string;
+  message?: string;
+  value?: string | number;
+}
+
+export interface RmmOverviewStats {
+  monitoredDevices: number;
+  onlineDevices: number;
+  offlineDevices: number;
+  pendingPatchesCount: number;
+  noiseReductionRatio: number;
+  selfHealingEfficiency: number;
+  automatedFCR: number;
+}
+

@@ -58,8 +58,78 @@ services:
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-24h}
       - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-7d}
       - MAX_FILE_SIZE_MB=${MAX_FILE_SIZE_MB:-10}
+      - ZABBIX_URL=${ZABBIX_URL:-http://zabbix-web:8080/api_jsonrpc.php}
+      - ZABBIX_USER=${ZABBIX_USER:-Admin}
+      - ZABBIX_PASSWORD=${ZABBIX_PASSWORD:-zabbix}
+      - ZABBIX_WEBHOOK_SECRET=${ZABBIX_WEBHOOK_SECRET:-secret_key}
     volumes:
       - uploads_data:/app/server/uploads
+
+  zabbix-db:
+    image: postgres:16-alpine
+    container_name: msp_zabbix_db_prod
+    restart: always
+    networks:
+      - default
+    environment:
+      POSTGRES_USER: ${ZABBIX_DB_USER:-zabbix}
+      POSTGRES_PASSWORD: ${ZABBIX_DB_PASSWORD:-zabbix_password}
+      POSTGRES_DB: ${ZABBIX_DB_NAME:-zabbix}
+    volumes:
+      - zabbix_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zabbix -d zabbix"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  zabbix-server:
+    image: zabbix/zabbix-server-pgsql:alpine-6.0-latest
+    container_name: msp_zabbix_server_prod
+    restart: always
+    networks:
+      - default
+    depends_on:
+      zabbix-db:
+        condition: service_healthy
+    environment:
+      DB_SERVER_HOST: zabbix-db
+      POSTGRES_USER: ${ZABBIX_DB_USER:-zabbix}
+      POSTGRES_PASSWORD: ${ZABBIX_DB_PASSWORD:-zabbix_password}
+      POSTGRES_DB: ${ZABBIX_DB_NAME:-zabbix}
+
+  zabbix-web:
+    image: zabbix/zabbix-web-nginx-pgsql:alpine-6.0-latest
+    container_name: msp_zabbix_web_prod
+    restart: always
+    networks:
+      - default
+    depends_on:
+      zabbix-db:
+        condition: service_healthy
+      zabbix-server:
+        condition: service_started
+    ports:
+      - "8080:8080"
+    environment:
+      ZBX_SERVER_HOST: zabbix-server
+      DB_SERVER_HOST: zabbix-db
+      POSTGRES_USER: ${ZABBIX_DB_USER:-zabbix}
+      POSTGRES_PASSWORD: ${ZABBIX_DB_PASSWORD:-zabbix_password}
+      POSTGRES_DB: ${ZABBIX_DB_NAME:-zabbix}
+      PHP_TZ: "America/Santo_Domingo"
+
+  zabbix-agent:
+    image: zabbix/zabbix-agent2:alpine-6.0-latest
+    container_name: msp_zabbix_agent_prod
+    restart: always
+    networks:
+      - default
+    depends_on:
+      - zabbix-server
+    environment:
+      ZBX_SERVER_HOST: zabbix-server
+      ZBX_HOSTNAME: "Zabbix server"
 
   client:
     image: ghcr.io/${REPOSITORY_OWNER:-eapolancovelmar}/msp-helpdesk-client:${VERSION:-latest}
@@ -84,8 +154,11 @@ volumes:
     driver: local
   uploads_data:
     driver: local
+  zabbix_pgdata:
+    driver: local
 
 networks:
   default:
   reverse-proxy:
     external: true
+

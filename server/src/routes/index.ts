@@ -13,6 +13,7 @@ import equipmentRoutes from './equipment.routes';
 import expenseRoutes from './expense.routes';
 import maintenanceRoutes from './maintenance.routes';
 import alertRoutes from './alert.routes';
+import rmmRoutes from './rmm.routes';
 
 const router = Router();
 
@@ -30,6 +31,8 @@ router.use('/equipment', equipmentRoutes);
 router.use('/expenses', expenseRoutes);
 router.use('/maintenance', maintenanceRoutes);
 router.use('/alerts', alertRoutes);
+router.use('/rmm', rmmRoutes);
+
 
 
 // Health check

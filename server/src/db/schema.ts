@@ -427,4 +427,60 @@ export const deviceMaintenances = pgTable(
   ]
 );
 
+// ---- RMM Patches ----
+export const rmmPatches = pgTable(
+  'rmm_patches',
+  {
+    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    equipment_id: uuid('equipment_id')
+      .references(() => subscriptionEquipment.id, { onDelete: 'cascade' })
+      .notNull(),
+    patch_id: varchar('patch_id', { length: 100 }).notNull(),
+    title: varchar('title', { length: 500 }).notNull(),
+    severity: varchar('severity', { length: 50 }).default('MEDIUM').notNull(),
+    status: varchar('status', { length: 50 }).default('PENDING').notNull(),
+    release_date: timestamp('release_date', { withTimezone: true }),
+    installed_at: timestamp('installed_at', { withTimezone: true }),
+    tenant_id: uuid('tenant_id')
+      .references(() => tenants.id, { onDelete: 'cascade' })
+      .notNull(),
+    created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    index('idx_rmm_patches_equip').on(table.equipment_id),
+    index('idx_rmm_patches_tenant').on(table.tenant_id),
+    index('idx_rmm_patches_status').on(table.status),
+  ]
+);
+
+// ---- RMM Device Telemetry ----
+export const rmmDeviceTelemetry = pgTable(
+  'rmm_device_telemetry',
+  {
+    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    equipment_id: uuid('equipment_id')
+      .references(() => subscriptionEquipment.id, { onDelete: 'cascade' })
+      .notNull()
+      .unique(),
+    zabbix_host_id: varchar('zabbix_host_id', { length: 100 }),
+    agent_status: varchar('agent_status', { length: 50 }).default('ONLINE').notNull(),
+    cpu_usage: decimal('cpu_usage', { precision: 5, scale: 2 }).$type<number>().default(0),
+    memory_usage: decimal('memory_usage', { precision: 5, scale: 2 }).$type<number>().default(0),
+    disk_usage: decimal('disk_usage', { precision: 5, scale: 2 }).$type<number>().default(0),
+    pending_patch_count: integer('pending_patch_count').default(0).notNull(),
+    last_sync_at: timestamp('last_sync_at', { withTimezone: true }),
+    tenant_id: uuid('tenant_id')
+      .references(() => tenants.id, { onDelete: 'cascade' })
+      .notNull(),
+    created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    index('idx_rmm_telemetry_equip').on(table.equipment_id),
+    index('idx_rmm_telemetry_tenant').on(table.tenant_id),
+  ]
+);
+
+
 

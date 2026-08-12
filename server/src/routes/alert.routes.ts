@@ -14,4 +14,8 @@ router.use(authMiddleware);
 /** POST /api/v1/alerts/rmm — Ingest an RMM alert for flapping/self-healing processing */
 router.post('/rmm', rbacMiddleware(UserRole.ADMIN), validate(ProcessRmmAlertDTO), (req, res) => alertController.processRmmAlert(req, res));
 
+/** POST /api/v1/alerts/zabbix-webhook — Ingest Zabbix webhook triggers */
+router.post('/zabbix-webhook', (req, res) => alertController.processZabbixWebhook(req, res));
+
 export default router;
+

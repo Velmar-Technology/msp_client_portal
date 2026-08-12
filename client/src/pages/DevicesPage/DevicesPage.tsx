@@ -12,6 +12,8 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { ScheduleMaintenanceModal } from "@/components/maintenance/ScheduleMaintenanceModal";
 import { NextcloudInfoModal } from "@/components/devices/NextcloudInfoModal";
 import { ActivateWithOtpModal } from "@/components/devices/ActivateWithOtpModal";
+import { RmmDashboard } from "@/components/devices/RmmDashboard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +22,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -884,56 +887,70 @@ export function DevicesPage() {
 
   return (
     <Page title={t("nav.devices")} subtitle={t("devices.subtitle")} isLoading={false}>
-      <div className="space-y-4">
-        {activeSubscriptions.length === 0 && !loading && !isAdmin ? (
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <EmptySubscriptionsCard onBrowsePlans={handleBrowsePlans} />
-          </div>
-        ) : (
-          <div className="space-y-4 text-on-surface animate-fade-in">
-            {activeSubscriptions.length > 1 && !isAdmin && (
-              <SubscriptionSelector
-                subscriptions={activeSubscriptions}
-                selectedId={selectedSubscriptionId}
-                onChange={setSelectedSubscriptionId}
-              />
-            )}
+      <Tabs defaultValue="devices" className="space-y-4">
+        <TabsList className="w-fit">
+          <TabsTrigger value="devices">Device Inventory & Slots</TabsTrigger>
+          <TabsTrigger value="rmm">RMM Monitoring & Patches (Zabbix)</TabsTrigger>
+        </TabsList>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-              <div className="lg:col-span-3 space-y-4">
-                {/* Toolbar: Activate with Code */}
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={handleOpenActivateWithOtp}
-                    className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-md shadow-sm transition-colors cursor-pointer"
-                  >
-                    <KeyRound className="h-3.5 w-3.5 text-zinc-500" />
-                    {t("devices.activateWithCode")}
-                  </button>
-                </div>
-
-                {/* Device List Data Table */}
-                <DataTable
-                  columns={equipmentColumns}
-                  data={paginatedEquipment}
-                  noDataMessage={t("devices.noSlotsFound")}
-                  loading={loading}
-                  className="border-none rounded-none"
-                  search={searchConfig}
-                  filters={filtersConfig}
-                  pagination={paginationConfig}
-                  enableRowSelection={true}
-                  onSelectedRowsChange={setSelectedDevices}
-                  bulkActions={bulkActions}
-                  sorting={sorting}
-                  onSortingChange={setSorting}
-                />
+        <TabsContent value="devices">
+          <div className="space-y-4">
+            {activeSubscriptions.length === 0 && !loading && !isAdmin ? (
+              <div className="flex items-center justify-center min-h-[60vh]">
+                <EmptySubscriptionsCard onBrowsePlans={handleBrowsePlans} />
               </div>
-            </div>
+            ) : (
+              <div className="space-y-4 text-on-surface animate-fade-in">
+                {activeSubscriptions.length > 1 && !isAdmin && (
+                  <SubscriptionSelector
+                    subscriptions={activeSubscriptions}
+                    selectedId={selectedSubscriptionId}
+                    onChange={setSelectedSubscriptionId}
+                  />
+                )}
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+                  <div className="lg:col-span-3 space-y-4">
+                    {/* Toolbar: Activate with Code */}
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={handleOpenActivateWithOtp}
+                        className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-md shadow-sm transition-colors cursor-pointer"
+                      >
+                        <KeyRound className="h-3.5 w-3.5 text-zinc-500" />
+                        {t("devices.activateWithCode")}
+                      </button>
+                    </div>
+
+                    {/* Device List Data Table */}
+                    <DataTable
+                      columns={equipmentColumns}
+                      data={paginatedEquipment}
+                      noDataMessage={t("devices.noSlotsFound")}
+                      loading={loading}
+                      className="border-none rounded-none"
+                      search={searchConfig}
+                      filters={filtersConfig}
+                      pagination={paginationConfig}
+                      enableRowSelection={true}
+                      onSelectedRowsChange={setSelectedDevices}
+                      bulkActions={bulkActions}
+                      sorting={sorting}
+                      onSortingChange={setSorting}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </TabsContent>
+
+        <TabsContent value="rmm">
+          <RmmDashboard />
+        </TabsContent>
+      </Tabs>
+
 
       {/* Device Activation Wizard Modal */}
       {activationWizardSubId && activationWizardSlotIdx !== null && (

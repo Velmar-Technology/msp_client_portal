@@ -11,7 +11,7 @@ import {
   FLAPPING_ALERT_TAG,
   TIER_2_SPECIALTY,
 } from '../config/constants';
-import { RmmAlertInput, Ticket, TicketCategory, TicketPriority, TicketStatus } from '../types';
+import { RmmAlertInput, Ticket, TicketCategory, TicketPriority, TicketStatus, ZabbixWebhookPayload } from '../types';
 
 export type RmmAlertOutcome =
   | { status: 'DEDUPLICATED' }
@@ -26,6 +26,35 @@ export class AlertService {
     private eventRepo: TicketEventRepository = ticketEventRepository,
     private creationSvc: TicketCreationService = ticketCreationService,
   ) {}
+
+  async processZabbixWebhook(payload: ZabbixWebhookPayload, fallbackTenantId: string, fallbackUserId?: string): Promise<RmmAlertOutcome> {
+    const alertType = payload.alertType || payload.triggername || 'ZABBIX_ALERT';
+    const assetId = payload.assetId || payload.hostname || 'UNKNOWN_HOST';
+    const tenantId = payload.tenantId || fallbackTenantId;
+    const clientId = payload.clientId || fallbackUserId || fallbackTenantId;
+
+    let priority = TicketPriority.MEDIUM;
+    const sev = String(payload.severity || '').toLowerCase();
+    if (sev === '5' || sev.includes('disaster') || sev.includes('critical')) {
+      priority = TicketPriority.CRITICAL;
+    } else if (sev === '4' || sev.includes('high')) {
+      priority = TicketPriority.HIGH;
+    } else if (sev === '1' || sev === '2' || sev.includes('info') || sev.includes('warning')) {
+      priority = TicketPriority.LOW;
+    }
+
+    const input: RmmAlertInput = {
+      alertType,
+      assetId,
+      tenantId,
+      priority,
+      executionTimeMs: payload.executionTimeMs ?? 500000,
+      clientId,
+    };
+
+    return this.processRMMAlert(input);
+  }
+
 
   async processRMMAlert(input: RmmAlertInput): Promise<RmmAlertOutcome> {
     const now = new Date();
