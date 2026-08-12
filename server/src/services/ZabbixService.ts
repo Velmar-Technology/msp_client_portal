@@ -129,29 +129,33 @@ export class ZabbixService {
   async getHostTelemetry(equipmentId: string, zabbixHostId?: string | null): Promise<ZabbixHostMetrics> {
     await this.authenticate();
     
-    if (zabbixHostId && zabbixHostId.startsWith('zbx-real-')) {
+    if (zabbixHostId && (!zabbixHostId.startsWith('zbx-') || zabbixHostId.startsWith('zbx-real-'))) {
       const items = await this.jsonRpcCall('item.get', {
         hostids: [zabbixHostId],
         output: ['key_', 'lastvalue'],
       });
 
-      if (items && Array.isArray(items)) {
+      if (items && Array.isArray(items) && items.length > 0) {
         let cpu = 15;
         let mem = 45;
         let disk = 30;
+        let pending = 0;
         items.forEach((it: any) => {
           if (it.key_?.includes('cpu')) cpu = parseFloat(it.lastvalue) || cpu;
           if (it.key_?.includes('memory')) mem = parseFloat(it.lastvalue) || mem;
           if (it.key_?.includes('disk')) disk = parseFloat(it.lastvalue) || disk;
+          if (it.key_?.includes('system.sw.packages') || it.key_?.includes('update') || it.key_?.includes('patch')) {
+            pending = parseInt(it.lastvalue, 10) || pending;
+          }
         });
 
         return {
           zabbixHostId,
           agentStatus: 'ONLINE',
-          cpuUsage: Math.min(100, Math.max(0, cpu)),
-          memoryUsage: Math.min(100, Math.max(0, mem)),
-          diskUsage: Math.min(100, Math.max(0, disk)),
-          pendingPatchCount: 2,
+          cpuUsage: Math.min(100, Math.max(0, Math.round(cpu))),
+          memoryUsage: Math.min(100, Math.max(0, Math.round(mem))),
+          diskUsage: Math.min(100, Math.max(0, Math.round(disk))),
+          pendingPatchCount: pending,
         };
       }
     }

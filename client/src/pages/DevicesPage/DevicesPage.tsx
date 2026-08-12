@@ -946,7 +946,7 @@ export function DevicesPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="rmm">
+        <TabsContent value="rmm" className="min-w-0 w-full max-w-full">
           <RmmDashboard />
         </TabsContent>
       </Tabs>

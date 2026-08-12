@@ -104,10 +104,10 @@ export class EquipmentController {
 
   async getMyDevices(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const devices = await this.equipmentSvc.getActiveDevicesForClient(
-        req.user!.userId,
-        req.user!.tenantId
-      );
+      const isClient = req.user!.role === 'CLIENT';
+      const devices = isClient
+        ? await this.equipmentSvc.getActiveDevicesForClient(req.user!.userId, req.user!.tenantId)
+        : await this.equipmentSvc.getAllDevicesForAdmin();
       res.json({
         success: true,
         data: devices,

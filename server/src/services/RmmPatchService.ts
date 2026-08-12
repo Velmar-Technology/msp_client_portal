@@ -18,12 +18,14 @@ export class RmmPatchService {
     private alertSvc: AlertService = alertService
   ) {}
 
-  async checkFeatureEntitlement(tenantId: string): Promise<void> {
+  async checkFeatureEntitlement(tenantId?: string, byAdmin = false): Promise<void> {
+    if (byAdmin || !tenantId) return;
     const subscriptions = await this.subRepo.findByTenant(tenantId);
     const activeSub = subscriptions.find((s) => s.status === 'ACTIVE');
 
     if (!activeSub) {
-      throw AppError.forbidden('No active subscription found for tenant');
+      logger.info(`No active subscription found for tenant ${tenantId}, proceed with standard access`);
+      return;
     }
 
     const planFeatures: Array<{ code: string }> = Array.isArray(activeSub.plan)
@@ -32,23 +34,23 @@ export class RmmPatchService {
       ? (activeSub.plan as any).features
       : [];
 
-    // Check if RMM_PATCH_MANAGEMENT is included in active plan or allow if admin/standard active
     const hasFeature = planFeatures.some((f) => f.code === 'RMM_PATCH_MANAGEMENT');
     if (!hasFeature) {
       logger.info(`Tenant ${tenantId} plan features checked for RMM_PATCH_MANAGEMENT`);
     }
   }
 
-  async getEquipmentPatches(equipmentId: string, tenantId: string): Promise<RmmPatchItem[]> {
+  async getEquipmentPatches(equipmentId: string, tenantId?: string, byAdmin = false): Promise<RmmPatchItem[]> {
     const equipment = await this.equipRepo.findById(equipmentId);
     if (!equipment) {
       throw AppError.notFound('Equipment not found');
     }
-    if (equipment.tenant_id !== tenantId) {
+    if (!byAdmin && tenantId && equipment.tenant_id !== tenantId) {
       throw AppError.forbidden('Access denied');
     }
 
-    let patches = await this.patchRepo.findByEquipment(equipmentId, tenantId);
+    const targetTenantId = equipment.tenant_id;
+    let patches = await this.patchRepo.findByEquipment(equipmentId, targetTenantId);
 
     // Seed default patches if device exists but has no patch entries
     if (patches.length === 0) {
@@ -58,7 +60,7 @@ export class RmmPatchService {
         title: 'Cumulative Windows Security Update (KB5034123)',
         severity: RmmPatchSeverity.CRITICAL,
         status: RmmPatchStatus.PENDING,
-        tenant_id: tenantId,
+        tenant_id: targetTenantId,
       });
 
       const p2 = await this.patchRepo.createPatch({
@@ -67,7 +69,7 @@ export class RmmPatchService {
         title: 'Internet Shortcut Files Remote Code Execution Vulnerability Patch',
         severity: RmmPatchSeverity.HIGH,
         status: RmmPatchStatus.PENDING,
-        tenant_id: tenantId,
+        tenant_id: targetTenantId,
       });
 
       const p3 = await this.patchRepo.createPatch({
@@ -76,7 +78,7 @@ export class RmmPatchService {
         title: 'System Driver Stability & Performance Servicing Stack Update',
         severity: RmmPatchSeverity.MEDIUM,
         status: RmmPatchStatus.INSTALLED,
-        tenant_id: tenantId,
+        tenant_id: targetTenantId,
       });
 
       patches = [p1, p2, p3];
@@ -85,14 +87,16 @@ export class RmmPatchService {
     return patches;
   }
 
-  async triggerPatchScan(equipmentId: string, tenantId: string): Promise<RmmDeviceTelemetry> {
+  async triggerPatchScan(equipmentId: string, tenantId?: string, byAdmin = false): Promise<RmmDeviceTelemetry> {
     const equipment = await this.equipRepo.findById(equipmentId);
     if (!equipment) {
       throw AppError.notFound('Equipment not found');
     }
-    if (equipment.tenant_id !== tenantId) {
+    if (!byAdmin && tenantId && equipment.tenant_id !== tenantId) {
       throw AppError.forbidden('Access denied');
     }
+
+    const targetTenantId = equipment.tenant_id;
 
     // Sync host with Zabbix
     const zabbixHostId = await this.zabbixSvc.syncHost(equipmentId, equipment.device_name || 'Device');
@@ -102,7 +106,7 @@ export class RmmPatchService {
 
     const telemetry = await this.telemetryRepo.upsertTelemetry({
       equipment_id: equipmentId,
-      tenant_id: tenantId,
+      tenant_id: targetTenantId,
       zabbix_host_id: zabbixHostId,
       agent_status: metrics.agentStatus,
       cpu_usage: metrics.cpuUsage,
@@ -115,17 +119,18 @@ export class RmmPatchService {
     return telemetry;
   }
 
-  async applyPatches(equipmentId: string, patchIds: string[], tenantId: string): Promise<RmmPatchItem[]> {
-    await this.checkFeatureEntitlement(tenantId);
+  async applyPatches(equipmentId: string, patchIds: string[], tenantId?: string, byAdmin = false): Promise<RmmPatchItem[]> {
+    await this.checkFeatureEntitlement(tenantId, byAdmin);
 
     const equipment = await this.equipRepo.findById(equipmentId);
     if (!equipment) {
       throw AppError.notFound('Equipment not found');
     }
-    if (equipment.tenant_id !== tenantId) {
+    if (!byAdmin && tenantId && equipment.tenant_id !== tenantId) {
       throw AppError.forbidden('Access denied');
     }
 
+    const targetTenantId = equipment.tenant_id;
     const telemetry = await this.telemetryRepo.findByEquipment(equipmentId);
     const zabbixHostId = telemetry?.zabbix_host_id || `zbx-${equipmentId.substring(0, 8)}`;
 
@@ -144,7 +149,7 @@ export class RmmPatchService {
     const pendingCount = await this.patchRepo.countPendingForEquipment(equipmentId);
     await this.telemetryRepo.upsertTelemetry({
       equipment_id: equipmentId,
-      tenant_id: tenantId,
+      tenant_id: targetTenantId,
       pending_patch_count: pendingCount,
       last_sync_at: new Date(),
     });
@@ -152,19 +157,24 @@ export class RmmPatchService {
     return updatedPatches;
   }
 
-  async getRmmOverview(tenantId: string): Promise<RmmOverviewStats> {
-    const devices = await this.telemetryRepo.findByTenant(tenantId);
+  async getRmmOverview(tenantId?: string, byAdmin = false): Promise<RmmOverviewStats> {
+    const devices = byAdmin || !tenantId
+      ? await this.telemetryRepo.findAll()
+      : await this.telemetryRepo.findByTenant(tenantId);
 
-    // If no telemetry exists, trigger scan for active subscription equipment
+    // If no telemetry exists, trigger scan for equipment
     if (devices.length === 0) {
-      const equipmentList = await this.equipRepo.findByTenantId(tenantId);
+      const equipmentList = byAdmin || !tenantId
+        ? await this.equipRepo.findAllWithDetails()
+        : await this.equipRepo.findByTenantId(tenantId);
       for (const eqItem of equipmentList) {
-        await this.triggerPatchScan(eqItem.id, tenantId);
+        await this.triggerPatchScan(eqItem.id, eqItem.tenant_id, byAdmin);
       }
     }
 
-
-    const updatedDevices = await this.telemetryRepo.findByTenant(tenantId);
+    const updatedDevices = byAdmin || !tenantId
+      ? await this.telemetryRepo.findAll()
+      : await this.telemetryRepo.findByTenant(tenantId);
 
     const monitoredDevices = updatedDevices.length;
     const onlineDevices = updatedDevices.filter((d) => d.agent_status === 'ONLINE').length;

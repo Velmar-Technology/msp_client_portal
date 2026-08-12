@@ -211,13 +211,13 @@ export function DataTable<TData, TValue>({
     : "";
 
   return (
-    <div className={cn("space-y-3", className)}>
+    <div className={cn("w-full max-w-full min-w-0 space-y-3", className)}>
       {/* 1. Search & Dropdown Filters Bar */}
       {(search || (filters && filters.length > 0)) && (
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 w-full max-w-full min-w-0">
           {search && (
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 shrink-0" />
               <Input
                 id={`${search.placeholder?.replace(/\s+/g, "-").toLowerCase() || "search"}-input`}
                 type="text"
@@ -230,12 +230,12 @@ export function DataTable<TData, TValue>({
           )}
           {filters &&
             filters.map((filter) => (
-              <div key={filter.id} className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-800">
+              <div key={filter.id} className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-800 min-w-0">
                 <Select value={filter.value || "all"} onValueChange={(val) => filter.onChange(val === "all" ? "" : val)}>
                   <SelectTrigger
                     id={`filter-${filter.id}`}
                     aria-label={filter.placeholder || filter.id}
-                    className="h-7.5 px-2.5 rounded text-xs font-semibold bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5"
+                    className="h-7.5 px-2.5 rounded text-xs font-semibold bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5 min-w-0"
                   >
                     <SelectValue placeholder={filter.placeholder || "Select..."} />
                   </SelectTrigger>
@@ -259,11 +259,11 @@ export function DataTable<TData, TValue>({
 
       {/* 2. Selection Bulk Action Bar */}
       {enableRowSelection && bulkActions && hasSelectedRows && (
-        <div className="px-3 py-1.5 bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded-sm flex items-center justify-between animate-fade-in">
+        <div className="px-3 py-1.5 bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2 animate-fade-in min-w-0">
           <span className="text-xs font-mono font-bold text-zinc-900 dark:text-zinc-100">
             {Object.keys(rowSelection).length} selected
           </span>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {bulkActions.map((action, idx) => (
               <button
                 key={idx}
@@ -272,7 +272,7 @@ export function DataTable<TData, TValue>({
                   action.onClick(selectedRows);
                 }}
                 className={cn(
-                  "px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer",
+                  "px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer whitespace-nowrap",
                   action.variant === "destructive"
                     ? "bg-red-600 hover:bg-red-700 text-white"
                     : action.variant === "outline"
@@ -288,7 +288,7 @@ export function DataTable<TData, TValue>({
       )}
 
       {/* 3. Main Data Table */}
-      <div className="rounded-sm border overflow-hidden bg-white dark:bg-zinc-950 shadow-sm">
+      <div className="w-full max-w-full min-w-0 rounded-sm border overflow-hidden bg-white dark:bg-zinc-950 shadow-sm">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

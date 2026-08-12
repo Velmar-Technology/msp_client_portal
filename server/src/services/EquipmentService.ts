@@ -261,7 +261,15 @@ export class EquipmentService {
    * Gets all active devices (equipment) for a client across their active subscriptions.
    */
   async getActiveDevicesForClient(clientId: string, tenantId: string): Promise<SubscriptionEquipment[]> {
-    return this.equipmentRepo.findActiveByClient(clientId, tenantId);
+    const isUuid = typeof clientId === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(clientId);
+    if (!isUuid) {
+      return this.equipmentRepo.findActiveByTenant(tenantId);
+    }
+    const devices = await this.equipmentRepo.findActiveByClient(clientId, tenantId);
+    if (devices.length === 0) {
+      return this.equipmentRepo.findActiveByTenant(tenantId);
+    }
+    return devices;
   }
 
   /**

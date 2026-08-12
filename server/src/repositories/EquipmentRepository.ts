@@ -151,6 +151,34 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
       .where(eq(subscriptionEquipment.tenant_id, tenantId));
     return results as SubscriptionEquipment[];
   }
+
+  async findActiveByTenant(tenantId: string): Promise<SubscriptionEquipment[]> {
+    const results = await db
+      .select({
+        id: subscriptionEquipment.id,
+        subscription_id: subscriptionEquipment.subscription_id,
+        slot_index: subscriptionEquipment.slot_index,
+        status: subscriptionEquipment.status,
+        device_name: subscriptionEquipment.device_name,
+        device_serial: subscriptionEquipment.device_serial,
+        otp: subscriptionEquipment.otp,
+        otp_expires_at: subscriptionEquipment.otp_expires_at,
+        nextcloud_username: subscriptionEquipment.nextcloud_username,
+        nextcloud_password: subscriptionEquipment.nextcloud_password,
+        tenant_id: subscriptionEquipment.tenant_id,
+        created_at: subscriptionEquipment.created_at,
+        updated_at: subscriptionEquipment.updated_at,
+      })
+      .from(subscriptionEquipment)
+      .where(
+        and(
+          eq(subscriptionEquipment.status, 'ACTIVE'),
+          eq(subscriptionEquipment.tenant_id, tenantId)
+        )
+      )
+      .orderBy(subscriptionEquipment.device_name);
+    return results as SubscriptionEquipment[];
+  }
 }
 
 
