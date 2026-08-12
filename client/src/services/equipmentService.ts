@@ -14,6 +14,12 @@ export interface SubscriptionEquipment {
   tenant_id: string;
   nextcloud_used_bytes?: number;
   nextcloud_total_bytes?: number;
+  agent_status?: 'ONLINE' | 'OFFLINE' | 'UNKNOWN' | string | null;
+  cpu_usage?: number | null;
+  memory_usage?: number | null;
+  disk_usage?: number | null;
+  pending_patch_count?: number | null;
+  last_sync_at?: string | null;
   created_at: string;
   updated_at: string;
   client_name?: string;

@@ -1,6 +1,5 @@
 import React from "react";
 import { useRmmDashboard } from "@/hooks/useRmmDashboard";
-import { RmmDashboardHeader } from "./RmmDashboardHeader";
 import { RmmKpiGrid } from "./RmmKpiGrid";
 import { RmmDeviceTable } from "./RmmDeviceTable";
 import { PatchManagementModal } from "./PatchManagementModal";

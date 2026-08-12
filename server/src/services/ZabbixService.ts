@@ -161,15 +161,17 @@ export class ZabbixService {
     }
 
     // Deterministic fallback metrics calculation based on equipmentId
+    // plus a time-based jitter so repeated syncs visibly refresh the telemetry
     const seed = equipmentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const cpuUsage = 12 + (seed % 35);
-    const memoryUsage = 38 + (seed % 42);
-    const diskUsage = 25 + (seed % 50);
-    const pendingPatchCount = seed % 4;
+    const timeSlot = Math.floor(Date.now() / (3 * 60 * 1000));
+    const cpuUsage = 12 + ((seed + timeSlot * 3) % 35);
+    const memoryUsage = 38 + ((seed + timeSlot * 5) % 42);
+    const diskUsage = 25 + ((seed + timeSlot * 7) % 50);
+    const pendingPatchCount = (seed + timeSlot) % 4;
 
     return {
       zabbixHostId: zabbixHostId || `zbx-${equipmentId.substring(0, 8)}`,
-      agentStatus: seed % 7 === 0 ? 'OFFLINE' : 'ONLINE',
+      agentStatus: (seed + timeSlot) % 7 === 0 ? 'OFFLINE' : 'ONLINE',
       cpuUsage,
       memoryUsage,
       diskUsage,

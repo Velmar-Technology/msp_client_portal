@@ -8,7 +8,7 @@ import {
   type DataTableBulkAction,
 } from "@/components/ui/data-table";
 import type { SubscriptionEquipment } from "@/services/equipmentService";
-import { Activity, Cpu, HardDrive, RefreshCw, ShieldCheck, CheckCircle2, Clock, Power } from "lucide-react";
+import { Activity, CheckCircle2, Cpu, HardDrive, RefreshCw, ShieldCheck, Clock, Power } from "lucide-react";
 import { formatRelativeTime } from "@/lib/formatRelativeTime";
 
 export interface RmmDeviceTableProps {
@@ -87,14 +87,47 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
           ),
         },
         {
+          id: "agent_status",
+          accessorFn: (row) => row.agent_status || "UNKNOWN",
+          header: ({ column }) => <DataTableColumnHeader column={column} title={t("rmm.tableAgentStatus")} />,
+          cell: ({ row }) => {
+            const status = row.original.agent_status;
+            if (!status) {
+              return <span className="font-mono text-[10px] text-zinc-400">{t("rmm.telemetryNA")}</span>;
+            }
+            const isOnline = status === "ONLINE";
+            const isOffline = status === "OFFLINE";
+            return (
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${
+                  isOnline
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50"
+                    : isOffline
+                      ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/50"
+                      : "bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:border-zinc-800"
+                }`}
+              >
+                {isOnline ? (
+                  <CheckCircle2 className="h-3 w-3 shrink-0" />
+                ) : isOffline ? (
+                  <Power className="h-3 w-3 shrink-0" />
+                ) : (
+                  <Activity className="h-3 w-3 shrink-0" />
+                )}
+                {t(isOnline ? "rmm.agentOnline" : isOffline ? "rmm.agentOffline" : "rmm.agentUnknown")}
+              </span>
+            );
+          },
+        },
+        {
           id: "last_checked",
-          accessorFn: (row) => row.updated_at || row.created_at,
+          accessorFn: (row) => row.last_sync_at || row.updated_at || row.created_at,
           header: ({ column }) => <DataTableColumnHeader column={column} title={t("rmm.tableLastChecked")} />,
           cell: ({ row }) => {
             const equip = row.original;
-            const dateStr = equip.updated_at || equip.created_at;
+            const dateStr = equip.last_sync_at || equip.updated_at || equip.created_at;
             if (!dateStr) {
-              return <span className="font-mono text-[10px] text-zinc-400">N/A</span>;
+              return <span className="font-mono text-[10px] text-zinc-400">{t("rmm.telemetryNA")}</span>;
             }
             const dateObj = new Date(dateStr);
             const isValid = !isNaN(dateObj.getTime());
@@ -118,27 +151,28 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
           ),
           cell: ({ row }) => {
             const equip = row.original;
-            const dateStr = equip.updated_at || equip.created_at;
-            const shutdownTime = dateStr
-              ? formatRelativeTime(new Date(new Date(dateStr).getTime() - 14 * 3600 * 1000))
-              : "N/A";
+            const cpu = equip.cpu_usage != null ? `${Math.round(equip.cpu_usage)}%` : t("rmm.telemetryNA");
+            const mem = equip.memory_usage != null ? `${Math.round(equip.memory_usage)}%` : t("rmm.telemetryNA");
+            const disk = equip.disk_usage != null ? `${Math.round(equip.disk_usage)}%` : t("rmm.telemetryNA");
+            const syncTime = equip.last_sync_at || equip.updated_at || equip.created_at;
+            const syncedAt = syncTime ? formatRelativeTime(new Date(syncTime)) : t("rmm.telemetryNA");
 
             return (
               <div className="space-y-1">
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs">
                   <span className="flex items-center gap-1 font-mono text-[11px] text-zinc-700 dark:text-zinc-300">
-                    <Cpu className="h-3 w-3 text-blue-500 shrink-0" /> 18%
+                    <Cpu className="h-3 w-3 text-blue-500 shrink-0" /> {cpu}
                   </span>
                   <span className="flex items-center gap-1 font-mono text-[11px] text-zinc-700 dark:text-zinc-300">
-                    <Activity className="h-3 w-3 text-emerald-500 shrink-0" /> 42%
+                    <Activity className="h-3 w-3 text-emerald-500 shrink-0" /> {mem}
                   </span>
                   <span className="flex items-center gap-1 font-mono text-[11px] text-zinc-700 dark:text-zinc-300">
-                    <HardDrive className="h-3 w-3 text-amber-500 shrink-0" /> 35%
+                    <HardDrive className="h-3 w-3 text-amber-500 shrink-0" /> {disk}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 font-mono text-[10px] text-zinc-500 dark:text-zinc-400">
-                  <Power className="h-3 w-3 text-rose-500 shrink-0" />
-                  <span>{t("rmm.lastShutdown", { time: shutdownTime })}</span>
+                  <Clock className="h-3 w-3 text-zinc-400 shrink-0" />
+                  <span>{t("rmm.lastSynced", { time: syncedAt })}</span>
                 </div>
               </div>
             );
@@ -152,11 +186,14 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
               {t("rmm.tablePatchAdvisory")}
             </span>
           ),
-          cell: () => (
-            <span className="bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/50 px-2 py-0.5 rounded text-[10px] font-mono font-bold inline-flex items-center gap-1 shrink-0">
-              <ShieldCheck className="h-3 w-3" /> {t("rmm.tablePendingPatchesBadge", { count: 2 })}
-            </span>
-          ),
+          cell: ({ row }) => {
+            const count = row.original.pending_patch_count ?? 0;
+            return (
+              <span className="bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/50 px-2 py-0.5 rounded text-[10px] font-mono font-bold inline-flex items-center gap-1 shrink-0">
+                <ShieldCheck className="h-3 w-3" /> {t("rmm.tablePendingPatchesBadge", { count })}
+              </span>
+            );
+          },
         },
         {
           id: "actions",

@@ -99,11 +99,11 @@ export const useRmmDashboard = (): UseRmmDashboardReturn => {
 
       let matchesFilter = true;
       if (statusFilter === 'ONLINE') {
-        matchesFilter = dev.status === 'ACTIVE';
+        matchesFilter = dev.agent_status === 'ONLINE';
       } else if (statusFilter === 'OFFLINE') {
-        matchesFilter = dev.status !== 'ACTIVE';
+        matchesFilter = dev.agent_status === 'OFFLINE';
       } else if (statusFilter === 'PENDING_PATCHES') {
-        matchesFilter = true; // All devices have advisories in telemetry
+        matchesFilter = (dev.pending_patch_count ?? 0) > 0;
       }
 
       return matchesSearch && matchesFilter;
@@ -126,8 +126,11 @@ export const useRmmDashboard = (): UseRmmDashboardReturn => {
         valA = (a.device_serial || '').toLowerCase();
         valB = (b.device_serial || '').toLowerCase();
       } else if (id === 'last_checked') {
-        valA = new Date(a.updated_at || a.created_at || 0).getTime();
-        valB = new Date(b.updated_at || b.created_at || 0).getTime();
+        valA = new Date(a.last_sync_at || a.updated_at || a.created_at || 0).getTime();
+        valB = new Date(b.last_sync_at || b.updated_at || b.created_at || 0).getTime();
+      } else if (id === 'agent_status') {
+        valA = a.agent_status || 'UNKNOWN';
+        valB = b.agent_status || 'UNKNOWN';
       } else if (id === 'status') {
         valA = a.status;
         valB = b.status;
@@ -165,7 +168,16 @@ export const useRmmDashboard = (): UseRmmDashboardReturn => {
       setDevices((prev) =>
         prev.map((d) =>
           d.id === equipmentId
-            ? { ...d, updated_at: updatedTimestamp }
+            ? {
+                ...d,
+                updated_at: updatedTimestamp,
+                last_sync_at: updatedTimestamp,
+                agent_status: telemetry?.agent_status ?? d.agent_status,
+                cpu_usage: telemetry?.cpu_usage ?? d.cpu_usage,
+                memory_usage: telemetry?.memory_usage ?? d.memory_usage,
+                disk_usage: telemetry?.disk_usage ?? d.disk_usage,
+                pending_patch_count: telemetry?.pending_patch_count ?? d.pending_patch_count,
+              }
             : d
         )
       );
@@ -191,7 +203,7 @@ export const useRmmDashboard = (): UseRmmDashboardReturn => {
       setDevices((prev) =>
         prev.map((d) =>
           selectedIds.has(d.id)
-            ? { ...d, updated_at: nowIso }
+            ? { ...d, updated_at: nowIso, last_sync_at: nowIso }
             : d
         )
       );
