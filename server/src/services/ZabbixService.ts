@@ -71,31 +71,51 @@ export class ZabbixService {
 
   async syncHost(equipmentId: string, deviceName: string): Promise<string> {
     await this.authenticate();
-    const hostName = `MSP-${deviceName || equipmentId.substring(0, 8)}`;
+    const technicalHost = (deviceName || equipmentId.substring(0, 8)).trim();
+    const visibleName = `MSP-${technicalHost}`;
     
-    // Check if host exists
+    // Find default OS template dynamically
+    let templateId: string | null = null;
+    const templateRes = await this.jsonRpcCall('template.get', {
+      filter: { host: ['Windows by Zabbix agent'] },
+    });
+    if (templateRes && templateRes.length > 0) {
+      templateId = templateRes[0].templateid;
+    }
+
+    // Check if host exists by technical host name or visible display name
     const existing = await this.jsonRpcCall('host.get', {
-      filter: { host: [hostName] },
+      filter: { host: [technicalHost, visibleName] },
     });
 
     if (existing && existing.length > 0) {
-      return existing[0].hostid;
+      const hostId = existing[0].hostid;
+      // Ensure technical host name matches agent Hostname and visible display name has MSP- prefix
+      await this.jsonRpcCall('host.update', {
+        hostid: hostId,
+        host: technicalHost,
+        name: visibleName,
+        ...(templateId ? { templates: [{ templateid: templateId }] } : {}),
+      });
+      return hostId;
     }
 
-    // Create host if not existing
+    // Create host if not existing with matched technical name and linked template
     const created = await this.jsonRpcCall('host.create', {
-      host: hostName,
+      host: technicalHost,
+      name: visibleName,
       interfaces: [
         {
           type: 1,
           main: 1,
-          useip: 1,
-          ip: '127.0.0.1',
-          dns: '',
+          useip: 0,
+          ip: '',
+          dns: 'host.docker.internal',
           port: '10050',
         },
       ],
       groups: [{ groupid: '2' }], // Linux / Windows servers group
+      ...(templateId ? { templates: [{ templateid: templateId }] } : {}),
     });
 
     if (created && created.hostids && created.hostids[0]) {

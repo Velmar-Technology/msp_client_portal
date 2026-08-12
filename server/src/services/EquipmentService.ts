@@ -2,6 +2,7 @@ import { equipmentRepository, EquipmentRepository } from '../repositories/Equipm
 import { subscriptionRepository, SubscriptionRepository } from '../repositories/SubscriptionRepository';
 import { planRepository, PlanRepository } from '../repositories/PlanRepository';
 import { nextcloudService, NextcloudService } from './NextcloudService';
+import { rmmPatchService, RmmPatchService } from './RmmPatchService';
 import { AppError } from '../utils/AppError';
 import { logger } from '../utils/logger';
 import { SubscriptionEquipment, EquipmentWithDetails } from '../types';
@@ -32,6 +33,7 @@ export class EquipmentService {
     private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
     private planRepo: PlanRepository = planRepository,
     private nextcloudSvc: NextcloudService = nextcloudService,
+    private rmmPatchSvc: RmmPatchService = rmmPatchService,
   ) {}
 
   /**
@@ -218,6 +220,14 @@ export class EquipmentService {
       nextcloud_username: username,
       nextcloud_password: password,
     });
+
+    // Auto-provision equipment into Zabbix RMM
+    try {
+      await this.rmmPatchSvc.triggerPatchScan(slot.id, slot.tenant_id);
+      logger.info('Auto-provisioned equipment to RMM/Zabbix upon slot activation', { equipmentId: slot.id, deviceName: options.deviceName });
+    } catch (err) {
+      logger.warn('Deferred RMM auto-provisioning on slot activation', { equipmentId: slot.id, err });
+    }
 
     return updated!;
   }
