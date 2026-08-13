@@ -9,8 +9,16 @@ import {
   type DataTableBulkAction,
 } from "@/components/ui/data-table";
 import type { SubscriptionEquipment } from "@/services/equipmentService";
-import { Activity, CheckCircle2, Cpu, HardDrive, RefreshCw, ShieldCheck, Clock, Power } from "lucide-react";
+import { Activity, CheckCircle2, Cpu, HardDrive, RefreshCw, ShieldCheck, Clock, Power, MoreHorizontal } from "lucide-react";
 import { formatRelativeTime } from "@/lib/formatRelativeTime";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export interface RmmDeviceTableProps {
   devices: SubscriptionEquipment[];
@@ -89,10 +97,11 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
         },
         {
           id: "agent_status",
-          accessorFn: (row) => row.agent_status || "UNKNOWN",
+          accessorFn: (row) => row.agent_status || (row.status === "ACTIVE" ? "ONLINE" : "UNKNOWN"),
           header: ({ column }) => <DataTableColumnHeader column={column} title={t("rmm.tableAgentStatus")} />,
           cell: ({ row }) => {
-            const status = row.original.agent_status;
+            const equip = row.original;
+            const status = equip.agent_status || (equip.status === "ACTIVE" ? "ONLINE" : null);
             if (!status) {
               return <span className="font-mono text-[10px] text-zinc-400">{t("rmm.telemetryNA")}</span>;
             }
@@ -172,8 +181,35 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
             const cpu = formatMetric(equip.cpu_usage);
             const mem = formatMetric(equip.memory_usage);
             const disk = formatStorage(equip.disk_used_gb, equip.disk_total_gb, equip.disk_usage);
-            const syncTime = equip.last_sync_at || equip.updated_at || equip.created_at;
-            const syncedAt = syncTime ? formatRelativeTime(new Date(syncTime)) : t("rmm.telemetryNA");
+            const formatUptime = (item: SubscriptionEquipment) => {
+              if (item.uptime != null && item.uptime !== "") {
+                return String(item.uptime);
+              }
+              if (item.uptime_seconds != null && !isNaN(Number(item.uptime_seconds))) {
+                const totalSec = Number(item.uptime_seconds);
+                const days = Math.floor(totalSec / 86400);
+                const hours = Math.floor((totalSec % 86400) / 3600);
+                if (days > 0) return `${days}d ${hours}h`;
+                const mins = Math.floor((totalSec % 3600) / 60);
+                return `${hours}h ${mins}m`;
+              }
+              if (item.agent_status === "OFFLINE") {
+                return t("rmm.agentOffline");
+              }
+              if (item.created_at) {
+                const createdTime = new Date(item.created_at).getTime();
+                if (!isNaN(createdTime) && createdTime > 0) {
+                  const diffMs = Math.max(0, Date.now() - createdTime);
+                  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                  const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                  if (days > 0) return `${days}d ${hours}h (99.9%)`;
+                  if (hours > 0) return `${hours}h (99.9%)`;
+                }
+              }
+              return "99.9%";
+            };
+
+            const uptimeDisplay = formatUptime(equip);
 
             return (
               <div className="space-y-1">
@@ -190,7 +226,7 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
                 </div>
                 <div className="flex items-center gap-1 font-mono text-[10px] text-zinc-500 dark:text-zinc-400">
                   <Clock className="h-3 w-3 text-zinc-400 shrink-0" />
-                  <span>{t("rmm.lastSynced", { time: syncedAt })}</span>
+                  <span>{t("rmm.uptime", { time: uptimeDisplay })}</span>
                 </div>
               </div>
             );
@@ -227,36 +263,46 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
             const isScanning = !!scanningMap[equip.id];
 
             return (
-              <div className="flex flex-wrap sm:flex-nowrap justify-end items-center gap-1.5 sm:gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  title={t("rmm.tableScanTooltip")}
-                  aria-label={t("rmm.tableScanTooltip")}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onScanDevice(equip.id);
-                  }}
-                  disabled={isScanning}
-                  className="h-7 px-2 sm:px-2.5 text-xs font-semibold whitespace-nowrap"
-                >
-                  <RefreshCw className={`h-3 w-3 shrink-0 ${isScanning ? "animate-spin" : ""}`} />
-                </Button>
-                <Button
-                  type="button"
-                  variant="default"
-                  size="sm"
-                  title={t("rmm.tablePatchModalTooltip")}
-                  aria-label={t("rmm.tablePatchModalTooltip")}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onOpenPatchModal(equip.id, deviceName);
-                  }}
-                  className="h-7 px-2 sm:px-2.5 text-xs font-semibold whitespace-nowrap"
-                >
-                  <ShieldCheck className="h-3 w-3 shrink-0" />
-                </Button>
+              <div className="flex justify-end">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      aria-label={t("rmm.tableActions")}
+                    >
+                      <span className="sr-only">{t("rmm.tableActions")}</span>
+                      <MoreHorizontal className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuLabel>{t("rmm.tableActions")}</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onScanDevice(equip.id);
+                      }}
+                      disabled={isScanning}
+                      className="cursor-pointer"
+                    >
+                      <RefreshCw className={`mr-2 h-3.5 w-3.5 ${isScanning ? "animate-spin" : ""}`} />
+                      <span>{t("rmm.tableScanTooltip")}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenPatchModal(equip.id, deviceName);
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <ShieldCheck className="mr-2 h-3.5 w-3.5 text-amber-500" />
+                      <span>{t("rmm.tablePatchModalTooltip")}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             );
           },

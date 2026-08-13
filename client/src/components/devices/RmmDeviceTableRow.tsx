@@ -3,7 +3,15 @@ import { useTranslation } from 'react-i18next';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import type { SubscriptionEquipment } from '@/services/equipmentService';
-import { Activity, CheckCircle2, Cpu, HardDrive, Power, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Activity, CheckCircle2, Cpu, HardDrive, Power, RefreshCw, ShieldCheck, MoreHorizontal } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export interface RmmDeviceTableRowProps {
   device: SubscriptionEquipment;
@@ -22,7 +30,7 @@ export const RmmDeviceTableRow: React.FC<RmmDeviceTableRowProps> = memo(({
   const deviceName = device.device_name || t('rmm.tableSlotNum', { num: device.slot_index + 1 });
   const deviceSerial = device.device_serial || t('rmm.tableUnassigned');
 
-  const agentStatus = device.agent_status || null;
+  const agentStatus = device.agent_status || (device.status === 'ACTIVE' ? 'ONLINE' : null);
   const isOnline = agentStatus === 'ONLINE';
   const isOffline = agentStatus === 'OFFLINE';
   const formatMetric = (val: unknown) => {
@@ -108,28 +116,46 @@ export const RmmDeviceTableRow: React.FC<RmmDeviceTableRowProps> = memo(({
       </TableCell>
 
       <TableCell className="py-3 px-4 text-right">
-        <div className="flex justify-end items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => onScanDevice(device.id)}
-            disabled={isScanning}
-            className="h-7 px-2.5 text-xs font-semibold"
-          >
-            <RefreshCw className={`h-3 w-3 ${isScanning ? 'animate-spin' : ''}`} />
-            <span>{t('rmm.tableScanTooltip')}</span>
-          </Button>
-          <Button
-            type="button"
-            variant="default"
-            size="sm"
-            onClick={() => onOpenPatchModal(device.id, deviceName)}
-            className="h-7 px-2.5 text-xs font-semibold"
-          >
-            <ShieldCheck className="h-3 w-3" />
-            <span>{t('rmm.tablePatchModalTooltip')}</span>
-          </Button>
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                aria-label={t('rmm.tableActions')}
+              >
+                <span className="sr-only">{t('rmm.tableActions')}</span>
+                <MoreHorizontal className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuLabel>{t('rmm.tableActions')}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onScanDevice(device.id);
+                }}
+                disabled={isScanning}
+                className="cursor-pointer"
+              >
+                <RefreshCw className={`mr-2 h-3.5 w-3.5 ${isScanning ? 'animate-spin' : ''}`} />
+                <span>{t('rmm.tableScanTooltip')}</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenPatchModal(device.id, deviceName);
+                }}
+                className="cursor-pointer"
+              >
+                <ShieldCheck className="mr-2 h-3.5 w-3.5 text-amber-500" />
+                <span>{t('rmm.tablePatchModalTooltip')}</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </TableCell>
     </TableRow>

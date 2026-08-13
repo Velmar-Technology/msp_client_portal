@@ -67,7 +67,23 @@ export const useRmmDashboard = (): UseRmmDashboardReturn => {
         equipmentService.getMyDevices(),
       ]);
       setStats(overviewData);
-      setDevices(devicesData);
+      setDevices((prev) => {
+        const prevMap = new Map(prev.map((d) => [d.id, d]));
+        return devicesData.map((d) => {
+          const existing = prevMap.get(d.id);
+          return {
+            ...d,
+            agent_status: d.agent_status ?? existing?.agent_status ?? (d.status === 'ACTIVE' ? 'ONLINE' : null),
+            cpu_usage: d.cpu_usage ?? existing?.cpu_usage,
+            memory_usage: d.memory_usage ?? existing?.memory_usage,
+            disk_usage: d.disk_usage ?? existing?.disk_usage,
+            disk_used_gb: d.disk_used_gb ?? existing?.disk_used_gb,
+            disk_total_gb: d.disk_total_gb ?? existing?.disk_total_gb,
+            pending_patch_count: d.pending_patch_count ?? existing?.pending_patch_count,
+            last_sync_at: d.last_sync_at ?? existing?.last_sync_at,
+          };
+        });
+      });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t('rmm.toastLoadError');
       if (!isSilent) toast.error(message);

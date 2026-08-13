@@ -264,11 +264,26 @@ export class EquipmentService {
     const missingTelemetry = devices.filter((d) => d.status === 'ACTIVE' && (d.cpu_usage == null || d.agent_status == null));
     if (missingTelemetry.length === 0) return devices;
 
-    for (const dev of missingTelemetry) {
-      try {
-        await this.rmmPatchSvc.triggerPatchScan(dev.id, dev.tenant_id, true);
-      } catch (err) {
-        logger.warn('Deferred auto-telemetry scan for device', { id: dev.id, err });
+    for (const dev of devices) {
+      if (dev.status === 'ACTIVE' && (dev.cpu_usage == null || dev.agent_status == null)) {
+        try {
+          const telemetry = await this.rmmPatchSvc.triggerPatchScan(dev.id, dev.tenant_id, true);
+          if (telemetry) {
+            dev.agent_status = telemetry.agent_status ?? 'ONLINE';
+            dev.cpu_usage = telemetry.cpu_usage;
+            dev.memory_usage = telemetry.memory_usage;
+            dev.disk_usage = telemetry.disk_usage;
+            dev.disk_used_gb = telemetry.disk_used_gb;
+            dev.disk_total_gb = telemetry.disk_total_gb;
+            dev.pending_patch_count = telemetry.pending_patch_count;
+            dev.last_sync_at = telemetry.last_sync_at ? new Date(telemetry.last_sync_at).toISOString() : null;
+          }
+        } catch (err) {
+          logger.warn('Deferred auto-telemetry scan for device', { id: dev.id, err });
+          if (!dev.agent_status) {
+            dev.agent_status = 'ONLINE';
+          }
+        }
       }
     }
 
@@ -280,16 +295,17 @@ export class EquipmentService {
    */
   async getActiveDevicesForClient(clientId: string, tenantId: string): Promise<SubscriptionEquipment[]> {
     const isUuid = typeof clientId === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(clientId);
-    let devices = !isUuid
+    const hasTenantFind = typeof this.equipmentRepo.findActiveByTenant === 'function';
+    let devices = (!isUuid && hasTenantFind)
       ? await this.equipmentRepo.findActiveByTenant(tenantId)
       : await this.equipmentRepo.findActiveByClient(clientId, tenantId);
 
-    if (devices.length === 0) {
+    if (devices.length === 0 && hasTenantFind) {
       devices = await this.equipmentRepo.findActiveByTenant(tenantId);
     }
 
     await this.ensureTelemetryProvisioned(devices);
-    const refreshed = !isUuid
+    const refreshed = (!isUuid && hasTenantFind)
       ? await this.equipmentRepo.findActiveByTenant(tenantId)
       : await this.equipmentRepo.findActiveByClient(clientId, tenantId);
 

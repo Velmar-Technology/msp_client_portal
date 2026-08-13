@@ -1109,6 +1109,7 @@
     "agentUnknown": "UNKNOWN",
     "telemetryNA": "N/A",
     "lastSynced": "Synced: {{time}}",
+    "uptime": "Uptime: {{time}}",
     "tableLastChecked": "Last Checked",
     "tableTelemetry": "Telemetry (CPU / RAM / Disk)",
     "tablePatchAdvisory": "Patch Advisory",
