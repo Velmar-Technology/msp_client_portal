@@ -377,6 +377,8 @@ export interface SubscriptionEquipment {
   cpu_usage?: number | null;
   memory_usage?: number | null;
   disk_usage?: number | null;
+  disk_used_gb?: number | null;
+  disk_total_gb?: number | null;
   pending_patch_count?: number | null;
   last_sync_at?: Date | null;
   created_at: Date;
@@ -482,6 +484,8 @@ export interface RmmDeviceTelemetry {
   cpu_usage: number;
   memory_usage: number;
   disk_usage: number;
+  disk_used_gb?: number | null;
+  disk_total_gb?: number | null;
   pending_patch_count: number;
   last_sync_at: Date | null;
   tenant_id: string;

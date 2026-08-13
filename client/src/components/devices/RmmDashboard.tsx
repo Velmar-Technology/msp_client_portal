@@ -1,5 +1,6 @@
 import React from "react";
 import { useRmmDashboard } from "@/hooks/useRmmDashboard";
+import { RmmDashboardHeader } from "./RmmDashboardHeader";
 import { RmmKpiGrid } from "./RmmKpiGrid";
 import { RmmDeviceTable } from "./RmmDeviceTable";
 import { PatchManagementModal } from "./PatchManagementModal";
@@ -37,10 +38,10 @@ export const RmmDashboard: React.FC = () => {
   return (
     <div className="w-full max-w-full min-w-0 space-y-4">
       {/* 1. Dashboard Header & Quick Actions */}
-      {/* <RmmDashboardHeader
+      <RmmDashboardHeader
         loading={loading}
         onRefresh={fetchData}
-      /> */}
+      />
 
       {/* 2. High-Density KPI Metrics Grid */}
       <RmmKpiGrid stats={stats} totalDevicesCount={devices.length} />

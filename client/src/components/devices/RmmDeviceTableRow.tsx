@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TableRow, TableCell } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 import type { SubscriptionEquipment } from '@/services/equipmentService';
 import { Activity, CheckCircle2, Cpu, HardDrive, Power, RefreshCw, ShieldCheck } from 'lucide-react';
 
@@ -24,9 +25,24 @@ export const RmmDeviceTableRow: React.FC<RmmDeviceTableRowProps> = memo(({
   const agentStatus = device.agent_status || null;
   const isOnline = agentStatus === 'ONLINE';
   const isOffline = agentStatus === 'OFFLINE';
-  const cpu = device.cpu_usage != null ? `${Math.round(device.cpu_usage)}%` : t('rmm.telemetryNA');
-  const mem = device.memory_usage != null ? `${Math.round(device.memory_usage)}%` : t('rmm.telemetryNA');
-  const disk = device.disk_usage != null ? `${Math.round(device.disk_usage)}%` : t('rmm.telemetryNA');
+  const formatMetric = (val: unknown) => {
+    if (val == null || val === '') return t('rmm.telemetryNA');
+    const num = Number(val);
+    return isNaN(num) ? t('rmm.telemetryNA') : `${Math.round(num)}%`;
+  };
+  const formatStorage = (usedGb: unknown, totalGb: unknown, fallbackPct: unknown) => {
+    if (usedGb != null && totalGb != null && Number(totalGb) > 0) {
+      const u = Math.round(Number(usedGb));
+      const t = Math.round(Number(totalGb));
+      if (!isNaN(u) && !isNaN(t) && t > 0) {
+        return `${u} GB / ${t} GB`;
+      }
+    }
+    return formatMetric(fallbackPct);
+  };
+  const cpu = formatMetric(device.cpu_usage);
+  const mem = formatMetric(device.memory_usage);
+  const disk = formatStorage(device.disk_used_gb, device.disk_total_gb, device.disk_usage);
   const pendingPatches = device.pending_patch_count ?? 0;
 
   return (
@@ -93,23 +109,27 @@ export const RmmDeviceTableRow: React.FC<RmmDeviceTableRowProps> = memo(({
 
       <TableCell className="py-3 px-4 text-right">
         <div className="flex justify-end items-center gap-2">
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={() => onScanDevice(device.id)}
             disabled={isScanning}
-            className="inline-flex items-center gap-1 h-7 px-2.5 text-xs font-semibold bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-md shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+            className="h-7 px-2.5 text-xs font-semibold"
           >
             <RefreshCw className={`h-3 w-3 ${isScanning ? 'animate-spin' : ''}`} />
             <span>{t('rmm.tableScanTooltip')}</span>
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="default"
+            size="sm"
             onClick={() => onOpenPatchModal(device.id, deviceName)}
-            className="inline-flex items-center gap-1 h-7 px-2.5 text-xs font-semibold bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 rounded-md shadow-xs transition-opacity cursor-pointer"
+            className="h-7 px-2.5 text-xs font-semibold"
           >
             <ShieldCheck className="h-3 w-3" />
             <span>{t('rmm.tablePatchModalTooltip')}</span>
-          </button>
+          </Button>
         </div>
       </TableCell>
     </TableRow>

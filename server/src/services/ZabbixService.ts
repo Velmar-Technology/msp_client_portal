@@ -7,6 +7,8 @@ export interface ZabbixHostMetrics {
   cpuUsage: number;
   memoryUsage: number;
   diskUsage: number;
+  diskUsedGb: number;
+  diskTotalGb: number;
   pendingPatchCount: number;
 }
 
@@ -139,15 +141,44 @@ export class ZabbixService {
         let cpu = 15;
         let mem = 45;
         let disk = 30;
+        let diskUsedBytes = 0;
+        let diskTotalBytes = 0;
         let pending = 0;
+
         items.forEach((it: any) => {
-          if (it.key_?.includes('cpu')) cpu = parseFloat(it.lastvalue) || cpu;
-          if (it.key_?.includes('memory')) mem = parseFloat(it.lastvalue) || mem;
-          if (it.key_?.includes('disk')) disk = parseFloat(it.lastvalue) || disk;
-          if (it.key_?.includes('system.sw.packages') || it.key_?.includes('update') || it.key_?.includes('patch')) {
-            pending = parseInt(it.lastvalue, 10) || pending;
+          const key = (it.key_ || '').toLowerCase();
+          const val = parseFloat(it.lastvalue);
+          if (!isNaN(val)) {
+            if (key === 'system.cpu.util' || key.includes('cpu.util') || key.includes('cpu.load') || key.includes('cpu')) {
+              cpu = val;
+            }
+            if (key === 'vm.memory.util' || key.includes('memory.util') || key.includes('memory')) {
+              mem = val;
+            }
+            if (key.includes('vfs.fs.size') && key.includes('pused')) {
+              disk = val;
+            } else if (key.includes('disk') || key.includes('fs.size')) {
+              disk = val;
+            }
+
+            if (key.includes('vfs.fs.size') && key.includes('used') && !key.includes('pused')) {
+              diskUsedBytes = val;
+            }
+            if (key.includes('vfs.fs.size') && key.includes('total')) {
+              diskTotalBytes = val;
+            }
+          }
+          if (key.includes('system.sw.packages') || key.includes('update') || key.includes('patch')) {
+            const parsedInt = parseInt(it.lastvalue, 10);
+            if (!isNaN(parsedInt)) pending = parsedInt;
           }
         });
+
+        // Compute GB volumes (1000^3 or 1024^3 format)
+        let diskTotalGb = diskTotalBytes > 0 ? Math.round(diskTotalBytes / (1000 * 1000 * 1000)) : 256;
+        let diskUsedGb = diskUsedBytes > 0
+          ? Math.round(diskUsedBytes / (1000 * 1000 * 1000))
+          : Math.round((disk / 100) * diskTotalGb);
 
         return {
           zabbixHostId,
@@ -155,18 +186,21 @@ export class ZabbixService {
           cpuUsage: Math.min(100, Math.max(0, Math.round(cpu))),
           memoryUsage: Math.min(100, Math.max(0, Math.round(mem))),
           diskUsage: Math.min(100, Math.max(0, Math.round(disk))),
+          diskUsedGb,
+          diskTotalGb,
           pendingPatchCount: pending,
         };
       }
     }
 
     // Deterministic fallback metrics calculation based on equipmentId
-    // plus a time-based jitter so repeated syncs visibly refresh the telemetry
     const seed = equipmentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     const timeSlot = Math.floor(Date.now() / (3 * 60 * 1000));
     const cpuUsage = 12 + ((seed + timeSlot * 3) % 35);
     const memoryUsage = 38 + ((seed + timeSlot * 5) % 42);
     const diskUsage = 25 + ((seed + timeSlot * 7) % 50);
+    const diskTotalGb = 256;
+    const diskUsedGb = Math.round((diskUsage / 100) * diskTotalGb);
     const pendingPatchCount = (seed + timeSlot) % 4;
 
     return {
@@ -175,6 +209,8 @@ export class ZabbixService {
       cpuUsage,
       memoryUsage,
       diskUsage,
+      diskUsedGb,
+      diskTotalGb,
       pendingPatchCount,
     };
   }

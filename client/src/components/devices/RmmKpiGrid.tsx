@@ -14,9 +14,9 @@ export const RmmKpiGrid: React.FC<RmmKpiGridProps> = memo(({ stats, totalDevices
   const monitoredTotal = stats?.monitoredDevices ?? totalDevicesCount ?? 0;
   const onlineCount = stats?.onlineDevices ?? totalDevicesCount ?? 0;
   const offlineCount = stats?.offlineDevices ?? 0;
-  const pendingPatches = stats?.pendingPatchesCount ?? 2;
-  const nrrFormatted = ((stats?.noiseReductionRatio ?? 0.88) * 100).toFixed(1);
-  const sheFormatted = ((stats?.selfHealingEfficiency ?? 0.9) * 100).toFixed(1);
+  const pendingPatches = stats?.pendingPatchesCount ?? 0;
+  const nrrFormatted = ((stats?.noiseReductionRatio ?? 0) * 100).toFixed(1);
+  const sheFormatted = ((stats?.selfHealingEfficiency ?? 0) * 100).toFixed(1);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full max-w-full min-w-0">

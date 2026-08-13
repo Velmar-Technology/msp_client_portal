@@ -17,7 +17,9 @@ export interface SubscriptionEquipment {
   agent_status?: 'ONLINE' | 'OFFLINE' | 'UNKNOWN' | string | null;
   cpu_usage?: number | null;
   memory_usage?: number | null;
-  disk_usage?: number | null;
+  disk_usage?: number | string | null;
+  disk_used_gb?: number | string | null;
+  disk_total_gb?: number | string | null;
   pending_patch_count?: number | null;
   last_sync_at?: string | null;
   created_at: string;

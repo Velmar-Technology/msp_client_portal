@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { rmmService, type RmmPatchItem } from '@/services/rmmService';
 import { toast } from 'sonner';
 import axios from 'axios';
@@ -28,6 +29,7 @@ export const usePatchManagementModal = ({
   equipmentId,
   onPatchesUpdated,
 }: UsePatchManagementModalParams): UsePatchManagementModalReturn => {
+  const { t } = useTranslation();
   const [patches, setPatches] = useState<RmmPatchItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [applying, setApplying] = useState<boolean>(false);
@@ -45,12 +47,12 @@ export const usePatchManagementModal = ({
       const errorMessage =
         axios.isAxiosError(err) && err.response?.data?.message
           ? (err.response.data.message as string)
-          : 'Failed to load device patch inventory';
+          : t('rmm.toastPatchLoadError');
       toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [equipmentId]);
+  }, [equipmentId, t]);
 
   useEffect(() => {
     if (open && equipmentId) {
@@ -90,9 +92,9 @@ export const usePatchManagementModal = ({
     if (!equipmentId || selectedPatchIds.length === 0) return;
     try {
       setApplying(true);
-      toast.info(`Triggering Zabbix patch update for ${selectedPatchIds.length} package(s)...`);
+      toast.info(t('rmm.toastPatchUpdateTriggered', { count: selectedPatchIds.length }));
       await rmmService.applyPatches(equipmentId, selectedPatchIds);
-      toast.success('Security patches installed successfully via Zabbix agent!');
+      toast.success(t('rmm.toastPatchUpdateSuccess'));
       await fetchPatches();
       if (onPatchesUpdated) {
         onPatchesUpdated();
@@ -101,12 +103,12 @@ export const usePatchManagementModal = ({
       const msg =
         axios.isAxiosError(err) && err.response?.data?.message
           ? (err.response.data.message as string)
-          : 'Failed to apply security patches';
+          : t('rmm.toastPatchUpdateError');
       toast.error(msg);
     } finally {
       setApplying(false);
     }
-  }, [equipmentId, selectedPatchIds, fetchPatches, onPatchesUpdated]);
+  }, [equipmentId, selectedPatchIds, fetchPatches, onPatchesUpdated, t]);
 
   return {
     patches,

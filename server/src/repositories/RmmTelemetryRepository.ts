@@ -18,6 +18,8 @@ export class RmmTelemetryRepository extends BaseRepository<RmmDeviceTelemetry> {
         cpu_usage: rmmDeviceTelemetry.cpu_usage,
         memory_usage: rmmDeviceTelemetry.memory_usage,
         disk_usage: rmmDeviceTelemetry.disk_usage,
+        disk_used_gb: rmmDeviceTelemetry.disk_used_gb,
+        disk_total_gb: rmmDeviceTelemetry.disk_total_gb,
         pending_patch_count: rmmDeviceTelemetry.pending_patch_count,
         last_sync_at: rmmDeviceTelemetry.last_sync_at,
         tenant_id: rmmDeviceTelemetry.tenant_id,
@@ -43,6 +45,8 @@ export class RmmTelemetryRepository extends BaseRepository<RmmDeviceTelemetry> {
         cpu_usage: rmmDeviceTelemetry.cpu_usage,
         memory_usage: rmmDeviceTelemetry.memory_usage,
         disk_usage: rmmDeviceTelemetry.disk_usage,
+        disk_used_gb: rmmDeviceTelemetry.disk_used_gb,
+        disk_total_gb: rmmDeviceTelemetry.disk_total_gb,
         pending_patch_count: rmmDeviceTelemetry.pending_patch_count,
         last_sync_at: rmmDeviceTelemetry.last_sync_at,
         tenant_id: rmmDeviceTelemetry.tenant_id,
@@ -66,6 +70,8 @@ export class RmmTelemetryRepository extends BaseRepository<RmmDeviceTelemetry> {
     cpu_usage?: number;
     memory_usage?: number;
     disk_usage?: number;
+    disk_used_gb?: number;
+    disk_total_gb?: number;
     pending_patch_count?: number;
     last_sync_at?: Date | null;
   }): Promise<RmmDeviceTelemetry> {
@@ -83,6 +89,8 @@ export class RmmTelemetryRepository extends BaseRepository<RmmDeviceTelemetry> {
           cpu_usage: data.cpu_usage !== undefined ? data.cpu_usage : existing[0].cpu_usage,
           memory_usage: data.memory_usage !== undefined ? data.memory_usage : existing[0].memory_usage,
           disk_usage: data.disk_usage !== undefined ? data.disk_usage : existing[0].disk_usage,
+          disk_used_gb: data.disk_used_gb !== undefined ? data.disk_used_gb : existing[0].disk_used_gb,
+          disk_total_gb: data.disk_total_gb !== undefined ? data.disk_total_gb : existing[0].disk_total_gb,
           pending_patch_count: data.pending_patch_count !== undefined ? data.pending_patch_count : existing[0].pending_patch_count,
           last_sync_at: data.last_sync_at ?? new Date(),
           updated_at: new Date(),
@@ -102,6 +110,8 @@ export class RmmTelemetryRepository extends BaseRepository<RmmDeviceTelemetry> {
         cpu_usage: data.cpu_usage ?? 0,
         memory_usage: data.memory_usage ?? 0,
         disk_usage: data.disk_usage ?? 0,
+        disk_used_gb: data.disk_used_gb ?? 0,
+        disk_total_gb: data.disk_total_gb ?? 0,
         pending_patch_count: data.pending_patch_count ?? 0,
         last_sync_at: data.last_sync_at ?? new Date(),
       })

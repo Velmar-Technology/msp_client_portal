@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -86,3 +87,4 @@ async function startServer(): Promise<void> {
 startServer();
 
 export default app;
+// Server restarted to reload equipment telemetry schema definitions

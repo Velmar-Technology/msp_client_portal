@@ -32,6 +32,8 @@ export interface RmmDeviceTelemetry {
   cpu_usage: number;
   memory_usage: number;
   disk_usage: number;
+  disk_used_gb?: number | string | null;
+  disk_total_gb?: number | string | null;
   pending_patch_count: number;
   last_sync_at: string | null;
   tenant_id: string;

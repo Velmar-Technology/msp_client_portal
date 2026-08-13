@@ -258,18 +258,42 @@ export class EquipmentService {
   }
 
   /**
+   * Helper method to auto-provision missing telemetry for active devices.
+   */
+  private async ensureTelemetryProvisioned<T extends SubscriptionEquipment>(devices: T[]): Promise<T[]> {
+    const missingTelemetry = devices.filter((d) => d.status === 'ACTIVE' && (d.cpu_usage == null || d.agent_status == null));
+    if (missingTelemetry.length === 0) return devices;
+
+    for (const dev of missingTelemetry) {
+      try {
+        await this.rmmPatchSvc.triggerPatchScan(dev.id, dev.tenant_id, true);
+      } catch (err) {
+        logger.warn('Deferred auto-telemetry scan for device', { id: dev.id, err });
+      }
+    }
+
+    return devices;
+  }
+
+  /**
    * Gets all active devices (equipment) for a client across their active subscriptions.
    */
   async getActiveDevicesForClient(clientId: string, tenantId: string): Promise<SubscriptionEquipment[]> {
     const isUuid = typeof clientId === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(clientId);
-    if (!isUuid) {
-      return this.equipmentRepo.findActiveByTenant(tenantId);
-    }
-    const devices = await this.equipmentRepo.findActiveByClient(clientId, tenantId);
+    let devices = !isUuid
+      ? await this.equipmentRepo.findActiveByTenant(tenantId)
+      : await this.equipmentRepo.findActiveByClient(clientId, tenantId);
+
     if (devices.length === 0) {
-      return this.equipmentRepo.findActiveByTenant(tenantId);
+      devices = await this.equipmentRepo.findActiveByTenant(tenantId);
     }
-    return devices;
+
+    await this.ensureTelemetryProvisioned(devices);
+    const refreshed = !isUuid
+      ? await this.equipmentRepo.findActiveByTenant(tenantId)
+      : await this.equipmentRepo.findActiveByClient(clientId, tenantId);
+
+    return refreshed.length > 0 ? refreshed : devices;
   }
 
   /**
@@ -280,6 +304,8 @@ export class EquipmentService {
     for (const sub of activeSubs) {
       await this.getEquipmentSlots(sub.id, sub.tenant_id, true);
     }
+    const devices = await this.equipmentRepo.findAllWithDetails();
+    await this.ensureTelemetryProvisioned(devices);
     return this.equipmentRepo.findAllWithDetails();
   }
 

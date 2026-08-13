@@ -112,6 +112,8 @@ export class RmmPatchService {
       cpu_usage: metrics.cpuUsage,
       memory_usage: metrics.memoryUsage,
       disk_usage: metrics.diskUsage,
+      disk_used_gb: metrics.diskUsedGb,
+      disk_total_gb: metrics.diskTotalGb,
       pending_patch_count: pendingCount,
       last_sync_at: new Date(),
     });

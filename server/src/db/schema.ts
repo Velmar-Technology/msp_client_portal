@@ -468,6 +468,8 @@ export const rmmDeviceTelemetry = pgTable(
     cpu_usage: decimal('cpu_usage', { precision: 5, scale: 2 }).$type<number>().default(0),
     memory_usage: decimal('memory_usage', { precision: 5, scale: 2 }).$type<number>().default(0),
     disk_usage: decimal('disk_usage', { precision: 5, scale: 2 }).$type<number>().default(0),
+    disk_used_gb: decimal('disk_used_gb', { precision: 10, scale: 2 }).$type<number>().default(0),
+    disk_total_gb: decimal('disk_total_gb', { precision: 10, scale: 2 }).$type<number>().default(0),
     pending_patch_count: integer('pending_patch_count').default(0).notNull(),
     last_sync_at: timestamp('last_sync_at', { withTimezone: true }),
     tenant_id: uuid('tenant_id')

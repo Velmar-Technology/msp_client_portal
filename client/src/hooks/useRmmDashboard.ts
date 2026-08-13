@@ -1,8 +1,11 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { rmmService, type RmmOverviewStats } from '@/services/rmmService';
 import { equipmentService, type SubscriptionEquipment } from '@/services/equipmentService';
 import type { SortingState } from '@tanstack/react-table';
 import { toast } from 'sonner';
+
+export const RMM_TELEMETRY_POLL_INTERVAL_MS = 30000;
 
 export interface SelectedDevice {
   id: string;
@@ -40,6 +43,7 @@ export interface UseRmmDashboardReturn {
 }
 
 export const useRmmDashboard = (): UseRmmDashboardReturn => {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<RmmOverviewStats | null>(null);
   const [devices, setDevices] = useState<SubscriptionEquipment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -65,20 +69,20 @@ export const useRmmDashboard = (): UseRmmDashboardReturn => {
       setStats(overviewData);
       setDevices(devicesData);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to load RMM telemetry data';
+      const message = err instanceof Error ? err.message : t('rmm.toastLoadError');
       if (!isSilent) toast.error(message);
     } finally {
       if (!isSilent) setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchData();
 
-    // Real-Time Telemetry Auto-Polling (every 30 seconds)
+    // Real-Time Telemetry Auto-Polling
     const intervalId = setInterval(() => {
       fetchData(true);
-    }, 30000);
+    }, RMM_TELEMETRY_POLL_INTERVAL_MS);
 
     return () => clearInterval(intervalId);
   }, [fetchData]);
@@ -158,9 +162,9 @@ export const useRmmDashboard = (): UseRmmDashboardReturn => {
   const handleScanDevice = useCallback(async (equipmentId: string) => {
     try {
       setScanningMap((prev) => ({ ...prev, [equipmentId]: true }));
-      toast.info('Triggering Zabbix telemetry scan...');
+      toast.info(t('rmm.toastScanTriggered'));
       const telemetry = await rmmService.triggerScan(equipmentId);
-      toast.success('Device telemetry synchronized with Zabbix!');
+      toast.success(t('rmm.toastScanSuccess'));
 
       const nowIso = new Date().toISOString();
       const updatedTimestamp = telemetry?.last_sync_at || telemetry?.updated_at || nowIso;
@@ -176,6 +180,8 @@ export const useRmmDashboard = (): UseRmmDashboardReturn => {
                 cpu_usage: telemetry?.cpu_usage ?? d.cpu_usage,
                 memory_usage: telemetry?.memory_usage ?? d.memory_usage,
                 disk_usage: telemetry?.disk_usage ?? d.disk_usage,
+                disk_used_gb: telemetry?.disk_used_gb ?? d.disk_used_gb,
+                disk_total_gb: telemetry?.disk_total_gb ?? d.disk_total_gb,
                 pending_patch_count: telemetry?.pending_patch_count ?? d.pending_patch_count,
               }
             : d
@@ -184,19 +190,19 @@ export const useRmmDashboard = (): UseRmmDashboardReturn => {
 
       await fetchData(true);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to scan device via Zabbix agent';
+      const message = err instanceof Error ? err.message : t('rmm.toastScanError');
       toast.error(message);
     } finally {
       setScanningMap((prev) => ({ ...prev, [equipmentId]: false }));
     }
-  }, [fetchData]);
+  }, [fetchData, t]);
 
   const handleBulkScan = useCallback(async (selectedList: SubscriptionEquipment[]) => {
     if (selectedList.length === 0) return;
-    toast.info(`Triggering Zabbix telemetry scan for ${selectedList.length} device(s)...`);
+    toast.info(t('rmm.toastBulkScanTriggered', { count: selectedList.length }));
     try {
       await Promise.all(selectedList.map((dev) => rmmService.triggerScan(dev.id)));
-      toast.success(`Zabbix telemetry synchronized for ${selectedList.length} device(s)!`);
+      toast.success(t('rmm.toastBulkScanSuccess', { count: selectedList.length }));
 
       const nowIso = new Date().toISOString();
       const selectedIds = new Set(selectedList.map((dev) => dev.id));
@@ -210,21 +216,27 @@ export const useRmmDashboard = (): UseRmmDashboardReturn => {
 
       await fetchData(true);
     } catch (err: unknown) {
-      toast.error('Bulk Zabbix telemetry scan failed');
+      toast.error(t('rmm.toastBulkScanError'));
     }
-  }, [fetchData]);
+  }, [fetchData, t]);
 
   const handleBulkExportCSV = useCallback((selectedList: SubscriptionEquipment[]) => {
     const listToExport = selectedList.length > 0 ? selectedList : filteredDevices;
     if (listToExport.length === 0) {
-      toast.error('No telemetry data available for export');
+      toast.error(t('rmm.toastNoExportData'));
       return;
     }
 
-    const headers = ['Device Name', 'Serial', 'Status', 'Slot Index', 'Created At'];
+    const headers = [
+      t('rmm.csvHeaderDeviceName'),
+      t('rmm.csvHeaderSerial'),
+      t('rmm.csvHeaderStatus'),
+      t('rmm.csvHeaderSlotIndex'),
+      t('rmm.csvHeaderCreatedAt'),
+    ];
     const rows = listToExport.map((dev) => [
       `"${dev.device_name || `Slot #${dev.slot_index + 1}`}"`,
-      `"${dev.device_serial || 'Unassigned'}"`,
+      `"${dev.device_serial || t('rmm.tableUnassigned')}"`,
       `"${dev.status}"`,
       dev.slot_index + 1,
       `"${new Date(dev.created_at).toLocaleString()}"`,
@@ -239,8 +251,8 @@ export const useRmmDashboard = (): UseRmmDashboardReturn => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success(`Exported ${listToExport.length} device telemetry record(s) to CSV!`);
-  }, [filteredDevices]);
+    toast.success(t('rmm.toastExportSuccess', { count: listToExport.length }));
+  }, [filteredDevices, t]);
 
   const handleOpenPatchModal = useCallback((equipmentId: string, deviceName: string) => {
     setSelectedDevice({ id: equipmentId, name: deviceName });

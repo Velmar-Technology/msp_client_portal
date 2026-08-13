@@ -1,6 +1,7 @@
 import React, { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
+import { Button } from "@/components/ui/button";
 import {
   DataTable,
   DataTableColumnHeader,
@@ -151,9 +152,26 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
           ),
           cell: ({ row }) => {
             const equip = row.original;
-            const cpu = equip.cpu_usage != null ? `${Math.round(equip.cpu_usage)}%` : t("rmm.telemetryNA");
-            const mem = equip.memory_usage != null ? `${Math.round(equip.memory_usage)}%` : t("rmm.telemetryNA");
-            const disk = equip.disk_usage != null ? `${Math.round(equip.disk_usage)}%` : t("rmm.telemetryNA");
+            const formatMetric = (val: unknown) => {
+              if (val == null || val === "") return t("rmm.telemetryNA");
+              const num = Number(val);
+              return isNaN(num) ? t("rmm.telemetryNA") : `${Math.round(num)}%`;
+            };
+
+            const formatStorage = (usedGb: unknown, totalGb: unknown, fallbackPct: unknown) => {
+              if (usedGb != null && totalGb != null && Number(totalGb) > 0) {
+                const u = Math.round(Number(usedGb));
+                const t = Math.round(Number(totalGb));
+                if (!isNaN(u) && !isNaN(t) && t > 0) {
+                  return `${u} GB / ${t} GB`;
+                }
+              }
+              return formatMetric(fallbackPct);
+            };
+
+            const cpu = formatMetric(equip.cpu_usage);
+            const mem = formatMetric(equip.memory_usage);
+            const disk = formatStorage(equip.disk_used_gb, equip.disk_total_gb, equip.disk_usage);
             const syncTime = equip.last_sync_at || equip.updated_at || equip.created_at;
             const syncedAt = syncTime ? formatRelativeTime(new Date(syncTime)) : t("rmm.telemetryNA");
 
@@ -210,8 +228,10 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
 
             return (
               <div className="flex flex-wrap sm:flex-nowrap justify-end items-center gap-1.5 sm:gap-2">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
                   title={t("rmm.tableScanTooltip")}
                   aria-label={t("rmm.tableScanTooltip")}
                   onClick={(e) => {
@@ -219,22 +239,24 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
                     onScanDevice(equip.id);
                   }}
                   disabled={isScanning}
-                  className="inline-flex items-center gap-1 h-7 px-2 sm:px-2.5 text-xs font-semibold bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-md shadow-xs transition-colors cursor-pointer disabled:opacity-50 whitespace-nowrap"
+                  className="h-7 px-2 sm:px-2.5 text-xs font-semibold whitespace-nowrap"
                 >
                   <RefreshCw className={`h-3 w-3 shrink-0 ${isScanning ? "animate-spin" : ""}`} />
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="default"
+                  size="sm"
                   title={t("rmm.tablePatchModalTooltip")}
                   aria-label={t("rmm.tablePatchModalTooltip")}
                   onClick={(e) => {
                     e.stopPropagation();
                     onOpenPatchModal(equip.id, deviceName);
                   }}
-                  className="inline-flex items-center gap-1 h-7 px-2 sm:px-2.5 text-xs font-semibold bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 rounded-md shadow-xs transition-opacity cursor-pointer whitespace-nowrap"
+                  className="h-7 px-2 sm:px-2.5 text-xs font-semibold whitespace-nowrap"
                 >
                   <ShieldCheck className="h-3 w-3 shrink-0" />
-                </button>
+                </Button>
               </div>
             );
           },
