@@ -23,7 +23,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
@@ -867,26 +866,8 @@ export function DevicesPage() {
     [page, totalPages, filteredEquipment.length, limit, setPage, setLimit, t],
   );
 
-  if (loading) {
-    return (
-      <Page title={t("nav.devices")} subtitle={t("devices.subtitle")} isLoading={false}>
-        <div className="space-y-4">
-          <div className="space-y-4 text-on-surface animate-fade-in">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-              <div className="lg:col-span-3 space-y-4">
-                <Skeleton className="w-full h-10" />
-                <Skeleton className="w-full h-96" />
-                <Skeleton className="w-full h-10" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </Page>
-    );
-  }
-
   return (
-    <Page title={t("nav.devices")} subtitle={t("devices.subtitle")} isLoading={false}>
+    <Page title={t("nav.devices")} subtitle={t("devices.subtitle")} isLoading={loading}>
       <Tabs defaultValue="devices" className="space-y-4">
         <TabsList className="w-fit">
           <TabsTrigger value="devices">{t("rmm.tabInventory")}</TabsTrigger>

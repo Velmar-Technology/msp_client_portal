@@ -405,28 +405,13 @@ export function ApiStatusPage() {
     [t]
   );
 
-  if (isLoading) {
-    return (
-      <Page title={t("apiStatus.title")} subtitle={t("apiStatus.subtitle")} isLoading={true}>
-        <div className="space-y-6">
-          <Skeleton className="h-20 w-full rounded-lg" />
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-24 w-full rounded-lg" />
-            ))}
-          </div>
-          <Skeleton className="h-96 w-full rounded-lg" />
-        </div>
-      </Page>
-    );
-  }
-
   const overallStatus = data?.overallStatus || "OPERATIONAL";
 
   return (
     <Page
       title={t("apiStatus.title")}
       subtitle={t("apiStatus.subtitle")}
+      isLoading={isLoading}
       actions={
         <div className="flex items-center gap-3">
           <div className="flex items-center space-x-2">
@@ -460,7 +445,9 @@ export function ApiStatusPage() {
         {/* Overall System Health Status Banner */}
         <div
           className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all shadow-xs ${
-            overallStatus === "OPERATIONAL"
+            isLoading
+              ? "bg-zinc-100 dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800"
+              : overallStatus === "OPERATIONAL"
               ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-950 dark:text-emerald-100"
               : overallStatus === "DEGRADED"
               ? "bg-amber-500/10 border-amber-500/20 text-amber-950 dark:text-amber-100"
@@ -468,42 +455,56 @@ export function ApiStatusPage() {
           }`}
         >
           <div className="flex items-center gap-3">
-            {overallStatus === "OPERATIONAL" ? (
-              <div className="p-2.5 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+            {isLoading ? (
+              <Skeleton className="h-11 w-11 rounded-lg shrink-0" />
+            ) : overallStatus === "OPERATIONAL" ? (
+              <div className="p-2.5 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0">
                 <CheckCircle2 className="h-6 w-6" />
               </div>
             ) : overallStatus === "DEGRADED" ? (
-              <div className="p-2.5 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400">
+              <div className="p-2.5 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
                 <AlertTriangle className="h-6 w-6" />
               </div>
             ) : (
-              <div className="p-2.5 rounded-lg bg-red-500/20 text-red-600 dark:text-red-400">
+              <div className="p-2.5 rounded-lg bg-red-500/20 text-red-600 dark:text-red-400 shrink-0">
                 <XCircle className="h-6 w-6" />
               </div>
             )}
 
             <div>
               <h2 className="text-base font-bold tracking-tight">
-                {overallStatus === "OPERATIONAL"
-                  ? t("apiStatus.overallOperational")
-                  : overallStatus === "DEGRADED"
-                  ? t("apiStatus.overallDegraded")
-                  : t("apiStatus.overallDown")}
+                {isLoading ? (
+                  <Skeleton className="h-5 w-48 mb-1" />
+                ) : overallStatus === "OPERATIONAL" ? (
+                  t("apiStatus.overallOperational")
+                ) : overallStatus === "DEGRADED" ? (
+                  t("apiStatus.overallDegraded")
+                ) : (
+                  t("apiStatus.overallDown")
+                )}
               </h2>
-              <p className="text-xs opacity-80 mt-0.5">
-                {t("apiStatus.lastChecked", { time: formatLastChecked(data?.lastChecked) })}
-              </p>
+              <div className="text-xs opacity-80 mt-0.5">
+                {isLoading ? (
+                  <Skeleton className="h-3.5 w-36" />
+                ) : (
+                  t("apiStatus.lastChecked", { time: formatLastChecked(data?.lastChecked) })
+                )}
+              </div>
             </div>
           </div>
 
           <div className="flex items-center gap-4 text-xs font-medium border-t sm:border-t-0 border-current/10 pt-2 sm:pt-0">
             <div className="flex items-center gap-1.5">
               <Zap className="h-4 w-4 opacity-70" />
-              <span>
+              <span className="flex items-center gap-1">
                 {t("apiStatus.kpiAvgLatency")}:{" "}
-                <strong className="font-mono">
-                  {data?.averageLatencyMs || 0} {t("apiStatus.unitMs")}
-                </strong>
+                {isLoading ? (
+                  <Skeleton className="h-4 w-12 inline-block" />
+                ) : (
+                  <strong className="font-mono">
+                    {data?.averageLatencyMs || 0} {t("apiStatus.unitMs")}
+                  </strong>
+                )}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
@@ -527,8 +528,8 @@ export function ApiStatusPage() {
               >
                 <Server className="h-3.5 w-3.5" />
                 <span>{t("apiStatus.sectionServices")}</span>
-                <Badge variant="secondary" className="ml-1 text-[10px] font-mono px-1.5 py-0">
-                  {data?.totalServices || 0}
+                <Badge variant="secondary" className="ml-1 text-[10px] font-mono px-1.5 py-0 min-w-[20px] inline-flex justify-center">
+                  {isLoading ? <Skeleton className="h-3 w-4" /> : (data?.totalServices || 0)}
                 </Badge>
               </TabsTrigger>
 
@@ -538,8 +539,8 @@ export function ApiStatusPage() {
               >
                 <KeyRound className="h-3.5 w-3.5 text-amber-500" />
                 <span>{t("apiStatus.sectionEnvVars")}</span>
-                <Badge variant="secondary" className="ml-1 text-[10px] font-mono px-1.5 py-0">
-                  {data?.envTotal || 0}
+                <Badge variant="secondary" className="ml-1 text-[10px] font-mono px-1.5 py-0 min-w-[20px] inline-flex justify-center">
+                  {isLoading ? <Skeleton className="h-3 w-4" /> : (data?.envTotal || 0)}
                 </Badge>
               </TabsTrigger>
             </TabsList>
@@ -561,7 +562,7 @@ export function ApiStatusPage() {
                 </CardHeader>
                 <CardContent className="pb-3.5 px-4">
                   <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 font-mono">
-                    {data?.totalServices || 0}
+                    {isLoading ? <Skeleton className="h-8 w-12" /> : (data?.totalServices || 0)}
                   </div>
                 </CardContent>
               </Card>
@@ -576,7 +577,7 @@ export function ApiStatusPage() {
                 </CardHeader>
                 <CardContent className="pb-3.5 px-4">
                   <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                    {data?.operationalCount || 0}
+                    {isLoading ? <Skeleton className="h-8 w-12" /> : (data?.operationalCount || 0)}
                   </div>
                 </CardContent>
               </Card>
@@ -591,7 +592,7 @@ export function ApiStatusPage() {
                 </CardHeader>
                 <CardContent className="pb-3.5 px-4">
                   <div className="text-2xl font-bold text-amber-600 dark:text-amber-400 font-mono">
-                    {data?.degradedCount || 0}
+                    {isLoading ? <Skeleton className="h-8 w-12" /> : (data?.degradedCount || 0)}
                   </div>
                 </CardContent>
               </Card>
@@ -606,7 +607,7 @@ export function ApiStatusPage() {
                 </CardHeader>
                 <CardContent className="pb-3.5 px-4">
                   <div className="text-2xl font-bold text-red-600 dark:text-red-400 font-mono">
-                    {data?.downCount || 0}
+                    {isLoading ? <Skeleton className="h-8 w-12" /> : (data?.downCount || 0)}
                   </div>
                 </CardContent>
               </Card>
@@ -621,10 +622,16 @@ export function ApiStatusPage() {
                 </CardHeader>
                 <CardContent className="pb-3.5 px-4">
                   <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 font-mono">
-                    {data?.averageLatencyMs || 0}{" "}
-                    <span className="text-xs font-normal text-zinc-500">
-                      {t("apiStatus.unitMs")}
-                    </span>
+                    {isLoading ? (
+                      <Skeleton className="h-8 w-16" />
+                    ) : (
+                      <>
+                        {data?.averageLatencyMs || 0}{" "}
+                        <span className="text-xs font-normal text-zinc-500">
+                          {t("apiStatus.unitMs")}
+                        </span>
+                      </>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -639,16 +646,16 @@ export function ApiStatusPage() {
               >
                 <TabsList className="h-8 bg-zinc-200/60 dark:bg-zinc-800/60 p-0.5">
                   <TabsTrigger value="ALL" className="text-xs h-7 px-3 cursor-pointer">
-                    {t("apiStatus.tabAll")} ({data?.totalServices || 0})
+                    {t("apiStatus.tabAll")} ({isLoading ? <Skeleton className="h-3 w-4 inline-block align-middle" /> : (data?.totalServices || 0)})
                   </TabsTrigger>
                   <TabsTrigger value="OPERATIONAL" className="text-xs h-7 px-3 cursor-pointer">
-                    {t("apiStatus.tabOperational")} ({data?.operationalCount || 0})
+                    {t("apiStatus.tabOperational")} ({isLoading ? <Skeleton className="h-3 w-4 inline-block align-middle" /> : (data?.operationalCount || 0)})
                   </TabsTrigger>
                   <TabsTrigger value="DEGRADED" className="text-xs h-7 px-3 cursor-pointer">
-                    {t("apiStatus.tabDegraded")} ({data?.degradedCount || 0})
+                    {t("apiStatus.tabDegraded")} ({isLoading ? <Skeleton className="h-3 w-4 inline-block align-middle" /> : (data?.degradedCount || 0)})
                   </TabsTrigger>
                   <TabsTrigger value="DOWN" className="text-xs h-7 px-3 cursor-pointer">
-                    {t("apiStatus.tabDown")} ({data?.downCount || 0})
+                    {t("apiStatus.tabDown")} ({isLoading ? <Skeleton className="h-3 w-4 inline-block align-middle" /> : (data?.downCount || 0)})
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -695,7 +702,7 @@ export function ApiStatusPage() {
                 </CardHeader>
                 <CardContent className="pb-3.5 px-4">
                   <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 font-mono">
-                    {data?.envTotal || 0}
+                    {isLoading ? <Skeleton className="h-8 w-12" /> : (data?.envTotal || 0)}
                   </div>
                 </CardContent>
               </Card>
@@ -710,7 +717,7 @@ export function ApiStatusPage() {
                 </CardHeader>
                 <CardContent className="pb-3.5 px-4">
                   <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                    {data?.envConfiguredCount || 0}
+                    {isLoading ? <Skeleton className="h-8 w-12" /> : (data?.envConfiguredCount || 0)}
                   </div>
                 </CardContent>
               </Card>
@@ -725,7 +732,7 @@ export function ApiStatusPage() {
                 </CardHeader>
                 <CardContent className="pb-3.5 px-4">
                   <div className="text-2xl font-bold text-amber-600 dark:text-amber-400 font-mono">
-                    {data?.envDegradedCount || 0}
+                    {isLoading ? <Skeleton className="h-8 w-12" /> : (data?.envDegradedCount || 0)}
                   </div>
                 </CardContent>
               </Card>
@@ -740,7 +747,7 @@ export function ApiStatusPage() {
                 </CardHeader>
                 <CardContent className="pb-3.5 px-4">
                   <div className="text-2xl font-bold text-red-600 dark:text-red-400 font-mono">
-                    {data?.envMissingCount || 0}
+                    {isLoading ? <Skeleton className="h-8 w-12" /> : (data?.envMissingCount || 0)}
                   </div>
                 </CardContent>
               </Card>
@@ -755,16 +762,16 @@ export function ApiStatusPage() {
               >
                 <TabsList className="h-8 bg-zinc-200/60 dark:bg-zinc-800/60 p-0.5">
                   <TabsTrigger value="ALL" className="text-xs h-7 px-3 cursor-pointer">
-                    {t("apiStatus.tabEnvAll")} ({data?.envTotal || 0})
+                    {t("apiStatus.tabEnvAll")} ({isLoading ? <Skeleton className="h-3 w-4 inline-block align-middle" /> : (data?.envTotal || 0)})
                   </TabsTrigger>
                   <TabsTrigger value="CONFIGURED" className="text-xs h-7 px-3 cursor-pointer">
-                    {t("apiStatus.tabEnvConfigured")} ({data?.envConfiguredCount || 0})
+                    {t("apiStatus.tabEnvConfigured")} ({isLoading ? <Skeleton className="h-3 w-4 inline-block align-middle" /> : (data?.envConfiguredCount || 0)})
                   </TabsTrigger>
                   <TabsTrigger value="DEFAULT_PLACEHOLDER" className="text-xs h-7 px-3 cursor-pointer">
-                    {t("apiStatus.tabEnvDegraded")} ({data?.envDegradedCount || 0})
+                    {t("apiStatus.tabEnvDegraded")} ({isLoading ? <Skeleton className="h-3 w-4 inline-block align-middle" /> : (data?.envDegradedCount || 0)})
                   </TabsTrigger>
                   <TabsTrigger value="MISSING" className="text-xs h-7 px-3 cursor-pointer">
-                    {t("apiStatus.tabEnvMissing")} ({data?.envMissingCount || 0})
+                    {t("apiStatus.tabEnvMissing")} ({isLoading ? <Skeleton className="h-3 w-4 inline-block align-middle" /> : (data?.envMissingCount || 0)})
                   </TabsTrigger>
                 </TabsList>
               </Tabs>

@@ -1,1 +1,2 @@
-export * from "@/pages/DevicesPage/DevicesPage";
+export { DevicesPage } from "./DevicesPage";
+export { DevicesPage as default } from "./DevicesPage";

@@ -15,11 +15,11 @@ import { ProfilePage } from "@/pages/ProfilePage";
 import { TechDashboardPage } from "@/pages/TechDashboardPage";
 import { HelpPage } from "@/pages/HelpPage";
 import { NotificationPreferencesPage } from "@/pages/NotificationPreferencesPage";
-import { DevicesPage } from "@/pages/DevicesPage";
 import { MaintenancePage } from "@/pages/MaintenancePage";
 import { UserManagementPage } from "@/pages/UserManagementPage";
 import { ResourcesPage } from "@/pages/ResourcesPage";
-import { ApiStatusPage } from "@/pages/ApiStatusPage";
+const DevicesPage = React.lazy(() => import("@/pages/DevicesPage"));
+const ApiStatusPage = React.lazy(() => import("@/pages/ApiStatusPage"));
 
 export interface AppRouteHandle {
   crumb: CrumbResolver;
@@ -85,7 +85,7 @@ const RAW_PROTECTED_ROUTES: Omit<AppRouteConfig, "handle">[] = [
   { path: "/financial", element: <FinancialPage />, allowedRoles: ["ADMIN"] },
   { path: "/plans", element: <PlansPage />, allowedRoles: ["CLIENT", "ADMIN"] },
   { path: "/billing", element: <BillingPage />, allowedRoles: ["CLIENT", "ADMIN"] },
-  { path: "/devices", element: <DevicesPage />, allowedRoles: ["CLIENT", "ADMIN"] },
+  { path: "/devices", element: <React.Suspense fallback={<RouteLoadingSpinner />}><DevicesPage /></React.Suspense>, allowedRoles: ["CLIENT", "ADMIN"] },
   { path: "/resources", element: <ResourcesPage />, allowedRoles: ["CLIENT", "ADMIN"] },
   { path: "/maintenance", element: <MaintenancePage />, allowedRoles: ["CLIENT", "ADMIN", "TECHNICIAN"] },
 
@@ -93,7 +93,7 @@ const RAW_PROTECTED_ROUTES: Omit<AppRouteConfig, "handle">[] = [
   { path: "/tech/dashboard", element: <TechDashboardPage />, allowedRoles: ["TECHNICIAN"] },
   { path: "/admin/dashboard", element: <Navigate to="/dashboard" replace />, allowedRoles: ["ADMIN"] },
   { path: "/admin/users", element: <UserManagementPage />, allowedRoles: ["ADMIN"] },
-  { path: "/admin/api-status", element: <ApiStatusPage />, allowedRoles: ["ADMIN"] },
+  { path: "/admin/api-status", element: <React.Suspense fallback={<RouteLoadingSpinner />}><ApiStatusPage /></React.Suspense>, allowedRoles: ["ADMIN"] },
 
   // Shared Routes
   { path: "/tickets", element: <TicketsPage /> },
