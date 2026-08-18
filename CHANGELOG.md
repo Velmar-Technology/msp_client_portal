@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.3.6](https://github.com/eapolancovelmar/msp_client_portal/compare/v1.3.5...v1.3.6) (2026-08-18)
+
+
+### Features
+
+* **auth,ui:** enhance OTP verification flow with AlertDialog, InputOTP and fix login error handling ([8288fdd](https://github.com/eapolancovelmar/msp_client_portal/commit/8288fdda47f3b7510fe4143622915da91642901f))
+* **auth:** disable autofill and align registration zod validation with backend ([ae668ff](https://github.com/eapolancovelmar/msp_client_portal/commit/ae668ffd597494967bd2a4d9eace92fa77702806))
+
 ## [1.3.5](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.3.4...v1.3.5) (2026-08-18)
 
 
