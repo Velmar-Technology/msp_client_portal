@@ -213,7 +213,7 @@ export function LoginPage() {
                       {t("register.otpTitle")}
                     </label>
                     <div className="flex justify-center my-2">
-                      <InputOTP maxLength={6} value={otp} onChange={(value) => setOtp(value)}>
+                      <InputOTP maxLength={6} value={otp} onChange={(value: string) => setOtp(value)}>
                         <InputOTPGroup>
                           <InputOTPSlot index={0} />
                           <InputOTPSlot index={1} />
@@ -402,7 +402,7 @@ export function LoginPage() {
 
           <form onSubmit={handleVerifyAndLogin} className="space-y-4 my-2">
             <div className="flex justify-center py-2">
-              <InputOTP maxLength={6} value={otp} onChange={(value) => setOtp(value)}>
+              <InputOTP maxLength={6} value={otp} onChange={(value: string) => setOtp(value)}>
                 <InputOTPGroup>
                   <InputOTPSlot index={0} />
                   <InputOTPSlot index={1} />
