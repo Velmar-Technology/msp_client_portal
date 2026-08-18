@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
 
 interface GoogleLoginButtonProps {
@@ -31,29 +31,42 @@ export function GoogleLoginButton({ onSuccess, onError, text = "signin_with" }: 
   const [mockEmail, setMockEmail] = useState("");
   const [mockName, setMockName] = useState("");
 
+  const onSuccessRef = useRef(onSuccess);
+  const onErrorRef = useRef(onError);
+  const renderedRef = useRef(false);
+
   useEffect(() => {
-    if (isMockMode) return;
+    onSuccessRef.current = onSuccess;
+    onErrorRef.current = onError;
+  }, [onSuccess, onError]);
+
+  useEffect(() => {
+    if (isMockMode || renderedRef.current) return;
 
     let attempts = 0;
     const initializeGsi = () => {
-      if (!window.google) return;
+      if (!window.google || renderedRef.current) return;
       try {
         window.google.accounts.id.initialize({
           client_id: clientId,
           callback: (response: { credential?: string }) => {
             if (response.credential) {
-              onSuccess(response.credential);
+              onSuccessRef.current(response.credential);
             } else {
-              onError("Google authentication failed: no credential");
+              onErrorRef.current("Google authentication failed: no credential");
             }
           },
         });
-        window.google.accounts.id.renderButton(document.getElementById("google-btn-container"), {
-          theme: "outline",
-          size: "large",
-          width: "380",
-          text: text === "signup_with" ? "signup_with" : "signin_with",
-        });
+        const container = document.getElementById("google-btn-container");
+        if (container) {
+          window.google.accounts.id.renderButton(container, {
+            theme: "outline",
+            size: "large",
+            width: "380",
+            text: text === "signup_with" ? "signup_with" : "signin_with",
+          });
+          renderedRef.current = true;
+        }
       } catch (err: unknown) {
         console.error("Failed to render GSI button:", err);
       }
@@ -63,7 +76,9 @@ export function GoogleLoginButton({ onSuccess, onError, text = "signin_with" }: 
       attempts++;
       if (window.google) {
         initializeGsi();
-        clearInterval(interval);
+        if (renderedRef.current) {
+          clearInterval(interval);
+        }
       } else if (attempts > 50) {
         clearInterval(interval);
         console.error("Google client library could not be loaded");
@@ -71,7 +86,7 @@ export function GoogleLoginButton({ onSuccess, onError, text = "signin_with" }: 
     }, 200);
 
     return () => clearInterval(interval);
-  }, [clientId, isMockMode, onSuccess, onError, text]);
+  }, [clientId, isMockMode, text]);
 
   const handleMockSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Eye, EyeOff, AlertCircle, Globe, ShieldCheck } from "lucide-react";
@@ -41,31 +41,37 @@ export function LoginPage() {
   const [otp, setOtp] = useState("");
   const [otpNotice, setOtpNotice] = useState("");
 
-  const handleGoogleSuccess = async (idToken: string) => {
-    setError("");
-    setLoading(true);
-    try {
-      await loginWithGoogle(idToken, undefined, rememberMe);
-      navigate("/dashboard");
-    } catch (err: unknown) {
-      const extractedMessage =
-        (err instanceof Error && err.message) ||
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      const errorMsg =
-        extractedMessage ||
-        (i18n.language === "es_DO" ? "Error al autenticar con Google" : "Google authentication failed");
-      setError(errorMsg);
-      toast.error(errorMsg);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const handleGoogleSuccess = useCallback(
+    async (idToken: string) => {
+      setError("");
+      setLoading(true);
+      try {
+        await loginWithGoogle(idToken, undefined, rememberMe);
+        navigate("/dashboard");
+      } catch (err: unknown) {
+        const extractedMessage =
+          (err instanceof Error && err.message) ||
+          (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+        const errorMsg =
+          extractedMessage ||
+          (i18n.language === "es_DO" ? "Error al autenticar con Google" : "Google authentication failed");
+        setError(errorMsg);
+        toast.error(errorMsg);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [loginWithGoogle, navigate, rememberMe, i18n.language]
+  );
 
-  const handleGoogleError = (errMsg?: string) => {
-    const defaultMsg = i18n.language === "es_DO" ? "Error al autenticar con Google" : "Google authentication failed";
-    setError(errMsg || defaultMsg);
-    toast.error(errMsg || defaultMsg);
-  };
+  const handleGoogleError = useCallback(
+    (errMsg?: string) => {
+      const defaultMsg = i18n.language === "es_DO" ? "Error al autenticar con Google" : "Google authentication failed";
+      setError(errMsg || defaultMsg);
+      toast.error(errMsg || defaultMsg);
+    },
+    [i18n.language]
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
