@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Activity,
@@ -5,7 +6,6 @@ import {
   AlertTriangle,
   XCircle,
   RotateCw,
-  Search,
   Server,
   Clock,
   ShieldCheck,
@@ -20,22 +20,16 @@ import {
 import { useApiStatus } from "@/hooks/useApiStatus";
 import { Page } from "@/components/Page";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
+import type { ColumnDef } from "@tanstack/react-table";
+import { cn } from "@/lib/utils";
 import type { ApiStatusItem, EnvVarStatusItem } from "@/services/systemService";
 
 export function ApiStatusPage() {
@@ -183,6 +177,221 @@ export function ApiStatusPage() {
         );
     }
   };
+
+  // 1. Column Definitions for API Microservices Table
+  const serviceColumns = useMemo<ColumnDef<ApiStatusItem, any>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("apiStatus.tableServiceName")} />
+        ),
+        cell: ({ row }) => {
+          const service = row.original;
+          return (
+            <div className="flex items-center gap-2 font-medium text-xs text-zinc-900 dark:text-zinc-100">
+              <Activity className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500 shrink-0" />
+              <span>{service.name}</span>
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "category",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("apiStatus.tableCategory")} />
+        ),
+        cell: ({ row }) => (
+          <Badge
+            variant="secondary"
+            className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300"
+          >
+            {getCategoryLabel(row.original.category)}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "endpoint",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("apiStatus.tableEndpoint")} />
+        ),
+        cell: ({ row }) => (
+          <span className="font-mono text-[11px] text-zinc-600 dark:text-zinc-400">
+            {row.original.endpoint}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("apiStatus.tableStatus")} />
+        ),
+        cell: ({ row }) => getStatusBadge(row.original.status),
+      },
+      {
+        accessorKey: "latencyMs",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("apiStatus.tableLatency")} />
+        ),
+        cell: ({ row }) => {
+          const latencyMs = row.original.latencyMs;
+          return (
+            <span
+              className={cn(
+                "font-mono text-xs font-medium",
+                latencyMs < 50
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : latencyMs < 200
+                  ? "text-amber-600 dark:text-amber-400"
+                  : "text-red-600 dark:text-red-400"
+              )}
+            >
+              {latencyMs} {t("apiStatus.unitMs")}
+            </span>
+          );
+        },
+      },
+      {
+        accessorKey: "uptimePercentage",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("apiStatus.tableUptime")} />
+        ),
+        cell: ({ row }) => (
+          <span className="font-mono text-xs text-zinc-700 dark:text-zinc-300">
+            {row.original.uptimePercentage}
+            {t("apiStatus.unitPercent")}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "message",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("apiStatus.tableMessage")} />
+        ),
+        cell: ({ row }) => {
+          const message = row.original.message;
+          if (!message) return t("apiStatus.dash");
+          return (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="cursor-help underline decoration-dotted decoration-zinc-300 dark:decoration-zinc-700 text-xs text-zinc-500 dark:text-zinc-400 max-w-xs truncate inline-block">
+                    {message}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent className="text-xs">{message}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          );
+        },
+      },
+    ],
+    [t, isSpanish]
+  );
+
+  // 2. Column Definitions for Environment Variables Table
+  const envVarColumns = useMemo<ColumnDef<EnvVarStatusItem, any>[]>(
+    () => [
+      {
+        accessorKey: "key",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("apiStatus.tableEnvKey")} />
+        ),
+        cell: ({ row }) => {
+          const item = row.original;
+          return (
+            <div className="flex items-center gap-2 font-medium text-xs text-zinc-900 dark:text-zinc-100">
+              {item.isSecret ? (
+                <Lock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+              ) : (
+                <FileCode className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+              )}
+              <span className="font-mono text-[12px] font-semibold">{item.key}</span>
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "category",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("apiStatus.tableEnvCategory")} />
+        ),
+        cell: ({ row }) => (
+          <Badge
+            variant="secondary"
+            className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300"
+          >
+            {getEnvCategoryLabel(row.original.category)}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("apiStatus.tableEnvStatus")} />
+        ),
+        cell: ({ row }) => getEnvStatusBadge(row.original.status),
+      },
+      {
+        accessorKey: "valueDisplay",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("apiStatus.tableEnvValue")} />
+        ),
+        cell: ({ row }) => {
+          const item = row.original;
+          return (
+            <div className="flex items-center gap-1.5 font-mono text-[11px]">
+              <span
+                className={cn(
+                  "px-2 py-0.5 rounded font-mono",
+                  item.isSecret
+                    ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20"
+                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200"
+                )}
+              >
+                {item.valueDisplay}
+              </span>
+              {item.isSecret ? (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Shield className="h-3.5 w-3.5 text-amber-500 cursor-help opacity-80" />
+                    </TooltipTrigger>
+                    <TooltipContent className="text-xs">
+                      {t("apiStatus.secretMaskedTooltip")}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3.5 w-3.5 text-zinc-400 cursor-help opacity-70" />
+                    </TooltipTrigger>
+                    <TooltipContent className="text-xs">
+                      {t("apiStatus.publicValueTooltip")}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "description",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("apiStatus.tableEnvDescription")} />
+        ),
+        cell: ({ row }) => (
+          <span className="text-xs text-zinc-500 dark:text-zinc-400 max-w-sm block">
+            {row.original.description}
+          </span>
+        ),
+      },
+    ],
+    [t]
+  );
 
   if (isLoading) {
     return (
@@ -409,7 +618,7 @@ export function ApiStatusPage() {
               </Card>
             </div>
 
-            {/* Filter Controls & Search */}
+            {/* Status Tabs Filter Bar */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-zinc-50/50 dark:bg-zinc-900/40 p-3 rounded-lg border border-zinc-200/80 dark:border-zinc-800/80">
               <Tabs
                 value={statusTab}
@@ -431,120 +640,24 @@ export function ApiStatusPage() {
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
-
-              <div className="relative w-full sm:w-72">
-                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
-                <Input
-                  type="search"
-                  placeholder={t("apiStatus.searchPlaceholder")}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-8.5 pl-8 text-xs bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
-                />
-              </div>
             </div>
 
-            {/* Services Status Table */}
-            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 overflow-hidden shadow-xs">
-              <Table>
-                <TableHeader className="bg-zinc-50/80 dark:bg-zinc-900/60">
-                  <TableRow className="border-b border-zinc-200 dark:border-zinc-800">
-                    <TableHead className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider py-3">
-                      {t("apiStatus.tableServiceName")}
-                    </TableHead>
-                    <TableHead className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider py-3">
-                      {t("apiStatus.tableCategory")}
-                    </TableHead>
-                    <TableHead className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider py-3">
-                      {t("apiStatus.tableEndpoint")}
-                    </TableHead>
-                    <TableHead className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider py-3">
-                      {t("apiStatus.tableStatus")}
-                    </TableHead>
-                    <TableHead className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider py-3">
-                      {t("apiStatus.tableLatency")}
-                    </TableHead>
-                    <TableHead className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider py-3">
-                      {t("apiStatus.tableUptime")}
-                    </TableHead>
-                    <TableHead className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider py-3">
-                      {t("apiStatus.tableMessage")}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredServices.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="h-32 text-center text-zinc-500 text-xs">
-                        {t("apiStatus.noServicesFound")}
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredServices.map((service: ApiStatusItem) => (
-                      <TableRow
-                        key={service.id}
-                        className="border-b border-zinc-100 dark:border-zinc-800/60 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40 transition-colors"
-                      >
-                        <TableCell className="py-3 font-medium text-xs text-zinc-900 dark:text-zinc-100">
-                          <div className="flex items-center gap-2">
-                            <Activity className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500 shrink-0" />
-                            <span>{service.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-3 text-xs">
-                          <Badge
-                            variant="secondary"
-                            className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300"
-                          >
-                            {getCategoryLabel(service.category)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="py-3 font-mono text-[11px] text-zinc-600 dark:text-zinc-400">
-                          {service.endpoint}
-                        </TableCell>
-                        <TableCell className="py-3">{getStatusBadge(service.status)}</TableCell>
-                        <TableCell className="py-3 font-mono text-xs font-medium">
-                          <span
-                            className={
-                              service.latencyMs < 50
-                                ? "text-emerald-600 dark:text-emerald-400"
-                                : service.latencyMs < 200
-                                ? "text-amber-600 dark:text-amber-400"
-                                : "text-red-600 dark:text-red-400"
-                            }
-                          >
-                            {service.latencyMs} {t("apiStatus.unitMs")}
-                          </span>
-                        </TableCell>
-                        <TableCell className="py-3 font-mono text-xs text-zinc-700 dark:text-zinc-300">
-                          {service.uptimePercentage}{t("apiStatus.unitPercent")}
-                        </TableCell>
-                        <TableCell className="py-3 text-xs text-zinc-500 dark:text-zinc-400 max-w-xs truncate">
-                          {service.message ? (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="cursor-help underline decoration-dotted decoration-zinc-300 dark:decoration-zinc-700">
-                                    {service.message}
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent className="text-xs">{service.message}</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          ) : (
-                            t("apiStatus.dash")
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+            {/* Reusable DataTable Component */}
+            <DataTable
+              columns={serviceColumns}
+              data={filteredServices}
+              loading={isLoading}
+              noDataMessage={t("apiStatus.noServicesFound")}
+              search={{
+                value: searchQuery,
+                onChange: setSearchQuery,
+                placeholder: t("apiStatus.searchPlaceholder"),
+              }}
+            />
           </div>
         )}
 
-        {/* SECTION 2: ENVIRONMENT VARIABLES (.ENV) */}
+        {/* SECTION 2: ENVIRONMENT VARIABLES */}
         {activeSection === "ENV_VARS" && (
           <div className="space-y-6">
             {/* KPI Metrics Cards for Env Vars */}
@@ -610,7 +723,7 @@ export function ApiStatusPage() {
               </Card>
             </div>
 
-            {/* Environment Variables Filter & Search Controls */}
+            {/* Environment Status Filter Bar */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-zinc-50/50 dark:bg-zinc-900/40 p-3 rounded-lg border border-zinc-200/80 dark:border-zinc-800/80">
               <Tabs
                 value={envStatusTab}
@@ -632,118 +745,20 @@ export function ApiStatusPage() {
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
-
-              <div className="relative w-full sm:w-80">
-                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
-                <Input
-                  type="search"
-                  placeholder={t("apiStatus.searchEnvPlaceholder")}
-                  value={envSearchQuery}
-                  onChange={(e) => setEnvSearchQuery(e.target.value)}
-                  className="h-8.5 pl-8 text-xs bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
-                />
-              </div>
             </div>
 
-            {/* Environment Variables Table */}
-            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 overflow-hidden shadow-xs">
-              <Table>
-                <TableHeader className="bg-zinc-50/80 dark:bg-zinc-900/60">
-                  <TableRow className="border-b border-zinc-200 dark:border-zinc-800">
-                    <TableHead className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider py-3">
-                      {t("apiStatus.tableEnvKey")}
-                    </TableHead>
-                    <TableHead className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider py-3">
-                      {t("apiStatus.tableEnvCategory")}
-                    </TableHead>
-                    <TableHead className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider py-3">
-                      {t("apiStatus.tableEnvStatus")}
-                    </TableHead>
-                    <TableHead className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider py-3">
-                      {t("apiStatus.tableEnvValue")}
-                    </TableHead>
-                    <TableHead className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider py-3">
-                      {t("apiStatus.tableEnvDescription")}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredEnvVariables.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="h-32 text-center text-zinc-500 text-xs">
-                        {t("apiStatus.noEnvVarsFound")}
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredEnvVariables.map((item: EnvVarStatusItem) => (
-                      <TableRow
-                        key={item.key}
-                        className="border-b border-zinc-100 dark:border-zinc-800/60 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40 transition-colors"
-                      >
-                        <TableCell className="py-3 font-medium text-xs text-zinc-900 dark:text-zinc-100">
-                          <div className="flex items-center gap-2">
-                            {item.isSecret ? (
-                              <Lock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                            ) : (
-                              <FileCode className="h-3.5 w-3.5 text-blue-500 shrink-0" />
-                            )}
-                            <span className="font-mono text-[12px] font-semibold">{item.key}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-3 text-xs">
-                          <Badge
-                            variant="secondary"
-                            className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300"
-                          >
-                            {getEnvCategoryLabel(item.category)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="py-3">{getEnvStatusBadge(item.status)}</TableCell>
-                        <TableCell className="py-3 font-mono text-[11px]">
-                          <div className="flex items-center gap-1.5">
-                            <span
-                              className={`px-2 py-0.5 rounded font-mono ${
-                                item.isSecret
-                                  ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20"
-                                  : "bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200"
-                              }`}
-                            >
-                              {item.valueDisplay}
-                            </span>
-                            {item.isSecret ? (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Shield className="h-3.5 w-3.5 text-amber-500 cursor-help opacity-80" />
-                                  </TooltipTrigger>
-                                  <TooltipContent className="text-xs">
-                                    {t("apiStatus.secretMaskedTooltip")}
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            ) : (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Info className="h-3.5 w-3.5 text-zinc-400 cursor-help opacity-70" />
-                                  </TooltipTrigger>
-                                  <TooltipContent className="text-xs">
-                                    {t("apiStatus.publicValueTooltip")}
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-3 text-xs text-zinc-500 dark:text-zinc-400 max-w-sm">
-                          {item.description}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+            {/* Reusable DataTable Component */}
+            <DataTable
+              columns={envVarColumns}
+              data={filteredEnvVariables}
+              loading={isLoading}
+              noDataMessage={t("apiStatus.noEnvVarsFound")}
+              search={{
+                value: envSearchQuery,
+                onChange: setEnvSearchQuery,
+                placeholder: t("apiStatus.searchEnvPlaceholder"),
+              }}
+            />
           </div>
         )}
       </div>
@@ -752,4 +767,5 @@ export function ApiStatusPage() {
 }
 
 export default ApiStatusPage;
+
 
