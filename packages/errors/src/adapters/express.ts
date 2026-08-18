@@ -40,7 +40,7 @@ export function createExpressErrorMiddleware(options?: ExpressErrorMiddlewareOpt
       correlationId: serialized.correlationId,
       code: serialized.code,
       message: err instanceof Error ? err.message : String(err),
-      stack: err instanceof Error ? err.stack : undefined,
+      stack: statusCode >= 500 && err instanceof Error ? err.stack : undefined,
       originalError: err instanceof AppError ? err.originalError : undefined,
       details: err instanceof AppError ? err.details : undefined
     };

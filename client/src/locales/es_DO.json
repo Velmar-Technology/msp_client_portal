@@ -290,7 +290,18 @@
     "passwordNumber": "La contraseña debe contener al menos un número",
     "phoneMax": "El número de teléfono no puede exceder 50 caracteres",
     "phoneNumber": "Número de Teléfono",
-    "whatsappOtpBadge": "OTP vía WhatsApp"
+    "whatsappOtpBadge": "OTP vía WhatsApp",
+    "personalGroupTitle": "Información Personal y Empresa",
+    "accountGroupTitle": "Credenciales y Seguridad",
+    "otpTitle": "Código de Verificación (OTP)",
+    "otpPlaceholder": "Ingrese código de 6 dígitos",
+    "verifyEmail": "Verificar Correo",
+    "emailVerifiedSuccess": "Correo verificado exitosamente. Ya puede iniciar sesión.",
+    "welcomeTitle": "¡Bienvenido a Velmar!",
+    "welcomeDesc": "Tu cuenta ha sido creada exitosamente.",
+    "continueToLogin": "Continuar al Login",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña"
   },
   "tickets": {
     "title": "Tickets de Soporte",

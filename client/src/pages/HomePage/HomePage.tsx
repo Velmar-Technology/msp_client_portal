@@ -1,14 +1,7 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
-import {
-  LifeBuoy,
-  Activity,
-  CreditCard,
-  ShieldCheck,
-  ArrowRight,
-  CheckCircle2,
-} from "lucide-react";
+import { LifeBuoy, Activity, CreditCard, ShieldCheck, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,8 +22,13 @@ export function HomePage() {
       {/* Authenticated Quick Notification Banner */}
       {isAuthenticated && (
         <div className="bg-emerald-500/10 border-b border-emerald-500/20 px-4 py-2.5 text-center text-xs font-medium text-emerald-700 dark:text-emerald-300">
-          <span>Logged in as <strong>{user?.name}</strong> ({user?.email}). </span>
-          <Link to={getDashboardLink()} className="underline font-bold hover:text-emerald-800 dark:hover:text-emerald-200">
+          <span>
+            Logged in as <strong>{user?.name}</strong> ({user?.email}).{" "}
+          </span>
+          <Link
+            to={getDashboardLink()}
+            className="underline font-bold hover:text-emerald-800 dark:hover:text-emerald-200"
+          >
             {t("home.goToDashboard")} &rarr;
           </Link>
         </div>
@@ -39,7 +37,10 @@ export function HomePage() {
       {/* Hero Section */}
       <section className="relative pt-12 pb-16 md:pt-20 md:pb-24 overflow-hidden border-b border-zinc-200 dark:border-zinc-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <Badge variant="outline" className="mb-4 px-3 py-1 text-xs font-semibold rounded-full border-primary/30 text-primary bg-primary/5">
+          <Badge
+            variant="outline"
+            className="mb-4 px-3 py-1 text-xs font-semibold rounded-full border-primary/30 text-primary bg-primary/5"
+          >
             {t("home.badge")}
           </Badge>
           <h1
@@ -59,7 +60,12 @@ export function HomePage() {
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="rounded-full px-6 font-semibold border-zinc-300 dark:border-zinc-700 text-sm">
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="rounded-full px-6 font-semibold border-zinc-300 dark:border-zinc-700 text-sm"
+            >
               <Link to="/plans">{t("home.explorePlans")}</Link>
             </Button>
           </div>
@@ -93,19 +99,22 @@ export function HomePage() {
                 <div className="flex items-start gap-2.5">
                   <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
                   <span className="text-zinc-600 dark:text-zinc-400">
-                    <strong>Multi-Tenant Client Portal</strong>: Isolated corporate accounts for clients, technicians, and administrators.
+                    <strong>Multi-Tenant Client Portal</strong>: Isolated corporate accounts for clients, technicians,
+                    and administrators.
                   </span>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
                   <span className="text-zinc-600 dark:text-zinc-400">
-                    <strong>1-Hour SLA Guarantee</strong>: Automated escalation logic for high-priority warranty and outage tickets.
+                    <strong>1-Hour SLA Guarantee</strong>: Automated escalation logic for high-priority warranty and
+                    outage tickets.
                   </span>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
                   <span className="text-zinc-600 dark:text-zinc-400">
-                    <strong>Automated Billing & Invoicing</strong>: Integrated PayPal REST capture and offline wire transfer verification.
+                    <strong>Automated Billing & Invoicing</strong>: Integrated PayPal REST capture and offline wire
+                    transfer verification.
                   </span>
                 </div>
                 <div className="flex items-start gap-2.5">
@@ -134,16 +143,14 @@ export function HomePage() {
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid justify-center grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {/* Feature 1 */}
           <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-xl hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
               <div className="w-10 h-10 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-3">
                 <LifeBuoy className="h-5 w-5" />
               </div>
-              <CardTitle className="text-base font-bold leading-snug">
-                {t("home.feature1Title")}
-              </CardTitle>
+              <CardTitle className="text-base font-bold leading-snug">{t("home.feature1Title")}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
@@ -158,9 +165,7 @@ export function HomePage() {
               <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3">
                 <Activity className="h-5 w-5" />
               </div>
-              <CardTitle className="text-base font-bold leading-snug">
-                {t("home.feature2Title")}
-              </CardTitle>
+              <CardTitle className="text-base font-bold leading-snug">{t("home.feature2Title")}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
@@ -170,7 +175,7 @@ export function HomePage() {
           </Card>
 
           {/* Feature 3 */}
-          <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-xl hover:shadow-lg transition-shadow">
+          {/* <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-xl hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
               <div className="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-3">
                 <CreditCard className="h-5 w-5" />
@@ -184,7 +189,7 @@ export function HomePage() {
                 {t("home.feature3Desc")}
               </p>
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Feature 4 */}
           <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-xl hover:shadow-lg transition-shadow">
@@ -192,9 +197,7 @@ export function HomePage() {
               <div className="w-10 h-10 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-3">
                 <ShieldCheck className="h-5 w-5" />
               </div>
-              <CardTitle className="text-base font-bold leading-snug">
-                {t("home.feature4Title")}
-              </CardTitle>
+              <CardTitle className="text-base font-bold leading-snug">{t("home.feature4Title")}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
@@ -214,14 +217,21 @@ export function HomePage() {
           >
             {t("home.ctaTitle")}
           </h2>
-          <p className="text-zinc-400 text-sm sm:text-base max-w-xl mx-auto mb-6">
-            {t("home.ctaSubtitle")}
-          </p>
+          <p className="text-zinc-400 text-sm sm:text-base max-w-xl mx-auto mb-6">{t("home.ctaSubtitle")}</p>
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <Button asChild size="lg" className="rounded-full bg-white text-zinc-900 hover:bg-zinc-100 font-bold px-6 text-sm">
+            <Button
+              asChild
+              size="lg"
+              className="rounded-full bg-white text-zinc-900 hover:bg-zinc-100 font-bold px-6 text-sm"
+            >
               <Link to="/login">{t("home.signIn")}</Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="rounded-full border-zinc-700 text-white hover:bg-zinc-800 font-semibold px-6 text-sm">
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="rounded-full border-zinc-700 text-white hover:bg-zinc-800 font-semibold px-6 text-sm"
+            >
               <Link to="/plans">{t("home.explorePlans")}</Link>
             </Button>
           </div>

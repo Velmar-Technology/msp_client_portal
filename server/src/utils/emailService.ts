@@ -766,4 +766,36 @@ export async function sendInvoiceDueEmail(
   });
 }
 
+/**
+ * Send an OTP verification email to the newly registered user.
+ */
+export async function sendOTPEmail(
+  recipientEmail: string,
+  recipientName: string,
+  otp: string,
+): Promise<void> {
+  const preheader = `Your account verification code is ${otp}.`;
+  const contentHtml = `
+    <h2 style="color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">Hello ${recipientName},</h2>
+    <p style="font-size: 15px; color: #475569; margin-top: 0; margin-bottom: 24px;">
+      Thank you for registering with Velmar Technology MSP Portal. Please use the following 6-digit verification code to complete your registration:
+    </p>
+
+    <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px;">
+      <span style="font-size: 32px; font-weight: 800; letter-spacing: 0.25em; color: #4F46E5; font-family: monospace;">${otp}</span>
+      <p style="font-size: 12px; color: #64748B; margin-top: 12px; margin-bottom: 0;">This code will expire in 15 minutes.</p>
+    </div>
+  `;
+
+  const body = getEmailLayout(preheader, 'Account Verification OTP', contentHtml);
+
+  await sendEmail({
+    to: recipientEmail,
+    subject: `Your Account Verification Code: ${otp}`,
+    body,
+    type: 'EMAIL',
+  });
+}
+
+
 

@@ -1,19 +1,35 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Eye, EyeOff, AlertCircle, Globe } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, Globe, ShieldCheck } from "lucide-react";
 import logoUrl from "@/assets/logo.png";
 import { useTranslation } from "react-i18next";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { GoogleLoginButton } from "@/components/auth/GoogleLoginButton";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { getRememberMe } from "@/lib/authStorage";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+  InputOTPSeparator,
+} from "@/components/ui/input-otp";
 
 export function LoginPage() {
   const { t, i18n } = useTranslation();
-  const { login, loginWithGoogle } = useAuth();
+  const { login, verifyEmail, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,6 +37,9 @@ export function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(getRememberMe);
+  const [showOtpForm, setShowOtpForm] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [otpNotice, setOtpNotice] = useState("");
 
   const handleGoogleSuccess = async (idToken: string) => {
     setError("");
@@ -29,9 +48,11 @@ export function LoginPage() {
       await loginWithGoogle(idToken, undefined, rememberMe);
       navigate("/dashboard");
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } };
+      const extractedMessage =
+        (err instanceof Error && err.message) ||
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       const errorMsg =
-        error.response?.data?.message ||
+        extractedMessage ||
         (i18n.language === "es_DO" ? "Error al autenticar con Google" : "Google authentication failed");
       setError(errorMsg);
       toast.error(errorMsg);
@@ -54,24 +75,55 @@ export function LoginPage() {
       await login(email, password, rememberMe);
       navigate("/dashboard");
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } };
+      const extractedMessage =
+        (err instanceof Error && err.message) ||
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       const errorMsg =
-        error.response?.data?.message ||
+        extractedMessage ||
         (i18n.language === "es_DO" ? "Correo o contraseña incorrectos" : "Invalid email or password");
-      setError(errorMsg);
 
       if (errorMsg.includes("verify your email") || errorMsg.includes("verificar tu correo")) {
-        toast.error("Authentication Failed", {
-          description: errorMsg,
-          action: {
-            label: i18n.language === "es_DO" ? "Ir a Registro" : "Go to Register",
-            onClick: () => navigate("/register"),
-          },
-          duration: 6000,
+        setShowOtpForm(true);
+        const notice =
+          i18n.language === "es_DO"
+            ? `Cuenta no verificada. Ingresa el código OTP de 6 dígitos enviado a tu correo (${email}) para activar tu cuenta e iniciar sesión.`
+            : `Account not verified. Enter the 6-digit OTP code sent to your email (${email}) to activate your account and log in.`;
+        setOtpNotice(notice);
+        toast.error(i18n.language === "es_DO" ? "Verificación requerida" : "Verification Required", {
+          description: notice,
+          duration: 8000,
         });
       } else {
+        setError(errorMsg);
         toast.error(errorMsg);
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyAndLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      await verifyEmail(email, otp);
+      toast.success(
+        i18n.language === "es_DO"
+          ? "Correo verificado exitosamente. Iniciando sesión..."
+          : "Email verified successfully. Logging in...",
+      );
+      await login(email, password, rememberMe);
+      navigate("/dashboard");
+    } catch (err: unknown) {
+      const extractedMessage =
+        (err instanceof Error && err.message) ||
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      const errorMsg =
+        extractedMessage ||
+        (i18n.language === "es_DO" ? "Error al verificar el código OTP" : "OTP verification failed");
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -117,9 +169,19 @@ export function LoginPage() {
                     className="text-xl md:text-2xl font-bold tracking-tight mb-1"
                     style={{ fontFamily: "var(--font-heading)" }}
                   >
-                    {t("login.welcome")}
+                    {showOtpForm
+                      ? i18n.language === "es_DO"
+                        ? "Verificación de Cuenta"
+                        : "Account Verification"
+                      : t("login.welcome")}
                   </h1>
-                  <p className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400">{t("login.signInToPortal")}</p>
+                  <p className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400">
+                    {showOtpForm
+                      ? i18n.language === "es_DO"
+                        ? "Ingresa el código OTP para continuar"
+                        : "Enter the OTP code to continue"
+                      : t("login.signInToPortal")}
+                  </p>
                 </div>
               </div>
 
@@ -131,88 +193,152 @@ export function LoginPage() {
                 </Alert>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
-                <div>
-                  <label
-                    htmlFor="login-email"
-                    className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1"
-                  >
-                    {t("login.emailAddress")}
-                  </label>
-                  <Input
-                    id="login-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder={t("login.emailPlaceholder")}
-                    required
-                    className="w-full h-9 sm:h-10 px-3 py-2 border-zinc-200 dark:border-zinc-800 rounded-lg text-sm bg-zinc-50 dark:bg-zinc-950! focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
-                  />
-                </div>
+              {otpNotice && showOtpForm && (
+                <Alert className="mb-4 py-2 px-3 bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-900/20 dark:text-amber-200 dark:border-amber-900">
+                  <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <AlertTitle className="text-xs font-bold mb-0.5">
+                    {i18n.language === "es_DO" ? "Acción Requerida" : "Action Required"}
+                  </AlertTitle>
+                  <AlertDescription className="text-[11px] leading-tight">{otpNotice}</AlertDescription>
+                </Alert>
+              )}
 
-                <div>
-                  <div className="flex justify-between items-center mb-1">
+              {showOtpForm ? (
+                <form onSubmit={handleVerifyAndLogin} className="space-y-3 sm:space-y-4 animate-fade-in">
+                  <div>
                     <label
-                      htmlFor="login-password"
-                      className="block text-xs font-bold text-zinc-700 dark:text-zinc-300"
+                      htmlFor="login-otp"
+                      className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-2 text-center"
                     >
-                      {t("login.password")}
+                      {t("register.otpTitle")}
                     </label>
-                    <Link
-                      to="/forgot-password"
-                      className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 hover:underline"
-                    >
-                      {t("login.forgotPassword")}
-                    </Link>
+                    <div className="flex justify-center my-2">
+                      <InputOTP maxLength={6} value={otp} onChange={(value) => setOtp(value)}>
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} />
+                          <InputOTPSlot index={1} />
+                          <InputOTPSlot index={2} />
+                        </InputOTPGroup>
+                        <InputOTPSeparator />
+                        <InputOTPGroup>
+                          <InputOTPSlot index={3} />
+                          <InputOTPSlot index={4} />
+                          <InputOTPSlot index={5} />
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </div>
                   </div>
-                  <div className="relative">
-                    <Input
-                      id="login-password"
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder={t("login.enterPasswordPlaceholder")}
-                      required
-                      className="w-full h-9 sm:h-10 px-3 py-2 pr-10 border-zinc-200 dark:border-zinc-800 rounded-lg text-sm bg-zinc-50 dark:bg-zinc-950 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors cursor-pointer"
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-2 pt-0.5 pb-1">
-                  <input
-                    type="checkbox"
-                    id="remember"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="rounded border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:ring-0 focus:ring-offset-0 bg-zinc-50 dark:bg-zinc-950 cursor-pointer"
-                  />
-                  <label
-                    htmlFor="remember"
-                    className="text-xs font-medium text-zinc-600 dark:text-zinc-400 cursor-pointer"
+                  <Button
+                    type="submit"
+                    disabled={loading || otp.length !== 6}
+                    className="w-full bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 h-9 sm:h-10 rounded-lg text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer shadow-md"
                   >
-                    {t("login.rememberMe")}
-                  </label>
-                </div>
+                    {loading ? (
+                      <div className="w-4 h-4 border-2 border-white/30 dark:border-zinc-900/30 border-t-white dark:border-t-zinc-900 rounded-full animate-spin" />
+                    ) : i18n.language === "es_DO" ? (
+                      "Verificar e Iniciar Sesión"
+                    ) : (
+                      "Verify & Sign In"
+                    )}
+                  </Button>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 h-9 sm:h-10 rounded-lg text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer shadow-md"
-                >
-                  {loading ? (
-                    <div className="w-4 h-4 border-2 border-white/30 dark:border-zinc-900/30 border-t-white dark:border-t-zinc-900 rounded-full animate-spin" />
-                  ) : (
-                    t("login.signIn")
-                  )}
-                </button>
-              </form>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowOtpForm(false);
+                      setError("");
+                      setOtpNotice("");
+                    }}
+                    className="w-full text-center text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium transition-colors mt-2 cursor-pointer"
+                  >
+                    {i18n.language === "es_DO" ? "← Volver a iniciar sesión" : "← Back to Sign In"}
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+                  <div>
+                    <label
+                      htmlFor="login-email"
+                      className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1"
+                    >
+                      {t("login.emailAddress")}
+                    </label>
+                    <Input
+                      id="login-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder={t("login.emailPlaceholder")}
+                      required
+                      className="w-full h-9 sm:h-10 px-3 py-2 border-zinc-200 dark:border-zinc-800 rounded-lg text-sm bg-zinc-50 dark:bg-zinc-950! focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <label
+                        htmlFor="login-password"
+                        className="block text-xs font-bold text-zinc-700 dark:text-zinc-300"
+                      >
+                        {t("login.password")}
+                      </label>
+                      <Link
+                        to="/forgot-password"
+                        className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 hover:underline"
+                      >
+                        {t("login.forgotPassword")}
+                      </Link>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        id="login-password"
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder={t("login.enterPasswordPlaceholder")}
+                        required
+                        className="w-full h-9 sm:h-10 px-3 py-2 pr-10 border-zinc-200 dark:border-zinc-800 rounded-lg text-sm bg-zinc-50 dark:bg-zinc-950 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors cursor-pointer"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-0.5 pb-1">
+                    <input
+                      type="checkbox"
+                      id="remember"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="rounded border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:ring-0 focus:ring-offset-0 bg-zinc-50 dark:bg-zinc-950 cursor-pointer"
+                    />
+                    <label
+                      htmlFor="remember"
+                      className="text-xs font-medium text-zinc-600 dark:text-zinc-400 cursor-pointer"
+                    >
+                      {t("login.rememberMe")}
+                    </label>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 h-9 sm:h-10 rounded-lg text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                  >
+                    {loading ? (
+                      <div className="w-4 h-4 border-2 border-white/30 dark:border-zinc-900/30 border-t-white dark:border-t-zinc-900 rounded-full animate-spin" />
+                    ) : (
+                      t("login.signIn")
+                    )}
+                  </button>
+                </form>
+              )}
 
               <div className="relative my-4 sm:my-5">
                 <div className="absolute inset-0 flex items-center">
@@ -243,29 +369,83 @@ export function LoginPage() {
                 className="absolute inset-0 h-full w-full object-cover opacity-50 dark:opacity-40 grayscale-[0.3]"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-zinc-950/40 to-transparent mix-blend-multiply" />
-
-              {/* <div className="relative z-10 mt-auto w-full max-w-sm flex flex-col gap-3">
-                <div className="bg-zinc-950/50 backdrop-blur-md border border-white/10 rounded-xl p-5 shadow-2xl">
-                  <h3 className="text-white font-bold text-sm mb-2 flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-                    Portal Demo Access
-                  </h3>
-                  <div className="space-y-1.5 font-mono text-[11px] text-zinc-300">
-                    <div className="flex items-center justify-between bg-black/40 rounded py-1 px-2">
-                      <span>User:</span>
-                      <span className="text-white font-medium">admin@msp-helpdesk.com</span>
-                    </div>
-                    <div className="flex items-center justify-between bg-black/40 rounded py-1 px-2">
-                      <span>Pass:</span>
-                      <span className="text-white font-medium">password123</span>
-                    </div>
-                  </div>
-                </div>
-              </div> */}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Account Verification Modal */}
+      <AlertDialog open={showOtpForm} onOpenChange={setShowOtpForm}>
+        <AlertDialogContent className="max-w-sm p-6 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-2xl rounded-2xl">
+          <AlertDialogHeader className="items-center text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 mb-2">
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <AlertDialogTitle className="text-lg font-bold tracking-tight">
+              {i18n.language === "es_DO" ? "Verificación de Cuenta" : "Account Verification"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 text-center">
+              {otpNotice ||
+                (i18n.language === "es_DO"
+                  ? `Ingresa el código OTP de 6 dígitos enviado a tu correo (${email}) para activar tu cuenta.`
+                  : `Enter the 6-digit OTP code sent to your email (${email}) to activate your account.`)}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {error && (
+            <Alert variant="destructive" className="py-2 px-3 my-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle className="text-xs font-bold mb-0.5">Error</AlertTitle>
+              <AlertDescription className="text-[11px] leading-tight">{error}</AlertDescription>
+            </Alert>
+          )}
+
+          <form onSubmit={handleVerifyAndLogin} className="space-y-4 my-2">
+            <div className="flex justify-center py-2">
+              <InputOTP maxLength={6} value={otp} onChange={(value) => setOtp(value)}>
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                </InputOTPGroup>
+                <InputOTPSeparator />
+                <InputOTPGroup>
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+
+            <AlertDialogFooter className="flex-row gap-2 sm:justify-end">
+              <AlertDialogCancel
+                type="button"
+                onClick={() => {
+                  setShowOtpForm(false);
+                  setError("");
+                  setOtpNotice("");
+                }}
+                className="w-1/2 sm:w-auto"
+              >
+                {i18n.language === "es_DO" ? "Cancelar" : "Cancel"}
+              </AlertDialogCancel>
+              <Button
+                type="submit"
+                disabled={loading || otp.length !== 6}
+                className="w-1/2 sm:w-auto bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-bold hover:opacity-90 transition-opacity"
+              >
+                {loading ? (
+                  <div className="w-4 h-4 border-2 border-white/30 dark:border-zinc-900/30 border-t-white dark:border-t-zinc-900 rounded-full animate-spin" />
+                ) : i18n.language === "es_DO" ? (
+                  "Verificar"
+                ) : (
+                  "Verify & Sign In"
+                )}
+              </Button>
+            </AlertDialogFooter>
+          </form>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

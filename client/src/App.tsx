@@ -16,9 +16,7 @@ import { protectedRoutes, ProtectedRoute } from "@/protected-routes";
 
 // Redirect if already logged in
 function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading, user } = useAuth();
-
-  if (isLoading) return null;
+  const { isAuthenticated, user } = useAuth();
 
   if (isAuthenticated) {
     if (user?.role === "ADMIN") return <Navigate to="/dashboard" replace />;

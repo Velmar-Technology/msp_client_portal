@@ -26,6 +26,7 @@ import {
   sendTicketAssignedEmail,
   sendTicketStatusEmail,
   sendTicketResponseEmail,
+  sendOTPEmail,
 } from './emailService';
 import { Ticket } from '../types';
 
@@ -145,5 +146,17 @@ describe('emailService', () => {
     expect(callArgs.html).toContain('Recipient Name');
     expect(callArgs.html).toContain('Sender Name');
     expect(callArgs.html).toContain('This is a new response comment.');
+  });
+
+  it('should send OTP verification email with correct parameters', async () => {
+    await sendOTPEmail('user@example.com', 'User Name', '654321');
+
+    expect(mockSendMail).toHaveBeenCalledTimes(1);
+    const callArgs = mockSendMail.mock.calls[0][0] as any;
+    expect(callArgs.to).toBe('user@example.com');
+    expect(callArgs.subject).toContain('Account Verification Code');
+    expect(callArgs.subject).toContain('654321');
+    expect(callArgs.html).toContain('User Name');
+    expect(callArgs.html).toContain('654321');
   });
 });

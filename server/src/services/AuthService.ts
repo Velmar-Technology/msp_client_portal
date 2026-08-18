@@ -12,6 +12,7 @@ import crypto from 'crypto';
 
 
 import { sendOTPWhatsApp } from '../utils/whatsappService';
+import { sendOTPEmail } from '../utils/emailService';
 
 export class AuthService {
   constructor(
@@ -28,25 +29,21 @@ export class AuthService {
       throw AppError.conflict('An account with this email already exists');
     }
 
-    // Generate and validate subdomain
-    const subdomain = data.tenantName
+    // Create a unique subdomain from tenantName
+    let baseSubdomain = data.tenantName
       .toLowerCase()
       .replace(/[^a-z0-9]/g, '')
-      .substring(0, 100);
-
-    if (!subdomain) {
-      throw AppError.badRequest('Company name must contain at least one alphanumeric character');
+      .substring(0, 30);
+    if (!baseSubdomain) {
+      baseSubdomain = 'tenant';
     }
 
-    // Check for existing tenant name or subdomain
-    const existingTenantBySubdomain = await this.tenantRepo.findBySubdomain(subdomain);
-    if (existingTenantBySubdomain) {
-      throw AppError.conflict('A company with this name or subdomain is already registered');
-    }
+    let subdomain = baseSubdomain;
+    let counter = 1;
 
-    const existingTenantByName = await this.tenantRepo.findByName(data.tenantName);
-    if (existingTenantByName) {
-      throw AppError.conflict('A company with this name or subdomain is already registered');
+    while (await this.tenantRepo.findBySubdomain(subdomain)) {
+      subdomain = `${baseSubdomain}${counter}`;
+      counter++;
     }
 
     // Create a new Tenant
@@ -74,7 +71,17 @@ export class AuthService {
     await this.userRepo.setOTP(user.id, otp, expiresAt);
     logger.info('Email/WhatsApp verification OTP generated', { userId: user.id, otp });
 
-    // If phone number was provided, send OTP via WhatsApp
+    // Send OTP via Email first (Primary delivery channel)
+    if (data.email) {
+      try {
+        await sendOTPEmail(data.email, data.name, otp);
+        logger.info('Email verification OTP sent', { userId: user.id, email: data.email });
+      } catch (err: any) {
+        logger.error('Failed to send Email OTP', { userId: user.id, error: err?.message });
+      }
+    }
+
+    // If phone number was provided, also send OTP via WhatsApp
     if (data.phoneNumber) {
       try {
         await sendOTPWhatsApp(data.phoneNumber, otp);
@@ -84,8 +91,8 @@ export class AuthService {
       }
     }
 
-    const message = data.phoneNumber
-      ? 'Registration successful. Please check your WhatsApp / email to verify your account.'
+    const message = data.email
+      ? `Registration successful. Please check your email (${data.email}) to verify your account.`
       : 'Registration successful. Please check your email to verify your account.';
 
     return {

@@ -53,6 +53,7 @@ vi.mock('jsonwebtoken', () => ({
 vi.mock('../utils/logger', () => ({
   logger: {
     info: vi.fn(),
+    warn: vi.fn(),
     error: vi.fn(),
     debug: vi.fn(),
   },
@@ -317,10 +318,11 @@ describe('AuthService', () => {
         tenantName: 'Acme',
         password: 'password123',
         confirmPassword: 'password123',
+        clientType: 'CLIENT'
       });
 
       expect(result.user).toBeDefined();
-      expect(result.message).toBe('Registration successful. Please check your email to verify your account.');
+      expect(result.message).toBe('Registration successful. Please check your email (user@example.com) to verify your account.');
       expect(mocks.updateLastLogin).not.toHaveBeenCalled();
       expect(mocks.setOTP).toHaveBeenCalledWith('user-1', expect.any(String), expect.any(Date));
     });
