@@ -121,7 +121,7 @@ services:
       args:
         VITE_GOOGLE_CLIENT_ID: "934502830032-cf8naqt4d2hfi2sf9lmpph1k4ctbm4i2.apps.googleusercontent.com"
         VITE_PAYPAL_CLIENT_ID: "AW62-DrjJDEz6Mb-_VdAud9ZNI7zntWQN5RbL_peKzMer_eWWLKOnVEiHZpzpoKN4qtxqimlMZzp9-L0"
-        VITE_APP_VERSION: "1.3.4"
+        VITE_APP_VERSION: "1.3.5"
     container_name: msp_client
     restart: always
     depends_on:
