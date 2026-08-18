@@ -15,4 +15,12 @@ router.get(
   (req, res, next) => systemController.getStorageStatus(req, res, next),
 );
 
+/** GET /api/v1/system/api-status — Get overall system & API status breakdown (Admin only) */
+router.get(
+  '/api-status',
+  rbacMiddleware(UserRole.ADMIN),
+  (req, res, next) => systemController.getApiStatus(req, res, next),
+);
+
 export default router;
+

@@ -48,6 +48,10 @@ export const routeCrumbs: RouteCrumbConfig[] = [
     crumb: (t) => ({ label: t("nav.userManagement"), to: "/admin/users" }),
   },
   {
+    path: "/admin/api-status",
+    crumb: (t) => ({ label: t("nav.apiStatus"), to: "/admin/api-status" }),
+  },
+  {
     path: "/tickets",
     crumb: (t, _params, user) => ({
       label: user?.role === "ADMIN" ? t("nav.allTickets") : t("nav.myTickets"),

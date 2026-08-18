@@ -11,6 +11,7 @@ import {
   Landmark,
   Calendar,
   Download,
+  Activity,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { subscriptionService } from "@/services/subscriptionService";
@@ -66,6 +67,7 @@ const adminNavItems: NavItem[] = [
   { to: "/dashboard", icon: Shield, labelKey: "adminDashboard" },
   { to: "/financial", icon: Landmark, labelKey: "financial" },
   { to: "/admin/users", icon: Users, labelKey: "userManagement" },
+  { to: "/admin/api-status", icon: Activity, labelKey: "apiStatus" },
   { to: "/devices", icon: Laptop, labelKey: "devices" },
   { to: "/resources", icon: Download, labelKey: "resources" },
   { to: "/maintenance", icon: Calendar, labelKey: "maintenance" },
