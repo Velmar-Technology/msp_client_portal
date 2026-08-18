@@ -85,15 +85,15 @@ export function GoogleLoginButton({ onSuccess, onError, text = "signin_with" }: 
 
   if (!isMockMode) {
     return (
-      <div className="flex justify-center w-full my-4 overflow-hidden">
-        <div id="google-btn-container" className="w-full max-w-[380px]" />
+      <div className="flex justify-center w-full my-4 overflow-hidden min-h-[44px]">
+        <div id="google-btn-container" className="w-full max-w-[380px] min-h-[44px] flex justify-center items-center" />
       </div>
     );
   }
 
   // Mock button rendering for local dev sandbox
   return (
-    <div className="flex flex-col items-center w-full my-4">
+    <div className="flex flex-col items-center w-full my-4 min-h-[44px]">
       <button
         type="button"
         onClick={() => setShowMockModal(true)}

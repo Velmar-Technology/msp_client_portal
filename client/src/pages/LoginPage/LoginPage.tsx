@@ -130,7 +130,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="relative flex h-screen h-dvh w-full items-center justify-center overflow-hidden bg-zinc-50 dark:bg-zinc-950 p-4 sm:p-6 transition-colors">
+    <div className="relative flex min-h-screen min-h-dvh w-full items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-4 sm:p-6 transition-colors">
       {/* Top Bar Language Selector */}
       <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 flex items-center gap-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 rounded-full px-3 py-1 shadow-sm">
         <Globe className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
@@ -153,7 +153,7 @@ export function LoginPage() {
         </select>
       </div>
 
-      <div className="w-full max-w-sm md:max-w-4xl max-h-full overflow-y-auto custom-scrollbar animate-fade-in">
+      <div className="w-full max-w-sm md:max-w-4xl animate-fade-in">
         <Card className="overflow-hidden p-0 border-zinc-200 dark:border-zinc-800 shadow-2xl rounded-2xl">
           <CardContent className="grid p-0 md:grid-cols-2">
             {/* Form Section */}

@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PublicLayout } from "@/components/layout/PublicLayout";
@@ -13,6 +14,14 @@ import { ReactErrorBoundary } from "@shared/errors";
 import { Toaster } from "@/components/ui/sonner";
 import { useSessionMonitor } from "@/hooks/useSessionMonitor";
 import { protectedRoutes, ProtectedRoute } from "@/protected-routes";
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
 
 // Redirect if already logged in
 function PublicRoute({ children }: { children: React.ReactNode }) {
@@ -34,6 +43,7 @@ export function App() {
     <ReactErrorBoundary>
       <ThemeProvider defaultTheme="system" storageKey="msp-portal-theme">
         <BrowserRouter>
+          <ScrollToTop />
           <Routes>
             {/* Standalone Public Pages (Landing, Terms, Privacy) */}
             <Route element={<PublicLayout />}>

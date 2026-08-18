@@ -221,11 +221,11 @@
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn 0.3s ease-out forwards;
 }
 
 .animate-slide-in {
-  animation: slideIn 0.3s ease-out;
+  animation: slideIn 0.3s ease-out forwards;
 }
 
 @keyframes shimmerLine {
