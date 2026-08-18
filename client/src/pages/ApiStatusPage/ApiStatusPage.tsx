@@ -51,7 +51,19 @@ export function ApiStatusPage() {
     isAutoRefresh,
     setIsAutoRefresh,
     filteredServices,
+    paginatedServices,
+    servicesPage,
+    setServicesPage,
+    servicesLimit,
+    setServicesLimit,
+    servicesTotalPages,
     filteredEnvVariables,
+    paginatedEnvVariables,
+    envVarsPage,
+    setEnvVarsPage,
+    envVarsLimit,
+    setEnvVarsLimit,
+    envVarsTotalPages,
     refresh,
   } = useApiStatus();
 
@@ -645,13 +657,24 @@ export function ApiStatusPage() {
             {/* Reusable DataTable Component */}
             <DataTable
               columns={serviceColumns}
-              data={filteredServices}
+              data={paginatedServices}
               loading={isLoading}
               noDataMessage={t("apiStatus.noServicesFound")}
               search={{
                 value: searchQuery,
                 onChange: setSearchQuery,
                 placeholder: t("apiStatus.searchPlaceholder"),
+              }}
+              pagination={{
+                page: servicesPage,
+                totalPages: servicesTotalPages,
+                totalItems: filteredServices.length,
+                limit: servicesLimit,
+                onPageChange: setServicesPage,
+                onLimitChange: (limit) => {
+                  setServicesLimit(limit);
+                  setServicesPage(1);
+                },
               }}
             />
           </div>
@@ -750,13 +773,24 @@ export function ApiStatusPage() {
             {/* Reusable DataTable Component */}
             <DataTable
               columns={envVarColumns}
-              data={filteredEnvVariables}
+              data={paginatedEnvVariables}
               loading={isLoading}
               noDataMessage={t("apiStatus.noEnvVarsFound")}
               search={{
                 value: envSearchQuery,
                 onChange: setEnvSearchQuery,
                 placeholder: t("apiStatus.searchEnvPlaceholder"),
+              }}
+              pagination={{
+                page: envVarsPage,
+                totalPages: envVarsTotalPages,
+                totalItems: filteredEnvVariables.length,
+                limit: envVarsLimit,
+                onPageChange: setEnvVarsPage,
+                onLimitChange: (limit) => {
+                  setEnvVarsLimit(limit);
+                  setEnvVarsPage(1);
+                },
               }}
             />
           </div>

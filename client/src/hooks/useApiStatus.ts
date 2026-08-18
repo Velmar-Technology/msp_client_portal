@@ -18,6 +18,14 @@ export function useApiStatus() {
   const [envStatusTab, setEnvStatusTab] = useState<"ALL" | "CONFIGURED" | "DEFAULT_PLACEHOLDER" | "MISSING">("ALL");
   const [isAutoRefresh, setIsAutoRefresh] = useState(true);
 
+  // Pagination state for Services table
+  const [servicesPage, setServicesPage] = useState(1);
+  const [servicesLimit, setServicesLimit] = useState(10);
+
+  // Pagination state for Environment Variables table
+  const [envVarsPage, setEnvVarsPage] = useState(1);
+  const [envVarsLimit, setEnvVarsLimit] = useState(10);
+
   const fetchStatus = useCallback(async (showRefreshingSpinner = false) => {
     if (showRefreshingSpinner) {
       setIsRefreshing(true);
@@ -47,6 +55,15 @@ export function useApiStatus() {
     return () => clearInterval(interval);
   }, [isAutoRefresh, fetchStatus]);
 
+  // Reset pagination when search query or filter tab changes
+  useEffect(() => {
+    setServicesPage(1);
+  }, [searchQuery, statusTab]);
+
+  useEffect(() => {
+    setEnvVarsPage(1);
+  }, [envSearchQuery, envStatusTab]);
+
   const filteredServices = useMemo(() => {
     if (!data) return [];
     return data.services.filter((item: ApiStatusItem) => {
@@ -60,6 +77,15 @@ export function useApiStatus() {
       return matchesSearch && matchesTab;
     });
   }, [data, searchQuery, statusTab]);
+
+  const servicesTotalPages = useMemo(() => {
+    return Math.ceil(filteredServices.length / servicesLimit) || 1;
+  }, [filteredServices.length, servicesLimit]);
+
+  const paginatedServices = useMemo(() => {
+    const start = (servicesPage - 1) * servicesLimit;
+    return filteredServices.slice(start, start + servicesLimit);
+  }, [filteredServices, servicesPage, servicesLimit]);
 
   const filteredEnvVariables = useMemo(() => {
     if (!data?.envVariables) return [];
@@ -76,6 +102,28 @@ export function useApiStatus() {
       return matchesSearch && matchesTab;
     });
   }, [data, envSearchQuery, envStatusTab]);
+
+  const envVarsTotalPages = useMemo(() => {
+    return Math.ceil(filteredEnvVariables.length / envVarsLimit) || 1;
+  }, [filteredEnvVariables.length, envVarsLimit]);
+
+  const paginatedEnvVariables = useMemo(() => {
+    const start = (envVarsPage - 1) * envVarsLimit;
+    return filteredEnvVariables.slice(start, start + envVarsLimit);
+  }, [filteredEnvVariables, envVarsPage, envVarsLimit]);
+
+  // Adjust page if filter/data change causes out-of-bounds page number
+  useEffect(() => {
+    if (servicesPage > servicesTotalPages && servicesTotalPages > 0) {
+      setServicesPage(servicesTotalPages);
+    }
+  }, [servicesPage, servicesTotalPages]);
+
+  useEffect(() => {
+    if (envVarsPage > envVarsTotalPages && envVarsTotalPages > 0) {
+      setEnvVarsPage(envVarsTotalPages);
+    }
+  }, [envVarsPage, envVarsTotalPages]);
 
   return {
     data,
@@ -94,7 +142,19 @@ export function useApiStatus() {
     isAutoRefresh,
     setIsAutoRefresh,
     filteredServices,
+    paginatedServices,
+    servicesPage,
+    setServicesPage,
+    servicesLimit,
+    setServicesLimit,
+    servicesTotalPages,
     filteredEnvVariables,
+    paginatedEnvVariables,
+    envVarsPage,
+    setEnvVarsPage,
+    envVarsLimit,
+    setEnvVarsLimit,
+    envVarsTotalPages,
     refresh: () => fetchStatus(true),
   };
 }

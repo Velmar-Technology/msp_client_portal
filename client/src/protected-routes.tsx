@@ -87,7 +87,7 @@ const RAW_PROTECTED_ROUTES: Omit<AppRouteConfig, "handle">[] = [
   { path: "/billing", element: <BillingPage />, allowedRoles: ["CLIENT", "ADMIN"] },
   { path: "/devices", element: <DevicesPage />, allowedRoles: ["CLIENT", "ADMIN"] },
   { path: "/resources", element: <ResourcesPage />, allowedRoles: ["CLIENT", "ADMIN"] },
-  { path: "/maintenance", element: <MaintenancePage /> },
+  { path: "/maintenance", element: <MaintenancePage />, allowedRoles: ["CLIENT", "ADMIN", "TECHNICIAN"] },
 
   // Tech/Admin Routes
   { path: "/tech/dashboard", element: <TechDashboardPage />, allowedRoles: ["TECHNICIAN"] },
@@ -110,10 +110,7 @@ export const protectedRoutes: AppRouteConfig[] = createProtectedRoutes(RAW_PROTE
  */
 export function RouteLoadingSpinner() {
   return (
-    <div
-      aria-label="Loading page content"
-      className="min-h-screen flex items-center justify-center bg-background"
-    >
+    <div aria-label="Loading page content" className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
     </div>
   );
@@ -141,4 +138,3 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
 
   return <>{children}</>;
 }
-
