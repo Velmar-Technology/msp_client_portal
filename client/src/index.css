@@ -94,7 +94,7 @@
 /* ---- Base Styles ---- */
 @layer base {
   html {
-    font-size: 16px;
+    font-size: 14.4px; /* 90% of default 16px base density — compacts all rem-based typography, spacing & layout without zoom property */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background-color: var(--color-background);
@@ -125,61 +125,61 @@
 /* ---- Typography Utilities ---- */
 .text-h1 {
   font-family: var(--font-heading);
-  font-size: 30px;
+  font-size: 1.6875rem; /* 27px (90% of 30px) */
   font-weight: 700;
-  line-height: 36px;
+  line-height: 2.025rem;
   letter-spacing: -0.02em;
 }
 
 .text-h2 {
   font-family: var(--font-heading);
-  font-size: 24px;
+  font-size: 1.35rem; /* 21.6px (90% of 24px) */
   font-weight: 600;
-  line-height: 32px;
+  line-height: 1.8rem;
   letter-spacing: -0.02em;
 }
 
 .text-h3 {
   font-family: var(--font-heading);
-  font-size: 20px;
+  font-size: 1.125rem; /* 18px (90% of 20px) */
   font-weight: 600;
-  line-height: 28px;
+  line-height: 1.575rem;
   letter-spacing: -0.01em;
 }
 
 .text-body-lg {
   font-family: var(--font-sans);
-  font-size: 16px;
+  font-size: 0.9rem; /* 14.4px (90% of 16px) */
   font-weight: 400;
-  line-height: 24px;
+  line-height: 1.35rem;
 }
 
 .text-body-md {
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 0.7875rem; /* 12.6px (90% of 14px) */
   font-weight: 400;
-  line-height: 20px;
+  line-height: 1.125rem;
 }
 
 .text-label-md {
   font-family: var(--font-heading);
-  font-size: 14px;
+  font-size: 0.7875rem; /* 12.6px (90% of 14px) */
   font-weight: 500;
-  line-height: 20px;
+  line-height: 1.125rem;
 }
 
 .text-label-sm {
   font-family: var(--font-heading);
-  font-size: 12px;
+  font-size: 0.675rem; /* 10.8px (90% of 12px) */
   font-weight: 500;
-  line-height: 16px;
+  line-height: 0.9rem;
 }
 
 .text-mono {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 0.73125rem; /* 11.7px (90% of 13px) */
   font-weight: 400;
-  line-height: 20px;
+  line-height: 1.125rem;
 }
 
 /* ---- Focus Ring ---- */
