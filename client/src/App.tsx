@@ -54,20 +54,18 @@ export function App() {
             {/* Default redirect */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-            {/* Protected Routes inside Layout */}
-            <Route
-              element={
-                <ProtectedRoute>
-                  <AppLayout />
-                </ProtectedRoute>
-              }
-            >
-              {protectedRoutes.map(({ path, element, allowedRoles, handle }) => (
+            {/* App Layout Routes */}
+            <Route element={<AppLayout />}>
+              {protectedRoutes.map(({ path, element, allowedRoles, isPublic, handle }) => (
                 <Route
                   key={path}
                   path={path}
                   element={
-                    allowedRoles ? <ProtectedRoute allowedRoles={allowedRoles}>{element}</ProtectedRoute> : element
+                    isPublic ? (
+                      element
+                    ) : (
+                      <ProtectedRoute allowedRoles={allowedRoles}>{element}</ProtectedRoute>
+                    )
                   }
                   handle={handle}
                 />

@@ -18,12 +18,14 @@ export function useAppLayout() {
   const [hasChecked, setHasChecked] = useState(false);
 
   useEffect(() => {
-    fetchNotifications();
-    startStream();
+    if (user) {
+      fetchNotifications();
+      startStream();
+    }
     return () => {
       stopStream();
     };
-  }, [fetchNotifications, startStream, stopStream]);
+  }, [user, fetchNotifications, startStream, stopStream]);
 
   useEffect(() => {
     if (user?.role !== "CLIENT") {

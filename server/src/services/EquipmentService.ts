@@ -276,7 +276,7 @@ export class EquipmentService {
             dev.disk_used_gb = telemetry.disk_used_gb;
             dev.disk_total_gb = telemetry.disk_total_gb;
             dev.pending_patch_count = telemetry.pending_patch_count;
-            dev.last_sync_at = telemetry.last_sync_at ? new Date(telemetry.last_sync_at).toISOString() : null;
+            dev.last_sync_at = telemetry.last_sync_at ? new Date(telemetry.last_sync_at) : null;
           }
         } catch (err) {
           logger.warn('Deferred auto-telemetry scan for device', { id: dev.id, err });

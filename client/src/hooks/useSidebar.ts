@@ -118,11 +118,14 @@ export function useSidebar() {
     };
   }, [user]);
 
+  const isPublicLegalPage = location.pathname === "/terms" || location.pathname === "/privacy";
+
   const navItems = useMemo(() => {
-    if (user?.role === "ADMIN") return adminNavItems;
-    if (user?.role === "TECHNICIAN") return techNavItems;
+    if (!user || isPublicLegalPage) return [];
+    if (user.role === "ADMIN") return adminNavItems;
+    if (user.role === "TECHNICIAN") return techNavItems;
     return clientNavItems;
-  }, [user?.role]);
+  }, [user, isPublicLegalPage]);
 
   const checkIsActive = useCallback(
     (to: string) => {

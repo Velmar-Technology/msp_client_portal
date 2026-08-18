@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import {
   Settings,
   LogOut,
@@ -217,6 +218,17 @@ export function UserMenu({
   logout,
   t,
 }: UserMenuProps) {
+  if (!user) {
+    return (
+      <Link
+        to="/login"
+        className="text-xs font-semibold px-3 py-1.5 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 rounded-sm hover:opacity-90 transition-opacity"
+      >
+        {t("login.signIn")}
+      </Link>
+    );
+  }
+
   return (
     <div className="relative" ref={userMenuRef}>
       <button
@@ -314,19 +326,21 @@ export function TopNav() {
         <ThemeToggle />
 
         {/* Notifications */}
-        <NotificationBell />
+        {user && <NotificationBell />}
 
         {/* Settings Dropdown */}
-        <SettingsMenu
-          showSettingsMenu={showSettingsMenu}
-          setShowSettingsMenu={setShowSettingsMenu}
-          settingsRef={settingsRef}
-          userRole={user?.role || "CLIENT"}
-          navigate={navigate}
-          t={t}
-        />
+        {user && (
+          <SettingsMenu
+            showSettingsMenu={showSettingsMenu}
+            setShowSettingsMenu={setShowSettingsMenu}
+            settingsRef={settingsRef}
+            userRole={user.role}
+            navigate={navigate}
+            t={t}
+          />
+        )}
 
-        {/* User Profile Dropdown */}
+        {/* User Profile Dropdown / Sign In Button */}
         <UserMenu
           showUserMenu={showUserMenu}
           setShowUserMenu={setShowUserMenu}

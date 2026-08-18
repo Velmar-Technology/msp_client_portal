@@ -126,7 +126,13 @@ export function useTopNav() {
   // Page links helper by role
   const getPagesForRole = useCallback((): PageLink[] => {
     const pages: PageLink[] = [];
-    if (!user) return pages;
+    if (!user) {
+      pages.push(
+        { title: t("footer.terms"), path: "/terms", icon: BookOpen },
+        { title: t("footer.privacy"), path: "/privacy", icon: BookOpen }
+      );
+      return pages;
+    }
 
     if (user.role === "CLIENT") {
       pages.push(

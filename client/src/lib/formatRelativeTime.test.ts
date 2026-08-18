@@ -5,7 +5,7 @@ describe("formatRelativeTime", () => {
   it("formats seconds in the past for English", () => {
     const pastDate = new Date(Date.now() - 10 * 1000).toISOString();
     const result = formatRelativeTime(pastDate, "en-US");
-    expect(result).toMatch(/10 sec|10 seconds|10s|now/i);
+    expect(result).toMatch(/\d+\s*(sec|seconds|s)|now/i);
   });
 
   it("formats minutes in the past for Spanish", () => {

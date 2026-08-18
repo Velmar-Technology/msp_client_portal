@@ -30,6 +30,7 @@ export interface AppRouteConfig {
   path: string;
   element: React.ReactNode;
   allowedRoles?: string[];
+  isPublic?: boolean;
   handle?: AppRouteHandle;
 }
 
@@ -100,8 +101,8 @@ const RAW_PROTECTED_ROUTES: Omit<AppRouteConfig, "handle">[] = [
   { path: "/profile", element: <ProfilePage /> },
   { path: "/notifications/preferences", element: <NotificationPreferencesPage /> },
   { path: "/help", element: <HelpPage /> },
-  { path: "/terms", element: <TermsPage /> },
-  { path: "/privacy", element: <PrivacyPage /> },
+  { path: "/terms", element: <TermsPage />, isPublic: true },
+  { path: "/privacy", element: <PrivacyPage />, isPublic: true },
 ];
 
 export const protectedRoutes: AppRouteConfig[] = createProtectedRoutes(RAW_PROTECTED_ROUTES);

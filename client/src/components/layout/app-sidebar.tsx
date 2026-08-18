@@ -171,9 +171,10 @@ export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive }: 
 // 4. Premium SaaS Sidebar Component
 export function AppSidebar() {
   const { t } = useTranslation();
-  const { user, activeSubscription, navItems, checkIsActive, checkIsGroupActive } = useSidebar();
+  const { user, location, activeSubscription, navItems, checkIsActive, checkIsGroupActive } = useSidebar();
 
   const isSpanish = t("dashboard.tableStatus") === "Estado";
+  const isPublicLegalPage = location.pathname === "/terms" || location.pathname === "/privacy";
 
   const appVersion = import.meta.env.VITE_APP_VERSION as string | undefined;
 
@@ -193,24 +194,26 @@ export function AppSidebar() {
 
       {/* Footer support item */}
       <SidebarFooter className="border-t border-zinc-200 dark:border-zinc-800 p-1.5 bg-white dark:bg-zinc-950">
-        {user?.role === "CLIENT" && activeSubscription && (
+        {user?.role === "CLIENT" && activeSubscription && !isPublicLegalPage && (
           <ActiveSubCard sub={activeSubscription} renewalLabel={t("dashboard.tableRenewal")} isSpanish={isSpanish} />
         )}
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={checkIsActive("/help")}
-              tooltip={t("nav.help")}
-              className="h-7 text-xs py-1 px-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 data-[active=true]:text-zinc-900 dark:data-[active=true]:text-zinc-100 transition-colors"
-            >
-              <NavLink to="/help" className="flex items-center gap-2">
-                <HelpCircle className="h-3.5 w-3.5 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden font-medium">{t("nav.help")}</span>
-              </NavLink>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        {user && !isPublicLegalPage && (
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={checkIsActive("/help")}
+                tooltip={t("nav.help")}
+                className="h-7 text-xs py-1 px-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 data-[active=true]:text-zinc-900 dark:data-[active=true]:text-zinc-100 transition-colors"
+              >
+                <NavLink to="/help" className="flex items-center gap-2">
+                  <HelpCircle className="h-3.5 w-3.5 shrink-0" />
+                  <span className="group-data-[collapsible=icon]:hidden font-medium">{t("nav.help")}</span>
+                </NavLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        )}
         {appVersion && (
           <div className="group-data-[collapsible=icon]:hidden px-3 pb-1 pt-0.5 text-[9px] font-medium text-zinc-400 dark:text-zinc-500">
             v{appVersion}

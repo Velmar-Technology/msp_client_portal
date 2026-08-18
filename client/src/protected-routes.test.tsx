@@ -60,6 +60,12 @@ describe("Protected Routes Authorization Helpers", () => {
       const financialRoute = protectedRoutes.find((r) => r.path === "/financial");
       expect(financialRoute).toBeDefined();
       expect(financialRoute?.handle?.crumb).toBeDefined();
+
+      const termsRoute = protectedRoutes.find((r) => r.path === "/terms");
+      expect(termsRoute?.isPublic).toBe(true);
+
+      const privacyRoute = protectedRoutes.find((r) => r.path === "/privacy");
+      expect(privacyRoute?.isPublic).toBe(true);
     });
   });
 });
