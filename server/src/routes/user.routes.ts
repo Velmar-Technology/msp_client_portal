@@ -12,6 +12,7 @@ import {
   BulkUpdateUserStatusDTO,
   UpdateUserClientTypeDTO,
   BulkUpdateUserClientTypeDTO,
+  BulkDeleteUsersDTO,
 } from '../dtos/user.dto';
 import { UserRole } from '../types';
 import { upload } from '../middleware/uploadMiddleware';
@@ -27,6 +28,14 @@ router.get(
   '/stats',
   rbacMiddleware(UserRole.ADMIN),
   (req, res) => userController.getStats(req, res),
+);
+
+/** DELETE /api/v1/users/bulk — Bulk delete users (Admin only) */
+router.delete(
+  '/bulk',
+  rbacMiddleware(UserRole.ADMIN),
+  validate(BulkDeleteUsersDTO),
+  (req, res) => userController.bulkDelete(req, res),
 );
 
 /** PATCH /api/v1/users/bulk/status — Bulk update user active status (Admin only) */
@@ -58,6 +67,13 @@ router.get(
   '/',
   rbacMiddleware(UserRole.ADMIN),
   (req, res) => userController.getAllUsers(req, res),
+);
+
+/** DELETE /api/v1/users/:id — Delete user (Admin only) */
+router.delete(
+  '/:id',
+  rbacMiddleware(UserRole.ADMIN),
+  (req, res) => userController.deleteUser(req, res),
 );
 
 /** PATCH /api/v1/users/:id/role — Update user role (Admin only) */

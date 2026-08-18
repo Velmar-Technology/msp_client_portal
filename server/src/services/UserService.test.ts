@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => {
     bulkUpdateRole: vi.fn(),
     updateClientType: vi.fn(),
     bulkUpdateClientType: vi.fn(),
+    deleteById: vi.fn(),
+    bulkDelete: vi.fn(),
     hashPassword: vi.fn(),
     comparePassword: vi.fn(),
   };
@@ -30,6 +32,8 @@ vi.mock('../repositories/UserRepository', () => {
       bulkUpdateRole: mocks.bulkUpdateRole,
       updateClientType: mocks.updateClientType,
       bulkUpdateClientType: mocks.bulkUpdateClientType,
+      deleteById: mocks.deleteById,
+      bulkDelete: mocks.bulkDelete,
     },
   };
 });
@@ -329,6 +333,61 @@ describe('UserService', () => {
 
       expect(mocks.bulkUpdateClientType).not.toHaveBeenCalled();
       expect(result).toEqual({ updatedCount: 0 });
+    });
+  });
+
+  describe('deleteUser', () => {
+    it('should delete user if found and not self', async () => {
+      const mockUser = { id: 'user-1', name: 'Test User' };
+      mocks.findById.mockResolvedValue(mockUser);
+      mocks.deleteById.mockResolvedValue(true);
+
+      await userService.deleteUser('admin-1', 'user-1');
+
+      expect(mocks.findById).toHaveBeenCalledWith('user-1');
+      expect(mocks.deleteById).toHaveBeenCalledWith('user-1');
+    });
+
+    it('should throw forbidden error if admin attempts to delete self', async () => {
+      await expect(
+        userService.deleteUser('admin-1', 'admin-1')
+      ).rejects.toMatchObject({
+        message: 'You cannot delete your own account',
+        statusCode: 403,
+      });
+
+      expect(mocks.deleteById).not.toHaveBeenCalled();
+    });
+
+    it('should throw not found error if user does not exist', async () => {
+      mocks.findById.mockResolvedValue(null);
+
+      await expect(
+        userService.deleteUser('admin-1', 'user-99')
+      ).rejects.toMatchObject({
+        message: 'User not found',
+        statusCode: 404,
+      });
+
+      expect(mocks.deleteById).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('bulkDeleteUsers', () => {
+    it('should exclude admin id and delete remaining users', async () => {
+      mocks.bulkDelete.mockResolvedValue(2);
+
+      const result = await userService.bulkDeleteUsers('admin-1', ['admin-1', 'user-2', 'user-3']);
+
+      expect(mocks.bulkDelete).toHaveBeenCalledWith(['user-2', 'user-3']);
+      expect(result).toEqual({ deletedCount: 2 });
+    });
+
+    it('should return deletedCount 0 if only admin id was provided', async () => {
+      const result = await userService.bulkDeleteUsers('admin-1', ['admin-1']);
+
+      expect(mocks.bulkDelete).not.toHaveBeenCalled();
+      expect(result).toEqual({ deletedCount: 0 });
     });
   });
 });

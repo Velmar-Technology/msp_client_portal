@@ -143,5 +143,14 @@ export const userService = {
     const response = await api.patch('/users/bulk/client-type', { userIds, clientType });
     return response.data.data;
   },
+
+  async deleteUser(userId: string): Promise<void> {
+    await api.delete(`/users/${userId}`);
+  },
+
+  async bulkDeleteUsers(userIds: string[]): Promise<{ deletedCount: number }> {
+    const response = await api.delete('/users/bulk', { data: { userIds } });
+    return response.data.data;
+  },
 };
 

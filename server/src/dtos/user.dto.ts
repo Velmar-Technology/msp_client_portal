@@ -77,4 +77,9 @@ export const BulkUpdateUserClientTypeDTO = z.object({
 });
 export type BulkUpdateUserClientTypeInput = z.infer<typeof BulkUpdateUserClientTypeDTO>;
 
+export const BulkDeleteUsersDTO = z.object({
+  userIds: z.array(z.string().uuid({ message: 'Each user ID must be a valid UUID' })).min(1, 'At least one user ID is required'),
+});
+export type BulkDeleteUsersInput = z.infer<typeof BulkDeleteUsersDTO>;
+
 

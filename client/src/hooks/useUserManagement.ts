@@ -15,7 +15,7 @@ export type StatusFilter = "all" | "active" | "inactive";
 
 export interface ConfirmationState {
   open: boolean;
-  type: "role" | "status" | "clientType";
+  type: "role" | "status" | "clientType" | "delete";
   isBulk?: boolean;
   userId?: string;
   userName?: string;
@@ -248,6 +248,40 @@ export function useUserManagement() {
     []
   );
 
+  const requestUserDelete = useCallback(
+    (userId: string, userName: string) => {
+      setConfirmation({
+        open: true,
+        type: "delete",
+        isBulk: false,
+        userId,
+        userName,
+        newValue: "",
+      });
+    },
+    []
+  );
+
+  const requestBulkDelete = useCallback(
+    (selectedUsers: ManagedUser[], currentUserId: string) => {
+      const validUserIds = selectedUsers
+        .map((u) => u.id)
+        .filter((id) => id !== currentUserId);
+
+      if (validUserIds.length === 0) return;
+
+      setConfirmation({
+        open: true,
+        type: "delete",
+        isBulk: true,
+        userIds: validUserIds,
+        userCount: validUserIds.length,
+        newValue: "",
+      });
+    },
+    []
+  );
+
   const cancelConfirmation = useCallback(() => {
     setConfirmation(INITIAL_CONFIRMATION);
   }, []);
@@ -269,6 +303,8 @@ export function useUserManagement() {
             confirmation.userIds!,
             confirmation.newValue as ClientType
           );
+        } else if (confirmation.type === "delete") {
+          await userService.bulkDeleteUsers(confirmation.userIds!);
         } else {
           await userService.bulkUpdateStatus(
             confirmation.userIds!,
@@ -286,6 +322,8 @@ export function useUserManagement() {
             confirmation.userId!,
             confirmation.newValue as ClientType
           );
+        } else if (confirmation.type === "delete") {
+          await userService.deleteUser(confirmation.userId!);
         } else {
           await userService.toggleUserStatus(
             confirmation.userId!,
@@ -377,6 +415,8 @@ export function useUserManagement() {
     requestBulkRoleChange,
     requestBulkStatusToggle,
     requestBulkClientTypeChange,
+    requestUserDelete,
+    requestBulkDelete,
     cancelConfirmation,
     executeConfirmation,
     // Utilities

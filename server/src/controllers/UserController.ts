@@ -9,6 +9,7 @@ import {
   BulkUpdateUserRoleInput,
   UpdateUserClientTypeInput,
   BulkUpdateUserClientTypeInput,
+  BulkDeleteUsersInput,
 } from '../dtos/user.dto';
 import { UserRole } from '../types';
 
@@ -128,6 +129,21 @@ export class UserController {
       req.user!.userId,
       data.userIds,
       data.clientType
+    );
+    res.json({ success: true, data: result });
+  }
+
+  async deleteUser(req: Request, res: Response): Promise<void> {
+    const id = req.params.id as string;
+    await userService.deleteUser(req.user!.userId, id);
+    res.json({ success: true, message: 'User deleted successfully' });
+  }
+
+  async bulkDelete(req: Request, res: Response): Promise<void> {
+    const data = req.body as BulkDeleteUsersInput;
+    const result = await userService.bulkDeleteUsers(
+      req.user!.userId,
+      data.userIds
     );
     res.json({ success: true, data: result });
   }

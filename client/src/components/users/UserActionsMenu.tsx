@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { MoreHorizontal, ShieldCheck, Wrench, User, UserX, UserCheck, Building2, GraduationCap, Tag } from "lucide-react";
+import { MoreHorizontal, ShieldCheck, Wrench, User, UserX, UserCheck, Building2, GraduationCap, Tag, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,6 +18,7 @@ interface UserActionsMenuProps {
   onRoleChange: (userId: string, userName: string, newRole: UserRole) => void;
   onStatusToggle: (userId: string, userName: string, newStatus: boolean) => void;
   onClientTypeChange: (userId: string, userName: string, newClientType: ClientType) => void;
+  onDelete?: (userId: string, userName: string) => void;
 }
 
 const ROLE_OPTIONS: { value: UserRole; icon: React.ComponentType<{ className?: string }>; labelKey: string }[] = [
@@ -39,6 +40,7 @@ export function UserActionsMenu({
   onRoleChange,
   onStatusToggle,
   onClientTypeChange,
+  onDelete,
 }: UserActionsMenuProps) {
   const { t } = useTranslation();
 
@@ -101,7 +103,7 @@ export function UserActionsMenu({
           <DropdownMenuItem
             disabled={isSelf}
             onClick={() => onStatusToggle(user.id, user.name, false)}
-            className="text-xs gap-2 text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
+            className="text-xs gap-2 text-amber-600 dark:text-amber-400 focus:text-amber-600 dark:focus:text-amber-400"
           >
             <UserX className="h-3.5 w-3.5" />
             {t("userManagement.deactivate")}
@@ -115,6 +117,19 @@ export function UserActionsMenu({
             <UserCheck className="h-3.5 w-3.5" />
             {t("userManagement.reactivate")}
           </DropdownMenuItem>
+        )}
+        {onDelete && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              disabled={isSelf}
+              onClick={() => onDelete(user.id, user.name)}
+              className="text-xs gap-2 text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              {t("userManagement.deleteUser") || "Delete User"}
+            </DropdownMenuItem>
+          </>
         )}
       </DropdownMenuContent>
     </DropdownMenu>

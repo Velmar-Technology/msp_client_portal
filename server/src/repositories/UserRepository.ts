@@ -151,6 +151,15 @@ export class UserRepository extends BaseRepository<User> {
     return results.length;
   }
 
+  async bulkDelete(ids: string[]): Promise<number> {
+    if (ids.length === 0) return 0;
+    const results = await db
+      .delete(users)
+      .where(inArray(users.id, ids))
+      .returning();
+    return results.length;
+  }
+
 
 
   async findByEmail(email: string): Promise<User | null> {

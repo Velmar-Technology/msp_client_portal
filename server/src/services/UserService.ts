@@ -200,6 +200,29 @@ export class UserService {
     return { updatedCount };
   }
 
+  async deleteUser(adminUserId: string, targetUserId: string): Promise<void> {
+    if (adminUserId === targetUserId) {
+      throw AppError.forbidden('You cannot delete your own account');
+    }
+
+    const target = await this.userRepo.findById(targetUserId);
+    if (!target) throw AppError.notFound('User not found');
+
+    await this.userRepo.deleteById(targetUserId);
+  }
+
+  async bulkDeleteUsers(
+    adminUserId: string,
+    targetUserIds: string[]
+  ): Promise<{ deletedCount: number }> {
+    const validIds = targetUserIds.filter((id) => id !== adminUserId);
+    if (validIds.length === 0) {
+      return { deletedCount: 0 };
+    }
+    const deletedCount = await this.userRepo.bulkDelete(validIds);
+    return { deletedCount };
+  }
+
 
 
   async getUserStats(): Promise<UserStats> {

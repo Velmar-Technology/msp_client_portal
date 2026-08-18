@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => {
     bulkUpdateRole: vi.fn(),
     updateUserClientType: vi.fn(),
     bulkUpdateClientType: vi.fn(),
+    deleteUser: vi.fn(),
+    bulkDeleteUsers: vi.fn(),
   };
 });
 
@@ -19,6 +21,8 @@ vi.mock('../services/UserService', () => {
       bulkUpdateRole: mocks.bulkUpdateRole,
       updateUserClientType: mocks.updateUserClientType,
       bulkUpdateClientType: mocks.bulkUpdateClientType,
+      deleteUser: mocks.deleteUser,
+      bulkDeleteUsers: mocks.bulkDeleteUsers,
     },
   };
 });
@@ -173,6 +177,52 @@ describe('UserController', () => {
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: { updatedCount: 2 },
+      });
+    });
+  });
+
+  describe('deleteUser', () => {
+    it('should call userService.deleteUser and return success message', async () => {
+      const req = {
+        user: { userId: 'admin-1' },
+        params: { id: 'u-1' },
+      } as unknown as Request;
+
+      const res = {
+        json: vi.fn(),
+      } as unknown as Response;
+
+      mocks.deleteUser.mockResolvedValue(undefined);
+
+      await userController.deleteUser(req, res);
+
+      expect(mocks.deleteUser).toHaveBeenCalledWith('admin-1', 'u-1');
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        message: 'User deleted successfully',
+      });
+    });
+  });
+
+  describe('bulkDelete', () => {
+    it('should call userService.bulkDeleteUsers and return result', async () => {
+      const req = {
+        user: { userId: 'admin-1' },
+        body: { userIds: ['u-1', 'u-2'] },
+      } as unknown as Request;
+
+      const res = {
+        json: vi.fn(),
+      } as unknown as Response;
+
+      mocks.bulkDeleteUsers.mockResolvedValue({ deletedCount: 2 });
+
+      await userController.bulkDelete(req, res);
+
+      expect(mocks.bulkDeleteUsers).toHaveBeenCalledWith('admin-1', ['u-1', 'u-2']);
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        data: { deletedCount: 2 },
       });
     });
   });

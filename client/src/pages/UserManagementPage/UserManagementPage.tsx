@@ -137,6 +137,8 @@ export function UserManagementPage() {
     requestBulkRoleChange,
     requestBulkStatusToggle,
     requestBulkClientTypeChange,
+    requestUserDelete,
+    requestBulkDelete,
     cancelConfirmation,
     executeConfirmation,
     getRoleLabel,
@@ -248,12 +250,13 @@ export function UserManagementPage() {
               onRoleChange={requestRoleChange}
               onStatusToggle={requestStatusToggle}
               onClientTypeChange={requestClientTypeChange}
+              onDelete={requestUserDelete}
             />
           </div>
         ),
       },
     ],
-    [t, getRoleLabel, getClientTypeLabel, formatDate, currentUserId, requestRoleChange, requestStatusToggle, requestClientTypeChange]
+    [t, getRoleLabel, getClientTypeLabel, formatDate, currentUserId, requestRoleChange, requestStatusToggle, requestClientTypeChange, requestUserDelete]
   );
 
   // Bulk actions configuration
@@ -287,8 +290,13 @@ export function UserManagementPage() {
         },
         variant: "outline",
       },
+      {
+        label: t("userManagement.bulkDelete") || "Delete Selected",
+        onClick: (selectedRows) => requestBulkDelete(selectedRows, currentUserId),
+        variant: "destructive",
+      },
     ],
-    [t, currentUserId, requestBulkStatusToggle, requestBulkRoleChange]
+    [t, currentUserId, requestBulkStatusToggle, requestBulkRoleChange, requestBulkDelete]
   );
 
   // Confirmation dialog title and description
@@ -297,12 +305,16 @@ export function UserManagementPage() {
       ? t("userManagement.confirmBulkRoleTitle")
       : confirmation.type === "clientType"
         ? t("userManagement.confirmBulkClientTypeTitle") || "Change Client Type for Selected Users"
-        : t("userManagement.confirmBulkStatusTitle")
+        : confirmation.type === "delete"
+          ? t("userManagement.confirmBulkDeleteTitle") || "Delete Selected Users"
+          : t("userManagement.confirmBulkStatusTitle")
     : confirmation.type === "role"
       ? t("userManagement.confirmRoleTitle")
       : confirmation.type === "clientType"
         ? t("userManagement.confirmClientTypeTitle") || "Change User Client Type"
-        : t("userManagement.confirmStatusTitle");
+        : confirmation.type === "delete"
+          ? t("userManagement.confirmDeleteTitle") || "Delete User"
+          : t("userManagement.confirmStatusTitle");
 
   const confirmationDescription = confirmation.isBulk
     ? confirmation.type === "role"
@@ -313,14 +325,17 @@ export function UserManagementPage() {
         ? (t("userManagement.confirmBulkClientTypeChange") || "Are you sure you want to change the client type of {count} selected user(s) to {type}?")
             .replace("{count}", String(confirmation.userCount ?? 0))
             .replace("{type}", getClientTypeLabel(String(confirmation.newValue)))
-        : t("userManagement.confirmBulkStatusChange")
-            .replace("{count}", String(confirmation.userCount ?? 0))
-            .replace(
-              "{status}",
-              confirmation.newValue
-                ? t("userManagement.active").toLowerCase()
-                : t("userManagement.inactive").toLowerCase()
-            )
+        : confirmation.type === "delete"
+          ? (t("userManagement.confirmBulkDeleteChange") || "Are you sure you want to delete {count} selected user(s)? This action cannot be undone.")
+              .replace("{count}", String(confirmation.userCount ?? 0))
+          : t("userManagement.confirmBulkStatusChange")
+              .replace("{count}", String(confirmation.userCount ?? 0))
+              .replace(
+                "{status}",
+                confirmation.newValue
+                  ? t("userManagement.active").toLowerCase()
+                  : t("userManagement.inactive").toLowerCase()
+              )
     : confirmation.type === "role"
       ? t("userManagement.confirmRoleChange")
           .replace("{name}", confirmation.userName || "")
@@ -329,14 +344,17 @@ export function UserManagementPage() {
         ? (t("userManagement.confirmClientTypeChange") || "Are you sure you want to change {name}'s client type to {type}?")
             .replace("{name}", confirmation.userName || "")
             .replace("{type}", getClientTypeLabel(String(confirmation.newValue)))
-        : t("userManagement.confirmStatusChange")
-            .replace("{name}", confirmation.userName || "")
-            .replace(
-              "{status}",
-              confirmation.newValue
-                ? t("userManagement.active").toLowerCase()
-                : t("userManagement.inactive").toLowerCase()
-            );
+        : confirmation.type === "delete"
+          ? (t("userManagement.confirmDeleteChange") || "Are you sure you want to delete {name}? This action cannot be undone.")
+              .replace("{name}", confirmation.userName || "")
+          : t("userManagement.confirmStatusChange")
+              .replace("{name}", confirmation.userName || "")
+              .replace(
+                "{status}",
+                confirmation.newValue
+                  ? t("userManagement.active").toLowerCase()
+                  : t("userManagement.inactive").toLowerCase()
+              );
 
   return (
     <Page
@@ -521,7 +539,7 @@ export function UserManagementPage() {
               onClick={executeConfirmation}
               disabled={actionLoading}
               className={
-                confirmation.type === "status" && !confirmation.newValue
+                confirmation.type === "delete" || (confirmation.type === "status" && !confirmation.newValue)
                   ? "bg-red-600 hover:bg-red-700 text-white dark:bg-red-600 dark:hover:bg-red-700"
                   : "bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
               }
