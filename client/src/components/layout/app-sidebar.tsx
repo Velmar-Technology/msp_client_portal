@@ -174,7 +174,7 @@ export function AppSidebar() {
   const { user, location, activeSubscription, navItems, checkIsActive, checkIsGroupActive } = useSidebar();
 
   const isSpanish = t("dashboard.tableStatus") === "Estado";
-  const isPublicLegalPage = location.pathname === "/terms" || location.pathname === "/privacy";
+  const isPublicLegalPage = location.pathname === "/" || location.pathname === "/terms" || location.pathname === "/privacy";
 
   const appVersion = import.meta.env.VITE_APP_VERSION as string | undefined;
 

@@ -5,6 +5,8 @@ import { Page } from "@/components/Page";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useResourcesPage } from "@/hooks/useResourcesPage";
 import type { ResourceItem, ResourceCategory } from "@/lib/resourceCatalog";
 import { cn } from "@/lib/utils";
@@ -22,7 +24,7 @@ function ResourceCard({ item, onDownload }: { item: ResourceItem; onDownload: (i
   const updated = new Date(item.updatedAt).toLocaleDateString();
 
   return (
-    <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-3">
+    <Card className="p-4 shadow-xs hover:shadow-sm transition-shadow flex flex-col gap-3">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
           <span className="p-2 bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 rounded-md border border-zinc-200 dark:border-zinc-800 shrink-0">
@@ -49,20 +51,21 @@ function ResourceCard({ item, onDownload }: { item: ResourceItem; onDownload: (i
 
       <p className="text-xs text-zinc-500 leading-relaxed line-clamp-2">{t(item.descriptionKey)}</p>
 
-      <div className="flex items-center justify-between gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800/60 text-[10px] text-zinc-400">
+      <CardFooter className="p-0 border-none flex items-center justify-between gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800/60 text-[10px] text-zinc-400">
         <span className="font-mono">
           {item.fileSize} · {updated}
         </span>
-        <button
+        <Button
           type="button"
           onClick={() => onDownload(item)}
-          className="inline-flex items-center gap-1.5 h-7 px-2.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-md text-[11px] font-semibold hover:opacity-90 transition-opacity cursor-pointer"
+          size="sm"
+          className="gap-1.5 text-[11px] font-semibold cursor-pointer"
         >
           <Download className="h-3 w-3" />
           {t("resources.download")}
-        </button>
-      </div>
-    </div>
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }
 
@@ -72,7 +75,7 @@ function ResourceListItem({ item, onDownload }: { item: ResourceItem; onDownload
   const updated = new Date(item.updatedAt).toLocaleDateString();
 
   return (
-    <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3.5 shadow-xs hover:shadow-sm transition-shadow flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <Card className="p-3.5 shadow-xs hover:shadow-sm transition-shadow flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div className="flex items-center gap-3 min-w-0 flex-1">
         <span className="p-2 bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 rounded-md border border-zinc-200 dark:border-zinc-800 shrink-0">
           <Icon className="h-4 w-4" />
@@ -93,23 +96,24 @@ function ResourceListItem({ item, onDownload }: { item: ResourceItem; onDownload
         </div>
       </div>
 
-      <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-100 dark:border-zinc-800/60 text-xs text-zinc-400">
+      <CardFooter className="p-0 border-none flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-100 dark:border-zinc-800/60 text-xs text-zinc-400">
         <span className="shrink-0 text-[10px] font-mono font-semibold text-zinc-400 uppercase bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded px-1.5 py-0.5">
           {item.fileType}
         </span>
         <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">
           {item.fileSize} · {updated}
         </span>
-        <button
+        <Button
           type="button"
           onClick={() => onDownload(item)}
-          className="inline-flex items-center gap-1.5 h-8 px-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-md text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer shrink-0"
+          size="sm"
+          className="gap-1.5 text-xs font-semibold cursor-pointer shrink-0"
         >
           <Download className="h-3.5 w-3.5" />
           {t("resources.download")}
-        </button>
-      </div>
-    </div>
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }
 
@@ -263,11 +267,11 @@ export function ResourcesPage() {
 
         {/* Resource list */}
         {filteredResources.length === 0 ? (
-          <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-8 text-center space-y-2">
+          <Card className="p-8 text-center space-y-2">
             <FileText className="h-6 w-6 text-zinc-300 mx-auto" />
             <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{t("resources.emptyTitle")}</p>
             <p className="text-xs text-zinc-500">{t("resources.emptyDesc")}</p>
-          </div>
+          </Card>
         ) : viewMode === "tiled" ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {filteredResources.map((item) => (

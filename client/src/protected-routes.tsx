@@ -21,6 +21,7 @@ import { DevicesPage } from "@/pages/DevicesPage";
 import { MaintenancePage } from "@/pages/MaintenancePage";
 import { UserManagementPage } from "@/pages/UserManagementPage";
 import { ResourcesPage } from "@/pages/ResourcesPage";
+import { HomePage } from "@/pages/HomePage";
 
 export interface AppRouteHandle {
   crumb: CrumbResolver;
@@ -101,8 +102,6 @@ const RAW_PROTECTED_ROUTES: Omit<AppRouteConfig, "handle">[] = [
   { path: "/profile", element: <ProfilePage /> },
   { path: "/notifications/preferences", element: <NotificationPreferencesPage /> },
   { path: "/help", element: <HelpPage /> },
-  { path: "/terms", element: <TermsPage />, isPublic: true },
-  { path: "/privacy", element: <PrivacyPage />, isPublic: true },
 ];
 
 export const protectedRoutes: AppRouteConfig[] = createProtectedRoutes(RAW_PROTECTED_ROUTES);

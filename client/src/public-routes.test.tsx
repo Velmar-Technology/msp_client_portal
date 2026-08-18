@@ -3,8 +3,10 @@ import { expect, test, vi, beforeEach, describe } from "vitest";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute, protectedRoutes } from "@/protected-routes";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { PublicLayout } from "@/components/layout/PublicLayout";
 import { PrivacyPage } from "@/pages/PrivacyPage";
 import { TermsPage } from "@/pages/TermsPage";
+import { HomePage } from "@/pages/HomePage";
 import React from "react";
 
 vi.mock("react-i18next", () => ({
@@ -54,21 +56,8 @@ describe("Public Unauthenticated Routes (/terms & /privacy)", () => {
     render(
       <MemoryRouter initialEntries={["/privacy"]}>
         <Routes>
-          <Route element={<AppLayout />}>
-            {protectedRoutes.map(({ path, element, allowedRoles, isPublic, handle }) => (
-              <Route
-                key={path}
-                path={path}
-                element={
-                  isPublic ? (
-                    element
-                  ) : (
-                    <ProtectedRoute allowedRoles={allowedRoles}>{element}</ProtectedRoute>
-                  )
-                }
-                handle={handle}
-              />
-            ))}
+          <Route element={<PublicLayout />}>
+            <Route path="/privacy" element={<PrivacyPage />} />
           </Route>
           <Route path="/login" element={<div>Login Page Redirect Target</div>} />
         </Routes>
@@ -77,8 +66,7 @@ describe("Public Unauthenticated Routes (/terms & /privacy)", () => {
 
     await waitFor(() => {
       expect(screen.queryByText("Login Page Redirect Target")).not.toBeInTheDocument();
-      expect(screen.queryByText("nav.dashboard")).not.toBeInTheDocument();
-      expect(screen.queryByText("nav.myTickets")).not.toBeInTheDocument();
+      expect(screen.getByText("legal.privacyTitle")).toBeInTheDocument();
     });
   });
 
@@ -92,21 +80,8 @@ describe("Public Unauthenticated Routes (/terms & /privacy)", () => {
     render(
       <MemoryRouter initialEntries={["/terms"]}>
         <Routes>
-          <Route element={<AppLayout />}>
-            {protectedRoutes.map(({ path, element, allowedRoles, isPublic, handle }) => (
-              <Route
-                key={path}
-                path={path}
-                element={
-                  isPublic ? (
-                    element
-                  ) : (
-                    <ProtectedRoute allowedRoles={allowedRoles}>{element}</ProtectedRoute>
-                  )
-                }
-                handle={handle}
-              />
-            ))}
+          <Route element={<PublicLayout />}>
+            <Route path="/terms" element={<TermsPage />} />
           </Route>
           <Route path="/login" element={<div>Login Page Redirect Target</div>} />
         </Routes>
@@ -115,8 +90,7 @@ describe("Public Unauthenticated Routes (/terms & /privacy)", () => {
 
     await waitFor(() => {
       expect(screen.queryByText("Login Page Redirect Target")).not.toBeInTheDocument();
-      expect(screen.queryByText("nav.dashboard")).not.toBeInTheDocument();
-      expect(screen.queryByText("nav.myTickets")).not.toBeInTheDocument();
+      expect(screen.getByText("legal.termsTitle")).toBeInTheDocument();
     });
   });
 
@@ -153,6 +127,28 @@ describe("Public Unauthenticated Routes (/terms & /privacy)", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Login Page Redirect Target")).toBeInTheDocument();
+    });
+  });
+
+  test("allows unauthenticated access to / home page without redirecting to login", async () => {
+    mockUseAuth.mockReturnValue({
+      user: null,
+      isAuthenticated: false,
+      isLoading: false,
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<div>Login Page Redirect Target</div>} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText("Login Page Redirect Target")).not.toBeInTheDocument();
+      expect(screen.getByText("home.title")).toBeInTheDocument();
     });
   });
 });

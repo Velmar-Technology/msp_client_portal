@@ -1,8 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { PublicLayout } from "@/components/layout/PublicLayout";
 import { LoginPage } from "@/pages/LoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
+import { HomePage } from "@/pages/HomePage";
+import { TermsPage } from "@/pages/TermsPage";
+import { PrivacyPage } from "@/pages/PrivacyPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ReactErrorBoundary } from "@shared/errors";
@@ -33,7 +37,14 @@ export function App() {
       <ThemeProvider defaultTheme="system" storageKey="msp-portal-theme">
         <BrowserRouter>
           <Routes>
-            {/* Public Routes */}
+            {/* Standalone Public Pages (Landing, Terms, Privacy) */}
+            <Route element={<PublicLayout />}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+            </Route>
+
+            {/* Public Authentication Routes */}
             <Route
               path="/login"
               element={
@@ -51,8 +62,6 @@ export function App() {
               }
             />
 
-            {/* Default redirect */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
             {/* App Layout Routes */}
             <Route element={<AppLayout />}>

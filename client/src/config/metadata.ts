@@ -6,7 +6,8 @@ export const APP_METADATA = {
   // Brand & Company Info
   company: 'Velmar Technology SRL',
   shortName: 'Velmar',
-  portalName: 'Velmar MSP Portal',
+  portalName: 'Velmar Technology MSP Services',
+  appName: 'Velmar Technology MSP Services',
   website: 'https://velmartech.com.do',
   tagline: 'Managed IT Services & Enterprise Support',
 
