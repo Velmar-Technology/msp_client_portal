@@ -20,7 +20,7 @@ services:
       retries: 5
 
   server:
-    image: ghcr.io/${REPOSITORY_OWNER:-eapolancovelmar}/msp-helpdesk-server:${VERSION:-latest}
+    image: ghcr.io/velmar-technology/msp-helpdesk-server:latest
     container_name: msp_server_prod
     restart: always
     networks:
@@ -53,15 +53,6 @@ services:
       - NEXTCLOUD_APP_USER=${NEXTCLOUD_APP_USER}
       - NEXTCLOUD_APP_PASS=${NEXTCLOUD_APP_PASS}
       - NEXTCLOUD_TOTAL_CAPACITY=${NEXTCLOUD_TOTAL_CAPACITY}
-      - ADMIN_EMAIL=${ADMIN_EMAIL}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-24h}
-      - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-7d}
-      - MAX_FILE_SIZE_MB=${MAX_FILE_SIZE_MB:-10}
-      - ZABBIX_URL=${ZABBIX_URL:-http://zabbix-web:8080/api_jsonrpc.php}
-      - ZABBIX_USER=${ZABBIX_USER:-Admin}
-      - ZABBIX_PASSWORD=${ZABBIX_PASSWORD:-zabbix}
-      - ZABBIX_WEBHOOK_SECRET=${ZABBIX_WEBHOOK_SECRET:-secret_key}
     volumes:
       - uploads_data:/app/server/uploads
 
@@ -125,18 +116,19 @@ services:
     image: zabbix/zabbix-agent2:alpine-6.0-latest
     container_name: msp_zabbix_agent_prod
     restart: always
-    networks:
-      - default
+    network_mode: "service:zabbix-server"
     depends_on:
       - zabbix-server
     environment:
-      ZBX_SERVER_HOST: zabbix-server
+      ZBX_SERVER_HOST: "127.0.0.1,zabbix-server"
       ZBX_HOSTNAME: "Zabbix server"
 
   client:
-    image: ghcr.io/${REPOSITORY_OWNER:-eapolancovelmar}/msp-helpdesk-client:${VERSION:-latest}
+    image: ghcr.io/velmar-technology/msp-helpdesk-client:latest
     container_name: msp_client_prod
     restart: always
+    environment:
+      - VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
     networks:
       - default
       - reverse-proxy
@@ -145,11 +137,28 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.msp-client.rule=Host(`helpdesk.velmartech.com.do`)"
-      - "traefik.http.routers.msp-client.entrypoints=web"
       - "traefik.http.routers.msp-client.entrypoints=websecure"
       - "traefik.http.routers.msp-client.tls=true"
-      # - "traefik.http.routers.msp-client.tls.certresolver=myresolver"
+      - "traefik.http.routers.msp-client.tls.certresolver=myresolver"
       - "traefik.http.services.msp-client-svc.loadbalancer.server.port=80"
+
+  logs:
+    image: amir20/dozzle:latest
+    container_name: odoo_logs
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.logs.rule=Host(`logs.local`)"
+      - "traefik.http.routers.logs.entrypoints=websecure"
+      - "traefik.http.routers.logs.tls=true"
+      - "traefik.http.services.logs.loadbalancer.server.port=8080"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.10'
+          memory: 100M
 
 volumes:
   pgdata:
@@ -163,4 +172,3 @@ networks:
   default:
   reverse-proxy:
     external: true
-

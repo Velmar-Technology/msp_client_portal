@@ -108,10 +108,11 @@ services:
     image: zabbix/zabbix-agent2:alpine-6.0-latest
     container_name: msp_zabbix_agent
     restart: always
+    network_mode: "service:zabbix-server"
     depends_on:
       - zabbix-server
     environment:
-      ZBX_SERVER_HOST: zabbix-server
+      ZBX_SERVER_HOST: "127.0.0.1,zabbix-server"
       ZBX_HOSTNAME: "Zabbix server"
 
   client:
