@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.3.7](https://github.com/eapolancovelmar/msp_client_portal/compare/v1.3.6...v1.3.7) (2026-08-18)
+
+
+### Bug Fixes
+
+* **client:** resolve TypeScript build errors and unused imports ([a49fca5](https://github.com/eapolancovelmar/msp_client_portal/commit/a49fca50010e65d07369b5bc735e99a0040f884b))
+* **docker:** add dozzle logs service and update zabbix-agent network_mode ([89d2108](https://github.com/eapolancovelmar/msp_client_portal/commit/89d2108e933f2830a7d8d44bba45a78380cd7ec2))
+* **ui:** eliminate transition animation and layout jumps on LoginPage ([c30c3b6](https://github.com/eapolancovelmar/msp_client_portal/commit/c30c3b60c5f642da837868ead05812f1c21c715e))
+* **ui:** prevent Google SDK re-initialization loop and make fadeIn opacity-only ([36982ac](https://github.com/eapolancovelmar/msp_client_portal/commit/36982accf42f8ccc4c8f750ddbc9f1bd5ef5cdeb))
+
 ## [1.3.6](https://github.com/eapolancovelmar/msp_client_portal/compare/v1.3.5...v1.3.6) (2026-08-18)
 
 
