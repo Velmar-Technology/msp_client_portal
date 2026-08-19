@@ -1,6 +1,6 @@
 # MSP Help Desk — Client Portal
 
-A multi-tenant **Layered Monolith** Help Desk and Infrastructure Management client portal built on the **PERN stack** (PostgreSQL, Express, React, Node.js) with TypeScript, Drizzle ORM, Vite, and Tailwind CSS v4.
+A multi-tenant **Modular Monolith** Help Desk and Infrastructure Management client portal built on the **PERN stack** (PostgreSQL, Express, React, Node.js) with TypeScript, Drizzle ORM, Vite, and Tailwind CSS v4.
 
 ---
 
@@ -25,13 +25,24 @@ The codebase strictly adheres to **Uncle Bob’s Clean Architecture & Clean Code
 
 ```
 server/src/
-├── types/          # Entities: Pure interfaces & enums (NO dependencies)
-├── db/schema/      # Entities & Migrations: Drizzle ORM tables & PostgreSQL Row-Level Security (RLS)
-├── repositories/   # Interface Adapters: Database access logic (NO req/res, NO business rules)
-├── services/       # Use Cases: Application business logic & validations (NO Express objects)
-├── controllers/    # Interface Adapters: HTTP req/res parsing & status formatting
-├── routes/         # Frameworks: Express route declarations & Gateway Cluster Router
-└── middleware/     # Frameworks: API Gateway Ingress (JWT Decoding, X-User-Id / X-Tenant-Id Injection, Multi-Tenant Rate Limiting, RBAC)
+├── shared/                         # Cross-cutting infrastructure & utilities
+│   ├── db/                         # Drizzle connection pool, schemas & migrations
+│   ├── dtos/                       # Data Transfer Objects
+│   ├── middleware/                 # Express middleware (auth, gateway, rate limiting)
+│   ├── policies/                   # Access control policy definitions
+│   ├── repositories/               # Shared base repositories (BaseRepository.ts)
+│   ├── types/                      # Primitive entity interfaces & enums
+│   └── utils/                      # Shared utility drivers (logger, passwordUtils, pdfGenerator)
+│
+└── modules/                        # Business Domain Bounded Contexts
+    ├── auth/                       # Controllers, Repositories, Routes, Services & Co-located Tests
+    ├── tickets/                    # Controllers, Repositories, Routes, Services & Co-located Tests
+    ├── billing/                    # Controllers, Repositories, Routes, Services & Co-located Tests
+    ├── subscriptions/              # Controllers, Repositories, Routes, Services & Co-located Tests
+    ├── rmm/                        # Controllers, Repositories, Routes, Services & Co-located Tests
+    ├── equipment/                  # Controllers, Repositories, Routes, Services & Co-located Tests
+    ├── notifications/              # Controllers, Repositories, Routes, Services & Co-located Tests
+    └── system/                     # Controllers, Repositories, Routes, Services & Co-located Tests
 
 client/src/
 ├── components/ui/  # MANDATORY UI Primitives: Base shadcn/ui components
@@ -234,7 +245,7 @@ Continuous Integration and Deployment is automated via GitHub Actions ([.github/
    # From project root:
    npm run db:migrate --prefix server
    # Run multi-tenancy schema migration script:
-   npx tsx server/src/db/apply_migration_003.ts
+   npx tsx server/src/shared/db/apply_migration_003.ts
    ```
 
 3. **Database Seeding:**

@@ -6,7 +6,7 @@ Esta es la documentación técnica del monorepo **MSP Client Portal** (sistema d
 
 ## 1. Arquitectura General del Sistema
 
-El proyecto sigue una arquitectura de **Monolito en Capas (Layered Monolith)** utilizando el stack **PERN (PostgreSQL, Express, React, Node.js)**. Se encuentra estructurado bajo un monorepo con un directorio para el frontend (`client/`) y otro para el backend (`server/`).
+El proyecto sigue una arquitectura de **Monolito Modular (Modular Monolith)** utilizando el stack **PERN (PostgreSQL, Express, React, Node.js)**. Se encuentra estructurado bajo un monorepo con un directorio para el frontend (`client/`) y otro para el backend (`server/`).
 
 ### Flujo de Datos del Servidor (Capas backend):
 El servidor Express implementa una separación estricta de responsabilidades (Separation of Concerns):
@@ -36,7 +36,7 @@ graph TD
 
 ## 2. Modelos de la Base de Datos (PostgreSQL via Drizzle ORM)
 
-La base de datos está modelada para soportar **Multi-tenancy (Multi-inquilino)** mediante la columna `tenant_id` presente en casi todas las tablas nucleares. A continuación se detallan los modelos definidos en [schema.ts](file:///c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/db/schema.ts):
+La base de datos está modelada para soportar **Multi-tenancy (Multi-inquilino)** mediante la columna `tenant_id` presente en casi todas las tablas nucleares. A continuación se detallan los modelos definidos en [schema.ts](file:///c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/shared/db/schema.ts):
 
 | Tabla / Modelo | Propósito | Campos Clave |
 | :--- | :--- | :--- |
@@ -59,7 +59,7 @@ La base de datos está modelada para soportar **Multi-tenancy (Multi-inquilino)*
 
 ## 3. Interfaces del Sistema
 
-Definidas centralmente en [types/index.ts](file:///c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/types/index.ts), representan los contratos de tipos en el servidor y ayudan a mantener la integridad de datos:
+Definidas centralmente en [types/index.ts](file:///c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/shared/types/index.ts), representan los contratos de tipos en el servidor y ayudan a mantener la integridad de datos:
 
 - **Enums de Dominio:**
   - `UserRole`: CLIENT, TECHNICIAN, ADMIN
@@ -84,14 +84,14 @@ Definidas centralmente en [types/index.ts](file:///c:/Users/DELL/Desktop/wordspa
 
 A continuación se detalla la estructura física del backend organizada por capas:
 
-### 4.1. Repositorios (Capa de Acceso a Datos - `server/src/repositories/`)
+### 4.1. Repositorios (Capa de Acceso a Datos - `server/src/modules/<domain>/repositories/`)
 
 Esta capa ejecuta las consultas directas en Drizzle o queries SQL brutas.
 
 Todos los repositorios heredan CRUD genérico de la clase abstracta `BaseRepository` de Drizzle.
 
-#### [BaseRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/repositories/BaseRepository.ts)
-*Ruta: `server/src/repositories/BaseRepository.ts`*
+#### [BaseRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/shared/repositories/BaseRepository.ts)
+*Ruta: `server/src/shared/repositories/BaseRepository.ts`*
 
 ##### Clase: `BaseRepository`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -103,8 +103,8 @@ Todos los repositorios heredan CRUD genérico de la clase abstracta `BaseReposit
 | `deleteById` | `id: string` | Mapeo o funcionalidad interna |
 
 
-#### [EquipmentRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/repositories/EquipmentRepository.ts)
-*Ruta: `server/src/repositories/EquipmentRepository.ts`*
+#### [EquipmentRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/equipment/repositories/EquipmentRepository.ts)
+*Ruta: `server/src/modules/equipment/repositories/EquipmentRepository.ts`*
 
 ##### Clase: `EquipmentRepository`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -119,8 +119,8 @@ Todos los repositorios heredan CRUD genérico de la clase abstracta `BaseReposit
 | `findAllWithDetails` | `Ninguno` | Mapeo o funcionalidad interna |
 
 
-#### [ExpenseRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/repositories/ExpenseRepository.ts)
-*Ruta: `server/src/repositories/ExpenseRepository.ts`*
+#### [ExpenseRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/billing/repositories/ExpenseRepository.ts)
+*Ruta: `server/src/modules/billing/repositories/ExpenseRepository.ts`*
 
 ##### Clase: `ExpenseRepository`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -132,8 +132,8 @@ Todos los repositorios heredan CRUD genérico de la clase abstracta `BaseReposit
 | `create` | `data: { amount: number; description: string; category: string; expense_date: Date; tenant_id: string; expense_identifier?: string | null; }` | Mapeo o funcionalidad interna |
 
 
-#### [InvoiceRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/repositories/InvoiceRepository.ts)
-*Ruta: `server/src/repositories/InvoiceRepository.ts`*
+#### [InvoiceRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/billing/repositories/InvoiceRepository.ts)
+*Ruta: `server/src/modules/billing/repositories/InvoiceRepository.ts`*
 
 ##### Clase: `InvoiceRepository`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -147,8 +147,8 @@ Todos los repositorios heredan CRUD genérico de la clase abstracta `BaseReposit
 | `getAllForStats` | `tenantId?: string` | Mapeo o funcionalidad interna |
 
 
-#### [NotificationPreferenceRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/repositories/NotificationPreferenceRepository.ts)
-*Ruta: `server/src/repositories/NotificationPreferenceRepository.ts`*
+#### [NotificationPreferenceRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/notifications/repositories/NotificationPreferenceRepository.ts)
+*Ruta: `server/src/modules/notifications/repositories/NotificationPreferenceRepository.ts`*
 
 ##### Clase: `NotificationPreferenceRepository`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -159,8 +159,8 @@ Todos los repositorios heredan CRUD genérico de la clase abstracta `BaseReposit
 | `getEffectivePreferences` | `userId: string` | Mapeo o funcionalidad interna |
 
 
-#### [NotificationRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/repositories/NotificationRepository.ts)
-*Ruta: `server/src/repositories/NotificationRepository.ts`*
+#### [NotificationRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/notifications/repositories/NotificationRepository.ts)
+*Ruta: `server/src/modules/notifications/repositories/NotificationRepository.ts`*
 
 ##### Clase: `NotificationRepository`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -174,8 +174,8 @@ Todos los repositorios heredan CRUD genérico de la clase abstracta `BaseReposit
 | `deleteAllForUser` | `userId: string` | Mapeo o funcionalidad interna |
 
 
-#### [PlanRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/repositories/PlanRepository.ts)
-*Ruta: `server/src/repositories/PlanRepository.ts`*
+#### [PlanRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/subscriptions/repositories/PlanRepository.ts)
+*Ruta: `server/src/modules/subscriptions/repositories/PlanRepository.ts`*
 
 ##### Clase: `PlanRepository`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -185,8 +185,8 @@ Todos los repositorios heredan CRUD genérico de la clase abstracta `BaseReposit
 | `update` | `id: string, data: Partial<Omit<Plan, 'id' | 'created_at' | 'updated_at'>>` | Mapeo o funcionalidad interna |
 
 
-#### [SubscriptionRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/repositories/SubscriptionRepository.ts)
-*Ruta: `server/src/repositories/SubscriptionRepository.ts`*
+#### [SubscriptionRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/subscriptions/repositories/SubscriptionRepository.ts)
+*Ruta: `server/src/modules/subscriptions/repositories/SubscriptionRepository.ts`*
 
 ##### Clase: `SubscriptionRepository`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -203,8 +203,8 @@ Todos los repositorios heredan CRUD genérico de la clase abstracta `BaseReposit
 | `getActiveSubscriptionsWithPlan` | `tenantId?: string` | Mapeo o funcionalidad interna |
 
 
-#### [TenantRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/repositories/TenantRepository.ts)
-*Ruta: `server/src/repositories/TenantRepository.ts`*
+#### [TenantRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/auth/repositories/TenantRepository.ts)
+*Ruta: `server/src/modules/auth/repositories/TenantRepository.ts`*
 
 ##### Clase: `TenantRepository`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -215,8 +215,8 @@ Todos los repositorios heredan CRUD genérico de la clase abstracta `BaseReposit
 | `findBySubdomain` | `subdomain: string` | Mapeo o funcionalidad interna |
 
 
-#### [TicketEventRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/repositories/TicketEventRepository.ts)
-*Ruta: `server/src/repositories/TicketEventRepository.ts`*
+#### [TicketEventRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/tickets/repositories/TicketEventRepository.ts)
+*Ruta: `server/src/modules/tickets/repositories/TicketEventRepository.ts`*
 
 ##### Clase: `TicketEventRepository`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -226,8 +226,8 @@ Todos los repositorios heredan CRUD genérico de la clase abstracta `BaseReposit
 | `findByTicket` | `ticketId: string` | Mapeo o funcionalidad interna |
 
 
-#### [TicketRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/repositories/TicketRepository.ts)
-*Ruta: `server/src/repositories/TicketRepository.ts`*
+#### [TicketRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/tickets/repositories/TicketRepository.ts)
+*Ruta: `server/src/modules/tickets/repositories/TicketRepository.ts`*
 
 ##### Clase: `TicketRepository`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -246,8 +246,8 @@ Todos los repositorios heredan CRUD genérico de la clase abstracta `BaseReposit
 | `getAttachmentsByResponses` | `ticketId: string` | Mapeo o funcionalidad interna |
 
 
-#### [TicketResponseRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/repositories/TicketResponseRepository.ts)
-*Ruta: `server/src/repositories/TicketResponseRepository.ts`*
+#### [TicketResponseRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/tickets/repositories/TicketResponseRepository.ts)
+*Ruta: `server/src/modules/tickets/repositories/TicketResponseRepository.ts`*
 
 ##### Clase: `TicketResponseRepository`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -257,8 +257,8 @@ Todos los repositorios heredan CRUD genérico de la clase abstracta `BaseReposit
 | `findByTicket` | `ticketId: string` | Mapeo o funcionalidad interna |
 
 
-#### [UserRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/repositories/UserRepository.ts)
-*Ruta: `server/src/repositories/UserRepository.ts`*
+#### [UserRepository.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/auth/repositories/UserRepository.ts)
+*Ruta: `server/src/modules/auth/repositories/UserRepository.ts`*
 
 ##### Clase: `UserRepository`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -290,12 +290,12 @@ Todos los repositorios heredan CRUD genérico de la clase abstracta `BaseReposit
 
 ---
 
-### 4.2. Servicios (Capa de Lógica de Negocio - `server/src/services/`)
+### 4.2. Servicios (Capa de Lógica de Negocio - `server/src/modules/<domain>/services/`)
 
 Esta capa orquesta las transacciones, valida reglas complejas (como SLAs y límites de equipos), distribuye llamadas de correo o facturación.
 
-#### [AssignmentService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/services/AssignmentService.ts)
-*Ruta: `server/src/services/AssignmentService.ts`*
+#### [AssignmentService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/tickets/services/AssignmentService.ts)
+*Ruta: `server/src/modules/tickets/services/AssignmentService.ts`*
 
 ##### Clase: `AssignmentService`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -303,8 +303,8 @@ Esta capa orquesta las transacciones, valida reglas complejas (como SLAs y lími
 | `getNextTechnician` | `category: TicketCategory, requestedSpecialty?: string` | Mapeo o funcionalidad interna |
 
 
-#### [AuthService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/services/AuthService.ts)
-*Ruta: `server/src/services/AuthService.ts`*
+#### [AuthService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/auth/services/AuthService.ts)
+*Ruta: `server/src/modules/auth/services/AuthService.ts`*
 
 ##### Clase: `AuthService`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -319,8 +319,8 @@ Esta capa orquesta las transacciones, valida reglas complejas (como SLAs y lími
 | `generateTokens` | `payload: JwtPayload` | Mapeo o funcionalidad interna |
 
 
-#### [EquipmentService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/services/EquipmentService.ts)
-*Ruta: `server/src/services/EquipmentService.ts`*
+#### [EquipmentService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/equipment/services/EquipmentService.ts)
+*Ruta: `server/src/modules/equipment/services/EquipmentService.ts`*
 
 ##### Clase: `EquipmentService`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -333,8 +333,8 @@ Esta capa orquesta las transacciones, valida reglas complejas (como SLAs y lími
 | `getAllDevicesForAdmin` | `Ninguno` | Mapeo o funcionalidad interna |
 
 
-#### [ExpenseService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/services/ExpenseService.ts)
-*Ruta: `server/src/services/ExpenseService.ts`*
+#### [ExpenseService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/billing/services/ExpenseService.ts)
+*Ruta: `server/src/modules/billing/services/ExpenseService.ts`*
 
 ##### Clase: `ExpenseService`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -345,8 +345,8 @@ Esta capa orquesta las transacciones, valida reglas complejas (como SLAs y lími
 | `deleteExpense` | `id: string, tenantId: string, userRole: UserRole` | Mapeo o funcionalidad interna |
 
 
-#### [InvoiceService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/services/InvoiceService.ts)
-*Ruta: `server/src/services/InvoiceService.ts`*
+#### [InvoiceService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/billing/services/InvoiceService.ts)
+*Ruta: `server/src/modules/billing/services/InvoiceService.ts`*
 
 ##### Clase: `InvoiceService`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -360,8 +360,8 @@ Esta capa orquesta las transacciones, valida reglas complejas (como SLAs y lími
 | `Date` | `allInvoices[0].invoice_date` | Mapeo o funcionalidad interna |
 
 
-#### [NextcloudService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/services/NextcloudService.ts)
-*Ruta: `server/src/services/NextcloudService.ts`*
+#### [NextcloudService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/system/services/NextcloudService.ts)
+*Ruta: `server/src/modules/system/services/NextcloudService.ts`*
 
 ##### Clase: `NextcloudService`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -380,8 +380,8 @@ Esta capa orquesta las transacciones, valida reglas complejas (como SLAs y lími
 - `StorageStatus`
 
 
-#### [NotificationPreferenceService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/services/NotificationPreferenceService.ts)
-*Ruta: `server/src/services/NotificationPreferenceService.ts`*
+#### [NotificationPreferenceService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/notifications/services/NotificationPreferenceService.ts)
+*Ruta: `server/src/modules/notifications/services/NotificationPreferenceService.ts`*
 
 ##### Clase: `NotificationPreferenceService`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -391,8 +391,8 @@ Esta capa orquesta las transacciones, valida reglas complejas (como SLAs y lími
 | `shouldNotify` | `userId: string, eventType: NotificationEventType, channel: 'in_app' | 'email' | 'whatsapp'` | Mapeo o funcionalidad interna |
 
 
-#### [NotificationService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/services/NotificationService.ts)
-*Ruta: `server/src/services/NotificationService.ts`*
+#### [NotificationService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/notifications/services/NotificationService.ts)
+*Ruta: `server/src/modules/notifications/services/NotificationService.ts`*
 
 ##### Clase: `NotificationService`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -406,8 +406,8 @@ Esta capa orquesta las transacciones, valida reglas complejas (como SLAs y lími
 | `onTicketResponseCreated` | `ticket: Ticket, recipient: User, senderName: string, message: string` | Mapeo o funcionalidad interna |
 
 
-#### [PaypalService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/services/PaypalService.ts)
-*Ruta: `server/src/services/PaypalService.ts`*
+#### [PaypalService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/billing/services/PaypalService.ts)
+*Ruta: `server/src/modules/billing/services/PaypalService.ts`*
 
 ##### Clase: `PaypalService`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -426,8 +426,8 @@ Esta capa orquesta las transacciones, valida reglas complejas (como SLAs y lími
 | `updateSubscriptionQuantity` | `subscriptionId: string, quantity: number` | Mapeo o funcionalidad interna |
 
 
-#### [PlanService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/services/PlanService.ts)
-*Ruta: `server/src/services/PlanService.ts`*
+#### [PlanService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/<domain>/services/PlanService.ts)
+*Ruta: `server/src/modules/<domain>/services/PlanService.ts`*
 
 ##### Clase: `PlanService`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -438,8 +438,8 @@ Esta capa orquesta las transacciones, valida reglas complejas (como SLAs y lími
 | `updatePlan` | `id: string, data: UpdatePlanInput` | Mapeo o funcionalidad interna |
 
 
-#### [SubscriptionScheduler.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/services/SubscriptionScheduler.ts)
-*Ruta: `server/src/services/SubscriptionScheduler.ts`*
+#### [SubscriptionScheduler.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/subscriptions/services/SubscriptionScheduler.ts)
+*Ruta: `server/src/modules/subscriptions/services/SubscriptionScheduler.ts`*
 
 ##### Clase: `SubscriptionScheduler`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -450,8 +450,8 @@ Esta capa orquesta las transacciones, valida reglas complejas (como SLAs y lími
 | `renewSubscription` | `sub: Subscription` | Mapeo o funcionalidad interna |
 
 
-#### [SubscriptionService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/services/SubscriptionService.ts)
-*Ruta: `server/src/services/SubscriptionService.ts`*
+#### [SubscriptionService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/subscriptions/services/SubscriptionService.ts)
+*Ruta: `server/src/modules/subscriptions/services/SubscriptionService.ts`*
 
 ##### Clase: `SubscriptionService`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -465,8 +465,8 @@ Esta capa orquesta las transacciones, valida reglas complejas (como SLAs y lími
 | `sendQuotation` | `data: SendQuoteInput, senderUserId: string, senderTenantId: string, role: string` | Mapeo o funcionalidad interna |
 
 
-#### [TicketService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/services/TicketService.ts)
-*Ruta: `server/src/services/TicketService.ts`*
+#### [TicketService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/<domain>/services/TicketService.ts)
+*Ruta: `server/src/modules/<domain>/services/TicketService.ts`*
 
 ##### Clase: `TicketService`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -485,8 +485,8 @@ Esta capa orquesta las transacciones, valida reglas complejas (como SLAs y lími
 | `addTicketResponse` | `ticketId: string, message: string, userId: string, userRole: UserRole, tenantId: string, files: { filename: string; path: string; mimetype: string; size: number }[] = [],` | Mapeo o funcionalidad interna |
 
 
-#### [UserService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/services/UserService.ts)
-*Ruta: `server/src/services/UserService.ts`*
+#### [UserService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/auth/services/UserService.ts)
+*Ruta: `server/src/modules/auth/services/UserService.ts`*
 
 ##### Clase: `UserService`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -509,12 +509,12 @@ Esta capa orquesta las transacciones, valida reglas complejas (como SLAs y lími
 
 ---
 
-### 4.3. Controladores (Capa de Entrada y Respuestas - `server/src/controllers/`)
+### 4.3. Controladores (Capa de Entrada y Respuestas - `server/src/modules/<domain>/controllers/`)
 
 Reciben peticiones HTTP de Express, extraen parámetros y llaman a la capa de Servicios.
 
-#### [AuthController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/controllers/AuthController.ts)
-*Ruta: `server/src/controllers/AuthController.ts`*
+#### [AuthController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/auth/controllers/AuthController.ts)
+*Ruta: `server/src/modules/auth/controllers/AuthController.ts`*
 
 ##### Clase: `AuthController`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -528,8 +528,8 @@ Reciben peticiones HTTP de Express, extraen parámetros y llaman a la capa de Se
 | `verifyEmail` | `req: Request, res: Response` | Mapeo o funcionalidad interna |
 
 
-#### [EquipmentController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/controllers/EquipmentController.ts)
-*Ruta: `server/src/controllers/EquipmentController.ts`*
+#### [EquipmentController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/equipment/controllers/EquipmentController.ts)
+*Ruta: `server/src/modules/equipment/controllers/EquipmentController.ts`*
 
 ##### Clase: `EquipmentController`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -542,8 +542,8 @@ Reciben peticiones HTTP de Express, extraen parámetros y llaman a la capa de Se
 | `getAllDevicesForAdmin` | `_req: Request, res: Response, next: NextFunction` | Mapeo o funcionalidad interna |
 
 
-#### [ExpenseController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/controllers/ExpenseController.ts)
-*Ruta: `server/src/controllers/ExpenseController.ts`*
+#### [ExpenseController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/billing/controllers/ExpenseController.ts)
+*Ruta: `server/src/modules/billing/controllers/ExpenseController.ts`*
 
 ##### Clase: `ExpenseController`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -554,8 +554,8 @@ Reciben peticiones HTTP de Express, extraen parámetros y llaman a la capa de Se
 | `delete` | `req: Request, res: Response, next: NextFunction` | Mapeo o funcionalidad interna |
 
 
-#### [InvoiceController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/controllers/InvoiceController.ts)
-*Ruta: `server/src/controllers/InvoiceController.ts`*
+#### [InvoiceController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/billing/controllers/InvoiceController.ts)
+*Ruta: `server/src/modules/billing/controllers/InvoiceController.ts`*
 
 ##### Clase: `InvoiceController`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -568,8 +568,8 @@ Reciben peticiones HTTP de Express, extraen parámetros y llaman a la capa de Se
 | `getFinancialStats` | `req: Request, res: Response` | Mapeo o funcionalidad interna |
 
 
-#### [NotificationController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/controllers/NotificationController.ts)
-*Ruta: `server/src/controllers/NotificationController.ts`*
+#### [NotificationController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/notifications/controllers/NotificationController.ts)
+*Ruta: `server/src/modules/notifications/controllers/NotificationController.ts`*
 
 ##### Clase: `NotificationController`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -581,8 +581,8 @@ Reciben peticiones HTTP de Express, extraen parámetros y llaman a la capa de Se
 | `stream` | `req: Request, res: Response` | Mapeo o funcionalidad interna |
 
 
-#### [NotificationPreferenceController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/controllers/NotificationPreferenceController.ts)
-*Ruta: `server/src/controllers/NotificationPreferenceController.ts`*
+#### [NotificationPreferenceController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/notifications/controllers/NotificationPreferenceController.ts)
+*Ruta: `server/src/modules/notifications/controllers/NotificationPreferenceController.ts`*
 
 ##### Clase: `NotificationPreferenceController`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -591,8 +591,8 @@ Reciben peticiones HTTP de Express, extraen parámetros y llaman a la capa de Se
 | `updatePreferences` | `req: Request, res: Response` | Mapeo o funcionalidad interna |
 
 
-#### [PlanController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/controllers/PlanController.ts)
-*Ruta: `server/src/controllers/PlanController.ts`*
+#### [PlanController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/subscriptions/controllers/PlanController.ts)
+*Ruta: `server/src/modules/subscriptions/controllers/PlanController.ts`*
 
 ##### Clase: `PlanController`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -603,8 +603,8 @@ Reciben peticiones HTTP de Express, extraen parámetros y llaman a la capa de Se
 | `update` | `req: Request, res: Response` | Mapeo o funcionalidad interna |
 
 
-#### [SubscriptionController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/controllers/SubscriptionController.ts)
-*Ruta: `server/src/controllers/SubscriptionController.ts`*
+#### [SubscriptionController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/subscriptions/controllers/SubscriptionController.ts)
+*Ruta: `server/src/modules/subscriptions/controllers/SubscriptionController.ts`*
 
 ##### Clase: `SubscriptionController`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -618,8 +618,8 @@ Reciben peticiones HTTP de Express, extraen parámetros y llaman a la capa de Se
 | `sendQuote` | `req: Request, res: Response` | Mapeo o funcionalidad interna |
 
 
-#### [SystemController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/controllers/SystemController.ts)
-*Ruta: `server/src/controllers/SystemController.ts`*
+#### [SystemController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/system/controllers/SystemController.ts)
+*Ruta: `server/src/modules/system/controllers/SystemController.ts`*
 
 ##### Clase: `SystemController`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -627,8 +627,8 @@ Reciben peticiones HTTP de Express, extraen parámetros y llaman a la capa de Se
 | `getStorageStatus` | `_req: Request, res: Response, next: NextFunction` | Mapeo o funcionalidad interna |
 
 
-#### [TicketController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/controllers/TicketController.ts)
-*Ruta: `server/src/controllers/TicketController.ts`*
+#### [TicketController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/tickets/controllers/TicketController.ts)
+*Ruta: `server/src/modules/tickets/controllers/TicketController.ts`*
 
 ##### Clase: `TicketController`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -646,8 +646,8 @@ Reciben peticiones HTTP de Express, extraen parámetros y llaman a la capa de Se
 | `createResponse` | `req: Request, res: Response` | Mapeo o funcionalidad interna |
 
 
-#### [UserController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/controllers/UserController.ts)
-*Ruta: `server/src/controllers/UserController.ts`*
+#### [UserController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/auth/controllers/UserController.ts)
+*Ruta: `server/src/modules/auth/controllers/UserController.ts`*
 
 ##### Clase: `UserController`
 | Método / Función | Argumentos | Descripción / Rol |
@@ -668,15 +668,15 @@ Reciben peticiones HTTP de Express, extraen parámetros y llaman a la capa de Se
 
 ---
 
-### 4.4. Rutas y Middlewares (`server/src/routes/` y `server/src/middleware/`)
+### 4.4. Rutas y Middlewares (`server/src/modules/<domain>/routes/` y `server/src/shared/middleware/`)
 
 Controles de acceso (RBAC), subida de archivos (Multer), autenticación por JWT y validaciones dinámicas con Zod.
 
 #### Rutas definidoras:
 
 #### Middlewares de apoyo:
-#### [authMiddleware.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/middleware/authMiddleware.ts)
-*Ruta: `server/src/middleware/authMiddleware.ts`*
+#### [authMiddleware.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/shared/middleware/authMiddleware.ts)
+*Ruta: `server/src/shared/middleware/authMiddleware.ts`*
 
 ##### Funciones auxiliares / Standalone:
 | Función | Parámetros | Descripción |
@@ -684,8 +684,8 @@ Controles de acceso (RBAC), subida de archivos (Multer), autenticación por JWT 
 | `authMiddleware` | `req: Request, _res: Response, next: NextFunction` | Operación lógica directa |
 
 
-#### [rbacMiddleware.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/middleware/rbacMiddleware.ts)
-*Ruta: `server/src/middleware/rbacMiddleware.ts`*
+#### [rbacMiddleware.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/shared/middleware/rbacMiddleware.ts)
+*Ruta: `server/src/shared/middleware/rbacMiddleware.ts`*
 
 ##### Funciones auxiliares / Standalone:
 | Función | Parámetros | Descripción |
@@ -693,8 +693,8 @@ Controles de acceso (RBAC), subida de archivos (Multer), autenticación por JWT 
 | `rbacMiddleware` | `...allowedRoles: UserRole[]` | Operación lógica directa |
 
 
-#### [validationMiddleware.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/middleware/validationMiddleware.ts)
-*Ruta: `server/src/middleware/validationMiddleware.ts`*
+#### [validationMiddleware.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/shared/middleware/validationMiddleware.ts)
+*Ruta: `server/src/shared/middleware/validationMiddleware.ts`*
 
 ##### Funciones auxiliares / Standalone:
 | Función | Parámetros | Descripción |

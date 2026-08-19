@@ -214,21 +214,21 @@ client/src/
 
 ### Explicit Import Rules for Agents
 
-1. **Entities Layer (`server/src/types/`)**:
+1. **Entities Layer (`server/src/shared/types/`, `server/src/shared/db/schema/`)**:
    - **Allowed Imports**: None (pure TypeScript definitions).
    - **Forbidden Imports**: Services, controllers, repositories, ORM schema, Express.
 
-2. **Use Case / Service Layer (`server/src/services/`)**:
-   - **Allowed Imports**: Entities (`types/`), Repositories (`repositories/`), DTOs (`dtos/`), Utils (`utils/`).
-   - **Forbidden Imports**: Express objects (`Request`, `Response`), database pool or schema (`../db`), controllers, routes.
+2. **Use Case / Service Layer (`server/src/modules/<domain>/services/`)**:
+   - **Allowed Imports**: Entities (`@shared/types`), Repositories (`@modules/<domain>/repositories`), DTOs (`@shared/dtos`), Utils (`@shared/utils`).
+   - **Forbidden Imports**: Express objects (`Request`, `Response`), database pool or schema (`@shared/db`), controllers, routes.
 
-3. **Repository Layer (`server/src/repositories/`)**:
-   - **Allowed Imports**: `db` instance (`../db`), Drizzle schemas, Entities (`types/`).
+3. **Repository Layer (`server/src/modules/<domain>/repositories/`, `server/src/shared/repositories/`)**:
+   - **Allowed Imports**: `db` instance (`@shared/db`), Drizzle schemas, Entities (`@shared/types`).
    - **Forbidden Imports**: Controllers, Express, Services (prevent circular dependencies), business logic calculations.
 
-4. **Controller Layer (`server/src/controllers/`)**:
-   - **Allowed Imports**: Services (`services/`), DTOs (`dtos/`), Entities (`types/`), Express (`Request`, `Response`).
-   - **Forbidden Imports**: Repositories (`repositories/`), `db` instance (`../db`).
+4. **Controller Layer (`server/src/modules/<domain>/controllers/`)**:
+   - **Allowed Imports**: Services (`@modules/<domain>/services`), DTOs (`@shared/dtos`), Entities (`@shared/types`), Express (`Request`, `Response`).
+   - **Forbidden Imports**: Repositories, `db` instance (`@shared/db`).
 
 5. **Client UI Component Layer (`client/src/components/`)**:
    - **Mandatory UI Rule**: All UI elements (Buttons, Inputs, Selects, Dialogs, Cards, Tables, Badges, Tabs, Tooltips, Labels, Checkboxes) **MUST strictly use `shadcn/ui` components from `client/src/components/ui/`**.
