@@ -284,6 +284,8 @@ The frontend relies on **shadcn/ui** primitives located in `client/src/component
 
 ## 📖 API Documentation
 
-Interactive Swagger API documentation is available when the server is running.
+Interactive Swagger API documentation is available when the server is running:
 
-- **Swagger UI URL:** [http://localhost:3001/api-docs](http://localhost:3001/api-docs)
+- **Direct Backend URL:** [http://localhost:3001/api-docs](http://localhost:3001/api-docs)
+- **API v1 Endpoint URL:** [http://localhost:3001/api/v1/api-docs](http://localhost:3001/api/v1/api-docs)
+- **Frontend Proxy URL (Dev):** [http://localhost:5173/api-docs](http://localhost:5173/api-docs)

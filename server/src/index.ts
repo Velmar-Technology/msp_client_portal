@@ -44,10 +44,12 @@ if (!fs.existsSync(uploadsDir)) {
 app.use('/uploads', express.static(uploadsDir));
 
 // ---- API Documentation ----
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+const swaggerOptions = {
   customCss: '.swagger-ui .topbar { display: none }',
   customSiteTitle: 'Velmar Technology SRL MSP API Documentation',
-}));
+};
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerOptions));
+app.use('/api/v1/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerOptions));
 
 // ---- API Routes ----
 app.use('/api/v1', routes);
@@ -67,7 +69,7 @@ async function startServer(): Promise<void> {
 
     app.listen(env.PORT, () => {
       logger.info(`Velmar Technology SRL MSP API Server running on port ${env.PORT}`);
-      logger.info(`API Docs available at http://localhost:${env.PORT}/api-docs`);
+      logger.info(`API Docs available at http://localhost:${env.PORT}/api-docs and http://localhost:${env.PORT}/api/v1/api-docs`);
       logger.info(`Environment: ${env.NODE_ENV}`);
       
       // Start background subscriptions renewal scheduler

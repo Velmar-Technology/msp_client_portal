@@ -8,8 +8,6 @@ import {
   RotateCw,
   Server,
   Clock,
-  ShieldCheck,
-  Zap,
   KeyRound,
   Lock,
   FileCode,
@@ -33,7 +31,7 @@ import { cn } from "@/lib/utils";
 import type { ApiStatusItem, EnvVarStatusItem } from "@/services/systemService";
 
 export function ApiStatusPage() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const {
     data,
     isLoading,
@@ -66,17 +64,6 @@ export function ApiStatusPage() {
     envVarsTotalPages,
     refresh,
   } = useApiStatus();
-
-  const isSpanish = i18n.language === "es_DO";
-
-  const formatLastChecked = (isoString?: string) => {
-    if (!isoString) return "";
-    return new Date(isoString).toLocaleTimeString(isSpanish ? "es-DO" : "en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-  };
 
   const getCategoryLabel = (category: string) => {
     switch (category) {
@@ -282,7 +269,7 @@ export function ApiStatusPage() {
         },
       },
     ],
-    [t, isSpanish],
+    [t],
   );
 
   // 2. Column Definitions for Environment Variables Table
@@ -372,8 +359,6 @@ export function ApiStatusPage() {
     ],
     [t],
   );
-
-  const overallStatus = data?.overallStatus || "OPERATIONAL";
 
   return (
     <Page
