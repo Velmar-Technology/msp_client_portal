@@ -16,12 +16,13 @@ export type StatusFilter = "all" | "active" | "inactive";
 
 export interface ConfirmationState {
   open: boolean;
-  type: "role" | "status" | "clientType" | "delete";
+  type: "role" | "status" | "clientType" | "delete" | "bulk_role" | "bulk_client_type" | "bulk_status" | "bulk_delete";
   isBulk?: boolean;
   userId?: string;
   userName?: string;
   userIds?: string[];
   userCount?: number;
+  targetUsers?: ManagedUser[];
   newValue: string | boolean;
 }
 
@@ -204,18 +205,18 @@ export function useUserManagement() {
 
   const requestBulkClientTypeChange = useCallback(
     (selectedUsers: ManagedUser[], currentUserId: string, newClientType: ClientType) => {
-      const validUserIds = selectedUsers
-        .map((u) => u.id)
-        .filter((id) => id !== currentUserId);
+      const validUsers = selectedUsers.filter((u) => u.id !== currentUserId);
+      const validUserIds = validUsers.map((u) => u.id);
 
       if (validUserIds.length === 0) return;
 
       setConfirmation({
         open: true,
-        type: "clientType",
+        type: "bulk_client_type",
         isBulk: true,
         userIds: validUserIds,
         userCount: validUserIds.length,
+        targetUsers: validUsers,
         newValue: newClientType,
       });
     },
@@ -224,18 +225,18 @@ export function useUserManagement() {
 
   const requestBulkRoleChange = useCallback(
     (selectedUsers: ManagedUser[], currentUserId: string, newRole: UserRole) => {
-      const validUserIds = selectedUsers
-        .map((u) => u.id)
-        .filter((id) => id !== currentUserId);
+      const validUsers = selectedUsers.filter((u) => u.id !== currentUserId);
+      const validUserIds = validUsers.map((u) => u.id);
 
       if (validUserIds.length === 0) return;
 
       setConfirmation({
         open: true,
-        type: "role",
+        type: "bulk_role",
         isBulk: true,
         userIds: validUserIds,
         userCount: validUserIds.length,
+        targetUsers: validUsers,
         newValue: newRole,
       });
     },
@@ -244,18 +245,18 @@ export function useUserManagement() {
 
   const requestBulkStatusToggle = useCallback(
     (selectedUsers: ManagedUser[], currentUserId: string, newStatus: boolean) => {
-      const validUserIds = selectedUsers
-        .map((u) => u.id)
-        .filter((id) => id !== currentUserId);
+      const validUsers = selectedUsers.filter((u) => u.id !== currentUserId);
+      const validUserIds = validUsers.map((u) => u.id);
 
       if (validUserIds.length === 0) return;
 
       setConfirmation({
         open: true,
-        type: "status",
+        type: "bulk_status",
         isBulk: true,
         userIds: validUserIds,
         userCount: validUserIds.length,
+        targetUsers: validUsers,
         newValue: newStatus,
       });
     },
@@ -278,18 +279,18 @@ export function useUserManagement() {
 
   const requestBulkDelete = useCallback(
     (selectedUsers: ManagedUser[], currentUserId: string) => {
-      const validUserIds = selectedUsers
-        .map((u) => u.id)
-        .filter((id) => id !== currentUserId);
+      const validUsers = selectedUsers.filter((u) => u.id !== currentUserId);
+      const validUserIds = validUsers.map((u) => u.id);
 
       if (validUserIds.length === 0) return;
 
       setConfirmation({
         open: true,
-        type: "delete",
+        type: "bulk_delete",
         isBulk: true,
         userIds: validUserIds,
         userCount: validUserIds.length,
+        targetUsers: validUsers,
         newValue: "",
       });
     },
@@ -307,17 +308,17 @@ export function useUserManagement() {
     setActionLoading(true);
     try {
       if (confirmation.isBulk) {
-        if (confirmation.type === "role") {
+        if (confirmation.type === "bulk_role" || confirmation.type === "role") {
           await userService.bulkUpdateRole(
             confirmation.userIds!,
             confirmation.newValue as UserRole
           );
-        } else if (confirmation.type === "clientType") {
+        } else if (confirmation.type === "bulk_client_type" || confirmation.type === "clientType") {
           await userService.bulkUpdateClientType(
             confirmation.userIds!,
             confirmation.newValue as ClientType
           );
-        } else if (confirmation.type === "delete") {
+        } else if (confirmation.type === "bulk_delete" || confirmation.type === "delete") {
           await userService.bulkDeleteUsers(confirmation.userIds!);
         } else {
           await userService.bulkUpdateStatus(

@@ -291,7 +291,7 @@ export function UserManagementPage() {
   const confirmationTitle = useMemo(() => {
     if (!confirmation.open) return "";
     if (confirmation.type === "role") return t("userManagement.confirmRoleTitle");
-    if (confirmation.type === "client_type") return t("userManagement.confirmClientTypeTitle") || "Update Client Type";
+    if (confirmation.type === "clientType") return t("userManagement.confirmClientTypeTitle") || "Update Client Type";
     if (confirmation.type === "bulk_role") return t("userManagement.confirmBulkRoleTitle") || "Update User Roles";
     if (confirmation.type === "bulk_client_type") return t("userManagement.confirmBulkClientTypeTitle") || "Update Client Types";
     if (confirmation.type === "bulk_status") return t("userManagement.confirmBulkStatusTitle") || "Update User Statuses";
@@ -310,9 +310,9 @@ export function UserManagementPage() {
         role: getRoleLabel(confirmation.newValue as UserRole),
       });
     }
-    if (confirmation.type === "client_type") {
+    if (confirmation.type === "clientType") {
       return (t("userManagement.confirmClientTypeDesc") || "Are you sure you want to change the client type for {name} to {type}?")
-        .replace("{name}", confirmation.userName)
+        .replace("{name}", confirmation.userName ?? "")
         .replace("{type}", getClientTypeLabel(confirmation.newValue as ClientType));
     }
     if (confirmation.type === "bulk_role") {
@@ -334,7 +334,7 @@ export function UserManagementPage() {
     }
     if (confirmation.type === "delete") {
       return (t("userManagement.confirmDeleteDesc") || "Are you sure you want to permanently delete the user account for {name}? This action cannot be undone.")
-        .replace("{name}", confirmation.userName);
+        .replace("{name}", confirmation.userName ?? "")
     }
     if (confirmation.type === "bulk_delete") {
       return (t("userManagement.confirmBulkDeleteDesc") || "Are you sure you want to permanently delete {count} user account(s)? This action cannot be undone.")
