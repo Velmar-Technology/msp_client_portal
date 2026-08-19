@@ -32,7 +32,7 @@ if (isSMTPConfigured) {
     // Asynchronously verify connection on startup so we don't block server initialization
     transporter.verify()
       .then(() => {
-        logger.info('📧 SMTP connection verified successfully!');
+        logger.info('SMTP connection verified successfully!');
       })
       .catch((error) => {
         logger.error('📧 SMTP connection verification failed. Falling back to STUB mode for emails.', {

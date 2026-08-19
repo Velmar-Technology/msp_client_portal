@@ -1,8 +1,8 @@
 import { ticketRepository, TicketRepository } from '@modules/tickets/repositories/TicketRepository';
 import { ticketEventRepository, TicketEventRepository } from '@modules/tickets/repositories/TicketEventRepository';
-import { userRepository, UserRepository } from '@modules/auth/repositories/UserRepository';
+import { userRepository, UserRepository } from '@modules/auth';
 import { assignmentService, AssignmentService } from '@modules/tickets/services/AssignmentService';
-import { notificationService, NotificationService } from '@modules/notifications/services/NotificationService';
+import { notificationService, NotificationService } from '@modules/notifications';
 import { ticketQuotaService, TicketQuotaService } from '@modules/tickets/services/TicketQuotaService';
 import { logger } from '@shared/utils/logger';
 import { Ticket, TicketPriority, TicketStatus, UserContext } from '@shared/types';

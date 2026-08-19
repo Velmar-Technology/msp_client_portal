@@ -1,5 +1,5 @@
 import { SubscriptionRepository, subscriptionRepository } from '@modules/subscriptions/repositories/SubscriptionRepository';
-import { UserRepository, userRepository } from '@modules/auth/repositories/UserRepository';
+import { UserRepository, userRepository } from '@modules/auth';
 import { SubscriptionLifecycleService, subscriptionLifecycleService } from '@modules/subscriptions/services/SubscriptionLifecycleService';
 import { SubscriptionPaymentService, subscriptionPaymentService } from '@modules/subscriptions/services/SubscriptionPaymentService';
 import { SubscriptionQuotationService, subscriptionQuotationService } from '@modules/subscriptions/services/SubscriptionQuotationService';

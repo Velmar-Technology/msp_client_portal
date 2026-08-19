@@ -1,5 +1,5 @@
 import { User, TicketCategory, TicketPriority } from '@shared/types';
-import { userRepository, UserRepository } from '@modules/auth/repositories/UserRepository';
+import { userRepository, UserRepository } from '@modules/auth';
 import { ticketRepository, TicketRepository } from '@modules/tickets/repositories/TicketRepository';
 import { PRIORITY_WEIGHTS, LOAD_CAPACITY_THRESHOLD } from '@shared/config/constants';
 import { logger } from '@shared/utils/logger';

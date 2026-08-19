@@ -7,5 +7,7 @@ export * from './services/BillingPricingService';
 export * from './services/FinancialStatsService';
 export * from './services/ExpenseService';
 export * from './services/PaypalService';
+export * from './repositories/InvoiceRepository';
 export * from './routes/invoice.routes';
 export * from './routes/expense.routes';
+

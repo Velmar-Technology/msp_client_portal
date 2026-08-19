@@ -3,7 +3,7 @@ import { invoiceService } from '@modules/billing/services/InvoiceService';
 import { InvoiceStatus, Invoice } from '@shared/types';
 import * as emailService from '@shared/utils/emailService';
 import { invoiceRepository } from '@modules/billing/repositories/InvoiceRepository';
-import { userRepository } from '@modules/auth/repositories/UserRepository';
+import { userRepository } from '@modules/auth';
 
 vi.mock('@modules/billing/repositories/InvoiceRepository', () => ({
   invoiceRepository: {

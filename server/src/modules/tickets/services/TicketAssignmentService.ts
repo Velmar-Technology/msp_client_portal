@@ -1,7 +1,7 @@
 import { ticketRepository, TicketRepository } from '@modules/tickets/repositories/TicketRepository';
 import { ticketEventRepository, TicketEventRepository } from '@modules/tickets/repositories/TicketEventRepository';
-import { userRepository, UserRepository } from '@modules/auth/repositories/UserRepository';
-import { notificationService, NotificationService } from '@modules/notifications/services/NotificationService';
+import { userRepository, UserRepository } from '@modules/auth';
+import { notificationService, NotificationService } from '@modules/notifications';
 import { AppError } from '@shared/utils/AppError';
 import { Ticket, UserRole } from '@shared/types';
 

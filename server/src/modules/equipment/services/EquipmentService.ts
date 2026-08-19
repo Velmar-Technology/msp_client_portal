@@ -1,8 +1,8 @@
 import { equipmentRepository, EquipmentRepository } from '@modules/equipment/repositories/EquipmentRepository';
-import { subscriptionRepository, SubscriptionRepository } from '@modules/subscriptions/repositories/SubscriptionRepository';
-import { planRepository, PlanRepository } from '@modules/subscriptions/repositories/PlanRepository';
-import { nextcloudService, NextcloudService } from '@modules/system/services/NextcloudService';
-import { rmmPatchService, RmmPatchService } from '@modules/rmm/services/RmmPatchService';
+import { subscriptionRepository, SubscriptionRepository } from '@modules/subscriptions';
+import { planRepository, PlanRepository } from '@modules/subscriptions';
+import { nextcloudService, NextcloudService } from '@modules/system';
+import { rmmPatchService, RmmPatchService } from '@modules/rmm';
 import { AppError } from '@shared/utils/AppError';
 import { logger } from '@shared/utils/logger';
 import { SubscriptionEquipment, EquipmentWithDetails } from '@shared/types';
@@ -36,6 +36,26 @@ export class EquipmentService {
     private rmmPatchSvc: RmmPatchService = rmmPatchService,
   ) {}
 
+  private get equipmentRepository(): EquipmentRepository {
+    return this.equipmentRepo || equipmentRepository;
+  }
+
+  private get subRepo(): SubscriptionRepository {
+    return this.subscriptionRepo || subscriptionRepository;
+  }
+
+  private get planRepository(): PlanRepository {
+    return this.planRepo || planRepository;
+  }
+
+  private get nextcloudService(): NextcloudService {
+    return this.nextcloudSvc || nextcloudService;
+  }
+
+  private get rmmPatchService(): RmmPatchService {
+    return this.rmmPatchSvc || rmmPatchService;
+  }
+
   /**
    * Utility helper to generate a numeric OTP string.
    */
@@ -61,7 +81,7 @@ export class EquipmentService {
     const existingIndices = new Set(slots.map((s) => s.slot_index));
     for (let i = 0; i < targetCount; i++) {
       if (!existingIndices.has(i)) {
-        const newSlot = await this.equipmentRepo.create({
+        const newSlot = await this.equipmentRepository.create({
           subscription_id: subscriptionId,
           slot_index: i,
           status: 'PENDING_ACTIVATION',
@@ -78,11 +98,11 @@ export class EquipmentService {
    * Retrieves equipment slots for a subscription, creating missing slots if necessary.
    */
   async getEquipmentSlots(subscriptionId: string, tenantId: string, byAdmin = false): Promise<SubscriptionEquipment[]> {
-    const sub = await this.subscriptionRepo.findById(subscriptionId);
+    const sub = await this.subRepo.findById(subscriptionId);
     if (!sub) throw AppError.notFound('Subscription not found');
     if (!byAdmin && sub.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
 
-    const existingSlots = await this.equipmentRepo.findBySubscription(subscriptionId);
+    const existingSlots = await this.equipmentRepository.findBySubscription(subscriptionId);
     const allSlots = await this.ensureSlotsInitialized(subscriptionId, sub.equipment_count, tenantId, existingSlots);
     return allSlots.slice(0, sub.equipment_count);
   }
@@ -96,7 +116,7 @@ export class EquipmentService {
     }
     await this.getEquipmentSlots(subscriptionId, tenantId, byAdmin);
 
-    const slot = await this.equipmentRepo.findBySlot(subscriptionId, slotIndex);
+    const slot = await this.equipmentRepository.findBySlot(subscriptionId, slotIndex);
     if (!slot) throw AppError.notFound('Equipment slot not found');
     if (!byAdmin && slot.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
 
@@ -107,7 +127,7 @@ export class EquipmentService {
       await this.cleanupNextcloudUser(slot.nextcloud_username);
     }
 
-    const updated = await this.equipmentRepo.update(slot.id, {
+    const updated = await this.equipmentRepository.update(slot.id, {
       status: 'PENDING_ACTIVATION',
       otp,
       otp_expires_at: expiresAt,
@@ -124,7 +144,7 @@ export class EquipmentService {
    */
   private async cleanupNextcloudUser(username: string): Promise<void> {
     try {
-      await this.nextcloudSvc.deleteUser(username);
+      await this.nextcloudService.deleteUser(username);
     } catch (err) {
       logger.warn('Failed to delete Nextcloud user', { username, err });
     }
@@ -135,7 +155,7 @@ export class EquipmentService {
    */
   private async resolveSlotToActivate(options: ActivateSlotOptions): Promise<SubscriptionEquipment> {
     if (options.otp) {
-      const slot = await this.equipmentRepo.findByOtp(options.otp);
+      const slot = await this.equipmentRepository.findByOtp(options.otp);
       if (!slot) throw AppError.notFound('Activation code (OTP) not found or invalid');
       if (slot.otp_expires_at && slot.otp_expires_at < new Date()) {
         throw AppError.badRequest('Activation code (OTP) has expired');
@@ -144,7 +164,7 @@ export class EquipmentService {
       return slot;
     }
     if (options.subscriptionId !== undefined && options.slotIndex !== undefined) {
-      const slot = await this.equipmentRepo.findBySlot(options.subscriptionId, options.slotIndex);
+      const slot = await this.equipmentRepository.findBySlot(options.subscriptionId, options.slotIndex);
       if (!slot) throw AppError.notFound('Slot not found');
       if (!options.byAdmin && slot.tenant_id !== options.tenantId) throw AppError.forbidden('Access denied');
       return slot;
@@ -160,7 +180,7 @@ export class EquipmentService {
     if (planId.includes('PL-002')) return '50 GB';
     if (planId.includes('PL-003')) return '100 GB';
 
-    const planDetails = await this.planRepo.findById(planId);
+    const planDetails = await this.planRepository.findById(planId);
     if (!planDetails) return '25 GB';
 
     const feature = planDetails.features.find((f: any) =>
@@ -187,7 +207,7 @@ export class EquipmentService {
     displayName: string
   ): Promise<string> {
     try {
-      return await this.nextcloudSvc.provisionUser({
+      return await this.nextcloudService.provisionUser({
         username,
         quota,
         displayName,
@@ -203,7 +223,7 @@ export class EquipmentService {
    */
   async activateSlot(options: ActivateSlotOptions): Promise<SubscriptionEquipment> {
     const slot = await this.resolveSlotToActivate(options);
-    const sub = await this.subscriptionRepo.findById(slot.subscription_id);
+    const sub = await this.subRepo.findById(slot.subscription_id);
     if (!sub) throw AppError.notFound('Subscription not found');
 
     const quota = await this.resolveStorageQuota(sub.plan);
@@ -211,7 +231,7 @@ export class EquipmentService {
     const displayName = `${options.deviceName} (${options.deviceSerial})`;
     const password = await this.provisionNextcloudUser(username, quota, displayName);
 
-    const updated = await this.equipmentRepo.update(slot.id, {
+    const updated = await this.equipmentRepository.update(slot.id, {
       status: 'ACTIVE',
       device_name: options.deviceName,
       device_serial: options.deviceSerial,
@@ -223,7 +243,7 @@ export class EquipmentService {
 
     // Auto-provision equipment into Zabbix RMM
     try {
-      await this.rmmPatchSvc.triggerPatchScan(slot.id, slot.tenant_id);
+      await this.rmmPatchService.triggerPatchScan(slot.id, slot.tenant_id);
       logger.info('Auto-provisioned equipment to RMM/Zabbix upon slot activation', { equipmentId: slot.id, deviceName: options.deviceName });
     } catch (err) {
       logger.warn('Deferred RMM auto-provisioning on slot activation', { equipmentId: slot.id, err });
@@ -236,7 +256,7 @@ export class EquipmentService {
    * Deactivates/revokes an equipment slot and deletes its Nextcloud account.
    */
   async deactivateSlot(subscriptionId: string, slotIndex: number, tenantId: string, byAdmin = false): Promise<SubscriptionEquipment> {
-    const slot = await this.equipmentRepo.findBySlot(subscriptionId, slotIndex);
+    const slot = await this.equipmentRepository.findBySlot(subscriptionId, slotIndex);
     if (!slot) throw AppError.notFound('Slot not found');
     if (!byAdmin && slot.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
 
@@ -244,7 +264,7 @@ export class EquipmentService {
       await this.cleanupNextcloudUser(slot.nextcloud_username);
     }
 
-    const updated = await this.equipmentRepo.update(slot.id, {
+    const updated = await this.equipmentRepository.update(slot.id, {
       status: 'PENDING_ACTIVATION',
       device_name: null,
       device_serial: null,
@@ -267,7 +287,7 @@ export class EquipmentService {
     for (const dev of devices) {
       if (dev.status === 'ACTIVE' && (dev.cpu_usage == null || dev.agent_status == null)) {
         try {
-          const telemetry = await this.rmmPatchSvc.triggerPatchScan(dev.id, dev.tenant_id, true);
+          const telemetry = await this.rmmPatchService.triggerPatchScan(dev.id, dev.tenant_id, true);
           if (telemetry) {
             dev.agent_status = telemetry.agent_status ?? 'ONLINE';
             dev.cpu_usage = telemetry.cpu_usage;
@@ -295,19 +315,19 @@ export class EquipmentService {
    */
   async getActiveDevicesForClient(clientId: string, tenantId: string): Promise<SubscriptionEquipment[]> {
     const isUuid = typeof clientId === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(clientId);
-    const hasTenantFind = typeof this.equipmentRepo.findActiveByTenant === 'function';
+    const hasTenantFind = typeof this.equipmentRepository.findActiveByTenant === 'function';
     let devices = (!isUuid && hasTenantFind)
-      ? await this.equipmentRepo.findActiveByTenant(tenantId)
-      : await this.equipmentRepo.findActiveByClient(clientId, tenantId);
+      ? await this.equipmentRepository.findActiveByTenant(tenantId)
+      : await this.equipmentRepository.findActiveByClient(clientId, tenantId);
 
     if (devices.length === 0 && hasTenantFind) {
-      devices = await this.equipmentRepo.findActiveByTenant(tenantId);
+      devices = await this.equipmentRepository.findActiveByTenant(tenantId);
     }
 
     await this.ensureTelemetryProvisioned(devices);
     const refreshed = (!isUuid && hasTenantFind)
-      ? await this.equipmentRepo.findActiveByTenant(tenantId)
-      : await this.equipmentRepo.findActiveByClient(clientId, tenantId);
+      ? await this.equipmentRepository.findActiveByTenant(tenantId)
+      : await this.equipmentRepository.findActiveByClient(clientId, tenantId);
 
     return refreshed.length > 0 ? refreshed : devices;
   }
@@ -316,13 +336,13 @@ export class EquipmentService {
    * Gets all client devices across all subscriptions and tenants (for Admin view).
    */
   async getAllDevicesForAdmin(): Promise<EquipmentWithDetails[]> {
-    const activeSubs = await this.subscriptionRepo.findAllActive();
+    const activeSubs = await this.subRepo.findAllActive();
     for (const sub of activeSubs) {
       await this.getEquipmentSlots(sub.id, sub.tenant_id, true);
     }
-    const devices = await this.equipmentRepo.findAllWithDetails();
+    const devices = await this.equipmentRepository.findAllWithDetails();
     await this.ensureTelemetryProvisioned(devices);
-    return this.equipmentRepo.findAllWithDetails();
+    return this.equipmentRepository.findAllWithDetails();
   }
 
   /**
@@ -334,7 +354,7 @@ export class EquipmentService {
     tenantId: string,
     byAdmin = false
   ): Promise<NextcloudStorageInfo> {
-    const slot = await this.equipmentRepo.findBySlot(subscriptionId, slotIndex);
+    const slot = await this.equipmentRepository.findBySlot(subscriptionId, slotIndex);
     if (!slot) throw AppError.notFound('Slot not found');
     if (!byAdmin && slot.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
 
@@ -343,7 +363,7 @@ export class EquipmentService {
 
     if (slot.status === 'ACTIVE' && slot.nextcloud_username) {
       try {
-        const quota = await this.nextcloudSvc.getUserStorage(slot.nextcloud_username);
+        const quota = await this.nextcloudService.getUserStorage(slot.nextcloud_username);
         used = quota.used;
         total = quota.total;
       } catch (err) {

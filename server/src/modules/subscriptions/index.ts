@@ -6,5 +6,8 @@ export * from './services/SubscriptionQuotationService';
 export * from './services/SubscriptionScheduler';
 export * from './services/PlanAdminService';
 export * from './services/PlanQueryService';
+export * from './repositories/SubscriptionRepository';
+export * from './repositories/PlanRepository';
 export * from './routes/subscription.routes';
 export * from './routes/plan.routes';
+

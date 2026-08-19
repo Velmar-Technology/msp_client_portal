@@ -1,5 +1,5 @@
 import { SubscriptionRepository, subscriptionRepository } from '@modules/subscriptions/repositories/SubscriptionRepository';
-import { InvoiceNotificationService, invoiceNotificationService } from '@modules/billing/services/InvoiceNotificationService';
+import { InvoiceNotificationService, invoiceNotificationService } from '@modules/billing';
 import { SubscriptionRenewalService, subscriptionRenewalService } from '@modules/subscriptions/services/SubscriptionRenewalService';
 import { logger } from '@shared/utils/logger';
 

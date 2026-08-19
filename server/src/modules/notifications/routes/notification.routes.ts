@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import { env } from '@shared/config/env';
 import { JwtPayload } from '@shared/types';
 import { AppError } from '@shared/utils/AppError';
-import { userRepository } from '@modules/auth/repositories/UserRepository';
+import { userRepository } from '@modules/auth';
 
 const router = Router();
 

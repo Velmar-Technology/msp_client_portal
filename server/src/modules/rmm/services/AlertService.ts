@@ -1,7 +1,7 @@
 import { rmmAlertRepository, RmmAlertRepository } from '@modules/rmm/repositories/RmmAlertRepository';
-import { ticketRepository, TicketRepository } from '@modules/tickets/repositories/TicketRepository';
-import { ticketEventRepository, TicketEventRepository } from '@modules/tickets/repositories/TicketEventRepository';
-import { ticketCreationService, TicketCreationService } from '@modules/tickets/services/TicketCreationService';
+import { ticketRepository, TicketRepository } from '@modules/tickets';
+import { ticketEventRepository, TicketEventRepository } from '@modules/tickets';
+import { ticketCreationService, TicketCreationService } from '@modules/tickets';
 import { logger } from '@shared/utils/logger';
 import {
   RMM_DEDUP_WINDOW_MS,

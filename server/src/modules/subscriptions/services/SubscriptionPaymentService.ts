@@ -1,6 +1,6 @@
 import { PlanRepository, planRepository } from '@modules/subscriptions/repositories/PlanRepository';
-import { PaypalService, paypalService } from '@modules/billing/services/PaypalService';
-import { BillingPricingService, billingPricingService } from '@modules/billing/services/BillingPricingService';
+import { PaypalService, paypalService } from '@modules/billing';
+import { BillingPricingService, billingPricingService } from '@modules/billing';
 import { AppError } from '@shared/utils/AppError';
 import { env } from '@shared/config/env';
 
@@ -44,14 +44,14 @@ export class SubscriptionPaymentService {
         throw AppError.badRequest('New equipment count must be greater than current count for an upgrade payment');
       }
       description = `Upgrade for ${planDetails.name} - Adding ${additionalCount} Equipment`;
-      total = this.pricingSvc.calculateUpgradePricing(price, additionalCount, billingCycle).total;
+      total = this.pricing.calculateUpgradePricing(price, additionalCount, billingCycle).total;
     } else {
-      total = this.pricingSvc.calculatePricing(price, equipmentCount, billingCycle).total;
+      total = this.pricing.calculatePricing(price, equipmentCount, billingCycle).total;
       description = `${planDetails.name} Subscription - ${equipmentCount} Equipment (${billingCycle === 'annual' ? 'Annually' : 'Monthly'})`;
     }
 
     const referenceId = `SUB-${planDetails.id}-${Date.now()}`;
-    const order = await this.paypalSvc.createOrderForAmount(total, description, referenceId);
+    const order = await this.paypal.createOrderForAmount(total, description, referenceId);
     return { orderId: order.id };
   }
 
@@ -68,7 +68,7 @@ export class SubscriptionPaymentService {
     const billingCycle = data.billingCycle || 'monthly';
     const equipmentCount = data.equipmentCount ?? 1;
 
-    await this.paypalSvc.createProduct(
+    await this.paypal.createProduct(
       'MSP Helpdesk Support Service',
       'Premium technical support and device slots monitoring service'
     );
@@ -77,12 +77,12 @@ export class SubscriptionPaymentService {
 
     if (!paypalPlanId) {
       const price = planDetails.price;
-      const unitPriceWithTax = this.pricingSvc.calculatePricing(price, 1, billingCycle).total;
+      const unitPriceWithTax = this.pricing.calculatePricing(price, 1, billingCycle).total;
 
       const planName = `${getLocalizedValue(planDetails.name)} Plan - ${billingCycle === 'annual' ? 'Annual' : 'Monthly'}`;
       const planDesc = `${getLocalizedValue(planDetails.description) || 'Recurring subscription plan'}`;
 
-      paypalPlanId = await this.paypalSvc.createPlan(
+      paypalPlanId = await this.paypal.createPlan(
         'MSP-PLAN-SUPPORT',
         planName,
         planDesc,
@@ -100,7 +100,7 @@ export class SubscriptionPaymentService {
     const returnUrl = `${env.CORS_ORIGIN}/plans?success=true`;
     const cancelUrl = `${env.CORS_ORIGIN}/plans?cancel=true`;
 
-    const paypalSubscription = await this.paypalSvc.createSubscription(
+    const paypalSubscription = await this.paypal.createSubscription(
       paypalPlanId!,
       equipmentCount,
       returnUrl,
@@ -113,10 +113,18 @@ export class SubscriptionPaymentService {
     };
   }
 
+  private get paypal(): PaypalService {
+    return this.paypalSvc || paypalService;
+  }
+
+  private get pricing(): BillingPricingService {
+    return this.pricingSvc || billingPricingService;
+  }
+
   async verifyPaypalOrderPayment(paypalOrderId: string, expectedTotal: number): Promise<void> {
-    const order = await this.paypalSvc.getOrder(paypalOrderId);
+    const order = await this.paypal.getOrder(paypalOrderId);
     if (order.status === 'APPROVED') {
-      const capture = await this.paypalSvc.captureOrder(paypalOrderId);
+      const capture = await this.paypal.captureOrder(paypalOrderId);
       order.status = capture.status;
     }
 
@@ -132,9 +140,9 @@ export class SubscriptionPaymentService {
   }
 
   async verifyPaypalUpgradePayment(paypalOrderId: string, expectedUpgradeTotal: number): Promise<void> {
-    const order = await this.paypalSvc.getOrder(paypalOrderId);
+    const order = await this.paypal.getOrder(paypalOrderId);
     if (order.status === 'APPROVED') {
-      const capture = await this.paypalSvc.captureOrder(paypalOrderId);
+      const capture = await this.paypal.captureOrder(paypalOrderId);
       order.status = capture.status;
     }
 

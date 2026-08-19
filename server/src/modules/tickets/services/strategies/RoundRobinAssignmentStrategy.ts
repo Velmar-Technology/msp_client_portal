@@ -1,5 +1,5 @@
 import { User, TicketCategory, TicketPriority } from '@shared/types';
-import { userRepository, UserRepository } from '@modules/auth/repositories/UserRepository';
+import { userRepository, UserRepository } from '@modules/auth';
 import { roundRobinRepository, RoundRobinRepository } from '@modules/tickets/repositories/RoundRobinRepository';
 import { logger } from '@shared/utils/logger';
 import { IAssignmentStrategy } from './IAssignmentStrategy';

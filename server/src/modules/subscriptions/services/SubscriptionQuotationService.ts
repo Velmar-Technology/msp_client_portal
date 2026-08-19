@@ -1,4 +1,4 @@
-import { userRepository, UserRepository } from '@modules/auth/repositories/UserRepository';
+import { userRepository, UserRepository } from '@modules/auth';
 import { planRepository, PlanRepository } from '@modules/subscriptions/repositories/PlanRepository';
 import { SendQuoteInput } from '@shared/dtos/subscription.dto';
 import { sendQuotationEmail } from '@shared/utils/emailService';

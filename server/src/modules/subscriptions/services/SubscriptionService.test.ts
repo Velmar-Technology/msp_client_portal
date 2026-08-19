@@ -60,6 +60,31 @@ vi.mock('@modules/billing/services/PaypalService', () => {
   };
 });
 
+vi.mock('@modules/billing/repositories/InvoiceRepository', () => {
+  return {
+    invoiceRepository: {
+      findByInvoiceNumber: mocks.invoiceFindByNumber,
+      create: mocks.invoiceCreate,
+    },
+  };
+});
+
+vi.mock('@modules/billing', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@modules/billing')>();
+  return {
+    ...actual,
+    paypalService: {
+      getOrder: mocks.paypalGetOrder,
+      captureOrder: mocks.paypalCaptureOrder,
+      createOrderForAmount: mocks.paypalCreateOrderForAmount,
+    },
+    invoiceRepository: {
+      findByInvoiceNumber: mocks.invoiceFindByNumber,
+      create: mocks.invoiceCreate,
+    },
+  };
+});
+
 vi.mock('@modules/subscriptions/repositories/SubscriptionRepository', () => {
   return {
     subscriptionRepository: {
@@ -74,11 +99,14 @@ vi.mock('@modules/subscriptions/repositories/SubscriptionRepository', () => {
   };
 });
 
-vi.mock('@modules/auth/repositories/UserRepository', () => {
+vi.mock('@modules/auth', () => {
   return {
     userRepository: {
       findById: mocks.userFindById,
       findByRole: mocks.userFindByRole,
+    },
+    tenantRepository: {
+      findById: vi.fn().mockResolvedValue({ id: 'tenant-123', name: 'Test Tenant' }),
     },
   };
 });
@@ -91,16 +119,7 @@ vi.mock('@modules/subscriptions/repositories/PlanRepository', () => {
   };
 });
 
-vi.mock('@modules/billing/repositories/InvoiceRepository', () => {
-  return {
-    invoiceRepository: {
-      findByInvoiceNumber: mocks.invoiceFindByNumber,
-      create: mocks.invoiceCreate,
-    },
-  };
-});
-
-vi.mock('@modules/notifications/services/NotificationService', () => {
+vi.mock('@modules/notifications', () => {
   return {
     notificationService: {
       createInAppNotification: mocks.notificationCreateInApp,

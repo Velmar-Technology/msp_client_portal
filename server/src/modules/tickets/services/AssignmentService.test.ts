@@ -17,11 +17,14 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock('@modules/auth/repositories/UserRepository', () => {
+vi.mock('@modules/auth', () => {
   return {
     userRepository: {
       findTechniciansBySpecialty: mocks.findTechniciansBySpecialty,
       findActiveTechnicians: mocks.findActiveTechnicians,
+    },
+    tenantRepository: {
+      findById: vi.fn(),
     },
   };
 });
@@ -36,6 +39,9 @@ vi.mock('@modules/tickets/repositories/TicketRepository', () => {
 
 vi.mock('@shared/db', () => {
   return {
+    tenants: {},
+    users: {},
+    tickets: {},
     db: {
       select: mocks.dbSelect,
       insert: mocks.dbInsert,

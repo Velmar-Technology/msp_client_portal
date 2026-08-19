@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock('@modules/auth/repositories/UserRepository', () => {
+vi.mock('@modules/auth', () => {
   return {
     userRepository: {
       findById: vi.fn().mockResolvedValue({
@@ -23,6 +23,9 @@ vi.mock('@modules/auth/repositories/UserRepository', () => {
         email: 'client@example.com',
         language: 'en',
       }),
+    },
+    tenantRepository: {
+      findById: vi.fn().mockResolvedValue({ id: 'tenant-abc', name: 'ABC Tenant' }),
     },
   };
 });
@@ -51,7 +54,7 @@ vi.mock('@modules/subscriptions/repositories/PlanRepository', () => {
   };
 });
 
-vi.mock('@modules/billing/repositories/InvoiceRepository', () => {
+vi.mock('@modules/billing', () => {
   return {
     invoiceRepository: {
       findByInvoiceNumber: mocks.invoiceFindByNumber,
@@ -59,18 +62,22 @@ vi.mock('@modules/billing/repositories/InvoiceRepository', () => {
       findPendingDueInvoices: vi.fn().mockResolvedValue([]),
       updateLastEmailSentAt: vi.fn().mockResolvedValue({}),
     },
-  };
-});
-
-vi.mock('@modules/billing/services/PaypalService', () => {
-  return {
     paypalService: {
       getSubscription: mocks.paypalGetSubscription,
+    },
+    billingPricingService: {
+      calculatePricing: vi.fn().mockReturnValue({ subtotal: 100, tax: 18, total: 118 }),
+      generateInvoiceNumber: vi.fn().mockResolvedValue('INV-2026-0001'),
+      calculateDiscountedPrice: vi.fn(),
+      calculateTax: vi.fn(),
+    },
+    invoiceNotificationService: {
+      notifyInvoiceDue: vi.fn(),
     },
   };
 });
 
-vi.mock('@modules/notifications/services/NotificationService', () => {
+vi.mock('@modules/notifications', () => {
   return {
     notificationService: {
       createInAppNotification: mocks.createInAppNotification,

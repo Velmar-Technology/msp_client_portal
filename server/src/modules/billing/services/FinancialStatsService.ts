@@ -1,5 +1,5 @@
 import { InvoiceRepository, invoiceRepository } from '@modules/billing/repositories/InvoiceRepository';
-import { SubscriptionRepository, subscriptionRepository } from '@modules/subscriptions/repositories/SubscriptionRepository';
+import { SubscriptionRepository, subscriptionRepository } from '@modules/subscriptions';
 import { ExpenseRepository, expenseRepository } from '@modules/billing/repositories/ExpenseRepository';
 import { InvoiceStatus, UserRole } from '@shared/types';
 

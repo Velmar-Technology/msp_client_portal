@@ -1,5 +1,5 @@
-import { subscriptionRepository, SubscriptionRepository } from '@modules/subscriptions/repositories/SubscriptionRepository';
-import { planRepository, PlanRepository } from '@modules/subscriptions/repositories/PlanRepository';
+import { subscriptionRepository, SubscriptionRepository } from '@modules/subscriptions';
+import { planRepository, PlanRepository } from '@modules/subscriptions';
 import { ticketRepository, TicketRepository } from '@modules/tickets/repositories/TicketRepository';
 import { AppError } from '@shared/utils/AppError';
 import { HELPDESK_SUPPORT_FEATURE_CODE } from '@shared/config/constants';

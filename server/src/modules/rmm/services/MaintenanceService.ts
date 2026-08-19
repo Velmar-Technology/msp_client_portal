@@ -1,11 +1,11 @@
 import { maintenanceRepository, MaintenanceRepository } from '@modules/rmm/repositories/MaintenanceRepository';
-import { equipmentRepository, EquipmentRepository } from '@modules/equipment/repositories/EquipmentRepository';
-import { subscriptionRepository, SubscriptionRepository } from '@modules/subscriptions/repositories/SubscriptionRepository';
+import { equipmentRepository, EquipmentRepository } from '@modules/equipment';
+import { subscriptionRepository, SubscriptionRepository } from '@modules/subscriptions';
 import { AppError } from '@shared/utils/AppError';
 import { logger } from '@shared/utils/logger';
 import { DeviceMaintenance, UserRole, MaintenanceStatus, MaintenanceType } from '@shared/types';
 import { CreateMaintenanceInput, UpdateMaintenanceInput, MaintenanceQueryInput } from '@shared/dtos/maintenance.dto';
-import { notificationService, NotificationService } from '@modules/notifications/services/NotificationService';
+import { notificationService, NotificationService } from '@modules/notifications';
 
 export class MaintenanceService {
   constructor(

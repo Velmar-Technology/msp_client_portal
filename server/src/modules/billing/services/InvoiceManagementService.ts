@@ -1,5 +1,5 @@
 import { InvoiceRepository, invoiceRepository } from '@modules/billing/repositories/InvoiceRepository';
-import { SubscriptionRepository, subscriptionRepository } from '@modules/subscriptions/repositories/SubscriptionRepository';
+import { SubscriptionRepository, subscriptionRepository } from '@modules/subscriptions';
 import { InvoicePdfService, invoicePdfService } from '@modules/billing/services/InvoicePdfService';
 import { InvoiceNotificationService, invoiceNotificationService } from '@modules/billing/services/InvoiceNotificationService';
 import { InvoiceAccessPolicy, invoiceAccessPolicy } from '@shared/policies/InvoiceAccessPolicy';

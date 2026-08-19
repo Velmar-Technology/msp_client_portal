@@ -1,9 +1,9 @@
 import { ticketRepository, TicketRepository } from '@modules/tickets/repositories/TicketRepository';
 import { ticketEventRepository, TicketEventRepository } from '@modules/tickets/repositories/TicketEventRepository';
 import { ticketResponseRepository, TicketResponseRepository } from '@modules/tickets/repositories/TicketResponseRepository';
-import { userRepository, UserRepository } from '@modules/auth/repositories/UserRepository';
+import { userRepository, UserRepository } from '@modules/auth';
 import { assignmentService, AssignmentService } from '@modules/tickets/services/AssignmentService';
-import { notificationService, NotificationService } from '@modules/notifications/services/NotificationService';
+import { notificationService, NotificationService } from '@modules/notifications';
 import { AppError } from '@shared/utils/AppError';
 import { logger } from '@shared/utils/logger';
 import { ESCALATION_THRESHOLDS_MS, TIER_2_SPECIALTY } from '@shared/config/constants';

@@ -22,7 +22,7 @@ export async function testConnection(): Promise<void> {
     const client = await pool.connect();
     await client.query('SELECT NOW()');
     client.release();
-    logger.info('✅ PostgreSQL connected successfully');
+    logger.info('PostgreSQL connected successfully');
   } catch (error) {
     logger.error('❌ PostgreSQL connection failed', { error });
     throw error;

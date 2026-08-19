@@ -1,7 +1,7 @@
 import { Invoice, UserRole } from '@shared/types';
-import { userRepository, UserRepository } from '@modules/auth/repositories/UserRepository';
+import { userRepository, UserRepository } from '@modules/auth';
 import { invoiceRepository, InvoiceRepository } from '@modules/billing/repositories/InvoiceRepository';
-import { notificationService, NotificationService } from '@modules/notifications/services/NotificationService';
+import { notificationService, NotificationService } from '@modules/notifications';
 import { sendInvoiceDueEmail } from '@shared/utils/emailService';
 import { logger } from '@shared/utils/logger';
 

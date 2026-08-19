@@ -35,49 +35,42 @@ vi.mock('@modules/billing/repositories/InvoiceRepository', () => {
   };
 });
 
-vi.mock('@modules/subscriptions/repositories/SubscriptionRepository', () => {
-  return {
-    subscriptionRepository: {
-      getActiveSubscriptionsWithPlan: mocks.getActiveSubscriptionsWithPlan,
-      findByClient: mocks.subFindByClient,
-      updateStatus: mocks.subUpdateStatus,
-    },
-  };
-});
+vi.mock('@modules/subscriptions', () => ({
+  subscriptionRepository: {
+    getActiveSubscriptionsWithPlan: mocks.getActiveSubscriptionsWithPlan,
+    findByClient: mocks.subFindByClient,
+    updateStatus: mocks.subUpdateStatus,
+  },
+}));
 
-vi.mock('@modules/billing/repositories/ExpenseRepository', () => {
-  return {
-    expenseRepository: {
-      getAllForStats: mocks.getExpensesForStats,
-    },
-  };
-});
+vi.mock('@modules/billing/repositories/ExpenseRepository', () => ({
+  expenseRepository: {
+    getAllForStats: mocks.getExpensesForStats,
+  },
+}));
 
-vi.mock('@modules/billing/services/PaypalService', () => {
-  return {
-    paypalService: {
-      createOrder: mocks.paypalCreateOrder,
-      captureOrder: mocks.paypalCaptureOrder,
-    },
-  };
-});
+vi.mock('@modules/billing/services/PaypalService', () => ({
+  paypalService: {
+    createOrder: mocks.paypalCreateOrder,
+    captureOrder: mocks.paypalCaptureOrder,
+  },
+}));
 
-vi.mock('@modules/auth/repositories/UserRepository', () => {
-  return {
-    userRepository: {
-      findById: vi.fn().mockResolvedValue({ id: 'client-1', name: 'John Doe', email: 'john@example.com' }),
-      findByRole: vi.fn().mockResolvedValue([{ id: 'admin-1', name: 'Admin User' }]),
-    },
-  };
-});
+vi.mock('@modules/auth', () => ({
+  userRepository: {
+    findById: vi.fn().mockResolvedValue({ id: 'client-1', name: 'John Doe', email: 'john@example.com' }),
+    findByRole: vi.fn().mockResolvedValue([{ id: 'admin-1', name: 'Admin User' }]),
+  },
+  tenantRepository: {
+    findById: vi.fn().mockResolvedValue({ id: 'tenant-1', name: 'Test Tenant' }),
+  },
+}));
 
-vi.mock('@modules/notifications/services/NotificationService', () => {
-  return {
-    notificationService: {
-      createInAppNotification: mocks.createInAppNotification,
-    },
-  };
-});
+vi.mock('@modules/notifications', () => ({
+  notificationService: {
+    createInAppNotification: mocks.createInAppNotification,
+  },
+}));
 
 import { invoiceService } from './InvoiceService';
 import { UserRole, InvoiceStatus, Invoice, SubscriptionStatus } from '@shared/types';

@@ -1,6 +1,6 @@
 import { generateInvoicePdf } from '@shared/utils/pdfGenerator';
-import { userRepository, UserRepository } from '@modules/auth/repositories/UserRepository';
-import { tenantRepository, TenantRepository } from '@modules/auth/repositories/TenantRepository';
+import { userRepository, UserRepository } from '@modules/auth';
+import { tenantRepository, TenantRepository } from '@modules/auth';
 import { AppError } from '@shared/utils/AppError';
 import { Invoice } from '@shared/types';
 

@@ -50,10 +50,11 @@ COPY --from=builder /app/packages/errors/dist ./packages/errors/dist
 COPY --from=builder /app/server/dist ./server/dist
 
 # Copy migrations and seed.sql from server
-COPY --from=builder /app/server/src/db/migrations ./server/dist/db/migrations
-COPY --from=builder /app/server/src/db/seed.sql ./server/dist/db/seed.sql
+COPY --from=builder /app/server/src/shared/db/migrations ./server/dist/shared/db/migrations
+COPY --from=builder /app/server/src/shared/db/seed.sql ./server/dist/shared/db/seed.sql
 
 EXPOSE 3001
 
 # Run migrations and start the server
-CMD ["sh", "-c", "node server/dist/db/migrate.js && npm -w server run start"]
+CMD ["sh", "-c", "node server/dist/shared/db/migrate.js && npm -w server run start"]
+

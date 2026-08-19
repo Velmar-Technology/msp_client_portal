@@ -1,5 +1,5 @@
 import { InvoiceRepository, invoiceRepository } from '@modules/billing/repositories/InvoiceRepository';
-import { SubscriptionRepository, subscriptionRepository } from '@modules/subscriptions/repositories/SubscriptionRepository';
+import { SubscriptionRepository, subscriptionRepository } from '@modules/subscriptions';
 import { PaypalService, paypalService } from '@modules/billing/services/PaypalService';
 import { InvoiceNotificationService, invoiceNotificationService } from '@modules/billing/services/InvoiceNotificationService';
 import { InvoiceAccessPolicy, invoiceAccessPolicy } from '@shared/policies/InvoiceAccessPolicy';
