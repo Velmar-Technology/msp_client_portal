@@ -4,6 +4,15 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { maintenanceService, type DeviceMaintenance, type MaintenanceType } from "@/services/maintenanceService";
 import type { SubscriptionEquipment } from "@/services/equipmentService";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 
 interface ScheduleMaintenanceModalProps {
   equipment: Partial<SubscriptionEquipment> | null;
@@ -71,8 +80,6 @@ export function ScheduleMaintenanceModal({
     return provisionedEquipment.find((e) => e.id === selectedEquipId) || equipment;
   }, [equipment, provisionedEquipment, selectedEquipId]);
 
-  if (!isOpen) return null;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedEquipId) {
@@ -116,17 +123,17 @@ export function ScheduleMaintenanceModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-card border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150">
+    <AlertDialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <AlertDialogContent className="max-w-lg w-full bg-white dark:bg-card border border-zinc-200 dark:border-zinc-800 rounded-xl p-0 overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-50 dark:bg-zinc-900/50">
+        <AlertDialogHeader className="px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-800 flex flex-row justify-between items-center bg-zinc-50 dark:bg-zinc-900/50 space-y-0 text-left">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-primary/10 rounded-md text-primary">
               <Wrench className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{t("maintenance.modalTitle")}</h3>
-              <p className="text-[10px] text-zinc-500">{t("maintenance.modalSubtitle")}</p>
+              <AlertDialogTitle className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{t("maintenance.modalTitle")}</AlertDialogTitle>
+              <AlertDialogDescription className="text-[10px] text-zinc-500">{t("maintenance.modalSubtitle")}</AlertDialogDescription>
             </div>
           </div>
           <button
@@ -136,7 +143,7 @@ export function ScheduleMaintenanceModal({
           >
             <X className="h-4 w-4" />
           </button>
-        </div>
+        </AlertDialogHeader>
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs">
@@ -331,15 +338,15 @@ export function ScheduleMaintenanceModal({
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
-            <button
+          <AlertDialogFooter className="flex justify-end gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+            <AlertDialogCancel
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="h-8 px-3 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md transition-colors cursor-pointer"
+              className="h-8 px-3 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md transition-colors cursor-pointer mt-0"
             >
               {t("common.cancel")}
-            </button>
+            </AlertDialogCancel>
             <button
               type="submit"
               disabled={loading}
@@ -354,9 +361,10 @@ export function ScheduleMaintenanceModal({
                 <span>{t("maintenance.confirmSchedule")}</span>
               )}
             </button>
-          </div>
+          </AlertDialogFooter>
         </form>
-      </div>
-    </div>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
+

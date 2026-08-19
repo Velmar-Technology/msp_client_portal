@@ -18,7 +18,7 @@ import {
 import { useApiStatus } from "@/hooks/useApiStatus";
 import { Page } from "@/components/Page";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import SummaryCard from "@/components/dashboard/summary-card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -436,86 +436,66 @@ export function ApiStatusPage() {
             {/* KPI Metrics Summary Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
               {/* Card 1: Total Services */}
-              <Card className="bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800">
-                <CardHeader className="flex flex-row items-center justify-between pb-1.5 pt-3.5 px-4">
-                  <CardTitle className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                    {t("apiStatus.kpiTotal")}
-                  </CardTitle>
-                  <Server className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
-                </CardHeader>
-                <CardContent className="pb-3.5 px-4">
-                  <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 font-mono">
-                    {isLoading ? <Skeleton className="h-8 w-12" /> : data?.totalServices || 0}
-                  </div>
-                </CardContent>
-              </Card>
+              <SummaryCard
+                icon={<Server className="h-4 w-4 text-zinc-600 dark:text-zinc-400 shrink-0" />}
+                title={t("apiStatus.kpiTotal")}
+                value={
+                  <span className="font-mono text-2xl font-extrabold text-zinc-900 dark:text-zinc-100">
+                    {isLoading ? <Skeleton className="h-8 w-12 inline-block" /> : data?.totalServices || 0}
+                  </span>
+                }
+              />
 
               {/* Card 2: Operational Services */}
-              <Card className="bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800">
-                <CardHeader className="flex flex-row items-center justify-between pb-1.5 pt-3.5 px-4">
-                  <CardTitle className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
-                    {t("apiStatus.kpiOperational")}
-                  </CardTitle>
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                </CardHeader>
-                <CardContent className="pb-3.5 px-4">
-                  <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                    {isLoading ? <Skeleton className="h-8 w-12" /> : data?.operationalCount || 0}
-                  </div>
-                </CardContent>
-              </Card>
+              <SummaryCard
+                icon={<CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />}
+                title={<span className="text-emerald-600 dark:text-emerald-400">{t("apiStatus.kpiOperational")}</span>}
+                value={
+                  <span className="font-mono text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                    {isLoading ? <Skeleton className="h-8 w-12 inline-block" /> : data?.operationalCount || 0}
+                  </span>
+                }
+              />
 
               {/* Card 3: Degraded Services */}
-              <Card className="bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800">
-                <CardHeader className="flex flex-row items-center justify-between pb-1.5 pt-3.5 px-4">
-                  <CardTitle className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
-                    {t("apiStatus.kpiDegraded")}
-                  </CardTitle>
-                  <AlertTriangle className="h-4 w-4 text-amber-500" />
-                </CardHeader>
-                <CardContent className="pb-3.5 px-4">
-                  <div className="text-2xl font-bold text-amber-600 dark:text-amber-400 font-mono">
-                    {isLoading ? <Skeleton className="h-8 w-12" /> : data?.degradedCount || 0}
-                  </div>
-                </CardContent>
-              </Card>
+              <SummaryCard
+                icon={<AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />}
+                title={<span className="text-amber-600 dark:text-amber-400">{t("apiStatus.kpiDegraded")}</span>}
+                value={
+                  <span className="font-mono text-2xl font-extrabold text-amber-600 dark:text-amber-400">
+                    {isLoading ? <Skeleton className="h-8 w-12 inline-block" /> : data?.degradedCount || 0}
+                  </span>
+                }
+              />
 
               {/* Card 4: Outages */}
-              <Card className="bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800">
-                <CardHeader className="flex flex-row items-center justify-between pb-1.5 pt-3.5 px-4">
-                  <CardTitle className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider">
-                    {t("apiStatus.kpiDown")}
-                  </CardTitle>
-                  <XCircle className="h-4 w-4 text-red-500" />
-                </CardHeader>
-                <CardContent className="pb-3.5 px-4">
-                  <div className="text-2xl font-bold text-red-600 dark:text-red-400 font-mono">
-                    {isLoading ? <Skeleton className="h-8 w-12" /> : data?.downCount || 0}
-                  </div>
-                </CardContent>
-              </Card>
+              <SummaryCard
+                icon={<XCircle className="h-4 w-4 text-red-500 shrink-0" />}
+                title={<span className="text-red-600 dark:text-red-400">{t("apiStatus.kpiDown")}</span>}
+                value={
+                  <span className="font-mono text-2xl font-extrabold text-red-600 dark:text-red-400">
+                    {isLoading ? <Skeleton className="h-8 w-12 inline-block" /> : data?.downCount || 0}
+                  </span>
+                }
+              />
 
               {/* Card 5: Average Latency */}
-              <Card className="bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800">
-                <CardHeader className="flex flex-row items-center justify-between pb-1.5 pt-3.5 px-4">
-                  <CardTitle className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                    {t("apiStatus.kpiAvgLatency")}
-                  </CardTitle>
-                  <Clock className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
-                </CardHeader>
-                <CardContent className="pb-3.5 px-4">
-                  <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 font-mono">
+              <SummaryCard
+                icon={<Clock className="h-4 w-4 text-zinc-600 dark:text-zinc-400 shrink-0" />}
+                title={t("apiStatus.kpiAvgLatency")}
+                value={
+                  <span className="font-mono text-2xl font-extrabold text-zinc-900 dark:text-zinc-100">
                     {isLoading ? (
-                      <Skeleton className="h-8 w-16" />
+                      <Skeleton className="h-8 w-16 inline-block" />
                     ) : (
                       <>
                         {data?.averageLatencyMs || 0}{" "}
                         <span className="text-xs font-normal text-zinc-500">{t("apiStatus.unitMs")}</span>
                       </>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
+                  </span>
+                }
+              />
             </div>
 
             {/* Status Tabs Filter Bar */}
@@ -579,64 +559,48 @@ export function ApiStatusPage() {
             {/* KPI Metrics Cards for Env Vars */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
               {/* Total Env Vars */}
-              <Card className="bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800">
-                <CardHeader className="flex flex-row items-center justify-between pb-1.5 pt-3.5 px-4">
-                  <CardTitle className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                    {t("apiStatus.kpiEnvTotal")}
-                  </CardTitle>
-                  <Sliders className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
-                </CardHeader>
-                <CardContent className="pb-3.5 px-4">
-                  <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 font-mono">
-                    {isLoading ? <Skeleton className="h-8 w-12" /> : data?.envTotal || 0}
-                  </div>
-                </CardContent>
-              </Card>
+              <SummaryCard
+                icon={<Sliders className="h-4 w-4 text-zinc-600 dark:text-zinc-400 shrink-0" />}
+                title={t("apiStatus.kpiEnvTotal")}
+                value={
+                  <span className="font-mono text-2xl font-extrabold text-zinc-900 dark:text-zinc-100">
+                    {isLoading ? <Skeleton className="h-8 w-12 inline-block" /> : data?.envTotal || 0}
+                  </span>
+                }
+              />
 
               {/* Fully Configured */}
-              <Card className="bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800">
-                <CardHeader className="flex flex-row items-center justify-between pb-1.5 pt-3.5 px-4">
-                  <CardTitle className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
-                    {t("apiStatus.kpiEnvConfigured")}
-                  </CardTitle>
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                </CardHeader>
-                <CardContent className="pb-3.5 px-4">
-                  <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                    {isLoading ? <Skeleton className="h-8 w-12" /> : data?.envConfiguredCount || 0}
-                  </div>
-                </CardContent>
-              </Card>
+              <SummaryCard
+                icon={<CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />}
+                title={<span className="text-emerald-600 dark:text-emerald-400">{t("apiStatus.kpiEnvConfigured")}</span>}
+                value={
+                  <span className="font-mono text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                    {isLoading ? <Skeleton className="h-8 w-12 inline-block" /> : data?.envConfiguredCount || 0}
+                  </span>
+                }
+              />
 
               {/* Default Placeholders */}
-              <Card className="bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800">
-                <CardHeader className="flex flex-row items-center justify-between pb-1.5 pt-3.5 px-4">
-                  <CardTitle className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
-                    {t("apiStatus.kpiEnvDegraded")}
-                  </CardTitle>
-                  <AlertTriangle className="h-4 w-4 text-amber-500" />
-                </CardHeader>
-                <CardContent className="pb-3.5 px-4">
-                  <div className="text-2xl font-bold text-amber-600 dark:text-amber-400 font-mono">
-                    {isLoading ? <Skeleton className="h-8 w-12" /> : data?.envDegradedCount || 0}
-                  </div>
-                </CardContent>
-              </Card>
+              <SummaryCard
+                icon={<AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />}
+                title={<span className="text-amber-600 dark:text-amber-400">{t("apiStatus.kpiEnvDegraded")}</span>}
+                value={
+                  <span className="font-mono text-2xl font-extrabold text-amber-600 dark:text-amber-400">
+                    {isLoading ? <Skeleton className="h-8 w-12 inline-block" /> : data?.envDegradedCount || 0}
+                  </span>
+                }
+              />
 
               {/* Missing / Unset */}
-              <Card className="bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800">
-                <CardHeader className="flex flex-row items-center justify-between pb-1.5 pt-3.5 px-4">
-                  <CardTitle className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider">
-                    {t("apiStatus.kpiEnvMissing")}
-                  </CardTitle>
-                  <XCircle className="h-4 w-4 text-red-500" />
-                </CardHeader>
-                <CardContent className="pb-3.5 px-4">
-                  <div className="text-2xl font-bold text-red-600 dark:text-red-400 font-mono">
-                    {isLoading ? <Skeleton className="h-8 w-12" /> : data?.envMissingCount || 0}
-                  </div>
-                </CardContent>
-              </Card>
+              <SummaryCard
+                icon={<XCircle className="h-4 w-4 text-red-500 shrink-0" />}
+                title={<span className="text-red-600 dark:text-red-400">{t("apiStatus.kpiEnvMissing")}</span>}
+                value={
+                  <span className="font-mono text-2xl font-extrabold text-red-600 dark:text-red-400">
+                    {isLoading ? <Skeleton className="h-8 w-12 inline-block" /> : data?.envMissingCount || 0}
+                  </span>
+                }
+              />
             </div>
 
             {/* Environment Status Filter Bar */}

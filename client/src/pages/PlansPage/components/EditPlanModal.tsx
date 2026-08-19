@@ -5,6 +5,15 @@ import type { Plan, PlanFeature } from "@/services/planService";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { FEATURE_CATALOG } from "@/constants/featureCatalog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 
 interface EditPlanModalProps {
   editingPlan: Plan;
@@ -85,15 +94,18 @@ export function EditPlanModal({
   const [activeLang, setActiveLang] = useState<'en_US' | 'es_DO'>('en_US');
   const [featureLangTab, setFeatureLangTab] = useState<'en_US' | 'es_DO'>('en_US');
 
+  const titleText = isCreateMode ? (t('plans.addNewPlan') || 'Add New Plan') : (t('plans.editPlanTitle', { id: editingPlan.id }) || `Edit Plan: ${editingPlan.id}`);
+
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-3">
-      <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl text-zinc-900 dark:text-zinc-50 overflow-hidden">
+    <AlertDialog open={true} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <AlertDialogContent className="max-w-lg w-full max-h-[90vh] bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-0 flex flex-col shadow-2xl text-zinc-900 dark:text-zinc-50 overflow-hidden">
         {/* Header */}
-        <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-100/60 dark:bg-zinc-900/80">
+        <AlertDialogHeader className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex flex-row justify-between items-center bg-zinc-100/60 dark:bg-zinc-900/80 space-y-0 text-left">
           <div className="flex items-center gap-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
-              {isCreateMode ? (t('plans.addNewPlan') || 'Add New Plan') : (t('plans.editPlanTitle', { id: editingPlan.id }) || `Edit Plan: ${editingPlan.id}`)}
-            </h3>
+            <AlertDialogTitle className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
+              {titleText}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="sr-only">{titleText}</AlertDialogDescription>
           </div>
           <button
             onClick={onClose}
@@ -101,7 +113,7 @@ export function EditPlanModal({
           >
             <X className="h-3.5 w-3.5" />
           </button>
-        </div>
+        </AlertDialogHeader>
 
         {/* Scrollable Body */}
         <div className="p-3.5 overflow-y-auto space-y-3 flex-1 text-xs">
@@ -466,7 +478,7 @@ export function EditPlanModal({
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-2.5 border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-100/50 dark:bg-zinc-900/60">
+        <AlertDialogFooter className="px-4 py-2.5 border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-100/50 dark:bg-zinc-900/60">
           <div>
             {!isCreateMode && onDeletePlan && (
               <button
@@ -483,12 +495,12 @@ export function EditPlanModal({
             )}
           </div>
           <div className="flex items-center gap-2">
-            <button
+            <AlertDialogCancel
               onClick={onClose}
-              className="px-3 py-1 border border-zinc-200 hover:bg-zinc-100 dark:border-zinc-800 rounded text-xs font-semibold cursor-pointer text-zinc-700 dark:text-zinc-300"
+              className="px-3 py-1 border border-zinc-200 hover:bg-zinc-100 dark:border-zinc-800 rounded text-xs font-semibold cursor-pointer text-zinc-700 dark:text-zinc-300 mt-0"
             >
               {t('plans.cancel') || 'Cancel'}
-            </button>
+            </AlertDialogCancel>
             <button
               onClick={onSave}
               disabled={saveLoading}
@@ -497,8 +509,9 @@ export function EditPlanModal({
               {saveLoading ? (t('plans.saving') || 'Saving...') : isCreateMode ? (t('plans.createPlan') || 'Create Plan') : (t('plans.saveChanges') || 'Save Changes')}
             </button>
           </div>
-        </div>
-      </div>
-    </div>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
+

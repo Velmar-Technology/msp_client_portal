@@ -13,13 +13,14 @@ import { Field, FieldLabel, FieldError, FieldSet, FieldLegend } from "@/componen
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp";
 
@@ -653,7 +654,7 @@ export function RegisterPage() {
         </main>
       </div>
 
-      <Dialog
+      <AlertDialog
         open={showWelcomeDialog}
         onOpenChange={(open) => {
           setShowWelcomeDialog(open);
@@ -662,29 +663,30 @@ export function RegisterPage() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-extrabold text-zinc-900 dark:text-zinc-100 font-heading tracking-tight">
+        <AlertDialogContent className="sm:max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-lg font-extrabold text-zinc-900 dark:text-zinc-100 font-heading tracking-tight">
               {t("register.welcomeTitle")}
-            </DialogTitle>
-            <DialogDescription className="text-sm text-zinc-500 dark:text-zinc-400">
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-zinc-500 dark:text-zinc-400">
               {t("register.welcomeDesc")}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="sm:justify-end mt-4">
-            <button
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="sm:justify-end mt-4">
+            <AlertDialogAction
               type="button"
               onClick={() => {
                 setShowWelcomeDialog(false);
                 navigate("/login");
               }}
-              className="bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 px-4 py-2 rounded-lg text-sm font-bold hover:opacity-90 transition-opacity cursor-pointer shadow-md"
+              className="bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 px-4 py-2 rounded-lg text-sm font-bold hover:opacity-90 transition-opacity cursor-pointer shadow-md border-0"
             >
               {t("register.continueToLogin")}
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
+

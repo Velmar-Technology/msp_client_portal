@@ -222,11 +222,12 @@ export const ActivationWizardModal = memo(function ActivationWizardModal({
   const currentSlot = slotsEquipment[slotIdx];
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-card border rounded-lg max-w-md w-full shadow-lg text-zinc-900 dark:text-zinc-100 flex flex-col">
+    <AlertDialog open={true} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <AlertDialogContent className="max-w-md w-full bg-card border rounded-lg p-0 text-zinc-900 dark:text-zinc-100 flex flex-col overflow-hidden">
         {/* Modal Header */}
-        <div className="px-5 py-3 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-white dark:bg-zinc-950 rounded-t-lg">
-          <h3 className="text-sm font-bold text-zinc-955 dark:text-zinc-50">{t("devices.wizardTitle")}</h3>
+        <AlertDialogHeader className="px-5 py-3 border-b border-zinc-200 dark:border-zinc-800 flex flex-row justify-between items-center bg-white dark:bg-zinc-950 rounded-t-lg space-y-0 text-left">
+          <AlertDialogTitle className="text-sm font-bold text-zinc-955 dark:text-zinc-50">{t("devices.wizardTitle")}</AlertDialogTitle>
+          <AlertDialogDescription className="sr-only">{t("devices.wizardTitle")}</AlertDialogDescription>
           <button
             onClick={onClose}
             className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-md transition-colors cursor-pointer text-zinc-400"
@@ -234,7 +235,7 @@ export const ActivationWizardModal = memo(function ActivationWizardModal({
           >
             <X className="h-4 w-4" />
           </button>
-        </div>
+        </AlertDialogHeader>
 
         {/* Step Indicators */}
         <div className="px-5 pt-4 flex justify-between items-center gap-2">
@@ -296,14 +297,14 @@ export const ActivationWizardModal = memo(function ActivationWizardModal({
                 </div>
               )}
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
-                <button
+              <AlertDialogFooter className="flex justify-end gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+                <AlertDialogCancel
                   type="button"
                   onClick={onClose}
-                  className="h-8 px-3 text-xs font-semibold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md transition-colors cursor-pointer"
+                  className="h-8 px-3 text-xs font-semibold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md transition-colors cursor-pointer mt-0"
                 >
                   {t("devices.cancel")}
-                </button>
+                </AlertDialogCancel>
                 <button
                   type="button"
                   onClick={() => onNextStep(2)}
@@ -312,7 +313,7 @@ export const ActivationWizardModal = memo(function ActivationWizardModal({
                 >
                   {t("devices.wizardStep1Next")}
                 </button>
-              </div>
+              </AlertDialogFooter>
             </div>
           )}
 
@@ -353,7 +354,7 @@ export const ActivationWizardModal = memo(function ActivationWizardModal({
                 </div>
               </div>
 
-              <div className="flex justify-between gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+              <AlertDialogFooter className="flex justify-between gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
                 <button
                   type="button"
                   onClick={() => onNextStep(1)}
@@ -377,7 +378,7 @@ export const ActivationWizardModal = memo(function ActivationWizardModal({
                     <span>{t("devices.wizardStep2Activate")}</span>
                   )}
                 </button>
-              </div>
+              </AlertDialogFooter>
             </div>
           )}
 
@@ -419,20 +420,20 @@ export const ActivationWizardModal = memo(function ActivationWizardModal({
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800">
-                <button
+              <AlertDialogFooter className="pt-3 border-t border-zinc-200 dark:border-zinc-800">
+                <AlertDialogAction
                   type="button"
                   onClick={onClose}
-                  className="w-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 py-1.5 rounded-md text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer"
+                  className="w-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 py-1.5 rounded-md text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer border-0"
                 >
                   {t("devices.wizardStep3Complete")}
-                </button>
-              </div>
+                </AlertDialogAction>
+              </AlertDialogFooter>
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 });
 

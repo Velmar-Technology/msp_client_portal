@@ -6,14 +6,15 @@ import { expenseService } from "@/services/expenseService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogTrigger,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 
 interface LogExpenseDialogProps {
   onExpenseLogged: () => void;
@@ -83,8 +84,8 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
+    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+      <AlertDialogTrigger asChild>
         <Button
           variant="outline"
           size="sm"
@@ -93,16 +94,16 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
           <Plus className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
           {t("financial.addExpense")}
         </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-5 rounded-lg shadow-lg">
-        <DialogHeader>
-          <DialogTitle className="text-sm font-bold text-zinc-900 dark:text-zinc-50 font-heading">
+      </AlertDialogTrigger>
+      <AlertDialogContent className="sm:max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-5 rounded-lg shadow-lg">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="text-sm font-bold text-zinc-900 dark:text-zinc-50 font-heading">
             {t("financial.expenseFormTitle")}
-          </DialogTitle>
-          <DialogDescription className="text-xs text-zinc-500 dark:text-zinc-400">
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-xs text-zinc-500 dark:text-zinc-400">
             {t("financial.expenseFormDesc")}
-          </DialogDescription>
-        </DialogHeader>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-3">
           {/* Description */}
@@ -181,17 +182,15 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
             />
           </div>
 
-          <DialogFooter className="mt-4 flex items-center justify-end gap-2">
-            <Button
+          <AlertDialogFooter className="mt-4 flex items-center justify-end gap-2">
+            <AlertDialogCancel
               type="button"
-              variant="outline"
-              size="sm"
               onClick={() => setIsOpen(false)}
               disabled={isSaving}
-              className="h-7 text-xs cursor-pointer"
+              className="h-7 text-xs cursor-pointer mt-0"
             >
               {t("financial.cancel")}
-            </Button>
+            </AlertDialogCancel>
             <Button
               type="submit"
               size="sm"
@@ -201,9 +200,10 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
               {isSaving && <Loader2 className="h-3 w-3 animate-spin" />}
               {isSaving ? t("financial.savingExpense") : t("financial.addExpense")}
             </Button>
-          </DialogFooter>
+          </AlertDialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
+

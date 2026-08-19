@@ -17,6 +17,15 @@ import {
   Laptop,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 import { Page } from "@/components/Page";
 import { Input } from "@/components/ui/input";
 import { DataTable } from "@/components/ui/data-table";
@@ -592,18 +601,18 @@ export function MaintenancePage() {
       />
 
       {/* Event Details Drawer/Modal */}
-      {selectedEventDetails && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-sm max-w-md w-full p-5 shadow-2xl space-y-4">
-            <div className="flex justify-between items-start border-b border-zinc-200 dark:border-zinc-800 pb-3">
+      <AlertDialog open={!!selectedEventDetails} onOpenChange={(open) => { if (!open) setSelectedEventDetails(null); }}>
+        {selectedEventDetails && (
+          <AlertDialogContent className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-sm max-w-md w-full p-5 shadow-2xl space-y-4">
+            <AlertDialogHeader className="flex flex-row justify-between items-start border-b border-zinc-200 dark:border-zinc-800 pb-3 space-y-0 text-left">
               <div>
-                <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{selectedEventDetails.title}</h3>
-                <p className="text-xs text-zinc-500 font-mono mt-0.5">
+                <AlertDialogTitle className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{selectedEventDetails.title}</AlertDialogTitle>
+                <AlertDialogDescription className="text-xs text-zinc-500 font-mono mt-0.5">
                   {new Date(selectedEventDetails.scheduled_date).toLocaleString()}
-                </p>
+                </AlertDialogDescription>
               </div>
               {getStatusBadge(selectedEventDetails.status)}
-            </div>
+            </AlertDialogHeader>
 
             <div className="space-y-2 text-xs text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-900/40 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800">
               <div className="flex justify-between">
@@ -632,17 +641,17 @@ export function MaintenancePage() {
               )}
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
-              <button
+            <AlertDialogFooter className="flex justify-end gap-2 pt-2">
+              <AlertDialogCancel
                 onClick={() => setSelectedEventDetails(null)}
-                className="h-8 px-4 text-xs font-semibold bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 rounded-md transition-opacity cursor-pointer"
+                className="h-8 px-4 text-xs font-semibold bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 rounded-md transition-opacity cursor-pointer border-0 mt-0"
               >
                 {t("common.close")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              </AlertDialogCancel>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        )}
+      </AlertDialog>
     </Page>
   );
 }

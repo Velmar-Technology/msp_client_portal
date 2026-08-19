@@ -2,6 +2,15 @@ import { useEffect, useState } from "react";
 import { X, Cloud, Loader2, Copy, Check, HardDrive } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { equipmentService } from "@/services/equipmentService";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 
 interface NextcloudInfoData {
   nextcloud_username: string | null;
@@ -71,8 +80,6 @@ export function NextcloudInfoModal({
     };
   }, [isOpen, subId, slotIndex, t]);
 
-  if (!isOpen) return null;
-
   const handleCopy = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
     setCopiedField(field);
@@ -96,17 +103,17 @@ export function NextcloudInfoModal({
   const deviceSerial = info?.device_serial;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-card border border-zinc-200 dark:border-zinc-800 rounded-lg max-w-md w-full shadow-xl text-zinc-900 dark:text-zinc-100 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <AlertDialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <AlertDialogContent className="max-w-md w-full bg-card border border-zinc-200 dark:border-zinc-800 rounded-lg p-0 text-zinc-900 dark:text-zinc-100 flex flex-col overflow-hidden">
         {/* Modal Header */}
-        <div className="px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-white dark:bg-zinc-950">
+        <AlertDialogHeader className="px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-800 flex flex-row justify-between items-center bg-white dark:bg-zinc-950 space-y-0 text-left">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-md border border-emerald-200 dark:border-emerald-900/50">
               <Cloud className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">{t("devices.nextcloudModalTitle")}</h3>
-              <p className="text-[10px] text-zinc-500 font-medium">{deviceName}</p>
+              <AlertDialogTitle className="text-sm font-bold text-zinc-900 dark:text-zinc-50">{t("devices.nextcloudModalTitle")}</AlertDialogTitle>
+              <AlertDialogDescription className="text-[10px] text-zinc-500 font-medium">{deviceName}</AlertDialogDescription>
             </div>
           </div>
           <button
@@ -115,7 +122,7 @@ export function NextcloudInfoModal({
           >
             <X className="h-4 w-4" />
           </button>
-        </div>
+        </AlertDialogHeader>
 
         {/* Modal Body */}
         <div className="p-5 space-y-4">
@@ -238,16 +245,17 @@ export function NextcloudInfoModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-5 py-3 bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 flex justify-end">
-          <button
+        <AlertDialogFooter className="px-5 py-3 bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 flex justify-end">
+          <AlertDialogCancel
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-md text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer"
+            className="px-4 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-md text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer border-0"
           >
             {t("billing.close")}
-          </button>
-        </div>
-      </div>
-    </div>
+          </AlertDialogCancel>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
+

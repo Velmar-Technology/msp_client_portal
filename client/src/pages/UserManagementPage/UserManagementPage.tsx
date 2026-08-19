@@ -13,14 +13,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
 import type { ColumnDef } from "@tanstack/react-table";
@@ -410,18 +402,17 @@ export function UserManagementPage() {
         className="mt-6"
       />
 
-      {/* Bulk Role Modal */}
-      <Dialog open={bulkRoleModalOpen} onOpenChange={setBulkRoleModalOpen}>
-        <DialogContent className="sm:max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100">
-          <DialogHeader>
-            <DialogTitle className="text-zinc-900 dark:text-zinc-100">
+      <AlertDialog open={bulkRoleModalOpen} onOpenChange={setBulkRoleModalOpen}>
+        <AlertDialogContent className="sm:max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-zinc-900 dark:text-zinc-100">
               {t("userManagement.bulkSetRoleModalTitle") || "Set User Role"}
-            </DialogTitle>
-            <DialogDescription className="text-zinc-500 dark:text-zinc-400">
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-500 dark:text-zinc-400">
               {(t("userManagement.bulkSetRoleModalDesc") || "Choose a role to apply to the {count} selected user(s).")
                 .replace("{count}", String(selectedUsersForBulkRole.length))}
-            </DialogDescription>
-          </DialogHeader>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
 
           <div className="py-4 space-y-3">
             <label htmlFor="bulk-role-select" className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
@@ -439,15 +430,13 @@ export function UserManagementPage() {
             </select>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              type="button"
-              variant="outline"
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel
               onClick={() => setBulkRoleModalOpen(false)}
-              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800 mt-0"
             >
               {t("userManagement.cancel") || "Cancel"}
-            </Button>
+            </AlertDialogCancel>
             <Button
               type="button"
               onClick={() => {
@@ -458,22 +447,21 @@ export function UserManagementPage() {
             >
               {t("userManagement.confirm") || "Confirm"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-      {/* Bulk Client Type Modal */}
-      <Dialog open={bulkClientTypeModalOpen} onOpenChange={setBulkClientTypeModalOpen}>
-        <DialogContent className="sm:max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100">
-          <DialogHeader>
-            <DialogTitle className="text-zinc-900 dark:text-zinc-100">
+      <AlertDialog open={bulkClientTypeModalOpen} onOpenChange={setBulkClientTypeModalOpen}>
+        <AlertDialogContent className="sm:max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-zinc-900 dark:text-zinc-100">
               {t("userManagement.bulkSetClientTypeModalTitle") || "Set Client Type"}
-            </DialogTitle>
-            <DialogDescription className="text-zinc-500 dark:text-zinc-400">
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-500 dark:text-zinc-400">
               {(t("userManagement.bulkSetClientTypeModalDesc") || "Choose a client type to apply to the {count} selected user(s).")
                 .replace("{count}", String(selectedUsersForBulkClientType.length))}
-            </DialogDescription>
-          </DialogHeader>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
 
           <div className="py-4 space-y-3">
             <label htmlFor="bulk-client-type-select" className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
@@ -492,15 +480,13 @@ export function UserManagementPage() {
             </select>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              type="button"
-              variant="outline"
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel
               onClick={() => setBulkClientTypeModalOpen(false)}
-              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800 mt-0"
             >
               {t("userManagement.cancel") || "Cancel"}
-            </Button>
+            </AlertDialogCancel>
             <Button
               type="button"
               onClick={() => {
@@ -511,9 +497,9 @@ export function UserManagementPage() {
             >
               {t("userManagement.confirm") || "Confirm"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Confirmation Dialog */}
       <AlertDialog

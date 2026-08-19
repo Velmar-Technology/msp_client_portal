@@ -1,5 +1,14 @@
 import { useEffect, useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 
 interface GoogleLoginButtonProps {
   onSuccess: (idToken: string) => void;
@@ -140,67 +149,70 @@ export function GoogleLoginButton({ onSuccess, onError, text = "signin_with" }: 
         VITE_GOOGLE_CLIENT_ID is not configured. Running in sandbox mode.
       </span>
 
-      {showMockModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-[2px] animate-fade-in">
-          <div className="w-full max-w-md bg-card border border-border rounded-xl p-6 shadow-xl animate-scale-in text-card-foreground">
-            <h3 className="text-lg font-semibold text-foreground mb-2">Google Sandbox Login</h3>
-            <p className="text-sm text-muted-foreground mb-4">
+      <AlertDialog open={showMockModal} onOpenChange={setShowMockModal}>
+        <AlertDialogContent className="w-full max-w-md bg-card border border-border rounded-xl p-6 shadow-xl text-card-foreground">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-lg font-semibold text-foreground mb-1">
+              Google Sandbox Login
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-muted-foreground">
               Simulate Google authentication by entering any mock account details.
-            </p>
-            <form onSubmit={handleMockSubmit} className="space-y-4">
-              <div>
-                <label
-                  htmlFor="google-sandbox-email"
-                  className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5"
-                >
-                  Mock Email Address
-                </label>
-                <Input
-                  id="google-sandbox-email"
-                  type="email"
-                  value={mockEmail}
-                  onChange={(e) => setMockEmail(e.target.value)}
-                  placeholder="name@company.com"
-                  required
-                  className="w-full px-4 py-2 border border-input rounded-lg text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="google-sandbox-name"
-                  className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5"
-                >
-                  Full Name
-                </label>
-                <Input
-                  id="google-sandbox-name"
-                  type="text"
-                  value={mockName}
-                  onChange={(e) => setMockName(e.target.value)}
-                  placeholder="John Mitchell"
-                  required
-                  className="w-full px-4 py-2 border border-input rounded-lg text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground"
-                />
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowMockModal(false)}
-                  className="px-4 py-2 text-sm border border-input rounded-lg hover:bg-muted transition-colors cursor-pointer text-foreground"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity font-medium cursor-pointer"
-                >
-                  Simulate Auth
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <form onSubmit={handleMockSubmit} className="space-y-4 mt-2">
+            <div>
+              <label
+                htmlFor="google-sandbox-email"
+                className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5"
+              >
+                Mock Email Address
+              </label>
+              <Input
+                id="google-sandbox-email"
+                type="email"
+                value={mockEmail}
+                onChange={(e) => setMockEmail(e.target.value)}
+                placeholder="name@company.com"
+                required
+                className="w-full px-4 py-2 border border-input rounded-lg text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="google-sandbox-name"
+                className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5"
+              >
+                Full Name
+              </label>
+              <Input
+                id="google-sandbox-name"
+                type="text"
+                value={mockName}
+                onChange={(e) => setMockName(e.target.value)}
+                placeholder="John Mitchell"
+                required
+                className="w-full px-4 py-2 border border-input rounded-lg text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground"
+              />
+            </div>
+            <AlertDialogFooter className="flex justify-end gap-3 pt-2">
+              <AlertDialogCancel
+                type="button"
+                onClick={() => setShowMockModal(false)}
+                className="px-4 py-2 text-sm border border-input rounded-lg hover:bg-muted transition-colors cursor-pointer text-foreground mt-0"
+              >
+                Cancel
+              </AlertDialogCancel>
+              <button
+                type="submit"
+                className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity font-medium cursor-pointer"
+              >
+                Simulate Auth
+              </button>
+            </AlertDialogFooter>
+          </form>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
+

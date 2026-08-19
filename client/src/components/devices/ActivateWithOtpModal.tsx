@@ -8,6 +8,15 @@ import {
   InputOTPSlot,
   InputOTPSeparator,
 } from "@/components/ui/input-otp";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 
 interface ActivateWithOtpModalProps {
   isOpen: boolean;
@@ -32,8 +41,6 @@ export function ActivateWithOtpModal({ isOpen, loading, onClose, onActivate }: A
     }
   }
 
-  if (!isOpen) return null;
-
   const isValidOtp = /^\d{6}$/.test(otp);
   const canSubmit = isValidOtp && deviceName.trim().length > 0 && deviceSerial.trim().length > 0 && !loading;
 
@@ -42,17 +49,17 @@ export function ActivateWithOtpModal({ isOpen, loading, onClose, onActivate }: A
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-card border border-zinc-200 dark:border-zinc-800 rounded-lg max-w-md w-full shadow-xl text-zinc-900 dark:text-zinc-100 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <AlertDialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <AlertDialogContent className="max-w-md w-full bg-card border border-zinc-200 dark:border-zinc-800 rounded-lg p-0 text-zinc-900 dark:text-zinc-100 flex flex-col overflow-hidden">
         {/* Modal Header */}
-        <div className="px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-white dark:bg-zinc-950">
+        <AlertDialogHeader className="px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-800 flex flex-row justify-between items-center bg-white dark:bg-zinc-950 space-y-0 text-left">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 rounded-md border border-zinc-200 dark:border-zinc-800">
               <KeyRound className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">{t("devices.activateWithCodeTitle")}</h3>
-              <p className="text-[10px] text-zinc-500 font-medium">{t("devices.activateWithCodeSubtitle")}</p>
+              <AlertDialogTitle className="text-sm font-bold text-zinc-900 dark:text-zinc-50">{t("devices.activateWithCodeTitle")}</AlertDialogTitle>
+              <AlertDialogDescription className="text-[10px] text-zinc-500 font-medium">{t("devices.activateWithCodeSubtitle")}</AlertDialogDescription>
             </div>
           </div>
           <button
@@ -62,7 +69,7 @@ export function ActivateWithOtpModal({ isOpen, loading, onClose, onActivate }: A
           >
             <X className="h-4 w-4" />
           </button>
-        </div>
+        </AlertDialogHeader>
 
         {/* Modal Body */}
         <div className="p-5 space-y-4">
@@ -126,37 +133,39 @@ export function ActivateWithOtpModal({ isOpen, loading, onClose, onActivate }: A
               />
             </div>
           </div>
-
-          <div className="flex justify-end gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="h-8 px-3 text-xs font-semibold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md transition-colors cursor-pointer disabled:opacity-50"
-            >
-              {t("devices.cancel")}
-            </button>
-            <button
-              type="button"
-              onClick={() => onActivate(otp, deviceName.trim(), deviceSerial.trim())}
-              disabled={!canSubmit}
-              className="h-8 px-4 text-xs font-semibold bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 rounded-md transition-opacity cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>{t("devices.wizardStep2Activating")}</span>
-                </>
-              ) : (
-                <>
-                  <Laptop className="w-3.5 h-3.5" />
-                  <span>{t("devices.activateWithCodeSubmit")}</span>
-                </>
-              )}
-            </button>
-          </div>
         </div>
-      </div>
-    </div>
+
+        {/* Modal Footer */}
+        <AlertDialogFooter className="p-5 border-t border-zinc-200 dark:border-zinc-800 flex flex-row justify-end gap-2">
+          <AlertDialogCancel
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            className="h-8 px-3 text-xs font-semibold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md transition-colors cursor-pointer disabled:opacity-50 mt-0"
+          >
+            {t("devices.cancel")}
+          </AlertDialogCancel>
+          <button
+            type="button"
+            onClick={() => onActivate(otp, deviceName.trim(), deviceSerial.trim())}
+            disabled={!canSubmit}
+            className="h-8 px-4 text-xs font-semibold bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 rounded-md transition-opacity cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>{t("devices.wizardStep2Activating")}</span>
+              </>
+            ) : (
+              <>
+                <Laptop className="w-3.5 h-3.5" />
+                <span>{t("devices.activateWithCodeSubmit")}</span>
+              </>
+            )}
+          </button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
+

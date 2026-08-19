@@ -1,13 +1,14 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { ShieldCheck, RefreshCw } from 'lucide-react';
 import { usePatchManagementModal } from '@/hooks/usePatchManagementModal';
@@ -49,17 +50,17 @@ export const PatchManagementModal: React.FC<PatchManagementModalProps> = ({
   const displayDeviceName = deviceName || t("rmm.modalEquipmentDevice");
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl w-full bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 p-5 shadow-xl sm:rounded-lg">
-        <DialogHeader className="space-y-1 pb-1">
-          <DialogTitle className="flex items-center gap-2 text-base font-semibold text-zinc-900 dark:text-zinc-100">
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent className="sm:max-w-3xl w-full bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 p-5 shadow-xl sm:rounded-lg">
+        <AlertDialogHeader className="space-y-1 pb-1">
+          <AlertDialogTitle className="flex items-center gap-2 text-base font-semibold text-zinc-900 dark:text-zinc-100">
             <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span>{t("rmm.modalTitle", { deviceName: displayDeviceName })}</span>
-          </DialogTitle>
-          <DialogDescription className="text-xs text-zinc-500 dark:text-zinc-400">
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-xs text-zinc-500 dark:text-zinc-400">
             {t("rmm.modalSubtitle")}
-          </DialogDescription>
-        </DialogHeader>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
 
         <div className="py-1">
           <PatchTable
@@ -74,15 +75,14 @@ export const PatchManagementModal: React.FC<PatchManagementModalProps> = ({
           />
         </div>
 
-        <DialogFooter className="flex items-center justify-between gap-3 pt-2 border-t border-zinc-100 dark:border-zinc-800/80">
-          <Button
-            variant="outline"
+        <AlertDialogFooter className="flex items-center justify-between gap-3 pt-2 border-t border-zinc-100 dark:border-zinc-800/80">
+          <AlertDialogCancel
             size="sm"
             onClick={() => onOpenChange(false)}
-            className="h-8 text-xs font-medium border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-700 dark:text-zinc-300"
+            className="h-8 text-xs font-medium border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-700 dark:text-zinc-300 mt-0"
           >
             {t("rmm.modalClose")}
-          </Button>
+          </AlertDialogCancel>
 
           <Button
             size="sm"
@@ -97,8 +97,9 @@ export const PatchManagementModal: React.FC<PatchManagementModalProps> = ({
             )}
             <span>{t("rmm.modalInstallSelected", { count: selectedCount })}</span>
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };
+
