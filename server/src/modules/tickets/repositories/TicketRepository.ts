@@ -149,6 +149,7 @@ export class TicketRepository extends BaseRepository<Ticket> {
     if (filters.search) {
       conditions.push(
         or(
+          ilike(tickets.id, `%${filters.search}%`),
           ilike(tickets.title, `%${filters.search}%`),
           ilike(tickets.description, `%${filters.search}%`)
         )
