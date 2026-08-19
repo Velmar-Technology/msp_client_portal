@@ -215,6 +215,27 @@ client/src/
 └── store/          # Application State: Zustand stores
 ```
 
+### 🧩 Feature Module Internal Anatomy & Public API Gateway
+
+Each domain module inside `server/src/modules/<domain>/` operates as an autonomous **mini-application** (bounded context). It encapsulates its own HTTP routes, controller adapters, business service logic, data access repositories, models/schemas, and co-located unit tests.
+
+To enforce loose coupling, Clean Architecture, and domain encapsulation, every module MUST maintain the following internal structure and expose its public surface area strictly via a module gateway (`index.ts`):
+
+```text
+server/src/modules/<feature>/
+├── routes/                # [feature].routes.ts: HTTP route definitions & middleware mapping
+├── controllers/           # [Feature]Controller.ts: Parses HTTP requests & calls the service layer
+├── services/              # [Feature]Service.ts: Core business logic (validations, calculations, rules)
+├── repositories/          # [Feature]Repository.ts: Database queries & ORM data persistence
+├── models/                # [feature].model.ts / schema: Module-specific DTOs, schemas & types
+└── index.ts               # The Public API / Gateway for this feature module
+```
+
+#### Module Gateway Rules (`index.ts`):
+1. **Public API Contract**: `index.ts` acts as the single gateway for the module. Other modules (`billing`, `tickets`, `notifications`) MUST ONLY consume services, types, or event hooks explicitly re-exported by `index.ts`.
+2. **Forbidden Cross-Module Imports**: Importing internal repositories, controllers, or raw ORM schemas directly from another module (e.g., `import { TicketRepository } from '@modules/tickets/repositories/TicketRepository'`) is strictly **FORBIDDEN**. Inter-module interactions must go through the public service interface.
+3. **Domain Encapsulation**: Data access details, query logic, and internal helpers remain private to the module, preserving clean boundaries and simplifying unit testing and future microservice extraction.
+
 ### Explicit Import Rules for Agents
 
 1. **Entities Layer (`server/src/shared/types/`, `server/src/shared/db/schema/`)**:
