@@ -5,13 +5,13 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "tsc && tsc-alias",
     "start": "node dist/index.js",
     "lint": "eslint src/ --ext .ts",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "test:email": "tsx src/scripts/testEmail.ts",
-    "db:migrate": "tsx src/db/migrate.ts",
+    "db:migrate": "tsx src/shared/db/migrate.ts",
     "db:seed": "tsx src/db/seed.ts"
   },
   "dependencies": {
@@ -49,6 +49,7 @@
     "@typescript-eslint/parser": "8.30.0",
     "drizzle-kit": "0.31.10",
     "eslint": "9.24.0",
+    "tsc-alias": "^1.9.2",
     "tsx": "4.19.3",
     "typescript": "5.7.3",
     "vitest": "3.0.0"

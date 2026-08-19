@@ -4,7 +4,7 @@ import { AppError } from './base-error';
  * 400 Bad Request / Data Validation Failure
  */
 export class ValidationError extends AppError {
-  public readonly code = 'VALIDATION_ERROR';
+  public readonly code: string = 'VALIDATION_ERROR';
   public readonly statusCode = 400;
 
   constructor(message: string, details?: Record<string, any>, originalError?: unknown) {
@@ -55,7 +55,7 @@ export class UnauthorizedError extends AppError {
  * 403 Forbidden / Insufficient Permission RBAC
  */
 export class ForbiddenError extends AppError {
-  public readonly code = 'FORBIDDEN_ERROR';
+  public readonly code: string = 'FORBIDDEN_ERROR';
   public readonly statusCode = 403;
 
   constructor(message = 'Forbidden', details?: Record<string, any>, originalError?: unknown) {
