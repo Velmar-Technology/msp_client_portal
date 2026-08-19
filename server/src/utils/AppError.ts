@@ -54,6 +54,10 @@ export class AppError extends SharedAppError {
     return new AppError(message, 403, 'SLA_VIOLATION');
   }
 
+  static tooManyRequests(message = 'Rate limit exceeded', code = 'TOO_MANY_REQUESTS'): AppError {
+    return new AppError(message, 429, code);
+  }
+
   static internal(message = 'Internal server error'): AppError {
     return new AppError(message, 500, 'INTERNAL_ERROR', false);
   }

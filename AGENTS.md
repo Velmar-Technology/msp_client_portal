@@ -45,6 +45,12 @@ Clean Architecture mandates that source code dependencies must strictly point **
    - Contains Express routes, database connection pool (`db.ts`), email/WhatsApp utility drivers, and React UI components.
    - *Compliance*: Framework-specific code (Drizzle ORM access, static bank account data) is confined to `server/src/db/`, repositories, and `client/src/constants/` — it does not leak into domain services or UI feature components.
 
+5. **The API Gateway Layer (`server/src/middleware/gateway*.ts`)**:
+   - Sits in front of downstream route clusters to handle global ingress logic uniformly:
+     - **Authentication Header Injection**: Decodes incoming JWT / session tokens at the entry point and injects standardized `X-User-Id` and `X-Tenant-Id` headers into downstream request context.
+     - **Multi-Tenant Rate Limiting**: Protects downstream services from noisy neighbors by enforcing per-tenant (`X-Tenant-Id`) sliding window request limits (100 req/15 min) and returning HTTP 429 (`TOO_MANY_REQUESTS`).
+     - **Cluster Path Routing**: Directs public path clusters (`/api/v1/billing/*`, `/api/v1/workspaces/*`, `/api/v1/tickets/*`, `/api/v1/auth/*`) to internal handlers while maintaining header propagation.
+
 ---
 
 ## 🛠️ Master Business Logic Specification (v2.0)
