@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useUrlState } from "@/hooks/useUrlState";
 import { toast } from "sonner";
 import { subscriptionService } from "@/services/subscriptionService";
 import type { Subscription } from "@/services/subscriptionService";
@@ -13,12 +14,33 @@ export function useDevicesPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { getParam, setParam } = useUrlState();
 
   const [loading, setLoading] = useState(true);
   const [activeSubscriptions, setActiveSubscriptions] = useState<Subscription[]>([]);
   const [selectedSubscriptionId, setSelectedSubscriptionId] = useState<string>("");
   const [subscriptionEquipment, setSubscriptionEquipment] = useState<Record<string, Partial<SubscriptionEquipment>[]>>({});
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Active Tab state ("devices" | "rmm")
+  const urlTab = getParam("tab", "devices");
+  const [activeTab, setActiveTabInternal] = useState<"devices" | "rmm">(() =>
+    urlTab === "rmm" ? "rmm" : "devices"
+  );
+
+  useEffect(() => {
+    const currentTabParam = getParam("tab", "devices");
+    const resolvedTab = currentTabParam === "rmm" ? "rmm" : "devices";
+    setActiveTabInternal(resolvedTab);
+  }, [getParam]);
+
+  const setActiveTab = useCallback(
+    (tab: "devices" | "rmm") => {
+      setActiveTabInternal(tab);
+      setParam("tab", tab === "devices" ? null : tab);
+    },
+    [setParam]
+  );
 
   // Admin specific states
   const [adminDevices, setAdminDevices] = useState<SubscriptionEquipment[]>([]);
@@ -549,6 +571,8 @@ export function useDevicesPage() {
     navigate,
     user,
     loading,
+    activeTab,
+    setActiveTab,
     activeSubscriptions,
     selectedSubscriptionId,
     setSelectedSubscriptionId,

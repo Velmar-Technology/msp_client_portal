@@ -1,11 +1,13 @@
 import { memo, useCallback, useState, useMemo } from "react";
-import { X, Laptop, Loader2, MoreHorizontal, Cloud, Check, KeyRound, Copy } from "lucide-react";
+import { X, Laptop, Loader2, MoreHorizontal, Cloud, Check, KeyRound, Copy, Activity } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { useDevicesPage } from "@/hooks/useDevicesPage";
 import type { Subscription } from "@/services/subscriptionService";
 import type { SubscriptionEquipment } from "@/services/equipmentService";
 import { Page } from "@/components/Page";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -13,7 +15,7 @@ import { ScheduleMaintenanceModal } from "@/components/maintenance/ScheduleMaint
 import { NextcloudInfoModal } from "@/components/devices/NextcloudInfoModal";
 import { ActivateWithOtpModal } from "@/components/devices/ActivateWithOtpModal";
 import { RmmDashboard } from "@/components/devices/RmmDashboard";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -227,7 +229,7 @@ export const ActivationWizardModal = memo(function ActivationWizardModal({
         {/* Modal Header */}
         <AlertDialogHeader className="px-5 py-3 border-b border-zinc-200 dark:border-zinc-800 flex flex-row justify-between items-center bg-white dark:bg-zinc-950 rounded-t-lg space-y-0 text-left">
           <AlertDialogTitle className="text-sm font-bold text-zinc-955 dark:text-zinc-50">{t("devices.wizardTitle")}</AlertDialogTitle>
-          <AlertDialogDescription className="sr-only">{t("devices.wizardTitle")}</AlertDialogDescription>
+          <AlertDialogDescription className="sr-only">{t("devices.wizardStep1Intro")}</AlertDialogDescription>
           <button
             onClick={onClose}
             className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-md transition-colors cursor-pointer text-zinc-400"
@@ -533,6 +535,8 @@ export function DevicesPage() {
   const {
     navigate,
     loading,
+    activeTab,
+    setActiveTab,
     activeSubscriptions,
     selectedSubscriptionId,
     setSelectedSubscriptionId,
@@ -563,6 +567,7 @@ export function DevicesPage() {
     handleCloseActivateWithOtp,
     handleActivateWithOtp,
     isAdmin,
+    adminDevices,
     selectedStatus,
     setSelectedStatus,
     statusFilterOptions,
@@ -583,6 +588,14 @@ export function DevicesPage() {
     sorting,
     setSorting,
   } = useDevicesPage();
+
+  const totalInventoryCount = useMemo(() => {
+    if (isAdmin) {
+      return (adminDevices && adminDevices.length) || filteredEquipment.length;
+    }
+    if (!activeSub) return 0;
+    return activeSub.equipment_count || (subscriptionEquipment[activeSub.id] || []).length;
+  }, [isAdmin, adminDevices, filteredEquipment.length, activeSub, subscriptionEquipment]);
 
   const [maintModalEquip, setMaintModalEquip] = useState<Partial<SubscriptionEquipment> | null>(null);
   const [isMaintModalOpen, setIsMaintModalOpen] = useState(false);
@@ -869,13 +882,38 @@ export function DevicesPage() {
 
   return (
     <Page title={t("nav.devices")} subtitle={t("devices.subtitle")} isLoading={loading}>
-      <Tabs defaultValue="devices" className="space-y-4">
-        <TabsList className="w-fit">
-          <TabsTrigger value="devices">{t("rmm.tabInventory")}</TabsTrigger>
-          <TabsTrigger value="rmm">{t("rmm.tabRmm")}</TabsTrigger>
-        </TabsList>
+      <div className="space-y-6">
+        {/* Navigation Section Switcher: Device Inventory vs RMM Monitoring & Patches */}
+        <div className="border-b border-zinc-200 dark:border-zinc-800 pb-2">
+          <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as "devices" | "rmm")} className="w-full">
+            <TabsList className="bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg">
+              <TabsTrigger
+                value="devices"
+                className="gap-2 text-xs font-medium px-4 py-1.5 cursor-pointer data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-xs"
+              >
+                <Laptop className="h-3.5 w-3.5" />
+                <span>{t("rmm.tabInventory")}</span>
+                <Badge
+                  variant="secondary"
+                  className="ml-1 text-[10px] font-mono px-1.5 py-0 min-w-[20px] inline-flex justify-center"
+                >
+                  {loading ? <Skeleton className="h-3 w-4" /> : totalInventoryCount}
+                </Badge>
+              </TabsTrigger>
 
-        <TabsContent value="devices">
+              <TabsTrigger
+                value="rmm"
+                className="gap-2 text-xs font-medium px-4 py-1.5 cursor-pointer data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-xs"
+              >
+                <Activity className="h-3.5 w-3.5 text-blue-500" />
+                <span>{t("rmm.tabRmm")}</span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
+        {/* SECTION 1: DEVICE INVENTORY */}
+        {activeTab === "devices" && (
           <div className="space-y-4">
             {activeSubscriptions.length === 0 && !loading && !isAdmin ? (
               <div className="flex items-center justify-center min-h-[60vh]">
@@ -926,13 +964,15 @@ export function DevicesPage() {
               </div>
             )}
           </div>
-        </TabsContent>
+        )}
 
-        <TabsContent value="rmm" className="min-w-0 w-full max-w-full">
-          <RmmDashboard />
-        </TabsContent>
-      </Tabs>
-
+        {/* SECTION 2: RMM MONITORING & PATCHES */}
+        {activeTab === "rmm" && (
+          <div className="space-y-6 min-w-0 w-full max-w-full">
+            <RmmDashboard />
+          </div>
+        )}
+      </div>
 
       {/* Device Activation Wizard Modal */}
       {activationWizardSubId && activationWizardSlotIdx !== null && (
@@ -972,7 +1012,7 @@ export function DevicesPage() {
       <NextcloudInfoModal
         isOpen={isNcModalOpen}
         onClose={handleCloseNcModal}
-        subId={ncModalEquip?.subscription_id || null}
+        subId={ncModalEquip?.subscription_id || activeSub?.id || selectedSubscriptionId || null}
         slotIndex={ncModalEquip?.slot_index ?? null}
         fallbackUsername={ncModalEquip?.nextcloud_username}
         fallbackDeviceName={ncModalEquip?.device_name}
