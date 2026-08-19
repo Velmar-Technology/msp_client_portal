@@ -1,4 +1,4 @@
-import { db } from '@shared/db';
+import { db, getPoolHealth } from '@shared/db';
 import { sql } from 'drizzle-orm';
 import { nextcloudService } from '@modules/system/services/NextcloudService';
 import { logger } from '@shared/utils/logger';
@@ -184,12 +184,19 @@ export class SystemService {
     let dbMessage = 'Database connection healthy';
     let dbLatency = 0;
 
+    const poolHealth = getPoolHealth();
+
     try {
       await this.dbPool.execute(sql`SELECT 1`);
       dbLatency = Date.now() - dbStart;
-      if (dbLatency > 300) {
+      if (poolHealth.state === 'down') {
+        dbStatus = 'DOWN';
+        dbMessage = `Pool reports DOWN (${poolHealth.consecutiveFailures} consecutive failures)`;
+      } else if (poolHealth.state === 'degraded' || dbLatency > 300) {
         dbStatus = 'DEGRADED';
-        dbMessage = `High latency (${dbLatency}ms)`;
+        dbMessage = poolHealth.state === 'degraded'
+          ? `Pool degraded (${poolHealth.consecutiveFailures} consecutive failures)`
+          : `High latency (${dbLatency}ms)`;
       }
     } catch (err: any) {
       dbLatency = Date.now() - dbStart;
