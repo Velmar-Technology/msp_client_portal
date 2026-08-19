@@ -4,7 +4,7 @@
 
 The **MSP Client Portal** (`msp_client_portal`) is a multi-tenant Managed Service Provider software platform designed to manage helpdesk support tickets, technician dispatch, device/equipment inventories, client subscription plans, recurring invoicing, cloud backups, and scheduled maintenance operations.
 
-Architecturally, the application is structured as a **Layered Monolith** (PERN Stack: PostgreSQL, Express, React, Node.js with Drizzle ORM and Vite/Tailwind v4). The folder layout segregates routes, controllers, services, and repositories, and the codebase adheres to **Uncle Bob’s Clean Architecture & Clean Code principles**: the Dependency Rule is enforced, services rely on constructor-injected dependencies, and all data access flows through the repository layer.
+Architecturally, the application is structured as a **Modular Monolith** (PERN Stack: PostgreSQL, Express, React, Node.js with Drizzle ORM and Vite/Tailwind v4). The codebase is strictly partitioned into self-contained domain modules (`modules/auth`, `modules/tickets`, `modules/billing`, `modules/subscriptions`, `modules/rmm`, `modules/equipment`, `modules/notifications`, `modules/system`) alongside a shared infrastructure directory (`shared/`). Each module encapsulates its own controllers, services, repositories, and routes while adhering to **Uncle Bob’s Clean Architecture & Clean Code principles**: the Dependency Rule is enforced within modules, services rely on constructor-injected dependencies, and all data access flows through module repositories.
 
 This document serves as the master specification, architectural health report, and boundary enforcement guide for all human developers and AI agents operating on this codebase.
 
@@ -29,23 +29,23 @@ Clean Architecture mandates that source code dependencies must strictly point **
 
 ### Layer Mapping & Status
 
-1. **Entities Layer (`server/src/types/`, `server/src/db/schema/`)**:
+1. **Entities Layer (`server/src/shared/types/`, `server/src/shared/db/schema/`)**:
    - Contains domain interfaces (`Ticket`, `User`, `Subscription`, `Invoice`, `Equipment`), status enums (`TicketStatus`, `UserRole`, `SubscriptionStatus`), and Drizzle schema table definitions.
    - *Compliance*: Pure domain types have no outward dependencies.
 
-2. **Use Cases / Service Layer (`server/src/services/`)**:
+2. **Use Cases / Service Layer (`server/src/modules/<domain>/services/`)**:
    - Houses application business logic: ticket quota validation, 1-hour SLA cancellation enforcement, technician round-robin allocation, subscription renewal calculations, and payment handling.
-   - *Compliance*: Every service exposes constructor injection with default singleton dependencies (e.g., `constructor(private userRepo: UserRepository = userRepository)`), so high-level use cases do not hard-couple to low-level concrete singletons. `AssignmentService` and its strategies access the database exclusively through `RoundRobinRepository`, `TicketRepository`, and `UserRepository` — no service imports `../db` directly.
+   - *Compliance*: Every service exposes constructor injection with default singleton dependencies (e.g., `constructor(private userRepo: UserRepository = userRepository)`), so high-level use cases do not hard-couple to low-level concrete singletons. `AssignmentService` and its strategies access the database exclusively through `RoundRobinRepository`, `TicketRepository`, and `UserRepository` — no service imports `db` directly.
 
-3. **Interface Adapters (`server/src/controllers/`, `server/src/repositories/`, `client/src/services/`)**:
+3. **Interface Adapters (`server/src/modules/<domain>/controllers/`, `server/src/modules/<domain>/repositories/`, `client/src/services/`)**:
    - Controllers translate HTTP requests/responses into service inputs/outputs. Repositories translate Drizzle ORM queries into typed domain objects.
    - *Compliance*: No controller imports a repository or the `db` pool directly; all data access flows through the service layer.
 
-4. **Frameworks & Drivers (`server/src/routes/`, `server/src/db/`, `client/src/components/`)**:
+4. **Frameworks & Drivers (`server/src/modules/<domain>/routes/`, `server/src/shared/db/`, `client/src/components/`)**:
    - Contains Express routes, database connection pool (`db.ts`), email/WhatsApp utility drivers, and React UI components.
-   - *Compliance*: Framework-specific code (Drizzle ORM access, static bank account data) is confined to `server/src/db/`, repositories, and `client/src/constants/` — it does not leak into domain services or UI feature components.
+   - *Compliance*: Framework-specific code (Drizzle ORM access, static bank account data) is confined to `server/src/shared/db/`, module repositories, and `client/src/constants/` — it does not leak into domain services or UI feature components.
 
-5. **The API Gateway Layer (`server/src/middleware/gateway*.ts`)**:
+5. **The API Gateway Layer (`server/src/shared/middleware/gateway*.ts`)**:
    - Sits in front of downstream route clusters to handle global ingress logic uniformly:
      - **Authentication Header Injection**: Decodes incoming JWT / session tokens at the entry point and injects standardized `X-User-Id` and `X-Tenant-Id` headers into downstream request context.
      - **Multi-Tenant Rate Limiting**: Protects downstream services from noisy neighbors by enforcing per-tenant (`X-Tenant-Id`) sliding window request limits (1000 req/15 min default, configurable via `RATE_LIMIT_MAX_REQUESTS`) and returning HTTP 429 (`TOO_MANY_REQUESTS`).
@@ -184,13 +184,24 @@ To maintain boundary enforcement and DIP, all future agent work must adhere to t
 
 ```
 server/src/
-├── types/          # Entities: Pure interfaces & enums (NO dependencies)
-├── db/schema/      # Entities: Drizzle table schemas (NO logic)
-├── repositories/   # Interface Adapters: Drizzle ORM data access (NO business logic, NO req/res)
-├── services/       # Use Cases: Business logic & validations (NO Express req/res, NO raw DB imports)
-├── controllers/    # Interface Adapters: HTTP req/res parsing (NO business logic, NO direct repo imports)
-├── routes/         # Frameworks: Express route declarations (NO logic)
-└── middleware/     # Frameworks: Express middleware (auth, RBAC, upload, validation)
+├── shared/                         # Cross-cutting infrastructure & utilities
+│   ├── db/                         # Entities: Drizzle connection pool, schemas & migrations
+│   ├── dtos/                       # Data Transfer Objects
+│   ├── middleware/                 # Express middleware (auth, gateway, rate limiting)
+│   ├── policies/                   # Access control policy definitions
+│   ├── repositories/               # Shared base repositories (BaseRepository.ts)
+│   ├── types/                      # Entities: Pure interfaces & enums
+│   └── utils/                      # Shared utility drivers (logger, passwordUtils, pdfGenerator)
+│
+└── modules/                        # Business Domain Bounded Contexts
+    ├── auth/                       # Controllers, Repositories, Routes, Services & Co-located Tests
+    ├── tickets/                    # Controllers, Repositories, Routes, Services & Co-located Tests
+    ├── billing/                    # Controllers, Repositories, Routes, Services & Co-located Tests
+    ├── subscriptions/              # Controllers, Repositories, Routes, Services & Co-located Tests
+    ├── rmm/                        # Controllers, Repositories, Routes, Services & Co-located Tests
+    ├── equipment/                  # Controllers, Repositories, Routes, Services & Co-located Tests
+    ├── notifications/              # Controllers, Repositories, Routes, Services & Co-located Tests
+    └── system/                     # Controllers, Repositories, Routes, Services & Co-located Tests
 
 client/src/
 ├── components/ui/  # MANDATORY UI Primitives: Base shadcn/ui components

@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { NotFoundError } from '@shared/errors';
-import { gatewayAuthMiddleware } from '../middleware/gatewayAuthMiddleware';
-import { gatewayRateLimiterMiddleware } from '../middleware/gatewayRateLimiterMiddleware';
-import { gatewayHeaderPropagatorMiddleware, gatewayClusterRouter } from '../middleware/gatewayRouterMiddleware';
+import { gatewayAuthMiddleware } from '@shared/middleware/gatewayAuthMiddleware';
+import { gatewayRateLimiterMiddleware } from '@shared/middleware/gatewayRateLimiterMiddleware';
+import { gatewayHeaderPropagatorMiddleware, gatewayClusterRouter } from '@shared/middleware/gatewayRouterMiddleware';
 
 const router = Router();
 

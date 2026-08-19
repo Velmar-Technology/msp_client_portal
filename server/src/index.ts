@@ -5,14 +5,14 @@ import helmet from 'helmet';
 import path from 'path';
 import fs from 'fs';
 import swaggerUi from 'swagger-ui-express';
-import { env } from './config/env';
-import { testConnection } from './config/database';
-import { migrate } from './db/migrate';
-import { logger } from './utils/logger';
+import { env } from '@shared/config/env';
+import { testConnection } from '@shared/config/database';
+import { migrate } from '@shared/db/migrate';
+import { logger } from '@shared/utils/logger';
 
 import { createExpressErrorMiddleware } from '@shared/errors';
 import routes from './routes';
-import { swaggerSpec } from './swagger/swagger.config';
+import { swaggerSpec } from '@shared/swagger/swagger.config';
 
 const app = express();
 
@@ -71,11 +71,11 @@ async function startServer(): Promise<void> {
       logger.info(`🌐 Environment: ${env.NODE_ENV}`);
       
       // Start background subscriptions renewal scheduler
-      const { subscriptionScheduler } = require('./services/SubscriptionScheduler');
+      const { subscriptionScheduler } = require('@modules/subscriptions/services/SubscriptionScheduler');
       subscriptionScheduler.start();
 
       // Start background SLA escalation scheduler
-      const { escalationScheduler } = require('./services/EscalationScheduler');
+      const { escalationScheduler } = require('@modules/tickets/services/EscalationScheduler');
       escalationScheduler.start();
     });
   } catch (error) {

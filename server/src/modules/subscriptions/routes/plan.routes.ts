@@ -1,0 +1,42 @@
+import { Router } from 'express';
+import { planController } from '@modules/subscriptions/controllers/PlanController';
+import { authMiddleware } from '@shared/middleware/authMiddleware';
+import { rbacMiddleware } from '@shared/middleware/rbacMiddleware';
+import { validate } from '@shared/middleware/validationMiddleware';
+import { CreatePlanDTO, UpdatePlanDTO, PlanQueryDTO } from '@shared/dtos/plan.dto';
+import { UserRole } from '@shared/types';
+
+const router = Router();
+
+router.use(authMiddleware);
+
+/** GET /api/v1/plans — List plans (filtered by role) */
+router.get('/', validate(PlanQueryDTO, 'query'), (req, res) => planController.getAll(req, res));
+
+/** GET /api/v1/plans/:id — Get plan details */
+router.get('/:id', (req, res) => planController.getById(req, res));
+
+/** POST /api/v1/plans — Create new plan (Admin only) */
+router.post(
+  '/',
+  rbacMiddleware(UserRole.ADMIN),
+  validate(CreatePlanDTO),
+  (req, res) => planController.create(req, res)
+);
+
+/** PATCH /api/v1/plans/:id — Update plan (Admin only) */
+router.patch(
+  '/:id',
+  rbacMiddleware(UserRole.ADMIN),
+  validate(UpdatePlanDTO),
+  (req, res) => planController.update(req, res)
+);
+
+/** DELETE /api/v1/plans/:id — Soft delete plan (Admin only) */
+router.delete(
+  '/:id',
+  rbacMiddleware(UserRole.ADMIN),
+  (req, res) => planController.delete(req, res)
+);
+
+export default router;

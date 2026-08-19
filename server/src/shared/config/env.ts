@@ -1,0 +1,71 @@
+import { z } from 'zod';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const envSchema = z.object({
+  // Database
+  DB_HOST: z.string().default('localhost'),
+  DB_PORT: z.coerce.number().default(5432),
+  DB_NAME: z.string().default('msp_helpdesk'),
+  DB_USER: z.string().default('postgres'),
+  DB_PASSWORD: z.string().default(''),
+
+  // Server
+  PORT: z.coerce.number().default(3001),
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+
+  // Admin Credentials
+  ADMIN_EMAIL: z.string().email().default('admin@msp-services.com'),
+  ADMIN_PASSWORD: z.string().min(8).default('password123'),
+
+  // JWT
+  JWT_SECRET: z.string().default('dev-secret-change-in-production'),
+  JWT_EXPIRES_IN: z.string().default('24h'),
+  JWT_REFRESH_SECRET: z.string().default('dev-refresh-secret'),
+  JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
+
+  // CORS
+  CORS_ORIGIN: z.string().default('http://localhost:5173'),
+
+  // Rate Limiting
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().default(15 * 60 * 1000),
+  RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(1000),
+
+  // Email
+  SMTP_HOST: z.string().default('smtp.gmail.com'),
+  SMTP_PORT: z.coerce.number().default(587),
+  SMTP_USER: z.string().default(''),
+  SMTP_PASSWORD: z.string().default(''),
+
+  // WhatsApp
+  WHATSAPP_API_URL: z.string().default(''),
+  WHATSAPP_API_KEY: z.string().default(''),
+
+  // File Uploads
+  UPLOAD_DIR: z.string().default('./uploads'),
+  MAX_FILE_SIZE_MB: z.coerce.number().default(10),
+
+  // Google OAuth
+  GOOGLE_CLIENT_ID: z.string().default(''),
+
+  // NextCloud
+  NEXTCLOUD_URL: z.string().default('http://localhost:8080'),
+  NEXTCLOUD_APP_USER: z.string().default(''),
+  NEXTCLOUD_APP_PASS: z.string().default(''),
+  NEXTCLOUD_TOTAL_CAPACITY: z.coerce.number().default(5000000000000), // Default 5.0 TB
+
+  // PayPal
+  PAYPAL_CLIENT_ID: z.string().default(''),
+  PAYPAL_CLIENT_SECRET: z.string().default(''),
+  PAYPAL_API_URL: z.string().default(''),
+});
+
+const parsed = envSchema.safeParse(process.env);
+
+if (!parsed.success) {
+  console.error('❌ Invalid environment variables:', parsed.error.flatten().fieldErrors);
+  process.exit(1);
+}
+
+export const env = parsed.data;

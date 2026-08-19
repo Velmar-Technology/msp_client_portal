@@ -8,7 +8,9 @@
     "rootDir": "./src",
     "baseUrl": "./src",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@shared/*": ["shared/*"],
+      "@modules/*": ["modules/*"]
     },
     "types": ["node", "vitest/globals"],
     "declaration": true,
