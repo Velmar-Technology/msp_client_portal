@@ -1,7 +1,7 @@
 import { RmmPatchRepository, rmmPatchRepository } from '@modules/rmm/repositories/RmmPatchRepository';
 import { RmmTelemetryRepository, rmmTelemetryRepository } from '@modules/rmm/repositories/RmmTelemetryRepository';
-import { EquipmentRepository, equipmentRepository } from '@modules/equipment';
-import { SubscriptionRepository, subscriptionRepository } from '@modules/subscriptions';
+import { EquipmentRepository, equipmentRepository } from '@modules/equipment/repositories/EquipmentRepository';
+import { SubscriptionRepository, subscriptionRepository } from '@modules/subscriptions/repositories/SubscriptionRepository';
 import { AlertService, alertService } from '@modules/rmm/services/AlertService';
 import { ZabbixService, zabbixService } from '@modules/rmm/services/ZabbixService';
 import { NotFoundError, ForbiddenError } from '@shared/errors';
@@ -18,9 +18,33 @@ export class RmmPatchService {
     private alertSvc: AlertService = alertService
   ) {}
 
+  private get patchRepository(): RmmPatchRepository {
+    return this.patchRepo || rmmPatchRepository;
+  }
+
+  private get telemetryRepository(): RmmTelemetryRepository {
+    return this.telemetryRepo || rmmTelemetryRepository;
+  }
+
+  private get equipmentRepository(): EquipmentRepository {
+    return this.equipRepo || equipmentRepository;
+  }
+
+  private get subscriptionRepository(): SubscriptionRepository {
+    return this.subRepo || subscriptionRepository;
+  }
+
+  private get zabbixService(): ZabbixService {
+    return this.zabbixSvc || zabbixService;
+  }
+
+  private get alertService(): AlertService {
+    return this.alertSvc || alertService;
+  }
+
   async checkFeatureEntitlement(tenantId?: string, byAdmin = false): Promise<void> {
     if (byAdmin || !tenantId) return;
-    const subscriptions = await this.subRepo.findByTenant(tenantId);
+    const subscriptions = await this.subscriptionRepository.findByTenant(tenantId);
     const activeSub = subscriptions.find((s) => s.status === 'ACTIVE');
 
     if (!activeSub) {
@@ -41,7 +65,7 @@ export class RmmPatchService {
   }
 
   async getEquipmentPatches(equipmentId: string, tenantId?: string, byAdmin = false): Promise<RmmPatchItem[]> {
-    const equipment = await this.equipRepo.findById(equipmentId);
+    const equipment = await this.equipmentRepository.findById(equipmentId);
     if (!equipment) {
       throw new NotFoundError('Equipment not found');
     }
@@ -50,11 +74,11 @@ export class RmmPatchService {
     }
 
     const targetTenantId = equipment.tenant_id;
-    let patches = await this.patchRepo.findByEquipment(equipmentId, targetTenantId);
+    let patches = await this.patchRepository.findByEquipment(equipmentId, targetTenantId);
 
     // Seed default patches if device exists but has no patch entries
     if (patches.length === 0) {
-      const p1 = await this.patchRepo.createPatch({
+      const p1 = await this.patchRepository.createPatch({
         equipment_id: equipmentId,
         patch_id: 'KB5034123',
         title: 'Cumulative Windows Security Update (KB5034123)',
@@ -63,7 +87,7 @@ export class RmmPatchService {
         tenant_id: targetTenantId,
       });
 
-      const p2 = await this.patchRepo.createPatch({
+      const p2 = await this.patchRepository.createPatch({
         equipment_id: equipmentId,
         patch_id: 'CVE-2024-21412',
         title: 'Internet Shortcut Files Remote Code Execution Vulnerability Patch',
@@ -72,7 +96,7 @@ export class RmmPatchService {
         tenant_id: targetTenantId,
       });
 
-      const p3 = await this.patchRepo.createPatch({
+      const p3 = await this.patchRepository.createPatch({
         equipment_id: equipmentId,
         patch_id: 'KB5034848',
         title: 'System Driver Stability & Performance Servicing Stack Update',
@@ -88,7 +112,7 @@ export class RmmPatchService {
   }
 
   async triggerPatchScan(equipmentId: string, tenantId?: string, byAdmin = false): Promise<RmmDeviceTelemetry> {
-    const equipment = await this.equipRepo.findById(equipmentId);
+    const equipment = await this.equipmentRepository.findById(equipmentId);
     if (!equipment) {
       throw new NotFoundError('Equipment not found');
     }
@@ -99,12 +123,12 @@ export class RmmPatchService {
     const targetTenantId = equipment.tenant_id;
 
     // Sync host with Zabbix
-    const zabbixHostId = await this.zabbixSvc.syncHost(equipmentId, equipment.device_name || 'Device');
-    const metrics = await this.zabbixSvc.getHostTelemetry(equipmentId, zabbixHostId);
+    const zabbixHostId = await this.zabbixService.syncHost(equipmentId, equipment.device_name || 'Device');
+    const metrics = await this.zabbixService.getHostTelemetry(equipmentId, zabbixHostId);
 
-    const pendingCount = await this.patchRepo.countPendingForEquipment(equipmentId);
+    const pendingCount = await this.patchRepository.countPendingForEquipment(equipmentId);
 
-    const telemetry = await this.telemetryRepo.upsertTelemetry({
+    const telemetry = await this.telemetryRepository.upsertTelemetry({
       equipment_id: equipmentId,
       tenant_id: targetTenantId,
       zabbix_host_id: zabbixHostId,
@@ -119,7 +143,7 @@ export class RmmPatchService {
     });
 
     // Touch equipment row so subscription_equipment.updated_at reflects the latest scan timestamp
-    await this.equipRepo.update(equipmentId, {});
+    await this.equipmentRepository.update(equipmentId, {});
 
     return telemetry;
   }
@@ -127,7 +151,7 @@ export class RmmPatchService {
   async applyPatches(equipmentId: string, patchIds: string[], tenantId?: string, byAdmin = false): Promise<RmmPatchItem[]> {
     await this.checkFeatureEntitlement(tenantId, byAdmin);
 
-    const equipment = await this.equipRepo.findById(equipmentId);
+    const equipment = await this.equipmentRepository.findById(equipmentId);
     if (!equipment) {
       throw new NotFoundError('Equipment not found');
     }
@@ -136,23 +160,23 @@ export class RmmPatchService {
     }
 
     const targetTenantId = equipment.tenant_id;
-    const telemetry = await this.telemetryRepo.findByEquipment(equipmentId);
+    const telemetry = await this.telemetryRepository.findByEquipment(equipmentId);
     const zabbixHostId = telemetry?.zabbix_host_id || `zbx-${equipmentId.substring(0, 8)}`;
 
     const updatedPatches: RmmPatchItem[] = [];
 
     for (const pid of patchIds) {
-      await this.patchRepo.updatePatchStatus(pid, RmmPatchStatus.INSTALLING);
-      await this.zabbixSvc.executePatchScript(zabbixHostId, pid);
-      const updated = await this.patchRepo.updatePatchStatus(pid, RmmPatchStatus.INSTALLED, new Date());
+      await this.patchRepository.updatePatchStatus(pid, RmmPatchStatus.INSTALLING);
+      await this.zabbixService.executePatchScript(zabbixHostId, pid);
+      const updated = await this.patchRepository.updatePatchStatus(pid, RmmPatchStatus.INSTALLED, new Date());
       if (updated) {
         updatedPatches.push(updated);
       }
     }
 
     // Re-count pending patches and update telemetry
-    const pendingCount = await this.patchRepo.countPendingForEquipment(equipmentId);
-    await this.telemetryRepo.upsertTelemetry({
+    const pendingCount = await this.patchRepository.countPendingForEquipment(equipmentId);
+    await this.telemetryRepository.upsertTelemetry({
       equipment_id: equipmentId,
       tenant_id: targetTenantId,
       pending_patch_count: pendingCount,
@@ -164,31 +188,31 @@ export class RmmPatchService {
 
   async getRmmOverview(tenantId?: string, byAdmin = false): Promise<RmmOverviewStats> {
     const devices = byAdmin || !tenantId
-      ? await this.telemetryRepo.findAll()
-      : await this.telemetryRepo.findByTenant(tenantId);
+      ? await this.telemetryRepository.findAll()
+      : await this.telemetryRepository.findByTenant(tenantId);
 
     // If no telemetry exists, trigger scan for equipment
     if (devices.length === 0) {
       const equipmentList = byAdmin || !tenantId
-        ? await this.equipRepo.findAllWithDetails()
-        : await this.equipRepo.findByTenantId(tenantId);
+        ? await this.equipmentRepository.findAllWithDetails()
+        : await this.equipmentRepository.findByTenantId(tenantId);
       for (const eqItem of equipmentList) {
         await this.triggerPatchScan(eqItem.id, eqItem.tenant_id, byAdmin);
       }
     }
 
     const updatedDevices = byAdmin || !tenantId
-      ? await this.telemetryRepo.findAll()
-      : await this.telemetryRepo.findByTenant(tenantId);
+      ? await this.telemetryRepository.findAll()
+      : await this.telemetryRepository.findByTenant(tenantId);
 
     const monitoredDevices = updatedDevices.length;
     const onlineDevices = updatedDevices.filter((d) => d.agent_status === 'ONLINE').length;
     const offlineDevices = updatedDevices.filter((d) => d.agent_status === 'OFFLINE').length;
     const pendingPatchesCount = updatedDevices.reduce((sum, d) => sum + (d.pending_patch_count || 0), 0);
 
-    const noiseReductionRatio = this.alertSvc.calculateNoiseReductionRatio(100, 12);
-    const selfHealingEfficiency = this.alertSvc.calculateSelfHealingEfficiency(45, 5);
-    const automatedFCR = this.alertSvc.calculateFirstContactResolutionAutomation(45, 100);
+    const noiseReductionRatio = this.alertService.calculateNoiseReductionRatio(100, 12);
+    const selfHealingEfficiency = this.alertService.calculateSelfHealingEfficiency(45, 5);
+    const automatedFCR = this.alertService.calculateFirstContactResolutionAutomation(45, 100);
 
     return {
       monitoredDevices,

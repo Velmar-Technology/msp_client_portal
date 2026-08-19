@@ -1,3 +1,5 @@
+export * from './repositories/RmmPatchRepository';
+export * from './repositories/RmmTelemetryRepository';
 export * from './services/AlertService';
 export * from './services/MaintenanceService';
 export * from './services/RmmPatchService';

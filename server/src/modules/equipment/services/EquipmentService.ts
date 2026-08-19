@@ -2,7 +2,7 @@ import { equipmentRepository, EquipmentRepository } from '@modules/equipment/rep
 import { subscriptionRepository, SubscriptionRepository } from '@modules/subscriptions';
 import { planRepository, PlanRepository } from '@modules/subscriptions';
 import { nextcloudService, NextcloudService } from '@modules/system';
-import { rmmPatchService, RmmPatchService } from '@modules/rmm';
+import { rmmPatchService, RmmPatchService } from '@modules/rmm/services/RmmPatchService';
 import { NotFoundError, ForbiddenError, ValidationError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
 import { SubscriptionEquipment, EquipmentWithDetails } from '@shared/types';
