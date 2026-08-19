@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import type { SortingState } from "@tanstack/react-table";
 import { ticketService } from "@/services/ticketService";
 import type { Ticket } from "@/services/ticketService";
 import { equipmentService } from "@/services/equipmentService";
@@ -24,6 +25,13 @@ export function useTicketsPage() {
   const [priorityFilter, setPriorityFilterInternal] = useState(() => getParam("priority", ""));
   const [deviceFilter, setDeviceFilterInternal] = useState(() => getParam("device", ""));
   const [loading, setLoading] = useState(true);
+
+  // Sorting
+  const initialSortBy = getParam("sortBy", "");
+  const initialSortOrder = getParam("sortOrder", "desc") as "asc" | "desc";
+  const [sorting, setSorting] = useState<SortingState>(
+    initialSortBy ? [{ id: initialSortBy, desc: initialSortOrder === "desc" }] : []
+  );
   const [showNewTicket, setShowNewTicketInternal] = useState(() => getParam("openModal") === "create-ticket");
   const [selectedTickets, setSelectedTickets] = useState<Ticket[]>([]);
   const [ticketToCancel, setTicketToCancel] = useState<Ticket | null>(null);
@@ -89,6 +97,20 @@ export function useTicketsPage() {
     [setParams]
   );
 
+  const handleSortingChange = useCallback(
+    (newSorting: SortingState) => {
+      setSorting(newSorting);
+      const active = newSorting[0];
+      setParams({
+        sortBy: active?.id || null,
+        sortOrder: active ? (active.desc ? "desc" : "asc") : null,
+        page: null,
+      });
+      setPageInternal(1);
+    },
+    [setParams]
+  );
+
   const setShowNewTicket = useCallback(
     (open: boolean) => {
       setShowNewTicketInternal(open);
@@ -136,6 +158,13 @@ export function useTicketsPage() {
       if (priorityFilter) params.priority = priorityFilter;
       if (search) params.search = search;
       if (deviceFilter) params.equipmentId = deviceFilter;
+
+      const activeSort = sorting[0];
+      if (activeSort) {
+        params.sortBy = activeSort.id;
+        params.sortOrder = activeSort.desc ? "desc" : "asc";
+      }
+
       const result = await ticketService.getAll(params);
       setTickets(result.data);
       setTotal(result.pagination.total);
@@ -144,7 +173,7 @@ export function useTicketsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, statusFilter, categoryFilter, priorityFilter, search, deviceFilter]);
+  }, [page, limit, statusFilter, categoryFilter, priorityFilter, search, deviceFilter, sorting]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -256,6 +285,8 @@ export function useTicketsPage() {
     totalPages,
     limit,
     handleLimitChange,
+    sorting,
+    handleSortingChange,
     loadTickets,
     canCreateTicket,
     handleBulkCancelClick,

@@ -426,7 +426,17 @@
     "responseError": "Error al enviar la respuesta",
     "previewNotAvailable": "Vista previa no disponible para este tipo de archivo.",
     "downloadFile": "Descargar Archivo",
-    "closePreview": "Cerrar vista previa"
+    "closePreview": "Cerrar vista previa",
+    "reopen": "Reabrir",
+    "closeTicket": "Cerrar",
+    "openedBy": "Abierto por",
+    "send": "Enviar",
+    "slaDescription": "La ventana de SLA para tickets de Garantía y Caída de Servicio está activa.",
+    "slaRemaining": "Restante:",
+    "information": "Información",
+    "assignment": "Asignación",
+    "client": "Cliente",
+    "assignBtn": "Asignar"
   },
   "techDashboard": {
     "subtitle": "Gestione sus tickets asignados, controle los SLA y actualice los estados de los tickets.",

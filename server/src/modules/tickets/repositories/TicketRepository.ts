@@ -169,6 +169,32 @@ export class TicketRepository extends BaseRepository<Ticket> {
     const clientAlias = alias(users, 'client');
     const techAlias = alias(users, 'tech');
 
+    const orderFn = filters.sortOrder === 'asc' ? asc : desc;
+
+    let orderByClause;
+    switch (filters.sortBy) {
+      case 'title':
+        orderByClause = orderFn(tickets.title);
+        break;
+      case 'client_name':
+        orderByClause = orderFn(clientAlias.name);
+        break;
+      case 'category':
+        orderByClause = orderFn(tickets.category);
+        break;
+      case 'priority':
+        orderByClause = orderFn(tickets.priority);
+        break;
+      case 'status':
+        orderByClause = orderFn(tickets.status);
+        break;
+      case 'created_at':
+        orderByClause = orderFn(tickets.created_at);
+        break;
+      default:
+        orderByClause = desc(tickets.created_at);
+    }
+
     const results = await db
       .select({
         id: tickets.id,
@@ -194,7 +220,7 @@ export class TicketRepository extends BaseRepository<Ticket> {
       .leftJoin(techAlias, eq(tickets.assigned_tech_id, techAlias.id))
       .leftJoin(subscriptionEquipment, eq(tickets.equipment_id, subscriptionEquipment.id))
       .where(whereClause)
-      .orderBy(desc(tickets.created_at))
+      .orderBy(orderByClause)
       .limit(limit)
       .offset(offset);
 

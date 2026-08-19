@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Page } from "@/components/Page";
-import { DataTable } from "@/components/ui/data-table";
+import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
 import type { DataTableBulkAction } from "@/components/ui/data-table";
 
 import {
@@ -116,6 +116,8 @@ export function UserManagementPage() {
     limit,
     setPage,
     handleLimitChange,
+    sorting,
+    handleSortingChange,
     roleFilter,
     statusFilter,
     searchQuery,
@@ -143,10 +145,8 @@ export function UserManagementPage() {
     () => [
       {
         accessorKey: "name",
-        header: () => (
-          <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-            {t("userManagement.colUser")}
-          </span>
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("userManagement.colUser")} />
         ),
         cell: ({ row }) => (
           <UserAvatarCell
@@ -158,10 +158,8 @@ export function UserManagementPage() {
       },
       {
         accessorKey: "role",
-        header: () => (
-          <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-            {t("userManagement.colRole")}
-          </span>
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("userManagement.colRole")} />
         ),
         cell: ({ row }) => (
           <UserRoleBadge
@@ -172,10 +170,8 @@ export function UserManagementPage() {
       },
       {
         accessorKey: "client_type",
-        header: () => (
-          <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-            {t("userManagement.colClientType") || "Client Type"}
-          </span>
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("userManagement.colClientType") || "Client Type"} />
         ),
         cell: ({ row }) => (
           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground border border-border">
@@ -185,10 +181,8 @@ export function UserManagementPage() {
       },
       {
         accessorKey: "is_active",
-        header: () => (
-          <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-            {t("userManagement.colStatus")}
-          </span>
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("userManagement.colStatus")} />
         ),
         cell: ({ row }) => (
           <StatusDot
@@ -203,10 +197,8 @@ export function UserManagementPage() {
       },
       {
         accessorKey: "created_at",
-        header: () => (
-          <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-            {t("userManagement.colJoined")}
-          </span>
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("userManagement.colJoined")} />
         ),
         cell: ({ row }) => (
           <span className="text-xs text-muted-foreground font-mono">
@@ -221,6 +213,7 @@ export function UserManagementPage() {
             {t("userManagement.colActions")}
           </span>
         ),
+        enableSorting: false,
         cell: ({ row }) => (
           <UserActionsMenu
             user={row.original}
@@ -360,6 +353,10 @@ export function UserManagementPage() {
         loading={loading}
         noDataMessage={t("userManagement.noUsersFound")}
         bulkActions={bulkActions}
+        sorting={sorting}
+        onSortingChange={handleSortingChange}
+        enableSorting
+        manualSorting
         search={{
           value: searchQuery,
           onChange: handleSearchChange,

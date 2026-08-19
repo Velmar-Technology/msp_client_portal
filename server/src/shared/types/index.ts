@@ -268,6 +268,8 @@ export interface TicketFilters {
   search?: string;
   page?: number;
   limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 // ---- Notification Types ----

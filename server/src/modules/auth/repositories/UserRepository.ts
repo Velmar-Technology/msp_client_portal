@@ -1,7 +1,7 @@
 import { BaseRepository } from '@shared/repositories/BaseRepository';
 import { User, UserRole } from '@shared/types';
 import { db, users } from '@shared/db';
-import { eq, and, or, ilike, asc, sql, count, inArray } from 'drizzle-orm';
+import { eq, and, or, ilike, asc, desc, sql, count, inArray } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 
 export interface UserListFilters {
@@ -10,6 +10,8 @@ export interface UserListFilters {
   search?: string;
   limit?: number;
   offset?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 export class UserRepository extends BaseRepository<User> {
@@ -38,10 +40,31 @@ export class UserRepository extends BaseRepository<User> {
 
   async findAllWithFilters(filters: UserListFilters): Promise<User[]> {
     const whereClause = this.buildFilterConditions(filters);
+
+    const orderFn = filters.sortOrder === 'desc' ? desc : asc;
+
+    let orderByClause;
+    switch (filters.sortBy) {
+      case 'role':
+        orderByClause = orderFn(users.role);
+        break;
+      case 'client_type':
+        orderByClause = orderFn(users.client_type);
+        break;
+      case 'is_active':
+        orderByClause = orderFn(users.is_active);
+        break;
+      case 'created_at':
+        orderByClause = orderFn(users.created_at);
+        break;
+      default:
+        orderByClause = asc(users.name);
+    }
+
     const query = db
       .select()
       .from(users)
-      .orderBy(asc(users.name))
+      .orderBy(orderByClause)
       .limit(filters.limit ?? 20)
       .offset(filters.offset ?? 0);
 

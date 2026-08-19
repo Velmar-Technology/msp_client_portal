@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { Plus, Eye, MoreHorizontal, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Page } from "@/components/Page";
-import { DataTable } from "@/components/ui/data-table";
+import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTickets } from "@/hooks/useTicketsPage";
 import type { Ticket, TicketResponse } from "@/services/ticketService";
@@ -127,6 +127,8 @@ export function TicketsPage() {
     limit,
     setPage,
     handleLimitChange,
+    sorting,
+    handleSortingChange,
     searchQuery,
     setSearchQuery,
     statusFilter,
@@ -156,10 +158,8 @@ export function TicketsPage() {
     () => [
       {
         accessorKey: "title",
-        header: () => (
-          <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-            {t("tickets.colTitle")}
-          </span>
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("tickets.colTitle")} />
         ),
         cell: ({ row }) => <TicketTitleWithHoverCard ticket={row.original} />,
       },
@@ -167,10 +167,8 @@ export function TicketsPage() {
         ? [
             {
               accessorKey: "client_name",
-              header: () => (
-                <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-                  {t("tickets.colClient")}
-                </span>
+              header: ({ column }: { column: any }) => (
+                <DataTableColumnHeader column={column} title={t("tickets.colClient")} />
               ),
               cell: ({ row }: { row: { original: Ticket } }) => (
                 <span className="text-xs font-medium text-foreground">{row.original.client_name || "-"}</span>
@@ -180,10 +178,8 @@ export function TicketsPage() {
         : []),
       {
         accessorKey: "category",
-        header: () => (
-          <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-            {t("tickets.colCategory")}
-          </span>
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("tickets.colCategory")} />
         ),
         cell: ({ row }) => (
           <span className="text-xs text-muted-foreground">{t(`tickets.categories.${row.original.category}`)}</span>
@@ -191,10 +187,8 @@ export function TicketsPage() {
       },
       {
         accessorKey: "priority",
-        header: () => (
-          <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-            {t("tickets.colPriority")}
-          </span>
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("tickets.colPriority")} />
         ),
         cell: ({ row }) => (
           <span className={`text-xs font-semibold ${priorityColor[row.original.priority] || "text-foreground"}`}>
@@ -204,10 +198,8 @@ export function TicketsPage() {
       },
       {
         accessorKey: "status",
-        header: () => (
-          <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-            {t("tickets.colStatus")}
-          </span>
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("tickets.colStatus")} />
         ),
         cell: ({ row }) => (
           <span
@@ -219,10 +211,8 @@ export function TicketsPage() {
       },
       {
         accessorKey: "created_at",
-        header: () => (
-          <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-            {t("tickets.colCreated")}
-          </span>
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("tickets.colCreated")} />
         ),
         cell: ({ row }) => (
           <span className="text-xs text-muted-foreground font-mono">
@@ -241,6 +231,7 @@ export function TicketsPage() {
             {t("tickets.colActions")}
           </span>
         ),
+        enableSorting: false,
         cell: ({ row }) => {
           const tItem = row.original;
           return (
@@ -301,6 +292,10 @@ export function TicketsPage() {
         loading={loading}
         noDataMessage={t("tickets.noTicketsFound")}
         onRowClick={(ticket) => navigate(`/tickets/${ticket.id}`)}
+        sorting={sorting}
+        onSortingChange={handleSortingChange}
+        enableSorting
+        manualSorting
         search={{
           value: searchQuery,
           onChange: setSearchQuery,

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import type { SortingState } from "@tanstack/react-table";
 import { userService } from "@/services/userService";
 import type {
   ManagedUser,
@@ -64,6 +65,13 @@ export function useUserManagement() {
   const [searchQuery, setSearchQuery] = useState(() => getParam("search", ""));
   const [debouncedSearch, setDebouncedSearch] = useState(() => getParam("search", ""));
 
+  // Sorting
+  const initialSortBy = getParam("sortBy", "");
+  const initialSortOrder = getParam("sortOrder", "asc") as "asc" | "desc";
+  const [sorting, setSorting] = useState<SortingState>(
+    initialSortBy ? [{ id: initialSortBy, desc: initialSortOrder === "desc" }] : []
+  );
+
   // Confirmation dialog
   const [confirmation, setConfirmation] = useState<ConfirmationState>(INITIAL_CONFIRMATION);
 
@@ -96,12 +104,16 @@ export function useUserManagement() {
       const isActiveParam =
         statusFilter === "active" ? "true" : statusFilter === "inactive" ? "false" : undefined;
 
+      const activeSort = sorting[0];
+
       const result = await userService.getAllUsers({
         page,
         limit,
         role: roleFilter || undefined,
         isActive: isActiveParam,
         search: debouncedSearch || undefined,
+        sortBy: activeSort?.id || undefined,
+        sortOrder: activeSort ? (activeSort.desc ? "desc" : "asc") : undefined,
       });
 
       setUsers(result.users);
@@ -112,7 +124,7 @@ export function useUserManagement() {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, roleFilter, statusFilter, debouncedSearch]);
+  }, [page, limit, roleFilter, statusFilter, debouncedSearch, sorting]);
 
   // Fetch stats
   const fetchStats = useCallback(async () => {
@@ -159,6 +171,20 @@ export function useUserManagement() {
     setPageInternal(1);
     setParams({ limit: value === DEFAULT_PAGE_SIZE ? null : value, page: null });
   }, [setParams]);
+
+  const handleSortingChange = useCallback(
+    (newSorting: SortingState) => {
+      setSorting(newSorting);
+      const active = newSorting[0];
+      setParams({
+        sortBy: active?.id || null,
+        sortOrder: active ? (active.desc ? "desc" : "asc") : null,
+        page: null,
+      });
+      setPageInternal(1);
+    },
+    [setParams]
+  );
 
   // Confirmation dialog handlers
   const requestRoleChange = useCallback(
@@ -415,6 +441,9 @@ export function useUserManagement() {
     limit,
     setPage,
     handleLimitChange,
+    // Sorting
+    sorting,
+    handleSortingChange,
     // Filters
     roleFilter,
     statusFilter,

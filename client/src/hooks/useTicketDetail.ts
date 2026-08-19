@@ -178,38 +178,24 @@ export function useTicketDetail(ticketId: string | undefined) {
   };
 
   const getStatusLabel = useCallback((status: string) => {
-    switch (status) {
-      case 'OPEN': return t('tickets.statusOpen') || 'Open';
-      case 'ASSIGNED': return t('tickets.statusAssigned') || 'Assigned';
-      case 'IN_PROGRESS': return t('tickets.statusInProgress') || 'In Progress';
-      case 'PENDING_CLIENT': return t('tickets.statusPendingClient') || 'Pending Client';
-      case 'RESOLVED': return t('tickets.statusResolved') || 'Resolved';
-      case 'CLOSED': return t('tickets.statusClosed') || 'Closed';
-      case 'CANCELLED': return t('tickets.statusCancelled') || 'Cancelled';
-      default: return status;
-    }
+    const key = `tickets.statuses.${status}`;
+    const translated = t(key);
+    if (translated !== key) return translated;
+    return status;
   }, [t]);
 
   const getPriorityLabel = useCallback((priority: string) => {
-    switch (priority) {
-      case 'CRITICAL': return t('tickets.priorityCritical') || 'Critical';
-      case 'HIGH': return t('tickets.priorityHigh') || 'High';
-      case 'MEDIUM': return t('tickets.priorityMedium') || 'Medium';
-      case 'LOW': return t('tickets.priorityLow') || 'Low';
-      default: return priority;
-    }
+    const key = `tickets.priorities.${priority}`;
+    const translated = t(key);
+    if (translated !== key) return translated;
+    return priority;
   }, [t]);
 
   const getCategoryLabel = useCallback((category: string) => {
-    switch (category) {
-      case 'HARDWARE': return t('tickets.catHardware') || 'Hardware';
-      case 'SOFTWARE': return t('tickets.catSoftware') || 'Software';
-      case 'NETWORK': return t('tickets.catNetwork') || 'Network';
-      case 'ACCESS': return t('tickets.catAccess') || 'Access';
-      case 'WARRANTY': return t('tickets.catWarranty') || 'Warranty';
-      case 'SERVICE_OUTAGE': return t('tickets.catServiceOutage') || 'Service Outage';
-      default: return category;
-    }
+    const key = `tickets.categories.${category}`;
+    const translated = t(key);
+    if (translated !== key) return translated;
+    return category;
   }, [t]);
 
   return {

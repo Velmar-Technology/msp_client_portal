@@ -74,10 +74,14 @@ export class UserService {
     role?: string;
     isActive?: string;
     search?: string;
+    sortBy?: string;
+    sortOrder?: string;
   }): Promise<UserListResponse> {
     const page = Math.max(1, params.page ?? 1);
     const limit = Math.min(100, Math.max(1, params.limit ?? 20));
     const offset = (page - 1) * limit;
+
+    const ALLOWED_SORT_COLUMNS = ['name', 'role', 'client_type', 'is_active', 'created_at'];
 
     const filters: UserListFilters = {
       limit,
@@ -92,6 +96,12 @@ export class UserService {
     }
     if (params.search) {
       filters.search = params.search;
+    }
+    if (params.sortBy && ALLOWED_SORT_COLUMNS.includes(params.sortBy)) {
+      filters.sortBy = params.sortBy;
+    }
+    if (params.sortOrder === 'asc' || params.sortOrder === 'desc') {
+      filters.sortOrder = params.sortOrder;
     }
 
     const [usersData, total] = await Promise.all([

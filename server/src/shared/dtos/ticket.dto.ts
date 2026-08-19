@@ -28,6 +28,8 @@ export const TicketQueryDTO = z.object({
   priority: z.nativeEnum(TicketPriority).optional(),
   equipmentId: z.string().uuid().optional(),
   search: z.string().optional(),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
   page: z.coerce.number().int().positive().optional().default(1),
   limit: z.coerce.number().int().positive().max(100).optional().default(20),
 });

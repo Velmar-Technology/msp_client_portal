@@ -117,7 +117,7 @@ export function TicketDetailPage() {
           className="px-3 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors rounded-lg text-xs font-semibold disabled:opacity-50 flex items-center gap-1.5 shadow-xs cursor-pointer"
         >
           {statusUpdating && <div className="w-3.5 h-3.5 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full animate-spin" />}
-          {t('techDashboard.startWork') === 'Iniciar Trabajo' ? 'Reabrir' : 'Reopen'}
+          {t('ticketDetail.reopen')}
         </button>
       );
     }
@@ -186,7 +186,7 @@ export function TicketDetailPage() {
             disabled={statusUpdating}
             className="px-3 py-1.5 border border-border text-muted-foreground hover:bg-muted transition-colors rounded-lg text-xs font-semibold disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
           >
-            {t('tickets.filterClosed') === 'Cerrado' ? 'Cerrar' : 'Close'}
+            {t('ticketDetail.closeTicket')}
           </button>
         </div>
       );
@@ -246,7 +246,7 @@ export function TicketDetailPage() {
               {getStatusLabel(ticket.status)}
             </span>
             <span className="text-xs text-muted-foreground font-medium">
-              {t('techDashboard.tableStatus') === 'Estado' ? 'Abierto por' : 'Opened by'} <strong className="font-semibold text-foreground">{ticket.client_name || 'Client'}</strong> • {new Date(ticket.created_at).toLocaleString(i18n.language === 'es_DO' ? 'es-DO' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+              {t('ticketDetail.openedBy')} <strong className="font-semibold text-foreground">{ticket.client_name || 'Client'}</strong> • {new Date(ticket.created_at).toLocaleString(i18n.language === 'es_DO' ? 'es-DO' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
             </span>
           </div>
         </div>
@@ -453,7 +453,7 @@ export function TicketDetailPage() {
                       <div className="w-3.5 h-3.5 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full animate-spin" />
                     ) : (
                       <>
-                        <span>{t('ticketDetail.sendResponse') === 'Enviar Respuesta' ? 'Enviar' : 'Send'}</span>
+                        <span>{t('ticketDetail.send')}</span>
                         <Send className="h-3.5 w-3.5" />
                       </>
                     )}
@@ -527,10 +527,10 @@ export function TicketDetailPage() {
                 <h4 className="text-xs font-bold uppercase tracking-wider font-heading">{t('ticketDetail.slaWindow')}</h4>
               </div>
               <p className="text-[11px] text-destructive/80">
-                {t('techDashboard.slaDescription') || 'Warranty & Service Outage ticket SLA is active.'}
+                {t('ticketDetail.slaDescription')}
               </p>
               <div className="text-xl font-mono text-destructive font-extrabold flex justify-between items-baseline mt-1">
-                <span className="text-xs font-sans font-semibold">{t('techDashboard.tableStatus') === 'Estado' ? 'Restante:' : 'Remaining:'}</span>
+                <span className="text-xs font-sans font-semibold">{t('ticketDetail.slaRemaining')}</span>
                 <span className="animate-pulse">{sla.formattedTime}</span>
               </div>
             </div>
@@ -541,7 +541,7 @@ export function TicketDetailPage() {
             <div className="px-4 py-3 border-b border-border flex items-center gap-2 bg-muted/30">
               <Clock className="h-4 w-4 text-muted-foreground" />
               <h3 className="text-xs font-bold text-foreground uppercase tracking-wider font-heading">
-                {t('techDashboard.tableStatus') === 'Estado' ? 'Información' : 'Information'}
+                {t('ticketDetail.information')}
               </h3>
             </div>
             <div className="p-4 flex flex-col gap-3">
@@ -574,7 +574,7 @@ export function TicketDetailPage() {
             <div className="px-4 py-3 border-b border-border flex items-center gap-2 bg-muted/30">
               <UserCheck className="h-4 w-4 text-muted-foreground" />
               <h3 className="text-xs font-bold text-foreground uppercase tracking-wider font-heading">
-                {t('techDashboard.tableStatus') === 'Estado' ? 'Asignación' : 'Assignment'}
+                {t('ticketDetail.assignment')}
               </h3>
             </div>
             <div className="p-4">
@@ -597,7 +597,7 @@ export function TicketDetailPage() {
               {canAssign && ticket.client_name && (
                 <div className="mb-4">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
-                    {t('techDashboard.tableStatus') === 'Estado' ? 'Cliente' : 'Client'}
+                    {t('ticketDetail.client')}
                   </span>
                   <div className="flex flex-col">
                     <span className="text-xs font-semibold text-foreground truncate">{ticket.client_name}</span>
@@ -633,7 +633,7 @@ export function TicketDetailPage() {
                       {assigning ? (
                         <div className="w-3.5 h-3.5 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full animate-spin" />
                       ) : (
-                        t('techDashboard.tableStatus') === 'Estado' ? 'Asignar' : 'Assign'
+                        t('ticketDetail.assignBtn')
                       )}
                     </button>
                   </div>

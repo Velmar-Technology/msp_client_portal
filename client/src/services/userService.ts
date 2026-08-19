@@ -50,6 +50,8 @@ export interface UserListParams {
   role?: UserRole | '';
   isActive?: string;
   search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 export const userService = {
@@ -104,6 +106,8 @@ export const userService = {
     if (params.role) queryParams.role = params.role;
     if (params.isActive !== undefined && params.isActive !== '') queryParams.isActive = params.isActive;
     if (params.search) queryParams.search = params.search;
+    if (params.sortBy) queryParams.sortBy = params.sortBy;
+    if (params.sortOrder) queryParams.sortOrder = params.sortOrder;
 
     const response = await api.get('/users', { params: queryParams });
     return response.data.data;

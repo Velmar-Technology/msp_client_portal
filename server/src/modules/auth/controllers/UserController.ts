@@ -54,13 +54,15 @@ export class UserController {
   // ---- Admin User Management ----
 
   async getAllUsers(req: Request, res: Response): Promise<void> {
-    const { page, limit, role, isActive, search } = req.query;
+    const { page, limit, role, isActive, search, sortBy, sortOrder } = req.query;
     const result = await userService.getAllUsers({
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
       role: role as string | undefined,
       isActive: isActive as string | undefined,
       search: search as string | undefined,
+      sortBy: sortBy as string | undefined,
+      sortOrder: sortOrder as string | undefined,
     });
     res.json({ success: true, data: result });
   }
