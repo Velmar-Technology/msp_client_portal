@@ -12,23 +12,25 @@ El proyecto sigue una arquitectura de **Monolito en Capas (Layered Monolith)** u
 El servidor Express implementa una separación estricta de responsabilidades (Separation of Concerns):
 ```mermaid
 graph TD
-    Client[Cliente React / API Request] --> Routes[Rutas: routes/*]
-    Routes --> Middlewares[Middlewares: auth, validation, rbac]
+    Client[Cliente React / API Request] --> Gateway[API Gateway Layer: gatewayAuth, gatewayRateLimiter, gatewayRouter]
+    Gateway --> Routes[Rutas: routes/*]
+    Routes --> Middlewares[Middlewares: validation, rbac]
     Middlewares --> Controllers[Controladores: controllers/*]
     Controllers --> Services[Servicios de Negocio: services/*]
     Services --> Repositories[Repositorios de Datos: repositories/*]
-    Repositories --> DB[(Base de Datos: PostgreSQL via Drizzle ORM)]
+    Repositories --> DB[(Base de Datos: PostgreSQL + Row-Level Security via Drizzle ORM)]
     DB --> Repositories
     Repositories --> Services
     Services --> Controllers
     Controllers --> Client
 ```
 
-1. **Rutas (`routes/`):** Define los endpoints de la API. No contiene lógica de negocio, solo delega en los controladores correspondientes.
-2. **Controladores (`controllers/`):** Manejan la entrada HTTP (`req`, `res`), validan las entradas de datos (usando Zod a través de middlewares) y delegan la lógica de negocio a los servicios.
-3. **Servicios (`services/`):** Contienen toda la lógica de negocio nuclear del sistema (e.g., asignación de tickets mediante Round-Robin, políticas de SLA de 1 hora, facturación automática, sincronización con Nextcloud). No tienen conocimiento de la capa HTTP.
-4. **Repositorios (`repositories/`):** Es la única capa autorizada para realizar consultas SQL (o sentencias Drizzle) a la base de datos PostgreSQL.
-5. **Esquema de Base de Datos (`db/schema.ts`):** Define las tablas relacionales y sus relaciones usando Drizzle ORM.
+1. **Capa API Gateway (`middleware/gateway*.ts`):** Punto de entrada unificado que ejecuta la decodificación de JWT, la inyección de cabeceras estándar (`X-User-Id`, `X-Tenant-Id`), el control de tasa de peticiones por inquilino (*Multi-Tenant Rate Limiting*) y el enrutamiento a clústeres.
+2. **Rutas (`routes/`):** Define los endpoints de la API. No contiene lógica de negocio, solo delega en los controladores correspondientes.
+3. **Controladores (`controllers/`):** Manejan la entrada HTTP (`req`, `res`), validan las entradas de datos (usando Zod a través de middlewares) y delegan la lógica de negocio a los servicios.
+4. **Servicios (`services/`):** Contienen toda la lógica de negocio nuclear del sistema (e.g., asignación de tickets mediante Round-Robin, políticas de SLA de 1 hora, facturación automática, sincronización con Nextcloud). No tienen conocimiento de la capa HTTP.
+5. **Repositorios (`repositories/`):** Es la única capa autorizada para realizar consultas SQL (o sentencias Drizzle) a la base de datos PostgreSQL.
+6. **Seguridad a Nivel de Fila (RLS) y Esquema DB (`db/`):** Define las tablas relacionales y sus políticas de aislamiento por inquilino (*Row-Level Security*) usando `app.current_tenant_id` y `withTenantContext`.
 
 ---
 

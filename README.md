@@ -26,12 +26,12 @@ The codebase strictly adheres to **Uncle Bob’s Clean Architecture & Clean Code
 ```
 server/src/
 ├── types/          # Entities: Pure interfaces & enums (NO dependencies)
-├── db/schema/      # Entities: Drizzle ORM table definitions & enums
+├── db/schema/      # Entities & Migrations: Drizzle ORM tables & PostgreSQL Row-Level Security (RLS)
 ├── repositories/   # Interface Adapters: Database access logic (NO req/res, NO business rules)
 ├── services/       # Use Cases: Application business logic & validations (NO Express objects)
 ├── controllers/    # Interface Adapters: HTTP req/res parsing & status formatting
-├── routes/         # Frameworks: Express route declarations
-└── middleware/     # Frameworks: Express middleware (Authentication, RBAC, Rate Limiting)
+├── routes/         # Frameworks: Express route declarations & Gateway Cluster Router
+└── middleware/     # Frameworks: API Gateway Ingress (JWT Decoding, X-User-Id / X-Tenant-Id Injection, Multi-Tenant Rate Limiting, RBAC)
 
 client/src/
 ├── components/ui/  # MANDATORY UI Primitives: Base shadcn/ui components
