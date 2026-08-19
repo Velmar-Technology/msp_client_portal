@@ -24,24 +24,23 @@ export function Page({
 }: PageProps) {
   return (
     <MaxWidthWrapper
-      className={cn('animate-fade-in text-zinc-900 dark:text-zinc-50', className)}
+      className={cn('animate-fade-in text-foreground', className)}
       {...props}
     >
-      {showBreadcrumbs && <Breadcrumbs className="mb-4 text-zinc-500 dark:text-zinc-400" />}
+      {showBreadcrumbs && <Breadcrumbs className="mb-4 text-muted-foreground" />}
       {(title || subtitle || actions) && (
         <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           {(title || subtitle) && (
             <div className="space-y-0.5">
               {title && (
                 <h1
-                  className="text-lg sm:text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 animate-fade-in"
-                  style={{ fontFamily: 'var(--font-heading)' }}
+                  className="text-lg sm:text-xl font-bold tracking-tight text-foreground font-heading animate-fade-in"
                 >
                   {title}
                 </h1>
               )}
               {subtitle && (
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 animate-fade-in">
+                <p className="text-xs text-muted-foreground animate-fade-in">
                   {subtitle}
                 </p>
               )}

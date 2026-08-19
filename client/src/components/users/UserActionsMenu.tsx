@@ -55,7 +55,7 @@ export function UserActionsMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52">
-        <DropdownMenuLabel className="text-[10px] uppercase text-zinc-400 tracking-wider font-bold">
+        <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground tracking-wider font-bold">
           {t("userManagement.changeRole")}
         </DropdownMenuLabel>
         <DropdownMenuGroup>
@@ -69,7 +69,7 @@ export function UserActionsMenu({
               <Icon className="h-3.5 w-3.5" />
               {t(labelKey)}
               {user.role === value && (
-                <span className="ml-auto text-[9px] text-zinc-400">
+                <span className="ml-auto text-[9px] text-muted-foreground">
                   {t("userManagement.current")}
                 </span>
               )}
@@ -77,7 +77,7 @@ export function UserActionsMenu({
           ))}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuLabel className="text-[10px] uppercase text-zinc-400 tracking-wider font-bold">
+        <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground tracking-wider font-bold">
           {t("userManagement.changeClientType") || "Client Type"}
         </DropdownMenuLabel>
         <DropdownMenuGroup>
@@ -91,7 +91,7 @@ export function UserActionsMenu({
               <Icon className="h-3.5 w-3.5" />
               {t(labelKey)}
               {user.client_type === value && (
-                <span className="ml-auto text-[9px] text-zinc-400">
+                <span className="ml-auto text-[9px] text-muted-foreground">
                   {t("userManagement.current")}
                 </span>
               )}
@@ -103,7 +103,7 @@ export function UserActionsMenu({
           <DropdownMenuItem
             disabled={isSelf}
             onClick={() => onStatusToggle(user.id, user.name, false)}
-            className="text-xs gap-2 text-amber-600 dark:text-amber-400 focus:text-amber-600 dark:focus:text-amber-400"
+            className="text-xs gap-2 text-secondary focus:text-secondary"
           >
             <UserX className="h-3.5 w-3.5" />
             {t("userManagement.deactivate")}
@@ -112,7 +112,7 @@ export function UserActionsMenu({
           <DropdownMenuItem
             disabled={isSelf}
             onClick={() => onStatusToggle(user.id, user.name, true)}
-            className="text-xs gap-2 text-emerald-600 dark:text-emerald-400 focus:text-emerald-600 dark:focus:text-emerald-400"
+            className="text-xs gap-2 text-primary focus:text-primary"
           >
             <UserCheck className="h-3.5 w-3.5" />
             {t("userManagement.reactivate")}
@@ -124,7 +124,7 @@ export function UserActionsMenu({
             <DropdownMenuItem
               disabled={isSelf}
               onClick={() => onDelete(user.id, user.name)}
-              className="text-xs gap-2 text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
+              className="text-xs gap-2 text-destructive focus:text-destructive"
             >
               <Trash2 className="h-3.5 w-3.5" />
               {t("userManagement.deleteUser") || "Delete User"}
@@ -135,4 +135,3 @@ export function UserActionsMenu({
     </DropdownMenu>
   );
 }
-

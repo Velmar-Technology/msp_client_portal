@@ -109,19 +109,19 @@ export function GoogleLoginButton({ onSuccess, onError, text = "signin_with" }: 
 
   if (!isMockMode) {
     return (
-      <div className="flex justify-center w-full my-4 overflow-hidden min-h-[44px]">
-        <div id="google-btn-container" className="w-full max-w-[380px] min-h-[44px] flex justify-center items-center" />
+      <div className="flex justify-center w-full my-4 overflow-hidden min-h-11">
+        <div id="google-btn-container" className="w-full max-w-95 min-h-11 flex justify-center items-center" />
       </div>
     );
   }
 
   // Mock button rendering for local dev sandbox
   return (
-    <div className="flex flex-col items-center w-full my-4 min-h-[44px]">
+    <div className="flex flex-col items-center w-full my-4 min-h-11">
       <button
         type="button"
         onClick={() => setShowMockModal(true)}
-        className="w-full max-w-[380px] flex items-center justify-center gap-3 bg-surface-container-lowest hover:bg-surface-container-low text-on-surface border border-outline-variant px-4 py-2.5 rounded-lg text-label-md font-medium transition-all shadow-sm cursor-pointer hover:border-primary/50"
+        className="w-full max-w-95 flex items-center justify-center gap-3 bg-card hover:bg-muted text-foreground border border-border px-4 py-2.5 rounded-lg text-sm font-medium transition-all shadow-xs cursor-pointer hover:border-primary/50"
       >
         <svg className="h-5 w-5" viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
           <g transform="matrix(1, 0, 0, 1, 0, 0)">

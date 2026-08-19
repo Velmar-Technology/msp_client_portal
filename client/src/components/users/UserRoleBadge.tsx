@@ -6,12 +6,9 @@ interface UserRoleBadgeProps {
 }
 
 const ROLE_STYLES: Record<UserRole, string> = {
-  ADMIN:
-    "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/20 dark:text-violet-400 dark:border-violet-900/50",
-  TECHNICIAN:
-    "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-900/50",
-  CLIENT:
-    "bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800/40 dark:text-zinc-400 dark:border-zinc-700",
+  ADMIN: "bg-primary/10 text-primary border-primary/20",
+  TECHNICIAN: "bg-secondary text-secondary-foreground border-border",
+  CLIENT: "bg-muted text-muted-foreground border-border",
 };
 
 export function UserRoleBadge({ role, label }: UserRoleBadgeProps) {

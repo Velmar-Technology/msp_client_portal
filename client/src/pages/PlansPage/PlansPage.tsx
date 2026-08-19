@@ -112,16 +112,11 @@ export function PlansPage() {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      ACTIVE:
-        "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/10",
-      EXPIRING: "bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400 dark:border-amber-500/10",
-      CANCELLED:
-        "bg-zinc-100 text-zinc-500 border-zinc-200 dark:bg-zinc-800/60 dark:text-zinc-400 dark:border-zinc-700/80",
+      ACTIVE: "bg-primary/10 text-primary border-primary/20",
+      EXPIRING: "bg-secondary text-secondary-foreground border-border",
+      CANCELLED: "bg-muted text-muted-foreground border-border",
     };
-    return (
-      colors[status] ||
-      "bg-zinc-100 text-zinc-800 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:border-zinc-800"
-    );
+    return colors[status] || "bg-muted text-muted-foreground border-border";
   };
 
   // Memoized columns definition for DataTable
@@ -131,7 +126,7 @@ export function PlansPage() {
         accessorKey: "service_name",
         header: t("plans.serviceName") || "Service Name",
         cell: ({ row }) => (
-          <span className="font-semibold text-zinc-900 dark:text-zinc-50 text-xs">{row.getValue("service_name")}</span>
+          <span className="font-semibold text-foreground text-xs font-heading">{row.getValue("service_name")}</span>
         ),
       },
       {
@@ -140,7 +135,7 @@ export function PlansPage() {
         cell: ({ row }) => {
           const planId = row.getValue("plan") as string;
           return (
-            <span className="inline-block px-1.5 py-0.2 border border-zinc-200 dark:border-zinc-850 rounded font-mono text-[9px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+            <span className="inline-block px-1.5 py-0.2 border border-border rounded font-mono text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
               {getTierLabel(planId)}
             </span>
           );
@@ -176,7 +171,7 @@ export function PlansPage() {
         cell: ({ row }) => {
           const dateStr = row.getValue("renewal_date") as string;
           return (
-            <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">
+            <span className="text-xs text-muted-foreground font-mono">
               {new Date(dateStr).toLocaleDateString(i18n.language.startsWith("es") ? "es-DO" : "en-US", {
                 day: "2-digit",
                 month: "short",
@@ -190,7 +185,7 @@ export function PlansPage() {
         accessorKey: "equipment_count",
         header: t("plans.devicesLimit") || "Devices Limit",
         cell: ({ row }) => (
-          <span className="bg-zinc-100 text-zinc-800 dark:bg-zinc-800/80 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700/60 px-1.5 py-0.2 rounded text-[10px] font-bold uppercase tracking-wider">
+          <span className="bg-muted text-foreground border border-border px-1.5 py-0.2 rounded text-[10px] font-bold uppercase tracking-wider">
             {t("plans.devicesCount", { count: row.getValue("equipment_count") })}
           </span>
         ),
@@ -205,14 +200,14 @@ export function PlansPage() {
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="flex items-center gap-0.5 text-xs text-zinc-800 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-zinc-50 font-semibold cursor-pointer border border-zinc-200 dark:border-zinc-800 px-2 py-1 rounded bg-white dark:bg-zinc-950"
+                  className="flex items-center gap-0.5 text-xs text-foreground font-semibold cursor-pointer border border-border px-2 py-1 rounded bg-card hover:bg-muted"
                 >
                   {t("plans.manageTab") || "Manage"} <ChevronDown className="h-3 w-3" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="w-44 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 border border-zinc-200 dark:border-zinc-800"
+                className="w-44 bg-card text-foreground border border-border"
               >
                 {/* Add Device */}
                 <DropdownMenuItem
@@ -258,7 +253,7 @@ export function PlansPage() {
                   {t("plans.removeDevice") || "Remove Device"}
                 </DropdownMenuItem>
 
-                <DropdownMenuSeparator className="bg-zinc-200 dark:bg-zinc-800" />
+                <DropdownMenuSeparator className="bg-border" />
 
                 {/* Change Plan */}
                 <DropdownMenuItem
@@ -291,7 +286,7 @@ export function PlansPage() {
                   {t("plans.contactSupport") || "Contact Support"}
                 </DropdownMenuItem>
 
-                <DropdownMenuSeparator className="bg-zinc-200 dark:bg-zinc-800" />
+                <DropdownMenuSeparator className="bg-border" />
 
                 {/* Cancel Subscription */}
                 <DropdownMenuItem
@@ -299,9 +294,9 @@ export function PlansPage() {
                     await handleCancelSubscription(sub.id);
                   }}
                   variant="destructive"
-                  className="cursor-pointer flex items-center gap-1.5 text-xs py-1.5 text-error focus:bg-error/15"
+                  className="cursor-pointer flex items-center gap-1.5 text-xs py-1.5 text-destructive focus:bg-destructive/10"
                 >
-                  <Ban className="h-3.5 w-3.5 text-error" />
+                  <Ban className="h-3.5 w-3.5" />
                   {t("plans.cancelSubscription") || "Cancel Subscription"}
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -336,7 +331,7 @@ export function PlansPage() {
             <button
               type="button"
               onClick={handleCreateClick}
-              className="bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950 px-3.5 py-1.5 rounded-md text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer flex items-center gap-1 shadow-sm border border-zinc-850 dark:border-zinc-200 w-full sm:w-auto justify-center"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-opacity cursor-pointer flex items-center gap-1 shadow-xs border border-primary w-full sm:w-auto justify-center"
             >
               <span>+ {t("plans.addPlan") || "Add Plan"}</span>
             </button>
@@ -346,13 +341,13 @@ export function PlansPage() {
     >
       {/* Tabs Section */}
       {showTabs && (
-        <div className="border-b border-zinc-200 dark:border-zinc-800 flex gap-6 mb-5">
+        <div className="border-b border-border flex gap-6 mb-5">
           <button
             type="button"
             className={`pb-2 text-xs font-semibold transition-all cursor-pointer ${
               activeTab === "browse"
-                ? "border-b-2 border-zinc-900 dark:border-zinc-50 text-zinc-900 dark:text-zinc-50"
-                : "text-zinc-400 hover:text-zinc-600 border-b-2 border-transparent"
+                ? "border-b-2 border-primary text-foreground font-heading"
+                : "text-muted-foreground hover:text-foreground border-b-2 border-transparent"
             }`}
             onClick={() => setActiveTab("browse")}
           >
@@ -362,8 +357,8 @@ export function PlansPage() {
             type="button"
             className={`pb-2 text-xs font-semibold transition-all cursor-pointer ${
               activeTab === "manage"
-                ? "border-b-2 border-zinc-900 dark:border-zinc-50 text-zinc-900 dark:text-zinc-50"
-                : "text-zinc-400 hover:text-zinc-600 border-b-2 border-transparent"
+                ? "border-b-2 border-primary text-foreground font-heading"
+                : "text-muted-foreground hover:text-foreground border-b-2 border-transparent"
             }`}
             onClick={() => setActiveTab("manage")}
           >
@@ -383,7 +378,7 @@ export function PlansPage() {
               <div className="flex items-center gap-2">
                 <label
                   htmlFor="client-type-filter"
-                  className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
+                  className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
                 >
                   {t("plans.audience") || "Audience"}
                 </label>
@@ -391,7 +386,7 @@ export function PlansPage() {
                   id="client-type-filter"
                   value={clientTypeFilter}
                   onChange={(e) => setClientTypeFilter(e.target.value as "ALL" | typeof clientTypeFilter)}
-                  className="h-8 px-2 border rounded text-xs bg-card text-zinc-900 dark:text-zinc-100 border-zinc-200 dark:border-zinc-800 focus:outline-none"
+                  className="h-8 px-2 border border-input rounded text-xs bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                 >
                   <option value="ALL">{t("plans.allAudiences") || "All plans"}</option>
                   <option value="CLIENT">{t("plans.clientTypes.standard") || "Standard Client"}</option>
@@ -404,8 +399,8 @@ export function PlansPage() {
           </div>
 
           {/* Velmar Store Discount Perk Banner */}
-          <div className="mb-6 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500/10 via-amber-500/15 to-amber-500/10 border border-amber-500/20 dark:border-amber-500/30 rounded-lg py-2 px-4 text-xs font-semibold text-amber-800 dark:text-amber-300 max-w-2xl mx-auto shadow-xs">
-            <ShoppingBag className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+          <div className="mb-6 flex items-center justify-center gap-2 bg-secondary/15 border border-border rounded-lg py-2 px-4 text-xs font-semibold text-secondary-foreground max-w-2xl mx-auto shadow-xs">
+            <ShoppingBag className="h-4 w-4 shrink-0 text-primary" />
             <span>
               {t("plans.storeDiscountBanner") || "Exclusive Subscriber Perk: Enjoy up to 10% discount at Velmar Store!"}
             </span>
@@ -413,11 +408,7 @@ export function PlansPage() {
 
           {/* Plan Cards */}
           <div
-            className="grid gap-4.5 mb-8 mx-auto w-full"
-            style={{
-              gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, 290px), 1fr))`,
-              maxWidth: `${Math.min(filteredPlans.length, 3) * 350}px`,
-            }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4.5 mb-8 mx-auto w-full max-w-5xl"
           >
             {filteredPlans.map((plan) => (
               <PlanCard
@@ -442,7 +433,7 @@ export function PlansPage() {
 
           {/* Payment Section */}
           {currentPlan && (
-            <div className="max-w-xl mx-auto w-full text-zinc-900 dark:text-zinc-50">
+            <div className="max-w-xl mx-auto w-full text-foreground">
               <PaymentSection
                 currentPlan={currentPlan}
                 billingCycle={billingCycle}
@@ -488,12 +479,12 @@ export function PlansPage() {
           if (!activeSub) return null;
 
           return (
-            <div className="space-y-4.5 text-zinc-900 dark:text-zinc-50">
+            <div className="space-y-4.5 text-foreground">
               {activeSubscriptions.length > 1 && (
-                <div className="bg-zinc-50/50 dark:bg-zinc-900/30 border border-zinc-200/60 dark:border-zinc-800/80 rounded-lg p-3.5 shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
+                <div className="bg-card border border-border rounded-lg p-3.5 shadow-xs">
                   <label
                     htmlFor="active-sub-select-manage"
-                    className="block text-[10px] text-zinc-500 dark:text-zinc-450 font-bold uppercase tracking-wider mb-1"
+                    className="block text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-1"
                   >
                     {t("plans.selectActiveSubToManage") || "Select Active Subscription to Manage"}
                   </label>
@@ -501,7 +492,7 @@ export function PlansPage() {
                     id="active-sub-select-manage"
                     value={subscriptionToModifyId}
                     onChange={(e) => setSubscriptionToModifyId(e.target.value)}
-                    className="w-full h-8.5 px-2.5 border rounded text-xs bg-card text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                    className="w-full h-8.5 px-2.5 border border-input rounded text-xs bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                   >
                     {activeSubscriptions.map((sub) => (
                       <option key={sub.id} value={sub.id}>
@@ -516,13 +507,13 @@ export function PlansPage() {
                 {/* Left Column: Manage Active Subscription + Licensed Devices list */}
                 <div className="space-y-4">
                   {/* Active Subscription Details Card */}
-                  <div className="bg-zinc-50/50 dark:bg-zinc-900/30 border border-zinc-200/60 dark:border-zinc-800/80 rounded-lg p-4.5 shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
+                  <div className="bg-card border border-border rounded-lg p-4.5 shadow-xs">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
+                        <h4 className="text-sm font-bold text-foreground font-heading">
                           {t("plans.manageActiveSub") || "Manage Active Subscription"}
                         </h4>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                        <p className="text-xs text-muted-foreground mt-0.5">
                           {t("plans.detailsForService", {
                             name: activeSub.service_name,
                             cycle:
@@ -535,8 +526,8 @@ export function PlansPage() {
                       <span
                         className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
                           activeSub.status === "EXPIRING"
-                            ? "bg-amber-500/20 text-amber-800 border-amber-300 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800"
-                            : "bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950 border-zinc-950 dark:border-zinc-200"
+                            ? "bg-secondary text-secondary-foreground border-border"
+                            : "bg-primary text-primary-foreground border-primary"
                         }`}
                       >
                         {activeSub.status === "EXPIRING"
@@ -546,7 +537,7 @@ export function PlansPage() {
                     </div>
 
                     {activeSub.status === "EXPIRING" && (
-                      <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-md text-xs text-amber-800 dark:text-amber-300">
+                      <div className="mb-4 p-3 bg-secondary/15 border border-border rounded-md text-xs text-secondary-foreground">
                         <p className="font-semibold">
                           {t("plans.cancellingPeriodEndTitle") || "Subscription Cancellation Scheduled"}
                         </p>
@@ -560,29 +551,29 @@ export function PlansPage() {
                     )}
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                      <div className="p-3 bg-zinc-100/50 dark:bg-zinc-800/30 rounded border border-zinc-200/50 dark:border-zinc-800/60">
-                        <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">
+                      <div className="p-3 bg-muted/40 rounded border border-border">
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">
                           {t("plans.devicesLabel") || "Devices"}
                         </p>
-                        <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                        <p className="text-xs font-semibold text-foreground">
                           {t("plans.devicesCount", { count: activeSub.equipment_count })}
                         </p>
                       </div>
-                      <div className="p-3 bg-zinc-100/50 dark:bg-zinc-800/30 rounded border border-zinc-200/50 dark:border-zinc-800/60">
-                        <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">
+                      <div className="p-3 bg-muted/40 rounded border border-border">
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">
                           {t("plans.cycleLabel") || "Cycle"}
                         </p>
-                        <p className="text-xs font-semibold capitalize text-zinc-900 dark:text-zinc-100">
+                        <p className="text-xs font-semibold capitalize text-foreground">
                           {billingCycle === "annual"
                             ? t("plans.annualButtonLabel") || "annual"
                             : t("plans.monthlyButtonLabel") || "monthly"}
                         </p>
                       </div>
-                      <div className="p-3 bg-zinc-100/50 dark:bg-zinc-800/30 rounded border border-zinc-200/50 dark:border-zinc-800/60">
-                        <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">
+                      <div className="p-3 bg-muted/40 rounded border border-border">
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">
                           {t("plans.renewalLabel") || "Renewal"}
                         </p>
-                        <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 font-mono">
+                        <p className="text-xs font-semibold text-foreground font-mono">
                           {activeSub.renewal_date
                             ? new Date(activeSub.renewal_date).toLocaleDateString(
                                 i18n.language.startsWith("es") ? "es-DO" : "en-US",
@@ -632,8 +623,8 @@ export function PlansPage() {
                 {/* Right Column: Sidebar Plan Summary + custom Help card */}
                 <div className="space-y-4">
                   {/* Plan Summary Card */}
-                  <div className="bg-zinc-50/50 dark:bg-zinc-900/30 border border-zinc-200/60 dark:border-zinc-800/80 rounded-lg p-4 shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-3">
+                  <div className="bg-card border border-border rounded-lg p-4 shadow-xs">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 font-heading">
                       {t("plans.planSummary")}
                     </h4>
                     {(() => {
@@ -651,48 +642,48 @@ export function PlansPage() {
                       return (
                         <div className="space-y-2.5">
                           <div className="flex justify-between items-center text-xs">
-                            <span className="text-zinc-500 dark:text-zinc-400 font-medium">
+                            <span className="text-muted-foreground font-medium">
                               {t("plans.basePlanName", { name: planName })}
                             </span>
-                            <span className="font-semibold text-zinc-900 dark:text-zinc-100 font-mono">
+                            <span className="font-semibold text-foreground font-mono">
                               ${basePrice.toFixed(2)}
                             </span>
                           </div>
                           <div className="flex justify-between items-center text-xs">
-                            <span className="text-zinc-500 dark:text-zinc-400 font-medium">
+                            <span className="text-muted-foreground font-medium">
                               {t("plans.addonCloudStorage")}
                             </span>
-                            <span className="font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide text-[9px] px-1 bg-zinc-100 dark:bg-zinc-800 rounded">
+                            <span className="font-semibold text-foreground uppercase tracking-wide text-[9px] px-1 bg-muted rounded">
                               {t("plans.included")}
                             </span>
                           </div>
                           <div className="flex justify-between items-center text-xs">
-                            <span className="text-zinc-500 dark:text-zinc-400 font-medium">
+                            <span className="text-muted-foreground font-medium">
                               {t("plans.storeDiscountSummaryLabel") || "Velmar Store Discount"}
                             </span>
-                            <span className="font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wide text-[9px] px-1 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded">
+                            <span className="font-semibold text-primary uppercase tracking-wide text-[9px] px-1 bg-primary/10 border border-primary/20 rounded">
                               {t("plans.upTo10PercentOff") || "Up to 10% Off"}
                             </span>
                           </div>
                           <div className="flex justify-between items-center text-xs">
-                            <span className="text-zinc-500 dark:text-zinc-400 font-medium">
+                            <span className="text-muted-foreground font-medium">
                               {t("plans.additionalDevices", { count: additionalDevicesCount })}
                             </span>
-                            <span className="font-semibold text-zinc-900 dark:text-zinc-100 font-mono">
+                            <span className="font-semibold text-foreground font-mono">
                               ${additionalDevicesPrice.toFixed(2)}
                             </span>
                           </div>
-                          <div className="pt-2.5 border-t border-zinc-200/50 dark:border-zinc-800/50">
+                          <div className="pt-2.5 border-t border-border">
                             <div className="flex justify-between items-center">
-                              <span className="font-semibold text-zinc-900 dark:text-zinc-100 text-xs">
+                              <span className="font-semibold text-foreground text-xs">
                                 {t("plans.estimatedMonthly")}
                               </span>
-                              <span className="text-sm font-bold text-zinc-900 dark:text-zinc-50 font-mono">
+                              <span className="text-sm font-bold text-foreground font-mono">
                                 ${estimatedTotal.toFixed(2)}
                               </span>
                             </div>
                             {billingCycle === "annual" && (
-                              <p className="text-right text-[9px] text-zinc-450 dark:text-zinc-500 mt-0.5 font-medium">
+                              <p className="text-right text-[9px] text-muted-foreground mt-0.5 font-medium">
                                 {t("plans.billedAnnually", { price: annualBilledTotal.toFixed(2) })}
                               </p>
                             )}
@@ -703,16 +694,16 @@ export function PlansPage() {
                   </div>
 
                   {/* Tailored Enterprise Help Card */}
-                  <div className="bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950 border border-zinc-900 dark:border-zinc-100 rounded-lg p-4 relative overflow-hidden shadow-[0_2px_10px_-3px_rgba(0,0,0,0.1)]">
+                  <div className="bg-primary text-primary-foreground border border-primary rounded-lg p-4 relative overflow-hidden shadow-sm">
                     <div className="relative z-10">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-350 dark:text-zinc-650 mb-1">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-primary-foreground/90 mb-1 font-heading">
                         {t("plans.customPlanTitle") || "Need a custom plan?"}
                       </h4>
-                      <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mb-3 leading-normal font-medium">
+                      <p className="text-[11px] text-primary-foreground/80 mb-3 leading-normal font-medium">
                         {t("plans.customPlanDesc") ||
                           "For organizations with over 100 devices, we offer tailored enterprise solutions."}
                       </p>
-                      <button className="w-full py-1.5 bg-white text-zinc-950 dark:bg-zinc-900 dark:text-zinc-50 border border-zinc-200 dark:border-zinc-800 font-semibold rounded text-xs hover:opacity-95 transition-opacity cursor-pointer">
+                      <button className="w-full py-1.5 bg-background text-foreground border border-border font-semibold rounded text-xs hover:bg-muted transition-colors cursor-pointer">
                         {t("plans.contactSales") || "Contact Sales"}
                       </button>
                     </div>
@@ -733,8 +724,8 @@ export function PlansPage() {
       )}
 
       {/* Legal & SLA Disclaimer Footnote */}
-      <div className="mt-8 pt-4 border-t border-zinc-200/80 dark:border-zinc-800/80 text-zinc-500 dark:text-zinc-400 text-[11px] leading-relaxed flex items-start gap-2 max-w-4xl mx-auto">
-        <Info className="h-4 w-4 shrink-0 text-zinc-400 dark:text-zinc-500 mt-0.5" />
+      <div className="mt-8 pt-4 border-t border-border text-muted-foreground text-[11px] leading-relaxed flex items-start gap-2 max-w-4xl mx-auto">
+        <Info className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
         <p>
           {t("plans.footnoteText") ||
             "Velmar Technology SRL presta servicios de soporte en horario corporativo de Lunes a Viernes de 9:00 AM a 4:00 PM (hora de la República Dominicana). Los tiempos de respuesta (SLA) representan el compromiso de evaluación inicial de la solicitud dentro del horario hábil establecido y no constituyen una garantía de solución inmediata o de disponibilidad de soporte fuera de jornada. Precios no incluyen ITBIS."}
@@ -784,3 +775,5 @@ export function PlansPage() {
     </Page>
   );
 }
+
+export default PlansPage;

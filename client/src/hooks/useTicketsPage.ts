@@ -6,9 +6,11 @@ import type { Ticket } from "@/services/ticketService";
 import { equipmentService } from "@/services/equipmentService";
 import type { SubscriptionEquipment } from "@/services/equipmentService";
 import { useUrlState } from "@/hooks/useUrlState";
+import { useAuth } from "@/hooks/useAuth";
 
 export function useTicketsPage() {
   const { t, i18n } = useTranslation();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { getParam, getNumberParam, setParam, setParams, removeParam } = useUrlState();
@@ -18,6 +20,8 @@ export function useTicketsPage() {
   const [page, setPageInternal] = useState(() => getNumberParam("page", 1));
   const [search, setSearchInternal] = useState(() => getParam("search", ""));
   const [statusFilter, setStatusFilterInternal] = useState(() => getParam("status", ""));
+  const [categoryFilter, setCategoryFilterInternal] = useState(() => getParam("category", ""));
+  const [priorityFilter, setPriorityFilterInternal] = useState(() => getParam("priority", ""));
   const [deviceFilter, setDeviceFilterInternal] = useState(() => getParam("device", ""));
   const [loading, setLoading] = useState(true);
   const [showNewTicket, setShowNewTicketInternal] = useState(() => getParam("openModal") === "create-ticket");
@@ -48,6 +52,22 @@ export function useTicketsPage() {
     (newStatus: string) => {
       setStatusFilterInternal(newStatus);
       setParams({ status: newStatus || null, page: null });
+    },
+    [setParams]
+  );
+
+  const setCategoryFilter = useCallback(
+    (newCategory: string) => {
+      setCategoryFilterInternal(newCategory);
+      setParams({ category: newCategory || null, page: null });
+    },
+    [setParams]
+  );
+
+  const setPriorityFilter = useCallback(
+    (newPriority: string) => {
+      setPriorityFilterInternal(newPriority);
+      setParams({ priority: newPriority || null, page: null });
     },
     [setParams]
   );
@@ -112,6 +132,8 @@ export function useTicketsPage() {
     try {
       const params: Record<string, string | number> = { page, limit };
       if (statusFilter) params.status = statusFilter;
+      if (categoryFilter) params.category = categoryFilter;
+      if (priorityFilter) params.priority = priorityFilter;
       if (search) params.search = search;
       if (deviceFilter) params.equipmentId = deviceFilter;
       const result = await ticketService.getAll(params);
@@ -122,7 +144,7 @@ export function useTicketsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, statusFilter, search, deviceFilter]);
+  }, [page, limit, statusFilter, categoryFilter, priorityFilter, search, deviceFilter]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -188,9 +210,20 @@ export function useTicketsPage() {
     loadTickets();
   }, [setShowNewTicket, setPage, loadTickets]);
 
+  const handleTicketAction = useCallback((action: string, ticket: Ticket) => {
+    if (action === "view") {
+      navigate(`/tickets/${ticket.id}`);
+    } else if (action === "cancel") {
+      setTicketToCancel(ticket);
+    }
+  }, [navigate]);
+
+  const canCreateTicket = true;
+
   return {
     t,
     i18n,
+    user,
     navigate,
     tickets,
     total,
@@ -198,8 +231,14 @@ export function useTicketsPage() {
     setPage,
     search,
     setSearch,
+    searchQuery: search,
+    setSearchQuery: setSearch,
     statusFilter,
     setStatusFilter,
+    categoryFilter,
+    setCategoryFilter,
+    priorityFilter,
+    setPriorityFilter,
     deviceFilter,
     setDeviceFilter,
     devices,
@@ -218,10 +257,14 @@ export function useTicketsPage() {
     limit,
     handleLimitChange,
     loadTickets,
+    canCreateTicket,
     handleBulkCancelClick,
     confirmBulkCancel,
     confirmCancelIndividual,
     handleTicketCreated,
+    handleTicketAction,
   };
 }
 
+export const useTickets = useTicketsPage;
+export default useTicketsPage;

@@ -134,9 +134,9 @@ export const OtpCodeBadge = memo(function OtpCodeBadge({
 
   if (compact) {
     return (
-      <div className="bg-zinc-50 dark:bg-zinc-900/30 p-2 rounded border border-zinc-200 dark:border-zinc-800 max-w-[190px]">
+      <div className="bg-card p-2 rounded border border-border max-w-47.5">
         <div className="flex items-center justify-between gap-1.5">
-          <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 font-mono select-all">
+          <p className="text-xs font-bold text-foreground font-mono select-all">
             {t("devices.otpLabel")} {otp}
           </p>
           <button
@@ -265,7 +265,7 @@ export const ActivationWizardModal = memo(function ActivationWizardModal({
                   {s.label}
                 </span>
               </div>
-              {idx < 2 && <div className="flex-1 h-0.5 mx-1.5 bg-zinc-200 dark:bg-zinc-800 min-w-[15px]" />}
+              {idx < 2 && <div className="flex-1 h-0.5 mx-1.5 bg-border min-w-3.75" />}
             </div>
           ))}
         </div>
@@ -666,7 +666,7 @@ export function DevicesPage() {
               </p>
               <p className="text-[10px] text-zinc-450 font-mono">{equip.tenant_name || t("devices.unknownTenant")}</p>
               {equip.client_email && (
-                <p className="text-[9px] text-zinc-400 truncate max-w-[140px]" title={equip.client_email}>
+                <p className="text-[9px] text-muted-foreground truncate max-w-35" title={equip.client_email}>
                   {equip.client_email}
                 </p>
               )}
@@ -882,7 +882,7 @@ export function DevicesPage() {
                 <EmptySubscriptionsCard onBrowsePlans={handleBrowsePlans} />
               </div>
             ) : (
-              <div className="space-y-4 text-on-surface animate-fade-in">
+              <div className="space-y-4 text-foreground animate-fade-in">
                 {activeSubscriptions.length > 1 && !isAdmin && (
                   <SubscriptionSelector
                     subscriptions={activeSubscriptions}

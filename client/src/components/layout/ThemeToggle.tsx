@@ -25,8 +25,8 @@ export function ThemeToggle() {
         onClick={() => setOpen(!open)}
         className={`p-1.5 transition-colors rounded-sm cursor-pointer flex items-center justify-center ${
           open
-            ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100'
-            : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100'
+            ? 'bg-muted text-foreground'
+            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
         }`}
         aria-label={t('theme.toggleTheme')}
       >
@@ -50,7 +50,7 @@ export function ThemeToggle() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-9 w-32 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-sm shadow-lg py-1 z-50 animate-fade-in overflow-hidden">
+        <div className="absolute right-0 top-9 w-32 bg-card border border-border rounded-sm shadow-lg py-1 z-50 animate-fade-in overflow-hidden">
           <button
             onClick={() => {
               setTheme('light');
@@ -58,8 +58,8 @@ export function ThemeToggle() {
             }}
             className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-xs transition-colors cursor-pointer text-left ${
               theme === 'light' 
-                ? 'text-zinc-900 dark:text-zinc-100 font-bold bg-zinc-50 dark:bg-zinc-900/50' 
-                : 'text-zinc-600 dark:text-zinc-400 font-medium hover:bg-zinc-50 hover:text-zinc-900 dark:hover:bg-zinc-900/30 dark:hover:text-zinc-100'
+                ? 'text-foreground font-bold bg-muted' 
+                : 'text-muted-foreground font-medium hover:bg-muted hover:text-foreground'
             }`}
           >
             <Sun className="h-3.5 w-3.5" />
@@ -73,8 +73,8 @@ export function ThemeToggle() {
             }}
             className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-xs transition-colors cursor-pointer text-left ${
               theme === 'dark' 
-                ? 'text-zinc-900 dark:text-zinc-100 font-bold bg-zinc-50 dark:bg-zinc-900/50' 
-                : 'text-zinc-600 dark:text-zinc-400 font-medium hover:bg-zinc-50 hover:text-zinc-900 dark:hover:bg-zinc-900/30 dark:hover:text-zinc-100'
+                ? 'text-foreground font-bold bg-muted' 
+                : 'text-muted-foreground font-medium hover:bg-muted hover:text-foreground'
             }`}
           >
             <Moon className="h-3.5 w-3.5" />
@@ -88,8 +88,8 @@ export function ThemeToggle() {
             }}
             className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-xs transition-colors cursor-pointer text-left ${
               theme === 'system' 
-                ? 'text-zinc-900 dark:text-zinc-100 font-bold bg-zinc-50 dark:bg-zinc-900/50' 
-                : 'text-zinc-600 dark:text-zinc-400 font-medium hover:bg-zinc-50 hover:text-zinc-900 dark:hover:bg-zinc-900/30 dark:hover:text-zinc-100'
+                ? 'text-foreground font-bold bg-muted' 
+                : 'text-muted-foreground font-medium hover:bg-muted hover:text-foreground'
             }`}
           >
             <Laptop className="h-3.5 w-3.5" />

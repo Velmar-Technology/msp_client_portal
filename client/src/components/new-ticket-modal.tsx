@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -107,11 +108,10 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
         if (!open) onClose();
       }}
     >
-      <AlertDialogContent className="sm:max-w-lg bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl p-6 text-on-surface text-sm">
+      <AlertDialogContent className="sm:max-w-lg bg-card border border-border rounded-xl shadow-xl p-6 text-foreground text-sm">
         <AlertDialogHeader>
           <AlertDialogTitle
-            className="text-h2 text-primary mb-2 text-left"
-            style={{ fontFamily: "var(--font-heading)" }}
+            className="text-xl font-bold text-foreground mb-2 text-left"
           >
             {t("tickets.createModalTitle")}
           </AlertDialogTitle>
@@ -119,9 +119,9 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
         </AlertDialogHeader>
         <form onSubmit={handleCreateTicket} className="space-y-4">
           <div>
-            <label htmlFor="new-ticket-title" className="block text-sm font-medium text-on-surface mb-1.5">
+            <Label htmlFor="new-ticket-title" className="block text-sm font-medium text-foreground mb-1.5">
               {t("tickets.modalTitleLabel")}
-            </label>
+            </Label>
             <Input
               id="new-ticket-title"
               type="text"
@@ -130,30 +130,30 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
               placeholder={t("tickets.modalTitlePlaceholder")}
               required
               minLength={5}
-              className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 bg-surface-container-lowest text-on-surface"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-on-surface mb-1.5">{t("tickets.modalDescLabel")}</label>
+            <Label htmlFor="new-ticket-desc" className="block text-sm font-medium text-foreground mb-1.5">{t("tickets.modalDescLabel")}</Label>
             <Textarea
+              id="new-ticket-desc"
               value={newDesc}
               onChange={(e) => setNewDesc(e.target.value)}
               placeholder={t("tickets.modalDescPlaceholder")}
               required
               minLength={10}
               rows={4}
-              className="w-full px-4 py-2.5 border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-secondary/20 resize-none bg-surface-container-lowest text-on-surface"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-on-surface mb-1.5">
+              <Label htmlFor="new-ticket-category" className="block text-sm font-medium text-foreground mb-1.5">
                 {t("tickets.modalCategoryLabel")}
-              </label>
+              </Label>
               <select
+                id="new-ticket-category"
                 value={newCategory}
                 onChange={(e) => setNewCategory(e.target.value)}
-                className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-sm focus:outline-none focus:border-primary cursor-pointer bg-surface-container-lowest text-on-surface"
+                className="w-full px-3 py-2 border border-input rounded-md text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
               >
                 <option value="REPAIR">{t("tickets.categories.REPAIR")}</option>
                 <option value="WARRANTY">{t("tickets.categories.WARRANTY")}</option>
@@ -161,13 +161,14 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-on-surface mb-1.5">
+              <Label htmlFor="new-ticket-priority" className="block text-sm font-medium text-foreground mb-1.5">
                 {t("tickets.modalPriorityLabel")}
-              </label>
+              </Label>
               <select
+                id="new-ticket-priority"
                 value={newPriority}
                 onChange={(e) => setNewPriority(e.target.value)}
-                className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-sm focus:outline-none focus:border-primary cursor-pointer bg-surface-container-lowest text-on-surface"
+                className="w-full px-3 py-2 border border-input rounded-md text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
               >
                 <option value="LOW">{t("tickets.priorities.LOW")}</option>
                 <option value="MEDIUM">{t("tickets.priorities.MEDIUM")}</option>
@@ -178,18 +179,19 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
           </div>
           {(devicesLoading || devicesFailed || devices.length > 0) && (
             <div>
-              <label className="block text-sm font-medium text-on-surface mb-1.5">
+              <Label htmlFor="new-ticket-device" className="block text-sm font-medium text-foreground mb-1.5">
                 {t("tickets.modalDeviceLabel")}
-              </label>
+              </Label>
               {devicesLoading ? (
-                <div className="text-sm text-on-surface-variant animate-pulse">{t("tickets.modalDeviceLoading")}</div>
+                <div className="text-sm text-muted-foreground animate-pulse">{t("tickets.modalDeviceLoading")}</div>
               ) : devicesFailed ? (
-                <div className="text-sm text-error">{t("tickets.modalDeviceLoadError")}</div>
+                <div className="text-sm text-destructive">{t("tickets.modalDeviceLoadError")}</div>
               ) : (
                 <select
+                  id="new-ticket-device"
                   value={selectedEquipmentId}
                   onChange={(e) => setSelectedEquipmentId(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-sm focus:outline-none focus:border-primary cursor-pointer bg-surface-container-lowest text-on-surface"
+                  className="w-full px-3 py-2 border border-input rounded-md text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
                 >
                   <option value="">{t("tickets.modalDevicePlaceholder")}</option>
                   {devices.map((device) => (
@@ -203,14 +205,14 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
           )}
 
           <div>
-            <label className="block text-sm font-medium text-on-surface mb-1.5">{t("tickets.attachmentsLabel")}</label>
+            <Label className="block text-sm font-medium text-foreground mb-1.5">{t("tickets.attachmentsLabel")}</Label>
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => document.getElementById("modal-file-input")?.click()}
-                  className="px-4 py-2 border border-outline-variant rounded-lg text-sm text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer bg-surface-container-low"
+                  className="cursor-pointer"
                 >
                   {t("tickets.selectFiles")}
                 </Button>
@@ -223,19 +225,19 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
                   aria-label={t("tickets.fileInput")}
                 />
                 {selectedFiles.length > 0 && (
-                  <span className="text-sm text-on-surface-variant font-medium">
+                  <span className="text-sm text-muted-foreground font-medium">
                     {selectedFiles.length} {t("tickets.filesSelected")}
                   </span>
                 )}
               </div>
               {/* Selected files list */}
               {selectedFiles.length > 0 && (
-                <ScrollArea className="h-24 border border-outline-variant/50 rounded-lg p-2 bg-surface-container/50">
+                <ScrollArea className="h-24 border border-border rounded-lg p-2 bg-muted/30">
                   <div className="space-y-1.5 pr-2">
                     {selectedFiles.map((file, idx) => (
                       <div
                         key={idx}
-                        className="flex justify-between items-center text-sm bg-surface-container-lowest px-2 py-1 rounded border border-outline-variant/30"
+                        className="flex justify-between items-center text-sm bg-card px-2 py-1 rounded border border-border"
                       >
                         <span className="truncate max-w-55" title={file.name}>
                           {file.name}
@@ -245,7 +247,7 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
                           variant="ghost"
                           size="icon-xs"
                           onClick={() => removeFile(idx)}
-                          className="text-error hover:text-error/80 cursor-pointer p-0.5"
+                          className="text-destructive hover:text-destructive/80 cursor-pointer p-0.5"
                           aria-label={`${t("tickets.removeAttachment")} ${file.name}`}
                         >
                           <X className="h-3.5 w-3.5" />
@@ -260,14 +262,14 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
           <AlertDialogFooter className="flex gap-3 pt-2 sm:flex-row sm:justify-stretch">
             <AlertDialogCancel
               onClick={onClose}
-              className="flex-1 border border-outline-variant rounded-lg text-sm text-on-surface hover:bg-surface-container-low transition-colors cursor-pointer bg-surface-container-lowest"
+              className="flex-1 cursor-pointer"
             >
               {t("tickets.modalCancel")}
             </AlertDialogCancel>
             <Button
               type="submit"
               disabled={submitting}
-              className="flex-1 bg-primary text-on-primary rounded-lg text-sm hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer font-medium"
+              className="flex-1 cursor-pointer"
             >
               {submitting ? t("tickets.modalCreating") : t("tickets.modalCreate")}
             </Button>

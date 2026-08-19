@@ -338,11 +338,11 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell colSpan={finalColumns.length} className="p-0">
                   <Empty className="border-none py-12 bg-transparent">
-                    <EmptyMedia variant="icon" className="bg-surface-container-high text-on-surface-variant">
+                    <EmptyMedia variant="icon" className="bg-muted text-muted-foreground">
                       <Inbox className="h-4 w-4" />
                     </EmptyMedia>
                     <EmptyHeader>
-                      <EmptyTitle className="text-on-surface text-body-md font-semibold">{noDataMessage}</EmptyTitle>
+                      <EmptyTitle className="text-foreground text-sm font-semibold">{noDataMessage}</EmptyTitle>
                     </EmptyHeader>
                   </Empty>
                 </TableCell>

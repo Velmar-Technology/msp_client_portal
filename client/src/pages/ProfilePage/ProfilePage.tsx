@@ -1,26 +1,14 @@
+import React from "react";
+import { User, ShieldCheck, Mail, Phone, Lock, Save, Globe, Edit, Clock, Loader2, Info, Key } from "lucide-react";
 import { Page } from "@/components/Page";
 import { Input } from "@/components/ui/input";
-import {
-  Save,
-  User,
-  Mail,
-  Phone,
-  ShieldCheck,
-  Globe,
-  Lock,
-  Key,
-  Clock,
-  Info,
-  Edit,
-  Loader2,
-} from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
-import type { AuthUser } from "@/store/useAuthStore";
+import type { User as UserType } from "@/services/authService";
 
-/* --- Sub-Components --- */
+/* --- Sub-components to keep functions < 40 lines --- */
 
 interface ProfileIdentityCardProps {
-  user: AuthUser | null;
+  user: UserType | null;
   lastLoginText: string;
   uploadingAvatar: boolean;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
@@ -39,16 +27,16 @@ const ProfileIdentityCard = ({
   t,
 }: ProfileIdentityCardProps) => {
   return (
-    <section className="flex flex-col items-center gap-6 rounded-xl border border-zinc-200 dark:border-zinc-800 dark:bg-zinc-950 bg-white p-6 shadow-sm sm:flex-row sm:items-start">
+    <section className="flex flex-col items-center gap-6 rounded-xl border border-border bg-card p-6 shadow-xs sm:flex-row sm:items-start">
       <div className="relative shrink-0 group">
         {user?.avatarUrl ? (
           <img
             src={user.avatarUrl}
             alt={user.name}
-            className="h-16 w-16 rounded-xl border border-zinc-200 dark:border-zinc-700 object-cover shadow-sm"
+            className="h-16 w-16 rounded-xl border border-border object-cover shadow-xs"
           />
         ) : (
-          <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 text-2xl font-bold text-zinc-400 dark:text-zinc-500 shadow-sm">
+          <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-border bg-muted text-2xl font-bold text-muted-foreground shadow-xs">
             {user?.name?.charAt(0).toUpperCase() || "U"}
           </div>
         )}
@@ -56,12 +44,12 @@ const ProfileIdentityCard = ({
           type="button"
           onClick={onAvatarClick}
           disabled={uploadingAvatar}
-          className="absolute -bottom-2 -right-2 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-1.5 shadow-sm transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 cursor-pointer"
+          className="absolute -bottom-2 -right-2 rounded-md border border-border bg-card p-1.5 shadow-xs transition-colors hover:bg-muted disabled:opacity-50 cursor-pointer"
         >
           {uploadingAvatar ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-zinc-900 dark:text-zinc-100" />
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-foreground" />
           ) : (
-            <Edit className="h-3.5 w-3.5 text-zinc-900 dark:text-zinc-100" />
+            <Edit className="h-3.5 w-3.5 text-foreground" />
           )}
         </button>
         <Input
@@ -75,14 +63,14 @@ const ProfileIdentityCard = ({
         />
       </div>
       <div className="flex-1 text-center sm:text-left">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{user?.name}</h2>
+        <h2 className="text-lg font-semibold text-foreground font-heading">{user?.name}</h2>
         <div className="mt-1 flex items-center justify-center gap-1.5 sm:justify-start">
-          <ShieldCheck className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
-          <span className="text-xs font-semibold tracking-wider text-zinc-500 dark:text-zinc-400 uppercase">
+          <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+          <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
             {user?.role}
           </span>
         </div>
-        <p className="mt-2 flex items-center justify-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 sm:justify-start">
+        <p className="mt-2 flex items-center justify-center gap-1.5 text-xs text-muted-foreground sm:justify-start">
           <Clock className="h-3.5 w-3.5" />
           {lastLoginText}
         </p>
@@ -97,26 +85,26 @@ const AccountDetailsForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
   return (
     <form
       onSubmit={handleSave}
-      className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm"
+      className="overflow-hidden rounded-xl border border-border bg-card shadow-xs"
     >
-      <div className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 px-6 py-4">
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t("profile.accountDetails")}</h3>
+      <div className="border-b border-border bg-muted/30 px-6 py-4">
+        <h3 className="text-sm font-semibold text-foreground font-heading">{t("profile.accountDetails")}</h3>
       </div>
       <div className="p-6">
         <div className="grid gap-6 md:grid-cols-2">
           <div>
             <label
               htmlFor="profile-name"
-              className="mb-1.5 flex items-center gap-2 text-xs font-medium text-zinc-700 dark:text-zinc-300"
+              className="mb-1.5 flex items-center gap-2 text-xs font-medium text-foreground"
             >
-              <User className="h-3.5 w-3.5" /> {t("profile.fullName")}
+              <User className="h-3.5 w-3.5 text-muted-foreground" /> {t("profile.fullName")}
             </label>
             <Input
               id="profile-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 transition-all focus:border-zinc-400 dark:focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+              className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground transition-all focus-visible:ring-1 focus-visible:ring-ring"
               required
             />
           </div>
@@ -124,16 +112,16 @@ const AccountDetailsForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
           <div>
             <label
               htmlFor="profile-email"
-              className="mb-1.5 flex items-center gap-2 text-xs font-medium text-zinc-700 dark:text-zinc-300"
+              className="mb-1.5 flex items-center gap-2 text-xs font-medium text-foreground"
             >
-              <Mail className="h-3.5 w-3.5" /> {t("profile.email")}
+              <Mail className="h-3.5 w-3.5 text-muted-foreground" /> {t("profile.email")}
             </label>
             <Input
               id="profile-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 transition-all focus:border-zinc-400 dark:focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+              className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground transition-all focus-visible:ring-1 focus-visible:ring-ring"
               required
             />
           </div>
@@ -141,9 +129,9 @@ const AccountDetailsForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
           <div>
             <label
               htmlFor="profile-phone"
-              className="mb-1.5 flex items-center gap-2 text-xs font-medium text-zinc-700 dark:text-zinc-300"
+              className="mb-1.5 flex items-center gap-2 text-xs font-medium text-foreground"
             >
-              <Phone className="h-3.5 w-3.5" /> {t("profile.phoneNumber", "Phone Number (WhatsApp)")}
+              <Phone className="h-3.5 w-3.5 text-muted-foreground" /> {t("profile.phoneNumber", "Phone Number (WhatsApp)")}
             </label>
             <Input
               id="profile-phone"
@@ -151,18 +139,18 @@ const AccountDetailsForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder="+1 (809) 000-0000"
-              className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 transition-all focus:border-zinc-400 dark:focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+              className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground transition-all focus-visible:ring-1 focus-visible:ring-ring"
             />
           </div>
 
           <div>
-            <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-zinc-700 dark:text-zinc-300">
-              <Globe className="h-3.5 w-3.5" /> {t("profile.languageSetting")}
+            <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-foreground">
+              <Globe className="h-3.5 w-3.5 text-muted-foreground" /> {t("profile.languageSetting")}
             </label>
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
-              className="w-full cursor-pointer rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-1.5 text-xs text-zinc-900 dark:text-zinc-100 transition-all focus:border-zinc-400 dark:focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+              className="w-full cursor-pointer rounded-md border border-input bg-background px-3 py-1.5 text-xs text-foreground transition-all focus-visible:ring-1 focus-visible:ring-ring"
             >
               <option value="en_US">{t("profile.languages.en_US")}</option>
               <option value="es_DO">{t("profile.languages.es_DO")}</option>
@@ -175,7 +163,7 @@ const AccountDetailsForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
             <button
               type="submit"
               disabled={saving}
-              className="flex cursor-pointer items-center gap-2 rounded-md bg-zinc-900 dark:bg-zinc-100 px-4 py-2 text-xs font-semibold text-white dark:text-zinc-900 shadow-sm transition-all hover:bg-zinc-800 dark:hover:bg-zinc-200 active:scale-95 disabled:cursor-not-allowed disabled:bg-zinc-300 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-500"
+              className="flex cursor-pointer items-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-xs transition-all hover:bg-primary/90 disabled:opacity-50"
             >
               {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
               {saving ? t("profile.saving") : t("profile.saveChanges")}
@@ -204,26 +192,26 @@ const ChangePasswordForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
   return (
     <form
       onSubmit={handlePasswordChange}
-      className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm"
+      className="overflow-hidden rounded-xl border border-border bg-card shadow-xs"
     >
-      <div className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 px-6 py-4">
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t("profile.changePassword")}</h3>
+      <div className="border-b border-border bg-muted/30 px-6 py-4">
+        <h3 className="text-sm font-semibold text-foreground font-heading">{t("profile.changePassword")}</h3>
       </div>
       <div className="p-6">
         <div className="space-y-4">
           <div>
             <label
               htmlFor="profile-current-password"
-              className="mb-1.5 flex items-center gap-2 text-xs font-medium text-zinc-700 dark:text-zinc-300"
+              className="mb-1.5 flex items-center gap-2 text-xs font-medium text-foreground"
             >
-              <Lock className="h-3.5 w-3.5" /> {t("profile.currentPassword")}
+              <Lock className="h-3.5 w-3.5 text-muted-foreground" /> {t("profile.currentPassword")}
             </label>
             <Input
               id="profile-current-password"
               type="password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 transition-all focus:border-zinc-400 dark:focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+              className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground transition-all focus-visible:ring-1 focus-visible:ring-ring"
               placeholder="••••••••••••"
             />
           </div>
@@ -232,16 +220,16 @@ const ChangePasswordForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
             <div>
               <label
                 htmlFor="profile-new-password"
-                className="mb-1.5 flex items-center gap-2 text-xs font-medium text-zinc-700 dark:text-zinc-300"
+                className="mb-1.5 flex items-center gap-2 text-xs font-medium text-foreground"
               >
-                <Key className="h-3.5 w-3.5" /> {t("profile.newPassword")}
+                <Key className="h-3.5 w-3.5 text-muted-foreground" /> {t("profile.newPassword")}
               </label>
               <Input
                 id="profile-new-password"
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 transition-all focus:border-zinc-400 dark:focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+                className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground transition-all focus-visible:ring-1 focus-visible:ring-ring"
                 placeholder="Min. 8 characters"
               />
             </div>
@@ -249,16 +237,16 @@ const ChangePasswordForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
             <div>
               <label
                 htmlFor="profile-confirm-password"
-                className="mb-1.5 flex items-center gap-2 text-xs font-medium text-zinc-700 dark:text-zinc-300"
+                className="mb-1.5 flex items-center gap-2 text-xs font-medium text-foreground"
               >
-                <Key className="h-3.5 w-3.5" /> {t("profile.confirmPassword")}
+                <Key className="h-3.5 w-3.5 text-muted-foreground" /> {t("profile.confirmPassword")}
               </label>
               <Input
                 id="profile-confirm-password"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 transition-all focus:border-zinc-400 dark:focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+                className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground transition-all focus-visible:ring-1 focus-visible:ring-ring"
                 placeholder="Repeat new password"
               />
             </div>
@@ -266,7 +254,7 @@ const ChangePasswordForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
         </div>
 
         <div className="mt-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-          <p className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Info className="h-3.5 w-3.5 shrink-0" />
             {t("profile.passwordRequirements")}
           </p>
@@ -274,7 +262,7 @@ const ChangePasswordForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
             <button
               type="submit"
               disabled={changingPassword}
-              className="flex cursor-pointer self-end sm:self-auto items-center gap-2 rounded-md bg-zinc-900 dark:bg-zinc-100 px-4 py-2 text-xs font-semibold text-white dark:text-zinc-900 shadow-sm transition-all hover:bg-zinc-800 dark:hover:bg-zinc-200 active:scale-95 disabled:cursor-not-allowed disabled:bg-zinc-300 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-500"
+              className="flex cursor-pointer self-end sm:self-auto items-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-xs transition-all hover:bg-primary/90 disabled:opacity-50"
             >
               {changingPassword ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Key className="h-3.5 w-3.5" />}
               {changingPassword ? t("profile.saving") : t("profile.updatePassword")}
@@ -310,3 +298,5 @@ export function ProfilePage() {
     </Page>
   );
 }
+
+export default ProfilePage;

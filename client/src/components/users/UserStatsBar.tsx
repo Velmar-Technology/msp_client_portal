@@ -22,8 +22,7 @@ function StatItem({ icon, label, value, accent }: StatItemProps) {
       <div className="flex flex-col">
         <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider leading-none">{label}</span>
         <span
-          className={`text-base font-extrabold leading-tight ${accent ?? "text-zinc-900 dark:text-zinc-50"}`}
-          style={{ fontFamily: "var(--font-heading)" }}
+          className={`text-base font-extrabold font-heading leading-tight ${accent ?? "text-foreground"}`}
         >
           {value}
         </span>

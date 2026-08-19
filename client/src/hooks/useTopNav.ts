@@ -25,12 +25,12 @@ export interface FlatItem {
 }
 
 const statusColorMap: Record<string, string> = {
-  OPEN: "bg-info/10 text-info",
-  IN_PROGRESS: "bg-warning/10 text-warning",
-  AWAITING_PAYMENT: "bg-warning/10 text-warning",
-  RESOLVED: "bg-success/10 text-success",
-  CLOSED: "bg-surface-container text-on-surface-variant",
-  CANCELLED: "bg-error/10 text-error",
+  OPEN: "bg-primary/10 text-primary",
+  IN_PROGRESS: "bg-secondary text-secondary-foreground",
+  AWAITING_PAYMENT: "bg-secondary text-secondary-foreground",
+  RESOLVED: "bg-primary/10 text-primary",
+  CLOSED: "bg-muted text-muted-foreground",
+  CANCELLED: "bg-destructive/10 text-destructive",
 };
 
 const invoiceStatusColorMap: Record<string, string> = {
@@ -292,7 +292,7 @@ export function useTopNav() {
         title: tick.title,
         subtitle: `#${tick.id.slice(0, 8)} • ${tick.category}`,
         badge: tick.status,
-        badgeClass: statusColorMap[tick.status] || "bg-surface-container text-on-surface-variant",
+        badgeClass: statusColorMap[tick.status] || "bg-muted text-muted-foreground",
         icon: TicketIcon,
         onClick: () => {
           navigate(`/tickets/${tick.id}`);
@@ -308,7 +308,7 @@ export function useTopNav() {
         title: inv.invoice_number,
         subtitle: `$${Number(inv.total).toFixed(2)} • ${new Date(inv.invoice_date).toLocaleDateString()}`,
         badge: inv.status,
-        badgeClass: invoiceStatusColorMap[inv.status] || "bg-surface-container text-on-surface-variant",
+        badgeClass: invoiceStatusColorMap[inv.status] || "bg-muted text-muted-foreground",
         icon: CreditCard,
         onClick: () => {
           navigate("/billing", { state: { invoiceId: inv.id } });

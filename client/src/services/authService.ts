@@ -46,6 +46,8 @@ export interface AuthResponse {
   };
 }
 
+export type User = AuthResponse['user'];
+
 /** Persist tokens + user to the correct store (localStorage or sessionStorage). */
 function persistAuthData(result: AuthResponse): void {
   setAuthItem('accessToken', result.tokens.accessToken);

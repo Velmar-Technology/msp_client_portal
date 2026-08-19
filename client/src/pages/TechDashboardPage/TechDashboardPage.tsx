@@ -22,19 +22,19 @@ import type { Ticket } from "@/services/ticketService";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const statusColor: Record<string, string> = {
-  OPEN: 'bg-info/10 text-info',
-  IN_PROGRESS: 'bg-warning/10 text-warning',
-  AWAITING_PAYMENT: 'bg-warning/10 text-warning',
-  RESOLVED: 'bg-success/10 text-success',
-  CLOSED: 'bg-surface-container text-on-surface-variant',
-  CANCELLED: 'bg-error/10 text-error',
+  OPEN: 'bg-primary/10 text-primary',
+  IN_PROGRESS: 'bg-secondary text-secondary-foreground',
+  AWAITING_PAYMENT: 'bg-secondary text-secondary-foreground',
+  RESOLVED: 'bg-primary/10 text-primary',
+  CLOSED: 'bg-muted text-muted-foreground',
+  CANCELLED: 'bg-destructive/10 text-destructive',
 };
 
 const priorityColor: Record<string, string> = {
-  LOW: 'text-on-surface-variant',
-  MEDIUM: 'text-warning',
-  HIGH: 'text-error',
-  CRITICAL: 'text-error font-bold',
+  LOW: 'text-muted-foreground',
+  MEDIUM: 'text-foreground font-medium',
+  HIGH: 'text-destructive font-semibold',
+  CRITICAL: 'text-destructive font-bold',
 };
 
 // Sub-component to handle active SLA timers per ticket
@@ -47,17 +47,17 @@ function SLACountdownRow({ ticket, onNavigate }: { ticket: Ticket; onNavigate: (
   return (
     <div
       onClick={() => onNavigate(ticket.id)}
-      className="flex items-center justify-between p-3.5 bg-error/10 hover:bg-error/15 border border-error/20 rounded-xl cursor-pointer transition-colors shadow-sm animate-pulse"
+      className="flex items-center justify-between p-3.5 bg-destructive/10 hover:bg-destructive/15 border border-destructive/20 rounded-xl cursor-pointer transition-colors shadow-xs"
     >
       <div className="flex-1 min-w-0 pr-2">
-        <h4 className="text-label-md font-semibold text-on-surface truncate">{ticket.title}</h4>
-        <span className="text-[11px] text-on-surface-variant opacity-85">
+        <h4 className="text-sm font-semibold text-foreground truncate">{ticket.title}</h4>
+        <span className="text-xs text-muted-foreground">
           {ticket.category === 'WARRANTY' ? t('tickets.categories.WARRANTY') : t('tickets.categories.SERVICE_OUTAGE')} • {t(`tickets.priorities.${ticket.priority}`)}
         </span>
       </div>
       <div className="text-right flex items-center gap-2">
-        <Clock className="h-4 w-4 text-error animate-spin" style={{ animationDuration: '4s' }} />
-        <span className="text-h3 font-mono text-error font-bold">{sla.formattedTime}</span>
+        <Clock className="h-4 w-4 text-destructive animate-spin" />
+        <span className="text-sm font-mono text-destructive font-bold">{sla.formattedTime}</span>
       </div>
     </div>
   );
@@ -159,7 +159,7 @@ export function TechDashboardPage() {
       accessorKey: 'title',
       header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t('tickets.tableTitle')}</span>,
       cell: ({ row }) => (
-        <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate max-w-[200px] block">
+        <span className="text-xs font-semibold text-foreground truncate max-w-50 block">
           {row.original.title}
         </span>
       ),
@@ -208,14 +208,14 @@ export function TechDashboardPage() {
                 <button
                   onClick={() => handleStatusTransition(ticket.id, 'AWAITING_PAYMENT')}
                   disabled={updatingId === ticket.id}
-                  className="px-2.5 py-1 bg-surface-container-high border border-outline hover:bg-surface-container-highest text-on-surface-variant transition-colors text-[11px] font-semibold rounded cursor-pointer disabled:opacity-50"
+                  className="px-2.5 py-1 bg-secondary text-secondary-foreground hover:bg-secondary/90 transition-colors text-[11px] font-semibold rounded cursor-pointer disabled:opacity-50"
                 >
                   {t('techDashboard.awaitingPayment')}
                 </button>
                 <button
                   onClick={() => handleStatusTransition(ticket.id, 'RESOLVED')}
                   disabled={updatingId === ticket.id}
-                  className="px-2.5 py-1 bg-success text-on-success hover:bg-success/90 transition-colors text-[11px] font-bold rounded cursor-pointer disabled:opacity-50"
+                  className="px-2.5 py-1 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-[11px] font-bold rounded cursor-pointer disabled:opacity-50"
                 >
                   {t('techDashboard.resolveTicket')}
                 </button>
@@ -223,7 +223,7 @@ export function TechDashboardPage() {
             )}
             <button
               onClick={() => navigate(`/tickets/${ticket.id}`)}
-              className="p-1 text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+              className="p-1 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
               title={t('dashboard.viewDetails')}
             >
               <ArrowRight className="h-4 w-4" />
@@ -288,13 +288,13 @@ export function TechDashboardPage() {
       title={`${t('login.welcome')}, ${user?.name}`}
       subtitle={t('techDashboard.subtitle')}
       actions={
-        <div className="flex items-center gap-3 bg-surface-container-high p-4 rounded-xl border border-outline-variant/60 shadow-sm animate-fade-in">
+        <div className="flex items-center gap-3 bg-muted p-4 rounded-xl border border-border shadow-xs animate-fade-in">
           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
             <User className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h4 className="text-label-md font-bold text-on-surface leading-tight">{user?.email}</h4>
-            <span className="text-[11px] text-on-surface-variant opacity-80 mt-0.5 block">
+            <h4 className="text-sm font-bold text-foreground leading-tight">{user?.email}</h4>
+            <span className="text-xs text-muted-foreground mt-0.5 block">
               {t('techDashboard.mySpecialty')}: <strong>{specialty || (t('profile.languages.es_DO') === 'Español' ? 'Generalista' : 'Generalist')}</strong>
             </span>
           </div>
@@ -305,45 +305,45 @@ export function TechDashboardPage() {
       {/* Metrics Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-6">
         {/* Total Assigned */}
-        <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl flex flex-col shadow-sm">
+        <div className="bg-card border border-border p-6 rounded-xl flex flex-col shadow-xs">
           <div className="flex justify-between items-start mb-4">
             <ClipboardList className="h-6 w-6 text-primary" />
           </div>
-          <h3 className="text-label-md text-on-surface-variant">{t('techDashboard.assignedTickets')}</h3>
-          <p className="text-h2 mt-1 font-bold text-on-surface" style={{ fontFamily: 'var(--font-heading)' }}>
+          <h3 className="text-sm font-medium text-muted-foreground">{t('techDashboard.assignedTickets')}</h3>
+          <p className="text-2xl mt-1 font-bold text-foreground">
             {totalAssigned}
           </p>
         </div>
 
         {/* Open */}
-        <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl flex flex-col shadow-sm">
+        <div className="bg-card border border-border p-6 rounded-xl flex flex-col shadow-xs">
           <div className="flex justify-between items-start mb-4">
-            <Clock className="h-6 w-6 text-info" />
+            <Clock className="h-6 w-6 text-primary" />
           </div>
-          <h3 className="text-label-md text-on-surface-variant">{t('techDashboard.openTickets')}</h3>
-          <p className="text-h2 mt-1 font-bold text-info" style={{ fontFamily: 'var(--font-heading)' }}>
+          <h3 className="text-sm font-medium text-muted-foreground">{t('techDashboard.openTickets')}</h3>
+          <p className="text-2xl mt-1 font-bold text-foreground">
             {openCount}
           </p>
         </div>
 
         {/* In Progress */}
-        <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl flex flex-col shadow-sm">
+        <div className="bg-card border border-border p-6 rounded-xl flex flex-col shadow-xs">
           <div className="flex justify-between items-start mb-4">
-            <Play className="h-6 w-6 text-warning" />
+            <Play className="h-6 w-6 text-secondary" />
           </div>
-          <h3 className="text-label-md text-on-surface-variant">{t('techDashboard.inProgressTickets')}</h3>
-          <p className="text-h2 mt-1 font-bold text-warning" style={{ fontFamily: 'var(--font-heading)' }}>
+          <h3 className="text-sm font-medium text-muted-foreground">{t('techDashboard.inProgressTickets')}</h3>
+          <p className="text-2xl mt-1 font-bold text-foreground">
             {inProgressCount}
           </p>
         </div>
 
         {/* Completed */}
-        <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl flex flex-col shadow-sm">
+        <div className="bg-card border border-border p-6 rounded-xl flex flex-col shadow-xs">
           <div className="flex justify-between items-start mb-4">
-            <CheckCircle2 className="h-6 w-6 text-success" />
+            <CheckCircle2 className="h-6 w-6 text-primary" />
           </div>
-          <h3 className="text-label-md text-on-surface-variant">{t('techDashboard.resolvedTickets')}</h3>
-          <p className="text-h2 mt-1 font-bold text-success" style={{ fontFamily: 'var(--font-heading)' }}>
+          <h3 className="text-sm font-medium text-muted-foreground">{t('techDashboard.resolvedTickets')}</h3>
+          <p className="text-2xl mt-1 font-bold text-foreground">
             {completedCount}
           </p>
         </div>
@@ -352,26 +352,26 @@ export function TechDashboardPage() {
       {/* Main Grid: SLA Monitor + Tickets list */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* SLA Attention Panel (Spans 4 cols on desktop) */}
-        <div className="lg:col-span-4 bg-surface-container-lowest border border-outline-variant p-6 rounded-xl flex flex-col shadow-sm h-fit">
-          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-outline-variant/30">
-            <AlertTriangle className="h-5 w-5 text-error" />
-            <h3 className="text-h3 font-bold text-on-surface" style={{ fontFamily: 'var(--font-heading)' }}>
+        <div className="lg:col-span-4 bg-card border border-border p-6 rounded-xl flex flex-col shadow-xs h-fit">
+          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-border">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+            <h3 className="text-base font-bold text-foreground">
               {t('techDashboard.slaAttention')}
             </h3>
           </div>
-          <p className="text-[12px] text-on-surface-variant mb-4 leading-normal">
+          <p className="text-xs text-muted-foreground mb-4 leading-normal">
             {t('techDashboard.slaDescription')}
           </p>
 
           {slaTickets.length === 0 ? (
-            <div className="py-8 text-center bg-surface-container-low rounded-xl border border-dashed border-outline-variant/60">
-              <CheckCircle2 className="h-8 w-8 text-success/60 mx-auto mb-2" />
-              <p className="text-body-md text-on-surface-variant px-4">
+            <div className="py-8 text-center bg-muted/50 rounded-xl border border-dashed border-border">
+              <CheckCircle2 className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground px-4">
                 {t('techDashboard.noSlaAttention')}
               </p>
             </div>
           ) : (
-            <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+            <div className="space-y-3 max-h-87.5 overflow-y-auto pr-1">
               {slaTickets.map((ticket) => (
                 <SLACountdownRow key={ticket.id} ticket={ticket} onNavigate={(id) => navigate(`/tickets/${id}`)} />
               ))}
@@ -380,15 +380,15 @@ export function TechDashboardPage() {
         </div>
 
         {/* Tickets Listing & Controls (Spans 8 cols on desktop) */}
-        <div className="lg:col-span-8 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm flex flex-col">
+        <div className="lg:col-span-8 bg-card border border-border rounded-xl overflow-hidden shadow-xs flex flex-col">
           {/* Action Message Alert */}
           {actionMessage && (
-            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800">
-              <Alert variant={actionMessage.isError ? 'destructive' : 'success'} className="animate-fade-in">
+            <div className="p-4 border-b border-border">
+              <Alert variant={actionMessage.isError ? 'destructive' : 'default'} className="animate-fade-in">
                 {actionMessage.isError ? (
                   <AlertCircle className="h-4 w-4" />
                 ) : (
-                  <CheckCircle2 className="h-4 w-4 text-success" />
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
                 )}
                 <AlertTitle>{actionMessage.isError ? 'Error' : 'Success'}</AlertTitle>
                 <AlertDescription>{actionMessage.text}</AlertDescription>

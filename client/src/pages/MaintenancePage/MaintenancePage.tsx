@@ -140,35 +140,35 @@ export function MaintenancePage() {
     switch (status) {
       case "COMPLETED":
         return (
-          <span className="inline-flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50 px-2 py-0.5 rounded text-[10px] font-semibold uppercase">
+          <span className="inline-flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-[10px] font-semibold uppercase">
             <CheckCircle2 className="h-3 w-3" />
             {t("maintenance.statusCompleted")}
           </span>
         );
       case "IN_PROGRESS":
         return (
-          <span className="inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 px-2 py-0.5 rounded text-[10px] font-semibold uppercase">
+          <span className="inline-flex items-center gap-1 bg-secondary text-secondary-foreground border border-border px-2 py-0.5 rounded text-[10px] font-semibold uppercase">
             <Clock className="h-3 w-3 animate-spin" />
             {t("maintenance.statusInProgress")}
           </span>
         );
       case "OVERDUE":
         return (
-          <span className="inline-flex items-center gap-1 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/50 px-2 py-0.5 rounded text-[10px] font-semibold uppercase">
+          <span className="inline-flex items-center gap-1 bg-destructive/10 text-destructive border border-destructive/20 px-2 py-0.5 rounded text-[10px] font-semibold uppercase">
             <AlertTriangle className="h-3 w-3" />
             {t("maintenance.statusOverdue")}
           </span>
         );
       case "CANCELLED":
         return (
-          <span className="inline-flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 border border-zinc-200 dark:border-zinc-700 px-2 py-0.5 rounded text-[10px] font-semibold uppercase">
+          <span className="inline-flex items-center gap-1 bg-muted text-muted-foreground border border-border px-2 py-0.5 rounded text-[10px] font-semibold uppercase">
             <XCircle className="h-3 w-3" />
             {t("maintenance.statusCancelled")}
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50 px-2 py-0.5 rounded text-[10px] font-semibold uppercase">
+          <span className="inline-flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-[10px] font-semibold uppercase">
             <CalendarIcon className="h-3 w-3" />
             {t("maintenance.statusScheduled")}
           </span>
@@ -181,7 +181,7 @@ export function MaintenancePage() {
     {
       id: "scheduledDate",
       header: () => (
-        <span className="uppercase text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">
+        <span className="uppercase text-[10px] font-bold text-muted-foreground tracking-wider">
           {t("maintenance.tableDate")}
         </span>
       ),
@@ -190,8 +190,8 @@ export function MaintenancePage() {
         const d = new Date(item.scheduled_date);
         return (
           <div className="space-y-0.5">
-            <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">{d.toLocaleDateString()}</p>
-            <p className="text-[10px] text-zinc-400 font-mono">
+            <p className="text-xs font-bold text-foreground">{d.toLocaleDateString()}</p>
+            <p className="text-[10px] text-muted-foreground font-mono">
               {item.maintenance_type === "CUSTOM_DATE"
                 ? t("maintenance.typeCustomDate")
                 : t("maintenance.typePredefined")}
@@ -203,7 +203,7 @@ export function MaintenancePage() {
     {
       id: "deviceInfo",
       header: () => (
-        <span className="uppercase text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">
+        <span className="uppercase text-[10px] font-bold text-muted-foreground tracking-wider">
           {t("maintenance.tableDevice")}
         </span>
       ),
@@ -211,11 +211,11 @@ export function MaintenancePage() {
         const item = row.original;
         return (
           <div className="space-y-0.5">
-            <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+            <p className="text-xs font-semibold text-foreground">
               {item.device_name || t("devices.unnamedDevice")}
             </p>
-            {item.device_serial && <p className="text-[10px] text-zinc-400 font-mono">{item.device_serial}</p>}
-            {item.service_name && <p className="text-[9px] text-zinc-500 italic">{item.service_name}</p>}
+            {item.device_serial && <p className="text-[10px] text-muted-foreground font-mono">{item.device_serial}</p>}
+            {item.service_name && <p className="text-[9px] text-muted-foreground italic">{item.service_name}</p>}
           </div>
         );
       },
@@ -223,7 +223,7 @@ export function MaintenancePage() {
     {
       id: "clientInfo",
       header: () => (
-        <span className="uppercase text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">
+        <span className="uppercase text-[10px] font-bold text-muted-foreground tracking-wider">
           {t("maintenance.tableClient")}
         </span>
       ),
@@ -231,9 +231,9 @@ export function MaintenancePage() {
         const item = row.original;
         return (
           <div className="space-y-0.5">
-            <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100">{item.client_name || "—"}</p>
+            <p className="text-xs font-medium text-foreground">{item.client_name || "—"}</p>
             {item.client_email && (
-              <p className="text-[10px] text-zinc-400 truncate max-w-[150px]">{item.client_email}</p>
+              <p className="text-[10px] text-muted-foreground truncate max-w-37.5">{item.client_email}</p>
             )}
           </div>
         );
@@ -242,26 +242,26 @@ export function MaintenancePage() {
     {
       id: "assignedTech",
       header: () => (
-        <span className="uppercase text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">
+        <span className="uppercase text-[10px] font-bold text-muted-foreground tracking-wider">
           {t("maintenance.tableTech")}
         </span>
       ),
       cell: ({ row }) => {
         const item = row.original;
         return item.assigned_tech_name ? (
-          <span className="text-xs font-medium text-zinc-800 dark:text-zinc-200 flex items-center gap-1">
-            <User className="h-3 w-3 text-zinc-400" />
+          <span className="text-xs font-medium text-foreground flex items-center gap-1">
+            <User className="h-3 w-3 text-muted-foreground" />
             {item.assigned_tech_name}
           </span>
         ) : (
-          <span className="text-xs text-zinc-400 italic">{t("maintenance.unassignedTech")}</span>
+          <span className="text-xs text-muted-foreground italic">{t("maintenance.unassignedTech")}</span>
         );
       },
     },
     {
       accessorKey: "status",
       header: () => (
-        <span className="uppercase text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">
+        <span className="uppercase text-[10px] font-bold text-muted-foreground tracking-wider">
           {t("maintenance.tableStatus")}
         </span>
       ),
@@ -270,7 +270,7 @@ export function MaintenancePage() {
     {
       id: "actions",
       header: () => (
-        <span className="uppercase text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-wider text-right">
+        <span className="uppercase text-[10px] font-bold text-muted-foreground tracking-wider text-right">
           {t("common.actions")}
         </span>
       ),
@@ -280,36 +280,36 @@ export function MaintenancePage() {
           <div className="text-right">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-md border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 cursor-pointer transition-colors">
-                  <MoreHorizontal className="h-3.5 w-3.5 text-zinc-500" />
+                <button className="p-1 hover:bg-muted rounded-md border border-transparent hover:border-border cursor-pointer transition-colors">
+                  <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800"
+                className="bg-card border border-border"
               >
-                <DropdownMenuLabel className="text-xs">{t("maintenance.actionsLabel")}</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-xs text-foreground font-heading">{t("maintenance.actionsLabel")}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setSelectedEventDetails(item)} className="cursor-pointer text-xs">
+                <DropdownMenuItem onClick={() => setSelectedEventDetails(item)} className="cursor-pointer text-xs text-foreground">
                   {t("maintenance.viewDetails")}
                 </DropdownMenuItem>
                 {isAdminOrTech && (
                   <>
                     <DropdownMenuItem
                       onClick={() => handleStatusChange(item.id, "IN_PROGRESS")}
-                      className="cursor-pointer text-xs text-amber-600 dark:text-amber-400"
+                      className="cursor-pointer text-xs text-secondary focus:text-secondary"
                     >
                       {t("maintenance.markInProgress")}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => handleStatusChange(item.id, "COMPLETED")}
-                      className="cursor-pointer text-xs text-emerald-600 dark:text-emerald-400"
+                      className="cursor-pointer text-xs text-primary focus:text-primary"
                     >
                       {t("maintenance.markCompleted")}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => handleStatusChange(item.id, "CANCELLED")}
-                      className="cursor-pointer text-xs text-red-600 dark:text-red-400"
+                      className="cursor-pointer text-xs text-destructive focus:text-destructive"
                     >
                       {t("maintenance.markCancelled")}
                     </DropdownMenuItem>
@@ -327,38 +327,38 @@ export function MaintenancePage() {
     <Page title={t("nav.maintenance")} subtitle={t("maintenance.subtitle")} isLoading={loading}>
       <div className="space-y-4">
         {/* Top Control Bar */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white dark:bg-zinc-950 p-4 border border-zinc-200 dark:border-zinc-800 rounded-sm shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-card p-4 border border-border rounded-sm shadow-xs">
           {/* Calendar Month Navigation */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center border border-zinc-200 dark:border-zinc-800 rounded-sm overflow-hidden bg-zinc-50 dark:bg-zinc-900/50">
+            <div className="flex items-center border border-border rounded-sm overflow-hidden bg-muted/40">
               <button
                 onClick={handlePrevMonth}
-                className="p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer text-zinc-600 dark:text-zinc-300"
+                className="p-1.5 hover:bg-muted transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
                 title={t("maintenance.prevMonth")}
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button
                 onClick={handleToday}
-                className="px-3 py-1 text-xs font-semibold hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer border-x border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-200"
+                className="px-3 py-1 text-xs font-semibold hover:bg-muted transition-colors cursor-pointer border-x border-border text-foreground"
               >
                 {t("maintenance.today")}
               </button>
               <button
                 onClick={handleNextMonth}
-                className="p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer text-zinc-600 dark:text-zinc-300"
+                className="p-1.5 hover:bg-muted transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
                 title={t("maintenance.nextMonth")}
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
-            <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 capitalize">{monthYearTitle}</h2>
+            <h2 className="text-base font-bold text-foreground capitalize font-heading">{monthYearTitle}</h2>
           </div>
 
           {/* Action & View Controls */}
           <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end">
             {/* View Mode Toggle */}
-            <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-800">
+            <div className="flex items-center bg-muted p-0.5 rounded-md border border-border">
               <button
                 type="button"
                 onClick={() => setViewMode("CALENDAR")}
@@ -367,8 +367,8 @@ export function MaintenancePage() {
                 className={cn(
                   "p-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer",
                   viewMode === "CALENDAR"
-                    ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-xs"
-                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200",
+                    ? "bg-card text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 <LayoutGrid className="h-4 w-4" />
@@ -381,8 +381,8 @@ export function MaintenancePage() {
                 className={cn(
                   "p-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer",
                   viewMode === "LIST"
-                    ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-xs"
-                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200",
+                    ? "bg-card text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 <ListIcon className="h-4 w-4" />
@@ -392,7 +392,7 @@ export function MaintenancePage() {
             {/* Schedule Maintenance Button */}
             <button
               onClick={() => openScheduleModal()}
-              className="h-8 px-3.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg text-xs font-semibold hover:opacity-90 transition-opacity shadow-sm flex items-center gap-1.5 cursor-pointer"
+              className="h-8 px-3.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg text-xs font-semibold transition-opacity shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="h-3.5 w-3.5" />
               <span>{t("maintenance.scheduleBtn")}</span>
@@ -402,26 +402,26 @@ export function MaintenancePage() {
 
         {/* Filters Toolbar - Calendar view only */}
         {viewMode === "CALENDAR" && (
-          <div className="bg-white dark:bg-zinc-950 p-3 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm flex flex-col md:flex-row gap-3 items-center justify-between">
+          <div className="bg-card p-3 border border-border rounded-xl shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
             <div className="relative w-full md:max-w-xs">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder={t("maintenance.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 h-8 bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-xs"
+                className="w-full pl-8 pr-3 h-8 bg-muted/40 border-border text-xs"
               />
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
               {/* Status Filter */}
               <div className="flex items-center gap-1.5">
-                <ListFilter className="h-3.5 w-3.5 text-zinc-400" />
+                <ListFilter className="h-3.5 w-3.5 text-muted-foreground" />
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="h-8 px-2 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200 focus:outline-none cursor-pointer"
+                  className="h-8 px-2 border border-input rounded-md text-xs bg-background text-foreground focus:outline-none cursor-pointer"
                 >
                   <option value="ALL">{t("maintenance.filterAllStatuses")}</option>
                   <option value="SCHEDULED">{t("maintenance.statusScheduled")}</option>
@@ -437,7 +437,7 @@ export function MaintenancePage() {
                 <select
                   value={selectedTechFilter}
                   onChange={(e) => setSelectedTechFilter(e.target.value)}
-                  className="h-8 px-2 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200 focus:outline-none cursor-pointer"
+                  className="h-8 px-2 border border-input rounded-md text-xs bg-background text-foreground focus:outline-none cursor-pointer"
                 >
                   <option value="ALL">{t("maintenance.filterAllTechs")}</option>
                   {uniqueTechnicians.map((tech) => (
@@ -453,9 +453,9 @@ export function MaintenancePage() {
 
         {/* CALENDAR VIEW GRID */}
         {viewMode === "CALENDAR" && (
-          <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-card border border-border rounded-xl shadow-xs overflow-hidden">
             {/* Day of Week Headers */}
-            <div className="grid grid-cols-7 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 text-center font-bold text-[11px] text-zinc-400 py-2">
+            <div className="grid grid-cols-7 border-b border-border bg-muted/30 text-center font-bold text-[11px] text-muted-foreground py-2 font-heading">
               <div>{t("calendar.sun")}</div>
               <div>{t("calendar.mon")}</div>
               <div>{t("calendar.tue")}</div>
@@ -466,7 +466,7 @@ export function MaintenancePage() {
             </div>
 
             {/* Days Grid Cells */}
-            <div className="grid grid-cols-7 auto-rows-fr divide-x divide-y divide-zinc-200 dark:divide-zinc-800">
+            <div className="grid grid-cols-7 auto-rows-fr divide-x divide-y divide-border">
               {calendarDays.map((dayItem, idx) => {
                 const isToday = dayItem.date.toDateString() === new Date().toDateString();
                 const dayMaintenances = filteredMaintenances.filter(
@@ -476,20 +476,20 @@ export function MaintenancePage() {
                 return (
                   <div
                     key={idx}
-                    className={`min-h-[110px] p-1.5 flex flex-col justify-start transition-colors ${
+                    className={`min-h-27.5 p-1.5 flex flex-col justify-start transition-colors ${
                       !dayItem.isCurrentMonth
-                        ? "bg-zinc-50/30 dark:bg-zinc-900/10 text-zinc-300 dark:text-zinc-700"
-                        : "bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200"
+                        ? "bg-muted/10 text-muted-foreground/40"
+                        : "bg-card text-foreground"
                     }`}
                   >
                     <div className="flex justify-between items-center mb-1 px-1">
                       <span
                         className={`text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center ${
                           isToday
-                            ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900"
+                            ? "bg-primary text-primary-foreground font-heading"
                             : dayItem.isCurrentMonth
-                              ? "text-zinc-700 dark:text-zinc-300"
-                              : "text-zinc-400 dark:text-zinc-600"
+                              ? "text-foreground"
+                              : "text-muted-foreground"
                         }`}
                       >
                         {dayItem.date.getDate()}
@@ -497,7 +497,7 @@ export function MaintenancePage() {
                       {dayItem.isCurrentMonth && (
                         <button
                           onClick={() => openScheduleModal()}
-                          className="opacity-0 hover:opacity-100 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 p-0.5 rounded cursor-pointer transition-opacity"
+                          className="opacity-0 hover:opacity-100 text-muted-foreground hover:text-foreground p-0.5 rounded cursor-pointer transition-opacity"
                           title={t("maintenance.scheduleBtn")}
                         >
                           <Plus className="h-3 w-3" />
@@ -506,19 +506,19 @@ export function MaintenancePage() {
                     </div>
 
                     {/* Events List for Day */}
-                    <div className="space-y-1 overflow-y-auto max-h-[85px] pr-0.5">
+                    <div className="space-y-1 overflow-y-auto max-h-21.25 pr-0.5">
                       {dayMaintenances.map((m) => (
                         <div
                           key={m.id}
                           onClick={() => setSelectedEventDetails(m)}
                           className={`p-1 rounded border text-[10px] cursor-pointer font-medium leading-tight truncate transition-all hover:scale-[1.02] shadow-xs ${
                             m.status === "COMPLETED"
-                              ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/50"
+                              ? "bg-primary/10 text-primary border-primary/20"
                               : m.status === "IN_PROGRESS"
-                                ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900/50"
+                                ? "bg-secondary text-secondary-foreground border-border"
                                 : m.status === "OVERDUE"
-                                  ? "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900/50"
-                                  : "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900/50"
+                                  ? "bg-destructive/10 text-destructive border-destructive/20"
+                                  : "bg-primary/10 text-primary border-primary/20"
                           }`}
                           title={`${m.title} - ${m.device_name || ""}`}
                         >
@@ -603,38 +603,38 @@ export function MaintenancePage() {
       {/* Event Details Drawer/Modal */}
       <AlertDialog open={!!selectedEventDetails} onOpenChange={(open) => { if (!open) setSelectedEventDetails(null); }}>
         {selectedEventDetails && (
-          <AlertDialogContent className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-sm max-w-md w-full p-5 shadow-2xl space-y-4">
-            <AlertDialogHeader className="flex flex-row justify-between items-start border-b border-zinc-200 dark:border-zinc-800 pb-3 space-y-0 text-left">
+          <AlertDialogContent className="bg-card border border-border rounded-sm max-w-md w-full p-5 shadow-2xl space-y-4">
+            <AlertDialogHeader className="flex flex-row justify-between items-start border-b border-border pb-3 space-y-0 text-left">
               <div>
-                <AlertDialogTitle className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{selectedEventDetails.title}</AlertDialogTitle>
-                <AlertDialogDescription className="text-xs text-zinc-500 font-mono mt-0.5">
+                <AlertDialogTitle className="text-sm font-bold text-foreground font-heading">{selectedEventDetails.title}</AlertDialogTitle>
+                <AlertDialogDescription className="text-xs text-muted-foreground font-mono mt-0.5">
                   {new Date(selectedEventDetails.scheduled_date).toLocaleString()}
                 </AlertDialogDescription>
               </div>
               {getStatusBadge(selectedEventDetails.status)}
             </AlertDialogHeader>
 
-            <div className="space-y-2 text-xs text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-900/40 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800">
+            <div className="space-y-2 text-xs text-foreground bg-muted/30 p-3 rounded-lg border border-border">
               <div className="flex justify-between">
-                <span className="text-zinc-400 font-semibold">{t("maintenance.tableDevice")}:</span>
+                <span className="text-muted-foreground font-semibold">{t("maintenance.tableDevice")}:</span>
                 <span className="font-bold">{selectedEventDetails.device_name || t("devices.unnamedDevice")}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-400 font-semibold">{t("devices.wizardStep3SerialNumber")}:</span>
+                <span className="text-muted-foreground font-semibold">{t("devices.wizardStep3SerialNumber")}:</span>
                 <span className="font-mono">{selectedEventDetails.device_serial || "—"}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-400 font-semibold">{t("maintenance.tableClient")}:</span>
+                <span className="text-muted-foreground font-semibold">{t("maintenance.tableClient")}:</span>
                 <span>{selectedEventDetails.client_name || "—"}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-400 font-semibold">{t("maintenance.tableTech")}:</span>
+                <span className="text-muted-foreground font-semibold">{t("maintenance.tableTech")}:</span>
                 <span>{selectedEventDetails.assigned_tech_name || t("maintenance.unassignedTech")}</span>
               </div>
               {selectedEventDetails.notes && (
-                <div className="border-t border-zinc-200 dark:border-zinc-800 pt-2 mt-2">
-                  <span className="text-zinc-400 font-semibold block mb-0.5">{t("maintenance.labelNotes")}:</span>
-                  <p className="text-zinc-600 dark:text-zinc-400 italic bg-white dark:bg-zinc-950 p-2 rounded border border-zinc-200 dark:border-zinc-800">
+                <div className="border-t border-border pt-2 mt-2">
+                  <span className="text-muted-foreground font-semibold block mb-0.5">{t("maintenance.labelNotes")}:</span>
+                  <p className="text-foreground italic bg-card p-2 rounded border border-border">
                     {selectedEventDetails.notes}
                   </p>
                 </div>
@@ -644,7 +644,7 @@ export function MaintenancePage() {
             <AlertDialogFooter className="flex justify-end gap-2 pt-2">
               <AlertDialogCancel
                 onClick={() => setSelectedEventDetails(null)}
-                className="h-8 px-4 text-xs font-semibold bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 rounded-md transition-opacity cursor-pointer border-0 mt-0"
+                className="h-8 px-4 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 rounded-md transition-opacity cursor-pointer border-0 mt-0"
               >
                 {t("common.close")}
               </AlertDialogCancel>

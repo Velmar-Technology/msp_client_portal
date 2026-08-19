@@ -44,8 +44,7 @@ export function HomePage() {
             {t("home.badge")}
           </Badge>
           <h1
-            className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight max-w-4xl mx-auto leading-tight mb-6 text-zinc-900 dark:text-white"
-            style={{ fontFamily: "var(--font-heading)" }}
+            className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight max-w-4xl mx-auto leading-tight mb-6 text-foreground font-heading"
           >
             {t("home.title")}
           </h1>
@@ -80,8 +79,7 @@ export function HomePage() {
               {t("home.purposeBadge")}
             </Badge>
             <h2
-              className="text-2xl sm:text-4xl font-bold tracking-tight text-zinc-900 dark:text-white"
-              style={{ fontFamily: "var(--font-heading)" }}
+              className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground font-heading"
             >
               {t("home.purposeTitle")}
             </h2>
@@ -133,74 +131,56 @@ export function HomePage() {
       <section className="py-14 md:py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2
-            className="text-2xl sm:text-3xl font-bold tracking-tight mb-3 text-zinc-900 dark:text-white"
-            style={{ fontFamily: "var(--font-heading)" }}
+            className="text-2xl sm:text-3xl font-bold tracking-tight mb-3 text-foreground font-heading"
           >
             {t("home.featuresTitle")}
           </h2>
-          <p className="text-sm sm:text-base text-zinc-500 dark:text-zinc-400 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
             {t("home.featuresSubtitle")}
           </p>
         </div>
 
         <div className="grid justify-center grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {/* Feature 1 */}
-          <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-xl hover:shadow-lg transition-shadow">
+          <Card className="border-border bg-card rounded-xl hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
-              <div className="w-10 h-10 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-3">
                 <LifeBuoy className="h-5 w-5" />
               </div>
               <CardTitle className="text-base font-bold leading-snug">{t("home.feature1Title")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                 {t("home.feature1Desc")}
               </p>
             </CardContent>
           </Card>
 
           {/* Feature 2 */}
-          <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-xl hover:shadow-lg transition-shadow">
+          <Card className="border-border bg-card rounded-xl hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
-              <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-3">
                 <Activity className="h-5 w-5" />
               </div>
               <CardTitle className="text-base font-bold leading-snug">{t("home.feature2Title")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                 {t("home.feature2Desc")}
               </p>
             </CardContent>
           </Card>
 
-          {/* Feature 3 */}
-          {/* <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-xl hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-3">
-                <CreditCard className="h-5 w-5" />
-              </div>
-              <CardTitle className="text-base font-bold leading-snug">
-                {t("home.feature3Title")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                {t("home.feature3Desc")}
-              </p>
-            </CardContent>
-          </Card> */}
-
           {/* Feature 4 */}
-          <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-xl hover:shadow-lg transition-shadow">
+          <Card className="border-border bg-card rounded-xl hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
-              <div className="w-10 h-10 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-3">
                 <ShieldCheck className="h-5 w-5" />
               </div>
               <CardTitle className="text-base font-bold leading-snug">{t("home.feature4Title")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                 {t("home.feature4Desc")}
               </p>
             </CardContent>
@@ -209,11 +189,10 @@ export function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-14 bg-zinc-900 text-white dark:bg-zinc-900 border-t border-zinc-800">
+      <section className="py-14 bg-card text-foreground border-t border-border">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2
-            className="text-2xl sm:text-3xl font-bold tracking-tight mb-3"
-            style={{ fontFamily: "var(--font-heading)" }}
+            className="text-2xl sm:text-3xl font-bold tracking-tight mb-3 font-heading"
           >
             {t("home.ctaTitle")}
           </h2>

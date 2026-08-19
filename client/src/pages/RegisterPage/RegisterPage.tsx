@@ -235,10 +235,10 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-4 transition-colors py-4 md:py-6">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 transition-colors py-4 md:py-6">
       <div className="w-full max-w-2xl md:max-w-3xl animate-fade-in">
         {/* Card */}
-        <main className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 md:p-6 shadow-xl relative overflow-hidden">
+        <main className="bg-card border border-border rounded-2xl p-5 md:p-6 shadow-xl relative overflow-hidden">
           {/* Brand Logo & Header */}
           <header className="flex flex-col items-center justify-center mb-3 gap-2">
             <img
@@ -246,19 +246,18 @@ export function RegisterPage() {
               alt="Velmar Technology SRL"
               className="h-10 md:h-12 w-auto object-contain dark:brightness-110"
             />
-            <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 px-2.5 py-0.5 rounded-full shadow-xs">
+            <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground bg-muted border border-border px-2.5 py-0.5 rounded-full shadow-xs">
               {t("topNav.portal")}
             </span>
           </header>
 
           <div className="mb-4 text-center">
             <h1
-              className="text-lg md:text-xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight"
-              style={{ fontFamily: "var(--font-heading)" }}
+              className="text-lg md:text-xl font-extrabold text-foreground font-heading tracking-tight"
             >
               {showOtpForm ? t("register.otpTitle") : t("register.createAccountHeader")}
             </h1>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+            <p className="text-xs text-muted-foreground font-medium">
               {showOtpForm
                 ? i18n.language === "es_DO"
                   ? "Ingresa el código OTP enviado a tu correo para activar tu cuenta."
@@ -279,9 +278,9 @@ export function RegisterPage() {
             <Alert
               role="status"
               aria-live="polite"
-              className="mb-3 animate-fade-in py-2 px-3 bg-emerald-50 text-emerald-900 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-200 dark:border-emerald-900"
+              className="mb-3 animate-fade-in py-2 px-3 bg-primary/10 text-primary border-primary/20"
             >
-              <AlertCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+              <AlertCircle className="h-4 w-4 text-primary" aria-hidden="true" />
               <AlertTitle className="text-xs font-bold mb-0.5">
                 {i18n.language === "es_DO" ? "Información" : "Notification"}
               </AlertTitle>
@@ -295,10 +294,10 @@ export function RegisterPage() {
                 <div>
                   <label
                     htmlFor="otp"
-                    className="block text-[10px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5"
+                    className="block text-[10px] font-bold text-foreground uppercase tracking-wider mb-1.5"
                   >
                     {t("register.otpTitle")}
-                    <span className="text-rose-500 ml-0.5" aria-hidden="true">
+                    <span className="text-destructive ml-0.5" aria-hidden="true">
                       *
                     </span>
                   </label>
@@ -321,11 +320,11 @@ export function RegisterPage() {
                 <button
                   type="submit"
                   disabled={loading || otp.length !== 6}
-                  className="w-full bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 py-2.5 rounded-lg text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer shadow-md focus-visible:ring-2 focus-visible:ring-zinc-900 dark:focus-visible:ring-zinc-100"
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 py-2.5 rounded-lg text-xs font-bold transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer shadow-md focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   {loading ? (
                     <div
-                      className="w-4 h-4 border-2 border-white/30 dark:border-zinc-900/30 border-t-white dark:border-t-zinc-900 rounded-full animate-spin"
+                      className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin"
                       aria-hidden="true"
                     />
                   ) : (
@@ -343,7 +342,7 @@ export function RegisterPage() {
                   setSuccessMessage("");
                   setError("");
                 }}
-                className="w-full text-center text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium transition-colors mt-3 py-1 cursor-pointer"
+                className="w-full text-center text-xs text-muted-foreground hover:text-foreground font-medium transition-colors mt-3 py-1 cursor-pointer"
               >
                 {i18n.language === "es_DO" ? "← Modificar datos de registro" : "← Edit registration details"}
               </button>
@@ -355,9 +354,9 @@ export function RegisterPage() {
               <form onSubmit={handleFormSubmit} className="space-y-4" autoComplete="off" noValidate>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Group 1: Personal & Organization Info */}
-                  <FieldSet className="p-3.5 bg-zinc-50/60 dark:bg-zinc-950/40 border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl space-y-2.5 shadow-xs">
-                    <FieldLegend className="flex items-center gap-1.5 pb-2 mb-0.5 border-b border-zinc-200/80 dark:border-zinc-800/80 text-[11px] font-bold text-zinc-800 dark:text-zinc-200 uppercase tracking-wider w-full">
-                      <User className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" aria-hidden="true" />
+                  <FieldSet className="p-3.5 bg-muted/40 border border-border rounded-xl space-y-2.5 shadow-xs">
+                    <FieldLegend className="flex items-center gap-1.5 pb-2 mb-0.5 border-b border-border text-[11px] font-bold text-foreground uppercase tracking-wider w-full font-heading">
+                      <User className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
                       <span>{t("register.personalGroupTitle")}</span>
                     </FieldLegend>
 
@@ -368,10 +367,10 @@ export function RegisterPage() {
                         <Field data-invalid={fieldState.invalid}>
                           <FieldLabel
                             htmlFor="reg-name"
-                            className="block text-[10px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1 flex items-center justify-between"
+                            className="text-[10px] font-bold text-foreground uppercase tracking-wider mb-1 flex items-center justify-between"
                           >
                             <span>{t("register.fullName")}</span>
-                            <span className="text-rose-500 ml-0.5" aria-hidden="true">
+                            <span className="text-destructive ml-0.5" aria-hidden="true">
                               *
                             </span>
                           </FieldLabel>
@@ -384,7 +383,7 @@ export function RegisterPage() {
                             aria-invalid={fieldState.invalid}
                             aria-describedby={fieldState.invalid ? "reg-name-error" : undefined}
                             placeholder="John Mitchell"
-                            className="w-full h-9 px-3 py-1.5 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs bg-white dark:bg-zinc-900 focus-visible:ring-2 focus-visible:ring-zinc-900 dark:focus-visible:ring-zinc-100 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600 text-zinc-900 dark:text-zinc-100 shadow-xs"
+                            className="w-full h-9 px-3 py-1.5 border border-input rounded-lg text-xs bg-background focus-visible:ring-1 focus-visible:ring-ring transition-all placeholder:text-muted-foreground text-foreground shadow-xs"
                           />
                           {fieldState.invalid && <FieldError id="reg-name-error" errors={[fieldState.error]} />}
                         </Field>
@@ -399,10 +398,10 @@ export function RegisterPage() {
                           <Field data-invalid={fieldState.invalid}>
                             <FieldLabel
                               htmlFor="reg-tenant"
-                              className="block text-[10px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1 flex items-center justify-between"
+                              className="text-[10px] font-bold text-foreground uppercase tracking-wider mb-1 flex items-center justify-between"
                             >
                               <span>{t("register.companyName")}</span>
-                              <span className="text-rose-500 ml-0.5" aria-hidden="true">
+                              <span className="text-destructive ml-0.5" aria-hidden="true">
                                 *
                               </span>
                             </FieldLabel>
@@ -415,7 +414,7 @@ export function RegisterPage() {
                               aria-invalid={fieldState.invalid}
                               aria-describedby={fieldState.invalid ? "reg-tenant-error" : undefined}
                               placeholder={t("register.companyNamePlaceholder")}
-                              className="w-full h-9 px-3 py-1.5 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs bg-white dark:bg-zinc-900 focus-visible:ring-2 focus-visible:ring-zinc-900 dark:focus-visible:ring-zinc-100 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600 text-zinc-900 dark:text-zinc-100 shadow-xs"
+                              className="w-full h-9 px-3 py-1.5 border border-input rounded-lg text-xs bg-background focus-visible:ring-1 focus-visible:ring-ring transition-all placeholder:text-muted-foreground text-foreground shadow-xs"
                             />
                             {fieldState.invalid && <FieldError id="reg-tenant-error" errors={[fieldState.error]} />}
                           </Field>
@@ -429,10 +428,10 @@ export function RegisterPage() {
                           <Field data-invalid={fieldState.invalid}>
                             <FieldLabel
                               htmlFor="reg-clientType"
-                              className="block text-[10px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1 flex items-center justify-between"
+                              className="text-[10px] font-bold text-foreground uppercase tracking-wider mb-1 flex items-center justify-between"
                             >
                               <span>{t("register.clientType")}</span>
-                              <span className="text-rose-500 ml-0.5" aria-hidden="true">
+                              <span className="text-destructive ml-0.5" aria-hidden="true">
                                 *
                               </span>
                             </FieldLabel>
@@ -442,11 +441,11 @@ export function RegisterPage() {
                                 aria-required="true"
                                 aria-invalid={fieldState.invalid}
                                 aria-describedby={fieldState.invalid ? "reg-clientType-error" : undefined}
-                                className="w-full h-9 data-[size=default]:h-9 px-3 py-1.5 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs bg-white dark:bg-zinc-900 focus-visible:ring-2 focus-visible:ring-zinc-900 dark:focus-visible:ring-zinc-100 transition-all text-zinc-900 dark:text-zinc-100 shadow-xs cursor-pointer"
+                                className="w-full h-9 data-[size=default]:h-9 px-3 py-1.5 border border-input rounded-lg text-xs bg-background focus-visible:ring-1 focus-visible:ring-ring transition-all text-foreground shadow-xs cursor-pointer"
                               >
                                 <SelectValue placeholder={t("register.clientType")} />
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent className="bg-card border-border">
                                 <SelectItem value="CLIENT">{t("register.clientTypeCLIENT")}</SelectItem>
                                 <SelectItem value="ENTERPRISE">{t("register.clientTypeENTERPRISE")}</SelectItem>
                                 <SelectItem value="STUDENT">{t("register.clientTypeSTUDENT")}</SelectItem>
@@ -466,7 +465,7 @@ export function RegisterPage() {
                         <Field data-invalid={fieldState.invalid}>
                           <FieldLabel
                             htmlFor="reg-phone"
-                            className="block text-[10px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1 flex items-center justify-between"
+                            className="text-[10px] font-bold text-foreground uppercase tracking-wider mb-1 flex items-center justify-between"
                           >
                             <span>{t("register.phoneNumber")}</span>
                           </FieldLabel>
@@ -478,7 +477,7 @@ export function RegisterPage() {
                             aria-invalid={fieldState.invalid}
                             aria-describedby={fieldState.invalid ? "reg-phone-error" : undefined}
                             placeholder="+1 (809) 000-0000"
-                            className="w-full h-9 px-3 py-1.5 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs bg-white dark:bg-zinc-900 focus-visible:ring-2 focus-visible:ring-zinc-900 dark:focus-visible:ring-zinc-100 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600 text-zinc-900 dark:text-zinc-100 shadow-xs"
+                            className="w-full h-9 px-3 py-1.5 border border-input rounded-lg text-xs bg-background focus-visible:ring-1 focus-visible:ring-ring transition-all placeholder:text-muted-foreground text-foreground shadow-xs"
                           />
                           {fieldState.invalid && <FieldError id="reg-phone-error" errors={[fieldState.error]} />}
                         </Field>
@@ -487,10 +486,10 @@ export function RegisterPage() {
                   </FieldSet>
 
                   {/* Group 2: Account & Credentials */}
-                  <FieldSet className="p-3.5 bg-zinc-50/60 dark:bg-zinc-950/40 border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl space-y-2.5 shadow-xs flex flex-col justify-between">
+                  <FieldSet className="p-3.5 bg-muted/40 border border-border rounded-xl space-y-2.5 shadow-xs flex flex-col justify-between">
                     <div className="space-y-2.5">
-                      <FieldLegend className="flex items-center gap-1.5 pb-2 mb-0.5 border-b border-zinc-200/80 dark:border-zinc-800/80 text-[11px] font-bold text-zinc-800 dark:text-zinc-200 uppercase tracking-wider w-full">
-                        <ShieldCheck className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" aria-hidden="true" />
+                      <FieldLegend className="flex items-center gap-1.5 pb-2 mb-0.5 border-b border-border text-[11px] font-bold text-foreground uppercase tracking-wider w-full font-heading">
+                        <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
                         <span>{t("register.accountGroupTitle")}</span>
                       </FieldLegend>
 
@@ -501,10 +500,10 @@ export function RegisterPage() {
                           <Field data-invalid={fieldState.invalid}>
                             <FieldLabel
                               htmlFor="reg-email"
-                              className="block text-[10px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1 flex items-center justify-between"
+                              className="text-[10px] font-bold text-foreground uppercase tracking-wider mb-1 flex items-center justify-between"
                             >
                               <span>{t("login.emailAddress")}</span>
-                              <span className="text-rose-500 ml-0.5" aria-hidden="true">
+                              <span className="text-destructive ml-0.5" aria-hidden="true">
                                 *
                               </span>
                             </FieldLabel>
@@ -517,7 +516,7 @@ export function RegisterPage() {
                               aria-invalid={fieldState.invalid}
                               aria-describedby={fieldState.invalid ? "reg-email-error" : undefined}
                               placeholder={t("login.emailPlaceholder")}
-                              className="w-full h-9 px-3 py-1.5 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs bg-white dark:bg-zinc-900 focus-visible:ring-2 focus-visible:ring-zinc-900 dark:focus-visible:ring-zinc-100 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600 text-zinc-900 dark:text-zinc-100 shadow-xs"
+                              className="w-full h-9 px-3 py-1.5 border border-input rounded-lg text-xs bg-background focus-visible:ring-1 focus-visible:ring-ring transition-all placeholder:text-muted-foreground text-foreground shadow-xs"
                             />
                             {fieldState.invalid && <FieldError id="reg-email-error" errors={[fieldState.error]} />}
                           </Field>
@@ -533,10 +532,10 @@ export function RegisterPage() {
                               <Field data-invalid={fieldState.invalid}>
                                 <FieldLabel
                                   htmlFor="reg-password"
-                                  className="block text-[10px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1 flex items-center justify-between"
+                                  className="text-[10px] font-bold text-foreground uppercase tracking-wider mb-1 flex items-center justify-between"
                                 >
                                   <span>{t("login.password")}</span>
-                                  <span className="text-rose-500 ml-0.5" aria-hidden="true">
+                                  <span className="text-destructive ml-0.5" aria-hidden="true">
                                     *
                                   </span>
                                 </FieldLabel>
@@ -550,13 +549,13 @@ export function RegisterPage() {
                                     aria-invalid={fieldState.invalid}
                                     aria-describedby={fieldState.invalid ? "reg-password-error" : undefined}
                                     placeholder={t("register.passwordPlaceholder")}
-                                    className="w-full h-9 px-3 py-1.5 pr-8 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs bg-white dark:bg-zinc-900 focus-visible:ring-2 focus-visible:ring-zinc-900 dark:focus-visible:ring-zinc-100 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600 text-zinc-900 dark:text-zinc-100 shadow-xs"
+                                    className="w-full h-9 px-3 py-1.5 pr-8 border border-input rounded-lg text-xs bg-background focus-visible:ring-1 focus-visible:ring-ring transition-all placeholder:text-muted-foreground text-foreground shadow-xs"
                                   />
                                   <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
                                     aria-label={showPassword ? t("register.hidePassword") : t("register.showPassword")}
-                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors cursor-pointer rounded-xs focus-visible:ring-2 focus-visible:ring-zinc-900 dark:focus-visible:ring-zinc-100 focus-visible:outline-none"
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer rounded-xs focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
                                   >
                                     {showPassword ? (
                                       <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />
@@ -579,10 +578,10 @@ export function RegisterPage() {
                               <Field data-invalid={fieldState.invalid}>
                                 <FieldLabel
                                   htmlFor="reg-confirm"
-                                  className="block text-[10px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1 mt-3 items-center justify-between"
+                                  className="block text-[10px] font-bold text-foreground uppercase tracking-wider mb-1 mt-3 items-center justify-between"
                                 >
                                   <span>{t("register.confirmPassword")}</span>
-                                  <span className="text-rose-500 ml-0.5" aria-hidden="true">
+                                  <span className="text-destructive ml-0.5" aria-hidden="true">
                                     *
                                   </span>
                                 </FieldLabel>
@@ -595,7 +594,7 @@ export function RegisterPage() {
                                   aria-invalid={fieldState.invalid}
                                   aria-describedby={fieldState.invalid ? "reg-confirm-error" : undefined}
                                   placeholder={t("register.confirmPasswordPlaceholder")}
-                                  className="w-full h-9 px-3 py-1.5 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs bg-white dark:bg-zinc-900 focus-visible:ring-2 focus-visible:ring-zinc-900 dark:focus-visible:ring-zinc-100 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600 text-zinc-900 dark:text-zinc-100 shadow-xs"
+                                  className="w-full h-9 px-3 py-1.5 border border-input rounded-lg text-xs bg-background focus-visible:ring-1 focus-visible:ring-ring transition-all placeholder:text-muted-foreground text-foreground shadow-xs"
                                 />
                                 {fieldState.invalid && (
                                   <FieldError id="reg-confirm-error" errors={[fieldState.error]} />
@@ -612,11 +611,11 @@ export function RegisterPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 py-2.5 rounded-lg text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer shadow-md focus-visible:ring-2 focus-visible:ring-zinc-900 dark:focus-visible:ring-zinc-100"
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 py-2.5 rounded-lg text-xs font-bold transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer shadow-md focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   {loading ? (
                     <div
-                      className="w-4 h-4 border-2 border-white/30 dark:border-zinc-900/30 border-t-white dark:border-t-zinc-900 rounded-full animate-spin"
+                      className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin"
                       aria-hidden="true"
                     />
                   ) : (
@@ -627,10 +626,10 @@ export function RegisterPage() {
 
               <div className="relative my-4">
                 <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                  <span className="w-full border-t border-zinc-200 dark:border-zinc-800" />
+                  <span className="w-full border-t border-border" />
                 </div>
                 <div className="relative flex justify-center text-[10px] font-bold uppercase tracking-wider">
-                  <span className="bg-white dark:bg-zinc-900 px-3 text-zinc-400">
+                  <span className="bg-card px-3 text-muted-foreground">
                     {t("login.or") || "Or continue with"}
                   </span>
                 </div>
@@ -642,11 +641,11 @@ export function RegisterPage() {
             </>
           )}
 
-          <p className="mt-4 text-center text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="mt-4 text-center text-xs text-muted-foreground">
             {t("register.alreadyHaveAccount")}{" "}
             <Link
               to="/login"
-              className="text-zinc-900 dark:text-zinc-100 font-bold hover:underline focus-visible:ring-2 focus-visible:ring-zinc-900 dark:focus-visible:ring-zinc-100 rounded-xs"
+              className="text-primary font-bold hover:underline focus-visible:ring-2 focus-visible:ring-ring rounded-xs"
             >
               {t("register.signInLink")}
             </Link>
@@ -663,12 +662,12 @@ export function RegisterPage() {
           }
         }}
       >
-        <AlertDialogContent className="sm:max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
+        <AlertDialogContent className="sm:max-w-md bg-card border border-border">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-lg font-extrabold text-zinc-900 dark:text-zinc-100 font-heading tracking-tight">
+            <AlertDialogTitle className="text-lg font-extrabold text-foreground font-heading tracking-tight">
               {t("register.welcomeTitle")}
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-sm text-zinc-500 dark:text-zinc-400">
+            <AlertDialogDescription className="text-sm text-muted-foreground">
               {t("register.welcomeDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -679,7 +678,7 @@ export function RegisterPage() {
                 setShowWelcomeDialog(false);
                 navigate("/login");
               }}
-              className="bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 px-4 py-2 rounded-lg text-sm font-bold hover:opacity-90 transition-opacity cursor-pointer shadow-md border-0"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-lg text-sm font-bold transition-opacity cursor-pointer shadow-md border-0"
             >
               {t("register.continueToLogin")}
             </AlertDialogAction>
@@ -690,3 +689,4 @@ export function RegisterPage() {
   );
 }
 
+export default RegisterPage;

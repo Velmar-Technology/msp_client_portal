@@ -136,10 +136,10 @@ export function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen min-h-dvh w-full items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-4 sm:p-6 transition-colors">
+    <div className="relative flex min-h-dvh w-full items-center justify-center bg-background p-4 sm:p-6 transition-colors">
       {/* Top Bar Language Selector */}
-      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 flex items-center gap-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 rounded-full px-3 py-1 shadow-sm">
-        <Globe className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 flex items-center gap-2 bg-card/80 backdrop-blur-sm border border-border rounded-full px-3 py-1 shadow-xs">
+        <Globe className="h-4 w-4 text-muted-foreground" />
         <select
           id="login-language-select"
           aria-label="Language Selector"
@@ -148,22 +148,22 @@ export function LoginPage() {
             const newLang = e.target.value;
             i18n.changeLanguage(newLang);
           }}
-          className="bg-transparent text-xs font-semibold text-zinc-700 dark:text-zinc-300 focus:outline-none cursor-pointer"
+          className="bg-transparent text-xs font-semibold text-foreground focus:outline-none cursor-pointer"
         >
-          <option value="en_US" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">
+          <option value="en_US" className="bg-card text-foreground">
             English (US)
           </option>
-          <option value="es_DO" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">
+          <option value="es_DO" className="bg-card text-foreground">
             Español (DO)
           </option>
         </select>
       </div>
 
       <div className="w-full max-w-sm md:max-w-4xl animate-fade-in">
-        <Card className="overflow-hidden p-0 border-zinc-200 dark:border-zinc-800 shadow-2xl rounded-2xl">
+        <Card className="overflow-hidden p-0 border-border shadow-2xl rounded-2xl">
           <CardContent className="grid p-0 md:grid-cols-2">
             {/* Form Section */}
-            <div className="p-5 sm:p-6 md:p-8 flex flex-col justify-center bg-white dark:bg-zinc-900">
+            <div className="p-5 sm:p-6 md:p-8 flex flex-col justify-center bg-card">
               <div className="flex flex-col items-center justify-center mb-4 sm:mb-6 gap-3">
                 <img
                   src={logoUrl}
@@ -172,8 +172,7 @@ export function LoginPage() {
                 />
                 <div className="text-center">
                   <h1
-                    className="text-xl md:text-2xl font-bold tracking-tight mb-1"
-                    style={{ fontFamily: "var(--font-heading)" }}
+                    className="text-xl md:text-2xl font-bold tracking-tight mb-1 text-foreground font-heading"
                   >
                     {showOtpForm
                       ? i18n.language === "es_DO"
@@ -181,7 +180,7 @@ export function LoginPage() {
                         : "Account Verification"
                       : t("login.welcome")}
                   </h1>
-                  <p className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400">
+                  <p className="text-xs md:text-sm text-muted-foreground">
                     {showOtpForm
                       ? i18n.language === "es_DO"
                         ? "Ingresa el código OTP para continuar"
@@ -200,8 +199,8 @@ export function LoginPage() {
               )}
 
               {otpNotice && showOtpForm && (
-                <Alert className="mb-4 py-2 px-3 bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-900/20 dark:text-amber-200 dark:border-amber-900">
-                  <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <Alert className="mb-4 py-2 px-3 bg-secondary/10 text-secondary-foreground border-secondary/20">
+                  <AlertCircle className="h-4 w-4 text-secondary" />
                   <AlertTitle className="text-xs font-bold mb-0.5">
                     {i18n.language === "es_DO" ? "Acción Requerida" : "Action Required"}
                   </AlertTitle>
@@ -214,7 +213,7 @@ export function LoginPage() {
                   <div>
                     <label
                       htmlFor="login-otp"
-                      className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-2 text-center"
+                      className="block text-xs font-bold text-foreground mb-2 text-center"
                     >
                       {t("register.otpTitle")}
                     </label>
@@ -238,10 +237,10 @@ export function LoginPage() {
                   <Button
                     type="submit"
                     disabled={loading || otp.length !== 6}
-                    className="w-full bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 h-9 sm:h-10 rounded-lg text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-9 sm:h-10 rounded-lg text-sm font-bold transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer shadow-md"
                   >
                     {loading ? (
-                      <div className="w-4 h-4 border-2 border-white/30 dark:border-zinc-900/30 border-t-white dark:border-t-zinc-900 rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                     ) : i18n.language === "es_DO" ? (
                       "Verificar e Iniciar Sesión"
                     ) : (
@@ -256,7 +255,7 @@ export function LoginPage() {
                       setError("");
                       setOtpNotice("");
                     }}
-                    className="w-full text-center text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium transition-colors mt-2 cursor-pointer"
+                    className="w-full text-center text-xs text-muted-foreground hover:text-foreground font-medium transition-colors mt-2 cursor-pointer"
                   >
                     {i18n.language === "es_DO" ? "← Volver a iniciar sesión" : "← Back to Sign In"}
                   </button>
@@ -266,7 +265,7 @@ export function LoginPage() {
                   <div>
                     <label
                       htmlFor="login-email"
-                      className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1"
+                      className="block text-xs font-bold text-foreground mb-1"
                     >
                       {t("login.emailAddress")}
                     </label>
@@ -277,7 +276,7 @@ export function LoginPage() {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder={t("login.emailPlaceholder")}
                       required
-                      className="w-full h-9 sm:h-10 px-3 py-2 border-zinc-200 dark:border-zinc-800 rounded-lg text-sm bg-zinc-50 dark:bg-zinc-950! focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
+                      className="w-full h-9 sm:h-10 px-3 py-2 border-input rounded-lg text-sm bg-background focus-visible:ring-1 focus-visible:ring-ring transition-all placeholder:text-muted-foreground"
                     />
                   </div>
 
@@ -285,13 +284,13 @@ export function LoginPage() {
                     <div className="flex justify-between items-center mb-1">
                       <label
                         htmlFor="login-password"
-                        className="block text-xs font-bold text-zinc-700 dark:text-zinc-300"
+                        className="block text-xs font-bold text-foreground"
                       >
                         {t("login.password")}
                       </label>
                       <Link
                         to="/forgot-password"
-                        className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 hover:underline"
+                        className="text-[11px] font-semibold text-primary hover:underline"
                       >
                         {t("login.forgotPassword")}
                       </Link>
@@ -304,12 +303,12 @@ export function LoginPage() {
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder={t("login.enterPasswordPlaceholder")}
                         required
-                        className="w-full h-9 sm:h-10 px-3 py-2 pr-10 border-zinc-200 dark:border-zinc-800 rounded-lg text-sm bg-zinc-50 dark:bg-zinc-950 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
+                        className="w-full h-9 sm:h-10 px-3 py-2 pr-10 border-input rounded-lg text-sm bg-background focus-visible:ring-1 focus-visible:ring-ring transition-all placeholder:text-muted-foreground"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors cursor-pointer"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
@@ -322,11 +321,11 @@ export function LoginPage() {
                       id="remember"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
-                      className="rounded border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:ring-0 focus:ring-offset-0 bg-zinc-50 dark:bg-zinc-950 cursor-pointer"
+                      className="rounded border-input text-primary focus:ring-0 focus:ring-offset-0 bg-background cursor-pointer"
                     />
                     <label
                       htmlFor="remember"
-                      className="text-xs font-medium text-zinc-600 dark:text-zinc-400 cursor-pointer"
+                      className="text-xs font-medium text-muted-foreground cursor-pointer"
                     >
                       {t("login.rememberMe")}
                     </label>
@@ -335,10 +334,10 @@ export function LoginPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 h-9 sm:h-10 rounded-lg text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-9 sm:h-10 rounded-lg text-sm font-bold transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer shadow-md"
                   >
                     {loading ? (
-                      <div className="w-4 h-4 border-2 border-white/30 dark:border-zinc-900/30 border-t-white dark:border-t-zinc-900 rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                     ) : (
                       t("login.signIn")
                     )}
@@ -348,10 +347,10 @@ export function LoginPage() {
 
               <div className="relative my-4 sm:my-5">
                 <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-zinc-200 dark:border-zinc-800" />
+                  <span className="w-full border-t border-border" />
                 </div>
                 <div className="relative flex justify-center text-xs">
-                  <span className="bg-white dark:bg-zinc-900 px-3 text-zinc-500 dark:text-zinc-400 font-medium">
+                  <span className="bg-card px-3 text-muted-foreground font-medium">
                     {t("login.or") || "Or continue with"}
                   </span>
                 </div>
@@ -359,22 +358,22 @@ export function LoginPage() {
 
               <GoogleLoginButton onSuccess={handleGoogleSuccess} onError={handleGoogleError} text="signin_with" />
 
-              <p className="mt-4 sm:mt-6 text-center text-xs text-zinc-500 dark:text-zinc-400">
+              <p className="mt-4 sm:mt-6 text-center text-xs text-muted-foreground">
                 {t("login.dontHaveAccount")}{" "}
-                <Link to="/register" className="text-zinc-900 dark:text-zinc-100 font-bold hover:underline">
+                <Link to="/register" className="text-primary font-bold hover:underline">
                   {t("login.createAccount")}
                 </Link>
               </p>
             </div>
 
             {/* Image/Visual Section */}
-            <div className="relative hidden bg-zinc-900 md:flex flex-col items-center justify-center p-8 overflow-hidden">
+            <div className="relative hidden bg-muted md:flex flex-col items-center justify-center p-8 overflow-hidden">
               <img
                 src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070&auto=format&fit=crop"
                 alt="Workspace"
                 className="absolute inset-0 h-full w-full object-cover opacity-50 dark:opacity-40 grayscale-[0.3]"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-zinc-950/40 to-transparent mix-blend-multiply" />
+              <div className="absolute inset-0 bg-linear-to-t from-background/90 via-background/40 to-transparent mix-blend-multiply" />
             </div>
           </CardContent>
         </Card>
@@ -382,15 +381,15 @@ export function LoginPage() {
 
       {/* Account Verification Modal */}
       <AlertDialog open={showOtpForm} onOpenChange={setShowOtpForm}>
-        <AlertDialogContent className="max-w-sm p-6 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-2xl rounded-2xl">
+        <AlertDialogContent className="max-w-sm p-6 bg-card border-border shadow-2xl rounded-2xl">
           <AlertDialogHeader className="items-center text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 mb-2">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-secondary/10 text-secondary mb-2">
               <ShieldCheck className="h-6 w-6" />
             </div>
-            <AlertDialogTitle className="text-lg font-bold tracking-tight">
+            <AlertDialogTitle className="text-lg font-bold tracking-tight font-heading">
               {i18n.language === "es_DO" ? "Verificación de Cuenta" : "Account Verification"}
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 text-center">
+            <AlertDialogDescription className="text-xs text-muted-foreground mt-1 text-center">
               {otpNotice ||
                 (i18n.language === "es_DO"
                   ? `Ingresa el código OTP de 6 dígitos enviado a tu correo (${email}) para activar tu cuenta.`
@@ -438,10 +437,10 @@ export function LoginPage() {
               <Button
                 type="submit"
                 disabled={loading || otp.length !== 6}
-                className="w-1/2 sm:w-auto bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-bold hover:opacity-90 transition-opacity"
+                className="w-1/2 sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 font-bold transition-opacity"
               >
                 {loading ? (
-                  <div className="w-4 h-4 border-2 border-white/30 dark:border-zinc-900/30 border-t-white dark:border-t-zinc-900 rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                 ) : i18n.language === "es_DO" ? (
                   "Verificar"
                 ) : (
@@ -455,3 +454,5 @@ export function LoginPage() {
     </div>
   );
 }
+
+export default LoginPage;

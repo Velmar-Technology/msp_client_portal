@@ -55,16 +55,16 @@ export function PlanCard({
   return (
     <div
       onClick={() => onSelect(plan.id)}
-      className={`relative bg-zinc-50/50 dark:bg-zinc-950 dark:border-zinc-800 border rounded-lg p-3.5 sm:p-4 flex flex-col justify-between transition-all duration-200 cursor-pointer text-zinc-900 dark:text-zinc-50 shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:shadow-md ${
+      className={`relative bg-card border rounded-lg p-3.5 sm:p-4 flex flex-col justify-between transition-all duration-200 cursor-pointer text-foreground shadow-xs hover:shadow-md ${
         isSelected
-          ? "border-zinc-900 dark:border-sky-500 ring-1 ring-zinc-900 dark:ring-sky-500/50 bg-zinc-100/60 dark:bg-zinc-900/50"
-          : "border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700"
-      } ${isPlanDisabled ? "opacity-60 bg-zinc-100/40 border-dashed" : ""}`}
+          ? "border-primary ring-1 ring-primary bg-primary/5"
+          : "border-border hover:border-border/80"
+      } ${isPlanDisabled ? "opacity-60 bg-muted/40 border-dashed" : ""}`}
     >
       {/* Recommended Badge */}
       {plan.recommended && (
         <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 z-10">
-          <span className="bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border border-zinc-900 dark:border-zinc-100 shadow-sm">
+          <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border border-primary shadow-xs">
             {t("plans.recommended")}
           </span>
         </div>
@@ -74,14 +74,14 @@ export function PlanCard({
       <div>
         <div className="flex items-center justify-between gap-2 mb-1.5">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="inline-block px-1.5 py-0.5 border border-zinc-200 dark:border-zinc-800 rounded font-mono text-[9px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 bg-white/60 dark:bg-zinc-900/60">
+            <span className="inline-block px-1.5 py-0.5 border border-border rounded font-mono text-[9px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">
               {getTierLabel(plan.id)}
             </span>
-            <span className="inline-block px-1.5 py-0.5 border border-zinc-200 dark:border-zinc-800 rounded text-[9px] font-semibold tracking-wide text-zinc-500 dark:text-zinc-400 bg-white/60 dark:bg-zinc-900/60">
+            <span className="inline-block px-1.5 py-0.5 border border-border rounded text-[9px] font-semibold tracking-wide text-muted-foreground bg-muted/50">
               {t(clientTypeLabelKey)}
             </span>
             {isPlanDisabled && (
-              <span className="bg-red-500/10 text-red-700 border border-red-500/20 dark:text-red-400 dark:border-red-500/20 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">
+              <span className="bg-destructive/10 text-destructive border border-destructive/20 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">
                 {t("plans.disabledStatus") || "Disabled"}
               </span>
             )}
@@ -89,7 +89,7 @@ export function PlanCard({
 
           <div className="flex items-center gap-1.5">
             {isCurrentlyActive && (
-              <span className="bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/20 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider animate-pulse">
+              <span className="bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider animate-pulse">
                 {t("plans.activeStatus") || "Active"}
               </span>
             )}
@@ -102,7 +102,7 @@ export function PlanCard({
                     e.stopPropagation();
                     onEdit(plan);
                   }}
-                  className="bg-white hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+                  className="bg-card hover:bg-muted text-foreground border border-border px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer flex items-center gap-1 shrink-0"
                 >
                   <Edit className="h-3 w-3" />
                   {t("plans.editAction") || "Edit"}
@@ -114,7 +114,7 @@ export function PlanCard({
                       e.stopPropagation();
                       onDelete(plan.id);
                     }}
-                    className="bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/60 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+                    className="bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer flex items-center gap-1 shrink-0"
                     title={t("plans.softDelete") || "Soft Delete"}
                   >
                     <Trash2 className="h-3 w-3" />
@@ -127,42 +127,42 @@ export function PlanCard({
         </div>
 
         {/* Title & Description */}
-        <h3 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-zinc-50 tracking-tight leading-snug">
+        <h3 className="text-sm sm:text-base font-bold text-foreground font-heading tracking-tight leading-snug">
           {getPlanName(plan.name)}
         </h3>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 mb-2.5 leading-normal line-clamp-2">
+        <p className="text-xs text-muted-foreground mt-0.5 mb-2.5 leading-normal line-clamp-2">
           {getPlanDescription(plan.description)}
         </p>
 
         {/* Price Display */}
         <div className="mb-3">
           <div className="flex items-baseline gap-1">
-            <span className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 font-mono">
+            <span className="text-xl sm:text-2xl font-bold tracking-tight text-foreground font-mono">
               ${Number.isInteger(priceVal) ? priceVal : priceVal.toFixed(2)}
             </span>
-            <span className="text-xs text-zinc-400 dark:text-zinc-500 font-medium">{t("plans.perMonth")}</span>
+            <span className="text-xs text-muted-foreground font-medium">{t("plans.perMonth")}</span>
           </div>
           {billingCycle === "annual" && (
-            <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium mt-0.5">
+            <p className="text-[10px] text-muted-foreground font-medium mt-0.5">
               {t("plans.billedAnnually", { price: (plan.price * 12 * 0.8).toFixed(2) })}
             </p>
           )}
         </div>
 
         {/* Features List */}
-        <div className="space-y-1.5 pt-1 border-t border-zinc-100 dark:border-zinc-800/60">
+        <div className="space-y-1.5 pt-1 border-t border-border">
           {plan.features.map((feature, i) => (
             <div key={i} className="flex items-start gap-1.5">
               {feature.included ? (
-                <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <Check className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
               ) : (
-                <X className="h-3.5 w-3.5 text-zinc-300 dark:text-zinc-700 shrink-0 mt-0.5" />
+                <X className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0 mt-0.5" />
               )}
               <span
                 className={`text-[11px] sm:text-xs leading-normal ${
                   feature.included
-                    ? "text-zinc-700 dark:text-zinc-300 font-normal"
-                    : "text-zinc-400 dark:text-zinc-600 font-normal line-through opacity-75"
+                    ? "text-foreground font-normal"
+                    : "text-muted-foreground font-normal line-through opacity-75"
                 }`}
               >
                 {getFeatureText(feature)}
@@ -173,31 +173,31 @@ export function PlanCard({
       </div>
 
       {/* Bottom Actions Area */}
-      <div className="mt-3 pt-2 border-t border-zinc-100 dark:border-zinc-800/60 space-y-2">
+      <div className="mt-3 pt-2 border-t border-border space-y-2">
         {/* Equipment Stepper */}
-        <div className="flex items-center justify-between bg-zinc-100/60 dark:bg-zinc-800/40 rounded border border-zinc-200/60 dark:border-zinc-800/60 px-2.5 py-1">
-          <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400">
+        <div className="flex items-center justify-between bg-muted/40 rounded border border-border px-2.5 py-1">
+          <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
             {t("plans.equipmentCount")}
           </span>
-          <div className="flex items-center gap-1.5 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-700/80 rounded px-1 py-0.5">
+          <div className="flex items-center gap-1.5 bg-card border border-border rounded px-1 py-0.5">
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onAdjustEquipmentCount(plan.id, -1);
               }}
-              className="w-4.5 h-4.5 rounded flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-xs font-semibold cursor-pointer text-zinc-700 dark:text-zinc-300"
+              className="w-4.5 h-4.5 rounded flex items-center justify-center hover:bg-muted transition-colors text-xs font-semibold cursor-pointer text-foreground"
             >
               −
             </button>
-            <span className="w-5 text-center text-xs font-semibold font-mono">{equipmentCount}</span>
+            <span className="w-5 text-center text-xs font-semibold font-mono text-foreground">{equipmentCount}</span>
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onAdjustEquipmentCount(plan.id, 1);
               }}
-              className="w-4.5 h-4.5 rounded flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-xs font-semibold cursor-pointer text-zinc-700 dark:text-zinc-300"
+              className="w-4.5 h-4.5 rounded flex items-center justify-center hover:bg-muted transition-colors text-xs font-semibold cursor-pointer text-foreground"
             >
               +
             </button>
@@ -207,3 +207,5 @@ export function PlanCard({
     </div>
   );
 }
+
+export default PlanCard;

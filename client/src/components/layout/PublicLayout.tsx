@@ -28,8 +28,7 @@ export function PublicLayout() {
             />
             <div className="flex flex-col">
               <span
-                className="text-base sm:text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-100 leading-tight"
-                style={{ fontFamily: "var(--font-heading)" }}
+                className="text-base sm:text-lg font-bold tracking-tight text-foreground leading-tight font-heading"
               >
                 {t("home.title")}
               </span>

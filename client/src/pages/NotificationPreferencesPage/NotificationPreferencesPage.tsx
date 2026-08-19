@@ -105,15 +105,15 @@ const ToggleSwitch = ({
     disabled={locked && enabled}
     aria-label={ariaLabel}
     className={`
-      relative h-4 w-7 p-0 rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:ring-offset-2 dark:focus:ring-offset-zinc-950
-      ${enabled ? "bg-zinc-900 dark:bg-zinc-100" : "bg-zinc-200 dark:bg-zinc-700"}
+      relative h-4 w-7 p-0 rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-1 focus:ring-ring
+      ${enabled ? "bg-primary" : "bg-muted"}
       ${locked && enabled ? "cursor-not-allowed opacity-50" : ""}
     `}
   >
     <span
       className={`
-        inline-block h-3 w-3 transform rounded-full transition duration-200 ease-in-out shadow-sm
-        ${enabled ? "translate-x-1.5 bg-white dark:bg-zinc-900" : "-translate-x-1.5 bg-white dark:bg-zinc-300"}
+        inline-block h-3 w-3 transform rounded-full transition duration-200 ease-in-out shadow-xs
+        ${enabled ? "translate-x-1.5 bg-primary-foreground" : "-translate-x-1.5 bg-muted-foreground"}
       `}
     />
   </Button>
@@ -133,16 +133,16 @@ const PreferenceRow = ({
   const { t } = useTranslation();
   const EventIcon = event.icon;
   return (
-    <div className="grid grid-cols-[1fr_repeat(3,60px)] sm:grid-cols-[1fr_repeat(3,80px)] items-center gap-4 border-b border-zinc-100 dark:border-zinc-800 px-4 py-2.5 last:border-0 hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors">
+    <div className="grid grid-cols-[1fr_repeat(3,60px)] sm:grid-cols-[1fr_repeat(3,80px)] items-center gap-4 border-b border-border px-4 py-2.5 last:border-0 hover:bg-muted/30 transition-colors">
       <div className="flex min-w-0 items-center gap-3">
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-sm">
-          <EventIcon className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-400" />
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-border bg-card shadow-xs">
+          <EventIcon className="h-3.5 w-3.5 text-muted-foreground" />
         </div>
         <div className="flex min-w-0 flex-col">
-          <span className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
+          <span className="truncate text-sm font-medium text-foreground">
             {t(`notificationPreferences.events.${event.key}.label`, event.label)}
           </span>
-          <span className="truncate text-xs text-zinc-500 dark:text-zinc-400">
+          <span className="truncate text-xs text-muted-foreground">
             {t(`notificationPreferences.events.${event.key}.description`, event.description)}
           </span>
         </div>
@@ -176,15 +176,15 @@ const PreferenceMatrix = ({
 }) => {
   const { t } = useTranslation();
   return (
-    <div className="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm">
-      <div className="grid grid-cols-[1fr_repeat(3,60px)] sm:grid-cols-[1fr_repeat(3,80px)] items-center gap-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 px-4 py-2">
-        <div className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+    <div className="overflow-hidden rounded-lg border border-border bg-card shadow-xs">
+      <div className="grid grid-cols-[1fr_repeat(3,60px)] sm:grid-cols-[1fr_repeat(3,80px)] items-center gap-4 border-b border-border bg-muted/40 px-4 py-2">
+        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {t("notificationPreferences.eventType", "Event Type")}
         </div>
         {CHANNEL_DEFINITIONS.map((channel) => (
           <div key={channel.key} className="flex flex-col items-center gap-1">
-            <channel.icon className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+            <channel.icon className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               {t(`notificationPreferences.channels.${channel.key}`, channel.label)}
             </span>
           </div>
@@ -201,9 +201,9 @@ const PreferenceMatrix = ({
           />
         ))}
       </div>
-      <div className="flex items-center gap-2 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 px-4 py-2">
-        <Lock className="h-3 w-3 text-zinc-400 dark:text-zinc-500" />
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">
+      <div className="flex items-center gap-2 border-t border-border bg-muted/30 px-4 py-2">
+        <Lock className="h-3 w-3 text-muted-foreground" />
+        <span className="text-xs text-muted-foreground">
           {t("notificationPreferences.lockedTogglesInfo", "Locked toggles cannot be disabled.")}
         </span>
       </div>
@@ -214,15 +214,15 @@ const PreferenceMatrix = ({
 const HeaderInfo = () => {
   const { t } = useTranslation();
   return (
-    <div className="mb-6 flex items-start gap-3 rounded-lg border border-zinc-200 dark:border-zinc-900 bg-white dark:bg-zinc-950 p-3 shadow-sm">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50">
-        <Bell className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
+    <div className="mb-6 flex items-start gap-3 rounded-lg border border-border bg-card p-3 shadow-xs">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-border bg-muted">
+        <Bell className="h-4 w-4 text-muted-foreground" />
       </div>
       <div className="flex flex-col gap-0.5">
-        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+        <h2 className="text-sm font-semibold text-foreground font-heading">
           {t("notificationPreferences.deliveryChannels", "Delivery Channels")}
         </h2>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+        <p className="text-xs text-muted-foreground">
           {t(
             "notificationPreferences.deliveryChannelsDesc",
             "Control which channels receive notifications for each event type. Critical system events always deliver in-app notifications."
@@ -240,17 +240,17 @@ const StatusBanner = ({ message, type }: { message: string; type: "success" | "e
   return (
     <Alert
       variant={type === "success" ? "default" : "destructive"}
-      className={`mb-6 px-3 py-2 ${type === "success" ? "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900" : ""}`}
+      className={`mb-6 px-3 py-2 ${type === "success" ? "border-border bg-card" : ""}`}
     >
       {type === "success" ? (
-        <CheckCircle2 className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
+        <CheckCircle2 className="h-4 w-4 text-primary" />
       ) : (
         <AlertCircle className="h-4 w-4" />
       )}
-      <AlertTitle className="text-sm font-medium dark:text-zinc-100">
+      <AlertTitle className="text-sm font-medium">
         {type === "success" ? t("notificationPreferences.saved", "Saved") : t("notificationPreferences.error", "Error")}
       </AlertTitle>
-      <AlertDescription className="text-xs dark:text-zinc-300">{t(message, message)}</AlertDescription>
+      <AlertDescription className="text-xs">{t(message, message)}</AlertDescription>
     </Alert>
   );
 };
@@ -263,14 +263,14 @@ const ActionFooter = ({
   hasChanges: boolean;
   isSaving: boolean;
   onSave: () => void;
-}) => {
+  }) => {
   const { t } = useTranslation();
   return (
     <div className="mt-4 flex items-center justify-between">
       <div className="flex items-center">
         {hasChanges && (
-          <span className="flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400">
-            <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-900 dark:bg-zinc-100" />
+          <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
             {t("notificationPreferences.unsavedChanges", "Unsaved changes")}
           </span>
         )}
@@ -306,8 +306,8 @@ export function NotificationPreferencesPage() {
         title={t("notificationPreferences.title", "Notifications & Preferences")}
         subtitle={t("notificationPreferences.subtitle", "Manage delivery channels and view alert history")}
       >
-        <div className="flex min-h-[400px] items-center justify-center">
-          <Loader2 className="h-6 w-6 animate-spin text-zinc-400 dark:text-zinc-600" />
+        <div className="flex min-h-100 items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       </Page>
     );
@@ -330,7 +330,7 @@ export function NotificationPreferencesPage() {
             <span>{t("notificationPreferences.tabHistory", "Notification History")}</span>
             {unreadCount > 0 && (
               <span
-                className="ml-1 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-1.5 py-0.2 text-[10px] font-semibold"
+                className="ml-1 rounded-full bg-primary text-primary-foreground px-1.5 py-0.2 text-[10px] font-semibold"
                 title={t("notifications.unreadCount", { count: unreadCount, defaultValue: "{{count}} unread" })}
                 aria-label={t("notifications.unreadCount", { count: unreadCount, defaultValue: "{{count}} unread" })}
               >
@@ -358,3 +358,5 @@ export function NotificationPreferencesPage() {
     </Page>
   );
 }
+
+export default NotificationPreferencesPage;

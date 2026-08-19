@@ -68,11 +68,11 @@ export function CheckoutSheet(props: CheckoutSheetProps) {
     const alreadySubscribed = activeSubscriptions.some((sub) => sub.plan === currentPlan.id && sub.status === "ACTIVE");
     if (alreadySubscribed) {
       return (
-        <div className="rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/15 p-3.5 text-center text-xs space-y-1.5 my-4">
-          <p className="font-semibold text-amber-800 dark:text-amber-400">
+        <div className="rounded-lg border border-border bg-secondary/15 p-3.5 text-center text-xs space-y-1.5 my-4">
+          <p className="font-semibold text-secondary-foreground">
             {t("plans.activePlanAlreadyRegistered") || "Active Plan Already Registered"}
           </p>
-          <p className="text-zinc-600 dark:text-zinc-400 leading-normal">
+          <p className="text-muted-foreground leading-normal">
             {t("plans.alreadySubscribedDesc", { name: getPlanName(currentPlan.name) })}
           </p>
         </div>
@@ -82,18 +82,18 @@ export function CheckoutSheet(props: CheckoutSheetProps) {
 
   return (
     <div className="space-y-3 text-center py-2">
-      <p className="text-xs text-zinc-500 leading-relaxed">
+      <p className="text-xs text-muted-foreground leading-relaxed">
         {t("plans.readyToActivate", { name: getPlanName(currentPlan.name) })}
       </p>
       <Sheet>
         <SheetTrigger asChild>
-          <button className="w-full bg-zinc-900 dark:bg-zinc-100 hover:opacity-90 text-white dark:text-zinc-900 py-2 rounded text-xs font-semibold transition-opacity flex items-center justify-center gap-2 cursor-pointer shadow-sm">
+          <button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2 rounded text-xs font-semibold transition-opacity flex items-center justify-center gap-2 cursor-pointer shadow-xs">
             {t("plans.proceedToCheckout", { total: total.toFixed(2) })}
           </button>
         </SheetTrigger>
-        <SheetContent className="w-[380px] p-4 sm:w-[440px] overflow-y-auto bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 border-l border-zinc-200 dark:border-zinc-800">
-          <SheetHeader className="pb-3 border-b border-zinc-200 dark:border-zinc-800">
-            <SheetTitle className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
+        <SheetContent className="w-95 p-4 sm:w-110 overflow-y-auto bg-card text-foreground border-l border-border">
+          <SheetHeader className="pb-3 border-b border-border">
+            <SheetTitle className="text-sm font-bold text-foreground font-heading">
               {t("plans.orderSummary")}
             </SheetTitle>
           </SheetHeader>
@@ -108,7 +108,7 @@ export function CheckoutSheet(props: CheckoutSheetProps) {
               total={total}
             />
 
-            <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
+            <div className="border-t border-border pt-4">
               <PaymentFields
                 isAdmin={isAdmin}
                 acceptedTos={acceptedTos}
@@ -122,11 +122,11 @@ export function CheckoutSheet(props: CheckoutSheetProps) {
               />
             </div>
 
-            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-950/20 p-3 flex items-start gap-2.5">
-              <Shield className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+            <div className="rounded-lg border border-border bg-muted/40 p-3 flex items-start gap-2.5">
+              <Shield className="h-4 w-4 text-primary shrink-0 mt-0.5" />
               <div className="text-left">
-                <p className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100">{t("plans.encryptedTx")}</p>
-                <p className="text-[10px] text-zinc-500 mt-0.5 leading-normal">{t("plans.militaryGradeSecurity")}</p>
+                <p className="text-[11px] font-semibold text-foreground">{t("plans.encryptedTx")}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5 leading-normal">{t("plans.militaryGradeSecurity")}</p>
               </div>
             </div>
           </div>
@@ -135,3 +135,5 @@ export function CheckoutSheet(props: CheckoutSheetProps) {
     </div>
   );
 }
+
+export default CheckoutSheet;

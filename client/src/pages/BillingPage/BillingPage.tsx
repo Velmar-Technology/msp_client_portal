@@ -22,10 +22,10 @@ import type { ColumnDef } from "@tanstack/react-table";
 /* --- Sub-Components --- */
 
 const statusColor: Record<string, string> = {
-  PENDING: "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border-zinc-200 dark:border-zinc-700",
-  PAID: "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800",
-  OVERDUE: "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800",
-  CANCELLED: "bg-zinc-50 dark:bg-zinc-900/30 text-zinc-500 dark:text-zinc-500 border-zinc-200 dark:border-zinc-800",
+  PENDING: "bg-secondary text-secondary-foreground border-border",
+  PAID: "bg-primary/10 text-primary border-primary/20",
+  OVERDUE: "bg-destructive/10 text-destructive border-destructive/20",
+  CANCELLED: "bg-muted text-muted-foreground border-border",
 };
 
 const PayModal = ({
@@ -202,9 +202,9 @@ const PayModal = ({
 
               <div
                 id="paypal-invoice-pay-container"
-                className="my-2 min-h-[120px] flex items-center justify-center bg-zinc-50/50 dark:bg-zinc-900/30 rounded-lg p-3 border border-zinc-200 dark:border-zinc-800 border-dashed"
+                className="my-2 min-h-30 flex items-center justify-center bg-muted/20 rounded-lg p-3 border border-border border-dashed"
               >
-                <span className="text-xs text-zinc-400">
+                <span className="text-xs text-muted-foreground">
                   {t("plans.loadingPayPalCheckout") || "Loading PayPal Checkout..."}
                 </span>
               </div>

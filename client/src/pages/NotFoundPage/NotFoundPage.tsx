@@ -14,7 +14,6 @@ export function NotFoundPage() {
         <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-zinc-400/10 dark:bg-zinc-800/10 rounded-full blur-3xl animate-pulse pointer-events-none" />
         <div
           className="absolute bottom-1/4 right-1/4 w-72 h-72 bg-zinc-400/10 dark:bg-zinc-800/10 rounded-full blur-3xl animate-pulse pointer-events-none"
-          style={{ animationDelay: "2s" }}
         />
 
         <div className="relative z-10 w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/80 rounded-2xl shadow-xl p-8 md:p-12 text-center transition-all duration-300">
@@ -28,8 +27,7 @@ export function NotFoundPage() {
 
           {/* 404 Giant Text */}
           <h1
-            className="text-8xl font-black tracking-tighter text-zinc-900 dark:text-zinc-50 select-none animate-bounce"
-            style={{ animationDuration: "4s", fontFamily: "var(--font-heading)" }}
+            className="text-8xl font-black font-heading tracking-tighter text-foreground select-none"
           >
             404
           </h1>

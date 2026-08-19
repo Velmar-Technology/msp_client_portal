@@ -30,7 +30,7 @@ interface SidebarBrandProps {
 
 export function SidebarBrand({ logo, portalTitle, infraTitle }: SidebarBrandProps) {
   return (
-    <SidebarHeader className="border-b border-zinc-200 dark:border-zinc-800 px-3.5 py-2.5 bg-white dark:bg-zinc-950">
+    <SidebarHeader className="border-b border-sidebar-border px-3.5 py-2.5 bg-sidebar">
       <div className="flex items-center gap-2.5">
         <img
           src={logo}
@@ -38,13 +38,10 @@ export function SidebarBrand({ logo, portalTitle, infraTitle }: SidebarBrandProp
           className="h-5.5 w-auto max-w-full shrink-0 object-contain dark:brightness-110"
         />
         <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-          <h1
-            className="text-xs font-bold text-zinc-900 dark:text-zinc-100 leading-none"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
+          <h1 className="text-xs font-bold text-sidebar-foreground font-heading leading-none">
             {portalTitle}
           </h1>
-          <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-medium mt-0.5 uppercase tracking-wider">
+          <span className="text-[9px] text-muted-foreground font-medium mt-0.5 uppercase tracking-wider">
             {infraTitle}
           </span>
         </div>
@@ -69,20 +66,20 @@ export function ActiveSubCard({ sub, renewalLabel, isSpanish }: ActiveSubCardPro
   }, [sub.renewal_date, isSpanish]);
 
   return (
-    <div className="mx-2 my-2 p-2.5 rounded-sm border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 shadow-sm group-data-[collapsible=icon]:hidden transition-colors">
+    <div className="mx-2 my-2 p-2.5 rounded-sm border border-sidebar-border bg-sidebar-accent/50 shadow-xs group-data-[collapsible=icon]:hidden transition-colors">
       <div className="flex items-center justify-between gap-2 mb-1">
-        <span className="text-[9px] font-mono font-bold text-zinc-900 dark:text-zinc-100 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-1 rounded-sm uppercase">
+        <span className="text-[9px] font-mono font-bold text-sidebar-foreground bg-sidebar-accent border border-sidebar-border px-1 rounded-sm uppercase">
           {sub.plan}
         </span>
         <div className="flex items-center gap-1">
-          <span className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-pulse" />
-          <span className="text-[8px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+          <span className="h-1.5 w-1.5 bg-primary rounded-full animate-pulse" />
+          <span className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">
             Active
           </span>
         </div>
       </div>
-      <p className="text-[11px] font-medium text-zinc-800 dark:text-zinc-200 truncate">{sub.service_name}</p>
-      <p className="text-[9px] text-zinc-500 dark:text-zinc-400 mt-0.5 font-mono">
+      <p className="text-[11px] font-medium text-sidebar-foreground truncate">{sub.service_name}</p>
+      <p className="text-[9px] text-muted-foreground mt-0.5 font-mono">
         {renewalLabel}: {formattedDate}
       </p>
     </div>
@@ -114,15 +111,15 @@ export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive }: 
                   <SidebarMenuButton
                     tooltip={translatedLabel}
                     isActive={isGroupActive}
-                    className="h-7 text-xs py-1 px-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 data-[active=true]:text-zinc-900 dark:data-[active=true]:text-zinc-100 data-[active=true]:font-semibold transition-colors"
+                    className="h-7 text-xs py-1 px-2 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:text-sidebar-foreground data-[active=true]:font-semibold transition-colors"
                   >
                     <item.icon className="h-3.5 w-3.5 shrink-0" />
                     <span className="group-data-[collapsible=icon]:hidden">{translatedLabel}</span>
-                    <ChevronRight className="ml-auto h-3 w-3 text-zinc-400 dark:text-zinc-500 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden" />
+                    <ChevronRight className="ml-auto h-3 w-3 text-muted-foreground transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden" />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  <SidebarMenuSub className="ml-3 border-l border-zinc-200 dark:border-zinc-800 pl-1.5 py-0.5 space-y-0.5">
+                  <SidebarMenuSub className="ml-3 border-l border-sidebar-border pl-1.5 py-0.5 space-y-0.5">
                     {item.items.map((sub) => {
                       const isSubActive = checkIsActive(sub.to);
                       return (
@@ -130,7 +127,7 @@ export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive }: 
                           <SidebarMenuSubButton
                             asChild
                             isActive={isSubActive}
-                            className="h-6 text-[11px] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 data-[active=true]:text-zinc-900 dark:data-[active=true]:text-zinc-100 data-[active=true]:font-medium transition-colors"
+                            className="h-6 text-[11px] text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium transition-colors"
                           >
                             <NavLink to={sub.to} className="w-full truncate">
                               {t(`nav.${sub.labelKey}`)}
@@ -154,7 +151,7 @@ export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive }: 
               asChild
               isActive={isActive}
               tooltip={translatedLabel}
-              className="h-7 text-xs py-1 px-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 data-[active=true]:text-zinc-900 dark:data-[active=true]:text-zinc-100 data-[active=true]:font-semibold transition-colors"
+              className="h-7 text-xs py-1 px-2 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:text-sidebar-foreground data-[active=true]:font-semibold transition-colors"
             >
               <NavLink to={item.to} className="flex items-center gap-2">
                 <item.icon className="h-3.5 w-3.5 shrink-0" />
@@ -179,12 +176,12 @@ export function AppSidebar() {
   const appVersion = import.meta.env.VITE_APP_VERSION as string | undefined;
 
   return (
-    <ShadcnSidebar className="border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+    <ShadcnSidebar className="border-r border-sidebar-border bg-sidebar">
       {/* Header section */}
       <SidebarBrand logo={logoUrl} portalTitle={t("topNav.portal")} infraTitle={t("nav.infrastructure")} />
 
       {/* Navigation Content */}
-      <SidebarContent className="py-1 bg-white dark:bg-zinc-950">
+      <SidebarContent className="py-1 bg-sidebar">
         <SidebarGroup className="p-0">
           <SidebarGroupContent>
             <SidebarNavList navItems={navItems} checkIsActive={checkIsActive} checkIsGroupActive={checkIsGroupActive} />
@@ -193,7 +190,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       {/* Footer support item */}
-      <SidebarFooter className="border-t border-zinc-200 dark:border-zinc-800 p-1.5 bg-white dark:bg-zinc-950">
+      <SidebarFooter className="border-t border-sidebar-border p-1.5 bg-sidebar">
         {user?.role === "CLIENT" && activeSubscription && !isPublicLegalPage && (
           <ActiveSubCard sub={activeSubscription} renewalLabel={t("dashboard.tableRenewal")} isSpanish={isSpanish} />
         )}
@@ -204,7 +201,7 @@ export function AppSidebar() {
                 asChild
                 isActive={checkIsActive("/help")}
                 tooltip={t("nav.help")}
-                className="h-7 text-xs py-1 px-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 data-[active=true]:text-zinc-900 dark:data-[active=true]:text-zinc-100 transition-colors"
+                className="h-7 text-xs py-1 px-2 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:text-sidebar-foreground transition-colors"
               >
                 <NavLink to="/help" className="flex items-center gap-2">
                   <HelpCircle className="h-3.5 w-3.5 shrink-0" />
@@ -215,7 +212,7 @@ export function AppSidebar() {
           </SidebarMenu>
         )}
         {appVersion && (
-          <div className="group-data-[collapsible=icon]:hidden px-3 pb-1 pt-0.5 text-[9px] font-medium text-zinc-400 dark:text-zinc-500">
+          <div className="group-data-[collapsible=icon]:hidden px-3 pb-1 pt-0.5 text-[9px] font-medium text-muted-foreground">
             v{appVersion}
           </div>
         )}

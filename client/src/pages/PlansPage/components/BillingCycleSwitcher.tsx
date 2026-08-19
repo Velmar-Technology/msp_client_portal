@@ -12,14 +12,14 @@ export function BillingCycleSwitcher({
   const { t } = useTranslation();
 
   return (
-    <div className="bg-zinc-150/70 dark:bg-zinc-800/60 border border-zinc-200/50 dark:border-zinc-700/50 p-0.5 rounded-md flex items-center gap-0.5 w-fit shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
+    <div className="bg-muted border border-border p-0.5 rounded-md flex items-center gap-0.5 w-fit shadow-xs">
       <button
         type="button"
         onClick={() => setBillingCycle("monthly")}
-        className={`px-3 py-1 rounded-sm text-xs font-semibold transition-all cursor-pointer ${
+        className={`px-3 py-1 rounded-xs text-xs font-semibold transition-all cursor-pointer ${
           billingCycle === "monthly"
-            ? "bg-white dark:bg-zinc-950 text-zinc-950 dark:text-zinc-50 border border-zinc-200/40 dark:border-zinc-850/60 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
-            : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-850 dark:hover:text-zinc-200 border border-transparent"
+            ? "bg-card text-foreground border border-border shadow-xs"
+            : "text-muted-foreground hover:text-foreground border border-transparent"
         }`}
       >
         {t("plans.monthlyButtonLabel")}
@@ -27,18 +27,18 @@ export function BillingCycleSwitcher({
       <button
         type="button"
         onClick={() => setBillingCycle("annual")}
-        className={`px-3 py-1 rounded-sm text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+        className={`px-3 py-1 rounded-xs text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
           billingCycle === "annual"
-            ? "bg-white dark:bg-zinc-950 text-zinc-950 dark:text-zinc-50 border border-zinc-200/40 dark:border-zinc-850/60 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
-            : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-850 dark:hover:text-zinc-200 border border-transparent"
+            ? "bg-card text-foreground border border-border shadow-xs"
+            : "text-muted-foreground hover:text-foreground border border-transparent"
         }`}
       >
         {t("plans.annualButtonLabel")}
         <span
           className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${
             billingCycle === "annual" 
-              ? "bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950" 
-              : "bg-zinc-200 text-zinc-650 dark:bg-zinc-750 dark:text-zinc-350"
+              ? "bg-primary text-primary-foreground" 
+              : "bg-muted-foreground/20 text-muted-foreground"
           }`}
         >
           {t("plans.saveLabel")} 20%
@@ -47,3 +47,5 @@ export function BillingCycleSwitcher({
     </div>
   );
 }
+
+export default BillingCycleSwitcher;
