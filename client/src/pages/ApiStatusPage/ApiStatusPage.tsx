@@ -195,9 +195,7 @@ export function ApiStatusPage() {
     () => [
       {
         accessorKey: "name",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title={t("apiStatus.tableServiceName")} />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("apiStatus.tableServiceName")} />,
         cell: ({ row }) => {
           const service = row.original;
           return (
@@ -210,9 +208,7 @@ export function ApiStatusPage() {
       },
       {
         accessorKey: "category",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title={t("apiStatus.tableCategory")} />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("apiStatus.tableCategory")} />,
         cell: ({ row }) => (
           <Badge
             variant="secondary"
@@ -224,27 +220,19 @@ export function ApiStatusPage() {
       },
       {
         accessorKey: "endpoint",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title={t("apiStatus.tableEndpoint")} />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("apiStatus.tableEndpoint")} />,
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] text-zinc-600 dark:text-zinc-400">
-            {row.original.endpoint}
-          </span>
+          <span className="font-mono text-[11px] text-zinc-600 dark:text-zinc-400">{row.original.endpoint}</span>
         ),
       },
       {
         accessorKey: "status",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title={t("apiStatus.tableStatus")} />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("apiStatus.tableStatus")} />,
         cell: ({ row }) => getStatusBadge(row.original.status),
       },
       {
         accessorKey: "latencyMs",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title={t("apiStatus.tableLatency")} />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("apiStatus.tableLatency")} />,
         cell: ({ row }) => {
           const latencyMs = row.original.latencyMs;
           return (
@@ -254,8 +242,8 @@ export function ApiStatusPage() {
                 latencyMs < 50
                   ? "text-emerald-600 dark:text-emerald-400"
                   : latencyMs < 200
-                  ? "text-amber-600 dark:text-amber-400"
-                  : "text-red-600 dark:text-red-400"
+                    ? "text-amber-600 dark:text-amber-400"
+                    : "text-red-600 dark:text-red-400",
               )}
             >
               {latencyMs} {t("apiStatus.unitMs")}
@@ -265,9 +253,7 @@ export function ApiStatusPage() {
       },
       {
         accessorKey: "uptimePercentage",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title={t("apiStatus.tableUptime")} />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("apiStatus.tableUptime")} />,
         cell: ({ row }) => (
           <span className="font-mono text-xs text-zinc-700 dark:text-zinc-300">
             {row.original.uptimePercentage}
@@ -277,9 +263,7 @@ export function ApiStatusPage() {
       },
       {
         accessorKey: "message",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title={t("apiStatus.tableMessage")} />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("apiStatus.tableMessage")} />,
         cell: ({ row }) => {
           const message = row.original.message;
           if (!message) return t("apiStatus.dash");
@@ -298,7 +282,7 @@ export function ApiStatusPage() {
         },
       },
     ],
-    [t, isSpanish]
+    [t, isSpanish],
   );
 
   // 2. Column Definitions for Environment Variables Table
@@ -306,9 +290,7 @@ export function ApiStatusPage() {
     () => [
       {
         accessorKey: "key",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title={t("apiStatus.tableEnvKey")} />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("apiStatus.tableEnvKey")} />,
         cell: ({ row }) => {
           const item = row.original;
           return (
@@ -325,9 +307,7 @@ export function ApiStatusPage() {
       },
       {
         accessorKey: "category",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title={t("apiStatus.tableEnvCategory")} />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("apiStatus.tableEnvCategory")} />,
         cell: ({ row }) => (
           <Badge
             variant="secondary"
@@ -339,16 +319,12 @@ export function ApiStatusPage() {
       },
       {
         accessorKey: "status",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title={t("apiStatus.tableEnvStatus")} />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("apiStatus.tableEnvStatus")} />,
         cell: ({ row }) => getEnvStatusBadge(row.original.status),
       },
       {
         accessorKey: "valueDisplay",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title={t("apiStatus.tableEnvValue")} />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("apiStatus.tableEnvValue")} />,
         cell: ({ row }) => {
           const item = row.original;
           return (
@@ -358,7 +334,7 @@ export function ApiStatusPage() {
                   "px-2 py-0.5 rounded font-mono",
                   item.isSecret
                     ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20"
-                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200"
+                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200",
                 )}
               >
                 {item.valueDisplay}
@@ -369,9 +345,7 @@ export function ApiStatusPage() {
                     <TooltipTrigger asChild>
                       <Shield className="h-3.5 w-3.5 text-amber-500 cursor-help opacity-80" />
                     </TooltipTrigger>
-                    <TooltipContent className="text-xs">
-                      {t("apiStatus.secretMaskedTooltip")}
-                    </TooltipContent>
+                    <TooltipContent className="text-xs">{t("apiStatus.secretMaskedTooltip")}</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               ) : (
@@ -380,9 +354,7 @@ export function ApiStatusPage() {
                     <TooltipTrigger asChild>
                       <Info className="h-3.5 w-3.5 text-zinc-400 cursor-help opacity-70" />
                     </TooltipTrigger>
-                    <TooltipContent className="text-xs">
-                      {t("apiStatus.publicValueTooltip")}
-                    </TooltipContent>
+                    <TooltipContent className="text-xs">{t("apiStatus.publicValueTooltip")}</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               )}
@@ -392,17 +364,13 @@ export function ApiStatusPage() {
       },
       {
         accessorKey: "description",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title={t("apiStatus.tableEnvDescription")} />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("apiStatus.tableEnvDescription")} />,
         cell: ({ row }) => (
-          <span className="text-xs text-zinc-500 dark:text-zinc-400 max-w-sm block">
-            {row.original.description}
-          </span>
+          <span className="text-xs text-zinc-500 dark:text-zinc-400 max-w-sm block">{row.original.description}</span>
         ),
       },
     ],
-    [t]
+    [t],
   );
 
   const overallStatus = data?.overallStatus || "OPERATIONAL";
@@ -442,85 +410,9 @@ export function ApiStatusPage() {
       }
     >
       <div className="space-y-6">
-        {/* Overall System Health Status Banner */}
-        <div
-          className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all shadow-xs ${
-            isLoading
-              ? "bg-zinc-100 dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800"
-              : overallStatus === "OPERATIONAL"
-              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-950 dark:text-emerald-100"
-              : overallStatus === "DEGRADED"
-              ? "bg-amber-500/10 border-amber-500/20 text-amber-950 dark:text-amber-100"
-              : "bg-red-500/10 border-red-500/20 text-red-950 dark:text-red-100"
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            {isLoading ? (
-              <Skeleton className="h-11 w-11 rounded-lg shrink-0" />
-            ) : overallStatus === "OPERATIONAL" ? (
-              <div className="p-2.5 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0">
-                <CheckCircle2 className="h-6 w-6" />
-              </div>
-            ) : overallStatus === "DEGRADED" ? (
-              <div className="p-2.5 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
-                <AlertTriangle className="h-6 w-6" />
-              </div>
-            ) : (
-              <div className="p-2.5 rounded-lg bg-red-500/20 text-red-600 dark:text-red-400 shrink-0">
-                <XCircle className="h-6 w-6" />
-              </div>
-            )}
-
-            <div>
-              <h2 className="text-base font-bold tracking-tight">
-                {isLoading ? (
-                  <Skeleton className="h-5 w-48 mb-1" />
-                ) : overallStatus === "OPERATIONAL" ? (
-                  t("apiStatus.overallOperational")
-                ) : overallStatus === "DEGRADED" ? (
-                  t("apiStatus.overallDegraded")
-                ) : (
-                  t("apiStatus.overallDown")
-                )}
-              </h2>
-              <div className="text-xs opacity-80 mt-0.5">
-                {isLoading ? (
-                  <Skeleton className="h-3.5 w-36" />
-                ) : (
-                  t("apiStatus.lastChecked", { time: formatLastChecked(data?.lastChecked) })
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4 text-xs font-medium border-t sm:border-t-0 border-current/10 pt-2 sm:pt-0">
-            <div className="flex items-center gap-1.5">
-              <Zap className="h-4 w-4 opacity-70" />
-              <span className="flex items-center gap-1">
-                {t("apiStatus.kpiAvgLatency")}:{" "}
-                {isLoading ? (
-                  <Skeleton className="h-4 w-12 inline-block" />
-                ) : (
-                  <strong className="font-mono">
-                    {data?.averageLatencyMs || 0} {t("apiStatus.unitMs")}
-                  </strong>
-                )}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <ShieldCheck className="h-4 w-4 opacity-70" />
-              <span>{t("apiStatus.legendUptime")}</span>
-            </div>
-          </div>
-        </div>
-
         {/* Navigation Section Switcher: Microservices vs Environment Variables */}
         <div className="border-b border-zinc-200 dark:border-zinc-800 pb-2">
-          <Tabs
-            value={activeSection}
-            onValueChange={(val) => setActiveSection(val as any)}
-            className="w-full"
-          >
+          <Tabs value={activeSection} onValueChange={(val) => setActiveSection(val as any)} className="w-full">
             <TabsList className="bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg">
               <TabsTrigger
                 value="SERVICES"
@@ -528,8 +420,11 @@ export function ApiStatusPage() {
               >
                 <Server className="h-3.5 w-3.5" />
                 <span>{t("apiStatus.sectionServices")}</span>
-                <Badge variant="secondary" className="ml-1 text-[10px] font-mono px-1.5 py-0 min-w-[20px] inline-flex justify-center">
-                  {isLoading ? <Skeleton className="h-3 w-4" /> : (data?.totalServices || 0)}
+                <Badge
+                  variant="secondary"
+                  className="ml-1 text-[10px] font-mono px-1.5 py-0 min-w-[20px] inline-flex justify-center"
+                >
+                  {isLoading ? <Skeleton className="h-3 w-4" /> : data?.totalServices || 0}
                 </Badge>
               </TabsTrigger>
 
@@ -539,8 +434,11 @@ export function ApiStatusPage() {
               >
                 <KeyRound className="h-3.5 w-3.5 text-amber-500" />
                 <span>{t("apiStatus.sectionEnvVars")}</span>
-                <Badge variant="secondary" className="ml-1 text-[10px] font-mono px-1.5 py-0 min-w-[20px] inline-flex justify-center">
-                  {isLoading ? <Skeleton className="h-3 w-4" /> : (data?.envTotal || 0)}
+                <Badge
+                  variant="secondary"
+                  className="ml-1 text-[10px] font-mono px-1.5 py-0 min-w-[20px] inline-flex justify-center"
+                >
+                  {isLoading ? <Skeleton className="h-3 w-4" /> : data?.envTotal || 0}
                 </Badge>
               </TabsTrigger>
             </TabsList>
@@ -562,7 +460,7 @@ export function ApiStatusPage() {
                 </CardHeader>
                 <CardContent className="pb-3.5 px-4">
                   <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 font-mono">
-                    {isLoading ? <Skeleton className="h-8 w-12" /> : (data?.totalServices || 0)}
+                    {isLoading ? <Skeleton className="h-8 w-12" /> : data?.totalServices || 0}
                   </div>
                 </CardContent>
               </Card>
@@ -577,7 +475,7 @@ export function ApiStatusPage() {
                 </CardHeader>
                 <CardContent className="pb-3.5 px-4">
                   <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                    {isLoading ? <Skeleton className="h-8 w-12" /> : (data?.operationalCount || 0)}
+                    {isLoading ? <Skeleton className="h-8 w-12" /> : data?.operationalCount || 0}
                   </div>
                 </CardContent>
               </Card>
@@ -592,7 +490,7 @@ export function ApiStatusPage() {
                 </CardHeader>
                 <CardContent className="pb-3.5 px-4">
                   <div className="text-2xl font-bold text-amber-600 dark:text-amber-400 font-mono">
-                    {isLoading ? <Skeleton className="h-8 w-12" /> : (data?.degradedCount || 0)}
+                    {isLoading ? <Skeleton className="h-8 w-12" /> : data?.degradedCount || 0}
                   </div>
                 </CardContent>
               </Card>
@@ -607,7 +505,7 @@ export function ApiStatusPage() {
                 </CardHeader>
                 <CardContent className="pb-3.5 px-4">
                   <div className="text-2xl font-bold text-red-600 dark:text-red-400 font-mono">
-                    {isLoading ? <Skeleton className="h-8 w-12" /> : (data?.downCount || 0)}
+                    {isLoading ? <Skeleton className="h-8 w-12" /> : data?.downCount || 0}
                   </div>
                 </CardContent>
               </Card>
@@ -627,9 +525,7 @@ export function ApiStatusPage() {
                     ) : (
                       <>
                         {data?.averageLatencyMs || 0}{" "}
-                        <span className="text-xs font-normal text-zinc-500">
-                          {t("apiStatus.unitMs")}
-                        </span>
+                        <span className="text-xs font-normal text-zinc-500">{t("apiStatus.unitMs")}</span>
                       </>
                     )}
                   </div>
@@ -639,23 +535,28 @@ export function ApiStatusPage() {
 
             {/* Status Tabs Filter Bar */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-zinc-50/50 dark:bg-zinc-900/40 p-3 rounded-lg border border-zinc-200/80 dark:border-zinc-800/80">
-              <Tabs
-                value={statusTab}
-                onValueChange={(val) => setStatusTab(val as any)}
-                className="w-full sm:w-auto"
-              >
+              <Tabs value={statusTab} onValueChange={(val) => setStatusTab(val as any)} className="w-full sm:w-auto">
                 <TabsList className="h-8 bg-zinc-200/60 dark:bg-zinc-800/60 p-0.5">
                   <TabsTrigger value="ALL" className="text-xs h-7 px-3 cursor-pointer">
-                    {t("apiStatus.tabAll")} ({isLoading ? <Skeleton className="h-3 w-4 inline-block align-middle" /> : (data?.totalServices || 0)})
+                    {t("apiStatus.tabAll")} (
+                    {isLoading ? <Skeleton className="h-3 w-4 inline-block align-middle" /> : data?.totalServices || 0})
                   </TabsTrigger>
                   <TabsTrigger value="OPERATIONAL" className="text-xs h-7 px-3 cursor-pointer">
-                    {t("apiStatus.tabOperational")} ({isLoading ? <Skeleton className="h-3 w-4 inline-block align-middle" /> : (data?.operationalCount || 0)})
+                    {t("apiStatus.tabOperational")} (
+                    {isLoading ? (
+                      <Skeleton className="h-3 w-4 inline-block align-middle" />
+                    ) : (
+                      data?.operationalCount || 0
+                    )}
+                    )
                   </TabsTrigger>
                   <TabsTrigger value="DEGRADED" className="text-xs h-7 px-3 cursor-pointer">
-                    {t("apiStatus.tabDegraded")} ({isLoading ? <Skeleton className="h-3 w-4 inline-block align-middle" /> : (data?.degradedCount || 0)})
+                    {t("apiStatus.tabDegraded")} (
+                    {isLoading ? <Skeleton className="h-3 w-4 inline-block align-middle" /> : data?.degradedCount || 0})
                   </TabsTrigger>
                   <TabsTrigger value="DOWN" className="text-xs h-7 px-3 cursor-pointer">
-                    {t("apiStatus.tabDown")} ({isLoading ? <Skeleton className="h-3 w-4 inline-block align-middle" /> : (data?.downCount || 0)})
+                    {t("apiStatus.tabDown")} (
+                    {isLoading ? <Skeleton className="h-3 w-4 inline-block align-middle" /> : data?.downCount || 0})
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -702,7 +603,7 @@ export function ApiStatusPage() {
                 </CardHeader>
                 <CardContent className="pb-3.5 px-4">
                   <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 font-mono">
-                    {isLoading ? <Skeleton className="h-8 w-12" /> : (data?.envTotal || 0)}
+                    {isLoading ? <Skeleton className="h-8 w-12" /> : data?.envTotal || 0}
                   </div>
                 </CardContent>
               </Card>
@@ -717,7 +618,7 @@ export function ApiStatusPage() {
                 </CardHeader>
                 <CardContent className="pb-3.5 px-4">
                   <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                    {isLoading ? <Skeleton className="h-8 w-12" /> : (data?.envConfiguredCount || 0)}
+                    {isLoading ? <Skeleton className="h-8 w-12" /> : data?.envConfiguredCount || 0}
                   </div>
                 </CardContent>
               </Card>
@@ -732,7 +633,7 @@ export function ApiStatusPage() {
                 </CardHeader>
                 <CardContent className="pb-3.5 px-4">
                   <div className="text-2xl font-bold text-amber-600 dark:text-amber-400 font-mono">
-                    {isLoading ? <Skeleton className="h-8 w-12" /> : (data?.envDegradedCount || 0)}
+                    {isLoading ? <Skeleton className="h-8 w-12" /> : data?.envDegradedCount || 0}
                   </div>
                 </CardContent>
               </Card>
@@ -747,7 +648,7 @@ export function ApiStatusPage() {
                 </CardHeader>
                 <CardContent className="pb-3.5 px-4">
                   <div className="text-2xl font-bold text-red-600 dark:text-red-400 font-mono">
-                    {isLoading ? <Skeleton className="h-8 w-12" /> : (data?.envMissingCount || 0)}
+                    {isLoading ? <Skeleton className="h-8 w-12" /> : data?.envMissingCount || 0}
                   </div>
                 </CardContent>
               </Card>
@@ -762,16 +663,35 @@ export function ApiStatusPage() {
               >
                 <TabsList className="h-8 bg-zinc-200/60 dark:bg-zinc-800/60 p-0.5">
                   <TabsTrigger value="ALL" className="text-xs h-7 px-3 cursor-pointer">
-                    {t("apiStatus.tabEnvAll")} ({isLoading ? <Skeleton className="h-3 w-4 inline-block align-middle" /> : (data?.envTotal || 0)})
+                    {t("apiStatus.tabEnvAll")} (
+                    {isLoading ? <Skeleton className="h-3 w-4 inline-block align-middle" /> : data?.envTotal || 0})
                   </TabsTrigger>
                   <TabsTrigger value="CONFIGURED" className="text-xs h-7 px-3 cursor-pointer">
-                    {t("apiStatus.tabEnvConfigured")} ({isLoading ? <Skeleton className="h-3 w-4 inline-block align-middle" /> : (data?.envConfiguredCount || 0)})
+                    {t("apiStatus.tabEnvConfigured")} (
+                    {isLoading ? (
+                      <Skeleton className="h-3 w-4 inline-block align-middle" />
+                    ) : (
+                      data?.envConfiguredCount || 0
+                    )}
+                    )
                   </TabsTrigger>
                   <TabsTrigger value="DEFAULT_PLACEHOLDER" className="text-xs h-7 px-3 cursor-pointer">
-                    {t("apiStatus.tabEnvDegraded")} ({isLoading ? <Skeleton className="h-3 w-4 inline-block align-middle" /> : (data?.envDegradedCount || 0)})
+                    {t("apiStatus.tabEnvDegraded")} (
+                    {isLoading ? (
+                      <Skeleton className="h-3 w-4 inline-block align-middle" />
+                    ) : (
+                      data?.envDegradedCount || 0
+                    )}
+                    )
                   </TabsTrigger>
                   <TabsTrigger value="MISSING" className="text-xs h-7 px-3 cursor-pointer">
-                    {t("apiStatus.tabEnvMissing")} ({isLoading ? <Skeleton className="h-3 w-4 inline-block align-middle" /> : (data?.envMissingCount || 0)})
+                    {t("apiStatus.tabEnvMissing")} (
+                    {isLoading ? (
+                      <Skeleton className="h-3 w-4 inline-block align-middle" />
+                    ) : (
+                      data?.envMissingCount || 0
+                    )}
+                    )
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -808,5 +728,3 @@ export function ApiStatusPage() {
 }
 
 export default ApiStatusPage;
-
-

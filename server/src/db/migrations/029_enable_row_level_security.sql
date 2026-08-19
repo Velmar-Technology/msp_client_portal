@@ -5,14 +5,20 @@ DECLARE
     tbl text;
     tenant_tables text[] := ARRAY[
         'tickets',
-        'equipment',
+        'subscription_equipment',
         'subscriptions',
         'invoices',
         'users',
         'expenses',
         'device_maintenances',
         'notification_preferences',
-        'rmm_alerts'
+        'rmm_alerts',
+        'rmm_patches',
+        'rmm_device_telemetry',
+        'ticket_attachments',
+        'ticket_events',
+        'ticket_responses',
+        'notifications'
     ];
 BEGIN
     FOREACH tbl IN ARRAY tenant_tables LOOP

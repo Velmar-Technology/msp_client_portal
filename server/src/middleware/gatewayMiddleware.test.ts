@@ -125,6 +125,16 @@ describe('API Gateway Layer Middleware', () => {
       limiter(req as Request, res as Response, next);
       expect(next).toHaveBeenLastCalledWith();
     });
+
+    it('defaults to 1000 requests per window when no options are provided', () => {
+      const defaultLimiter = createGatewayRateLimiter();
+      req.headers = { 'x-tenant-id': 'tenant-default' };
+
+      defaultLimiter(req as Request, res as Response, next);
+      expect(res.setHeader).toHaveBeenCalledWith('X-RateLimit-Limit', '1000');
+      expect(res.setHeader).toHaveBeenCalledWith('X-RateLimit-Remaining', '999');
+      expect(next).toHaveBeenCalledWith();
+    });
   });
 
   describe('gatewayHeaderPropagatorMiddleware — Header Propagation', () => {

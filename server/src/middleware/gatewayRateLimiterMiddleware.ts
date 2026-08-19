@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/AppError';
+import { env } from '../config/env';
 
 interface RateLimitRecord {
   count: number;
@@ -11,10 +12,10 @@ interface RateLimiterOptions {
   maxRequests?: number;
 }
 
-const defaultOptions = {
-  windowMs: 15 * 60 * 1000, // 15 minutes window
-  maxRequests: 100, // max 100 requests per window
-};
+const getDefaultOptions = () => ({
+  windowMs: env?.RATE_LIMIT_WINDOW_MS ?? 15 * 60 * 1000, // 15 minutes window
+  maxRequests: env?.RATE_LIMIT_MAX_REQUESTS ?? 1000, // max 1000 requests per window
+});
 
 /**
  * In-memory rate limiting store mapping tenantId/IP keys to tracking records.
@@ -34,8 +35,9 @@ export function resetRateLimitStore(): void {
  * grouped by `X-Tenant-Id` (for authenticated calls) or client IP (for unauthenticated calls).
  */
 export function createGatewayRateLimiter(options: RateLimiterOptions = {}) {
-  const windowMs = options.windowMs ?? defaultOptions.windowMs;
-  const maxRequests = options.maxRequests ?? defaultOptions.maxRequests;
+  const defaults = getDefaultOptions();
+  const windowMs = options.windowMs ?? defaults.windowMs;
+  const maxRequests = options.maxRequests ?? defaults.maxRequests;
 
   return function gatewayRateLimiterMiddleware(
     req: Request,

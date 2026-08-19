@@ -28,6 +28,10 @@ const envSchema = z.object({
   // CORS
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
 
+  // Rate Limiting
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().default(15 * 60 * 1000),
+  RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(1000),
+
   // Email
   SMTP_HOST: z.string().default('smtp.gmail.com'),
   SMTP_PORT: z.coerce.number().default(587),

@@ -48,7 +48,7 @@ Clean Architecture mandates that source code dependencies must strictly point **
 5. **The API Gateway Layer (`server/src/middleware/gateway*.ts`)**:
    - Sits in front of downstream route clusters to handle global ingress logic uniformly:
      - **Authentication Header Injection**: Decodes incoming JWT / session tokens at the entry point and injects standardized `X-User-Id` and `X-Tenant-Id` headers into downstream request context.
-     - **Multi-Tenant Rate Limiting**: Protects downstream services from noisy neighbors by enforcing per-tenant (`X-Tenant-Id`) sliding window request limits (100 req/15 min) and returning HTTP 429 (`TOO_MANY_REQUESTS`).
+     - **Multi-Tenant Rate Limiting**: Protects downstream services from noisy neighbors by enforcing per-tenant (`X-Tenant-Id`) sliding window request limits (1000 req/15 min default, configurable via `RATE_LIMIT_MAX_REQUESTS`) and returning HTTP 429 (`TOO_MANY_REQUESTS`).
      - **Cluster Path Routing**: Directs public path clusters (`/api/v1/billing/*`, `/api/v1/workspaces/*`, `/api/v1/tickets/*`, `/api/v1/auth/*`) to internal handlers while maintaining header propagation.
 
 ---
