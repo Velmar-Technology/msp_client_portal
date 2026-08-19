@@ -3,11 +3,11 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-route
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PublicLayout } from "@/components/layout/PublicLayout";
-import { LoginPage } from "@/pages/LoginPage";
-import { RegisterPage } from "@/pages/RegisterPage";
-import { HomePage } from "@/pages/HomePage";
-import { TermsPage } from "@/pages/TermsPage";
-import { PrivacyPage } from "@/pages/PrivacyPage";
+import { LoginPage } from "@/routes/_auth/login";
+import { RegisterPage } from "@/routes/_auth/register";
+import { HomePage } from "@/routes/_public/index";
+import { TermsPage } from "@/routes/_public/terms";
+import { PrivacyPage } from "@/routes/_public/privacy";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ReactErrorBoundary } from "@shared/errors";

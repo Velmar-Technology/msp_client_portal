@@ -1369,6 +1369,43 @@ El frontend está ubicado en `client/`. Utiliza Zustand para la gestión de esta
 | :--- | :--- | :--- |
 | `UserManagementPage` | `Ninguno` | Operación lógica directa |
 
+---
+
+### 5.5. Arquitectura de Ruteo Basada en Layouts (`client/src/routes/`)
+
+El cliente utiliza una estructura de rutas basada en carpetas y layouts jerárquicos (patrón TanStack Router / File-Based Routing) para organizar las vistas según su contexto y alcance de acceso:
+
+```text
+client/src/routes/
+├── _public/                          # Layout público sin autenticación (PublicLayout)
+│   ├── index.tsx                     # Página de Inicio / Landing ("/")
+│   ├── terms.tsx                     # Términos y Condiciones ("/terms")
+│   └── privacy.tsx                   # Política de Privacidad ("/privacy")
+├── _auth/                            # Layout para flujos de autenticación
+│   ├── login.tsx                     # Inicio de Sesión ("/login")
+│   └── register.tsx                  # Registro de Cuenta ("/register")
+└── _app/                             # Layout principal autenticado (AppLayout)
+    ├── dashboard.tsx                 # Dashboard Principal ("/dashboard")
+    ├── financial.tsx                 # Métricas Financieras ("/financial")
+    ├── plans.tsx                     # Planes y Suscripciones ("/plans")
+    ├── billing.tsx                   # Facturación ("/billing")
+    ├── devices.tsx                   # Gestión de Dispositivos ("/devices")
+    ├── resources.tsx                 # Recursos e Documentación ("/resources")
+    ├── maintenance.tsx               # Mantenimientos Programados ("/maintenance")
+    ├── profile.tsx                   # Perfil del Usuario ("/profile")
+    ├── help.tsx                      # Centro de Ayuda ("/help")
+    ├── notifications/
+    │   └── preferences.tsx           # Preferencias de Notificación ("/notifications/preferences")
+    ├── tickets/
+    │   ├── index.tsx                 # Lista de Tickets ("/tickets")
+    │   └── $id.tsx                   # Detalle de Ticket Dinámico ("/tickets/:id")
+    ├── tech/
+    │   └── dashboard.tsx             # Portal del Técnico ("/tech/dashboard")
+    └── admin/
+        ├── users.tsx                 # Gestión de Usuarios ("/admin/users")
+        └── api-status.tsx            # Estado del Sistema / API ("/admin/api-status")
+```
+
 
 
 #### Componentes Reutilizables:

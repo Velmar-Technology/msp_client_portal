@@ -189,7 +189,8 @@ server/src/
 client/src/
 ├── components/ui/  # MANDATORY UI Primitives: Base shadcn/ui components
 ├── components/     # Feature Components: MUST strictly use components from components/ui/
-├── pages/          # Page Views: Top-level route views
+├── routes/         # Layout Routes: File-based layout route hierarchy (_public/, _auth/, _app/)
+├── pages/          # Page Views: Top-level route page view implementations
 ├── services/       # API Adapters: Axios HTTP services
 └── store/          # Application State: Zustand stores
 ```

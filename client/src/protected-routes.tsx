@@ -5,21 +5,21 @@ import { useAuth } from "@/hooks/useAuth";
 import { routeCrumbs } from "@/components/layout/routeCrumbs";
 import type { CrumbResolver } from "@/components/layout/routeCrumbs";
 
-import { DashboardPage } from "@/pages/DashboardPage";
-import { TicketsPage } from "@/pages/TicketsPage";
-import { TicketDetailPage } from "@/pages/TicketDetailPage";
-import { PlansPage } from "@/pages/PlansPage";
-import { BillingPage } from "@/pages/BillingPage";
-import { FinancialPage } from "@/pages/FinancialPage";
-import { ProfilePage } from "@/pages/ProfilePage";
-import { TechDashboardPage } from "@/pages/TechDashboardPage";
-import { HelpPage } from "@/pages/HelpPage";
-import { NotificationPreferencesPage } from "@/pages/NotificationPreferencesPage";
-import { MaintenancePage } from "@/pages/MaintenancePage";
-import { UserManagementPage } from "@/pages/UserManagementPage";
-import { ResourcesPage } from "@/pages/ResourcesPage";
-const DevicesPage = React.lazy(() => import("@/pages/DevicesPage"));
-const ApiStatusPage = React.lazy(() => import("@/pages/ApiStatusPage"));
+import { DashboardPage } from "@/routes/_app/dashboard";
+import { TicketsPage } from "@/routes/_app/tickets/index";
+import { TicketDetailPage } from "@/routes/_app/tickets/$id";
+import { PlansPage } from "@/routes/_app/plans";
+import { BillingPage } from "@/routes/_app/billing";
+import { FinancialPage } from "@/routes/_app/financial";
+import { ProfilePage } from "@/routes/_app/profile";
+import { TechDashboardPage } from "@/routes/_app/tech/dashboard";
+import { HelpPage } from "@/routes/_app/help";
+import { NotificationPreferencesPage } from "@/routes/_app/notifications/preferences";
+import { MaintenancePage } from "@/routes/_app/maintenance";
+import { UserManagementPage } from "@/routes/_app/admin/users";
+import { ResourcesPage } from "@/routes/_app/resources";
+const DevicesPage = React.lazy(() => import("@/routes/_app/devices"));
+const ApiStatusPage = React.lazy(() => import("@/routes/_app/admin/api-status"));
 
 export interface AppRouteHandle {
   crumb: CrumbResolver;

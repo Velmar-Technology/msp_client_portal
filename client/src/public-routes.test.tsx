@@ -4,9 +4,9 @@ import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute, protectedRoutes } from "@/protected-routes";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PublicLayout } from "@/components/layout/PublicLayout";
-import { PrivacyPage } from "@/pages/PrivacyPage";
-import { TermsPage } from "@/pages/TermsPage";
-import { HomePage } from "@/pages/HomePage";
+import { PrivacyPage } from "@/routes/_public/privacy";
+import { TermsPage } from "@/routes/_public/terms";
+import { HomePage } from "@/routes/_public/index";
 import React from "react";
 
 vi.mock("react-i18next", () => ({
