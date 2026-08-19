@@ -16,12 +16,16 @@ export class InvoicePaymentService {
     private accessPolicy: InvoiceAccessPolicy = invoiceAccessPolicy
   ) {}
 
+  private get subRepo(): SubscriptionRepository {
+    return this.subscriptionRepo || subscriptionRepository;
+  }
+
   private async activateExpiredSubscriptionsForClient(clientId: string, tenantId: string): Promise<void> {
     try {
-      const clientSubs = await this.subscriptionRepo.findByClient(clientId, tenantId);
+      const clientSubs = await this.subRepo.findByClient(clientId, tenantId);
       for (const sub of clientSubs) {
         if (sub.status === SubscriptionStatus.EXPIRED) {
-          await this.subscriptionRepo.updateStatus(sub.id, SubscriptionStatus.ACTIVE);
+          await this.subRepo.updateStatus(sub.id, SubscriptionStatus.ACTIVE);
         }
       }
     } catch (err) {

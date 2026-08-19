@@ -50,6 +50,18 @@ export class FinancialStatsService {
     private expenseRepo: ExpenseRepository = expenseRepository
   ) {}
 
+  private get invoiceRepository(): InvoiceRepository {
+    return this.invoiceRepo || invoiceRepository;
+  }
+
+  private get subRepo(): SubscriptionRepository {
+    return this.subscriptionRepo || subscriptionRepository;
+  }
+
+  private get expenseRepository(): ExpenseRepository {
+    return this.expenseRepo || expenseRepository;
+  }
+
   private getRangeMilliseconds(range: FinancialRange): number {
     switch (range) {
       case 'quarter':
@@ -221,9 +233,9 @@ export class FinancialStatsService {
     const isClient = userRole === UserRole.CLIENT;
     const tenantFilter = isClient ? tenantId : undefined;
 
-    const allInvoices = await this.invoiceRepo.getAllForStats(tenantFilter);
-    const activeSubs = await this.subscriptionRepo.getActiveSubscriptionsWithPlan(tenantFilter);
-    const allExpenses = await this.expenseRepo.getAllForStats(tenantFilter);
+    const allInvoices = await this.invoiceRepository.getAllForStats(tenantFilter);
+    const activeSubs = await this.subRepo.getActiveSubscriptionsWithPlan(tenantFilter);
+    const allExpenses = await this.expenseRepository.getAllForStats(tenantFilter);
 
     const referenceDate = allInvoices.length > 0 ? new Date(allInvoices[0].invoice_date) : new Date();
     const rangeMs = this.getRangeMilliseconds(range);

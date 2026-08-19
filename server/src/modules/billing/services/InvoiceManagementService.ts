@@ -24,6 +24,10 @@ export class InvoiceManagementService {
     private accessPolicy: InvoiceAccessPolicy = invoiceAccessPolicy
   ) {}
 
+  private get subRepo(): SubscriptionRepository {
+    return this.subscriptionRepo || subscriptionRepository;
+  }
+
   async getInvoiceById(id: string, tenantId: string, userRole: UserRole): Promise<Invoice> {
     const invoice = await this.invoiceRepo.findById(id);
     if (!invoice) throw AppError.notFound('Invoice not found');
@@ -108,7 +112,7 @@ export class InvoiceManagementService {
 
   private async cancelRelatedSubscriptionIfExpired(invoice: Invoice): Promise<void> {
     try {
-      const clientSubs = await this.subscriptionRepo.findByClient(invoice.client_id, invoice.tenant_id);
+      const clientSubs = await this.subRepo.findByClient(invoice.client_id, invoice.tenant_id);
       const invCreatedAt = new Date(invoice.created_at || invoice.invoice_date).getTime();
       let bestMatch = clientSubs[0];
       let bestDiff = Infinity;
@@ -122,7 +126,7 @@ export class InvoiceManagementService {
         }
       }
       if (bestMatch && bestMatch.status === SubscriptionStatus.EXPIRED) {
-        await this.subscriptionRepo.updateStatus(bestMatch.id, SubscriptionStatus.CANCELLED);
+        await this.subRepo.updateStatus(bestMatch.id, SubscriptionStatus.CANCELLED);
       }
     } catch (err) {
       logger.error('Failed to cancel related subscription for cancelled invoice:', err);
