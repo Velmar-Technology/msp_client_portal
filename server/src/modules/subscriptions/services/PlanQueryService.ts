@@ -1,6 +1,6 @@
 import { planRepository, PlanRepository } from '@modules/subscriptions/repositories/PlanRepository';
 import { planAccessPolicy, PlanAccessPolicy } from '@shared/policies/PlanAccessPolicy';
-import { AppError } from '@shared/utils/AppError';
+import { NotFoundError } from '@shared/errors';
 import { Plan, PlanFilters, UserContext } from '@shared/types';
 
 export class PlanQueryService {
@@ -17,7 +17,7 @@ export class PlanQueryService {
   async getPlanById(id: string, ctx: UserContext): Promise<Plan> {
     const plan = await this.planRepo.findById(id);
     if (!plan) {
-      throw AppError.notFound('Plan not found');
+      throw new NotFoundError('Plan not found');
     }
     this.accessPol.assertActivePlan(plan, ctx);
     return plan;

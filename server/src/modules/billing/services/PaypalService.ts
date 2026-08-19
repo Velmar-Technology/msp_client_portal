@@ -1,6 +1,6 @@
 import { env } from '@shared/config/env';
 import { logger } from '@shared/utils/logger';
-import { AppError } from '@shared/utils/AppError';
+import { InternalServerError } from '@shared/errors';
 import { Invoice } from '@shared/types';
 
 export class PaypalService {
@@ -40,14 +40,14 @@ export class PaypalService {
       if (!response.ok) {
         const errorText = await response.text();
         logger.error('PayPal OAuth token retrieval failed', { status: response.status, errorText });
-        throw AppError.internal('Failed to authenticate with PayPal');
+        throw new InternalServerError('Failed to authenticate with PayPal');
       }
 
       const data = await response.json() as { access_token: string };
       return data.access_token;
     } catch (error) {
       logger.error('Error fetching PayPal access token', { error });
-      throw AppError.internal('Failed to authenticate with PayPal');
+      throw new InternalServerError('Failed to authenticate with PayPal');
     }
   }
 
@@ -87,14 +87,14 @@ export class PaypalService {
       if (!response.ok) {
         const errorText = await response.text();
         logger.error('PayPal order creation failed', { status: response.status, errorText });
-        throw AppError.internal('Failed to create PayPal order');
+        throw new InternalServerError('Failed to create PayPal order');
       }
 
       const data = await response.json() as { id: string; status: string };
       return data;
     } catch (error) {
       logger.error('Error creating PayPal order', { error, invoiceId: invoice.id });
-      throw AppError.internal('Failed to initiate PayPal payment');
+      throw new InternalServerError('Failed to initiate PayPal payment');
     }
   }
 
@@ -121,7 +121,7 @@ export class PaypalService {
       if (!response.ok) {
         const errorText = await response.text();
         logger.error('PayPal order capture failed', { status: response.status, errorText });
-        throw AppError.internal('Failed to capture PayPal payment');
+        throw new InternalServerError('Failed to capture PayPal payment');
       }
 
       const data = await response.json() as {
@@ -140,7 +140,7 @@ export class PaypalService {
       };
     } catch (error) {
       logger.error('Error capturing PayPal order', { error, paypalOrderId });
-      throw AppError.internal('Failed to finalize PayPal payment');
+      throw new InternalServerError('Failed to finalize PayPal payment');
     }
   }
 
@@ -173,14 +173,14 @@ export class PaypalService {
       if (!response.ok) {
         const errorText = await response.text();
         logger.error('PayPal get order failed', { status: response.status, errorText });
-        throw AppError.internal('Failed to retrieve PayPal order details');
+        throw new InternalServerError('Failed to retrieve PayPal order details');
       }
 
       const data = await response.json() as any;
       return data;
     } catch (error) {
       logger.error('Error retrieving PayPal order', { error, paypalOrderId });
-      throw AppError.internal('Failed to retrieve PayPal payment status');
+      throw new InternalServerError('Failed to retrieve PayPal payment status');
     }
   }
 
@@ -217,14 +217,14 @@ export class PaypalService {
       if (!response.ok) {
         const errorText = await response.text();
         logger.error('PayPal order creation failed', { status: response.status, errorText });
-        throw AppError.internal('Failed to create PayPal order');
+        throw new InternalServerError('Failed to create PayPal order');
       }
 
       const data = await response.json() as { id: string; status: string };
       return data;
     } catch (error) {
       logger.error('Error creating PayPal order for amount', { error, amount });
-      throw AppError.internal('Failed to initiate PayPal payment');
+      throw new InternalServerError('Failed to initiate PayPal payment');
     }
   }
 
@@ -259,14 +259,14 @@ export class PaypalService {
           return productId;
         }
         logger.error('PayPal product creation failed', { status: response.status, errorText });
-        throw AppError.internal('Failed to create PayPal product');
+        throw new InternalServerError('Failed to create PayPal product');
       }
 
       logger.info(`PayPal product ${productId} created successfully.`);
       return productId;
     } catch (error) {
       logger.error('Error creating PayPal product', { error });
-      throw AppError.internal('Failed to create PayPal product');
+      throw new InternalServerError('Failed to create PayPal product');
     }
   }
 
@@ -319,7 +319,7 @@ export class PaypalService {
       if (!response.ok) {
         const errorText = await response.text();
         logger.error('PayPal billing plan creation failed', { status: response.status, errorText });
-        throw AppError.internal('Failed to create PayPal billing plan');
+        throw new InternalServerError('Failed to create PayPal billing plan');
       }
 
       const data = await response.json() as { id: string };
@@ -327,7 +327,7 @@ export class PaypalService {
       return data.id;
     } catch (error) {
       logger.error('Error creating PayPal plan', { error });
-      throw AppError.internal('Failed to create PayPal billing plan');
+      throw new InternalServerError('Failed to create PayPal billing plan');
     }
   }
 
@@ -366,13 +366,13 @@ export class PaypalService {
       if (!response.ok) {
         const errorText = await response.text();
         logger.error('PayPal subscription creation failed', { status: response.status, errorText });
-        throw AppError.internal('Failed to create PayPal subscription');
+        throw new InternalServerError('Failed to create PayPal subscription');
       }
 
       const data = await response.json() as { id: string; links?: Array<{ rel: string; href: string }> };
       const approveLink = data.links?.find((l) => l.rel === 'approve');
       if (!approveLink) {
-        throw AppError.internal('PayPal approval link not found in response');
+        throw new InternalServerError('PayPal approval link not found in response');
       }
 
       return {
@@ -381,7 +381,7 @@ export class PaypalService {
       };
     } catch (error) {
       logger.error('Error creating PayPal subscription', { error });
-      throw AppError.internal('Failed to initiate PayPal subscription');
+      throw new InternalServerError('Failed to initiate PayPal subscription');
     }
   }
 
@@ -409,7 +409,7 @@ export class PaypalService {
       if (!response.ok) {
         const errorText = await response.text();
         logger.error('PayPal get subscription details failed', { status: response.status, errorText });
-        throw AppError.internal('Failed to retrieve PayPal subscription details');
+        throw new InternalServerError('Failed to retrieve PayPal subscription details');
       }
 
       const data = await response.json() as { status: string; billing_info?: { next_billing_time?: string } };
@@ -419,7 +419,7 @@ export class PaypalService {
       };
     } catch (error) {
       logger.error('Error retrieving PayPal subscription', { error, subscriptionId });
-      throw AppError.internal('Failed to retrieve PayPal subscription status');
+      throw new InternalServerError('Failed to retrieve PayPal subscription status');
     }
   }
 
@@ -449,13 +449,13 @@ export class PaypalService {
       if (response.status !== 204 && !response.ok) {
         const errorText = await response.text();
         logger.error('PayPal subscription quantity update failed', { status: response.status, errorText });
-        throw AppError.internal('Failed to update PayPal subscription quantity');
+        throw new InternalServerError('Failed to update PayPal subscription quantity');
       }
 
       logger.info(`PayPal subscription ${subscriptionId} quantity updated to ${quantity} successfully.`);
     } catch (error) {
       logger.error('Error updating PayPal subscription quantity', { error, subscriptionId });
-      throw AppError.internal('Failed to update subscription quantity in PayPal');
+      throw new InternalServerError('Failed to update subscription quantity in PayPal');
     }
   }
 
@@ -479,13 +479,13 @@ export class PaypalService {
       if (response.status !== 204 && !response.ok) {
         const errorText = await response.text();
         logger.error('PayPal cancel subscription failed', { status: response.status, errorText });
-        throw AppError.internal('Failed to cancel PayPal subscription');
+        throw new InternalServerError('Failed to cancel PayPal subscription');
       }
 
       logger.info(`PayPal subscription ${subscriptionId} cancelled successfully.`);
     } catch (error) {
       logger.error('Error cancelling PayPal subscription', { error, subscriptionId });
-      throw AppError.internal('Failed to cancel subscription in PayPal');
+      throw new InternalServerError('Failed to cancel subscription in PayPal');
     }
   }
 }

@@ -4,7 +4,7 @@ import { EquipmentRepository, equipmentRepository } from '@modules/equipment';
 import { SubscriptionRepository, subscriptionRepository } from '@modules/subscriptions';
 import { AlertService, alertService } from '@modules/rmm/services/AlertService';
 import { ZabbixService, zabbixService } from '@modules/rmm/services/ZabbixService';
-import { AppError } from '@shared/utils/AppError';
+import { NotFoundError, ForbiddenError } from '@shared/errors';
 import { RmmPatchItem, RmmDeviceTelemetry, RmmOverviewStats, RmmPatchStatus, RmmPatchSeverity } from '@shared/types';
 import { logger } from '@shared/utils/logger';
 
@@ -43,10 +43,10 @@ export class RmmPatchService {
   async getEquipmentPatches(equipmentId: string, tenantId?: string, byAdmin = false): Promise<RmmPatchItem[]> {
     const equipment = await this.equipRepo.findById(equipmentId);
     if (!equipment) {
-      throw AppError.notFound('Equipment not found');
+      throw new NotFoundError('Equipment not found');
     }
     if (!byAdmin && tenantId && equipment.tenant_id !== tenantId) {
-      throw AppError.forbidden('Access denied');
+      throw new ForbiddenError('Access denied');
     }
 
     const targetTenantId = equipment.tenant_id;
@@ -90,10 +90,10 @@ export class RmmPatchService {
   async triggerPatchScan(equipmentId: string, tenantId?: string, byAdmin = false): Promise<RmmDeviceTelemetry> {
     const equipment = await this.equipRepo.findById(equipmentId);
     if (!equipment) {
-      throw AppError.notFound('Equipment not found');
+      throw new NotFoundError('Equipment not found');
     }
     if (!byAdmin && tenantId && equipment.tenant_id !== tenantId) {
-      throw AppError.forbidden('Access denied');
+      throw new ForbiddenError('Access denied');
     }
 
     const targetTenantId = equipment.tenant_id;
@@ -129,10 +129,10 @@ export class RmmPatchService {
 
     const equipment = await this.equipRepo.findById(equipmentId);
     if (!equipment) {
-      throw AppError.notFound('Equipment not found');
+      throw new NotFoundError('Equipment not found');
     }
     if (!byAdmin && tenantId && equipment.tenant_id !== tenantId) {
-      throw AppError.forbidden('Access denied');
+      throw new ForbiddenError('Access denied');
     }
 
     const targetTenantId = equipment.tenant_id;

@@ -3,7 +3,7 @@ import { UserRepository, userRepository } from '@modules/auth';
 import { SubscriptionLifecycleService, subscriptionLifecycleService } from '@modules/subscriptions/services/SubscriptionLifecycleService';
 import { SubscriptionPaymentService, subscriptionPaymentService } from '@modules/subscriptions/services/SubscriptionPaymentService';
 import { SubscriptionQuotationService, subscriptionQuotationService } from '@modules/subscriptions/services/SubscriptionQuotationService';
-import { AppError } from '@shared/utils/AppError';
+import { NotFoundError, ForbiddenError } from '@shared/errors';
 import { Subscription } from '@shared/types';
 import { CreateSubscriptionInput, UpdateSubscriptionInput, SendQuoteInput } from '@shared/dtos/subscription.dto';
 
@@ -19,7 +19,7 @@ export class SubscriptionService {
   async getClientTenantId(clientId: string): Promise<string> {
     const clientUser = await this.userRepo.findById(clientId);
     if (!clientUser) {
-      throw AppError.notFound('Client user not found');
+      throw new NotFoundError('Client user not found');
     }
     return clientUser.tenant_id;
   }
@@ -30,8 +30,8 @@ export class SubscriptionService {
 
   async getSubscriptionById(id: string, tenantId: string): Promise<Subscription> {
     const sub = await this.subscriptionRepo.findById(id);
-    if (!sub) throw AppError.notFound('Subscription not found');
-    if (sub.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
+    if (!sub) throw new NotFoundError('Subscription not found');
+    if (sub.tenant_id !== tenantId) throw new ForbiddenError('Access denied');
     return sub;
   }
 

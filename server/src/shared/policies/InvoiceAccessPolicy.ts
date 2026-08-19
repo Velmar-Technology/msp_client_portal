@@ -1,16 +1,16 @@
 import { Invoice, UserRole } from '@shared/types';
-import { AppError } from '@shared/utils/AppError';
+import { ForbiddenError } from '@shared/errors';
 
 export class InvoiceAccessPolicy {
   assertAccess(invoice: Invoice, tenantId: string, userRole: UserRole): void {
     if (userRole === UserRole.CLIENT && invoice.tenant_id !== tenantId) {
-      throw AppError.forbidden('Access denied');
+      throw new ForbiddenError('Access denied');
     }
   }
 
   assertAdmin(userRole: UserRole, message = 'Only administrators can perform this action'): void {
     if (userRole !== UserRole.ADMIN) {
-      throw AppError.forbidden(message);
+      throw new ForbiddenError(message);
     }
   }
 }

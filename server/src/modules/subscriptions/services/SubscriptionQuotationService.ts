@@ -2,7 +2,7 @@ import { userRepository, UserRepository } from '@modules/auth';
 import { planRepository, PlanRepository } from '@modules/subscriptions/repositories/PlanRepository';
 import { SendQuoteInput } from '@shared/dtos/subscription.dto';
 import { sendQuotationEmail } from '@shared/utils/emailService';
-import { AppError } from '@shared/utils/AppError';
+import { NotFoundError, ForbiddenError } from '@shared/errors';
 import { TAX_RATE } from '@shared/config/constants';
 
 export class SubscriptionQuotationService {
@@ -31,10 +31,10 @@ export class SubscriptionQuotationService {
       }
       const clientUser = await this.userRepo.findById(targetClientId);
       if (!clientUser) {
-        throw AppError.notFound('Client user not found');
+        throw new NotFoundError('Client user not found');
       }
       if (clientUser.tenant_id !== senderTenantId && role !== 'ADMIN') {
-        throw AppError.forbidden('Client does not belong to this tenant');
+        throw new ForbiddenError('Client does not belong to this tenant');
       }
       recipientEmail = clientUser.email;
       recipientName = clientUser.name;
@@ -43,7 +43,7 @@ export class SubscriptionQuotationService {
 
     const planDetails = await this.planRepo.findById(data.plan);
     if (!planDetails) {
-      throw AppError.notFound('Plan not found');
+      throw new NotFoundError('Plan not found');
     }
 
     const billingCycle = data.billingCycle || 'monthly';

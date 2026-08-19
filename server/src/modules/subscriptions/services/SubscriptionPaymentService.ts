@@ -1,7 +1,7 @@
 import { PlanRepository, planRepository } from '@modules/subscriptions/repositories/PlanRepository';
 import { PaypalService, paypalService } from '@modules/billing';
 import { BillingPricingService, billingPricingService } from '@modules/billing';
-import { AppError } from '@shared/utils/AppError';
+import { NotFoundError, ValidationError } from '@shared/errors';
 import { env } from '@shared/config/env';
 
 function getLocalizedValue(val: any): string {
@@ -29,7 +29,7 @@ export class SubscriptionPaymentService {
   }): Promise<{ orderId: string }> {
     const planDetails = await this.planRepo.findById(data.plan);
     if (!planDetails) {
-      throw AppError.notFound('Plan not found');
+      throw new NotFoundError('Plan not found');
     }
 
     const price = planDetails.price;
@@ -41,7 +41,7 @@ export class SubscriptionPaymentService {
     if (data.currentSubscriptionId) {
       const additionalCount = equipmentCount - data.equipmentCount;
       if (additionalCount <= 0) {
-        throw AppError.badRequest('New equipment count must be greater than current count for an upgrade payment');
+        throw new ValidationError('New equipment count must be greater than current count for an upgrade payment');
       }
       description = `Upgrade for ${planDetails.name} - Adding ${additionalCount} Equipment`;
       total = this.pricing.calculateUpgradePricing(price, additionalCount, billingCycle).total;
@@ -62,7 +62,7 @@ export class SubscriptionPaymentService {
   }): Promise<{ subscriptionId: string; approveUrl: string }> {
     const planDetails = await this.planRepo.findById(data.plan);
     if (!planDetails) {
-      throw AppError.notFound('Plan not found');
+      throw new NotFoundError('Plan not found');
     }
 
     const billingCycle = data.billingCycle || 'monthly';
@@ -129,13 +129,13 @@ export class SubscriptionPaymentService {
     }
 
     if (order.status !== 'COMPLETED') {
-      throw AppError.badRequest('PayPal payment was not completed');
+      throw new ValidationError('PayPal payment was not completed');
     }
 
     const purchaseUnit = order.purchase_units?.[0];
     const paidAmount = Number(purchaseUnit?.amount?.value);
     if (isNaN(paidAmount) || Math.abs(paidAmount - expectedTotal) > 0.05) {
-      throw AppError.badRequest(`Paid amount $${paidAmount} does not match expected subscription cost $${expectedTotal}`);
+      throw new ValidationError(`Paid amount $${paidAmount} does not match expected subscription cost $${expectedTotal}`);
     }
   }
 
@@ -147,13 +147,13 @@ export class SubscriptionPaymentService {
     }
 
     if (order.status !== 'COMPLETED') {
-      throw AppError.badRequest('PayPal payment for device upgrade was not completed');
+      throw new ValidationError('PayPal payment for device upgrade was not completed');
     }
 
     const purchaseUnit = order.purchase_units?.[0];
     const paidAmount = Number(purchaseUnit?.amount?.value);
     if (isNaN(paidAmount) || Math.abs(paidAmount - expectedUpgradeTotal) > 0.05) {
-      throw AppError.badRequest(`Paid upgrade amount $${paidAmount} does not match expected upgrade cost $${expectedUpgradeTotal}`);
+      throw new ValidationError(`Paid upgrade amount $${paidAmount} does not match expected upgrade cost $${expectedUpgradeTotal}`);
     }
   }
 }

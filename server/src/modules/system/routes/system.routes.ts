@@ -12,15 +12,14 @@ router.use(authMiddleware);
 router.get(
   '/storage',
   rbacMiddleware(UserRole.ADMIN),
-  (req, res, next) => systemController.getStorageStatus(req, res, next),
+  (req, res) => systemController.getStorageStatus(req, res),
 );
 
 /** GET /api/v1/system/api-status — Get overall system & API status breakdown (Admin only) */
 router.get(
   '/api-status',
   rbacMiddleware(UserRole.ADMIN),
-  (req, res, next) => systemController.getApiStatus(req, res, next),
+  (req, res) => systemController.getApiStatus(req, res),
 );
 
 export default router;
-

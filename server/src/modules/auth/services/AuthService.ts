@@ -3,7 +3,7 @@ import { env } from '@shared/config/env';
 import { userRepository, UserRepository } from '@modules/auth/repositories/UserRepository';
 import { tenantRepository, TenantRepository } from '@modules/auth/repositories/TenantRepository';
 import { hashPassword, comparePassword } from '@shared/utils/passwordUtils';
-import { AppError } from '@shared/utils/AppError';
+import { ConflictError, ValidationError, UnauthorizedError, ForbiddenError, InternalServerError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
 import { AuthTokens, JwtPayload, UserRole } from '@shared/types';
 import { LoginInput, RegisterInput, GoogleAuthInput } from '@shared/dtos/auth.dto';
@@ -26,7 +26,7 @@ export class AuthService {
     // Check for existing user
     const existing = await this.userRepo.findByEmail(data.email);
     if (existing) {
-      throw AppError.conflict('An account with this email already exists');
+      throw new ConflictError('An account with this email already exists');
     }
 
     // Create a unique subdomain from tenantName
@@ -107,20 +107,20 @@ export class AuthService {
   async login(data: LoginInput, ipAddress: string): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null; lastLoginAt: string | null; lastLoginIp: string | null; clientType: string; phoneNumber: string | null }; tokens: AuthTokens }> {
     const user = await this.userRepo.findByEmail(data.email);
     if (!user) {
-      throw AppError.unauthorized('Invalid email or password');
+      throw new UnauthorizedError('Invalid email or password');
     }
 
     if (!user.is_active) {
-      throw AppError.forbidden('Account has been deactivated');
+      throw new ForbiddenError('Account has been deactivated');
     }
 
     if (!user.email_verified) {
-      throw AppError.forbidden('Please verify your email address before logging in');
+      throw new ForbiddenError('Please verify your email address before logging in');
     }
 
     const isValid = await comparePassword(data.password, user.password_hash);
     if (!isValid) {
-      throw AppError.unauthorized('Invalid email or password');
+      throw new UnauthorizedError('Invalid email or password');
     }
 
     // Capture previous login data before updating
@@ -158,14 +158,14 @@ export class AuthService {
 
     if (data.idToken.startsWith('mock-google-token-')) {
       if (env.NODE_ENV === 'production') {
-        throw AppError.badRequest('Mock Google login is only allowed in development');
+        throw new ValidationError('Mock Google login is only allowed in development');
       }
       const parts = data.idToken.split('-');
       email = parts[3] || 'mock@example.com';
       name = parts[4] || 'Mock User';
     } else {
       if (!env.GOOGLE_CLIENT_ID) {
-        throw AppError.internal('Google client ID is not configured');
+        throw new InternalServerError('Google client ID is not configured');
       }
       const client = new OAuth2Client(env.GOOGLE_CLIENT_ID);
       try {
@@ -175,13 +175,13 @@ export class AuthService {
         });
         const payload = ticket.getPayload();
         if (!payload || !payload.email || !payload.name) {
-          throw AppError.unauthorized('Invalid Google ID Token payload');
+          throw new UnauthorizedError('Invalid Google ID Token payload');
         }
         email = payload.email;
         name = payload.name;
       } catch (error: any) {
         logger.error('Google token verification failed', { error: error.message });
-        throw AppError.unauthorized('Invalid Google ID Token');
+        throw new UnauthorizedError('Invalid Google ID Token');
       }
     }
 
@@ -232,7 +232,7 @@ export class AuthService {
       logger.info('New user registered via Google OAuth', { userId: user.id, email: user.email, tenantId: tenant.id });
     } else {
       if (!user.is_active) {
-        throw AppError.forbidden('Account has been deactivated');
+        throw new ForbiddenError('Account has been deactivated');
       }
       logger.info('User logged in via Google OAuth', { userId: user.id, email: user.email, tenantId: user.tenant_id });
     }
@@ -263,11 +263,11 @@ export class AuthService {
       const decoded = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET) as JwtPayload;
       const user = await this.userRepo.findById(decoded.userId);
       if (!user || !user.is_active) {
-        throw AppError.unauthorized('Invalid refresh token');
+        throw new UnauthorizedError('Invalid refresh token');
       }
 
       if (!user.email_verified) {
-        throw AppError.forbidden('Please verify your email address');
+        throw new ForbiddenError('Please verify your email address');
       }
 
       return this.generateTokens({
@@ -277,7 +277,7 @@ export class AuthService {
         tenantId: user.tenant_id,
       });
     } catch {
-      throw AppError.unauthorized('Invalid or expired refresh token');
+      throw new UnauthorizedError('Invalid or expired refresh token');
     }
   }
 
@@ -287,19 +287,19 @@ export class AuthService {
   async verifyEmail(email: string, otp: string): Promise<void> {
     const user = await this.userRepo.findByEmail(email);
     if (!user) {
-      throw AppError.badRequest('Invalid email or OTP');
+      throw new ValidationError('Invalid email or OTP');
     }
 
     if (user.email_verified) {
-      throw AppError.badRequest('Email is already verified');
+      throw new ValidationError('Email is already verified');
     }
 
     if (!user.otp_code || user.otp_code !== otp) {
-      throw AppError.badRequest('Invalid OTP');
+      throw new ValidationError('Invalid OTP');
     }
 
     if (!user.otp_expires || user.otp_expires < new Date()) {
-      throw AppError.badRequest('OTP has expired');
+      throw new ValidationError('OTP has expired');
     }
 
     await this.userRepo.verifyEmail(user.id);
@@ -334,7 +334,7 @@ export class AuthService {
       await this.userRepo.updatePassword(decoded.userId, password_hash);
       logger.info('Password reset successfully', { userId: decoded.userId });
     } catch {
-      throw AppError.badRequest('Invalid or expired reset token');
+      throw new ValidationError('Invalid or expired reset token');
     }
   }
 

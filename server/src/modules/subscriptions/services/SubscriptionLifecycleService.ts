@@ -8,7 +8,7 @@ import { PaypalService, paypalService } from '@modules/billing';
 import { NotificationService, notificationService } from '@modules/notifications';
 import { BillingPricingService, billingPricingService } from '@modules/billing';
 import { SubscriptionPaymentService, subscriptionPaymentService } from '@modules/subscriptions/services/SubscriptionPaymentService';
-import { AppError } from '@shared/utils/AppError';
+import { NotFoundError, ForbiddenError, ValidationError, InternalServerError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
 import { Subscription, SubscriptionStatus, InvoiceStatus, UserRole } from '@shared/types';
 import { CreateSubscriptionInput, UpdateSubscriptionInput } from '@shared/dtos/subscription.dto';
@@ -29,16 +29,16 @@ export class SubscriptionLifecycleService {
 
   private async validateClientUser(clientId: string, tenantId: string): Promise<void> {
     const clientUser = await this.userRepo.findById(clientId);
-    if (!clientUser) throw AppError.notFound('Client user not found');
-    if (clientUser.tenant_id !== tenantId) throw AppError.forbidden('Client does not belong to this tenant');
-    if (clientUser.role !== 'CLIENT') throw AppError.badRequest('Target user must have CLIENT role');
+    if (!clientUser) throw new NotFoundError('Client user not found');
+    if (clientUser.tenant_id !== tenantId) throw new ForbiddenError('Client does not belong to this tenant');
+    if (clientUser.role !== 'CLIENT') throw new ValidationError('Target user must have CLIENT role');
   }
 
   private async checkDuplicateActivePlan(clientId: string, tenantId: string, plan: string): Promise<void> {
     const existingSubs = await this.subscriptionRepo.findByClient(clientId, tenantId);
     const hasActivePlan = existingSubs.some((sub) => sub.plan === plan && sub.status === 'ACTIVE');
     if (hasActivePlan) {
-      throw AppError.badRequest(`You already have an active subscription for the ${plan} plan. Please modify your existing subscription instead.`);
+      throw new ValidationError(`You already have an active subscription for the ${plan} plan. Please modify your existing subscription instead.`);
     }
   }
 
@@ -165,20 +165,20 @@ export class SubscriptionLifecycleService {
 
     if (!byAdmin && !isBankTransfer) {
       if (!data.paypalOrderId) {
-        throw AppError.badRequest('PayPal order ID is required for checkout');
+        throw new ValidationError('PayPal order ID is required for checkout');
       }
 
       if (data.paypalOrderId.startsWith('I-') || data.paypalOrderId.startsWith('MOCK-SUB-')) {
         const subDetails = await this.paypalSvc.getSubscription(data.paypalOrderId);
         if (subDetails.status !== 'ACTIVE' && subDetails.status !== 'APPROVED') {
-          throw AppError.badRequest(`PayPal subscription is not active (status: ${subDetails.status})`);
+          throw new ValidationError(`PayPal subscription is not active (status: ${subDetails.status})`);
         }
         if (subDetails.nextBillingTime) {
           renewalDate = new Date(subDetails.nextBillingTime);
         }
       } else {
         const planDetails = await this.planRepo.findById(data.plan);
-        if (!planDetails) throw AppError.notFound('Plan not found');
+        if (!planDetails) throw new NotFoundError('Plan not found');
 
         const pricing = this.pricingSvc.calculatePricing(planDetails.price, data.equipmentCount ?? 1, billingCycle);
         await this.subPaymentSvc.verifyPaypalOrderPayment(data.paypalOrderId, pricing.total);
@@ -255,8 +255,8 @@ export class SubscriptionLifecycleService {
 
   async updateSubscription(id: string, data: UpdateSubscriptionInput, tenantId: string, byAdmin = false): Promise<Subscription> {
     const sub = await this.subscriptionRepo.findById(id);
-    if (!sub) throw AppError.notFound('Subscription not found');
-    if (sub.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
+    if (!sub) throw new NotFoundError('Subscription not found');
+    if (sub.tenant_id !== tenantId) throw new ForbiddenError('Access denied');
 
     let updated = sub;
 
@@ -269,10 +269,10 @@ export class SubscriptionLifecycleService {
           await this.paypalSvc.updateSubscriptionQuantity(sub.paypal_order_id, newCount);
         } else if (newCount > sub.equipment_count) {
           if (!data.paypalOrderId) {
-            throw AppError.badRequest('PayPal order ID is required to add more devices');
+            throw new ValidationError('PayPal order ID is required to add more devices');
           }
           const planDetails = await this.planRepo.findById(newPlan);
-          if (!planDetails) throw AppError.notFound('Plan not found');
+          if (!planDetails) throw new NotFoundError('Plan not found');
 
           const billingCycle = (sub.service_name.includes('Annual') || sub.service_name.includes('Anual')) ? 'annual' : 'monthly';
           const additionalCount = newCount - sub.equipment_count;
@@ -287,7 +287,7 @@ export class SubscriptionLifecycleService {
       }
 
       const res = await this.subscriptionRepo.updatePlan(sub.id, newPlan, newCount);
-      if (!res) throw AppError.internal('Failed to update subscription');
+      if (!res) throw new InternalServerError('Failed to update subscription');
       updated = res;
     }
 
@@ -312,7 +312,7 @@ export class SubscriptionLifecycleService {
       }
 
       const res = await this.subscriptionRepo.updateStatus(sub.id, targetStatus);
-      if (!res) throw AppError.internal('Failed to update subscription status');
+      if (!res) throw new InternalServerError('Failed to update subscription status');
       updated = res;
     }
 

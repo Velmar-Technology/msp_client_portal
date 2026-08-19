@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { ValidationError } from '@shared/errors';
 import { invoiceService } from '@modules/billing/services/InvoiceService';
 import { UserRole } from '@shared/types';
 
@@ -87,8 +88,7 @@ export class InvoiceController {
   async getFinancialStats(req: Request, res: Response): Promise<void> {
     const range = (req.query.range as '30_days' | 'quarter' | 'year') || '30_days';
     if (!['30_days', 'quarter', 'year'].includes(range)) {
-      res.status(400).json({ success: false, message: 'Invalid range parameter' });
-      return;
+      throw new ValidationError('Invalid range parameter');
     }
     const stats = await invoiceService.getFinancialStats(
       req.user!.tenantId,

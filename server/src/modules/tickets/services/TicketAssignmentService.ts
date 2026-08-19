@@ -2,7 +2,7 @@ import { ticketRepository, TicketRepository } from '@modules/tickets/repositorie
 import { ticketEventRepository, TicketEventRepository } from '@modules/tickets/repositories/TicketEventRepository';
 import { userRepository, UserRepository } from '@modules/auth';
 import { notificationService, NotificationService } from '@modules/notifications';
-import { AppError } from '@shared/utils/AppError';
+import { NotFoundError, ValidationError, InternalServerError } from '@shared/errors';
 import { Ticket, UserRole } from '@shared/types';
 
 export class TicketAssignmentService {
@@ -16,21 +16,21 @@ export class TicketAssignmentService {
   async assignTicket(ticketId: string, techId: string, actorId: string): Promise<Ticket> {
     const ticket = await this.ticketRepo.findById(ticketId);
     if (!ticket) {
-      throw AppError.notFound('Ticket not found');
+      throw new NotFoundError('Ticket not found');
     }
 
     const technician = await this.userRepo.findById(techId);
     if (!technician) {
-      throw AppError.notFound('Technician not found');
+      throw new NotFoundError('Technician not found');
     }
 
     if (technician.role !== UserRole.TECHNICIAN) {
-      throw AppError.badRequest('Assigned user must be a technician');
+      throw new ValidationError('Assigned user must be a technician');
     }
 
     const updated = await this.ticketRepo.assignTechnician(ticketId, techId);
     if (!updated) {
-      throw AppError.internal('Failed to assign technician');
+      throw new InternalServerError('Failed to assign technician');
     }
 
     await this.eventRepo.create({
@@ -44,7 +44,7 @@ export class TicketAssignmentService {
 
     const fullUpdatedTicket = await this.ticketRepo.findById(ticketId);
     if (!fullUpdatedTicket) {
-      throw AppError.internal('Failed to retrieve updated ticket details');
+      throw new InternalServerError('Failed to retrieve updated ticket details');
     }
 
     await this.notifSvc.onTicketAssigned(fullUpdatedTicket, technician);

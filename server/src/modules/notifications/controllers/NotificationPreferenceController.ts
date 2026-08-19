@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { ValidationError } from '@shared/errors';
 import { notificationPreferenceService } from '@modules/notifications/services/NotificationPreferenceService';
 
 export class NotificationPreferenceController {
@@ -22,11 +23,7 @@ export class NotificationPreferenceController {
     const { preferences } = req.body;
 
     if (!preferences || typeof preferences !== 'object') {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid preferences payload. Expected an object mapping event types to channel toggles.',
-      });
-      return;
+      throw new ValidationError('Invalid preferences payload. Expected an object mapping event types to channel toggles.');
     }
 
     const updated = await notificationPreferenceService.updatePreferences(

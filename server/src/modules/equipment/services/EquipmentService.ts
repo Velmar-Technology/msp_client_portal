@@ -3,7 +3,7 @@ import { subscriptionRepository, SubscriptionRepository } from '@modules/subscri
 import { planRepository, PlanRepository } from '@modules/subscriptions';
 import { nextcloudService, NextcloudService } from '@modules/system';
 import { rmmPatchService, RmmPatchService } from '@modules/rmm';
-import { AppError } from '@shared/utils/AppError';
+import { NotFoundError, ForbiddenError, ValidationError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
 import { SubscriptionEquipment, EquipmentWithDetails } from '@shared/types';
 
@@ -99,8 +99,8 @@ export class EquipmentService {
    */
   async getEquipmentSlots(subscriptionId: string, tenantId: string, byAdmin = false): Promise<SubscriptionEquipment[]> {
     const sub = await this.subRepo.findById(subscriptionId);
-    if (!sub) throw AppError.notFound('Subscription not found');
-    if (!byAdmin && sub.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
+    if (!sub) throw new NotFoundError('Subscription not found');
+    if (!byAdmin && sub.tenant_id !== tenantId) throw new ForbiddenError('Access denied');
 
     const existingSlots = await this.equipmentRepository.findBySubscription(subscriptionId);
     const allSlots = await this.ensureSlotsInitialized(subscriptionId, sub.equipment_count, tenantId, existingSlots);
@@ -112,13 +112,13 @@ export class EquipmentService {
    */
   async generateSlotOTP(subscriptionId: string, slotIndex: number, tenantId: string, byAdmin = false): Promise<SubscriptionEquipment> {
     if (!byAdmin) {
-      throw AppError.forbidden('Client users are not authorized to generate activation codes');
+      throw new ForbiddenError('Client users are not authorized to generate activation codes');
     }
     await this.getEquipmentSlots(subscriptionId, tenantId, byAdmin);
 
     const slot = await this.equipmentRepository.findBySlot(subscriptionId, slotIndex);
-    if (!slot) throw AppError.notFound('Equipment slot not found');
-    if (!byAdmin && slot.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
+    if (!slot) throw new NotFoundError('Equipment slot not found');
+    if (!byAdmin && slot.tenant_id !== tenantId) throw new ForbiddenError('Access denied');
 
     const otp = this.generateNumericOTP(6);
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -156,20 +156,20 @@ export class EquipmentService {
   private async resolveSlotToActivate(options: ActivateSlotOptions): Promise<SubscriptionEquipment> {
     if (options.otp) {
       const slot = await this.equipmentRepository.findByOtp(options.otp);
-      if (!slot) throw AppError.notFound('Activation code (OTP) not found or invalid');
+      if (!slot) throw new NotFoundError('Activation code (OTP) not found or invalid');
       if (slot.otp_expires_at && slot.otp_expires_at < new Date()) {
-        throw AppError.badRequest('Activation code (OTP) has expired');
+        throw new ValidationError('Activation code (OTP) has expired');
       }
-      if (!options.byAdmin && slot.tenant_id !== options.tenantId) throw AppError.forbidden('Access denied');
+      if (!options.byAdmin && slot.tenant_id !== options.tenantId) throw new ForbiddenError('Access denied');
       return slot;
     }
     if (options.subscriptionId !== undefined && options.slotIndex !== undefined) {
       const slot = await this.equipmentRepository.findBySlot(options.subscriptionId, options.slotIndex);
-      if (!slot) throw AppError.notFound('Slot not found');
-      if (!options.byAdmin && slot.tenant_id !== options.tenantId) throw AppError.forbidden('Access denied');
+      if (!slot) throw new NotFoundError('Slot not found');
+      if (!options.byAdmin && slot.tenant_id !== options.tenantId) throw new ForbiddenError('Access denied');
       return slot;
     }
-    throw AppError.badRequest('Must provide either OTP or SubscriptionId + SlotIndex');
+    throw new ValidationError('Must provide either OTP or SubscriptionId + SlotIndex');
   }
 
   /**
@@ -224,7 +224,7 @@ export class EquipmentService {
   async activateSlot(options: ActivateSlotOptions): Promise<SubscriptionEquipment> {
     const slot = await this.resolveSlotToActivate(options);
     const sub = await this.subRepo.findById(slot.subscription_id);
-    if (!sub) throw AppError.notFound('Subscription not found');
+    if (!sub) throw new NotFoundError('Subscription not found');
 
     const quota = await this.resolveStorageQuota(sub.plan);
     const username = `client_${sub.tenant_id.slice(0, 8)}_slot_${slot.slot_index + 1}`;
@@ -257,8 +257,8 @@ export class EquipmentService {
    */
   async deactivateSlot(subscriptionId: string, slotIndex: number, tenantId: string, byAdmin = false): Promise<SubscriptionEquipment> {
     const slot = await this.equipmentRepository.findBySlot(subscriptionId, slotIndex);
-    if (!slot) throw AppError.notFound('Slot not found');
-    if (!byAdmin && slot.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
+    if (!slot) throw new NotFoundError('Slot not found');
+    if (!byAdmin && slot.tenant_id !== tenantId) throw new ForbiddenError('Access denied');
 
     if (slot.nextcloud_username) {
       await this.cleanupNextcloudUser(slot.nextcloud_username);
@@ -355,8 +355,8 @@ export class EquipmentService {
     byAdmin = false
   ): Promise<NextcloudStorageInfo> {
     const slot = await this.equipmentRepository.findBySlot(subscriptionId, slotIndex);
-    if (!slot) throw AppError.notFound('Slot not found');
-    if (!byAdmin && slot.tenant_id !== tenantId) throw AppError.forbidden('Access denied');
+    if (!slot) throw new NotFoundError('Slot not found');
+    if (!byAdmin && slot.tenant_id !== tenantId) throw new ForbiddenError('Access denied');
 
     let used = 0;
     let total = 0;

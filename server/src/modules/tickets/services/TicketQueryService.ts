@@ -1,6 +1,6 @@
 import { ticketRepository, TicketRepository } from '@modules/tickets/repositories/TicketRepository';
 import { ticketAccessPolicy, TicketAccessPolicy } from '@shared/policies/TicketAccessPolicy';
-import { AppError } from '@shared/utils/AppError';
+import { NotFoundError } from '@shared/errors';
 import { Ticket, TicketFilters, UserContext, UserRole } from '@shared/types';
 
 export class TicketQueryService {
@@ -12,7 +12,7 @@ export class TicketQueryService {
   async getTicketById(ticketId: string, ctx: UserContext): Promise<Ticket> {
     const ticket = await this.ticketRepo.findById(ticketId);
     if (!ticket) {
-      throw AppError.notFound('Ticket not found');
+      throw new NotFoundError('Ticket not found');
     }
     this.accessPol.assertReadAccess(ticket, ctx);
     return ticket;

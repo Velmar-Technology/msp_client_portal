@@ -1,5 +1,6 @@
 import { env } from '@shared/config/env';
 import { logger } from '@shared/utils/logger';
+import { InternalServerError, ExternalServiceError } from '@shared/errors';
 
 export interface StorageStatus {
   used: number;
@@ -60,7 +61,7 @@ export class NextcloudService {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        throw new Error(`WebDAV request failed with status: ${response.status} ${response.statusText}`);
+        throw new ExternalServiceError('Nextcloud WebDAV request failed', { service: 'nextcloud', upstream: response.status });
       }
 
       const xmlText = await response.text();
@@ -146,7 +147,7 @@ export class NextcloudService {
     let rawUrl = env.NEXTCLOUD_URL;
 
     if (!adminUser || !adminPass || !rawUrl) {
-      throw new Error('Nextcloud configuration is incomplete.');
+      throw new InternalServerError('Nextcloud configuration is incomplete');
     }
 
     if (!/^https?:\/\//i.test(rawUrl)) {
@@ -180,14 +181,14 @@ export class NextcloudService {
 
     if (!response.ok) {
       const errText = await response.text();
-      throw new Error(`Provisioning request failed: ${response.status} ${errText}`);
+      throw new ExternalServiceError('Nextcloud provisioning request failed', { service: 'nextcloud', upstream: response.status, detail: errText });
     }
 
     const data = await response.json() as any;
     const statusCode = data?.ocs?.meta?.statuscode;
     if (statusCode !== 100) {
       const msg = data?.ocs?.meta?.message || 'Unknown error';
-      throw new Error(`Nextcloud OCS error (${statusCode}): ${msg}`);
+      throw new ExternalServiceError(`Nextcloud OCS error: ${msg}`, { service: 'nextcloud', ocsCode: statusCode });
     }
 
     // Return the generated password so we can store/display it
@@ -203,7 +204,7 @@ export class NextcloudService {
     let rawUrl = env.NEXTCLOUD_URL;
 
     if (!adminUser || !adminPass || !rawUrl) {
-      throw new Error('Nextcloud configuration is incomplete.');
+      throw new InternalServerError('Nextcloud configuration is incomplete');
     }
 
     if (!/^https?:\/\//i.test(rawUrl)) {
@@ -224,14 +225,14 @@ export class NextcloudService {
 
     if (!response.ok) {
       const errText = await response.text();
-      throw new Error(`Delete user request failed: ${response.status} ${errText}`);
+      throw new ExternalServiceError('Nextcloud delete user request failed', { service: 'nextcloud', upstream: response.status, detail: errText });
     }
 
     const data = await response.json() as any;
     const statusCode = data?.ocs?.meta?.statuscode;
     if (statusCode !== 100) {
       const msg = data?.ocs?.meta?.message || 'Unknown error';
-      throw new Error(`Nextcloud OCS error (${statusCode}): ${msg}`);
+      throw new ExternalServiceError(`Nextcloud OCS error: ${msg}`, { service: 'nextcloud', ocsCode: statusCode });
     }
   }
 
@@ -244,7 +245,7 @@ export class NextcloudService {
     let rawUrl = env.NEXTCLOUD_URL;
 
     if (!adminUser || !adminPass || !rawUrl) {
-      throw new Error('Nextcloud configuration is incomplete.');
+      throw new InternalServerError('Nextcloud configuration is incomplete');
     }
 
     if (!/^https?:\/\//i.test(rawUrl)) {
@@ -265,14 +266,14 @@ export class NextcloudService {
       });
 
       if (!response.ok) {
-        throw new Error(`Get user request failed: ${response.status}`);
+        throw new ExternalServiceError('Nextcloud get user request failed', { service: 'nextcloud', upstream: response.status });
       }
 
       const data = await response.json() as any;
       const statusCode = data?.ocs?.meta?.statuscode;
       if (statusCode !== 100) {
         const msg = data?.ocs?.meta?.message || 'Unknown error';
-        throw new Error(`Nextcloud OCS error (${statusCode}): ${msg}`);
+        throw new ExternalServiceError(`Nextcloud OCS error: ${msg}`, { service: 'nextcloud', ocsCode: statusCode });
       }
 
       const quota = data?.ocs?.data?.quota;

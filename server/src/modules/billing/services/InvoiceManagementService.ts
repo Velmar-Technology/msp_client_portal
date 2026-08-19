@@ -3,7 +3,7 @@ import { SubscriptionRepository, subscriptionRepository } from '@modules/subscri
 import { InvoicePdfService, invoicePdfService } from '@modules/billing/services/InvoicePdfService';
 import { InvoiceNotificationService, invoiceNotificationService } from '@modules/billing/services/InvoiceNotificationService';
 import { InvoiceAccessPolicy, invoiceAccessPolicy } from '@shared/policies/InvoiceAccessPolicy';
-import { AppError } from '@shared/utils/AppError';
+import { NotFoundError, ValidationError, InternalServerError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
 import { Invoice, UserRole, InvoiceStatus, SubscriptionStatus } from '@shared/types';
 
@@ -30,7 +30,7 @@ export class InvoiceManagementService {
 
   async getInvoiceById(id: string, tenantId: string, userRole: UserRole): Promise<Invoice> {
     const invoice = await this.invoiceRepo.findById(id);
-    if (!invoice) throw AppError.notFound('Invoice not found');
+    if (!invoice) throw new NotFoundError('Invoice not found');
     this.accessPolicy.assertAccess(invoice, tenantId, userRole);
     return invoice;
   }
@@ -93,7 +93,7 @@ export class InvoiceManagementService {
     const invoice = await this.getInvoiceById(id, tenantId, userRole);
 
     if (invoice.status === InvoiceStatus.PAID) {
-      throw AppError.badRequest('Cannot cancel an already paid invoice');
+      throw new ValidationError('Cannot cancel an already paid invoice');
     }
     if (invoice.status === InvoiceStatus.CANCELLED) {
       return invoice;
@@ -101,7 +101,7 @@ export class InvoiceManagementService {
 
     const updatedInvoice = await this.invoiceRepo.updateStatus(id, InvoiceStatus.CANCELLED);
     if (!updatedInvoice) {
-      throw AppError.internal('Failed to update invoice status in database');
+      throw new InternalServerError('Failed to update invoice status in database');
     }
 
     await this.cancelRelatedSubscriptionIfExpired(invoice);

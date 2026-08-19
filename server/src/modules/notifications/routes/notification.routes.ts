@@ -3,7 +3,7 @@ import { notificationController } from '@modules/notifications/controllers/Notif
 import jwt from 'jsonwebtoken';
 import { env } from '@shared/config/env';
 import { JwtPayload } from '@shared/types';
-import { AppError } from '@shared/utils/AppError';
+import { UnauthorizedError } from '@shared/errors';
 import { userRepository } from '@modules/auth';
 
 const router = Router();
@@ -20,7 +20,7 @@ async function flexibleAuthMiddleware(req: Request, _res: Response, next: NextFu
   }
 
   if (!token) {
-    return next(AppError.unauthorized('Missing or invalid authorization token'));
+    return next(new UnauthorizedError('Missing or invalid authorization token'));
   }
 
   try {
@@ -36,7 +36,7 @@ async function flexibleAuthMiddleware(req: Request, _res: Response, next: NextFu
     req.user = decoded;
     next();
   } catch {
-    next(AppError.unauthorized('Invalid or expired token'));
+    next(new UnauthorizedError('Invalid or expired token'));
   }
 }
 

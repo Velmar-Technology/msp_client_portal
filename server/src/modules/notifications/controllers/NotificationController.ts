@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { NotFoundError } from '@shared/errors';
 import { notificationService } from '@modules/notifications/services/NotificationService';
 
 export class NotificationController {
@@ -17,8 +18,7 @@ export class NotificationController {
   async markAsRead(req: Request, res: Response): Promise<void> {
     const notification = await notificationService.markAsRead(req.params.id as string, req.user!.userId);
     if (!notification) {
-      res.status(404).json({ success: false, message: 'Notification not found or unauthorized' });
-      return;
+      throw new NotFoundError('Notification not found or unauthorized');
     }
     res.json({ success: true, data: notification });
   }

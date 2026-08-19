@@ -6,7 +6,7 @@ import { gatewayAuthMiddleware } from './gatewayAuthMiddleware';
 import { createGatewayRateLimiter, resetRateLimitStore } from './gatewayRateLimiterMiddleware';
 import { gatewayHeaderPropagatorMiddleware } from './gatewayRouterMiddleware';
 import { userRepository } from '@modules/auth/repositories/UserRepository';
-import { AppError } from '@shared/utils/AppError';
+import { RateLimitError } from '@shared/errors';
 
 vi.mock('@modules/auth/repositories/UserRepository', () => ({
   userRepository: {
@@ -90,7 +90,7 @@ describe('API Gateway Layer Middleware', () => {
       expect(next).toHaveBeenLastCalledWith();
     });
 
-    it('throws AppError 429 when rate limit is exceeded for a tenant', () => {
+    it('throws RateLimitError 429 when rate limit is exceeded for a tenant', () => {
       const limiter = createGatewayRateLimiter({ windowMs: 60000, maxRequests: 2 });
       req.headers = { 'x-tenant-id': 'tenant-alpha' };
 
@@ -101,9 +101,9 @@ describe('API Gateway Layer Middleware', () => {
       // Request 3 (Exceeds limit)
       limiter(req as Request, res as Response, next);
       const err = (next as any).mock.calls[2][0];
-      expect(err).toBeInstanceOf(AppError);
+      expect(err).toBeInstanceOf(RateLimitError);
       expect(err.statusCode).toBe(429);
-      expect(err.code).toBe('TOO_MANY_REQUESTS');
+      expect(err.code).toBe('RATE_LIMIT_EXCEEDED');
       expect(res.setHeader).toHaveBeenCalledWith('Retry-After', expect.any(String));
     });
 

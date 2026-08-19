@@ -1,10 +1,12 @@
 import { AppError as SharedAppError } from '@shared/errors';
 
 /**
- * Custom application error class with HTTP status code.
- * Inherits from the centralized @shared/errors base class.
- * Used throughout the service layer to throw typed errors
- * that the global error handler middleware can process.
+ * @deprecated Use domain error classes from '@shared/errors' directly instead:
+ * - NotFoundError, ForbiddenError, ValidationError, UnauthorizedError
+ * - ConflictError, InternalServerError, RateLimitError, ExternalServiceError
+ * - SlaViolationError, TicketLimitExceededError, InvalidTransitionError, InvalidFileTypeError
+ *
+ * This facade is kept for backward compatibility only and will be removed in a future release.
  */
 export class AppError extends SharedAppError {
   public readonly statusCode: number;

@@ -3,7 +3,7 @@ import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { env } from '@shared/config/env';
 import { ALLOWED_MIME_TYPES } from '@shared/config/constants';
-import { AppError } from '@shared/utils/AppError';
+import { InvalidFileTypeError } from '@shared/errors';
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
@@ -24,7 +24,7 @@ const fileFilter = (
   if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new AppError(`File type ${file.mimetype} is not allowed`, 400, 'INVALID_FILE_TYPE'));
+    cb(new InvalidFileTypeError(`File type ${file.mimetype} is not allowed`));
   }
 };
 

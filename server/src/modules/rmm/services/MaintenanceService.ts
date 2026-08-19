@@ -1,7 +1,7 @@
 import { maintenanceRepository, MaintenanceRepository } from '@modules/rmm/repositories/MaintenanceRepository';
 import { equipmentRepository, EquipmentRepository } from '@modules/equipment';
 import { subscriptionRepository, SubscriptionRepository } from '@modules/subscriptions';
-import { AppError } from '@shared/utils/AppError';
+import { NotFoundError, ForbiddenError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
 import { DeviceMaintenance, UserRole, MaintenanceStatus, MaintenanceType } from '@shared/types';
 import { CreateMaintenanceInput, UpdateMaintenanceInput, MaintenanceQueryInput } from '@shared/dtos/maintenance.dto';
@@ -79,10 +79,10 @@ export class MaintenanceService {
     const effectiveTenantId = user.role === UserRole.CLIENT ? tenantId : undefined;
     const item = await this.maintenanceRepo.findByIdWithDetails(id, effectiveTenantId);
     if (!item) {
-      throw AppError.notFound('Maintenance schedule not found');
+      throw new NotFoundError('Maintenance schedule not found');
     }
     if (user.role === UserRole.CLIENT && item.client_id !== user.id) {
-      throw AppError.forbidden('Access denied');
+      throw new ForbiddenError('Access denied');
     }
     return item;
   }
@@ -94,20 +94,20 @@ export class MaintenanceService {
   ): Promise<DeviceMaintenance> {
     const equipment = await this.equipmentRepo.findById(data.equipmentId);
     if (!equipment) {
-      throw AppError.notFound('Device / Equipment slot not found');
+      throw new NotFoundError('Device / Equipment slot not found');
     }
     if (user.role === UserRole.CLIENT && equipment.tenant_id !== tenantId) {
-      throw AppError.forbidden('Access denied');
+      throw new ForbiddenError('Access denied');
     }
 
     const subscription = await this.subscriptionRepo.findById(equipment.subscription_id);
     if (!subscription) {
-      throw AppError.notFound('Associated subscription not found');
+      throw new NotFoundError('Associated subscription not found');
     }
 
     // Permission check: Clients can only schedule maintenance for their own subscription devices
     if (user.role === UserRole.CLIENT && subscription.client_id !== user.id) {
-      throw AppError.forbidden('Cannot schedule maintenance for another user device');
+      throw new ForbiddenError('Cannot schedule maintenance for another user device');
     }
 
     let scheduledDate: Date;
@@ -166,11 +166,11 @@ export class MaintenanceService {
     const effectiveTenantId = user.role === UserRole.CLIENT ? tenantId : undefined;
     const existing = await this.maintenanceRepo.findByIdWithDetails(id, effectiveTenantId);
     if (!existing) {
-      throw AppError.notFound('Maintenance schedule not found');
+      throw new NotFoundError('Maintenance schedule not found');
     }
 
     if (user.role === UserRole.CLIENT) {
-      throw AppError.forbidden('Only technicians or administrators can update maintenance schedules');
+      throw new ForbiddenError('Only technicians or administrators can update maintenance schedules');
     }
 
     const updatePayload: Partial<DeviceMaintenance> = {};
@@ -211,13 +211,13 @@ export class MaintenanceService {
 
   async deleteMaintenance(tenantId: string, user: { id: string; role: UserRole }, id: string): Promise<{ success: boolean }> {
     if (user.role === UserRole.CLIENT) {
-      throw AppError.forbidden('Only technicians or administrators can delete maintenance schedules');
+      throw new ForbiddenError('Only technicians or administrators can delete maintenance schedules');
     }
 
     const effectiveTenantId = (user.role as UserRole) === UserRole.CLIENT ? tenantId : undefined;
     const existing = await this.maintenanceRepo.findByIdWithDetails(id, effectiveTenantId);
     if (!existing) {
-      throw AppError.notFound('Maintenance schedule not found');
+      throw new NotFoundError('Maintenance schedule not found');
     }
 
     const success = await this.maintenanceRepo.delete(id, effectiveTenantId);

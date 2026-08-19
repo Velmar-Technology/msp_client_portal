@@ -100,3 +100,81 @@ export class InternalServerError extends AppError {
     });
   }
 }
+
+/**
+ * 429 Rate Limit Exceeded
+ */
+export class RateLimitError extends AppError {
+  public readonly code = 'RATE_LIMIT_EXCEEDED';
+  public readonly statusCode = 429;
+
+  constructor(message = 'Rate limit exceeded', details?: Record<string, any>, originalError?: unknown) {
+    super({
+      message,
+      details,
+      originalError,
+      isOperational: true
+    });
+  }
+}
+
+/**
+ * 502 External Service Failure (e.g. Nextcloud, third-party APIs)
+ */
+export class ExternalServiceError extends AppError {
+  public readonly code = 'EXTERNAL_SERVICE_ERROR';
+  public readonly statusCode = 502;
+
+  constructor(message: string, details?: Record<string, any>, originalError?: unknown) {
+    super({
+      message,
+      details,
+      originalError,
+      isOperational: true
+    });
+  }
+}
+
+/**
+ * 403 SLA Violation — ticket cancellation window expired
+ */
+export class SlaViolationError extends ForbiddenError {
+  public readonly code = 'SLA_VIOLATION';
+
+  constructor(message: string, details?: Record<string, any>, originalError?: unknown) {
+    super(message, details, originalError);
+  }
+}
+
+/**
+ * 403 Ticket creation limit reached for client or device
+ */
+export class TicketLimitExceededError extends ForbiddenError {
+  public readonly code = 'TICKET_LIMIT_EXCEEDED';
+
+  constructor(message: string, details?: Record<string, any>, originalError?: unknown) {
+    super(message, details, originalError);
+  }
+}
+
+/**
+ * 400 Invalid status transition (e.g. OPEN → RESOLVED)
+ */
+export class InvalidTransitionError extends ValidationError {
+  public readonly code = 'INVALID_STATUS_TRANSITION';
+
+  constructor(message: string, details?: Record<string, any>, originalError?: unknown) {
+    super(message, details, originalError);
+  }
+}
+
+/**
+ * 400 Uploaded file type not allowed
+ */
+export class InvalidFileTypeError extends ValidationError {
+  public readonly code = 'INVALID_FILE_TYPE';
+
+  constructor(message: string, details?: Record<string, any>, originalError?: unknown) {
+    super(message, details, originalError);
+  }
+}

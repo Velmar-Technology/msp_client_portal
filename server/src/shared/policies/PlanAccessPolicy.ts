@@ -1,10 +1,10 @@
 import { Plan, UserContext, UserRole } from '@shared/types';
-import { AppError } from '@shared/utils/AppError';
+import { ForbiddenError } from '@shared/errors';
 
 export class PlanAccessPolicy {
   assertAdminMutation(ctx: UserContext): void {
     if (ctx.role !== UserRole.ADMIN) {
-      throw AppError.forbidden('Only administrators can manage plans');
+      throw new ForbiddenError('Only administrators can manage plans');
     }
   }
 
@@ -14,7 +14,7 @@ export class PlanAccessPolicy {
 
   assertActivePlan(plan: Plan, ctx: UserContext): void {
     if (!this.canViewInactive(ctx) && plan.active === false) {
-      throw AppError.forbidden('This plan is not available');
+      throw new ForbiddenError('This plan is not available');
     }
   }
 }

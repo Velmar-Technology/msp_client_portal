@@ -1,7 +1,7 @@
 import { subscriptionRepository, SubscriptionRepository } from '@modules/subscriptions';
 import { planRepository, PlanRepository } from '@modules/subscriptions';
 import { ticketRepository, TicketRepository } from '@modules/tickets/repositories/TicketRepository';
-import { AppError } from '@shared/utils/AppError';
+import { TicketLimitExceededError } from '@shared/errors';
 import { HELPDESK_SUPPORT_FEATURE_CODE } from '@shared/config/constants';
 import { Subscription, SubscriptionStatus } from '@shared/types';
 
@@ -69,9 +69,8 @@ export class TicketQuotaService {
   private async enforceDeviceQuota(equipmentId: string, limit: number): Promise<void> {
     const deviceTicketCount = await this.ticketRepo.countEquipmentTicketsInCurrentMonth(equipmentId);
     if (deviceTicketCount >= limit) {
-      throw AppError.forbidden(
+      throw new TicketLimitExceededError(
         `Monthly ticket limit reached for this device (${deviceTicketCount}/${limit}). Your plan allows up to ${limit} tickets per device per month.`,
-        'TICKET_LIMIT_EXCEEDED'
       );
     }
   }
@@ -79,9 +78,8 @@ export class TicketQuotaService {
   private async enforceAccountQuota(clientId: string, limit: number): Promise<void> {
     const clientTicketCount = await this.ticketRepo.countClientTicketsInCurrentMonth(clientId);
     if (clientTicketCount >= limit) {
-      throw AppError.forbidden(
+      throw new TicketLimitExceededError(
         `Monthly ticket limit reached (${clientTicketCount}/${limit}). Your subscription plan allows up to ${limit} tickets per month.`,
-        'TICKET_LIMIT_EXCEEDED'
       );
     }
   }

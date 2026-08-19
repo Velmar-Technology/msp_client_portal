@@ -1,6 +1,6 @@
 import { userRepository, UserRepository } from '@modules/auth/repositories/UserRepository';
 import type { UserListFilters } from '@modules/auth/repositories/UserRepository';
-import { AppError } from '@shared/utils/AppError';
+import { NotFoundError, ConflictError, UnauthorizedError, ForbiddenError, InternalServerError } from '@shared/errors';
 import { User, UserRole } from '@shared/types';
 import { UpdateProfileInput, ChangePasswordInput } from '@shared/dtos/user.dto';
 import { hashPassword, comparePassword } from '@shared/utils/passwordUtils';
@@ -24,7 +24,7 @@ export class UserService {
 
   async getProfile(userId: string): Promise<Omit<User, 'password_hash'>> {
     const user = await this.userRepo.findById(userId);
-    if (!user) throw AppError.notFound('User not found');
+    if (!user) throw new NotFoundError('User not found');
     const { password_hash, ...profile } = user;
     return profile;
   }
@@ -33,23 +33,23 @@ export class UserService {
     if (data.email) {
       const existing = await this.userRepo.findByEmail(data.email);
       if (existing && existing.id !== userId) {
-        throw AppError.conflict('Email already in use');
+        throw new ConflictError('Email already in use');
       }
     }
 
     const updated = await this.userRepo.updateProfile(userId, data);
-    if (!updated) throw AppError.internal('Failed to update profile');
+    if (!updated) throw new InternalServerError('Failed to update profile');
     const { password_hash, ...profile } = updated;
     return profile;
   }
 
   async changePassword(userId: string, data: ChangePasswordInput): Promise<void> {
     const user = await this.userRepo.findById(userId);
-    if (!user) throw AppError.notFound('User not found');
+    if (!user) throw new NotFoundError('User not found');
 
     const isValid = await comparePassword(data.currentPassword, user.password_hash);
     if (!isValid) {
-      throw AppError.unauthorized('Invalid current password');
+      throw new UnauthorizedError('Invalid current password');
     }
 
     const hashed = await hashPassword(data.newPassword);
@@ -115,14 +115,14 @@ export class UserService {
     newRole: UserRole
   ): Promise<Omit<User, 'password_hash'>> {
     if (adminUserId === targetUserId) {
-      throw AppError.forbidden('You cannot change your own role');
+      throw new ForbiddenError('You cannot change your own role');
     }
 
     const target = await this.userRepo.findById(targetUserId);
-    if (!target) throw AppError.notFound('User not found');
+    if (!target) throw new NotFoundError('User not found');
 
     const updated = await this.userRepo.updateRole(targetUserId, newRole);
-    if (!updated) throw AppError.internal('Failed to update user role');
+    if (!updated) throw new InternalServerError('Failed to update user role');
 
     const { password_hash, ...user } = updated;
     return user;
@@ -134,14 +134,14 @@ export class UserService {
     isActive: boolean
   ): Promise<Omit<User, 'password_hash'>> {
     if (adminUserId === targetUserId) {
-      throw AppError.forbidden('You cannot change your own status');
+      throw new ForbiddenError('You cannot change your own status');
     }
 
     const target = await this.userRepo.findById(targetUserId);
-    if (!target) throw AppError.notFound('User not found');
+    if (!target) throw new NotFoundError('User not found');
 
     const updated = await this.userRepo.updateStatus(targetUserId, isActive);
-    if (!updated) throw AppError.internal('Failed to update user status');
+    if (!updated) throw new InternalServerError('Failed to update user status');
 
     const { password_hash, ...user } = updated;
     return user;
@@ -179,10 +179,10 @@ export class UserService {
     newClientType: string
   ): Promise<Omit<User, 'password_hash'>> {
     const target = await this.userRepo.findById(targetUserId);
-    if (!target) throw AppError.notFound('User not found');
+    if (!target) throw new NotFoundError('User not found');
 
     const updated = await this.userRepo.updateClientType(targetUserId, newClientType);
-    if (!updated) throw AppError.internal('Failed to update user client type');
+    if (!updated) throw new InternalServerError('Failed to update user client type');
 
     const { password_hash, ...user } = updated;
     return user;
@@ -202,11 +202,11 @@ export class UserService {
 
   async deleteUser(adminUserId: string, targetUserId: string): Promise<void> {
     if (adminUserId === targetUserId) {
-      throw AppError.forbidden('You cannot delete your own account');
+      throw new ForbiddenError('You cannot delete your own account');
     }
 
     const target = await this.userRepo.findById(targetUserId);
-    if (!target) throw AppError.notFound('User not found');
+    if (!target) throw new NotFoundError('User not found');
 
     await this.userRepo.deleteById(targetUserId);
   }

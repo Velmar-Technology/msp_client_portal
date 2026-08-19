@@ -4,7 +4,7 @@ import { ticketResponseRepository, TicketResponseRepository } from '@modules/tic
 import { userRepository, UserRepository } from '@modules/auth';
 import { assignmentService, AssignmentService } from '@modules/tickets/services/AssignmentService';
 import { notificationService, NotificationService } from '@modules/notifications';
-import { AppError } from '@shared/utils/AppError';
+import { NotFoundError, InternalServerError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
 import { ESCALATION_THRESHOLDS_MS, TIER_2_SPECIALTY } from '@shared/config/constants';
 import { Ticket, TicketStatus } from '@shared/types';
@@ -22,7 +22,7 @@ export class EscalationService {
   async enforceEscalation(ticketId: string): Promise<Ticket | null> {
     const ticket = await this.ticketRepo.findById(ticketId);
     if (!ticket) {
-      throw AppError.notFound('Ticket not found');
+      throw new NotFoundError('Ticket not found');
     }
 
     if (ticket.status !== TicketStatus.OPEN) {
@@ -49,7 +49,7 @@ export class EscalationService {
 
     const updated = await this.ticketRepo.assignTechnician(ticketId, technician.id);
     if (!updated) {
-      throw AppError.internal('Failed to assign technician during escalation');
+      throw new InternalServerError('Failed to assign technician during escalation');
     }
 
     await this.eventRepo.create({

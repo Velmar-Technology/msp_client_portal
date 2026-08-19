@@ -3,7 +3,7 @@ import { ticketEventRepository, TicketEventRepository } from '@modules/tickets/r
 import { userRepository, UserRepository } from '@modules/auth';
 import { notificationService, NotificationService } from '@modules/notifications';
 import { ticketAccessPolicy, TicketAccessPolicy } from '@shared/policies/TicketAccessPolicy';
-import { AppError } from '@shared/utils/AppError';
+import { NotFoundError, InternalServerError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
 import { Ticket, TicketCategory, TicketEvent, TicketStatus, UserContext } from '@shared/types';
 import { UpdateTicketStatusInput } from '@shared/dtos/ticket.dto';
@@ -20,7 +20,7 @@ export class TicketStatusService {
   async updateStatus(ticketId: string, data: UpdateTicketStatusInput, ctx: UserContext): Promise<Ticket> {
     const ticket = await this.ticketRepo.findById(ticketId);
     if (!ticket) {
-      throw AppError.notFound('Ticket not found');
+      throw new NotFoundError('Ticket not found');
     }
 
     this.accessPol.assertStatusUpdateAccess(ticket, data.status, ctx);
@@ -34,7 +34,7 @@ export class TicketStatusService {
 
     const updated = await this.ticketRepo.updateStatus(ticketId, data.status);
     if (!updated) {
-      throw AppError.internal('Failed to update ticket status');
+      throw new InternalServerError('Failed to update ticket status');
     }
 
     await this.eventRepo.create({
@@ -55,7 +55,7 @@ export class TicketStatusService {
   async getTicketTimeline(ticketId: string, ctx: UserContext): Promise<TicketEvent[]> {
     const ticket = await this.ticketRepo.findById(ticketId);
     if (!ticket) {
-      throw AppError.notFound('Ticket not found');
+      throw new NotFoundError('Ticket not found');
     }
     this.accessPol.assertReadAccess(ticket, ctx);
     return this.eventRepo.findByTicket(ticketId);

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { UserRole } from '@shared/types';
-import { AppError } from '@shared/utils/AppError';
+import { UnauthorizedError, ForbiddenError } from '@shared/errors';
 
 /**
  * Role-Based Access Control (RBAC) middleware factory.
@@ -11,11 +11,11 @@ import { AppError } from '@shared/utils/AppError';
 export function rbacMiddleware(...allowedRoles: UserRole[]) {
   return (req: Request, _res: Response, next: NextFunction): void => {
     if (!req.user) {
-      throw AppError.unauthorized('Authentication required');
+      throw new UnauthorizedError('Authentication required');
     }
 
     if (!allowedRoles.includes(req.user.role as UserRole)) {
-      throw AppError.forbidden(
+      throw new ForbiddenError(
         `Access denied. Required role: ${allowedRoles.join(' or ')}`,
       );
     }

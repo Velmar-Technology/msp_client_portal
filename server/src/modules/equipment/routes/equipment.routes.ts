@@ -11,44 +11,43 @@ const router = Router();
 router.use(authMiddleware);
 
 /** GET /api/v1/equipment/admin/devices — Get all devices for all clients (Admin only) */
-router.get('/admin/devices', rbacMiddleware(UserRole.ADMIN), (req, res, next) =>
-  equipmentController.getAllDevicesForAdmin(req, res, next)
+router.get('/admin/devices', rbacMiddleware(UserRole.ADMIN), (req, res) =>
+  equipmentController.getAllDevicesForAdmin(req, res)
 );
 
 /** GET /api/v1/equipment/my-devices — Get active devices for the authenticated client */
-router.get('/my-devices', (req, res, next) =>
-  equipmentController.getMyDevices(req, res, next)
+router.get('/my-devices', (req, res) =>
+  equipmentController.getMyDevices(req, res)
 );
 
 /** POST /api/v1/equipment/activate-with-otp — Activate a slot by entering a generated OTP code */
-router.post('/activate-with-otp', validate(ActivateWithOtpDTO, 'body'), (req, res, next) =>
-  equipmentController.activateWithOtp(req, res, next)
+router.post('/activate-with-otp', validate(ActivateWithOtpDTO, 'body'), (req, res) =>
+  equipmentController.activateWithOtp(req, res)
 );
 
 /** GET /api/v1/equipment/subscriptions/:subId/slots — Get equipment slots */
-router.get('/subscriptions/:subId/slots', (req, res, next) =>
-  equipmentController.getSlots(req, res, next)
+router.get('/subscriptions/:subId/slots', (req, res) =>
+  equipmentController.getSlots(req, res)
 );
 
 /** POST /api/v1/equipment/subscriptions/:subId/slots/:slotIndex/otp — Generate OTP code */
-router.post('/subscriptions/:subId/slots/:slotIndex/otp', rbacMiddleware(UserRole.ADMIN, UserRole.TECHNICIAN), (req, res, next) =>
-  equipmentController.generateOTP(req, res, next)
+router.post('/subscriptions/:subId/slots/:slotIndex/otp', rbacMiddleware(UserRole.ADMIN, UserRole.TECHNICIAN), (req, res) =>
+  equipmentController.generateOTP(req, res)
 );
 
 /** POST /api/v1/equipment/subscriptions/:subId/slots/:slotIndex/activate — Activate equipment */
-router.post('/subscriptions/:subId/slots/:slotIndex/activate', (req, res, next) =>
-  equipmentController.activateSlot(req, res, next)
+router.post('/subscriptions/:subId/slots/:slotIndex/activate', (req, res) =>
+  equipmentController.activateSlot(req, res)
 );
 
 /** POST /api/v1/equipment/subscriptions/:subId/slots/:slotIndex/deactivate — Deactivate equipment */
-router.post('/subscriptions/:subId/slots/:slotIndex/deactivate', (req, res, next) =>
-  equipmentController.deactivateSlot(req, res, next)
+router.post('/subscriptions/:subId/slots/:slotIndex/deactivate', (req, res) =>
+  equipmentController.deactivateSlot(req, res)
 );
 
 /** GET /api/v1/equipment/subscriptions/:subId/slots/:slotIndex/nextcloud — Get Nextcloud info for a slot */
-router.get('/subscriptions/:subId/slots/:slotIndex/nextcloud', (req, res, next) =>
-  equipmentController.getSlotNextcloudInfo(req, res, next)
+router.get('/subscriptions/:subId/slots/:slotIndex/nextcloud', (req, res) =>
+  equipmentController.getSlotNextcloudInfo(req, res)
 );
 
 export default router;
-

@@ -3,7 +3,7 @@ import { SubscriptionRepository, subscriptionRepository } from '@modules/subscri
 import { PaypalService, paypalService } from '@modules/billing/services/PaypalService';
 import { InvoiceNotificationService, invoiceNotificationService } from '@modules/billing/services/InvoiceNotificationService';
 import { InvoiceAccessPolicy, invoiceAccessPolicy } from '@shared/policies/InvoiceAccessPolicy';
-import { AppError } from '@shared/utils/AppError';
+import { ValidationError, InternalServerError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
 import { Invoice, InvoiceStatus, SubscriptionStatus, UserRole } from '@shared/types';
 
@@ -35,7 +35,7 @@ export class InvoicePaymentService {
 
   async createPaypalOrder(invoice: Invoice): Promise<{ orderId: string }> {
     if (invoice.status === InvoiceStatus.PAID) {
-      throw AppError.badRequest('Invoice is already paid');
+      throw new ValidationError('Invoice is already paid');
     }
     const order = await this.paypalSvc.createOrder(invoice);
     return { orderId: order.id };
@@ -48,12 +48,12 @@ export class InvoicePaymentService {
 
     const captureResult = await this.paypalSvc.captureOrder(paypalOrderId);
     if (captureResult.status !== 'COMPLETED') {
-      throw AppError.badRequest('PayPal payment was not completed');
+      throw new ValidationError('PayPal payment was not completed');
     }
 
     const updatedInvoice = await this.invoiceRepo.updateStatus(invoice.id, InvoiceStatus.PAID);
     if (!updatedInvoice) {
-      throw AppError.internal('Failed to update invoice status in database');
+      throw new InternalServerError('Failed to update invoice status in database');
     }
 
     await this.activateExpiredSubscriptionsForClient(invoice.client_id, invoice.tenant_id);
@@ -71,7 +71,7 @@ export class InvoicePaymentService {
 
     const updatedInvoice = await this.invoiceRepo.updateStatus(invoice.id, InvoiceStatus.PAID);
     if (!updatedInvoice) {
-      throw AppError.internal('Failed to update invoice status in database');
+      throw new InternalServerError('Failed to update invoice status in database');
     }
 
     await this.activateExpiredSubscriptionsForClient(invoice.client_id, invoice.tenant_id);

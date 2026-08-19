@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { InvalidFileTypeError } from '@shared/errors';
 import { userService } from '@modules/auth/services/UserService';
 import {
   UpdateProfileInput,
@@ -38,8 +39,7 @@ export class UserController {
 
   async uploadAvatar(req: Request, res: Response): Promise<void> {
     if (!req.file) {
-      res.status(400).json({ success: false, message: 'No file uploaded' });
-      return;
+      throw new InvalidFileTypeError('No file uploaded');
     }
     const avatarUrl = `/uploads/${req.file.filename}`;
     await userService.updateProfile(req.user!.userId, { avatar_url: avatarUrl });

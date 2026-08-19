@@ -3,7 +3,7 @@ import { ticketResponseRepository, TicketResponseRepository } from '@modules/tic
 import { userRepository, UserRepository } from '@modules/auth';
 import { notificationService, NotificationService } from '@modules/notifications';
 import { ticketAccessPolicy, TicketAccessPolicy } from '@shared/policies/TicketAccessPolicy';
-import { AppError } from '@shared/utils/AppError';
+import { NotFoundError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
 import { Ticket, TicketAttachment, TicketResponse, UploadedFile, UserContext, UserRole } from '@shared/types';
 
@@ -73,7 +73,7 @@ export class TicketResponseService {
   private async requireTicket(ticketId: string, ctx: UserContext): Promise<Ticket> {
     const ticket = await this.ticketRepo.findById(ticketId);
     if (!ticket) {
-      throw AppError.notFound('Ticket not found');
+      throw new NotFoundError('Ticket not found');
     }
     this.accessPol.assertReadAccess(ticket, ctx);
     return ticket;

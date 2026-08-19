@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { subscriptionService } from '@modules/subscriptions/services/SubscriptionService';
 import { CreateSubscriptionInput, UpdateSubscriptionInput, SendQuoteInput, CreatePaypalOrderInput } from '@shared/dtos/subscription.dto';
 
@@ -28,24 +28,16 @@ export class SubscriptionController {
     res.status(201).json({ success: true, data: subscription });
   }
 
-  async createPaypalOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const data = req.body as CreatePaypalOrderInput;
-      const orderData = await subscriptionService.createPaypalOrderForSubscription(data);
-      res.json({ success: true, data: orderData });
-    } catch (error) {
-      next(error);
-    }
+  async createPaypalOrder(req: Request, res: Response): Promise<void> {
+    const data = req.body as CreatePaypalOrderInput;
+    const orderData = await subscriptionService.createPaypalOrderForSubscription(data);
+    res.json({ success: true, data: orderData });
   }
 
-  async createPaypalSubscription(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const data = req.body as { plan: string; equipmentCount: number; billingCycle?: 'monthly' | 'annual' };
-      const subData = await subscriptionService.createPaypalSubscription(data);
-      res.json({ success: true, data: subData });
-    } catch (error) {
-      next(error);
-    }
+  async createPaypalSubscription(req: Request, res: Response): Promise<void> {
+    const data = req.body as { plan: string; equipmentCount: number; billingCycle?: 'monthly' | 'annual' };
+    const subData = await subscriptionService.createPaypalSubscription(data);
+    res.json({ success: true, data: subData });
   }
 
   async update(req: Request, res: Response): Promise<void> {

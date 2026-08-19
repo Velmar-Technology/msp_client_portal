@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { env } from '@shared/config/env';
 import { JwtPayload } from '@shared/types';
-import { AppError } from '@shared/utils/AppError';
+import { UnauthorizedError } from '@shared/errors';
 import { userRepository } from '@modules/auth/repositories/UserRepository';
 
 /**
@@ -13,7 +13,7 @@ export async function authMiddleware(req: Request, _res: Response, next: NextFun
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return next(AppError.unauthorized('Missing or invalid authorization header'));
+    return next(new UnauthorizedError('Missing or invalid authorization header'));
   }
 
   const token = authHeader.split(' ')[1];
@@ -32,6 +32,6 @@ export async function authMiddleware(req: Request, _res: Response, next: NextFun
     req.user = decoded;
     next();
   } catch {
-    next(AppError.unauthorized('Invalid or expired token'));
+    next(new UnauthorizedError('Invalid or expired token'));
   }
 }

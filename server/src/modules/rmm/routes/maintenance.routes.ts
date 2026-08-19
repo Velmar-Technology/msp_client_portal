@@ -7,18 +7,18 @@ const router = Router();
 router.use(authMiddleware);
 
 /** GET /api/v1/maintenance — Get maintenance list / calendar items */
-router.get('/', (req, res, next) => maintenanceController.getAll(req, res, next));
+router.get('/', (req, res) => maintenanceController.getAll(req, res));
 
 /** POST /api/v1/maintenance — Schedule new device maintenance */
-router.post('/', (req, res, next) => maintenanceController.create(req, res, next));
+router.post('/', (req, res) => maintenanceController.create(req, res));
 
 /** GET /api/v1/maintenance/:id — Get maintenance details */
-router.get('/:id', (req, res, next) => maintenanceController.getById(req, res, next));
+router.get('/:id', (req, res) => maintenanceController.getById(req, res));
 
 /** PUT /api/v1/maintenance/:id — Update maintenance schedule or status */
-router.put('/:id', (req, res, next) => maintenanceController.update(req, res, next));
+router.put('/:id', (req, res) => maintenanceController.update(req, res));
 
 /** DELETE /api/v1/maintenance/:id — Delete maintenance schedule */
-router.delete('/:id', (req, res, next) => maintenanceController.delete(req, res, next));
+router.delete('/:id', (req, res) => maintenanceController.delete(req, res));
 
 export default router;

@@ -1,6 +1,6 @@
 import { planRepository, PlanRepository } from '@modules/subscriptions/repositories/PlanRepository';
 import { planAccessPolicy, PlanAccessPolicy } from '@shared/policies/PlanAccessPolicy';
-import { AppError } from '@shared/utils/AppError';
+import { NotFoundError, ConflictError, InternalServerError } from '@shared/errors';
 import { Plan, PlanClientType, UserContext } from '@shared/types';
 import { CreatePlanInput, UpdatePlanInput } from '@shared/dtos/plan.dto';
 
@@ -14,7 +14,7 @@ export class PlanAdminService {
     this.accessPol.assertAdminMutation(ctx);
     const existing = await this.planRepo.findById(data.id);
     if (existing) {
-      throw AppError.conflict(`Plan with ID '${data.id}' already exists`);
+      throw new ConflictError(`Plan with ID '${data.id}' already exists`);
     }
 
     return this.planRepo.create({
@@ -33,12 +33,12 @@ export class PlanAdminService {
     this.accessPol.assertAdminMutation(ctx);
     const plan = await this.planRepo.findById(id);
     if (!plan) {
-      throw AppError.notFound('Plan not found');
+      throw new NotFoundError('Plan not found');
     }
 
     const updated = await this.planRepo.update(id, data);
     if (!updated) {
-      throw AppError.internal('Failed to update plan');
+      throw new InternalServerError('Failed to update plan');
     }
     return updated;
   }
@@ -47,12 +47,12 @@ export class PlanAdminService {
     this.accessPol.assertAdminMutation(ctx);
     const plan = await this.planRepo.findById(id);
     if (!plan) {
-      throw AppError.notFound('Plan not found');
+      throw new NotFoundError('Plan not found');
     }
 
     const updated = await this.planRepo.update(id, { active: false });
     if (!updated) {
-      throw AppError.internal('Failed to soft delete plan');
+      throw new InternalServerError('Failed to soft delete plan');
     }
     return updated;
   }

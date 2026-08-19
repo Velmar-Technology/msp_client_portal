@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { InvalidFileTypeError } from '@shared/errors';
 import { ticketCreationService } from '@modules/tickets/services/TicketCreationService';
 import { ticketQueryService } from '@modules/tickets/services/TicketQueryService';
 import { ticketStatusService } from '@modules/tickets/services/TicketStatusService';
@@ -70,8 +71,7 @@ export class TicketController {
 
   async uploadAttachment(req: Request, res: Response): Promise<void> {
     if (!req.file) {
-      res.status(400).json({ success: false, message: 'No file uploaded' });
-      return;
+      throw new InvalidFileTypeError('No file uploaded');
     }
 
     const attachment = await ticketAttachmentService.addAttachment(
