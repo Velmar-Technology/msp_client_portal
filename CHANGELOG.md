@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.4.2](https://github.com/eapolancovelmar/msp_client_portal/compare/v1.4.1...v1.4.2) (2026-08-19)
+
+
+### Features
+
+* **client:** align DevicesPage tab navigation structure with ApiStatusPage ([656dc9b](https://github.com/eapolancovelmar/msp_client_portal/commit/656dc9bb04c5a9c5d36cf9d50607601ef9d4b0da))
+
+
+### Bug Fixes
+
+* **i18n,ui:** add missing i18n keys for user management and tickets, restore entrance animations ([bf54a41](https://github.com/eapolancovelmar/msp_client_portal/commit/bf54a41b9981841fb1d6d34183956041132d16ac))
+
 ## [1.4.1](https://github.com/eapolancovelmar/msp_client_portal/compare/v1.4.0...v1.4.1) (2026-08-19)
 
 
