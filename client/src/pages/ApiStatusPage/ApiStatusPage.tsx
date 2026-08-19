@@ -248,26 +248,6 @@ export function ApiStatusPage() {
           </span>
         ),
       },
-      {
-        accessorKey: "message",
-        header: ({ column }) => <DataTableColumnHeader column={column} title={t("apiStatus.tableMessage")} />,
-        cell: ({ row }) => {
-          const message = row.original.message;
-          if (!message) return t("apiStatus.dash");
-          return (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="cursor-help underline decoration-dotted decoration-zinc-300 dark:decoration-zinc-700 text-xs text-zinc-500 dark:text-zinc-400 max-w-xs truncate inline-block">
-                    {message}
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent className="text-xs">{message}</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          );
-        },
-      },
     ],
     [t],
   );
@@ -572,7 +552,9 @@ export function ApiStatusPage() {
               {/* Fully Configured */}
               <SummaryCard
                 icon={<CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />}
-                title={<span className="text-emerald-600 dark:text-emerald-400">{t("apiStatus.kpiEnvConfigured")}</span>}
+                title={
+                  <span className="text-emerald-600 dark:text-emerald-400">{t("apiStatus.kpiEnvConfigured")}</span>
+                }
                 value={
                   <span className="font-mono text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
                     {isLoading ? <Skeleton className="h-8 w-12 inline-block" /> : data?.envConfiguredCount || 0}
