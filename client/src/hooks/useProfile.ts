@@ -3,10 +3,21 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { userService } from "@/services/userService";
+import { useUrlState } from "@/hooks/useUrlState";
 
 export function useProfile() {
   const { t, i18n } = useTranslation();
   const { user, updateUser } = useAuth();
+  const { getParam, setParam } = useUrlState();
+
+  const activeTab = getParam("tab", "account");
+
+  const setActiveTab = useCallback(
+    (tab: string) => {
+      setParam("tab", tab === "account" ? null : tab);
+    },
+    [setParam]
+  );
 
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
@@ -144,6 +155,8 @@ export function useProfile() {
   return {
     t,
     user,
+    activeTab,
+    setActiveTab,
     name, setName,
     email, setEmail,
     phoneNumber, setPhoneNumber,
@@ -164,4 +177,5 @@ export function useProfile() {
     handleSave,
   };
 }
+
 

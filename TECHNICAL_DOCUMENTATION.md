@@ -1118,8 +1118,19 @@ El frontend está ubicado en `client/`. Utiliza Zustand para la gestión de esta
 | `useUserManagement` | `Ninguno` | Operación lógica directa |
 
 
+#### [useUrlState.ts](./file:/c:/Users/Public/Workspace/msp_client_portal/client/src/hooks/useUrlState.ts)
+*Ruta: `client/src/hooks/useUrlState.ts`*
+
+##### Interfaces definidas:
+- `SetUrlParamsOptions`
+
+##### Funciones auxiliares / Standalone:
+| Función | Parámetros | Descripción |
+| :--- | :--- | :--- |
+| `useUrlState` | `Ninguno` | Sincronización declarativa y type-safe de parámetros de búsqueda URL (search params) |
 
 ---
+
 
 ### 5.4. Páginas y Componentes de Vista (`client/src/pages/` y `client/src/components/`)
 
@@ -1609,5 +1620,30 @@ client/src/routes/
 | Función | Parámetros | Descripción |
 | :--- | :--- | :--- |
 | `UserStatsBar` | `{ stats, loading }: UserStatsBarProps` | Operación lógica directa |
+
+
+---
+
+## 6. Arquitectura de Deep Links y Estado de Recursos por URL
+
+La aplicación implementa patrones avanzados de URLs para aplicaciones SaaS que permiten a los usuarios guardar en marcadores (bookmarking), compartir enlaces exactos y mantener la navegación persistente:
+
+### 6.1. Patrones de URL Soportados
+
+1. **IDs Dinámicos (`/tickets/:id`, `/devices/:id`):**
+   - Rutas RESTful asociadas a entidades individuales con resolución dinámica de migas de pan (breadcrumbs).
+2. **Pestañas y Sub-vistas por Parámetros de Búsqueda (`?tab=...`):**
+   - Vistas secundarias en `/billing?tab=plans`, `/help?tab=billing`, `/profile?tab=security`.
+   - Mantiene activo el componente de layout (`AppLayout`) y la barra lateral (sidebar) sin desmontar la estructura ni reiniciar el scroll.
+3. **Modales y Overlays Compartibles (`?openModal=...&...`):**
+   - Apertura automática de modales al navegar o cargar un enlace compartido:
+     - `/tickets?openModal=create-ticket`
+     - `/billing?openModal=pay-invoice&invoiceId=...`
+     - `/billing?openModal=invoice-details&invoiceId=...`
+     - `/help?tab=billing&faq=4` (expande automáticamente una pregunta del FAQ).
+
+### 6.2. Hook `useUrlState`
+El hook [`useUrlState.ts`](file:///c:/Users/Public/Workspace/msp_client_portal/client/src/hooks/useUrlState.ts) encapsula `useSearchParams` de `react-router-dom` para ofrecer actualización atómica y reactiva de los query parameters sin perder otros filtros o estados activos en la URL.
+
 
 

@@ -1,35 +1,49 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation } from 'react-router-dom';
 import { invoiceService } from "@/services/invoiceService";
 import type { Invoice } from "@/services/invoiceService";
+import { useUrlState } from "@/hooks/useUrlState";
 
 export function useBilling() {
   const { t, i18n } = useTranslation();
+  const location = useLocation();
+  const { getParam, getNumberParam, setParam, setParams, removeParams } = useUrlState();
+
   const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [page, setPageInternal] = useState(() => getNumberParam("page", 1));
+  const [limit, setLimitInternal] = useState(() => getNumberParam("limit", 10));
   const [loading, setLoading] = useState(true);
 
-  // Filters (client-side)
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  // Active tab state ("invoices" | "plans")
+  const activeTab = useMemo(() => getParam("tab", "invoices"), [getParam]);
+
+  const setActiveTab = useCallback(
+    (tab: string) => {
+      setParam("tab", tab === "invoices" ? null : tab);
+    },
+    [setParam]
+  );
+
+  // Filters
+  const [search, setSearchInternal] = useState(() => getParam("search", ""));
+  const [statusFilter, setStatusFilterInternal] = useState(() => getParam("status", ""));
 
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
-  const [showPayModal, setShowPayModal] = useState(false);
+  const [showPayModal, setShowPayModalInternal] = useState(false);
   const [selectedInvoiceToMarkPaid, setSelectedInvoiceToMarkPaid] = useState<Invoice | null>(null);
-  const [showMarkPaidModal, setShowMarkPaidModal] = useState(false);
+  const [showMarkPaidModal, setShowMarkPaidModalInternal] = useState(false);
   const [selectedInvoiceDetails, setSelectedInvoiceDetails] = useState<Invoice | null>(null);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModalInternal] = useState(false);
   const [markingPaid, setMarkingPaid] = useState(false);
   const [selectedInvoiceToCancel, setSelectedInvoiceToCancel] = useState<Invoice | null>(null);
-  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showCancelModal, setShowCancelModalInternal] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch a large batch to enable client-side filtering
       const result = await invoiceService.getAll(1, 200);
       setAllInvoices(result.data);
     } catch (err) {
@@ -45,6 +59,92 @@ export function useBilling() {
     }, 0);
     return () => clearTimeout(timer);
   }, [fetchInvoices]);
+
+  const openPayModal = useCallback(
+    (inv: Invoice) => {
+      setSelectedInvoice(inv);
+      setShowPayModalInternal(true);
+      setParams({ openModal: "pay-invoice", invoiceId: inv.id });
+    },
+    [setParams]
+  );
+
+  const closePayModal = useCallback(() => {
+    setShowPayModalInternal(false);
+    setSelectedInvoice(null);
+    removeParams(["openModal", "invoiceId"]);
+  }, [removeParams]);
+
+  const openMarkPaidModal = useCallback(
+    (inv: Invoice) => {
+      setSelectedInvoiceToMarkPaid(inv);
+      setShowMarkPaidModalInternal(true);
+      setParams({ openModal: "mark-paid", invoiceId: inv.id });
+    },
+    [setParams]
+  );
+
+  const closeMarkPaidModal = useCallback(() => {
+    setShowMarkPaidModalInternal(false);
+    setSelectedInvoiceToMarkPaid(null);
+    removeParams(["openModal", "invoiceId"]);
+  }, [removeParams]);
+
+  const openDetailsModal = useCallback(
+    (inv: Invoice) => {
+      setSelectedInvoiceDetails(inv);
+      setShowDetailsModalInternal(true);
+      setParams({ openModal: "invoice-details", invoiceId: inv.id });
+    },
+    [setParams]
+  );
+
+  const closeDetailsModal = useCallback(() => {
+    setShowDetailsModalInternal(false);
+    setSelectedInvoiceDetails(null);
+    removeParams(["openModal", "invoiceId"]);
+  }, [removeParams]);
+
+  const openCancelModal = useCallback(
+    (inv: Invoice) => {
+      setSelectedInvoiceToCancel(inv);
+      setShowCancelModalInternal(true);
+      setParams({ openModal: "cancel-invoice", invoiceId: inv.id });
+    },
+    [setParams]
+  );
+
+  const closeCancelModal = useCallback(() => {
+    setShowCancelModalInternal(false);
+    setSelectedInvoiceToCancel(null);
+    removeParams(["openModal", "invoiceId"]);
+  }, [removeParams]);
+
+  // Sync deep link params when allInvoices are available
+  useEffect(() => {
+    if (allInvoices.length === 0) return;
+    const openModalParam = getParam("openModal");
+    const invoiceIdParam = getParam("invoiceId") || (location.state as { invoiceId?: string })?.invoiceId;
+
+    if (invoiceIdParam) {
+      const inv = allInvoices.find((i) => i.id === invoiceIdParam);
+      if (inv) {
+        if (openModalParam === "pay-invoice") {
+          setSelectedInvoice(inv);
+          setShowPayModalInternal(true);
+        } else if (openModalParam === "mark-paid") {
+          setSelectedInvoiceToMarkPaid(inv);
+          setShowMarkPaidModalInternal(true);
+        } else if (openModalParam === "cancel-invoice") {
+          setSelectedInvoiceToCancel(inv);
+          setShowCancelModalInternal(true);
+        } else if (openModalParam === "invoice-details" || !openModalParam) {
+          setSelectedInvoiceDetails(inv);
+          setShowDetailsModalInternal(true);
+        }
+      }
+    }
+  }, [allInvoices, getParam, location.state]);
 
   const handleDownload = useCallback(async (inv: Invoice) => {
     setDownloadingId(inv.id);
@@ -65,36 +165,6 @@ export function useBilling() {
     }
   }, [i18n.language]);
 
-  const openPayModal = useCallback((inv: Invoice) => {
-    setSelectedInvoice(inv);
-    setShowPayModal(true);
-  }, []);
-
-  const closePayModal = useCallback(() => {
-    setShowPayModal(false);
-    setSelectedInvoice(null);
-  }, []);
-
-  const openMarkPaidModal = useCallback((inv: Invoice) => {
-    setSelectedInvoiceToMarkPaid(inv);
-    setShowMarkPaidModal(true);
-  }, []);
-
-  const closeMarkPaidModal = useCallback(() => {
-    setShowMarkPaidModal(false);
-    setSelectedInvoiceToMarkPaid(null);
-  }, []);
-
-  const openDetailsModal = useCallback((inv: Invoice) => {
-    setSelectedInvoiceDetails(inv);
-    setShowDetailsModal(true);
-  }, []);
-
-  const closeDetailsModal = useCallback(() => {
-    setShowDetailsModal(false);
-    setSelectedInvoiceDetails(null);
-  }, []);
-
   const handleMarkAsPaid = useCallback(async () => {
     if (!selectedInvoiceToMarkPaid) return;
     setMarkingPaid(true);
@@ -108,16 +178,6 @@ export function useBilling() {
       setMarkingPaid(false);
     }
   }, [selectedInvoiceToMarkPaid, fetchInvoices, closeMarkPaidModal]);
-
-  const openCancelModal = useCallback((inv: Invoice) => {
-    setSelectedInvoiceToCancel(inv);
-    setShowCancelModal(true);
-  }, []);
-
-  const closeCancelModal = useCallback(() => {
-    setShowCancelModal(false);
-    setSelectedInvoiceToCancel(null);
-  }, []);
 
   const handleCancelInvoice = useCallback(async (reason?: string) => {
     if (!selectedInvoiceToCancel) return;
@@ -157,31 +217,49 @@ export function useBilling() {
   const filteredTotal = filteredInvoices.length;
   const totalPages = Math.ceil(filteredTotal / limit);
 
-  // Paginate the filtered list
   const paginatedInvoices = filteredInvoices.slice(
     (page - 1) * limit,
     page * limit,
   );
 
-  // Reset page when filters change
-  const handleSearchChange = useCallback((value: string) => {
-    setSearch(value);
-    setPage(1);
-  }, []);
+  const setPage = useCallback(
+    (newPage: number) => {
+      setPageInternal(newPage);
+      setParam("page", newPage === 1 ? null : newPage);
+    },
+    [setParam]
+  );
 
-  const handleStatusFilterChange = useCallback((value: string) => {
-    setStatusFilter(value);
-    setPage(1);
-  }, []);
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchInternal(value);
+      setParams({ search: value || null, page: null });
+    },
+    [setParams]
+  );
 
-  const handleLimitChange = useCallback((value: number) => {
-    setLimit(value);
-    setPage(1);
-  }, []);
+  const handleStatusFilterChange = useCallback(
+    (value: string) => {
+      setStatusFilterInternal(value);
+      setParams({ status: value || null, page: null });
+    },
+    [setParams]
+  );
+
+  const handleLimitChange = useCallback(
+    (value: number) => {
+      setLimitInternal(value);
+      setPageInternal(1);
+      setParams({ limit: value === 10 ? null : value, page: null });
+    },
+    [setParams]
+  );
 
   return {
     t,
     i18n,
+    activeTab,
+    setActiveTab,
     invoices: paginatedInvoices,
     total: filteredTotal,
     page,
@@ -220,3 +298,4 @@ export function useBilling() {
     fetchInvoices,
   };
 }
+

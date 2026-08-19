@@ -7,6 +7,7 @@ import type {
   ClientType,
   UserStats,
 } from "../services/userService";
+import { useUrlState } from "@/hooks/useUrlState";
 
 // ---- Types ----
 
@@ -41,6 +42,7 @@ const DEFAULT_PAGE_SIZE = 20;
 
 export function useUserManagement() {
   const { t, i18n } = useTranslation();
+  const { getParam, getNumberParam, setParam, setParams } = useUrlState();
 
   // Data state
   const [users, setUsers] = useState<ManagedUser[]>([]);
@@ -50,22 +52,30 @@ export function useUserManagement() {
   const [actionLoading, setActionLoading] = useState(false);
 
   // Pagination
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
+  const [page, setPageInternal] = useState(() => getNumberParam("page", 1));
+  const [limit, setLimitInternal] = useState(() => getNumberParam("limit", DEFAULT_PAGE_SIZE));
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
 
   // Filters
-  const [roleFilter, setRoleFilter] = useState<RoleFilter>("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [roleFilter, setRoleFilterInternal] = useState<RoleFilter>(() => getParam("role", "") as RoleFilter);
+  const [statusFilter, setStatusFilterInternal] = useState<StatusFilter>(() => getParam("status", "all") as StatusFilter);
+  const [searchQuery, setSearchQuery] = useState(() => getParam("search", ""));
+  const [debouncedSearch, setDebouncedSearch] = useState(() => getParam("search", ""));
 
   // Confirmation dialog
   const [confirmation, setConfirmation] = useState<ConfirmationState>(INITIAL_CONFIRMATION);
 
   // Debounce search input
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const setPage = useCallback(
+    (newPage: number) => {
+      setPageInternal(newPage);
+      setParam("page", newPage === 1 ? null : newPage);
+    },
+    [setParam]
+  );
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchQuery(value);
@@ -74,9 +84,10 @@ export function useUserManagement() {
     }
     debounceTimer.current = setTimeout(() => {
       setDebouncedSearch(value);
-      setPage(1);
+      setPageInternal(1);
+      setParams({ search: value || null, page: null });
     }, 300);
-  }, []);
+  }, [setParams]);
 
   // Fetch users
   const fetchUsers = useCallback(async () => {
@@ -131,19 +142,22 @@ export function useUserManagement() {
 
   // Filter handlers (reset page on filter change)
   const handleRoleFilterChange = useCallback((value: RoleFilter) => {
-    setRoleFilter(value);
-    setPage(1);
-  }, []);
+    setRoleFilterInternal(value);
+    setPageInternal(1);
+    setParams({ role: value || null, page: null });
+  }, [setParams]);
 
   const handleStatusFilterChange = useCallback((value: StatusFilter) => {
-    setStatusFilter(value);
-    setPage(1);
-  }, []);
+    setStatusFilterInternal(value);
+    setPageInternal(1);
+    setParams({ status: value === "all" ? null : value, page: null });
+  }, [setParams]);
 
   const handleLimitChange = useCallback((value: number) => {
-    setLimit(value);
-    setPage(1);
-  }, []);
+    setLimitInternal(value);
+    setPageInternal(1);
+    setParams({ limit: value === DEFAULT_PAGE_SIZE ? null : value, page: null });
+  }, [setParams]);
 
   // Confirmation dialog handlers
   const requestRoleChange = useCallback(
@@ -425,4 +439,5 @@ export function useUserManagement() {
     formatDate,
   };
 }
+
 
