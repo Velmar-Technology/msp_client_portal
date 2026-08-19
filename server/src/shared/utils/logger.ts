@@ -14,7 +14,7 @@ export const logger = winston.createLogger({
     timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     errors({ stack: true }),
   ),
-  defaultMeta: { service: 'msp-helpdesk' },
+  defaultMeta: { service: 'msp-services' },
   transports: [
     // Console transport
     new winston.transports.Console({

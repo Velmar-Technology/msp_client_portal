@@ -3,7 +3,7 @@ name: Build and Deploy to VPS
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
     inputs:
       releaseVersion:
@@ -53,8 +53,8 @@ jobs:
           echo "OWNER_LC=${OWNER,,}" >> ${GITHUB_ENV}
           echo "REPO_LC=${REPO,,}" >> ${GITHUB_ENV}
         env:
-          OWNER: '${{ github.repository_owner }}'
-          REPO: '${{ github.event.repository.name }}'
+          OWNER: "${{ github.repository_owner }}"
+          REPO: "${{ github.event.repository.name }}"
 
       - name: Build & Push Server Image
         uses: docker/build-push-action@v5
@@ -63,9 +63,9 @@ jobs:
           file: server/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ env.OWNER_LC }}/msp-helpdesk-server:latest
-            ghcr.io/${{ env.OWNER_LC }}/msp-helpdesk-server:${{ github.sha }}
-            ghcr.io/${{ env.OWNER_LC }}/msp-helpdesk-server:${{ env.RELEASE_VERSION }}
+            ghcr.io/${{ env.OWNER_LC }}/msp-services-server:latest
+            ghcr.io/${{ env.OWNER_LC }}/msp-services-server:${{ github.sha }}
+            ghcr.io/${{ env.OWNER_LC }}/msp-services-server:${{ env.RELEASE_VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -102,9 +102,9 @@ jobs:
             VITE_APP_VERSION=${{ env.CLIENT_VERSION }}
             VITE_PAYPAL_CLIENT_ID=${{ secrets.VITE_PAYPAL_CLIENT_ID }}
           tags: |
-            ghcr.io/${{ env.OWNER_LC }}/msp-helpdesk-client:latest
-            ghcr.io/${{ env.OWNER_LC }}/msp-helpdesk-client:${{ github.sha }}
-            ghcr.io/${{ env.OWNER_LC }}/msp-helpdesk-client:${{ env.RELEASE_VERSION }}
+            ghcr.io/${{ env.OWNER_LC }}/msp-services-client:latest
+            ghcr.io/${{ env.OWNER_LC }}/msp-services-client:${{ github.sha }}
+            ghcr.io/${{ env.OWNER_LC }}/msp-services-client:${{ env.RELEASE_VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -130,7 +130,7 @@ jobs:
         run: |
           echo "OWNER_LC=${OWNER,,}" >> ${GITHUB_ENV}
         env:
-          OWNER: '${{ github.repository_owner }}'
+          OWNER: "${{ github.repository_owner }}"
 
       - name: Copy Docker Compose file to VPS via SCP
         uses: appleboy/scp-action@master
@@ -141,7 +141,6 @@ jobs:
           port: ${{ secrets.VPS_PORT || 22 }}
           source: "docker-compose.prod.yml"
           target: "~/msp-client-portal"
-
 
       - name: Execute Remote SSH Deploy Script
         uses: appleboy/ssh-action@master

@@ -8,7 +8,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../../.env') }); // root env
 dotenv.config(); // local env
 
 async function run() {
-  const recipient = process.argv[2] || 'mike.tech@msp-helpdesk.com';
+  const recipient = process.argv[2] || 'mike.tech@msp-services.com';
   
   console.log('--------------------------------------------------');
   console.log('📧 MSP Help Desk — Email Connection Diagnostic');

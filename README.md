@@ -49,11 +49,13 @@ client/src/
 This portal uses a **Shared Database, Shared Schema** multi-tenant model. All client data is partitioned logically using indexed `tenant_id` foreign keys referencing `tenants(id) ON DELETE CASCADE`.
 
 ### User Roles & Isolation Scopes
+
 1. **Tenants (`tenants` table):** Client organizations (e.g., Acme Corp) or the Service Provider (`MSP Provider`).
 2. **Client Users (`CLIENT` role):** Restricted strictly to their `tenant_id`. They can only view/manage their own organization's tickets, subscriptions, and invoices.
 3. **Staff Users (`ADMIN` & `TECHNICIAN` roles):** Belong to the MSP provider tenant with cross-tenant administrative access to manage tickets, dispatch technicians, and handle billing globally.
 
 ### Partitioned Tables
+
 - `users`
 - `tickets`
 - `subscriptions`
@@ -66,6 +68,7 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
 ## 🛠️ Master Business Logic Specifications
 
 ### Module 1: Support, Routing & Escalation Engine
+
 - **BL-101: 1-Hour SLA Cancellation Rule** (`TicketService.enforceSLARule`)
   - Tickets in `WARRANTY` or `SERVICE_OUTAGE` categories can only be cancelled within 60 minutes ($\text{SLA\_WINDOW\_MS} = 3,600,000$) of creation. Late cancellation attempts throw `AppError.slaViolation`.
 - **BL-102: Round-Robin Dispatch with Specialty Fallback** (`AssignmentService.getNextTechnician`)
@@ -81,6 +84,7 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
   - **$FCR_A$** (Automated First Contact Resolution) $= \frac{\text{AutomatedResolved}}{\text{TotalTicketsIngested}}$
 
 ### Module 2: Subscriptions, Licensing & True-Ups
+
 - **BL-201: Plan Feature Quotas** (`TicketService.enforceTicketLimit`)
   - Blocks ticket creation with `AppError.forbidden` (`TICKET_LIMIT_EXCEEDED`) when client plan limits are reached.
 - **BL-202: Automated License True-Up** (`SubscriptionService.reconcileSeats`)
@@ -89,11 +93,13 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
   - Shifts out-of-scope requests (hardware moves, site setups) to `PENDING_ESTIMATE` pending client authorization.
 
 ### Module 3: Access Control & Ticket State Machine
+
 - **BL-301: Ticket State Machine & RBAC** (`TicketService.updateTicketStatus`)
   - All status transitions must comply with the `STATUS_TRANSITIONS` state matrix.
   - Multi-tenant RBAC enforces isolation: Clients are limited to `CANCELLED` status changes; Technicians manage assigned tickets; Admins hold global permissions.
 
 ### Module 4: Billing Automation & Invoicing Lifecycle
+
 - **BL-401: Automatic Subscription Reactivation** (`InvoiceService.capturePaypalOrder`, `InvoiceService.markAsPaid`)
   - Successful PayPal capture or manual payment updates invoice to `PAID` and immediately reactivates all `EXPIRED` client subscriptions to `ACTIVE`.
 - **BL-402: Recurring Renewal Scheduler** (`SubscriptionScheduler.processSubscriptions`)
@@ -102,6 +108,7 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
   - Admins can mark bank/wire transfers as `PAID` without PayPal API dependencies, automatically reactivating expired subscriptions.
 
 ### Module 5: Account Health & QBR Logic
+
 - **BL-501: Composite Client Health Scoring** (`ClientHealthService.calculateScore`)
   - Health Formula:
     $$H = 0.40 \times S_{\text{ticket}} + 0.30 \times S_{\text{hardware}} + 0.30 \times S_{\text{security}}$$
@@ -112,30 +119,33 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
 ## 🔄 Core Data Journeys & Command-Query Separation (CQS)
 
 ### Journey 1: Ticket Creation & Auto-Assignment
+
 1. **Inputs:** Client posts `CreateTicketInput` payload to `POST /api/tickets`.
 2. **Execution:**
-   - *Query:* `TicketService.enforceTicketLimit` checks active client subscriptions and monthly ticket count.
-   - *Command:* `ticketRepository.create` inserts ticket with `OPEN` status.
-   - *Command:* `ticketEventRepository.create` logs audit event.
-   - *Command:* `assignmentService.getNextTechnician` calculates assigned technician via round-robin and updates `round_robin_state`.
-   - *Side Effect:* `notificationService.onTicketCreated` triggers email and in-app alerts.
+   - _Query:_ `TicketService.enforceTicketLimit` checks active client subscriptions and monthly ticket count.
+   - _Command:_ `ticketRepository.create` inserts ticket with `OPEN` status.
+   - _Command:_ `ticketEventRepository.create` logs audit event.
+   - _Command:_ `assignmentService.getNextTechnician` calculates assigned technician via round-robin and updates `round_robin_state`.
+   - _Side Effect:_ `notificationService.onTicketCreated` triggers email and in-app alerts.
 3. **Outputs:** Ticket inserted, assigned tech set, HTTP 201 response.
 
 ### Journey 2: Ticket Cancellation & SLA Validation
+
 1. **Inputs:** Client sends `{ status: "CANCELLED" }` via `PATCH /api/tickets/:id/status`.
 2. **Execution:**
-   - *Query & Validation:* Verifies tenant match and owner rights. Checks transition rules.
-   - *SLA Rule:* For `WARRANTY` or `SERVICE_OUTAGE`, verifies `Date.now() - ticket.created_at <= 1 hour`. Throws `slaViolation` if exceeded.
-   - *Command:* `ticketRepository.updateStatus` sets status to `CANCELLED`.
-   - *Command:* `ticketEventRepository.create` logs audit entry.
+   - _Query & Validation:_ Verifies tenant match and owner rights. Checks transition rules.
+   - _SLA Rule:_ For `WARRANTY` or `SERVICE_OUTAGE`, verifies `Date.now() - ticket.created_at <= 1 hour`. Throws `slaViolation` if exceeded.
+   - _Command:_ `ticketRepository.updateStatus` sets status to `CANCELLED`.
+   - _Command:_ `ticketEventRepository.create` logs audit entry.
 3. **Outputs:** Ticket cancelled, HTTP 200 returned.
 
 ### Journey 3: Invoice Payment & Subscription Activation
+
 1. **Inputs:** Client captures PayPal order via `POST /api/invoices/:id/capture-paypal` OR Admin validates wire transfer via `POST /api/invoices/:id/mark-paid`.
 2. **Execution:**
-   - *Command:* `invoiceRepository.updateStatus(id, 'PAID')`.
-   - *Command:* `activateExpiredSubscriptionsForClient` updates linked `EXPIRED` client subscriptions to `ACTIVE`.
-   - *Command:* `notificationService.createInAppNotification` alerts client and admins.
+   - _Command:_ `invoiceRepository.updateStatus(id, 'PAID')`.
+   - _Command:_ `activateExpiredSubscriptionsForClient` updates linked `EXPIRED` client subscriptions to `ACTIVE`.
+   - _Command:_ `notificationService.createInAppNotification` alerts client and admins.
 3. **Outputs:** Invoice status `PAID`, subscriptions `ACTIVE`, HTTP 200 returned.
 
 ---
@@ -176,23 +186,26 @@ Continuous Integration and Deployment is automated via GitHub Actions ([.github/
 ```
 
 ### 1. GitHub Actions Workflow Trigger
+
 - **Automated Trigger:** Pushing a version tag matching `v*` (e.g. `v1.2.0`).
 - **Manual Trigger:** `workflow_dispatch` trigger with optional custom `releaseVersion` input.
 
 ### 2. Build & Push Docker Images Job (`build-and-push`)
+
 - Computes release version from tag, dispatch input, or `client/package.json`.
 - Log in to **GitHub Container Registry (`ghcr.io`)**.
 - Builds and pushes backend server Docker image (`server/Dockerfile`) with tags:
-  - `ghcr.io/<owner>/msp-helpdesk-server:latest`
-  - `ghcr.io/<owner>/msp-helpdesk-server:<sha>`
-  - `ghcr.io/<owner>/msp-helpdesk-server:<version>`
+  - `ghcr.io/<owner>/msp-services-server:latest`
+  - `ghcr.io/<owner>/msp-services-server:<sha>`
+  - `ghcr.io/<owner>/msp-services-server:<version>`
 - Validates secrets (`VITE_GOOGLE_CLIENT_ID`, `VITE_PAYPAL_CLIENT_ID`).
 - Builds and pushes frontend client Docker image (`client/Dockerfile`) passing build args (`VITE_GOOGLE_CLIENT_ID`, `VITE_APP_VERSION`, `VITE_PAYPAL_CLIENT_ID`) with tags:
-  - `ghcr.io/<owner>/msp-helpdesk-client:latest`
-  - `ghcr.io/<owner>/msp-helpdesk-client:<sha>`
-  - `ghcr.io/<owner>/msp-helpdesk-client:<version>`
+  - `ghcr.io/<owner>/msp-services-client:latest`
+  - `ghcr.io/<owner>/msp-services-client:<sha>`
+  - `ghcr.io/<owner>/msp-services-client:<version>`
 
 ### 3. VPS Deployment Job (`deploy`)
+
 - **SCP Transfer:** Transfers `docker-compose.prod.yml` to `~/msp-client-portal` on VPS via SSH (`appleboy/scp-action`).
 - **SSH Deployment:** Executes remote deployment commands (`appleboy/ssh-action`):
   ```bash
@@ -216,6 +229,7 @@ Continuous Integration and Deployment is automated via GitHub Actions ([.github/
    Copy `server/.env.example` to `server/.env` and configure PostgreSQL credentials (`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`).
 
 2. **Database Migrations:**
+
    ```bash
    # From project root:
    npm run db:migrate --prefix server
@@ -229,6 +243,7 @@ Continuous Integration and Deployment is automated via GitHub Actions ([.github/
    ```
 
 ### Drizzle Kit CLI Commands (From `server/` directory)
+
 - **Drizzle Studio Inspector:** `npx drizzle-kit studio`
 - **Generate SQL Migrations:** `npx drizzle-kit generate`
 - **Push Schema Direct to DB:** `npx drizzle-kit push`
@@ -249,6 +264,7 @@ Continuous Integration and Deployment is automated via GitHub Actions ([.github/
 ## 🎨 UI Primitives & Skeleton Loaders
 
 The frontend relies on **shadcn/ui** primitives located in `client/src/components/ui/`. Modern structural skeleton loaders replace standard loading spinners for enhanced perceived performance:
+
 - **Skeleton Primitive:** [skeleton.tsx](file:///c:/Users/Public/Workspace/msp_client_portal/client/src/components/ui/skeleton.tsx)
 - **DataTable Skeleton:** [data-table.tsx](file:///c:/Users/Public/Workspace/msp_client_portal/client/src/components/ui/data-table.tsx) displays skeleton rows matching table structure when `loading` is active.
 - **Ticket Detail Skeleton:** [TicketDetailPage.tsx](file:///c:/Users/Public/Workspace/msp_client_portal/client/src/pages/TicketDetailPage.tsx) renders layout grid skeletons during asynchronous data fetches.
@@ -258,4 +274,5 @@ The frontend relies on **shadcn/ui** primitives located in `client/src/component
 ## 📖 API Documentation
 
 Interactive Swagger API documentation is available when the server is running.
+
 - **Swagger UI URL:** [http://localhost:3001/api-docs](http://localhost:3001/api-docs)
