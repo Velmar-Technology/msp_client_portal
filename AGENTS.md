@@ -70,7 +70,7 @@ Clean Architecture mandates that source code dependencies must strictly point **
 
 - **BL-101: 1-Hour SLA Cancellation Rule** (`TicketService.enforceSLARule`)
   - **Condition**: Tickets in `WARRANTY` or `SERVICE_OUTAGE` categories can only be cancelled within 60 minutes ($\text{SLA\_WINDOW\_MS} = 3,600,000$) of creation.
-  - **Enforcement**: Late cancellation attempts throw `AppError.slaViolation`.
+  - **Enforcement**: Late cancellation attempts throw `SlaViolationError`.
 - **BL-102: Round-Robin Dispatch with Specialty Fallback** (`AssignmentService.getNextTechnician`)
   - **Condition**: Distributes tickets equitably per category.
   - **Fallback Chain**: Active Specialists $\rightarrow$ General Active Technician Pool.
@@ -90,7 +90,7 @@ Clean Architecture mandates that source code dependencies must strictly point **
 
 - **BL-201: Plan Feature Quota Rule** (`TicketService.enforceTicketLimit`)
   - **Condition**: Validates client subscription feature caps (`HELPDESK_SUPPORT`).
-  - **Enforcement**: Blocks ticket creation with `AppError.forbidden` (`TICKET_LIMIT_EXCEEDED`) once thresholds (e.g., 5 tickets/device/month or 10 tickets/account/month) are reached.
+  - **Enforcement**: Blocks ticket creation with `TicketLimitExceededError` once thresholds (e.g., 5 tickets/device/month or 10 tickets/account/month) are reached.
 - **BL-202: Automated License True-Up & Scaling** (`SubscriptionService.reconcileSeats`)
   - **Condition**: Nightly job reconciles cloud user seats (e.g., M365/Azure AD) and active RMM agents against active client contracts.
   - **Action**: Automatically updates billable quantity ($Q_{\text{billed}}$) for the next billing run if active count exceeds contracted baseline ($Q_{\text{contracted}}$).
@@ -100,7 +100,7 @@ Clean Architecture mandates that source code dependencies must strictly point **
 ### Module 3: Access Control & State Machine
 
 - **BL-301: Strict Ticket State Machine & Access Isolation** (`TicketService.updateTicketStatus`, `TicketService.getTickets`)
-  - **Validation**: All status changes must pass the defined `STATUS_TRANSITIONS` matrix.
+  - **Validation**: All status changes must pass the defined `STATUS_TRANSITIONS` matrix (invalid attempts throw `InvalidTransitionError`).
   - **RBAC Scoping Rules**:
     - **Clients**: Strict multi-tenant isolation by `tenant_id`. Status transitions restricted to `CANCELLED`.
     - **Technicians**: View/modify permissions restricted to explicitly assigned tickets.
@@ -152,7 +152,7 @@ Clean Architecture mandates that source code dependencies must strictly point **
    - _Query_: `ticketRepository.findById(ticketId)` fetches current ticket record.
    - _Validation_: Verifies tenant matching (`ticket.tenant_id === tenantId`) and client ownership (`ticket.client_id === userId`).
    - _Validation_: Verifies transition matrix (`STATUS_TRANSITIONS[ticket.status]`).
-   - _Query / SLA Validation_: If category is `WARRANTY` or `SERVICE_OUTAGE`, `enforceSLARule` compares `Date.now() - ticket.created_at` against `SLA_WINDOW_MS` (1 hour). Throws `AppError.slaViolation` if elapsed time > 60 minutes.
+   - _Query / SLA Validation_: If category is `WARRANTY` or `SERVICE_OUTAGE`, `enforceSLARule` compares `Date.now() - ticket.created_at` against `SLA_WINDOW_MS` (1 hour). Throws `SlaViolationError` if elapsed time > 60 minutes.
    - _Command (Mutation)_: `ticketRepository.updateStatus(ticketId, 'CANCELLED')`.
    - _Command (Mutation)_: `ticketEventRepository.create` logs transition event.
    - _Side Effect_: `notificationService.onTicketStatusChanged` notifies the assigned technician.
@@ -243,22 +243,70 @@ server/src/modules/<feature>/
    - **Forbidden Imports**: Services, controllers, repositories, ORM schema, Express.
 
 2. **Use Case / Service Layer (`server/src/modules/<domain>/services/`)**:
-   - **Allowed Imports**: Entities (`@shared/types`), Repositories (`@modules/<domain>/repositories`), DTOs (`@shared/dtos`), Utils (`@shared/utils`).
+   - **Allowed Imports**: Domain Errors (`@shared/errors`), Entities (`@shared/types`), Repositories (`@modules/<domain>/repositories`), DTOs (`@shared/dtos`), Utils (`@shared/utils`).
    - **Forbidden Imports**: Express objects (`Request`, `Response`), database pool or schema (`@shared/db`), controllers, routes.
+   - **Error Handling Rule**: Throw typed domain error classes directly from `@shared/errors` (e.g. `throw new NotFoundError(...)`, `throw new ForbiddenError(...)`). Never use deprecated `AppError.factory()` or raw `throw new Error(...)`.
 
 3. **Repository Layer (`server/src/modules/<domain>/repositories/`, `server/src/shared/repositories/`)**:
-   - **Allowed Imports**: `db` instance (`@shared/db`), Drizzle schemas, Entities (`@shared/types`).
+   - **Allowed Imports**: `db` instance (`@shared/db`), Drizzle schemas, Entities (`@shared/types`), Domain Errors (`@shared/errors`).
    - **Forbidden Imports**: Controllers, Express, Services (prevent circular dependencies), business logic calculations.
 
 4. **Controller Layer (`server/src/modules/<domain>/controllers/`)**:
-   - **Allowed Imports**: Services (`@modules/<domain>/services`), DTOs (`@shared/dtos`), Entities (`@shared/types`), Express (`Request`, `Response`).
+   - **Allowed Imports**: Services (`@modules/<domain>/services`), Domain Errors (`@shared/errors`), DTOs (`@shared/dtos`), Entities (`@shared/types`), Express (`Request`, `Response`).
    - **Forbidden Imports**: Repositories, `db` instance (`@shared/db`).
+   - **Async Error Handling Rule**: Rely on **Express 5 native async error propagation**. Do NOT wrap actions in `try/catch (err) { next(err); }` boilerplate. NEVER send inline error responses (e.g., `res.status(400).json(...)`) — throw typed domain errors and let the global error middleware handle formatting.
 
 5. **Client UI Component Layer (`client/src/components/`)**:
    - **Mandatory UI Rule**: All UI elements (Buttons, Inputs, Selects, Dialogs, Cards, Tables, Badges, Tabs, Tooltips, Labels, Checkboxes) **MUST strictly use `shadcn/ui` components from `client/src/components/ui/`**.
    - **Mandatory i18n Rule**: NO user-facing UI text, headers, subheaders, badges, tooltips, search placeholders, modal titles, or table headers may be hardcoded in raw English or Spanish strings. All user-facing strings **MUST use `useTranslation()` from `react-i18next`** (`t("namespace.key")`) and be defined in both `client/src/locales/en_US.json` and `client/src/locales/es_DO.json`.
    - **Mandatory Deep Link & Resource State Rule**: All page sub-views (tabs: `?tab=...`), table filters (`?status=...`, `?search=...`), and modal dialog overlays (`?openModal=...`) **MUST sync with URL search parameters using `useUrlState`**. Shareable links must automatically restore modal and tab state on direct load or refresh without unmounting layout frames (`AppLayout`).
    - **Forbidden Imports**: Raw unstyled HTML primitives (`<button>`, `<input>`, `<select>`, `<dialog>`) when a `shadcn/ui` primitive is available.
+
+---
+
+## 🚨 Standardized Domain Error Hierarchy & Express 5 Async Error Handling
+
+All backend modules, services, policies, middleware, and controllers must adhere to the unified domain error system in `@shared/errors` (`packages/errors/`).
+
+### Domain Error Primitives Matrix
+
+| Error Class | Status Code | Error Code (`code`) | Inheritance / Base | Typical Use Case |
+| :--- | :---: | :--- | :--- | :--- |
+| **`ValidationError`** | 400 | `VALIDATION_ERROR` | `AppError` | Payload / schema / input validation failures |
+| **`NotFoundError`** | 404 | `NOT_FOUND_ERROR` | `AppError` | Missing entities (tickets, users, invoices, slots) |
+| **`UnauthorizedError`** | 401 | `UNAUTHORIZED_ERROR` | `AppError` | Missing/invalid authentication token or session |
+| **`ForbiddenError`** | 403 | `FORBIDDEN_ERROR` | `AppError` | RBAC violations, unauthorized tenant access |
+| **`ConflictError`** | 409 | `CONFLICT_ERROR` | `AppError` | Unique constraints, duplicate records |
+| **`InternalServerError`**| 500 | `INTERNAL_SERVER_ERROR`| `AppError` | Unhandled non-operational system failures |
+| **`RateLimitError`** | 429 | `RATE_LIMIT_EXCEEDED` | `AppError` | Tenant / IP rate limiting exceeded |
+| **`ExternalServiceError`**| 502| `EXTERNAL_SERVICE_ERROR`| `AppError` | External third-party failure (Nextcloud, PayPal, etc.) |
+| **`SlaViolationError`** | 403 | `SLA_VIOLATION` | `ForbiddenError` | Ticket cancellation attempted outside 60-min SLA |
+| **`TicketLimitExceededError`**| 403 | `TICKET_LIMIT_EXCEEDED` | `ForbiddenError` | Client / device quota exceeded |
+| **`InvalidTransitionError`**| 400 | `INVALID_STATUS_TRANSITION`| `ValidationError`| Disallowed state machine transition |
+| **`InvalidFileTypeError`**| 400 | `INVALID_FILE_TYPE` | `ValidationError` | Disallowed file MIME type or extension |
+
+### Mandatory Error Handling Rules for Agents
+
+1. **Direct Class Instantiation**:
+   - Always instantiate and throw the specific typed domain error class directly:
+     ```ts
+     throw new NotFoundError('Equipment slot not found', { slotIndex });
+     ```
+   - The legacy `AppError.badRequest()`, `AppError.forbidden()`, etc. factory methods are **deprecated** and must not be used in new code.
+2. **No Untyped `throw new Error()`**:
+   - Services, middleware, and adapters must never throw raw untyped `new Error('...')` or string literals. Always throw the corresponding typed domain error.
+3. **No Inline HTTP Error Responses in Controllers**:
+   - Controllers must NEVER return inline error responses such as `res.status(400).json({ error: '...' })`. Always throw the appropriate domain error (e.g. `throw new ValidationError('...')`) to allow the global Express error adapter to serialize the response consistently.
+4. **Express 5 Native Async Rejection Pattern**:
+   - Controllers and route handlers run on **Express 5**, which natively catches unhandled promise rejections in `async` handlers and routes them to the global error middleware.
+   - Do NOT write boilerplate `try { ... } catch (err) { next(err); }` in controllers. Write clean, direct async actions:
+     ```ts
+     async getSlots(req: Request, res: Response): Promise<void> {
+       const subId = req.params.subId as string;
+       const slots = await this.equipmentSvc.getEquipmentSlots(subId, req.user!.tenantId, req.user!.role === 'ADMIN');
+       res.json({ success: true, data: slots });
+     }
+     ```
 
 ---
 
@@ -329,3 +377,9 @@ Code must explain itself. Comments are only allowed when strictly necessary to e
 
 - Source code dependencies may only point **inward** toward high-level business rules.
 - Inner layers (entities, use cases) must know nothing about outer layers (database, web framework, UI).
+
+### 6. Clean Error Handling
+
+- **Prefer Exceptions to Return Codes / Manual Status Formatting**: Use typed domain exceptions instead of returning error codes or manual error response JSON objects in controllers.
+- **Define Exception Classes in Terms of Caller's Needs**: Utilize domain error classes from `@shared/errors` (`ValidationError`, `NotFoundError`, `ForbiddenError`, `SlaViolationError`, etc.) to convey semantic meaning, proper HTTP status codes, and machine-readable error codes.
+- **Don't Return Null or Raw String Errors**: Throw typed domain exceptions with contextual metadata (`details`) rather than passing raw strings or returning null for error states.
