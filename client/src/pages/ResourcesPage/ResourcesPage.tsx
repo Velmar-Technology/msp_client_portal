@@ -24,7 +24,7 @@ function ResourceCard({ item, onDownload }: { item: ResourceItem; onDownload: (i
   const updated = new Date(item.updatedAt).toLocaleDateString();
 
   return (
-    <Card className="p-4 shadow-xs hover:shadow-sm transition-shadow flex flex-col gap-3">
+    <Card className="p-4 shadow-xs hover:shadow-sm transition-shadow flex flex-col gap-3 h-full">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
           <span className="p-2 bg-muted text-muted-foreground rounded-md border border-border shrink-0">
@@ -49,9 +49,9 @@ function ResourceCard({ item, onDownload }: { item: ResourceItem; onDownload: (i
         </span>
       </div>
 
-      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{t(item.descriptionKey)}</p>
+      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 flex-1">{t(item.descriptionKey)}</p>
 
-      <CardFooter className="p-0 border-none flex items-center justify-between gap-2 pt-2 border-t border-border text-[10px] text-muted-foreground">
+      <CardFooter className="p-0 border-none flex items-center justify-between gap-2 pt-2 border-t border-border text-[10px] text-muted-foreground mt-auto">
         <span className="font-mono">
           {item.fileSize} · {updated}
         </span>

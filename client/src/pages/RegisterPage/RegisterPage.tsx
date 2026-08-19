@@ -172,13 +172,12 @@ export function RegisterPage() {
       if (errorData?.errors && errorData.errors.length > 0) {
         const detailedErrors = errorData.errors.map((e) => e.message).join(". ");
         setError(detailedErrors);
-        toast.error(detailedErrors);
       } else {
         const errorMsg =
           errorData?.message || (i18n.language === "es_DO" ? "Error al registrar la cuenta" : "Registration failed");
         setError(errorMsg);
 
-        if (errorMsg.includes("already exists") || errorMsg.includes("ya existe")) {
+        if (errorMsg.toLowerCase().includes("already exists")) {
           toast.error("Registration Failed", {
             description:
               errorMsg +
@@ -191,8 +190,6 @@ export function RegisterPage() {
             },
             duration: 6000,
           });
-        } else {
-          toast.error(errorMsg);
         }
       }
     } finally {
@@ -228,7 +225,6 @@ export function RegisterPage() {
         error.response?.data?.message ||
         (i18n.language === "es_DO" ? "Error al verificar el correo" : "Verification failed");
       setError(errorMsg);
-      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }

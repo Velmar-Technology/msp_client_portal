@@ -88,7 +88,7 @@ export function LoginPage() {
         extractedMessage ||
         (i18n.language === "es_DO" ? "Correo o contraseña incorrectos" : "Invalid email or password");
 
-      if (errorMsg.includes("verify your email") || errorMsg.includes("verificar tu correo")) {
+      if (errorMsg.toLowerCase().includes("verify your email")) {
         setShowOtpForm(true);
         const notice =
           i18n.language === "es_DO"
@@ -101,7 +101,6 @@ export function LoginPage() {
         });
       } else {
         setError(errorMsg);
-        toast.error(errorMsg);
       }
     } finally {
       setLoading(false);
@@ -129,7 +128,6 @@ export function LoginPage() {
         extractedMessage ||
         (i18n.language === "es_DO" ? "Error al verificar el código OTP" : "OTP verification failed");
       setError(errorMsg);
-      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }

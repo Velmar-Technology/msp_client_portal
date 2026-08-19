@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import api from "@/services/api";
+import type { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import api from './api';
 import { toast } from 'sonner';
 
 vi.mock('sonner', () => ({
@@ -18,7 +19,7 @@ Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 Object.defineProperty(window, 'location', { value: { href: '' }, writable: true });
 
 // We can mock the axios adapter to simulate a network error
-api.defaults.adapter = async (config) => {
+api.defaults.adapter = async (config: InternalAxiosRequestConfig) => {
   if (config.url === '/400') {
     return Promise.reject({
       response: { status: 400, data: { message: 'Some generic error' } },
@@ -51,7 +52,7 @@ describe('api global response interceptors', () => {
     } catch {
       // Expected to throw
     }
-    expect(toast.error).toHaveBeenCalledWith('Some generic error');
+    expect(toast.error).toHaveBeenCalledWith('Some generic error', { id: 'Some generic error' });
     expect(toast.error).toHaveBeenCalledTimes(1);
   });
 

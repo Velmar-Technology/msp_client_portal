@@ -31,11 +31,11 @@ api.interceptors.response.use(
       const errorMsg = error.response.data?.message || 'An unexpected error occurred';
       
       // Prevent double toasting for specific errors that have custom UI/Actions in their respective pages
-      const customHandledErrors = ['verify your email', 'verificar tu correo', 'already exists', 'ya existe'];
-      const hasCustomHandler = customHandledErrors.some((str) => errorMsg.includes(str));
+      const customHandledErrors = ['verify your email', 'already exists'];
+      const hasCustomHandler = customHandledErrors.some((str) => errorMsg.toLowerCase().includes(str));
       
       if (!hasCustomHandler) {
-        toast.error(errorMsg);
+        toast.error(errorMsg, { id: errorMsg });
       }
     }
     return Promise.reject(error);
