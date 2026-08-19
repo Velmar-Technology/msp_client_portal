@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.4.1](https://github.com/eapolancovelmar/msp_client_portal/compare/v1.4.0...v1.4.1) (2026-08-19)
+
+
+### Bug Fixes
+
+* **billing:** resolve circular dependency in FinancialStatsService, InvoiceManagementService, and InvoicePaymentService ([d698962](https://github.com/eapolancovelmar/msp_client_portal/commit/d69896291f8fc4c7921096a6eaedf358fd25a742))
+
 ## [1.3.7](https://github.com/eapolancovelmar/msp_client_portal/compare/v1.3.6...v1.3.7) (2026-08-18)
 
 
