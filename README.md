@@ -4,7 +4,7 @@ A multi-tenant **Modular Monolith** Help Desk and Infrastructure Management clie
 
 ---
 
-## 🏗️ Architecture & Clean Architecture Principles
+## Architecture & Clean Architecture Principles
 
 The codebase strictly adheres to **Uncle Bob’s Clean Architecture & Clean Code principles**. Source code dependencies strictly point **INWARD** toward high-level domain entities and business rules:
 
@@ -55,7 +55,7 @@ client/src/
 
 ---
 
-## 🏢 Multi-Tenant Architecture & Database
+## Multi-Tenant Architecture & Database
 
 This portal uses a **Shared Database, Shared Schema** multi-tenant model. All client data is partitioned logically using indexed `tenant_id` foreign keys referencing `tenants(id) ON DELETE CASCADE`.
 
@@ -76,7 +76,7 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
 
 ---
 
-## 🛠️ Master Business Logic Specifications
+## Master Business Logic Specifications
 
 ### Module 1: Support, Routing & Escalation Engine
 
@@ -127,7 +127,7 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
 
 ---
 
-## 🔄 Core Data Journeys & Command-Query Separation (CQS)
+## Core Data Journeys & Command-Query Separation (CQS)
 
 ### Journey 1: Ticket Creation & Auto-Assignment
 
@@ -161,7 +161,7 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
 
 ---
 
-## 🧹 Code Quality & Engineering Standards
+## Code Quality & Engineering Standards
 
 - **The Boy Scout Rule:** Always leave code cleaner than you found it.
 - **The Three Rules of TDD:** Write production code only to fix a failing test; write only enough of a test to fail; write only enough production code to pass.
@@ -170,7 +170,7 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
 
 ---
 
-## 🚀 CI/CD Pipeline & VPS Deployment Guide
+## CI/CD Pipeline & VPS Deployment Guide
 
 Continuous Integration and Deployment is automated via GitHub Actions ([.github/workflows/deploy.yml](file:///.github/workflows/deploy.yml)).
 

@@ -66,9 +66,9 @@ async function startServer(): Promise<void> {
 
 
     app.listen(env.PORT, () => {
-      logger.info(`🚀 Velmar Technology SRL MSP API Server running on port ${env.PORT}`);
-      logger.info(`📚 API Docs available at http://localhost:${env.PORT}/api-docs`);
-      logger.info(`🌐 Environment: ${env.NODE_ENV}`);
+      logger.info(`Velmar Technology SRL MSP API Server running on port ${env.PORT}`);
+      logger.info(`API Docs available at http://localhost:${env.PORT}/api-docs`);
+      logger.info(`Environment: ${env.NODE_ENV}`);
       
       // Start background subscriptions renewal scheduler
       const { subscriptionScheduler } = require('@modules/subscriptions/services/SubscriptionScheduler');
