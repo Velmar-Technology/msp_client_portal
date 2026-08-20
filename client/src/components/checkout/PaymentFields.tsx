@@ -14,6 +14,7 @@ export interface PaymentFieldsProps {
   reference: string;
   subscribeLoading: boolean;
   handleProcessSubscription: (e?: SyntheticEvent) => void;
+  paypalContainerId?: string;
 }
 
 export function PaymentFields({
@@ -26,6 +27,7 @@ export function PaymentFields({
   reference,
   subscribeLoading,
   handleProcessSubscription,
+  paypalContainerId = "paypal-button-container",
 }: PaymentFieldsProps) {
   const { t } = useTranslation();
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -103,7 +105,7 @@ export function PaymentFields({
                 </div>
               )}
               <div
-                id="paypal-button-container"
+                id={paypalContainerId}
                 className="my-2 min-h-30 flex items-center justify-center bg-muted/20 rounded-lg p-3 border border-border border-dashed"
               >
                 <span className="text-xs text-muted-foreground">
