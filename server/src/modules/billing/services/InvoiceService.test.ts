@@ -143,7 +143,7 @@ describe('InvoiceService', () => {
         invoiceService.getInvoiceById('inv-123', 'different-tenant', UserRole.CLIENT)
       ).rejects.toMatchObject({
         statusCode: 403,
-        code: 'FORBIDDEN',
+        code: 'FORBIDDEN_ERROR',
       });
     });
 
@@ -151,10 +151,10 @@ describe('InvoiceService', () => {
       mocks.findById.mockResolvedValue(null);
 
       await expect(
-        invoiceService.getInvoiceById('inv-999', 'tenant-1', UserRole.CLIENT)
+        invoiceService.getInvoiceById('inv-999', 'tenant-1', UserRole.ADMIN)
       ).rejects.toMatchObject({
         statusCode: 404,
-        code: 'NOT_FOUND',
+        code: 'NOT_FOUND_ERROR',
       });
     });
   });

@@ -156,7 +156,7 @@ describe('emailService', () => {
     expect(mockSendMail).toHaveBeenCalledTimes(1);
     const callArgs = mockSendMail.mock.calls[0][0] as any;
     expect(callArgs.to).toBe('user@example.com');
-    expect(callArgs.subject).toContain('Account Verification Code');
+    expect(callArgs.subject).toContain('Your Verification Code');
     expect(callArgs.subject).toContain('654321');
     expect(callArgs.html).toContain('User Name');
     expect(callArgs.html).toContain('654321');

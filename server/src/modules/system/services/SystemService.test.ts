@@ -2,13 +2,17 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SystemService } from './SystemService';
 
 describe('SystemService', () => {
-  let mockDbPool: any;
+  let mockSystemRepo: any;
   let mockStorageService: any;
   let systemService: SystemService;
 
   beforeEach(() => {
-    mockDbPool = {
-      execute: vi.fn().mockResolvedValue([{ '?column?': 1 }]),
+    mockSystemRepo = {
+      pingDatabase: vi.fn().mockResolvedValue({
+        status: 'OPERATIONAL',
+        latencyMs: 15,
+        message: 'Database connection healthy',
+      }),
     };
     mockStorageService = {
       getStorageUsage: vi.fn().mockResolvedValue({
@@ -19,7 +23,7 @@ describe('SystemService', () => {
         status: 'online',
       }),
     };
-    systemService = new SystemService(mockDbPool, mockStorageService);
+    systemService = new SystemService(mockSystemRepo, mockStorageService);
   });
 
   it('should return operational status when DB and Storage are healthy', async () => {
@@ -51,7 +55,11 @@ describe('SystemService', () => {
   });
 
   it('should handle database errors gracefully and set status to DOWN', async () => {
-    mockDbPool.execute.mockRejectedValueOnce(new Error('Connection failed'));
+    mockSystemRepo.pingDatabase.mockResolvedValueOnce({
+      status: 'DOWN',
+      latencyMs: 50,
+      message: 'Connection failed',
+    });
 
     const result = await systemService.getApiStatus();
 

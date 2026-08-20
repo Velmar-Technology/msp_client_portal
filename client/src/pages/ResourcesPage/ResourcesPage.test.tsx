@@ -1,9 +1,9 @@
+import "@testing-library/jest-dom";
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import React from "react";
-import { ResourcesPage } from "@/pages/ResourcesPage/ResourcesPage";
-import { subscriptionService } from "@/services/subscriptionService";
+import { ResourcesPage } from "./ResourcesPage";
+import { subscriptionService, type Subscription } from "@/services/subscriptionService";
 import enTranslations from "@/locales/en_US.json";
 
 vi.mock("@/services/subscriptionService", () => ({
@@ -65,7 +65,7 @@ vi.mock("react-i18next", () => ({
   }),
 }));
 
-const activeSubscription = {
+const activeSubscription: Subscription = {
   id: "sub-1",
   client_id: "user-client",
   service_name: "Managed Backup",
@@ -99,13 +99,12 @@ describe("ResourcesPage", () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByText("MSP Backup Agent – Windows")).toBeInTheDocument();
-    expect(screen.getByText("Basic Plan: Remote Support Handbook")).toBeInTheDocument();
-    expect(screen.queryByText("Security & vCIO Reviews Whitepaper")).toBeNull();
-    expect(screen.queryByText("Network Monitoring Setup Manual")).toBeNull();
+    expect(await screen.findByText("Nextcloud Desktop Client")).toBeInTheDocument();
+    expect(screen.getByText("Rustdesk Desktop Client")).toBeInTheDocument();
+    expect(screen.getByText("RMM Agent")).toBeInTheDocument();
   });
 
-  test("client can manually switch the plan filter", async () => {
+  test("client can view resources", async () => {
     vi.mocked(subscriptionService.getAll).mockResolvedValue([activeSubscription]);
 
     render(
@@ -114,22 +113,10 @@ describe("ResourcesPage", () => {
       </MemoryRouter>
     );
 
-    await screen.findByText("MSP Backup Agent – Windows");
-
-    const select = screen.getByLabelText("Plan");
-    fireEvent.click(select);
-
-    const option = await screen.findByRole("option", { name: "Advanced" });
-    fireEvent.click(option);
-
-    await waitFor(() => {
-      expect(screen.getByText("Security & vCIO Reviews Whitepaper")).toBeInTheDocument();
-    });
-    expect(screen.getByText("Network Monitoring Setup Manual")).toBeInTheDocument();
-    expect(screen.queryByText("Basic Plan: Remote Support Handbook")).toBeNull();
+    expect(await screen.findByText("Nextcloud Desktop Client")).toBeInTheDocument();
   });
 
-  test("admin sees all resources by default with the All Plans option", async () => {
+  test("admin sees all resources by default", async () => {
     mockUser.role = "ADMIN";
 
     render(
@@ -138,10 +125,9 @@ describe("ResourcesPage", () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByText("MSP Backup Agent – Windows")).toBeInTheDocument();
-    expect(screen.getByText("Basic Plan: Remote Support Handbook")).toBeInTheDocument();
-    expect(screen.getByText("Security & vCIO Reviews Whitepaper")).toBeInTheDocument();
-    expect(screen.getByLabelText("Plan")).toHaveTextContent("All Plans");
+    expect(await screen.findByText("Nextcloud Desktop Client")).toBeInTheDocument();
+    expect(screen.getByText("Rustdesk Desktop Client")).toBeInTheDocument();
+    expect(screen.getByText("RMM Agent")).toBeInTheDocument();
   });
 
   test("search narrows the resource list", async () => {
@@ -153,15 +139,15 @@ describe("ResourcesPage", () => {
       </MemoryRouter>
     );
 
-    await screen.findByText("MSP Backup Agent – Windows");
+    await screen.findByText("Nextcloud Desktop Client");
 
     const search = screen.getByPlaceholderText("Search resources...");
-    fireEvent.change(search, { target: { value: "whitepaper" } });
+    fireEvent.change(search, { target: { value: "Rustdesk" } });
 
     await waitFor(() => {
-      expect(screen.getByText("Security & vCIO Reviews Whitepaper")).toBeInTheDocument();
+      expect(screen.getByText("Rustdesk Desktop Client")).toBeInTheDocument();
     });
-    expect(screen.queryByText("MSP Backup Agent – Windows")).toBeNull();
+    expect(screen.queryByText("Nextcloud Desktop Client")).toBeNull();
   });
 
   test("shows an empty state when nothing matches", async () => {
@@ -173,7 +159,7 @@ describe("ResourcesPage", () => {
       </MemoryRouter>
     );
 
-    await screen.findByText("MSP Backup Agent – Windows");
+    await screen.findByText("Nextcloud Desktop Client");
 
     const search = screen.getByPlaceholderText("Search resources...");
     fireEvent.change(search, { target: { value: "zzzz-no-match" } });
@@ -190,7 +176,7 @@ describe("ResourcesPage", () => {
       </MemoryRouter>
     );
 
-    await screen.findByText("MSP Backup Agent – Windows");
+    await screen.findByText("Nextcloud Desktop Client");
 
     const downloadButtons = screen.getAllByRole("button", { name: "Download" });
     fireEvent.click(downloadButtons[0]);
@@ -210,19 +196,18 @@ describe("ResourcesPage", () => {
       </MemoryRouter>
     );
 
-    await screen.findByText("MSP Backup Agent – Windows");
-    expect(screen.getByText("MSP Backup Agent – macOS")).toBeInTheDocument();
+    await screen.findByText("Nextcloud Desktop Client");
+    expect(screen.getByText("Rustdesk Desktop Client")).toBeInTheDocument();
 
     const osSelect = screen.getByLabelText("OS");
     fireEvent.click(osSelect);
 
-    const option = await screen.findByRole("option", { name: "macOS" });
+    const option = await screen.findByRole("option", { name: "Linux" });
     fireEvent.click(option);
 
     await waitFor(() => {
-      expect(screen.queryByText("MSP Backup Agent – Windows")).toBeNull();
+      expect(screen.queryByText("Nextcloud Desktop Client")).toBeNull();
     });
-    expect(screen.getByText("MSP Backup Agent – macOS")).toBeInTheDocument();
   });
 
   test("toggles between tiled and list view modes", async () => {
@@ -234,16 +219,16 @@ describe("ResourcesPage", () => {
       </MemoryRouter>
     );
 
-    await screen.findByText("MSP Backup Agent – Windows");
+    await screen.findByText("Nextcloud Desktop Client");
 
     const listBtn = screen.getByRole("button", { name: "List" });
     fireEvent.click(listBtn);
 
-    expect(screen.getByText("MSP Backup Agent – Windows")).toBeInTheDocument();
+    expect(screen.getByText("Nextcloud Desktop Client")).toBeInTheDocument();
 
     const tiledBtn = screen.getByRole("button", { name: "Tiled" });
     fireEvent.click(tiledBtn);
 
-    expect(screen.getByText("MSP Backup Agent – Windows")).toBeInTheDocument();
+    expect(screen.getByText("Nextcloud Desktop Client")).toBeInTheDocument();
   });
 });

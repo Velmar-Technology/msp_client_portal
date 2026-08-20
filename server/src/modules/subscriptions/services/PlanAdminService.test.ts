@@ -36,7 +36,7 @@ describe('PlanAdminService', () => {
       ).rejects.toMatchObject({
         message: 'Only administrators can manage plans',
         statusCode: 403,
-        code: 'FORBIDDEN',
+        code: 'FORBIDDEN_ERROR',
       });
       expect(mocks.create).not.toHaveBeenCalled();
     });
@@ -93,7 +93,7 @@ describe('PlanAdminService', () => {
       ).rejects.toMatchObject({
         message: "Plan with ID 'PL-NEW' already exists",
         statusCode: 409,
-        code: 'CONFLICT',
+        code: 'CONFLICT_ERROR',
       });
       expect(mocks.create).not.toHaveBeenCalled();
     });
@@ -119,7 +119,7 @@ describe('PlanAdminService', () => {
       await expect(planAdminService.updatePlan('NONEXISTENT', { price: 300 }, adminCtx)).rejects.toMatchObject({
         message: 'Plan not found',
         statusCode: 404,
-        code: 'NOT_FOUND',
+        code: 'NOT_FOUND_ERROR',
       });
       expect(mocks.update).not.toHaveBeenCalled();
     });
@@ -131,7 +131,7 @@ describe('PlanAdminService', () => {
       await expect(planAdminService.updatePlan('BASIC', { price: 300 }, adminCtx)).rejects.toMatchObject({
         message: 'Failed to update plan',
         statusCode: 500,
-        code: 'INTERNAL_ERROR',
+        code: 'INTERNAL_SERVER_ERROR',
       });
     });
   });
@@ -156,7 +156,7 @@ describe('PlanAdminService', () => {
       await expect(planAdminService.softDeletePlan('NONEXISTENT', adminCtx)).rejects.toMatchObject({
         message: 'Plan not found',
         statusCode: 404,
-        code: 'NOT_FOUND',
+        code: 'NOT_FOUND_ERROR',
       });
       expect(mocks.update).not.toHaveBeenCalled();
     });
@@ -168,7 +168,7 @@ describe('PlanAdminService', () => {
       await expect(planAdminService.softDeletePlan('BASIC', adminCtx)).rejects.toMatchObject({
         message: 'Failed to soft delete plan',
         statusCode: 500,
-        code: 'INTERNAL_ERROR',
+        code: 'INTERNAL_SERVER_ERROR',
       });
     });
   });

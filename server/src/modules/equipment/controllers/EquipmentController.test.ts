@@ -1,14 +1,12 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { Request, Response, NextFunction } from 'express';
 import { EquipmentController } from './EquipmentController';
 import { UserRole } from '@shared/types';
 
 describe('EquipmentController', () => {
   let controller: EquipmentController;
   let mockEquipmentSvc: any;
-  let req: Partial<Request>;
-  let res: Partial<Response>;
-  let next: NextFunction;
+  let req: any;
+  let res: any;
 
   beforeEach(() => {
     mockEquipmentSvc = {
@@ -35,7 +33,6 @@ describe('EquipmentController', () => {
     res = {
       json: vi.fn(),
     };
-    next = vi.fn();
   });
 
   describe('getSlots', () => {
@@ -44,7 +41,7 @@ describe('EquipmentController', () => {
       const slots = [{ id: 'slot-1', slot_index: 0 }];
       mockEquipmentSvc.getEquipmentSlots.mockResolvedValue(slots);
 
-      await controller.getSlots(req as Request, res as Response, next);
+      await controller.getSlots(req, res);
 
       expect(mockEquipmentSvc.getEquipmentSlots).toHaveBeenCalledWith('sub-1', 'tenant-123', false);
       expect(res.json).toHaveBeenCalledWith({ success: true, data: slots });
@@ -54,8 +51,9 @@ describe('EquipmentController', () => {
   describe('generateOTP', () => {
     it('should reject if user role is CLIENT', async () => {
       req.user!.role = UserRole.CLIENT;
-      await controller.generateOTP(req as Request, res as Response, next);
-      expect(next).toHaveBeenCalledWith(expect.objectContaining({ message: 'Client users are not authorized to generate activation codes' }));
+      await expect(
+        controller.generateOTP(req, res)
+      ).rejects.toThrow('Client users are not authorized to generate activation codes');
     });
 
     it('should call generateSlotOTP for ADMIN users', async () => {
@@ -64,7 +62,7 @@ describe('EquipmentController', () => {
       const slot = { id: 'slot-1', otp: '123456' };
       mockEquipmentSvc.generateSlotOTP.mockResolvedValue(slot);
 
-      await controller.generateOTP(req as Request, res as Response, next);
+      await controller.generateOTP(req, res);
 
       expect(mockEquipmentSvc.generateSlotOTP).toHaveBeenCalledWith('sub-1', 0, 'tenant-123', true);
       expect(res.json).toHaveBeenCalledWith({ success: true, data: slot });
@@ -74,8 +72,9 @@ describe('EquipmentController', () => {
   describe('activateWithOtp', () => {
     it('should throw bad request error if OTP format is invalid', async () => {
       req.body = { otp: 'invalid' };
-      await controller.activateWithOtp(req as Request, res as Response, next);
-      expect(next).toHaveBeenCalledWith(expect.objectContaining({ message: 'Activation code (OTP) must be a 6-digit numeric code' }));
+      await expect(
+        controller.activateWithOtp(req, res)
+      ).rejects.toThrow('Activation code (OTP) must be a 6-digit numeric code');
     });
 
     it('should activate slot when OTP is valid 6-digit string', async () => {
@@ -83,7 +82,7 @@ describe('EquipmentController', () => {
       const slot = { id: 'slot-1', status: 'ACTIVE' };
       mockEquipmentSvc.activateSlot.mockResolvedValue(slot);
 
-      await controller.activateWithOtp(req as Request, res as Response, next);
+      await controller.activateWithOtp(req, res);
 
       expect(mockEquipmentSvc.activateSlot).toHaveBeenCalledWith({
         otp: '654321',
@@ -101,7 +100,7 @@ describe('EquipmentController', () => {
       const devices = [{ id: 'dev-1', device_name: 'Workstation 1' }];
       mockEquipmentSvc.getActiveDevicesForClient.mockResolvedValue(devices);
 
-      await controller.getMyDevices(req as Request, res as Response, next);
+      await controller.getMyDevices(req, res);
 
       expect(mockEquipmentSvc.getActiveDevicesForClient).toHaveBeenCalledWith('user-123', 'tenant-123');
       expect(res.json).toHaveBeenCalledWith({ success: true, data: devices });
@@ -113,7 +112,7 @@ describe('EquipmentController', () => {
       const devices = [{ id: 'dev-1', client_name: 'Client A' }];
       mockEquipmentSvc.getAllDevicesForAdmin.mockResolvedValue(devices);
 
-      await controller.getAllDevicesForAdmin(req as Request, res as Response, next);
+      await controller.getAllDevicesForAdmin(req, res);
 
       expect(mockEquipmentSvc.getAllDevicesForAdmin).toHaveBeenCalled();
       expect(res.json).toHaveBeenCalledWith({ success: true, data: devices });

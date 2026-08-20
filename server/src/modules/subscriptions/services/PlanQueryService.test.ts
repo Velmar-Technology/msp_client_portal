@@ -69,7 +69,7 @@ describe('PlanQueryService', () => {
       await expect(planQueryService.getPlanById('NONEXISTENT', clientCtx)).rejects.toMatchObject({
         message: 'Plan not found',
         statusCode: 404,
-        code: 'NOT_FOUND',
+        code: 'NOT_FOUND_ERROR',
       });
     });
 
@@ -78,7 +78,7 @@ describe('PlanQueryService', () => {
 
       await expect(planQueryService.getPlanById('PL-001', clientCtx)).rejects.toMatchObject({
         statusCode: 403,
-        code: 'FORBIDDEN',
+        code: 'FORBIDDEN_ERROR',
       });
     });
 

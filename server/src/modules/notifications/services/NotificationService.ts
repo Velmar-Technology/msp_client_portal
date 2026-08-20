@@ -1,4 +1,3 @@
-import { Response } from 'express';
 import { Ticket, User, Notification, NotificationEventType } from '@shared/types';
 import { 
   sendTicketCreatedEmail, 
@@ -12,14 +11,24 @@ import { notificationRepository, NotificationRepository } from '@modules/notific
 import { notificationPreferenceService, NotificationPreferenceService } from '@modules/notifications/services/NotificationPreferenceService';
 
 /**
+ * Interface representing a downstream SSE response stream.
+ * Decouples the domain notification service from Express.
+ */
+export interface SSEClientStream {
+  writeHead?(statusCode: number, headers: Record<string, string>): void;
+  write(chunk: string): boolean | void;
+  on(event: 'close' | string, listener: () => void): this | void;
+}
+
+/**
  * Notification Service — Orchestrates multi-channel and in-app notifications.
  * Delegates to email, WhatsApp, and handles in-app SSE streaming.
  * Respects per-user notification preferences before dispatching to each channel.
  * Notifications are fire-and-forget: they should never break the main flow.
  */
 export class NotificationService {
-  // In-memory registry of active SSE connections: userId -> Response[]
-  private sseClients = new Map<string, Response[]>();
+  // In-memory registry of active SSE connections: userId -> SSEClientStream[]
+  private sseClients = new Map<string, SSEClientStream[]>();
 
   constructor(
     private notificationRepo: NotificationRepository = notificationRepository,
@@ -29,14 +38,16 @@ export class NotificationService {
   /**
    * Register a user's SSE connection.
    */
-  registerSSEClient(userId: string, res: Response): void {
+  registerSSEClient(userId: string, res: SSEClientStream): void {
     // Configure headers for SSE
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-      'X-Accel-Buffering': 'no', // Disable buffering in Nginx if applicable
-    });
+    if (res.writeHead) {
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no', // Disable buffering in Nginx if applicable
+      });
+    }
 
     // Send initial handshake
     res.write('retry: 10000\n');

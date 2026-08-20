@@ -475,7 +475,7 @@ export async function sendTicketAssignedEmail(
       </tr>
       <tr>
         <td style="padding: 6px 0; color: #64748B; font-weight: 500;">Client:</td>
-        <td style="padding: 6px 0; color: #0F172A; font-weight: 600;">${ticket.client_name || 'Client'}</td>
+        <td style="padding: 6px 0; color: #0F172A; font-weight: 600;">${ticket.client_name || 'Client'}${ticket.client_email ? ` (${ticket.client_email})` : ''}</td>
       </tr>
       <tr>
         <td style="padding: 6px 0; color: #64748B; font-weight: 500;">Category:</td>

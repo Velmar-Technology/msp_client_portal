@@ -1,6 +1,5 @@
-import { db, getPoolHealth } from '@shared/db';
-import { sql } from 'drizzle-orm';
 import { nextcloudService } from '@modules/system/services/NextcloudService';
+import { systemRepository, SystemRepository } from '@modules/system/repositories/SystemRepository';
 import { logger } from '@shared/utils/logger';
 
 export interface ApiStatusItem {
@@ -54,7 +53,7 @@ export interface SystemApiStatusResponse {
 
 export class SystemService {
   constructor(
-    private dbPool = db,
+    private systemRepo: SystemRepository = systemRepository,
     private storageService = nextcloudService,
   ) {}
 
@@ -179,42 +178,18 @@ export class SystemService {
     const services: ApiStatusItem[] = [];
 
     // 1. PostgreSQL Database Check
-    const dbStart = Date.now();
-    let dbStatus: 'OPERATIONAL' | 'DEGRADED' | 'DOWN' = 'OPERATIONAL';
-    let dbMessage = 'Database connection healthy';
-    let dbLatency = 0;
-
-    const poolHealth = getPoolHealth();
-
-    try {
-      await this.dbPool.execute(sql`SELECT 1`);
-      dbLatency = Date.now() - dbStart;
-      if (poolHealth.state === 'down') {
-        dbStatus = 'DOWN';
-        dbMessage = `Pool reports DOWN (${poolHealth.consecutiveFailures} consecutive failures)`;
-      } else if (poolHealth.state === 'degraded' || dbLatency > 300) {
-        dbStatus = 'DEGRADED';
-        dbMessage = poolHealth.state === 'degraded'
-          ? `Pool degraded (${poolHealth.consecutiveFailures} consecutive failures)`
-          : `High latency (${dbLatency}ms)`;
-      }
-    } catch (err: any) {
-      dbLatency = Date.now() - dbStart;
-      dbStatus = 'DOWN';
-      dbMessage = err?.message || 'Database connection error';
-      logger.error('Database health check failed', { error: err });
-    }
+    const dbHealth = await this.systemRepo.pingDatabase();
 
     services.push({
       id: 'db_postgres',
       name: 'PostgreSQL Database',
       category: 'CORE',
       endpoint: 'db://postgresql:5432/msp_portal',
-      status: dbStatus,
-      latencyMs: dbLatency,
-      uptimePercentage: dbStatus === 'DOWN' ? 98.5 : 99.99,
+      status: dbHealth.status,
+      latencyMs: dbHealth.latencyMs,
+      uptimePercentage: dbHealth.status === 'DOWN' ? 98.5 : 99.99,
       lastChecked: now,
-      message: dbMessage,
+      message: dbHealth.message,
     });
 
     // 2. Nextcloud Storage Service Check
@@ -331,7 +306,7 @@ export class SystemService {
         }
       }
 
-      if (dbStatus === 'DOWN' && ep.category !== 'INTEGRATION') {
+      if (dbHealth.status === 'DOWN' && ep.category !== 'INTEGRATION') {
         status = 'DEGRADED';
         message = 'Database performance impacting response times';
       }
@@ -342,7 +317,7 @@ export class SystemService {
         category: ep.category,
         endpoint: ep.endpoint,
         status,
-        latencyMs: ep.baseLatency + (dbStatus === 'DEGRADED' ? 45 : 0),
+        latencyMs: ep.baseLatency + (dbHealth.status === 'DEGRADED' ? 45 : 0),
         uptimePercentage: status === 'OPERATIONAL' ? 99.95 : 98.5,
         lastChecked: now,
         message,

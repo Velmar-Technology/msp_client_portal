@@ -1,5 +1,5 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { Response } from 'express';
+import { SSEClientStream } from './NotificationService';
 
 // Hoist mock handlers
 const emailMocks = vi.hoisted(() => ({
