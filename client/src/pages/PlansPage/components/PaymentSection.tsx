@@ -2,19 +2,12 @@ import { type SyntheticEvent } from "react";
 import { useTranslation } from "react-i18next";
 import type { Plan } from "@/services/planService";
 import type { Subscription } from "@/services/subscriptionService";
-import type { AuthUser } from "@/store/useAuthStore";
-import { Input } from "@/components/ui/input";
 import { CheckoutSheet } from "@/components/checkout-sheet";
-
-export type PaymentSectionMode = "browse" | "assign";
 
 interface PaymentSectionProps {
   currentPlan: Plan;
   billingCycle: "monthly" | "annual";
   currentEquipmentCount: number;
-  subtotal: number;
-  tax: number;
-  total: number;
   isAdmin: boolean;
   acceptedTos: boolean;
   setAcceptedTos: (val: boolean) => void;
@@ -26,21 +19,6 @@ interface PaymentSectionProps {
   handleProcessSubscription: (e?: SyntheticEvent) => Promise<void>;
   activeSubscriptions: Subscription[];
   getPlanName: (name: string | Record<string, string>) => string;
-  clients: AuthUser[];
-  selectedClientId: string;
-  setSelectedClientId: (val: string) => void;
-  unregisteredEmail: string;
-  setUnregisteredEmail: (val: string) => void;
-  unregisteredName: string;
-  setUnregisteredName: (val: string) => void;
-  quoteLoading: boolean;
-  handleSendQuote: (e: React.MouseEvent) => Promise<void>;
-  mode?: PaymentSectionMode;
-  actionType?: "subscribe" | "modify";
-  setActionType?: (val: "subscribe" | "modify") => void;
-  subscriptionToModifyId?: string;
-  setSubscriptionToModifyId?: (val: string) => void;
-  handleUpdateSubscription?: (subId: string, count: number) => Promise<void>;
 }
 
 export function PaymentSection({
@@ -58,119 +36,8 @@ export function PaymentSection({
   handleProcessSubscription,
   activeSubscriptions,
   getPlanName,
-  clients,
-  selectedClientId,
-  setSelectedClientId,
-  unregisteredEmail,
-  setUnregisteredEmail,
-  unregisteredName,
-  setUnregisteredName,
-  quoteLoading,
-  handleSendQuote,
-  mode = "browse",
-  actionType = "subscribe",
-  setActionType,
-  subscriptionToModifyId = "",
-  setSubscriptionToModifyId,
-  handleUpdateSubscription,
 }: PaymentSectionProps) {
   const { t } = useTranslation();
-
-  const renderAssignModifyForm = (activeSub: Subscription) => {
-    const isIncreaseCount = currentEquipmentCount > activeSub.equipment_count;
-    const isSamePlanAndCount =
-      currentPlan?.id === activeSub.plan && currentEquipmentCount === activeSub.equipment_count;
-
-    if (isSamePlanAndCount) {
-      return (
-        <div className="space-y-3">
-          <div className="bg-muted/40 border border-border rounded p-3">
-            <p className="text-xs font-semibold text-foreground">
-              {t("plans.alreadyOnThisPlan") || "You are already on this plan with the same device count."}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1 leading-normal">
-              {t("plans.alreadyOnThisPlanDesc") ||
-                "To make changes, adjust the device count above or select a different plan tier."}
-            </p>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-3">
-        <div className="bg-muted/40 border border-border rounded p-3">
-          <p className="text-xs font-semibold text-foreground">
-            {t("plans.subscriptionModification") || "Subscription Modification"}
-          </p>
-          <p className="text-xs text-muted-foreground mt-1 leading-normal">
-            {t("plans.subscriptionModificationDesc", {
-              name: getPlanName(currentPlan.name),
-              count: currentEquipmentCount,
-            })}
-          </p>
-        </div>
-
-        {!isAdmin && (
-          <div className="flex items-start gap-2 p-2 bg-muted/40 rounded border border-border my-2">
-            <input
-              type="checkbox"
-              id="tos-checkbox-assign"
-              checked={acceptedTos}
-              onChange={(e) => setAcceptedTos(e.target.checked)}
-              className="h-3.5 w-3.5 rounded border-input text-primary focus:ring-ring mt-0.5 cursor-pointer"
-            />
-            <label
-              htmlFor="tos-checkbox-assign"
-              className="text-xs text-muted-foreground cursor-pointer select-none font-medium leading-normal"
-            >
-              {t("plans.agreeToTermsPrefix")}{" "}
-              <a
-                href="/terms"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-foreground underline hover:opacity-80 transition-opacity font-semibold"
-              >
-                {t("plans.termsOfServiceLink")}
-              </a>
-            </label>
-          </div>
-        )}
-
-        {isIncreaseCount ? (
-          <div className="mt-2 border-t border-border pt-3">
-            <p className="text-xs text-muted-foreground mb-2 leading-normal">
-              {t("plans.addDevicesPaymentNotice") ||
-                "Adding more devices requires a PayPal payment to activate the additional licenses immediately."}
-            </p>
-            <div
-              id="paypal-assign-button-container"
-              className="my-1.5 min-h-25 flex items-center justify-center bg-muted/20 rounded-md p-3 border border-border border-dashed"
-            >
-              <span className="text-xs text-muted-foreground">
-                {t("plans.loadingPayPal") || "Loading PayPal Checkout..."}
-              </span>
-            </div>
-            {paymentMessage && (
-              <p className="text-xs text-foreground font-semibold mt-1.5">{paymentMessage}</p>
-            )}
-          </div>
-        ) : (
-          <button
-            onClick={() => handleUpdateSubscription?.(activeSub.id, currentEquipmentCount)}
-            disabled={subscribeLoading}
-            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 py-2 rounded text-xs font-semibold transition-opacity flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-          >
-            {subscribeLoading
-              ? t("plans.updatingStatus") || "Updating..."
-              : t("plans.updateSubscription") || "Update Subscription"}
-          </button>
-        )}
-      </div>
-    );
-  };
-
-  const activeSubForPlan = activeSubscriptions.find((sub) => sub.plan === currentPlan?.id && sub.status === "ACTIVE");
 
   return (
     <div className="bg-card border border-border rounded-lg p-4 shadow-xs text-foreground">
@@ -189,241 +56,22 @@ export function PaymentSection({
         </div>
       </div>
 
-      {isAdmin ? (
-        <div className="space-y-3">
-          <h4 className="text-sm font-semibold tracking-tight text-foreground font-heading mb-2">
-            {t("plans.applyPlanToCustomer") || "Apply Plan to Customer"}
-          </h4>
-          <div className="space-y-3">
-            <div>
-              <label
-                htmlFor="customer-select"
-                className="block text-xs text-muted-foreground mb-1 font-semibold uppercase tracking-wider"
-              >
-                {t("plans.selectCustomer") || "Select Customer"}
-              </label>
-              <select
-                id="customer-select"
-                value={selectedClientId}
-                onChange={(e) => setSelectedClientId(e.target.value)}
-                className="w-full h-8.5 px-2 border border-input rounded text-xs focus:outline-none focus:ring-1 focus:ring-ring bg-background text-foreground mt-0.5"
-              >
-                {clients.length === 0 ? (
-                  <option value="" disabled>
-                    {t("plans.noCustomersFound") || "No registered customers found"}
-                  </option>
-                ) : (
-                  clients.map((client) => (
-                    <option key={client.id} value={client.id}>
-                      {client.name} ({client.email})
-                    </option>
-                  ))
-                )}
-                <option value="unregistered">{t("plans.unregisteredOption")}</option>
-              </select>
-            </div>
-
-            {selectedClientId === "unregistered" && (
-              <div className="space-y-2 pt-2 border-t border-border">
-                <div>
-                  <label
-                    htmlFor="unregistered-email-admin"
-                    className="block text-[10px] text-muted-foreground mb-1 font-semibold uppercase tracking-wider"
-                  >
-                    {t("plans.unregisteredEmailLabel")}
-                  </label>
-                  <Input
-                    id="unregistered-email-admin"
-                    type="email"
-                    required
-                    value={unregisteredEmail}
-                    onChange={(e) => setUnregisteredEmail(e.target.value)}
-                    placeholder={t("plans.unregisteredEmailPlaceholder")}
-                    className="h-8.5 text-xs bg-background text-foreground border-input"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="unregistered-name-admin"
-                    className="block text-[10px] text-muted-foreground mb-1 font-semibold uppercase tracking-wider"
-                  >
-                    {t("plans.unregisteredNameLabel")}
-                  </label>
-                  <Input
-                    id="unregistered-name-admin"
-                    type="text"
-                    value={unregisteredName}
-                    onChange={(e) => setUnregisteredName(e.target.value)}
-                    placeholder={t("plans.unregisteredNamePlaceholder")}
-                    className="h-8.5 text-xs bg-background text-foreground border-input"
-                  />
-                </div>
-              </div>
-            )}
-
-            <button
-              onClick={handleProcessSubscription}
-              disabled={subscribeLoading || selectedClientId === "unregistered" || clients.length === 0}
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 py-2 rounded text-xs font-semibold transition-opacity flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-            >
-              {subscribeLoading
-                ? t("plans.applyingStatus") || "Applying..."
-                : t("plans.applyPlanToCustomer") || "Apply Plan to Customer"}
-            </button>
-
-            <button
-              type="button"
-              onClick={handleSendQuote}
-              disabled={quoteLoading || subscribeLoading || !selectedClientId}
-              className="w-full border border-border hover:bg-muted text-foreground py-2 rounded text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-            >
-              {quoteLoading ? t("plans.quoteSending") : t("plans.sendQuoteToCustomer")}
-            </button>
-          </div>
-        </div>
-      ) : mode === "assign" ? (
-        (() => {
-          if (activeSubForPlan) {
-            return (
-              <div className="space-y-3">
-                <h4 className="text-sm font-semibold tracking-tight text-foreground font-heading">
-                  {t("plans.manageActiveSub") || "Manage Active Subscription"}
-                </h4>
-                {renderAssignModifyForm(activeSubForPlan)}
-              </div>
-            );
-          }
-
-          if (activeSubscriptions.length === 0) {
-            return (
-              <CheckoutSheet
-                currentPlan={currentPlan}
-                billingCycle={billingCycle}
-                currentEquipmentCount={currentEquipmentCount}
-                isAdmin={isAdmin}
-                acceptedTos={acceptedTos}
-                setAcceptedTos={setAcceptedTos}
-                paymentMethod={paymentMethod}
-                setPaymentMethod={setPaymentMethod}
-                paymentMessage={paymentMessage}
-                reference={reference}
-                subscribeLoading={subscribeLoading}
-                handleProcessSubscription={handleProcessSubscription}
-                activeSubscriptions={activeSubscriptions}
-                getPlanName={getPlanName}
-              />
-            );
-          }
-
-          return (
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-sm font-semibold tracking-tight text-foreground font-heading mb-1">
-                  {t("plans.selectActionForPlan", { name: getPlanName(currentPlan.name) })}
-                </h4>
-                <p className="text-xs text-muted-foreground leading-normal mb-3">
-                  {t("plans.selectActionDesc") ||
-                    "You have existing active subscriptions. Choose whether you want to replace one of them or add this plan as a new additional subscription."}
-                </p>
-
-                <div className="bg-muted border border-border p-0.5 rounded-md flex items-center gap-0.5 w-full shadow-xs mb-4">
-                  <button
-                    type="button"
-                    onClick={() => setActionType?.("modify")}
-                    className={`flex-1 py-1 rounded-xs text-xs font-semibold transition-all cursor-pointer ${
-                      actionType === "modify"
-                        ? "bg-card text-foreground border border-border shadow-xs"
-                        : "text-muted-foreground hover:text-foreground border border-transparent"
-                    }`}
-                  >
-                    {t("plans.changeExistingPlan") || "Change Existing Plan"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActionType?.("subscribe")}
-                    className={`flex-1 py-1 rounded-xs text-xs font-semibold transition-all cursor-pointer ${
-                      actionType === "subscribe"
-                        ? "bg-card text-foreground border border-border shadow-xs"
-                        : "text-muted-foreground hover:text-foreground border border-transparent"
-                    }`}
-                  >
-                    {t("plans.subscribeAsAdditionalPlan") || "Subscribe as Additional Plan"}
-                  </button>
-                </div>
-              </div>
-
-              {actionType === "subscribe" ? (
-                <CheckoutSheet
-                  currentPlan={currentPlan}
-                  billingCycle={billingCycle}
-                  currentEquipmentCount={currentEquipmentCount}
-                  isAdmin={isAdmin}
-                  acceptedTos={acceptedTos}
-                  setAcceptedTos={setAcceptedTos}
-                  paymentMethod={paymentMethod}
-                  setPaymentMethod={setPaymentMethod}
-                  paymentMessage={paymentMessage}
-                  reference={reference}
-                  subscribeLoading={subscribeLoading}
-                  handleProcessSubscription={handleProcessSubscription}
-                  activeSubscriptions={activeSubscriptions}
-                  getPlanName={getPlanName}
-                />
-              ) : (
-                <div className="space-y-3">
-                  <div>
-                    <label
-                      htmlFor="active-sub-select"
-                      className="block text-[10px] text-muted-foreground mb-1 font-semibold uppercase tracking-wider"
-                    >
-                      {t("plans.selectActiveSubToReplace") || "Select Active Subscription to Replace"}
-                    </label>
-                    <select
-                      id="active-sub-select"
-                      value={subscriptionToModifyId}
-                      onChange={(e) => setSubscriptionToModifyId?.(e.target.value)}
-                      className="w-full h-8.5 px-2 border border-input rounded text-xs focus:outline-none focus:ring-1 focus:ring-ring bg-background text-foreground"
-                    >
-                      {activeSubscriptions.map((sub) => (
-                        <option key={sub.id} value={sub.id}>
-                          {sub.service_name} (
-                          {t("plans.equipmentCountLabel", { count: sub.equipment_count }) ||
-                            `${sub.equipment_count} Equipment`}
-                          )
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {(() => {
-                    const subToModify =
-                      activeSubscriptions.find((sub) => sub.id === subscriptionToModifyId) || activeSubscriptions[0];
-                    if (!subToModify) return null;
-                    return renderAssignModifyForm(subToModify);
-                  })()}
-                </div>
-              )}
-            </div>
-          );
-        })()
-      ) : (
-        <CheckoutSheet
-          currentPlan={currentPlan}
-          billingCycle={billingCycle}
-          currentEquipmentCount={currentEquipmentCount}
-          isAdmin={isAdmin}
-          acceptedTos={acceptedTos}
-          setAcceptedTos={setAcceptedTos}
-          paymentMethod={paymentMethod}
-          setPaymentMethod={setPaymentMethod}
-          paymentMessage={paymentMessage}
-          reference={reference}
-          subscribeLoading={subscribeLoading}
-          handleProcessSubscription={handleProcessSubscription}
-          activeSubscriptions={activeSubscriptions}
-          getPlanName={getPlanName}
-        />
-      )}
+      <CheckoutSheet
+        currentPlan={currentPlan}
+        billingCycle={billingCycle}
+        currentEquipmentCount={currentEquipmentCount}
+        isAdmin={isAdmin}
+        acceptedTos={acceptedTos}
+        setAcceptedTos={setAcceptedTos}
+        paymentMethod={paymentMethod}
+        setPaymentMethod={setPaymentMethod}
+        paymentMessage={paymentMessage}
+        reference={reference}
+        subscribeLoading={subscribeLoading}
+        handleProcessSubscription={handleProcessSubscription}
+        activeSubscriptions={activeSubscriptions}
+        getPlanName={getPlanName}
+      />
     </div>
   );
 }

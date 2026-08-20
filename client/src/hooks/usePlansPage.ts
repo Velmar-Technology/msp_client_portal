@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo, type SyntheticEvent 
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from "@/hooks/useAuth";
+import { useUrlState } from "@/hooks/useUrlState";
 import { usePlanStore } from "@/store/usePlanStore";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 import { useCheckoutStore } from "@/store/useCheckoutStore";
@@ -9,6 +10,8 @@ import { toast } from 'sonner';
 import type { Plan, PlanFeature, PlanFilters, PlanClientType } from "@/services/planService";
 import { subscriptionService } from "@/services/subscriptionService";
 import { FEATURE_CATALOG } from "@/constants/featureCatalog";
+
+export type PlansTab = "browse" | "assign" | "manage";
 
 export function usePlansPage() {
   const { t, i18n } = useTranslation();
@@ -94,8 +97,13 @@ export function usePlansPage() {
   const [unregisteredEmail, setUnregisteredEmail] = useState("");
   const [unregisteredName, setUnregisteredName] = useState("");
 
-  // Tab Selector State
-  const [activeTab, setActiveTab] = useState<"browse" | "assign" | "manage">("browse");
+  // Tab Selector State (synced with the ?tab= URL search parameter)
+  const { getParam, setParam } = useUrlState();
+  const activeTab = getParam("tab", "browse") as PlansTab;
+  const setActiveTab = useCallback(
+    (tab: PlansTab) => setParam("tab", tab === "browse" ? null : tab),
+    [setParam],
+  );
 
   // Admin Editor State
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
@@ -137,6 +145,7 @@ export function usePlansPage() {
   const setPaymentMessage = useCheckoutStore((s) => s.setPaymentMessage);
 
   const isAdmin = user?.role === "ADMIN";
+  const isUnregistered = !user;
 
   const [clientTypeFilter, setClientTypeFilter] = useState<"ALL" | PlanClientType>("ALL");
 
@@ -172,6 +181,7 @@ export function usePlansPage() {
   useEffect(() => {
     if (isAdmin) {
       fetchClients();
+      fetchActiveSubscriptions();
     } else if (user?.role === "CLIENT") {
       fetchActiveSubscriptions();
     }
@@ -179,10 +189,10 @@ export function usePlansPage() {
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    if (!userSelectedPlan && activeSubscriptions.length > 0) {
+    if (!isAdmin && !userSelectedPlan && activeSubscriptions.length > 0) {
       setUserSelectedPlan(activeSubscriptions[0].plan);
     }
-  }, [activeSubscriptions, userSelectedPlan]);
+  }, [isAdmin, activeSubscriptions, userSelectedPlan]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const selectedPlan = useMemo(() => {
@@ -202,19 +212,31 @@ export function usePlansPage() {
 
   const [actionType, setActionType] = useState<"subscribe" | "modify">("modify");
   const [subscriptionToModifyId, setSubscriptionToModifyId] = useState<string>("");
+  const [tierChangeSubId, setTierChangeSubId] = useState<string | null>(null);
 
+  const selectedClientSubscriptions = useMemo(() => {
+    if (!selectedClientId) return [];
+    return activeSubscriptions.filter((sub) => sub.client_id === selectedClientId);
+  }, [activeSubscriptions, selectedClientId]);
+
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActionType("modify");
-    if (activeSubscriptions.length > 0) {
-      const activeSubForPlan = activeSubscriptions.find((sub) => sub.plan === selectedPlan && (sub.status === "ACTIVE" || sub.status === "EXPIRING"));
+    if (tierChangeSubId) {
+      setSubscriptionToModifyId(tierChangeSubId);
+      return;
+    }
+    const sourceSubs = isAdmin ? selectedClientSubscriptions : activeSubscriptions;
+    if (sourceSubs.length > 0) {
+      const activeSubForPlan = sourceSubs.find((sub) => sub.plan === selectedPlan && (sub.status === "ACTIVE" || sub.status === "EXPIRING"));
       if (activeSubForPlan) {
         setSubscriptionToModifyId(activeSubForPlan.id);
       } else {
-        setSubscriptionToModifyId(activeSubscriptions[0].id);
+        setSubscriptionToModifyId(sourceSubs[0].id);
       }
     }
-  }, [selectedPlan, activeSubscriptions]);
+  }, [selectedPlan, activeSubscriptions, selectedClientSubscriptions, isAdmin, tierChangeSubId]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const currentEquipmentCount = useMemo(() => {
     return currentPlan ? (equipmentCounts[currentPlan.id] || 1) : 1;
@@ -729,17 +751,17 @@ export function usePlansPage() {
     } finally {
       setQuoteLoading(false);
     }
-  }, [currentPlan, isAdmin, selectedClientId, unregisteredEmail, unregisteredName, currentEquipmentCount, billingCycle, t, addToast]);
+  }, [currentPlan, isAdmin, selectedClientId, unregisteredEmail, unregisteredName, currentEquipmentCount, billingCycle, t, addToast, isUnregistered]);
 
-  const handleUpdateSubscription = useCallback(async (subId: string, count: number) => {
-    if (!currentPlan) return;
+  const handleUpdateSubscription = useCallback(async (subId: string, count: number): Promise<boolean> => {
+    if (!currentPlan) return false;
     if (!isAdmin && !acceptedTos) {
       addToast({
         title: "Terms of Service",
         message: "Please accept the Terms of Service before proceeding.",
         type: "warning",
       });
-      return;
+      return false;
     }
     setSubscribeLoading(true);
     try {
@@ -753,6 +775,7 @@ export function usePlansPage() {
         type: "success",
       });
       await fetchActiveSubscriptions();
+      return true;
     } catch (err) {
       console.error("Failed to update subscription:", err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
@@ -761,6 +784,7 @@ export function usePlansPage() {
         message: error.response?.data?.message || error.message || "Failed to update subscription.",
         type: "error",
       });
+      return false;
     } finally {
       setSubscribeLoading(false);
     }
@@ -1275,6 +1299,9 @@ export function usePlansPage() {
     setActionType,
     subscriptionToModifyId,
     setSubscriptionToModifyId,
+    tierChangeSubId,
+    setTierChangeSubId,
+    selectedClientSubscriptions,
     currentPlan,
     currentEquipmentCount,
     subtotal,
@@ -1298,7 +1325,6 @@ export function usePlansPage() {
     checkoutSubscription,
     checkoutDeviceDelta,
     setCheckoutDeviceDelta,
-    setPaymentMessage,
     openCheckout,
     handleEditClick,
     handleCreateClick,

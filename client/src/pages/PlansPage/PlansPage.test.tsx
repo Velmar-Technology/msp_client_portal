@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within, act } from '@testing-library/react';
 import { PlansPage } from "@/pages/PlansPage/PlansPage";
 import { expect, test, vi, beforeEach, describe } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
@@ -6,6 +6,8 @@ import { userService } from '@/services/userService';
 import { subscriptionService } from '@/services/subscriptionService';
 import { useAuth } from '@/hooks/useAuth';
 import { usePlanStore } from '@/store/usePlanStore';
+import { useSubscriptionStore } from '@/store/useSubscriptionStore';
+import { useCheckoutStore } from '@/store/useCheckoutStore';
 
 import enTranslations from "@/locales/en_US.json";
 
@@ -84,7 +86,7 @@ vi.mock('@/services/subscriptionService', () => ({
   subscriptionService: {
     create: vi.fn(),
     getAll: vi.fn().mockResolvedValue([]),
-    update: vi.fn(),
+    update: vi.fn().mockResolvedValue({}),
     sendQuote: vi.fn(),
     createPaypalOrder: vi.fn().mockResolvedValue({ orderId: 'MOCK-PAYPAL-ORDER' }),
     createPaypalSubscription: vi.fn().mockResolvedValue({ subscriptionId: 'MOCK-PAYPAL-SUB', approveUrl: 'http://approve.url' }),
@@ -128,10 +130,62 @@ const mockClients = [
   { id: 'client-2', name: 'Bob Customer', email: 'bob@example.com' },
 ];
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const makeSub = (overrides: any) => ({
+  id: 'sub-active',
+  client_id: 'user-client',
+  service_name: 'Standard Support',
+  plan: 'STANDARD' as const,
+  status: 'ACTIVE' as const,
+  renewal_date: '2026-07-22T00:00:00.000Z',
+  equipment_count: 1,
+  tenant_id: 'tenant-1',
+  created_at: '2026-06-22',
+  updated_at: '2026-06-22',
+  ...overrides,
+});
+
+const renderPage = (route = '/') =>
+  render(
+    <MemoryRouter initialEntries={[route]}>
+      <PlansPage />
+    </MemoryRouter>
+  );
+
+const goManageTab = async () => {
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: 'Manage Subscription' })).toBeInTheDocument();
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Manage Subscription' }));
+};
+
+const openRowMenu = async (serviceName: string) => {
+  const row = screen.getByText(serviceName).closest('tr');
+  if (!row) throw new Error(`Row not found for service: ${serviceName}`);
+  const trigger = within(row as HTMLElement).getByRole('button', { name: 'Manage Subscription' });
+  fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
+  fireEvent.click(trigger);
+};
+
 describe('PlansPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
+    // Reset real zustand stores (module-level singletons persist across tests)
+    useSubscriptionStore.setState({
+      activeSubscriptions: [],
+      subscribeLoading: false,
+      clients: [],
+      selectedClientId: '',
+      equipmentCounts: {},
+    });
+    useCheckoutStore.setState({
+      checkoutOpen: false,
+      checkoutAction: null,
+      checkoutSubscription: null,
+      paymentMessage: null,
+    });
+
     // Default usePlanStore mock implementation
     vi.mocked(usePlanStore).mockReturnValue({
       plans: mockPlans,
@@ -152,7 +206,7 @@ describe('PlansPage', () => {
         isAuthenticated: true,
       } as unknown as ReturnType<typeof useAuth>);
       vi.mocked(subscriptionService.getAll).mockResolvedValue([]);
-      
+
       const script = document.getElementById('paypal-js-sdk-script');
       if (script) {
         script.remove();
@@ -172,11 +226,7 @@ describe('PlansPage', () => {
     });
 
     test('renders plans and payment method for Client', async () => {
-      render(
-        <MemoryRouter>
-          <PlansPage />
-        </MemoryRouter>
-      );
+      renderPage();
 
       expect(screen.getByRole('heading', { name: 'Basic Support' })).toBeInTheDocument();
       expect(screen.getByRole('heading', { name: 'Standard Support' })).toBeInTheDocument();
@@ -200,13 +250,29 @@ describe('PlansPage', () => {
       expect(screen.queryByText('Apply Plan to Customer')).not.toBeInTheDocument();
     });
 
+    test('hides Assign tab and shows Manage tab only with active subscriptions', async () => {
+      // Without subscriptions there are no tabs at all
+      const first = renderPage();
+      expect(screen.queryByRole('button', { name: 'Assign Plan' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Manage Subscription' })).not.toBeInTheDocument();
+      first.unmount();
+
+      vi.mocked(subscriptionService.getAll).mockResolvedValue([makeSub({})]);
+
+      renderPage();
+
+      await waitFor(() => {
+        expect(screen.getByText('Active')).toBeInTheDocument();
+      });
+      expect(screen.getByRole('button', { name: 'Browse Plans' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Manage Subscription' })).toBeInTheDocument();
+      // Assign Plan is admin/salesperson-only
+      expect(screen.queryByRole('button', { name: 'Assign Plan' })).not.toBeInTheDocument();
+    });
+
     test('submits client subscription on Process Payment click', async () => {
       vi.mocked(subscriptionService.create).mockResolvedValue({ id: 'sub-new' } as unknown as Awaited<ReturnType<typeof subscriptionService.create>>);
-      render(
-        <MemoryRouter>
-          <PlansPage />
-        </MemoryRouter>
-      );
+      renderPage();
 
       // Select Standard Support
       const selectCard = screen.getByText('Standard Support');
@@ -250,11 +316,7 @@ describe('PlansPage', () => {
     });
 
     test('updates pricing and calculations when toggling to Annually', async () => {
-      render(
-        <MemoryRouter>
-          <PlansPage />
-        </MemoryRouter>
-      );
+      renderPage();
 
       // Verify default monthly pricing for Standard Support card
       expect(screen.getByText('$499')).toBeInTheDocument();
@@ -282,11 +344,7 @@ describe('PlansPage', () => {
 
     test('submits client subscription with billingCycle = annual when toggled', async () => {
       vi.mocked(subscriptionService.create).mockResolvedValue({ id: 'sub-new' } as unknown as Awaited<ReturnType<typeof subscriptionService.create>>);
-      render(
-        <MemoryRouter>
-          <PlansPage />
-        </MemoryRouter>
-      );
+      renderPage();
 
       // Toggle to Annually
       const annualButton = screen.getByRole('button', { name: /Annually/i });
@@ -325,111 +383,51 @@ describe('PlansPage', () => {
       });
     });
 
-    test('renders Active badge and Cancel button when active subscription is present', async () => {
-      const activeSub = {
-        id: 'sub-active',
-        client_id: 'user-client',
-        service_name: 'Standard Support',
-        plan: 'STANDARD' as const,
-        status: 'ACTIVE' as const,
-        renewal_date: '2026-07-22T00:00:00.000Z',
-        equipment_count: 1,
-        tenant_id: 'tenant-1',
-        created_at: '2026-06-22',
-        updated_at: '2026-06-22',
-      };
+    test('submits cancellation update from Manage tab dropdown', async () => {
+      const activeSub = makeSub({});
       vi.mocked(subscriptionService.getAll).mockResolvedValue([activeSub]);
+      vi.mocked(subscriptionService.update).mockResolvedValue({ ...activeSub, status: 'CANCELLED' } as unknown as Awaited<ReturnType<typeof subscriptionService.update>>);
 
-      render(
-        <MemoryRouter>
-          <PlansPage />
-        </MemoryRouter>
-      );
+      renderPage();
 
-      await waitFor(() => {
-        expect(screen.getByText('Active')).toBeInTheDocument();
-        expect(screen.getByText('Manage Active Subscription')).toBeInTheDocument();
-        expect(screen.getByText('Cancel Subscription')).toBeInTheDocument();
-      });
-    });
+      await goManageTab();
 
-    test('submits cancellation update on Cancel click', async () => {
-      const activeSub = {
-        id: 'sub-active',
-        client_id: 'user-client',
-        service_name: 'Standard Support',
-        plan: 'STANDARD' as const,
-        status: 'ACTIVE' as const,
-        renewal_date: '2026-07-22T00:00:00.000Z',
-        equipment_count: 1,
-        tenant_id: 'tenant-1',
-        created_at: '2026-06-22',
-        updated_at: '2026-06-22',
-      };
-      vi.mocked(subscriptionService.getAll).mockResolvedValue([activeSub]);
-      vi.mocked(subscriptionService.update).mockResolvedValue({ ...activeSub, status: 'CANCELLED' });
+      await openRowMenu('Standard Support');
+      fireEvent.click(await screen.findByText('Cancel Subscription'));
 
-      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
-
-      render(
-        <MemoryRouter>
-          <PlansPage />
-        </MemoryRouter>
-      );
+      // Confirm inside the CheckoutSheet
+      fireEvent.click(await screen.findByRole('button', { name: 'Yes, Cancel Subscription' }));
 
       await waitFor(() => {
-        expect(screen.getByText('Cancel Subscription')).toBeInTheDocument();
-      });
-
-      fireEvent.click(screen.getByText('Cancel Subscription'));
-
-      await waitFor(() => {
-        expect(confirmSpy).toHaveBeenCalled();
         expect(subscriptionService.update).toHaveBeenCalledWith('sub-active', {
           status: 'CANCELLED',
         });
       });
     });
 
-    test('renders modification panel and submits updates on different plan select', async () => {
-      const activeSub = {
-        id: 'sub-active',
-        client_id: 'user-client',
-        service_name: 'Standard Support',
-        plan: 'STANDARD' as const,
-        status: 'ACTIVE' as const,
-        renewal_date: '2026-07-22T00:00:00.000Z',
-        equipment_count: 1,
-        tenant_id: 'tenant-1',
-        created_at: '2026-06-22',
-        updated_at: '2026-06-22',
-      };
+    test('changes plan tier via Manage tab inline panel on same device count', async () => {
+      const activeSub = makeSub({});
       vi.mocked(subscriptionService.getAll).mockResolvedValue([activeSub]);
-      vi.mocked(subscriptionService.update).mockResolvedValue({ ...activeSub, plan: 'BASIC' });
+      vi.mocked(subscriptionService.update).mockResolvedValue({ ...activeSub, plan: 'BASIC' } as unknown as Awaited<ReturnType<typeof subscriptionService.update>>);
 
-      render(
-        <MemoryRouter>
-          <PlansPage />
-        </MemoryRouter>
-      );
+      renderPage();
 
-      await waitFor(() => {
-        expect(screen.getByText('Active')).toBeInTheDocument();
-      });
+      await goManageTab();
 
-      // Select Basic Support card
-      fireEvent.click(screen.getByText('Basic Support'));
+      await openRowMenu('Standard Support');
+      fireEvent.click(await screen.findByText('Change Plan Tier'));
 
-      await waitFor(() => {
-        expect(screen.getByText('Subscription Modification')).toBeInTheDocument();
-        expect(screen.getByText('Update Subscription')).toBeInTheDocument();
-      });
+      // Inline tier-change panel appears
+      expect(await screen.findByText('Select New Tier')).toBeInTheDocument();
 
-      // Click Terms of Service checkbox
-      const tosCheckbox = screen.getByLabelText(/Terms of Service/i);
-      fireEvent.click(tosCheckbox);
+      // Select Basic Support as the new tier
+      const select = screen.getByLabelText('Select New Tier');
+      fireEvent.change(select, { target: { value: 'BASIC' } });
 
-      fireEvent.click(screen.getByText('Update Subscription'));
+      // Accept Terms of Service
+      fireEvent.click(screen.getByLabelText(/Terms of Service/i));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Update Subscription' }));
 
       await waitFor(() => {
         expect(subscriptionService.update).toHaveBeenCalledWith('sub-active', {
@@ -439,42 +437,59 @@ describe('PlansPage', () => {
       });
     });
 
+    test('pays for device increase through PayPal when changing tier panel count', async () => {
+      const activeSub = makeSub({ id: 'sub-basic', service_name: 'Basic Support', plan: 'BASIC', equipment_count: 2 });
+      vi.mocked(subscriptionService.getAll).mockResolvedValue([activeSub]);
 
+      renderPage();
+
+      await goManageTab();
+
+      await openRowMenu('Basic Support');
+      fireEvent.click(await screen.findByText('Change Plan Tier'));
+      expect(await screen.findByText('Select New Tier')).toBeInTheDocument();
+
+      // Increment devices twice: 2 -> 4
+      fireEvent.click(screen.getByRole('button', { name: 'Add Device' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Add Device' }));
+
+      // Accept Terms of Service
+      fireEvent.click(screen.getByLabelText(/Terms of Service/i));
+
+      // Increase requires PayPal payment. The SDK effect re-renders the upgrade
+      // buttons through a 100ms debounce timer — wait for the fresh instance
+      // that closes over equipmentCount = 4.
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      });
+
+      expect(paypalButtonsOptions).not.toBeNull();
+
+      const orderId = await paypalButtonsOptions.createOrder();
+      expect(orderId).toBe('MOCK-PAYPAL-ORDER');
+      expect(subscriptionService.createPaypalOrder).toHaveBeenLastCalledWith(
+        expect.objectContaining({ plan: 'BASIC', equipmentCount: 4 })
+      );
+
+      await paypalButtonsOptions.onApprove({ orderID: 'MOCK-PAYPAL-ORDER' });
+
+      await waitFor(() => {
+        expect(subscriptionService.update).toHaveBeenCalledWith('sub-basic', {
+          plan: 'BASIC',
+          equipmentCount: 4,
+          paypalOrderId: 'MOCK-PAYPAL-ORDER',
+        });
+      });
+    });
 
     test('renders multiple active plan subscriptions with unequal equipment counts', async () => {
       const activeSubs = [
-        {
-          id: 'sub-basic',
-          client_id: 'user-client',
-          service_name: 'Basic Support',
-          plan: 'BASIC' as const,
-          status: 'ACTIVE' as const,
-          renewal_date: '2026-07-22T00:00:00.000Z',
-          equipment_count: 2,
-          tenant_id: 'tenant-1',
-          created_at: '2026-06-22',
-          updated_at: '2026-06-22',
-        },
-        {
-          id: 'sub-standard',
-          client_id: 'user-client',
-          service_name: 'Standard Support',
-          plan: 'STANDARD' as const,
-          status: 'ACTIVE' as const,
-          renewal_date: '2026-07-22T00:00:00.000Z',
-          equipment_count: 3,
-          tenant_id: 'tenant-1',
-          created_at: '2026-06-22',
-          updated_at: '2026-06-22',
-        },
+        makeSub({ id: 'sub-basic', service_name: 'Basic Support', plan: 'BASIC', equipment_count: 2 }),
+        makeSub({ id: 'sub-standard', service_name: 'Standard Support', plan: 'STANDARD', equipment_count: 3 }),
       ];
       vi.mocked(subscriptionService.getAll).mockResolvedValue(activeSubs);
 
-      render(
-        <MemoryRouter>
-          <PlansPage />
-        </MemoryRouter>
-      );
+      renderPage();
 
       // Verify that both plans render with Active badges
       await waitFor(() => {
@@ -491,149 +506,34 @@ describe('PlansPage', () => {
       expect(standardCount).toBeInTheDocument();
     });
 
-    test('updates a specific active subscription when multiple are present', async () => {
-      const activeSubs = [
-        {
-          id: 'sub-basic',
-          client_id: 'user-client',
-          service_name: 'Basic Support',
-          plan: 'BASIC' as const,
-          status: 'ACTIVE' as const,
-          renewal_date: '2026-07-22T00:00:00.000Z',
-          equipment_count: 2,
-          tenant_id: 'tenant-1',
-          created_at: '2026-06-22',
-          updated_at: '2026-06-22',
-        },
-        {
-          id: 'sub-standard',
-          client_id: 'user-client',
-          service_name: 'Standard Support',
-          plan: 'STANDARD' as const,
-          status: 'ACTIVE' as const,
-          renewal_date: '2026-07-22T00:00:00.000Z',
-          equipment_count: 3,
-          tenant_id: 'tenant-1',
-          created_at: '2026-06-22',
-          updated_at: '2026-06-22',
-        },
-      ];
-      vi.mocked(subscriptionService.getAll).mockResolvedValue(activeSubs);
-      vi.mocked(subscriptionService.update).mockResolvedValue({ ...activeSubs[0], equipment_count: 4 });
-
-      render(
-        <MemoryRouter>
-          <PlansPage />
-        </MemoryRouter>
-      );
-
-      // Select Basic Support plan card to manage it
-      await waitFor(() => {
-        expect(screen.getByText('Basic Support')).toBeInTheDocument();
-      });
-
-      // Increment equipment count of BASIC plan to 4 (currently 2, so increment twice)
-      const incrementButtons = screen.getAllByRole('button', { name: '+' });
-      // BASIC is the first card
-      fireEvent.click(incrementButtons[0]);
-      fireEvent.click(incrementButtons[0]);
-
-      // Verify updated count on screen is 4
-      expect(screen.getByText('4')).toBeInTheDocument();
-
-      // Switch to Manage Subscription tab
-      const manageTabButton = screen.getByRole('button', { name: /Manage Subscription/i });
-      fireEvent.click(manageTabButton);
-
-      // Wait for PayPal buttons container
-      await waitFor(() => {
-        expect(paypalButtonsOptions).not.toBeNull();
-      });
-
-      // Click Terms of Service checkbox
-      const tosCheckbox = screen.getByLabelText(/Terms of Service/i);
-      fireEvent.click(tosCheckbox);
-
-      // Call createOrder
-      const orderId = await paypalButtonsOptions.createOrder();
-      expect(orderId).toBe('MOCK-PAYPAL-ORDER');
-
-      // Call onApprove
-      await paypalButtonsOptions.onApprove({ orderID: 'MOCK-PAYPAL-ORDER' });
-
-      await waitFor(() => {
-        expect(subscriptionService.update).toHaveBeenCalledWith('sub-basic', {
-          plan: 'BASIC',
-          equipmentCount: 4,
-          paypalOrderId: 'MOCK-PAYPAL-ORDER',
-        });
-      });
-    });
-
-    test('submits a new subscription as an additional plan when toggle is clicked', async () => {
-      const activeSub = {
-        id: 'sub-active-basic',
-        client_id: 'user-client',
-        service_name: 'Basic Support',
-        plan: 'BASIC' as const,
-        status: 'ACTIVE' as const,
-        renewal_date: '2026-07-22T00:00:00.000Z',
-        equipment_count: 1,
-        tenant_id: 'tenant-1',
-        created_at: '2026-06-22',
-        updated_at: '2026-06-22',
-      };
+    test('submits a new additional subscription from Browse checkout', async () => {
+      const activeSub = makeSub({ id: 'sub-active-basic', service_name: 'Basic Support', plan: 'BASIC' });
       vi.mocked(subscriptionService.getAll).mockResolvedValue([activeSub]);
       vi.mocked(subscriptionService.create).mockResolvedValue({ id: 'sub-new-standard' } as unknown as Awaited<ReturnType<typeof subscriptionService.create>>);
 
-      render(
-        <MemoryRouter>
-          <PlansPage />
-        </MemoryRouter>
-      );
+      renderPage();
 
       // Verify that Basic Support is currently active and selected
       await waitFor(() => {
         expect(screen.getByText('Active')).toBeInTheDocument();
       });
 
-      // Select Standard Support card (which is not active)
+      // Select Standard Support card (which is not active) and checkout as an additional plan
       fireEvent.click(screen.getByText('Standard Support'));
 
-      // The select action header should appear
-      await waitFor(() => {
-        expect(screen.getByText('Select Action for Standard Support')).toBeInTheDocument();
-      });
-
-      // Default should be change existing plan (modify), let's click 'Subscribe as Additional Plan'
-      const subscribeAdditionalBtn = screen.getByRole('button', { name: 'Subscribe as Additional Plan' });
-      fireEvent.click(subscribeAdditionalBtn);
-
-      // Now the Proceed to Checkout button should be visible
       const checkoutBtn = screen.getByRole('button', { name: /Proceed to Checkout/i });
       fireEvent.click(checkoutBtn);
 
-      // Verify Payment Method is not shown initially before accepting ToS
-      expect(screen.queryByText('Payment Method')).not.toBeInTheDocument();
-
       // Click Terms of Service checkbox
-      const tosCheckbox = screen.getByLabelText(/Terms of Service/i);
-      fireEvent.click(tosCheckbox);
+      fireEvent.click(screen.getByLabelText(/Terms of Service/i));
 
-      await waitFor(() => {
-        expect(screen.getByText('Payment Method')).toBeInTheDocument();
-      });
-
-      // Wait for PayPal buttons container
       await waitFor(() => {
         expect(paypalButtonsOptions).not.toBeNull();
       });
 
-      // Call createOrder
       const orderId = await paypalButtonsOptions.createOrder();
       expect(orderId).toBe('MOCK-PAYPAL-ORDER');
 
-      // Call onApprove
       await paypalButtonsOptions.onApprove({ orderID: 'MOCK-PAYPAL-ORDER' });
 
       await waitFor(() => {
@@ -658,31 +558,40 @@ describe('PlansPage', () => {
       } as unknown as ReturnType<typeof useAuth>);
 
       vi.mocked(userService.getClients).mockResolvedValue(mockClients as unknown as Awaited<ReturnType<typeof userService.getClients>>);
+      vi.mocked(subscriptionService.getAll).mockResolvedValue([]);
     });
 
-    test('renders admin customer assignment section instead of payment method', async () => {
-      render(
-        <MemoryRouter>
-          <PlansPage />
-        </MemoryRouter>
-      );
+    test('shows Assign tab only for admin and renders sales workspace via deep link', async () => {
+      renderPage('/?tab=assign');
 
       await waitFor(() => {
         expect(userService.getClients).toHaveBeenCalled();
-        expect(screen.getByRole('heading', { name: /Apply Plan to Customer/i })).toBeInTheDocument();
-        expect(screen.getByLabelText('Select Customer')).toBeInTheDocument();
       });
 
+      expect(screen.getByRole('button', { name: 'Assign Plan' })).toBeInTheDocument();
+      expect(screen.getByText('Customer Subscriptions')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /Apply Plan to Customer/i })).toBeInTheDocument();
+      expect(screen.getByLabelText('Select Customer')).toBeInTheDocument();
+      expect(screen.queryByText('Payment Method')).not.toBeInTheDocument();
+    });
+
+    test('renders admin customer assignment section after switching to Assign tab', async () => {
+      renderPage();
+
+      await waitFor(() => {
+        expect(userService.getClients).toHaveBeenCalled();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Assign Plan' }));
+
+      expect(await screen.findByRole('heading', { name: /Apply Plan to Customer/i })).toBeInTheDocument();
+      expect(screen.getByLabelText('Select Customer')).toBeInTheDocument();
       expect(screen.queryByText('Payment Method')).not.toBeInTheDocument();
     });
 
     test('submits admin client assignment with selected clientId', async () => {
       vi.mocked(subscriptionService.create).mockResolvedValue({ id: 'sub-new' } as unknown as Awaited<ReturnType<typeof subscriptionService.create>>);
-      render(
-        <MemoryRouter>
-          <PlansPage />
-        </MemoryRouter>
-      );
+      renderPage('/?tab=assign');
 
       await waitFor(() => {
         expect(screen.getByLabelText('Select Customer')).toBeInTheDocument();
@@ -712,6 +621,57 @@ describe('PlansPage', () => {
       });
     });
 
+    test('lists and cancels a customer subscription from the workspace', async () => {
+      const customerSub = makeSub({ id: 'sub-cust-1', client_id: 'client-1' });
+      vi.mocked(subscriptionService.getAll).mockResolvedValue([customerSub]);
+      vi.mocked(subscriptionService.update).mockResolvedValue({ ...customerSub, status: 'CANCELLED' } as unknown as Awaited<ReturnType<typeof subscriptionService.update>>);
+
+      renderPage('/?tab=assign');
+
+      // The selected customer's subscriptions are listed
+      await waitFor(() => {
+        expect(screen.getByText('Standard Support')).toBeInTheDocument();
+      });
+      expect(screen.getByText('Customer Subscriptions')).toBeInTheDocument();
+
+      // Cancel the customer's subscription
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      fireEvent.click(await screen.findByRole('button', { name: 'Yes, Cancel Subscription' }));
+
+      await waitFor(() => {
+        expect(subscriptionService.update).toHaveBeenCalledWith('sub-cust-1', {
+          status: 'CANCELLED',
+        });
+      });
+    });
+
+    test('modifies a customer subscription plan from the workspace', async () => {
+      const customerSub = makeSub({ id: 'sub-cust-1', client_id: 'client-1', plan: 'BASIC', service_name: 'Basic Support' });
+      vi.mocked(subscriptionService.getAll).mockResolvedValue([customerSub]);
+      vi.mocked(subscriptionService.update).mockResolvedValue({ ...customerSub, plan: 'STANDARD' } as unknown as Awaited<ReturnType<typeof subscriptionService.update>>);
+
+      renderPage('/?tab=assign');
+
+      await waitFor(() => {
+        expect(screen.getByText('Customer Subscriptions')).toBeInTheDocument();
+      });
+
+      // Enter modify mode for the customer's subscription
+      fireEvent.click(screen.getByRole('button', { name: 'Modify' }));
+
+      // Pick a different target tier
+      fireEvent.click(screen.getByText('Standard Support'));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Update Subscription' }));
+
+      await waitFor(() => {
+        expect(subscriptionService.update).toHaveBeenCalledWith('sub-cust-1', {
+          plan: 'STANDARD',
+          equipmentCount: 1,
+        });
+      });
+    });
+
     test('renders "+ Add Plan" button, opens create modal, and submits new plan', async () => {
       const mockCreatePlan = vi.fn().mockResolvedValue(undefined);
       vi.mocked(usePlanStore).mockReturnValue({
@@ -723,11 +683,7 @@ describe('PlansPage', () => {
         updatePlan: vi.fn(),
       } as unknown as ReturnType<typeof usePlanStore>);
 
-      render(
-        <MemoryRouter>
-          <PlansPage />
-        </MemoryRouter>
-      );
+      renderPage();
 
       const addPlanButton = screen.getByText('+ Add Plan');
       expect(addPlanButton).toBeInTheDocument();
@@ -735,7 +691,7 @@ describe('PlansPage', () => {
       fireEvent.click(addPlanButton);
 
       // Verify modal is open
-      expect(screen.getByText('Add New Plan')).toBeInTheDocument();
+      expect(screen.getAllByText('Add New Plan').length).toBeGreaterThan(0);
 
       // Fill in details
       fireEvent.change(screen.getByPlaceholderText('e.g. PL-008'), { target: { value: 'PL-TEST' } });
@@ -849,18 +805,14 @@ describe('PlansPage', () => {
         updatePlan: mockUpdatePlan,
       } as unknown as ReturnType<typeof usePlanStore>);
 
-      render(
-        <MemoryRouter>
-          <PlansPage />
-        </MemoryRouter>
-      );
+      renderPage();
 
       // Open Edit Modal
       const editButton = screen.getByRole('button', { name: /Edit/i });
       fireEvent.click(editButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Plan: BASIC')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'Edit Plan: BASIC' })).toBeInTheDocument();
       });
 
       // Find inputs containing the English features
@@ -918,27 +870,19 @@ describe('PlansPage', () => {
 
     test('renders plans in Spanish when language is es_DO', async () => {
       mockLanguage = 'es_DO';
-      render(
-        <MemoryRouter>
-          <PlansPage />
-        </MemoryRouter>
-      );
+      renderPage();
 
       expect(screen.getByText('Soporte Básico')).toBeInTheDocument();
       expect(screen.getByText('Descripción del plan básico')).toBeInTheDocument();
       expect(screen.getByText('Soporte por correo')).toBeInTheDocument();
-      
+
       // Reset mockLanguage
       mockLanguage = 'en_US';
     });
 
     test('sends customer quotation via email on Send Quotation to Customer click', async () => {
       vi.mocked(subscriptionService.sendQuote).mockResolvedValue({ success: true, message: 'Sent' });
-      render(
-        <MemoryRouter>
-          <PlansPage />
-        </MemoryRouter>
-      );
+      renderPage('/?tab=assign');
 
       await waitFor(() => {
         expect(screen.getByLabelText('Select Customer')).toBeInTheDocument();
@@ -968,11 +912,7 @@ describe('PlansPage', () => {
 
     test('sends quotation for unregistered customer in admin flow', async () => {
       vi.mocked(subscriptionService.sendQuote).mockResolvedValue({ success: true, message: 'Sent' });
-      render(
-        <MemoryRouter>
-          <PlansPage />
-        </MemoryRouter>
-      );
+      renderPage('/?tab=assign');
 
       await waitFor(() => {
         expect(screen.getByLabelText('Select Customer')).toBeInTheDocument();

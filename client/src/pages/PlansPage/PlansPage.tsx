@@ -17,6 +17,8 @@ import { PlanCard } from "@/pages/PlansPage/components/PlanCard";
 import { PaymentSection } from "@/pages/PlansPage/components/PaymentSection";
 import { ActiveSubscriptionsDashboard } from "@/pages/PlansPage/components/ActiveSubscriptionsDashboard";
 import { EditPlanModal } from "@/pages/PlansPage/components/EditPlanModal";
+import { AssignPlanWorkspace } from "@/pages/PlansPage/components/AssignPlanWorkspace";
+import { ChangeTierPanel } from "@/pages/PlansPage/components/ChangeTierPanel";
 import { CheckoutSheet } from "@/components/checkout-sheet";
 
 type SubDialogAction = "add_device" | "remove_device" | "cancel" | "pay";
@@ -34,6 +36,7 @@ export function PlansPage() {
     selectedPlan,
     setUserSelectedPlan,
     equipmentCounts,
+    setEquipmentCounts,
     paymentMethod,
     setPaymentMethod,
     acceptedTos,
@@ -79,11 +82,11 @@ export function PlansPage() {
     setActionType,
     subscriptionToModifyId,
     setSubscriptionToModifyId,
+    tierChangeSubId,
+    setTierChangeSubId,
+    selectedClientSubscriptions,
     currentPlan,
     currentEquipmentCount,
-    subtotal,
-    tax,
-    total,
     getPlanName,
     getPlanDescription,
     getFeatureText,
@@ -123,6 +126,13 @@ export function PlansPage() {
   const openActionDialog = useCallback((action: SubDialogAction, sub: Subscription) => {
     openCheckout(action, sub);
   }, [openCheckout]);
+
+  const syncEquipmentCount = useCallback(
+    (planId: string, count: number) => {
+      setEquipmentCounts((prev) => ({ ...prev, [planId]: count }));
+    },
+    [setEquipmentCounts],
+  );
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -266,8 +276,8 @@ export function PlansPage() {
                 <DropdownMenuItem
                   onClick={() => {
                     setUserSelectedPlan(sub.plan);
-                    setActiveTab("assign");
-                    toast.info(t("plans.assignTab") || "Assign Plan", {
+                    setTierChangeSubId(sub.id);
+                    toast.info(t("plans.changeTierTitle") || "Change Plan Tier", {
                       description: t("plans.changePlanMsg") || "Select a different plan tier to switch or subscribe.",
                     });
                   }}
@@ -315,12 +325,16 @@ export function PlansPage() {
       getTierLabel,
       handleUpdateSubscriptionDirect,
       setUserSelectedPlan,
-      setActiveTab,
+      setTierChangeSubId,
       openActionDialog,
     ],
   );
 
-  const showTabs = !isAdmin && activeSubscriptions.length > 0;
+  const showTabs = isAdmin || activeSubscriptions.length > 0;
+
+  const tierChangeSub = tierChangeSubId
+    ? activeSubscriptions.find((sub) => sub.id === tierChangeSubId) || null
+    : null;
 
   const activeSubForCurrentPlan = activeSubscriptions.find(
     (sub) => sub.plan === selectedPlan && sub.status === "ACTIVE",
@@ -359,32 +373,36 @@ export function PlansPage() {
           >
             {t("plans.browseTab")}
           </button>
-          <button
-            type="button"
-            className={`pb-2 text-xs font-semibold transition-all cursor-pointer ${
-              activeTab === "assign"
-                ? "border-b-2 border-primary text-foreground font-heading"
-                : "text-muted-foreground hover:text-foreground border-b-2 border-transparent"
-            }`}
-            onClick={() => setActiveTab("assign")}
-          >
-            {t("plans.assignTab")}
-          </button>
-          <button
-            type="button"
-            className={`pb-2 text-xs font-semibold transition-all cursor-pointer ${
-              activeTab === "manage"
-                ? "border-b-2 border-primary text-foreground font-heading"
-                : "text-muted-foreground hover:text-foreground border-b-2 border-transparent"
-            }`}
-            onClick={() => setActiveTab("manage")}
-          >
-            {t("plans.manageTab")}
-          </button>
+          {isAdmin && (
+            <button
+              type="button"
+              className={`pb-2 text-xs font-semibold transition-all cursor-pointer ${
+                activeTab === "assign"
+                  ? "border-b-2 border-primary text-foreground font-heading"
+                  : "text-muted-foreground hover:text-foreground border-b-2 border-transparent"
+              }`}
+              onClick={() => setActiveTab("assign")}
+            >
+              {t("plans.assignTab")}
+            </button>
+          )}
+          {!isAdmin && (
+            <button
+              type="button"
+              className={`pb-2 text-xs font-semibold transition-all cursor-pointer ${
+                activeTab === "manage"
+                  ? "border-b-2 border-primary text-foreground font-heading"
+                  : "text-muted-foreground hover:text-foreground border-b-2 border-transparent"
+              }`}
+              onClick={() => setActiveTab("manage")}
+            >
+              {t("plans.manageTab")}
+            </button>
+          )}
         </div>
       )}
 
-      {isAdmin || activeTab === "browse" ? (
+      {!(isAdmin && activeTab === "assign") && activeTab !== "manage" ? (
         <>
           {/* Billing Cycle Switcher & Admin Actions */}
           <div className="flex flex-col sm:flex-row justify-center items-center gap-3.5 mb-4">
@@ -446,10 +464,10 @@ export function PlansPage() {
             ))}
           </div>
 
-          {/* Payment Section — Browse mode: new subscriptions only */}
-          {currentPlan && (
+          {/* Payment Section — Browse mode: new subscriptions only (clients) */}
+          {!isAdmin && currentPlan && (
             <div className="max-w-xl mx-auto w-full text-foreground">
-              {!isAdmin && activeSubForCurrentPlan ? (
+              {activeSubForCurrentPlan ? (
                 <div className="bg-card border border-border rounded-lg p-5 shadow-xs text-center">
                   <p className="text-xs text-foreground font-semibold mb-2">
                     {t("plans.alreadySubscribedNotice") ||
@@ -468,9 +486,6 @@ export function PlansPage() {
                   currentPlan={currentPlan}
                   billingCycle={billingCycle}
                   currentEquipmentCount={currentEquipmentCount}
-                  subtotal={subtotal}
-                  tax={tax}
-                  total={total}
                   isAdmin={isAdmin}
                   acceptedTos={acceptedTos}
                   setAcceptedTos={setAcceptedTos}
@@ -482,95 +497,75 @@ export function PlansPage() {
                   handleProcessSubscription={handleProcessSubscription}
                   activeSubscriptions={activeSubscriptions}
                   getPlanName={getPlanName}
-                  clients={clients}
-                  selectedClientId={selectedClientId}
-                  setSelectedClientId={setSelectedClientId}
-                  unregisteredEmail={unregisteredEmail}
-                  setUnregisteredEmail={setUnregisteredEmail}
-                  unregisteredName={unregisteredName}
-                  setUnregisteredName={setUnregisteredName}
-                  quoteLoading={quoteLoading}
-                  handleSendQuote={handleSendQuote}
                 />
               )}
             </div>
           )}
         </>
-      ) : activeTab === "assign" ? (
-        <>
-          {/* Assign Plan Tab — Modify existing subscription */}
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-3.5 mb-4">
-            <div className="flex justify-center">
-              <BillingCycleSwitcher billingCycle={billingCycle} setBillingCycle={setBillingCycle} />
-            </div>
-          </div>
-
-          {/* Plan Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4.5 mb-8 mx-auto w-full max-w-5xl">
-            {filteredPlans.map((plan) => (
-              <PlanCard
-                key={plan.id}
-                plan={plan}
-                selectedPlan={selectedPlan}
-                billingCycle={billingCycle}
-                equipmentCount={equipmentCounts[plan.id] || 1}
-                isAdmin={isAdmin}
-                activeSubscriptions={activeSubscriptions}
-                onSelect={setUserSelectedPlan}
-                onEdit={handleEditClick}
-                onDelete={handleDeletePlan}
-                onAdjustEquipmentCount={handleAdjustEquipmentCount}
-                getPlanName={getPlanName}
-                getPlanDescription={getPlanDescription}
-                getFeatureText={getFeatureText}
-                getTierLabel={getTierLabel}
-              />
-            ))}
-          </div>
-
-          {/* Payment Section — Assign mode: modify existing subscription */}
-          {currentPlan && (
-            <div className="max-w-xl mx-auto w-full text-foreground">
-              <PaymentSection
-                currentPlan={currentPlan}
-                billingCycle={billingCycle}
-                currentEquipmentCount={currentEquipmentCount}
-                subtotal={subtotal}
-                tax={tax}
-                total={total}
-                isAdmin={isAdmin}
-                acceptedTos={acceptedTos}
-                setAcceptedTos={setAcceptedTos}
-                paymentMethod={paymentMethod}
-                setPaymentMethod={setPaymentMethod}
-                paymentMessage={paymentMessage}
-                reference={reference}
-                subscribeLoading={subscribeLoading}
-                handleProcessSubscription={handleProcessSubscription}
-                activeSubscriptions={activeSubscriptions}
-                getPlanName={getPlanName}
-                clients={clients}
-                selectedClientId={selectedClientId}
-                setSelectedClientId={setSelectedClientId}
-                unregisteredEmail={unregisteredEmail}
-                setUnregisteredEmail={setUnregisteredEmail}
-                unregisteredName={unregisteredName}
-                setUnregisteredName={setUnregisteredName}
-                quoteLoading={quoteLoading}
-                handleSendQuote={handleSendQuote}
-                mode="assign"
-                actionType={actionType}
-                setActionType={setActionType}
-                subscriptionToModifyId={subscriptionToModifyId}
-                setSubscriptionToModifyId={setSubscriptionToModifyId}
-                handleUpdateSubscription={handleUpdateSubscription}
-              />
-            </div>
-          )}
-        </>
+      ) : activeTab === "assign" && isAdmin ? (
+        /* Assign Plan Tab — Admin/Salesperson workspace */
+        <AssignPlanWorkspace
+          filteredPlans={filteredPlans}
+          selectedPlan={selectedPlan}
+          billingCycle={billingCycle}
+          setBillingCycle={setBillingCycle}
+          equipmentCounts={equipmentCounts}
+          onSelectPlan={setUserSelectedPlan}
+          onAdjustEquipmentCount={handleAdjustEquipmentCount}
+          getPlanName={getPlanName}
+          getPlanDescription={getPlanDescription}
+          getFeatureText={getFeatureText}
+          getTierLabel={getTierLabel}
+          clients={clients}
+          selectedClientId={selectedClientId}
+          setSelectedClientId={setSelectedClientId}
+          unregisteredEmail={unregisteredEmail}
+          setUnregisteredEmail={setUnregisteredEmail}
+          unregisteredName={unregisteredName}
+          setUnregisteredName={setUnregisteredName}
+          customerSubscriptions={selectedClientSubscriptions}
+          actionType={actionType}
+          setActionType={setActionType}
+          subscriptionToModifyId={subscriptionToModifyId}
+          setSubscriptionToModifyId={setSubscriptionToModifyId}
+          currentPlan={currentPlan}
+          currentEquipmentCount={currentEquipmentCount}
+          subscribeLoading={subscribeLoading}
+          quoteLoading={quoteLoading}
+          paymentMessage={paymentMessage}
+          acceptedTos={acceptedTos}
+          setAcceptedTos={setAcceptedTos}
+          onApplyPlan={handleProcessSubscription}
+          onSendQuote={handleSendQuote}
+          onUpdateSubscription={handleUpdateSubscription}
+          onCancelSubscription={(sub) => openCheckout("cancel", sub)}
+        />
       ) : (
-        /* Manage Subscriptions Tab — DataTable only */
+        /* Manage Subscriptions Tab — Tier change panel + DataTable */
         <div className="text-foreground">
+          {tierChangeSub && (
+            <ChangeTierPanel
+              subscription={tierChangeSub}
+              plans={filteredPlans}
+              currentPlan={currentPlan}
+              currentEquipmentCount={currentEquipmentCount}
+              onSelectPlan={setUserSelectedPlan}
+              onSyncEquipmentCount={syncEquipmentCount}
+              onAdjustEquipmentCount={handleAdjustEquipmentCount}
+              onClose={() => setTierChangeSubId(null)}
+              onUpdateSubscription={async (subId, count) => {
+                const updated = await handleUpdateSubscription(subId, count);
+                if (updated) {
+                  setTierChangeSubId(null);
+                }
+              }}
+              subscribeLoading={subscribeLoading}
+              acceptedTos={acceptedTos}
+              setAcceptedTos={setAcceptedTos}
+              paymentMessage={paymentMessage}
+              getPlanName={getPlanName}
+            />
+          )}
           {activeSubscriptions.length > 0 ? (
             <ActiveSubscriptionsDashboard
               activeSubscriptions={activeSubscriptions}

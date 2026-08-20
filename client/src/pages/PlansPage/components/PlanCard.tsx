@@ -11,7 +11,7 @@ interface PlanCardProps {
   isAdmin: boolean;
   activeSubscriptions: Subscription[];
   onSelect: (planId: string) => void;
-  onEdit: (plan: Plan) => void;
+  onEdit?: (plan: Plan) => void;
   onDelete?: (planId: string) => void;
   onAdjustEquipmentCount: (planId: string, delta: number) => void;
   getPlanName: (name: string | Record<string, string>) => string;
@@ -94,7 +94,7 @@ export function PlanCard({
               </span>
             )}
 
-            {isAdmin && (
+            {isAdmin && onEdit && (
               <div className="flex items-center gap-1">
                 <button
                   type="button"
