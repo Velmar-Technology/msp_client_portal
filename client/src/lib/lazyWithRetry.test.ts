@@ -45,15 +45,18 @@ describe("lazyWithRetry", () => {
   it("throws after exhausting maxRetries", async () => {
     const factory = vi.fn().mockRejectedValue(new Error("Persistent error"));
 
-    const LazyComp = lazyWithRetry(factory, { maxRetries: 2, initialDelayMs: 50, autoReloadOnDeployMismatch: false });
+    const LazyComp = lazyWithRetry(factory, {
+      maxRetries: 2,
+      initialDelayMs: 50,
+      autoReloadOnDeployMismatch: false,
+    });
 
-    const preloadPromise = LazyComp.preload();
+    const assertion = expect(LazyComp.preload()).rejects.toThrow("Persistent error");
 
     // Advance across retries
-    await vi.advanceTimersByTimeAsync(50);
-    await vi.advanceTimersByTimeAsync(100);
+    await vi.advanceTimersByTimeAsync(200);
 
-    await expect(preloadPromise).rejects.toThrow("Persistent error");
+    await assertion;
     expect(factory).toHaveBeenCalledTimes(3); // 1 initial + 2 retries
   });
 

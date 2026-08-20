@@ -247,9 +247,9 @@ describe('TicketDetailPage - Button Blocking for CANCELLED Tickets', () => {
     // Initially within threshold, skeleton should not be rendered
     expect(container.querySelector('[data-slot="skeleton"]')).not.toBeInTheDocument();
 
-    // Advance time past threshold
+    // Advance time past threshold (SKELETON_DISPLAY_DELAY_MS)
     act(() => {
-      vi.advanceTimersByTime(200);
+      vi.advanceTimersByTime(1100);
     });
 
     // Skeleton should now be visible
