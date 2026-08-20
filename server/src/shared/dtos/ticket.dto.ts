@@ -45,3 +45,8 @@ export const CreateTicketResponseDTO = z.object({
 });
 export type CreateTicketResponseInput = z.infer<typeof CreateTicketResponseDTO>;
 
+export const TicketIdParamDTO = z.object({
+  id: z.string().uuid('Ticket ID Invalid'),
+});
+export type TicketIdParamInput = z.infer<typeof TicketIdParamDTO>;
+

@@ -1,8 +1,8 @@
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import {
   Clock, AlertTriangle, UserCheck, FileText, Image as ImageIcon, Video,
   FileSpreadsheet, Download, Paperclip, CheckCircle2, AlertCircle, Send, Upload,
-  Activity, UserPlus, XCircle, X
+  Activity, UserPlus, XCircle, X, ArrowLeft
 } from 'lucide-react';
 
 import { useTicketDetail } from "@/hooks/useTicketDetail";
@@ -69,6 +69,7 @@ export function TicketDetailPage() {
     i18n,
     user,
     ticket,
+    error,
     responses,
     timeline,
     attachments,
@@ -235,7 +236,7 @@ export function TicketDetailPage() {
     return null;
   };
 
-  if (loading || !ticket) {
+  if (loading) {
     return (
       <Page>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -268,6 +269,35 @@ export function TicketDetailPage() {
                 <Skeleton className="h-4 w-full" />
               </div>
             </div>
+          </div>
+        </div>
+      </Page>
+    );
+  }
+
+  if (!ticket || error) {
+    return (
+      <Page>
+        <div className="max-w-2xl mx-auto py-16 px-4 text-center space-y-6">
+          <div className="w-16 h-16 bg-destructive/10 text-destructive rounded-2xl flex items-center justify-center mx-auto border border-destructive/20 shadow-xs">
+            <AlertCircle className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-foreground">
+              {error?.title || t('ticketDetail.invalidTicketId')}
+            </h1>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              {error?.message || t('ticketDetail.invalidTicketIdDesc')}
+            </p>
+          </div>
+          <div>
+            <Link
+              to={user?.role === 'CLIENT' ? '/tickets' : '/tech/tickets'}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors rounded-lg text-sm font-semibold shadow-xs"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              {t('ticketDetail.backToTickets')}
+            </Link>
           </div>
         </div>
       </Page>

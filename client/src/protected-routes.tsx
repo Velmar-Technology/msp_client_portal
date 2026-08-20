@@ -18,6 +18,8 @@ import { NotificationPreferencesPage } from "@/routes/_app/notifications/prefere
 import { MaintenancePage } from "@/routes/_app/maintenance";
 import { UserManagementPage } from "@/routes/_app/admin/users";
 import { ResourcesPage } from "@/routes/_app/resources";
+import { TermsPage } from "@/routes/_public/terms";
+import { PrivacyPage } from "@/routes/_public/privacy";
 const DevicesPage = React.lazy(() => import("@/routes/_app/devices"));
 const ApiStatusPage = React.lazy(() => import("@/routes/_app/admin/api-status"));
 
@@ -101,6 +103,8 @@ const RAW_PROTECTED_ROUTES: Omit<AppRouteConfig, "handle">[] = [
   { path: "/profile", element: <ProfilePage /> },
   { path: "/notifications/preferences", element: <NotificationPreferencesPage /> },
   { path: "/help", element: <HelpPage /> },
+  { path: "/terms", element: <TermsPage />, isPublic: true },
+  { path: "/privacy", element: <PrivacyPage />, isPublic: true },
 ];
 
 export const protectedRoutes: AppRouteConfig[] = createProtectedRoutes(RAW_PROTECTED_ROUTES);

@@ -142,4 +142,58 @@ describe('TicketDetailPage - Button Blocking for CANCELLED Tickets', () => {
 
     expect(screen.getByText('tickets.cancelTicket')).toBeInTheDocument();
   });
+
+  test('renders invalid ticket ID error view when ticket is null and not loading', () => {
+    vi.mocked(useTicketDetail).mockReturnValue({
+      t: (key: string) => key,
+      i18n: { language: 'en_US' } as any,
+      user: { id: 'user-1', role: 'CLIENT', name: 'John Doe', email: 'john@example.com' } as any,
+      ticket: null,
+      error: {
+        title: 'Ticket ID Invalid',
+        message: 'The provided ticket ID is not valid. Please verify the URL and try again.',
+      },
+      responses: [],
+      timeline: [],
+      attachments: [],
+      technicians: [],
+      loading: false,
+      loadingTechs: false,
+      assigning: false,
+      statusUpdating: false,
+      sendingResponse: false,
+      uploading: false,
+      responseText: '',
+      setResponseText: vi.fn(),
+      responseFiles: [],
+      setResponseFiles: vi.fn(),
+      responseFeedback: null,
+      selectedTechId: '',
+      setSelectedTechId: vi.fn(),
+      assignMessage: null,
+      uploadError: null,
+      previewFile: null,
+      setPreviewFile: vi.fn(),
+      isDragOver: false,
+      setIsDragOver: vi.fn(),
+      canAssign: false,
+      getStatusLabel: (s: string) => s,
+      getPriorityLabel: (p: string) => p,
+      getCategoryLabel: (c: string) => c,
+      handleStatusChange: vi.fn(),
+      handleAssign: vi.fn(),
+      handleSendResponse: vi.fn(),
+      handleFileUpload: vi.fn(),
+    });
+
+    render(
+      <MemoryRouter>
+        <TicketDetailPage />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Ticket ID Invalid')).toBeInTheDocument();
+    expect(screen.getByText('ticketDetail.backToTickets')).toBeInTheDocument();
+  });
 });
+

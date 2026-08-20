@@ -3,6 +3,7 @@ import { Ticket, TicketAttachment, TicketFilters, TicketStatus, TicketCategory, 
 import { db, tickets, users, ticketAttachments, ticketResponses, subscriptionEquipment } from '@shared/db';
 import { eq, ne, gte, and, or, ilike, desc, asc, count, lt, inArray, SQL, isNull, isNotNull, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
+import { validate as isUuid } from 'uuid';
 
 export class TicketRepository extends BaseRepository<Ticket> {
   constructor() {
@@ -10,6 +11,10 @@ export class TicketRepository extends BaseRepository<Ticket> {
   }
 
   override async findById(id: string): Promise<Ticket | null> {
+    if (!id || !isUuid(id)) {
+      return null;
+    }
+
     const clientAlias = alias(users, 'client');
     const techAlias = alias(users, 'tech');
 
@@ -230,6 +235,9 @@ export class TicketRepository extends BaseRepository<Ticket> {
   }
 
   async updateStatus(id: string, status: TicketStatus): Promise<Ticket | null> {
+    if (!id || !isUuid(id)) {
+      return null;
+    }
     const results = await db
       .update(tickets)
       .set({ status })
@@ -239,6 +247,9 @@ export class TicketRepository extends BaseRepository<Ticket> {
   }
 
   async assignTechnician(id: string, techId: string): Promise<Ticket | null> {
+    if (!id || !isUuid(id) || !isUuid(techId)) {
+      return null;
+    }
     const results = await db
       .update(tickets)
       .set({ assigned_tech_id: techId })
@@ -251,12 +262,15 @@ export class TicketRepository extends BaseRepository<Ticket> {
     const conditions: (SQL | undefined)[] = [];
 
     if (clientId) {
+      if (!isUuid(clientId)) return {};
       conditions.push(eq(tickets.client_id, clientId));
     }
     if (assignedTechId) {
+      if (!isUuid(assignedTechId)) return {};
       conditions.push(eq(tickets.assigned_tech_id, assignedTechId));
     }
     if (tenantId) {
+      if (!isUuid(tenantId)) return {};
       conditions.push(eq(tickets.tenant_id, tenantId));
     }
 
@@ -305,6 +319,9 @@ export class TicketRepository extends BaseRepository<Ticket> {
   }
 
   async getAttachments(ticketId: string): Promise<TicketAttachment[]> {
+    if (!ticketId || !isUuid(ticketId)) {
+      return [];
+    }
     const results = await db
       .select()
       .from(ticketAttachments)
@@ -314,6 +331,9 @@ export class TicketRepository extends BaseRepository<Ticket> {
   }
 
   async getAttachmentsByResponses(ticketId: string): Promise<TicketAttachment[]> {
+    if (!ticketId || !isUuid(ticketId)) {
+      return [];
+    }
     const results = await db
       .select()
       .from(ticketAttachments)

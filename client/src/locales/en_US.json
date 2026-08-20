@@ -443,6 +443,9 @@
     "modalDeviceLoadError": "Couldn't load your devices. Try refreshing the page."
   },
   "ticketDetail": {
+    "invalidTicketId": "Ticket ID Invalid",
+    "invalidTicketIdDesc": "The provided ticket ID is not valid. Please verify the URL and try again.",
+    "ticketNotFound": "Ticket Not Found",
     "backToTickets": "Back to Tickets",
     "priority": "Priority",
     "created": "Created",

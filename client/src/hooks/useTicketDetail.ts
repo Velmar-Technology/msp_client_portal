@@ -12,6 +12,7 @@ export function useTicketDetail(ticketId: string | undefined) {
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [timeline, setTimeline] = useState<(TicketEvent & { changed_by_name?: string })[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<{ title: string; message: string } | null>(null);
 
   // Technician assignment state
   const [technicians, setTechnicians] = useState<any[]>([]);
@@ -43,6 +44,7 @@ export function useTicketDetail(ticketId: string | undefined) {
     if (!ticketId) return;
     try {
       setLoading(true);
+      setError(null);
       const [tData, events, atts, resps] = await Promise.all([
         ticketService.getById(ticketId),
         ticketService.getTimeline(ticketId),
@@ -54,12 +56,30 @@ export function useTicketDetail(ticketId: string | undefined) {
       setTimeline(events as (TicketEvent & { changed_by_name?: string })[]);
       setAttachments(atts);
       setResponses(resps);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load ticket', err);
+      const status = err?.response?.status;
+      const code = err?.response?.data?.code;
+      if (status === 400 || code === 'VALIDATION_ERROR') {
+        setError({
+          title: t('ticketDetail.invalidTicketId'),
+          message: t('ticketDetail.invalidTicketIdDesc'),
+        });
+      } else if (status === 404 || code === 'NOT_FOUND_ERROR') {
+        setError({
+          title: t('ticketDetail.ticketNotFound'),
+          message: t('ticketDetail.invalidTicketIdDesc'),
+        });
+      } else {
+        setError({
+          title: t('ticketDetail.invalidTicketId'),
+          message: err?.response?.data?.message || t('ticketDetail.invalidTicketIdDesc'),
+        });
+      }
     } finally {
       setLoading(false);
     }
-  }, [ticketId]);
+  }, [ticketId, t]);
 
   useEffect(() => {
     loadTicketData();
@@ -203,6 +223,7 @@ export function useTicketDetail(ticketId: string | undefined) {
     i18n,
     user,
     ticket,
+    error,
     timeline,
     loading,
     technicians,

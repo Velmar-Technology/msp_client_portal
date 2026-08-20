@@ -443,6 +443,9 @@
     "modalDeviceLoadError": "No se pudieron cargar tus dispositivos. Intenta recargar la página."
   },
   "ticketDetail": {
+    "invalidTicketId": "ID de Ticket Inválido",
+    "invalidTicketIdDesc": "El ID de ticket proporcionado no es válido. Por favor verifique el enlace e intente nuevamente.",
+    "ticketNotFound": "Ticket No Encontrado",
     "backToTickets": "Volver a Tickets",
     "priority": "Prioridad",
     "created": "Creado",

@@ -1,5 +1,6 @@
 import { db, pool } from '@shared/db';
 import { eq, desc } from 'drizzle-orm';
+import { validate as isUuid } from 'uuid';
 
 /**
  * Generic base repository providing reusable CRUD operations.
@@ -12,6 +13,9 @@ export abstract class BaseRepository<T> {
   ) {}
 
   async findById(id: string): Promise<T | null> {
+    if (!id || !isUuid(id)) {
+      return null;
+    }
     const result = await db.select().from(this.table).where(eq(this.table.id, id));
     return (result[0] as T) || null;
   }
@@ -35,6 +39,9 @@ export abstract class BaseRepository<T> {
   }
 
   async deleteById(id: string): Promise<boolean> {
+    if (!id || !isUuid(id)) {
+      return false;
+    }
     const result = await db.delete(this.table).where(eq(this.table.id, id));
     return (result.rowCount ?? 0) > 0;
   }
