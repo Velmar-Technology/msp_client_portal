@@ -1,4 +1,5 @@
 import { PlanRepository, planRepository } from '@modules/subscriptions/repositories/PlanRepository';
+import { SubscriptionRepository, subscriptionRepository } from '@modules/subscriptions/repositories/SubscriptionRepository';
 import { PaypalService, paypalService } from '@modules/billing';
 import { BillingPricingService, billingPricingService } from '@modules/billing';
 import { NotFoundError, ValidationError } from '@shared/errors';
@@ -18,7 +19,8 @@ export class SubscriptionPaymentService {
   constructor(
     private planRepo: PlanRepository = planRepository,
     private paypalSvc: PaypalService = paypalService,
-    private pricingSvc: BillingPricingService = billingPricingService
+    private pricingSvc: BillingPricingService = billingPricingService,
+    private subscriptionRepo: SubscriptionRepository = subscriptionRepository
   ) {}
 
   async createPaypalOrderForSubscription(data: {
@@ -32,22 +34,25 @@ export class SubscriptionPaymentService {
       throw new NotFoundError('Plan not found');
     }
 
-    const price = planDetails.price;
-    const equipmentCount = data.equipmentCount ?? 1;
+    const newEquipmentCount = data.equipmentCount ?? 1;
     const billingCycle = data.billingCycle || 'monthly';
     let total = 0;
     let description = '';
 
     if (data.currentSubscriptionId) {
-      const additionalCount = equipmentCount - data.equipmentCount;
+      const currentSubscription = await this.subscriptionRepo.findById(data.currentSubscriptionId);
+      if (!currentSubscription) {
+        throw new NotFoundError('Current subscription not found');
+      }
+      const additionalCount = newEquipmentCount - currentSubscription.equipment_count;
       if (additionalCount <= 0) {
         throw new ValidationError('New equipment count must be greater than current count for an upgrade payment');
       }
       description = `Upgrade for ${planDetails.name} - Adding ${additionalCount} Equipment`;
-      total = this.pricing.calculateUpgradePricing(price, additionalCount, billingCycle).total;
+      total = this.pricing.calculateUpgradePricing(planDetails.price, additionalCount, billingCycle).total;
     } else {
-      total = this.pricing.calculatePricing(price, equipmentCount, billingCycle).total;
-      description = `${planDetails.name} Subscription - ${equipmentCount} Equipment (${billingCycle === 'annual' ? 'Annually' : 'Monthly'})`;
+      total = this.pricing.calculatePricing(planDetails.price, newEquipmentCount, billingCycle).total;
+      description = `${planDetails.name} Subscription - ${newEquipmentCount} Equipment (${billingCycle === 'annual' ? 'Annually' : 'Monthly'})`;
     }
 
     const referenceId = `SUB-${planDetails.id}-${Date.now()}`;
