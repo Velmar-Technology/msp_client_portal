@@ -47,6 +47,7 @@ server/src/
 client/src/
 ├── components/ui/  # MANDATORY UI Primitives: Base shadcn/ui components
 ├── components/     # Feature Components: Must use shadcn/ui primitives
+├── email-templates/# Master Email Design System & transactional email templates
 ├── routes/         # Layout Routes: File-based layout route hierarchy (_public/, _auth/, _app/)
 ├── pages/          # Top-Level Page Views
 ├── services/       # API Adapters: Axios HTTP client services
@@ -279,6 +280,20 @@ The frontend relies on **shadcn/ui** primitives located in `client/src/component
 - **Skeleton Primitive:** [skeleton.tsx](file:///c:/Users/Public/Workspace/msp_client_portal/client/src/components/ui/skeleton.tsx)
 - **DataTable Skeleton:** [data-table.tsx](file:///c:/Users/Public/Workspace/msp_client_portal/client/src/components/ui/data-table.tsx) displays skeleton rows matching table structure when `loading` is active.
 - **Ticket Detail Skeleton:** [TicketDetailPage.tsx](file:///c:/Users/Public/Workspace/msp_client_portal/client/src/pages/TicketDetailPage.tsx) renders layout grid skeletons during asynchronous data fetches.
+
+---
+
+## 📧 Email Design System & Transactional Templates
+
+The platform features a **Token-Driven Homogeneous Email Design System** shared conceptually between the frontend live preview and backend dispatch engine:
+
+- **Frontend Template Suite:** [`client/src/email-templates/`](file:///c:/Users/Public/Workspace/msp_client_portal/client/src/email-templates)
+  - `tokens.ts`: Unified design tokens for brand palette (`#0C4A6E`, `#38BDF8`, `#2563EB`), typography, spacing, and shadows.
+  - `components.tsx`: Standardized sub-components (`Greeting`, `InfoCard`, `DetailRow`, `Badge`, `Callout`, `Disclaimer`, `HighlightCode`, `FallbackLink`).
+  - `EmailWrapper.tsx`: Responsive layout shell with header gradient, 3px colored accent bar, and bilingual footer.
+  - `PasswordResetTemplate.tsx`, `OTPTemplate.tsx`, `TicketCreatedTemplate.tsx`, `InvoiceReminderTemplate.tsx`.
+- **Live Interactive Gallery:** Accessible in the client portal under **Notifications & Preferences** (`/notifications`), providing live multi-template inspection with English and Spanish language switching.
+- **Backend Email Dispatcher:** [`server/src/shared/utils/emailService.ts`](file:///c:/Users/Public/Workspace/msp_client_portal/server/src/shared/utils/emailService.ts) renders and sends identical HTML for all system notifications via Nodemailer SMTP.
 
 ---
 

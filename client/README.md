@@ -1,73 +1,48 @@
-# React + TypeScript + Vite
+# MSP Client Portal — Frontend Client Application
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The frontend client portal is built with **React 19**, **TypeScript**, **Vite**, **Tailwind CSS v4**, **shadcn/ui**, and **Zustand**.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 📁 Directory Structure
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+client/src/
+├── assets/             # Brand logos, hero images, and static graphics
+├── components/         # Feature-specific components
+│   └── ui/             # Core shadcn/ui primitives (Button, Card, Tabs, Select, etc.)
+├── config/             # Environment, API, and runtime configurations
+├── constants/          # Static constants and lookups
+├── email-templates/    # Master Email Design System & transactional email templates
+│   ├── tokens.ts       # Centralized design tokens (colors, typography, spacing, shadows)
+│   ├── types.ts        # TypeScript prop types
+│   ├── components.tsx  # Shared email primitives (Greeting, InfoCard, DetailRow, etc.)
+│   ├── EmailWrapper.tsx# Outermost responsive layout shell
+│   └── *.tsx           # Individual template implementations
+├── hooks/              # Custom React hooks
+├── locales/            # Internationalization dictionaries (en_US.json, es_DO.json)
+├── pages/              # Top-level route page view implementations
+│   ├── NotificationPreferencesPage/ # Notification channels, history & Email Templates Gallery
+│   └── ...             # Dashboard, Tickets, Billing, Plans, Devices, etc.
+├── routes/             # Route hierarchies (_public, _auth, _app)
+├── services/           # Axios HTTP client service adapters
+├── store/              # Zustand global application state stores
+└── test/               # Unit and component testing utilities
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 🎨 Design System & UI Architecture
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+1. **shadcn/ui Primitives**: All components strictly consume primitives from `src/components/ui/`.
+2. **Internationalization (i18n)**: All user-facing strings are localized via `react-i18next` (`useTranslation`) in both `en_US` and `es_DO`.
+3. **Form Validation**: Strict schema validation using **Zod** (`safeParse`) on all form dialogs.
+4. **Email Templates Design System**: Located in `src/email-templates/`, providing token-driven, homogeneous email components previewed live in the **Notifications & Preferences** gallery.
+
+---
+
+## 🛠️ Scripts & Development
+
+- `npm run dev`: Start local Vite development server (`http://localhost:5173`)
+- `npm run build`: Typecheck and produce optimized production bundle (`tsc -b && vite build`)
+- `npm run test`: Execute test suites with Vitest

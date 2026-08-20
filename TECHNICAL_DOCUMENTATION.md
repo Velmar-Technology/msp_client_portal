@@ -748,6 +748,23 @@ Controles de acceso (RBAC), subida de archivos (Multer), autenticación por JWT 
 | `comparePassword` | `password: string, hash: string` | Operación lógica directa |
 
 
+#### [emailService.ts](./file:/server/src/shared/utils/emailService.ts)
+*Ruta: `server/src/shared/utils/emailService.ts`*
+
+##### Funciones auxiliares / Standalone:
+| Función | Parámetros | Descripción |
+| :--- | :--- | :--- |
+| `sendEmail` | `payload: NotificationPayload` | Envío de correo mediante Nodemailer (SMTP o Stub) |
+| `sendPasswordResetEmail` | `recipientEmail, recipientName, resetToken, language?` | Envío de correo con enlace de restablecimiento de contraseña |
+| `sendOTPEmail` | `recipientEmail, recipientName, otp, language?` | Envío de código de verificación de 6 dígitos (OTP) |
+| `sendTicketCreatedEmail` | `clientEmail, clientName, ticket` | Envío de correo de bienvenida y acuse de recibo de ticket |
+| `sendTicketStatusChangedEmail` | `clientEmail, clientName, ticket, notes?` | Envío de actualización de estado y comentarios del técnico |
+| `sendTicketAssignedEmail` | `technicianEmail, technicianName, ticket` | Notificación de asignación de ticket para el técnico |
+| `sendTicketResponseEmail` | `recipientEmail, recipientName, senderName, ticket, message` | Notificación de nueva respuesta agregada a un ticket |
+| `sendInvoiceDueEmail` | `clientEmail, clientName, invoice, language` | Recordatorio de vencimiento y pago pendiente de factura |
+| `sendQuotationEmail` | `clientEmail, clientName, plan, billingCycle, equipmentCount, subtotal, tax, total, language` | Envío de cotización formal de plan de soporte |
+
+
 #### [pdfGenerator.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/utils/pdfGenerator.ts)
 *Ruta: `server/src/utils/pdfGenerator.ts`*
 
@@ -773,6 +790,14 @@ Controles de acceso (RBAC), subida de archivos (Multer), autenticación por JWT 
 ## 5. Estructura y Componentes del Frontend (React + Zustand + React Router v7)
 
 El frontend está ubicado en `client/`. Utiliza Zustand para la gestión de estados globales y Axios para comunicarse con los endpoints del backend.
+
+### 5.0. Sistema de Diseño de Correos Electrónicos (`client/src/email-templates/`)
+
+El frontend cuenta con un sistema de diseño de correos electrónicos homogéneo y basado en tokens (`tokens.ts`) con subcomponentes reutilizables (`components.tsx`), layout unificado (`EmailWrapper.tsx`) y galería de previsualización interactiva con soporte bilingüe (EN/ES) en la página de Preferencias de Notificación (`/notifications`).
+
+- **Tokens (`tokens.ts`):** Paleta oceánica (`#0C4A6E`, `#38BDF8`, `#2563EB`), escala tipográfica, espaciados y sombras.
+- **Componentes (`components.tsx`):** `Greeting`, `BodyText`, `InfoCard`, `DetailRow`, `Badge`, `Callout`, `Disclaimer`, `HighlightCode`, `FallbackLink`.
+- **Plantillas:** `PasswordResetTemplate`, `OTPTemplate`, `TicketCreatedTemplate`, `InvoiceReminderTemplate`.
 
 ### 5.1. Manejadores de Estado Global (Zustand Stores - `client/src/store/`)
 

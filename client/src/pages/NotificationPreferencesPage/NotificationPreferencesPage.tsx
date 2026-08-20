@@ -29,6 +29,7 @@ import { useNotificationPreferences } from "@/hooks/useNotificationPreferences";
 import { useNotificationStore } from "@/store/useNotificationStore";
 import { useTranslation } from "react-i18next";
 import { NotificationHistorySection } from "./NotificationHistorySection";
+import { EmailTemplatesGallerySection } from "./EmailTemplatesGallerySection";
 
 /**
  * Event definitions for the preference matrix.
@@ -338,6 +339,10 @@ export function NotificationPreferencesPage() {
               </span>
             )}
           </TabsTrigger>
+          <TabsTrigger value="templates" className="gap-2">
+            <Mail className="h-3.5 w-3.5" />
+            <span>{t("notificationPreferences.tabTemplates", "Email Templates")}</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="channels">
@@ -353,6 +358,10 @@ export function NotificationPreferencesPage() {
 
         <TabsContent value="history">
           <NotificationHistorySection />
+        </TabsContent>
+
+        <TabsContent value="templates">
+          <EmailTemplatesGallerySection />
         </TabsContent>
       </Tabs>
     </Page>
