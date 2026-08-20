@@ -47,28 +47,32 @@ const health: PoolHealth = {
   uptimeMs: Date.now(),
 };
 
-function transitionState(newState: PoolHealthState) {
+function transitionState(newState: PoolHealthState, lastError?: unknown) {
   if (health.state === newState) return;
   const prev = health.state;
   health.state = newState;
 
+  const errorDetail = lastError instanceof Error ? lastError.message : lastError ? String(lastError) : undefined;
+
   if (newState === 'degraded' && prev === 'healthy') {
     logger.warn('PostgreSQL connection degraded - ping failed', {
       consecutiveFailures: health.consecutiveFailures,
+      ...(errorDetail && { reason: errorDetail }),
     });
   } else if (newState === 'down') {
     logger.error('PostgreSQL connection DOWN - consecutive ping failures exceeded threshold', {
       consecutiveFailures: health.consecutiveFailures,
+      ...(errorDetail && { reason: errorDetail }),
     });
   } else if (newState === 'healthy' && (prev === 'degraded' || prev === 'down')) {
     logger.info('PostgreSQL connection restored', { previousState: prev });
   }
 }
 
-function evaluateHealth(pingOk: boolean) {
+function evaluateHealth(pingResult: { ok: boolean; error?: unknown }) {
   health.lastCheckAt = new Date();
 
-  if (pingOk) {
+  if (pingResult.ok) {
     health.consecutiveFailures = 0;
     health.consecutiveSuccesses++;
 
@@ -80,10 +84,10 @@ function evaluateHealth(pingOk: boolean) {
     health.consecutiveFailures++;
 
     if (health.consecutiveFailures >= DEGRADED_THRESHOLD && health.state === 'healthy') {
-      transitionState('degraded');
+      transitionState('degraded', pingResult.error);
     }
     if (health.consecutiveFailures >= 3 && health.state === 'degraded') {
-      transitionState('down');
+      transitionState('down', pingResult.error);
     }
   }
 }
@@ -92,14 +96,14 @@ function evaluateHealth(pingOk: boolean) {
 // Background pinger
 // ---------------------------------------------------------------------------
 
-async function pingDatabase(): Promise<boolean> {
+async function pingDatabase(): Promise<{ ok: boolean; error?: unknown }> {
   let client: PoolClient | null = null;
   try {
     client = await pool.connect();
     await client.query('SELECT 1');
-    return true;
-  } catch {
-    return false;
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error };
   } finally {
     client?.release();
   }
@@ -112,8 +116,8 @@ function startPinger() {
   pingerStarted = true;
 
   const tick = async () => {
-    const ok = await pingDatabase();
-    evaluateHealth(ok);
+    const res = await pingDatabase();
+    evaluateHealth(res);
   };
 
   tick();
