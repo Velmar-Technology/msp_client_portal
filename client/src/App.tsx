@@ -3,17 +3,33 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-route
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PublicLayout } from "@/components/layout/PublicLayout";
-import { LoginPage } from "@/routes/_auth/login";
-import { RegisterPage } from "@/routes/_auth/register";
-import { HomePage } from "@/routes/_public/index";
-import { TermsPage } from "@/routes/_public/terms";
-import { PrivacyPage } from "@/routes/_public/privacy";
-import { NotFoundPage } from "@/pages/NotFoundPage";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ReactErrorBoundary } from "@shared/errors";
 import { Toaster } from "@/components/ui/sonner";
 import { useSessionMonitor } from "@/hooks/useSessionMonitor";
 import { protectedRoutes, ProtectedRoute } from "@/protected-routes";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
+import { RouteSuspenseWrapper, ContentPageSkeleton } from "@/components/skeletons";
+
+// ---- Lazy-loaded Public & Auth Pages ----
+const HomePage = lazyWithRetry(() =>
+  import("@/routes/_public/index").then((m) => ({ default: m.HomePage || m.default }))
+);
+const TermsPage = lazyWithRetry(() =>
+  import("@/routes/_public/terms").then((m) => ({ default: m.TermsPage || m.default }))
+);
+const PrivacyPage = lazyWithRetry(() =>
+  import("@/routes/_public/privacy").then((m) => ({ default: m.PrivacyPage || m.default }))
+);
+const LoginPage = lazyWithRetry(() =>
+  import("@/routes/_auth/login").then((m) => ({ default: m.LoginPage || m.default }))
+);
+const RegisterPage = lazyWithRetry(() =>
+  import("@/routes/_auth/register").then((m) => ({ default: m.RegisterPage || m.default }))
+);
+const NotFoundPage = lazyWithRetry(() =>
+  import("@/pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage || m.default }))
+);
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -47,9 +63,30 @@ export function App() {
           <Routes>
             {/* Standalone Public Pages (Landing, Terms, Privacy) */}
             <Route element={<PublicLayout />}>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/terms" element={<TermsPage />} />
-              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route
+                path="/"
+                element={
+                  <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+                    <HomePage />
+                  </RouteSuspenseWrapper>
+                }
+              />
+              <Route
+                path="/terms"
+                element={
+                  <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+                    <TermsPage />
+                  </RouteSuspenseWrapper>
+                }
+              />
+              <Route
+                path="/privacy"
+                element={
+                  <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+                    <PrivacyPage />
+                  </RouteSuspenseWrapper>
+                }
+              />
             </Route>
 
             {/* Public Authentication Routes */}
@@ -57,7 +94,9 @@ export function App() {
               path="/login"
               element={
                 <PublicRoute>
-                  <LoginPage />
+                  <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+                    <LoginPage />
+                  </RouteSuspenseWrapper>
                 </PublicRoute>
               }
             />
@@ -65,7 +104,9 @@ export function App() {
               path="/register"
               element={
                 <PublicRoute>
-                  <RegisterPage />
+                  <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+                    <RegisterPage />
+                  </RouteSuspenseWrapper>
                 </PublicRoute>
               }
             />
@@ -77,7 +118,6 @@ export function App() {
               path="/reset-password"
               element={<Navigate to="/login?openModal=reset-password" replace />}
             />
-
 
             {/* App Layout Routes */}
             <Route element={<AppLayout />}>
@@ -98,7 +138,14 @@ export function App() {
             </Route>
 
             {/* Catch-all Route */}
-            <Route path="*" element={<NotFoundPage />} />
+            <Route
+              path="*"
+              element={
+                <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+                  <NotFoundPage />
+                </RouteSuspenseWrapper>
+              }
+            />
           </Routes>
           <Toaster />
         </BrowserRouter>

@@ -11,11 +11,32 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ScheduleMaintenanceModal } from "@/components/maintenance/ScheduleMaintenanceModal";
-import { NextcloudInfoModal } from "@/components/devices/NextcloudInfoModal";
-import { ActivateWithOtpModal } from "@/components/devices/ActivateWithOtpModal";
-import { RmmDashboard } from "@/components/devices/RmmDashboard";
+import { Suspense } from "react";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
+import { ChunkErrorBoundary } from "@/components/shared/ChunkErrorBoundary";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+// ---- Lazily loaded heavy sub-features and modals ----
+const ScheduleMaintenanceModal = lazyWithRetry(() =>
+  import("@/components/maintenance/ScheduleMaintenanceModal").then((m) => ({
+    default: m.ScheduleMaintenanceModal || m.default,
+  }))
+);
+const NextcloudInfoModal = lazyWithRetry(() =>
+  import("@/components/devices/NextcloudInfoModal").then((m) => ({
+    default: m.NextcloudInfoModal || m.default,
+  }))
+);
+const ActivateWithOtpModal = lazyWithRetry(() =>
+  import("@/components/devices/ActivateWithOtpModal").then((m) => ({
+    default: m.ActivateWithOtpModal || m.default,
+  }))
+);
+const RmmDashboard = lazyWithRetry(() =>
+  import("@/components/devices/RmmDashboard").then((m) => ({
+    default: m.RmmDashboard || m.default,
+  }))
+);
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -969,7 +990,17 @@ export function DevicesPage() {
         {/* SECTION 2: RMM MONITORING & PATCHES */}
         {activeTab === "rmm" && (
           <div className="space-y-6 min-w-0 w-full max-w-full">
-            <RmmDashboard />
+            <ChunkErrorBoundary>
+              <Suspense
+                fallback={
+                  <div className="p-8 flex items-center justify-center min-h-[300px]">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                }
+              >
+                <RmmDashboard />
+              </Suspense>
+            </ChunkErrorBoundary>
           </div>
         )}
       </div>
@@ -992,31 +1023,49 @@ export function DevicesPage() {
       )}
 
       {/* Schedule Maintenance Modal */}
-      <ScheduleMaintenanceModal
-        equipment={maintModalEquip}
-        isOpen={isMaintModalOpen}
-        onClose={handleCloseMaintModal}
-        onSuccess={handleMaintSuccess}
-        isAdminOrTech={isAdmin}
-      />
+      {isMaintModalOpen && (
+        <ChunkErrorBoundary>
+          <Suspense fallback={null}>
+            <ScheduleMaintenanceModal
+              equipment={maintModalEquip}
+              isOpen={isMaintModalOpen}
+              onClose={handleCloseMaintModal}
+              onSuccess={handleMaintSuccess}
+              isAdminOrTech={isAdmin}
+            />
+          </Suspense>
+        </ChunkErrorBoundary>
+      )}
 
       {/* Standalone Activate with Code Modal */}
-      <ActivateWithOtpModal
-        isOpen={activateOtpModalOpen}
-        loading={activateOtpLoading}
-        onClose={handleCloseActivateWithOtp}
-        onActivate={handleActivateWithOtp}
-      />
+      {activateOtpModalOpen && (
+        <ChunkErrorBoundary>
+          <Suspense fallback={null}>
+            <ActivateWithOtpModal
+              isOpen={activateOtpModalOpen}
+              loading={activateOtpLoading}
+              onClose={handleCloseActivateWithOtp}
+              onActivate={handleActivateWithOtp}
+            />
+          </Suspense>
+        </ChunkErrorBoundary>
+      )}
 
       {/* Nextcloud Info Modal */}
-      <NextcloudInfoModal
-        isOpen={isNcModalOpen}
-        onClose={handleCloseNcModal}
-        subId={ncModalEquip?.subscription_id || activeSub?.id || selectedSubscriptionId || null}
-        slotIndex={ncModalEquip?.slot_index ?? null}
-        fallbackUsername={ncModalEquip?.nextcloud_username}
-        fallbackDeviceName={ncModalEquip?.device_name}
-      />
+      {isNcModalOpen && (
+        <ChunkErrorBoundary>
+          <Suspense fallback={null}>
+            <NextcloudInfoModal
+              isOpen={isNcModalOpen}
+              onClose={handleCloseNcModal}
+              subId={ncModalEquip?.subscription_id || activeSub?.id || selectedSubscriptionId || null}
+              slotIndex={ncModalEquip?.slot_index ?? null}
+              fallbackUsername={ncModalEquip?.nextcloud_username}
+              fallbackDeviceName={ncModalEquip?.device_name}
+            />
+          </Suspense>
+        </ChunkErrorBoundary>
+      )}
 
       {/* Bulk Deactivation Confirmation Modal */}
       <AlertDialog open={showBulkDeactivateAlert} onOpenChange={setShowBulkDeactivateAlert}>

@@ -3,6 +3,8 @@ import { Page } from "@/components/Page";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useDeferredLoading } from "@/hooks/useDeferredLoading";
+import { SKELETON_DISPLAY_DELAY_MS } from "@/constants/ui";
 import {
   Bell,
   Mail,
@@ -299,8 +301,10 @@ export function NotificationPreferencesPage() {
   const { preferences, isLoading, isSaving, message, messageType, hasChanges, handleToggle, handleSave, isLocked } =
     useNotificationPreferences();
   const unreadCount = useNotificationStore((state) => state.unreadCount);
+  const showSkeleton = useDeferredLoading(isLoading, SKELETON_DISPLAY_DELAY_MS);
 
   if (isLoading) {
+    if (!showSkeleton) return null;
     return (
       <Page
         className="max-w-4xl"

@@ -20,6 +20,8 @@ import { ticketService } from "@/services/ticketService";
 import { userService } from "@/services/userService";
 import type { Ticket } from "@/services/ticketService";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useDeferredLoading } from "@/hooks/useDeferredLoading";
+import { SKELETON_DISPLAY_DELAY_MS } from "@/constants/ui";
 
 const statusColor: Record<string, string> = {
   OPEN: 'bg-primary/10 text-primary',
@@ -275,7 +277,10 @@ export function TechDashboardPage() {
   const inProgressCount = statusSummary.IN_PROGRESS || 0;
   const completedCount = (statusSummary.RESOLVED || 0) + (statusSummary.CLOSED || 0);
 
+  const showSkeleton = useDeferredLoading(loading, SKELETON_DISPLAY_DELAY_MS);
+
   if (loading) {
+    if (!showSkeleton) return null;
     return (
       <div className="flex items-center justify-center h-64">
         <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />

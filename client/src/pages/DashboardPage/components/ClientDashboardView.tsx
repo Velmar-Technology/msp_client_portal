@@ -5,11 +5,15 @@ import { DashboardSummaryStats } from "@/pages/DashboardPage/components/Dashboar
 import { ActiveSubscriptions } from "@/pages/DashboardPage/components/ActiveSubscriptions";
 import { RecentInvoices } from "@/pages/DashboardPage/components/RecentInvoices";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDeferredLoading } from "@/hooks/useDeferredLoading";
+import { SKELETON_DISPLAY_DELAY_MS } from "@/constants/ui";
 
 export function ClientDashboardView() {
   const { t, loading, subscriptions, invoices, handleNewTicket, getStatusColor } = useClientDashboard();
+  const showSkeleton = useDeferredLoading(loading, SKELETON_DISPLAY_DELAY_MS);
 
   if (loading) {
+    if (!showSkeleton) return null;
     return (
       <Page
         title={

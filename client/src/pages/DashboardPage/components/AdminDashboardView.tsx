@@ -9,6 +9,8 @@ import type { ColumnDef } from "@tanstack/react-table";
 import SummaryCard from "@/components/dashboard/summary-card";
 import { StatsGrid } from "@/components/stats-grid";
 import DashboardSkeleton from "@/components/dashboard/dashboard-skeleton";
+import { useDeferredLoading } from "@/hooks/useDeferredLoading";
+import { SKELETON_DISPLAY_DELAY_MS } from "@/constants/ui";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -264,7 +266,10 @@ export function AdminDashboardView() {
     getStatusColorClass,
   } = useAdminDashboard();
 
+  const showSkeleton = useDeferredLoading(loading, SKELETON_DISPLAY_DELAY_MS);
+
   if (loading) {
+    if (!showSkeleton) return null;
     return <DashboardSkeleton />;
   }
 

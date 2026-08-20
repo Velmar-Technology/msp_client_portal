@@ -7,6 +7,7 @@ import {
 
 import { useTicketDetail } from "@/hooks/useTicketDetail";
 import { useSLATimer } from "@/hooks/useSLATimer";
+import { useDeferredLoading } from "@/hooks/useDeferredLoading";
 import { Page } from '@/components/Page';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -103,6 +104,7 @@ export function TicketDetailPage() {
   } = useTicketDetail(id);
 
   const sla = useSLATimer(ticket);
+  const showSkeleton = useDeferredLoading(loading);
 
   const canAssign = user?.role === 'ADMIN';
 
@@ -237,9 +239,10 @@ export function TicketDetailPage() {
   };
 
   if (loading) {
+    if (!showSkeleton) return null;
     return (
       <Page>
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 animate-fade-in">
           <div className="space-y-2 w-full md:w-1/2">
             <Skeleton className="h-8 w-3/4" />
             <div className="flex items-center gap-3">

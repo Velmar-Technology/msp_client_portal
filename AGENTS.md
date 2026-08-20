@@ -274,8 +274,45 @@ server/src/modules/<feature>/
      - **FORBIDDEN: Language-Detection Hacks**: Never write `t('someKey') === 'Spanish text' ? 'Spanish' : 'English'` or any variant that inspects the _output_ of a `t()` call to infer the active language. This pattern is fragile, breaks when translations change, and defeats the purpose of i18n. Instead, always add a dedicated translation key for each distinct string.
      - **Correct Pattern**: If a button needs a short label different from an existing key, create a new key (e.g. `ticketDetail.send` = `"Send"` / `"Enviar"`) and use `t('ticketDetail.send')` — never derive the language from another key's value.
      - **Key Naming Convention**: Use `namespace.descriptiveKey` format. Reuse existing keys (`tickets.statuses.OPEN`, `tickets.priorities.HIGH`, `tickets.categories.REPAIR`) via dynamic interpolation (`t(\`tickets.statuses.${status}\`)`) instead of creating duplicate flat keys.
-   - **Mandatory Deep Link & Resource State Rule**: All page sub-views (tabs: `?tab=...`), table filters (`?status=...`, `?search=...`), and modal dialog overlays (`?openModal=...`) **MUST sync with URL search parameters using `useUrlState`**. Shareable links must automatically restore modal and tab state on direct load or refresh without unmounting layout frames (`AppLayout`).
-   - **Forbidden Imports**: Raw unstyled HTML primitives (`<button>`, `<input>`, `<select>`, `<dialog>`) when a `shadcn/ui` primitive is available.
+    - **Mandatory Deep Link & Resource State Rule**: All page sub-views (tabs: `?tab=...`), table filters (`?status=...`, `?search=...`), and modal dialog overlays (`?openModal=...`) **MUST sync with URL search parameters using `useUrlState`**. Shareable links must automatically restore modal and tab state on direct load or refresh without unmounting layout frames (`AppLayout`).
+    - **Forbidden Imports**: Raw unstyled HTML primitives (`<button>`, `<input>`, `<select>`, `<dialog>`) when a `shadcn/ui` primitive is available.
+
+---
+
+## ⚡ Performance, Code Splitting & Dynamic Loading Architecture
+
+To guarantee rapid initial page loads (< 1.5s FCP), minimal bundle sizes, and zero layout shifts (CLS), the frontend adheres to the following performance specifications:
+
+### 1. Route-Level & Component-Level Code Splitting (`lazyWithRetry`)
+- **Mandatory Dynamic Route Loading**: All top-level route pages in `client/src/routes/` and `client/src/protected-routes.tsx` **MUST be dynamically imported using `lazyWithRetry`** from `@/lib/lazyWithRetry`.
+- **Heavy Feature Splitting**: Non-critical heavy components (chart visualization libraries, complex modals like `ScheduleMaintenanceModal`, `NextcloudInfoModal`, and heavy tab views like `RmmDashboard`) must be lazily loaded rather than statically bundled into parent views.
+- **Exponential Backoff & Network Resilience**: Dynamic imports are wrapped in automatic retries (2 retries at 300ms, 900ms) with a session-guarded page reload fallback (`sessionStorage` timestamp check) to gracefully recover when new production deployments invalidate asset chunk hashes.
+
+### 2. Domain-Specific Skeletons & Localized Suspense Boundaries
+- **Zero Fullscreen Generic Spinners**: Top-level routes must never block on a generic fullscreen loading spinner.
+- **Localized Skeletons (`components/skeletons/`)**: Every lazy route must be wrapped with `<RouteSuspenseWrapper fallback={<MatchingSkeleton />}>` using its domain-specific skeleton:
+  - `DashboardSkeleton`: KPI summary grid + quota card + chart placeholders (for `/dashboard`, `/tech/dashboard`, `/financial`, `/admin/api-status`).
+  - `TablePageSkeleton`: Search/filter bar + table row skeletons (for `/tickets`, `/devices`, `/billing`, `/admin/users`, `/maintenance`).
+  - `DetailSkeleton`: Breadcrumbs + 2-column description and activity sidebar (for `/tickets/:id`).
+  - `ContentPageSkeleton`: Clean card blocks (for `/profile`, `/notifications/preferences`, `/help`, `/plans`, `/terms`, `/privacy`).
+- **Granular Error Isolation (`ChunkErrorBoundary`)**: Every async chunk is shielded by an isolated `ChunkErrorBoundary` that displays an inline retry action without crashing the surrounding `AppLayout` shell.
+
+### 3. Intent-Based & Idle Preloading Strategy
+- **Hover & Focus Intent Preloading**: Interactive navigation elements (`AppSidebar`, `TopNav`) **MUST trigger `preloadRoute(to)` on `onMouseEnter` and `onFocus`** to download destination chunks prior to click navigation.
+- **Background Idle Preloading (`preloadOnIdle`)**: High-probability secondary route chunks (`/tickets`, `/devices`, `/plans`, `/billing`) are quietly preloaded during browser idle time using `requestIdleCallback` upon layout initialization.
+
+### 4. Zero-Flicker Skeleton Deferral (`SKELETON_DISPLAY_DELAY_MS`)
+- **Preventing Skeleton Flash**: For fast API responses or cached loads (< `SKELETON_DISPLAY_DELAY_MS` defined in `@/constants/ui`), skeletons must not flash briefly.
+- **Enforcement**: All asynchronous loading gates in page views and `RouteSuspenseWrapper` **MUST use `useDeferredLoading(loading, SKELETON_DISPLAY_DELAY_MS)`** from `@/hooks/useDeferredLoading` before rendering skeleton placeholders.
+
+### 5. Vite Vendor Chunk Optimization
+- `vite.config.ts` enforces Rollup `manualChunks` splitting into isolated vendor bundles:
+  - `vendor-react`: `react`, `react-dom`, `react-router-dom`
+  - `vendor-ui`: `@radix-ui/*`, `lucide-react`, `sonner`, `clsx`, `tailwind-merge`
+  - `vendor-table`: `@tanstack/react-table`
+  - `vendor-form`: `react-hook-form`, `@hookform/resolvers`, `zod`
+  - `vendor-i18n`: `i18next`, `react-i18next`
+  - `vendor-state`: `zustand`, `axios`
 
 ---
 

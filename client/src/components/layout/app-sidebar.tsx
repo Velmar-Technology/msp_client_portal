@@ -1,9 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import { ChevronRight, HelpCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import logoUrl from "@/assets/logo.png";
 import { useSidebar, type NavItem, type NavSubItem } from "@/hooks/useSidebar";
+import { preloadRoute, routePreloaders } from "@/protected-routes";
+import { preloadOnIdle } from "@/lib/lazyWithRetry";
 import {
   Sidebar as ShadcnSidebar,
   SidebarContent,
@@ -182,7 +184,12 @@ export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive }: 
                             isActive={isSubActive}
                             className="h-6 text-[11px] text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium transition-colors"
                           >
-                            <NavLink to={sub.to} className="w-full truncate">
+                            <NavLink
+                              to={sub.to}
+                              className="w-full truncate"
+                              onMouseEnter={() => preloadRoute(sub.to)}
+                              onFocus={() => preloadRoute(sub.to)}
+                            >
                               {t(`nav.${sub.labelKey}`)}
                             </NavLink>
                           </SidebarMenuSubButton>
@@ -206,7 +213,12 @@ export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive }: 
               tooltip={translatedLabel}
               className="h-7 text-xs py-1 px-2 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:text-sidebar-foreground data-[active=true]:font-semibold transition-colors"
             >
-              <NavLink to={item.to} className="flex items-center gap-2">
+              <NavLink
+                to={item.to}
+                className="flex items-center gap-2"
+                onMouseEnter={() => preloadRoute(item.to)}
+                onFocus={() => preloadRoute(item.to)}
+              >
                 <item.icon className="h-3.5 w-3.5 shrink-0" />
                 <span className="group-data-[collapsible=icon]:hidden">{translatedLabel}</span>
               </NavLink>
@@ -242,6 +254,19 @@ export function AppSidebar() {
   }, [activeSubscriptions]);
 
   const hasMultipleGroups = groupedSubs.length > 1;
+
+  useEffect(() => {
+    // Idle preload high-probability secondary route chunks
+    const secondaryPreloaders = [
+      routePreloaders["/tickets"],
+      routePreloaders["/devices"],
+      routePreloaders["/plans"],
+      routePreloaders["/billing"],
+    ].filter(Boolean) as Array<() => Promise<unknown>>;
+
+    const cancel = preloadOnIdle(secondaryPreloaders, 2500);
+    return cancel;
+  }, []);
 
   return (
     <ShadcnSidebar className="border-r border-sidebar-border bg-sidebar">
@@ -298,7 +323,12 @@ export function AppSidebar() {
                 tooltip={t("nav.help")}
                 className="h-7 text-xs py-1 px-2 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:text-sidebar-foreground transition-colors"
               >
-                <NavLink to="/help" className="flex items-center gap-2">
+                <NavLink
+                  to="/help"
+                  className="flex items-center gap-2"
+                  onMouseEnter={() => preloadRoute("/help")}
+                  onFocus={() => preloadRoute("/help")}
+                >
                   <HelpCircle className="h-3.5 w-3.5 shrink-0" />
                   <span className="group-data-[collapsible=icon]:hidden font-medium">{t("nav.help")}</span>
                 </NavLink>

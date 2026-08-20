@@ -4,24 +4,69 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { routeCrumbs } from "@/components/layout/routeCrumbs";
 import type { CrumbResolver } from "@/components/layout/routeCrumbs";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
+import {
+  DashboardSkeleton,
+  TablePageSkeleton,
+  DetailSkeleton,
+  ContentPageSkeleton,
+  RouteSuspenseWrapper,
+} from "@/components/skeletons";
 
-import { DashboardPage } from "@/routes/_app/dashboard";
-import { TicketsPage } from "@/routes/_app/tickets/index";
-import { TicketDetailPage } from "@/routes/_app/tickets/$id";
-import { PlansPage } from "@/routes/_app/plans";
-import { BillingPage } from "@/routes/_app/billing";
-import { FinancialPage } from "@/routes/_app/financial";
-import { ProfilePage } from "@/routes/_app/profile";
-import { TechDashboardPage } from "@/routes/_app/tech/dashboard";
-import { HelpPage } from "@/routes/_app/help";
-import { NotificationPreferencesPage } from "@/routes/_app/notifications/preferences";
-import { MaintenancePage } from "@/routes/_app/maintenance";
-import { UserManagementPage } from "@/routes/_app/admin/users";
-import { ResourcesPage } from "@/routes/_app/resources";
-import { TermsPage } from "@/routes/_public/terms";
-import { PrivacyPage } from "@/routes/_public/privacy";
-const DevicesPage = React.lazy(() => import("@/routes/_app/devices"));
-const ApiStatusPage = React.lazy(() => import("@/routes/_app/admin/api-status"));
+// ---- Dynamic Route Definitions using lazyWithRetry ----
+export const DashboardPage = lazyWithRetry(() =>
+  import("@/routes/_app/dashboard").then((m) => ({ default: m.DashboardPage || m.default }))
+);
+export const TicketsPage = lazyWithRetry(() =>
+  import("@/routes/_app/tickets/index").then((m) => ({ default: m.TicketsPage || m.default }))
+);
+export const TicketDetailPage = lazyWithRetry(() =>
+  import("@/routes/_app/tickets/$id").then((m) => ({ default: m.TicketDetailPage || m.default }))
+);
+export const PlansPage = lazyWithRetry(() =>
+  import("@/routes/_app/plans").then((m) => ({ default: m.PlansPage || m.default }))
+);
+export const BillingPage = lazyWithRetry(() =>
+  import("@/routes/_app/billing").then((m) => ({ default: m.BillingPage || m.default }))
+);
+export const FinancialPage = lazyWithRetry(() =>
+  import("@/routes/_app/financial").then((m) => ({ default: m.FinancialPage || m.default }))
+);
+export const ProfilePage = lazyWithRetry(() =>
+  import("@/routes/_app/profile").then((m) => ({ default: m.ProfilePage || m.default }))
+);
+export const TechDashboardPage = lazyWithRetry(() =>
+  import("@/routes/_app/tech/dashboard").then((m) => ({ default: m.TechDashboardPage || m.default }))
+);
+export const HelpPage = lazyWithRetry(() =>
+  import("@/routes/_app/help").then((m) => ({ default: m.HelpPage || m.default }))
+);
+export const NotificationPreferencesPage = lazyWithRetry(() =>
+  import("@/routes/_app/notifications/preferences").then((m) => ({
+    default: m.NotificationPreferencesPage || m.default,
+  }))
+);
+export const MaintenancePage = lazyWithRetry(() =>
+  import("@/routes/_app/maintenance").then((m) => ({ default: m.MaintenancePage || m.default }))
+);
+export const UserManagementPage = lazyWithRetry(() =>
+  import("@/routes/_app/admin/users").then((m) => ({ default: m.UserManagementPage || m.default }))
+);
+export const ResourcesPage = lazyWithRetry(() =>
+  import("@/routes/_app/resources").then((m) => ({ default: m.ResourcesPage || m.default }))
+);
+export const DevicesPage = lazyWithRetry(() =>
+  import("@/routes/_app/devices").then((m) => ({ default: m.DevicesPage || m.default }))
+);
+export const ApiStatusPage = lazyWithRetry(() =>
+  import("@/routes/_app/admin/api-status").then((m) => ({ default: m.ApiStatusPage || m.default }))
+);
+export const TermsPage = lazyWithRetry(() =>
+  import("@/routes/_public/terms").then((m) => ({ default: m.TermsPage || m.default }))
+);
+export const PrivacyPage = lazyWithRetry(() =>
+  import("@/routes/_public/privacy").then((m) => ({ default: m.PrivacyPage || m.default }))
+);
 
 export interface AppRouteHandle {
   crumb: CrumbResolver;
@@ -83,31 +128,199 @@ export function createProtectedRoutes(routes: Omit<AppRouteConfig, "handle">[]):
 
 const RAW_PROTECTED_ROUTES: Omit<AppRouteConfig, "handle">[] = [
   // Client Routes
-  { path: "/dashboard", element: <DashboardPage />, allowedRoles: ["CLIENT", "ADMIN"] },
-  { path: "/financial", element: <FinancialPage />, allowedRoles: ["ADMIN"] },
-  { path: "/plans", element: <PlansPage />, allowedRoles: ["CLIENT", "ADMIN"] },
-  { path: "/billing", element: <BillingPage />, allowedRoles: ["CLIENT", "ADMIN"] },
-  { path: "/devices", element: <React.Suspense fallback={<RouteLoadingSpinner />}><DevicesPage /></React.Suspense>, allowedRoles: ["CLIENT", "ADMIN"] },
-  { path: "/resources", element: <ResourcesPage />, allowedRoles: ["CLIENT", "ADMIN"] },
-  { path: "/maintenance", element: <MaintenancePage />, allowedRoles: ["CLIENT", "ADMIN", "TECHNICIAN"] },
+  {
+    path: "/dashboard",
+    element: (
+      <RouteSuspenseWrapper fallback={<DashboardSkeleton />}>
+        <DashboardPage />
+      </RouteSuspenseWrapper>
+    ),
+    allowedRoles: ["CLIENT", "ADMIN"],
+  },
+  {
+    path: "/financial",
+    element: (
+      <RouteSuspenseWrapper fallback={<DashboardSkeleton />}>
+        <FinancialPage />
+      </RouteSuspenseWrapper>
+    ),
+    allowedRoles: ["ADMIN"],
+  },
+  {
+    path: "/plans",
+    element: (
+      <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+        <PlansPage />
+      </RouteSuspenseWrapper>
+    ),
+    allowedRoles: ["CLIENT", "ADMIN"],
+  },
+  {
+    path: "/billing",
+    element: (
+      <RouteSuspenseWrapper fallback={<TablePageSkeleton />}>
+        <BillingPage />
+      </RouteSuspenseWrapper>
+    ),
+    allowedRoles: ["CLIENT", "ADMIN"],
+  },
+  {
+    path: "/devices",
+    element: (
+      <RouteSuspenseWrapper fallback={<TablePageSkeleton />}>
+        <DevicesPage />
+      </RouteSuspenseWrapper>
+    ),
+    allowedRoles: ["CLIENT", "ADMIN"],
+  },
+  {
+    path: "/resources",
+    element: (
+      <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+        <ResourcesPage />
+      </RouteSuspenseWrapper>
+    ),
+    allowedRoles: ["CLIENT", "ADMIN"],
+  },
+  {
+    path: "/maintenance",
+    element: (
+      <RouteSuspenseWrapper fallback={<TablePageSkeleton />}>
+        <MaintenancePage />
+      </RouteSuspenseWrapper>
+    ),
+    allowedRoles: ["CLIENT", "ADMIN", "TECHNICIAN"],
+  },
 
   // Tech/Admin Routes
-  { path: "/tech/dashboard", element: <TechDashboardPage />, allowedRoles: ["TECHNICIAN"] },
-  { path: "/admin/dashboard", element: <Navigate to="/dashboard" replace />, allowedRoles: ["ADMIN"] },
-  { path: "/admin/users", element: <UserManagementPage />, allowedRoles: ["ADMIN"] },
-  { path: "/admin/api-status", element: <React.Suspense fallback={<RouteLoadingSpinner />}><ApiStatusPage /></React.Suspense>, allowedRoles: ["ADMIN"] },
+  {
+    path: "/tech/dashboard",
+    element: (
+      <RouteSuspenseWrapper fallback={<DashboardSkeleton />}>
+        <TechDashboardPage />
+      </RouteSuspenseWrapper>
+    ),
+    allowedRoles: ["TECHNICIAN"],
+  },
+  {
+    path: "/admin/dashboard",
+    element: <Navigate to="/dashboard" replace />,
+    allowedRoles: ["ADMIN"],
+  },
+  {
+    path: "/admin/users",
+    element: (
+      <RouteSuspenseWrapper fallback={<TablePageSkeleton />}>
+        <UserManagementPage />
+      </RouteSuspenseWrapper>
+    ),
+    allowedRoles: ["ADMIN"],
+  },
+  {
+    path: "/admin/api-status",
+    element: (
+      <RouteSuspenseWrapper fallback={<DashboardSkeleton />}>
+        <ApiStatusPage />
+      </RouteSuspenseWrapper>
+    ),
+    allowedRoles: ["ADMIN"],
+  },
 
   // Shared Routes
-  { path: "/tickets", element: <TicketsPage /> },
-  { path: "/tickets/:id", element: <TicketDetailPage /> },
-  { path: "/profile", element: <ProfilePage /> },
-  { path: "/notifications/preferences", element: <NotificationPreferencesPage /> },
-  { path: "/help", element: <HelpPage /> },
-  { path: "/terms", element: <TermsPage />, isPublic: true },
-  { path: "/privacy", element: <PrivacyPage />, isPublic: true },
+  {
+    path: "/tickets",
+    element: (
+      <RouteSuspenseWrapper fallback={<TablePageSkeleton />}>
+        <TicketsPage />
+      </RouteSuspenseWrapper>
+    ),
+  },
+  {
+    path: "/tickets/:id",
+    element: (
+      <RouteSuspenseWrapper fallback={<DetailSkeleton />}>
+        <TicketDetailPage />
+      </RouteSuspenseWrapper>
+    ),
+  },
+  {
+    path: "/profile",
+    element: (
+      <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+        <ProfilePage />
+      </RouteSuspenseWrapper>
+    ),
+  },
+  {
+    path: "/notifications/preferences",
+    element: (
+      <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+        <NotificationPreferencesPage />
+      </RouteSuspenseWrapper>
+    ),
+  },
+  {
+    path: "/help",
+    element: (
+      <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+        <HelpPage />
+      </RouteSuspenseWrapper>
+    ),
+  },
+  {
+    path: "/terms",
+    element: (
+      <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+        <TermsPage />
+      </RouteSuspenseWrapper>
+    ),
+    isPublic: true,
+  },
+  {
+    path: "/privacy",
+    element: (
+      <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+        <PrivacyPage />
+      </RouteSuspenseWrapper>
+    ),
+    isPublic: true,
+  },
 ];
 
 export const protectedRoutes: AppRouteConfig[] = createProtectedRoutes(RAW_PROTECTED_ROUTES);
+
+/**
+ * Route Preloader Registry for Intent & Idle Preloading.
+ */
+export const routePreloaders: Record<string, () => Promise<unknown>> = {
+  "/dashboard": () => DashboardPage.preload(),
+  "/financial": () => FinancialPage.preload(),
+  "/plans": () => PlansPage.preload(),
+  "/billing": () => BillingPage.preload(),
+  "/devices": () => DevicesPage.preload(),
+  "/resources": () => ResourcesPage.preload(),
+  "/maintenance": () => MaintenancePage.preload(),
+  "/tech/dashboard": () => TechDashboardPage.preload(),
+  "/admin/users": () => UserManagementPage.preload(),
+  "/admin/api-status": () => ApiStatusPage.preload(),
+  "/tickets": () => TicketsPage.preload(),
+  "/profile": () => ProfilePage.preload(),
+  "/notifications/preferences": () => NotificationPreferencesPage.preload(),
+  "/help": () => HelpPage.preload(),
+  "/terms": () => TermsPage.preload(),
+  "/privacy": () => PrivacyPage.preload(),
+};
+
+/**
+ * Preload a target route chunk on intent (hover/focus).
+ */
+export function preloadRoute(path: string): void {
+  const cleanPath = path.split("?")[0];
+  const preloader = routePreloaders[cleanPath];
+  if (preloader) {
+    preloader().catch(() => {});
+  }
+}
 
 /**
  * Dedicated Loading Presentation Component.

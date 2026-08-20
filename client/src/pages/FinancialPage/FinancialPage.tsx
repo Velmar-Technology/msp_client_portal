@@ -1,15 +1,39 @@
+import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { Download } from "lucide-react";
 import { useFinancialDashboard } from "@/hooks/useFinancialDashboard";
 import type { DateRange } from "@/hooks/useFinancialDashboard";
 import { KpiCards } from "@/components/financial/KpiCards";
-import { RevenueChart } from "@/components/financial/RevenueChart";
-import { ExpenseDoughnut } from "@/components/financial/ExpenseDoughnut";
 import { TransactionsTable } from "@/components/financial/TransactionsTable";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { LogExpenseDialog } from "@/components/financial/LogExpenseDialog";
 import { Page } from "@/components/Page";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
+import { ChunkErrorBoundary } from "@/components/shared/ChunkErrorBoundary";
+import { useDeferredLoading } from "@/hooks/useDeferredLoading";
+import { SKELETON_DISPLAY_DELAY_MS } from "@/constants/ui";
+
+// ---- Lazily loaded heavy chart components ----
+const RevenueChart = lazyWithRetry(() =>
+  import("@/components/financial/RevenueChart").then((m) => ({ default: m.RevenueChart }))
+);
+const ExpenseDoughnut = lazyWithRetry(() =>
+  import("@/components/financial/ExpenseDoughnut").then((m) => ({ default: m.ExpenseDoughnut }))
+);
+
+function ChartSkeletonPlaceholder({ className }: { className?: string }) {
+  return (
+    <div className={`bg-card border border-border rounded-xl p-5 shadow-xs flex flex-col justify-between ${className || "h-72"}`}>
+      <div className="flex justify-between items-center mb-4">
+        <Skeleton className="h-5 w-36" />
+        <Skeleton className="h-6 w-20" />
+      </div>
+      <Skeleton className="h-full w-full rounded-lg" />
+    </div>
+  );
+}
 
 export function FinancialPage() {
   const { t } = useTranslation();
@@ -33,11 +57,11 @@ export function FinancialPage() {
     transactions,
   } = useFinancialDashboard();
 
-  // Find dynamic total expenses value from KPI data to display inside doughnut hole
-  const expenseKpi = kpis.find((k) => k.key === "expenses");
   const totalExpensesFormatted = expenseKpi ? expenseKpi.value : "$0.00";
+  const showSkeleton = useDeferredLoading(isLoading, SKELETON_DISPLAY_DELAY_MS);
 
   if (isLoading) {
+    if (!showSkeleton) return null;
     return (
       <Page title={t("financial.title")} subtitle={t("financial.subtitle")} isLoading={true}>
         <div className="flex items-center justify-center min-h-[50vh]">
@@ -91,17 +115,29 @@ export function FinancialPage() {
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-3" aria-label="Financial Trends">
           {/* Left: Revenue vs Expenses (Col-span 2) */}
           <div className="lg:col-span-2">
-            <RevenueChart data={monthlyData} hoveredIndex={hoveredMonthIndex} setHoveredIndex={setHoveredMonthIndex} />
+            <ChunkErrorBoundary fallback={<ChartSkeletonPlaceholder className="h-72" />}>
+              <Suspense fallback={<ChartSkeletonPlaceholder className="h-72" />}>
+                <RevenueChart
+                  data={monthlyData}
+                  hoveredIndex={hoveredMonthIndex}
+                  setHoveredIndex={setHoveredMonthIndex}
+                />
+              </Suspense>
+            </ChunkErrorBoundary>
           </div>
 
           {/* Right: Expense Breakdown (Col-span 1) */}
           <div className="lg:col-span-1">
-            <ExpenseDoughnut
-              categories={expenseCategories}
-              hoveredIndex={hoveredCategoryIndex}
-              setHoveredIndex={setHoveredCategoryIndex}
-              totalExpenses={totalExpensesFormatted}
-            />
+            <ChunkErrorBoundary fallback={<ChartSkeletonPlaceholder className="h-72" />}>
+              <Suspense fallback={<ChartSkeletonPlaceholder className="h-72" />}>
+                <ExpenseDoughnut
+                  categories={expenseCategories}
+                  hoveredIndex={hoveredCategoryIndex}
+                  setHoveredIndex={setHoveredCategoryIndex}
+                  totalExpenses={totalExpensesFormatted}
+                />
+              </Suspense>
+            </ChunkErrorBoundary>
           </div>
         </section>
 
