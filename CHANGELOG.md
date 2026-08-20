@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.4.3](https://github.com/eapolancovelmar/msp_client_portal/compare/v1.4.2...v1.4.3) (2026-08-20)
+
+
+### Features
+
+* add data table sorting to UserManagement & Tickets pages, fix i18n hacks in TicketDetailPage ([8323c84](https://github.com/eapolancovelmar/msp_client_portal/commit/8323c84b31abaf5bc5ce4d197361eedbf8d8fe23))
+* **arch:** enforce 4-level architectural layering and clean dependency boundaries ([738a122](https://github.com/eapolancovelmar/msp_client_portal/commit/738a12270d9233282965a9c22fb3be65fbb2615c))
+* **auth:** implement password reset with Zod validation, AlertDialog modals, and live SMTP email dispatch ([10c76d5](https://github.com/eapolancovelmar/msp_client_portal/commit/10c76d5c7012dfd40c6654650433e5803c248895))
+* **auth:** streamline email-link password reset and validate email existence in db ([d788254](https://github.com/eapolancovelmar/msp_client_portal/commit/d788254b913536a32c3b376159f62819a5e42728))
+* **mcp:** implement msp support mcp server with live diagnostics, security audits and remediation tools ([d0eaefd](https://github.com/eapolancovelmar/msp_client_portal/commit/d0eaefdce273fb9fc7eaa23ee495c53bb6d043b1))
+* **notifications:** add homogeneous email design system, live preview gallery, and transactional email alignment ([3b8a06b](https://github.com/eapolancovelmar/msp_client_portal/commit/3b8a06bd5fc55b6a509110fb05d45c5b8ef471aa))
+* **perf:** implement React.lazy code splitting, deferred skeleton loading, and preloading architecture ([6d6eed4](https://github.com/eapolancovelmar/msp_client_portal/commit/6d6eed4bb9894e73d4f8b25ef33616e5d1c36864))
+* **plans:** add pagination to ActiveSubscriptionsDashboard and fix subscription upgrade pricing calculation ([ecfa6cd](https://github.com/eapolancovelmar/msp_client_portal/commit/ecfa6cddf9396280f4425fbeec2851e6f59d9ecd))
+* **plans:** admin-only Assign Plan sales workspace and client tier-change panel ([434885a](https://github.com/eapolancovelmar/msp_client_portal/commit/434885a87a92cc6b789fb9995ac833c39a36c451))
+* **plans:** refactor checkout to shared CheckoutSheet with Zustand stores ([b88029a](https://github.com/eapolancovelmar/msp_client_portal/commit/b88029a305b173f41749ac2ce8942a0c4c811a83))
+* subscription lifecycle guards, expiry notifications, and sidebar i18n ([e0b0e3e](https://github.com/eapolancovelmar/msp_client_portal/commit/e0b0e3eaab602a6400e82d036700aeeb6bb41d5f))
+
+
+### Bug Fixes
+
+* **auth:** sync forgot password email only on modal open transition ([5cac778](https://github.com/eapolancovelmar/msp_client_portal/commit/5cac778b6737df30ba1dfc18c16043ed30ac3d7f))
+* **client:** align ConfirmationState types between hook and page to resolve TS build errors ([8ab913b](https://github.com/eapolancovelmar/msp_client_portal/commit/8ab913bd3d9dce685bd402807341a35ce3704301))
+* **client:** deduplicate toast notifications and fix ResourcesPage card alignment ([aa7bd92](https://github.com/eapolancovelmar/msp_client_portal/commit/aa7bd925647a0e6f1b80689a7953922ef15c9983))
+* **db:** add connection health pinger, recovery state machine, and withRetry utility ([54de270](https://github.com/eapolancovelmar/msp_client_portal/commit/54de2701b2acf903c94f3e7bd1228718615efdde))
+* **db:** parameterize prod healthcheck and capture ping error details ([835b4c8](https://github.com/eapolancovelmar/msp_client_portal/commit/835b4c8e909ca4dcc357f8da1e1519a6febb2ab5))
+* **rmm:** resolve circular dependency and undefined equipmentRepository in RmmPatchService ([7a5e40d](https://github.com/eapolancovelmar/msp_client_portal/commit/7a5e40d3b23575170c2d0e1686ea99c3a427da05))
+* **server:** resolve @shared/* path alias resolution failure in compiled CJS output ([f2be749](https://github.com/eapolancovelmar/msp_client_portal/commit/f2be749cb14db1dba68592face07d1231366f3a0))
+* **tickets:** block action button on cancelled tickets and enable partial id search in TopNav ([20b90cb](https://github.com/eapolancovelmar/msp_client_portal/commit/20b90cb94f69601314c364d3be901070bf6bfe4c))
+* **tickets:** handle invalid UUID ticket IDs and show 'Ticket ID Invalid' on frontend ([0e4de85](https://github.com/eapolancovelmar/msp_client_portal/commit/0e4de85f2cebf89288486696c4d5da56a11d211c))
+* **tickets:** include ticket ID in topnav search query ([55a8fff](https://github.com/eapolancovelmar/msp_client_portal/commit/55a8fff096e07b884ef8301cd139f2335c6bbdd0))
+* **ui:** theme-aware thin scrollbars across light/dark modes ([738876c](https://github.com/eapolancovelmar/msp_client_portal/commit/738876cf1c4da542442683ca3446f7bfd8782070))
+
 ## [1.4.2](https://github.com/eapolancovelmar/msp_client_portal/compare/v1.4.1...v1.4.2) (2026-08-19)
 
 
