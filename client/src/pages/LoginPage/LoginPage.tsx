@@ -1,7 +1,20 @@
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Eye, EyeOff, AlertCircle, Globe, ShieldCheck } from "lucide-react";
+import { useUrlState } from "@/hooks/useUrlState";
+import { authService } from "@/services/authService";
+import {
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Globe,
+  ShieldCheck,
+  KeyRound,
+  Mail,
+  Lock,
+  CheckCircle2,
+  ArrowLeft,
+} from "lucide-react";
 import logoUrl from "@/assets/logo.png";
 import { useTranslation } from "react-i18next";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -9,8 +22,8 @@ import { GoogleLoginButton } from "@/components/auth/GoogleLoginButton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { toast } from "sonner";
-import { getRememberMe } from "@/lib/authStorage";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -20,26 +33,84 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-  InputOTPSeparator,
-} from "@/components/ui/input-otp";
+import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp";
+import { toast } from "sonner";
+import { getRememberMe } from "@/lib/authStorage";
+import { z } from "zod";
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+const resetPasswordSchema = z
+  .object({
+    token: z.string().min(1),
+    password: z
+      .string()
+      .min(8)
+      .regex(/[A-Z]/)
+      .regex(/[a-z]/)
+      .regex(/[0-9]/),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ["confirmPassword"],
+  });
 
 export function LoginPage() {
   const { t, i18n } = useTranslation();
   const { login, verifyEmail, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const { getParam, setParam, removeParam, removeParams } = useUrlState();
+
+  // Login form state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(getRememberMe);
+
+  // Email OTP verification state
   const [showOtpForm, setShowOtpForm] = useState(false);
   const [otp, setOtp] = useState("");
   const [otpNotice, setOtpNotice] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+
+  // Forgot password dialog state
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
+  const [forgotError, setForgotError] = useState("");
+
+  // Reset password with token dialog state
+  const [resetToken, setResetToken] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState("");
+
+  // URL-synced modal dialog triggers
+  const openModal = getParam("openModal", "");
+  const tokenFromUrl = getParam("token", "") || getParam("resetToken", "");
+
+  useEffect(() => {
+    if (tokenFromUrl) {
+      setResetToken(tokenFromUrl);
+      if (openModal !== "reset-password") {
+        setParam("openModal", "reset-password");
+      }
+    }
+  }, [tokenFromUrl, openModal, setParam]);
+
+  // Sync initial forgot email with login email if user typed it
+  useEffect(() => {
+    if (openModal === "forgot-password" && email && !forgotEmail) {
+      setForgotEmail(email);
+    }
+  }, [openModal, email, forgotEmail]);
 
   const handleGoogleSuccess = useCallback(
     async (idToken: string) => {
@@ -52,25 +123,23 @@ export function LoginPage() {
         const extractedMessage =
           (err instanceof Error && err.message) ||
           (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-        const errorMsg =
-          extractedMessage ||
-          (i18n.language === "es_DO" ? "Error al autenticar con Google" : "Google authentication failed");
+        const errorMsg = extractedMessage || t("passwordReset.googleAuthError");
         setError(errorMsg);
         toast.error(errorMsg);
       } finally {
         setLoading(false);
       }
     },
-    [loginWithGoogle, navigate, rememberMe, i18n.language]
+    [loginWithGoogle, navigate, rememberMe, t],
   );
 
   const handleGoogleError = useCallback(
     (errMsg?: string) => {
-      const defaultMsg = i18n.language === "es_DO" ? "Error al autenticar con Google" : "Google authentication failed";
+      const defaultMsg = t("passwordReset.googleAuthError");
       setError(errMsg || defaultMsg);
       toast.error(errMsg || defaultMsg);
     },
-    [i18n.language]
+    [t],
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -84,18 +153,13 @@ export function LoginPage() {
       const extractedMessage =
         (err instanceof Error && err.message) ||
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      const errorMsg =
-        extractedMessage ||
-        (i18n.language === "es_DO" ? "Correo o contraseña incorrectos" : "Invalid email or password");
+      const errorMsg = extractedMessage || t("passwordReset.invalidCredentials");
 
       if (errorMsg.toLowerCase().includes("verify your email")) {
         setShowOtpForm(true);
-        const notice =
-          i18n.language === "es_DO"
-            ? `Cuenta no verificada. Ingresa el código OTP de 6 dígitos enviado a tu correo (${email}) para activar tu cuenta e iniciar sesión.`
-            : `Account not verified. Enter the 6-digit OTP code sent to your email (${email}) to activate your account and log in.`;
+        const notice = t("passwordReset.unverifiedAccountNotice", { email });
         setOtpNotice(notice);
-        toast.error(i18n.language === "es_DO" ? "Verificación requerida" : "Verification Required", {
+        toast.error(t("passwordReset.verificationRequiredTitle"), {
           description: notice,
           duration: 8000,
         });
@@ -110,27 +174,111 @@ export function LoginPage() {
   const handleVerifyAndLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
+    setOtpLoading(true);
     try {
       await verifyEmail(email, otp);
-      toast.success(
-        i18n.language === "es_DO"
-          ? "Correo verificado exitosamente. Iniciando sesión..."
-          : "Email verified successfully. Logging in...",
-      );
+      toast.success(t("passwordReset.verifySuccess"));
       await login(email, password, rememberMe);
       navigate("/dashboard");
     } catch (err: unknown) {
       const extractedMessage =
         (err instanceof Error && err.message) ||
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      const errorMsg =
-        extractedMessage ||
-        (i18n.language === "es_DO" ? "Error al verificar el código OTP" : "OTP verification failed");
+      const errorMsg = extractedMessage || t("passwordReset.otpVerifyFailed");
       setError(errorMsg);
     } finally {
-      setLoading(false);
+      setOtpLoading(false);
     }
+  };
+
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotError("");
+
+    const validation = forgotPasswordSchema.safeParse({ email: forgotEmail });
+    if (!validation.success) {
+      setForgotError(t("passwordReset.invalidEmail"));
+      return;
+    }
+
+    setForgotLoading(true);
+    try {
+      await authService.forgotPassword(forgotEmail);
+      setForgotSent(true);
+      toast.success(t("passwordReset.requestSuccessToast"));
+    } catch (err: unknown) {
+      const extractedMessage =
+        (err instanceof Error && err.message) ||
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setForgotError(extractedMessage || t("passwordReset.invalidCredentials"));
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError("");
+
+    const validation = resetPasswordSchema.safeParse({
+      token: resetToken.trim(),
+      password: newPassword,
+      confirmPassword: confirmNewPassword,
+    });
+
+    if (!validation.success) {
+      const firstIssue = validation.error.issues[0];
+      if (firstIssue.path.includes("token")) {
+        setResetError(t("passwordReset.tokenRequired"));
+      } else if (firstIssue.path.includes("confirmPassword")) {
+        setResetError(t("passwordReset.passwordMismatch"));
+      } else if (firstIssue.path.includes("password")) {
+        if (newPassword.length < 8) {
+          setResetError(t("passwordReset.passwordMinLength"));
+        } else if (!/[A-Z]/.test(newPassword)) {
+          setResetError(t("passwordReset.passwordUppercase"));
+        } else if (!/[a-z]/.test(newPassword)) {
+          setResetError(t("passwordReset.passwordLowercase"));
+        } else if (!/[0-9]/.test(newPassword)) {
+          setResetError(t("passwordReset.passwordNumber"));
+        } else {
+          setResetError(t("passwordReset.passwordMinLength"));
+        }
+      }
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      await authService.resetPassword(resetToken.trim(), newPassword, confirmNewPassword);
+      toast.success(t("passwordReset.successToast"));
+      // Reset form state and close modal
+      setResetToken("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      removeParams(["openModal", "token", "resetToken"]);
+      if (forgotEmail && !email) {
+        setEmail(forgotEmail);
+      }
+    } catch (err: unknown) {
+      const extractedMessage =
+        (err instanceof Error && err.message) ||
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setResetError(extractedMessage || t("passwordReset.invalidTokenError"));
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const closeForgotDialog = () => {
+    removeParam("openModal");
+    setForgotError("");
+    setForgotSent(false);
+  };
+
+  const closeResetDialog = () => {
+    removeParams(["openModal", "token", "resetToken"]);
+    setResetError("");
   };
 
   return (
@@ -169,21 +317,11 @@ export function LoginPage() {
                   className="h-10 md:h-12 w-auto object-contain dark:brightness-110"
                 />
                 <div className="text-center">
-                  <h1
-                    className="text-xl md:text-2xl font-bold tracking-tight mb-1 text-foreground font-heading"
-                  >
-                    {showOtpForm
-                      ? i18n.language === "es_DO"
-                        ? "Verificación de Cuenta"
-                        : "Account Verification"
-                      : t("login.welcome")}
+                  <h1 className="text-xl md:text-2xl font-bold tracking-tight mb-1 text-foreground font-heading">
+                    {showOtpForm ? t("passwordReset.accountVerificationTitle") : t("login.welcome")}
                   </h1>
                   <p className="text-xs md:text-sm text-muted-foreground">
-                    {showOtpForm
-                      ? i18n.language === "es_DO"
-                        ? "Ingresa el código OTP para continuar"
-                        : "Enter the OTP code to continue"
-                      : t("login.signInToPortal")}
+                    {showOtpForm ? t("passwordReset.enterOtpPrompt") : t("login.signInToPortal")}
                   </p>
                 </div>
               </div>
@@ -200,7 +338,7 @@ export function LoginPage() {
                 <Alert className="mb-4 py-2 px-3 bg-secondary/10 text-secondary-foreground border-secondary/20">
                   <AlertCircle className="h-4 w-4 text-secondary" />
                   <AlertTitle className="text-xs font-bold mb-0.5">
-                    {i18n.language === "es_DO" ? "Acción Requerida" : "Action Required"}
+                    {t("passwordReset.verificationRequiredTitle")}
                   </AlertTitle>
                   <AlertDescription className="text-[11px] leading-tight">{otpNotice}</AlertDescription>
                 </Alert>
@@ -209,12 +347,9 @@ export function LoginPage() {
               {showOtpForm ? (
                 <form onSubmit={handleVerifyAndLogin} className="space-y-3 sm:space-y-4 animate-fade-in">
                   <div>
-                    <label
-                      htmlFor="login-otp"
-                      className="block text-xs font-bold text-foreground mb-2 text-center"
-                    >
+                    <Label htmlFor="login-otp" className="block text-xs font-bold text-foreground mb-2 text-center">
                       {t("register.otpTitle")}
-                    </label>
+                    </Label>
                     <div className="flex justify-center my-2">
                       <InputOTP maxLength={6} value={otp} onChange={(value: string) => setOtp(value)}>
                         <InputOTPGroup>
@@ -234,39 +369,35 @@ export function LoginPage() {
 
                   <Button
                     type="submit"
-                    disabled={loading || otp.length !== 6}
+                    disabled={otpLoading || otp.length !== 6}
                     className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-9 sm:h-10 rounded-lg text-sm font-bold transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer shadow-md"
                   >
-                    {loading ? (
+                    {otpLoading ? (
                       <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                    ) : i18n.language === "es_DO" ? (
-                      "Verificar e Iniciar Sesión"
                     ) : (
-                      "Verify & Sign In"
+                      t("passwordReset.verifyAndSignIn")
                     )}
                   </Button>
 
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
                     onClick={() => {
                       setShowOtpForm(false);
                       setError("");
                       setOtpNotice("");
                     }}
-                    className="w-full text-center text-xs text-muted-foreground hover:text-foreground font-medium transition-colors mt-2 cursor-pointer"
+                    className="w-full text-center text-xs text-muted-foreground hover:text-foreground font-medium transition-colors mt-2 cursor-pointer h-8"
                   >
-                    {i18n.language === "es_DO" ? "← Volver a iniciar sesión" : "← Back to Sign In"}
-                  </button>
+                    {`← ${t("passwordReset.backToSignIn")}`}
+                  </Button>
                 </form>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
                   <div>
-                    <label
-                      htmlFor="login-email"
-                      className="block text-xs font-bold text-foreground mb-1"
-                    >
+                    <Label htmlFor="login-email" className="block text-xs font-bold text-foreground mb-1">
                       {t("login.emailAddress")}
-                    </label>
+                    </Label>
                     <Input
                       id="login-email"
                       type="email"
@@ -280,18 +411,20 @@ export function LoginPage() {
 
                   <div>
                     <div className="flex justify-between items-center mb-1">
-                      <label
-                        htmlFor="login-password"
-                        className="block text-xs font-bold text-foreground"
-                      >
+                      <Label htmlFor="login-password" className="block text-xs font-bold text-foreground">
                         {t("login.password")}
-                      </label>
-                      <Link
-                        to="/forgot-password"
-                        className="text-[11px] font-semibold text-primary hover:underline"
+                      </Label>
+                      <Button
+                        type="button"
+                        variant="link"
+                        onClick={() => {
+                          setForgotEmail(email);
+                          setParam("openModal", "forgot-password");
+                        }}
+                        className="p-0 h-auto text-[11px] font-semibold text-primary hover:underline cursor-pointer"
                       >
                         {t("login.forgotPassword")}
-                      </Link>
+                      </Button>
                     </div>
                     <div className="relative">
                       <Input
@@ -303,33 +436,34 @@ export function LoginPage() {
                         required
                         className="w-full h-9 sm:h-10 px-3 py-2 pr-10 border-input rounded-lg text-sm bg-background focus-visible:ring-1 focus-visible:ring-ring transition-all placeholder:text-muted-foreground"
                       />
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
+                        <span className="sr-only">Toggle password visibility</span>
+                      </Button>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 pt-0.5 pb-1">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       id="remember"
                       checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                      className="rounded border-input text-primary focus:ring-0 focus:ring-offset-0 bg-background cursor-pointer"
+                      onCheckedChange={(checked) => setRememberMe(checked === true)}
                     />
-                    <label
+                    <Label
                       htmlFor="remember"
-                      className="text-xs font-medium text-muted-foreground cursor-pointer"
+                      className="text-xs font-medium text-muted-foreground cursor-pointer select-none"
                     >
                       {t("login.rememberMe")}
-                    </label>
+                    </Label>
                   </div>
 
-                  <button
+                  <Button
                     type="submit"
                     disabled={loading}
                     className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-9 sm:h-10 rounded-lg text-sm font-bold transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer shadow-md"
@@ -339,7 +473,7 @@ export function LoginPage() {
                     ) : (
                       t("login.signIn")
                     )}
-                  </button>
+                  </Button>
                 </form>
               )}
 
@@ -348,9 +482,7 @@ export function LoginPage() {
                   <span className="w-full border-t border-border" />
                 </div>
                 <div className="relative flex justify-center text-xs">
-                  <span className="bg-card px-3 text-muted-foreground font-medium">
-                    {t("login.or") || "Or continue with"}
-                  </span>
+                  <span className="bg-card px-3 text-muted-foreground font-medium">{t("login.or")}</span>
                 </div>
               </div>
 
@@ -377,21 +509,18 @@ export function LoginPage() {
         </Card>
       </div>
 
-      {/* Account Verification Modal */}
+      {/* Account Verification Dialog */}
       <AlertDialog open={showOtpForm} onOpenChange={setShowOtpForm}>
-        <AlertDialogContent className="max-w-sm p-6 bg-card border-border shadow-2xl rounded-2xl">
+        <AlertDialogContent size="sm" className="p-6 bg-card border-border shadow-2xl rounded-2xl sm:max-w-[440px]">
           <AlertDialogHeader className="items-center text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-secondary/10 text-secondary mb-2">
               <ShieldCheck className="h-6 w-6" />
             </div>
             <AlertDialogTitle className="text-lg font-bold tracking-tight font-heading">
-              {i18n.language === "es_DO" ? "Verificación de Cuenta" : "Account Verification"}
+              {t("passwordReset.accountVerificationTitle")}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-muted-foreground mt-1 text-center">
-              {otpNotice ||
-                (i18n.language === "es_DO"
-                  ? `Ingresa el código OTP de 6 dígitos enviado a tu correo (${email}) para activar tu cuenta.`
-                  : `Enter the 6-digit OTP code sent to your email (${email}) to activate your account.`)}
+              {otpNotice || t("passwordReset.accountVerificationDesc", { email })}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -428,24 +557,268 @@ export function LoginPage() {
                   setError("");
                   setOtpNotice("");
                 }}
-                className="w-1/2 sm:w-auto"
+                className="w-1/2 sm:w-auto cursor-pointer"
               >
-                {i18n.language === "es_DO" ? "Cancelar" : "Cancel"}
+                {t("passwordReset.cancel")}
               </AlertDialogCancel>
               <Button
                 type="submit"
-                disabled={loading || otp.length !== 6}
-                className="w-1/2 sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 font-bold transition-opacity"
+                disabled={otpLoading || otp.length !== 6}
+                className="w-1/2 sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 font-bold transition-opacity cursor-pointer"
               >
-                {loading ? (
+                {otpLoading ? (
                   <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                ) : i18n.language === "es_DO" ? (
-                  "Verificar"
                 ) : (
-                  "Verify & Sign In"
+                  t("passwordReset.verifyAndSignIn")
                 )}
               </Button>
             </AlertDialogFooter>
+          </form>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Forgot Password Request Dialog (?openModal=forgot-password) */}
+      <AlertDialog
+        open={openModal === "forgot-password"}
+        onOpenChange={(open) => {
+          if (!open) closeForgotDialog();
+        }}
+      >
+        <AlertDialogContent size="sm" className="p-6 bg-card border-border shadow-2xl rounded-2xl sm:max-w-[440px]">
+          <AlertDialogHeader className="items-center text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-2">
+              <Mail className="h-6 w-6" />
+            </div>
+            <AlertDialogTitle className="text-lg font-bold tracking-tight font-heading">
+              {t("passwordReset.forgotPasswordTitle")}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground mt-1 text-center">
+              {t("passwordReset.forgotPasswordDesc")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {forgotError && (
+            <Alert variant="destructive" className="py-2 px-3 my-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle className="text-xs font-bold mb-0.5">Error</AlertTitle>
+              <AlertDescription className="text-[11px] leading-tight">{forgotError}</AlertDescription>
+            </Alert>
+          )}
+
+          {forgotSent ? (
+            <div className="space-y-4 my-2 text-center">
+              <div className="flex flex-col items-center justify-center p-4 bg-primary/5 rounded-xl border border-primary/10">
+                <CheckCircle2 className="h-10 w-10 text-primary mb-2" />
+                <h4 className="text-sm font-bold text-foreground">{t("passwordReset.resetEmailSentTitle")}</h4>
+                <p className="text-xs text-muted-foreground mt-1">{t("passwordReset.resetEmailSentDesc")}</p>
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2">
+                <Button
+                  type="button"
+                  onClick={() => setParam("openModal", "reset-password")}
+                  className="w-full bg-primary text-primary-foreground font-bold hover:bg-primary/90 cursor-pointer"
+                >
+                  <KeyRound className="h-4 w-4 mr-2" />
+                  {t("passwordReset.enterTokenLink")}
+                </Button>
+                <Button type="button" variant="outline" onClick={closeForgotDialog} className="w-full cursor-pointer">
+                  {t("passwordReset.backToSignIn")}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleForgotPasswordSubmit} className="space-y-4 my-2">
+              <div>
+                <Label htmlFor="forgot-email" className="block text-xs font-bold text-foreground mb-1">
+                  {t("passwordReset.emailLabel")}
+                </Label>
+                <Input
+                  id="forgot-email"
+                  type="email"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  placeholder={t("passwordReset.emailPlaceholder")}
+                  required
+                  className="w-full h-10 px-3 py-2 border-input rounded-lg text-sm bg-background"
+                />
+              </div>
+
+              <AlertDialogFooter className="flex flex-col sm:flex-row gap-2 pt-2">
+                <AlertDialogCancel
+                  type="button"
+                  onClick={closeForgotDialog}
+                  className="w-full sm:w-auto cursor-pointer"
+                >
+                  {t("passwordReset.cancel")}
+                </AlertDialogCancel>
+                <Button
+                  type="submit"
+                  disabled={forgotLoading || !forgotEmail}
+                  className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 font-bold cursor-pointer"
+                >
+                  {forgotLoading ? (
+                    <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                  ) : (
+                    t("passwordReset.sendResetLink")
+                  )}
+                </Button>
+              </AlertDialogFooter>
+
+              <div className="pt-2 text-center">
+                <Button
+                  type="button"
+                  variant="link"
+                  onClick={() => setParam("openModal", "reset-password")}
+                  className="text-xs text-primary font-semibold hover:underline cursor-pointer"
+                >
+                  {t("passwordReset.haveTokenPrompt")}{" "}
+                  <span className="font-bold underline ml-1">{t("passwordReset.enterTokenLink")}</span>
+                </Button>
+              </div>
+            </form>
+          )}
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reset Password With Token Dialog (?openModal=reset-password) */}
+      <AlertDialog
+        open={openModal === "reset-password"}
+        onOpenChange={(open) => {
+          if (!open) closeResetDialog();
+        }}
+      >
+        <AlertDialogContent size="sm" className="p-6 bg-card border-border shadow-2xl rounded-2xl sm:max-w-[440px]">
+          <AlertDialogHeader className="items-center text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-2">
+              <Lock className="h-6 w-6" />
+            </div>
+            <AlertDialogTitle className="text-lg font-bold tracking-tight font-heading">
+              {t("passwordReset.resetPasswordTitle")}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground mt-1 text-center">
+              {t("passwordReset.resetPasswordDesc")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {resetError && (
+            <Alert variant="destructive" className="py-2 px-3 my-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle className="text-xs font-bold mb-0.5">Error</AlertTitle>
+              <AlertDescription className="text-[11px] leading-tight">{resetError}</AlertDescription>
+            </Alert>
+          )}
+
+          <form onSubmit={handleResetPasswordSubmit} className="space-y-3 sm:space-y-4 my-2">
+            <div>
+              <Label htmlFor="reset-token-input" className="block text-xs font-bold text-foreground mb-1">
+                {t("passwordReset.tokenLabel")}
+              </Label>
+              <Input
+                id="reset-token-input"
+                type="text"
+                value={resetToken}
+                onChange={(e) => setResetToken(e.target.value)}
+                placeholder={t("passwordReset.tokenPlaceholder")}
+                required
+                className="w-full h-10 px-3 py-2 border-input rounded-lg text-xs bg-background font-mono"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="reset-new-password" className="block text-xs font-bold text-foreground mb-1">
+                {t("passwordReset.newPasswordLabel")}
+              </Label>
+              <div className="relative">
+                <Input
+                  id="reset-new-password"
+                  type={showNewPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder={t("passwordReset.newPasswordPlaceholder")}
+                  required
+                  className="w-full h-10 px-3 py-2 pr-10 border-input rounded-lg text-sm bg-background"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  <span className="sr-only">Toggle new password visibility</span>
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="reset-confirm-password" className="block text-xs font-bold text-foreground mb-1">
+                {t("passwordReset.confirmNewPasswordLabel")}
+              </Label>
+              <div className="relative">
+                <Input
+                  id="reset-confirm-password"
+                  type={showConfirmNewPassword ? "text" : "password"}
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  placeholder={t("passwordReset.confirmNewPasswordPlaceholder")}
+                  required
+                  className="w-full h-10 px-3 py-2 pr-10 border-input rounded-lg text-sm bg-background"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  {showConfirmNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  <span className="sr-only">Toggle confirm password visibility</span>
+                </Button>
+              </div>
+            </div>
+
+            <AlertDialogFooter className="flex flex-col sm:flex-row gap-2 pt-2">
+              <AlertDialogCancel
+                type="button"
+                onClick={closeResetDialog}
+                className="w-full sm:w-auto cursor-pointer"
+              >
+                {t("passwordReset.cancel")}
+              </AlertDialogCancel>
+              <Button
+                type="submit"
+                disabled={resetLoading || !resetToken || !newPassword || !confirmNewPassword}
+                className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 font-bold cursor-pointer"
+              >
+                {resetLoading ? (
+                  <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                ) : (
+                  t("passwordReset.resetSubmitButton")
+                )}
+              </Button>
+            </AlertDialogFooter>
+
+            <div className="pt-2 text-center flex items-center justify-between">
+              <Button
+                type="button"
+                variant="link"
+                onClick={() => setParam("openModal", "forgot-password")}
+                className="text-xs text-muted-foreground hover:text-primary p-0 h-auto cursor-pointer"
+              >
+                <ArrowLeft className="h-3 w-3 mr-1" />
+                {t("passwordReset.requestTokenLink")}
+              </Button>
+              <Button
+                type="button"
+                variant="link"
+                onClick={closeResetDialog}
+                className="text-xs text-primary font-semibold hover:underline p-0 h-auto cursor-pointer"
+              >
+                {t("passwordReset.backToSignIn")}
+              </Button>
+            </div>
           </form>
         </AlertDialogContent>
       </AlertDialog>

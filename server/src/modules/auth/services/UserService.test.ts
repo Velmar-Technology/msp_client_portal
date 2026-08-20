@@ -85,7 +85,7 @@ describe('UserService', () => {
       await expect(userService.getProfile('user-1')).rejects.toMatchObject({
         message: 'User not found',
         statusCode: 404,
-        code: 'NOT_FOUND',
+        code: 'NOT_FOUND_ERROR',
       });
     });
   });
@@ -166,7 +166,7 @@ describe('UserService', () => {
       ).rejects.toMatchObject({
         message: 'Email already in use',
         statusCode: 409,
-        code: 'CONFLICT',
+        code: 'CONFLICT_ERROR',
       });
     });
   });
@@ -206,7 +206,7 @@ describe('UserService', () => {
       ).rejects.toMatchObject({
         message: 'User not found',
         statusCode: 404,
-        code: 'NOT_FOUND',
+        code: 'NOT_FOUND_ERROR',
       });
     });
 
@@ -227,7 +227,7 @@ describe('UserService', () => {
       ).rejects.toMatchObject({
         message: 'Invalid current password',
         statusCode: 401,
-        code: 'UNAUTHORIZED',
+        code: 'UNAUTHORIZED_ERROR',
       });
 
       expect(mocks.updatePassword).not.toHaveBeenCalled();
@@ -313,7 +313,7 @@ describe('UserService', () => {
       ).rejects.toMatchObject({
         message: 'User not found',
         statusCode: 404,
-        code: 'NOT_FOUND',
+        code: 'NOT_FOUND_ERROR',
       });
     });
   });

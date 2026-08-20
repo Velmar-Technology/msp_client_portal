@@ -25,7 +25,12 @@ function isAuthKey(key: string): key is AuthKey {
  * that were stored in localStorage before this abstraction existed.
  */
 export function getRememberMe(): boolean {
-  return localStorage.getItem(REMEMBER_KEY) !== 'false';
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return true;
+  try {
+    return localStorage.getItem(REMEMBER_KEY) !== 'false';
+  } catch {
+    return true;
+  }
 }
 
 /**
@@ -33,12 +38,22 @@ export function getRememberMe(): boolean {
  * Call this BEFORE storing tokens (i.e. at login time).
  */
 export function setRememberMe(remember: boolean): void {
-  localStorage.setItem(REMEMBER_KEY, String(remember));
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(REMEMBER_KEY, String(remember));
+  } catch {
+    // Ignore storage quota / access errors
+  }
 }
 
 /** Returns the backing store for auth data based on the current preference. */
-function getStore(): Storage {
-  return getRememberMe() ? localStorage : sessionStorage;
+function getStore(): Storage | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return getRememberMe() ? window.localStorage : window.sessionStorage;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -46,30 +61,37 @@ function getStore(): Storage {
  * that was started before a preference change is still found.
  */
 export function getAuthItem(key: AuthKey): string | null {
+  if (typeof window === 'undefined') return null;
   const store = getStore();
+  if (!store) return null;
   const value = store.getItem(key);
   if (value !== null) return value;
 
   // Fallback: check the other store (handles edge case where user
   // toggled preference mid-session, or legacy localStorage data)
-  const fallbackStore = store === localStorage ? sessionStorage : localStorage;
-  return fallbackStore.getItem(key);
+  const fallbackStore = store === window.localStorage ? window.sessionStorage : window.localStorage;
+  return fallbackStore ? fallbackStore.getItem(key) : null;
 }
 
 /** Write an auth value to the correct store. */
 export function setAuthItem(key: AuthKey, value: string): void {
+  if (typeof window === 'undefined') return;
   const store = getStore();
+  if (!store) return;
   store.setItem(key, value);
 
   // Clean up the OTHER store to avoid stale duplicates
-  const otherStore = store === localStorage ? sessionStorage : localStorage;
-  otherStore.removeItem(key);
+  const otherStore = store === window.localStorage ? window.sessionStorage : window.localStorage;
+  if (otherStore) {
+    otherStore.removeItem(key);
+  }
 }
 
 /** Remove an auth value from BOTH stores (used during logout). */
 export function removeAuthItem(key: AuthKey): void {
-  localStorage.removeItem(key);
-  sessionStorage.removeItem(key);
+  if (typeof window === 'undefined') return;
+  if (typeof window.localStorage !== 'undefined') window.localStorage.removeItem(key);
+  if (typeof window.sessionStorage !== 'undefined') window.sessionStorage.removeItem(key);
 }
 
 /** Remove all auth data from both stores (full logout). */

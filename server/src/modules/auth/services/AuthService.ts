@@ -12,7 +12,7 @@ import crypto from 'crypto';
 
 
 import { sendOTPWhatsApp } from '@shared/utils/whatsappService';
-import { sendOTPEmail } from '@shared/utils/emailService';
+import { sendOTPEmail, sendPasswordResetEmail } from '@shared/utils/emailService';
 
 export class AuthService {
   constructor(
@@ -307,21 +307,29 @@ export class AuthService {
   }
 
   /**
-   * Initiate password reset flow (stub — sends email with token).
+   * Initiate password reset flow — generates token and sends reset email.
    */
   async forgotPassword(email: string): Promise<void> {
     const user = await this.userRepo.findByEmail(email);
     if (!user) {
-      // Don't reveal whether email exists
+      // Don't reveal whether email exists for account enumeration protection
       logger.debug('Password reset requested for non-existent email', { email });
       return;
     }
 
-    // Generate reset token (in production, store in DB with expiry)
+    // Generate reset token valid for 1 hour
     const resetToken = jwt.sign({ userId: user.id }, env.JWT_SECRET, { expiresIn: '1h' });
 
-    logger.info('Password reset token generated', { userId: user.id, token: resetToken });
-    logger.debug('Password reset token ready for email dispatch', { userId: user.id });
+    try {
+      await sendPasswordResetEmail(user.email, user.name, resetToken, user.language);
+      logger.info('Password reset email dispatched successfully', { userId: user.id, email: user.email });
+    } catch (err: unknown) {
+      logger.error('Failed to dispatch password reset email', {
+        userId: user.id,
+        email: user.email,
+        error: err instanceof Error ? err.message : err,
+      });
+    }
   }
 
   /**

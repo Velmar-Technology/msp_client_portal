@@ -20,7 +20,7 @@ services:
       retries: 5
 
   server:
-    image: ghcr.io/velmar-technology/msp-services-server:latest
+    image: ghcr.io/velmar-technology/msp-services-server:1.4.2.3
     container_name: msp_server_prod
     restart: always
     networks:
@@ -53,6 +53,10 @@ services:
       - NEXTCLOUD_APP_USER=${NEXTCLOUD_APP_USER}
       - NEXTCLOUD_APP_PASS=${NEXTCLOUD_APP_PASS}
       - NEXTCLOUD_TOTAL_CAPACITY=${NEXTCLOUD_TOTAL_CAPACITY}
+      - ZABBIX_URL=${ZABBIX_URL}
+      - ZABBIX_USER=${ZABBIX_USER}
+      - ZABBIX_PASSWORD=${ZABBIX_PASSWORD}
+      - ZABBIX_WEBHOOK_SECRET=${ZABBIX_WEBHOOK_SECRET}
     volumes:
       - uploads_data:/app/server/uploads
 
@@ -124,7 +128,7 @@ services:
       ZBX_HOSTNAME: "Zabbix server"
 
   client:
-    image: ghcr.io/velmar-technology/msp-services-client:latest
+    image: ghcr.io/velmar-technology/msp-services-client:1.4.2.3
     container_name: msp_client_prod
     restart: always
     environment:
@@ -144,7 +148,7 @@ services:
 
   logs:
     image: amir20/dozzle:latest
-    container_name: odoo_logs
+    container_name: msp_portal_logs
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     labels:

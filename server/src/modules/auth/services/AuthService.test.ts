@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => {
     findById: vi.fn(),
     create: vi.fn(),
     updateLastLogin: vi.fn(),
+    updatePassword: vi.fn(),
     findBySubdomain: vi.fn(),
     findByName: vi.fn(),
     createTenant: vi.fn(),
@@ -16,8 +17,15 @@ const mocks = vi.hoisted(() => {
     jwtVerify: vi.fn(),
     verifyEmail: vi.fn(),
     setOTP: vi.fn(),
+    sendOTPEmail: vi.fn(),
+    sendPasswordResetEmail: vi.fn(),
   };
 });
+
+vi.mock('@shared/utils/emailService', () => ({
+  sendOTPEmail: mocks.sendOTPEmail,
+  sendPasswordResetEmail: mocks.sendPasswordResetEmail,
+}));
 
 vi.mock('@modules/auth/repositories/UserRepository', () => ({
   userRepository: {
@@ -25,6 +33,7 @@ vi.mock('@modules/auth/repositories/UserRepository', () => ({
     findById: mocks.findById,
     create: mocks.create,
     updateLastLogin: mocks.updateLastLogin,
+    updatePassword: mocks.updatePassword,
     verifyEmail: mocks.verifyEmail,
     setOTP: mocks.setOTP,
   },
@@ -171,7 +180,7 @@ describe('AuthService', () => {
       ).rejects.toMatchObject({
         message: 'Invalid email or password',
         statusCode: 401,
-        code: 'UNAUTHORIZED',
+        code: 'UNAUTHORIZED_ERROR',
       });
 
       expect(mocks.updateLastLogin).not.toHaveBeenCalled();
@@ -186,7 +195,7 @@ describe('AuthService', () => {
       ).rejects.toMatchObject({
         message: 'Please verify your email address before logging in',
         statusCode: 403,
-        code: 'FORBIDDEN',
+        code: 'FORBIDDEN_ERROR',
       });
 
       expect(mocks.updateLastLogin).not.toHaveBeenCalled();
@@ -202,7 +211,7 @@ describe('AuthService', () => {
       ).rejects.toMatchObject({
         message: 'Invalid email or password',
         statusCode: 401,
-        code: 'UNAUTHORIZED',
+        code: 'UNAUTHORIZED_ERROR',
       });
 
       expect(mocks.updateLastLogin).not.toHaveBeenCalled();
@@ -217,7 +226,7 @@ describe('AuthService', () => {
       ).rejects.toMatchObject({
         message: 'Account has been deactivated',
         statusCode: 403,
-        code: 'FORBIDDEN',
+        code: 'FORBIDDEN_ERROR',
       });
 
       expect(mocks.updateLastLogin).not.toHaveBeenCalled();
@@ -293,7 +302,7 @@ describe('AuthService', () => {
       ).rejects.toMatchObject({
         message: 'Account has been deactivated',
         statusCode: 403,
-        code: 'FORBIDDEN',
+        code: 'FORBIDDEN_ERROR',
       });
 
       expect(mocks.updateLastLogin).not.toHaveBeenCalled();
@@ -386,6 +395,60 @@ describe('AuthService', () => {
         message: 'OTP has expired',
         statusCode: 400,
       });
+    });
+  });
+
+  // ============================
+  // FORGOT PASSWORD
+  // ============================
+  describe('forgotPassword', () => {
+    it('should generate reset token for existing user and dispatch reset email', async () => {
+      const mockUser = createMockUser({ id: 'user-123', email: 'user@example.com', name: 'John Doe', language: 'en_US' });
+      mocks.findByEmail.mockResolvedValue(mockUser);
+      mocks.jwtSign.mockReturnValue('reset-token-xyz');
+      mocks.sendPasswordResetEmail.mockResolvedValue(undefined);
+
+      await expect(authService.forgotPassword('user@example.com')).resolves.toBeUndefined();
+      expect(mocks.findByEmail).toHaveBeenCalledWith('user@example.com');
+      expect(mocks.jwtSign).toHaveBeenCalledWith({ userId: 'user-123' }, 'test-jwt-secret', { expiresIn: '1h' });
+      expect(mocks.sendPasswordResetEmail).toHaveBeenCalledWith('user@example.com', 'John Doe', 'reset-token-xyz', 'en_US');
+    });
+
+    it('should quietly return without error if email does not exist (security)', async () => {
+      mocks.findByEmail.mockResolvedValue(null);
+
+      await expect(authService.forgotPassword('nonexistent@example.com')).resolves.toBeUndefined();
+      expect(mocks.findByEmail).toHaveBeenCalledWith('nonexistent@example.com');
+      expect(mocks.jwtSign).not.toHaveBeenCalled();
+      expect(mocks.sendPasswordResetEmail).not.toHaveBeenCalled();
+    });
+  });
+
+  // ============================
+  // RESET PASSWORD
+  // ============================
+  describe('resetPassword', () => {
+    it('should reset password with valid token and hash new password', async () => {
+      mocks.jwtVerify.mockReturnValue({ userId: 'user-123' });
+      mocks.hashPassword.mockResolvedValue('new-hashed-password');
+      mocks.updatePassword.mockResolvedValue(undefined);
+
+      await expect(authService.resetPassword('valid-token', 'NewPassword123!')).resolves.toBeUndefined();
+      expect(mocks.jwtVerify).toHaveBeenCalledWith('valid-token', 'test-jwt-secret');
+      expect(mocks.hashPassword).toHaveBeenCalledWith('NewPassword123!');
+      expect(mocks.updatePassword).toHaveBeenCalledWith('user-123', 'new-hashed-password');
+    });
+
+    it('should throw validation error for invalid or expired token', async () => {
+      mocks.jwtVerify.mockImplementation(() => {
+        throw new Error('jwt expired');
+      });
+
+      await expect(authService.resetPassword('expired-token', 'NewPassword123!')).rejects.toMatchObject({
+        message: 'Invalid or expired reset token',
+        statusCode: 400,
+      });
+      expect(mocks.updatePassword).not.toHaveBeenCalled();
     });
   });
 });

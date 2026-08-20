@@ -47,12 +47,9 @@ describe('UserController', () => {
         json: vi.fn(),
       } as unknown as Response;
 
-      await userController.uploadAvatar(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({
-        success: false,
+      await expect(userController.uploadAvatar(req, res)).rejects.toMatchObject({
         message: 'No file uploaded',
+        statusCode: 400,
       });
     });
 

@@ -246,6 +246,7 @@ server/src/modules/<feature>/
    - **Allowed Imports**: Domain Errors (`@shared/errors`), Entities (`@shared/types`), Repositories (`@modules/<domain>/repositories`), DTOs (`@shared/dtos`), Utils (`@shared/utils`).
    - **Forbidden Imports**: Express objects (`Request`, `Response`), database pool or schema (`@shared/db`), controllers, routes.
    - **Error Handling Rule**: Throw typed domain error classes directly from `@shared/errors` (e.g. `throw new NotFoundError(...)`, `throw new ForbiddenError(...)`). Never use deprecated `AppError.factory()` or raw `throw new Error(...)`.
+   - **Notification & Email Dispatch Integrity Rule**: Authentication, verification, and recovery flows (`AuthService.forgotPassword`, `AuthService.register`, `TicketService`, `InvoiceService`) **MUST NEVER stub out, leave as comments, or omit email/notification dispatches**. Any generated token, OTP, quotation, or invoice event must explicitly invoke the corresponding utility driver (e.g., `emailService.sendPasswordResetEmail`, `emailService.sendOTPEmail`, `whatsappService`).
 
 3. **Repository Layer (`server/src/modules/<domain>/repositories/`, `server/src/shared/repositories/`)**:
    - **Allowed Imports**: `db` instance (`@shared/db`), Drizzle schemas, Entities (`@shared/types`), Domain Errors (`@shared/errors`).
@@ -256,8 +257,9 @@ server/src/modules/<feature>/
    - **Forbidden Imports**: Repositories, `db` instance (`@shared/db`).
    - **Async Error Handling Rule**: Rely on **Express 5 native async error propagation**. Do NOT wrap actions in `try/catch (err) { next(err); }` boilerplate. NEVER send inline error responses (e.g., `res.status(400).json(...)`) — throw typed domain errors and let the global error middleware handle formatting.
 
-5. **Client UI Component Layer (`client/src/components/`)**:
+5. **Client UI Component Layer (`client/src/components/`, `client/src/pages/`)**:
    - **Mandatory UI Rule**: All UI elements (Buttons, Inputs, Selects, Dialogs, Cards, Tables, Badges, Tabs, Tooltips, Labels, Checkboxes) **MUST strictly use `shadcn/ui` components from `client/src/components/ui/`**.
+   - **Mandatory Zod Form Validation Rule**: All client forms and modal submission dialogs (authentication, registration, password recovery, profile edits, ticket creation) **MUST strictly validate input using Zod schemas (`schema.safeParse(...)`)** mirroring backend DTO constraints (`@shared/dtos/auth.dto.ts`). Password fields must enforce complexity rules (min 8 characters, at least 1 uppercase letter, 1 lowercase letter, 1 number, and identical password confirmation). Validation feedback must map directly to `t("namespace.key")` translation keys.
    - **Mandatory i18n Rule**: NO user-facing UI text, headers, subheaders, badges, tooltips, search placeholders, modal titles, or table headers may be hardcoded in raw English or Spanish strings. All user-facing strings **MUST use `useTranslation()` from `react-i18next`** (`t("namespace.key")`) and be defined in both `client/src/locales/en_US.json` and `client/src/locales/es_DO.json`.
      - **FORBIDDEN: Language-Detection Hacks**: Never write `t('someKey') === 'Spanish text' ? 'Spanish' : 'English'` or any variant that inspects the _output_ of a `t()` call to infer the active language. This pattern is fragile, breaks when translations change, and defeats the purpose of i18n. Instead, always add a dedicated translation key for each distinct string.
      - **Correct Pattern**: If a button needs a short label different from an existing key, create a new key (e.g. `ticketDetail.send` = `"Send"` / `"Enviar"`) and use `t('ticketDetail.send')` — never derive the language from another key's value.

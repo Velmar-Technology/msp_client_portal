@@ -234,4 +234,42 @@ describe('AuthController', () => {
       });
     });
   });
+
+  describe('forgotPassword', () => {
+    it('should call authService.forgotPassword and return success message', async () => {
+      mocks.forgotPassword.mockResolvedValue(undefined);
+
+      const req = {
+        body: { email: 'user@example.com' },
+      } as unknown as Request;
+      const res = createMockResponse();
+
+      await authController.forgotPassword(req, res);
+
+      expect(mocks.forgotPassword).toHaveBeenCalledWith('user@example.com');
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        message: 'If an account exists with this email, a password reset link has been sent.',
+      });
+    });
+  });
+
+  describe('resetPassword', () => {
+    it('should call authService.resetPassword and return success message', async () => {
+      mocks.resetPassword.mockResolvedValue(undefined);
+
+      const req = {
+        body: { token: 'valid-reset-token', password: 'NewPassword123!' },
+      } as unknown as Request;
+      const res = createMockResponse();
+
+      await authController.resetPassword(req, res);
+
+      expect(mocks.resetPassword).toHaveBeenCalledWith('valid-reset-token', 'NewPassword123!');
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        message: 'Password reset successfully',
+      });
+    });
+  });
 });

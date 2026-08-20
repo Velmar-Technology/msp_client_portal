@@ -797,5 +797,85 @@ export async function sendOTPEmail(
   });
 }
 
+/**
+ * Send a password reset email to the user with secure token and reset link.
+ */
+export async function sendPasswordResetEmail(
+  recipientEmail: string,
+  recipientName: string,
+  resetToken: string,
+  language?: string,
+): Promise<void> {
+  const isSpanish = (language || 'en_US').startsWith('es');
+  const portalUrl = `${env.CORS_ORIGIN || 'http://localhost:5173'}/login?openModal=reset-password&token=${encodeURIComponent(resetToken)}`;
+  const preheader = isSpanish
+    ? 'Haga clic en el enlace para restablecer su contraseña del portal de soporte.'
+    : 'Click the link to reset your support portal password.';
+
+  const title = isSpanish ? 'Restablecimiento de Contraseña' : 'Password Reset Request';
+
+  const contentHtml = isSpanish ? `
+    <h2 style="color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">Hola ${recipientName},</h2>
+    <p style="font-size: 15px; color: #475569; margin-top: 0; margin-bottom: 20px;">
+      Hemos recibido una solicitud para restablecer la contraseña de su cuenta en el Portal de Clientes de <strong>Velmar Technology</strong>.
+    </p>
+    <p style="font-size: 14px; color: #64748B; margin-top: 0; margin-bottom: 24px;">
+      Para restablecer su contraseña, haga clic en el botón de abajo o ingrese el token de restablecimiento directamente en la página de inicio de sesión:
+    </p>
+
+    <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+      <p style="margin: 0 0 8px 0; color: #64748B; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">
+        Token de Restablecimiento Manual:
+      </p>
+      <div style="background-color: #ffffff; border: 1px solid #CBD5E1; border-radius: 8px; padding: 12px 14px; word-break: break-all; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; color: #1E293B; line-height: 1.4;">
+        ${resetToken}
+      </div>
+      <p style="font-size: 12px; color: #EF4444; margin-top: 10px; margin-bottom: 0; font-weight: 500;">
+        ⚠️ Este enlace y token son válidos únicamente durante 1 hora.
+      </p>
+    </div>
+
+    <p style="font-size: 13px; color: #94A3B8; margin-top: 24px; margin-bottom: 0;">
+      Si no solicitó este cambio, puede ignorar este mensaje de forma segura. Su contraseña actual no se modificará.
+    </p>
+  ` : `
+    <h2 style="color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">Hello ${recipientName},</h2>
+    <p style="font-size: 15px; color: #475569; margin-top: 0; margin-bottom: 20px;">
+      We received a request to reset the password for your account on the <strong>Velmar Technology</strong> Client Portal.
+    </p>
+    <p style="font-size: 14px; color: #64748B; margin-top: 0; margin-bottom: 24px;">
+      To reset your password, click the button below or enter the reset token directly on the login page:
+    </p>
+
+    <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+      <p style="margin: 0 0 8px 0; color: #64748B; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">
+        Manual Reset Token:
+      </p>
+      <div style="background-color: #ffffff; border: 1px solid #CBD5E1; border-radius: 8px; padding: 12px 14px; word-break: break-all; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; color: #1E293B; line-height: 1.4;">
+        ${resetToken}
+      </div>
+      <p style="font-size: 12px; color: #EF4444; margin-top: 10px; margin-bottom: 0; font-weight: 500;">
+        ⚠️ This link and token are valid for 1 hour only.
+      </p>
+    </div>
+
+    <p style="font-size: 13px; color: #94A3B8; margin-top: 24px; margin-bottom: 0;">
+      If you did not request a password reset, you can safely ignore this email. Your password will remain unchanged.
+    </p>
+  `;
+
+  const actionText = isSpanish ? 'Restablecer Mi Contraseña' : 'Reset My Password';
+  const body = getEmailLayout(preheader, title, contentHtml, portalUrl, actionText);
+
+  await sendEmail({
+    to: recipientEmail,
+    subject: isSpanish
+      ? 'Restablecimiento de Contraseña - Velmar Technology Portal'
+      : 'Password Reset Request - Velmar Technology Portal',
+    body,
+    type: 'EMAIL',
+  });
+}
+
 
 

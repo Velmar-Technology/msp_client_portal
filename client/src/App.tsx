@@ -69,6 +69,14 @@ export function App() {
                 </PublicRoute>
               }
             />
+            <Route
+              path="/forgot-password"
+              element={<Navigate to="/login?openModal=forgot-password" replace />}
+            />
+            <Route
+              path="/reset-password"
+              element={<Navigate to="/login?openModal=reset-password" replace />}
+            />
 
 
             {/* App Layout Routes */}
