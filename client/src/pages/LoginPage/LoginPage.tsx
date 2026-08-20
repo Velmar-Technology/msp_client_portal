@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUrlState } from "@/hooks/useUrlState";
@@ -93,6 +93,7 @@ export function LoginPage() {
   // URL-synced modal dialog triggers
   const openModal = getParam("openModal", "");
   const tokenFromUrl = getParam("token", "") || getParam("resetToken", "");
+  const prevModalRef = useRef(openModal);
 
   useEffect(() => {
     if (tokenFromUrl) {
@@ -103,12 +104,15 @@ export function LoginPage() {
     }
   }, [tokenFromUrl, openModal, setParam]);
 
-  // Sync initial forgot email with login email if user typed it
+  // Sync initial forgot email with login email only when modal opens
   useEffect(() => {
-    if (openModal === "forgot-password" && email && !forgotEmail) {
-      setForgotEmail(email);
+    if (openModal === "forgot-password" && prevModalRef.current !== "forgot-password") {
+      if (email) {
+        setForgotEmail(email);
+      }
     }
-  }, [openModal, email, forgotEmail]);
+    prevModalRef.current = openModal;
+  }, [openModal, email]);
 
   const handleGoogleSuccess = useCallback(
     async (idToken: string) => {
