@@ -309,7 +309,8 @@ export type NotificationEventType =
   | 'TICKET_ASSIGNED'
   | 'TICKET_STATUS_CHANGED'
   | 'TICKET_CANCELLED'
-  | 'NEW_REPLY';
+  | 'NEW_REPLY'
+  | 'SUBSCRIPTION_EXPIRING_SOON';
 
 export type NotificationPreferencesMap = Record<NotificationEventType, ChannelPreference>;
 

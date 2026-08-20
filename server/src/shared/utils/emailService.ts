@@ -828,6 +828,83 @@ export async function sendInvoiceDueEmail(
 }
 
 /**
+ * Send a subscription expiry warning email to the client (7 days before renewal).
+ */
+export async function sendSubscriptionExpiringEmail(
+  clientEmail: string,
+  clientName: string,
+  serviceName: string,
+  renewalDate: Date,
+  language: string,
+): Promise<void> {
+  const isSpanish = language.startsWith('es');
+  const portalUrl = `${env.CORS_ORIGIN || 'http://localhost:5173'}/plans`;
+
+  const renewalDateStr = renewalDate.toLocaleDateString(isSpanish ? 'es-DO' : 'en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  const preheader = isSpanish
+    ? `Su suscripción a ${serviceName} vence el ${renewalDateStr}. Renueve para evitar interrupciones.`
+    : `Your subscription to ${serviceName} expires on ${renewalDateStr}. Renew to avoid interruptions.`;
+
+  const title = isSpanish ? 'Suscripción por Vencer' : 'Subscription Expiring Soon';
+
+  const cardHtml = `
+    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+      <tr>
+        <td style="padding: 6px 0; color: #64748B; width: 160px; font-weight: 500;">${isSpanish ? 'Servicio:' : 'Service:'}</td>
+        <td style="padding: 6px 0; color: #0F172A; font-weight: 600;">${serviceName}</td>
+      </tr>
+      <tr>
+        <td style="padding: 6px 0; color: #64748B; font-weight: 500;">${isSpanish ? 'Fecha de Vencimiento:' : 'Expiry Date:'}</td>
+        <td style="padding: 6px 0; color: #DC2626; font-weight: 600;">${renewalDateStr}</td>
+      </tr>
+    </table>
+  `;
+
+  const contentHtml = `
+    <h2 style="color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 12px;">
+      ${isSpanish ? `Hola ${clientName},` : `Hello ${clientName},`}
+    </h2>
+    <p style="font-size: 15px; color: #475569; margin-top: 0; margin-bottom: 24px;">
+      ${isSpanish
+        ? `Su suscripción a <strong>${serviceName}</strong> está programada para vencer el <strong>${renewalDateStr}</strong>. Para evitar interrupciones en el servicio, le recomendamos renovar antes de esa fecha.`
+        : `Your subscription to <strong>${serviceName}</strong> is scheduled to expire on <strong>${renewalDateStr}</strong>. To avoid any service interruption, we recommend renewing before that date.`}
+    </p>
+    ${renderInfoCard(isSpanish ? 'Detalles de la Suscripción' : 'Subscription Details', cardHtml, palette.warning)}
+    ${renderCallout(isSpanish
+      ? 'Una vez que la suscripción venza, no podrá crear tickets de soporte ni acceder a las funcionalidades del portal hasta que renueve.'
+      : 'Once the subscription expires, you will not be able to create support tickets or access portal features until you renew.', 'warning')}
+    ${renderDisclaimer(isSpanish
+      ? 'Si ya renovó su suscripción, por favor ignore este mensaje.'
+      : 'If you have already renewed your subscription, please disregard this email.')}
+  `;
+
+  const body = getEmailLayout({
+    preheader,
+    title,
+    headerIcon: '⏰',
+    accentColor: palette.warning,
+    language,
+    contentHtml,
+    actionUrl: portalUrl,
+    actionText: isSpanish ? 'Renovar Suscripción' : 'Renew Subscription',
+  });
+
+  await sendEmail({
+    to: clientEmail,
+    subject: isSpanish
+      ? `Su suscripción a ${serviceName} vence pronto`
+      : `Your ${serviceName} subscription is expiring soon`,
+    body,
+    type: 'EMAIL',
+  });
+}
+
+/**
  * Send an OTP verification email to the newly registered user.
  */
 export async function sendOTPEmail(

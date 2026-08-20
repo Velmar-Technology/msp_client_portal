@@ -52,36 +52,89 @@ export function SidebarBrand({ logo, portalTitle, infraTitle }: SidebarBrandProp
 
 // 2. High-Density Active Subscription Card Sub-component
 interface ActiveSubCardProps {
-  sub: Subscription;
+  subs: Subscription[];
+  planNameMap: Map<string, string>;
   renewalLabel: string;
   isSpanish: boolean;
 }
 
-export function ActiveSubCard({ sub, renewalLabel, isSpanish }: ActiveSubCardProps) {
+export function ActiveSubCard({ subs, planNameMap, renewalLabel, isSpanish }: ActiveSubCardProps) {
+  const representative = subs[0];
+  const count = subs.length;
+  const displayName = planNameMap.get(representative.plan) || representative.service_name;
+
   const formattedDate = useMemo(() => {
-    return new Date(sub.renewal_date).toLocaleDateString(isSpanish ? "es-DO" : "en-US", {
+    const earliest = subs.reduce((min, s) => {
+      const d = new Date(s.renewal_date);
+      return d < min ? d : min;
+    }, new Date(subs[0].renewal_date));
+    return earliest.toLocaleDateString(isSpanish ? "es-DO" : "en-US", {
       day: "2-digit",
       month: "short",
     });
-  }, [sub.renewal_date, isSpanish]);
+  }, [subs, isSpanish]);
+
+  const daysRemaining = useMemo(() => {
+    const earliest = subs.reduce((min, s) => {
+      const d = new Date(s.renewal_date);
+      return d < min ? d : min;
+    }, new Date(subs[0].renewal_date));
+    const now = new Date();
+    const diffMs = earliest.getTime() - now.getTime();
+    return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+  }, [subs]);
+
+  const isExpiring = subs.some((s) => s.status === "EXPIRING");
 
   return (
-    <div className="mx-2 my-2 p-2.5 rounded-sm border border-sidebar-border bg-sidebar-accent/50 shadow-xs group-data-[collapsible=icon]:hidden transition-colors">
+    <div className={`mx-2 my-1.5 p-2.5 rounded-sm border shadow-xs group-data-[collapsible=icon]:hidden transition-colors ${
+      isExpiring
+        ? "border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/30"
+        : "border-sidebar-border bg-sidebar-accent/50"
+    }`}>
       <div className="flex items-center justify-between gap-2 mb-1">
-        <span className="text-[9px] font-mono font-bold text-sidebar-foreground bg-sidebar-accent border border-sidebar-border px-1 rounded-sm uppercase">
-          {sub.plan}
-        </span>
-        <div className="flex items-center gap-1">
-          <span className="h-1.5 w-1.5 bg-primary rounded-full animate-pulse" />
-          <span className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">
-            Active
+        <div className="flex items-center gap-1.5">
+          <span className="text-[9px] font-mono font-bold text-sidebar-foreground bg-sidebar-accent border border-sidebar-border px-1 rounded-sm uppercase">
+            {representative.plan}
           </span>
+          {count > 1 && (
+            <span className="text-[9px] font-mono font-bold text-primary bg-primary/10 border border-primary/20 px-1 rounded-sm">
+              x{count}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          {isExpiring ? (
+            <>
+              <span className="h-1.5 w-1.5 bg-amber-500 rounded-full animate-pulse" />
+              <span className="text-[8px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                {isSpanish ? "Expira Pronto" : "Expiring"}
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="h-1.5 w-1.5 bg-primary rounded-full animate-pulse" />
+              <span className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">
+                Active
+              </span>
+            </>
+          )}
         </div>
       </div>
-      <p className="text-[11px] font-medium text-sidebar-foreground truncate">{sub.service_name}</p>
+      <p className="text-[11px] font-medium text-sidebar-foreground truncate">{displayName}</p>
       <p className="text-[9px] text-muted-foreground mt-0.5 font-mono">
         {renewalLabel}: {formattedDate}
       </p>
+      {isExpiring && (
+        <p className="text-[9px] text-amber-600 dark:text-amber-400 mt-0.5 font-semibold">
+          {daysRemaining === 0
+            ? (isSpanish ? "Vence hoy" : "Expires today")
+            : isSpanish
+              ? `Quedan ${daysRemaining} día${daysRemaining !== 1 ? "s" : ""}`
+              : `${daysRemaining} day${daysRemaining !== 1 ? "s" : ""} remaining`
+          }
+        </p>
+      )}
     </div>
   );
 }
@@ -168,12 +221,27 @@ export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive }: 
 // 4. Premium SaaS Sidebar Component
 export function AppSidebar() {
   const { t } = useTranslation();
-  const { user, location, activeSubscription, navItems, checkIsActive, checkIsGroupActive } = useSidebar();
+  const { user, location, activeSubscriptions, planNameMap, navItems, checkIsActive, checkIsGroupActive } = useSidebar();
 
   const isSpanish = t("dashboard.tableStatus") === "Estado";
   const isPublicLegalPage = location.pathname === "/" || location.pathname === "/terms" || location.pathname === "/privacy";
 
   const appVersion = import.meta.env.VITE_APP_VERSION as string | undefined;
+
+  const groupedSubs = useMemo(() => {
+    const groups = new Map<string, Subscription[]>();
+    for (const sub of activeSubscriptions) {
+      const existing = groups.get(sub.plan);
+      if (existing) {
+        existing.push(sub);
+      } else {
+        groups.set(sub.plan, [sub]);
+      }
+    }
+    return Array.from(groups.values());
+  }, [activeSubscriptions]);
+
+  const hasMultipleGroups = groupedSubs.length > 1;
 
   return (
     <ShadcnSidebar className="border-r border-sidebar-border bg-sidebar">
@@ -191,8 +259,35 @@ export function AppSidebar() {
 
       {/* Footer support item */}
       <SidebarFooter className="border-t border-sidebar-border p-1.5 bg-sidebar">
-        {user?.role === "CLIENT" && activeSubscription && !isPublicLegalPage && (
-          <ActiveSubCard sub={activeSubscription} renewalLabel={t("dashboard.tableRenewal")} isSpanish={isSpanish} />
+        {user?.role === "CLIENT" && groupedSubs.length > 0 && !isPublicLegalPage && (
+          hasMultipleGroups ? (
+            <Collapsible defaultOpen className="group/collapsible-sub">
+              <SidebarMenu className="px-0">
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton
+                      className="h-auto py-1.5 px-2 text-[9px] font-semibold text-muted-foreground uppercase tracking-wider hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                    >
+                      <span>{isSpanish ? "Suscripciones" : "Subscriptions"}</span>
+                      <span className="ml-auto bg-sidebar-accent border border-sidebar-border rounded-sm px-1.5 py-0.5 text-[9px] font-mono tabular-nums">
+                        {groupedSubs.length}
+                      </span>
+                      <ChevronRight className="h-3 w-3 text-muted-foreground transition-transform duration-200 group-data-[state=open]/collapsible-sub:rotate-90" />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="space-y-0">
+                      {groupedSubs.map((group) => (
+                        <ActiveSubCard key={group[0].plan} subs={group} planNameMap={planNameMap} renewalLabel={t("dashboard.tableRenewal")} isSpanish={isSpanish} />
+                      ))}
+                    </div>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </Collapsible>
+          ) : (
+            <ActiveSubCard subs={groupedSubs[0]} planNameMap={planNameMap} renewalLabel={t("dashboard.tableRenewal")} isSpanish={isSpanish} />
+          )
         )}
         {user && !isPublicLegalPage && (
           <SidebarMenu>

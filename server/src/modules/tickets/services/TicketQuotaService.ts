@@ -1,7 +1,7 @@
 import { subscriptionRepository, SubscriptionRepository } from '@modules/subscriptions';
 import { planRepository, PlanRepository } from '@modules/subscriptions';
 import { ticketRepository, TicketRepository } from '@modules/tickets/repositories/TicketRepository';
-import { TicketLimitExceededError } from '@shared/errors';
+import { TicketLimitExceededError, ForbiddenError } from '@shared/errors';
 import { HELPDESK_SUPPORT_FEATURE_CODE } from '@shared/config/constants';
 import { Subscription, SubscriptionStatus } from '@shared/types';
 
@@ -36,7 +36,12 @@ export class TicketQuotaService {
       (s) => s.status === SubscriptionStatus.ACTIVE || s.status === SubscriptionStatus.EXPIRING
     );
 
-    if (activeSubs.length === 0) return;
+    if (activeSubs.length === 0) {
+      throw new ForbiddenError(
+        'No active subscription found. Please renew your subscription to continue creating tickets.',
+        { code: 'NO_ACTIVE_SUBSCRIPTION' }
+      );
+    }
 
     const quota = await this.resolveQuota(activeSubs);
     if (!quota.checkedAnyFeature || quota.unlimited || quota.limit === 0) return;

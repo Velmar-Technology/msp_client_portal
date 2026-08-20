@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useLocation } from "react-router-dom";
+import i18n from "i18next";
 import {
   LayoutDashboard,
   Ticket,
@@ -15,6 +16,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { subscriptionService } from "@/services/subscriptionService";
+import { planService, type Plan } from "@/services/planService";
 import type { Subscription } from "@/services/subscriptionService";
 
 export interface NavSubItem {
@@ -88,7 +90,8 @@ const adminNavItems: NavItem[] = [
 export function useSidebar() {
   const { user } = useAuth();
   const location = useLocation();
-  const [activeSubscription, setActiveSubscription] = useState<Subscription | null>(null);
+  const [activeSubscriptions, setActiveSubscriptions] = useState<Subscription[]>([]);
+  const [plans, setPlans] = useState<Plan[]>([]);
   const [loadingSub, setLoadingSub] = useState(false);
 
   useEffect(() => {
@@ -96,29 +99,52 @@ export function useSidebar() {
 
     if (user?.role !== "CLIENT") {
       Promise.resolve().then(() => {
-        if (isMounted) setActiveSubscription(null);
+        if (isMounted) {
+          setActiveSubscriptions([]);
+          setPlans([]);
+        }
       });
       return;
     }
-    async function loadActiveSub() {
+    async function loadActiveSubs() {
       setLoadingSub(true);
       try {
-        const subs = await subscriptionService.getAll();
+        const [subs, planList] = await Promise.all([
+          subscriptionService.getAll(),
+          planService.getAll({ limit: 100 }),
+        ]);
         if (isMounted) {
-          const active = subs.find((sub) => sub.status === "ACTIVE");
-          setActiveSubscription(active || null);
+          const active = subs.filter((sub) => sub.status === "ACTIVE" || sub.status === "EXPIRING");
+          setActiveSubscriptions(active);
+          setPlans(planList);
         }
       } catch (err) {
-        console.error("Failed to load active subscription for sidebar", err);
+        console.error("Failed to load active subscriptions for sidebar", err);
       } finally {
         if (isMounted) setLoadingSub(false);
       }
     }
-    loadActiveSub();
+    loadActiveSubs();
     return () => {
       isMounted = false;
     };
   }, [user]);
+
+  const planNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    const lang = i18n.language?.startsWith("es") ? "es_DO" : "en_US";
+    for (const plan of plans) {
+      const name = plan.name;
+      if (typeof name === "string") {
+        map.set(plan.id, name);
+      } else if (name && typeof name === "object") {
+        map.set(plan.id, name[lang] || name["en_US"] || Object.values(name)[0] || plan.id);
+      } else {
+        map.set(plan.id, plan.id);
+      }
+    }
+    return map;
+  }, [plans, i18n.language]);
 
   const isPublicLegalPage = location.pathname === "/terms" || location.pathname === "/privacy";
 
@@ -150,7 +176,9 @@ export function useSidebar() {
   return {
     user,
     location,
-    activeSubscription,
+    activeSubscriptions,
+    activeSubscription: activeSubscriptions[0] ?? null,
+    planNameMap,
     loadingSub,
     navItems,
     checkIsActive,

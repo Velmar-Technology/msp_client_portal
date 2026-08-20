@@ -13,6 +13,7 @@ export const DEFAULT_PREFERENCES: NotificationPreferencesMap = {
   TICKET_STATUS_CHANGED: { in_app: true, email: true, whatsapp: true },
   TICKET_CANCELLED:      { in_app: true, email: true, whatsapp: false },
   NEW_REPLY:             { in_app: true, email: true, whatsapp: false },
+  SUBSCRIPTION_EXPIRING_SOON: { in_app: true, email: true, whatsapp: false },
 };
 
 export class NotificationPreferenceRepository extends BaseRepository<NotificationPreference> {

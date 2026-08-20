@@ -1,7 +1,7 @@
 import { BaseRepository } from '@shared/repositories/BaseRepository';
 import { Subscription, SubscriptionStatus } from '@shared/types';
 import { db, subscriptions, plans } from '@shared/db';
-import { eq, desc, and, or, lt } from 'drizzle-orm';
+import { eq, desc, and, or, lt, lte, gt } from 'drizzle-orm';
 
 export class SubscriptionRepository extends BaseRepository<Subscription> {
   constructor() {
@@ -99,6 +99,20 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
             eq(subscriptions.status, 'EXPIRING')
           ),
           lt(subscriptions.renewal_date, now)
+        )
+      );
+    return results as Subscription[];
+  }
+
+  async findExpiringSoon(thresholdDate: Date, now: Date): Promise<Subscription[]> {
+    const results = await db
+      .select()
+      .from(subscriptions)
+      .where(
+        and(
+          eq(subscriptions.status, 'ACTIVE'),
+          gt(subscriptions.renewal_date, now),
+          lte(subscriptions.renewal_date, thresholdDate)
         )
       );
     return results as Subscription[];

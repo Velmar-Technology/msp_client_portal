@@ -8,6 +8,12 @@ export class PlanRepository extends BaseRepository<Plan> {
     super(plans, 'plans');
   }
 
+  async findById(id: string): Promise<Plan | null> {
+    if (!id) return null;
+    const result = await db.select().from(plans).where(eq(plans.id, id));
+    return (result[0] as Plan) || null;
+  }
+
   async create(data: Omit<Plan, 'created_at' | 'updated_at'>): Promise<Plan> {
     const results = await db
       .insert(plans)

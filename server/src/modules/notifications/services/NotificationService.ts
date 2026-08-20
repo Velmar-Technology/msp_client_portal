@@ -1,9 +1,10 @@
-import { Ticket, User, Notification, NotificationEventType } from '@shared/types';
+import { Ticket, User, Subscription, Notification, NotificationEventType } from '@shared/types';
 import { 
   sendTicketCreatedEmail, 
   sendTicketStatusChangedEmail, 
   sendTicketAssignedEmail,
-  sendTicketResponseEmail
+  sendTicketResponseEmail,
+  sendSubscriptionExpiringEmail
 } from '@shared/utils/emailService';
 import { sendTicketStatusWhatsApp } from '@shared/utils/whatsappService';
 import { logger } from '@shared/utils/logger';
@@ -306,6 +307,46 @@ export class NotificationService {
         ticketId: ticket.id,
         type: 'NEW_REPLY',
         tenantId: ticket.tenant_id,
+      });
+    }
+  }
+
+  /**
+   * Notify client when their subscription is expiring within 7 days.
+   */
+  async onSubscriptionExpiringSoon(subscription: Subscription, client: User): Promise<void> {
+    const eventType: NotificationEventType = 'SUBSCRIPTION_EXPIRING_SOON';
+    const renewalDateStr = new Date(subscription.renewal_date).toLocaleDateString();
+
+    // 1. Email
+    if (await this.preferenceSvc.shouldNotify(client.id, eventType, 'email')) {
+      try {
+        await sendSubscriptionExpiringEmail(
+          client.email,
+          client.name,
+          subscription.service_name,
+          subscription.renewal_date,
+          client.language || 'en_US',
+        );
+      } catch (error) {
+        logger.error('Failed to send subscription expiry warning email', { subscriptionId: subscription.id, error });
+      }
+    }
+
+    // 2. In-App Notification
+    if (await this.preferenceSvc.shouldNotify(client.id, eventType, 'in_app')) {
+      await this.createInAppNotification({
+        userId: client.id,
+        title: 'Subscription Expiring Soon',
+        message: `Your subscription to ${subscription.service_name} expires on ${renewalDateStr}. Renew now to avoid service interruption.`,
+        link: '/plans',
+        type: 'SUBSCRIPTION_EXPIRING_SOON',
+        tenantId: subscription.tenant_id,
+        metadata: {
+          subscriptionId: subscription.id,
+          renewalDate: subscription.renewal_date,
+          serviceName: subscription.service_name,
+        },
       });
     }
   }
