@@ -1,6 +1,7 @@
+export * from './repositories/NotificationRepository';
 export * from './services/NotificationService';
 export * from './services/NotificationPreferenceService';
-export * from './repositories/NotificationRepository';
 export * from './routes/notification.routes';
 export * from './routes/notificationPreference.routes';
+
 

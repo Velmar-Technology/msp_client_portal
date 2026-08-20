@@ -189,7 +189,8 @@ export function useTopNav() {
     const delayDebounceFn = setTimeout(async () => {
       try {
         const query = searchQuery.trim();
-        const queryLower = query.toLowerCase();
+        const cleanQuery = query.startsWith('#') ? query.slice(1).trim() : query;
+        const queryLower = (cleanQuery || query).toLowerCase();
 
         // Local search for FAQs using the pre-computed index
         const matchedFaqs = faqSearchIndexRef.current
@@ -202,11 +203,11 @@ export function useTopNav() {
           p.title.toLowerCase().includes(queryLower)
         );
 
-        // API search for Tickets with abort signal
+        // API search for Tickets with abort signal (supports chunks of ID like "ce9d703a")
         let matchedTickets: Ticket[] = [];
         try {
           const ticketRes = await ticketService.getAll(
-            { search: query, limit: 5 },
+            { search: cleanQuery || query, limit: 5 },
             { signal: controller.signal }
           );
           matchedTickets = ticketRes.data;

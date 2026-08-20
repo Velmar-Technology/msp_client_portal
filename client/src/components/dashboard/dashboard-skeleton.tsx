@@ -3,7 +3,7 @@ import { StatsGrid } from "@/components/stats-grid";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
 
-export default function DashboardSkeleton() {
+export function DashboardSkeleton() {
   const { t } = useTranslation();
 
   return (
@@ -26,3 +26,5 @@ export default function DashboardSkeleton() {
     </Page>
   );
 }
+
+export default DashboardSkeleton;

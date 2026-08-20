@@ -107,35 +107,75 @@ export function TicketDetailPage() {
 
   const renderActionButtons = () => {
     if (!ticket) return null;
-    const isInactive = ['CLOSED', 'CANCELLED', 'RESOLVED'].includes(ticket.status);
-    
-    if (isInactive) {
-      return (
-        <button
-          onClick={() => handleStatusChange('OPEN')}
-          disabled={statusUpdating}
-          className="px-3 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors rounded-lg text-xs font-semibold disabled:opacity-50 flex items-center gap-1.5 shadow-xs cursor-pointer"
-        >
-          {statusUpdating && <div className="w-3.5 h-3.5 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full animate-spin" />}
-          {t('ticketDetail.reopen')}
-        </button>
-      );
+
+    // Terminal states: CANCELLED and CLOSED tickets cannot transition anywhere
+    if (ticket.status === 'CANCELLED' || ticket.status === 'CLOSED') {
+      return null;
     }
 
     if (user?.role === 'CLIENT') {
-      return (
-        <button
-          onClick={() => handleStatusChange('CANCELLED')}
-          disabled={statusUpdating}
-          className="px-3 py-1.5 border border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors rounded-lg text-xs font-semibold disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
-        >
-          {statusUpdating && <div className="w-3.5 h-3.5 border-2 border-destructive/20 border-t-destructive rounded-full animate-spin" />}
-          {t('tickets.cancelTicket')}
-        </button>
-      );
+      if (ticket.status === 'OPEN') {
+        return (
+          <button
+            onClick={() => handleStatusChange('CANCELLED')}
+            disabled={statusUpdating}
+            className="px-3 py-1.5 border border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors rounded-lg text-xs font-semibold disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+          >
+            {statusUpdating && <div className="w-3.5 h-3.5 border-2 border-destructive/20 border-t-destructive rounded-full animate-spin" />}
+            {t('tickets.cancelTicket')}
+          </button>
+        );
+      }
+      return null;
     }
 
     if (user?.role === 'ADMIN' || user?.role === 'TECHNICIAN') {
+      if (ticket.status === 'RESOLVED') {
+        return (
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => handleStatusChange('OPEN')}
+              disabled={statusUpdating}
+              className="px-3 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors rounded-lg text-xs font-semibold disabled:opacity-50 flex items-center gap-1.5 shadow-xs cursor-pointer"
+            >
+              {statusUpdating && <div className="w-3.5 h-3.5 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full animate-spin" />}
+              {t('ticketDetail.reopen')}
+            </button>
+            <button
+              onClick={() => handleStatusChange('CLOSED')}
+              disabled={statusUpdating}
+              className="px-3 py-1.5 border border-border text-muted-foreground hover:bg-muted transition-colors rounded-lg text-xs font-semibold disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+            >
+              {statusUpdating && <div className="w-3.5 h-3.5 border-2 border-border border-t-foreground rounded-full animate-spin" />}
+              {t('ticketDetail.closeTicket')}
+            </button>
+          </div>
+        );
+      }
+
+      if (ticket.status === 'RESOLVED_AUTOMATED') {
+        return (
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => handleStatusChange('RESOLVED')}
+              disabled={statusUpdating}
+              className="px-3 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors rounded-lg text-xs font-semibold disabled:opacity-50 flex items-center gap-1.5 shadow-xs cursor-pointer"
+            >
+              {statusUpdating && <div className="w-3.5 h-3.5 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full animate-spin" />}
+              {t('techDashboard.resolveTicket')}
+            </button>
+            <button
+              onClick={() => handleStatusChange('CLOSED')}
+              disabled={statusUpdating}
+              className="px-3 py-1.5 border border-border text-muted-foreground hover:bg-muted transition-colors rounded-lg text-xs font-semibold disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+            >
+              {statusUpdating && <div className="w-3.5 h-3.5 border-2 border-border border-t-foreground rounded-full animate-spin" />}
+              {t('ticketDetail.closeTicket')}
+            </button>
+          </div>
+        );
+      }
+
       return (
         <div className="flex flex-wrap gap-2">
           {ticket.status === 'OPEN' && (
@@ -186,6 +226,7 @@ export function TicketDetailPage() {
             disabled={statusUpdating}
             className="px-3 py-1.5 border border-border text-muted-foreground hover:bg-muted transition-colors rounded-lg text-xs font-semibold disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
           >
+            {statusUpdating && <div className="w-3.5 h-3.5 border-2 border-border border-t-foreground rounded-full animate-spin" />}
             {t('ticketDetail.closeTicket')}
           </button>
         </div>

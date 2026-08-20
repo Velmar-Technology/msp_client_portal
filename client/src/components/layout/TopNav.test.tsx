@@ -142,3 +142,65 @@ test('closes search dropdown on pressing Escape', async () => {
   // Dropdown should be closed
   expect(screen.queryByText('topNav.quickLinks')).not.toBeInTheDocument();
 });
+
+test('allows user to find ticket with a chunk of id data like "ce9d703a"', async () => {
+  vi.mocked(ticketService.getAll).mockResolvedValue({
+    data: [
+      {
+        id: 'ce9d703a-5678-90ab-cdef-1234567890ab',
+        title: 'Printer connectivity failure',
+        category: 'REPAIR',
+        status: 'OPEN',
+        priority: 'MEDIUM',
+        created_at: '2026-08-20',
+      },
+    ],
+    pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+  });
+
+  render(<TopNav />);
+  const searchInput = screen.getByPlaceholderText('topNav.search');
+
+  fireEvent.change(searchInput, { target: { value: 'ce9d703a' } });
+  fireEvent.focus(searchInput);
+
+  await waitFor(() => {
+    expect(ticketService.getAll).toHaveBeenCalledWith(
+      expect.objectContaining({ search: 'ce9d703a' }),
+      expect.anything()
+    );
+    expect(screen.getByText('Printer connectivity failure')).toBeInTheDocument();
+    expect(screen.getByText('#ce9d703a • REPAIR')).toBeInTheDocument();
+  }, { timeout: 500 });
+});
+
+test('allows user to find ticket when prefixed with hash like "#ce9d703a"', async () => {
+  vi.mocked(ticketService.getAll).mockResolvedValue({
+    data: [
+      {
+        id: 'ce9d703a-5678-90ab-cdef-1234567890ab',
+        title: 'Printer connectivity failure',
+        category: 'REPAIR',
+        status: 'OPEN',
+        priority: 'MEDIUM',
+        created_at: '2026-08-20',
+      },
+    ],
+    pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+  });
+
+  render(<TopNav />);
+  const searchInput = screen.getByPlaceholderText('topNav.search');
+
+  fireEvent.change(searchInput, { target: { value: '#ce9d703a' } });
+  fireEvent.focus(searchInput);
+
+  await waitFor(() => {
+    expect(ticketService.getAll).toHaveBeenCalledWith(
+      expect.objectContaining({ search: 'ce9d703a' }),
+      expect.anything()
+    );
+    expect(screen.getByText('Printer connectivity failure')).toBeInTheDocument();
+  }, { timeout: 500 });
+});
+

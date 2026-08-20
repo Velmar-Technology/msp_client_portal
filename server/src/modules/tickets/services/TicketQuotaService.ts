@@ -18,8 +18,20 @@ export class TicketQuotaService {
     private ticketRepo: TicketRepository = ticketRepository,
   ) {}
 
+  private get subsRepo(): SubscriptionRepository {
+    return this.subscriptionRepo || subscriptionRepository;
+  }
+
+  private get plansRepo(): PlanRepository {
+    return this.planRepo || planRepository;
+  }
+
+  private get ticketsRepo(): TicketRepository {
+    return this.ticketRepo || ticketRepository;
+  }
+
   async enforceTicketLimit(clientId: string, tenantId: string, equipmentId?: string): Promise<void> {
-    const subs = await this.subscriptionRepo.findByClient(clientId, tenantId);
+    const subs = await this.subsRepo.findByClient(clientId, tenantId);
     const activeSubs = subs.filter(
       (s) => s.status === SubscriptionStatus.ACTIVE || s.status === SubscriptionStatus.EXPIRING
     );
@@ -42,7 +54,7 @@ export class TicketQuotaService {
     let maxLimit = 0;
 
     for (const sub of activeSubs) {
-      const plan = await this.planRepo.findById(sub.plan);
+      const plan = await this.plansRepo.findById(sub.plan);
       if (!plan || !Array.isArray(plan.features)) continue;
 
       for (const feature of plan.features) {
@@ -67,7 +79,7 @@ export class TicketQuotaService {
   }
 
   private async enforceDeviceQuota(equipmentId: string, limit: number): Promise<void> {
-    const deviceTicketCount = await this.ticketRepo.countEquipmentTicketsInCurrentMonth(equipmentId);
+    const deviceTicketCount = await this.ticketsRepo.countEquipmentTicketsInCurrentMonth(equipmentId);
     if (deviceTicketCount >= limit) {
       throw new TicketLimitExceededError(
         `Monthly ticket limit reached for this device (${deviceTicketCount}/${limit}). Your plan allows up to ${limit} tickets per device per month.`,
@@ -76,7 +88,7 @@ export class TicketQuotaService {
   }
 
   private async enforceAccountQuota(clientId: string, limit: number): Promise<void> {
-    const clientTicketCount = await this.ticketRepo.countClientTicketsInCurrentMonth(clientId);
+    const clientTicketCount = await this.ticketsRepo.countClientTicketsInCurrentMonth(clientId);
     if (clientTicketCount >= limit) {
       throw new TicketLimitExceededError(
         `Monthly ticket limit reached (${clientTicketCount}/${limit}). Your subscription plan allows up to ${limit} tickets per month.`,

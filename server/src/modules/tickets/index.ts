@@ -1,3 +1,5 @@
+export * from './repositories/TicketRepository';
+export * from './repositories/TicketEventRepository';
 export * from './services/TicketCreationService';
 export * from './services/TicketStatusService';
 export * from './services/TicketQueryService';
@@ -8,7 +10,6 @@ export * from './services/TicketQuotaService';
 export * from './services/AssignmentService';
 export * from './services/EscalationService';
 export * from './services/EscalationScheduler';
-export * from './repositories/TicketRepository';
-export * from './repositories/TicketEventRepository';
 export * from './routes/ticket.routes';
+
 

@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { RmmOverviewStats } from '@/services/rmmService';
-import SummaryCard from '@/components/dashboard/summary-card';
+import { SummaryCard } from '@/components/shared';
 import { Server, ShieldCheck, TrendingUp, Zap, CheckCircle2 } from 'lucide-react';
 
 export interface RmmKpiGridProps {

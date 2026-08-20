@@ -29,11 +29,35 @@ export class TicketCreationService {
     private quotaSvc: TicketQuotaService = ticketQuotaService,
   ) {}
 
+  private get ticketsRepo(): TicketRepository {
+    return this.ticketRepo || ticketRepository;
+  }
+
+  private get eventsRepo(): TicketEventRepository {
+    return this.eventRepo || ticketEventRepository;
+  }
+
+  private get usersRepo(): UserRepository {
+    return this.userRepo || userRepository;
+  }
+
+  private get assignSvc(): AssignmentService {
+    return this.assignmentSvc || assignmentService;
+  }
+
+  private get notifsSvc(): NotificationService {
+    return this.notifSvc || notificationService;
+  }
+
+  private get quotasSvc(): TicketQuotaService {
+    return this.quotaSvc || ticketQuotaService;
+  }
+
   async createTicket(data: CreateTicketInput, ctx: UserContext): Promise<Ticket> {
-    await this.quotaSvc.enforceTicketLimit(ctx.userId, ctx.tenantId, data.equipmentId);
+    await this.quotasSvc.enforceTicketLimit(ctx.userId, ctx.tenantId, data.equipmentId);
 
     const priority = data.priority ?? TicketPriority.MEDIUM;
-    const ticket = await this.ticketRepo.create({
+    const ticket = await this.ticketsRepo.create({
       title: data.title,
       description: data.description,
       category: data.category,
@@ -43,7 +67,7 @@ export class TicketCreationService {
       tenant_id: ctx.tenantId,
     });
 
-    await this.eventRepo.create({
+    await this.eventsRepo.create({
       ticket_id: ticket.id,
       old_status: null,
       new_status: TicketStatus.OPEN,
@@ -54,9 +78,9 @@ export class TicketCreationService {
 
     await this.assignIfPossible(ticket, data.category, undefined, priority);
 
-    const client = await this.userRepo.findById(ctx.userId);
+    const client = await this.usersRepo.findById(ctx.userId);
     if (client) {
-      await this.notifSvc.onTicketCreated(ticket, client);
+      await this.notifsSvc.onTicketCreated(ticket, client);
     }
 
     return ticket;
@@ -66,7 +90,7 @@ export class TicketCreationService {
     const baseTitle = input.title || `RMM Alert: ${input.alertType}`;
     const title = opts.tag ? `${opts.tag} ${baseTitle}` : baseTitle;
 
-    const ticket = await this.ticketRepo.create({
+    const ticket = await this.ticketsRepo.create({
       title,
       description: input.description || `Automated RMM alert (${input.alertType}) for asset ${input.assetId}`,
       category: opts.category,
@@ -76,7 +100,7 @@ export class TicketCreationService {
       tenant_id: input.tenantId,
     });
 
-    await this.eventRepo.create({
+    await this.eventsRepo.create({
       ticket_id: ticket.id,
       old_status: null,
       new_status: opts.status,
@@ -99,10 +123,10 @@ export class TicketCreationService {
     requestedSpecialty: string | undefined,
     priority?: TicketPriority,
   ): Promise<void> {
-    const technician = await this.assignmentSvc.assignNext(category, requestedSpecialty, priority);
+    const technician = await this.assignSvc.assignNext(category, requestedSpecialty, priority);
     if (!technician) return;
 
-    await this.ticketRepo.assignTechnician(ticket.id, technician.id);
+    await this.ticketsRepo.assignTechnician(ticket.id, technician.id);
     ticket.assigned_tech_id = technician.id;
     logger.info('Ticket auto-assigned', { ticketId: ticket.id, techId: technician.id, techName: technician.name });
   }

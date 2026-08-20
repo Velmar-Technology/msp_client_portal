@@ -1,7 +1,7 @@
 import { BaseRepository } from '@shared/repositories/BaseRepository';
 import { Ticket, TicketAttachment, TicketFilters, TicketStatus, TicketCategory, TicketPriority, EscalationCandidate } from '@shared/types';
 import { db, tickets, users, ticketAttachments, ticketResponses, subscriptionEquipment } from '@shared/db';
-import { eq, ne, gte, and, or, ilike, desc, asc, count, lt, inArray, SQL, isNull, isNotNull } from 'drizzle-orm';
+import { eq, ne, gte, and, or, ilike, desc, asc, count, lt, inArray, SQL, isNull, isNotNull, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
 export class TicketRepository extends BaseRepository<Ticket> {
@@ -147,11 +147,12 @@ export class TicketRepository extends BaseRepository<Ticket> {
       conditions.push(eq(tickets.equipment_id, filters.equipmentId));
     }
     if (filters.search) {
+      const searchTerm = filters.search.startsWith('#') ? filters.search.slice(1).trim() : filters.search;
       conditions.push(
         or(
-          ilike(tickets.id, `%${filters.search}%`),
-          ilike(tickets.title, `%${filters.search}%`),
-          ilike(tickets.description, `%${filters.search}%`)
+          ilike(sql`${tickets.id}::text`, `%${searchTerm}%`),
+          ilike(tickets.title, `%${searchTerm}%`),
+          ilike(tickets.description, `%${searchTerm}%`)
         )
       );
     }
