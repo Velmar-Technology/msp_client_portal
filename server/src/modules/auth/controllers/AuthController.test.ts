@@ -249,7 +249,7 @@ describe('AuthController', () => {
       expect(mocks.forgotPassword).toHaveBeenCalledWith('user@example.com');
       expect(res.json).toHaveBeenCalledWith({
         success: true,
-        message: 'If an account exists with this email, a password reset link has been sent.',
+        message: 'Password reset link has been sent to your email.',
       });
     });
   });

@@ -414,10 +414,13 @@ describe('AuthService', () => {
       expect(mocks.sendPasswordResetEmail).toHaveBeenCalledWith('user@example.com', 'John Doe', 'reset-token-xyz', 'en_US');
     });
 
-    it('should quietly return without error if email does not exist (security)', async () => {
+    it('should throw NotFoundError if email does not exist in database', async () => {
       mocks.findByEmail.mockResolvedValue(null);
 
-      await expect(authService.forgotPassword('nonexistent@example.com')).resolves.toBeUndefined();
+      await expect(authService.forgotPassword('nonexistent@example.com')).rejects.toMatchObject({
+        message: 'No account found with this email address',
+        statusCode: 404,
+      });
       expect(mocks.findByEmail).toHaveBeenCalledWith('nonexistent@example.com');
       expect(mocks.jwtSign).not.toHaveBeenCalled();
       expect(mocks.sendPasswordResetEmail).not.toHaveBeenCalled();

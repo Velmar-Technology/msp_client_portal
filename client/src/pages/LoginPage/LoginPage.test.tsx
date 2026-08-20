@@ -158,7 +158,32 @@ describe('LoginPage Password Reset Flow', () => {
     });
   });
 
-  test('renders reset password dialog when opened with token parameter', async () => {
+  test('displays error message when email does not exist in database on forgot password', async () => {
+    vi.mocked(authService.forgotPassword).mockRejectedValueOnce({
+      response: { data: { message: 'No account found with this email address' } },
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/login?openModal=forgot-password']}>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    const emailInput = document.querySelector('#forgot-email') as HTMLInputElement;
+    fireEvent.change(emailInput, { target: { value: 'notfound@example.com' } });
+
+    const submitBtn = screen.getByText(enTranslations.passwordReset.sendResetLink);
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText('No account found with this email address')).toBeInTheDocument();
+      expect(mockToast.success).not.toHaveBeenCalled();
+    });
+  });
+
+  test('renders reset password dialog when opened with token in link', async () => {
     render(
       <MemoryRouter initialEntries={['/login?openModal=reset-password&token=test-reset-token-123']}>
         <Routes>
@@ -169,14 +194,12 @@ describe('LoginPage Password Reset Flow', () => {
 
     await waitFor(() => {
       expect(screen.getByText(enTranslations.passwordReset.resetPasswordTitle)).toBeInTheDocument();
-      const tokenInput = screen.getByPlaceholderText(enTranslations.passwordReset.tokenPlaceholder) as HTMLInputElement;
-      expect(tokenInput.value).toBe('test-reset-token-123');
+      expect(screen.getByPlaceholderText(enTranslations.passwordReset.newPasswordPlaceholder)).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(enTranslations.passwordReset.confirmNewPasswordPlaceholder)).toBeInTheDocument();
     });
   });
 
-  test('validates and submits new password in reset password dialog', async () => {
-    vi.mocked(authService.resetPassword).mockResolvedValueOnce(undefined);
-
+  test('displays missing link warning when reset password modal opened without token', async () => {
     render(
       <MemoryRouter initialEntries={['/login?openModal=reset-password']}>
         <Routes>
@@ -185,11 +208,26 @@ describe('LoginPage Password Reset Flow', () => {
       </MemoryRouter>
     );
 
-    const tokenInput = screen.getByPlaceholderText(enTranslations.passwordReset.tokenPlaceholder);
+    await waitFor(() => {
+      expect(screen.getByText(enTranslations.passwordReset.missingLinkError)).toBeInTheDocument();
+      expect(screen.getByText(enTranslations.passwordReset.requestNewLink)).toBeInTheDocument();
+    });
+  });
+
+  test('validates and submits new password in reset password dialog with token in link', async () => {
+    vi.mocked(authService.resetPassword).mockResolvedValueOnce(undefined);
+
+    render(
+      <MemoryRouter initialEntries={['/login?openModal=reset-password&token=valid-token']}>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
     const newPassInput = screen.getByPlaceholderText(enTranslations.passwordReset.newPasswordPlaceholder);
     const confirmPassInput = screen.getByPlaceholderText(enTranslations.passwordReset.confirmNewPasswordPlaceholder);
 
-    fireEvent.change(tokenInput, { target: { value: 'valid-token' } });
     fireEvent.change(newPassInput, { target: { value: 'SuperSecret123!' } });
     fireEvent.change(confirmPassInput, { target: { value: 'SuperSecret123!' } });
 
@@ -204,19 +242,17 @@ describe('LoginPage Password Reset Flow', () => {
 
   test('validates password complexity with zod and displays error for weak password', async () => {
     render(
-      <MemoryRouter initialEntries={['/login?openModal=reset-password']}>
+      <MemoryRouter initialEntries={['/login?openModal=reset-password&token=valid-token']}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
         </Routes>
       </MemoryRouter>
     );
 
-    const tokenInput = screen.getByPlaceholderText(enTranslations.passwordReset.tokenPlaceholder);
     const newPassInput = screen.getByPlaceholderText(enTranslations.passwordReset.newPasswordPlaceholder);
     const confirmPassInput = screen.getByPlaceholderText(enTranslations.passwordReset.confirmNewPasswordPlaceholder);
 
     // Missing uppercase letter
-    fireEvent.change(tokenInput, { target: { value: 'valid-token' } });
     fireEvent.change(newPassInput, { target: { value: 'lowercase123' } });
     fireEvent.change(confirmPassInput, { target: { value: 'lowercase123' } });
 
@@ -231,18 +267,16 @@ describe('LoginPage Password Reset Flow', () => {
 
   test('validates password confirmation equality with zod and displays error', async () => {
     render(
-      <MemoryRouter initialEntries={['/login?openModal=reset-password']}>
+      <MemoryRouter initialEntries={['/login?openModal=reset-password&token=valid-token']}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
         </Routes>
       </MemoryRouter>
     );
 
-    const tokenInput = screen.getByPlaceholderText(enTranslations.passwordReset.tokenPlaceholder);
     const newPassInput = screen.getByPlaceholderText(enTranslations.passwordReset.newPasswordPlaceholder);
     const confirmPassInput = screen.getByPlaceholderText(enTranslations.passwordReset.confirmNewPasswordPlaceholder);
 
-    fireEvent.change(tokenInput, { target: { value: 'valid-token' } });
     fireEvent.change(newPassInput, { target: { value: 'ValidPass123!' } });
     fireEvent.change(confirmPassInput, { target: { value: 'MismatchPass123!' } });
 

@@ -3,7 +3,7 @@ import { env } from '@shared/config/env';
 import { userRepository, UserRepository } from '@modules/auth/repositories/UserRepository';
 import { tenantRepository, TenantRepository } from '@modules/auth/repositories/TenantRepository';
 import { hashPassword, comparePassword } from '@shared/utils/passwordUtils';
-import { ConflictError, ValidationError, UnauthorizedError, ForbiddenError, InternalServerError } from '@shared/errors';
+import { ConflictError, ValidationError, UnauthorizedError, ForbiddenError, InternalServerError, NotFoundError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
 import { AuthTokens, JwtPayload, UserRole } from '@shared/types';
 import { LoginInput, RegisterInput, GoogleAuthInput } from '@shared/dtos/auth.dto';
@@ -312,9 +312,8 @@ export class AuthService {
   async forgotPassword(email: string): Promise<void> {
     const user = await this.userRepo.findByEmail(email);
     if (!user) {
-      // Don't reveal whether email exists for account enumeration protection
-      logger.debug('Password reset requested for non-existent email', { email });
-      return;
+      logger.warn('Password reset requested for non-existent email', { email });
+      throw new NotFoundError('No account found with this email address');
     }
 
     // Generate reset token valid for 1 hour

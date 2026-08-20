@@ -820,23 +820,29 @@ export async function sendPasswordResetEmail(
       Hemos recibido una solicitud para restablecer la contraseña de su cuenta en el Portal de Clientes de <strong>Velmar Technology</strong>.
     </p>
     <p style="font-size: 14px; color: #64748B; margin-top: 0; margin-bottom: 24px;">
-      Para restablecer su contraseña, haga clic en el botón de abajo o ingrese el token de restablecimiento directamente en la página de inicio de sesión:
+      Para crear una nueva contraseña, haga clic en el siguiente botón:
     </p>
 
-    <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
-      <p style="margin: 0 0 8px 0; color: #64748B; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">
-        Token de Restablecimiento Manual:
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${portalUrl}" style="display: inline-block; background-color: #2563EB; color: #ffffff; font-size: 15px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);">
+        Restablecer Contraseña
+      </a>
+    </div>
+
+    <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+      <p style="font-size: 12px; color: #64748B; margin: 0 0 6px 0;">
+        Si el botón no funciona, copie y pegue el siguiente enlace en su navegador:
       </p>
-      <div style="background-color: #ffffff; border: 1px solid #CBD5E1; border-radius: 8px; padding: 12px 14px; word-break: break-all; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; color: #1E293B; line-height: 1.4;">
-        ${resetToken}
-      </div>
+      <p style="font-size: 12px; word-break: break-all; color: #2563EB; margin: 0;">
+        <a href="${portalUrl}" style="color: #2563EB; text-decoration: underline;">${portalUrl}</a>
+      </p>
       <p style="font-size: 12px; color: #EF4444; margin-top: 10px; margin-bottom: 0; font-weight: 500;">
-        ⚠️ Este enlace y token son válidos únicamente durante 1 hora.
+        ⚠️ Este enlace es válido únicamente durante 1 hora.
       </p>
     </div>
 
     <p style="font-size: 13px; color: #94A3B8; margin-top: 24px; margin-bottom: 0;">
-      Si no solicitó este cambio, puede ignorar este mensaje de forma segura. Su contraseña actual no se modificará.
+      Si no solicitó este cambio, puede ignorar este mensaje de forma segura. Su contraseña actual permanecerá intacta.
     </p>
   ` : `
     <h2 style="color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">Hello ${recipientName},</h2>
@@ -844,18 +850,24 @@ export async function sendPasswordResetEmail(
       We received a request to reset the password for your account on the <strong>Velmar Technology</strong> Client Portal.
     </p>
     <p style="font-size: 14px; color: #64748B; margin-top: 0; margin-bottom: 24px;">
-      To reset your password, click the button below or enter the reset token directly on the login page:
+      To set a new password, click the button below:
     </p>
 
-    <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
-      <p style="margin: 0 0 8px 0; color: #64748B; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">
-        Manual Reset Token:
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${portalUrl}" style="display: inline-block; background-color: #2563EB; color: #ffffff; font-size: 15px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);">
+        Reset Password
+      </a>
+    </div>
+
+    <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+      <p style="font-size: 12px; color: #64748B; margin: 0 0 6px 0;">
+        If the button above does not work, copy and paste this link into your browser:
       </p>
-      <div style="background-color: #ffffff; border: 1px solid #CBD5E1; border-radius: 8px; padding: 12px 14px; word-break: break-all; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; color: #1E293B; line-height: 1.4;">
-        ${resetToken}
-      </div>
+      <p style="font-size: 12px; word-break: break-all; color: #2563EB; margin: 0;">
+        <a href="${portalUrl}" style="color: #2563EB; text-decoration: underline;">${portalUrl}</a>
+      </p>
       <p style="font-size: 12px; color: #EF4444; margin-top: 10px; margin-bottom: 0; font-weight: 500;">
-        ⚠️ This link and token are valid for 1 hour only.
+        ⚠️ This link is valid for 1 hour only.
       </p>
     </div>
 

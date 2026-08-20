@@ -9,11 +9,9 @@ import {
   AlertCircle,
   Globe,
   ShieldCheck,
-  KeyRound,
   Mail,
   Lock,
   CheckCircle2,
-  ArrowLeft,
 } from "lucide-react";
 import logoUrl from "@/assets/logo.png";
 import { useTranslation } from "react-i18next";
@@ -220,8 +218,15 @@ export function LoginPage() {
     e.preventDefault();
     setResetError("");
 
+    const activeToken = (resetToken || tokenFromUrl).trim();
+
+    if (!activeToken) {
+      setResetError(t("passwordReset.missingLinkError"));
+      return;
+    }
+
     const validation = resetPasswordSchema.safeParse({
-      token: resetToken.trim(),
+      token: activeToken,
       password: newPassword,
       confirmPassword: confirmNewPassword,
     });
@@ -229,7 +234,7 @@ export function LoginPage() {
     if (!validation.success) {
       const firstIssue = validation.error.issues[0];
       if (firstIssue.path.includes("token")) {
-        setResetError(t("passwordReset.tokenRequired"));
+        setResetError(t("passwordReset.missingLinkError"));
       } else if (firstIssue.path.includes("confirmPassword")) {
         setResetError(t("passwordReset.passwordMismatch"));
       } else if (firstIssue.path.includes("password")) {
@@ -250,7 +255,7 @@ export function LoginPage() {
 
     setResetLoading(true);
     try {
-      await authService.resetPassword(resetToken.trim(), newPassword, confirmNewPassword);
+      await authService.resetPassword(activeToken, newPassword, confirmNewPassword);
       toast.success(t("passwordReset.successToast"));
       // Reset form state and close modal
       setResetToken("");
@@ -613,16 +618,12 @@ export function LoginPage() {
                 <p className="text-xs text-muted-foreground mt-1">{t("passwordReset.resetEmailSentDesc")}</p>
               </div>
 
-              <div className="flex flex-col gap-2 pt-2">
+              <div className="pt-2">
                 <Button
                   type="button"
-                  onClick={() => setParam("openModal", "reset-password")}
+                  onClick={closeForgotDialog}
                   className="w-full bg-primary text-primary-foreground font-bold hover:bg-primary/90 cursor-pointer"
                 >
-                  <KeyRound className="h-4 w-4 mr-2" />
-                  {t("passwordReset.enterTokenLink")}
-                </Button>
-                <Button type="button" variant="outline" onClick={closeForgotDialog} className="w-full cursor-pointer">
                   {t("passwordReset.backToSignIn")}
                 </Button>
               </div>
@@ -664,24 +665,12 @@ export function LoginPage() {
                   )}
                 </Button>
               </AlertDialogFooter>
-
-              <div className="pt-2 text-center">
-                <Button
-                  type="button"
-                  variant="link"
-                  onClick={() => setParam("openModal", "reset-password")}
-                  className="text-xs text-primary font-semibold hover:underline cursor-pointer"
-                >
-                  {t("passwordReset.haveTokenPrompt")}{" "}
-                  <span className="font-bold underline ml-1">{t("passwordReset.enterTokenLink")}</span>
-                </Button>
-              </div>
             </form>
           )}
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Reset Password With Token Dialog (?openModal=reset-password) */}
+      {/* Reset Password Dialog (?openModal=reset-password) */}
       <AlertDialog
         open={openModal === "reset-password"}
         onOpenChange={(open) => {
@@ -709,117 +698,115 @@ export function LoginPage() {
             </Alert>
           )}
 
-          <form onSubmit={handleResetPasswordSubmit} className="space-y-3 sm:space-y-4 my-2">
-            <div>
-              <Label htmlFor="reset-token-input" className="block text-xs font-bold text-foreground mb-1">
-                {t("passwordReset.tokenLabel")}
-              </Label>
-              <Input
-                id="reset-token-input"
-                type="text"
-                value={resetToken}
-                onChange={(e) => setResetToken(e.target.value)}
-                placeholder={t("passwordReset.tokenPlaceholder")}
-                required
-                className="w-full h-10 px-3 py-2 border-input rounded-lg text-xs bg-background font-mono"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="reset-new-password" className="block text-xs font-bold text-foreground mb-1">
-                {t("passwordReset.newPasswordLabel")}
-              </Label>
-              <div className="relative">
-                <Input
-                  id="reset-new-password"
-                  type={showNewPassword ? "text" : "password"}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder={t("passwordReset.newPasswordPlaceholder")}
-                  required
-                  className="w-full h-10 px-3 py-2 pr-10 border-input rounded-lg text-sm bg-background"
-                />
+          {!resetToken && !tokenFromUrl ? (
+            <div className="space-y-4 my-2 text-center">
+              <div className="flex flex-col items-center justify-center p-4 bg-muted/30 rounded-xl border border-border">
+                <AlertCircle className="h-10 w-10 text-amber-500 mb-2" />
+                <p className="text-xs text-muted-foreground">{t("passwordReset.missingLinkError")}</p>
+              </div>
+              <div className="flex flex-col gap-2 pt-2">
                 <Button
                   type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
+                  onClick={() => setParam("openModal", "forgot-password")}
+                  className="w-full bg-primary text-primary-foreground font-bold hover:bg-primary/90 cursor-pointer"
                 >
-                  {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  <span className="sr-only">Toggle new password visibility</span>
+                  <Mail className="h-4 w-4 mr-2" />
+                  {t("passwordReset.requestNewLink")}
+                </Button>
+                <Button type="button" variant="outline" onClick={closeResetDialog} className="w-full cursor-pointer">
+                  {t("passwordReset.backToSignIn")}
                 </Button>
               </div>
             </div>
+          ) : (
+            <form onSubmit={handleResetPasswordSubmit} className="space-y-3 sm:space-y-4 my-2">
+              <div>
+                <Label htmlFor="reset-new-password" className="block text-xs font-bold text-foreground mb-1">
+                  {t("passwordReset.newPasswordLabel")}
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="reset-new-password"
+                    type={showNewPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder={t("passwordReset.newPasswordPlaceholder")}
+                    required
+                    className="w-full h-10 px-3 py-2 pr-10 border-input rounded-lg text-sm bg-background"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    <span className="sr-only">Toggle new password visibility</span>
+                  </Button>
+                </div>
+              </div>
 
-            <div>
-              <Label htmlFor="reset-confirm-password" className="block text-xs font-bold text-foreground mb-1">
-                {t("passwordReset.confirmNewPasswordLabel")}
-              </Label>
-              <div className="relative">
-                <Input
-                  id="reset-confirm-password"
-                  type={showConfirmNewPassword ? "text" : "password"}
-                  value={confirmNewPassword}
-                  onChange={(e) => setConfirmNewPassword(e.target.value)}
-                  placeholder={t("passwordReset.confirmNewPasswordPlaceholder")}
-                  required
-                  className="w-full h-10 px-3 py-2 pr-10 border-input rounded-lg text-sm bg-background"
-                />
+              <div>
+                <Label htmlFor="reset-confirm-password" className="block text-xs font-bold text-foreground mb-1">
+                  {t("passwordReset.confirmNewPasswordLabel")}
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="reset-confirm-password"
+                    type={showConfirmNewPassword ? "text" : "password"}
+                    value={confirmNewPassword}
+                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    placeholder={t("passwordReset.confirmNewPasswordPlaceholder")}
+                    required
+                    className="w-full h-10 px-3 py-2 pr-10 border-input rounded-lg text-sm bg-background"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    {showConfirmNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    <span className="sr-only">Toggle confirm password visibility</span>
+                  </Button>
+                </div>
+              </div>
+
+              <AlertDialogFooter className="flex flex-col sm:flex-row gap-2 pt-2">
+                <AlertDialogCancel
+                  type="button"
+                  onClick={closeResetDialog}
+                  className="w-full sm:w-auto cursor-pointer"
+                >
+                  {t("passwordReset.cancel")}
+                </AlertDialogCancel>
+                <Button
+                  type="submit"
+                  disabled={resetLoading || !newPassword || !confirmNewPassword}
+                  className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 font-bold cursor-pointer"
+                >
+                  {resetLoading ? (
+                    <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                  ) : (
+                    t("passwordReset.resetSubmitButton")
+                  )}
+                </Button>
+              </AlertDialogFooter>
+
+              <div className="pt-2 text-center">
                 <Button
                   type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
+                  variant="link"
+                  onClick={closeResetDialog}
+                  className="text-xs text-primary font-semibold hover:underline p-0 h-auto cursor-pointer"
                 >
-                  {showConfirmNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  <span className="sr-only">Toggle confirm password visibility</span>
+                  {t("passwordReset.backToSignIn")}
                 </Button>
               </div>
-            </div>
-
-            <AlertDialogFooter className="flex flex-col sm:flex-row gap-2 pt-2">
-              <AlertDialogCancel
-                type="button"
-                onClick={closeResetDialog}
-                className="w-full sm:w-auto cursor-pointer"
-              >
-                {t("passwordReset.cancel")}
-              </AlertDialogCancel>
-              <Button
-                type="submit"
-                disabled={resetLoading || !resetToken || !newPassword || !confirmNewPassword}
-                className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 font-bold cursor-pointer"
-              >
-                {resetLoading ? (
-                  <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                ) : (
-                  t("passwordReset.resetSubmitButton")
-                )}
-              </Button>
-            </AlertDialogFooter>
-
-            <div className="pt-2 text-center flex items-center justify-between">
-              <Button
-                type="button"
-                variant="link"
-                onClick={() => setParam("openModal", "forgot-password")}
-                className="text-xs text-muted-foreground hover:text-primary p-0 h-auto cursor-pointer"
-              >
-                <ArrowLeft className="h-3 w-3 mr-1" />
-                {t("passwordReset.requestTokenLink")}
-              </Button>
-              <Button
-                type="button"
-                variant="link"
-                onClick={closeResetDialog}
-                className="text-xs text-primary font-semibold hover:underline p-0 h-auto cursor-pointer"
-              >
-                {t("passwordReset.backToSignIn")}
-              </Button>
-            </div>
-          </form>
+            </form>
+          )}
         </AlertDialogContent>
       </AlertDialog>
     </div>
