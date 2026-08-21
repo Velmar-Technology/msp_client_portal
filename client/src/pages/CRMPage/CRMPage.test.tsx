@@ -342,5 +342,46 @@ describe("CRMPage", () => {
       expect(crmService.updateQuotationStatus).toHaveBeenCalledWith("quote-1", "ACCEPTED");
     });
   });
+
+  test("allows editing lead info from detail sheet and submits update", async () => {
+    (crmService.updateLead as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ...mockLeads[0],
+      contact_name: "Bruce Updated",
+      company_name: "Wayne Industries Global",
+      expected_revenue: 1500,
+    });
+
+    useCRMStore.setState({
+      selectedLead: mockLeads[0],
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/crm?lead=lead-1"]}>
+        <CRMPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Bruce Wayne")).toBeInTheDocument();
+
+    const editBtn = screen.getByRole("button", { name: /Edit Details/i });
+    fireEvent.click(editBtn);
+
+    const nameInput = screen.getByDisplayValue("Bruce Wayne");
+    fireEvent.change(nameInput, { target: { value: "Bruce Updated" } });
+
+    const companyInput = screen.getByDisplayValue("Wayne Enterprises");
+    fireEvent.change(companyInput, { target: { value: "Wayne Industries Global" } });
+
+    const saveBtn = screen.getByRole("button", { name: /Save Changes/i });
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(crmService.updateLead).toHaveBeenCalledWith("lead-1", expect.objectContaining({
+        contactName: "Bruce Updated",
+        companyName: "Wayne Industries Global",
+      }));
+    });
+  });
 });
+
 

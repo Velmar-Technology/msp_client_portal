@@ -64,6 +64,7 @@ export function CRMPage() {
     fetchUpcomingActivities,
     fetchLeadDetail,
     createLead,
+    updateLead,
     updateLeadStage,
     bulkUpdateStage,
     sendQuotation,
@@ -379,6 +380,9 @@ export function CRMPage() {
           quotations={leadQuotations}
           customerSubscriptions={customerSubsForSelectedLead}
           actionLoading={actionLoading}
+          onUpdateLead={async (id, payload) => {
+            await updateLead(id, payload);
+          }}
           onUpdateStage={async (id, stage, lostReason) => {
             await updateLeadStage(id, stage, lostReason);
           }}

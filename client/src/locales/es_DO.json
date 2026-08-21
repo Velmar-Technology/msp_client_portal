@@ -10,7 +10,6 @@
     "saving": "Guardando..."
   },
   "nav": {
-
     "dashboard": "Panel de Control",
     "tickets": "Tickets",
     "plans": "Planes",
@@ -667,7 +666,6 @@
     "active": "Activo",
     "cancelledStatus": "Cancelado",
     "disabledStatus": "Deshabilitado",
-
     "editAction": "Editar",
     "devicesLabel": "Dispositivos",
     "cycleLabel": "Ciclo",
@@ -1449,8 +1447,13 @@
     "companyNamePlaceholder": "ej. Acme Corp",
     "contactPhone": "Número de Teléfono",
     "contactPhonePlaceholder": "+1 809 555 1234",
-    "notes": "Notas Internas / Descripción",
-    "notesPlaceholder": "El cliente necesita cobertura de endpoints 24/7...",
+    "notes": "Notas Internas / Descripción del Prospecto",
+    "notesPlaceholder": "El cliente necesita cobertura 24/7 de endpoints...",
+    "editLead": "Editar Detalles",
+    "saveLead": "Guardar Cambios",
+    "cancelEdit": "Cancelar",
+    "leadUpdatedSuccess": "¡Detalles del prospecto actualizados correctamente!",
+    "leadUpdateError": "Error al actualizar los detalles del prospecto.",
     "createLead": "Crear Prospecto",
     "createSuccess": "¡Prospecto creado exitosamente!",
     "stageUpdatedSuccess": "¡Etapa del prospecto actualizada con éxito!",
@@ -1531,7 +1534,13 @@
       "call": "Llamada Telefónica",
       "meeting": "Reunión",
       "email": "Seguimiento por Correo",
-      "note": "Nota Interna"
+      "note": "Nota Interna",
+      "quoteSent": "Cotización Enviada",
+      "quoteReminder": "Recordatorio de Seguimiento",
+      "quoteStatusChange": "Estado de Cotización",
+      "stageChange": "Cambio de Etapa",
+      "planAssigned": "Plan Asignado",
+      "subModified": "Cambio de Suscripción"
     },
     "followUps": {
       "title": "Seguimientos y Actividades Pendientes"
@@ -1564,6 +1573,17 @@
       "contactEmailInvalid": "Ingrese un correo electrónico válido",
       "planRequired": "Seleccione un plan",
       "activityTitleRequired": "El título de la actividad es obligatorio"
+    },
+    "systemActivity": {
+      "leadCreated": "Prospecto Creado",
+      "stageChanged": "Etapa Cambiada: {{from}} → {{to}}",
+      "quotationSent": "Cotización Enviada: {{number}}",
+      "followUpDue": "Recordatorio de Seguimiento Pendiente: {{number}}",
+      "quoteReminderSent": "Recordatorio de Cotización Enviado: {{number}}",
+      "quotationStatus": "Cotización {{status}}: {{number}}",
+      "leadConverted": "Prospecto Convertido: Suscripción Activa Creada ({{plan}})",
+      "subscriptionModified": "Suscripción Modificada ({{plan}})",
+      "subscriptionCancelled": "Suscripción Cancelada"
     }
   }
 }

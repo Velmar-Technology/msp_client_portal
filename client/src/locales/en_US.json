@@ -10,7 +10,6 @@
     "saving": "Saving..."
   },
   "nav": {
-
     "dashboard": "Dashboard",
     "tickets": "Tickets",
     "plans": "Plans",
@@ -667,7 +666,6 @@
     "active": "Active",
     "cancelledStatus": "Cancelled",
     "disabledStatus": "Disabled",
-
     "editAction": "Edit",
     "devicesLabel": "Devices",
     "cycleLabel": "Cycle",
@@ -787,7 +785,6 @@
   "devices": {
     "title": "Devices",
     "subtitle": "Manage your active device licenses, generate activation OTPs, and provision client storage.",
-
     "tableId": "Device ID",
     "tableSlot": "Slot",
     "tableStatus": "Status",
@@ -1161,7 +1158,6 @@
     "pageOf": "Page {page} of {total}"
   },
   "financial": {
-
     "title": "Financial Overview",
     "subtitle": "Real-time monthly recurring income, cashflow ledger, and infrastructure overhead.",
     "export": "Export Report",
@@ -1463,6 +1459,11 @@
     "contactPhonePlaceholder": "+1 809 555 1234",
     "notes": "Internal Notes / Lead Description",
     "notesPlaceholder": "Client needs 24/7 endpoint coverage...",
+    "editLead": "Edit Details",
+    "saveLead": "Save Changes",
+    "cancelEdit": "Cancel",
+    "leadUpdatedSuccess": "Lead details updated successfully!",
+    "leadUpdateError": "Failed to update lead details.",
     "createLead": "Create Lead",
     "createSuccess": "Lead created successfully!",
     "stageUpdatedSuccess": "Lead stage updated successfully!",
@@ -1543,7 +1544,13 @@
       "call": "Phone Call",
       "meeting": "Meeting",
       "email": "Email Follow-up",
-      "note": "Internal Note"
+      "note": "Internal Note",
+      "quoteSent": "Quotation Sent",
+      "quoteReminder": "Follow-up Reminder",
+      "quoteStatusChange": "Quotation Status",
+      "stageChange": "Stage Change",
+      "planAssigned": "Plan Assigned",
+      "subModified": "Subscription Change"
     },
     "followUps": {
       "title": "Due Follow-ups & Scheduled Activities"
@@ -1576,6 +1583,17 @@
       "contactEmailInvalid": "Please provide a valid email address",
       "planRequired": "Please select a plan",
       "activityTitleRequired": "Activity title is required"
+    },
+    "systemActivity": {
+      "leadCreated": "Lead Created",
+      "stageChanged": "Stage Changed: {{from}} → {{to}}",
+      "quotationSent": "Quotation Sent: {{number}}",
+      "followUpDue": "Follow-up Reminder Due: {{number}}",
+      "quoteReminderSent": "Quotation Reminder Sent: {{number}}",
+      "quotationStatus": "Quotation {{status}}: {{number}}",
+      "leadConverted": "Lead Converted: Active Subscription Created ({{plan}})",
+      "subscriptionModified": "Subscription Modified ({{plan}})",
+      "subscriptionCancelled": "Subscription Cancelled"
     }
   }
 }
