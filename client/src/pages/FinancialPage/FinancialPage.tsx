@@ -57,7 +57,7 @@ export function FinancialPage() {
     transactions,
   } = useFinancialDashboard();
 
-  const totalExpensesFormatted = expenseKpi ? expenseKpi.value : "$0.00";
+  const totalExpensesFormatted = kpis.find((kpi) => kpi.key === "expenses")?.value ?? "$0.00";
   const showSkeleton = useDeferredLoading(isLoading, SKELETON_DISPLAY_DELAY_MS);
 
   if (isLoading) {
