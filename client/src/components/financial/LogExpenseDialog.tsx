@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { expenseService } from "@/services/expenseService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/shared";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -174,11 +175,10 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
           {/* Date */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-zinc-750 dark:text-zinc-300">{t("financial.dateLabel")}</label>
-            <Input
-              type="date"
+            <DatePicker
               value={expenseDate}
-              onChange={(e) => setExpenseDate(e.target.value)}
-              className="cursor-pointer"
+              onChange={setExpenseDate}
+              className="w-full"
             />
           </div>
 

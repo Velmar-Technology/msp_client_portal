@@ -7,7 +7,8 @@
     "delete": "Eliminar",
     "edit": "Editar",
     "loading": "Cargando...",
-    "saving": "Guardando..."
+    "saving": "Guardando...",
+    "pickDate": "Seleccionar fecha"
   },
   "nav": {
     "dashboard": "Panel de Control",

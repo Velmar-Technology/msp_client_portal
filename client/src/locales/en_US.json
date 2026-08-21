@@ -7,7 +7,8 @@
     "delete": "Delete",
     "edit": "Edit",
     "loading": "Loading...",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "pickDate": "Pick a date"
   },
   "nav": {
     "dashboard": "Dashboard",

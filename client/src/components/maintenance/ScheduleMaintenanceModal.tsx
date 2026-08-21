@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { maintenanceService, type DeviceMaintenance, type MaintenanceType } from "@/services/maintenanceService";
 import type { SubscriptionEquipment } from "@/services/equipmentService";
+import { DatePicker } from "@/components/shared";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -274,13 +275,12 @@ export function ScheduleMaintenanceModal({
               <label htmlFor="maint-custom-date" className="block text-[10px] uppercase font-bold text-zinc-400">
                 {t("maintenance.labelDatePicker")}
               </label>
-              <input
+              <DatePicker
                 id="maint-custom-date"
-                type="date"
-                min={new Date().toISOString().split("T")[0]}
                 value={customDate}
-                onChange={(e) => setCustomDate(e.target.value)}
-                className="w-full h-8 px-2.5 border border-zinc-200 dark:border-zinc-800 rounded-md bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-zinc-400 font-mono text-xs cursor-pointer"
+                onChange={setCustomDate}
+                disabledBefore={new Date()}
+                className="w-full h-8 text-xs"
               />
             </div>
           )}

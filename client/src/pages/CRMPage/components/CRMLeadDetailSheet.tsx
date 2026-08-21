@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Lead, LeadStage, LeadPriority, LeadActivity, Quotation, QuotationStatus, UpdateLeadPayload } from "@/services/crmService";
+import { DatePicker } from "@/components/shared";
 import { getActivityTypeLabel, resolveActivityTitle } from "../utils/activityTitles";
 import type { Plan } from "@/services/planService";
 import type { Subscription } from "@/services/subscriptionService";
@@ -254,7 +255,7 @@ export function CRMLeadDetailSheet({
       activityType,
       title: activityTitle.trim(),
       summary: activitySummary.trim() || undefined,
-      dueDate: activityDueDate ? new Date(activityDueDate).toISOString() : undefined,
+      dueDate: activityDueDate ? new Date(`${activityDueDate}T09:00:00.000Z`).toISOString() : undefined,
     });
 
     if (!parsed.success) {
@@ -1018,14 +1019,13 @@ export function CRMLeadDetailSheet({
                     <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
                       {t("crm.dueDate")}
                     </label>
-                    <Input
-                      type="datetime-local"
+                    <DatePicker
                       value={activityDueDate}
-                      onChange={(e) => {
-                        setActivityDueDate(e.target.value);
-                        if (e.target.value) setActivityIsPending(true);
+                      onChange={(v) => {
+                        setActivityDueDate(v);
+                        if (v) setActivityIsPending(true);
                       }}
-                      className="h-8.5 text-xs bg-background text-foreground"
+                      className="w-full h-8.5 text-xs bg-background"
                     />
                   </div>
                 </div>
