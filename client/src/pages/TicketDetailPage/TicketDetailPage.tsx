@@ -12,6 +12,16 @@ import { Page } from '@/components/Page';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
+import {
+  Attachment,
+  AttachmentAction,
+  AttachmentActions,
+  AttachmentContent,
+  AttachmentDescription,
+  AttachmentMedia,
+  AttachmentTitle,
+  AttachmentTrigger,
+} from '@/components/ui/attachment';
 
 const statusColor: Record<string, string> = {
   OPEN: 'bg-primary/10 text-primary border-primary/20',
@@ -387,24 +397,32 @@ export function TicketDetailPage() {
                                 {resp.attachments.map((att) => {
                                   const downloadUrl = getAttachmentUrl(att.path);
                                   return (
-                                    <div key={att.id} className="flex items-center justify-between p-1.5 rounded-md text-xs border border-primary-foreground/20 bg-primary-foreground/10">
-                                      <div
-                                        className="flex items-center gap-1.5 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
-                                        onClick={() => setPreviewFile({ filename: att.filename, url: downloadUrl, mimeType: att.mime_type })}
-                                      >
-                                        <span>{getAttachmentIcon(att.mime_type)}</span>
-                                        <span className="truncate max-w-37.5 font-medium" title={att.filename}>{att.filename}</span>
-                                      </div>
-                                      <a
-                                        href={downloadUrl}
-                                        download={att.filename}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="p-1 rounded-full hover:bg-primary-foreground/20 transition-colors cursor-pointer shrink-0"
-                                      >
-                                        <Download className="h-3.5 w-3.5" />
-                                      </a>
-                                    </div>
+                                    <Attachment
+                                      key={att.id}
+                                      size="sm"
+                                      className="w-full border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground has-[>a,>button]:hover:bg-primary-foreground/20"
+                                    >
+                                      <AttachmentMedia className="bg-primary-foreground/10 text-primary-foreground">
+                                        {getAttachmentIcon(att.mime_type)}
+                                      </AttachmentMedia>
+                                      <AttachmentContent>
+                                        <AttachmentTitle>{att.filename}</AttachmentTitle>
+                                      </AttachmentContent>
+                                      <AttachmentActions>
+                                        <AttachmentAction asChild aria-label={t('ticketDetail.downloadFile')} className="hover:text-primary-foreground">
+                                          <a href={downloadUrl} download={att.filename} target="_blank" rel="noreferrer">
+                                            <Download />
+                                          </a>
+                                        </AttachmentAction>
+                                      </AttachmentActions>
+                                      <AttachmentTrigger asChild>
+                                        <button
+                                          type="button"
+                                          onClick={() => setPreviewFile({ filename: att.filename, url: downloadUrl, mimeType: att.mime_type })}
+                                          aria-label={`${t('ticketDetail.previewFile')}: ${att.filename}`}
+                                        />
+                                      </AttachmentTrigger>
+                                    </Attachment>
                                   );
                                 })}
                               </div>
@@ -441,24 +459,28 @@ export function TicketDetailPage() {
                               {resp.attachments.map((att) => {
                                 const downloadUrl = getAttachmentUrl(att.path);
                                 return (
-                                  <div key={att.id} className="flex items-center justify-between p-1.5 rounded-md text-xs border border-border bg-card">
-                                    <div
-                                      className="flex items-center gap-1.5 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
-                                      onClick={() => setPreviewFile({ filename: att.filename, url: downloadUrl, mimeType: att.mime_type })}
-                                    >
+                                  <Attachment key={att.id} size="sm" className="w-full">
+                                    <AttachmentMedia>
                                       {getAttachmentIcon(att.mime_type)}
-                                      <span className="truncate max-w-37.5 font-medium" title={att.filename}>{att.filename}</span>
-                                    </div>
-                                    <a
-                                      href={downloadUrl}
-                                      download={att.filename}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="p-1 rounded-full hover:bg-muted text-muted-foreground transition-colors cursor-pointer shrink-0"
-                                    >
-                                      <Download className="h-3.5 w-3.5" />
-                                    </a>
-                                  </div>
+                                    </AttachmentMedia>
+                                    <AttachmentContent>
+                                      <AttachmentTitle>{att.filename}</AttachmentTitle>
+                                    </AttachmentContent>
+                                    <AttachmentActions>
+                                      <AttachmentAction asChild aria-label={t('ticketDetail.downloadFile')}>
+                                        <a href={downloadUrl} download={att.filename} target="_blank" rel="noreferrer">
+                                          <Download />
+                                        </a>
+                                      </AttachmentAction>
+                                    </AttachmentActions>
+                                    <AttachmentTrigger asChild>
+                                      <button
+                                        type="button"
+                                        onClick={() => setPreviewFile({ filename: att.filename, url: downloadUrl, mimeType: att.mime_type })}
+                                        aria-label={`${t('ticketDetail.previewFile')}: ${att.filename}`}
+                                      />
+                                    </AttachmentTrigger>
+                                  </Attachment>
                                 );
                               })}
                             </div>
@@ -475,17 +497,24 @@ export function TicketDetailPage() {
               {responseFiles.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-2">
                   {responseFiles.map((file, idx) => (
-                    <div key={idx} className="flex items-center gap-1.5 px-2 py-1 bg-card border border-border rounded-md text-xs text-foreground">
-                      <Paperclip className="h-3 w-3 text-muted-foreground" />
-                      <span className="truncate max-w-30 font-medium">{file.name}</span>
-                      <button
-                        type="button"
-                        onClick={() => setResponseFiles(prev => prev.filter((_, i) => i !== idx))}
-                        className="p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
+                    <Attachment key={`${file.name}-${idx}`} size="sm" state="idle">
+                      <AttachmentMedia>
+                        {getAttachmentIcon(file.type)}
+                      </AttachmentMedia>
+                      <AttachmentContent>
+                        <AttachmentTitle>{file.name}</AttachmentTitle>
+                        <AttachmentDescription>{formatFileSize(file.size)}</AttachmentDescription>
+                      </AttachmentContent>
+                      <AttachmentActions>
+                        <AttachmentAction
+                          aria-label={t('ticketDetail.removeAttachment')}
+                          onClick={() => setResponseFiles(prev => prev.filter((_, i) => i !== idx))}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <X />
+                        </AttachmentAction>
+                      </AttachmentActions>
+                    </Attachment>
                   ))}
                 </div>
               )}
@@ -743,36 +772,29 @@ export function TicketDetailPage() {
                   {attachments.map((att) => {
                     const downloadUrl = getAttachmentUrl(att.path);
                     return (
-                      <div
-                        key={att.id}
-                        className="flex items-center justify-between p-2 bg-muted/30 hover:bg-muted/60 border border-border rounded-lg transition-colors group"
-                      >
-                        <div
-                          className="flex items-center gap-2 min-w-0 cursor-pointer"
-                          onClick={() => setPreviewFile({ filename: att.filename, url: downloadUrl, mimeType: att.mime_type })}
-                        >
-                          <div className="p-1.5 bg-card rounded border border-border shrink-0">
-                            {getAttachmentIcon(att.mime_type)}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs font-semibold text-foreground truncate" title={att.filename}>
-                              {att.filename}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground font-mono">
-                              {formatFileSize(att.size_bytes)}
-                            </p>
-                          </div>
-                        </div>
-                        <a
-                          href={downloadUrl}
-                          download={att.filename}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                        >
-                          <Download className="h-3.5 w-3.5" />
-                        </a>
-                      </div>
+                      <Attachment key={att.id} className="w-full">
+                        <AttachmentMedia>
+                          {getAttachmentIcon(att.mime_type)}
+                        </AttachmentMedia>
+                        <AttachmentContent>
+                          <AttachmentTitle>{att.filename}</AttachmentTitle>
+                          <AttachmentDescription>{formatFileSize(att.size_bytes)}</AttachmentDescription>
+                        </AttachmentContent>
+                        <AttachmentActions>
+                          <AttachmentAction asChild aria-label={t('ticketDetail.downloadFile')}>
+                            <a href={downloadUrl} download={att.filename} target="_blank" rel="noreferrer">
+                              <Download />
+                            </a>
+                          </AttachmentAction>
+                        </AttachmentActions>
+                        <AttachmentTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={() => setPreviewFile({ filename: att.filename, url: downloadUrl, mimeType: att.mime_type })}
+                            aria-label={`${t('ticketDetail.previewFile')}: ${att.filename}`}
+                          />
+                        </AttachmentTrigger>
+                      </Attachment>
                     );
                   })}
                 </div>
@@ -780,6 +802,17 @@ export function TicketDetailPage() {
                 <p className="text-xs text-muted-foreground italic text-center py-2">
                   {t('ticketDetail.noAttachments')}
                 </p>
+              )}
+
+              {uploading && (
+                <Attachment state="uploading" className="w-full">
+                  <AttachmentMedia>
+                    <Upload />
+                  </AttachmentMedia>
+                  <AttachmentContent>
+                    <AttachmentTitle>{t('ticketDetail.uploading')}</AttachmentTitle>
+                  </AttachmentContent>
+                </Attachment>
               )}
 
               <div

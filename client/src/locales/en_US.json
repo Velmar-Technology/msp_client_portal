@@ -483,6 +483,7 @@
     "responseError": "Failed to send response",
     "previewNotAvailable": "Preview not available for this file type.",
     "downloadFile": "Download File",
+    "previewFile": "Preview file",
     "closePreview": "Close preview",
     "reopen": "Reopen",
     "closeTicket": "Close",

@@ -483,6 +483,7 @@
     "responseError": "Error al enviar la respuesta",
     "previewNotAvailable": "Vista previa no disponible para este tipo de archivo.",
     "downloadFile": "Descargar Archivo",
+    "previewFile": "Ver archivo",
     "closePreview": "Cerrar vista previa",
     "reopen": "Reabrir",
     "closeTicket": "Cerrar",
