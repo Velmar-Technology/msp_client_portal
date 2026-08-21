@@ -1,8 +1,16 @@
 import api from "@/services/api";
+import type { Invoice } from "@/services/invoiceService";
 
 export type LeadStage = "NEW" | "QUALIFIED" | "PROPOSITION" | "WON" | "LOST";
 export type LeadPriority = "LOW" | "MEDIUM" | "HIGH";
 export type QuotationStatus = "DRAFT" | "SENT" | "ACCEPTED" | "DECLINED" | "EXPIRED";
+
+export interface ConvertLeadResult {
+  lead: Lead;
+  subscription: { id: string; status: string; plan: string; equipment_count: number };
+  invoice?: Invoice;
+  clientCreated?: boolean;
+}
 
 export interface Lead {
   id: string;
@@ -217,6 +225,10 @@ export const crmService = {
     return response.data.data;
   },
 
+  async deleteLead(id: string): Promise<void> {
+    await api.delete(`/crm/leads/${id}`);
+  },
+
   async sendQuotation(data: SendQuotationPayload): Promise<Quotation> {
     const response = await api.post("/crm/quotations/send", data);
     return response.data.data;
@@ -237,8 +249,8 @@ export const crmService = {
     return response.data.data;
   },
 
-  async convertLeadToSubscription(leadId: string, data: ConvertLeadPayload = {}): Promise<{ lead: Lead; subscription: { id: string; status: string; plan: string; equipment_count: number } }> {
-    const response = await api.post(`/crm/leads/${leadId}/convert`, data);
+  async convertLeadToSubscription(leadId: string, data: ConvertLeadPayload = {}): Promise<ConvertLeadResult> {
+    const response = await api.post(`/crm/leads/${leadId}/convert`, { ...data, leadId });
     return response.data.data;
   },
 

@@ -51,7 +51,7 @@ export class LeadActivityRepository extends BaseRepository<LeadActivity> {
     const result = await db
       .insert(leadActivities)
       .values({
-        lead_id: data.leadId,
+        lead_id: data.leadId!,
         tenant_id: tenantId,
         user_id: userId || null,
         activity_type: data.activityType,

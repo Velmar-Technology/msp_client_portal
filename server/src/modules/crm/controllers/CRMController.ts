@@ -61,6 +61,11 @@ export class CRMController {
     res.json({ success: true, data: lead });
   }
 
+  async deleteLead(req: Request, res: Response): Promise<void> {
+    await this.service.deleteLead(req.params.id as string, req.user!.tenantId);
+    res.json({ success: true, message: 'Lead deleted successfully' });
+  }
+
   async sendQuotation(req: Request, res: Response): Promise<void> {
     const data = SendCrmQuotationDTO.parse(req.body);
     const quotation = await this.service.sendQuotation(data, req.user!.tenantId, req.user!.userId);

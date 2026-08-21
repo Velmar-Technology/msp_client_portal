@@ -39,6 +39,9 @@ router.get('/leads/:id', (req, res) => crmController.getLeadById(req, res));
 /** PATCH /api/v1/crm/leads/:id — Update lead details */
 router.patch('/leads/:id', validate(UpdateLeadDTO), (req, res) => crmController.updateLead(req, res));
 
+/** DELETE /api/v1/crm/leads/:id — Delete / archive a lead */
+router.delete('/leads/:id', (req, res) => crmController.deleteLead(req, res));
+
 /** PATCH /api/v1/crm/leads/:id/stage — Update lead pipeline stage */
 router.patch('/leads/:id/stage', validate(UpdateLeadStageDTO), (req, res) => crmController.updateStage(req, res));
 

@@ -5,7 +5,18 @@ import { DataTable, type DataTableFilter, type DataTableBulkAction } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Lead, LeadStage, LeadPriority } from "@/services/crmService";
-import { Calendar, Phone, Mail, Building2, User, ChevronRight, MoreHorizontal, ArrowUpRight, Ban } from "lucide-react";
+import {
+  Calendar,
+  Phone,
+  Mail,
+  Building2,
+  User,
+  ChevronRight,
+  MoreHorizontal,
+  ArrowUpRight,
+  Ban,
+  Trash2,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -14,6 +25,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 interface CRMDataTableProps {
   leads: Lead[];
@@ -22,6 +43,8 @@ interface CRMDataTableProps {
   onSelectLead: (lead: Lead) => void;
   onUpdateStage: (id: string, stage: LeadStage) => void;
   onBulkUpdateStage?: (ids: string[], stage: LeadStage) => void;
+  onDeleteLead?: (id: string) => void;
+  onBulkDeleteLeads?: (ids: string[]) => void;
   search: string;
   onSearchChange: (val: string) => void;
   stageFilter: string;
@@ -40,6 +63,8 @@ export function CRMDataTable({
   onSelectLead,
   onUpdateStage,
   onBulkUpdateStage,
+  onDeleteLead,
+  onBulkDeleteLeads,
   search,
   onSearchChange,
   stageFilter,
@@ -52,6 +77,9 @@ export function CRMDataTable({
 }: CRMDataTableProps) {
   const { t, i18n } = useTranslation();
   const isSpanish = i18n.language.startsWith("es");
+
+  const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
+  const [bulkToDelete, setBulkToDelete] = useState<string[] | null>(null);
 
   const getStageBadge = (stage: LeadStage) => {
     switch (stage) {
@@ -248,7 +276,7 @@ export function CRMDataTable({
                     <MoreHorizontal className="h-3.5 w-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-44 bg-card text-foreground border border-border">
+                <DropdownMenuContent align="end" className="w-48 bg-card text-foreground border border-border">
                   <DropdownMenuLabel className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
                     {t("crm.quickStage")}
                   </DropdownMenuLabel>
@@ -271,14 +299,26 @@ export function CRMDataTable({
                     <ArrowUpRight className="h-3.5 w-3.5 mr-1" />
                     {t("crm.stages.won")}
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-border" />
                   <DropdownMenuItem
                     onClick={() => onUpdateStage(lead.id, "LOST")}
-                    className="text-xs text-destructive cursor-pointer"
+                    className="text-xs text-amber-600 cursor-pointer"
                   >
                     <Ban className="h-3.5 w-3.5 mr-1" />
                     {t("crm.stages.lost")}
                   </DropdownMenuItem>
+
+                  {onDeleteLead && (
+                    <>
+                      <DropdownMenuSeparator className="bg-border" />
+                      <DropdownMenuItem
+                        onClick={() => setLeadToDelete(lead)}
+                        className="text-xs text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+                      >
+                        <Trash2 className="h-3.5 w-3.5 mr-1 text-destructive" />
+                        {t("crm.deleteLead") || "Delete / Archive"}
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -286,7 +326,7 @@ export function CRMDataTable({
         },
       },
     ],
-    [t, isSpanish, onSelectLead, onUpdateStage, now],
+    [t, isSpanish, onSelectLead, onUpdateStage, onDeleteLead, now],
   );
 
   const filters: DataTableFilter[] = useMemo(
@@ -342,8 +382,19 @@ export function CRMDataTable({
           }
         },
       },
+      ...(onBulkDeleteLeads
+        ? [
+            {
+              label: t("crm.bulkDelete") || "Delete Selected",
+              variant: "destructive" as const,
+              onClick: (selectedRows: Lead[]) => {
+                setBulkToDelete(selectedRows.map((row) => row.id));
+              },
+            },
+          ]
+        : []),
     ],
-    [t, onUpdateStage, onBulkUpdateStage],
+    [t, onUpdateStage, onBulkUpdateStage, onBulkDeleteLeads],
   );
 
   const totalPages = Math.ceil(total / limit) || 1;
@@ -372,6 +423,78 @@ export function CRMDataTable({
         }}
         noDataMessage={t("crm.noLeadsFound")}
       />
+
+      {/* Confirmation Dialog: Single Delete */}
+      <AlertDialog open={Boolean(leadToDelete)} onOpenChange={(open) => !open && setLeadToDelete(null)}>
+        <AlertDialogContent className="sm:max-w-md bg-card text-foreground border border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-sm font-bold flex items-center gap-2 text-destructive">
+              <Trash2 className="h-4 w-4" />
+              {t("crm.deleteLeadConfirmTitle") || "Delete Opportunity?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground leading-normal">
+              {leadToDelete &&
+                (t("crm.deleteLeadConfirmDesc", { name: leadToDelete.contact_name }) ||
+                  `Are you sure you want to delete the opportunity for ${leadToDelete.contact_name}?`)}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="pt-2 sm:justify-end gap-2">
+            <AlertDialogCancel
+              onClick={() => setLeadToDelete(null)}
+              className="text-xs cursor-pointer"
+            >
+              {t("common.cancel") || "Cancel"}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (leadToDelete && onDeleteLead) {
+                  onDeleteLead(leadToDelete.id);
+                  setLeadToDelete(null);
+                }
+              }}
+              className="text-xs font-semibold bg-destructive hover:bg-destructive/90 text-destructive-foreground cursor-pointer"
+            >
+              {t("common.delete") || "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirmation Dialog: Bulk Delete */}
+      <AlertDialog open={Boolean(bulkToDelete)} onOpenChange={(open) => !open && setBulkToDelete(null)}>
+        <AlertDialogContent className="sm:max-w-md bg-card text-foreground border border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-sm font-bold flex items-center gap-2 text-destructive">
+              <Trash2 className="h-4 w-4" />
+              {t("crm.bulkDeleteConfirmTitle") || "Delete Selected Opportunities?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground leading-normal">
+              {bulkToDelete &&
+                (t("crm.bulkDeleteConfirmDesc", { count: bulkToDelete.length }) ||
+                  `Are you sure you want to delete ${bulkToDelete.length} selected opportunities?`)}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="pt-2 sm:justify-end gap-2">
+            <AlertDialogCancel
+              onClick={() => setBulkToDelete(null)}
+              className="text-xs cursor-pointer"
+            >
+              {t("common.cancel") || "Cancel"}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (bulkToDelete && onBulkDeleteLeads) {
+                  onBulkDeleteLeads(bulkToDelete);
+                  setBulkToDelete(null);
+                }
+              }}
+              className="text-xs font-semibold bg-destructive hover:bg-destructive/90 text-destructive-foreground cursor-pointer"
+            >
+              {t("crm.bulkDelete") || "Delete Selected"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

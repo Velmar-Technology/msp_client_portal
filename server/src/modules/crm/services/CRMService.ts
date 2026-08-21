@@ -1,9 +1,15 @@
+import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
+import { env } from '@shared/config/env';
+import { hashPassword } from '@shared/utils/passwordUtils';
+import { logger } from '@shared/utils/logger';
 import { LeadRepository, leadRepository } from '@modules/crm/repositories/LeadRepository';
 import { LeadActivityRepository, leadActivityRepository } from '@modules/crm/repositories/LeadActivityRepository';
 import { QuotationRepository, quotationRepository } from '@modules/crm/repositories/QuotationRepository';
 import { UserRepository, userRepository } from '@modules/auth';
 import { PlanRepository, planRepository, SubscriptionService, subscriptionService } from '@modules/subscriptions';
-import { sendQuotationEmail } from '@shared/utils/emailService';
+import { InvoiceRepository, invoiceRepository } from '@modules/billing';
+import { sendPasswordResetEmail, sendQuotationEmail } from '@shared/utils/emailService';
 import { NotFoundError, ValidationError } from '@shared/errors';
 import {
   Lead,
@@ -14,6 +20,8 @@ import {
   CrmPipelineStats,
   Subscription,
   SubscriptionStatus,
+  UserRole,
+  Invoice,
 } from '@shared/types';
 import {
   CreateLeadInput,
@@ -61,6 +69,7 @@ export class CRMService {
     private userRepo: UserRepository = userRepository,
     private planRepo: PlanRepository = planRepository,
     private subService: SubscriptionService = subscriptionService,
+    private invoiceRepo: InvoiceRepository = invoiceRepository,
   ) {}
 
   async getLeads(tenantId: string, query: GetLeadsQueryInput = {}): Promise<{ leads: Lead[]; total: number }> {
@@ -164,6 +173,14 @@ export class CRMService {
     userId?: string,
   ): Promise<Lead> {
     return this.updateLead(id, { stage, lostReason, probability: STAGE_PROBABILITIES[stage] }, tenantId, userId);
+  }
+
+  async deleteLead(id: string, tenantId: string): Promise<void> {
+    await this.getLeadById(id, tenantId);
+    const deleted = await this.leadRepo.deleteLead(id, tenantId);
+    if (!deleted) {
+      throw new NotFoundError('Lead not found');
+    }
   }
 
   async sendQuotation(data: SendCrmQuotationInput, tenantId: string, userId?: string): Promise<Quotation> {
@@ -341,18 +358,56 @@ export class CRMService {
     data: ConvertLeadToSubscriptionInput,
     tenantId: string,
     userId?: string,
-  ): Promise<{ lead: Lead; subscription: Subscription }> {
+  ): Promise<{ lead: Lead; subscription: Subscription; invoice?: Invoice; clientCreated?: boolean }> {
+    if (!data.leadId) {
+      throw new ValidationError('Lead ID is required');
+    }
     const lead = await this.getLeadById(data.leadId, tenantId);
 
     let targetClientId = lead.client_id;
+    let clientCreated = false;
+
     if (!targetClientId) {
       const existingUser = await this.userRepo.findByEmail(lead.contact_email);
       if (existingUser && existingUser.tenant_id === tenantId) {
         targetClientId = existingUser.id;
         await this.leadRepo.updateLead(lead.id, { clientId: targetClientId }, tenantId);
+      } else if (!existingUser) {
+        // Auto-create client user if account does not exist
+        const tempPassword = crypto.randomBytes(24).toString('hex');
+        const password_hash = await hashPassword(tempPassword);
+        const newUser = await this.userRepo.create({
+          email: lead.contact_email,
+          name: lead.contact_name,
+          password_hash,
+          role: UserRole.CLIENT,
+          tenant_id: tenantId,
+          client_type: 'CLIENT',
+          phone_number: lead.contact_phone || undefined,
+        });
+
+        targetClientId = newUser.id;
+        clientCreated = true;
+        await this.leadRepo.updateLead(lead.id, { clientId: targetClientId }, tenantId);
+
+        // Generate password setup token valid for 72h
+        const resetToken = jwt.sign({ userId: newUser.id }, env.JWT_SECRET, { expiresIn: '72h' });
+        try {
+          await sendPasswordResetEmail(newUser.email, newUser.name, resetToken, newUser.language);
+          logger.info('Password setup invitation email dispatched on lead conversion', {
+            userId: newUser.id,
+            email: newUser.email,
+          });
+        } catch (err: unknown) {
+          logger.error('Failed to send password setup invitation email on lead conversion', {
+            userId: newUser.id,
+            email: newUser.email,
+            error: err instanceof Error ? err.message : err,
+          });
+        }
       } else {
         throw new ValidationError(
-          `No registered user account found for ${lead.contact_email}. Please ensure the client registers or link an existing customer profile before converting to an active subscription.`
+          `User account for ${lead.contact_email} exists under a different tenant.`
         );
       }
     }
@@ -388,6 +443,10 @@ export class CRMService {
       true, // byAdmin
     );
 
+    // Retrieve the newly created initial invoice for this client
+    const tenantInvoices = await this.invoiceRepo.findByTenant(tenantId, 10, 0);
+    const invoice = tenantInvoices.find((inv) => inv.client_id === targetClientId);
+
     const updatedLead = await this.leadRepo.updateLead(
       lead.id,
       {
@@ -405,14 +464,14 @@ export class CRMService {
         leadId: lead.id,
         activityType: 'PLAN_ASSIGNED',
         title: `Lead Converted: Active Subscription Created (${plan.id})`,
-        summary: `Successfully subscribed customer to ${planName} with ${equipmentCount} device(s). Status marked as WON.`,
+        summary: `Successfully subscribed customer to ${planName} with ${equipmentCount} device(s). Status marked as WON.${clientCreated ? ' Client account was automatically provisioned and invite email sent.' : ''}`,
         status: 'COMPLETED',
       },
       tenantId,
       userId,
     );
 
-    return { lead: updatedLead || lead, subscription };
+    return { lead: updatedLead || lead, subscription, invoice, clientCreated };
   }
 
   async getActivitiesForLead(leadId: string, tenantId: string): Promise<LeadActivity[]> {
@@ -420,6 +479,9 @@ export class CRMService {
   }
 
   async logActivity(data: CreateLeadActivityInput, tenantId: string, userId?: string): Promise<LeadActivity> {
+    if (!data.leadId) {
+      throw new ValidationError('Lead ID is required');
+    }
     await this.getLeadById(data.leadId, tenantId);
     return this.activityRepo.createActivity(data, tenantId, userId);
   }

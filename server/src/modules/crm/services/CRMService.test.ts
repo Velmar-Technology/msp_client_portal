@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => {
       findLeadById: vi.fn(),
       createLead: vi.fn(),
       updateLead: vi.fn(),
+      deleteLead: vi.fn(),
       getPipelineStats: vi.fn(),
     },
     activityRepo: {
@@ -27,6 +28,7 @@ const mocks = vi.hoisted(() => {
     userRepo: {
       findById: vi.fn(),
       findByEmail: vi.fn(),
+      create: vi.fn(),
     },
     planRepo: {
       findById: vi.fn(),
@@ -35,12 +37,17 @@ const mocks = vi.hoisted(() => {
       createSubscription: vi.fn(),
       updateSubscription: vi.fn(),
     },
+    invoiceRepo: {
+      findByTenant: vi.fn(),
+    },
     sendQuotationEmail: vi.fn(),
+    sendPasswordResetEmail: vi.fn(),
   };
 });
 
 vi.mock('@shared/utils/emailService', () => ({
   sendQuotationEmail: mocks.sendQuotationEmail,
+  sendPasswordResetEmail: mocks.sendPasswordResetEmail,
 }));
 
 import { CRMService } from './CRMService';
@@ -57,6 +64,7 @@ describe('CRMService', () => {
       mocks.userRepo as any,
       mocks.planRepo as any,
       mocks.subService as any,
+      mocks.invoiceRepo as any,
     );
   });
 
@@ -431,7 +439,7 @@ describe('CRMService', () => {
   });
 
   describe('convertLeadToSubscription', () => {
-    it('creates active subscription, sets lead to WON, and logs activity', async () => {
+    it('creates active subscription, sets lead to WON, and logs activity for existing client', async () => {
       const mockLead = {
         id: 'lead-1',
         tenant_id: 'tenant-1',
@@ -452,6 +460,9 @@ describe('CRMService', () => {
         id: 'sub-1',
         status: 'ACTIVE',
       });
+      mocks.invoiceRepo.findByTenant.mockResolvedValue([
+        { id: 'inv-1', client_id: 'client-user-1', total: 300 },
+      ]);
       mocks.leadRepo.updateLead.mockResolvedValue({
         ...mockLead,
         stage: LeadStage.WON,
@@ -465,6 +476,8 @@ describe('CRMService', () => {
       );
 
       expect(result.lead.stage).toBe(LeadStage.WON);
+      expect(result.invoice).toEqual({ id: 'inv-1', client_id: 'client-user-1', total: 300 });
+      expect(result.clientCreated).toBe(false);
       expect(mocks.subService.createSubscription).toHaveBeenCalledWith(
         expect.objectContaining({
           plan: 'ENTERPRISE',
@@ -484,6 +497,80 @@ describe('CRMService', () => {
         }),
         'tenant-1',
         'user-admin',
+      );
+    });
+
+    it('automatically creates client user, sends password setup email, and provisions subscription when client does not exist', async () => {
+      const mockLead = {
+        id: 'lead-new',
+        tenant_id: 'tenant-1',
+        client_id: null,
+        contact_name: 'Alice Wonder',
+        contact_email: 'alice@example.com',
+        contact_phone: '+18095551234',
+        plan_id: 'PRO',
+        equipment_count: 2,
+        billing_cycle: 'monthly',
+      };
+      mocks.leadRepo.findLeadById.mockResolvedValue(mockLead);
+      mocks.userRepo.findByEmail.mockResolvedValue(null);
+      mocks.userRepo.create.mockResolvedValue({
+        id: 'new-client-id',
+        email: 'alice@example.com',
+        name: 'Alice Wonder',
+        role: 'CLIENT',
+        language: 'en_US',
+      });
+      mocks.planRepo.findById.mockResolvedValue({
+        id: 'PRO',
+        name: { en_US: 'Professional Plan' },
+        price: 150,
+      });
+      mocks.subService.createSubscription.mockResolvedValue({
+        id: 'sub-new',
+        status: 'ACTIVE',
+      });
+      mocks.invoiceRepo.findByTenant.mockResolvedValue([
+        { id: 'inv-new', client_id: 'new-client-id', total: 177 },
+      ]);
+      mocks.leadRepo.updateLead.mockResolvedValue({
+        ...mockLead,
+        client_id: 'new-client-id',
+        stage: LeadStage.WON,
+        probability: 100,
+      });
+
+      const result = await service.convertLeadToSubscription(
+        { leadId: 'lead-new' },
+        'tenant-1',
+        'user-admin',
+      );
+
+      expect(result.clientCreated).toBe(true);
+      expect(result.invoice).toEqual({ id: 'inv-new', client_id: 'new-client-id', total: 177 });
+      expect(mocks.userRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: 'alice@example.com',
+          name: 'Alice Wonder',
+          role: 'CLIENT',
+          tenant_id: 'tenant-1',
+          phone_number: '+18095551234',
+        }),
+      );
+      expect(mocks.sendPasswordResetEmail).toHaveBeenCalledWith(
+        'alice@example.com',
+        'Alice Wonder',
+        expect.any(String),
+        'en_US',
+      );
+      expect(mocks.subService.createSubscription).toHaveBeenCalledWith(
+        expect.objectContaining({
+          clientId: 'new-client-id',
+          plan: 'PRO',
+        }),
+        'new-client-id',
+        'tenant-1',
+        true,
       );
     });
   });
@@ -509,6 +596,22 @@ describe('CRMService', () => {
       const result = await service.getPipelineStats('tenant-1');
       expect(result).toEqual(stats);
       expect(mocks.leadRepo.getPipelineStats).toHaveBeenCalledWith('tenant-1');
+    });
+  });
+
+  describe('deleteLead', () => {
+    it('deletes lead when found in tenant', async () => {
+      mocks.leadRepo.findLeadById.mockResolvedValue({ id: 'lead-1' });
+      mocks.leadRepo.deleteLead.mockResolvedValue(true);
+
+      await service.deleteLead('lead-1', 'tenant-1');
+      expect(mocks.leadRepo.deleteLead).toHaveBeenCalledWith('lead-1', 'tenant-1');
+    });
+
+    it('throws NotFoundError if lead does not exist', async () => {
+      mocks.leadRepo.findLeadById.mockResolvedValue(null);
+
+      await expect(service.deleteLead('lead-999', 'tenant-1')).rejects.toThrow(NotFoundError);
     });
   });
 });

@@ -12,6 +12,7 @@ import {
   type SendQuotationPayload,
   type ResendQuotationPayload,
   type ConvertLeadPayload,
+  type ConvertLeadResult,
   type CreateActivityPayload,
   type GetLeadsParams,
 } from "@/services/crmService";
@@ -43,10 +44,12 @@ export interface CRMState {
   updateLead: (id: string, data: UpdateLeadPayload) => Promise<Lead>;
   updateLeadStage: (id: string, stage: LeadStage, lostReason?: string | null) => Promise<void>;
   bulkUpdateStage: (ids: string[], stage: LeadStage) => Promise<void>;
+  deleteLead: (id: string) => Promise<void>;
+  bulkDeleteLeads: (ids: string[]) => Promise<void>;
   sendQuotation: (data: SendQuotationPayload) => Promise<Quotation>;
   resendQuotation: (data: ResendQuotationPayload) => Promise<Quotation>;
   updateQuotationStatus: (quotationId: string, status: Quotation["status"]) => Promise<Quotation>;
-  convertLeadToSubscription: (leadId: string, data?: ConvertLeadPayload) => Promise<void>;
+  convertLeadToSubscription: (leadId: string, data?: ConvertLeadPayload) => Promise<ConvertLeadResult>;
   logActivity: (leadId: string, data: CreateActivityPayload) => Promise<void>;
   updateActivity: (activityId: string, data: { status?: string; summary?: string }) => Promise<void>;
   modifySubscription: (data: { subId: string; planId: string; equipmentCount: number; leadId?: string }) => Promise<void>;
@@ -212,6 +215,42 @@ export const useCRMStore = create<CRMState>()(
         }
       },
 
+      deleteLead: async (id: string) => {
+        set({ actionLoading: true });
+        try {
+          await crmService.deleteLead(id);
+          set((state) => ({
+            leads: state.leads.filter((l) => l.id !== id),
+            totalLeads: Math.max(0, state.totalLeads - 1),
+            selectedLead: state.selectedLead?.id === id ? null : state.selectedLead,
+            actionLoading: false,
+          }));
+          get().fetchStats();
+          get().fetchUpcomingActivities();
+        } catch (err) {
+          set({ actionLoading: false });
+          throw err;
+        }
+      },
+
+      bulkDeleteLeads: async (ids: string[]) => {
+        set({ actionLoading: true });
+        try {
+          const results = await Promise.allSettled(ids.map((id) => crmService.deleteLead(id)));
+          const failedCount = results.filter((r) => r.status === "rejected").length;
+          await get().fetchLeads();
+          get().fetchStats();
+          get().fetchUpcomingActivities();
+          set({ actionLoading: false });
+          if (failedCount > 0) {
+            throw new Error(`${failedCount} of ${ids.length} deletes failed`);
+          }
+        } catch (err) {
+          set({ actionLoading: false });
+          throw err;
+        }
+      },
+
       sendQuotation: async (data: SendQuotationPayload) => {
         set({ actionLoading: true });
         try {
@@ -267,11 +306,12 @@ export const useCRMStore = create<CRMState>()(
       convertLeadToSubscription: async (leadId: string, data: ConvertLeadPayload = {}) => {
         set({ actionLoading: true });
         try {
-          await crmService.convertLeadToSubscription(leadId, data);
+          const result = await crmService.convertLeadToSubscription(leadId, data);
           await get().fetchLeadDetail(leadId);
           await get().fetchLeads();
           await get().fetchStats();
           set({ actionLoading: false });
+          return result;
         } catch (err) {
           set({ actionLoading: false });
           throw err;

@@ -67,6 +67,8 @@ export function CRMPage() {
     updateLead,
     updateLeadStage,
     bulkUpdateStage,
+    deleteLead,
+    bulkDeleteLeads,
     sendQuotation,
     resendQuotation,
     updateQuotationStatus,
@@ -163,6 +165,36 @@ export function CRMPage() {
       }
     },
     [bulkUpdateStage, t],
+  );
+
+  const handleDeleteLead = useCallback(
+    async (id: string) => {
+      try {
+        await deleteLead(id);
+        toast.success(t("crm.deleteSuccess"));
+        if (paramLeadId === id) {
+          closeLeadSheet();
+        }
+      } catch (err: unknown) {
+        toast.error(getErrorMessage(err) || t("crm.deleteError"));
+      }
+    },
+    [deleteLead, paramLeadId, closeLeadSheet, t],
+  );
+
+  const handleBulkDeleteLeads = useCallback(
+    async (ids: string[]) => {
+      try {
+        await bulkDeleteLeads(ids);
+        toast.success(t("crm.bulkDeleteSuccess"));
+        if (paramLeadId && ids.includes(paramLeadId)) {
+          closeLeadSheet();
+        }
+      } catch (err: unknown) {
+        toast.error(getErrorMessage(err) || t("crm.bulkDeleteError"));
+      }
+    },
+    [bulkDeleteLeads, paramLeadId, closeLeadSheet, t],
   );
 
   const customerSubsForSelectedLead = selectedLead?.client_id
@@ -347,6 +379,8 @@ export function CRMPage() {
           onSelectLead={openLeadSheet}
           onUpdateStage={handleQuickUpdateStage}
           onBulkUpdateStage={handleBulkUpdateStage}
+          onDeleteLead={handleDeleteLead}
+          onBulkDeleteLeads={handleBulkDeleteLeads}
           search={paramSearch}
           onSearchChange={handleSearchChange}
           stageFilter={paramStage}
@@ -380,6 +414,7 @@ export function CRMPage() {
           quotations={leadQuotations}
           customerSubscriptions={customerSubsForSelectedLead}
           actionLoading={actionLoading}
+          onDeleteLead={handleDeleteLead}
           onUpdateLead={async (id, payload) => {
             await updateLead(id, payload);
           }}
@@ -396,7 +431,7 @@ export function CRMPage() {
             await updateQuotationStatus(quotationId, status);
           }}
           onConvertLead={async (leadId, payload) => {
-            await convertLeadToSubscription(leadId, payload);
+            return await convertLeadToSubscription(leadId, payload);
           }}
           onLogActivity={async (payload) => {
             if (selectedLead) {

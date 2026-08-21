@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -14,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Lead, LeadStage, LeadPriority, LeadActivity, Quotation, QuotationStatus, UpdateLeadPayload } from "@/services/crmService";
+import type { Lead, LeadStage, LeadPriority, LeadActivity, Quotation, QuotationStatus, UpdateLeadPayload, ConvertLeadResult } from "@/services/crmService";
 import { DatePicker } from "@/components/shared";
 import { getActivityTypeLabel, resolveActivityTitle } from "../utils/activityTitles";
 import type { Plan } from "@/services/planService";
@@ -39,7 +40,18 @@ import {
   Check,
   X,
   Pencil,
+  Trash2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 export const CRM_TAX_RATE = 0.18;
 
@@ -98,7 +110,7 @@ interface CRMLeadDetailSheetProps {
   onConvertLead: (
     leadId: string,
     payload: { planId?: string; billingCycle?: "monthly" | "annual"; equipmentCount?: number },
-  ) => Promise<void>;
+  ) => Promise<ConvertLeadResult | void>;
   onLogActivity: (payload: {
     activityType: LeadActivity["activity_type"];
     title: string;
@@ -110,6 +122,7 @@ interface CRMLeadDetailSheetProps {
   onModifySubscription: (subId: string, planId: string, count: number) => Promise<void>;
   onCancelSubscription?: (subId: string) => Promise<void>;
   onRequestCancelSubscription?: (subId: string) => void;
+  onDeleteLead?: (id: string) => Promise<void>;
 }
 
 const STAGES: LeadStage[] = ["NEW", "QUALIFIED", "PROPOSITION", "WON", "LOST"];
@@ -150,7 +163,9 @@ export function CRMLeadDetailSheet({
   onModifySubscription,
   onCancelSubscription,
   onRequestCancelSubscription,
+  onDeleteLead,
 }: CRMLeadDetailSheetProps) {
+  const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const isSpanish = i18n.language.startsWith("es");
 
@@ -165,6 +180,7 @@ export function CRMLeadDetailSheet({
   const [editPriority, setEditPriority] = useState<LeadPriority>(() => lead?.priority || "MEDIUM");
   const [editNotes, setEditNotes] = useState(() => lead?.notes || "");
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Quotation form initial state derived on mount
   const [selectedPlanId, setSelectedPlanId] = useState<string>(() => lead?.plan_id || plans[0]?.id || "");
@@ -220,12 +236,26 @@ export function CRMLeadDetailSheet({
   const handleConvertClick = async () => {
     if (!lead) return;
     try {
-      await onConvertLead(lead.id, {
+      const result = await onConvertLead(lead.id, {
         planId: effectivePlanId,
         billingCycle,
         equipmentCount,
       });
-      toast.success(t("crm.convertSuccess"));
+      if (result && "clientCreated" in result && result.clientCreated) {
+        toast.success(
+          t("crm.convertAndClientCreatedSuccess") ||
+            "Lead converted! Client account created, invitation sent, and invoice ready for payment."
+        );
+      } else {
+        toast.success(t("crm.convertSuccess"));
+      }
+      onOpenChange(false);
+      const invoiceId = result && "invoice" in result && result.invoice ? result.invoice.id : undefined;
+      if (invoiceId) {
+        navigate(`/billing?invoiceId=${invoiceId}`, { state: { invoiceId } });
+      } else {
+        navigate("/billing");
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t("crm.convertError");
       toast.error(message);
@@ -416,6 +446,19 @@ export function CRMLeadDetailSheet({
                   >
                     <Pencil className="h-3 w-3" />
                     <span>{t("crm.editLead") || "Edit Details"}</span>
+                  </Button>
+                )}
+
+                {!isEditingLead && onDeleteLead && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="h-7 px-2 text-xs font-semibold gap-1 text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    <span className="hidden sm:inline">{t("crm.deleteLead") || "Delete / Archive"}</span>
                   </Button>
                 )}
 
@@ -1148,6 +1191,42 @@ export function CRMLeadDetailSheet({
             </TabsContent>
           </Tabs>
         </div>
+
+        {/* Confirmation Dialog: Delete Opportunity */}
+        <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+          <AlertDialogContent className="sm:max-w-md bg-card text-foreground border border-border">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-sm font-bold flex items-center gap-2 text-destructive">
+                <Trash2 className="h-4 w-4" />
+                {t("crm.deleteLeadConfirmTitle") || "Delete Opportunity?"}
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-xs text-muted-foreground leading-normal">
+                {t("crm.deleteLeadConfirmDesc", { name: lead.contact_name }) ||
+                  `Are you sure you want to delete the opportunity for ${lead.contact_name}?`}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="pt-2 sm:justify-end gap-2">
+              <AlertDialogCancel
+                onClick={() => setShowDeleteConfirm(false)}
+                className="text-xs cursor-pointer"
+              >
+                {t("common.cancel") || "Cancel"}
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={async () => {
+                  if (onDeleteLead) {
+                    await onDeleteLead(lead.id);
+                    setShowDeleteConfirm(false);
+                    onOpenChange(false);
+                  }
+                }}
+                className="text-xs font-semibold bg-destructive hover:bg-destructive/90 text-destructive-foreground cursor-pointer"
+              >
+                {t("common.delete") || "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </SheetContent>
     </Sheet>
   );

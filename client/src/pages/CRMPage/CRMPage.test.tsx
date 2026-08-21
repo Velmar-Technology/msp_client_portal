@@ -6,6 +6,7 @@ import { useCRMStore } from "@/store/useCRMStore";
 import { usePlanStore } from "@/store/usePlanStore";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 import { crmService, type Lead, type CrmPipelineStats, type Quotation, type LeadActivity } from "@/services/crmService";
+import type { Invoice } from "@/services/invoiceService";
 import { planService, type Plan } from "@/services/planService";
 import { subscriptionService, type Subscription } from "@/services/subscriptionService";
 import { userService } from "@/services/userService";
@@ -72,6 +73,7 @@ vi.mock("@/services/crmService", () => ({
     createLead: vi.fn(),
     updateLead: vi.fn(),
     updateStage: vi.fn(),
+    deleteLead: vi.fn(),
     sendQuotation: vi.fn(),
     resendQuotation: vi.fn(),
     updateQuotationStatus: vi.fn(),
@@ -380,6 +382,84 @@ describe("CRMPage", () => {
         contactName: "Bruce Updated",
         companyName: "Wayne Industries Global",
       }));
+    });
+  });
+
+  test("converts lead to subscription and navigates to billing with invoice", async () => {
+    const convertedInvoice: Invoice = {
+      id: "inv-101",
+      invoice_number: "INV-2026-0001",
+      client_id: "client-1",
+      amount: 147.0,
+      tax_amount: 26.46,
+      total: 173.46,
+      status: "PENDING",
+      due_date: "2026-09-01",
+      invoice_date: "2026-08-21",
+      created_at: "2026-08-21",
+      line_items: [],
+    };
+    vi.mocked(crmService.convertLeadToSubscription).mockResolvedValue({
+      lead: { ...mockLeads[0], stage: "WON" },
+      subscription: { id: "sub-1", status: "ACTIVE", plan: "STANDARD", equipment_count: 3 },
+      invoice: convertedInvoice,
+      clientCreated: true,
+    });
+
+    useCRMStore.setState({
+      selectedLead: mockLeads[0],
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/crm?lead=lead-1"]}>
+        <CRMPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Bruce Wayne")).toBeInTheDocument();
+
+    // Click subscription tab
+    const subTab = screen.getByRole("tab", { name: /Plan \/ Sub/i });
+    fireEvent.pointerDown(subTab, { button: 0 });
+    fireEvent.mouseDown(subTab, { button: 0 });
+    fireEvent.click(subTab);
+
+    // Click convert button
+    const convertBtn = await screen.findByRole("button", { name: /Activate Subscription/i });
+    fireEvent.click(convertBtn);
+
+    await waitFor(() => {
+      expect(crmService.convertLeadToSubscription).toHaveBeenCalledWith("lead-1", expect.objectContaining({
+        planId: "STANDARD",
+      }));
+    });
+  });
+
+  test("allows deleting a lead from detail sheet with confirmation", async () => {
+    vi.mocked(crmService.deleteLead).mockResolvedValue(undefined);
+
+    useCRMStore.setState({
+      selectedLead: mockLeads[0],
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/crm?lead=lead-1"]}>
+        <CRMPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Bruce Wayne")).toBeInTheDocument();
+
+    const deleteBtn = await screen.findByRole("button", { name: /Delete \/ Archive/i });
+    fireEvent.click(deleteBtn);
+
+    expect(screen.getByText("Delete Opportunity?")).toBeInTheDocument();
+
+    const confirmDeleteBtn = screen.getByRole("button", { name: /^Delete$/i });
+    fireEvent.click(confirmDeleteBtn);
+
+    await waitFor(() => {
+      expect(crmService.deleteLead).toHaveBeenCalledWith("lead-1");
     });
   });
 });

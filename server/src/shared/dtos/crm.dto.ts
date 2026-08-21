@@ -65,7 +65,7 @@ export const ResendCrmQuotationDTO = z.object({
 export type ResendCrmQuotationInput = z.infer<typeof ResendCrmQuotationDTO>;
 
 export const ConvertLeadToSubscriptionDTO = z.object({
-  leadId: z.string().uuid('Invalid lead ID'),
+  leadId: z.string().uuid('Invalid lead ID').optional(),
   planId: z.string().max(50).optional(),
   billingCycle: z.enum(['monthly', 'annual']).default('monthly').optional(),
   equipmentCount: z.coerce.number().int().min(1).max(500).default(1).optional(),
@@ -74,7 +74,7 @@ export const ConvertLeadToSubscriptionDTO = z.object({
 export type ConvertLeadToSubscriptionInput = z.infer<typeof ConvertLeadToSubscriptionDTO>;
 
 export const CreateLeadActivityDTO = z.object({
-  leadId: z.string().uuid('Invalid lead ID'),
+  leadId: z.string().uuid('Invalid lead ID').optional(),
   activityType: z.enum([
     'EMAIL_SENT',
     'QUOTE_SENT',

@@ -235,6 +235,15 @@ export class LeadRepository extends BaseRepository<Lead> {
     return this.findLeadById(id, tenantId);
   }
 
+  async deleteLead(id: string, tenantId: string): Promise<boolean> {
+    if (!id || !isUuid(id)) return false;
+    const result = await db
+      .delete(leads)
+      .where(and(eq(leads.id, id), eq(leads.tenant_id, tenantId)))
+      .returning({ id: leads.id });
+    return result.length > 0;
+  }
+
   async getPipelineStats(tenantId: string): Promise<CrmPipelineStats> {
     const sqlQuery = `
       SELECT 
