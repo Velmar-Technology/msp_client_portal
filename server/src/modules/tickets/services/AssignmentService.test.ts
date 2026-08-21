@@ -5,6 +5,8 @@ const mocks = vi.hoisted(() => {
   return {
     findTechniciansBySpecialty: vi.fn(),
     findActiveTechnicians: vi.fn(),
+    findAllTechnicians: vi.fn(),
+    getConnectedUserIds: vi.fn(),
     findOpenTicketsForTechnicians: vi.fn(),
     dbSelect: vi.fn(),
     dbFrom: vi.fn(),
@@ -22,9 +24,18 @@ vi.mock('@modules/auth', () => {
     userRepository: {
       findTechniciansBySpecialty: mocks.findTechniciansBySpecialty,
       findActiveTechnicians: mocks.findActiveTechnicians,
+      findAllTechnicians: mocks.findAllTechnicians,
     },
     tenantRepository: {
       findById: vi.fn(),
+    },
+  };
+});
+
+vi.mock('@modules/notifications', () => {
+  return {
+    notificationService: {
+      getConnectedUserIds: mocks.getConnectedUserIds,
     },
   };
 });
@@ -124,6 +135,8 @@ describe('AssignmentService', () => {
     });
 
     mocks.findOpenTicketsForTechnicians.mockResolvedValue([]);
+    mocks.findAllTechnicians.mockResolvedValue([]);
+    mocks.getConnectedUserIds.mockReturnValue([]);
   });
 
   describe('RoundRobinAssignmentStrategy', () => {
@@ -329,6 +342,43 @@ describe('AssignmentService', () => {
 
       expect(result).toBeNull();
       expect(mocks.loggerWarn).toHaveBeenCalledWith('No active technicians available for assignment');
+    });
+
+    it('falls back to an online technician when no active technicians are available', async () => {
+      const onlineTech = createMockUser('tech-online', 'Dave');
+      mocks.findActiveTechnicians.mockResolvedValue([]);
+      mocks.getConnectedUserIds.mockReturnValue([onlineTech.id]);
+      mocks.findAllTechnicians.mockResolvedValue([onlineTech]);
+
+      const result = await capacity().assignNext(TicketCategory.REPAIR);
+
+      expect(result).toEqual(onlineTech);
+      expect(mocks.findAllTechnicians).toHaveBeenCalledTimes(1);
+      expect(mocks.loggerInfo).toHaveBeenCalledWith(
+        'Technician assigned via online fallback',
+        expect.objectContaining({ techId: onlineTech.id, category: TicketCategory.REPAIR })
+      );
+    });
+
+    it('returns null when no active technicians exist and nobody is connected', async () => {
+      mocks.findActiveTechnicians.mockResolvedValue([]);
+      mocks.getConnectedUserIds.mockReturnValue([]);
+
+      const result = await capacity().assignNext(TicketCategory.REPAIR);
+
+      expect(result).toBeNull();
+      expect(mocks.loggerWarn).toHaveBeenCalledWith('No active technicians available for assignment');
+      expect(mocks.findAllTechnicians).not.toHaveBeenCalled();
+    });
+
+    it('returns null when connected users include no technicians', async () => {
+      mocks.findActiveTechnicians.mockResolvedValue([]);
+      mocks.getConnectedUserIds.mockReturnValue(['client-1']);
+      mocks.findAllTechnicians.mockResolvedValue([]);
+
+      const result = await capacity().assignNext(TicketCategory.REPAIR);
+
+      expect(result).toBeNull();
     });
 
     it('threads the ticket priority through to the strategy', async () => {

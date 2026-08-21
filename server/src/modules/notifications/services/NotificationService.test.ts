@@ -86,6 +86,40 @@ describe('NotificationService', () => {
     vi.useRealTimers();
   });
 
+  describe('getConnectedUserIds', () => {
+    it('returns user IDs with live SSE connections and removes them on disconnect', () => {
+      const makeRes = () => {
+        let closeCallback: (() => void) | undefined;
+        const res = {
+          writeHead: vi.fn(),
+          write: vi.fn(),
+          on: vi.fn().mockImplementation((event, cb) => {
+            if (event === 'close') {
+              closeCallback = cb;
+            }
+          }),
+        } as unknown as Response;
+        return { res, close: () => closeCallback?.() };
+      };
+
+      const first = makeRes();
+      const second = makeRes();
+
+      notificationService.registerSSEClient('tech-a', first.res);
+      notificationService.registerSSEClient('tech-b', second.res);
+
+      expect(notificationService.getConnectedUserIds()).toEqual(
+        expect.arrayContaining(['tech-a', 'tech-b'])
+      );
+
+      first.close();
+      expect(notificationService.getConnectedUserIds()).toEqual(['tech-b']);
+
+      second.close();
+      expect(notificationService.getConnectedUserIds()).toEqual([]);
+    });
+  });
+
   describe('registerSSEClient and sendRealTimeUpdate', () => {
     it('should register connection, send connected event, support heartbeats, and cleanup on close', async () => {
       let closeCallback: (() => void) | undefined;

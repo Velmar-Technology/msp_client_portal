@@ -247,6 +247,15 @@ export class UserRepository extends BaseRepository<User> {
     return results as User[];
   }
 
+  async findAllTechnicians(): Promise<User[]> {
+    const results = await db
+      .select()
+      .from(users)
+      .where(eq(users.role, UserRole.TECHNICIAN))
+      .orderBy(asc(users.name));
+    return results as User[];
+  }
+
   async findByPhoneNumber(phoneNumber: string): Promise<User | null> {
     const results = await db.select().from(users).where(eq(users.phone_number, phoneNumber));
     return (results[0] as User) || null;

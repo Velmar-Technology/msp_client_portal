@@ -85,6 +85,13 @@ export class NotificationService {
   }
 
   /**
+   * Query the IDs of users with at least one live SSE connection (portal presence).
+   */
+  getConnectedUserIds(): string[] {
+    return [...this.sseClients.keys()];
+  }
+
+  /**
    * Push real-time event to connected user tabs.
    */
   private sendRealTimeUpdate(userId: string, event: string, data: any): void {
