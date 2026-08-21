@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { subscriptionController } from '@modules/subscriptions/controllers/SubscriptionController';
 import { authMiddleware } from '@shared/middleware/authMiddleware';
 import { validate } from '@shared/middleware/validationMiddleware';
-import { CreateSubscriptionDTO, UpdateSubscriptionDTO, SendQuoteDTO, CreatePaypalOrderDTO } from '@shared/dtos/subscription.dto';
+import { CreateSubscriptionDTO, UpdateSubscriptionDTO, CreatePaypalOrderDTO } from '@shared/dtos/subscription.dto';
 
 const router = Router();
 
@@ -22,9 +22,6 @@ router.post('/paypal-subscription', validate(CreatePaypalOrderDTO), (req, res) =
 
 /** POST /api/v1/subscriptions — Create a subscription */
 router.post('/', validate(CreateSubscriptionDTO), (req, res) => subscriptionController.create(req, res));
-
-/** POST /api/v1/subscriptions/quote — Send a plan quotation email */
-router.post('/quote', validate(SendQuoteDTO), (req, res) => subscriptionController.sendQuote(req, res));
 
 /** PATCH /api/v1/subscriptions/:id — Update subscription */
 router.patch('/:id', validate(UpdateSubscriptionDTO), (req, res) => subscriptionController.update(req, res));

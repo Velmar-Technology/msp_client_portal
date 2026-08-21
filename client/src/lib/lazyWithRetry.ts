@@ -134,7 +134,7 @@ export function lazyWithRetry<T extends ComponentType<any>>(
     return cachedPromise;
   };
 
-  const LazyComponent = React.lazy(loadModule) as PreloadableComponent<T>;
+  const LazyComponent = React.lazy(loadModule) as unknown as PreloadableComponent<T>;
 
   LazyComponent.preload = loadModule;
 

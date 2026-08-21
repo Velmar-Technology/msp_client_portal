@@ -22,10 +22,10 @@ describe('TicketDetailPage - Button Blocking for CANCELLED Tickets', () => {
       isApplicable: false,
       isExpired: false,
       formattedTime: '00:00:00',
-      remainingMs: 0,
-      totalMs: 0,
-      progress: 0,
-    });
+      remaining: 0,
+      minutes: 0,
+      seconds: 0,
+    } as any);
   });
 
   test('does not render Reopen or action buttons when ticket is CANCELLED', () => {
@@ -74,7 +74,7 @@ describe('TicketDetailPage - Button Blocking for CANCELLED Tickets', () => {
       handleAssign: vi.fn(),
       handleSendResponse: vi.fn(),
       handleFileUpload: vi.fn(),
-    });
+    } as any);
 
     render(
       <MemoryRouter>
@@ -132,7 +132,7 @@ describe('TicketDetailPage - Button Blocking for CANCELLED Tickets', () => {
       handleAssign: vi.fn(),
       handleSendResponse: vi.fn(),
       handleFileUpload: vi.fn(),
-    });
+    } as any);
 
     render(
       <MemoryRouter>
@@ -145,7 +145,7 @@ describe('TicketDetailPage - Button Blocking for CANCELLED Tickets', () => {
 
   test('renders invalid ticket ID error view when ticket is null and not loading', () => {
     vi.mocked(useTicketDetail).mockReturnValue({
-      t: (key: string) => key,
+      t: ((key: string) => key) as any,
       i18n: { language: 'en_US' } as any,
       user: { id: 'user-1', role: 'CLIENT', name: 'John Doe', email: 'john@example.com' } as any,
       ticket: null,
@@ -184,7 +184,7 @@ describe('TicketDetailPage - Button Blocking for CANCELLED Tickets', () => {
       handleAssign: vi.fn(),
       handleSendResponse: vi.fn(),
       handleFileUpload: vi.fn(),
-    });
+    } as any);
 
     render(
       <MemoryRouter>
@@ -200,7 +200,7 @@ describe('TicketDetailPage - Button Blocking for CANCELLED Tickets', () => {
     vi.useFakeTimers();
 
     vi.mocked(useTicketDetail).mockReturnValue({
-      t: (key: string) => key,
+      t: ((key: string) => key) as any,
       i18n: { language: 'en_US' } as any,
       user: { id: 'user-1', role: 'CLIENT', name: 'John Doe', email: 'john@example.com' } as any,
       ticket: null,
@@ -236,7 +236,7 @@ describe('TicketDetailPage - Button Blocking for CANCELLED Tickets', () => {
       handleAssign: vi.fn(),
       handleSendResponse: vi.fn(),
       handleFileUpload: vi.fn(),
-    });
+    } as any);
 
     const { container } = render(
       <MemoryRouter>

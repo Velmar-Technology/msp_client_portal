@@ -37,10 +37,5 @@ export const subscriptionService = {
     const response = await api.patch(`/subscriptions/${id}`, data);
     return response.data.data;
   },
-
-  async sendQuote(data: { plan: string; equipmentCount: number; clientId?: string; unregisteredEmail?: string; unregisteredName?: string; billingCycle: 'monthly' | 'annual' }): Promise<{ success: boolean; message: string }> {
-    const response = await api.post('/subscriptions/quote', data);
-    return response.data;
-  },
 };
 

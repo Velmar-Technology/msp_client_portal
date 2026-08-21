@@ -6,4 +6,4 @@ export const db = drizzle(pool, { schema });
 export * from './schema';
 export { pool };
 export { withRetry, getPoolHealth } from '@shared/config/database';
-export type { PoolHealth } from '@shared/config/database';
+export type { PoolHealth, PoolHealth as PoolHealthStatus } from '@shared/config/database';

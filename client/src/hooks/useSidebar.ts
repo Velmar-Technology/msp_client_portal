@@ -13,6 +13,7 @@ import {
   Calendar,
   Download,
   Activity,
+  Target,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { subscriptionService } from "@/services/subscriptionService";
@@ -67,6 +68,7 @@ const techNavItems: NavItem[] = [
 
 const adminNavItems: NavItem[] = [
   { to: "/dashboard", icon: Shield, labelKey: "adminDashboard" },
+  { to: "/crm", icon: Target, labelKey: "crm" },
   { to: "/financial", icon: Landmark, labelKey: "financial" },
   { to: "/admin/users", icon: Users, labelKey: "userManagement" },
   { to: "/admin/api-status", icon: Activity, labelKey: "apiStatus" },

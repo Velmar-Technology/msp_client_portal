@@ -17,7 +17,6 @@ import { PlanCard } from "@/pages/PlansPage/components/PlanCard";
 import { PaymentSection } from "@/pages/PlansPage/components/PaymentSection";
 import { ActiveSubscriptionsDashboard } from "@/pages/PlansPage/components/ActiveSubscriptionsDashboard";
 import { EditPlanModal } from "@/pages/PlansPage/components/EditPlanModal";
-import { AssignPlanWorkspace } from "@/pages/PlansPage/components/AssignPlanWorkspace";
 import { ChangeTierPanel } from "@/pages/PlansPage/components/ChangeTierPanel";
 import { CheckoutSheet } from "@/components/checkout-sheet";
 
@@ -44,11 +43,6 @@ export function PlansPage() {
     reference,
     billingCycle,
     setBillingCycle,
-    quoteLoading,
-    unregisteredEmail,
-    setUnregisteredEmail,
-    unregisteredName,
-    setUnregisteredName,
     activeTab,
     setActiveTab,
     editingPlan,
@@ -72,19 +66,11 @@ export function PlansPage() {
     isCreateMode,
     draggedIndex,
     dragOverIndex,
-    clients,
-    selectedClientId,
-    setSelectedClientId,
     subscribeLoading,
     paymentMessage,
     activeSubscriptions,
-    actionType,
-    setActionType,
-    subscriptionToModifyId,
-    setSubscriptionToModifyId,
     tierChangeSubId,
     setTierChangeSubId,
-    selectedClientSubscriptions,
     currentPlan,
     currentEquipmentCount,
     getPlanName,
@@ -93,7 +79,6 @@ export function PlansPage() {
     getTierLabel,
     handleAdjustEquipmentCount,
     handleProcessSubscription,
-    handleSendQuote,
     handleUpdateSubscription,
     handleUpdateSubscriptionDirect,
     handleModifySubscription,
@@ -330,7 +315,7 @@ export function PlansPage() {
     ],
   );
 
-  const showTabs = isAdmin || activeSubscriptions.length > 0;
+  const showTabs = activeSubscriptions.length > 0;
 
   const tierChangeSub = tierChangeSubId
     ? activeSubscriptions.find((sub) => sub.id === tierChangeSubId) || null
@@ -365,7 +350,7 @@ export function PlansPage() {
           <button
             type="button"
             className={`pb-2 text-xs font-semibold transition-all cursor-pointer ${
-              activeTab === "browse"
+              activeTab !== "manage"
                 ? "border-b-2 border-primary text-foreground font-heading"
                 : "text-muted-foreground hover:text-foreground border-b-2 border-transparent"
             }`}
@@ -373,36 +358,21 @@ export function PlansPage() {
           >
             {t("plans.browseTab")}
           </button>
-          {isAdmin && (
-            <button
-              type="button"
-              className={`pb-2 text-xs font-semibold transition-all cursor-pointer ${
-                activeTab === "assign"
-                  ? "border-b-2 border-primary text-foreground font-heading"
-                  : "text-muted-foreground hover:text-foreground border-b-2 border-transparent"
-              }`}
-              onClick={() => setActiveTab("assign")}
-            >
-              {t("plans.assignTab")}
-            </button>
-          )}
-          {!isAdmin && (
-            <button
-              type="button"
-              className={`pb-2 text-xs font-semibold transition-all cursor-pointer ${
-                activeTab === "manage"
-                  ? "border-b-2 border-primary text-foreground font-heading"
-                  : "text-muted-foreground hover:text-foreground border-b-2 border-transparent"
-              }`}
-              onClick={() => setActiveTab("manage")}
-            >
-              {t("plans.manageTab")}
-            </button>
-          )}
+          <button
+            type="button"
+            className={`pb-2 text-xs font-semibold transition-all cursor-pointer ${
+              activeTab === "manage"
+                ? "border-b-2 border-primary text-foreground font-heading"
+                : "text-muted-foreground hover:text-foreground border-b-2 border-transparent"
+            }`}
+            onClick={() => setActiveTab("manage")}
+          >
+            {t("plans.manageTab")}
+          </button>
         </div>
       )}
 
-      {!(isAdmin && activeTab === "assign") && activeTab !== "manage" ? (
+      {activeTab !== "manage" ? (
         <>
           {/* Billing Cycle Switcher & Admin Actions */}
           <div className="flex flex-col sm:flex-row justify-center items-center gap-3.5 mb-4">
@@ -502,44 +472,6 @@ export function PlansPage() {
             </div>
           )}
         </>
-      ) : activeTab === "assign" && isAdmin ? (
-        /* Assign Plan Tab — Admin/Salesperson workspace */
-        <AssignPlanWorkspace
-          filteredPlans={filteredPlans}
-          selectedPlan={selectedPlan}
-          billingCycle={billingCycle}
-          setBillingCycle={setBillingCycle}
-          equipmentCounts={equipmentCounts}
-          onSelectPlan={setUserSelectedPlan}
-          onAdjustEquipmentCount={handleAdjustEquipmentCount}
-          getPlanName={getPlanName}
-          getPlanDescription={getPlanDescription}
-          getFeatureText={getFeatureText}
-          getTierLabel={getTierLabel}
-          clients={clients}
-          selectedClientId={selectedClientId}
-          setSelectedClientId={setSelectedClientId}
-          unregisteredEmail={unregisteredEmail}
-          setUnregisteredEmail={setUnregisteredEmail}
-          unregisteredName={unregisteredName}
-          setUnregisteredName={setUnregisteredName}
-          customerSubscriptions={selectedClientSubscriptions}
-          actionType={actionType}
-          setActionType={setActionType}
-          subscriptionToModifyId={subscriptionToModifyId}
-          setSubscriptionToModifyId={setSubscriptionToModifyId}
-          currentPlan={currentPlan}
-          currentEquipmentCount={currentEquipmentCount}
-          subscribeLoading={subscribeLoading}
-          quoteLoading={quoteLoading}
-          paymentMessage={paymentMessage}
-          acceptedTos={acceptedTos}
-          setAcceptedTos={setAcceptedTos}
-          onApplyPlan={handleProcessSubscription}
-          onSendQuote={handleSendQuote}
-          onUpdateSubscription={handleUpdateSubscription}
-          onCancelSubscription={(sub) => openCheckout("cancel", sub)}
-        />
       ) : (
         /* Manage Subscriptions Tab — Tier change panel + DataTable */
         <div className="text-foreground">

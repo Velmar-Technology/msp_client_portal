@@ -19,22 +19,22 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 // ---- Lazily loaded heavy sub-features and modals ----
 const ScheduleMaintenanceModal = lazyWithRetry(() =>
   import("@/components/maintenance/ScheduleMaintenanceModal").then((m) => ({
-    default: m.ScheduleMaintenanceModal || m.default,
+    default: m.ScheduleMaintenanceModal,
   }))
 );
 const NextcloudInfoModal = lazyWithRetry(() =>
   import("@/components/devices/NextcloudInfoModal").then((m) => ({
-    default: m.NextcloudInfoModal || m.default,
+    default: m.NextcloudInfoModal,
   }))
 );
 const ActivateWithOtpModal = lazyWithRetry(() =>
   import("@/components/devices/ActivateWithOtpModal").then((m) => ({
-    default: m.ActivateWithOtpModal || m.default,
+    default: m.ActivateWithOtpModal,
   }))
 );
 const RmmDashboard = lazyWithRetry(() =>
   import("@/components/devices/RmmDashboard").then((m) => ({
-    default: m.RmmDashboard || m.default,
+    default: m.RmmDashboard,
   }))
 );
 import {

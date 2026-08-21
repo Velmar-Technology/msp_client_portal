@@ -89,4 +89,4 @@ async function startServer(): Promise<void> {
 startServer();
 
 export default app;
-// Server restarted to reload equipment telemetry schema definitions
+// Server restarted to register CRM domain router endpoints

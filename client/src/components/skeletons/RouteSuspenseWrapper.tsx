@@ -1,4 +1,4 @@
-import React, { Suspense, type ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { ChunkErrorBoundary } from "@/components/shared/ChunkErrorBoundary";
 import { ContentPageSkeleton } from "./ContentPageSkeleton";
 import { useDeferredLoading } from "@/hooks/useDeferredLoading";

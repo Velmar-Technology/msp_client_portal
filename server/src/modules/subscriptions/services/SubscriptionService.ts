@@ -2,18 +2,16 @@ import { SubscriptionRepository, subscriptionRepository } from '@modules/subscri
 import { UserRepository, userRepository } from '@modules/auth';
 import { SubscriptionLifecycleService, subscriptionLifecycleService } from '@modules/subscriptions/services/SubscriptionLifecycleService';
 import { SubscriptionPaymentService, subscriptionPaymentService } from '@modules/subscriptions/services/SubscriptionPaymentService';
-import { SubscriptionQuotationService, subscriptionQuotationService } from '@modules/subscriptions/services/SubscriptionQuotationService';
 import { NotFoundError, ForbiddenError } from '@shared/errors';
 import { Subscription } from '@shared/types';
-import { CreateSubscriptionInput, UpdateSubscriptionInput, SendQuoteInput } from '@shared/dtos/subscription.dto';
+import { CreateSubscriptionInput, UpdateSubscriptionInput } from '@shared/dtos/subscription.dto';
 
 export class SubscriptionService {
   constructor(
     private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
     private userRepo: UserRepository = userRepository,
     private lifecycleService: SubscriptionLifecycleService = subscriptionLifecycleService,
-    private paymentService: SubscriptionPaymentService = subscriptionPaymentService,
-    private quotationService: SubscriptionQuotationService = subscriptionQuotationService
+    private paymentService: SubscriptionPaymentService = subscriptionPaymentService
   ) {}
 
   async getClientTenantId(clientId: string): Promise<string> {
@@ -58,10 +56,6 @@ export class SubscriptionService {
 
   async updateSubscription(id: string, data: UpdateSubscriptionInput, tenantId: string, byAdmin = false): Promise<Subscription> {
     return this.lifecycleService.updateSubscription(id, data, tenantId, byAdmin);
-  }
-
-  async sendQuotation(data: SendQuoteInput, senderUserId: string, senderTenantId: string, role: string): Promise<void> {
-    return this.quotationService.sendQuotation(data, senderUserId, senderTenantId, role);
   }
 }
 

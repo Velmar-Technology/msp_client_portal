@@ -1,6 +1,5 @@
 import { nextcloudService } from '@modules/system/services/NextcloudService';
 import { systemRepository, SystemRepository } from '@modules/system/repositories/SystemRepository';
-import { logger } from '@shared/utils/logger';
 
 export interface ApiStatusItem {
   id: string;
@@ -240,6 +239,7 @@ export class SystemService {
       { id: 'api_subscriptions', name: 'Subscriptions Engine', category: 'BUSINESS', endpoint: '/api/v1/subscriptions', baseLatency: 34 },
       { id: 'api_invoices', name: 'Invoices & Billing API', category: 'BUSINESS', endpoint: '/api/v1/invoices', baseLatency: 25 },
       { id: 'api_plans', name: 'Service Plans API', category: 'BUSINESS', endpoint: '/api/v1/plans', baseLatency: 14 },
+      { id: 'api_crm', name: 'CRM & Sales Pipeline API', category: 'BUSINESS', endpoint: '/api/v1/crm', baseLatency: 20 },
       { id: 'api_equipment', name: 'Equipment Inventory API', category: 'SERVICES', endpoint: '/api/v1/equipment', baseLatency: 22 },
       { id: 'api_expenses', name: 'Expense Tracking API', category: 'BUSINESS', endpoint: '/api/v1/expenses', baseLatency: 19 },
       { id: 'api_maintenance', name: 'Maintenance Scheduler', category: 'SERVICES', endpoint: '/api/v1/maintenance', baseLatency: 31 },

@@ -38,6 +38,9 @@ export const ProfilePage = lazyWithRetry(() =>
 export const TechDashboardPage = lazyWithRetry(() =>
   import("@/routes/_app/tech/dashboard").then((m) => ({ default: m.TechDashboardPage || m.default }))
 );
+export const CRMPage = lazyWithRetry(() =>
+  import("@/routes/_app/crm").then((m) => ({ default: m.CRMPage || m.default }))
+);
 export const HelpPage = lazyWithRetry(() =>
   import("@/routes/_app/help").then((m) => ({ default: m.HelpPage || m.default }))
 );
@@ -194,6 +197,15 @@ const RAW_PROTECTED_ROUTES: Omit<AppRouteConfig, "handle">[] = [
 
   // Tech/Admin Routes
   {
+    path: "/crm",
+    element: (
+      <RouteSuspenseWrapper fallback={<TablePageSkeleton />}>
+        <CRMPage />
+      </RouteSuspenseWrapper>
+    ),
+    allowedRoles: ["ADMIN"],
+  },
+  {
     path: "/tech/dashboard",
     element: (
       <RouteSuspenseWrapper fallback={<DashboardSkeleton />}>
@@ -295,6 +307,7 @@ export const protectedRoutes: AppRouteConfig[] = createProtectedRoutes(RAW_PROTE
 export const routePreloaders: Record<string, () => Promise<unknown>> = {
   "/dashboard": () => DashboardPage.preload(),
   "/financial": () => FinancialPage.preload(),
+  "/crm": () => CRMPage.preload(),
   "/plans": () => PlansPage.preload(),
   "/billing": () => BillingPage.preload(),
   "/devices": () => DevicesPage.preload(),

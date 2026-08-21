@@ -63,13 +63,13 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(ticketService.getAll).mockResolvedValue({
     data: [
-      { id: 't1', title: 'Network Outage', category: 'SERVICE_OUTAGE', status: 'OPEN', priority: 'HIGH', created_at: '2026-06-22' },
+      { id: 't1', title: 'Network Outage', category: 'SERVICE_OUTAGE', status: 'OPEN', priority: 'HIGH', created_at: '2026-06-22' } as any,
     ],
     pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
   });
   vi.mocked(invoiceService.getAll).mockResolvedValue({
     data: [
-      { id: 'inv1', invoice_number: 'INV-2026-001', amount: 100, tax_amount: 16, total: 116, status: 'PAID', invoice_date: '2026-06-22' },
+      { id: 'inv1', invoice_number: 'INV-2026-001', amount: 100, tax_amount: 16, total: 116, status: 'PAID', invoice_date: '2026-06-22' } as any,
     ],
     pagination: { total: 1, totalPages: 1 },
   });
@@ -153,7 +153,7 @@ test('allows user to find ticket with a chunk of id data like "ce9d703a"', async
         status: 'OPEN',
         priority: 'MEDIUM',
         created_at: '2026-08-20',
-      },
+      } as any,
     ],
     pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
   });
@@ -184,7 +184,7 @@ test('allows user to find ticket when prefixed with hash like "#ce9d703a"', asyn
         status: 'OPEN',
         priority: 'MEDIUM',
         created_at: '2026-08-20',
-      },
+      } as any,
     ],
     pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
   });

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { subscriptionService } from '@modules/subscriptions/services/SubscriptionService';
-import { CreateSubscriptionInput, UpdateSubscriptionInput, SendQuoteInput, CreatePaypalOrderInput } from '@shared/dtos/subscription.dto';
+import { CreateSubscriptionInput, UpdateSubscriptionInput, CreatePaypalOrderInput } from '@shared/dtos/subscription.dto';
 
 export class SubscriptionController {
   async getAll(req: Request, res: Response): Promise<void> {
@@ -45,12 +45,6 @@ export class SubscriptionController {
     const byAdmin = req.user!.role === 'ADMIN';
     const subscription = await subscriptionService.updateSubscription(req.params.id as string, data, req.user!.tenantId, byAdmin);
     res.json({ success: true, data: subscription });
-  }
-
-  async sendQuote(req: Request, res: Response): Promise<void> {
-    const data = req.body as SendQuoteInput;
-    await subscriptionService.sendQuotation(data, req.user!.userId, req.user!.tenantId, req.user!.role);
-    res.json({ success: true, message: 'Quotation email sent successfully' });
   }
 }
 

@@ -22,13 +22,13 @@ const PrivacyPage = lazyWithRetry(() =>
   import("@/routes/_public/privacy").then((m) => ({ default: m.PrivacyPage || m.default }))
 );
 const LoginPage = lazyWithRetry(() =>
-  import("@/routes/_auth/login").then((m) => ({ default: m.LoginPage || m.default }))
+  import("@/routes/_auth/login").then((m) => ({ default: m.LoginPage }))
 );
 const RegisterPage = lazyWithRetry(() =>
-  import("@/routes/_auth/register").then((m) => ({ default: m.RegisterPage || m.default }))
+  import("@/routes/_auth/register").then((m) => ({ default: m.RegisterPage }))
 );
 const NotFoundPage = lazyWithRetry(() =>
-  import("@/pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage || m.default }))
+  import("@/pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage }))
 );
 
 function ScrollToTop() {

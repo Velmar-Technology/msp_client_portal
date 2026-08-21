@@ -28,13 +28,3 @@ export const UpdateSubscriptionDTO = z.object({
 });
 export type UpdateSubscriptionInput = z.infer<typeof UpdateSubscriptionDTO>;
 
-export const SendQuoteDTO = z.object({
-  plan: z.string().min(1, 'Plan is required'),
-  equipmentCount: z.coerce.number().int().min(1, 'At least 1 equipment required').max(100),
-  clientId: z.string().uuid('Invalid client ID format').optional(),
-  unregisteredEmail: z.string().email('Invalid email format').optional(),
-  unregisteredName: z.string().max(255).optional(),
-  billingCycle: z.enum(['monthly', 'annual']).default('monthly'),
-});
-export type SendQuoteInput = z.infer<typeof SendQuoteDTO>;
-

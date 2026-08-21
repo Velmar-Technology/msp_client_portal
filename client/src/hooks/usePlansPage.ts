@@ -93,9 +93,6 @@ export function usePlansPage() {
     () => `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9999)).padStart(4, "0")}`,
   );
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
-  const [quoteLoading, setQuoteLoading] = useState(false);
-  const [unregisteredEmail, setUnregisteredEmail] = useState("");
-  const [unregisteredName, setUnregisteredName] = useState("");
 
   // Tab Selector State (synced with the ?tab= URL search parameter)
   const { getParam, setParam } = useUrlState();
@@ -127,11 +124,8 @@ export function usePlansPage() {
   const setSubscribeLoading = useSubscriptionStore((s) => s.setSubscribeLoading);
   const equipmentCounts = useSubscriptionStore((s) => s.equipmentCounts);
   const setEquipmentCounts = useSubscriptionStore((s) => s.setEquipmentCounts);
-  const clients = useSubscriptionStore((s) => s.clients);
   const selectedClientId = useSubscriptionStore((s) => s.selectedClientId);
-  const setSelectedClientId = useSubscriptionStore((s) => s.setSelectedClientId);
   const fetchActiveSubscriptions = useSubscriptionStore((s) => s.fetchActiveSubscriptions);
-  const fetchClients = useSubscriptionStore((s) => s.fetchClients);
 
   // Checkout store selectors
   const checkoutOpen = useCheckoutStore((s) => s.checkoutOpen);
@@ -145,7 +139,6 @@ export function usePlansPage() {
   const setPaymentMessage = useCheckoutStore((s) => s.setPaymentMessage);
 
   const isAdmin = user?.role === "ADMIN";
-  const isUnregistered = !user;
 
   const [clientTypeFilter, setClientTypeFilter] = useState<"ALL" | PlanClientType>("ALL");
 
@@ -179,13 +172,10 @@ export function usePlansPage() {
   }, [plans, setEquipmentCounts]);
 
   useEffect(() => {
-    if (isAdmin) {
-      fetchClients();
-      fetchActiveSubscriptions();
-    } else if (user?.role === "CLIENT") {
+    if (isAdmin || user?.role === "CLIENT") {
       fetchActiveSubscriptions();
     }
-  }, [isAdmin, user, fetchClients, fetchActiveSubscriptions]);
+  }, [isAdmin, user, fetchActiveSubscriptions]);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -210,55 +200,11 @@ export function usePlansPage() {
       filteredPlans[0];
   }, [filteredPlans, selectedPlan]);
 
-  const [actionType, setActionType] = useState<"subscribe" | "modify">("modify");
-  const [subscriptionToModifyId, setSubscriptionToModifyId] = useState<string>("");
   const [tierChangeSubId, setTierChangeSubId] = useState<string | null>(null);
-
-  const selectedClientSubscriptions = useMemo(() => {
-    if (!selectedClientId) return [];
-    return activeSubscriptions.filter((sub) => sub.client_id === selectedClientId);
-  }, [activeSubscriptions, selectedClientId]);
-
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    setActionType("modify");
-    if (tierChangeSubId) {
-      setSubscriptionToModifyId(tierChangeSubId);
-      return;
-    }
-    const sourceSubs = isAdmin ? selectedClientSubscriptions : activeSubscriptions;
-    if (sourceSubs.length > 0) {
-      const activeSubForPlan = sourceSubs.find((sub) => sub.plan === selectedPlan && (sub.status === "ACTIVE" || sub.status === "EXPIRING"));
-      if (activeSubForPlan) {
-        setSubscriptionToModifyId(activeSubForPlan.id);
-      } else {
-        setSubscriptionToModifyId(sourceSubs[0].id);
-      }
-    }
-  }, [selectedPlan, activeSubscriptions, selectedClientSubscriptions, isAdmin, tierChangeSubId]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   const currentEquipmentCount = useMemo(() => {
     return currentPlan ? (equipmentCounts[currentPlan.id] || 1) : 1;
   }, [currentPlan, equipmentCounts]);
-
-  const priceMultiplier = useMemo(() => {
-    return billingCycle === "annual" ? 12 * 0.8 : 1;
-  }, [billingCycle]);
-
-  const subtotal = useMemo(() => {
-    return currentPlan
-      ? Math.round(currentPlan.price * priceMultiplier * currentEquipmentCount * 100) / 100
-      : 0;
-  }, [currentPlan, priceMultiplier, currentEquipmentCount]);
-
-  const tax = useMemo(() => {
-    return Math.round(subtotal * 0.18 * 100) / 100;
-  }, [subtotal]);
-
-  const total = useMemo(() => {
-    return Math.round((subtotal + tax) * 100) / 100;
-  }, [subtotal, tax]);
 
   const getTierLabel = useCallback((planId: string) => {
     if (planId )
@@ -389,7 +335,9 @@ export function usePlansPage() {
         setPaymentMessage(null);
         try {
           const activeSub =
-            activeSubscriptions.find((sub) => sub.id === subscriptionToModifyId) || activeSubscriptions[0];
+            (tierChangeSubId
+              ? activeSubscriptions.find((sub) => sub.id === tierChangeSubId)
+              : activeSubscriptions.find((sub) => sub.plan === selectedPlan)) || activeSubscriptions[0];
           if (activeSub) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             upgradeButtonsInstance = (window as any).paypal.Buttons({
@@ -410,50 +358,52 @@ export function usePlansPage() {
                     billingCycle,
                     currentSubscriptionId: activeSub.id,
                   });
-                  setPaymentMessage("Upgrade order created. Please approve payment in PayPal window.");
                   return response.orderId;
                 } catch (err) {
-                  console.error(err);
-                  setPaymentMessage("Failed to prepare upgrade checkout.");
+                  console.error("Failed to create upgrade PayPal order:", err);
+                  setPaymentMessage("Failed to initiate upgrade payment. Please try again.");
                   throw err;
                 }
               },
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               onApprove: async (data: any) => {
-                setPaymentMessage("Upgrade payment approved. Updating subscription...");
-                setSubscribeLoading(true);
+                setPaymentMessage("Processing upgrade payment...");
                 try {
                   await subscriptionService.update(activeSub.id, {
                     plan: currentPlan.id,
                     equipmentCount: currentEquipmentCount,
                     paypalOrderId: data.orderID,
                   });
-                  setPaymentMessage("Subscription upgraded successfully!");
                   addToast({
-                    title: "Subscription Updated",
-                    message: `Successfully updated your subscription to ${getPlanName(currentPlan.name)} with ${currentEquipmentCount} devices.`,
+                    title: "Plan Upgraded!",
+                    message: `Successfully upgraded to ${getPlanName(currentPlan.name)}.`,
                     type: "success",
                   });
                   await fetchActiveSubscriptions();
+                  setPaymentMessage(null);
                 } catch (err) {
-                  console.error(err);
-                  setPaymentMessage("Failed to update subscription.");
+                  console.error("Failed to capture upgrade payment:", err);
+                  setPaymentMessage("Upgrade payment capture failed. Please contact support.");
                   addToast({
-                    title: "Upgrade Failed",
-                    message: "Payment verification failed or could not upgrade subscription.",
+                    title: "Payment Error",
+                    message: "Upgrade payment could not be processed.",
                     type: "error",
                   });
-                } finally {
-                  setSubscribeLoading(false);
                 }
               },
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               onError: (err: any) => {
-                console.error(err);
-                setPaymentMessage("PayPal Upgrade Checkout encountered an error.");
+                console.error("PayPal Upgrade Button Error:", err);
+                setPaymentMessage("Payment service encountered an error.");
+              },
+              onCancel: () => {
+                setPaymentMessage("Upgrade transaction cancelled.");
               },
             });
-            upgradeButtonsInstance.render("#paypal-upgrade-button-container");
+
+            if (upgradeButtonsInstance.isEligible()) {
+              upgradeButtonsInstance.render("#paypal-upgrade-button-container");
+            }
           }
         } catch (err) {
           console.error("Failed to render PayPal upgrade buttons", err);
@@ -467,13 +417,13 @@ export function usePlansPage() {
 
     return () => {
       clearTimeout(timer);
+      if (upgradeButtonsInstance) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        upgradeButtonsInstance.close().catch((e: any) => console.error("Error closing upgrade buttons", e));
+      }
       if (buttonsInstance && buttonsInstance.close) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         buttonsInstance.close().catch((e: any) => console.error("Error closing buttons", e));
-      }
-      if (upgradeButtonsInstance && upgradeButtonsInstance.close) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        upgradeButtonsInstance.close().catch((e: any) => console.error("Error closing upgrade buttons", e));
       }
     };
   }, [
@@ -483,7 +433,8 @@ export function usePlansPage() {
     currentPlan,
     currentEquipmentCount,
     billingCycle,
-    subscriptionToModifyId,
+    tierChangeSubId,
+    selectedPlan,
     activeSubscriptions,
     fetchActiveSubscriptions,
     addToast,
@@ -523,7 +474,7 @@ export function usePlansPage() {
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (!(window as any).paypal) {
+      if (!(window as any).paypal || !checkoutSubscription) {
         setPaymentMessage("PayPal SDK failed to load");
         return;
       }
@@ -533,9 +484,10 @@ export function usePlansPage() {
         container.innerHTML = "";
         setPaymentMessage(null);
         try {
+          const currentSub = checkoutSubscription;
           const newCount = checkoutAction === "add_device"
-            ? checkoutSubscription.equipment_count + checkoutDeviceDelta
-            : checkoutSubscription.equipment_count;
+            ? currentSub.equipment_count + checkoutDeviceDelta
+            : currentSub.equipment_count;
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           buttonsInstance = (window as any).paypal.Buttons({
@@ -543,10 +495,10 @@ export function usePlansPage() {
               setPaymentMessage("Preparing checkout...");
               try {
                 const response = await subscriptionService.createPaypalOrder({
-                  plan: checkoutSubscription.plan,
+                  plan: currentSub.plan,
                   equipmentCount: newCount,
                   billingCycle,
-                  currentSubscriptionId: checkoutSubscription.id,
+                  currentSubscriptionId: currentSub.id,
                 });
                 setPaymentMessage("Order created. Please approve payment in PayPal window.");
                 return response.orderId;
@@ -561,8 +513,8 @@ export function usePlansPage() {
               setPaymentMessage("Payment approved. Updating subscription...");
               setSubscribeLoading(true);
               try {
-                await subscriptionService.update(checkoutSubscription.id, {
-                  plan: checkoutSubscription.plan,
+                await subscriptionService.update(currentSub.id, {
+                  plan: currentSub.plan,
                   equipmentCount: newCount,
                   paypalOrderId: data.orderID,
                 });
@@ -696,63 +648,6 @@ export function usePlansPage() {
     }
   }, [currentPlan, isAdmin, acceptedTos, selectedClientId, currentEquipmentCount, billingCycle, paymentMethod, getPlanName, addToast, fetchActiveSubscriptions, navigate, setSubscribeLoading]);
 
-  const handleSendQuote = useCallback(async (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (!currentPlan) return;
-
-    const sendToUnregistered = isUnregistered || (isAdmin && selectedClientId === "unregistered");
-    if (sendToUnregistered && !unregisteredEmail.trim()) {
-      addToast({
-        title: "Validation Error",
-        message: "Please enter a recipient email address.",
-        type: "error",
-      });
-      return;
-    }
-
-    if (isAdmin && !selectedClientId) {
-      addToast({
-        title: "Validation Error",
-        message: "Please select a customer or unregistered option.",
-        type: "error",
-      });
-      return;
-    }
-
-    setQuoteLoading(true);
-    try {
-      await subscriptionService.sendQuote({
-        plan: currentPlan.id,
-        equipmentCount: currentEquipmentCount,
-        clientId: !sendToUnregistered && isAdmin ? selectedClientId : undefined,
-        unregisteredEmail: sendToUnregistered ? unregisteredEmail.trim() : undefined,
-        unregisteredName: sendToUnregistered ? unregisteredName.trim() || undefined : undefined,
-        billingCycle,
-      });
-
-      addToast({
-        title: "Quotation Sent",
-        message: t("plans.quoteSuccess"),
-        type: "success",
-      });
-
-      if (sendToUnregistered) {
-        setUnregisteredEmail("");
-        setUnregisteredName("");
-      }
-    } catch (err) {
-      console.error("Failed to send quotation:", err);
-      const error = err as { response?: { data?: { message?: string } }; message?: string };
-      addToast({
-        title: t("plans.quoteError"),
-        message: error.response?.data?.message || error.message || "Failed to send quotation.",
-        type: "error",
-      });
-    } finally {
-      setQuoteLoading(false);
-    }
-  }, [currentPlan, isAdmin, selectedClientId, unregisteredEmail, unregisteredName, currentEquipmentCount, billingCycle, t, addToast, isUnregistered]);
-
   const handleUpdateSubscription = useCallback(async (subId: string, count: number): Promise<boolean> => {
     if (!currentPlan) return false;
     if (!isAdmin && !acceptedTos) {
@@ -789,36 +684,6 @@ export function usePlansPage() {
       setSubscribeLoading(false);
     }
   }, [currentPlan, isAdmin, acceptedTos, getPlanName, addToast, fetchActiveSubscriptions, setSubscribeLoading]);
-
-  const handleCancelSubscription = useCallback(async (subId: string) => {
-    const confirmCancel = window.confirm(
-      t("plans.cancelConfirm") || "Are you sure you want to cancel your subscription? Your access will remain active through the end of your paid billing cycle.",
-    );
-    if (!confirmCancel) return;
-
-    setSubscribeLoading(true);
-    try {
-      await subscriptionService.update(subId, {
-        status: "CANCELLED",
-      });
-      addToast({
-        title: t("plans.cancelTitle") || "Subscription Cancellation Scheduled",
-        message: t("plans.cancelSuccess") || "Your subscription cancellation has been scheduled. Services will remain active until the end of your billing period.",
-        type: "success",
-      });
-      await fetchActiveSubscriptions();
-    } catch (err) {
-      console.error("Failed to cancel subscription:", err);
-      const error = err as { response?: { data?: { message?: string } }; message?: string };
-      addToast({
-        title: t("plans.cancelErrorTitle") || "Cancellation Failed",
-        message: error.response?.data?.message || error.message || "Failed to cancel subscription.",
-        type: "error",
-      });
-    } finally {
-      setSubscribeLoading(false);
-    }
-  }, [t, addToast, fetchActiveSubscriptions, setSubscribeLoading]);
 
   const handleDirectCancelSubscription = useCallback(async (subId: string) => {
     setSubscribeLoading(true);
@@ -894,7 +759,6 @@ export function usePlansPage() {
       await subscriptionService.update(checkoutSubscription.id, {
         plan: checkoutSubscription.plan,
         equipmentCount: newCount,
-        paymentMethod: "transfer",
       });
 
       addToast({
@@ -1260,11 +1124,6 @@ export function usePlansPage() {
     reference,
     billingCycle,
     setBillingCycle,
-    quoteLoading,
-    unregisteredEmail,
-    setUnregisteredEmail,
-    unregisteredName,
-    setUnregisteredName,
     activeTab,
     setActiveTab,
     editingPlan,
@@ -1288,34 +1147,21 @@ export function usePlansPage() {
     isCreateMode,
     draggedIndex,
     dragOverIndex,
-    clients,
-    selectedClientId,
-    setSelectedClientId,
     subscribeLoading,
     paymentMessage,
     setPaymentMessage,
     activeSubscriptions,
-    actionType,
-    setActionType,
-    subscriptionToModifyId,
-    setSubscriptionToModifyId,
     tierChangeSubId,
     setTierChangeSubId,
-    selectedClientSubscriptions,
     currentPlan,
     currentEquipmentCount,
-    subtotal,
-    tax,
-    total,
     getPlanName,
     getPlanDescription,
     getFeatureText,
     getTierLabel,
     handleAdjustEquipmentCount,
     handleProcessSubscription,
-    handleSendQuote,
     handleUpdateSubscription,
-    handleCancelSubscription,
     handleUpdateSubscriptionDirect,
     handleModifySubscription,
     handleDirectCancelSubscription,

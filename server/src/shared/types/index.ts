@@ -522,3 +522,111 @@ export interface RmmOverviewStats {
   automatedFCR: number;
 }
 
+// ---- CRM & Lead Pipeline Types ----
+
+export enum LeadStage {
+  NEW = 'NEW',
+  QUALIFIED = 'QUALIFIED',
+  PROPOSITION = 'PROPOSITION',
+  WON = 'WON',
+  LOST = 'LOST',
+}
+
+export enum LeadPriority {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+}
+
+export enum QuotationStatus {
+  DRAFT = 'DRAFT',
+  SENT = 'SENT',
+  ACCEPTED = 'ACCEPTED',
+  DECLINED = 'DECLINED',
+  EXPIRED = 'EXPIRED',
+}
+
+export interface Lead {
+  id: string;
+  tenant_id: string;
+  client_id?: string | null;
+  contact_name: string;
+  contact_email: string;
+  contact_phone?: string | null;
+  company_name?: string | null;
+  stage: LeadStage | string;
+  plan_id?: string | null;
+  billing_cycle: 'monthly' | 'annual' | string;
+  equipment_count: number;
+  expected_revenue: number;
+  probability: number;
+  priority: LeadPriority | string;
+  assigned_user_id?: string | null;
+  assigned_user_name?: string | null;
+  assigned_user_email?: string | null;
+  client_name?: string | null;
+  client_email?: string | null;
+  plan_name?: string | null;
+  notes?: string | null;
+  lost_reason?: string | null;
+  next_follow_up_date?: Date | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface Quotation {
+  id: string;
+  quotation_number: string;
+  tenant_id: string;
+  lead_id?: string | null;
+  client_id?: string | null;
+  recipient_name: string;
+  recipient_email: string;
+  plan_id: string;
+  plan_name?: string | null;
+  billing_cycle: 'monthly' | 'annual' | string;
+  equipment_count: number;
+  subtotal: number;
+  tax: number;
+  total: number;
+  status: QuotationStatus | string;
+  valid_until?: Date | null;
+  sent_at: Date;
+  last_reminder_sent_at?: Date | null;
+  created_by?: string | null;
+  created_by_name?: string | null;
+  created_at: Date;
+}
+
+export interface LeadActivity {
+  id: string;
+  lead_id: string;
+  tenant_id: string;
+  user_id?: string | null;
+  user_name?: string | null;
+  activity_type: 'EMAIL_SENT' | 'QUOTE_SENT' | 'QUOTE_REMINDER' | 'QUOTE_STATUS_CHANGE' | 'CALL' | 'MEETING' | 'NOTE' | 'STAGE_CHANGE' | 'PLAN_ASSIGNED' | 'SUB_MODIFIED' | string;
+  title: string;
+  summary?: string | null;
+  due_date?: Date | null;
+  completed_at?: Date | null;
+  status: 'PENDING' | 'COMPLETED' | 'CANCELLED' | string;
+  created_at: Date;
+  lead_contact_name?: string | null;
+  lead_company_name?: string | null;
+}
+
+export interface CrmPipelineStats {
+  totalLeads: number;
+  pipelineValue: number;
+  wonRevenue: number;
+  leadsInProposition: number;
+  conversionRate: number;
+  stageBreakdown: {
+    NEW: { count: number; value: number };
+    QUALIFIED: { count: number; value: number };
+    PROPOSITION: { count: number; value: number };
+    WON: { count: number; value: number };
+    LOST: { count: number; value: number };
+  };
+}
+

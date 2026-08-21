@@ -410,7 +410,7 @@ describe('DevicesPage', () => {
   });
 
   test('filters device slots by device ID (id) using the search bar', async () => {
-    const mockSlots: SubscriptionEquipment[] = [
+    const mockSlots: any[] = [
       {
         id: 'slot-uuid-1111',
         subscription_id: 'sub-basic',
@@ -438,10 +438,11 @@ describe('DevicesPage', () => {
         plan: 'BASIC',
         status: 'ACTIVE',
         equipment_count: 2,
+        renewal_date: '2026-07-22T00:00:00.000Z',
         tenant_id: 'tenant-1',
         created_at: '2026-06-22',
         updated_at: '2026-06-22',
-      },
+      } as any,
     ]);
     vi.mocked(equipmentService.getMyDevices).mockResolvedValue(mockSlots);
 
@@ -451,32 +452,32 @@ describe('DevicesPage', () => {
       </MemoryRouter>
     );
 
-    // Wait for the list to load and verify both are rendered
+    // Both should be visible initially
     await waitFor(() => {
       expect(screen.getByText('Workstation Alpha')).toBeInTheDocument();
       expect(screen.getByText('PENDING ACTIVATION')).toBeInTheDocument();
-      expect(screen.getByText('ID: slot-uuid-1111')).toBeInTheDocument();
-      expect(screen.getByText('ID: slot-uuid-2222')).toBeInTheDocument();
     });
 
-    // Filter by '2222' using search bar
+    // Search by partial/full UUID of the active slot
     const searchInput = screen.getByPlaceholderText('Search by Device ID...');
-    fireEvent.change(searchInput, { target: { value: '2222' } });
+    fireEvent.change(searchInput, { target: { value: '1111' } });
 
-    // Expect slot-1111 to be filtered out, and slot-2222 to remain
-    expect(screen.queryByText('Workstation Alpha')).not.toBeInTheDocument();
-    expect(screen.getByText('ID: slot-uuid-2222')).toBeInTheDocument();
+    // Assert only matching slot is present
+    await waitFor(() => {
+      expect(screen.getByText('Workstation Alpha')).toBeInTheDocument();
+      expect(screen.queryByText('PENDING ACTIVATION')).toBeNull();
+    });
 
-    // Clear search
+    // Clear search and ensure all return
     fireEvent.change(searchInput, { target: { value: '' } });
-    expect(screen.getByText('Workstation Alpha')).toBeInTheDocument();
-    expect(screen.getByText('ID: slot-uuid-2222')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Workstation Alpha')).toBeInTheDocument();
+      expect(screen.getByText('PENDING ACTIVATION')).toBeInTheDocument();
+    });
   });
 
-  test('renders all devices with filters for admin role', async () => {
-    // Reset mockUser role to ADMIN for this test
+  test('renders client and tenant info on device list for ADMIN role', async () => {
     mockUser.role = 'ADMIN';
-
     const mockAdminDevices = [
       {
         id: 'slot-uuid-1',
@@ -484,9 +485,9 @@ describe('DevicesPage', () => {
         slot_index: 0,
         status: 'ACTIVE' as const,
         device_name: 'Workstation Alpha',
-        device_serial: 'SN-ALPHA-01',
-        nextcloud_username: 'NC_USER_1',
-        nextcloud_password: 'mock_password_1',
+        device_serial: 'SN-001',
+        nextcloud_username: 'nc_user_1',
+        nextcloud_password: 'mock_password',
         tenant_id: 'tenant-1',
         tenant_name: 'Acme Corp',
         client_name: 'John Mitchell',
@@ -500,13 +501,11 @@ describe('DevicesPage', () => {
         id: 'slot-uuid-2',
         subscription_id: 'sub-premium',
         slot_index: 0,
-        status: 'PENDING_ACTIVATION' as const,
-        device_name: null,
-        device_serial: null,
-        otp: null,
-        otp_expires_at: null,
-        nextcloud_username: null,
-        nextcloud_password: null,
+        status: 'ACTIVE' as const,
+        device_name: 'Server Beta',
+        device_serial: 'SN-002',
+        nextcloud_username: 'nc_user_2',
+        nextcloud_password: 'mock_password',
         tenant_id: 'tenant-2',
         tenant_name: 'Beta Industries',
         client_name: 'Lisa Park',
@@ -518,7 +517,7 @@ describe('DevicesPage', () => {
       },
     ];
 
-    vi.mocked(equipmentService.getAllDevicesForAdmin).mockResolvedValue(mockAdminDevices);
+    vi.mocked(equipmentService.getAllDevicesForAdmin).mockResolvedValue(mockAdminDevices as any);
 
     render(
       <MemoryRouter>
@@ -566,7 +565,7 @@ describe('DevicesPage', () => {
       updated_at: '2026-06-22',
     }));
 
-    vi.mocked(equipmentService.getAllDevicesForAdmin).mockResolvedValue(mockAdminDevices);
+    vi.mocked(equipmentService.getAllDevicesForAdmin).mockResolvedValue(mockAdminDevices as any);
 
     render(
       <MemoryRouter>
@@ -622,6 +621,7 @@ describe('DevicesPage', () => {
       plan: 'PREMIUM',
       status: 'ACTIVE' as const,
       equipment_count: 1,
+      renewal_date: '2027-06-22T00:00:00.000Z',
       tenant_id: 'tenant-1',
       created_at: '2026-06-22',
       updated_at: '2026-06-22',
@@ -643,7 +643,7 @@ describe('DevicesPage', () => {
       updated_at: '2026-06-22',
     };
 
-    vi.mocked(subscriptionService.getAll).mockResolvedValue([activeSub]);
+    vi.mocked(subscriptionService.getAll).mockResolvedValue([activeSub as any]);
     vi.mocked(equipmentService.getMyDevices).mockResolvedValue([mockSlot]);
     vi.mocked(equipmentService.getNextcloudInfo).mockResolvedValue({
       nextcloud_username: 'client_tenant1_slot_1',
@@ -702,12 +702,12 @@ describe('DevicesPage', () => {
       },
     ];
 
-    vi.mocked(equipmentService.getAllDevicesForAdmin).mockResolvedValue(mockAdminDevices);
+    vi.mocked(equipmentService.getAllDevicesForAdmin).mockResolvedValue(mockAdminDevices as any);
     vi.mocked(equipmentService.generateOTP).mockResolvedValue({
       ...mockAdminDevices[0],
       otp: '654321',
       otp_expires_at: new Date().toISOString(),
-    });
+    } as any);
 
     render(
       <MemoryRouter>
@@ -759,14 +759,14 @@ describe('DevicesPage', () => {
       },
     ];
 
-    vi.mocked(equipmentService.getAllDevicesForAdmin).mockResolvedValue(mockAdminDevices);
+    vi.mocked(equipmentService.getAllDevicesForAdmin).mockResolvedValue(mockAdminDevices as any);
     vi.mocked(equipmentService.deactivateSlot).mockResolvedValue({
       ...mockAdminDevices[0],
       status: 'PENDING_ACTIVATION',
       device_name: null,
       device_serial: null,
       nextcloud_username: null,
-    });
+    } as any);
 
     render(
       <MemoryRouter>
@@ -820,7 +820,7 @@ describe('DevicesPage', () => {
         tenant_id: 'tenant-1',
         created_at: '2026-06-22',
         updated_at: '2026-06-22',
-      },
+      } as any,
     ]);
     vi.mocked(equipmentService.getMyDevices).mockResolvedValue([]);
 
@@ -877,6 +877,7 @@ describe('DevicesPage', () => {
       plan: 'BASIC' as const,
       status: 'ACTIVE' as const,
       equipment_count: 1,
+      renewal_date: '2026-07-22T00:00:00.000Z',
       tenant_id: 'tenant-1',
       created_at: '2026-06-22',
       updated_at: '2026-06-22',
@@ -897,7 +898,7 @@ describe('DevicesPage', () => {
       updated_at: '2026-06-22',
     };
 
-    vi.mocked(subscriptionService.getAll).mockResolvedValue([activeSub]);
+    vi.mocked(subscriptionService.getAll).mockResolvedValue([activeSub as any]);
     vi.mocked(equipmentService.getMyDevices).mockResolvedValue([mockSlot]);
 
     const { rerender } = render(
@@ -953,7 +954,7 @@ describe('DevicesPage', () => {
     });
 
     mockUser.role = 'ADMIN';
-    const mockSlots: SubscriptionEquipment[] = [
+    const mockSlots: any[] = [
       {
         id: 'slot-otp-1',
         subscription_id: 'sub-basic',

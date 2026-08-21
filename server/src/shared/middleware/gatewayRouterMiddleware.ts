@@ -13,6 +13,7 @@ import planRoutes from '@modules/subscriptions/routes/plan.routes';
 import systemRoutes from '@modules/system/routes/system.routes';
 import notificationRoutes from '@modules/notifications/routes/notification.routes';
 import notificationPreferenceRoutes from '@modules/notifications/routes/notificationPreference.routes';
+import { crmRoutes } from '@modules/crm';
 
 /**
  * Express router acting as the API Gateway Layer Cluster Dispatcher.
@@ -46,6 +47,7 @@ gatewayClusterRouter.use('/expenses', expenseRoutes);
 gatewayClusterRouter.use('/maintenance', maintenanceRoutes);
 gatewayClusterRouter.use('/alerts', alertRoutes);
 gatewayClusterRouter.use('/rmm', rmmRoutes);
+gatewayClusterRouter.use('/crm', crmRoutes);
 
 /**
  * Middleware ensuring standard Gateway Header propagation on all cluster requests.

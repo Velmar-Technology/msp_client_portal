@@ -71,7 +71,7 @@ describe('AppSidebar', () => {
         tenant_id: 'tenant-1',
         created_at: '2026-06-22',
         updated_at: '2026-06-22',
-      },
+      } as any,
     ]);
 
     render(
@@ -107,7 +107,7 @@ describe('AppSidebar', () => {
         tenant_id: 'tenant-1',
         created_at: '2026-06-22',
         updated_at: '2026-06-22',
-      },
+      } as any,
     ]);
 
     render(

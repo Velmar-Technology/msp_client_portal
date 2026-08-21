@@ -1,7 +1,7 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { TicketQuotaService, ticketQuotaService } from './TicketQuotaService';
-import { Subscription, SubscriptionStatus, Plan } from '@shared/types';
-import { TicketLimitExceededError } from '@shared/errors';
+import { SubscriptionStatus } from '@shared/types';
+import { TicketLimitExceededError, ForbiddenError } from '@shared/errors';
 import { HELPDESK_SUPPORT_FEATURE_CODE } from '@shared/config/constants';
 
 describe('TicketQuotaService', () => {
@@ -33,13 +33,13 @@ describe('TicketQuotaService', () => {
     expect(ticketQuotaService).toBeInstanceOf(TicketQuotaService);
   });
 
-  it('does nothing when client has no active or expiring subscriptions', async () => {
+  it('throws ForbiddenError when client has no active or expiring subscriptions', async () => {
     mockSubRepo.findByClient.mockResolvedValue([
       { id: 'sub-1', status: SubscriptionStatus.CANCELLED, plan: 'plan-basic' },
       { id: 'sub-2', status: SubscriptionStatus.EXPIRED, plan: 'plan-basic' },
     ]);
 
-    await expect(service.enforceTicketLimit('client-1', 'tenant-1')).resolves.toBeUndefined();
+    await expect(service.enforceTicketLimit('client-1', 'tenant-1')).rejects.toThrow(ForbiddenError);
     expect(mockPlanRepo.findById).not.toHaveBeenCalled();
     expect(mockTicketRepo.countClientTicketsInCurrentMonth).not.toHaveBeenCalled();
   });

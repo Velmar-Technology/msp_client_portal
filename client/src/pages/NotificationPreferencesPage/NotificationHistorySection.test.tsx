@@ -44,7 +44,7 @@ describe('NotificationHistorySection i18n & rendering', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseNotificationHistory.mockReturnValue({
-      notifications: sampleNotifications,
+      notifications: sampleNotifications as any,
       totalCount: 2,
       unreadCount: 1,
       isLoading: false,

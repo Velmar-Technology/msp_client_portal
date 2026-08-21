@@ -3,5 +3,5 @@ export {
   SidebarBrand,
   ActiveSubCard,
   SidebarNavList,
-  default,
+  AppSidebar as default,
 } from './app-sidebar';
