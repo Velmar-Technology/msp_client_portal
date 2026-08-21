@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.5.0](https://github.com/eapolancovelmar/msp_client_portal/compare/v1.4.3...v1.5.0) (2026-08-21)
+
+
+### Features
+
+* **billing:** add wire transfer payment tab and invoice deep-link support ([324af1e](https://github.com/eapolancovelmar/msp_client_portal/commit/324af1e844b21598b1a13ed5738f2817b70b1d63))
+* **crm:** add lead pipeline module and remove legacy plan assignment flow ([583519f](https://github.com/eapolancovelmar/msp_client_portal/commit/583519f2aa3ad2871672ce8710170da1a7475422))
+* **crm:** lead deletion, bulk delete, and auto-provisioned client conversion ([b19900f](https://github.com/eapolancovelmar/msp_client_portal/commit/b19900f1f2755da135488c4075a795ed249edc67))
+* **crm:** translate activity timeline and add inline lead editing ([be25a87](https://github.com/eapolancovelmar/msp_client_portal/commit/be25a87dde2f073bde3501db29787b934a435654))
+* **tickets:** adopt shadcn attachment primitives in TicketDetailPage ([aa3712b](https://github.com/eapolancovelmar/msp_client_portal/commit/aa3712bdc4ea671d28c7fe858948b42817005ba2))
+* **ui:** adopt shadcn Calendar via shared DatePicker across date inputs ([1033213](https://github.com/eapolancovelmar/msp_client_portal/commit/10332135665466b6e138162cf8e47b113cfa1567))
+
+
+### Bug Fixes
+
+* **financial:** resolve undefined expenseKpi reference crashing FinancialPage ([510a64b](https://github.com/eapolancovelmar/msp_client_portal/commit/510a64be57533923b0ad106535032367c97ac626))
+* **tickets:** fall back to online technicians when no active pool is available ([9d44ca6](https://github.com/eapolancovelmar/msp_client_portal/commit/9d44ca6108fa8fb1c0a2ab2c442097f7c1b10d04))
+
 ## [1.4.3](https://github.com/eapolancovelmar/msp_client_portal/compare/v1.4.2...v1.4.3) (2026-08-20)
 
 
