@@ -61,3 +61,20 @@ Never hardcode arbitrary height classes (e.g. `h-8.5`, `h-9`, `h-10`, `py-3`) on
 ## 5. Page Spacing & Section Architecture
 - Body wrapper: `<div className="flex flex-col gap-4">`.
 - Sections: Wrap all main subsections with accessible `<section aria-label="...">` blocks.
+
+---
+
+## 6. Anti-Pattern: No Nested Cards ("Matryoshka / Russian Doll" Rule)
+Avoid nesting cards inside cards inside cards (stacking outer borders, rounded corners, and drop shadows):
+
+### Visual & Architectural Drawbacks:
+1. **Visual Clutter & Cognitive Overload**: Stacking borders (`border`) and shadows (`shadow-sm`) adds noise and muddles visual hierarchy.
+2. **Wasted Screen Real Estate**: Accumulated paddings and margins restrict horizontal space, especially in slide-over drawers (`Sheet`), dialogs, or mobile views.
+3. **Muddled Visual Hierarchy**: When every sub-group is in a boxed container, primary actions and secondary details compete for the same visual weight.
+4. **Violation of Single Responsibility**: Monolithic components managing multiple nested card states become unmaintainable and untestable.
+
+### Enforced Layout Alternatives:
+- **Flat Sectioning & Hairline Dividers**: Use `divide-y divide-border` or subtle `border-b border-border/60` instead of nested border boxes.
+- **Semantic Sections**: Structure layouts with `<section aria-label="...">` and crisp uppercase subheaders (`text-[10px] font-bold uppercase tracking-wider text-muted-foreground`).
+- **Tonal Contrast**: Rely on a single subtle background shift (`bg-zinc-50/70 dark:bg-zinc-900/40`) rather than full border + shadow cards.
+- **Sub-Component Decomposition**: Break down multi-section forms and drawers into dedicated, isolated sub-components.

@@ -273,3 +273,22 @@ function ChartSkeletonPlaceholder({ className }: { className?: string }) {
   );
 }
 ```
+
+---
+
+### 6. Card Hierarchy & Anti-Nested Cards Standard ("Matryoshka Prevention")
+
+Avoid nesting cards inside cards inside cards (e.g. bordered shadow containers placed inside an already bordered card, modal, or drawer):
+
+* **Visual Overhead**: Stacking multiple layers of `border`, `rounded-lg`, and `shadow-xs` produces visual noise and cognitive fatigue.
+* **Spatial Efficiency**: Deeply nested cards consume precious horizontal and vertical padding/margin in side-drawers (`Sheet`), dialogs, and compact views.
+* **Visual Hierarchy**: Boxing every sub-element gives all content identical visual prominence, making primary CTAs and critical data harder to scan.
+
+#### Recommended Layout Patterns:
+
+| Anti-Pattern (Avoid) | Preferred Design Pattern |
+| :--- | :--- |
+| **Stacked Bordered Cards** (`border` + `shadow-xs` inside outer card) | **Hairline Dividers & Flat Sections**: Group with `border-b border-border/60` or `divide-y divide-border/60`. |
+| **Inner Card Wrapper** | **Tonal Surface Contrast**: Apply subtle tonal background shift (`bg-zinc-50/70 dark:bg-zinc-900/40`) without adding outer borders or drop shadows. |
+| **Monolithic Form with Multiple Sub-Cards** | **Semantic Sub-Components**: Decompose sections into `<section aria-label="...">` blocks with clear uppercase typography (`text-[10px] font-bold uppercase tracking-wider text-muted-foreground`). |
+

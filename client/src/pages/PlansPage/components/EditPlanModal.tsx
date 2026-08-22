@@ -30,13 +30,13 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import { FEATURE_CATALOG } from "@/constants/featureCatalog";
 
 export interface EditPlanModalProps {
@@ -123,24 +123,25 @@ export function EditPlanModal({
     : t('plans.editPlanTitle', { id: editingPlan.id });
 
   return (
-    <Dialog open={true} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent
-        size="xl"
-        className="max-w-2xl w-full max-h-[88vh] bg-card border border-border rounded-xl p-0 flex flex-col shadow-2xl text-foreground overflow-hidden"
+    <Sheet open={true} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <SheetContent
+        side="right"
+        showCloseButton={false}
+        className="w-full sm:max-w-xl md:max-w-2xl h-full p-0 flex flex-col bg-background text-foreground border-l border-border shadow-2xl overflow-hidden data-[side=right]:w-full data-[side=right]:sm:max-w-xl data-[side=right]:md:max-w-2xl"
       >
         {/* Header */}
-        <DialogHeader className="px-5 py-3.5 border-b border-border flex flex-row justify-between items-center bg-zinc-50/70 dark:bg-zinc-900/40 space-y-0 text-left shrink-0">
+        <SheetHeader className="px-6 py-4 border-b border-border flex flex-row justify-between items-center bg-zinc-50/70 dark:bg-zinc-900/40 space-y-0 text-left shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="flex size-7 items-center justify-center rounded-md bg-primary/10 text-primary border border-primary/20">
               <Package className="size-3.5" />
             </div>
             <div>
-              <DialogTitle className="text-sm font-bold tracking-tight text-foreground font-heading">
+              <SheetTitle className="text-sm font-bold tracking-tight text-foreground font-heading">
                 {titleText}
-              </DialogTitle>
-              <DialogDescription className="text-[11px] text-muted-foreground">
+              </SheetTitle>
+              <SheetDescription className="text-[11px] text-muted-foreground">
                 {isCreateMode ? t('plans.createSubtitle') : t('plans.editSubtitle')}
-              </DialogDescription>
+              </SheetDescription>
             </div>
           </div>
           <Button
@@ -153,13 +154,13 @@ export function EditPlanModal({
           >
             <X className="h-3.5 w-3.5" />
           </Button>
-        </DialogHeader>
+        </SheetHeader>
 
-        {/* Scrollable Body */}
-        <div className="p-5 overflow-y-auto space-y-4 flex-1 text-xs">
-          {/* Section 1: General Plan Info & Pricing */}
-          <div className="rounded-lg border border-border bg-card p-3.5 shadow-xs space-y-3">
-            <div className="flex items-center justify-between border-b border-border/60 pb-2">
+        {/* Scrollable Body with Flat Semantic Sections & Hairline Dividers */}
+        <div className="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
+          {/* Section 1: Plan Specifications */}
+          <section aria-label={t('plans.generalInfo')} className="space-y-3.5">
+            <div className="flex items-center justify-between pb-2 border-b border-border/60">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                 <SlidersHorizontal className="h-3.5 w-3.5 text-primary" />
                 {t('plans.generalInfo')}
@@ -248,12 +249,12 @@ export function EditPlanModal({
                 </div>
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* Section 2: Localization (i18n) Tabs for Plan Name & Description */}
-          <div className="rounded-lg border border-border bg-card p-3.5 shadow-xs">
+          {/* Section 2: Localization (i18n) */}
+          <section aria-label={t('plans.i18nContent')} className="space-y-3.5 pt-1">
             <Tabs value={activeLang} onValueChange={(val) => setActiveLang(val as 'en_US' | 'es_DO')} className="w-full">
-              <div className="flex items-center justify-between border-b border-border/60 pb-2 mb-3">
+              <div className="flex items-center justify-between pb-2 mb-3 border-b border-border/60">
                 <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <Globe className="h-3.5 w-3.5 text-primary" />
                   <span>{t('plans.i18nContent')}</span>
@@ -261,13 +262,13 @@ export function EditPlanModal({
                 <TabsList className="h-7 p-0.5 bg-zinc-100 dark:bg-zinc-900 rounded-md border border-border">
                   <TabsTrigger
                     value="en_US"
-                    className="px-2.5 py-0.5 text-[11px] font-semibold h-6 cursor-pointer data-active:bg-card data-active:text-foreground data-active:shadow-xs"
+                    className="px-2.5 py-0.5 text-[11px] font-semibold h-6 cursor-pointer data-active:bg-background data-active:text-foreground data-active:shadow-2xs"
                   >
                     {t('plans.langEn')}
                   </TabsTrigger>
                   <TabsTrigger
                     value="es_DO"
-                    className="px-2.5 py-0.5 text-[11px] font-semibold h-6 cursor-pointer data-active:bg-card data-active:text-foreground data-active:shadow-xs"
+                    className="px-2.5 py-0.5 text-[11px] font-semibold h-6 cursor-pointer data-active:bg-background data-active:text-foreground data-active:shadow-2xs"
                   >
                     {t('plans.langEs')}
                   </TabsTrigger>
@@ -334,12 +335,12 @@ export function EditPlanModal({
                 </div>
               </TabsContent>
             </Tabs>
-          </div>
+          </section>
 
-          {/* Section 3: Plan Features Editor & Quota Builder */}
-          <div className="rounded-lg border border-border bg-card p-3.5 shadow-xs">
+          {/* Section 3: Plan Features & Quotas */}
+          <section aria-label={t('plans.planFeatures')} className="space-y-3.5 pt-1">
             <Tabs value={featureLangTab} onValueChange={(val) => setFeatureLangTab(val as 'en_US' | 'es_DO')} className="w-full">
-              <div className="flex items-center justify-between border-b border-border/60 pb-2 mb-3">
+              <div className="flex items-center justify-between pb-2 mb-3 border-b border-border/60">
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                     <Layers className="h-3.5 w-3.5 text-primary" />
@@ -354,13 +355,13 @@ export function EditPlanModal({
                   <TabsList className="h-6 p-0.5 bg-zinc-100 dark:bg-zinc-900 rounded border border-border">
                     <TabsTrigger
                       value="en_US"
-                      className="px-2 py-0 text-[10px] h-5 font-bold cursor-pointer data-active:bg-card data-active:text-foreground"
+                      className="px-2 py-0 text-[10px] h-5 font-bold cursor-pointer data-active:bg-background data-active:text-foreground"
                     >
                       EN
                     </TabsTrigger>
                     <TabsTrigger
                       value="es_DO"
-                      className="px-2 py-0 text-[10px] h-5 font-bold cursor-pointer data-active:bg-card data-active:text-foreground"
+                      className="px-2 py-0 text-[10px] h-5 font-bold cursor-pointer data-active:bg-background data-active:text-foreground"
                     >
                       ES
                     </TabsTrigger>
@@ -378,10 +379,10 @@ export function EditPlanModal({
                 </div>
               </div>
 
-              {/* Feature Items List */}
-              <div className="space-y-2 max-h-64 overflow-y-auto pr-0.5">
+              {/* Feature Items List (Flat tonal rows without nested shadow boxes) */}
+              <div className="space-y-2 max-h-72 overflow-y-auto pr-0.5">
                 {editFeatures.length === 0 ? (
-                  <div className="text-center py-6 text-muted-foreground border border-dashed border-border rounded-lg bg-zinc-50/50 dark:bg-zinc-900/20">
+                  <div className="text-center py-8 text-muted-foreground border border-dashed border-border/80 rounded-lg bg-zinc-50/40 dark:bg-zinc-900/20">
                     <Layers className="h-6 w-6 mx-auto mb-1.5 opacity-40" />
                     <p className="text-xs font-medium">{t('plans.noFeatures')}</p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">
@@ -407,12 +408,12 @@ export function EditPlanModal({
                         onDragOver={(e) => onDragOver(e, index)}
                         onDrop={(e) => onDrop(e, index)}
                         onDragEnd={onDragEnd}
-                        className={`group flex flex-col gap-1.5 border rounded-lg p-2 transition-all duration-150 ${
+                        className={`group flex flex-col gap-1.5 rounded-md p-2 transition-all duration-150 ${
                           draggedIndex === index
-                            ? 'opacity-40 bg-muted'
+                            ? 'opacity-40 bg-muted border border-border'
                             : dragOverIndex === index
-                              ? 'border-primary border-dashed bg-primary/5 shadow-xs'
-                              : 'border-border bg-card hover:border-zinc-300 dark:hover:border-zinc-700'
+                              ? 'border border-primary border-dashed bg-primary/5'
+                              : 'border border-border/70 bg-zinc-50/50 hover:bg-zinc-50/90 dark:bg-zinc-900/30 dark:hover:bg-zinc-900/60'
                         }`}
                       >
                         {/* Feature Main Control Bar */}
@@ -461,7 +462,7 @@ export function EditPlanModal({
                             value={feat.code || 'CUSTOM_FEATURE'}
                             onValueChange={(val) => onUpdateFeatureCode?.(index, val)}
                           >
-                            <SelectTrigger size="sm" className="flex-1 text-xs truncate font-medium bg-input/20">
+                            <SelectTrigger size="sm" className="flex-1 text-xs truncate font-medium bg-background border-border/70">
                               <SelectValue placeholder={t('plans.customFeatureSelect')} />
                             </SelectTrigger>
                             <SelectContent>
@@ -494,9 +495,9 @@ export function EditPlanModal({
                           </Button>
                         </div>
 
-                        {/* Parameter Controls (Inline compact pills) */}
+                        {/* Parameter Controls (Flat chip pills with tonal background) */}
                         {feat.code && feat.code !== 'CUSTOM_FEATURE' && (
-                          <div className="ml-6 pl-1 pt-0.5 flex items-center gap-1.5 flex-wrap bg-zinc-50/70 dark:bg-zinc-900/40 p-1.5 rounded-md border border-border">
+                          <div className="ml-6 pl-1 pt-0.5 flex items-center gap-1.5 flex-wrap">
                             {allParamKeys.map((paramKey) => {
                               const schemaItem = catalogItem?.paramSchema?.find((p) => p.key === paramKey);
                               const label = schemaItem ? schemaItem.label : paramKey;
@@ -505,7 +506,7 @@ export function EditPlanModal({
                               return (
                                 <div
                                   key={paramKey}
-                                  className="flex items-center gap-1 bg-card px-1.5 py-0.5 rounded border border-border shadow-2xs"
+                                  className="flex items-center gap-1 bg-background px-1.5 py-0.5 rounded border border-border/70"
                                 >
                                   <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
                                     {label}:
@@ -612,11 +613,11 @@ export function EditPlanModal({
                 )}
               </div>
             </Tabs>
-          </div>
+          </section>
         </div>
 
         {/* Footer */}
-        <DialogFooter className="px-5 py-3 border-t border-border flex flex-row justify-between items-center bg-zinc-50/70 dark:bg-zinc-900/40 shrink-0">
+        <SheetFooter className="px-6 py-3.5 border-t border-border flex flex-row justify-between items-center bg-zinc-50/70 dark:bg-zinc-900/40 shrink-0 mt-auto">
           <div>
             {!isCreateMode && onDeletePlan && (
               <Button
@@ -660,9 +661,9 @@ export function EditPlanModal({
               )}
             </Button>
           </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }
 
