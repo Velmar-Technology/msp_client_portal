@@ -435,3 +435,20 @@ Code must explain itself. Comments are only allowed when strictly necessary to e
 - **Prefer Exceptions to Return Codes / Manual Status Formatting**: Use typed domain exceptions instead of returning error codes or manual error response JSON objects in controllers.
 - **Define Exception Classes in Terms of Caller's Needs**: Utilize domain error classes from `@shared/errors` (`ValidationError`, `NotFoundError`, `ForbiddenError`, `SlaViolationError`, etc.) to convey semantic meaning, proper HTTP status codes, and machine-readable error codes.
 - **Don't Return Null or Raw String Errors**: Throw typed domain exceptions with contextual metadata (`details`) rather than passing raw strings or returning null for error states.
+
+---
+
+## ❓ Agent Operational Protocol: Upfront Clarification & Interactive Decision Making
+
+To ensure zero miscommunication, minimize rework, and respect user design intent, all AI agents operating on this codebase must adhere to the **Upfront Clarification Protocol**:
+
+### 1. Interactive Questions Before Planning / Applying Changes
+- Whenever a task involves **UI/UX choices, feature scope tradeoffs, component adaptations (e.g., converting demo templates into production components), or ambiguous requirements**, agents **MUST NOT make silent assumptions**.
+- Agents **MUST proactively present structured multiple-choice questions** using the interactive `ask_question` tool before finalizing or executing an implementation plan.
+
+### 2. Standard Question Formatting Rules
+- **User-Centric Phrasing**: Format options as the user's direct response/action.
+- **Recommended Defaults**: Always prefix the recommended / best-practice option with `(Recommended)` as the first choice.
+- **Clear Scope Separation**: Split distinct decisions into separate questions (e.g., data source binding, navigation section headers, search depth / keyboard shortcuts, responsive behavior).
+- **Wait for Input**: Block execution until the user selects their preferred choices or provides custom input.
+

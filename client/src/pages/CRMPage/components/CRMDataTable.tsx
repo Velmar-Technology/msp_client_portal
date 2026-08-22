@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable, type DataTableFilter, type DataTableBulkAction } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import type { Lead, LeadStage, LeadPriority } from "@/services/crmService";
 import {
   Calendar,
@@ -84,17 +83,35 @@ export function CRMDataTable({
   const getStageBadge = (stage: LeadStage) => {
     switch (stage) {
       case "NEW":
-        return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20";
+        return {
+          badgeClass: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-500/20",
+          dotClass: "bg-blue-500",
+        };
       case "QUALIFIED":
-        return "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20";
+        return {
+          badgeClass: "bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 border border-purple-500/20",
+          dotClass: "bg-purple-500",
+        };
       case "PROPOSITION":
-        return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
+        return {
+          badgeClass: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-500/20",
+          dotClass: "bg-amber-500",
+        };
       case "WON":
-        return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
+        return {
+          badgeClass: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-500/20",
+          dotClass: "bg-emerald-500",
+        };
       case "LOST":
-        return "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-zinc-500/20";
+        return {
+          badgeClass: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800/80 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700",
+          dotClass: "bg-zinc-400",
+        };
       default:
-        return "bg-muted text-muted-foreground border-border";
+        return {
+          badgeClass: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border border-border",
+          dotClass: "bg-zinc-400",
+        };
     }
   };
 
@@ -152,15 +169,12 @@ export function CRMDataTable({
         header: t("crm.columns.stage"),
         cell: ({ row }) => {
           const stage = row.getValue("stage") as LeadStage;
+          const { badgeClass, dotClass } = getStageBadge(stage);
           return (
-            <Badge
-              variant="outline"
-              className={`px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase border font-mono ${getStageBadge(
-                stage,
-              )}`}
-            >
+            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-medium ${badgeClass}`}>
+              <span className={`mr-1 h-1 w-1 rounded-full ${dotClass}`} />
               {t(`crm.stages.${stage.toLowerCase()}`) || stage}
-            </Badge>
+            </span>
           );
         },
       },
