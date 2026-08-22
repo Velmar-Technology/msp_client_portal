@@ -78,8 +78,14 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     pool: 'forks',
-    isolate: true,
-    execArgv: ['--max-old-space-size=4096'],
+    poolOptions: {
+      forks: {
+        singleFork: false,
+        isolate: true,
+      },
+    },
+    execArgv: ['--max-old-space-size=4096', '--expose-gc'],
     maxWorkers: 2,
+    testTimeout: 15000,
   },
 });

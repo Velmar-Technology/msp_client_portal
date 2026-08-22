@@ -4,6 +4,20 @@ import { afterEach, vi } from 'vitest';
 
 afterEach(() => {
   cleanup();
+  vi.clearAllMocks();
+  if (typeof document !== 'undefined') {
+    document.body.innerHTML = '';
+  }
+  if (typeof localStorage !== 'undefined') {
+    localStorage.clear();
+  }
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.clear();
+  }
+  // If garbage collection is exposed via --expose-gc, reclaim heap memory
+  if (typeof global !== 'undefined' && typeof (global as any).gc === 'function') {
+    (global as any).gc();
+  }
 });
 
 Object.defineProperty(window, 'matchMedia', {
@@ -40,5 +54,3 @@ global.IntersectionObserver = class IntersectionObserver {
 
 window.scrollTo = vi.fn();
 Element.prototype.scrollIntoView = vi.fn();
-
-
