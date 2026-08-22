@@ -1,10 +1,26 @@
-import { useState } from 'react';
-import { X, GripVertical, ChevronUp, ChevronDown, Trash2, Plus, Globe } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  X,
+  GripVertical,
+  ChevronUp,
+  ChevronDown,
+  Trash2,
+  Plus,
+  Globe,
+  SlidersHorizontal,
+  Package,
+  Layers,
+  Sparkles,
+  CheckCircle2,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Plan, PlanFeature } from "@/services/planService";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -13,18 +29,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { FEATURE_CATALOG } from "@/constants/featureCatalog";
 import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { FEATURE_CATALOG } from "@/constants/featureCatalog";
 
-interface EditPlanModalProps {
+export interface EditPlanModalProps {
   editingPlan: Plan;
   isCreateMode: boolean;
   editId: string;
@@ -103,193 +118,250 @@ export function EditPlanModal({
   const [activeLang, setActiveLang] = useState<'en_US' | 'es_DO'>('en_US');
   const [featureLangTab, setFeatureLangTab] = useState<'en_US' | 'es_DO'>('en_US');
 
-  const titleText = isCreateMode ? (t('plans.addNewPlan') || 'Add New Plan') : (t('plans.editPlanTitle', { id: editingPlan.id }) || `Edit Plan: ${editingPlan.id}`);
+  const titleText = isCreateMode
+    ? t('plans.addNewPlan')
+    : t('plans.editPlanTitle', { id: editingPlan.id });
 
   return (
-    <AlertDialog open={true} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <AlertDialogContent className="max-w-lg w-full max-h-[90vh] bg-card border border-border rounded-lg p-0 flex flex-col shadow-2xl text-foreground overflow-hidden">
+    <Dialog open={true} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent
+        size="xl"
+        className="max-w-2xl w-full max-h-[88vh] bg-card border border-border rounded-xl p-0 flex flex-col shadow-2xl text-foreground overflow-hidden"
+      >
         {/* Header */}
-        <AlertDialogHeader className="px-4 py-3 border-b border-border flex flex-row justify-between items-center bg-muted/40 space-y-0 text-left">
-          <div className="flex items-center gap-2">
-            <AlertDialogTitle className="text-xs font-bold uppercase tracking-wider text-foreground font-heading">
-              {titleText}
-            </AlertDialogTitle>
-            <AlertDialogDescription className="sr-only">{titleText}</AlertDialogDescription>
+        <DialogHeader className="px-5 py-3.5 border-b border-border flex flex-row justify-between items-center bg-zinc-50/70 dark:bg-zinc-900/40 space-y-0 text-left shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-7 items-center justify-center rounded-md bg-primary/10 text-primary border border-primary/20">
+              <Package className="size-3.5" />
+            </div>
+            <div>
+              <DialogTitle className="text-sm font-bold tracking-tight text-foreground font-heading">
+                {titleText}
+              </DialogTitle>
+              <DialogDescription className="text-[11px] text-muted-foreground">
+                {isCreateMode ? t('plans.createSubtitle') : t('plans.editSubtitle')}
+              </DialogDescription>
+            </div>
           </div>
           <Button
             type="button"
             variant="ghost"
             size="icon-xs"
             onClick={onClose}
-            className="cursor-pointer text-muted-foreground hover:text-foreground"
+            className="cursor-pointer text-muted-foreground hover:text-foreground rounded-md"
+            aria-label={t('common.close')}
           >
             <X className="h-3.5 w-3.5" />
           </Button>
-        </AlertDialogHeader>
+        </DialogHeader>
 
         {/* Scrollable Body */}
-        <div className="p-3.5 overflow-y-auto space-y-3 flex-1 text-xs">
-          {/* Row 1: Plan ID, Client Type, Price, Flags */}
-          <div className="grid grid-cols-12 gap-2 items-end">
-            <div className="col-span-3">
-              <label htmlFor="edit-id" className="block text-[9px] text-muted-foreground font-bold uppercase tracking-wider mb-0.5">
-                {t('plans.planId') || 'Plan ID'}
-              </label>
-              <Input
-                id="edit-id"
-                type="text"
-                value={editId}
-                disabled={!isCreateMode}
-                onChange={(e) => setEditId(e.target.value.toUpperCase().replace(/\s+/g, '-'))}
-                placeholder="e.g. PL-008"
-                className="font-mono disabled:opacity-60"
-              />
+        <div className="p-5 overflow-y-auto space-y-4 flex-1 text-xs">
+          {/* Section 1: General Plan Info & Pricing */}
+          <div className="rounded-lg border border-border bg-card p-3.5 shadow-xs space-y-3">
+            <div className="flex items-center justify-between border-b border-border/60 pb-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <SlidersHorizontal className="h-3.5 w-3.5 text-primary" />
+                {t('plans.generalInfo')}
+              </span>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-1.5 cursor-pointer select-none text-xs font-medium text-foreground">
+                  <Checkbox
+                    checked={editRecommended}
+                    onCheckedChange={(checked) => setEditRecommended(checked === true)}
+                    className="size-3.5 cursor-pointer"
+                  />
+                  <span className="flex items-center gap-1 text-[11px] font-medium text-foreground">
+                    <Sparkles className="h-3 w-3 text-amber-500" />
+                    {t('plans.recommended')}
+                  </span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer select-none text-xs font-medium text-foreground">
+                  <Checkbox
+                    checked={editActive}
+                    onCheckedChange={(checked) => setEditActive(checked === true)}
+                    className="size-3.5 cursor-pointer"
+                  />
+                  <span className="flex items-center gap-1 text-[11px] font-medium text-foreground">
+                    <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                    {t('plans.active')}
+                  </span>
+                </label>
+              </div>
             </div>
 
-            <div className="col-span-4">
-              <label htmlFor="edit-client-type" className="block text-[9px] text-muted-foreground font-bold uppercase tracking-wider mb-0.5">
-                {t('plans.clientType') || 'Client Type'}
-              </label>
-              <Select
-                value={editClientType}
-                onValueChange={(val) => setEditClientType(val)}
-              >
-                <SelectTrigger id="edit-client-type" className="w-full">
-                  <SelectValue placeholder={t('plans.clientType') || 'Client Type'} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="CLIENT">{t('plans.clientTypes.standard') || 'Standard'}</SelectItem>
-                  <SelectItem value="ENTERPRISE">{t('plans.clientTypes.enterprise') || 'Enterprise'}</SelectItem>
-                  <SelectItem value="STUDENT">{t('plans.clientTypes.student') || 'Student'}</SelectItem>
-                  <SelectItem value="OTHER">{t('plans.clientTypes.other') || 'Other'}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="col-span-2">
-              <label htmlFor="edit-price" className="block text-[9px] text-muted-foreground font-bold uppercase tracking-wider mb-0.5">
-                {t('plans.monthlyPriceLabel') || 'Price ($)'}
-              </label>
-              <Input
-                id="edit-price"
-                type="number"
-                value={editPrice}
-                onChange={(e) => setEditPrice(parseInt(e.target.value) || 0)}
-                className="font-mono"
-              />
-            </div>
-
-            <div className="col-span-3 flex items-center gap-2 pb-1 justify-end">
-              <label className="flex items-center gap-1.5 cursor-pointer select-none text-[10px] font-medium text-foreground">
-                <Checkbox
-                  checked={editRecommended}
-                  onCheckedChange={(checked) => setEditRecommended(checked === true)}
-                  className="size-3.5"
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
+              {/* Plan ID */}
+              <div className="sm:col-span-4 space-y-1">
+                <Label htmlFor="edit-id" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  {t('plans.planId')}
+                </Label>
+                <Input
+                  id="edit-id"
+                  type="text"
+                  value={editId}
+                  disabled={!isCreateMode}
+                  onChange={(e) => setEditId(e.target.value.toUpperCase().replace(/\s+/g, '-'))}
+                  placeholder={t('plans.planIdPlaceholder')}
+                  className="font-mono text-xs disabled:opacity-60"
                 />
-                Rec.
-              </label>
-              <label className="flex items-center gap-1.5 cursor-pointer select-none text-[10px] font-medium text-foreground">
-                <Checkbox
-                  checked={editActive}
-                  onCheckedChange={(checked) => setEditActive(checked === true)}
-                  className="size-3.5"
-                />
-                Active
-              </label>
+              </div>
+
+              {/* Client Type */}
+              <div className="sm:col-span-5 space-y-1">
+                <Label htmlFor="edit-client-type" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  {t('plans.clientType')}
+                </Label>
+                <Select
+                  value={editClientType}
+                  onValueChange={(val) => setEditClientType(val)}
+                >
+                  <SelectTrigger id="edit-client-type" className="w-full text-xs font-medium">
+                    <SelectValue placeholder={t('plans.clientType')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CLIENT">{t('plans.clientTypes.standard')}</SelectItem>
+                    <SelectItem value="ENTERPRISE">{t('plans.clientTypes.enterprise')}</SelectItem>
+                    <SelectItem value="STUDENT">{t('plans.clientTypes.student')}</SelectItem>
+                    <SelectItem value="OTHER">{t('plans.clientTypes.other')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Monthly Price */}
+              <div className="sm:col-span-3 space-y-1">
+                <Label htmlFor="edit-price" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  {t('plans.priceUsdPerMo')}
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">
+                    $
+                  </span>
+                  <Input
+                    id="edit-price"
+                    type="number"
+                    min={0}
+                    value={editPrice}
+                    onChange={(e) => setEditPrice(parseInt(e.target.value, 10) || 0)}
+                    className="pl-6 font-mono text-xs font-semibold"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* i18n Language Tabs Section for Plan Information */}
-          <div className="bg-muted/40 border border-border rounded-md p-2.5">
+          {/* Section 2: Localization (i18n) Tabs for Plan Name & Description */}
+          <div className="rounded-lg border border-border bg-card p-3.5 shadow-xs">
             <Tabs value={activeLang} onValueChange={(val) => setActiveLang(val as 'en_US' | 'es_DO')} className="w-full">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  <Globe className="h-3 w-3 text-muted-foreground" />
-                  <span>{t('plans.i18nContent') || 'Localization (i18n)'}</span>
+              <div className="flex items-center justify-between border-b border-border/60 pb-2 mb-3">
+                <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Globe className="h-3.5 w-3.5 text-primary" />
+                  <span>{t('plans.i18nContent')}</span>
                 </div>
-                <TabsList className="h-6 p-0.5 bg-muted rounded">
-                  <TabsTrigger value="en_US" className="px-2 py-0 text-[10px] h-5 font-bold data-[state=active]:bg-card data-[state=active]:text-foreground">
-                    EN (English)
+                <TabsList className="h-7 p-0.5 bg-zinc-100 dark:bg-zinc-900 rounded-md border border-border">
+                  <TabsTrigger
+                    value="en_US"
+                    className="px-2.5 py-0.5 text-[11px] font-semibold h-6 cursor-pointer data-active:bg-card data-active:text-foreground data-active:shadow-xs"
+                  >
+                    {t('plans.langEn')}
                   </TabsTrigger>
-                  <TabsTrigger value="es_DO" className="px-2 py-0 text-[10px] h-5 font-bold data-[state=active]:bg-card data-[state=active]:text-foreground">
-                    ES (Español)
+                  <TabsTrigger
+                    value="es_DO"
+                    className="px-2.5 py-0.5 text-[11px] font-semibold h-6 cursor-pointer data-active:bg-card data-active:text-foreground data-active:shadow-xs"
+                  >
+                    {t('plans.langEs')}
                   </TabsTrigger>
                 </TabsList>
               </div>
 
               {/* English Tab */}
-              <TabsContent value="en_US" forceMount className={activeLang === 'en_US' ? 'space-y-2 mt-0' : 'hidden'}>
-                <div>
-                  <label htmlFor="edit-name-en" className="block text-[9px] text-muted-foreground font-bold uppercase tracking-wider mb-0.5">
-                    {t('plans.planNameEn') || 'Plan Name (English)'}
-                  </label>
+              <TabsContent value="en_US" forceMount className={activeLang === 'en_US' ? 'space-y-3 mt-0' : 'hidden'}>
+                <div className="space-y-1">
+                  <Label htmlFor="edit-name-en" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    {t('plans.planNameEn')}
+                  </Label>
                   <Input
                     id="edit-name-en"
                     type="text"
                     value={editName.en_US || ''}
                     onChange={(e) => setEditName({ ...editName, en_US: e.target.value })}
-                    placeholder="Plan name in English..."
+                    placeholder={t('plans.planNameEnPlaceholder')}
+                    className="text-xs"
                   />
                 </div>
-                <div>
-                  <label htmlFor="edit-desc-en" className="block text-[9px] text-muted-foreground font-bold uppercase tracking-wider mb-0.5">
-                    {t('plans.planDescEn') || 'Plan Description (English)'}
-                  </label>
-                  <textarea
+                <div className="space-y-1">
+                  <Label htmlFor="edit-desc-en" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    {t('plans.planDescEn')}
+                  </Label>
+                  <Textarea
                     id="edit-desc-en"
                     rows={2}
                     value={editDescription.en_US || ''}
                     onChange={(e) => setEditDescription({ ...editDescription, en_US: e.target.value })}
-                    placeholder="Description in English..."
-                    className="w-full p-1.5 rounded border border-input bg-background text-foreground text-[11px] focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+                    placeholder={t('plans.planDescEnPlaceholder')}
+                    className="min-h-[56px] text-xs bg-background text-foreground resize-none"
                   />
                 </div>
               </TabsContent>
 
               {/* Spanish Tab */}
-              <TabsContent value="es_DO" forceMount className={activeLang === 'es_DO' ? 'space-y-2 mt-0' : 'hidden'}>
-                <div>
-                  <label htmlFor="edit-name-es" className="block text-[9px] text-muted-foreground font-bold uppercase tracking-wider mb-0.5">
-                    {t('plans.planNameEs') || 'Nombre del Plan (Español)'}
-                  </label>
+              <TabsContent value="es_DO" forceMount className={activeLang === 'es_DO' ? 'space-y-3 mt-0' : 'hidden'}>
+                <div className="space-y-1">
+                  <Label htmlFor="edit-name-es" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    {t('plans.planNameEs')}
+                  </Label>
                   <Input
                     id="edit-name-es"
                     type="text"
                     value={editName.es_DO || ''}
                     onChange={(e) => setEditName({ ...editName, es_DO: e.target.value })}
-                    placeholder="Nombre del plan en español..."
+                    placeholder={t('plans.planNameEsPlaceholder')}
+                    className="text-xs"
                   />
                 </div>
-                <div>
-                  <label htmlFor="edit-desc-es" className="block text-[9px] text-muted-foreground font-bold uppercase tracking-wider mb-0.5">
-                    {t('plans.planDescEs') || 'Descripción del Plan (Español)'}
-                  </label>
-                  <textarea
+                <div className="space-y-1">
+                  <Label htmlFor="edit-desc-es" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    {t('plans.planDescEs')}
+                  </Label>
+                  <Textarea
                     id="edit-desc-es"
                     rows={2}
                     value={editDescription.es_DO || ''}
                     onChange={(e) => setEditDescription({ ...editDescription, es_DO: e.target.value })}
-                    placeholder="Descripción en Español..."
-                    className="w-full p-1.5 rounded border border-input bg-background text-foreground text-[11px] focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+                    placeholder={t('plans.planDescEsPlaceholder')}
+                    className="min-h-[56px] text-xs bg-background text-foreground resize-none"
                   />
                 </div>
               </TabsContent>
             </Tabs>
           </div>
 
-          {/* Features Editor */}
-          <div>
+          {/* Section 3: Plan Features Editor & Quota Builder */}
+          <div className="rounded-lg border border-border bg-card p-3.5 shadow-xs">
             <Tabs value={featureLangTab} onValueChange={(val) => setFeatureLangTab(val as 'en_US' | 'es_DO')} className="w-full">
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider">
-                  {t('plans.planFeatures') || 'Plan Features'} ({editFeatures.length})
-                </label>
+              <div className="flex items-center justify-between border-b border-border/60 pb-2 mb-3">
                 <div className="flex items-center gap-2">
-                  <TabsList className="h-5 p-0.5 bg-muted rounded">
-                    <TabsTrigger value="en_US" className="px-1.5 py-0 text-[9px] h-4 font-bold data-[state=active]:bg-card data-[state=active]:text-foreground">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Layers className="h-3.5 w-3.5 text-primary" />
+                    {t('plans.planFeatures')}
+                  </span>
+                  <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-mono">
+                    {editFeatures.length}
+                  </Badge>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <TabsList className="h-6 p-0.5 bg-zinc-100 dark:bg-zinc-900 rounded border border-border">
+                    <TabsTrigger
+                      value="en_US"
+                      className="px-2 py-0 text-[10px] h-5 font-bold cursor-pointer data-active:bg-card data-active:text-foreground"
+                    >
                       EN
                     </TabsTrigger>
-                    <TabsTrigger value="es_DO" className="px-1.5 py-0 text-[9px] h-4 font-bold data-[state=active]:bg-card data-[state=active]:text-foreground">
+                    <TabsTrigger
+                      value="es_DO"
+                      className="px-2 py-0 text-[10px] h-5 font-bold cursor-pointer data-active:bg-card data-active:text-foreground"
+                    >
                       ES
                     </TabsTrigger>
                   </TabsList>
@@ -298,233 +370,253 @@ export function EditPlanModal({
                     variant="outline"
                     size="xs"
                     onClick={onAddFeature}
-                    className="gap-1"
+                    className="h-6 gap-1 px-2 text-xs font-semibold cursor-pointer border-zinc-200 dark:border-zinc-800"
                   >
                     <Plus className="h-3 w-3" />
-                    {t('plans.addFeature') || 'Add Feature'}
+                    <span>{t('plans.addFeature')}</span>
                   </Button>
                 </div>
               </div>
 
-              <div className="space-y-1.5 max-h-56 overflow-y-auto pr-0.5">
-                {editFeatures.map((feat, index) => {
-                  const catalogItem = FEATURE_CATALOG.find((c) => c.code === feat.code);
-                  const allParamKeys = Array.from(
-                    new Set([
-                      ...(catalogItem?.paramSchema?.map((p) => p.key) || []),
-                      ...Object.keys(feat.params || {}),
-                    ])
-                  );
-                  const schemaKeys = new Set(catalogItem?.paramSchema?.map((p) => p.key) || []);
+              {/* Feature Items List */}
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-0.5">
+                {editFeatures.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground border border-dashed border-border rounded-lg bg-zinc-50/50 dark:bg-zinc-900/20">
+                    <Layers className="h-6 w-6 mx-auto mb-1.5 opacity-40" />
+                    <p className="text-xs font-medium">{t('plans.noFeatures')}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {t('plans.noFeaturesHint')}
+                    </p>
+                  </div>
+                ) : (
+                  editFeatures.map((feat, index) => {
+                    const catalogItem = FEATURE_CATALOG.find((c) => c.code === feat.code);
+                    const allParamKeys = Array.from(
+                      new Set([
+                        ...(catalogItem?.paramSchema?.map((p) => p.key) || []),
+                        ...Object.keys(feat.params || {}),
+                      ])
+                    );
+                    const schemaKeys = new Set(catalogItem?.paramSchema?.map((p) => p.key) || []);
 
-                  return (
-                    <div
-                      key={index}
-                      draggable
-                      onDragStart={(e) => onDragStart(e, index)}
-                      onDragOver={(e) => onDragOver(e, index)}
-                      onDrop={(e) => onDrop(e, index)}
-                      onDragEnd={onDragEnd}
-                      className={`group flex flex-col gap-1 border rounded p-1.5 transition-all duration-150 ${
-                        draggedIndex === index
-                          ? 'opacity-40 bg-muted'
-                          : dragOverIndex === index
-                            ? 'border-primary border-dashed bg-primary/5'
-                            : 'border-border bg-card'
-                      }`}
-                    >
-                      {/* Feature Main Control Bar */}
-                      <div className="flex items-center gap-1.5">
-                        <div
-                          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground p-0.5"
-                          title={t('plans.dragToReorder') || 'Drag to reorder'}
-                        >
-                          <GripVertical className="h-3.5 w-3.5" />
-                        </div>
+                    return (
+                      <div
+                        key={index}
+                        draggable
+                        onDragStart={(e) => onDragStart(e, index)}
+                        onDragOver={(e) => onDragOver(e, index)}
+                        onDrop={(e) => onDrop(e, index)}
+                        onDragEnd={onDragEnd}
+                        className={`group flex flex-col gap-1.5 border rounded-lg p-2 transition-all duration-150 ${
+                          draggedIndex === index
+                            ? 'opacity-40 bg-muted'
+                            : dragOverIndex === index
+                              ? 'border-primary border-dashed bg-primary/5 shadow-xs'
+                              : 'border-border bg-card hover:border-zinc-300 dark:hover:border-zinc-700'
+                        }`}
+                      >
+                        {/* Feature Main Control Bar */}
+                        <div className="flex items-center gap-1.5">
+                          <div
+                            className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground p-0.5 rounded transition-colors"
+                            title={t('plans.dragToReorder')}
+                          >
+                            <GripVertical className="h-3.5 w-3.5" />
+                          </div>
 
-                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-xs"
+                              disabled={index === 0}
+                              onClick={() => onMoveFeature(index, -1)}
+                              className="h-5 w-5 text-muted-foreground disabled:opacity-20 cursor-pointer"
+                              title={t('plans.moveUp')}
+                            >
+                              <ChevronUp className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-xs"
+                              disabled={index === editFeatures.length - 1}
+                              onClick={() => onMoveFeature(index, 1)}
+                              className="h-5 w-5 text-muted-foreground disabled:opacity-20 cursor-pointer"
+                              title={t('plans.moveDown')}
+                            >
+                              <ChevronDown className="h-3 w-3" />
+                            </Button>
+                          </div>
+
+                          <Checkbox
+                            checked={feat.included}
+                            onCheckedChange={(checked) => onToggleFeatureIncluded(index, checked === true)}
+                            className="size-3.5 cursor-pointer"
+                            title={feat.included ? t('plans.includedInPlan') : t('plans.excludedFromPlan')}
+                          />
+
+                          {/* Catalog Code Dropdown */}
+                          <Select
+                            value={feat.code || 'CUSTOM_FEATURE'}
+                            onValueChange={(val) => onUpdateFeatureCode?.(index, val)}
+                          >
+                            <SelectTrigger size="sm" className="flex-1 text-xs truncate font-medium bg-input/20">
+                              <SelectValue placeholder={t('plans.customFeatureSelect')} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="CUSTOM_FEATURE">{t('plans.customFeatureSelect')}</SelectItem>
+                              {FEATURE_CATALOG.filter((c) => c.code !== 'CUSTOM_FEATURE').map((cat) => {
+                                const paramsToUse =
+                                  feat.code === cat.code
+                                    ? feat.params || cat.defaultParams || {}
+                                    : cat.defaultParams || {};
+                                const label = t(cat.labelKey, paramsToUse) || cat.code;
+                                return (
+                                  <SelectItem key={cat.code} value={cat.code}>
+                                    {label} ({cat.code})
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+
+                          {/* Delete Feature Button */}
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon-xs"
-                            disabled={index === 0}
-                            onClick={() => onMoveFeature(index, -1)}
-                            className="h-5 w-5 text-muted-foreground disabled:opacity-30 cursor-pointer"
-                            title={t('plans.moveUp') || 'Move up'}
+                            onClick={() => onDeleteFeature(index)}
+                            className="h-6 w-6 text-destructive hover:bg-destructive/10 cursor-pointer"
+                            title={t('plans.deleteFeature')}
                           >
-                            <ChevronUp className="h-2.5 w-2.5" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-xs"
-                            disabled={index === editFeatures.length - 1}
-                            onClick={() => onMoveFeature(index, 1)}
-                            className="h-5 w-5 text-muted-foreground disabled:opacity-30 cursor-pointer"
-                            title={t('plans.moveDown') || 'Move down'}
-                          >
-                            <ChevronDown className="h-2.5 w-2.5" />
+                            <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
 
-                        <Checkbox
-                          checked={feat.included}
-                          onCheckedChange={(checked) => onToggleFeatureIncluded(index, checked === true)}
-                          className="size-3.5"
-                          title={feat.included ? 'Included in plan' : 'Excluded from plan'}
-                        />
+                        {/* Parameter Controls (Inline compact pills) */}
+                        {feat.code && feat.code !== 'CUSTOM_FEATURE' && (
+                          <div className="ml-6 pl-1 pt-0.5 flex items-center gap-1.5 flex-wrap bg-zinc-50/70 dark:bg-zinc-900/40 p-1.5 rounded-md border border-border">
+                            {allParamKeys.map((paramKey) => {
+                              const schemaItem = catalogItem?.paramSchema?.find((p) => p.key === paramKey);
+                              const label = schemaItem ? schemaItem.label : paramKey;
+                              const currentVal = feat.params?.[paramKey] ?? schemaItem?.defaultValue ?? '';
 
-                        {/* Code Dropdown */}
-                        <Select
-                          value={feat.code || 'CUSTOM_FEATURE'}
-                          onValueChange={(val) => onUpdateFeatureCode?.(index, val)}
-                        >
-                          <SelectTrigger size="sm" className="flex-1 h-6.5 text-[11px] truncate font-medium">
-                            <SelectValue placeholder="-- Custom Text Feature --" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="CUSTOM_FEATURE">-- Custom Text Feature --</SelectItem>
-                            {FEATURE_CATALOG.filter((c) => c.code !== 'CUSTOM_FEATURE').map((cat) => {
-                              const paramsToUse = feat.code === cat.code ? (feat.params || cat.defaultParams || {}) : (cat.defaultParams || {});
-                              const label = t(cat.labelKey, paramsToUse) || cat.code;
                               return (
-                                <SelectItem key={cat.code} value={cat.code}>
-                                  {label} ({cat.code})
-                                </SelectItem>
+                                <div
+                                  key={paramKey}
+                                  className="flex items-center gap-1 bg-card px-1.5 py-0.5 rounded border border-border shadow-2xs"
+                                >
+                                  <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                                    {label}:
+                                  </span>
+                                  {schemaItem?.type === 'select' && schemaItem.options ? (
+                                    <Select
+                                      value={String(currentVal)}
+                                      onValueChange={(val) => onUpdateFeatureParam?.(index, paramKey, val)}
+                                    >
+                                      <SelectTrigger size="xs" className="h-5 px-1 bg-transparent text-[10px] border-0 shadow-none">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {schemaItem.options.map((opt) => (
+                                          <SelectItem key={opt} value={opt} className="text-xs">
+                                            {opt}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  ) : (
+                                    <Input
+                                      size="xs"
+                                      type={schemaItem?.type === 'number' ? 'number' : 'text'}
+                                      value={currentVal as string | number}
+                                      onChange={(e) =>
+                                        onUpdateFeatureParam?.(
+                                          index,
+                                          paramKey,
+                                          schemaItem?.type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value
+                                        )
+                                      }
+                                      className="h-5 w-16 text-[10px] bg-transparent font-mono text-foreground focus:outline-none border-0 px-1"
+                                    />
+                                  )}
+                                  {!schemaKeys.has(paramKey) && (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon-xs"
+                                      onClick={() => onDeleteFeatureParam?.(index, paramKey)}
+                                      className="h-4 w-4 text-[9px] text-destructive hover:opacity-80 p-0 cursor-pointer"
+                                      title={t('plans.removeParam')}
+                                    >
+                                      ✕
+                                    </Button>
+                                  )}
+                                </div>
                               );
                             })}
-                          </SelectContent>
-                        </Select>
 
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon-xs"
-                          onClick={() => onDeleteFeature(index)}
-                          className="h-6 w-6 text-destructive hover:bg-destructive/10 cursor-pointer"
-                          title="Delete feature"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="xs"
+                              onClick={() => {
+                                const key = window.prompt(t('plans.paramPromptKey'));
+                                if (!key || !key.trim()) return;
+                                const val = window.prompt(t('plans.paramPromptVal', { key: key.trim() }));
+                                if (val === null) return;
+                                onUpdateFeatureParam?.(index, key.trim(), val);
+                              }}
+                              className="text-[9px] h-5 px-1.5 text-muted-foreground hover:text-foreground font-semibold cursor-pointer"
+                            >
+                              {t('plans.addParam')}
+                            </Button>
+                          </div>
+                        )}
 
-                      {/* Parameter Controls (Inline compact pills) */}
-                      {feat.code && feat.code !== 'CUSTOM_FEATURE' && (
-                        <div className="ml-6 pl-1 pt-0.5 flex items-center gap-1.5 flex-wrap bg-muted/40 p-1 rounded border border-border">
-                          {allParamKeys.map((paramKey) => {
-                            const schemaItem = catalogItem?.paramSchema?.find((p) => p.key === paramKey);
-                            const label = schemaItem ? schemaItem.label : paramKey;
-                            const currentVal = feat.params?.[paramKey] ?? schemaItem?.defaultValue ?? '';
-
-                            return (
-                              <div key={paramKey} className="flex items-center gap-1 bg-card px-1.5 py-0.5 rounded border border-border">
-                                <span className="text-[8px] font-bold uppercase tracking-wider text-muted-foreground">{label}:</span>
-                                {schemaItem?.type === 'select' && schemaItem.options ? (
-                                  <Select
-                                    value={String(currentVal)}
-                                    onValueChange={(val) => onUpdateFeatureParam?.(index, paramKey, val)}
-                                  >
-                                    <SelectTrigger size="xs" className="h-5 px-1 bg-transparent text-[10px] border-0 shadow-none">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {schemaItem.options.map((opt) => (
-                                        <SelectItem key={opt} value={opt}>
-                                          {opt}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                ) : (
-                                  <Input
-                                    size="xs"
-                                    type={schemaItem?.type === 'number' ? 'number' : 'text'}
-                                    value={currentVal as string | number}
-                                    onChange={(e) =>
-                                      onUpdateFeatureParam?.(
-                                        index,
-                                        paramKey,
-                                        schemaItem?.type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value
-                                      )
-                                    }
-                                    className="h-5 w-16 text-[10px] bg-transparent font-mono text-foreground focus:outline-none border-0 px-1"
-                                  />
-                                )}
-                                {!schemaKeys.has(paramKey) && (
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon-xs"
-                                    onClick={() => onDeleteFeatureParam?.(index, paramKey)}
-                                    className="h-4 w-4 text-[9px] text-destructive hover:opacity-80 p-0"
-                                    title="Remove parameter"
-                                  >
-                                    ✕
-                                  </Button>
-                                )}
+                        {/* Custom Text Input for Active Feature Language Tab */}
+                        {(!feat.code || feat.code === 'CUSTOM_FEATURE') && (
+                          <div className="ml-6 pt-0.5">
+                            <TabsContent value="en_US" forceMount className={featureLangTab === 'en_US' ? 'mt-0' : 'hidden'}>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[9px] font-bold text-muted-foreground uppercase w-5 shrink-0">EN</span>
+                                <Input
+                                  size="sm"
+                                  type="text"
+                                  value={(typeof feat.text === 'string' ? feat.text : feat.text?.en_US) || ''}
+                                  onChange={(e) => onEditFeatureText(index, 'en_US', e.target.value)}
+                                  className="flex-1 text-xs bg-background"
+                                  placeholder={t('plans.featureEnPlaceholder')}
+                                />
                               </div>
-                            );
-                          })}
-
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="xs"
-                            onClick={() => {
-                              const key = window.prompt("Enter parameter key name (e.g. limit, unit, hours):");
-                              if (!key || !key.trim()) return;
-                              const val = window.prompt(`Enter value for '${key.trim()}':`);
-                              if (val === null) return;
-                              onUpdateFeatureParam?.(index, key.trim(), val);
-                            }}
-                            className="text-[9px] h-5 px-1 text-muted-foreground hover:text-foreground font-medium"
-                          >
-                            + Param
-                          </Button>
-                        </div>
-                      )}
-
-                      {/* Custom Text Input for Active Feature Language Tab */}
-                      {(!feat.code || feat.code === 'CUSTOM_FEATURE') && (
-                        <div className="ml-6 pt-0.5">
-                          <TabsContent value="en_US" forceMount className={featureLangTab === 'en_US' ? 'mt-0' : 'hidden'}>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[8px] font-bold text-muted-foreground uppercase w-4">EN</span>
-                              <Input
-                                size="sm"
-                                type="text"
-                                value={(typeof feat.text === 'string' ? feat.text : feat.text?.en_US) || ''}
-                                onChange={(e) => onEditFeatureText(index, 'en_US', e.target.value)}
-                                className="flex-1 h-6.5 text-[11px] bg-background py-0"
-                                placeholder={t('plans.featureEnPlaceholder') || 'Feature in English...'}
-                              />
-                            </div>
-                          </TabsContent>
-                          <TabsContent value="es_DO" forceMount className={featureLangTab === 'es_DO' ? 'mt-0' : 'hidden'}>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[8px] font-bold text-muted-foreground uppercase w-4">ES</span>
-                              <Input
-                                size="sm"
-                                type="text"
-                                value={(typeof feat.text === 'string' ? feat.text : feat.text?.es_DO) || ''}
-                                onChange={(e) => onEditFeatureText(index, 'es_DO', e.target.value)}
-                                className="flex-1 h-6.5 text-[11px] bg-background py-0"
-                                placeholder={t('plans.featureEsPlaceholder') || 'Característica en Español...'}
-                              />
-                            </div>
-                          </TabsContent>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                            </TabsContent>
+                            <TabsContent value="es_DO" forceMount className={featureLangTab === 'es_DO' ? 'mt-0' : 'hidden'}>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[9px] font-bold text-muted-foreground uppercase w-5 shrink-0">ES</span>
+                                <Input
+                                  size="sm"
+                                  type="text"
+                                  value={(typeof feat.text === 'string' ? feat.text : feat.text?.es_DO) || ''}
+                                  onChange={(e) => onEditFeatureText(index, 'es_DO', e.target.value)}
+                                  className="flex-1 text-xs bg-background"
+                                  placeholder={t('plans.featureEsPlaceholder')}
+                                />
+                              </div>
+                            </TabsContent>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </Tabs>
           </div>
         </div>
 
         {/* Footer */}
-        <AlertDialogFooter className="px-4 py-2.5 border-t border-border flex justify-between items-center bg-muted/40">
+        <DialogFooter className="px-5 py-3 border-t border-border flex flex-row justify-between items-center bg-zinc-50/70 dark:bg-zinc-900/40 shrink-0">
           <div>
             {!isCreateMode && onDeletePlan && (
               <Button
@@ -535,32 +627,42 @@ export function EditPlanModal({
                   onClose();
                   onDeletePlan(editingPlan.id);
                 }}
-                className="gap-1 cursor-pointer"
+                className="gap-1 cursor-pointer text-xs font-semibold"
               >
-                <Trash2 className="h-3 w-3" />
-                {t('plans.deletePlan') || 'Delete Plan'}
+                <Trash2 className="h-3.5 w-3.5" />
+                {t('plans.deletePlan')}
               </Button>
             )}
           </div>
           <div className="flex items-center gap-2">
-            <AlertDialogCancel
-              onClick={onClose}
-              className="h-7 text-xs font-semibold cursor-pointer text-foreground mt-0"
-            >
-              {t('plans.cancel') || 'Cancel'}
-            </AlertDialogCancel>
             <Button
               type="button"
+              variant="outline"
+              size="sm"
+              onClick={onClose}
+              className="text-xs font-semibold cursor-pointer text-foreground"
+            >
+              {t('plans.cancel')}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
               onClick={onSave}
               disabled={saveLoading}
-              className="h-7 text-xs font-semibold gap-1 cursor-pointer shadow-xs"
+              className="text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
             >
-              {saveLoading ? (t('plans.saving') || 'Saving...') : isCreateMode ? (t('plans.createPlan') || 'Create Plan') : (t('plans.saveChanges') || 'Save Changes')}
+              {saveLoading ? (
+                t('plans.saving')
+              ) : isCreateMode ? (
+                t('plans.createPlan')
+              ) : (
+                t('plans.saveChanges')
+              )}
             </Button>
           </div>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
