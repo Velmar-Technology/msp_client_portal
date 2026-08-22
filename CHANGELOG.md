@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.5.1](https://github.com-work/eapolancovelmar/msp_client_portal/compare/v1.5.0...v1.5.1) (2026-08-22)
+
+### Features
+
+* **ui:** adopt Linear-style sidebar with grouped nav and workspace subscription card ([302c488](https://github.com-work/eapolancovelmar/msp_client_portal/commit/302c488b058883222495eedacc4f88a24d2bf5c3))
+* **ui:** align CRMPage with platform UI styling standards and add UI style guide documentation ([3b7df34](https://github.com-work/eapolancovelmar/msp_client_portal/commit/3b7df34025149d15990cd78232a0654196bdffc8))
+* **ui:** migrate CRM and Plan modals to Sheet drawer and enforce anti-nested cards rule ([d2f1e92](https://github.com-work/eapolancovelmar/msp_client_portal/commit/d2f1e9280a50880a0ce9c3c60be21a3b2c16b8a3))
+
+### Bug Fixes
+
+* **ui:** polish search bar and filter controls in data table and user management ([316d4c4](https://github.com-work/eapolancovelmar/msp_client_portal/commit/316d4c4a0240939b87ae575217a948112beaf7bf))
 ## [1.5.0](https://github.com/eapolancovelmar/msp_client_portal/compare/v1.4.3...v1.5.0) (2026-08-21)
 
 
