@@ -20,11 +20,17 @@ services:
       retries: 5
 
   server:
-    image: ghcr.io/velmar-technology/msp-services-server:1.4.2.3
+    image: ghcr.io/${REPOSITORY_OWNER:-velmar-technology}/msp-services-server:${VERSION:-latest}
     container_name: msp_server_prod
     restart: always
     networks:
       - default
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/v1/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     depends_on:
       db:
         condition: service_healthy
@@ -128,7 +134,7 @@ services:
       ZBX_HOSTNAME: "Zabbix server"
 
   client:
-    image: ghcr.io/velmar-technology/msp-services-client:1.4.2.3
+    image: ghcr.io/${REPOSITORY_OWNER:-velmar-technology}/msp-services-client:${VERSION:-latest}
     container_name: msp_client_prod
     restart: always
     environment:
@@ -137,7 +143,14 @@ services:
       - default
       - reverse-proxy
     depends_on:
-      - server
+      server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.msp-client.rule=Host(`helpdesk.velmartech.com.do`)"

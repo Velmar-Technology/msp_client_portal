@@ -924,7 +924,7 @@
     "wizardStep2SerialLabel": "Número de Serie del Dispositivo",
     "wizardStep2SerialPlaceholder": "ej. SN-SIM-827461",
     "wizardStep2Activating": "Activando...",
-    "wizardStep2Activate": "Activar y Aprovisionar Respaldo",
+    "wizardStep2Submit": "Activar y Aprovisionar Respaldo",
     "wizardStep3Success": "¡Dispositivo Activado con Éxito!",
     "wizardStep3Desc": "El espacio de almacenamiento en la nube ha sido aprovisionado y asignado a este dispositivo.",
     "wizardStep3DeviceName": "Nombre del Dispositivo:",

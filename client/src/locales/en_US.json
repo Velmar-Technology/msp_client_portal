@@ -924,7 +924,7 @@
     "wizardStep2SerialLabel": "Device Serial Number",
     "wizardStep2SerialPlaceholder": "e.g. SN-SIM-827461",
     "wizardStep2Activating": "Activating...",
-    "wizardStep2Activate": "Activate & Provision Backup",
+    "wizardStep2Submit": "Activate & Provision Backup",
     "wizardStep3Success": "Device Successfully Activated!",
     "wizardStep3Desc": "Cloud storage space has been provisioned and mapped to this device.",
     "wizardStep3DeviceName": "Device Name:",

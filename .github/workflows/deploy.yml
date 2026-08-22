@@ -1,4 +1,18 @@
-name: Build and Deploy to VPS
+name: Release & Deploy
+
+# Enterprise CD pipeline:
+#   prepare -> quality gates -> build & push (parallel) -> vulnerability scan
+#           -> GitHub Release (tags only) -> [approval] -> deploy w/ auto-rollback -> notify
+#
+# Required repository secrets:
+#   VPS_HOST / VPS_USER / VPS_SSH_KEY / VPS_PORT   - Production VPS SSH access
+#   VITE_GOOGLE_CLIENT_ID or GOOGLE_CLIENT_ID      - Google OAuth client ID (Vite build arg)
+#   VITE_PAYPAL_CLIENT_ID                          - PayPal client ID (Vite build arg)
+#   DEPLOY_WEBHOOK_URL                             - Optional Slack/Discord/Teams notification webhook
+#
+# Required repository configuration (Settings):
+#   1. Environment "production" with required reviewers for manual approval.
+#   2. Branch protection on main requiring the "CI / Quality Gates" checks.
 
 on:
   push:
@@ -7,166 +21,371 @@ on:
   workflow_dispatch:
     inputs:
       releaseVersion:
-        description: "Release version to deploy (e.g. 1.2.0). Defaults to client package.json version."
+        description: "Release version to deploy (e.g. 1.5.1). Defaults to client/package.json version."
         required: false
         default: ""
         type: string
 
 permissions:
   contents: read
-  packages: write
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  SERVER_IMAGE: msp-services-server
+  CLIENT_IMAGE: msp-services-client
 
 jobs:
-  build-and-push:
-    name: Build & Push Docker Images
+  # ------------------------------------------------------------------
+  # 1. Prepare — resolve release version and image namespace once
+  # ------------------------------------------------------------------
+  prepare:
+    name: Prepare Release Metadata
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      owner_lc: ${{ steps.meta.outputs.owner_lc }}
+      is_tag: ${{ steps.meta.outputs.is_tag }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.1
+        with:
+          persist-credentials: false
 
-      - name: Compute Release Version
+      - name: Resolve Version & Image Namespace
+        id: meta
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_VERSION: ${{ inputs.releaseVersion }}
+          REPO_OWNER: ${{ github.repository_owner }}
         run: |
-          if [ "${{ github.ref_type }}" = "tag" ]; then
-            echo "RELEASE_VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
-          elif [ -n "${{ inputs.releaseVersion }}" ]; then
-            echo "RELEASE_VERSION=${{ inputs.releaseVersion }}" >> "$GITHUB_ENV"
+          OWNER_LC="${REPO_OWNER,,}"
+
+          if [ "${REF_TYPE}" = "tag" ]; then
+            VERSION="${REF_NAME#v}"
+            IS_TAG=true
+          elif [ -n "${INPUT_VERSION}" ]; then
+            VERSION="${INPUT_VERSION}"
+            IS_TAG=false
           else
-            echo "RELEASE_VERSION=$(node -p "require('./client/package.json').version")" >> "$GITHUB_ENV"
+            VERSION="$(node -p "require('./client/package.json').version")"
+            IS_TAG=false
           fi
 
-      - name: Read Client Version
-        run: |
-          echo "CLIENT_VERSION=$(node -p "require('./client/package.json').version")" >> "$GITHUB_ENV"
+          if ! [[ "${VERSION}" =~ ^[0-9]+(\.[0-9]+){1,3}$ ]]; then
+            echo "::error::Invalid release version '${VERSION}' — expected numeric semver like 1.2.3 or 1.2.3.4"
+            exit 1
+          fi
+
+          {
+            echo "version=${VERSION}"
+            echo "owner_lc=${OWNER_LC}"
+            echo "is_tag=${IS_TAG}"
+          } >> "${GITHUB_OUTPUT}"
+
+          {
+            echo "### 🚀 Release ${VERSION}"
+            echo ""
+            echo "| Field | Value |"
+            echo "| ----- | ----- |"
+            echo "| Version | \`${VERSION}\` |"
+            echo "| Image namespace | \`${OWNER_LC}\` |"
+            echo "| Commit | \`${GITHUB_SHA}\` |"
+            echo "| Trigger | \`${REF_TYPE}\` |"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+  # ------------------------------------------------------------------
+  # 2. Quality gates — lint, typecheck & tests must pass before any image ships
+  # ------------------------------------------------------------------
+  quality-gates:
+    name: Quality Gates
+    uses: ./.github/workflows/quality.yml
+    permissions:
+      contents: read
+
+  # ------------------------------------------------------------------
+  # 3a. Build & push server image
+  # ------------------------------------------------------------------
+  build-server:
+    name: Build & Push Server
+    needs: [prepare, quality-gates]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.11.1
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.4.0
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Downcase Owner and Repo Name
-        run: |
-          echo "OWNER_LC=${OWNER,,}" >> ${GITHUB_ENV}
-          echo "REPO_LC=${REPO,,}" >> ${GITHUB_ENV}
-        env:
-          OWNER: "${{ github.repository_owner }}"
-          REPO: "${{ github.event.repository.name }}"
+      - name: Extract Docker Metadata
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.7.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner_lc }}/${{ env.SERVER_IMAGE }}
+          tags: |
+            type=raw,value=${{ needs.prepare.outputs.version }}
+            type=sha,format=long,prefix=
+            type=raw,value=latest
 
       - name: Build & Push Server Image
-        uses: docker/build-push-action@v5
+        id: push
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.18.0
         with:
           context: .
           file: server/Dockerfile
           push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha,scope=build-server
+          cache-to: type=gha,mode=max,scope=build-server
+
+  # ------------------------------------------------------------------
+  # 3b. Build & push client image (Vite build args baked at compile time)
+  # ------------------------------------------------------------------
+  build-client:
+    name: Build & Push Client
+    needs: [prepare, quality-gates]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.11.1
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.4.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker Metadata
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.7.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner_lc }}/${{ env.CLIENT_IMAGE }}
           tags: |
-            ghcr.io/${{ env.OWNER_LC }}/msp-services-server:latest
-            ghcr.io/${{ env.OWNER_LC }}/msp-services-server:${{ github.sha }}
-            ghcr.io/${{ env.OWNER_LC }}/msp-services-server:${{ env.RELEASE_VERSION }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Verify Client Secrets
-        run: |
-          if [ -n "${SECRET_VAL}" ]; then
-            echo "✅ Google Client ID secret found for Vite build."
-          else
-            echo "⚠️ WARNING: Neither VITE_GOOGLE_CLIENT_ID nor GOOGLE_CLIENT_ID secret was found in GitHub Secrets!"
-            echo "Vite frontend will be built in Sandbox mode."
-          fi
-        env:
-          SECRET_VAL: ${{ secrets.VITE_GOOGLE_CLIENT_ID || secrets.GOOGLE_CLIENT_ID }}
-
-      - name: Verify PayPal Client Secret
-        run: |
-          if [ -n "${PAYPAL_SECRET_VAL}" ]; then
-            echo "✅ PayPal client ID secret found for Vite build."
-          else
-            echo "⚠️ WARNING: VITE_PAYPAL_CLIENT_ID secret was not found in GitHub Secrets!"
-            echo "Vite frontend will fall back to the sandbox/test PayPal client ID."
-          fi
-        env:
-          PAYPAL_SECRET_VAL: ${{ secrets.VITE_PAYPAL_CLIENT_ID }}
+            type=raw,value=${{ needs.prepare.outputs.version }}
+            type=sha,format=long,prefix=
+            type=raw,value=latest
 
       - name: Build & Push Client Image
-        uses: docker/build-push-action@v5
+        id: push
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.18.0
         with:
           context: .
           file: client/Dockerfile
           push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID || secrets.GOOGLE_CLIENT_ID }}
-            VITE_APP_VERSION=${{ env.CLIENT_VERSION }}
+            VITE_APP_VERSION=${{ needs.prepare.outputs.version }}
             VITE_PAYPAL_CLIENT_ID=${{ secrets.VITE_PAYPAL_CLIENT_ID }}
-          tags: |
-            ghcr.io/${{ env.OWNER_LC }}/msp-services-client:latest
-            ghcr.io/${{ env.OWNER_LC }}/msp-services-client:${{ github.sha }}
-            ghcr.io/${{ env.OWNER_LC }}/msp-services-client:${{ env.RELEASE_VERSION }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha,scope=build-client
+          cache-to: type=gha,mode=max,scope=build-client
 
-  deploy:
-    name: Deploy to VPS
+  # ------------------------------------------------------------------
+  # 4. Security gate — block release on HIGH/CRITICAL CVEs + publish SARIF
+  # ------------------------------------------------------------------
+  security-scan:
+    name: Security Scan (${{ matrix.image }})
+    needs: [prepare, build-server, build-client]
     runs-on: ubuntu-latest
-    needs: build-and-push
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: msp-services-server
+            digest: ${{ needs.build-server.outputs.digest }}
+            sarif: trivy-server.sarif
+          - image: msp-services-client
+            digest: ${{ needs.build-client.outputs.digest }}
+            sarif: trivy-client.sarif
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.4.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trivy Vulnerability Scan (HIGH/CRITICAL blocks release)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner_lc }}/${{ matrix.image }}@${{ matrix.digest }}
+          format: sarif
+          output: ${{ matrix.sarif }}
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          ignore-unfixed: true
+
+      - name: Upload Scan Results to GitHub Security Tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@42947a340483f03ba47bb1a039b2c519aab3df85 # v3.30.3
+        with:
+          sarif_file: ${{ matrix.sarif }}
+
+  # ------------------------------------------------------------------
+  # 5. GitHub Release — generated notes from commits since last tag
+  # ------------------------------------------------------------------
+  create-release:
+    name: Create GitHub Release
+    if: needs.prepare.outputs.is_tag == 'true'
+    needs: [prepare, security-scan]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.1
+        with:
+          persist-credentials: false
 
-      - name: Compute Release Version
+      - name: Create Release
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
+        with:
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          make_latest: true
+
+  # ------------------------------------------------------------------
+  # 6. Deploy to production — gated by "production" environment approval,
+  #    executed via reviewed scripts with health verification & auto-rollback
+  # ------------------------------------------------------------------
+  deploy-production:
+    name: Deploy to Production VPS
+    needs: [prepare, security-scan, build-server, build-client]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: https://helpdesk.velmartech.com.do
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Copy Compose File & Deploy Scripts to VPS
+        uses: appleboy/scp-action@ff85246acaad7bdce478db94a363cd2bf7c90345 # v1.0.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          source: "docker-compose.prod.yml,scripts/deploy.sh,scripts/rollback.sh"
+          target: "~/msp-client-portal"
+          overwrite: true
+
+      - name: Execute Remote Deploy (with automatic rollback)
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          REPOSITORY_OWNER: ${{ needs.prepare.outputs.owner_lc }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          envs: VERSION,REPOSITORY_OWNER,GHCR_USER,GHCR_TOKEN
+          script: |
+            cd ~/msp-client-portal
+            chmod +x scripts/deploy.sh scripts/rollback.sh
+            ./scripts/deploy.sh
+
+      - name: Write Deployment Summary
         run: |
-          if [ "${{ github.ref_type }}" = "tag" ]; then
-            echo "RELEASE_VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
-          elif [ -n "${{ inputs.releaseVersion }}" ]; then
-            echo "RELEASE_VERSION=${{ inputs.releaseVersion }}" >> "$GITHUB_ENV"
-          else
-            echo "RELEASE_VERSION=$(node -p "require('./client/package.json').version")" >> "$GITHUB_ENV"
+          {
+            echo "### ✅ Deployed to Production"
+            echo ""
+            echo "| Component | Image | Digest |"
+            echo "| --------- | ----- | ------ |"
+            echo "| Server | \`${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner_lc }}/${{ env.SERVER_IMAGE }}:${{ needs.prepare.outputs.version }}\` | \`${{ needs.build-server.outputs.digest }}\` |"
+            echo "| Client | \`${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner_lc }}/${{ env.CLIENT_IMAGE }}:${{ needs.prepare.outputs.version }}\` | \`${{ needs.build-client.outputs.digest }}\` |"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+  # ------------------------------------------------------------------
+  # 7. Notify — Slack/Discord/Teams compatible webhook (success & failure)
+  # ------------------------------------------------------------------
+  notify:
+    name: Deployment Notification
+    if: always() && needs.prepare.result == 'success'
+    needs: [prepare, deploy-production]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Send Webhook Notification
+        env:
+          WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+          STATUS: ${{ needs.deploy-production.result }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          ACTOR: ${{ github.actor }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "${WEBHOOK_URL}" ]; then
+            echo "::notice::DEPLOY_WEBHOOK_URL secret not configured — skipping notification."
+            exit 0
           fi
 
-      - name: Downcase Owner Name
-        run: |
-          echo "OWNER_LC=${OWNER,,}" >> ${GITHUB_ENV}
-        env:
-          OWNER: "${{ github.repository_owner }}"
+          if [ "${STATUS}" = "success" ]; then
+            EMOJI="✅"
+          else
+            EMOJI="❌"
+          fi
 
-      - name: Copy Docker Compose file to VPS via SCP
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT || 22 }}
-          source: "docker-compose.prod.yml"
-          target: "~/msp-client-portal"
+          MESSAGE="${EMOJI} MSP Portal **v${VERSION}** deployment ${STATUS} (triggered by ${ACTOR})"
 
-      - name: Execute Remote SSH Deploy Script
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT || 22 }}
-          script: |
-            # Navigate to deploy directory
-            mkdir -p ~/msp-client-portal
-            cd ~/msp-client-portal
-
-
-            # Log in to GHCR using ephemeral GitHub token passed from the active Action run
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-            # Set the repository owner variable for Docker Compose interpolation
-            export REPOSITORY_OWNER=${{ env.OWNER_LC }}
-            export VERSION=${{ env.RELEASE_VERSION }}
-
-            # Pull latest images from GHCR
-            docker compose -f docker-compose.prod.yml pull
-
-            # Run containers in detached mode, recreate updated containers
-            docker compose -f docker-compose.prod.yml up -d
-
-            # Log out from GHCR to clean up credentials
-            docker logout ghcr.io
+          jq -n --arg text "${MESSAGE} ${RUN_URL}" '{text: $text, content: $text}' > payload.json
+          curl -sf --max-time 10 \
+            -H "Content-Type: application/json" \
+            -d @payload.json \
+            "${WEBHOOK_URL}" || echo "::warning::Webhook delivery failed — check DEPLOY_WEBHOOK_URL."

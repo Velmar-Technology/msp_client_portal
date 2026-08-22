@@ -1,0 +1,64 @@
+name: Quality Gates
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    name: Gates (${{ matrix.workspace }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - workspace: server
+            lint_cmd: npm run lint -w server
+            lint_blocking: true
+            typecheck_cmd: npm run build -w server
+            test_cmd: npm test -w server
+          - workspace: client
+            # Ratchet gate: client has a pre-existing baseline of ~105 lint errors.
+            # Non-blocking until the baseline is cleared, then flip to true.
+            lint_cmd: npm run lint -w client
+            lint_blocking: false
+            typecheck_cmd: npx tsc -b client
+            test_cmd: npm run test:run -w client
+          - workspace: packages/errors
+            lint_cmd: ""
+            lint_blocking: true
+            typecheck_cmd: npm run build -w packages/errors
+            test_cmd: npm test -w packages/errors
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build Shared Packages
+        if: matrix.workspace != 'packages/errors'
+        run: npm run build:packages
+
+      - name: Lint
+        if: matrix.lint_cmd != ''
+        continue-on-error: ${{ !matrix.lint_blocking }}
+        run: ${{ matrix.lint_cmd }}
+
+      - name: Typecheck & Build
+        run: ${{ matrix.typecheck_cmd }}
+
+      - name: Unit Tests
+        run: ${{ matrix.test_cmd }}
