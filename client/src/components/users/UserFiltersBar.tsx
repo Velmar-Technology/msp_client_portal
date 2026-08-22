@@ -34,7 +34,7 @@ export function UserFiltersBar({
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 mb-3 w-full">
       {/* Search */}
-      <div className="relative flex-1 min-w-[200px]">
+      <div className="relative flex-1 min-w-50">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
         <Input
           placeholder={t("userManagement.searchPlaceholder")}
@@ -62,7 +62,7 @@ export function UserFiltersBar({
             onRoleFilterChange(value === "ALL" ? "" : (value as RoleFilter))
           }
         >
-          <SelectTrigger className="h-8 min-w-[130px] px-2.5 text-xs font-medium bg-card text-foreground border border-border shadow-2xs hover:bg-accent/40 hover:border-border/80 focus:ring-1 focus:ring-ring cursor-pointer gap-2">
+          <SelectTrigger className="h-8 min-w-32.5 px-2.5 text-xs font-medium bg-card text-foreground border border-border shadow-2xs hover:bg-accent/40 hover:border-border/80 focus:ring-1 focus:ring-ring cursor-pointer gap-2">
             <SelectValue placeholder={t("userManagement.filterRole")} />
           </SelectTrigger>
           <SelectContent className="bg-popover border-border shadow-md rounded-md">
@@ -78,7 +78,7 @@ export function UserFiltersBar({
           value={statusFilter}
           onValueChange={(value) => onStatusFilterChange(value as StatusFilter)}
         >
-          <SelectTrigger className="h-8 min-w-[130px] px-2.5 text-xs font-medium bg-card text-foreground border border-border shadow-2xs hover:bg-accent/40 hover:border-border/80 focus:ring-1 focus:ring-ring cursor-pointer gap-2">
+          <SelectTrigger className="h-8 min-w-32.5 px-2.5 text-xs font-medium bg-card text-foreground border border-border shadow-2xs hover:bg-accent/40 hover:border-border/80 focus:ring-1 focus:ring-ring cursor-pointer gap-2">
             <SelectValue placeholder={t("userManagement.filterStatus")} />
           </SelectTrigger>
           <SelectContent className="bg-popover border-border shadow-md rounded-md">
