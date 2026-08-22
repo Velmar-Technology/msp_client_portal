@@ -59,4 +59,6 @@ jobs:
         run: ${{ matrix.typecheck_cmd }}
 
       - name: Unit Tests
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
         run: ${{ matrix.test_cmd }}
