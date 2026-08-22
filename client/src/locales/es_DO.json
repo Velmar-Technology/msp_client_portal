@@ -32,6 +32,20 @@
     "apiStatus": "Estado de API",
     "crm": "Pipeline CRM"
   },
+  "sidebar": {
+    "groups": {
+      "operations": "Operaciones",
+      "account": "Cuenta",
+      "management": "Gestión"
+    },
+    "subscriptions": "Suscripciones",
+    "renewsOn": "Renueva {{date}}",
+    "active": "Activa",
+    "expiring": "Por expirar",
+    "expiresToday": "Vence hoy",
+    "daysRemaining_one": "Queda {{count}} día",
+    "daysRemaining_other": "Quedan {{count}} días"
+  },
   "topNav": {
     "search": "Buscar tickets, facturas, FAQs...",
     "signOut": "Cerrar Sesión",

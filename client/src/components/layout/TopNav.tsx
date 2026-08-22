@@ -300,7 +300,7 @@ export function TopNav() {
   return (
     <header className="flex justify-between items-center w-full px-4 md:px-8 h-12 bg-card border-b border-border sticky top-0 z-30 transition-colors">
       <div className="flex items-center gap-2">
-        <SidebarTrigger className="text-muted-foreground hover:bg-muted hover:text-foreground h-8 w-8 cursor-pointer rounded-sm transition-colors" />
+        <SidebarTrigger className="h-8 w-8 rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer transition-colors" />
         <h2 className="text-xs font-bold text-foreground md:hidden font-heading">
           {t("topNav.portal")}
         </h2>

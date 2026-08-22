@@ -1,6 +1,7 @@
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
-import { ChevronRight, HelpCircle } from "lucide-react";
+import { Fragment } from "react";
+import { ChevronDown, ChevronRight, HelpCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import logoUrl from "@/assets/logo.png";
 import { useSidebar, type NavItem, type NavSubItem } from "@/hooks/useSidebar";
@@ -21,9 +22,20 @@ import {
   SidebarMenuSubButton,
 } from "../ui/sidebar";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import type { Subscription } from "@/services/subscriptionService";
 
-// 1. Sidebar Brand Sub-component
+const navItemButtonClass =
+  "h-8 gap-2.5 px-2.5 py-1 text-[13px] text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-foreground transition-colors";
+
+const navGroupHeadingClass =
+  "px-1.5 pb-1 pt-3 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50";
+
 interface SidebarBrandProps {
   logo: string;
   portalTitle: string;
@@ -32,7 +44,7 @@ interface SidebarBrandProps {
 
 export function SidebarBrand({ logo, portalTitle, infraTitle }: SidebarBrandProps) {
   return (
-    <SidebarHeader className="border-b border-sidebar-border px-3.5 py-2.5 bg-sidebar">
+    <SidebarHeader className="border-b border-sidebar-border/50 px-3 py-2.5 bg-sidebar">
       <div className="flex items-center gap-2.5">
         <img
           src={logo}
@@ -52,96 +64,125 @@ export function SidebarBrand({ logo, portalTitle, infraTitle }: SidebarBrandProp
   );
 }
 
-// 2. High-Density Active Subscription Card Sub-component
+function useSubscriptionMeta(subs: Subscription[]) {
+  const { t, i18n } = useTranslation();
+
+  const locale = i18n.language?.startsWith("es") ? "es-DO" : "en-US";
+
+  const [now] = useState(() => Date.now());
+
+  const formatDate = (dateStr: string) =>
+    new Date(dateStr).toLocaleDateString(locale, { day: "2-digit", month: "short" });
+
+  const earliestRenewal = useMemo(() => {
+    return subs.reduce((min, s) => {
+      const d = new Date(s.renewal_date);
+      return d < min ? d : min;
+    }, new Date(subs[0].renewal_date));
+  }, [subs]);
+
+  const daysRemaining = useMemo(
+    () => Math.max(0, Math.ceil((earliestRenewal.getTime() - now) / 86400000)),
+    [earliestRenewal, now]
+  );
+
+  const daysRemainingLabel =
+    daysRemaining === 0
+      ? t("sidebar.expiresToday")
+      : t("sidebar.daysRemaining", { count: daysRemaining });
+
+  return { t, locale, formatDate, daysRemaining, daysRemainingLabel };
+}
+
 interface ActiveSubCardProps {
   subs: Subscription[];
   planNameMap: Map<string, string>;
-  renewalLabel: string;
-  isSpanish: boolean;
 }
 
-export function ActiveSubCard({ subs, planNameMap, renewalLabel, isSpanish }: ActiveSubCardProps) {
+export function ActiveSubCard({ subs, planNameMap }: ActiveSubCardProps) {
+  const { t } = useTranslation();
+  const { formatDate, daysRemainingLabel } = useSubscriptionMeta(subs);
+
   const representative = subs[0];
   const count = subs.length;
   const displayName = planNameMap.get(representative.plan) || representative.service_name;
-
-  const formattedDate = useMemo(() => {
-    const earliest = subs.reduce((min, s) => {
-      const d = new Date(s.renewal_date);
-      return d < min ? d : min;
-    }, new Date(subs[0].renewal_date));
-    return earliest.toLocaleDateString(isSpanish ? "es-DO" : "en-US", {
-      day: "2-digit",
-      month: "short",
-    });
-  }, [subs, isSpanish]);
-
-  const daysRemaining = useMemo(() => {
-    const earliest = subs.reduce((min, s) => {
-      const d = new Date(s.renewal_date);
-      return d < min ? d : min;
-    }, new Date(subs[0].renewal_date));
-    const now = new Date();
-    const diffMs = earliest.getTime() - now.getTime();
-    return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
-  }, [subs]);
-
   const isExpiring = subs.some((s) => s.status === "EXPIRING");
 
+  const metaText = isExpiring
+    ? daysRemainingLabel
+    : t("sidebar.renewsOn", {
+        date: formatDate(representative.renewal_date),
+      });
+
   return (
-    <div className={`mx-2 my-1.5 p-2.5 rounded-sm border shadow-xs group-data-[collapsible=icon]:hidden transition-colors ${
-      isExpiring
-        ? "border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/30"
-        : "border-sidebar-border bg-sidebar-accent/50"
-    }`}>
-      <div className="flex items-center justify-between gap-2 mb-1">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[9px] font-mono font-bold text-sidebar-foreground bg-sidebar-accent border border-sidebar-border px-1 rounded-sm uppercase">
-            {representative.plan}
-          </span>
-          {count > 1 && (
-            <span className="text-[9px] font-mono font-bold text-primary bg-primary/10 border border-primary/20 px-1 rounded-sm">
-              x{count}
-            </span>
-          )}
+    <div className="mx-1 my-1 flex items-center justify-between gap-1 rounded-lg px-1.5 py-1.5 transition-colors hover:bg-sidebar-accent/60 group-data-[collapsible=icon]:hidden">
+      <div className="flex min-w-0 items-center gap-2.5">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px] bg-primary text-primary-foreground text-[13px] font-semibold shadow-sm">
+          {displayName.charAt(0).toUpperCase()}
         </div>
-        <div className="flex items-center gap-1">
-          {isExpiring ? (
-            <>
-              <span className="h-1.5 w-1.5 bg-amber-500 rounded-full animate-pulse" />
-              <span className="text-[8px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
-                {isSpanish ? "Expira Pronto" : "Expiring"}
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="h-1.5 w-1.5 bg-primary rounded-full animate-pulse" />
-              <span className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">
-                Active
-              </span>
-            </>
-          )}
+        <div className="flex flex-col overflow-hidden">
+          <span className="text-[13px] font-medium leading-none text-sidebar-foreground truncate">
+            {displayName}
+          </span>
+          <span
+            className={`mt-1.5 text-[11px] leading-none truncate ${
+              isExpiring ? "font-semibold text-amber-600 dark:text-amber-400" : "text-muted-foreground"
+            }`}
+          >
+            {metaText}
+          </span>
         </div>
       </div>
-      <p className="text-[11px] font-medium text-sidebar-foreground truncate">{displayName}</p>
-      <p className="text-[9px] text-muted-foreground mt-0.5 font-mono">
-        {renewalLabel}: {formattedDate}
-      </p>
-      {isExpiring && (
-        <p className="text-[9px] text-amber-600 dark:text-amber-400 mt-0.5 font-semibold">
-          {daysRemaining === 0
-            ? (isSpanish ? "Vence hoy" : "Expires today")
-            : isSpanish
-              ? `Quedan ${daysRemaining} día${daysRemaining !== 1 ? "s" : ""}`
-              : `${daysRemaining} day${daysRemaining !== 1 ? "s" : ""} remaining`
-          }
-        </p>
-      )}
+      <div className="flex shrink-0 items-center gap-1.5">
+        <span
+          className={`h-1.5 w-1.5 shrink-0 animate-pulse rounded-full ${
+            isExpiring ? "bg-amber-500" : "bg-primary"
+          }`}
+        />
+        <span
+          className={`text-[9px] font-semibold uppercase tracking-wider leading-none ${
+            isExpiring ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"
+          }`}
+        >
+          {isExpiring ? t("sidebar.expiring") : t("sidebar.active")}
+        </span>
+        {count > 1 && (
+          <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-mono font-bold tabular-nums text-primary">
+            x{count}
+          </span>
+        )}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              aria-label={displayName}
+              className="flex h-5 w-5 items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer"
+            >
+              <ChevronDown className="h-3.5 w-3.5" strokeWidth={1.5} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="right" align="start" className="w-56">
+            {subs.map((s) => (
+              <DropdownMenuItem key={s.id} className="gap-2 text-xs">
+                <span
+                  className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                    s.status === "EXPIRING" ? "animate-pulse bg-amber-500" : "bg-primary"
+                  }`}
+                />
+                <span className="flex-1 truncate font-medium">
+                  {planNameMap.get(s.plan) || s.service_name}
+                </span>
+                <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
+                  {formatDate(s.renewal_date)}
+                </span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
   );
 }
 
-// 3. Navigation List Component
 interface SidebarNavListProps {
   navItems: NavItem[];
   checkIsActive: (to: string) => boolean;
@@ -153,89 +194,110 @@ export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive }: 
 
   return (
     <SidebarMenu className="gap-0.5 px-1">
-      {navItems.map((item) => {
+      {navItems.map((item, idx) => {
         const translatedLabel = t(`nav.${item.labelKey}`);
+        const showHeading =
+          !!item.groupLabelKey && item.groupLabelKey !== navItems[idx - 1]?.groupLabelKey;
 
         if (item.items) {
           const isGroupActive = checkIsGroupActive(item.items);
 
           return (
-            <Collapsible key={item.labelKey} asChild defaultOpen={isGroupActive} className="group/collapsible">
-              <SidebarMenuItem>
-                <CollapsibleTrigger asChild>
-                  <SidebarMenuButton
-                    tooltip={translatedLabel}
-                    isActive={isGroupActive}
-                    className="h-7 text-xs py-1 px-2 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:text-sidebar-foreground data-[active=true]:font-semibold transition-colors"
-                  >
-                    <item.icon className="h-3.5 w-3.5 shrink-0" />
-                    <span className="group-data-[collapsible=icon]:hidden">{translatedLabel}</span>
-                    <ChevronRight className="ml-auto h-3 w-3 text-muted-foreground transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden" />
-                  </SidebarMenuButton>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <SidebarMenuSub className="ml-3 border-l border-sidebar-border pl-1.5 py-0.5 space-y-0.5">
-                    {item.items.map((sub) => {
-                      const isSubActive = checkIsActive(sub.to);
-                      return (
-                        <SidebarMenuSubItem key={sub.to}>
-                          <SidebarMenuSubButton
-                            asChild
-                            isActive={isSubActive}
-                            className="h-6 text-[11px] text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium transition-colors"
-                          >
-                            <NavLink
-                              to={sub.to}
-                              className="w-full truncate"
-                              onMouseEnter={() => preloadRoute(sub.to)}
-                              onFocus={() => preloadRoute(sub.to)}
+            <Fragment key={item.to}>
+              {showHeading && (
+                <li aria-hidden="true" className="pointer-events-none list-none">
+                  <span className={navGroupHeadingClass}>{t(item.groupLabelKey!)}</span>
+                </li>
+              )}
+              <Collapsible asChild defaultOpen={isGroupActive} className="group/collapsible">
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton
+                      tooltip={translatedLabel}
+                      isActive={isGroupActive}
+                      className={navItemButtonClass}
+                    >
+                      <item.icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+                      <span className="truncate group-data-[collapsible=icon]:hidden">
+                        {translatedLabel}
+                      </span>
+                      <ChevronRight
+                        strokeWidth={1.5}
+                        className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground/50 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden"
+                      />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-1 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1">
+                    <SidebarMenuSub className="ml-3 border-l border-sidebar-border/50 py-0.5 space-y-0.5 pl-1.5">
+                      {item.items.map((sub) => {
+                        const isSubActive = checkIsActive(sub.to);
+                        return (
+                          <SidebarMenuSubItem key={sub.to}>
+                            <SidebarMenuSubButton
+                              asChild
+                              isActive={isSubActive}
+                              className="h-7 rounded-md text-xs text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:font-medium data-[active=true]:text-sidebar-foreground transition-colors"
                             >
-                              {t(`nav.${sub.labelKey}`)}
-                            </NavLink>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      );
-                    })}
-                  </SidebarMenuSub>
-                </CollapsibleContent>
-              </SidebarMenuItem>
-            </Collapsible>
+                              <NavLink
+                                to={sub.to}
+                                className="w-full truncate"
+                                onMouseEnter={() => preloadRoute(sub.to)}
+                                onFocus={() => preloadRoute(sub.to)}
+                              >
+                                {t(`nav.${sub.labelKey}`)}
+                              </NavLink>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        );
+                      })}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+            </Fragment>
           );
         }
 
         const isActive = checkIsActive(item.to);
 
         return (
-          <SidebarMenuItem key={item.to}>
-            <SidebarMenuButton
-              asChild
-              isActive={isActive}
-              tooltip={translatedLabel}
-              className="h-7 text-xs py-1 px-2 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:text-sidebar-foreground data-[active=true]:font-semibold transition-colors"
-            >
-              <NavLink
-                to={item.to}
-                className="flex items-center gap-2"
-                onMouseEnter={() => preloadRoute(item.to)}
-                onFocus={() => preloadRoute(item.to)}
+          <Fragment key={item.to}>
+            {showHeading && (
+              <li aria-hidden="true" className="pointer-events-none list-none">
+                <span className={navGroupHeadingClass}>{t(item.groupLabelKey!)}</span>
+              </li>
+            )}
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={isActive}
+                tooltip={translatedLabel}
+                className={navItemButtonClass}
               >
-                <item.icon className="h-3.5 w-3.5 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden">{translatedLabel}</span>
-              </NavLink>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+                <NavLink
+                  to={item.to}
+                  className="flex items-center gap-2.5"
+                  onMouseEnter={() => preloadRoute(item.to)}
+                  onFocus={() => preloadRoute(item.to)}
+                >
+                  <item.icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+                  <span className="truncate group-data-[collapsible=icon]:hidden">
+                    {translatedLabel}
+                  </span>
+                </NavLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </Fragment>
         );
       })}
     </SidebarMenu>
   );
 }
 
-// 4. Premium SaaS Sidebar Component
 export function AppSidebar() {
   const { t } = useTranslation();
   const { user, location, activeSubscriptions, planNameMap, navItems, checkIsActive, checkIsGroupActive } = useSidebar();
 
-  const isSpanish = t("dashboard.tableStatus") === "Estado";
   const isPublicLegalPage = location.pathname === "/" || location.pathname === "/terms" || location.pathname === "/privacy";
 
   const appVersion = import.meta.env.VITE_APP_VERSION as string | undefined;
@@ -256,7 +318,6 @@ export function AppSidebar() {
   const hasMultipleGroups = groupedSubs.length > 1;
 
   useEffect(() => {
-    // Idle preload high-probability secondary route chunks
     const secondaryPreloaders = [
       routePreloaders["/tickets"],
       routePreloaders["/devices"],
@@ -269,11 +330,9 @@ export function AppSidebar() {
   }, []);
 
   return (
-    <ShadcnSidebar className="border-r border-sidebar-border bg-sidebar">
-      {/* Header section */}
+    <ShadcnSidebar className="border-r border-sidebar-border/50 bg-sidebar">
       <SidebarBrand logo={logoUrl} portalTitle={t("topNav.portal")} infraTitle={t("nav.infrastructure")} />
 
-      {/* Navigation Content */}
       <SidebarContent className="py-1 bg-sidebar">
         <SidebarGroup className="p-0">
           <SidebarGroupContent>
@@ -282,28 +341,28 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      {/* Footer support item */}
-      <SidebarFooter className="border-t border-sidebar-border p-1.5 bg-sidebar">
+      <SidebarFooter className="border-t border-sidebar-border/50 p-1 bg-sidebar">
         {user?.role === "CLIENT" && groupedSubs.length > 0 && !isPublicLegalPage && (
           hasMultipleGroups ? (
             <Collapsible defaultOpen className="group/collapsible-sub">
               <SidebarMenu className="px-0">
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuButton
-                      className="h-auto py-1.5 px-2 text-[9px] font-semibold text-muted-foreground uppercase tracking-wider hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
-                    >
-                      <span>{isSpanish ? "Suscripciones" : "Subscriptions"}</span>
-                      <span className="ml-auto bg-sidebar-accent border border-sidebar-border rounded-sm px-1.5 py-0.5 text-[9px] font-mono tabular-nums">
+                    <SidebarMenuButton className="h-auto w-full px-1.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors">
+                      <span>{t("sidebar.subscriptions")}</span>
+                      <span className="ml-auto rounded-full bg-sidebar-accent px-1.5 py-0.5 text-[9px] font-mono font-bold tabular-nums text-muted-foreground">
                         {groupedSubs.length}
                       </span>
-                      <ChevronRight className="h-3 w-3 text-muted-foreground transition-transform duration-200 group-data-[state=open]/collapsible-sub:rotate-90" />
+                      <ChevronRight
+                        strokeWidth={1.5}
+                        className="h-3 w-3 text-muted-foreground/50 transition-transform duration-200 group-data-[state=open]/collapsible-sub:rotate-90"
+                      />
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <div className="space-y-0">
+                  <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-1 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1">
+                    <div className="space-y-0 pb-0.5">
                       {groupedSubs.map((group) => (
-                        <ActiveSubCard key={group[0].plan} subs={group} planNameMap={planNameMap} renewalLabel={t("dashboard.tableRenewal")} isSpanish={isSpanish} />
+                        <ActiveSubCard key={group[0].plan} subs={group} planNameMap={planNameMap} />
                       ))}
                     </div>
                   </CollapsibleContent>
@@ -311,7 +370,7 @@ export function AppSidebar() {
               </SidebarMenu>
             </Collapsible>
           ) : (
-            <ActiveSubCard subs={groupedSubs[0]} planNameMap={planNameMap} renewalLabel={t("dashboard.tableRenewal")} isSpanish={isSpanish} />
+            <ActiveSubCard subs={groupedSubs[0]} planNameMap={planNameMap} />
           )
         )}
         {user && !isPublicLegalPage && (
@@ -321,23 +380,23 @@ export function AppSidebar() {
                 asChild
                 isActive={checkIsActive("/help")}
                 tooltip={t("nav.help")}
-                className="h-7 text-xs py-1 px-2 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:text-sidebar-foreground transition-colors"
+                className={navItemButtonClass}
               >
                 <NavLink
                   to="/help"
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2.5"
                   onMouseEnter={() => preloadRoute("/help")}
                   onFocus={() => preloadRoute("/help")}
                 >
-                  <HelpCircle className="h-3.5 w-3.5 shrink-0" />
-                  <span className="group-data-[collapsible=icon]:hidden font-medium">{t("nav.help")}</span>
+                  <HelpCircle className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+                  <span className="truncate group-data-[collapsible=icon]:hidden">{t("nav.help")}</span>
                 </NavLink>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         )}
         {appVersion && (
-          <div className="group-data-[collapsible=icon]:hidden px-3 pb-1 pt-0.5 text-[9px] font-medium text-muted-foreground">
+          <div className="px-2.5 pb-1 pt-0.5 text-[9px] font-medium text-muted-foreground/50 group-data-[collapsible=icon]:hidden">
             v{appVersion}
           </div>
         )}

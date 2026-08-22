@@ -14,6 +14,7 @@ import {
   Download,
   Activity,
   Target,
+  type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { subscriptionService } from "@/services/subscriptionService";
@@ -27,13 +28,14 @@ export interface NavSubItem {
 
 export interface NavItem {
   to: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: LucideIcon;
   labelKey: string;
+  groupLabelKey?: string;
   items?: NavSubItem[];
 }
 
 const clientNavItems: NavItem[] = [
-  { to: "/dashboard", icon: LayoutDashboard, labelKey: "dashboard" },
+  { to: "/dashboard", icon: LayoutDashboard, labelKey: "dashboard", groupLabelKey: "sidebar.groups.operations" },
   { to: "/devices", icon: Laptop, labelKey: "devices" },
   { to: "/resources", icon: Download, labelKey: "resources" },
   { to: "/maintenance", icon: Calendar, labelKey: "maintenance" },
@@ -42,6 +44,7 @@ const clientNavItems: NavItem[] = [
     to: "/account-group",
     icon: User,
     labelKey: "account",
+    groupLabelKey: "sidebar.groups.account",
     items: [
       { to: "/profile", labelKey: "profile" },
       { to: "/notifications/preferences", labelKey: "notificationPreferences" },
@@ -52,13 +55,14 @@ const clientNavItems: NavItem[] = [
 ];
 
 const techNavItems: NavItem[] = [
-  { to: "/tech/dashboard", icon: LayoutDashboard, labelKey: "dashboard" },
+  { to: "/tech/dashboard", icon: LayoutDashboard, labelKey: "dashboard", groupLabelKey: "sidebar.groups.operations" },
   { to: "/maintenance", icon: Calendar, labelKey: "maintenance" },
   { to: "/tickets", icon: Ticket, labelKey: "myTickets" },
   {
     to: "/account-group",
     icon: User,
     labelKey: "account",
+    groupLabelKey: "sidebar.groups.account",
     items: [
       { to: "/profile", labelKey: "profile" },
       { to: "/notifications/preferences", labelKey: "notificationPreferences" },
@@ -67,12 +71,12 @@ const techNavItems: NavItem[] = [
 ];
 
 const adminNavItems: NavItem[] = [
-  { to: "/dashboard", icon: Shield, labelKey: "adminDashboard" },
+  { to: "/dashboard", icon: Shield, labelKey: "adminDashboard", groupLabelKey: "sidebar.groups.management" },
   { to: "/crm", icon: Target, labelKey: "crm" },
   { to: "/financial", icon: Landmark, labelKey: "financial" },
   { to: "/admin/users", icon: Users, labelKey: "userManagement" },
   { to: "/admin/api-status", icon: Activity, labelKey: "apiStatus" },
-  { to: "/devices", icon: Laptop, labelKey: "devices" },
+  { to: "/devices", icon: Laptop, labelKey: "devices", groupLabelKey: "sidebar.groups.operations" },
   { to: "/resources", icon: Download, labelKey: "resources" },
   { to: "/maintenance", icon: Calendar, labelKey: "maintenance" },
   { to: "/tickets", icon: Ticket, labelKey: "allTickets" },
@@ -80,6 +84,7 @@ const adminNavItems: NavItem[] = [
     to: "/settings-group",
     icon: Settings,
     labelKey: "settings",
+    groupLabelKey: "sidebar.groups.account",
     items: [
       { to: "/profile", labelKey: "profile" },
       { to: "/notifications/preferences", labelKey: "notificationPreferences" },

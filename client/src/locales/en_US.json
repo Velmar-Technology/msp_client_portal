@@ -32,6 +32,20 @@
     "apiStatus": "API Status",
     "crm": "CRM Pipeline"
   },
+  "sidebar": {
+    "groups": {
+      "operations": "Operations",
+      "account": "Account",
+      "management": "Management"
+    },
+    "subscriptions": "Subscriptions",
+    "renewsOn": "Renews {{date}}",
+    "active": "Active",
+    "expiring": "Expiring soon",
+    "expiresToday": "Expires today",
+    "daysRemaining_one": "{{count}} day remaining",
+    "daysRemaining_other": "{{count}} days remaining"
+  },
   "topNav": {
     "search": "Search tickets, invoices, FAQs...",
     "signOut": "Sign Out",
