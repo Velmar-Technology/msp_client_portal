@@ -275,102 +275,104 @@ export function AdminDashboardView() {
 
   return (
     <Page title={t("dashboard.systemOverview")} subtitle={t("dashboard.systemStatus")}>
-      <div className="space-y-6 mb-6">
+      <div className="flex flex-col gap-4">
         {/* Support Status, Maintenance, Backup Status, and Cloud Storage Card grid */}
-        <StatsGrid className="w-full">
-          {/* Support Status */}
-          <SummaryCard
-            icon={<Headphones className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />}
-            title={t("dashboard.technicalSupport")}
-            value={openTickets}
-            subtitle={t("dashboard.activeTickets")}
-            badge={
-              openTickets > 0 ? (
-                <span className="flex items-center gap-1.5">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+        <section aria-label="System Metrics">
+          <StatsGrid className="w-full">
+            {/* Support Status */}
+            <SummaryCard
+              icon={<Headphones className="h-3.5 w-3.5" />}
+              title={t("dashboard.technicalSupport")}
+              value={openTickets}
+              subtitle={t("dashboard.activeTickets")}
+              badge={
+                openTickets > 0 ? (
+                  <span className="flex items-center gap-1.5">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                    </span>
+                    {t("tickets.statusOpen") || "OPEN"}
                   </span>
-                  {t("dashboard.tableStatus") === "Estado" ? "ABIERTOS" : "OPEN"}
-                </span>
-              ) : undefined
-            }
-            footer={
-              <Link
-                to="/tickets"
-                className="flex items-center gap-1 text-zinc-650 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium"
-              >
-                {t("dashboard.viewDetails")}
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            }
-          />
-
-          {/* Maintenance */}
-          <SummaryCard
-            icon={<Wrench className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />}
-            title={t("dashboard.maintenance")}
-            value={
-              nextMaintenance
-                ? new Date(nextMaintenance.scheduled_date).toLocaleDateString(
-                    i18n.language === "es_DO" ? "es-DO" : "en-US",
-                    {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    },
-                  )
-                : t("dashboard.noneScheduled")
-            }
-            badge={
-              nextMaintenance
-                ? t(
-                    nextMaintenance.status === "IN_PROGRESS"
-                      ? "maintenance.statusInProgress"
-                      : nextMaintenance.status === "OVERDUE"
-                        ? "maintenance.statusOverdue"
-                        : "maintenance.statusScheduled",
-                  )
-                : undefined
-            }
-            footer={
-              nextMaintenance ? (
+                ) : undefined
+              }
+              footer={
                 <Link
-                  to="/maintenance"
-                  className="flex items-center gap-1 text-zinc-650 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium"
+                  to="/tickets"
+                  className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium"
                 >
-                  <span className="truncate max-w-[140px] block" title={nextMaintenance.title}>
-                    {nextMaintenance.title}
-                  </span>
-                  <ArrowRight className="h-4 w-4 shrink-0" />
+                  {t("dashboard.viewDetails")}
+                  <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
-              ) : (
-                <span className="text-[11px] text-zinc-450 dark:text-zinc-500 font-normal">
-                  {t("dashboard.noUpcomingMaintenance")}
+              }
+            />
+
+            {/* Maintenance */}
+            <SummaryCard
+              icon={<Wrench className="h-3.5 w-3.5" />}
+              title={t("dashboard.maintenance")}
+              value={
+                nextMaintenance
+                  ? new Date(nextMaintenance.scheduled_date).toLocaleDateString(
+                      i18n.language === "es_DO" ? "es-DO" : "en-US",
+                      {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      },
+                    )
+                  : t("dashboard.noneScheduled")
+              }
+              badge={
+                nextMaintenance
+                  ? t(
+                      nextMaintenance.status === "IN_PROGRESS"
+                        ? "maintenance.statusInProgress"
+                        : nextMaintenance.status === "OVERDUE"
+                          ? "maintenance.statusOverdue"
+                          : "maintenance.statusScheduled",
+                    )
+                  : undefined
+              }
+              footer={
+                nextMaintenance ? (
+                  <Link
+                    to="/maintenance"
+                    className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium"
+                  >
+                    <span className="truncate max-w-35 block" title={nextMaintenance.title}>
+                      {nextMaintenance.title}
+                    </span>
+                    <ArrowRight className="h-3.5 w-3.5 shrink-0" />
+                  </Link>
+                ) : (
+                  <span className="text-[9px] text-zinc-400 dark:text-zinc-500 font-mono">
+                    {t("dashboard.noUpcomingMaintenance")}
+                  </span>
+                )
+              }
+            />
+
+            {/* Backups */}
+            <SummaryCard
+              icon={<CloudUpload className="h-3.5 w-3.5" />}
+              title={t("dashboard.lastBackup")}
+              value={t("dashboard.twoHoursAgo")}
+              badge={t("dashboard.successful")}
+              footer={
+                <span className="text-[9px] text-zinc-400 dark:text-zinc-500 font-mono">
+                  {t("dashboard.mainDbServer")}
                 </span>
-              )
-            }
-          />
+              }
+            />
 
-          {/* Backups */}
-          <SummaryCard
-            icon={<CloudUpload className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />}
-            title={t("dashboard.lastBackup")}
-            value={t("dashboard.twoHoursAgo")}
-            badge={t("dashboard.successful")}
-            footer={
-              <span className="text-[11px] text-zinc-450 dark:text-zinc-500 font-normal">
-                {t("dashboard.mainDbServer")}
-              </span>
-            }
-          />
-
-          {/* Cloud Storage (Resource Usage) */}
-          <StorageOverview storage={storage} loading={storageLoading} t={t} />
-        </StatsGrid>
+            {/* Cloud Storage (Resource Usage) */}
+            <StorageOverview storage={storage} loading={storageLoading} t={t} />
+          </StatsGrid>
+        </section>
 
         {/* Billing & Invoices */}
-        <div className="w-full">
+        <section aria-label="Recent Invoices" className="w-full">
           <RecentInvoices
             invoices={invoices}
             t={t}
@@ -378,7 +380,7 @@ export function AdminDashboardView() {
             getStatusLabel={getStatusLabel}
             getStatusColorClass={getStatusColorClass}
           />
-        </div>
+        </section>
       </div>
     </Page>
   );

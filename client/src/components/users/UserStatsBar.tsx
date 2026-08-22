@@ -17,15 +17,17 @@ interface StatItemProps {
 
 function StatItem({ icon, label, value, accent }: StatItemProps) {
   return (
-    <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-zinc-100 dark:bg-zinc-950 border border-zinc-200/60 dark:border-zinc-800/80">
-      <div className="text-zinc-400 dark:text-zinc-500">{icon}</div>
-      <div className="flex flex-col">
-        <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider leading-none">{label}</span>
-        <span
-          className={`text-base font-extrabold font-heading leading-tight ${accent ?? "text-foreground"}`}
-        >
+    <div className="group rounded-lg border border-zinc-200 bg-white p-3 shadow-xs transition-all duration-200 hover:border-zinc-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700 flex items-center justify-between gap-2">
+      <div className="flex flex-col min-w-0">
+        <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider truncate leading-tight">
+          {label}
+        </span>
+        <span className={`text-xl font-bold tracking-tight font-heading mt-0.5 leading-tight ${accent ?? "text-zinc-900 dark:text-zinc-50"}`}>
           {value}
         </span>
+      </div>
+      <div className="rounded-md bg-zinc-50 p-1.5 text-zinc-600 transition-colors group-hover:bg-zinc-100 dark:bg-zinc-900/50 dark:text-zinc-400 dark:group-hover:bg-zinc-900 shrink-0">
+        {icon}
       </div>
     </div>
   );

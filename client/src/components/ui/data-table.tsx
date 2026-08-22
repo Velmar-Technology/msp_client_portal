@@ -224,18 +224,18 @@ export function DataTable<TData, TValue>({
                 placeholder={search.placeholder || "Search..."}
                 value={search.value}
                 onChange={(e) => search.onChange(e.target.value)}
-                className="w-full pl-8 pr-3 h-8.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-400 transition-all"
+                className="w-full pl-8 pr-3 h-7 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-400 transition-all"
               />
             </div>
           )}
           {filters &&
             filters.map((filter) => (
-              <div key={filter.id} className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-800 min-w-0">
+              <div key={filter.id} className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-800 min-w-0">
                 <Select value={filter.value || "all"} onValueChange={(val) => filter.onChange(val === "all" ? "" : val)}>
                   <SelectTrigger
                     id={`filter-${filter.id}`}
                     aria-label={filter.placeholder || filter.id}
-                    className="h-7.5 px-2.5 rounded text-xs font-semibold bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5 min-w-0"
+                    className="h-7 px-2.5 rounded-md text-xs font-semibold bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5 min-w-0"
                   >
                     <SelectValue placeholder={filter.placeholder || "Select..."} />
                   </SelectTrigger>
@@ -259,36 +259,31 @@ export function DataTable<TData, TValue>({
 
       {/* 2. Selection Bulk Action Bar */}
       {enableRowSelection && bulkActions && hasSelectedRows && (
-        <div className="px-3 py-1.5 bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2 animate-fade-in min-w-0">
+        <div className="px-3 py-1.5 bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2 animate-fade-in min-w-0">
           <span className="text-xs font-mono font-bold text-zinc-900 dark:text-zinc-100">
             {Object.keys(rowSelection).length} selected
           </span>
           <div className="flex flex-wrap gap-2">
             {bulkActions.map((action, idx) => (
-              <button
+              <Button
                 key={idx}
+                size="sm"
+                variant={action.variant === "destructive" ? "destructive" : action.variant === "outline" ? "outline" : "default"}
                 onClick={() => {
                   const selectedRows = table.getSelectedRowModel().rows.map((row) => row.original);
                   action.onClick(selectedRows);
                 }}
-                className={cn(
-                  "px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer whitespace-nowrap",
-                  action.variant === "destructive"
-                    ? "bg-red-600 hover:bg-red-700 text-white"
-                    : action.variant === "outline"
-                      ? "border border-zinc-200 hover:bg-zinc-100 dark:border-zinc-800 dark:hover:bg-zinc-805 text-zinc-700 dark:text-zinc-300"
-                      : "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90",
-                )}
+                className="h-7 px-2.5 text-xs font-medium cursor-pointer whitespace-nowrap"
               >
                 {action.label}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
       )}
 
       {/* 3. Main Data Table */}
-      <div className="w-full max-w-full min-w-0 rounded-sm border overflow-hidden bg-white dark:bg-zinc-950 shadow-sm">
+      <div className="w-full max-w-full min-w-0 rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-950 shadow-xs">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

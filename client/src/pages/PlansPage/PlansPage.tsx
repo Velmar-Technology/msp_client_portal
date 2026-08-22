@@ -1,6 +1,7 @@
 import { useMemo, useCallback } from "react";
 import { ChevronDown, Plus, Minus, RefreshCw, Mail, Ban, CreditCard, ShoppingBag, Info } from "lucide-react";
 import { Page } from "@/components/Page";
+import { Button } from "@/components/ui/button";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Subscription } from "@/services/subscriptionService";
 import { toast } from "sonner";
@@ -333,13 +334,14 @@ export function PlansPage() {
       actions={
         isAdmin && (
           <div className="flex justify-end w-full sm:w-auto">
-            <button
+            <Button
               type="button"
+              size="sm"
               onClick={handleCreateClick}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-opacity cursor-pointer flex items-center gap-1 shadow-xs border border-primary w-full sm:w-auto justify-center"
+              className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
             >
               <span>+ {t("plans.addPlan") || "Add Plan"}</span>
-            </button>
+            </Button>
           </div>
         )
       }
@@ -391,7 +393,7 @@ export function PlansPage() {
                   id="client-type-filter"
                   value={clientTypeFilter}
                   onChange={(e) => setClientTypeFilter(e.target.value as "ALL" | typeof clientTypeFilter)}
-                  className="h-8 px-2 border border-input rounded text-xs bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  className="h-7 rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs font-medium text-zinc-700 shadow-xs outline-none transition-all hover:border-zinc-300 focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 cursor-pointer"
                 >
                   <option value="ALL">{t("plans.allAudiences") || "All plans"}</option>
                   <option value="CLIENT">{t("plans.clientTypes.standard") || "Standard Client"}</option>

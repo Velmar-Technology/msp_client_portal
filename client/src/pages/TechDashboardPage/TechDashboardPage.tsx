@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Page } from '@/components/Page';
+import { SummaryCard } from '@/components/shared/SummaryCard';
+import { StatsGrid } from '@/components/stats-grid';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/ui/data-table';
 import {
@@ -66,7 +68,7 @@ function SLACountdownRow({ ticket, onNavigate }: { ticket: Ticket; onNavigate: (
 }
 
 export function TechDashboardPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -293,69 +295,56 @@ export function TechDashboardPage() {
       title={`${t('login.welcome')}, ${user?.name}`}
       subtitle={t('techDashboard.subtitle')}
       actions={
-        <div className="flex items-center gap-3 bg-muted p-4 rounded-xl border border-border shadow-xs animate-fade-in">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <User className="h-5 w-5 text-primary" />
+        <div className="flex items-center gap-2.5 bg-white dark:bg-zinc-950 p-2 px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-xs">
+          <div className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center text-zinc-600 dark:text-zinc-400">
+            <User className="h-3.5 w-3.5" />
           </div>
           <div>
-            <h4 className="text-sm font-bold text-foreground leading-tight">{user?.email}</h4>
-            <span className="text-xs text-muted-foreground mt-0.5 block">
-              {t('techDashboard.mySpecialty')}: <strong>{specialty || (t('profile.languages.es_DO') === 'Español' ? 'Generalista' : 'Generalist')}</strong>
+            <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 leading-tight">{user?.email}</h4>
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">
+              {t('techDashboard.mySpecialty')}: <strong className="text-zinc-700 dark:text-zinc-300">{specialty || (i18n.language === 'es_DO' ? 'Generalista' : 'Generalist')}</strong>
             </span>
           </div>
         </div>
       }
     >
+      <div className="flex flex-col gap-4">
+        {/* Metrics Row */}
+        <section aria-label="Technician Metrics">
+          <StatsGrid className="w-full">
+            {/* Total Assigned */}
+            <SummaryCard
+              icon={<ClipboardList className="h-3.5 w-3.5" />}
+              title={t('techDashboard.assignedTickets')}
+              value={totalAssigned}
+            />
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-6">
-        {/* Total Assigned */}
-        <div className="bg-card border border-border p-6 rounded-xl flex flex-col shadow-xs">
-          <div className="flex justify-between items-start mb-4">
-            <ClipboardList className="h-6 w-6 text-primary" />
-          </div>
-          <h3 className="text-sm font-medium text-muted-foreground">{t('techDashboard.assignedTickets')}</h3>
-          <p className="text-2xl mt-1 font-bold text-foreground">
-            {totalAssigned}
-          </p>
-        </div>
+            {/* Open */}
+            <SummaryCard
+              icon={<Clock className="h-3.5 w-3.5" />}
+              title={t('techDashboard.openTickets')}
+              value={openCount}
+            />
 
-        {/* Open */}
-        <div className="bg-card border border-border p-6 rounded-xl flex flex-col shadow-xs">
-          <div className="flex justify-between items-start mb-4">
-            <Clock className="h-6 w-6 text-primary" />
-          </div>
-          <h3 className="text-sm font-medium text-muted-foreground">{t('techDashboard.openTickets')}</h3>
-          <p className="text-2xl mt-1 font-bold text-foreground">
-            {openCount}
-          </p>
-        </div>
+            {/* In Progress */}
+            <SummaryCard
+              icon={<Play className="h-3.5 w-3.5" />}
+              title={t('techDashboard.inProgressTickets')}
+              value={inProgressCount}
+            />
 
-        {/* In Progress */}
-        <div className="bg-card border border-border p-6 rounded-xl flex flex-col shadow-xs">
-          <div className="flex justify-between items-start mb-4">
-            <Play className="h-6 w-6 text-secondary" />
-          </div>
-          <h3 className="text-sm font-medium text-muted-foreground">{t('techDashboard.inProgressTickets')}</h3>
-          <p className="text-2xl mt-1 font-bold text-foreground">
-            {inProgressCount}
-          </p>
-        </div>
+            {/* Completed */}
+            <SummaryCard
+              icon={<CheckCircle2 className="h-3.5 w-3.5" />}
+              title={t('techDashboard.resolvedTickets')}
+              value={completedCount}
+            />
+          </StatsGrid>
+        </section>
 
-        {/* Completed */}
-        <div className="bg-card border border-border p-6 rounded-xl flex flex-col shadow-xs">
-          <div className="flex justify-between items-start mb-4">
-            <CheckCircle2 className="h-6 w-6 text-primary" />
-          </div>
-          <h3 className="text-sm font-medium text-muted-foreground">{t('techDashboard.resolvedTickets')}</h3>
-          <p className="text-2xl mt-1 font-bold text-foreground">
-            {completedCount}
-          </p>
-        </div>
-      </div>
-
-      {/* Main Grid: SLA Monitor + Tickets list */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Main Grid: SLA Monitor + Tickets list */}
+        <section aria-label="Tickets and SLA Monitor">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* SLA Attention Panel (Spans 4 cols on desktop) */}
         <div className="lg:col-span-4 bg-card border border-border p-6 rounded-xl flex flex-col shadow-xs h-fit">
           <div className="flex items-center gap-2 mb-2 pb-2 border-b border-border">
@@ -438,6 +427,8 @@ export function TechDashboardPage() {
             }}
           />
         </div>
+      </div>
+        </section>
       </div>
     </Page>
   );

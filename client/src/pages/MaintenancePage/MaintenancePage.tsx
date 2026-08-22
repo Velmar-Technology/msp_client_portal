@@ -27,6 +27,7 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { Page } from "@/components/Page";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DataTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -41,7 +42,6 @@ import {
 import { useMaintenance } from "@/hooks/useMaintenance";
 import { ScheduleMaintenanceModal } from "@/components/maintenance/ScheduleMaintenanceModal";
 import type { DeviceMaintenance, MaintenanceStatus } from "@/services/maintenanceService";
-import { cn } from "@/lib/utils";
 
 export function MaintenancePage() {
   const { i18n } = useTranslation();
@@ -327,76 +327,81 @@ export function MaintenancePage() {
     <Page title={t("nav.maintenance")} subtitle={t("maintenance.subtitle")} isLoading={loading}>
       <div className="space-y-4">
         {/* Top Control Bar */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-card p-4 border border-border rounded-sm shadow-xs">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white dark:bg-zinc-950 p-3.5 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-xs">
           {/* Calendar Month Navigation */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center border border-border rounded-sm overflow-hidden bg-muted/40">
-              <button
+            <div className="flex items-center border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden bg-zinc-50 dark:bg-zinc-900">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
                 onClick={handlePrevMonth}
-                className="p-1.5 hover:bg-muted transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
+                className="h-7 w-7 p-0 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
                 title={t("maintenance.prevMonth")}
               >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={handleToday}
-                className="px-3 py-1 text-xs font-semibold hover:bg-muted transition-colors cursor-pointer border-x border-border text-foreground"
+                className="h-7 px-3 text-xs font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer border-x border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
               >
                 {t("maintenance.today")}
-              </button>
-              <button
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
                 onClick={handleNextMonth}
-                className="p-1.5 hover:bg-muted transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
+                className="h-7 w-7 p-0 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
                 title={t("maintenance.nextMonth")}
               >
-                <ChevronRight className="h-4 w-4" />
-              </button>
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Button>
             </div>
-            <h2 className="text-base font-bold text-foreground capitalize font-heading">{monthYearTitle}</h2>
+            <h2 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-zinc-100 capitalize font-heading">{monthYearTitle}</h2>
           </div>
 
           {/* Action & View Controls */}
           <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end">
             {/* View Mode Toggle */}
-            <div className="flex items-center bg-muted p-0.5 rounded-md border border-border">
-              <button
+            <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-800">
+              <Button
                 type="button"
+                size="icon"
+                variant={viewMode === "CALENDAR" ? "secondary" : "ghost"}
                 onClick={() => setViewMode("CALENDAR")}
                 title={t("maintenance.viewCalendar")}
                 aria-label={t("maintenance.viewCalendar")}
-                className={cn(
-                  "p-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer",
-                  viewMode === "CALENDAR"
-                    ? "bg-card text-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
+                className="h-7 w-7 p-0 cursor-pointer"
               >
-                <LayoutGrid className="h-4 w-4" />
-              </button>
-              <button
+                <LayoutGrid className="h-3.5 w-3.5" />
+              </Button>
+              <Button
                 type="button"
+                size="icon"
+                variant={viewMode === "LIST" ? "secondary" : "ghost"}
                 onClick={() => setViewMode("LIST")}
                 title={t("maintenance.viewList")}
                 aria-label={t("maintenance.viewList")}
-                className={cn(
-                  "p-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer",
-                  viewMode === "LIST"
-                    ? "bg-card text-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
+                className="h-7 w-7 p-0 cursor-pointer"
               >
-                <ListIcon className="h-4 w-4" />
-              </button>
+                <ListIcon className="h-3.5 w-3.5" />
+              </Button>
             </div>
 
             {/* Schedule Maintenance Button */}
-            <button
+            <Button
+              type="button"
+              size="sm"
               onClick={() => openScheduleModal()}
-              className="h-8 px-3.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg text-xs font-semibold transition-opacity shadow-xs flex items-center gap-1.5 cursor-pointer"
+              className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
             >
               <Plus className="h-3.5 w-3.5" />
               <span>{t("maintenance.scheduleBtn")}</span>
-            </button>
+            </Button>
           </div>
         </div>
 

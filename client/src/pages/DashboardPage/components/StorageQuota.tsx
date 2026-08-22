@@ -30,7 +30,7 @@ export function StorageQuota({
 
   return (
     <SummaryCard
-      icon={<Cloud className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />}
+      icon={<Cloud className="h-3.5 w-3.5" />}
       title={t("dashboard.cloudStorage")}
       value={
         totalSlotsCount + 1 > 0 ? (

@@ -343,13 +343,17 @@ export function UserManagementPage() {
       title={t("userManagement.pageTitle")}
       subtitle={t("userManagement.pageSubtitle")}
     >
-      {/* Metrics Header Bar */}
-      <UserStatsBar stats={stats} loading={statsLoading} />
+      <div className="flex flex-col gap-4">
+        {/* Metrics Header Bar */}
+        <section aria-label="User Statistics">
+          <UserStatsBar stats={stats} loading={statsLoading} />
+        </section>
 
-      {/* Main Data Table */}
-      <DataTable
-        columns={columns}
-        data={users}
+        {/* Main Data Table */}
+        <section aria-label="User Accounts Table">
+          <DataTable
+            columns={columns}
+            data={users}
         loading={loading}
         noDataMessage={t("userManagement.noUsersFound")}
         bulkActions={bulkActions}
@@ -395,6 +399,8 @@ export function UserManagementPage() {
         }}
         className="mt-6"
       />
+        </section>
+      </div>
 
       <AlertDialog open={bulkRoleModalOpen} onOpenChange={setBulkRoleModalOpen}>
         <AlertDialogContent className="sm:max-w-md bg-card border border-border rounded-xl text-foreground">

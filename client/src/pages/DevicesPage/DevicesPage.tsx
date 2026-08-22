@@ -6,6 +6,7 @@ import { useDevicesPage } from "@/hooks/useDevicesPage";
 import type { Subscription } from "@/services/subscriptionService";
 import type { SubscriptionEquipment } from "@/services/equipmentService";
 import { Page } from "@/components/Page";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -76,12 +77,14 @@ export const EmptySubscriptionsCard = memo(function EmptySubscriptionsCard({
         <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{t("devices.noActiveSubscriptions")}</h3>
         <p className="text-xs text-zinc-500 mt-1 leading-relaxed">{t("devices.noActiveSubscriptionsDesc")}</p>
       </div>
-      <button
+      <Button
+        type="button"
+        size="sm"
         onClick={onBrowsePlans}
-        className="px-4 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold rounded-md text-xs shadow-sm hover:opacity-90 transition-opacity cursor-pointer"
+        className="h-7 px-3 text-xs font-semibold cursor-pointer"
       >
         {t("devices.browseSupportPlans")}
-      </button>
+      </Button>
     </div>
   );
 });
@@ -954,14 +957,16 @@ export function DevicesPage() {
                   <div className="lg:col-span-3 space-y-4">
                     {/* Toolbar: Activate with Code */}
                     <div className="flex justify-end">
-                      <button
+                      <Button
                         type="button"
+                        variant="outline"
+                        size="sm"
                         onClick={handleOpenActivateWithOtp}
-                        className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-md shadow-sm transition-colors cursor-pointer"
+                        className="h-7 px-3 text-xs font-semibold gap-1 bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-200 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer"
                       >
                         <KeyRound className="h-3.5 w-3.5 text-zinc-500" />
-                        {t("devices.activateWithCode")}
-                      </button>
+                        <span>{t("devices.activateWithCode")}</span>
+                      </Button>
                     </div>
 
                     {/* Device List Data Table */}

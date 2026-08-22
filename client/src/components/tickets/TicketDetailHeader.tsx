@@ -12,16 +12,6 @@ export interface TicketDetailHeaderProps {
   onStatusChange: (newStatus: string) => void;
 }
 
-const statusColor: Record<string, string> = {
-  OPEN: 'bg-primary/10 text-primary border-primary/20',
-  IN_PROGRESS: 'bg-secondary text-secondary-foreground border-border',
-  AWAITING_PAYMENT: 'bg-secondary text-secondary-foreground border-border animate-pulse',
-  RESOLVED: 'bg-primary/10 text-primary border-primary/20',
-  RESOLVED_AUTOMATED: 'bg-primary/10 text-primary border-primary/20',
-  CLOSED: 'bg-muted text-muted-foreground border-border',
-  CANCELLED: 'bg-destructive/10 text-destructive border-destructive/20',
-};
-
 export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
   ticket,
   user,
@@ -45,10 +35,10 @@ export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
             size="sm"
             onClick={() => onStatusChange('CANCELLED')}
             disabled={statusUpdating}
-            className="border-destructive/30 text-destructive hover:bg-destructive/10 font-semibold"
+            className="h-7 px-3 text-xs border-destructive/30 text-destructive hover:bg-destructive/10 font-semibold cursor-pointer"
           >
             {statusUpdating && (
-              <div className="w-3.5 h-3.5 border-2 border-destructive/20 border-t-destructive rounded-full animate-spin mr-1.5" />
+              <div className="w-3 h-3 border-2 border-destructive/20 border-t-destructive rounded-full animate-spin mr-1" />
             )}
             {t('tickets.cancelTicket')}
           </Button>
@@ -65,10 +55,10 @@ export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
               size="sm"
               onClick={() => onStatusChange('OPEN')}
               disabled={statusUpdating}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
+              className="h-7 px-3 text-xs bg-primary text-primary-foreground hover:bg-primary/90 font-semibold cursor-pointer"
             >
               {statusUpdating && (
-                <div className="w-3.5 h-3.5 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full animate-spin mr-1.5" />
+                <div className="w-3 h-3 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full animate-spin mr-1" />
               )}
               {t('ticketDetail.reopen')}
             </Button>
@@ -77,10 +67,10 @@ export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
               size="sm"
               onClick={() => onStatusChange('CLOSED')}
               disabled={statusUpdating}
-              className="text-muted-foreground font-semibold"
+              className="h-7 px-3 text-xs text-muted-foreground font-semibold cursor-pointer"
             >
               {statusUpdating && (
-                <div className="w-3.5 h-3.5 border-2 border-border border-t-foreground rounded-full animate-spin mr-1.5" />
+                <div className="w-3 h-3 border-2 border-border border-t-foreground rounded-full animate-spin mr-1" />
               )}
               {t('ticketDetail.closeTicket')}
             </Button>
@@ -95,10 +85,10 @@ export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
               size="sm"
               onClick={() => onStatusChange('RESOLVED')}
               disabled={statusUpdating}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
+              className="h-7 px-3 text-xs bg-primary text-primary-foreground hover:bg-primary/90 font-semibold cursor-pointer"
             >
               {statusUpdating && (
-                <div className="w-3.5 h-3.5 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full animate-spin mr-1.5" />
+                <div className="w-3 h-3 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full animate-spin mr-1" />
               )}
               {t('techDashboard.resolveTicket')}
             </Button>
@@ -107,10 +97,10 @@ export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
               size="sm"
               onClick={() => onStatusChange('CLOSED')}
               disabled={statusUpdating}
-              className="text-muted-foreground font-semibold"
+              className="h-7 px-3 text-xs text-muted-foreground font-semibold cursor-pointer"
             >
               {statusUpdating && (
-                <div className="w-3.5 h-3.5 border-2 border-border border-t-foreground rounded-full animate-spin mr-1.5" />
+                <div className="w-3 h-3 border-2 border-border border-t-foreground rounded-full animate-spin mr-1" />
               )}
               {t('ticketDetail.closeTicket')}
             </Button>
@@ -125,10 +115,10 @@ export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
               size="sm"
               onClick={() => onStatusChange('IN_PROGRESS')}
               disabled={statusUpdating}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
+              className="h-7 px-3 text-xs bg-primary text-primary-foreground hover:bg-primary/90 font-semibold cursor-pointer"
             >
               {statusUpdating && (
-                <div className="w-3.5 h-3.5 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full animate-spin mr-1.5" />
+                <div className="w-3 h-3 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full animate-spin mr-1" />
               )}
               {t('techDashboard.startWork')}
             </Button>
@@ -141,10 +131,10 @@ export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
                 size="sm"
                 onClick={() => onStatusChange('AWAITING_PAYMENT')}
                 disabled={statusUpdating}
-                className="font-semibold"
+                className="h-7 px-3 text-xs font-semibold cursor-pointer"
               >
                 {statusUpdating && (
-                  <div className="w-3.5 h-3.5 border-2 border-border border-t-foreground rounded-full animate-spin mr-1.5" />
+                  <div className="w-3 h-3 border-2 border-border border-t-foreground rounded-full animate-spin mr-1" />
                 )}
                 {t('techDashboard.awaitingPayment')}
               </Button>
@@ -152,10 +142,10 @@ export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
                 size="sm"
                 onClick={() => onStatusChange('RESOLVED')}
                 disabled={statusUpdating}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
+                className="h-7 px-3 text-xs bg-primary text-primary-foreground hover:bg-primary/90 font-semibold cursor-pointer"
               >
                 {statusUpdating && (
-                  <div className="w-3.5 h-3.5 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full animate-spin mr-1.5" />
+                  <div className="w-3 h-3 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full animate-spin mr-1" />
                 )}
                 {t('techDashboard.resolveTicket')}
               </Button>
@@ -167,10 +157,10 @@ export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
               size="sm"
               onClick={() => onStatusChange('RESOLVED')}
               disabled={statusUpdating}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
+              className="h-7 px-3 text-xs bg-primary text-primary-foreground hover:bg-primary/90 font-semibold cursor-pointer"
             >
               {statusUpdating && (
-                <div className="w-3.5 h-3.5 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full animate-spin mr-1.5" />
+                <div className="w-3 h-3 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full animate-spin mr-1" />
               )}
               {t('techDashboard.resolveTicket')}
             </Button>
@@ -181,10 +171,10 @@ export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
             size="sm"
             onClick={() => onStatusChange('CLOSED')}
             disabled={statusUpdating}
-            className="text-muted-foreground font-semibold"
+            className="h-7 px-3 text-xs text-muted-foreground font-semibold cursor-pointer"
           >
             {statusUpdating && (
-              <div className="w-3.5 h-3.5 border-2 border-border border-t-foreground rounded-full animate-spin mr-1.5" />
+              <div className="w-3 h-3 border-2 border-border border-t-foreground rounded-full animate-spin mr-1" />
             )}
             {t('ticketDetail.closeTicket')}
           </Button>
@@ -194,6 +184,31 @@ export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
     return null;
   };
 
+  const isResolved = ticket.status === 'RESOLVED' || ticket.status === 'RESOLVED_AUTOMATED';
+  const isPendingOrProgress = ticket.status === 'IN_PROGRESS' || ticket.status === 'AWAITING_PAYMENT';
+  const isCancelled = ticket.status === 'CANCELLED';
+  const isOpen = ticket.status === 'OPEN';
+
+  const badgeClasses = isResolved
+    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-500/20'
+    : isPendingOrProgress
+      ? 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border-amber-500/20'
+      : isCancelled
+        ? 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400 border-red-500/20'
+        : isOpen
+          ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border-blue-500/20'
+          : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800/80 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700';
+
+  const dotClass = isResolved
+    ? 'bg-emerald-500'
+    : isPendingOrProgress
+      ? 'bg-amber-500'
+      : isCancelled
+        ? 'bg-red-500'
+        : isOpen
+          ? 'bg-blue-500'
+          : 'bg-zinc-400';
+
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
       <div>
@@ -202,10 +217,9 @@ export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
         </h1>
         <div className="flex items-center gap-3 flex-wrap">
           <span
-            className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
-              statusColor[ticket.status] || 'bg-muted text-muted-foreground border-border'
-            }`}
+            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-medium border ${badgeClasses}`}
           >
+            <span className={`mr-1 h-1 w-1 rounded-full ${dotClass}`} />
             {getStatusLabel(ticket.status)}
           </span>
           <span className="text-xs text-muted-foreground font-medium">

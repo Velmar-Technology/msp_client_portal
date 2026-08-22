@@ -28,16 +28,6 @@ import {
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-const statusColor: Record<string, string> = {
-  OPEN: "bg-primary/10 text-primary border-primary/20",
-  IN_PROGRESS: "bg-secondary text-secondary-foreground border-border",
-  AWAITING_PAYMENT: "bg-secondary text-secondary-foreground border-border animate-pulse",
-  RESOLVED: "bg-primary/10 text-primary border-primary/20",
-  RESOLVED_AUTOMATED: "bg-primary/10 text-primary border-primary/20",
-  CLOSED: "bg-muted text-muted-foreground border-border",
-  CANCELLED: "bg-destructive/10 text-destructive border-destructive/20",
-};
-
 const priorityColor: Record<string, string> = {
   LOW: "text-muted-foreground",
   MEDIUM: "text-foreground font-medium",
@@ -201,13 +191,40 @@ export function TicketsPage() {
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title={t("tickets.colStatus")} />
         ),
-        cell: ({ row }) => (
-          <span
-            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${statusColor[row.original.status] || "bg-muted text-muted-foreground border-border"}`}
-          >
-            {t(`tickets.statuses.${row.original.status}`)}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const status = row.original.status;
+          const isResolved = status === "RESOLVED" || status === "RESOLVED_AUTOMATED";
+          const isPendingOrProgress = status === "IN_PROGRESS" || status === "AWAITING_PAYMENT";
+          const isCancelled = status === "CANCELLED";
+          const isOpen = status === "OPEN";
+
+          const badgeClasses = isResolved
+            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-500/20"
+            : isPendingOrProgress
+              ? "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border-amber-500/20"
+              : isCancelled
+                ? "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400 border-red-500/20"
+                : isOpen
+                  ? "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border-blue-500/20"
+                  : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800/80 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700";
+
+          const dotClass = isResolved
+            ? "bg-emerald-500"
+            : isPendingOrProgress
+              ? "bg-amber-500"
+              : isCancelled
+                ? "bg-red-500"
+                : isOpen
+                  ? "bg-blue-500"
+                  : "bg-zinc-400";
+
+          return (
+            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-medium border ${badgeClasses}`}>
+              <span className={`mr-1 h-1 w-1 rounded-full ${dotClass}`} />
+              {t(`tickets.statuses.${status}`)}
+            </span>
+          );
+        },
       },
       {
         accessorKey: "created_at",
@@ -238,9 +255,9 @@ export function TicketsPage() {
             <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="p-1 hover:bg-muted rounded-md cursor-pointer transition-colors border border-transparent hover:border-border">
-                    <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                  </button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 p-0 cursor-pointer text-muted-foreground hover:text-foreground">
+                    <MoreHorizontal className="h-3.5 w-3.5" />
+                  </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-card border border-border">
                   <DropdownMenuItem
@@ -276,12 +293,13 @@ export function TicketsPage() {
       actions={
         canCreateTicket ? (
           <Button
-            onClick={() => setShowNewTicket(true)}
+            type="button"
             size="sm"
-            className="flex items-center gap-1.5 cursor-pointer font-semibold shadow-xs"
+            onClick={() => setShowNewTicket(true)}
+            className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
           >
-            <Plus className="h-4 w-4" />
-            {t("tickets.newTicket")}
+            <Plus className="h-3.5 w-3.5" />
+            <span>{t("tickets.newTicket")}</span>
           </Button>
         ) : undefined
       }

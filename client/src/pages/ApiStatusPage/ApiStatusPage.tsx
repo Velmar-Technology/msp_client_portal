@@ -366,10 +366,10 @@ export function ApiStatusPage() {
             size="sm"
             onClick={refresh}
             disabled={isRefreshing}
-            className="h-8 gap-1.5 text-xs font-medium bg-white hover:bg-zinc-50 text-zinc-700 border-zinc-200 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 cursor-pointer"
+            className="h-7 px-3 gap-1 text-xs font-semibold bg-white hover:bg-zinc-50 text-zinc-700 border-zinc-200 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 cursor-pointer"
           >
             <RotateCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
-            {isRefreshing ? t("apiStatus.refreshing") : t("apiStatus.refresh")}
+            <span>{isRefreshing ? t("apiStatus.refreshing") : t("apiStatus.refresh")}</span>
           </Button>
         </div>
       }

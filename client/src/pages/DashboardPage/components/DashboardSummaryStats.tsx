@@ -15,49 +15,49 @@ export function DashboardSummaryStats() {
     <StatsGrid className="w-full">
       {/* Support Status Card */}
       <SummaryCard
-        icon={<Headphones className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />}
+        icon={<Headphones className="h-3.5 w-3.5" />}
         title={t("dashboard.technicalSupport")}
         subtitle={t("dashboard.activeTickets")}
         value={openTickets}
         footer={
           <Link
             to="/tickets"
-            className="flex items-center gap-1 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+            className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium"
           >
             {t("dashboard.viewDetails")}
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         }
       />
       {/* Maintenance Card */}
       <SummaryCard
-        icon={<Wrench className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />}
+        icon={<Wrench className="h-3.5 w-3.5" />}
         title={t("dashboard.maintenance")}
         value="15 Oct 2024"
         badge={t("dashboard.scheduled")}
         footer={
           <Link
             to="/maintenance"
-            className="flex items-center gap-1 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+            className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium"
           >
             {t("dashboard.viewDetails")}
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         }
       />
       {/* Backups Card */}
       <SummaryCard
-        icon={<CloudUpload className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />}
+        icon={<CloudUpload className="h-3.5 w-3.5" />}
         title={t("dashboard.lastBackup")}
         value="15 Oct 2024"
         badge={t("dashboard.successful")}
         footer={
           <Link
             to="/backups"
-            className="flex items-center gap-1 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+            className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium"
           >
             {t("dashboard.viewDetails")}
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         }
       />
