@@ -493,7 +493,7 @@ export function usePlansPage() {
               },
             });
 
-            if (upgradeButtonsInstance.isEligible()) {
+            if (typeof upgradeButtonsInstance.isEligible === 'function' ? upgradeButtonsInstance.isEligible() : true) {
               upgradeButtonsInstance.render("#paypal-upgrade-button-container");
             }
           }

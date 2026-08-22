@@ -219,6 +219,7 @@ describe('PlansPage', () => {
           return {
             render: vi.fn(),
             close: vi.fn().mockResolvedValue(undefined),
+            isEligible: vi.fn().mockReturnValue(true),
           };
         }),
       };
