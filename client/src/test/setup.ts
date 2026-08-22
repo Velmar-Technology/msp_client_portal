@@ -8,10 +8,10 @@ afterEach(() => {
   if (typeof document !== 'undefined') {
     document.body.innerHTML = '';
   }
-  if (typeof localStorage !== 'undefined') {
+  if (typeof localStorage !== 'undefined' && typeof localStorage.clear === 'function') {
     localStorage.clear();
   }
-  if (typeof sessionStorage !== 'undefined') {
+  if (typeof sessionStorage !== 'undefined' && typeof sessionStorage.clear === 'function') {
     sessionStorage.clear();
   }
   // If garbage collection is exposed via --expose-gc, reclaim heap memory
