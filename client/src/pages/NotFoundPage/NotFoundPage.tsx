@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { FileQuestion, ArrowLeft, Home } from "lucide-react";
 import { Page } from "@/components/Page";
+import { Button } from "@/components/ui/button";
 
 export function NotFoundPage() {
   const { t } = useTranslation();
@@ -38,21 +39,24 @@ export function NotFoundPage() {
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 mt-8">
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => navigate(-1)}
-              className="flex-1 flex items-center justify-center gap-2 bg-zinc-100 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:hover:bg-zinc-700/80 text-zinc-700 dark:text-zinc-200 text-xs font-bold py-2.5 px-4 rounded-xl border border-zinc-200/50 dark:border-zinc-700/50 transition-all active:scale-[0.98]"
+              className="flex-1 h-9 text-xs font-bold gap-2 cursor-pointer shadow-xs"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               {t("notFound.goBack")}
-            </button>
+            </Button>
 
-            <button
+            <Button
+              size="sm"
               onClick={() => navigate("/")}
-              className="flex-1 flex items-center justify-center gap-2 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-50 dark:hover:bg-zinc-200 text-zinc-50 dark:text-zinc-900 text-xs font-bold py-2.5 px-4 rounded-xl transition-all active:scale-[0.98]"
+              className="flex-1 h-9 text-xs font-bold gap-2 cursor-pointer shadow-xs"
             >
               <Home className="h-3.5 w-3.5" />
               {t("notFound.backHome")}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

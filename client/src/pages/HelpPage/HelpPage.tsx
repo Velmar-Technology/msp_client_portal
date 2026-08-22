@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Search, ChevronDown, ChevronUp, Mail, Phone, Clock, PlusCircle, HelpCircle } from 'lucide-react';
 import { Page } from '@/components/Page';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { useHelpPage } from '@/hooks/useHelpPage';
 import type { FAQ, Category } from '@/hooks/useHelpPage';
 
@@ -25,7 +26,7 @@ const HelpSearchHeader: React.FC<HeaderProps> = ({ t, searchQuery, setSearchQuer
         placeholder={t('help.searchPlaceholder')}
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
-        className="w-full h-8 pl-8 pr-3 py-1.5 text-xs bg-muted/40 border-border rounded-md focus-visible:ring-1 focus-visible:ring-ring"
+        className="w-full h-7 pl-8 pr-3 py-1 text-xs bg-muted/40 border-border rounded-md focus-visible:ring-1 focus-visible:ring-ring"
       />
     </div>
   </div>
@@ -43,18 +44,20 @@ const HelpCategoryTabs: React.FC<TabsProps> = ({ categories, selectedCategory, o
       const Icon = cat.icon;
       const isActive = selectedCategory === cat.id;
       return (
-        <button
+        <Button
           key={cat.id}
+          variant={isActive ? "default" : "outline"}
+          size="sm"
           onClick={() => onSelect(cat.id)}
-          className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border transition-colors cursor-pointer select-none ${
-            isActive 
-              ? 'bg-primary text-primary-foreground border-primary shadow-xs' 
-              : 'bg-card text-muted-foreground border-border hover:bg-muted hover:text-foreground'
+          className={`h-7 px-2.5 text-xs font-medium cursor-pointer select-none gap-1.5 ${
+            isActive
+              ? 'shadow-xs'
+              : 'text-muted-foreground hover:text-foreground'
           }`}
         >
           <Icon className="h-3.5 w-3.5" />
           {cat.label}
-        </button>
+        </Button>
       );
     })}
   </div>
@@ -87,9 +90,10 @@ const HelpFaqAccordion: React.FC<AccordionProps> = ({ faqs, openFaqId, toggleFaq
             key={faq.id} 
             className="border border-border rounded-md overflow-hidden bg-card"
           >
-            <button
+            <Button
+              variant="ghost"
               onClick={() => toggleFaq(faq.id)}
-              className="w-full flex items-center justify-between px-3 py-2.5 text-left cursor-pointer hover:bg-muted transition-colors"
+              className="w-full h-auto py-2.5 px-3 flex items-center justify-between text-left cursor-pointer hover:bg-muted transition-colors rounded-none justify-between"
             >
               <span className="text-xs font-semibold text-foreground pr-4 select-none">
                 {faq.question}
@@ -99,7 +103,7 @@ const HelpFaqAccordion: React.FC<AccordionProps> = ({ faqs, openFaqId, toggleFaq
               ) : (
                 <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
               )}
-            </button>
+            </Button>
             {isOpen && (
               <div className="px-3 pb-3 pt-1 border-t border-border">
                 <p className="text-xs text-muted-foreground leading-relaxed">

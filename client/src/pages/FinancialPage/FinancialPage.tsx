@@ -7,6 +7,13 @@ import { KpiCards } from "@/components/financial/KpiCards";
 import { TransactionsTable } from "@/components/financial/TransactionsTable";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { LogExpenseDialog } from "@/components/financial/LogExpenseDialog";
 import { Page } from "@/components/Page";
@@ -78,15 +85,19 @@ export function FinancialPage() {
       actions={
         <>
           {/* Date Selector */}
-          <select
+          <Select
             value={dateRange}
-            onChange={(e) => setDateRange(e.target.value as DateRange)}
-            className="h-7 rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs font-medium text-zinc-700 shadow-xs outline-none transition-all hover:border-zinc-300 focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:focus:border-zinc-650 cursor-pointer"
+            onValueChange={(val) => setDateRange(val as DateRange)}
           >
-            <option value="30_days">{t("financial.last30Days")}</option>
-            <option value="quarter">{t("financial.thisQuarter")}</option>
-            <option value="year">{t("financial.yearToDate")}</option>
-          </select>
+            <SelectTrigger className="w-36 h-7 text-xs font-medium bg-background">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="30_days">{t("financial.last30Days")}</SelectItem>
+              <SelectItem value="quarter">{t("financial.thisQuarter")}</SelectItem>
+              <SelectItem value="year">{t("financial.yearToDate")}</SelectItem>
+            </SelectContent>
+          </Select>
 
           {/* Export Button */}
           <Button

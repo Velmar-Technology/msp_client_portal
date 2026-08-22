@@ -1,6 +1,7 @@
 import React from 'react';
 import { Shield, Lock, ChevronRight } from 'lucide-react';
 import { Page } from '@/components/Page';
+import { Button } from '@/components/ui/button';
 import { usePrivacyPage } from '@/hooks/usePrivacyPage';
 import type { PrivacySection } from '@/hooks/usePrivacyPage';
 
@@ -39,14 +40,16 @@ const PrivacySidebar: React.FC<SidebarProps> = ({ sections, scrollToSection, t }
     </h2>
     <nav className="space-y-0.5 flex flex-col">
       {sections.map((sec) => (
-        <button
+        <Button
           key={sec.id}
+          variant="ghost"
+          size="sm"
           onClick={() => scrollToSection(sec.id)}
-          className="group flex items-center justify-between px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors text-left cursor-pointer"
+          className="group flex items-center justify-between px-3 py-1.5 h-auto rounded-md text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors text-left cursor-pointer w-full"
         >
           <span className="truncate">{sec.title.split('. ')[1] || sec.title}</span>
-          <ChevronRight className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground" />
-        </button>
+          <ChevronRight className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground shrink-0" />
+        </Button>
       ))}
     </nav>
   </div>

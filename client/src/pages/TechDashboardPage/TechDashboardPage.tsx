@@ -6,6 +6,7 @@ import { SummaryCard } from '@/components/shared/SummaryCard';
 import { StatsGrid } from '@/components/stats-grid';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/ui/data-table';
+import { Button } from '@/components/ui/button';
 import {
   User,
   CheckCircle2,
@@ -193,45 +194,56 @@ export function TechDashboardPage() {
     },
     {
       id: 'actions',
-      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider block text-right">{t('techDashboard.tableStatus') === 'Estado' ? 'Acciones' : 'Actions'}</span>,
+      header: () => (
+        <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider block text-right">
+          {t('common.actions')}
+        </span>
+      ),
       cell: ({ row }) => {
         const ticket = row.original;
         return (
-          <div className="flex gap-2 justify-end" onClick={(e) => e.stopPropagation()}>
+          <div className="flex gap-2 justify-end items-center" onClick={(e) => e.stopPropagation()}>
             {ticket.status === 'OPEN' && (
-              <button
+              <Button
+                variant="outline"
+                size="xs"
                 onClick={() => handleStatusTransition(ticket.id, 'IN_PROGRESS')}
                 disabled={updatingId === ticket.id}
-                className="px-2.5 py-1 bg-warning text-[#0F172A] hover:bg-warning/90 transition-colors text-[11px] font-bold rounded cursor-pointer disabled:opacity-50"
+                className="bg-warning text-[#0F172A] hover:bg-warning/90 border-0 text-[11px] font-bold h-6 px-2.5 cursor-pointer"
               >
                 {t('techDashboard.startWork')}
-              </button>
+              </Button>
             )}
             {ticket.status === 'IN_PROGRESS' && (
               <>
-                <button
+                <Button
+                  variant="secondary"
+                  size="xs"
                   onClick={() => handleStatusTransition(ticket.id, 'AWAITING_PAYMENT')}
                   disabled={updatingId === ticket.id}
-                  className="px-2.5 py-1 bg-secondary text-secondary-foreground hover:bg-secondary/90 transition-colors text-[11px] font-semibold rounded cursor-pointer disabled:opacity-50"
+                  className="text-[11px] font-semibold h-6 px-2.5 cursor-pointer"
                 >
                   {t('techDashboard.awaitingPayment')}
-                </button>
-                <button
+                </Button>
+                <Button
+                  size="xs"
                   onClick={() => handleStatusTransition(ticket.id, 'RESOLVED')}
                   disabled={updatingId === ticket.id}
-                  className="px-2.5 py-1 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-[11px] font-bold rounded cursor-pointer disabled:opacity-50"
+                  className="text-[11px] font-bold h-6 px-2.5 cursor-pointer"
                 >
                   {t('techDashboard.resolveTicket')}
-                </button>
+                </Button>
               </>
             )}
-            <button
+            <Button
+              variant="ghost"
+              size="icon-xs"
               onClick={() => navigate(`/tickets/${ticket.id}`)}
-              className="p-1 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+              className="h-6 w-6 text-muted-foreground hover:text-primary cursor-pointer"
               title={t('dashboard.viewDetails')}
             >
-              <ArrowRight className="h-4 w-4" />
-            </button>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
           </div>
         );
       },

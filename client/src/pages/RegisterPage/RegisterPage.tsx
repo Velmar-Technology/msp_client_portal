@@ -11,6 +11,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Field, FieldLabel, FieldError, FieldSet, FieldLegend } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -313,10 +314,11 @@ export function RegisterPage() {
                     </InputOTP>
                   </div>
                 </div>
-                <button
+                <Button
                   type="submit"
+                  size="sm"
                   disabled={loading || otp.length !== 6}
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 py-2.5 rounded-lg text-xs font-bold transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer shadow-md focus-visible:ring-2 focus-visible:ring-ring"
+                  className="w-full text-xs font-bold shadow-md cursor-pointer h-9"
                 >
                   {loading ? (
                     <div
@@ -326,10 +328,12 @@ export function RegisterPage() {
                   ) : (
                     t("register.verifyEmail")
                   )}
-                </button>
+                </Button>
               </form>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   try {
                     sessionStorage.removeItem("pending_otp_email");
@@ -340,8 +344,8 @@ export function RegisterPage() {
                 }}
                 className="w-full text-center text-xs text-muted-foreground hover:text-foreground font-medium transition-colors mt-3 py-1 cursor-pointer"
               >
-                {i18n.language === "es_DO" ? "← Modificar datos de registro" : "← Edit registration details"}
-              </button>
+                {t("register.editRegistrationDetails")}
+              </Button>
             </div>
           )}
 
@@ -547,18 +551,20 @@ export function RegisterPage() {
                                     placeholder={t("register.passwordPlaceholder")}
                                     className="w-full h-9 px-3 py-1.5 pr-8 border border-input rounded-lg text-xs bg-background focus-visible:ring-1 focus-visible:ring-ring transition-all placeholder:text-muted-foreground text-foreground shadow-xs"
                                   />
-                                  <button
+                                  <Button
                                     type="button"
+                                    variant="ghost"
+                                    size="icon-xs"
                                     onClick={() => setShowPassword(!showPassword)}
                                     aria-label={showPassword ? t("register.hidePassword") : t("register.showPassword")}
-                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer rounded-xs focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+                                    className="absolute right-1.5 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                                   >
                                     {showPassword ? (
                                       <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />
                                     ) : (
                                       <Eye className="h-3.5 w-3.5" aria-hidden="true" />
                                     )}
-                                  </button>
+                                  </Button>
                                 </div>
                                 {fieldState.invalid && (
                                   <FieldError id="reg-password-error" errors={[fieldState.error]} />
@@ -604,10 +610,11 @@ export function RegisterPage() {
                   </FieldSet>
                 </div>
 
-                <button
+                <Button
                   type="submit"
+                  size="sm"
                   disabled={loading}
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 py-2.5 rounded-lg text-xs font-bold transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer shadow-md focus-visible:ring-2 focus-visible:ring-ring"
+                  className="w-full text-xs font-bold shadow-md cursor-pointer h-9"
                 >
                   {loading ? (
                     <div
@@ -617,7 +624,7 @@ export function RegisterPage() {
                   ) : (
                     t("register.createAccountHeader")
                   )}
-                </button>
+                </Button>
               </form>
 
               <div className="relative my-4">

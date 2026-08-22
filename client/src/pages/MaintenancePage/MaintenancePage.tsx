@@ -29,6 +29,13 @@ import {
 import { Page } from "@/components/Page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { DataTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
@@ -280,9 +287,13 @@ export function MaintenancePage() {
           <div className="text-right">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="p-1 hover:bg-muted rounded-md border border-transparent hover:border-border cursor-pointer transition-colors">
-                  <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
-                </button>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  <MoreHorizontal className="h-3.5 w-3.5" />
+                </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
@@ -415,7 +426,7 @@ export function MaintenancePage() {
                 placeholder={t("maintenance.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 h-8 bg-muted/40 border-border text-xs"
+                className="w-full pl-8 pr-3 h-7 bg-muted/40 border-border text-xs"
               />
             </div>
 
@@ -423,34 +434,42 @@ export function MaintenancePage() {
               {/* Status Filter */}
               <div className="flex items-center gap-1.5">
                 <ListFilter className="h-3.5 w-3.5 text-muted-foreground" />
-                <select
+                <Select
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="h-8 px-2 border border-input rounded-md text-xs bg-background text-foreground focus:outline-none cursor-pointer"
+                  onValueChange={(val) => setStatusFilter(val)}
                 >
-                  <option value="ALL">{t("maintenance.filterAllStatuses")}</option>
-                  <option value="SCHEDULED">{t("maintenance.statusScheduled")}</option>
-                  <option value="IN_PROGRESS">{t("maintenance.statusInProgress")}</option>
-                  <option value="COMPLETED">{t("maintenance.statusCompleted")}</option>
-                  <option value="OVERDUE">{t("maintenance.statusOverdue")}</option>
-                  <option value="CANCELLED">{t("maintenance.statusCancelled")}</option>
-                </select>
+                  <SelectTrigger className="w-36 h-7 text-xs font-medium bg-background">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">{t("maintenance.filterAllStatuses")}</SelectItem>
+                    <SelectItem value="SCHEDULED">{t("maintenance.statusScheduled")}</SelectItem>
+                    <SelectItem value="IN_PROGRESS">{t("maintenance.statusInProgress")}</SelectItem>
+                    <SelectItem value="COMPLETED">{t("maintenance.statusCompleted")}</SelectItem>
+                    <SelectItem value="OVERDUE">{t("maintenance.statusOverdue")}</SelectItem>
+                    <SelectItem value="CANCELLED">{t("maintenance.statusCancelled")}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Tech Filter (Admin/Tech) */}
               {isAdminOrTech && uniqueTechnicians.length > 0 && (
-                <select
+                <Select
                   value={selectedTechFilter}
-                  onChange={(e) => setSelectedTechFilter(e.target.value)}
-                  className="h-8 px-2 border border-input rounded-md text-xs bg-background text-foreground focus:outline-none cursor-pointer"
+                  onValueChange={(val) => setSelectedTechFilter(val)}
                 >
-                  <option value="ALL">{t("maintenance.filterAllTechs")}</option>
-                  {uniqueTechnicians.map((tech) => (
-                    <option key={tech.id} value={tech.id}>
-                      {tech.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-36 h-7 text-xs font-medium bg-background">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">{t("maintenance.filterAllTechs")}</SelectItem>
+                    {uniqueTechnicians.map((tech) => (
+                      <SelectItem key={tech.id} value={tech.id}>
+                        {tech.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
             </div>
           </div>
@@ -500,13 +519,15 @@ export function MaintenancePage() {
                         {dayItem.date.getDate()}
                       </span>
                       {dayItem.isCurrentMonth && (
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
                           onClick={() => openScheduleModal()}
-                          className="opacity-0 hover:opacity-100 text-muted-foreground hover:text-foreground p-0.5 rounded cursor-pointer transition-opacity"
+                          className="h-5 w-5 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground p-0 cursor-pointer transition-opacity"
                           title={t("maintenance.scheduleBtn")}
                         >
                           <Plus className="h-3 w-3" />
-                        </button>
+                        </Button>
                       )}
                     </div>
 

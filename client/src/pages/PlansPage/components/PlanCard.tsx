@@ -1,5 +1,6 @@
 import { Check, X, Edit, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
 import type { Plan, PlanFeature } from "@/services/planService";
 import type { Subscription } from "@/services/subscriptionService";
 
@@ -96,30 +97,34 @@ export function PlanCard({
 
             {isAdmin && onEdit && (
               <div className="flex items-center gap-1">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="xs"
                   onClick={(e) => {
                     e.stopPropagation();
                     onEdit(plan);
                   }}
-                  className="bg-card hover:bg-muted text-foreground border border-border px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+                  className="h-6 px-1.5 py-0 text-[10px] font-medium cursor-pointer flex items-center gap-1 shrink-0"
                 >
                   <Edit className="h-3 w-3" />
                   {t("plans.editAction") || "Edit"}
-                </button>
+                </Button>
                 {onDelete && !isPlanDisabled && (
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="xs"
                     onClick={(e) => {
                       e.stopPropagation();
                       onDelete(plan.id);
                     }}
-                    className="bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+                    className="h-6 px-1.5 py-0 bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20 text-[10px] font-medium cursor-pointer flex items-center gap-1 shrink-0"
                     title={t("plans.softDelete") || "Soft Delete"}
                   >
                     <Trash2 className="h-3 w-3" />
                     {t("plans.deleteAction") || "Delete"}
-                  </button>
+                  </Button>
                 )}
               </div>
             )}
@@ -180,27 +185,31 @@ export function PlanCard({
             {t("plans.equipmentCount")}
           </span>
           <div className="flex items-center gap-1.5 bg-card border border-border rounded px-1 py-0.5">
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-xs"
               onClick={(e) => {
                 e.stopPropagation();
                 onAdjustEquipmentCount(plan.id, -1);
               }}
-              className="w-4.5 h-4.5 rounded flex items-center justify-center hover:bg-muted transition-colors text-xs font-semibold cursor-pointer text-foreground"
+              className="h-5 w-5 rounded text-xs font-semibold cursor-pointer"
             >
               −
-            </button>
+            </Button>
             <span className="w-5 text-center text-xs font-semibold font-mono text-foreground">{equipmentCount}</span>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-xs"
               onClick={(e) => {
                 e.stopPropagation();
                 onAdjustEquipmentCount(plan.id, 1);
               }}
-              className="w-4.5 h-4.5 rounded flex items-center justify-center hover:bg-muted transition-colors text-xs font-semibold cursor-pointer text-foreground"
+              className="h-5 w-5 rounded text-xs font-semibold cursor-pointer"
             >
               +
-            </button>
+            </Button>
           </div>
         </div>
       </div>

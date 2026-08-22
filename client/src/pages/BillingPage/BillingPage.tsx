@@ -4,6 +4,8 @@ import { useLocation } from "react-router-dom";
 import { Download, CreditCard, Loader2, Shield, CheckCircle, FileText, Eye, XCircle, Copy, Check, Building2 } from "lucide-react";
 import { Page } from "@/components/Page";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -278,10 +280,12 @@ const PayModal = ({
                                 <span className="font-mono text-xs font-semibold text-foreground tracking-wider">
                                   {bank.accountNumber}
                                 </span>
-                                <button
+                                <Button
                                   type="button"
+                                  variant="secondary"
+                                  size="xs"
                                   onClick={() => handleCopy(bank.accountNumber, bank.id)}
-                                  className="h-6 px-2 text-[10px] flex items-center gap-1 bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded transition-colors cursor-pointer"
+                                  className="h-6 px-2 text-[10px] flex items-center gap-1 cursor-pointer"
                                 >
                                   {isCopied ? (
                                     <>
@@ -294,7 +298,7 @@ const PayModal = ({
                                       <span>{t("plans.copy") || "Copy"}</span>
                                     </>
                                   )}
-                                </button>
+                                </Button>
                               </div>
                             </div>
                           );
@@ -386,14 +390,15 @@ const MarkPaidConfirmModal = ({
           >
             {t("common.cancel") || "Cancel"}
           </AlertDialogCancel>
-          <button
+          <Button
+            size="sm"
             onClick={onConfirm}
             disabled={loading}
-            className="px-4 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            className="text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 cursor-pointer"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle className="h-3.5 w-3.5" />}
             {t("billing.markAsPaid") || "Mark as Paid"}
-          </button>
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -440,18 +445,19 @@ const CancelInvoiceConfirmModal = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        <div className="py-3 space-y-2">
-          <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+        <div className="py-3 space-y-1.5">
+          <Label htmlFor="cancel-invoice-reason" className="text-xs font-semibold text-foreground">
             {t("billing.cancelReasonLabel") || "Reason (optional)"}
-          </label>
-          <input
+          </Label>
+          <Input
+            id="cancel-invoice-reason"
             type="text"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder={
               t("billing.cancelReasonPlaceholder") || "e.g. Client decided not to proceed with bank transfer"
             }
-            className="w-full text-xs px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-primary"
+            className="h-7 text-xs bg-background text-foreground"
           />
         </div>
 
@@ -463,14 +469,16 @@ const CancelInvoiceConfirmModal = ({
           >
             {t("common.cancel") || "Cancel"}
           </AlertDialogCancel>
-          <button
+          <Button
+            variant="destructive"
+            size="sm"
             onClick={() => onConfirm(reason)}
             disabled={loading}
-            className="px-4 py-1.5 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            className="text-xs font-semibold gap-1.5 cursor-pointer"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" />}
             {t("billing.cancelInvoice") || "Cancel Invoice"}
-          </button>
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -598,14 +606,16 @@ const InvoiceDetailsModal = ({
         </div>
 
         <AlertDialogFooter className="pt-3 border-t border-zinc-200 dark:border-zinc-800 sm:justify-between items-center gap-2 flex-col-reverse sm:flex-row">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => onDownload(invoice)}
             disabled={downloading}
-            className="px-3.5 py-1.5 text-xs font-semibold border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300 disabled:opacity-50"
+            className="text-xs font-semibold gap-1.5 cursor-pointer"
           >
             {downloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
             {t("billing.downloadInvoice") || "Download PDF"}
-          </button>
+          </Button>
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             <AlertDialogCancel
@@ -616,42 +626,46 @@ const InvoiceDetailsModal = ({
             </AlertDialogCancel>
 
             {isUnpaid && isClient && (
-              <button
+              <Button
+                size="sm"
                 onClick={() => {
                   onClose();
                   onPay(invoice);
                 }}
-                className="px-3.5 py-1.5 text-xs font-semibold bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 rounded-lg transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                className="text-xs font-semibold gap-1.5 cursor-pointer shadow-sm"
               >
                 <CreditCard className="h-3.5 w-3.5" />
                 {t("billing.payNow") || "Pay Now"}
-              </button>
+              </Button>
             )}
 
             {isUnpaid && isAdmin && (
-              <button
+              <Button
+                size="sm"
                 onClick={() => {
                   onClose();
                   onMarkPaid(invoice);
                 }}
-                className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                className="text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 cursor-pointer shadow-sm"
               >
                 <CheckCircle className="h-3.5 w-3.5" />
                 {t("billing.markAsPaid") || "Mark as Paid"}
-              </button>
+              </Button>
             )}
 
             {isUnpaid && (
-              <button
+              <Button
+                variant="destructive"
+                size="sm"
                 onClick={() => {
                   onClose();
                   onCancel(invoice);
                 }}
-                className="px-3.5 py-1.5 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                className="text-xs font-semibold gap-1.5 cursor-pointer shadow-sm"
               >
                 <XCircle className="h-3.5 w-3.5" />
                 {t("billing.cancelInvoice") || "Cancel Invoice"}
-              </button>
+              </Button>
             )}
           </div>
         </AlertDialogFooter>
@@ -753,12 +767,14 @@ export function BillingPage() {
         accessorKey: "invoice_number",
         header: ({ column }) => <DataTableColumnHeader column={column} title={t("billing.tableInvoiceNo")} />,
         cell: ({ row }) => (
-          <button
+          <Button
+            variant="link"
+            size="sm"
             onClick={() => openDetailsModal(row.original)}
-            className="text-sm font-medium text-zinc-900 dark:text-zinc-100 hover:text-primary dark:hover:text-primary hover:underline font-mono text-left cursor-pointer"
+            className="h-auto p-0 text-sm font-medium text-foreground hover:text-primary hover:underline font-mono text-left cursor-pointer"
           >
             {row.original.invoice_number}
-          </button>
+          </Button>
         ),
       },
       {

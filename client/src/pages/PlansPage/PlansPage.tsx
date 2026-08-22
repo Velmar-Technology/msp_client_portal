@@ -214,12 +214,13 @@ export function PlansPage() {
           return (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="flex items-center gap-0.5 text-xs text-foreground font-semibold cursor-pointer border border-border px-2 py-1 rounded bg-card hover:bg-muted"
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2.5 text-xs text-foreground font-semibold cursor-pointer gap-1"
                 >
                   {t("plans.manageTab") || "Manage"} <ChevronDown className="h-3 w-3" />
-                </button>
+                </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
@@ -355,29 +356,33 @@ export function PlansPage() {
     >
       {/* Tabs Section */}
       {showTabs && (
-        <div className="border-b border-border flex gap-6 mb-5">
-          <button
+        <div className="border-b border-border flex gap-4 mb-5">
+          <Button
             type="button"
-            className={`pb-2 text-xs font-semibold transition-all cursor-pointer ${
+            variant="ghost"
+            size="sm"
+            className={`rounded-none border-b-2 px-3 pb-2 pt-0 h-auto text-xs font-semibold cursor-pointer shadow-none ${
               activeTab !== "manage"
-                ? "border-b-2 border-primary text-foreground font-heading"
-                : "text-muted-foreground hover:text-foreground border-b-2 border-transparent"
+                ? "border-primary text-foreground font-heading"
+                : "text-muted-foreground hover:text-foreground border-transparent"
             }`}
             onClick={() => setActiveTab("browse")}
           >
             {t("plans.browseTab")}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className={`pb-2 text-xs font-semibold transition-all cursor-pointer ${
+            variant="ghost"
+            size="sm"
+            className={`rounded-none border-b-2 px-3 pb-2 pt-0 h-auto text-xs font-semibold cursor-pointer shadow-none ${
               activeTab === "manage"
-                ? "border-b-2 border-primary text-foreground font-heading"
-                : "text-muted-foreground hover:text-foreground border-b-2 border-transparent"
+                ? "border-primary text-foreground font-heading"
+                : "text-muted-foreground hover:text-foreground border-transparent"
             }`}
             onClick={() => setActiveTab("manage")}
           >
             {t("plans.manageTab")}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -455,13 +460,15 @@ export function PlansPage() {
                     {t("plans.alreadySubscribedNotice") ||
                       "You already have an active subscription for this plan."}
                   </p>
-                  <button
+                  <Button
                     type="button"
+                    variant="link"
+                    size="sm"
                     onClick={() => setActiveTab("manage")}
-                    className="text-xs text-primary underline font-semibold cursor-pointer hover:opacity-80 transition-opacity"
+                    className="h-auto p-0 text-xs text-primary font-semibold cursor-pointer"
                   >
                     {t("plans.goToManage") || "Go to Manage Subscriptions"}
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <PaymentSection

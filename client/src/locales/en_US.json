@@ -366,6 +366,7 @@
     "otpTitle": "Verification Code (OTP)",
     "otpPlaceholder": "Enter 6-digit code",
     "verifyEmail": "Verify Email",
+    "editRegistrationDetails": "← Edit registration details",
     "emailVerifiedSuccess": "Email verified successfully. You can now log in.",
     "welcomeTitle": "Welcome to Velmar!",
     "welcomeDesc": "Your account has been created successfully.",

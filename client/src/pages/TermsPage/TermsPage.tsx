@@ -1,6 +1,7 @@
 import React from "react";
-import { FileText, ShieldAlert, ChevronRight } from "lucide-react";
+import { FileText, ShieldAlert, ChevronRight, Scale } from "lucide-react";
 import { Page } from "@/components/Page";
+import { Button } from "@/components/ui/button";
 import { useTermsPage } from "@/hooks/useTermsPage";
 import type { TermSection } from "@/hooks/useTermsPage";
 
@@ -12,21 +13,16 @@ interface HeaderProps {
 const TermsHeader: React.FC<HeaderProps> = ({ t, isSpanish }) => (
   <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-5 md:px-6 md:py-5 border-b border-border bg-card">
     <div>
-      <h1 className="text-sm font-bold text-foreground leading-none uppercase tracking-tight font-heading">
+      <h1 className="text-sm font-bold text-foreground leading-none font-heading">
         {t("legal.termsTitle")}
       </h1>
       <p className="text-xs text-muted-foreground mt-1">
-        {t("legal.lastUpdated")}: {isSpanish ? "Agosto de 2026" : "August 2026"}.{" "}
-        {isSpanish
-          ? "Lea estos términos atentamente antes de usar el portal."
-          : "Please read these terms carefully before using the portal."}
+        {t("legal.lastUpdated")}: {isSpanish ? "18 de Junio, 2026" : "June 18, 2026"}. {isSpanish ? "Al utilizar los servicios de Velmar Technology, usted acepta cumplir con estos términos." : "By using Velmar Technology services, you agree to be bound by these terms."}
       </p>
     </div>
     <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted rounded-md border border-border shrink-0">
-      <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-        v3.0 {t("legal.effectiveText")}
-      </span>
+      <Scale className="h-3.5 w-3.5 text-muted-foreground" />
+      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t("legal.bindingAgreement")}</span>
     </div>
   </div>
 );
@@ -44,14 +40,16 @@ const TermsSidebar: React.FC<SidebarProps> = ({ sections, scrollToSection, t }) 
     </h2>
     <nav className="space-y-0.5 flex flex-col">
       {sections.map((sec) => (
-        <button
+        <Button
           key={sec.id}
+          variant="ghost"
+          size="sm"
           onClick={() => scrollToSection(sec.id)}
-          className="group flex items-center justify-between px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors text-left cursor-pointer"
+          className="group flex items-center justify-between px-3 py-1.5 h-auto rounded-md text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors text-left cursor-pointer w-full"
         >
           <span className="truncate">{sec.title.split(". ")[1] || sec.title}</span>
-          <ChevronRight className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground" />
-        </button>
+          <ChevronRight className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground shrink-0" />
+        </Button>
       ))}
     </nav>
   </div>

@@ -23,6 +23,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   AlertDialog,
   AlertDialogCancel,
   AlertDialogContent,
@@ -293,25 +300,20 @@ export function LoginPage() {
   return (
     <div className="relative flex min-h-dvh w-full items-center justify-center bg-background p-4 sm:p-6 transition-colors">
       {/* Top Bar Language Selector */}
-      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 flex items-center gap-2 bg-card/80 backdrop-blur-sm border border-border rounded-full px-3 py-1 shadow-xs">
-        <Globe className="h-4 w-4 text-muted-foreground" />
-        <select
-          id="login-language-select"
-          aria-label="Language Selector"
+      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 flex items-center gap-1.5 bg-card/80 backdrop-blur-sm border border-border rounded-full p-1 pl-2 shadow-xs">
+        <Globe className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        <Select
           value={i18n.language || "en_US"}
-          onChange={(e) => {
-            const newLang = e.target.value;
-            i18n.changeLanguage(newLang);
-          }}
-          className="bg-transparent text-xs font-semibold text-foreground focus:outline-none cursor-pointer"
+          onValueChange={(newLang) => i18n.changeLanguage(newLang)}
         >
-          <option value="en_US" className="bg-card text-foreground">
-            English (US)
-          </option>
-          <option value="es_DO" className="bg-card text-foreground">
-            Español (DO)
-          </option>
-        </select>
+          <SelectTrigger className="h-6 border-0 bg-transparent text-xs font-semibold text-foreground shadow-none px-2 focus:ring-0 cursor-pointer">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent align="end">
+            <SelectItem value="en_US">English (US)</SelectItem>
+            <SelectItem value="es_DO">Español (DO)</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="w-full max-w-sm md:max-w-4xl animate-fade-in">

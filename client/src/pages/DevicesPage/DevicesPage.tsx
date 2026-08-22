@@ -165,15 +165,17 @@ export const OtpCodeBadge = memo(function OtpCodeBadge({
           <p className="text-xs font-bold text-foreground font-mono select-all">
             {t("devices.otpLabel")} {otp}
           </p>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-xs"
             onClick={handleCopy}
             title={t("devices.copyOtp") || "Copy OTP"}
             aria-label={t("devices.copyOtp") || "Copy OTP"}
-            className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer shrink-0"
+            className="h-6 w-6 text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
           >
             {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
-          </button>
+          </Button>
         </div>
         {expiresAt && (
           <p className="text-[9px] text-zinc-400 mt-0.5">
@@ -195,15 +197,17 @@ export const OtpCodeBadge = memo(function OtpCodeBadge({
         <p className="text-3xl font-extrabold text-primary font-mono tracking-widest select-all">
           {otp}
         </p>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-xs"
           onClick={handleCopy}
           title={t("devices.copyOtp") || "Copy OTP"}
           aria-label={t("devices.copyOtp") || "Copy OTP"}
-          className="p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-md transition-colors text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer shrink-0"
+          className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
         >
           {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
-        </button>
+        </Button>
       </div>
       {expiresAt && (
         <p className="text-[10px] text-zinc-400 font-medium">
@@ -254,13 +258,15 @@ export const ActivationWizardModal = memo(function ActivationWizardModal({
         <AlertDialogHeader className="px-5 py-3 border-b border-zinc-200 dark:border-zinc-800 flex flex-row justify-between items-center bg-white dark:bg-zinc-950 rounded-t-lg space-y-0 text-left">
           <AlertDialogTitle className="text-sm font-bold text-zinc-955 dark:text-zinc-50">{t("devices.wizardTitle")}</AlertDialogTitle>
           <AlertDialogDescription className="sr-only">{t("devices.wizardStep1Intro")}</AlertDialogDescription>
-          <button
+          <Button
+            variant="ghost"
+            size="icon-xs"
             onClick={onClose}
-            className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-md transition-colors cursor-pointer text-zinc-400"
+            className="h-6 w-6 text-muted-foreground hover:text-foreground cursor-pointer"
             disabled={loading}
           >
             <X className="h-4 w-4" />
-          </button>
+          </Button>
         </AlertDialogHeader>
 
         {/* Step Indicators */}
@@ -331,14 +337,15 @@ export const ActivationWizardModal = memo(function ActivationWizardModal({
                 >
                   {t("devices.cancel")}
                 </AlertDialogCancel>
-                <button
+                <Button
                   type="button"
+                  size="sm"
                   onClick={() => onNextStep(2)}
                   disabled={!currentSlot?.otp}
-                  className="h-8 px-3 text-xs font-semibold bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 rounded-md transition-opacity cursor-pointer disabled:opacity-50"
+                  className="h-8 px-3 text-xs font-semibold cursor-pointer shadow-xs"
                 >
                   {t("devices.wizardStep1Next")}
-                </button>
+                </Button>
               </AlertDialogFooter>
             </div>
           )}
@@ -381,19 +388,22 @@ export const ActivationWizardModal = memo(function ActivationWizardModal({
               </div>
 
               <AlertDialogFooter className="flex justify-between gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={() => onNextStep(1)}
-                  className="h-8 px-3 text-xs font-semibold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md transition-colors cursor-pointer"
+                  className="h-8 px-3 text-xs font-semibold cursor-pointer"
                   disabled={loading}
                 >
                   {t("devices.back")}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  size="sm"
                   onClick={onActivate}
                   disabled={loading || !deviceName || !deviceSerial}
-                  className="h-8 px-4 text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 rounded-md transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                  className="h-8 px-4 text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 rounded-md transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
                 >
                   {loading ? (
                     <>
@@ -401,9 +411,9 @@ export const ActivationWizardModal = memo(function ActivationWizardModal({
                       <span>{t("devices.wizardStep2Activating")}</span>
                     </>
                   ) : (
-                    <span>{t("devices.wizardStep2Activate")}</span>
+                    <span>{t("devices.wizardStep2Submit")}</span>
                   )}
-                </button>
+                </Button>
               </AlertDialogFooter>
             </div>
           )}
@@ -494,12 +504,14 @@ const DeviceActionsCell = memo(function DeviceActionsCell({
     <div className="text-right" onClick={(e) => e.stopPropagation()}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button
+          <Button
+            variant="ghost"
+            size="icon-xs"
             aria-label={t("devices.tableActions")}
-            className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-md border border-transparent hover:border-zinc-200 dark:hover:border-zinc-850 cursor-pointer transition-colors"
+            className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
           >
-            <MoreHorizontal className="h-3.5 w-3.5 text-zinc-505" />
-          </button>
+            <MoreHorizontal className="h-3.5 w-3.5" />
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="end"
