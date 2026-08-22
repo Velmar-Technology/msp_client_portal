@@ -29,7 +29,7 @@ export function useAppLayout() {
 
   useEffect(() => {
     if (user?.role !== "CLIENT") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setActiveSubscription(null);
       setHasChecked(true);
       return;

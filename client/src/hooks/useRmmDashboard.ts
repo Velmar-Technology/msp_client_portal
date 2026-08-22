@@ -136,8 +136,8 @@ export const useRmmDashboard = (): UseRmmDashboardReturn => {
     const { id, desc } = sorting[0];
 
     return [...filteredDevices].sort((a, b) => {
-      let valA: string | number = '';
-      let valB: string | number = '';
+      let valA: string | number;
+      let valB: string | number;
 
       if (id === 'device_name') {
         valA = (a.device_name || `Slot #${a.slot_index + 1}`).toLowerCase();
@@ -231,7 +231,7 @@ export const useRmmDashboard = (): UseRmmDashboardReturn => {
       );
 
       await fetchData(true);
-    } catch (err: unknown) {
+    } catch {
       toast.error(t('rmm.toastBulkScanError'));
     }
   }, [fetchData, t]);

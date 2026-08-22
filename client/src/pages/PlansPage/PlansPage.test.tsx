@@ -15,10 +15,10 @@ let mockLanguage = 'en_US';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     t: (key: string, options?: any) => {
       const parts = key.split('.');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       let current: any = enTranslations;
       for (const part of parts) {
         if (current && typeof current === 'object' && part in current) {
@@ -129,7 +129,7 @@ const mockClients = [
   { id: 'client-2', name: 'Bob Customer', email: 'bob@example.com' },
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const makeSub = (overrides: any) => ({
   id: 'sub-active',
   client_id: 'user-client',
@@ -196,7 +196,7 @@ describe('PlansPage', () => {
   });
 
   describe('Client Flow', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     let paypalButtonsOptions: any = null;
 
     beforeEach(() => {
@@ -212,7 +212,7 @@ describe('PlansPage', () => {
       }
 
       paypalButtonsOptions = null;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       (window as any).paypal = {
         Buttons: vi.fn().mockImplementation((options) => {
           paypalButtonsOptions = options;

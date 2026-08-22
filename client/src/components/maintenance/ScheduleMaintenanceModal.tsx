@@ -81,6 +81,10 @@ export function ScheduleMaintenanceModal({
     return provisionedEquipment.find((e) => e.id === selectedEquipId) || equipment;
   }, [equipment, provisionedEquipment, selectedEquipId]);
 
+  const predefinedDateDisplay = useMemo(() => {
+    return new Date(Date.now() + monthsAhead * 30 * 24 * 60 * 60 * 1000).toLocaleDateString();
+  }, [monthsAhead]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedEquipId) {
@@ -266,7 +270,7 @@ export function ScheduleMaintenanceModal({
               <p className="text-[10px] text-zinc-400 flex items-center gap-1 mt-1">
                 <AlertCircle className="h-3 w-3 text-amber-500" />
                 {t("maintenance.predefinedNote", {
-                  date: new Date(Date.now() + monthsAhead * 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+                  date: predefinedDateDisplay,
                 })}
               </p>
             </div>

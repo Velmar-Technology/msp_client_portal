@@ -276,7 +276,7 @@ export function TechDashboardPage() {
 
   // Identify tickets that require urgent SLA attention (WARRANTY/SERVICE_OUTAGE in open/in progress status created within last hour)
   const slaTickets = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity
+     
     const now = Date.now();
     return tickets.filter((ticket) => {
       if (!['OPEN', 'IN_PROGRESS'].includes(ticket.status)) return false;

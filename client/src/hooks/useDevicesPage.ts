@@ -64,7 +64,7 @@ export function useDevicesPage() {
 
   // Reset page to 1 when filters or search change
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setPage(1);
   }, [searchTerm, selectedClient, selectedStatus, selectedSubscriptionId]);
 
@@ -165,7 +165,7 @@ export function useDevicesPage() {
   }, [user?.role, isAdmin]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     fetchActiveSubscriptions();
   }, [fetchActiveSubscriptions]);
 

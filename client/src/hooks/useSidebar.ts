@@ -137,9 +137,10 @@ export function useSidebar() {
     };
   }, [user]);
 
+  const currentLanguage = i18n.language;
   const planNameMap = useMemo(() => {
     const map = new Map<string, string>();
-    const lang = i18n.language?.startsWith("es") ? "es_DO" : "en_US";
+    const lang = currentLanguage?.startsWith("es") ? "es_DO" : "en_US";
     for (const plan of plans) {
       const name = plan.name;
       if (typeof name === "string") {
@@ -151,7 +152,7 @@ export function useSidebar() {
       }
     }
     return map;
-  }, [plans, i18n.language]);
+  }, [plans, currentLanguage]);
 
   const isPublicLegalPage = location.pathname === "/terms" || location.pathname === "/privacy";
 

@@ -337,7 +337,9 @@ export function RegisterPage() {
                 onClick={() => {
                   try {
                     sessionStorage.removeItem("pending_otp_email");
-                  } catch (e) {}
+                  } catch {
+                    // Ignore sessionStorage access errors
+                  }
                   setShowOtpForm(false);
                   setSuccessMessage("");
                   setError("");

@@ -144,7 +144,7 @@ export function usePlansPage() {
     return null;
   }, [isCreateMode, editorOpenParam, editorPlanId, plans, emptyPlanDraft]);
 
-  /* eslint-disable react-hooks/set-state-in-effect */
+   
   useEffect(() => {
     if (isCreateMode) {
       setEditId("");
@@ -204,7 +204,7 @@ export function usePlansPage() {
       }),
     );
   }, [isCreateMode, editingPlan]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+   
 
   const closePlanEditor = useCallback(() => {
     setParams({ openModal: null, planId: null });
@@ -269,13 +269,13 @@ export function usePlansPage() {
     }
   }, [isAdmin, user, fetchActiveSubscriptions]);
 
-  /* eslint-disable react-hooks/set-state-in-effect */
+   
   useEffect(() => {
     if (!isAdmin && !userSelectedPlan && activeSubscriptions.length > 0) {
       setUserSelectedPlan(activeSubscriptions[0].plan);
     }
   }, [isAdmin, activeSubscriptions, userSelectedPlan]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+   
 
   const selectedPlan = useMemo(() => {
     return userSelectedPlan ||

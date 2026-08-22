@@ -21,10 +21,8 @@ jobs:
             typecheck_cmd: npm run build -w server
             test_cmd: npm test -w server
           - workspace: client
-            # Ratchet gate: client has a pre-existing baseline of ~105 lint errors.
-            # Non-blocking until the baseline is cleared, then flip to true.
             lint_cmd: npm run lint -w client
-            lint_blocking: false
+            lint_blocking: true
             typecheck_cmd: npx tsc -b client
             test_cmd: npm run test:run -w client
           - workspace: packages/errors

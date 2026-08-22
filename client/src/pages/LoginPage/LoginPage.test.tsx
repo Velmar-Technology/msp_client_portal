@@ -10,10 +10,10 @@ let mockLanguage = 'en_US';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     t: (key: string, options?: any) => {
       const parts = key.split('.');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       let current: any = enTranslations;
       for (const part of parts) {
         if (current && typeof current === 'object' && part in current) {
@@ -134,7 +134,7 @@ describe('LoginPage Password Reset Flow', () => {
   test('submits forgot password form and displays success state', async () => {
     vi.mocked(authService.forgotPassword).mockResolvedValueOnce(undefined);
 
-    const { container } = render(
+    render(
       <MemoryRouter initialEntries={['/login?openModal=forgot-password']}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
