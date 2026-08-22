@@ -41,21 +41,21 @@ export function NextcloudInfoModal({
 }: NextcloudInfoModalProps) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [hasError, setHasError] = useState(false);
   const [info, setInfo] = useState<NextcloudInfoData | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen || !subId || slotIndex === null || slotIndex === undefined) {
       setInfo(null);
-      setError(null);
+      setHasError(false);
       return;
     }
 
     let isMounted = true;
     const fetchNextcloudData = async () => {
       setLoading(true);
-      setError(null);
+      setHasError(false);
       try {
         const data = await equipmentService.getNextcloudInfo(subId, slotIndex);
         if (isMounted) {
@@ -64,7 +64,7 @@ export function NextcloudInfoModal({
       } catch (err) {
         console.error("Failed to load Nextcloud info:", err);
         if (isMounted) {
-          setError(t("devices.nextcloudError"));
+          setHasError(true);
         }
       } finally {
         if (isMounted) {
@@ -78,7 +78,7 @@ export function NextcloudInfoModal({
     return () => {
       isMounted = false;
     };
-  }, [isOpen, subId, slotIndex, t]);
+  }, [isOpen, subId, slotIndex]);
 
   const handleCopy = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -131,9 +131,9 @@ export function NextcloudInfoModal({
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
               <p className="text-xs text-muted-foreground font-medium animate-pulse">{t("devices.nextcloudLoading")}</p>
             </div>
-          ) : error ? (
+          ) : hasError ? (
             <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-md text-center text-xs text-destructive">
-              {error}
+              {t("devices.nextcloudError")}
             </div>
           ) : (
             <>
