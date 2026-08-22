@@ -14,10 +14,6 @@ afterEach(() => {
   if (typeof sessionStorage !== 'undefined' && typeof sessionStorage.clear === 'function') {
     sessionStorage.clear();
   }
-  // If garbage collection is exposed via --expose-gc, reclaim heap memory
-  if (typeof global !== 'undefined' && typeof (global as any).gc === 'function') {
-    (global as any).gc();
-  }
 });
 
 Object.defineProperty(window, 'matchMedia', {

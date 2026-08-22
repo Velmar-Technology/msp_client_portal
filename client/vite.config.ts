@@ -79,8 +79,9 @@ export default defineConfig({
     setupFiles: './src/test/setup.ts',
     pool: 'forks',
     isolate: true,
-    execArgv: ['--max-old-space-size=4096', '--expose-gc'],
+    execArgv: ['--max-old-space-size=2048'],
     maxWorkers: 2,
+    fileParallelism: false,
     testTimeout: 15000,
   },
 });
