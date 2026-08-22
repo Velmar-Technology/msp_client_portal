@@ -78,7 +78,7 @@ export function NextcloudInfoModal({
     return () => {
       isMounted = false;
     };
-  }, [isOpen, subId, slotIndex]);
+  }, [isOpen, subId, slotIndex, t]);
 
   const handleCopy = (text: string, field: string) => {
     navigator.clipboard.writeText(text);

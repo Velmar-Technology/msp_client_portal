@@ -119,9 +119,12 @@ export function ScheduleMaintenanceModal({
       toast.success(t("maintenance.scheduleSuccess"));
       onSuccess(res);
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to schedule maintenance", err);
-      toast.error(err?.response?.data?.message || t("maintenance.scheduleError"));
+      const errorMessage =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        t("maintenance.scheduleError");
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

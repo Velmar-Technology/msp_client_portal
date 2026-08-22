@@ -1,2 +1,5 @@
-export { CheckoutSheet, default } from '@/components/checkout/CheckoutSheet';
+import { CheckoutSheet } from '@/components/checkout/CheckoutSheet';
+
+export { CheckoutSheet };
 export type { CheckoutSheetProps, CheckoutStateProps } from '@/components/checkout/CheckoutSheet';
+export default CheckoutSheet;

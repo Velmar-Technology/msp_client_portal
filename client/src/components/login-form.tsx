@@ -1,1 +1,4 @@
-export { LoginForm, default } from '@/components/auth/LoginForm';
+import { LoginForm } from '@/components/auth/LoginForm';
+
+export { LoginForm };
+export default LoginForm;

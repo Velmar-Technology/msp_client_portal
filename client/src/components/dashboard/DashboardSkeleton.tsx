@@ -1,1 +1,4 @@
-export { DashboardSkeleton, default } from './dashboard-skeleton';
+import { DashboardSkeleton } from './dashboard-skeleton';
+
+export { DashboardSkeleton };
+export default DashboardSkeleton;
