@@ -6,9 +6,11 @@ import { subscriptionService } from "@/services/subscriptionService";
 import { planService, type Plan } from "@/services/planService";
 import React from 'react';
 
+const mockT = (key: string) => key;
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => key,
+    t: mockT,
     i18n: { language: 'en-US' },
   }),
 }));

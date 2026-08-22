@@ -34,20 +34,22 @@ import enTranslations from "@/locales/en_US.json";
 
 let mockLanguage = "en_US";
 
+const mockT = (key: string) => {
+  const parts = key.split(".");
+  let current: unknown = enTranslations;
+  for (const part of parts) {
+    if (current && typeof current === "object" && part in (current as Record<string, unknown>)) {
+      current = (current as Record<string, unknown>)[part];
+    } else {
+      return key;
+    }
+  }
+  return typeof current === "string" ? current : key;
+};
+
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
-    t: (key: string) => {
-      const parts = key.split(".");
-      let current: unknown = enTranslations;
-      for (const part of parts) {
-        if (current && typeof current === "object" && part in current) {
-          current = (current as Record<string, unknown>)[part];
-        } else {
-          return key;
-        }
-      }
-      return typeof current === "string" ? current : key;
-    },
+    t: mockT,
     i18n: {
       get language() {
         return mockLanguage;

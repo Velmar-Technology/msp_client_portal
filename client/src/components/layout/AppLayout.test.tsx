@@ -5,9 +5,11 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { subscriptionService } from "@/services/subscriptionService";
 import React from 'react';
 
+const mockT = (key: string) => key;
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => key,
+    t: mockT,
   }),
 }));
 

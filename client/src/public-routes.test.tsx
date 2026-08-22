@@ -8,9 +8,11 @@ import { TermsPage } from "@/routes/_public/terms";
 import { HomePage } from "@/routes/_public/index";
 import React from "react";
 
+const mockT = (key: string) => key;
+
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
-    t: (key: string) => key,
+    t: mockT,
     i18n: { language: "en_US", changeLanguage: vi.fn() },
   }),
 }));

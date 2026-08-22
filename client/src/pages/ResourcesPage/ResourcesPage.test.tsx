@@ -37,31 +37,36 @@ vi.mock("@/store/useNotificationStore", () => ({
   useNotificationStore: () => ({}),
 }));
 
+const mockT = (key: string, options?: Record<string, string | number>) => {
+  const parts = key.split(".");
+  let current: unknown = enTranslations;
+  for (const part of parts) {
+    if (current && typeof current === "object" && part in (current as Record<string, unknown>)) {
+      current = (current as Record<string, unknown>)[part];
+    } else {
+      return key;
+    }
+  }
+  if (typeof current === "string") {
+    if (options && typeof options === "object") {
+      let res = current;
+      for (const k of Object.keys(options)) {
+        res = res.replace(`{{${k}}}`, String(options[k]));
+      }
+      return res;
+    }
+    return current;
+  }
+  return key;
+};
+
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
-    t: (key: string, options?: Record<string, string | number>) => {
-      const parts = key.split(".");
-      let current: unknown = enTranslations;
-      for (const part of parts) {
-        if (current && typeof current === "object" && part in current) {
-          current = (current as Record<string, unknown>)[part];
-        } else {
-          return key;
-        }
-      }
-      if (typeof current === "string") {
-        if (options && typeof options === "object") {
-          let res = current;
-          for (const k of Object.keys(options)) {
-            res = res.replace(`{{${k}}}`, String(options[k]));
-          }
-          return res;
-        }
-        return current;
-      }
-      return key;
+    t: mockT,
+    i18n: {
+      language: "en_US",
+      changeLanguage: () => Promise.resolve(),
     },
-    i18n: {},
   }),
 }));
 

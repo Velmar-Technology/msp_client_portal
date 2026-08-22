@@ -13,32 +13,32 @@ import enTranslations from "@/locales/en_US.json";
 
 let mockLanguage = 'en_US';
 
+const mockT = (key: string, options?: any) => {
+  const parts = key.split('.');
+  let current: any = enTranslations;
+  for (const part of parts) {
+    if (current && typeof current === 'object' && part in current) {
+      current = current[part];
+    } else {
+      return key;
+    }
+  }
+  if (typeof current === 'string') {
+    if (options && typeof options === 'object') {
+      let res = current;
+      for (const k of Object.keys(options)) {
+        res = res.replace(`{{${k}}}`, options[k]);
+      }
+      return res;
+    }
+    return current;
+  }
+  return key;
+};
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-     
-    t: (key: string, options?: any) => {
-      const parts = key.split('.');
-       
-      let current: any = enTranslations;
-      for (const part of parts) {
-        if (current && typeof current === 'object' && part in current) {
-          current = current[part];
-        } else {
-          return key;
-        }
-      }
-      if (typeof current === 'string') {
-        if (options && typeof options === 'object') {
-          let res = current;
-          for (const k of Object.keys(options)) {
-            res = res.replace(`{{${k}}}`, options[k]);
-          }
-          return res;
-        }
-        return current;
-      }
-      return key;
-    },
+    t: mockT,
     i18n: {
       get language() {
         return mockLanguage;

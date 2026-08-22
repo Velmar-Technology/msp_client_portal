@@ -10,41 +10,43 @@ import esTranslations from '@/locales/es_DO.json';
 
 let currentLanguage = 'en_US';
 
+const mockT = (key: string, param2?: any, param3?: any) => {
+  let defaultValue: string | undefined;
+  let options: Record<string, any> | undefined;
+
+  if (typeof param2 === 'string') {
+    defaultValue = param2;
+    options = param3;
+  } else if (typeof param2 === 'object') {
+    options = param2;
+    defaultValue = options?.defaultValue;
+  }
+
+  const dict = currentLanguage === 'es_DO' ? esTranslations : enTranslations;
+  const parts = key.split('.');
+  let current: any = dict;
+  for (const part of parts) {
+    if (current && typeof current === 'object' && part in current) {
+      current = current[part];
+    } else {
+      current = undefined;
+      break;
+    }
+  }
+
+  let res = typeof current === 'string' ? current : (defaultValue || key);
+
+  if (options && typeof options === 'object') {
+    for (const k of Object.keys(options)) {
+      res = res.replace(new RegExp(`{{\\s*${k}\\s*}}`, 'g'), String(options[k]));
+    }
+  }
+  return res;
+};
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, param2?: any, param3?: any) => {
-      let defaultValue: string | undefined;
-      let options: Record<string, any> | undefined;
-
-      if (typeof param2 === 'string') {
-        defaultValue = param2;
-        options = param3;
-      } else if (typeof param2 === 'object') {
-        options = param2;
-        defaultValue = options?.defaultValue;
-      }
-
-      const dict = currentLanguage === 'es_DO' ? esTranslations : enTranslations;
-      const parts = key.split('.');
-      let current: any = dict;
-      for (const part of parts) {
-        if (current && typeof current === 'object' && part in current) {
-          current = current[part];
-        } else {
-          current = undefined;
-          break;
-        }
-      }
-
-      let res = typeof current === 'string' ? current : (defaultValue || key);
-
-      if (options && typeof options === 'object') {
-        for (const k of Object.keys(options)) {
-          res = res.replace(new RegExp(`{{\\s*${k}\\s*}}`, 'g'), String(options[k]));
-        }
-      }
-      return res;
-    },
+    t: mockT,
     i18n: {
       get language() {
         return currentLanguage;
