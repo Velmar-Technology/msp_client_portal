@@ -420,7 +420,7 @@ describe('PlansPage', () => {
       expect(await screen.findByText('Select New Tier')).toBeInTheDocument();
 
       // Select Basic Support as the new tier
-      const trigger = screen.getByRole('combobox');
+      const trigger = screen.getByRole('combobox', { name: 'Select New Tier' });
       fireEvent.click(trigger);
       const option = await screen.findByRole('option', { name: /Basic Support/i });
       fireEvent.click(option);
@@ -712,7 +712,7 @@ describe('PlansPage', () => {
       expect((enInputs[1] as HTMLInputElement).value).toBe('Feature B');
 
       // 1. Test Keyboard Accessible Move Down
-      const moveDownButtons = screen.getAllByTitle('Move down');
+      const moveDownButtons = screen.getAllByRole('button', { name: 'Move down' });
       fireEvent.click(moveDownButtons[0]);
 
       // Verify they swapped
@@ -720,13 +720,13 @@ describe('PlansPage', () => {
       expect((enInputs[1] as HTMLInputElement).value).toBe('Feature A');
 
       // Swap them back to original with Move Up
-      const moveUpButtons = screen.getAllByTitle('Move up');
+      const moveUpButtons = screen.getAllByRole('button', { name: 'Move up' });
       fireEvent.click(moveUpButtons[1]);
       expect((enInputs[0] as HTMLInputElement).value).toBe('Feature A');
       expect((enInputs[1] as HTMLInputElement).value).toBe('Feature B');
 
       // 2. Test Drag and Drop reordering
-      const dragRows = screen.getAllByTitle('Drag to reorder');
+      const dragRows = screen.getAllByLabelText('Drag to reorder');
       expect(dragRows).toHaveLength(2);
 
       const sourceContainer = dragRows[0].closest('[draggable="true"]');

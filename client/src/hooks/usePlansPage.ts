@@ -95,15 +95,19 @@ export function usePlansPage() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
 
   // Tab Selector State (synced with the ?tab= URL search parameter)
-  const { getParam, setParam } = useUrlState();
+  const { getParam, setParam, setParams } = useUrlState();
   const activeTab = getParam("tab", "browse") as PlansTab;
   const setActiveTab = useCallback(
     (tab: PlansTab) => setParam("tab", tab === "browse" ? null : tab),
     [setParam],
   );
 
+  // Plan Editor State (deep-linked via ?openModal=edit-plan&planId=<id> | ?openModal=new-plan)
+  const editorOpenParam = getParam("openModal");
+  const editorPlanId = getParam("planId");
+  const isCreateMode = editorOpenParam === "new-plan";
+
   // Admin Editor State
-  const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
   const [editId, setEditId] = useState("");
   const [editName, setEditName] = useState<Record<string, string>>({ en_US: "", es_DO: "" });
   const [editDescription, setEditDescription] = useState<Record<string, string>>({ en_US: "", es_DO: "" });
@@ -113,10 +117,98 @@ export function usePlansPage() {
   const [editActive, setEditActive] = useState(true);
   const [editFeatures, setEditFeatures] = useState<PlanFeature[]>([]);
   const [saveLoading, setSaveLoading] = useState(false);
-  const [isCreateMode, setIsCreateMode] = useState(false);
 
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  const [pendingDeletePlanId, setPendingDeletePlanId] = useState<string | null>(null);
+
+  const emptyPlanDraft = useMemo<Plan>(() => ({
+    id: "",
+    name: { en_US: "", es_DO: "" },
+    description: { en_US: "", es_DO: "" },
+    price: 0,
+    features: [],
+    recommended: false,
+    client_type: "CLIENT",
+    active: true,
+    created_at: "",
+    updated_at: "",
+  }), []);
+
+  const editingPlan = useMemo(() => {
+    if (isCreateMode) return emptyPlanDraft;
+    if (editorOpenParam === "edit-plan" && editorPlanId) {
+      return plans.find((p) => p.id === editorPlanId) ?? null;
+    }
+    return null;
+  }, [isCreateMode, editorOpenParam, editorPlanId, plans, emptyPlanDraft]);
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (isCreateMode) {
+      setEditId("");
+      setEditName({ en_US: "", es_DO: "" });
+      setEditDescription({ en_US: "", es_DO: "" });
+      setEditPrice(0);
+      setEditRecommended(false);
+      setEditClientType("CLIENT");
+      setEditActive(true);
+      setEditFeatures([]);
+      return;
+    }
+    if (!editingPlan) return;
+
+    setEditId(editingPlan.id);
+
+    if (typeof editingPlan.name === "string") {
+      setEditName({ en_US: editingPlan.name, es_DO: editingPlan.name });
+    } else {
+      setEditName({
+        en_US: editingPlan.name?.en_US || "",
+        es_DO: editingPlan.name?.es_DO || "",
+      });
+    }
+
+    if (!editingPlan.description) {
+      setEditDescription({ en_US: "", es_DO: "" });
+    } else if (typeof editingPlan.description === "string") {
+      setEditDescription({ en_US: editingPlan.description, es_DO: editingPlan.description });
+    } else {
+      setEditDescription({
+        en_US: editingPlan.description?.en_US || "",
+        es_DO: editingPlan.description?.es_DO || "",
+      });
+    }
+
+    setEditPrice(editingPlan.price);
+    setEditRecommended(editingPlan.recommended);
+    setEditClientType(editingPlan.client_type || "CLIENT");
+    setEditActive(editingPlan.active !== undefined ? editingPlan.active : true);
+
+    setEditFeatures(
+      editingPlan.features.map((f) => {
+        let textObj: Record<string, string>;
+        if (typeof f.text === "string") {
+          textObj = { en_US: f.text, es_DO: f.text };
+        } else {
+          textObj = {
+            en_US: f.text?.en_US || "",
+            es_DO: f.text?.es_DO || "",
+          };
+        }
+        return {
+          ...f,
+          text: textObj,
+        };
+      }),
+    );
+  }, [isCreateMode, editingPlan]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  const closePlanEditor = useCallback(() => {
+    setParams({ openModal: null, planId: null });
+  }, [setParams]);
 
   // Subscription store selectors
   const activeSubscriptions = useSubscriptionStore((s) => s.activeSubscriptions);
@@ -247,7 +339,7 @@ export function usePlansPage() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (!(window as any).paypal) {
         console.error("PayPal SDK failed to load");
-        setPaymentMessage("PayPal SDK failed to load");
+        setPaymentMessage(t("plans.toasts.paypalSdkFailed"));
         return;
       }
 
@@ -260,7 +352,7 @@ export function usePlansPage() {
           const buttonConfig: any = {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onApprove: async (data: any) => {
-              setPaymentMessage("Payment approved. Activating subscription...");
+              setPaymentMessage(t("plans.toasts.paymentApprovedActivating"));
               setSubscribeLoading(true);
               try {
                 await subscriptionService.create({
@@ -271,19 +363,19 @@ export function usePlansPage() {
                   paypalOrderId: data.subscriptionID || data.orderID,
                   paymentMethod: 'card',
                 });
-                setPaymentMessage("Subscription activated successfully!");
+                setPaymentMessage(t("plans.toasts.subscriptionActivatedMsg"));
                 addToast({
-                  title: "Subscribed Successfully",
-                  message: `Successfully subscribed to the ${getPlanName(currentPlan.name)} plan.`,
+                  title: t("plans.toasts.subscribedTitle"),
+                  message: t("plans.toasts.subscribedMsg", { name: getPlanName(currentPlan.name) }),
                   type: "success",
                 });
                 await fetchActiveSubscriptions();
               } catch (err) {
                 console.error(err);
-                setPaymentMessage("Failed to activate subscription.");
+                setPaymentMessage(t("plans.toasts.activationFailed"));
                 addToast({
-                  title: "Subscription Failed",
-                  message: "Payment verification failed or could not activate subscription.",
+                  title: t("plans.toasts.subscriptionFailedTitle"),
+                  message: t("plans.toasts.paymentVerificationFailed"),
                   type: "error",
                 });
               } finally {
@@ -293,29 +385,29 @@ export function usePlansPage() {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onError: (err: any) => {
               console.error(err);
-              setPaymentMessage("PayPal Checkout encountered an error.");
+              setPaymentMessage(t("plans.toasts.paypalCheckoutError"));
             },
             createOrder: async () => {
               if (!acceptedTosRef.current) {
                 addToast({
-                  title: "Terms of Service",
-                  message: "Please accept the Terms of Service before proceeding.",
+                  title: t("plans.toasts.tosWarningTitle"),
+                  message: t("plans.toasts.tosWarningMsg"),
                   type: "warning",
                 });
                 throw new Error("Terms of Service not accepted");
               }
-              setPaymentMessage("Preparing checkout...");
+              setPaymentMessage(t("plans.preparingCheckout"));
               try {
                 const response = await subscriptionService.createPaypalOrder({
                   plan: currentPlan.id,
                   equipmentCount: currentEquipmentCount,
                   billingCycle,
                 });
-                setPaymentMessage("Order created. Please approve payment in PayPal window.");
+                setPaymentMessage(t("plans.toasts.orderCreatedApprove"));
                 return response.orderId;
               } catch (err) {
                 console.error(err);
-                setPaymentMessage("Failed to prepare checkout.");
+                setPaymentMessage(t("plans.toasts.prepareCheckoutFailed"));
                 throw err;
               }
             },
@@ -344,13 +436,13 @@ export function usePlansPage() {
               createOrder: async () => {
                 if (!acceptedTosRef.current) {
                   addToast({
-                    title: "Terms of Service",
-                    message: "Please accept the Terms of Service before proceeding.",
+                    title: t("plans.toasts.tosWarningTitle"),
+                    message: t("plans.toasts.tosWarningMsg"),
                     type: "warning",
                   });
                   throw new Error("Terms of Service not accepted");
                 }
-                setPaymentMessage("Preparing upgrade checkout...");
+                setPaymentMessage(t("plans.toasts.preparingUpgradeCheckout"));
                 try {
                   const response = await subscriptionService.createPaypalOrder({
                     plan: currentPlan.id,
@@ -361,13 +453,13 @@ export function usePlansPage() {
                   return response.orderId;
                 } catch (err) {
                   console.error("Failed to create upgrade PayPal order:", err);
-                  setPaymentMessage("Failed to initiate upgrade payment. Please try again.");
+                  setPaymentMessage(t("plans.toasts.upgradePrepareFailed"));
                   throw err;
                 }
               },
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               onApprove: async (data: any) => {
-                setPaymentMessage("Processing upgrade payment...");
+                setPaymentMessage(t("plans.toasts.processingUpgradePayment"));
                 try {
                   await subscriptionService.update(activeSub.id, {
                     plan: currentPlan.id,
@@ -375,18 +467,18 @@ export function usePlansPage() {
                     paypalOrderId: data.orderID,
                   });
                   addToast({
-                    title: "Plan Upgraded!",
-                    message: `Successfully upgraded to ${getPlanName(currentPlan.name)}.`,
+                    title: t("plans.toasts.planUpgradedTitle"),
+                    message: t("plans.toasts.planUpgradedMsg", { name: getPlanName(currentPlan.name) }),
                     type: "success",
                   });
                   await fetchActiveSubscriptions();
                   setPaymentMessage(null);
                 } catch (err) {
                   console.error("Failed to capture upgrade payment:", err);
-                  setPaymentMessage("Upgrade payment capture failed. Please contact support.");
+                  setPaymentMessage(t("plans.toasts.upgradeCaptureFailed"));
                   addToast({
-                    title: "Payment Error",
-                    message: "Upgrade payment could not be processed.",
+                    title: t("plans.paymentError"),
+                    message: t("plans.toasts.paymentErrorMsg"),
                     type: "error",
                   });
                 }
@@ -394,10 +486,10 @@ export function usePlansPage() {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               onError: (err: any) => {
                 console.error("PayPal Upgrade Button Error:", err);
-                setPaymentMessage("Payment service encountered an error.");
+                setPaymentMessage(t("plans.toasts.paymentServiceError"));
               },
               onCancel: () => {
-                setPaymentMessage("Upgrade transaction cancelled.");
+                setPaymentMessage(t("plans.toasts.upgradeCancelled"));
               },
             });
 
@@ -442,6 +534,7 @@ export function usePlansPage() {
     acceptedTos,
     setPaymentMessage,
     setSubscribeLoading,
+    t,
   ]);
 
   // Modify/Renew PayPal effect (for Manage tab actions)
@@ -475,7 +568,7 @@ export function usePlansPage() {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (!(window as any).paypal || !checkoutSubscription) {
-        setPaymentMessage("PayPal SDK failed to load");
+        setPaymentMessage(t("plans.toasts.paypalSdkFailed"));
         return;
       }
 
@@ -492,7 +585,7 @@ export function usePlansPage() {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           buttonsInstance = (window as any).paypal.Buttons({
             createOrder: async () => {
-              setPaymentMessage("Preparing checkout...");
+              setPaymentMessage(t("plans.preparingCheckout"));
               try {
                 const response = await subscriptionService.createPaypalOrder({
                   plan: currentSub.plan,
@@ -500,17 +593,17 @@ export function usePlansPage() {
                   billingCycle,
                   currentSubscriptionId: currentSub.id,
                 });
-                setPaymentMessage("Order created. Please approve payment in PayPal window.");
+                setPaymentMessage(t("plans.toasts.orderCreatedApprove"));
                 return response.orderId;
               } catch (err) {
                 console.error(err);
-                setPaymentMessage("Failed to prepare checkout.");
+                setPaymentMessage(t("plans.toasts.prepareCheckoutFailed"));
                 throw err;
               }
             },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onApprove: async (data: any) => {
-              setPaymentMessage("Payment approved. Updating subscription...");
+              setPaymentMessage(t("plans.toasts.paymentApprovedUpdating"));
               setSubscribeLoading(true);
               try {
                 await subscriptionService.update(currentSub.id, {
@@ -518,9 +611,9 @@ export function usePlansPage() {
                   equipmentCount: newCount,
                   paypalOrderId: data.orderID,
                 });
-                setPaymentMessage("Subscription updated successfully!");
+                setPaymentMessage(t("plans.toasts.subscriptionUpdatedSuccessMsg"));
                 addToast({
-                  title: "Subscription Updated",
+                  title: t("plans.subscriptionUpdated"),
                   message: `Successfully updated your subscription with ${newCount} devices.`,
                   type: "success",
                 });
@@ -528,10 +621,10 @@ export function usePlansPage() {
                 await fetchActiveSubscriptions();
               } catch (err) {
                 console.error(err);
-                setPaymentMessage("Failed to update subscription.");
+                setPaymentMessage(t("plans.toasts.updateFailedMsg"));
                 addToast({
-                  title: "Update Failed",
-                  message: "Payment verification failed or could not update subscription.",
+                  title: t("plans.updateErrorTitle"),
+                  message: t("plans.toasts.updateFailedMsg"),
                   type: "error",
                 });
               } finally {
@@ -541,7 +634,7 @@ export function usePlansPage() {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onError: (err: any) => {
               console.error(err);
-              setPaymentMessage("PayPal Checkout encountered an error.");
+              setPaymentMessage(t("plans.toasts.paypalCheckoutError"));
             },
           });
           buttonsInstance.render("#paypal-modify-container");
@@ -579,6 +672,7 @@ export function usePlansPage() {
     closeCheckout,
     setPaymentMessage,
     setSubscribeLoading,
+    t,
   ]);
 
   const handleAdjustEquipmentCount = useCallback((planId: string, delta: number) => {
@@ -594,8 +688,8 @@ export function usePlansPage() {
 
     if (!isAdmin && !acceptedTos) {
       addToast({
-        title: "Terms of Service",
-        message: "Please accept the Terms of Service before proceeding.",
+        title: t("plans.toasts.tosWarningTitle"),
+        message: t("plans.toasts.tosWarningMsg"),
         type: "warning",
       });
       return;
@@ -603,8 +697,8 @@ export function usePlansPage() {
 
     if (isAdmin && !selectedClientId) {
       addToast({
-        title: "Validation Error",
-        message: "Please select a customer to apply the plan to.",
+        title: t("plans.toasts.validationErrorTitle"),
+        message: t("plans.toasts.selectCustomerRequired"),
         type: "error",
       });
       return;
@@ -623,12 +717,14 @@ export function usePlansPage() {
 
       const isTransfer = paymentMethod === "transfer";
       addToast({
-        title: isTransfer ? "Bank Transfer Intent Confirmed" : (isAdmin ? "Plan Applied" : "Subscribed Successfully"),
+        title: isTransfer
+          ? t("plans.toasts.bankTransferIntentTitle")
+          : (isAdmin ? t("plans.toasts.planAppliedTitle") : t("plans.toasts.subscribedTitle")),
         message: isTransfer
-          ? "Your bank transfer intent has been recorded. An invoice has been generated under your Billing page awaiting payment confirmation."
+          ? t("plans.toasts.bankTransferIntentMsg")
           : (isAdmin
-            ? `Successfully applied the ${getPlanName(currentPlan.name)} plan to the customer.`
-            : `Successfully subscribed to the ${getPlanName(currentPlan.name)} plan.`),
+            ? t("plans.toasts.planAppliedMsg", { name: getPlanName(currentPlan.name) })
+            : t("plans.toasts.subscribedMsg", { name: getPlanName(currentPlan.name) })),
         type: "success",
       });
       await fetchActiveSubscriptions();
@@ -639,21 +735,21 @@ export function usePlansPage() {
       console.error("Failed to create subscription:", err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
       addToast({
-        title: "Subscription Failed",
-        message: error.response?.data?.message || error.message || "Failed to create subscription.",
+        title: t("plans.toasts.subscriptionFailedTitle"),
+        message: error.response?.data?.message || error.message || t("plans.toasts.subscriptionFailedMsg"),
         type: "error",
       });
     } finally {
       setSubscribeLoading(false);
     }
-  }, [currentPlan, isAdmin, acceptedTos, selectedClientId, currentEquipmentCount, billingCycle, paymentMethod, getPlanName, addToast, fetchActiveSubscriptions, navigate, setSubscribeLoading]);
+  }, [currentPlan, isAdmin, acceptedTos, selectedClientId, currentEquipmentCount, billingCycle, paymentMethod, getPlanName, addToast, fetchActiveSubscriptions, navigate, setSubscribeLoading, t]);
 
   const handleUpdateSubscription = useCallback(async (subId: string, count: number): Promise<boolean> => {
     if (!currentPlan) return false;
     if (!isAdmin && !acceptedTos) {
       addToast({
-        title: "Terms of Service",
-        message: "Please accept the Terms of Service before proceeding.",
+        title: t("plans.toasts.tosWarningTitle"),
+        message: t("plans.toasts.tosWarningMsg"),
         type: "warning",
       });
       return false;
@@ -665,8 +761,8 @@ export function usePlansPage() {
         equipmentCount: count,
       });
       addToast({
-        title: "Subscription Updated",
-        message: `Successfully updated your subscription to ${getPlanName(currentPlan.name)}.`,
+        title: t("plans.subscriptionUpdated"),
+        message: t("plans.toasts.subscriptionUpdatedMsg", { name: getPlanName(currentPlan.name) }),
         type: "success",
       });
       await fetchActiveSubscriptions();
@@ -675,15 +771,15 @@ export function usePlansPage() {
       console.error("Failed to update subscription:", err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
       addToast({
-        title: "Update Failed",
-        message: error.response?.data?.message || error.message || "Failed to update subscription.",
+        title: t("plans.updateErrorTitle"),
+        message: error.response?.data?.message || error.message || t("plans.toasts.updateFailedMsg"),
         type: "error",
       });
       return false;
     } finally {
       setSubscribeLoading(false);
     }
-  }, [currentPlan, isAdmin, acceptedTos, getPlanName, addToast, fetchActiveSubscriptions, setSubscribeLoading]);
+  }, [currentPlan, isAdmin, acceptedTos, getPlanName, addToast, fetchActiveSubscriptions, setSubscribeLoading, t]);
 
   const handleDirectCancelSubscription = useCallback(async (subId: string) => {
     setSubscribeLoading(true);
@@ -692,8 +788,8 @@ export function usePlansPage() {
         status: "CANCELLED",
       });
       addToast({
-        title: t("plans.cancelTitle") || "Subscription Cancellation Scheduled",
-        message: t("plans.cancelSuccess") || "Your subscription cancellation has been scheduled. Services will remain active until the end of your billing period.",
+        title: t("plans.cancelTitle"),
+        message: t("plans.cancelSuccess"),
         type: "success",
       });
       closeCheckout();
@@ -702,8 +798,8 @@ export function usePlansPage() {
       console.error("Failed to cancel subscription:", err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
       addToast({
-        title: t("plans.cancelErrorTitle") || "Cancellation Failed",
-        message: error.response?.data?.message || error.message || "Failed to cancel subscription.",
+        title: t("plans.cancelErrorTitle"),
+        message: error.response?.data?.message || error.message || t("plans.cancelFailed"),
         type: "error",
       });
     } finally {
@@ -719,8 +815,8 @@ export function usePlansPage() {
         equipmentCount: count,
       });
       addToast({
-        title: t("plans.subscriptionUpdated") || "Subscription Updated",
-        message: t("plans.deviceUpdateSuccess", { count }) || `Successfully updated device count to ${count}.`,
+        title: t("plans.subscriptionUpdated"),
+        message: t("plans.deviceUpdateSuccess", { count }),
         type: "success",
       });
       await fetchActiveSubscriptions();
@@ -728,8 +824,8 @@ export function usePlansPage() {
       console.error("Failed to update subscription:", err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
       addToast({
-        title: t("plans.updateErrorTitle") || "Update Failed",
-        message: error.response?.data?.message || error.message || "Failed to update subscription.",
+        title: t("plans.updateErrorTitle"),
+        message: error.response?.data?.message || error.message || t("plans.toasts.updateFailedMsg"),
         type: "error",
       });
     } finally {
@@ -743,8 +839,8 @@ export function usePlansPage() {
 
     if (!acceptedTos) {
       addToast({
-        title: "Terms of Service",
-        message: "Please accept the Terms of Service before proceeding.",
+        title: t("plans.toasts.tosWarningTitle"),
+        message: t("plans.toasts.tosWarningMsg"),
         type: "warning",
       });
       return;
@@ -762,8 +858,8 @@ export function usePlansPage() {
       });
 
       addToast({
-        title: "Bank Transfer Intent Confirmed",
-        message: "Your bank transfer intent has been recorded. An invoice has been generated under your Billing page awaiting payment confirmation.",
+        title: t("plans.toasts.bankTransferIntentTitle"),
+        message: t("plans.toasts.bankTransferIntentMsg"),
         type: "success",
       });
       closeCheckout();
@@ -772,88 +868,25 @@ export function usePlansPage() {
       console.error("Failed to modify subscription:", err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
       addToast({
-        title: "Modify Failed",
-        message: error.response?.data?.message || error.message || "Failed to modify subscription.",
+        title: t("plans.toasts.modifyFailedTitle"),
+        message: error.response?.data?.message || error.message || t("plans.toasts.modifyFailedMsg"),
         type: "error",
       });
     } finally {
       setSubscribeLoading(false);
     }
-  }, [checkoutSubscription, checkoutAction, checkoutDeviceDelta, currentPlan, acceptedTos, addToast, fetchActiveSubscriptions, closeCheckout, setSubscribeLoading]);
+  }, [checkoutSubscription, checkoutAction, checkoutDeviceDelta, currentPlan, acceptedTos, addToast, fetchActiveSubscriptions, closeCheckout, setSubscribeLoading, t]);
 
-  // Open Edit Modal
-  const handleEditClick = useCallback((plan: Plan) => {
-    setIsCreateMode(false);
-    setEditingPlan(plan);
-    setEditId(plan.id);
+  // Open Edit Modal (deep-linked: ?openModal=edit-plan&planId=<id>; fields hydrate via effect)
+  const handleEditClick = useCallback(
+    (plan: Plan) => setParams({ openModal: "edit-plan", planId: plan.id }),
+    [setParams],
+  );
 
-    if (typeof plan.name === "string") {
-      setEditName({ en_US: plan.name, es_DO: plan.name });
-    } else {
-      setEditName({
-        en_US: plan.name?.en_US || "",
-        es_DO: plan.name?.es_DO || "",
-      });
-    }
-
-    if (!plan.description) {
-      setEditDescription({ en_US: "", es_DO: "" });
-    } else if (typeof plan.description === "string") {
-      setEditDescription({ en_US: plan.description, es_DO: plan.description });
-    } else {
-      setEditDescription({
-        en_US: plan.description?.en_US || "",
-        es_DO: plan.description?.es_DO || "",
-      });
-    }
-
-    setEditPrice(plan.price);
-    setEditRecommended(plan.recommended);
-    setEditClientType(plan.client_type || "CLIENT");
-    setEditActive(plan.active !== undefined ? plan.active : true);
-
-    const parsedFeatures = plan.features.map((f) => {
-      let textObj: Record<string, string>;
-      if (typeof f.text === "string") {
-        textObj = { en_US: f.text, es_DO: f.text };
-      } else {
-        textObj = {
-          en_US: f.text?.en_US || "",
-          es_DO: f.text?.es_DO || "",
-        };
-      }
-      return {
-        ...f,
-        text: textObj,
-      };
-    });
-    setEditFeatures(parsedFeatures);
-  }, []);
-
-  // Open Create Modal
+  // Open Create Modal (deep-linked: ?openModal=new-plan; fields reset via effect)
   const handleCreateClick = useCallback(() => {
-    setIsCreateMode(true);
-    setEditingPlan({
-      id: "",
-      name: { en_US: "", es_DO: "" },
-      description: { en_US: "", es_DO: "" },
-      price: 0,
-      features: [],
-      recommended: false,
-      client_type: "CLIENT",
-      active: true,
-      created_at: "",
-      updated_at: "",
-    });
-    setEditId("");
-    setEditName({ en_US: "", es_DO: "" });
-    setEditDescription({ en_US: "", es_DO: "" });
-    setEditPrice(0);
-    setEditRecommended(false);
-    setEditClientType("CLIENT");
-    setEditActive(true);
-    setEditFeatures([]);
-  }, []);
+    setParams({ openModal: "new-plan", planId: null });
+  }, [setParams]);
 
   const handleAddFeature = useCallback(() => {
     setEditFeatures((prev) => [...prev, { text: { en_US: "", es_DO: "" }, included: true }]);
@@ -990,25 +1023,8 @@ export function usePlansPage() {
 
   const handleSavePlan = useCallback(async () => {
     if (!editingPlan) return;
-    if (isCreateMode && !editId.trim()) {
-      addToast({
-        title: "Validation Error",
-        message: "Plan ID is required.",
-        type: "error",
-      });
-      return;
-    }
 
     const finalName = cleanBilingualRecord(editName);
-    if (!finalName.en_US) {
-      addToast({
-        title: "Validation Error",
-        message: "Plan name is required.",
-        type: "error",
-      });
-      return;
-    }
-
     const finalDescription = cleanBilingualRecord(editDescription);
 
     setSaveLoading(true);
@@ -1043,8 +1059,8 @@ export function usePlansPage() {
         });
 
         addToast({
-          title: "Plan Created",
-          message: `${planNameStr} plan has been created successfully.`,
+          title: t("plans.toasts.planCreatedTitle"),
+          message: t("plans.toasts.planCreatedMsg", { name: planNameStr }),
           type: "success",
         });
       } else {
@@ -1059,48 +1075,58 @@ export function usePlansPage() {
         });
 
         addToast({
-          title: "Plan Updated",
-          message: `${planNameStr} plan has been updated successfully.`,
+          title: t("plans.toasts.planUpdatedTitle"),
+          message: t("plans.toasts.planUpdatedMsg", { name: planNameStr }),
           type: "success",
         });
       }
-      setEditingPlan(null);
+      closePlanEditor();
     } catch (err) {
       console.error("Failed to save plan:", err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
       addToast({
-        title: "Save Failed",
-        message: error.response?.data?.message || error.message || "Failed to save plan.",
+        title: t("plans.toasts.saveFailedTitle"),
+        message: error.response?.data?.message || error.message || t("plans.toasts.saveFailedMsg"),
         type: "error",
       });
     } finally {
       setSaveLoading(false);
     }
-  }, [editingPlan, isCreateMode, editId, editName, editDescription, editPrice, editRecommended, editClientType, editActive, editFeatures, cleanBilingualRecord, getPlanName, createPlan, updatePlan, addToast]);
+  }, [editingPlan, isCreateMode, editId, editName, editDescription, editPrice, editRecommended, editClientType, editActive, editFeatures, cleanBilingualRecord, getPlanName, createPlan, updatePlan, addToast, t, closePlanEditor]);
 
-  const handleDeletePlan = useCallback(async (planId: string) => {
-    const confirmDelete = window.confirm(
-      t("plans.deleteConfirm") || "Are you sure you want to deactivate/soft-delete this plan?"
-    );
-    if (!confirmDelete) return;
+  // Delete flow: request (open AlertDialog) -> confirm / cancel
+  const requestDeletePlan = useCallback(
+    (planId: string) => {
+      setPendingDeletePlanId(planId);
+      setParams({ openModal: null, planId: null });
+    },
+    [setParams],
+  );
 
+  const cancelDeletePlan = useCallback(() => setPendingDeletePlanId(null), []);
+
+  const confirmDeletePlan = useCallback(async () => {
+    if (!pendingDeletePlanId) return;
+    const planId = pendingDeletePlanId;
     try {
       await deletePlan(planId);
       addToast({
-        title: t("plans.deleteSuccessTitle") || "Plan Deactivated",
-        message: t("plans.deleteSuccessMsg", { id: planId }) || `Plan ${planId} has been soft-deleted.`,
+        title: t("plans.deleteSuccessTitle"),
+        message: t("plans.deleteSuccessMsg", { id: planId }),
         type: "success",
       });
     } catch (err) {
       console.error("Failed to delete plan:", err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
       addToast({
-        title: t("plans.deleteErrorTitle") || "Deactivation Failed",
-        message: error.response?.data?.message || error.message || "Failed to soft delete plan.",
+        title: t("plans.deleteErrorTitle"),
+        message: error.response?.data?.message || error.message || t("plans.toasts.deleteFailedMsg"),
         type: "error",
       });
+    } finally {
+      setPendingDeletePlanId(null);
     }
-  }, [t, deletePlan, addToast]);
+  }, [pendingDeletePlanId, deletePlan, t, addToast]);
 
   return {
     t,
@@ -1127,7 +1153,6 @@ export function usePlansPage() {
     activeTab,
     setActiveTab,
     editingPlan,
-    setEditingPlan,
     editId,
     setEditId,
     editName,
@@ -1187,7 +1212,11 @@ export function usePlansPage() {
     handleDrop,
     handleDragEnd,
     handleSavePlan,
-    handleDeletePlan,
+    closePlanEditor,
+    pendingDeletePlanId,
+    requestDeletePlan,
+    confirmDeletePlan,
+    cancelDeletePlan,
     fetchActiveSubscriptions,
     addToast,
   };

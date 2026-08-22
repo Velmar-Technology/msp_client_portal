@@ -25,6 +25,7 @@ import { PlanCard } from "@/pages/PlansPage/components/PlanCard";
 import { PaymentSection } from "@/pages/PlansPage/components/PaymentSection";
 import { ActiveSubscriptionsDashboard } from "@/pages/PlansPage/components/ActiveSubscriptionsDashboard";
 import { EditPlanModal } from "@/pages/PlansPage/components/EditPlanModal";
+import { DeletePlanAlertDialog } from "@/pages/PlansPage/components/DeletePlanAlertDialog";
 import { ChangeTierPanel } from "@/pages/PlansPage/components/ChangeTierPanel";
 import { CheckoutSheet } from "@/components/checkout-sheet";
 
@@ -37,6 +38,7 @@ export function PlansPage() {
     user,
     loading,
     isAdmin,
+    plans,
     filteredPlans,
     clientTypeFilter,
     setClientTypeFilter,
@@ -54,7 +56,6 @@ export function PlansPage() {
     activeTab,
     setActiveTab,
     editingPlan,
-    setEditingPlan,
     editId,
     setEditId,
     editName,
@@ -113,12 +114,22 @@ export function PlansPage() {
     handleDrop,
     handleDragEnd,
     handleSavePlan,
-    handleDeletePlan,
+    closePlanEditor,
+    pendingDeletePlanId,
+    requestDeletePlan,
+    confirmDeletePlan,
+    cancelDeletePlan,
   } = usePlansPage();
 
   const openActionDialog = useCallback((action: SubDialogAction, sub: Subscription) => {
     openCheckout(action, sub);
   }, [openCheckout]);
+
+  const pendingDeletePlanName = useMemo(() => {
+    if (!pendingDeletePlanId) return null;
+    const plan = plans.find((p) => p.id === pendingDeletePlanId);
+    return plan ? getPlanName(plan.name) : pendingDeletePlanId;
+  }, [pendingDeletePlanId, plans, getPlanName]);
 
   const syncEquipmentCount = useCallback(
     (planId: string, count: number) => {
@@ -441,7 +452,7 @@ export function PlansPage() {
                 activeSubscriptions={activeSubscriptions}
                 onSelect={setUserSelectedPlan}
                 onEdit={handleEditClick}
-                onDelete={handleDeletePlan}
+                onDelete={requestDeletePlan}
                 onAdjustEquipmentCount={handleAdjustEquipmentCount}
                 getPlanName={getPlanName}
                 getPlanDescription={getPlanDescription}
@@ -564,7 +575,7 @@ export function PlansPage() {
           saveLoading={saveLoading}
           draggedIndex={draggedIndex}
           dragOverIndex={dragOverIndex}
-          onClose={() => setEditingPlan(null)}
+          onClose={closePlanEditor}
           onSave={handleSavePlan}
           onAddFeature={handleAddFeature}
           onDeleteFeature={handleDeleteFeature}
@@ -578,9 +589,16 @@ export function PlansPage() {
           onDragOver={handleDragOver}
           onDrop={handleDrop}
           onDragEnd={handleDragEnd}
-          onDeletePlan={handleDeletePlan}
+          onDeletePlan={requestDeletePlan}
         />
       )}
+
+      {/* Delete Plan Confirmation Dialog */}
+      <DeletePlanAlertDialog
+        planName={pendingDeletePlanName}
+        onConfirm={confirmDeletePlan}
+        onCancel={cancelDeletePlan}
+      />
 
       {/* Subscription Action Checkout Sheet */}
       {checkoutSubscription && currentPlan && (
