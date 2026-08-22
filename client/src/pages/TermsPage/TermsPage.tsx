@@ -1,5 +1,5 @@
 import React from "react";
-import { FileText, ShieldAlert, ChevronRight, Scale } from "lucide-react";
+import { ShieldAlert, ChevronRight, Scale } from "lucide-react";
 import { Page } from "@/components/Page";
 import { Button } from "@/components/ui/button";
 import { useTermsPage } from "@/hooks/useTermsPage";
