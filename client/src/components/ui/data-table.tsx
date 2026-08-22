@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Inbox, Search, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Inbox, Search, X, RotateCcw, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Empty, EmptyHeader, EmptyTitle, EmptyMedia } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -210,50 +210,100 @@ export function DataTable<TData, TValue>({
     ? `Showing ${pagination.totalItems === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1}–${Math.min(pagination.page * pagination.limit, pagination.totalItems)} of ${pagination.totalItems}`
     : "";
 
+  const hasActiveFilters = useMemo(() => {
+    const hasSearch = Boolean(search?.value && search.value.trim().length > 0);
+    const hasFilter = Boolean(filters?.some((f) => f.value && f.value !== "all" && f.value !== "ALL"));
+    return hasSearch || hasFilter;
+  }, [search?.value, filters]);
+
+  const handleResetFilters = () => {
+    if (search?.onChange && search.value) {
+      search.onChange("");
+    }
+    if (filters) {
+      filters.forEach((f) => {
+        if (f.value && f.value !== "all" && f.value !== "ALL") {
+          f.onChange("");
+        }
+      });
+    }
+  };
+
   return (
     <div className={cn("w-full max-w-full min-w-0 space-y-3", className)}>
       {/* 1. Search & Dropdown Filters Bar */}
       {(search || (filters && filters.length > 0)) && (
-        <div className="flex flex-col sm:flex-row gap-2 w-full max-w-full min-w-0">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full max-w-full min-w-0">
           {search && (
-            <div className="relative flex-1 min-w-0">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 shrink-0" />
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
               <Input
                 id={`${search.placeholder?.replace(/\s+/g, "-").toLowerCase() || "search"}-input`}
                 type="text"
                 placeholder={search.placeholder || "Search..."}
                 value={search.value}
                 onChange={(e) => search.onChange(e.target.value)}
-                className="w-full pl-8 pr-3 h-7 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-400 transition-all"
+                className="w-full pl-8 pr-8 h-8 bg-card border-border rounded-md text-xs text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:border-ring/50 shadow-2xs transition-all"
               />
+              {search.value && (
+                <button
+                  type="button"
+                  aria-label="Clear search"
+                  onClick={() => search.onChange("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-sm hover:bg-muted/80 transition-colors cursor-pointer"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
             </div>
           )}
-          {filters &&
-            filters.map((filter) => (
-              <div key={filter.id} className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-800 min-w-0">
-                <Select value={filter.value || "all"} onValueChange={(val) => filter.onChange(val === "all" ? "" : val)}>
-                  <SelectTrigger
-                    id={`filter-${filter.id}`}
-                    aria-label={filter.placeholder || filter.id}
-                    className="h-7 px-2.5 rounded-md text-xs font-semibold bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5 min-w-0"
+          {filters && filters.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 min-w-0">
+              {filters.map((filter) => {
+                const activeVal = filter.value || "all";
+                return (
+                  <Select
+                    key={filter.id}
+                    value={activeVal}
+                    onValueChange={(val) => filter.onChange(val === "all" ? "" : val)}
                   >
-                    <SelectValue placeholder={filter.placeholder || "Select..."} />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800">
-                    {filter.placeholder && (
-                      <SelectItem value="all" className="text-xs font-medium cursor-pointer">
-                        {filter.placeholder}
-                      </SelectItem>
-                    )}
-                    {filter.options.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value} className="text-xs font-medium cursor-pointer">
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ))}
+                    <SelectTrigger
+                      id={`filter-${filter.id}`}
+                      aria-label={filter.placeholder || filter.id}
+                      className="h-8 px-2.5 min-w-[130px] rounded-md text-xs font-medium bg-card text-foreground border border-border shadow-2xs hover:bg-accent/40 hover:border-border/80 focus:ring-1 focus:ring-ring cursor-pointer gap-2"
+                    >
+                      <SelectValue placeholder={filter.placeholder || "Select..."} />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border-border shadow-md rounded-md">
+                      {filter.placeholder && (
+                        <SelectItem value="all" className="text-xs font-medium cursor-pointer">
+                          {filter.placeholder}
+                        </SelectItem>
+                      )}
+                      {filter.options.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value} className="text-xs font-medium cursor-pointer">
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                );
+              })}
+              {hasActiveFilters && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleResetFilters}
+                  className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground gap-1 cursor-pointer transition-colors"
+                  title="Reset filters"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                  <span className="hidden sm:inline">Reset</span>
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       )}
 

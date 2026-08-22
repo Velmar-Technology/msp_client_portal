@@ -361,51 +361,50 @@ export function UserManagementPage() {
           <DataTable
             columns={columns}
             data={users}
-        loading={loading}
-        noDataMessage={t("userManagement.noUsersFound")}
-        bulkActions={bulkActions}
-        sorting={sorting}
-        onSortingChange={handleSortingChange}
-        enableSorting
-        manualSorting
-        search={{
-          value: searchQuery,
-          onChange: handleSearchChange,
-          placeholder: t("userManagement.searchPlaceholder"),
-        }}
-        filters={[
-          {
-            id: "role",
-            value: roleFilter,
-            onChange: (val) => handleRoleFilterChange(val as RoleFilter),
-            options: [
-              { value: "ALL", label: t("userManagement.filterAllRoles") },
-              { value: "CLIENT", label: t("userManagement.roleClient") },
-              { value: "TECHNICIAN", label: t("userManagement.roleTech") },
-              { value: "ADMIN", label: t("userManagement.roleAdmin") },
-            ],
-          },
-          {
-            id: "status",
-            value: statusFilter,
-            onChange: (val) => handleStatusFilterChange(val as StatusFilter),
-            options: [
-              { value: "ALL", label: t("userManagement.filterAllStatuses") },
-              { value: "ACTIVE", label: t("userManagement.statusActive") },
-              { value: "INACTIVE", label: t("userManagement.statusInactive") },
-            ],
-          },
-        ]}
-        pagination={{
-          page,
-          totalPages,
-          totalItems: total,
-          limit,
-          onPageChange: setPage,
-          onLimitChange: handleLimitChange,
-        }}
-        className="mt-6"
-      />
+            loading={loading}
+            noDataMessage={t("userManagement.noUsersFound")}
+            bulkActions={bulkActions}
+            sorting={sorting}
+            onSortingChange={handleSortingChange}
+            enableSorting
+            manualSorting
+            search={{
+              value: searchQuery,
+              onChange: handleSearchChange,
+              placeholder: t("userManagement.searchPlaceholder"),
+            }}
+            filters={[
+              {
+                id: "role",
+                value: roleFilter,
+                onChange: (val) => handleRoleFilterChange(val as RoleFilter),
+                placeholder: t("userManagement.filterAllRoles") || "All Roles",
+                options: [
+                  { value: "CLIENT", label: t("userManagement.roleClient") || "Client" },
+                  { value: "TECHNICIAN", label: t("userManagement.roleTech") || "Technician" },
+                  { value: "ADMIN", label: t("userManagement.roleAdmin") || "Admin" },
+                ],
+              },
+              {
+                id: "status",
+                value: statusFilter === "all" ? "" : statusFilter,
+                onChange: (val) => handleStatusFilterChange((val || "all") as StatusFilter),
+                placeholder: t("userManagement.filterAllStatuses") || "All Statuses",
+                options: [
+                  { value: "active", label: t("userManagement.statusActive") || "Active" },
+                  { value: "inactive", label: t("userManagement.statusInactive") || "Inactive" },
+                ],
+              },
+            ]}
+            pagination={{
+              page,
+              totalPages,
+              totalItems: total,
+              limit,
+              onPageChange: setPage,
+              onLimitChange: handleLimitChange,
+            }}
+          />
         </section>
       </div>
 
