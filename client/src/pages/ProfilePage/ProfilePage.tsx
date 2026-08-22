@@ -2,6 +2,14 @@ import React from "react";
 import { User, ShieldCheck, Mail, Phone, Lock, Save, Globe, Edit, Clock, Loader2, Info, Key } from "lucide-react";
 import { Page } from "@/components/Page";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useProfile } from "@/hooks/useProfile";
 import type { User as UserType } from "@/services/authService";
 
@@ -40,18 +48,20 @@ const ProfileIdentityCard = ({
             {user?.name?.charAt(0).toUpperCase() || "U"}
           </div>
         )}
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="icon-sm"
           onClick={onAvatarClick}
           disabled={uploadingAvatar}
-          className="absolute -bottom-2 -right-2 rounded-md border border-border bg-card p-1.5 shadow-xs transition-colors hover:bg-muted disabled:opacity-50 cursor-pointer"
+          className="absolute -bottom-2 -right-2 rounded-md border border-border bg-card shadow-xs transition-colors hover:bg-muted disabled:opacity-50 cursor-pointer"
         >
           {uploadingAvatar ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin text-foreground" />
           ) : (
             <Edit className="h-3.5 w-3.5 text-foreground" />
           )}
-        </button>
+        </Button>
         <Input
           id="profile-avatar-upload"
           type="file"
@@ -104,7 +114,6 @@ const AccountDetailsForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground transition-all focus-visible:ring-1 focus-visible:ring-ring"
               required
             />
           </div>
@@ -121,7 +130,6 @@ const AccountDetailsForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground transition-all focus-visible:ring-1 focus-visible:ring-ring"
               required
             />
           </div>
@@ -139,35 +147,35 @@ const AccountDetailsForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder="+1 (809) 000-0000"
-              className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground transition-all focus-visible:ring-1 focus-visible:ring-ring"
             />
           </div>
 
           <div>
-            <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-foreground">
+            <label htmlFor="profile-language-select" className="mb-1.5 flex items-center gap-2 text-xs font-medium text-foreground">
               <Globe className="h-3.5 w-3.5 text-muted-foreground" /> {t("profile.languageSetting")}
             </label>
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="w-full cursor-pointer rounded-md border border-input bg-background px-3 py-1.5 text-xs text-foreground transition-all focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              <option value="en_US">{t("profile.languages.en_US")}</option>
-              <option value="es_DO">{t("profile.languages.es_DO")}</option>
-            </select>
+            <Select value={language} onValueChange={(val) => setLanguage(val)}>
+              <SelectTrigger id="profile-language-select" className="w-full">
+                <SelectValue placeholder={t("profile.languageSetting")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en_US">{t("profile.languages.en_US")}</SelectItem>
+                <SelectItem value="es_DO">{t("profile.languages.es_DO")}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
         {isDirty && (
           <div className="mt-6 flex justify-end">
-            <button
+            <Button
               type="submit"
               disabled={saving}
-              className="flex cursor-pointer items-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-xs transition-all hover:bg-primary/90 disabled:opacity-50"
+              className="flex items-center gap-2"
             >
               {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
               {saving ? t("profile.saving") : t("profile.saveChanges")}
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -211,7 +219,6 @@ const ChangePasswordForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
               type="password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground transition-all focus-visible:ring-1 focus-visible:ring-ring"
               placeholder="••••••••••••"
             />
           </div>
@@ -229,7 +236,6 @@ const ChangePasswordForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground transition-all focus-visible:ring-1 focus-visible:ring-ring"
                 placeholder="Min. 8 characters"
               />
             </div>
@@ -246,7 +252,6 @@ const ChangePasswordForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground transition-all focus-visible:ring-1 focus-visible:ring-ring"
                 placeholder="Repeat new password"
               />
             </div>
@@ -259,14 +264,14 @@ const ChangePasswordForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
             {t("profile.passwordRequirements")}
           </p>
           {isPasswordDirty && (
-            <button
+            <Button
               type="submit"
               disabled={changingPassword}
-              className="flex cursor-pointer self-end sm:self-auto items-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-xs transition-all hover:bg-primary/90 disabled:opacity-50"
+              className="flex self-end sm:self-auto items-center gap-2"
             >
               {changingPassword ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Key className="h-3.5 w-3.5" />}
               {changingPassword ? t("profile.saving") : t("profile.updatePassword")}
-            </button>
+            </Button>
           )}
         </div>
       </div>

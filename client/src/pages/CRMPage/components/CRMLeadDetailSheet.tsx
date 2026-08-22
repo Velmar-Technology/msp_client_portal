@@ -753,7 +753,7 @@ export function CRMLeadDetailSheet({
                         type="button"
                         variant="outline"
                         size="icon"
-                        className="h-8.5 w-8.5 cursor-pointer"
+                        className="cursor-pointer"
                         disabled={equipmentCount <= 1}
                         onClick={() => setEquipmentCount((c) => Math.max(1, c - 1))}
                       >
@@ -765,13 +765,13 @@ export function CRMLeadDetailSheet({
                         max={500}
                         value={equipmentCount}
                         onChange={(e) => setEquipmentCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                        className="h-8.5 text-center font-mono font-bold text-xs"
+                        className="text-center font-mono font-bold text-xs"
                       />
                       <Button
                         type="button"
                         variant="outline"
                         size="icon"
-                        className="h-8.5 w-8.5 cursor-pointer"
+                        className="cursor-pointer"
                         onClick={() => setEquipmentCount((c) => c + 1)}
                       >
                         <Plus className="h-3.5 w-3.5" />
@@ -783,7 +783,7 @@ export function CRMLeadDetailSheet({
                     <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
                       {t("plans.billingCycle")}
                     </label>
-                    <div className="flex items-center bg-muted p-0.5 rounded-md border border-border h-8.5">
+                    <div className="flex items-center bg-muted p-0.5 rounded-md border border-border">
                       <Button
                         type="button"
                         variant={billingCycle === "monthly" ? "secondary" : "ghost"}
@@ -1046,7 +1046,7 @@ export function CRMLeadDetailSheet({
                       value={activityType}
                       onValueChange={(v) => setActivityType(v as LeadActivity["activity_type"])}
                     >
-                      <SelectTrigger className="w-full h-8.5 text-xs bg-background">
+                      <SelectTrigger className="w-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1068,7 +1068,7 @@ export function CRMLeadDetailSheet({
                         setActivityDueDate(v);
                         if (v) setActivityIsPending(true);
                       }}
-                      className="w-full h-8.5 text-xs bg-background"
+                      className="w-full"
                     />
                   </div>
                 </div>
@@ -1082,7 +1082,6 @@ export function CRMLeadDetailSheet({
                     onChange={(e) => setActivityTitle(e.target.value)}
                     placeholder={t("crm.activityTitlePlaceholder")}
                     aria-invalid={Boolean(activityErrors.title)}
-                    className="h-8.5 text-xs bg-background text-foreground"
                   />
                   {activityErrors.title && (
                     <p className="text-[10px] text-destructive mt-1">{t(activityErrors.title)}</p>

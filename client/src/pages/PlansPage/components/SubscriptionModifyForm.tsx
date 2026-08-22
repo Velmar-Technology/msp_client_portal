@@ -1,6 +1,8 @@
 import { useTranslation } from "react-i18next";
 import type { Plan } from "@/services/planService";
 import type { Subscription } from "@/services/subscriptionService";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface SubscriptionModifyFormProps {
   activeSub: Subscription;
@@ -66,12 +68,11 @@ export function SubscriptionModifyForm({
 
       {!isAdmin && (
         <div className="flex items-start gap-2 p-2 bg-muted/40 rounded border border-border my-2">
-          <input
-            type="checkbox"
+          <Checkbox
             id="tos-checkbox-modify"
             checked={acceptedTos}
-            onChange={(e) => setAcceptedTos(e.target.checked)}
-            className="h-3.5 w-3.5 rounded border-input text-primary focus:ring-ring mt-0.5 cursor-pointer"
+            onCheckedChange={(checked) => setAcceptedTos(checked === true)}
+            className="mt-0.5"
           />
           <label
             htmlFor="tos-checkbox-modify"
@@ -109,15 +110,16 @@ export function SubscriptionModifyForm({
           )}
         </div>
       ) : (
-        <button
+        <Button
+          type="button"
           onClick={() => onUpdateSubscription(activeSub.id, currentEquipmentCount)}
           disabled={subscribeLoading}
-          className="w-full bg-primary text-primary-foreground hover:bg-primary/90 py-2 rounded text-xs font-semibold transition-opacity flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+          className="w-full h-7 text-xs font-semibold cursor-pointer"
         >
           {subscribeLoading
             ? t("plans.updatingStatus") || "Updating..."
             : t("plans.updateSubscription") || "Update Subscription"}
-        </button>
+        </Button>
       )}
     </div>
   );

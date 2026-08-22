@@ -146,7 +146,7 @@ export function CRMNewLeadModal({
               {t("plans.selectCustomer")}
             </Label>
             <Select value={selectedClientId} onValueChange={handleClientChange}>
-              <SelectTrigger className="w-full h-8.5 text-xs bg-background">
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -170,7 +170,6 @@ export function CRMNewLeadModal({
                 onChange={(e) => setContactName(e.target.value)}
                 placeholder={t("crm.contactNamePlaceholder")}
                 aria-invalid={Boolean(errors.contactName)}
-                className="h-8.5 text-xs bg-background text-foreground"
               />
               {errors.contactName && (
                 <p className="text-[10px] text-destructive">{t(errors.contactName)}</p>
@@ -187,7 +186,6 @@ export function CRMNewLeadModal({
                 onChange={(e) => setContactEmail(e.target.value)}
                 placeholder={t("crm.contactEmailPlaceholder")}
                 aria-invalid={Boolean(errors.contactEmail)}
-                className="h-8.5 text-xs bg-background text-foreground"
               />
               {errors.contactEmail && (
                 <p className="text-[10px] text-destructive">{t(errors.contactEmail)}</p>
@@ -204,7 +202,6 @@ export function CRMNewLeadModal({
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
                 placeholder={t("crm.companyNamePlaceholder")}
-                className="h-8.5 text-xs bg-background text-foreground"
               />
             </div>
 
@@ -216,7 +213,6 @@ export function CRMNewLeadModal({
                 value={contactPhone}
                 onChange={(e) => setContactPhone(e.target.value)}
                 placeholder={t("crm.contactPhonePlaceholder")}
-                className="h-8.5 text-xs bg-background text-foreground"
               />
             </div>
           </div>
@@ -227,7 +223,7 @@ export function CRMNewLeadModal({
                 {t("plans.plan")}
               </Label>
               <Select value={effectivePlanId} onValueChange={setPlanId}>
-                <SelectTrigger className="w-full h-8.5 text-xs bg-background">
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -252,7 +248,7 @@ export function CRMNewLeadModal({
                 max={500}
                 value={equipmentCount}
                 onChange={(e) => setEquipmentCount(Math.max(1, parseInt(e.target.value) || 1))}
-                className="h-8.5 text-xs bg-background text-foreground font-mono"
+                className="font-mono"
               />
             </div>
 
@@ -261,7 +257,7 @@ export function CRMNewLeadModal({
                 {t("plans.billingCycle")}
               </Label>
               <Select value={billingCycle} onValueChange={(v) => setBillingCycle(v as "monthly" | "annual")}>
-                <SelectTrigger className="w-full h-8.5 text-xs bg-background font-mono">
+                <SelectTrigger className="w-full font-mono">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -276,7 +272,7 @@ export function CRMNewLeadModal({
                 {t("crm.columns.priority")}
               </Label>
               <Select value={priority} onValueChange={(v) => setPriority(v as LeadPriority)}>
-                <SelectTrigger className="w-full h-8.5 text-xs bg-background font-mono">
+                <SelectTrigger className="w-full font-mono">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

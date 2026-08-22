@@ -12,6 +12,13 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { usePlansPage } from "@/hooks/usePlansPage";
 import { BillingCycleSwitcher } from "@/pages/PlansPage/components/BillingCycleSwitcher";
 import { PlanCard } from "@/pages/PlansPage/components/PlanCard";
@@ -389,18 +396,21 @@ export function PlansPage() {
                 >
                   {t("plans.audience") || "Audience"}
                 </label>
-                <select
-                  id="client-type-filter"
+                <Select
                   value={clientTypeFilter}
-                  onChange={(e) => setClientTypeFilter(e.target.value as "ALL" | typeof clientTypeFilter)}
-                  className="h-7 rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs font-medium text-zinc-700 shadow-xs outline-none transition-all hover:border-zinc-300 focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 cursor-pointer"
+                  onValueChange={(val) => setClientTypeFilter(val as "ALL" | typeof clientTypeFilter)}
                 >
-                  <option value="ALL">{t("plans.allAudiences") || "All plans"}</option>
-                  <option value="CLIENT">{t("plans.clientTypes.standard") || "Standard Client"}</option>
-                  <option value="ENTERPRISE">{t("plans.clientTypes.enterprise") || "Enterprise Client"}</option>
-                  <option value="STUDENT">{t("plans.clientTypes.student") || "Student Starter"}</option>
-                  <option value="OTHER">{t("plans.clientTypes.other") || "Other / Custom"}</option>
-                </select>
+                  <SelectTrigger id="client-type-filter" className="h-7 text-xs">
+                    <SelectValue placeholder={t("plans.allAudiences") || "All plans"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">{t("plans.allAudiences") || "All plans"}</SelectItem>
+                    <SelectItem value="CLIENT">{t("plans.clientTypes.standard") || "Standard Client"}</SelectItem>
+                    <SelectItem value="ENTERPRISE">{t("plans.clientTypes.enterprise") || "Enterprise Client"}</SelectItem>
+                    <SelectItem value="STUDENT">{t("plans.clientTypes.student") || "Student Starter"}</SelectItem>
+                    <SelectItem value="OTHER">{t("plans.clientTypes.other") || "Other / Custom"}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             )}
           </div>

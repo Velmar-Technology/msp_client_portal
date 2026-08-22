@@ -149,7 +149,7 @@ function NotificationItem({ notification, onMarkAsRead }: NotificationItemProps)
           <Button
             variant="outline"
             size="sm"
-            className="h-8 gap-1 text-xs"
+            className="h-7 gap-1 text-xs"
             onClick={() => {
               window.location.href = notification.link!;
             }}
@@ -162,7 +162,7 @@ function NotificationItem({ notification, onMarkAsRead }: NotificationItemProps)
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 gap-1 text-xs text-muted-foreground hover:text-foreground"
+            className="h-7 gap-1 text-xs text-muted-foreground hover:text-foreground"
             onClick={() => onMarkAsRead(notification.id)}
           >
             <Check className="h-3.5 w-3.5" />
@@ -206,7 +206,7 @@ export function NotificationHistorySection() {
               placeholder={t("notificationHistory.searchPlaceholder", "Search notifications...")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 h-8 text-xs bg-muted/40"
+              className="pl-8 text-xs bg-muted/40"
             />
           </div>
 
@@ -217,7 +217,7 @@ export function NotificationHistorySection() {
               size="sm"
               onClick={handleRefresh}
               disabled={isLoading}
-              className="h-8 gap-1.5 text-xs"
+              className="h-7 gap-1.5 text-xs"
               title={t("notificationHistory.refreshTooltip", "Refresh notifications")}
             >
               <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
@@ -229,7 +229,7 @@ export function NotificationHistorySection() {
                 variant="outline"
                 size="sm"
                 onClick={handleMarkAllAsRead}
-                className="h-8 gap-1.5 text-xs"
+                className="h-7 gap-1.5 text-xs"
               >
                 <CheckCheck className="h-3.5 w-3.5" />
                 <span>{t("notificationHistory.markAllRead", "Mark all read")}</span>
@@ -239,7 +239,7 @@ export function NotificationHistorySection() {
             {totalCount > 0 && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs text-destructive hover:bg-destructive/10">
+                  <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs text-destructive hover:bg-destructive/10">
                     <Trash2 className="h-3.5 w-3.5" />
                     <span>{t("notificationHistory.clearAll", "Clear history")}</span>
                   </Button>

@@ -3,6 +3,15 @@ import { X, GripVertical, ChevronUp, ChevronDown, Trash2, Plus, Globe } from 'lu
 import { useTranslation } from 'react-i18next';
 import type { Plan, PlanFeature } from "@/services/planService";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { FEATURE_CATALOG } from "@/constants/featureCatalog";
 import {
@@ -107,12 +116,15 @@ export function EditPlanModal({
             </AlertDialogTitle>
             <AlertDialogDescription className="sr-only">{titleText}</AlertDialogDescription>
           </div>
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
             onClick={onClose}
-            className="p-1 hover:bg-muted rounded transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
+            className="cursor-pointer text-muted-foreground hover:text-foreground"
           >
             <X className="h-3.5 w-3.5" />
-          </button>
+          </Button>
         </AlertDialogHeader>
 
         {/* Scrollable Body */}
@@ -130,7 +142,7 @@ export function EditPlanModal({
                 disabled={!isCreateMode}
                 onChange={(e) => setEditId(e.target.value.toUpperCase().replace(/\s+/g, '-'))}
                 placeholder="e.g. PL-008"
-                className="h-7 text-xs bg-background font-mono disabled:opacity-60"
+                className="font-mono disabled:opacity-60"
               />
             </div>
 
@@ -138,17 +150,20 @@ export function EditPlanModal({
               <label htmlFor="edit-client-type" className="block text-[9px] text-muted-foreground font-bold uppercase tracking-wider mb-0.5">
                 {t('plans.clientType') || 'Client Type'}
               </label>
-              <select
-                id="edit-client-type"
+              <Select
                 value={editClientType}
-                onChange={(e) => setEditClientType(e.target.value)}
-                className="w-full h-7 px-2 border border-input rounded text-xs focus:outline-none focus:ring-1 focus:ring-ring bg-background text-foreground"
+                onValueChange={(val) => setEditClientType(val)}
               >
-                <option value="CLIENT">{t('plans.clientTypes.standard') || 'Standard'}</option>
-                <option value="ENTERPRISE">{t('plans.clientTypes.enterprise') || 'Enterprise'}</option>
-                <option value="STUDENT">{t('plans.clientTypes.student') || 'Student'}</option>
-                <option value="OTHER">{t('plans.clientTypes.other') || 'Other'}</option>
-              </select>
+                <SelectTrigger id="edit-client-type" className="w-full">
+                  <SelectValue placeholder={t('plans.clientType') || 'Client Type'} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CLIENT">{t('plans.clientTypes.standard') || 'Standard'}</SelectItem>
+                  <SelectItem value="ENTERPRISE">{t('plans.clientTypes.enterprise') || 'Enterprise'}</SelectItem>
+                  <SelectItem value="STUDENT">{t('plans.clientTypes.student') || 'Student'}</SelectItem>
+                  <SelectItem value="OTHER">{t('plans.clientTypes.other') || 'Other'}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="col-span-2">
@@ -160,26 +175,24 @@ export function EditPlanModal({
                 type="number"
                 value={editPrice}
                 onChange={(e) => setEditPrice(parseInt(e.target.value) || 0)}
-                className="h-7 text-xs bg-background font-mono"
+                className="font-mono"
               />
             </div>
 
             <div className="col-span-3 flex items-center gap-2 pb-1 justify-end">
-              <label className="flex items-center gap-1 cursor-pointer select-none text-[10px] font-medium text-foreground">
-                <input
-                  type="checkbox"
+              <label className="flex items-center gap-1.5 cursor-pointer select-none text-[10px] font-medium text-foreground">
+                <Checkbox
                   checked={editRecommended}
-                  onChange={(e) => setEditRecommended(e.target.checked)}
-                  className="h-3 w-3 rounded border-input accent-primary"
+                  onCheckedChange={(checked) => setEditRecommended(checked === true)}
+                  className="size-3.5"
                 />
                 Rec.
               </label>
-              <label className="flex items-center gap-1 cursor-pointer select-none text-[10px] font-medium text-foreground">
-                <input
-                  type="checkbox"
+              <label className="flex items-center gap-1.5 cursor-pointer select-none text-[10px] font-medium text-foreground">
+                <Checkbox
                   checked={editActive}
-                  onChange={(e) => setEditActive(e.target.checked)}
-                  className="h-3 w-3 rounded border-input accent-primary"
+                  onCheckedChange={(checked) => setEditActive(checked === true)}
+                  className="size-3.5"
                 />
                 Active
               </label>
@@ -204,97 +217,110 @@ export function EditPlanModal({
                 </TabsList>
               </div>
 
+              {/* English Tab */}
               <TabsContent value="en_US" forceMount className={activeLang === 'en_US' ? 'space-y-2 mt-0' : 'hidden'}>
                 <div>
-                  <label className="block text-[9px] text-muted-foreground font-bold uppercase tracking-wider mb-0.5">
-                    {t('plans.planNameLabel') || 'Plan Name'} (English)
+                  <label htmlFor="edit-name-en" className="block text-[9px] text-muted-foreground font-bold uppercase tracking-wider mb-0.5">
+                    {t('plans.planNameEn') || 'Plan Name (English)'}
                   </label>
                   <Input
+                    id="edit-name-en"
                     type="text"
                     value={editName.en_US || ''}
                     onChange={(e) => setEditName({ ...editName, en_US: e.target.value })}
-                    className="h-7 text-xs bg-background"
                     placeholder="Plan name in English..."
                   />
                 </div>
                 <div>
-                  <label className="block text-[9px] text-muted-foreground font-bold uppercase tracking-wider mb-0.5">
-                    {t('plans.descriptionLabel') || 'Description'} (English)
+                  <label htmlFor="edit-desc-en" className="block text-[9px] text-muted-foreground font-bold uppercase tracking-wider mb-0.5">
+                    {t('plans.planDescEn') || 'Plan Description (English)'}
                   </label>
                   <textarea
+                    id="edit-desc-en"
+                    rows={2}
                     value={editDescription.en_US || ''}
                     onChange={(e) => setEditDescription({ ...editDescription, en_US: e.target.value })}
-                    className="w-full h-11 p-1.5 rounded border border-input bg-background text-foreground text-[11px] focus:outline-none focus:ring-1 focus:ring-ring resize-none"
                     placeholder="Description in English..."
+                    className="w-full p-1.5 rounded border border-input bg-background text-foreground text-[11px] focus:outline-none focus:ring-1 focus:ring-ring resize-none"
                   />
                 </div>
               </TabsContent>
 
+              {/* Spanish Tab */}
               <TabsContent value="es_DO" forceMount className={activeLang === 'es_DO' ? 'space-y-2 mt-0' : 'hidden'}>
                 <div>
-                  <label className="block text-[9px] text-muted-foreground font-bold uppercase tracking-wider mb-0.5">
-                    {t('plans.planNameLabel') || 'Plan Name'} (Español)
+                  <label htmlFor="edit-name-es" className="block text-[9px] text-muted-foreground font-bold uppercase tracking-wider mb-0.5">
+                    {t('plans.planNameEs') || 'Nombre del Plan (Español)'}
                   </label>
                   <Input
+                    id="edit-name-es"
                     type="text"
                     value={editName.es_DO || ''}
                     onChange={(e) => setEditName({ ...editName, es_DO: e.target.value })}
-                    className="h-7 text-xs bg-background"
                     placeholder="Nombre del plan en español..."
                   />
                 </div>
                 <div>
-                  <label className="block text-[9px] text-muted-foreground font-bold uppercase tracking-wider mb-0.5">
-                    {t('plans.descriptionLabel') || 'Description'} (Español)
+                  <label htmlFor="edit-desc-es" className="block text-[9px] text-muted-foreground font-bold uppercase tracking-wider mb-0.5">
+                    {t('plans.planDescEs') || 'Descripción del Plan (Español)'}
                   </label>
                   <textarea
+                    id="edit-desc-es"
+                    rows={2}
                     value={editDescription.es_DO || ''}
                     onChange={(e) => setEditDescription({ ...editDescription, es_DO: e.target.value })}
-                    className="w-full h-11 p-1.5 rounded border border-input bg-background text-foreground text-[11px] focus:outline-none focus:ring-1 focus:ring-ring resize-none"
                     placeholder="Descripción en Español..."
+                    className="w-full p-1.5 rounded border border-input bg-background text-foreground text-[11px] focus:outline-none focus:ring-1 focus:ring-ring resize-none"
                   />
                 </div>
               </TabsContent>
             </Tabs>
           </div>
 
-          {/* Features Section with i18n Tabs */}
-          <div className="border-t border-border pt-2.5">
+          {/* Features Editor */}
+          <div>
             <Tabs value={featureLangTab} onValueChange={(val) => setFeatureLangTab(val as 'en_US' | 'es_DO')} className="w-full">
-              <div className="flex justify-between items-center mb-1.5">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider">
+                  {t('plans.planFeatures') || 'Plan Features'} ({editFeatures.length})
+                </label>
                 <div className="flex items-center gap-2">
-                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                    {t('plans.featuresTitle') || 'Features'} ({editFeatures.length})
-                  </h4>
                   <TabsList className="h-5 p-0.5 bg-muted rounded">
                     <TabsTrigger value="en_US" className="px-1.5 py-0 text-[9px] h-4 font-bold data-[state=active]:bg-card data-[state=active]:text-foreground">
-                      EN Text
+                      EN
                     </TabsTrigger>
                     <TabsTrigger value="es_DO" className="px-1.5 py-0 text-[9px] h-4 font-bold data-[state=active]:bg-card data-[state=active]:text-foreground">
-                      ES Text
+                      ES
                     </TabsTrigger>
                   </TabsList>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="xs"
+                    onClick={onAddFeature}
+                    className="gap-1"
+                  >
+                    <Plus className="h-3 w-3" />
+                    {t('plans.addFeature') || 'Add Feature'}
+                  </Button>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={onAddFeature}
-                  className="text-[10px] text-foreground hover:underline flex items-center gap-0.5 cursor-pointer font-bold uppercase tracking-wider bg-muted hover:bg-muted/80 px-2 py-0.5 rounded"
-                >
-                  <Plus className="h-3 w-3" /> {t('plans.addFeature') || 'Add Feature'}
-                </button>
               </div>
 
-              <div className="space-y-1.5 max-h-55 overflow-y-auto pr-1">
+              <div className="space-y-1.5 max-h-56 overflow-y-auto pr-0.5">
                 {editFeatures.map((feat, index) => {
                   const catalogItem = FEATURE_CATALOG.find((c) => c.code === feat.code);
+                  const allParamKeys = Array.from(
+                    new Set([
+                      ...(catalogItem?.paramSchema?.map((p) => p.key) || []),
+                      ...Object.keys(feat.params || {}),
+                    ])
+                  );
                   const schemaKeys = new Set(catalogItem?.paramSchema?.map((p) => p.key) || []);
-                  const allParamKeys = Array.from(new Set([...Array.from(schemaKeys), ...Object.keys(feat.params || {})]));
 
                   return (
                     <div
                       key={index}
-                      draggable={true}
+                      draggable
                       onDragStart={(e) => onDragStart(e, index)}
                       onDragOver={(e) => onDragOver(e, index)}
                       onDrop={(e) => onDrop(e, index)}
@@ -317,60 +343,69 @@ export function EditPlanModal({
                         </div>
 
                         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="icon-xs"
                             disabled={index === 0}
                             onClick={() => onMoveFeature(index, -1)}
-                            className="p-0.5 hover:bg-muted rounded text-muted-foreground disabled:opacity-30 cursor-pointer"
+                            className="h-5 w-5 text-muted-foreground disabled:opacity-30 cursor-pointer"
                             title={t('plans.moveUp') || 'Move up'}
                           >
                             <ChevronUp className="h-2.5 w-2.5" />
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="icon-xs"
                             disabled={index === editFeatures.length - 1}
                             onClick={() => onMoveFeature(index, 1)}
-                            className="p-0.5 hover:bg-muted rounded text-muted-foreground disabled:opacity-30 cursor-pointer"
+                            className="h-5 w-5 text-muted-foreground disabled:opacity-30 cursor-pointer"
                             title={t('plans.moveDown') || 'Move down'}
                           >
                             <ChevronDown className="h-2.5 w-2.5" />
-                          </button>
+                          </Button>
                         </div>
 
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={feat.included}
-                          onChange={(e) => onToggleFeatureIncluded(index, e.target.checked)}
-                          className="h-3.5 w-3.5 rounded border-input accent-primary cursor-pointer"
+                          onCheckedChange={(checked) => onToggleFeatureIncluded(index, checked === true)}
+                          className="size-3.5"
                           title={feat.included ? 'Included in plan' : 'Excluded from plan'}
                         />
 
                         {/* Code Dropdown */}
-                        <select
+                        <Select
                           value={feat.code || 'CUSTOM_FEATURE'}
-                          onChange={(e) => onUpdateFeatureCode?.(index, e.target.value)}
-                          className="flex-1 h-6.5 px-1.5 border border-input rounded text-[11px] bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring truncate font-medium"
+                          onValueChange={(val) => onUpdateFeatureCode?.(index, val)}
                         >
-                          <option value="CUSTOM_FEATURE">-- Custom Text Feature --</option>
-                          {FEATURE_CATALOG.filter((c) => c.code !== 'CUSTOM_FEATURE').map((cat) => {
-                            const paramsToUse = feat.code === cat.code ? (feat.params || cat.defaultParams || {}) : (cat.defaultParams || {});
-                            const label = t(cat.labelKey, paramsToUse) || cat.code;
-                            return (
-                              <option key={cat.code} value={cat.code}>
-                                {label} ({cat.code})
-                              </option>
-                            );
-                          })}
-                        </select>
+                          <SelectTrigger size="sm" className="flex-1 h-6.5 text-[11px] truncate font-medium">
+                            <SelectValue placeholder="-- Custom Text Feature --" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="CUSTOM_FEATURE">-- Custom Text Feature --</SelectItem>
+                            {FEATURE_CATALOG.filter((c) => c.code !== 'CUSTOM_FEATURE').map((cat) => {
+                              const paramsToUse = feat.code === cat.code ? (feat.params || cat.defaultParams || {}) : (cat.defaultParams || {});
+                              const label = t(cat.labelKey, paramsToUse) || cat.code;
+                              return (
+                                <SelectItem key={cat.code} value={cat.code}>
+                                  {label} ({cat.code})
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
 
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="icon-xs"
                           onClick={() => onDeleteFeature(index)}
-                          className="p-1 hover:bg-destructive/10 text-destructive rounded transition-colors cursor-pointer"
+                          className="h-6 w-6 text-destructive hover:bg-destructive/10 cursor-pointer"
                           title="Delete feature"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        </Button>
                       </div>
 
                       {/* Parameter Controls (Inline compact pills) */}
@@ -385,19 +420,24 @@ export function EditPlanModal({
                               <div key={paramKey} className="flex items-center gap-1 bg-card px-1.5 py-0.5 rounded border border-border">
                                 <span className="text-[8px] font-bold uppercase tracking-wider text-muted-foreground">{label}:</span>
                                 {schemaItem?.type === 'select' && schemaItem.options ? (
-                                  <select
+                                  <Select
                                     value={String(currentVal)}
-                                    onChange={(e) => onUpdateFeatureParam?.(index, paramKey, e.target.value)}
-                                    className="h-5 px-0.5 bg-transparent text-[10px] text-foreground font-medium focus:outline-none"
+                                    onValueChange={(val) => onUpdateFeatureParam?.(index, paramKey, val)}
                                   >
-                                    {schemaItem.options.map((opt) => (
-                                      <option key={opt} value={opt}>
-                                        {opt}
-                                      </option>
-                                    ))}
-                                  </select>
+                                    <SelectTrigger size="xs" className="h-5 px-1 bg-transparent text-[10px] border-0 shadow-none">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {schemaItem.options.map((opt) => (
+                                        <SelectItem key={opt} value={opt}>
+                                          {opt}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
                                 ) : (
-                                  <input
+                                  <Input
+                                    size="xs"
                                     type={schemaItem?.type === 'number' ? 'number' : 'text'}
                                     value={currentVal as string | number}
                                     onChange={(e) =>
@@ -407,25 +447,29 @@ export function EditPlanModal({
                                         schemaItem?.type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value
                                       )
                                     }
-                                    className="h-5 w-16 text-[10px] bg-transparent font-mono text-foreground focus:outline-none"
+                                    className="h-5 w-16 text-[10px] bg-transparent font-mono text-foreground focus:outline-none border-0 px-1"
                                   />
                                 )}
                                 {!schemaKeys.has(paramKey) && (
-                                  <button
+                                  <Button
                                     type="button"
+                                    variant="ghost"
+                                    size="icon-xs"
                                     onClick={() => onDeleteFeatureParam?.(index, paramKey)}
-                                    className="text-[9px] text-destructive hover:opacity-80 ml-0.5"
+                                    className="h-4 w-4 text-[9px] text-destructive hover:opacity-80 p-0"
                                     title="Remove parameter"
                                   >
                                     ✕
-                                  </button>
+                                  </Button>
                                 )}
                               </div>
                             );
                           })}
 
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="xs"
                             onClick={() => {
                               const key = window.prompt("Enter parameter key name (e.g. limit, unit, hours):");
                               if (!key || !key.trim()) return;
@@ -433,10 +477,10 @@ export function EditPlanModal({
                               if (val === null) return;
                               onUpdateFeatureParam?.(index, key.trim(), val);
                             }}
-                            className="text-[9px] text-muted-foreground hover:text-foreground hover:underline px-1 cursor-pointer font-medium"
+                            className="text-[9px] h-5 px-1 text-muted-foreground hover:text-foreground font-medium"
                           >
                             + Param
-                          </button>
+                          </Button>
                         </div>
                       )}
 
@@ -447,6 +491,7 @@ export function EditPlanModal({
                             <div className="flex items-center gap-1.5">
                               <span className="text-[8px] font-bold text-muted-foreground uppercase w-4">EN</span>
                               <Input
+                                size="sm"
                                 type="text"
                                 value={(typeof feat.text === 'string' ? feat.text : feat.text?.en_US) || ''}
                                 onChange={(e) => onEditFeatureText(index, 'en_US', e.target.value)}
@@ -459,6 +504,7 @@ export function EditPlanModal({
                             <div className="flex items-center gap-1.5">
                               <span className="text-[8px] font-bold text-muted-foreground uppercase w-4">ES</span>
                               <Input
+                                size="sm"
                                 type="text"
                                 value={(typeof feat.text === 'string' ? feat.text : feat.text?.es_DO) || ''}
                                 onChange={(e) => onEditFeatureText(index, 'es_DO', e.target.value)}
@@ -481,33 +527,36 @@ export function EditPlanModal({
         <AlertDialogFooter className="px-4 py-2.5 border-t border-border flex justify-between items-center bg-muted/40">
           <div>
             {!isCreateMode && onDeletePlan && (
-              <button
+              <Button
                 type="button"
+                variant="destructive"
+                size="sm"
                 onClick={() => {
                   onClose();
                   onDeletePlan(editingPlan.id);
                 }}
-                className="px-2.5 py-1 bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20 rounded text-xs font-semibold cursor-pointer flex items-center gap-1 transition-colors"
+                className="gap-1 cursor-pointer"
               >
                 <Trash2 className="h-3 w-3" />
                 {t('plans.deletePlan') || 'Delete Plan'}
-              </button>
+              </Button>
             )}
           </div>
           <div className="flex items-center gap-2">
             <AlertDialogCancel
               onClick={onClose}
-              className="px-3 py-1 border border-border hover:bg-muted rounded text-xs font-semibold cursor-pointer text-foreground mt-0"
+              className="h-7 text-xs font-semibold cursor-pointer text-foreground mt-0"
             >
               {t('plans.cancel') || 'Cancel'}
             </AlertDialogCancel>
-            <button
+            <Button
+              type="button"
               onClick={onSave}
               disabled={saveLoading}
-              className="px-3.5 py-1 bg-primary text-primary-foreground hover:bg-primary/90 rounded text-xs font-semibold transition-opacity flex items-center gap-1 disabled:opacity-50 cursor-pointer shadow-xs"
+              className="h-7 text-xs font-semibold gap-1 cursor-pointer shadow-xs"
             >
               {saveLoading ? (t('plans.saving') || 'Saving...') : isCreateMode ? (t('plans.createPlan') || 'Create Plan') : (t('plans.saveChanges') || 'Save Changes')}
-            </button>
+            </Button>
           </div>
         </AlertDialogFooter>
       </AlertDialogContent>

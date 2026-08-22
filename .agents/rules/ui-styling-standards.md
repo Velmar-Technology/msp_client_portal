@@ -3,23 +3,38 @@
 ## 1. Mandatory Level 1 Primitive Rule
 All interactive elements, forms, and overlays **MUST strictly use shadcn/ui primitives from `client/src/components/ui/`**:
 - **Buttons & Controls**: `import { Button } from "@/components/ui/button"`
+- **Inputs & Form Controls**: `import { Input } from "@/components/ui/input"`
+- **Selects & Dropdowns**: `import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"`
+- **Checkboxes**: `import { Checkbox } from "@/components/ui/checkbox"`
 - **Tables**: `import { DataTable } from "@/components/ui/data-table"` or `import { Table, TableBody, ... } from "@/components/ui/table"`
 - **Drawers & Sheets**: `import { Sheet, SheetContent, ... } from "@/components/ui/sheet"`
 - **Modals & Dialogs**: `import { Dialog, DialogContent, ... } from "@/components/ui/dialog"`
 - **Confirmations**: `import { AlertDialog, AlertDialogAction, ... } from "@/components/ui/alert-dialog"`
-- **Dropdowns**: `import { DropdownMenu, DropdownMenuItem, ... } from "@/components/ui/dropdown-menu"`
+- **Dropdown Menus**: `import { DropdownMenu, DropdownMenuItem, ... } from "@/components/ui/dropdown-menu"`
 - **Skeletons**: `import { Skeleton } from "@/components/ui/skeleton"`
 - **Badges**: `import { Badge } from "@/components/ui/badge"`
 
-Raw HTML elements (`<button>`, unstyled `<select>`, raw `<dialog>`) are strictly forbidden.
+Raw HTML elements (`<button>`, unstyled `<select>`, raw `<input>`, raw `<dialog>`) are strictly forbidden.
 
 ---
 
-## 2. Action Controls & Toolbar (`h-7` Standard)
-- Standard Height: Strictly `h-7` (28px height) on `Button`, `select`, and segmented controls.
-- Font Size: `text-xs font-medium` or `text-xs font-semibold`.
-- Segmented View Switchers: `bg-zinc-100 p-0.5 rounded-lg border border-zinc-200 dark:bg-zinc-900 dark:border-zinc-800`.
-- Icons in Actions: `h-3 w-3` or `h-3.5 w-3.5` with `text-zinc-500 dark:text-zinc-400`.
+## 2. Synchronized Control Height Standards (`h-7` Baseline)
+To eliminate height discrepancies across toolbars, forms, data tables, modals, and sheets, all input and action primitives support synchronized size variants:
+
+| Variant (`size`) | Pixel Height | Tailwind Class | Typography / Padding | Typical Use Case |
+| :--- | :---: | :---: | :---: | :--- |
+| **`xs`** | 20px | `h-5` | `text-[0.625rem] px-1.5 py-0` | Micro table row actions, compact pills, sub-parameters |
+| **`sm`** | 24px | `h-6` | `text-xs px-2 py-0.5` | Dense dialogs, nested tabs, compact table cells |
+| **`default`** | 28px | `h-7` | `text-xs px-2 py-1` | **App-wide default**: toolbars, search bars, modals, settings |
+| **`lg`** | 32px | `h-8` | `text-xs px-2.5 py-1.5` | Hero search inputs, prominent CTA buttons |
+
+### Zero Ad-Hoc Height Overrides Rule
+Never hardcode arbitrary height classes (e.g. `h-8.5`, `h-9`, `h-10`, `py-3`) on `Input`, `SelectTrigger`, or `Button` instances. Rely directly on the component's default (`h-7`) or explicit `size` prop (`size="sm" | "default" | "lg" | "xs"`) to maintain strict visual parity.
+
+- **Standard Toolbar & Search Height**: Strictly `h-7` (28px height).
+- **Font Size**: `text-xs font-medium` or `text-xs font-semibold`.
+- **Segmented View Switchers**: `bg-zinc-100 p-0.5 rounded-lg border border-zinc-200 dark:bg-zinc-900 dark:border-zinc-800` composing `Button` primitives.
+- **Icons in Controls**: `h-3 w-3` or `h-3.5 w-3.5` with `text-zinc-500 dark:text-zinc-400`.
 
 ---
 

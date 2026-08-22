@@ -288,6 +288,9 @@ server/src/modules/<feature>/
    - **Mandatory i18n Rule**: NO user-facing UI text, headers, subheaders, badges, tooltips, search placeholders, modal titles, or table headers may be hardcoded in raw English or Spanish strings. All user-facing strings **MUST use `useTranslation()` from `react-i18next`** (`t("namespace.key")`) and be defined in both `client/src/locales/en_US.json` and `client/src/locales/es_DO.json`.
      - **FORBIDDEN: Language-Detection Hacks**: Never write `t('someKey') === 'Spanish text' ? 'Spanish' : 'English'` or any variant that inspects the _output_ of a `t()` call to infer the active language. Instead, always add a dedicated translation key for each distinct string.
    - **Mandatory Deep Link & Resource State Rule**: All page sub-views (tabs: `?tab=...`), table filters (`?status=...`, `?search=...`), and modal dialog overlays (`?openModal=...`) **MUST sync with URL search parameters using `useUrlState`**.
+   - **Mandatory Synchronized Control Height Standards**: All interactive controls (`Button`, `Input`, `SelectTrigger`, and action toolbars) adhere to a synchronized size system anchored on the compact `h-7` (28px) standard:
+     - `xs`: `h-5` (20px) | `sm`: `h-6` (24px) | `default`: `h-7` (28px) | `lg`: `h-8` (32px).
+     - **Zero Ad-Hoc Overrides**: Never apply hardcoded `h-8.5`, `h-9`, `h-10`, or custom padding on `Input` or `SelectTrigger`.
    - **Forbidden Imports**: Raw unstyled HTML primitives (`<button>`, `<input>`, `<select>`, `<dialog>`) when a `shadcn/ui` primitive is available.
 
 ---

@@ -420,8 +420,10 @@ describe('PlansPage', () => {
       expect(await screen.findByText('Select New Tier')).toBeInTheDocument();
 
       // Select Basic Support as the new tier
-      const select = screen.getByLabelText('Select New Tier');
-      fireEvent.change(select, { target: { value: 'BASIC' } });
+      const trigger = screen.getByRole('combobox');
+      fireEvent.click(trigger);
+      const option = await screen.findByRole('option', { name: /Basic Support/i });
+      fireEvent.click(option);
 
       // Accept Terms of Service
       fireEvent.click(screen.getByLabelText(/Terms of Service/i));

@@ -139,8 +139,8 @@ export function ResourcesPage() {
       return (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row justify-between gap-3">
-            <Skeleton className="w-full sm:w-64 h-9" />
-            <Skeleton className="w-full sm:w-64 h-9" />
+            <Skeleton className="w-full sm:w-64 h-7" />
+            <Skeleton className="w-full sm:w-64 h-7" />
           </div>
           {viewMode === "tiled" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -170,7 +170,7 @@ export function ResourcesPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder={t("resources.searchPlaceholder")}
-              className="pl-8 h-9 text-xs"
+              className="pl-8 text-xs"
             />
           </div>
           <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3">
@@ -231,34 +231,34 @@ export function ResourcesPage() {
 
             {/* View Mode Toggle */}
             <div className="flex items-center bg-muted p-0.5 rounded-md border border-border">
-              <button
+              <Button
                 type="button"
+                variant={viewMode === "tiled" ? "secondary" : "ghost"}
+                size="icon-xs"
                 onClick={() => setViewMode("tiled")}
                 title={t("resources.viewTiled")}
                 aria-label={t("resources.viewTiled")}
                 className={cn(
-                  "p-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer",
-                  viewMode === "tiled"
-                    ? "bg-card text-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground",
+                  "h-7 w-7 rounded cursor-pointer",
+                  viewMode === "tiled" && "bg-card text-foreground shadow-xs"
                 )}
               >
-                <LayoutGrid className="h-4 w-4" />
-              </button>
-              <button
+                <LayoutGrid className="h-3.5 w-3.5" />
+              </Button>
+              <Button
                 type="button"
+                variant={viewMode === "list" ? "secondary" : "ghost"}
+                size="icon-xs"
                 onClick={() => setViewMode("list")}
                 title={t("resources.viewList")}
                 aria-label={t("resources.viewList")}
                 className={cn(
-                  "p-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer",
-                  viewMode === "list"
-                    ? "bg-card text-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground",
+                  "h-7 w-7 rounded cursor-pointer",
+                  viewMode === "list" && "bg-card text-foreground shadow-xs"
                 )}
               >
-                <List className="h-4 w-4" />
-              </button>
+                <List className="h-3.5 w-3.5" />
+              </Button>
             </div>
           </div>
         </div>

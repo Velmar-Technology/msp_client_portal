@@ -14,6 +14,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import type { ColumnDef } from "@tanstack/react-table";
 
@@ -418,16 +425,19 @@ export function UserManagementPage() {
             <label htmlFor="bulk-role-select" className="block text-xs font-bold text-foreground uppercase tracking-wider">
               {t("userManagement.selectRole") || "Select Role"}
             </label>
-            <select
-              id="bulk-role-select"
+            <Select
               value={selectedBulkRole}
-              onChange={(e) => setSelectedBulkRole(e.target.value as UserRole)}
-              className="w-full h-10 px-3 py-2 border border-input rounded-lg text-sm bg-background text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              onValueChange={(val) => setSelectedBulkRole(val as UserRole)}
             >
-              <option value="CLIENT">{t("userManagement.roleClient") || "Client"}</option>
-              <option value="TECHNICIAN">{t("userManagement.roleTech") || "Technician"}</option>
-              <option value="ADMIN">{t("userManagement.roleAdmin") || "Admin"}</option>
-            </select>
+              <SelectTrigger id="bulk-role-select" className="w-full">
+                <SelectValue placeholder={t("userManagement.selectRole") || "Select Role"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="CLIENT">{t("userManagement.roleClient") || "Client"}</SelectItem>
+                <SelectItem value="TECHNICIAN">{t("userManagement.roleTech") || "Technician"}</SelectItem>
+                <SelectItem value="ADMIN">{t("userManagement.roleAdmin") || "Admin"}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <AlertDialogFooter className="gap-2 sm:gap-0">
@@ -466,17 +476,20 @@ export function UserManagementPage() {
             <label htmlFor="bulk-client-type-select" className="block text-xs font-bold text-foreground uppercase tracking-wider">
               {t("userManagement.selectClientType") || "Select Client Type"}
             </label>
-            <select
-              id="bulk-client-type-select"
+            <Select
               value={selectedBulkClientType}
-              onChange={(e) => setSelectedBulkClientType(e.target.value as ClientType)}
-              className="w-full h-10 px-3 py-2 border border-input rounded-lg text-sm bg-background text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              onValueChange={(val) => setSelectedBulkClientType(val as ClientType)}
             >
-              <option value="CLIENT">{t("userManagement.clientTypeCLIENT") || "Standard Client"}</option>
-              <option value="ENTERPRISE">{t("userManagement.clientTypeENTERPRISE") || "Enterprise Client"}</option>
-              <option value="STUDENT">{t("userManagement.clientTypeSTUDENT") || "Student Starter"}</option>
-              <option value="OTHER">{t("userManagement.clientTypeOTHER") || "Other / Custom"}</option>
-            </select>
+              <SelectTrigger id="bulk-client-type-select" className="w-full">
+                <SelectValue placeholder={t("userManagement.selectClientType") || "Select Client Type"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="CLIENT">{t("userManagement.clientTypeCLIENT") || "Standard Client"}</SelectItem>
+                <SelectItem value="ENTERPRISE">{t("userManagement.clientTypeENTERPRISE") || "Enterprise Client"}</SelectItem>
+                <SelectItem value="STUDENT">{t("userManagement.clientTypeSTUDENT") || "Student Starter"}</SelectItem>
+                <SelectItem value="OTHER">{t("userManagement.clientTypeOTHER") || "Other / Custom"}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <AlertDialogFooter className="gap-2 sm:gap-0">

@@ -68,7 +68,7 @@ export const EmailTemplatesGallerySection: React.FC = () => {
             <div className="flex items-center gap-2 self-start sm:self-auto">
               <Globe className="h-4 w-4 text-muted-foreground" />
               <Select value={previewLanguage} onValueChange={setPreviewLanguage}>
-                <SelectTrigger className="h-8 w-32 text-xs">
+                <SelectTrigger className="h-7 w-32 text-xs">
                   <SelectValue placeholder={t('notificationPreferences.previewLanguage', 'Language')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -92,7 +92,7 @@ export const EmailTemplatesGallerySection: React.FC = () => {
                   variant={isActive ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setSelectedTemplate(tpl.key)}
-                  className="flex items-center gap-2 justify-start text-xs h-9"
+                  className="flex items-center gap-2 justify-start text-xs h-7"
                 >
                   <Icon className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate">{tpl.label}</span>

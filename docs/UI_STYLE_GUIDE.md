@@ -35,13 +35,58 @@ The design system builds upon Tailwind `zinc` surfaces, crisp typography, and hi
 
 ## 📐 Layout & Action Toolbar Standards
 
-### 1. Page Actions (shadcn/ui `Button` & `Select` Primitives)
+### 1. Synchronized Control Height Standards (`h-7` Baseline)
 
-Every page uses `<Page title={...} subtitle={...} actions={...}>`. All action controls adhere to a compact `h-7` standard:
+All interactive controls (`Button`, `Input`, `SelectTrigger`, and action toolbars) adhere to a synchronized size system anchored on the compact `h-7` (28px) standard:
 
-* **Control Height**: Strictly `h-7` (28px height).
+| Variant (`size`) | Pixel Height | Tailwind Class | Typography / Padding | Typical Use Case |
+| :--- | :---: | :---: | :---: | :--- |
+| **`xs`** | 20px | `h-5` | `text-[0.625rem] px-1.5 py-0` | Micro table row actions, compact pills, sub-parameters |
+| **`sm`** | 24px | `h-6` | `text-xs px-2 py-0.5` | Dense dialogs, nested tabs, compact table cells |
+| **`default`** | 28px | `h-7` | `text-xs px-2 py-1` | **App-wide default**: toolbars, search bars, modals, settings |
+| **`lg`** | 32px | `h-8` | `text-xs px-2.5 py-1.5` | Hero search inputs, prominent CTA buttons |
+
+* **Default Control Height**: Strictly `h-7` (28px height).
 * **Font Size**: `text-xs font-medium` or `text-xs font-semibold`.
 * **Icon Size**: `h-3 w-3` or `h-3.5 w-3.5` with `text-zinc-500 dark:text-zinc-400`.
+* **Zero Ad-Hoc Overrides**: Never apply hardcoded `h-8.5`, `h-9`, `h-10`, or custom padding on `Input` or `SelectTrigger`.
+
+#### Paired Search Bar & Filter Toolbar (`Input` + `Select` + `Button`)
+```tsx
+import { Input } from "@/components/ui/input";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Search, Plus } from "lucide-react";
+
+<div className="flex items-center gap-2">
+  {/* Standard Search Input (h-7 default) */}
+  <div className="relative flex-1">
+    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+    <Input
+      type="text"
+      placeholder="Search..."
+      className="pl-8"
+    />
+  </div>
+
+  {/* Standard Select Trigger (h-7 default) */}
+  <Select value={filter} onValueChange={setFilter}>
+    <SelectTrigger className="w-36">
+      <SelectValue placeholder="Filter..." />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="ALL">All</SelectItem>
+      <SelectItem value="ACTIVE">Active</SelectItem>
+    </SelectContent>
+  </Select>
+
+  {/* Standard Action Button (h-7 default) */}
+  <Button type="button" className="gap-1 cursor-pointer">
+    <Plus className="h-3.5 w-3.5" />
+    <span>New</span>
+  </Button>
+</div>
+```
 
 #### Segmented View Switcher (Composing shadcn `Button` Primitives)
 ```tsx

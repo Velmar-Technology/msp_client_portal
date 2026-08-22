@@ -3,6 +3,14 @@ import { X, Minus, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Plan } from "@/services/planService";
 import type { Subscription } from "@/services/subscriptionService";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { SubscriptionModifyForm } from "./SubscriptionModifyForm";
 
 interface ChangeTierPanelProps {
@@ -56,14 +64,16 @@ export function ChangeTierPanel({
           </h3>
           <p className="text-[11px] text-muted-foreground mt-0.5 font-medium">{subscription.service_name}</p>
         </div>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-xs"
           onClick={onClose}
           aria-label={t("plans.cancel")}
-          className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+          className="text-muted-foreground hover:text-foreground cursor-pointer"
         >
           <X className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
 
       <div className="space-y-3">
@@ -74,18 +84,21 @@ export function ChangeTierPanel({
           >
             {t("plans.selectNewTier")}
           </label>
-          <select
-            id="tier-change-plan-select"
+          <Select
             value={currentPlan.id}
-            onChange={(e) => onSelectPlan(e.target.value)}
-            className="w-full h-8.5 px-2 border border-input rounded text-xs focus:outline-none focus:ring-1 focus:ring-ring bg-background text-foreground"
+            onValueChange={(val) => onSelectPlan(val)}
           >
-            {plans.map((plan) => (
-              <option key={plan.id} value={plan.id}>
-                {getPlanName(plan.name)} — ${plan.price}/mo
-              </option>
-            ))}
-          </select>
+            <SelectTrigger id="tier-change-plan-select" className="w-full h-7 text-xs">
+              <SelectValue placeholder={t("plans.selectNewTier")} />
+            </SelectTrigger>
+            <SelectContent>
+              {plans.map((plan) => (
+                <SelectItem key={plan.id} value={plan.id}>
+                  {getPlanName(plan.name)} — ${plan.price}/mo
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="flex items-center justify-between bg-muted/40 rounded border border-border px-2.5 py-1.5">
@@ -93,25 +106,29 @@ export function ChangeTierPanel({
             {t("plans.changeTierDevices")}
           </span>
           <div className="flex items-center gap-1.5 bg-card border border-border rounded px-1 py-0.5">
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-xs"
               aria-label={t("plans.removeDevice") || "Remove Device"}
               onClick={() => onAdjustEquipmentCount(currentPlan.id, -1)}
-              className="w-4.5 h-4.5 rounded flex items-center justify-center hover:bg-muted transition-colors text-xs font-semibold cursor-pointer text-foreground"
+              className="cursor-pointer text-foreground"
             >
               <Minus className="h-3 w-3" />
-            </button>
+            </Button>
             <span className="w-5 text-center text-xs font-semibold font-mono text-foreground">
               {currentEquipmentCount}
             </span>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-xs"
               aria-label={t("plans.addDevice") || "Add Device"}
               onClick={() => onAdjustEquipmentCount(currentPlan.id, 1)}
-              className="w-4.5 h-4.5 rounded flex items-center justify-center hover:bg-muted transition-colors text-xs font-semibold cursor-pointer text-foreground"
+              className="cursor-pointer text-foreground"
             >
               <Plus className="h-3 w-3" />
-            </button>
+            </Button>
           </div>
         </div>
 

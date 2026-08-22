@@ -391,11 +391,11 @@ export function TicketsPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4 gap-2 flex justify-end">
-            <AlertDialogCancel className="h-8 px-3 rounded-md text-xs font-semibold cursor-pointer">
+            <AlertDialogCancel className="h-7 px-3 rounded-md text-xs font-semibold cursor-pointer">
               {t("tickets.modalCancel")}
             </AlertDialogCancel>
             <AlertDialogAction
-              className="h-8 px-3 rounded-md text-xs font-semibold cursor-pointer bg-destructive text-destructive-foreground hover:bg-destructive/90 border-0"
+              className="h-7 px-3 rounded-md text-xs font-semibold cursor-pointer bg-destructive text-destructive-foreground hover:bg-destructive/90 border-0"
               onClick={confirmCancelIndividual}
             >
               {t("tickets.cancelTicket")}
@@ -414,11 +414,11 @@ export function TicketsPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4 gap-2 flex justify-end">
-            <AlertDialogCancel className="h-8 px-3 rounded-md text-xs font-semibold cursor-pointer">
+            <AlertDialogCancel className="h-7 px-3 rounded-md text-xs font-semibold cursor-pointer">
               {t("tickets.modalCancel")}
             </AlertDialogCancel>
             <AlertDialogAction
-              className="h-8 px-3 rounded-md text-xs font-semibold cursor-pointer bg-destructive text-destructive-foreground hover:bg-destructive/90 border-0"
+              className="h-7 px-3 rounded-md text-xs font-semibold cursor-pointer bg-destructive text-destructive-foreground hover:bg-destructive/90 border-0"
               onClick={confirmBulkCancel}
             >
               {t("tickets.bulkCancel")}
@@ -440,7 +440,7 @@ export function TicketsPage() {
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4 flex justify-end">
             <AlertDialogAction
-              className="h-8 px-3 rounded-md text-xs font-semibold cursor-pointer"
+              className="h-7 px-3 rounded-md text-xs font-semibold cursor-pointer"
               onClick={() => setAlertWarningMessage(null)}
             >
               {t("common.close") || "OK"}
