@@ -77,11 +77,9 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
-    pool: 'forks',
-    isolate: true,
-    execArgv: ['--max-old-space-size=2048'],
+    pool: 'threads',
+    isolate: false,
     maxWorkers: 2,
-    fileParallelism: false,
     testTimeout: 15000,
   },
 });
