@@ -18,7 +18,7 @@ describe('withTenantContext — Row-Level Security Wrapper', () => {
       return cb(mockTx);
     });
 
-    const result = await withTenantContext('tenant-abc-123', async (tx) => {
+    const result = await withTenantContext('tenant-abc-123', async (_tx) => {
       expect(mockTx.execute).toHaveBeenCalled();
       return 'query-result';
     });

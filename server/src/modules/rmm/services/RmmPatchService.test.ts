@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RmmPatchService } from './RmmPatchService';
-import { RmmPatchSeverity, RmmPatchStatus } from '@shared/types';
+import { RmmPatchStatus } from '@shared/types';
 
 describe('RmmPatchService', () => {
   let service: RmmPatchService;
@@ -90,7 +90,7 @@ describe('RmmPatchService', () => {
   });
 
   it('applies patches after checking plan feature entitlement', async () => {
-    const applied = await service.applyPatches(equipmentId, ['p-1'], tenantId);
+    await service.applyPatches(equipmentId, ['p-1'], tenantId);
 
     expect(mockZabbixSvc.executePatchScript).toHaveBeenCalledWith('zbx-1', 'p-1');
     expect(mockPatchRepo.updatePatchStatus).toHaveBeenCalledWith('p-1', RmmPatchStatus.INSTALLED, expect.any(Date));

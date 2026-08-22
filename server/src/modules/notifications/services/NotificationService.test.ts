@@ -1,5 +1,4 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { SSEClientStream } from './NotificationService';
 
 // Hoist mock handlers
 const emailMocks = vi.hoisted(() => ({
@@ -200,7 +199,7 @@ describe('NotificationService', () => {
 
   describe('onTicketCreated', () => {
     it('should dispatch email and in-app notifications if preferences allow', async () => {
-      preferenceMocks.shouldNotify.mockImplementation(async (userId, eventType, channel) => {
+      preferenceMocks.shouldNotify.mockImplementation(async () => {
         return true; // allow all
       });
 

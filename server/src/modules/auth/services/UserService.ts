@@ -19,14 +19,19 @@ export interface UserStats {
   inactive: number;
 }
 
+function sanitizeUser(user: User): Omit<User, 'password_hash'> {
+  const sanitized = { ...user };
+  delete (sanitized as Partial<User>).password_hash;
+  return sanitized;
+}
+
 export class UserService {
   constructor(private userRepo: UserRepository = userRepository) {}
 
   async getProfile(userId: string): Promise<Omit<User, 'password_hash'>> {
     const user = await this.userRepo.findById(userId);
     if (!user) throw new NotFoundError('User not found');
-    const { password_hash, ...profile } = user;
-    return profile;
+    return sanitizeUser(user);
   }
 
   async updateProfile(userId: string, data: UpdateProfileInput): Promise<Omit<User, 'password_hash'>> {
@@ -39,8 +44,7 @@ export class UserService {
 
     const updated = await this.userRepo.updateProfile(userId, data);
     if (!updated) throw new InternalServerError('Failed to update profile');
-    const { password_hash, ...profile } = updated;
-    return profile;
+    return sanitizeUser(updated);
   }
 
   async changePassword(userId: string, data: ChangePasswordInput): Promise<void> {
@@ -58,12 +62,12 @@ export class UserService {
 
   async getTechnicians(): Promise<Omit<User, 'password_hash'>[]> {
     const techs = await this.userRepo.findByRole(UserRole.TECHNICIAN);
-    return techs.map(({ password_hash, ...t }) => t);
+    return techs.map(sanitizeUser);
   }
 
   async getClients(): Promise<Omit<User, 'password_hash'>[]> {
     const clients = await this.userRepo.findAllClients();
-    return clients.map(({ password_hash, ...c }) => c);
+    return clients.map(sanitizeUser);
   }
 
   // ---- Admin User Management ----
@@ -112,7 +116,7 @@ export class UserService {
     const totalPages = Math.ceil(total / limit);
 
     return {
-      users: usersData.map(({ password_hash, ...u }) => u),
+      users: usersData.map(sanitizeUser),
       total,
       page,
       totalPages,
@@ -134,8 +138,7 @@ export class UserService {
     const updated = await this.userRepo.updateRole(targetUserId, newRole);
     if (!updated) throw new InternalServerError('Failed to update user role');
 
-    const { password_hash, ...user } = updated;
-    return user;
+    return sanitizeUser(updated);
   }
 
   async toggleUserStatus(
@@ -153,8 +156,7 @@ export class UserService {
     const updated = await this.userRepo.updateStatus(targetUserId, isActive);
     if (!updated) throw new InternalServerError('Failed to update user status');
 
-    const { password_hash, ...user } = updated;
-    return user;
+    return sanitizeUser(updated);
   }
 
   async bulkUpdateStatus(
@@ -194,8 +196,7 @@ export class UserService {
     const updated = await this.userRepo.updateClientType(targetUserId, newClientType);
     if (!updated) throw new InternalServerError('Failed to update user client type');
 
-    const { password_hash, ...user } = updated;
-    return user;
+    return sanitizeUser(updated);
   }
 
   async bulkUpdateClientType(

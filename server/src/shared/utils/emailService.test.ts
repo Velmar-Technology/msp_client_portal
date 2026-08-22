@@ -1,5 +1,4 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import nodemailer from 'nodemailer';
 
 // Mock nodemailer module
 const { mockSendMail, mockVerify } = vi.hoisted(() => ({

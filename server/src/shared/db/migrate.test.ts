@@ -2,7 +2,6 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { PoolClient } from 'pg';
 import bcrypt from 'bcrypt';
 import { ensureAdminExists } from './migrate';
-import { env } from '@shared/config/env';
 
 // Mock the dependencies
 vi.mock('@shared/config/env', () => {
