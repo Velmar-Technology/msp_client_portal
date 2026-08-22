@@ -48,15 +48,15 @@ describe("ChunkErrorBoundary", () => {
 
     expect(screen.getByText("Unable to load section")).toBeInTheDocument();
 
-    // Fix the error condition and click retry
-    fireEvent.click(screen.getByRole("button", { name: /retry section/i }));
-    expect(onReset).toHaveBeenCalledTimes(1);
-
+    // Update child prop to not throw on subsequent render, then trigger retry
     rerender(
       <ChunkErrorBoundary onReset={onReset}>
         <ThrowingComponent shouldThrow={false} />
       </ChunkErrorBoundary>
     );
+
+    fireEvent.click(screen.getByRole("button", { name: /retry section/i }));
+    expect(onReset).toHaveBeenCalledTimes(1);
 
     expect(screen.getByText("Component loaded successfully")).toBeInTheDocument();
 

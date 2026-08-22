@@ -15,3 +15,25 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
+// Polyfill ResizeObserver for Radix UI / Tooltip / Layout
+global.ResizeObserver = class ResizeObserver {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+};
+
+// Polyfill IntersectionObserver
+global.IntersectionObserver = class IntersectionObserver {
+  root = null;
+  rootMargin = '';
+  thresholds = [];
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+  takeRecords = vi.fn().mockReturnValue([]);
+} as unknown as typeof IntersectionObserver;
+
+window.scrollTo = vi.fn();
+Element.prototype.scrollIntoView = vi.fn();
+
+

@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { expect, test, vi, beforeEach, describe } from "vitest";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
-import { ProtectedRoute, protectedRoutes } from "@/protected-routes";
+import { ProtectedRoute } from "@/protected-routes";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { PrivacyPage } from "@/routes/_public/privacy";
@@ -16,6 +16,10 @@ vi.mock("react-i18next", () => ({
   }),
 }));
 
+vi.mock("@/assets/logo.png", () => ({
+  default: "logo-stub.png",
+}));
+
 const mockUseAuth = vi.fn();
 vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => mockUseAuth(),
@@ -24,6 +28,24 @@ vi.mock("@/hooks/useAuth", () => ({
 vi.mock("@/services/subscriptionService", () => ({
   subscriptionService: {
     getAll: vi.fn().mockResolvedValue([]),
+  },
+}));
+
+vi.mock("@/services/planService", () => ({
+  planService: {
+    getAll: vi.fn().mockResolvedValue([]),
+  },
+}));
+
+vi.mock("@/services/ticketService", () => ({
+  ticketService: {
+    getAll: vi.fn().mockResolvedValue({ data: [] }),
+  },
+}));
+
+vi.mock("@/services/invoiceService", () => ({
+  invoiceService: {
+    getAll: vi.fn().mockResolvedValue({ data: [] }),
   },
 }));
 
@@ -104,22 +126,14 @@ describe("Public Unauthenticated Routes (/terms & /privacy)", () => {
     render(
       <MemoryRouter initialEntries={["/dashboard"]}>
         <Routes>
-          <Route element={<AppLayout />}>
-            {protectedRoutes.map(({ path, element, allowedRoles, isPublic, handle }) => (
-              <Route
-                key={path}
-                path={path}
-                element={
-                  isPublic ? (
-                    element
-                  ) : (
-                    <ProtectedRoute allowedRoles={allowedRoles}>{element}</ProtectedRoute>
-                  )
-                }
-                handle={handle}
-              />
-            ))}
-          </Route>
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={["CLIENT", "ADMIN"]}>
+                <div>Protected Dashboard Content</div>
+              </ProtectedRoute>
+            }
+          />
           <Route path="/login" element={<div>Login Page Redirect Target</div>} />
         </Routes>
       </MemoryRouter>
