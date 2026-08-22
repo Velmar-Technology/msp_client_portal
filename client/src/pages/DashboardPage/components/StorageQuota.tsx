@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Cloud } from "lucide-react";
+import { Cloud, CloudOff, ArrowRight } from "lucide-react";
 import { formatBytes } from "@/hooks/useClientDashboard";
 import SummaryCard from "@/components/dashboard/summary-card";
+import { Button } from "@/components/ui/button";
 
 interface StorageQuotaProps {
   totalSlotsCount: number;
@@ -10,6 +11,9 @@ interface StorageQuotaProps {
   totalStorageQuota: number;
   activeStorageQuota: number;
 }
+
+const footerLinkClassName =
+  "flex items-center gap-1 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium";
 
 export function StorageQuota({
   totalSlotsCount,
@@ -22,88 +26,76 @@ export function StorageQuota({
   const usagePercentage =
     totalStorageQuota > 0 ? Math.min(100, Math.round((activeStorageQuota / totalStorageQuota) * 100)) : 0;
 
-  // Circular gauge config
-  const radius = 50;
-  const strokeWidth = 8;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (usagePercentage / 100) * circumference;
+  if (totalSlotsCount === 0) {
+    return (
+      <div className="flex min-h-[120px] flex-col rounded-lg border border-zinc-200 bg-white p-3.5 shadow-xs transition-all duration-200 hover:border-zinc-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700">
+        <div className="flex items-center justify-between gap-2">
+          <span className="truncate text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+            {t("dashboard.cloudStorage")}
+          </span>
+          <div className="shrink-0 rounded-md bg-zinc-50 p-1.5 text-zinc-600 dark:bg-zinc-900/50 dark:text-zinc-400">
+            <Cloud className="h-3.5 w-3.5" />
+          </div>
+        </div>
+        <div className="flex flex-1 flex-col items-center justify-center gap-1.5 py-2 text-center">
+          <div className="rounded-full bg-zinc-100 p-2 text-zinc-400 dark:bg-zinc-800/60 dark:text-zinc-500">
+            <CloudOff className="h-4 w-4" />
+          </div>
+          <p className="max-w-52.5 text-[11px] leading-snug text-zinc-500 dark:text-zinc-400">
+            {t("dashboard.noActiveSubscriptions")}
+          </p>
+          <Button asChild size="sm" variant="outline" className="mt-0.5 gap-1 cursor-pointer font-semibold">
+            <Link to="/plans">
+              {t("dashboard.viewPlanDetails")}
+              <ArrowRight />
+            </Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <SummaryCard
       icon={<Cloud className="h-3.5 w-3.5" />}
       title={t("dashboard.cloudStorage")}
-      value={
-        totalSlotsCount + 1 > 0 ? (
-          <div className="flex-1 flex flex-col justify-between">
-            <div className="flex items-center justify-center py-2.5">
-              <div className="relative w-24 h-24 flex items-center justify-center">
-                <svg className="w-24 h-24 -rotate-90" viewBox="0 0 120 120">
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r={radius}
-                    fill="none"
-                    className="stroke-zinc-100 dark:stroke-zinc-800/80"
-                    strokeWidth={strokeWidth}
-                  />
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r={radius}
-                    fill="none"
-                    className="stroke-zinc-900 dark:stroke-zinc-100 transition-all duration-500 ease-out"
-                    strokeWidth={strokeWidth}
-                    strokeLinecap="round"
-                    strokeDasharray={circumference}
-                    strokeDashoffset={strokeDashoffset}
-                  />
-                </svg>
-                <div className="absolute flex flex-col items-center justify-center">
-                  <span className="text-base font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
-                    {usagePercentage}%
-                  </span>
-                  <span className="text-[9px] uppercase tracking-wider text-zinc-400 dark:text-zinc-500 font-medium">
-                    {t("dashboard.used")}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2 mt-2">
-              <div className="flex justify-between text-xs text-zinc-500 dark:text-zinc-400 border-b border-zinc-200/50 dark:border-zinc-800/50 pb-1.5">
-                <span>{t("dashboard.activeAccounts")}</span>
-                <span className="font-semibold text-zinc-850 dark:text-zinc-200">
-                  {activeSlotsCount} / {totalSlotsCount}
-                </span>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-[11px] mb-1 font-medium text-zinc-500 dark:text-zinc-400">
-                  <span>{formatBytes(activeStorageQuota)}</span>
-                  <span>{formatBytes(totalStorageQuota)}</span>
-                </div>
-                <div className="w-full bg-zinc-100 dark:bg-zinc-800/60 rounded-full h-1.5 overflow-hidden">
-                  <div
-                    className="bg-zinc-900 dark:bg-zinc-100 h-1.5 rounded-full transition-all duration-550"
-                    style={{ width: `${usagePercentage}%` }}
-                  />
-                </div>
-              </div>
-            </div>
+      value={`${usagePercentage}%`}
+      trend={
+        <span
+          className="inline-flex shrink-0 self-center items-center gap-1 rounded-full border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 text-[9px] font-medium text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-400"
+          title={t("dashboard.activeAccounts")}
+        >
+          <Cloud className="h-2.5 w-2.5" />
+          <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+            {activeSlotsCount} / {totalSlotsCount}
+          </span>
+        </span>
+      }
+      subtitle={
+        <div className="space-y-1.5">
+          <div
+            role="progressbar"
+            aria-valuenow={usagePercentage}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            className="w-full bg-zinc-100 dark:bg-zinc-800/60 rounded-full h-1.5 overflow-hidden"
+          >
+            <div
+              className="bg-zinc-900 dark:bg-zinc-100 h-full rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${usagePercentage}%` }}
+            />
           </div>
-        ) : (
-          <div className="flex-1 flex flex-col justify-center items-center text-center py-6">
-            <p className="text-xs text-zinc-450 dark:text-zinc-500 mb-2.5 font-normal">
-              {t("dashboard.noActiveSubscriptions")}
-            </p>
-            <Link
-              to="/plans"
-              className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 hover:underline transition-all"
-            >
-              {t("dashboard.viewPlanDetails")}
-            </Link>
+          <div className="flex items-center justify-between text-[10px] text-zinc-500 dark:text-zinc-400">
+            <span>{formatBytes(activeStorageQuota)}</span>
+            <span>{formatBytes(totalStorageQuota)}</span>
           </div>
-        )
+        </div>
+      }
+      footer={
+        <Link to="/plans" className={footerLinkClassName}>
+          {t("dashboard.viewDetails")}
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
       }
     />
   );

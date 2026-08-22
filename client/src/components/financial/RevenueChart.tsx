@@ -251,7 +251,7 @@ export function RevenueChart({ data, hoveredIndex, setHoveredIndex }: RevenueCha
         {/* Float html Tooltip */}
         {hoveredIndex !== null && activeItem && (
           <div
-            className="pointer-events-none absolute z-20 flex flex-col gap-1 rounded-md border border-zinc-150 bg-white/95 p-2 text-[10px] shadow-md backdrop-blur-xs transition-all duration-75 dark:border-zinc-850 dark:bg-zinc-950/95"
+            className="pointer-events-none absolute z-20 flex flex-col gap-1 rounded-md border border-zinc-200 bg-white/95 p-2 text-[10px] shadow-md backdrop-blur-xs transition-all duration-75 dark:border-zinc-800 dark:bg-zinc-950/95"
             style={{
               left: `${Math.min(width - 130, Math.max(paddingLeft + 10, tooltipX - 60))}px`,
               top: `${paddingTop + 10}px`,

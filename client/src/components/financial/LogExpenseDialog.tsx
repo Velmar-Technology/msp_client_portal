@@ -109,7 +109,7 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-3">
           {/* Description */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-750 dark:text-zinc-300">
+            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
               {t("financial.descriptionLabel")}
             </label>
             <Input
@@ -125,7 +125,7 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
 
           {/* Amount */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-750 dark:text-zinc-300">
+            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
               {t("financial.amountLabel")}
             </label>
             <Input
@@ -144,7 +144,7 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
 
           {/* Reference / Identifier */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-750 dark:text-zinc-300">
+            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
               {t("financial.identifierLabel")}
             </label>
             <Input
@@ -156,13 +156,13 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
 
           {/* Category */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-750 dark:text-zinc-300">
+            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
               {t("financial.categoryLabel")}
             </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="h-7 rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs font-medium text-zinc-700 shadow-xs outline-none transition-all hover:border-zinc-300 focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:border-zinc-700 dark:focus:border-zinc-650 cursor-pointer"
+              className="h-7 rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs font-medium text-zinc-700 shadow-xs outline-none transition-all hover:border-zinc-300 focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:border-zinc-700 dark:focus:border-zinc-600 cursor-pointer"
             >
               <option value="cloudInfra">{t("financial.cloudInfra")}</option>
               <option value="salaries">{t("financial.salaries")}</option>
@@ -174,7 +174,7 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
 
           {/* Date */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-750 dark:text-zinc-300">{t("financial.dateLabel")}</label>
+            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">{t("financial.dateLabel")}</label>
             <DatePicker
               value={expenseDate}
               onChange={setExpenseDate}

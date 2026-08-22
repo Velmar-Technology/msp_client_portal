@@ -445,7 +445,7 @@ export const ActivationWizardModal = memo(function ActivationWizardModal({
                   <p className="text-[10px] font-bold text-primary uppercase tracking-wider">
                     {t("devices.wizardStep3Credentials")}
                   </p>
-                  <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-850 p-2 rounded-md font-mono text-[10px] text-zinc-600 dark:text-zinc-400 space-y-0.5 select-all">
+                  <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-2 rounded-md font-mono text-[10px] text-zinc-600 dark:text-zinc-400 space-y-0.5 select-all">
                     <p>
                       {t("devices.wizardStep3User")} {currentSlot?.nextcloud_username}
                     </p>
@@ -713,7 +713,7 @@ export function DevicesPage() {
               <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
                 {equip.client_name || t("devices.unknownClient")}
               </p>
-              <p className="text-[10px] text-zinc-450 font-mono">{equip.tenant_name || t("devices.unknownTenant")}</p>
+              <p className="text-[10px] text-zinc-400 font-mono">{equip.tenant_name || t("devices.unknownTenant")}</p>
               {equip.client_email && (
                 <p className="text-[9px] text-muted-foreground truncate max-w-35" title={equip.client_email}>
                   {equip.client_email}
