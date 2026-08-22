@@ -6,7 +6,7 @@ import path from 'path';
 import fs from 'fs';
 import swaggerUi from 'swagger-ui-express';
 import { env } from '@shared/config/env';
-import { testConnection } from '@shared/config/database';
+import { testConnection, startPinger } from '@shared/config/database';
 import { migrate } from '@shared/db/migrate';
 import { logger } from '@shared/utils/logger';
 
@@ -60,12 +60,14 @@ app.use(createExpressErrorMiddleware({ logger, isProduction: env.NODE_ENV === 'p
 // ---- Start Server ----
 async function startServer(): Promise<void> {
   try {
-    // Test database connection
+    // Test database connection with retry backoff
     await testConnection();
 
     // Auto-run pending database migrations
     await migrate();
 
+    // Start background database health pinger once DB connection & migrations are complete
+    startPinger();
 
     app.listen(env.PORT, () => {
       logger.info(`Velmar Technology SRL MSP API Server running on port ${env.PORT}`);

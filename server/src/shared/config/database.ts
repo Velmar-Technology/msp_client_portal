@@ -35,7 +35,7 @@ export interface PoolHealth {
   uptimeMs: number;
 }
 
-const DEGRADED_THRESHOLD = 1;
+const DEGRADED_THRESHOLD = 3;
 const RECOVERY_THRESHOLD = 2;
 const PING_INTERVAL_MS = 30_000;
 
@@ -86,7 +86,7 @@ function evaluateHealth(pingResult: { ok: boolean; error?: unknown }) {
     if (health.consecutiveFailures >= DEGRADED_THRESHOLD && health.state === 'healthy') {
       transitionState('degraded', pingResult.error);
     }
-    if (health.consecutiveFailures >= 3 && health.state === 'degraded') {
+    if (health.consecutiveFailures >= 5 && health.state === 'degraded') {
       transitionState('down', pingResult.error);
     }
   }
@@ -111,7 +111,7 @@ async function pingDatabase(): Promise<{ ok: boolean; error?: unknown }> {
 
 let pingerStarted = false;
 
-function startPinger() {
+export function startPinger() {
   if (pingerStarted) return;
   pingerStarted = true;
 
@@ -125,8 +125,6 @@ function startPinger() {
 
   logger.info('PostgreSQL health pinger started', { intervalMs: PING_INTERVAL_MS });
 }
-
-startPinger();
 
 // ---------------------------------------------------------------------------
 // Public helpers
@@ -191,17 +189,35 @@ export async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promis
 }
 
 // ---------------------------------------------------------------------------
-// Initial connection test (called at boot)
+// Initial connection test (called at boot with retries)
 // ---------------------------------------------------------------------------
 
-export async function testConnection(): Promise<void> {
-  try {
-    const client = await pool.connect();
-    await client.query('SELECT NOW()');
-    client.release();
-    logger.info('PostgreSQL connected successfully');
-  } catch (error) {
-    logger.error('PostgreSQL connection failed', { error });
-    throw error;
+export async function testConnection(maxRetries = 5): Promise<void> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    let client: PoolClient | null = null;
+    try {
+      client = await pool.connect();
+      await client.query('SELECT NOW()');
+      logger.info('PostgreSQL connected successfully');
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxRetries) {
+        const delayMs = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+        logger.warn('PostgreSQL connection attempt failed — retrying...', {
+          attempt,
+          maxRetries,
+          delayMs,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    } finally {
+      client?.release();
+    }
   }
+
+  logger.error('PostgreSQL connection failed after all retries', { error: lastError });
+  throw lastError;
 }
