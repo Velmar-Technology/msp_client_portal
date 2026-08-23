@@ -43,7 +43,11 @@ COPY server/package.json ./server/
 COPY packages/errors/package.json ./packages/errors/
 
 # Install only production dependencies and explicitly force zod installation to resolve hoisting conflicts
-RUN npm install --omit=dev --legacy-peer-deps --no-audit --no-fund && npm install zod@3.24.2 --legacy-peer-deps --no-audit --no-fund
+# (cache cleanup must run in the SAME layer so /root/.npm/_cacache never lands in the image)
+RUN npm install --omit=dev --legacy-peer-deps --no-audit --no-fund \
+  && npm install zod@3.24.2 --legacy-peer-deps --no-audit --no-fund \
+  && npm cache clean --force \
+  && rm -rf /root/.npm
 
 # Copy compiled code from build stage
 COPY --from=builder /app/packages/errors/dist ./packages/errors/dist

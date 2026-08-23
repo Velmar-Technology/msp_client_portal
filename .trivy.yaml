@@ -1,0 +1,9 @@
+# Trivy scan configuration (consumed by the security-scan job in
+# .github/workflows/deploy.yml and local trivy invocations).
+scan:
+  skip-dirs:
+    # npm content-addressable cache blobs (24MB+ tarballs) baked into runtime
+    # images blow up secret-scanner memory usage; no secrets live there that
+    # aren't already covered by package manifests / lockfiles.
+    - /root/.npm/_cacache
+  skip-files: []
