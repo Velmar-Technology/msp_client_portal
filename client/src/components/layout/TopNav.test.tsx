@@ -9,10 +9,15 @@ vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
 }));
 
+// Stable references mirror react-i18next's contract (memoized t / i18n instances).
+// Unstable identities here would re-trigger effects on every render.
+const stableT = (key: string) => key;
+const stableI18n = { language: 'en_US', changeLanguage: vi.fn() };
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => key,
-    i18n: { language: 'en_US', changeLanguage: vi.fn() },
+    t: stableT,
+    i18n: stableI18n,
   }),
 }));
 

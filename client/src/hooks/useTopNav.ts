@@ -172,8 +172,11 @@ export function useTopNav() {
   // Search logic (debounced with request cancellation and local indexes/caches)
   useEffect(() => {
     if (!searchQuery.trim()) {
-       
-      setResults({ pages: [], tickets: [], invoices: [], faqs: [] });
+      setResults((prev) =>
+        prev.pages.length || prev.tickets.length || prev.invoices.length || prev.faqs.length
+          ? { pages: [], tickets: [], invoices: [], faqs: [] }
+          : prev
+      );
       setIsLoading(false);
       return;
     }
