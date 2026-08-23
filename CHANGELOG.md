@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.5.2](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.5.1...v1.5.2) (2026-08-23)
+
+
+### Features
+
+* **ci:** add CI/quality workflows, automated deploy/rollback scripts, and container healthchecks ([ac374dd](https://github.com/Velmar-Technology/msp_client_portal/commit/ac374dd403879c3fa818c3399b43fbe3eaac8813))
+
+
+### Bug Fixes
+
+* **ci:** lock Linux platform binaries for lightningcss and @tailwindcss/oxide ([2be77ac](https://github.com/Velmar-Technology/msp_client_portal/commit/2be77ac2088aa76859c2c2c087c706dd614215b8))
+* **ci:** resolve OOM in GitHub Actions client tests ([7304521](https://github.com/Velmar-Technology/msp_client_portal/commit/730452174934081e891eb2f54e2bf6cc93c10af7))
+* **ci:** resolve worker OOM crashes in client test suite ([c8f04cf](https://github.com/Velmar-Technology/msp_client_portal/commit/c8f04cf8b1f89887909db0bdadfb83a5a465db29))
+* **ci:** switch test pool from forks to threads to resolve OOM ([6b0cae6](https://github.com/Velmar-Technology/msp_client_portal/commit/6b0cae6a45cd806e2de0598f45398f3300878c97))
+* **client:** guard isEligible call on PayPal upgrade buttons instance and mock in tests ([ad951df](https://github.com/Velmar-Technology/msp_client_portal/commit/ad951df1ae070450c266855028be613b66ca5e6c))
+* **client:** guard localStorage.clear in test setup and provide clear mock in api.test.ts ([2ee86d6](https://github.com/Velmar-Technology/msp_client_portal/commit/2ee86d6d3c1e2ae6bb04557262db0e1d3756fc87))
+* **client:** prevent infinite re-render loop in NextcloudInfoModal by managing boolean error state ([bfeaf20](https://github.com/Velmar-Technology/msp_client_portal/commit/bfeaf20efef6d69e581959fde186f72e2cd80656))
+* **client:** remove non-existent poolOptions property to satisfy tsc build check ([49ee385](https://github.com/Velmar-Technology/msp_client_portal/commit/49ee3856650c11e24b6d727784258f7009321c64))
+* **client:** resolve all ESLint errors and enable blocking quality gate in CI ([6e4f432](https://github.com/Velmar-Technology/msp_client_portal/commit/6e4f432982ad579e905a5ad7ac79f5c023d6af4a))
+* **client:** resolve quality gate lint warnings for fast refresh, hook dependencies, and explicit types ([b400f02](https://github.com/Velmar-Technology/msp_client_portal/commit/b400f025550d1051a13fc13c8d8f3751d41caa20))
+* **client:** update Vitest config for v4 pool rework and cleanup hooks ([e11b309](https://github.com/Velmar-Technology/msp_client_portal/commit/e11b309e91849bc1ddaaf649f75f2b4f3c2e4547))
+* **server:** increase DB pinger degraded threshold, add startup connection retry, and defer pinger ([d366f75](https://github.com/Velmar-Technology/msp_client_portal/commit/d366f752064588ea418818663dda485a6b397cd0))
+* **server:** resolve all ESLint unused variable and import warnings ([d922a59](https://github.com/Velmar-Technology/msp_client_portal/commit/d922a594032ce4b804cabf68d6e35311dd379851))
+
 ## [1.5.1](https://github.com-work/eapolancovelmar/msp_client_portal/compare/v1.5.0...v1.5.1) (2026-08-22)
 
 ### Features
