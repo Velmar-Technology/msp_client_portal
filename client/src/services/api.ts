@@ -2,6 +2,7 @@ import axios from 'axios';
 import { setupAxiosErrorInterceptor } from '@shared/errors';
 import { toast } from 'sonner';
 import { getAuthItem, setAuthItem } from '@/lib/authStorage';
+import { trackApiError } from '@/telemetry/faro';
 
 const api = axios.create({
   baseURL: '/api/v1',
@@ -22,10 +23,13 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// Global response interceptor to show toast notifications for backend errors
+// Global response interceptor to show toast notifications for backend errors & telemetry
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Send API error telemetry to Grafana Faro RUM
+    trackApiError(error);
+
     // Only toast if we have a response and it's not a 401 (which is handled by refresh/redirect)
     if (error.response && error.response.status !== 401) {
       const errorMsg = error.response.data?.message || 'An unexpected error occurred';

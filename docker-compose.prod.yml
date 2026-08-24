@@ -203,6 +203,9 @@ services:
     restart: always
     environment:
       - VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
+      - VITE_FARO_URL=${VITE_FARO_URL:-https://helpdesk.velmartech.com.do/collect}
+      - VITE_FARO_APP_NAME=${VITE_FARO_APP_NAME:-msp-client-portal}
+      - VITE_FARO_APP_ENV=${VITE_FARO_APP_ENV:-production}
     networks:
       - default
       - reverse-proxy
@@ -288,6 +291,10 @@ services:
             metrics_path: '/api/v1/metrics'
             static_configs:
               - targets: ['server:3001']
+
+          - job_name: 'alloy'
+            static_configs:
+              - targets: ['alloy:12345']
         EOF
         exec /bin/prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --storage.tsdb.retention.time=15d --web.enable-lifecycle --web.route-prefix=/prometheus --web.external-url=https://helpdesk.velmartech.com.do/prometheus
     volumes:
@@ -312,6 +319,49 @@ services:
       - "traefik.http.middlewares.prom-auth.basicauth.users=admin:$$2y$$10$$DmHxqQNulxwaAz6MOYPx9.wDHaBDCIK4ctEDo2gyc3KIWTp77NGLW"
       - "traefik.http.routers.msp-prometheus.middlewares=prom-auth"
       - "traefik.http.services.msp-prometheus-svc.loadbalancer.server.port=9090"
+
+  alloy:
+    image: grafana/alloy:v1.2.0
+    container_name: msp_alloy
+    restart: always
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        cat << 'EOF' > /etc/alloy/config.alloy
+        faro.receiver "faro" {
+          server {
+            listen_address           = "0.0.0.0"
+            listen_port              = 12347
+            cors_allowed_origins     = ["https://helpdesk.velmartech.com.do", "*"]
+            max_allowed_payload_size = "10MiB"
+          }
+
+          output {
+          }
+        }
+        EOF
+        exec /bin/alloy run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+    volumes:
+      - alloy_data:/var/lib/alloy/data
+    networks:
+      - default
+      - reverse-proxy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.15'
+          memory: 100M
+        reservations:
+          cpus: '0.01'
+          memory: 30M
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.msp-faro.rule=Host(`helpdesk.velmartech.com.do`) && PathPrefix(`/collect`)"
+      - "traefik.http.routers.msp-faro.entrypoints=websecure"
+      - "traefik.http.routers.msp-faro.tls=true"
+      - "traefik.http.routers.msp-faro.tls.certresolver=myresolver"
+      - "traefik.http.services.msp-faro-svc.loadbalancer.server.port=12347"
 
   grafana:
     image: grafana/grafana-oss:latest
@@ -363,6 +413,8 @@ volumes:
   prometheus_data:
     driver: local
   grafana_data:
+    driver: local
+  alloy_data:
     driver: local
 
 networks:

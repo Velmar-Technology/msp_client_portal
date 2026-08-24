@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { authService } from "@/services/authService";
 import { setAuthItem } from "@/lib/authStorage";
+import { setFaroUser, resetFaroUser } from "@/telemetry/faro";
 
 export interface AuthUser {
   id: string;
@@ -40,7 +41,11 @@ export interface AuthState {
 const getInitialUser = (): AuthUser | null => {
   try {
     const stored = authService.getCurrentUser();
-    return stored && authService.isAuthenticated() ? stored : null;
+    const user = stored && authService.isAuthenticated() ? stored : null;
+    if (user) {
+      setFaroUser(user);
+    }
+    return user;
   } catch (err) {
     console.error('Failed to get initial user from localStorage', err);
     return null;
@@ -58,6 +63,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true }, false, 'auth/login_request');
         try {
           const result = await authService.login({ email, password }, rememberMe);
+          setFaroUser(result.user);
           set(
             {
               user: result.user,
@@ -113,6 +119,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true }, false, 'auth/google_login_request');
         try {
           const result = await authService.loginWithGoogle({ idToken, tenantName }, rememberMe);
+          setFaroUser(result.user);
           set(
             {
               user: result.user,
@@ -130,6 +137,7 @@ export const useAuthStore = create<AuthState>()(
 
       logout: () => {
         authService.logout();
+        resetFaroUser();
         set(
           {
             user: null,
@@ -146,6 +154,7 @@ export const useAuthStore = create<AuthState>()(
             if (!state.user) return state;
             const updatedUser = { ...state.user, ...updatedFields };
             setAuthItem('user', JSON.stringify(updatedUser));
+            setFaroUser(updatedUser);
             return { user: updatedUser };
           },
           false,
