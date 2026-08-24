@@ -35,7 +35,7 @@ export function initDatadogRum(): boolean {
   if (!applicationId || !clientToken) {
     if (import.meta.env.DEV) {
       console.info(
-        '[Datadog RUM]   or VITE_DD_CLIENT_TOKEN is not configured. Datadog RUM is in standby mode.'
+        '[Datadog RUM] VITE_DD_APPLICATION_ID or VITE_DD_CLIENT_TOKEN is not configured. Datadog RUM is in standby mode.'
       );
     }
     return false;
