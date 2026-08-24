@@ -16,8 +16,19 @@ import { createExpressErrorMiddleware } from '@shared/errors';
 import routes from './routes';
 import { swaggerSpec } from '@shared/swagger/swagger.config';
 import { agentGateway } from '@modules/rmm/services/AgentGateway';
+import { metricsMiddleware } from '@shared/middleware/metricsMiddleware';
+import { metricsService } from '@shared/metrics/metricsService';
 
 const app = express();
+
+// ---- Observability & Metrics Middleware ----
+app.use(metricsMiddleware);
+
+// Root Metrics Endpoint for Prometheus Scraper
+app.get('/metrics', async (_req, res) => {
+  res.set('Content-Type', metricsService.getContentType());
+  res.end(await metricsService.getMetrics());
+});
 
 // ---- Security Middleware ----
 app.use(helmet());

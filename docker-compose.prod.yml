@@ -283,6 +283,11 @@ services:
           - job_name: 'traefik'
             static_configs:
               - targets: ['traefik:8080']
+
+          - job_name: 'msp-server'
+            metrics_path: '/api/v1/metrics'
+            static_configs:
+              - targets: ['server:3001']
         EOF
         exec /bin/prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --storage.tsdb.retention.time=15d --web.enable-lifecycle --web.route-prefix=/prometheus --web.external-url=https://helpdesk.velmartech.com.do/prometheus
     volumes:
@@ -318,6 +323,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-Epolanco36}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_AUTH_DISABLE_PASSWORD_RESET=false
+      - GF_INSTALL_PLUGINS=alexanderzobnin-zabbix-app
       - GF_SERVER_ROOT_URL=https://helpdesk.velmartech.com.do/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
       - GF_SMTP_ENABLED=true

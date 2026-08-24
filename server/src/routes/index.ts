@@ -3,6 +3,7 @@ import { NotFoundError } from '@shared/errors';
 import { gatewayAuthMiddleware } from '@shared/middleware/gatewayAuthMiddleware';
 import { gatewayRateLimiterMiddleware } from '@shared/middleware/gatewayRateLimiterMiddleware';
 import { gatewayHeaderPropagatorMiddleware, gatewayClusterRouter } from '@shared/middleware/gatewayRouterMiddleware';
+import { metricsService } from '@shared/metrics/metricsService';
 
 const router = Router();
 
@@ -26,6 +27,12 @@ router.get('/health', (_req, res) => {
     message: 'Velmar Technology SRL MSP API is running',
     timestamp: new Date().toISOString(),
   });
+});
+
+// Prometheus Metrics endpoint
+router.get('/metrics', async (_req, res) => {
+  res.set('Content-Type', metricsService.getContentType());
+  res.end(await metricsService.getMetrics());
 });
 
 // Catch-all 404 for unknown API routes

@@ -2,6 +2,7 @@ import { WebSocketServer, WebSocket, RawData } from 'ws';
 import { IncomingMessage } from 'http';
 import crypto from 'crypto';
 import { logger } from '@shared/utils/logger';
+import { metricsService } from '@shared/metrics/metricsService';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -90,6 +91,7 @@ export class AgentGateway {
     };
 
     this.activeSockets.set(equipmentId, agent);
+    metricsService.incWsConnection('agent-ws');
     logger.info(`[AgentGateway] Agent connected: ${equipmentId}. Total active: ${this.activeSockets.size}`);
 
     // ── Message Handler ──
@@ -125,6 +127,7 @@ export class AgentGateway {
     // ── Disconnect Handler ──
     ws.on('close', (code: number, reason: Buffer) => {
       this.activeSockets.delete(equipmentId);
+      metricsService.decWsConnection('agent-ws');
       logger.info(
         `[AgentGateway] Agent disconnected: ${equipmentId} (code=${code}, reason=${reason.toString()}). Active: ${this.activeSockets.size}`
       );

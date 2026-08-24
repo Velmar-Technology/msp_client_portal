@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { RateLimitError } from '@shared/errors';
 import { env } from '@shared/config/env';
+import { metricsService } from '@shared/metrics/metricsService';
 
 interface RateLimitRecord {
   count: number;
@@ -70,6 +71,7 @@ export function createGatewayRateLimiter(options: RateLimiterOptions = {}) {
     if (record.count > maxRequests) {
       const retryAfterSeconds = Math.ceil((record.resetTime - now) / 1000);
       res.setHeader('Retry-After', retryAfterSeconds.toString());
+      metricsService.recordRateLimitHit(tenantId || req.ip || 'anonymous');
       return next(new RateLimitError(`Rate limit exceeded for tenant: ${tenantId || req.ip}`));
     }
 
