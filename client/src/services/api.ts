@@ -3,6 +3,7 @@ import { setupAxiosErrorInterceptor } from '@shared/errors';
 import { toast } from 'sonner';
 import { getAuthItem, setAuthItem } from '@/lib/authStorage';
 import { trackApiError } from '@/telemetry/faro';
+import { trackDatadogError } from '@/telemetry/datadog';
 
 const api = axios.create({
   baseURL: '/api/v1',
@@ -27,8 +28,13 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Send API error telemetry to Grafana Faro RUM
+    // Send API error telemetry to Grafana Faro RUM & Datadog RUM
     trackApiError(error);
+    trackDatadogError(error, {
+      status: error?.response?.status,
+      url: error?.config?.url,
+      method: error?.config?.method,
+    });
 
     // Only toast if we have a response and it's not a 401 (which is handled by refresh/redirect)
     if (error.response && error.response.status !== 401) {

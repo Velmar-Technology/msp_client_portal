@@ -65,6 +65,15 @@ const envSchema = z.object({
   ZABBIX_USER: z.string().default('Admin'),
   ZABBIX_PASSWORD: z.string().default('zabbix'),
   ZABBIX_WEBHOOK_SECRET: z.string().default(''),
+
+  // Datadog APM & Observability (Optional)
+  DD_API_KEY: z.string().optional(),
+  DD_SITE: z.string().default('datadoghq.com'),
+  DD_SERVICE: z.string().default('msp-services-server'),
+  DD_ENV: z.string().default('production'),
+  DD_VERSION: z.string().default('1.5.2'),
+  DD_TRACE_ENABLED: z.string().default('false'),
+  DD_AGENT_HOST: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

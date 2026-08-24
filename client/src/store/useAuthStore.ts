@@ -3,6 +3,7 @@ import { devtools } from 'zustand/middleware';
 import { authService } from "@/services/authService";
 import { setAuthItem } from "@/lib/authStorage";
 import { setFaroUser, resetFaroUser } from "@/telemetry/faro";
+import { setDatadogUser, resetDatadogUser } from "@/telemetry/datadog";
 
 export interface AuthUser {
   id: string;
@@ -44,6 +45,7 @@ const getInitialUser = (): AuthUser | null => {
     const user = stored && authService.isAuthenticated() ? stored : null;
     if (user) {
       setFaroUser(user);
+      setDatadogUser(user);
     }
     return user;
   } catch (err) {
@@ -64,6 +66,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           const result = await authService.login({ email, password }, rememberMe);
           setFaroUser(result.user);
+          setDatadogUser(result.user);
           set(
             {
               user: result.user,
@@ -120,6 +123,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           const result = await authService.loginWithGoogle({ idToken, tenantName }, rememberMe);
           setFaroUser(result.user);
+          setDatadogUser(result.user);
           set(
             {
               user: result.user,
@@ -138,6 +142,7 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         authService.logout();
         resetFaroUser();
+        resetDatadogUser();
         set(
           {
             user: null,
@@ -155,6 +160,7 @@ export const useAuthStore = create<AuthState>()(
             const updatedUser = { ...state.user, ...updatedFields };
             setAuthItem('user', JSON.stringify(updatedUser));
             setFaroUser(updatedUser);
+            setDatadogUser(updatedUser);
             return { user: updatedUser };
           },
           false,
