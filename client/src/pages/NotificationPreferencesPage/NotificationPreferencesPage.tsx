@@ -29,6 +29,7 @@ import {
 } from "../../services/notificationPreferenceService";
 import { useNotificationPreferences } from "@/hooks/useNotificationPreferences";
 import { useNotificationStore } from "@/store/useNotificationStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
 import { NotificationHistorySection } from "./NotificationHistorySection";
 import { EmailTemplatesGallerySection } from "./EmailTemplatesGallerySection";
@@ -301,6 +302,8 @@ export function NotificationPreferencesPage() {
   const { preferences, isLoading, isSaving, message, messageType, hasChanges, handleToggle, handleSave, isLocked } =
     useNotificationPreferences();
   const unreadCount = useNotificationStore((state) => state.unreadCount);
+  const user = useAuthStore((state) => state.user);
+  const isAdmin = user?.role === "ADMIN";
   const showSkeleton = useDeferredLoading(isLoading, SKELETON_DISPLAY_DELAY_MS);
 
   if (isLoading) {
@@ -318,13 +321,15 @@ export function NotificationPreferencesPage() {
     );
   }
 
+  const effectiveActiveTab = !isAdmin && activeTab === "templates" ? "channels" : activeTab;
+
   return (
     <Page
       className="max-w-4xl"
       title={t("notificationPreferences.title", "Notifications & Preferences")}
       subtitle={t("notificationPreferences.subtitle", "Manage delivery channels and view alert history")}
     >
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={effectiveActiveTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="channels" className="gap-2">
             <Sliders className="h-3.5 w-3.5" />
@@ -343,10 +348,12 @@ export function NotificationPreferencesPage() {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="templates" className="gap-2">
-            <Mail className="h-3.5 w-3.5" />
-            <span>{t("notificationPreferences.tabTemplates", "Email Templates")}</span>
-          </TabsTrigger>
+          {isAdmin && (
+            <TabsTrigger value="templates" className="gap-2">
+              <Mail className="h-3.5 w-3.5" />
+              <span>{t("notificationPreferences.tabTemplates", "Email Templates")}</span>
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="channels">
@@ -364,9 +371,11 @@ export function NotificationPreferencesPage() {
           <NotificationHistorySection />
         </TabsContent>
 
-        <TabsContent value="templates">
-          <EmailTemplatesGallerySection />
-        </TabsContent>
+        {isAdmin && (
+          <TabsContent value="templates">
+            <EmailTemplatesGallerySection />
+          </TabsContent>
+        )}
       </Tabs>
     </Page>
   );

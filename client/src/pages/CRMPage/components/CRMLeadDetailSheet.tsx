@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
@@ -175,7 +175,7 @@ export function CRMLeadDetailSheet({
   const [editContactEmail, setEditContactEmail] = useState(() => lead?.contact_email || "");
   const [editContactPhone, setEditContactPhone] = useState(() => lead?.contact_phone || "");
   const [editCompanyName, setEditCompanyName] = useState(() => lead?.company_name || "");
-  const [editExpectedRevenue, setEditExpectedRevenue] = useState<number>(() => lead?.expected_revenue ?? 0);
+  const [editExpectedRevenue, setEditExpectedRevenue] = useState<number>(() => Number(lead?.expected_revenue ?? 0));
   const [editProbability, setEditProbability] = useState<number>(() => lead?.probability ?? 10);
   const [editPriority, setEditPriority] = useState<LeadPriority>(() => lead?.priority || "MEDIUM");
   const [editNotes, setEditNotes] = useState(() => lead?.notes || "");
@@ -189,6 +189,22 @@ export function CRMLeadDetailSheet({
   );
   const [equipmentCount, setEquipmentCount] = useState<number>(() => lead?.equipment_count || 1);
   const [quoteNotes, setQuoteNotes] = useState<string>("");
+
+  useEffect(() => {
+    if (lead && !isEditingLead) {
+      setEditContactName(lead.contact_name || "");
+      setEditContactEmail(lead.contact_email || "");
+      setEditContactPhone(lead.contact_phone || "");
+      setEditCompanyName(lead.company_name || "");
+      setEditExpectedRevenue(Number(lead.expected_revenue ?? 0));
+      setEditProbability(lead.probability ?? 10);
+      setEditPriority(lead.priority || "MEDIUM");
+      setEditNotes(lead.notes || "");
+      if (lead.plan_id) setSelectedPlanId(lead.plan_id);
+      if (lead.billing_cycle) setBillingCycle(lead.billing_cycle);
+      if (lead.equipment_count) setEquipmentCount(lead.equipment_count);
+    }
+  }, [lead, isEditingLead]);
 
   // Activity form state
   const [activityType, setActivityType] = useState<LeadActivity["activity_type"]>("CALL");
@@ -679,7 +695,7 @@ export function CRMLeadDetailSheet({
                     {t("crm.columns.expectedRevenue")}
                   </span>
                   <span className="text-base font-bold text-foreground font-heading">
-                    ${lead.expected_revenue.toFixed(2)}
+                    ${Number(lead?.expected_revenue ?? 0).toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -876,7 +892,7 @@ export function CRMLeadDetailSheet({
                             </Badge>
                           </div>
                           <span className="text-[10px] text-muted-foreground font-mono">
-                            ${quote.total.toFixed(2)} • {quote.equipment_count} {t("crm.devices")} •{" "}
+                            ${Number(quote.total || 0).toFixed(2)} • {quote.equipment_count ?? 0} {t("crm.devices")} •{" "}
                             {new Date(quote.sent_at).toLocaleDateString(isSpanish ? "es-DO" : "en-US", {
                               month: "short",
                               day: "numeric",

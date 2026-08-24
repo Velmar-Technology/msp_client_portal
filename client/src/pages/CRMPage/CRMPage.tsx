@@ -303,7 +303,7 @@ export function CRMPage() {
                 </h2>
               </div>
               <p className="mt-1 text-[9px] text-zinc-400 dark:text-zinc-500 font-mono">
-                ${(stats?.stageBreakdown?.PROPOSITION?.value || 0).toFixed(2)} {t("crm.inQuotes")}
+                ${Number(stats?.stageBreakdown?.PROPOSITION?.value || 0).toFixed(2)} {t("crm.inQuotes")}
               </p>
             </div>
 
@@ -347,12 +347,15 @@ export function CRMPage() {
                       key={act.id}
                       type="button"
                       variant="outline"
-                      onClick={() =>
-                        openLeadSheet({
-                          id: act.lead_id,
-                          contact_name: act.lead_contact_name || "",
-                        } as Lead)
-                      }
+                      onClick={() => {
+                        const existingLead = leads.find((l) => l.id === act.lead_id);
+                        if (existingLead) {
+                          openLeadSheet(existingLead);
+                        } else {
+                          fetchLeadDetail(act.lead_id);
+                          setParams({ lead: act.lead_id });
+                        }
+                      }}
                       className="h-auto w-full p-2.5 text-left justify-start flex-col items-start rounded-md border border-zinc-200 bg-zinc-50/50 hover:bg-zinc-100/80 dark:border-zinc-800 dark:bg-zinc-900/40 dark:hover:bg-zinc-900/80 cursor-pointer group transition-all"
                     >
                       <div className="flex items-center justify-between gap-2 w-full">

@@ -182,7 +182,7 @@ export function CRMDataTable({
         accessorKey: "expected_revenue",
         header: t("crm.columns.expectedRevenue"),
         cell: ({ row }) => {
-          const val = row.getValue("expected_revenue") as number;
+          const val = Number(row.getValue("expected_revenue") || 0);
           const cycle = row.original.billing_cycle;
           return (
             <div className="flex flex-col font-mono text-xs">

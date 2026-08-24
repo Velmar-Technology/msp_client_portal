@@ -4,6 +4,7 @@ import { expect, test, vi, beforeEach, describe } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
 import { useNotificationStore } from '@/store/useNotificationStore';
+import { useAuthStore } from '@/store/useAuthStore';
 
 import enTranslations from '@/locales/en_US.json';
 import esTranslations from '@/locales/es_DO.json';
@@ -60,12 +61,14 @@ vi.mock('react-i18next', () => ({
 
 vi.mock('@/hooks/useNotificationPreferences');
 vi.mock('@/store/useNotificationStore');
+vi.mock('@/store/useAuthStore');
 vi.mock('./NotificationHistorySection', () => ({
   NotificationHistorySection: () => <div data-testid="notification-history-section">Notification History Section Mock</div>,
 }));
 
 const mockUseNotificationPreferences = vi.mocked(useNotificationPreferences);
 const mockUseNotificationStore = vi.mocked(useNotificationStore);
+const mockUseAuthStore = vi.mocked(useAuthStore);
 
 describe('NotificationPreferencesPage i18n & behavior', () => {
   const mockHandleToggle = vi.fn();
@@ -82,6 +85,7 @@ describe('NotificationPreferencesPage i18n & behavior', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseAuthStore.mockImplementation((selector: any) => selector({ user: { role: 'ADMIN' } }));
     mockUseNotificationStore.mockImplementation((selector: any) => selector({ unreadCount: 3 }));
     mockUseNotificationPreferences.mockReturnValue({
       preferences: defaultPreferences,
@@ -198,5 +202,29 @@ describe('NotificationPreferencesPage i18n & behavior', () => {
 
     expect(screen.getByText('Saved')).toBeInTheDocument();
     expect(screen.getByText('Notification preferences updated successfully')).toBeInTheDocument();
+  });
+
+  test('renders Email Templates tab for ADMIN user', () => {
+    mockUseAuthStore.mockImplementation((selector: any) => selector({ user: { role: 'ADMIN' } }));
+
+    render(
+      <MemoryRouter>
+        <NotificationPreferencesPage />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Email Templates')).toBeInTheDocument();
+  });
+
+  test('does not render Email Templates tab for CLIENT or TECHNICIAN user', () => {
+    mockUseAuthStore.mockImplementation((selector: any) => selector({ user: { role: 'CLIENT' } }));
+
+    render(
+      <MemoryRouter>
+        <NotificationPreferencesPage />
+      </MemoryRouter>
+    );
+
+    expect(screen.queryByText('Email Templates')).not.toBeInTheDocument();
   });
 });

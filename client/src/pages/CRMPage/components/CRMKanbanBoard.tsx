@@ -69,7 +69,10 @@ export function CRMKanbanBoard({
         {STAGES.map(({ key, color, border, headerBg }) => {
           const stageLeads = leadsByStage[key] || [];
           const stageStats = stats?.stageBreakdown?.[key];
-          const totalVal = stageStats ? stageStats.value : stageLeads.reduce((acc, l) => acc + l.expected_revenue, 0);
+          const totalVal =
+            stageStats?.value !== undefined
+              ? Number(stageStats.value)
+              : stageLeads.reduce((acc, l) => acc + Number(l.expected_revenue || 0), 0);
           const isDropTarget = dragOverStage === key && draggingLeadId !== null;
 
           return (
@@ -94,7 +97,7 @@ export function CRMKanbanBoard({
                     {t(`crm.stages.${key.toLowerCase()}`)}
                   </span>
                   <span className="text-[11px] font-mono font-bold text-foreground mt-0.5">
-                    ${totalVal.toFixed(2)}
+                    ${Number(totalVal || 0).toFixed(2)}
                   </span>
                 </div>
                 <span className="px-2 py-0.5 rounded-full bg-background border border-border text-[10px] font-bold text-foreground font-mono">
@@ -164,7 +167,7 @@ export function CRMKanbanBoard({
                             {lead.plan_name || lead.plan_id || t("crm.noPlan")}
                           </span>
                           <span className="text-xs font-bold font-mono text-foreground">
-                            ${lead.expected_revenue.toFixed(2)}
+                            ${Number(lead?.expected_revenue ?? 0).toFixed(2)}
                           </span>
                         </div>
 
