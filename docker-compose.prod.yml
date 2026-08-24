@@ -18,6 +18,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.40'
+          memory: 250M
+        reservations:
+          cpus: '0.05'
+          memory: 64M
 
   server:
     image: ghcr.io/${REPOSITORY_OWNER:-velmar-technology}/msp-services-server:${VERSION:-latest}
@@ -25,6 +33,7 @@ services:
     restart: always
     networks:
       - default
+      - reverse-proxy
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/v1/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 30s
@@ -65,6 +74,21 @@ services:
       - ZABBIX_WEBHOOK_SECRET=${ZABBIX_WEBHOOK_SECRET}
     volumes:
       - uploads_data:/app/server/uploads
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 300M
+        reservations:
+          cpus: '0.05'
+          memory: 64M
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.msp-server.rule=Host(`helpdesk.velmartech.com.do`) && (PathPrefix(`/api`) || PathPrefix(`/uploads`))"
+      - "traefik.http.routers.msp-server.entrypoints=websecure"
+      - "traefik.http.routers.msp-server.tls=true"
+      - "traefik.http.routers.msp-server.tls.certresolver=myresolver"
+      - "traefik.http.services.msp-server-svc.loadbalancer.server.port=3001"
 
   zabbix-db:
     image: postgres:16-alpine
@@ -83,6 +107,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.40'
+          memory: 380M
+        reservations:
+          cpus: '0.05'
+          memory: 128M
 
   zabbix-server:
     image: zabbix/zabbix-server-pgsql:alpine-6.0-latest
@@ -100,6 +132,14 @@ services:
       POSTGRES_USER: ${ZABBIX_DB_USER:-zabbix}
       POSTGRES_PASSWORD: ${ZABBIX_DB_PASSWORD:-zabbix_password}
       POSTGRES_DB: ${ZABBIX_DB_NAME:-zabbix}
+    deploy:
+      resources:
+        limits:
+          cpus: '0.30'
+          memory: 200M
+        reservations:
+          cpus: '0.05'
+          memory: 64M
 
   zabbix-web:
     image: zabbix/zabbix-web-nginx-pgsql:alpine-6.0-latest
@@ -107,13 +147,12 @@ services:
     restart: always
     networks:
       - default
+      - reverse-proxy
     depends_on:
       zabbix-db:
         condition: service_healthy
       zabbix-server:
         condition: service_started
-    ports:
-      - "8080:8080"
     environment:
       ZBX_SERVER_HOST: zabbix-server
       DB_SERVER_HOST: zabbix-db
@@ -121,6 +160,23 @@ services:
       POSTGRES_PASSWORD: ${ZABBIX_DB_PASSWORD:-zabbix_password}
       POSTGRES_DB: ${ZABBIX_DB_NAME:-zabbix}
       PHP_TZ: "America/Santo_Domingo"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 150M
+        reservations:
+          cpus: '0.02'
+          memory: 48M
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.msp-zabbix.rule=Host(`helpdesk.velmartech.com.do`) && PathPrefix(`/zabbix`)"
+      - "traefik.http.routers.msp-zabbix.entrypoints=websecure"
+      - "traefik.http.routers.msp-zabbix.tls=true"
+      - "traefik.http.routers.msp-zabbix.tls.certresolver=myresolver"
+      - "traefik.http.middlewares.zabbix-auth.basicauth.users=admin:$$2y$$10$$DmHxqQNulxwaAz6MOYPx9.wDHaBDCIK4ctEDo2gyc3KIWTp77NGLW"
+      - "traefik.http.routers.msp-zabbix.middlewares=zabbix-auth"
+      - "traefik.http.services.msp-zabbix-svc.loadbalancer.server.port=8080"
 
   zabbix-agent:
     image: zabbix/zabbix-agent2:alpine-6.0-latest
@@ -132,6 +188,14 @@ services:
     environment:
       ZBX_SERVER_HOST: "127.0.0.1,zabbix-server"
       ZBX_HOSTNAME: "Zabbix server"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.10'
+          memory: 80M
+        reservations:
+          cpus: '0.01'
+          memory: 24M
 
   client:
     image: ghcr.io/${REPOSITORY_OWNER:-velmar-technology}/msp-services-client:${VERSION:-latest}
@@ -151,6 +215,14 @@ services:
       timeout: 10s
       retries: 3
       start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.15'
+          memory: 64M
+        reservations:
+          cpus: '0.01'
+          memory: 16M
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.msp-client.rule=Host(`helpdesk.velmartech.com.do`)"
@@ -162,20 +234,110 @@ services:
   logs:
     image: amir20/dozzle:latest
     container_name: msp_portal_logs
+    environment:
+      - DOZZLE_BASE=/logs
+      - DOZZLE_FILTER=label=com.docker.compose.project=msp_portal
+    networks:
+      - default
+      - reverse-proxy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.logs.rule=Host(`logs.local`)"
-      - "traefik.http.routers.logs.entrypoints=websecure"
-      - "traefik.http.routers.logs.tls=true"
-      - "traefik.http.services.logs.loadbalancer.server.port=8080"
-    restart: unless-stopped
     deploy:
       resources:
         limits:
           cpus: '0.10'
-          memory: 100M
+          memory: 80M
+        reservations:
+          cpus: '0.01'
+          memory: 20M
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.msp-logs.rule=Host(`helpdesk.velmartech.com.do`) && PathPrefix(`/logs`)"
+      - "traefik.http.routers.msp-logs.entrypoints=websecure"
+      - "traefik.http.routers.msp-logs.tls=true"
+      - "traefik.http.routers.msp-logs.tls.certresolver=myresolver"
+      - "traefik.http.middlewares.logs-auth.basicauth.users=admin:$$2y$$10$$DmHxqQNulxwaAz6MOYPx9.wDHaBDCIK4ctEDo2gyc3KIWTp77NGLW"
+      - "traefik.http.routers.msp-logs.middlewares=logs-auth"
+      - "traefik.http.services.msp-logs-svc.loadbalancer.server.port=8080"
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.54.0
+    container_name: msp_prometheus
+    restart: always
+    user: "0:0"
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        cat << 'EOF' > /etc/prometheus/prometheus.yml
+        global:
+          scrape_interval: 15s
+          evaluation_interval: 15s
+
+        scrape_configs:
+          - job_name: 'prometheus'
+            static_configs:
+              - targets: ['localhost:9090']
+
+          - job_name: 'traefik'
+            static_configs:
+              - targets: ['traefik:8080']
+        EOF
+        exec /bin/prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --storage.tsdb.retention.time=15d --web.enable-lifecycle --web.route-prefix=/prometheus --web.external-url=https://helpdesk.velmartech.com.do/prometheus
+    volumes:
+      - prometheus_data:/prometheus
+    networks:
+      - default
+      - reverse-proxy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.20'
+          memory: 150M
+        reservations:
+          cpus: '0.02'
+          memory: 40M
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.msp-prometheus.rule=Host(`helpdesk.velmartech.com.do`) && PathPrefix(`/prometheus`)"
+      - "traefik.http.routers.msp-prometheus.entrypoints=websecure"
+      - "traefik.http.routers.msp-prometheus.tls=true"
+      - "traefik.http.routers.msp-prometheus.tls.certresolver=myresolver"
+      - "traefik.http.middlewares.prom-auth.basicauth.users=admin:$$2y$$10$$DmHxqQNulxwaAz6MOYPx9.wDHaBDCIK4ctEDo2gyc3KIWTp77NGLW"
+      - "traefik.http.routers.msp-prometheus.middlewares=prom-auth"
+      - "traefik.http.services.msp-prometheus-svc.loadbalancer.server.port=9090"
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: msp_grafana
+    restart: always
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-3$$tiv3n36}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=https://helpdesk.velmartech.com.do/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - default
+      - reverse-proxy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 180M
+        reservations:
+          cpus: '0.02'
+          memory: 60M
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.msp-grafana.rule=Host(`helpdesk.velmartech.com.do`) && PathPrefix(`/grafana`)"
+      - "traefik.http.routers.msp-grafana.entrypoints=websecure"
+      - "traefik.http.routers.msp-grafana.tls=true"
+      - "traefik.http.routers.msp-grafana.tls.certresolver=myresolver"
+      - "traefik.http.services.msp-grafana-svc.loadbalancer.server.port=3000"
 
 volumes:
   pgdata:
@@ -183,6 +345,10 @@ volumes:
   uploads_data:
     driver: local
   zabbix_pgdata:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
     driver: local
 
 networks:
