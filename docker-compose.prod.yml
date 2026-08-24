@@ -314,10 +314,18 @@ services:
     restart: always
     environment:
       - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_EMAIL=epolanco@velmartech.com.do
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-3$$tiv3n36Admin!}
       - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_DISABLE_PASSWORD_RESET=false
       - GF_SERVER_ROOT_URL=https://helpdesk.velmartech.com.do/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_SMTP_ENABLED=true
+      - GF_SMTP_HOST=${SMTP_HOST}:${SMTP_PORT:-587}
+      - GF_SMTP_USER=${SMTP_USER}
+      - GF_SMTP_PASSWORD=${SMTP_PASSWORD}
+      - GF_SMTP_FROM_ADDRESS=${SMTP_USER}
+      - GF_SMTP_FROM_NAME=Velmartech MSP Monitoring
     volumes:
       - grafana_data:/var/lib/grafana
     networks:
