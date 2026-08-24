@@ -5,7 +5,7 @@ import { nextcloudService, NextcloudService } from '@modules/system';
 import { rmmPatchService, RmmPatchService } from '@modules/rmm/services/RmmPatchService';
 import { NotFoundError, ForbiddenError, ValidationError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
-import { SubscriptionEquipment, EquipmentWithDetails } from '@shared/types';
+import { SubscriptionEquipment, EquipmentWithDetails, SubscriptionStatus } from '@shared/types';
 
 export interface ActivateSlotOptions {
   subscriptionId?: string;
@@ -406,7 +406,7 @@ export class EquipmentService {
         plan: 'PL-003',
         equipment_count: 50,
         renewal_date: renewalDate,
-        status: 'ACTIVE',
+        status: SubscriptionStatus.ACTIVE,
       });
     }
 
