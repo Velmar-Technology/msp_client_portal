@@ -20,6 +20,7 @@ set -euo pipefail
 
 readonly COMPOSE_FILE="docker-compose.prod.yml"
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 log() { printf '[portainer] %s\n' "$*"; }
 
@@ -43,8 +44,8 @@ main() {
   require_env PORTAINER_ENDPOINT_ID
   require_env PORTAINER_STACK_ID
 
-  if [ ! -f "${SCRIPT_DIR}/${COMPOSE_FILE}" ]; then
-    log "ERROR: ${COMPOSE_FILE} not found next to scripts/ — run from a repo checkout"
+  if [ ! -f "${REPO_ROOT}/${COMPOSE_FILE}" ]; then
+    log "ERROR: ${COMPOSE_FILE} not found at repo root — run from a repo checkout"
     exit 1
   fi
 
@@ -68,7 +69,7 @@ main() {
     '[(.Env // [])[] | select(.name != "VERSION")] + [{name: "VERSION", value: $v}]')"
 
   payload="$(jq -n \
-    --rawfile file "${SCRIPT_DIR}/${COMPOSE_FILE}" \
+    --rawfile file "${REPO_ROOT}/${COMPOSE_FILE}" \
     --argjson env "${env_json}" \
     '{stackFileContent: $file, env: $env, prune: true, pullImage: true}')"
 
