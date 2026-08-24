@@ -99,6 +99,7 @@ services:
       - "traefik.http.routers.msp-server.tls=true"
       - "traefik.http.routers.msp-server.tls.certresolver=myresolver"
       - "traefik.http.routers.msp-server.priority=100"
+      - "traefik.http.routers.msp-server.middlewares=msp-compress"
       - "traefik.http.services.msp-server-svc.loadbalancer.server.port=3001"
 
   zabbix-db:
@@ -256,6 +257,8 @@ services:
       - "traefik.http.routers.msp-client.tls=true"
       - "traefik.http.routers.msp-client.tls.certresolver=myresolver"
       - "traefik.http.routers.msp-client.priority=1"
+      - "traefik.http.middlewares.msp-compress.compress=true"
+      - "traefik.http.routers.msp-client.middlewares=msp-compress"
       - "traefik.http.services.msp-client-svc.loadbalancer.server.port=80"
 
   logs:
