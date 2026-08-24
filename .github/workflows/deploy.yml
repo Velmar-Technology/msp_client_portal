@@ -19,6 +19,8 @@ name: Release & Deploy
 # SSH health check (auto-rollback re-pins the previous VERSION on failure).
 # GHCR pull credentials must exist once on the VPS: `docker login ghcr.io` with
 # a read:packages PAT, or configure the registry under Portainer → Registries.
+# TLS: Portainer's self-signed certificate is currently trusted blindly via
+# PORTAINER_TLS_INSECURE=true in deploy-production — remove once CA-signed.
 #
 # Required repository configuration (Settings):
 #   1. Environment "production" with required reviewers for manual approval.
@@ -360,6 +362,9 @@ jobs:
       PORTAINER_API_KEY: ${{ secrets.PORTAINER_API_KEY }}
       PORTAINER_ENDPOINT_ID: ${{ secrets.PORTAINER_ENDPOINT_ID }}
       PORTAINER_STACK_ID: ${{ secrets.PORTAINER_STACK_ID }}
+      # Portainer currently serves a self-signed certificate. Flip to "false"
+      # once it sits behind Traefik with a CA-signed cert.
+      PORTAINER_TLS_INSECURE: "true"
     steps:
       - name: Checkout Code
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.1
@@ -369,7 +374,11 @@ jobs:
       - name: Capture Rollback Point
         run: |
           set -euo pipefail
-          RESP="$(curl -sfS --max-time 30 \
+          CURL_OPTS=(-sfS --max-time 30)
+          if [ "${PORTAINER_TLS_INSECURE}" = "true" ]; then
+            CURL_OPTS+=(-k)
+          fi
+          RESP="$(curl "${CURL_OPTS[@]}" \
             -H "X-API-Key: ${PORTAINER_API_KEY}" \
             "${PORTAINER_URL%/}/api/endpoints/${PORTAINER_ENDPOINT_ID}/docker/containers/msp_server_prod/json" || true)"
           IMG="$(jq -r '.Config.Image // ""' <<<"${RESP}" 2>/dev/null || true)"

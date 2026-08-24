@@ -52,9 +52,18 @@ main() {
   local base="${PORTAINER_URL%/}"
   local stack_url="${base}/api/stacks/${PORTAINER_STACK_ID}?endpointId=${PORTAINER_ENDPOINT_ID}"
 
+  # Optional TLS verification bypass for self-signed Portainer certificates.
+  # Prefer installing a CA-signed cert (e.g. via Traefik + Let's Encrypt) and
+  # removing this flag — the API key travels in headers on every call.
+  CURL_OPTS=(-sS --max-time 30)
+  if [ "${PORTAINER_TLS_INSECURE:-false}" = "true" ]; then
+    log "WARNING: TLS certificate verification disabled (PORTAINER_TLS_INSECURE=true)"
+    CURL_OPTS+=(-k)
+  fi
+
   # Fetch current stack to preserve its existing environment variables.
   local stack_json
-  if ! stack_json="$(curl -sS --max-time 30 -H "X-API-Key: ${PORTAINER_API_KEY}" "${stack_url}")"; then
+  if ! stack_json="$(curl "${CURL_OPTS[@]}" -H "X-API-Key: ${PORTAINER_API_KEY}" "${stack_url}")"; then
     log "ERROR: failed to fetch stack ${PORTAINER_STACK_ID} from ${base}"
     exit 1
   fi
@@ -77,7 +86,7 @@ main() {
 
   local http_code response_file
   response_file="$(mktemp)"
-  http_code="$(curl -sS --max-time 60 -o "${response_file}" -w '%{http_code}' \
+  http_code="$(curl "${CURL_OPTS[@]}" --max-time 60 -o "${response_file}" -w '%{http_code}' \
     -X PUT \
     -H "X-API-Key: ${PORTAINER_API_KEY}" \
     -H "Content-Type: application/json" \
