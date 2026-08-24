@@ -392,6 +392,29 @@ jobs:
             echo "::warning::No running msp_server_prod container found — automatic rollback disabled for this run."
           fi
 
+      - name: Pre-warm Image Pulls on VPS
+        # Best-effort: shrinks the synchronous Portainer PUT window by pulling
+        # the new app images ahead of time. Requires the one-time GHCR docker
+        # login on the VPS; failures are non-fatal (PUT still pulls on its own).
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          OWNER_LC: ${{ needs.prepare.outputs.owner_lc }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          envs: VERSION,OWNER_LC
+          script: |
+            for image in msp-services-server msp-services-client; do
+              if docker pull "ghcr.io/${OWNER_LC}/${image}:${VERSION}"; then
+                echo "[prewarm] Pulled ${image}:${VERSION}"
+              else
+                echo "[prewarm] WARNING: could not pre-pull ${image}:${VERSION} (GHCR login missing?) — Portainer will pull during stack update"
+              fi
+            done
+
       - name: Update Stack via Portainer API
         id: deploy
         run: bash scripts/portainer-stack-update.sh "${VERSION}"
