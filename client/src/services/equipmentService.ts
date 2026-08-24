@@ -83,6 +83,20 @@ export const equipmentService = {
     return response.data.data;
   },
 
+  async addAdminDevice(data: {
+    deviceName: string;
+    deviceSerial?: string;
+    tenantId?: string;
+  }): Promise<SubscriptionEquipment> {
+    const response = await api.post('/equipment/admin/devices', data);
+    return response.data.data;
+  },
+
+  async deleteAdminDevice(equipmentId: string): Promise<{ success: boolean; id: string }> {
+    const response = await api.delete(`/equipment/admin/devices/${equipmentId}`);
+    return response.data.data;
+  },
+
   async getNextcloudInfo(subId: string, slotIndex: number): Promise<{
     nextcloud_username: string | null;
     nextcloud_password: string | null;

@@ -15,6 +15,16 @@ router.get('/admin/devices', rbacMiddleware(UserRole.ADMIN), (req, res) =>
   equipmentController.getAllDevicesForAdmin(req, res)
 );
 
+/** POST /api/v1/equipment/admin/devices — Add a device directly for admin/tenant without needing a subscription */
+router.post('/admin/devices', rbacMiddleware(UserRole.ADMIN), (req, res) =>
+  equipmentController.addAdminDevice(req, res)
+);
+
+/** DELETE /api/v1/equipment/admin/devices/:id — Delete an admin-owned equipment record */
+router.delete('/admin/devices/:id', rbacMiddleware(UserRole.ADMIN), (req, res) =>
+  equipmentController.deleteAdminDevice(req, res)
+);
+
 /** GET /api/v1/equipment/my-devices — Get active devices for the authenticated client */
 router.get('/my-devices', (req, res) =>
   equipmentController.getMyDevices(req, res)

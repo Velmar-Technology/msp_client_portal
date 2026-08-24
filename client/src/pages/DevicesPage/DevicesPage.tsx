@@ -21,22 +21,27 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 const ScheduleMaintenanceModal = lazyWithRetry(() =>
   import("@/components/maintenance/ScheduleMaintenanceModal").then((m) => ({
     default: m.ScheduleMaintenanceModal,
-  }))
+  })),
 );
 const NextcloudInfoModal = lazyWithRetry(() =>
   import("@/components/devices/NextcloudInfoModal").then((m) => ({
     default: m.NextcloudInfoModal,
-  }))
+  })),
 );
 const ActivateWithOtpModal = lazyWithRetry(() =>
   import("@/components/devices/ActivateWithOtpModal").then((m) => ({
     default: m.ActivateWithOtpModal,
-  }))
+  })),
+);
+const AddAdminDeviceModal = lazyWithRetry(() =>
+  import("@/components/devices/AddAdminDeviceModal").then((m) => ({
+    default: m.AddAdminDeviceModal,
+  })),
 );
 const RmmDashboard = lazyWithRetry(() =>
   import("@/components/devices/RmmDashboard").then((m) => ({
     default: m.RmmDashboard,
-  }))
+  })),
 );
 import {
   DropdownMenu,
@@ -77,12 +82,7 @@ export const EmptySubscriptionsCard = memo(function EmptySubscriptionsCard({
         <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{t("devices.noActiveSubscriptions")}</h3>
         <p className="text-xs text-zinc-500 mt-1 leading-relaxed">{t("devices.noActiveSubscriptionsDesc")}</p>
       </div>
-      <Button
-        type="button"
-        size="sm"
-        onClick={onBrowsePlans}
-        className="h-7 px-3 text-xs font-semibold cursor-pointer"
-      >
+      <Button type="button" size="sm" onClick={onBrowsePlans} className="h-7 px-3 text-xs font-semibold cursor-pointer">
         {t("devices.browseSupportPlans")}
       </Button>
     </div>
@@ -139,11 +139,7 @@ interface OtpCodeBadgeProps {
   compact?: boolean;
 }
 
-export const OtpCodeBadge = memo(function OtpCodeBadge({
-  otp,
-  expiresAt,
-  compact = false,
-}: OtpCodeBadgeProps) {
+export const OtpCodeBadge = memo(function OtpCodeBadge({ otp, expiresAt, compact = false }: OtpCodeBadgeProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
@@ -190,13 +186,9 @@ export const OtpCodeBadge = memo(function OtpCodeBadge({
 
   return (
     <div className="bg-zinc-50/50 dark:bg-zinc-950/20 p-4 rounded-md border border-zinc-200 dark:border-zinc-800 text-center space-y-1.5">
-      <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
-        {t("devices.wizardStep1TempCode")}
-      </p>
+      <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">{t("devices.wizardStep1TempCode")}</p>
       <div className="flex items-center justify-center gap-2 my-1.5">
-        <p className="text-3xl font-extrabold text-primary font-mono tracking-widest select-all">
-          {otp}
-        </p>
+        <p className="text-3xl font-extrabold text-primary font-mono tracking-widest select-all">{otp}</p>
         <Button
           type="button"
           variant="ghost"
@@ -252,11 +244,18 @@ export const ActivationWizardModal = memo(function ActivationWizardModal({
   const currentSlot = slotsEquipment[slotIdx];
 
   return (
-    <AlertDialog open={true} onOpenChange={(open) => { if (!open) onClose(); }}>
+    <AlertDialog
+      open={true}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <AlertDialogContent className="max-w-md w-full bg-card border rounded-lg p-0 text-zinc-900 dark:text-zinc-100 flex flex-col overflow-hidden">
         {/* Modal Header */}
         <AlertDialogHeader className="px-5 py-3 border-b border-zinc-200 dark:border-zinc-800 flex flex-row justify-between items-center bg-white dark:bg-zinc-950 rounded-t-lg space-y-0 text-left">
-          <AlertDialogTitle className="text-sm font-bold text-zinc-955 dark:text-zinc-50">{t("devices.wizardTitle")}</AlertDialogTitle>
+          <AlertDialogTitle className="text-sm font-bold text-zinc-955 dark:text-zinc-50">
+            {t("devices.wizardTitle")}
+          </AlertDialogTitle>
           <AlertDialogDescription className="sr-only">{t("devices.wizardStep1Intro")}</AlertDialogDescription>
           <Button
             variant="ghost"
@@ -484,6 +483,7 @@ interface DeviceActionsCellProps {
   onRevokeEquipment: (subId: string, slotIndex: number) => void;
   onStartActivationWizard: (subId: string, slotIndex: number, otp: string | null) => void;
   onGenerateOTP: (subId: string, slotIndex: number) => void;
+  onDeleteAdminDevice?: (equip: Partial<SubscriptionEquipment>) => void;
 }
 
 const DeviceActionsCell = memo(function DeviceActionsCell({
@@ -496,9 +496,11 @@ const DeviceActionsCell = memo(function DeviceActionsCell({
   onRevokeEquipment,
   onStartActivationWizard,
   onGenerateOTP,
+  onDeleteAdminDevice,
 }: DeviceActionsCellProps) {
   const { t } = useTranslation();
   const idx = equip.slot_index !== undefined ? equip.slot_index : rowIndex;
+  const isAdminOwned = isAdmin && (equip.client_role === "ADMIN" || !equip.client_role);
 
   return (
     <div className="text-right" onClick={(e) => e.stopPropagation()}>
@@ -535,6 +537,14 @@ const DeviceActionsCell = memo(function DeviceActionsCell({
               >
                 {t("devices.actionDeactivate")}
               </DropdownMenuItem>
+              {isAdminOwned && (
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => onDeleteAdminDevice && onDeleteAdminDevice(equip)}
+                >
+                  {t("devices.actionDelete", "Delete Device")}
+                </DropdownMenuItem>
+              )}
             </>
           ) : equip.otp ? (
             <>
@@ -546,18 +556,32 @@ const DeviceActionsCell = memo(function DeviceActionsCell({
                   {t("devices.actionRegenerate")}
                 </DropdownMenuItem>
               )}
+              {isAdminOwned && (
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => onDeleteAdminDevice && onDeleteAdminDevice(equip)}
+                >
+                  {t("devices.actionDelete", "Delete Device")}
+                </DropdownMenuItem>
+              )}
             </>
-          ) : isAdmin ? (
-            <DropdownMenuItem onClick={() => targetSubId && onStartActivationWizard(targetSubId, idx, null)}>
-              {t("devices.actionGenerate")}
-            </DropdownMenuItem>
           ) : (
-            <DropdownMenuItem
-              onClick={() => targetSubId && onStartActivationWizard(targetSubId, idx, null)}
-              className="opacity-60"
-            >
-              {t("devices.actionGenerate")}
-            </DropdownMenuItem>
+            <>
+              <DropdownMenuItem
+                onClick={() => targetSubId && onStartActivationWizard(targetSubId, idx, null)}
+                className={isAdmin ? "" : "opacity-60"}
+              >
+                {t("devices.actionGenerate")}
+              </DropdownMenuItem>
+              {isAdminOwned && (
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => onDeleteAdminDevice && onDeleteAdminDevice(equip)}
+                >
+                  {t("devices.actionDelete", "Delete Device")}
+                </DropdownMenuItem>
+              )}
+            </>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
@@ -602,6 +626,16 @@ export function DevicesPage() {
     handleOpenActivateWithOtp,
     handleCloseActivateWithOtp,
     handleActivateWithOtp,
+    addDeviceModalOpen,
+    addDeviceLoading,
+    handleOpenAddDevice,
+    handleCloseAddDevice,
+    handleAddAdminDevice,
+    deviceToDelete,
+    setDeviceToDelete,
+    deleteDeviceLoading,
+    handleDeleteAdminDevice,
+    uniqueClients,
     isAdmin,
     adminDevices,
     selectedStatus,
@@ -855,6 +889,7 @@ export function DevicesPage() {
             onRevokeEquipment={handleRevokeEquipment}
             onStartActivationWizard={handleStartActivationWizard}
             onGenerateOTP={handleGenerateOTP}
+            onDeleteAdminDevice={setDeviceToDelete}
           />
         );
       },
@@ -867,6 +902,7 @@ export function DevicesPage() {
     handleGenerateOTP,
     handleOpenScheduleMaint,
     handleOpenNcModal,
+    setDeviceToDelete,
     isAdmin,
     activeSub,
   ]);
@@ -891,13 +927,7 @@ export function DevicesPage() {
         placeholder: t("devices.filterAllStatuses"),
       },
     ];
-  }, [
-    isAdmin,
-    selectedStatus,
-    setSelectedStatus,
-    statusFilterOptions,
-    t,
-  ]);
+  }, [isAdmin, selectedStatus, setSelectedStatus, statusFilterOptions, t]);
 
   const paginationConfig = useMemo(
     () => ({
@@ -931,7 +961,7 @@ export function DevicesPage() {
                 <span>{t("rmm.tabInventory")}</span>
                 <Badge
                   variant="secondary"
-                  className="ml-1 text-[10px] font-mono px-1.5 py-0 min-w-[20px] inline-flex justify-center"
+                  className="ml-1 text-[10px] font-mono px-1.5 py-0 min-w-5 inline-flex justify-center"
                 >
                   {loading ? <Skeleton className="h-3 w-4" /> : totalInventoryCount}
                 </Badge>
@@ -967,8 +997,20 @@ export function DevicesPage() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
                   <div className="lg:col-span-3 space-y-4">
-                    {/* Toolbar: Activate with Code */}
-                    <div className="flex justify-end">
+                    {/* Toolbar: Actions */}
+                    <div className="flex items-center justify-end gap-2">
+                      {isAdmin && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleOpenAddDevice}
+                          className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
+                        >
+                          <Laptop className="h-3.5 w-3.5" />
+                          <span>{t("devices.addDevice", "Add Device")}</span>
+                        </Button>
+                      )}
+
                       <Button
                         type="button"
                         variant="outline"
@@ -1010,7 +1052,7 @@ export function DevicesPage() {
             <ChunkErrorBoundary>
               <Suspense
                 fallback={
-                  <div className="p-8 flex items-center justify-center min-h-[300px]">
+                  <div className="p-8 flex items-center justify-center min-h-75">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
                 }
@@ -1068,6 +1110,21 @@ export function DevicesPage() {
         </ChunkErrorBoundary>
       )}
 
+      {/* Admin Add Device Modal */}
+      {isAdmin && addDeviceModalOpen && (
+        <ChunkErrorBoundary>
+          <Suspense fallback={null}>
+            <AddAdminDeviceModal
+              isOpen={addDeviceModalOpen}
+              loading={addDeviceLoading}
+              onClose={handleCloseAddDevice}
+              onSubmit={handleAddAdminDevice}
+              tenantOptions={uniqueClients}
+            />
+          </Suspense>
+        </ChunkErrorBoundary>
+      )}
+
       {/* Nextcloud Info Modal */}
       {isNcModalOpen && (
         <ChunkErrorBoundary>
@@ -1109,6 +1166,47 @@ export function DevicesPage() {
               onClick={confirmBulkDeactivate}
             >
               {t("devices.bulkDeactivate") || "Deactivate Devices"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Admin Device Confirmation Modal */}
+      <AlertDialog
+        open={!!deviceToDelete}
+        onOpenChange={(open) => {
+          if (!open && !deleteDeviceLoading) setDeviceToDelete(null);
+        }}
+      >
+        <AlertDialogContent className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 max-w-sm rounded-lg p-5">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-sm font-bold">
+              {t("devices.deleteDeviceConfirmTitle", "Delete Managed Device")}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-zinc-500 mt-2">
+              {t(
+                "devices.deleteDeviceConfirmDesc",
+                "Are you sure you want to permanently delete this device? Associated cloud backup storage and telemetry monitoring will be removed.",
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 flex flex-row justify-end gap-2">
+            <AlertDialogCancel
+              type="button"
+              onClick={() => setDeviceToDelete(null)}
+              disabled={deleteDeviceLoading}
+              className="h-8 px-3 text-xs"
+            >
+              {t("devices.cancel", "Cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              type="button"
+              onClick={() => deviceToDelete?.id && handleDeleteAdminDevice(deviceToDelete.id)}
+              disabled={deleteDeviceLoading}
+              className="h-8 px-3 text-xs bg-red-600 hover:bg-red-700 text-white gap-1.5"
+            >
+              {deleteDeviceLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span>{t("devices.actionDelete", "Delete Device")}</span>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -101,6 +101,38 @@ export class EquipmentController {
     });
   }
 
+  async addAdminDevice(req: Request, res: Response): Promise<void> {
+    if (req.user!.role !== 'ADMIN') {
+      throw new ForbiddenError('Only administrators can register devices directly');
+    }
+    const { deviceName, deviceSerial, tenantId } = req.body;
+    const targetTenantId = (tenantId as string) || req.user!.tenantId;
+
+    const device = await this.equipmentSvc.addAdminDevice({
+      deviceName: deviceName as string,
+      deviceSerial: deviceSerial as string,
+      tenantId: targetTenantId,
+      adminUserId: req.user!.userId,
+    });
+
+    res.status(201).json({
+      success: true,
+      data: device,
+    });
+  }
+
+  async deleteAdminDevice(req: Request, res: Response): Promise<void> {
+    if (req.user!.role !== 'ADMIN') {
+      throw new ForbiddenError('Only administrators can delete equipment');
+    }
+    const { id } = req.params;
+    const result = await this.equipmentSvc.deleteAdminEquipment(id as string, req.user!.userId);
+    res.json({
+      success: true,
+      data: result,
+    });
+  }
+
   async getSlotNextcloudInfo(req: Request, res: Response): Promise<void> {
     const subId = req.params.subId as string;
     const slotIndex = parseInt(req.params.slotIndex as string, 10);

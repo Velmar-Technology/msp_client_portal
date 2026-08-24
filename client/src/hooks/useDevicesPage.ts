@@ -80,7 +80,7 @@ export function useDevicesPage() {
         const devices = rawDevices.filter(
           (d) =>
             (!d.subscription_status || d.subscription_status === "ACTIVE" || d.subscription_status === "EXPIRING") &&
-            (!d.client_role || d.client_role === "CLIENT")
+            (!d.client_role || d.client_role === "CLIENT" || d.client_role === "ADMIN")
         );
         setAdminDevices(devices);
 
@@ -303,6 +303,66 @@ export function useDevicesPage() {
     },
     [updateDeviceList, t]
   );
+
+  // Standalone "Add Admin Device" flow state
+  const [addDeviceModalOpen, setAddDeviceModalOpen] = useState(false);
+  const [addDeviceLoading, setAddDeviceLoading] = useState(false);
+
+  const handleOpenAddDevice = useCallback(() => {
+    setAddDeviceModalOpen(true);
+  }, []);
+
+  const handleCloseAddDevice = useCallback(() => {
+    if (addDeviceLoading) return;
+    setAddDeviceModalOpen(false);
+  }, [addDeviceLoading]);
+
+  const handleAddAdminDevice = useCallback(
+    async (data: { deviceName: string; deviceSerial?: string; tenantId?: string }) => {
+      setAddDeviceLoading(true);
+      try {
+        await equipmentService.addAdminDevice(data);
+        await fetchActiveSubscriptions();
+        setAddDeviceModalOpen(false);
+        toast.success(t("devices.addAdminDeviceSuccess", { name: data.deviceName }) || "Device added successfully", {
+          description: `Device ${data.deviceName} has been registered and provisioned.`,
+        });
+      } catch (err) {
+        console.error("Failed to add admin device:", err);
+        const error = err as { response?: { data?: { message?: string } }; message?: string };
+        toast.error(t("common.error") || "Error", {
+          description: error.response?.data?.message || error.message || "Failed to add device.",
+        });
+      } finally {
+        setAddDeviceLoading(false);
+      }
+    },
+    [fetchActiveSubscriptions, t]
+  );
+
+  const handleDeleteAdminDevice = useCallback(
+    async (equipmentId: string) => {
+      setDeleteDeviceLoading(true);
+      try {
+        await equipmentService.deleteAdminDevice(equipmentId);
+        await fetchActiveSubscriptions();
+        setDeviceToDelete(null);
+        toast.success(t("devices.deleteSuccess") || "Device deleted successfully");
+      } catch (err) {
+        console.error("Failed to delete admin device:", err);
+        const error = err as { response?: { data?: { message?: string } }; message?: string };
+        toast.error(t("common.error") || "Error", {
+          description: error.response?.data?.message || error.message || "Failed to delete device.",
+        });
+      } finally {
+        setDeleteDeviceLoading(false);
+      }
+    },
+    [fetchActiveSubscriptions, t]
+  );
+
+  const [deviceToDelete, setDeviceToDelete] = useState<Partial<SubscriptionEquipment> | null>(null);
+  const [deleteDeviceLoading, setDeleteDeviceLoading] = useState(false);
 
   const activeSub = useMemo(() => {
     return activeSubscriptions.find((sub) => sub.id === selectedSubscriptionId) || activeSubscriptions[0];
@@ -604,6 +664,16 @@ export function useDevicesPage() {
     handleOpenActivateWithOtp,
     handleCloseActivateWithOtp,
     handleActivateWithOtp,
+    addDeviceModalOpen,
+    setAddDeviceModalOpen,
+    addDeviceLoading,
+    handleOpenAddDevice,
+    handleCloseAddDevice,
+    handleAddAdminDevice,
+    deviceToDelete,
+    setDeviceToDelete,
+    deleteDeviceLoading,
+    handleDeleteAdminDevice,
     isAdmin,
     adminDevices,
     selectedClient,

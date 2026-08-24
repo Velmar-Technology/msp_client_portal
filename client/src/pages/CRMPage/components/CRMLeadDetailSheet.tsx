@@ -8,14 +8,17 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import type { Lead, LeadStage, LeadPriority, LeadActivity, Quotation, QuotationStatus, UpdateLeadPayload, ConvertLeadResult } from "@/services/crmService";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type {
+  Lead,
+  LeadStage,
+  LeadPriority,
+  LeadActivity,
+  Quotation,
+  QuotationStatus,
+  UpdateLeadPayload,
+  ConvertLeadResult,
+} from "@/services/crmService";
 import { DatePicker } from "@/components/shared";
 import { getActivityTypeLabel, resolveActivityTitle } from "../utils/activityTitles";
 import type { Plan } from "@/services/planService";
@@ -260,7 +263,7 @@ export function CRMLeadDetailSheet({
       if (result && "clientCreated" in result && result.clientCreated) {
         toast.success(
           t("crm.convertAndClientCreatedSuccess") ||
-            "Lead converted! Client account created, invitation sent, and invoice ready for payment."
+            "Lead converted! Client account created, invitation sent, and invoice ready for payment.",
         );
       } else {
         toast.success(t("crm.convertSuccess"));
@@ -494,7 +497,11 @@ export function CRMLeadDetailSheet({
 
             {/* Lead Summary Header Info or Edit Form */}
             {isEditingLead ? (
-              <form onSubmit={handleSaveLeadInfo} className="bg-muted/40 p-4 rounded-xl border border-border space-y-3 mt-1" noValidate>
+              <form
+                onSubmit={handleSaveLeadInfo}
+                className="bg-muted/40 p-4 rounded-xl border border-border space-y-3 mt-1"
+                noValidate
+              >
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold font-heading uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                     <Pencil className="h-3.5 w-3.5 text-primary" />
@@ -608,7 +615,9 @@ export function CRMLeadDetailSheet({
                         min={0}
                         max={100}
                         value={editProbability}
-                        onChange={(e) => setEditProbability(Math.min(100, Math.max(0, parseInt(e.target.value, 10) || 0)))}
+                        onChange={(e) =>
+                          setEditProbability(Math.min(100, Math.max(0, parseInt(e.target.value, 10) || 0)))
+                        }
                         className="h-8 text-xs bg-background text-foreground font-mono text-center"
                       />
                     </div>
@@ -953,9 +962,7 @@ export function CRMLeadDetailSheet({
                   <Sparkles className="h-4 w-4 text-emerald-600" />
                   {t("plans.applyPlanToCustomer")}
                 </h4>
-                <p className="text-xs text-muted-foreground leading-normal">
-                  {t("crm.applyPlanHelp")}
-                </p>
+                <p className="text-xs text-muted-foreground leading-normal">{t("crm.applyPlanHelp")}</p>
                 <Button
                   onClick={handleConvertClick}
                   disabled={actionLoading}
@@ -1047,7 +1054,11 @@ export function CRMLeadDetailSheet({
 
             {/* TAB 3: Follow-Up Scheduler */}
             <TabsContent value="followup" className="space-y-5 pt-4">
-              <form onSubmit={handleLogActivityClick} className="bg-card border border-border rounded-xl p-4 shadow-xs space-y-3.5" noValidate>
+              <form
+                onSubmit={handleLogActivityClick}
+                className="bg-card border border-border rounded-xl p-4 shadow-xs space-y-3.5"
+                noValidate
+              >
                 <h4 className="text-xs font-bold font-heading uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                   <Calendar className="h-4 w-4 text-primary" />
                   {t("crm.scheduleFollowUp")}
@@ -1145,7 +1156,7 @@ export function CRMLeadDetailSheet({
                     return (
                       <div key={act.id} className="relative group">
                         <div
-                          className={`absolute -left-[31px] top-1 h-3.5 w-3.5 rounded-full border-2 border-background ${
+                          className={`absolute -left-7.75 top-1 h-3.5 w-3.5 rounded-full border-2 border-background ${
                             isPending
                               ? "bg-amber-500 ring-2 ring-amber-500/20"
                               : act.activity_type === "PLAN_ASSIGNED"
@@ -1221,10 +1232,7 @@ export function CRMLeadDetailSheet({
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="pt-2 sm:justify-end gap-2">
-              <AlertDialogCancel
-                onClick={() => setShowDeleteConfirm(false)}
-                className="text-xs cursor-pointer"
-              >
+              <AlertDialogCancel onClick={() => setShowDeleteConfirm(false)} className="text-xs cursor-pointer">
                 {t("common.cancel") || "Cancel"}
               </AlertDialogCancel>
               <AlertDialogAction

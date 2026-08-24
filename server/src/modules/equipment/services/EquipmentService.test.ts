@@ -4,6 +4,9 @@ const mocks = vi.hoisted(() => {
   return {
     subFindById: vi.fn(),
     subFindAllActive: vi.fn(),
+    subFindByTenant: vi.fn(),
+    subCreate: vi.fn(),
+    subUpdatePlan: vi.fn(),
     equipFindBySubscription: vi.fn(),
     equipFindBySlot: vi.fn(),
     equipFindByOtp: vi.fn(),
@@ -11,6 +14,8 @@ const mocks = vi.hoisted(() => {
     equipUpdate: vi.fn(),
     equipFindAllWithDetails: vi.fn(),
     equipFindActiveByClient: vi.fn(),
+    equipFindByIdWithDetails: vi.fn(),
+    equipDeleteById: vi.fn(),
     planFindById: vi.fn(),
     ncProvisionUser: vi.fn(),
     ncDeleteUser: vi.fn(),
@@ -23,6 +28,9 @@ vi.mock('@modules/subscriptions/repositories/SubscriptionRepository', () => {
     subscriptionRepository: {
       findById: mocks.subFindById,
       findAllActive: mocks.subFindAllActive,
+      findByTenant: mocks.subFindByTenant,
+      create: mocks.subCreate,
+      updatePlan: mocks.subUpdatePlan,
     },
   };
 });
@@ -37,6 +45,8 @@ vi.mock('@modules/equipment/repositories/EquipmentRepository', () => {
       update: mocks.equipUpdate,
       findAllWithDetails: mocks.equipFindAllWithDetails,
       findActiveByClient: mocks.equipFindActiveByClient,
+      findByIdWithDetails: mocks.equipFindByIdWithDetails,
+      deleteById: mocks.equipDeleteById,
     },
   };
 });
@@ -486,6 +496,108 @@ describe('EquipmentService', () => {
       });
       const quota = await equipmentService.resolveStorageQuota('CUSTOM-PLAN');
       expect(quota).toBe('500 GB');
+    });
+  });
+
+  describe('addAdminDevice', () => {
+    it('should create an internal admin subscription if tenant has no active subscription and provision slot', async () => {
+      mocks.subFindByTenant.mockResolvedValue([]);
+      mocks.subCreate.mockResolvedValue({
+        id: 'sub-new-admin',
+        tenant_id: tenantId,
+        service_name: 'Admin Infrastructure',
+        plan: 'PL-003',
+        equipment_count: 50,
+        status: 'ACTIVE',
+      });
+      mocks.equipFindBySubscription.mockResolvedValue([]);
+      mocks.ncProvisionUser.mockResolvedValue('nc_password_123');
+      mocks.equipCreate.mockResolvedValue({
+        id: 'slot-admin-1',
+        subscription_id: 'sub-new-admin',
+        slot_index: 0,
+        status: 'ACTIVE',
+        device_name: 'Core Server',
+        device_serial: 'SN-ADM-001',
+        nextcloud_username: `admin_${tenantId.slice(0, 8)}_slot_1`,
+        nextcloud_password: 'nc_password_123',
+        tenant_id: tenantId,
+      });
+
+      const result = await equipmentService.addAdminDevice({
+        deviceName: 'Core Server',
+        deviceSerial: 'SN-ADM-001',
+        tenantId,
+        adminUserId: 'admin-1',
+      });
+
+      expect(mocks.subCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          client_id: 'admin-1',
+          tenant_id: tenantId,
+          service_name: 'Admin Infrastructure',
+          status: 'ACTIVE',
+        })
+      );
+      expect(mocks.equipCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subscription_id: 'sub-new-admin',
+          slot_index: 0,
+          status: 'ACTIVE',
+          device_name: 'Core Server',
+          device_serial: 'SN-ADM-001',
+        })
+      );
+      expect(result.device_name).toBe('Core Server');
+    });
+
+    it('should throw ValidationError if deviceName is empty', async () => {
+      await expect(
+        equipmentService.addAdminDevice({
+          deviceName: '   ',
+          tenantId,
+          adminUserId: 'admin-1',
+        })
+      ).rejects.toThrow('Device name is required');
+    });
+  });
+
+  describe('deleteAdminEquipment', () => {
+    it('should delete admin-owned equipment successfully and cleanup Nextcloud', async () => {
+      mocks.equipFindByIdWithDetails.mockResolvedValue({
+        id: 'equip-adm-1',
+        client_role: 'ADMIN',
+        nextcloud_username: 'admin_user_slot_1',
+        device_name: 'Core Server',
+      });
+      mocks.equipDeleteById.mockResolvedValue(true);
+
+      const result = await equipmentService.deleteAdminEquipment('equip-adm-1', 'admin-1');
+
+      expect(mocks.equipFindByIdWithDetails).toHaveBeenCalledWith('equip-adm-1');
+      expect(mocks.ncDeleteUser).toHaveBeenCalledWith('admin_user_slot_1');
+      expect(mocks.equipDeleteById).toHaveBeenCalledWith('equip-adm-1');
+      expect(result).toEqual({ success: true, id: 'equip-adm-1' });
+    });
+
+    it('should throw NotFoundError if equipment is not found', async () => {
+      mocks.equipFindByIdWithDetails.mockResolvedValue(null);
+
+      await expect(
+        equipmentService.deleteAdminEquipment('missing-id', 'admin-1')
+      ).rejects.toThrow('Equipment not found');
+    });
+
+    it('should reject deleting client-owned equipment with ForbiddenError', async () => {
+      mocks.equipFindByIdWithDetails.mockResolvedValue({
+        id: 'equip-cli-1',
+        client_role: 'CLIENT',
+        device_name: 'Client Laptop',
+      });
+
+      await expect(
+        equipmentService.deleteAdminEquipment('equip-cli-1', 'admin-1')
+      ).rejects.toThrow('Only admin-owned equipment can be deleted');
     });
   });
 });

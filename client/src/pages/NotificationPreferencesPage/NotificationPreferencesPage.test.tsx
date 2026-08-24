@@ -57,6 +57,11 @@ vi.mock('react-i18next', () => ({
       },
     },
   }),
+  initReactI18next: {
+    type: '3rdParty',
+    init: () => {},
+  },
+  Trans: ({ children }: any) => children,
 }));
 
 vi.mock('@/hooks/useNotificationPreferences');
@@ -64,6 +69,9 @@ vi.mock('@/store/useNotificationStore');
 vi.mock('@/store/useAuthStore');
 vi.mock('./NotificationHistorySection', () => ({
   NotificationHistorySection: () => <div data-testid="notification-history-section">Notification History Section Mock</div>,
+}));
+vi.mock('./EmailTemplateGallery', () => ({
+  EmailTemplateGallery: () => <div data-testid="email-template-gallery">Email Template Gallery Mock</div>,
 }));
 
 const mockUseNotificationPreferences = vi.mocked(useNotificationPreferences);
@@ -85,8 +93,14 @@ describe('NotificationPreferencesPage i18n & behavior', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseAuthStore.mockImplementation((selector: any) => selector({ user: { role: 'ADMIN' } }));
-    mockUseNotificationStore.mockImplementation((selector: any) => selector({ unreadCount: 3 }));
+    mockUseAuthStore.mockImplementation((selector?: any) => {
+      const state = { user: { role: 'ADMIN', id: 'user-admin', name: 'Admin User' }, isAuthenticated: true };
+      return typeof selector === 'function' ? selector(state) : state;
+    });
+    mockUseNotificationStore.mockImplementation((selector?: any) => {
+      const state = { unreadCount: 3 };
+      return typeof selector === 'function' ? selector(state) : state;
+    });
     mockUseNotificationPreferences.mockReturnValue({
       preferences: defaultPreferences,
       isLoading: false,
@@ -205,7 +219,10 @@ describe('NotificationPreferencesPage i18n & behavior', () => {
   });
 
   test('renders Email Templates tab for ADMIN user', () => {
-    mockUseAuthStore.mockImplementation((selector: any) => selector({ user: { role: 'ADMIN' } }));
+    mockUseAuthStore.mockImplementation((selector?: any) => {
+      const state = { user: { role: 'ADMIN', id: 'user-admin', name: 'Admin User' }, isAuthenticated: true };
+      return typeof selector === 'function' ? selector(state) : state;
+    });
 
     render(
       <MemoryRouter>
@@ -217,7 +234,10 @@ describe('NotificationPreferencesPage i18n & behavior', () => {
   });
 
   test('does not render Email Templates tab for CLIENT or TECHNICIAN user', () => {
-    mockUseAuthStore.mockImplementation((selector: any) => selector({ user: { role: 'CLIENT' } }));
+    mockUseAuthStore.mockImplementation((selector?: any) => {
+      const state = { user: { role: 'CLIENT', id: 'user-client', name: 'Client User' }, isAuthenticated: true };
+      return typeof selector === 'function' ? selector(state) : state;
+    });
 
     render(
       <MemoryRouter>

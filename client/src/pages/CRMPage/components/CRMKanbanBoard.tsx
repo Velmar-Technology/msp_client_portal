@@ -13,9 +13,24 @@ interface CRMKanbanBoardProps {
 
 const STAGES: { key: LeadStage; color: string; border: string; headerBg: string }[] = [
   { key: "NEW", color: "text-blue-600 dark:text-blue-400", border: "border-blue-500/30", headerBg: "bg-blue-500/10" },
-  { key: "QUALIFIED", color: "text-purple-600 dark:text-purple-400", border: "border-purple-500/30", headerBg: "bg-purple-500/10" },
-  { key: "PROPOSITION", color: "text-amber-600 dark:text-amber-400", border: "border-amber-500/30", headerBg: "bg-amber-500/10" },
-  { key: "WON", color: "text-emerald-600 dark:text-emerald-400", border: "border-emerald-500/30", headerBg: "bg-emerald-500/10" },
+  {
+    key: "QUALIFIED",
+    color: "text-purple-600 dark:text-purple-400",
+    border: "border-purple-500/30",
+    headerBg: "bg-purple-500/10",
+  },
+  {
+    key: "PROPOSITION",
+    color: "text-amber-600 dark:text-amber-400",
+    border: "border-amber-500/30",
+    headerBg: "bg-amber-500/10",
+  },
+  {
+    key: "WON",
+    color: "text-emerald-600 dark:text-emerald-400",
+    border: "border-emerald-500/30",
+    headerBg: "bg-emerald-500/10",
+  },
   { key: "LOST", color: "text-zinc-500 dark:text-zinc-400", border: "border-zinc-500/30", headerBg: "bg-zinc-500/10" },
 ];
 
@@ -25,12 +40,7 @@ const NEXT_STAGE: Partial<Record<LeadStage, LeadStage>> = {
   PROPOSITION: "WON",
 };
 
-export function CRMKanbanBoard({
-  leads,
-  stats,
-  onSelectLead,
-  onUpdateStage,
-}: CRMKanbanBoardProps) {
+export function CRMKanbanBoard({ leads, stats, onSelectLead, onUpdateStage }: CRMKanbanBoardProps) {
   const { t, i18n } = useTranslation();
   const isSpanish = i18n.language.startsWith("es");
   const [draggingLeadId, setDraggingLeadId] = useState<string | null>(null);
@@ -65,7 +75,7 @@ export function CRMKanbanBoard({
 
   return (
     <div className="w-full overflow-x-auto pb-4">
-      <div className="flex gap-4 min-w-[1000px] items-start">
+      <div className="flex gap-4 min-w-250 items-start">
         {STAGES.map(({ key, color, border, headerBg }) => {
           const stageLeads = leadsByStage[key] || [];
           const stageStats = stats?.stageBreakdown?.[key];
@@ -84,7 +94,7 @@ export function CRMKanbanBoard({
               }}
               onDragLeave={() => setDragOverStage((prev) => (prev === key ? null : prev))}
               onDrop={() => handleDrop(key)}
-              className={`flex-1 min-w-[220px] rounded-xl p-3 flex flex-col gap-3 shadow-xs transition-colors ${
+              className={`flex-1 min-w-55 rounded-xl p-3 flex flex-col gap-3 shadow-xs transition-colors ${
                 isDropTarget
                   ? "bg-primary/5 border-2 border-dashed border-primary/50"
                   : "bg-muted/40 dark:bg-zinc-900/40 border border-border"
@@ -106,7 +116,7 @@ export function CRMKanbanBoard({
               </div>
 
               {/* Column Cards */}
-              <div className="flex flex-col gap-2.5 min-h-[300px]">
+              <div className="flex flex-col gap-2.5 min-h-75">
                 {stageLeads.length === 0 ? (
                   <div className="h-32 border border-dashed border-border rounded-lg flex items-center justify-center text-[11px] text-muted-foreground">
                     {t("crm.emptyStage")}
@@ -176,10 +186,10 @@ export function CRMKanbanBoard({
                           {lead.next_follow_up_date ? (
                             <span className="flex items-center gap-1 text-[10px] text-muted-foreground font-mono">
                               <Calendar className="h-2.5 w-2.5 text-zinc-400" />
-                              {new Date(lead.next_follow_up_date).toLocaleDateString(
-                                isSpanish ? "es-DO" : "en-US",
-                                { month: "short", day: "numeric" },
-                              )}
+                              {new Date(lead.next_follow_up_date).toLocaleDateString(isSpanish ? "es-DO" : "en-US", {
+                                month: "short",
+                                day: "numeric",
+                              })}
                             </span>
                           ) : (
                             <span />

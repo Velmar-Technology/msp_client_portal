@@ -1,4 +1,5 @@
 export { ActivateWithOtpModal } from './ActivateWithOtpModal';
+export { AddAdminDeviceModal } from './AddAdminDeviceModal';
 export { NextcloudInfoModal } from './NextcloudInfoModal';
 export { PatchManagementModal } from './PatchManagementModal';
 export { PatchSeverityBadge } from './PatchSeverityBadge';

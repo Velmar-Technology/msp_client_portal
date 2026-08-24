@@ -381,6 +381,110 @@ export class EquipmentService {
       status: slot.status,
     };
   }
+
+  /**
+   * Directly provisions/adds a device for an ADMIN without requiring an upfront paid subscription.
+   */
+  async addAdminDevice(options: {
+    deviceName: string;
+    deviceSerial?: string;
+    tenantId: string;
+    adminUserId: string;
+  }): Promise<SubscriptionEquipment> {
+    if (!options.deviceName || options.deviceName.trim().length === 0) {
+      throw new ValidationError('Device name is required');
+    }
+
+    const tenantSubs = await this.subRepo.findByTenant(options.tenantId);
+    let sub = tenantSubs.find((s) => s.status === 'ACTIVE' || s.status === 'EXPIRING');
+    if (!sub) {
+      const renewalDate = new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000);
+      sub = await this.subRepo.create({
+        client_id: options.adminUserId,
+        tenant_id: options.tenantId,
+        service_name: 'Admin Infrastructure',
+        plan: 'PL-003',
+        equipment_count: 50,
+        renewal_date: renewalDate,
+        status: 'ACTIVE',
+      });
+    }
+
+    const existingSlots = await this.equipmentRepository.findBySubscription(sub.id);
+    const targetSlot = existingSlots.find((s) => s.status !== 'ACTIVE' && !s.otp);
+    const slotIndex = targetSlot ? targetSlot.slot_index : existingSlots.length;
+
+    if (slotIndex >= sub.equipment_count) {
+      await this.subRepo.updatePlan(sub.id, sub.plan, slotIndex + 10);
+    }
+
+    const serial = options.deviceSerial?.trim() || `SN-ADM-${Math.floor(100000 + Math.random() * 900000)}`;
+    const username = `admin_${options.tenantId.slice(0, 8)}_slot_${slotIndex + 1}`;
+    const displayName = `${options.deviceName.trim()} (${serial})`;
+    const password = await this.provisionNextcloudUser(username, '100 GB', displayName);
+
+    let slot: SubscriptionEquipment;
+    if (targetSlot) {
+      slot = (await this.equipmentRepository.update(targetSlot.id, {
+        status: 'ACTIVE',
+        device_name: options.deviceName.trim(),
+        device_serial: serial,
+        otp: null,
+        otp_expires_at: null,
+        nextcloud_username: username,
+        nextcloud_password: password,
+      }))!;
+    } else {
+      slot = await this.equipmentRepository.create({
+        subscription_id: sub.id,
+        slot_index: slotIndex,
+        status: 'ACTIVE',
+        device_name: options.deviceName.trim(),
+        device_serial: serial,
+        nextcloud_username: username,
+        nextcloud_password: password,
+        tenant_id: options.tenantId,
+      });
+    }
+
+    // Auto-provision equipment into Zabbix RMM
+    try {
+      await this.rmmPatchService.triggerPatchScan(slot.id, slot.tenant_id);
+      logger.info('Auto-provisioned admin equipment to RMM/Zabbix', { equipmentId: slot.id, deviceName: options.deviceName });
+    } catch (err) {
+      logger.warn('Deferred RMM auto-provisioning on admin device creation', { equipmentId: slot.id, err });
+    }
+
+    return slot;
+  }
+
+  /**
+   * Permanently deletes an admin-owned equipment record and cleans up associated external resources.
+   * Client-owned equipment slots cannot be deleted through this endpoint.
+   */
+  async deleteAdminEquipment(equipmentId: string, _adminUserId: string): Promise<{ success: boolean; id: string }> {
+    const equip = await this.equipmentRepository.findByIdWithDetails(equipmentId);
+    if (!equip) {
+      throw new NotFoundError('Equipment not found');
+    }
+
+    if (equip.client_role !== 'ADMIN') {
+      throw new ForbiddenError('Only admin-owned equipment can be deleted. Client equipment slots must be managed through their subscription.');
+    }
+
+    if (equip.nextcloud_username) {
+      await this.cleanupNextcloudUser(equip.nextcloud_username);
+    }
+
+    const deleted = await this.equipmentRepository.deleteById(equipmentId);
+    if (!deleted) {
+      throw new NotFoundError('Failed to delete equipment record');
+    }
+
+    logger.info('Admin deleted equipment record', { equipmentId, deviceName: equip.device_name });
+
+    return { success: true, id: equipmentId };
+  }
 }
 
 export const equipmentService = new EquipmentService();
