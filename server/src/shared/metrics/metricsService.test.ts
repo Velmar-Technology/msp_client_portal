@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { metricsService, register } from './metricsService';
+import { metricsService } from './metricsService';
 
 describe('MetricsService', () => {
   it('should return valid prometheus content type', () => {

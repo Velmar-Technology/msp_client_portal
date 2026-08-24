@@ -241,6 +241,11 @@ jobs:
             VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID || secrets.GOOGLE_CLIENT_ID }}
             VITE_APP_VERSION=${{ needs.prepare.outputs.version }}
             VITE_PAYPAL_CLIENT_ID=${{ secrets.VITE_PAYPAL_CLIENT_ID }}
+            VITE_DD_APPLICATION_ID=${{ secrets.VITE_DD_APPLICATION_ID }}
+            VITE_DD_CLIENT_TOKEN=${{ secrets.VITE_DD_CLIENT_TOKEN }}
+            VITE_DD_SITE=${{ secrets.VITE_DD_SITE || 'datadoghq.com' }}
+            VITE_DD_SERVICE=${{ secrets.VITE_DD_SERVICE || 'msp-client-portal' }}
+            VITE_DD_ENV=${{ secrets.VITE_DD_ENV || 'production' }}
           provenance: mode=max
           sbom: true
           cache-from: type=gha,scope=build-client
