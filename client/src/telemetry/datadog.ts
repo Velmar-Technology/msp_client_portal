@@ -24,8 +24,10 @@ export function initDatadogRum(): boolean {
     return false;
   }
 
-  const applicationId = import.meta.env.VITE_DD_APPLICATION_ID;
-  const clientToken = import.meta.env.VITE_DD_CLIENT_TOKEN;
+  const applicationId =
+    import.meta.env.VITE_DD_APPLICATION_ID || '8c0ad8cc-116b-4682-8f71-ff6f1c918a93';
+  const clientToken =
+    import.meta.env.VITE_DD_CLIENT_TOKEN || 'pubd2f42aac4ebc63e6188e14ba4b954316';
   const site = import.meta.env.VITE_DD_SITE || 'datadoghq.com';
   const service = import.meta.env.VITE_DD_SERVICE || 'msp-client-portal';
   const env = import.meta.env.VITE_DD_ENV || import.meta.env.MODE || 'production';
@@ -50,7 +52,7 @@ export function initDatadogRum(): boolean {
       env,
       version,
       sessionSampleRate: 100,
-      sessionReplaySampleRate: 100,
+      sessionReplaySampleRate: 20,
       trackUserInteractions: true,
       trackResources: true,
       trackLongTasks: true,
