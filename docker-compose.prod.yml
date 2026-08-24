@@ -313,9 +313,9 @@ services:
     container_name: msp_grafana
     restart: always
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_USER=epolanco@velmartech.com.do
       - GF_SECURITY_ADMIN_EMAIL=epolanco@velmartech.com.do
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-3$$tiv3n36Admin!}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-Epolanco36}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_AUTH_DISABLE_PASSWORD_RESET=false
       - GF_SERVER_ROOT_URL=https://helpdesk.velmartech.com.do/grafana/
