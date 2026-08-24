@@ -5,10 +5,20 @@ name: Release & Deploy
 #           -> GitHub Release (tags only) -> [approval] -> deploy w/ auto-rollback -> notify
 #
 # Required repository secrets:
-#   VPS_HOST / VPS_USER / VPS_SSH_KEY / VPS_PORT   - Production VPS SSH access
+#   VPS_HOST / VPS_USER / VPS_SSH_KEY / VPS_PORT   - Production VPS SSH access (health checks)
+#   PORTAINER_URL                                  - Portainer base URL (e.g. https://host:9443)
+#   PORTAINER_API_KEY                              - Portainer API key (X-API-Key)
+#   PORTAINER_ENDPOINT_ID / PORTAINER_STACK_ID     - Target environment & stack IDs
 #   VITE_GOOGLE_CLIENT_ID or GOOGLE_CLIENT_ID      - Google OAuth client ID (Vite build arg)
 #   VITE_PAYPAL_CLIENT_ID                          - PayPal client ID (Vite build arg)
 #   DEPLOY_WEBHOOK_URL                             - Optional Slack/Discord/Teams notification webhook
+#
+# Deployment model: Portainer owns the stack lifecycle. CI pushes images to
+# GHCR, then updates the stack via the Portainer API with the repo-owned
+# docker-compose.prod.yml and a pinned VERSION env var, and finally gates on an
+# SSH health check (auto-rollback re-pins the previous VERSION on failure).
+# GHCR pull credentials must exist once on the VPS: `docker login ghcr.io` with
+# a read:packages PAT, or configure the registry under Portainer → Registries.
 #
 # Required repository configuration (Settings):
 #   1. Environment "production" with required reviewers for manual approval.
@@ -328,11 +338,13 @@ jobs:
           make_latest: true
 
   # ------------------------------------------------------------------
-  # 6. Deploy to production — gated by "production" environment approval,
-  #    executed via reviewed scripts with health verification & auto-rollback
+  # 6. Deploy to production — gated by "production" environment approval.
+  #    Portainer owns the stack lifecycle: CI pushes the repo compose spec and
+  #    a pinned VERSION via the Portainer API, then gates on an SSH health
+  #    check with automatic rollback to the previous version on failure.
   # ------------------------------------------------------------------
   deploy-production:
-    name: Deploy to Production VPS
+    name: Deploy to Production (Portainer)
     needs: [prepare, security-scan, build-server, build-client]
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -342,40 +354,89 @@ jobs:
     permissions:
       contents: read
       packages: read
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
+      PORTAINER_API_KEY: ${{ secrets.PORTAINER_API_KEY }}
+      PORTAINER_ENDPOINT_ID: ${{ secrets.PORTAINER_ENDPOINT_ID }}
+      PORTAINER_STACK_ID: ${{ secrets.PORTAINER_STACK_ID }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.1
         with:
           persist-credentials: false
 
-      - name: Copy Compose File & Deploy Scripts to VPS
-        uses: appleboy/scp-action@ff85246acaad7bdce478db94a363cd2bf7c90345 # v1.0.0
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT || 22 }}
-          source: "docker-compose.prod.yml,scripts/deploy.sh,scripts/rollback.sh"
-          target: "~/msp-client-portal"
-          overwrite: true
+      - name: Capture Rollback Point
+        run: |
+          set -euo pipefail
+          RESP="$(curl -sfS --max-time 30 \
+            -H "X-API-Key: ${PORTAINER_API_KEY}" \
+            "${PORTAINER_URL%/}/api/endpoints/${PORTAINER_ENDPOINT_ID}/docker/containers/msp_server_prod/json" || true)"
+          IMG="$(jq -r '.Config.Image // ""' <<<"${RESP}" 2>/dev/null || true)"
+          TAG="${IMG##*:}"
+          if [ -n "${TAG}" ] && [ "${TAG}" != "${IMG}" ]; then
+            echo "PREVIOUS_VERSION=${TAG}" >> "${GITHUB_ENV}"
+            echo "Rollback point recorded: ${TAG}"
+          else
+            echo "PREVIOUS_VERSION=" >> "${GITHUB_ENV}"
+            echo "::warning::No running msp_server_prod container found — automatic rollback disabled for this run."
+          fi
 
-      - name: Execute Remote Deploy (with automatic rollback)
+      - name: Update Stack via Portainer API
+        id: deploy
+        run: bash scripts/portainer-stack-update.sh "${VERSION}"
+
+      - name: Verify Application Health
+        id: health
         uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
-        env:
-          VERSION: ${{ needs.prepare.outputs.version }}
-          REPOSITORY_OWNER: ${{ needs.prepare.outputs.owner_lc }}
-          GHCR_USER: ${{ github.actor }}
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
-          envs: VERSION,REPOSITORY_OWNER,GHCR_USER,GHCR_TOKEN
           script: |
-            cd ~/msp-client-portal
-            chmod +x scripts/deploy.sh scripts/rollback.sh
-            ./scripts/deploy.sh
+            for attempt in $(seq 1 12); do
+              if docker exec msp_server_prod node -e \
+                "fetch('http://127.0.0.1:3001/api/v1/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))" >/dev/null 2>&1; then
+                echo "[health] Server API healthy (attempt ${attempt}/12)"
+                exit 0
+              fi
+              echo "[health] Waiting for API health... (${attempt}/12)"
+              sleep 5
+            done
+            echo "[health] ERROR: server failed health verification after 12 attempts"
+            exit 1
+
+      - name: Rollback to Previous Version
+        if: steps.deploy.outcome == 'failure' || steps.health.outcome == 'failure'
+        run: |
+          if [ -z "${PREVIOUS_VERSION:-}" ]; then
+            echo "::error::Deployment failed and no rollback point exists — manual intervention required."
+            exit 1
+          fi
+          echo "::warning::Deployment failed — rolling back to ${PREVIOUS_VERSION}"
+          bash scripts/portainer-stack-update.sh "${PREVIOUS_VERSION}"
+
+      - name: Verify Rollback Health
+        if: steps.deploy.outcome == 'failure' || steps.health.outcome == 'failure'
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            for attempt in $(seq 1 12); do
+              if docker exec msp_server_prod node -e \
+                "fetch('http://127.0.0.1:3001/api/v1/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))" >/dev/null 2>&1; then
+                echo "[health] Rollback healthy (attempt ${attempt}/12)"
+                exit 0
+              fi
+              echo "[health] Waiting for rollback health... (${attempt}/12)"
+              sleep 5
+            done
+            echo "[health] ERROR: rollback failed health verification — manual intervention required"
+            exit 1
 
       - name: Write Deployment Summary
         run: |
@@ -386,6 +447,7 @@ jobs:
             echo "| --------- | ----- | ------ |"
             echo "| Server | \`${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner_lc }}/${{ env.SERVER_IMAGE }}:${{ needs.prepare.outputs.version }}\` | \`${{ needs.build-server.outputs.digest }}\` |"
             echo "| Client | \`${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner_lc }}/${{ env.CLIENT_IMAGE }}:${{ needs.prepare.outputs.version }}\` | \`${{ needs.build-client.outputs.digest }}\` |"
+            echo "| Rollback point | \`${PREVIOUS_VERSION:-n/a}\` | |"
           } >> "${GITHUB_STEP_SUMMARY}"
 
   # ------------------------------------------------------------------
