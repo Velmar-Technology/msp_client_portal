@@ -15,6 +15,10 @@
 #   PORTAINER_API_KEY     - API key (X-API-Key)
 #   PORTAINER_ENDPOINT_ID - Portainer environment ID
 #   PORTAINER_STACK_ID    - Target standalone (compose) stack ID
+#
+# Optional environment variables:
+#   PORTAINER_TLS_INSECURE        - "true" to skip TLS verification (self-signed certs)
+#   PORTAINER_UPDATE_TIMEOUT_SECS - PUT timeout in seconds (default: 600)
 
 set -euo pipefail
 
@@ -55,7 +59,7 @@ main() {
   # Optional TLS verification bypass for self-signed Portainer certificates.
   # Prefer installing a CA-signed cert (e.g. via Traefik + Let's Encrypt) and
   # removing this flag — the API key travels in headers on every call.
-  CURL_OPTS=(-sS --max-time 30)
+  CURL_OPTS=(-sS)
   if [ "${PORTAINER_TLS_INSECURE:-false}" = "true" ]; then
     log "WARNING: TLS certificate verification disabled (PORTAINER_TLS_INSECURE=true)"
     CURL_OPTS+=(-k)
@@ -63,7 +67,7 @@ main() {
 
   # Fetch current stack to preserve its existing environment variables.
   local stack_json
-  if ! stack_json="$(curl "${CURL_OPTS[@]}" -H "X-API-Key: ${PORTAINER_API_KEY}" "${stack_url}")"; then
+  if ! stack_json="$(curl "${CURL_OPTS[@]}" --max-time 30 -H "X-API-Key: ${PORTAINER_API_KEY}" "${stack_url}")"; then
     log "ERROR: failed to fetch stack ${PORTAINER_STACK_ID} from ${base}"
     exit 1
   fi
@@ -84,9 +88,14 @@ main() {
 
   log "Updating stack ${PORTAINER_STACK_ID} to version ${target_version}"
 
+  # Portainer runs the image pull + container recreate synchronously inside the
+  # PUT, so the response only arrives once the redeploy finishes. Allow a
+  # generous window (default 10 minutes, tunable via PORTAINER_UPDATE_TIMEOUT_SECS).
+  local update_timeout="${PORTAINER_UPDATE_TIMEOUT_SECS:-600}"
+
   local http_code response_file
   response_file="$(mktemp)"
-  http_code="$(curl "${CURL_OPTS[@]}" --max-time 60 -o "${response_file}" -w '%{http_code}' \
+  http_code="$(curl "${CURL_OPTS[@]}" --max-time "${update_timeout}" -o "${response_file}" -w '%{http_code}' \
     -X PUT \
     -H "X-API-Key: ${PORTAINER_API_KEY}" \
     -H "Content-Type: application/json" \

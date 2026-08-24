@@ -349,7 +349,8 @@ jobs:
     name: Deploy to Production (Portainer)
     needs: [prepare, security-scan, build-server, build-client]
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Budget must cover worst case: PUT (10m) + health check + rollback PUT + re-verify
+    timeout-minutes: 25
     environment:
       name: production
       url: https://helpdesk.velmartech.com.do
