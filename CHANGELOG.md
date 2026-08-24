@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.5.3](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.5.2...v1.5.3) (2026-08-24)
+
+
+### Features
+
+* **ci:** deploy production stack via Portainer API with health gate and auto-rollback ([be55ccf](https://github.com/Velmar-Technology/msp_client_portal/commit/be55ccf25a334a4d44253705c28763cddc8223ac))
+* **ci:** pre-warm GHCR image pulls on VPS before Portainer stack update ([72f33e5](https://github.com/Velmar-Technology/msp_client_portal/commit/72f33e5a2cc66d26db2f73df6f59aeb573c0877b))
+* **deploy:** configure Grafana SMTP and admin email for password reset ([b941ee8](https://github.com/Velmar-Technology/msp_client_portal/commit/b941ee81c491494a4ada2eaaa19c0019176dab96))
+* **observability:** add Prometheus metrics telemetry and Grafana scraping ([7a24c7a](https://github.com/Velmar-Technology/msp_client_portal/commit/7a24c7a4315fb339f5789f7eef421f80622d842f))
+* **observability:** implement frontend Real User Monitoring with Grafana Faro and self-hosted Alloy collector ([71810bd](https://github.com/Velmar-Technology/msp_client_portal/commit/71810bd3b8081ad61747a08cf6af194726f214c8))
+* **rmm:** add rust endpoint agent, websocket gateway relay, and mcp remote tools ([ea2bbe5](https://github.com/Velmar-Technology/msp_client_portal/commit/ea2bbe5ba98e5d09183e07228aef75941580edf8))
+* **rmm:** enhance ZabbixService with keep-alive pooling and auto-reauth retry ([255e0a3](https://github.com/Velmar-Technology/msp_client_portal/commit/255e0a34d920e5ecb7d4e532fddcabd81e1bd181))
+* **telemetry:** add Datadog RUM Visual Session Replay and Node.js APM distributed tracing ([3a73e5c](https://github.com/Velmar-Technology/msp_client_portal/commit/3a73e5c96c9c9cdaba540b08edaa11b7539a33c7))
+* **telemetry:** configure Datadog RUM credentials and session replay sample rate ([0dff612](https://github.com/Velmar-Technology/msp_client_portal/commit/0dff6126139d1dc7b2ef36879889fb5e82683442))
+
+
+### Bug Fixes
+
+* **ci:** add controlled security-gate bypass and honor .trivy.yaml in security-scan job ([bd60ab4](https://github.com/Velmar-Technology/msp_client_portal/commit/bd60ab4dd8474f5c1f3aa699e0593f15a0a3cd00))
+* **ci:** allow self-signed Portainer TLS via PORTAINER_TLS_INSECURE flag ([321bdfd](https://github.com/Velmar-Technology/msp_client_portal/commit/321bdfdb9f9211df978ed862c116879a2fad8506))
+* **ci:** enforce HIGH/CRITICAL-only Trivy gate in SARIF mode ([f7f8b33](https://github.com/Velmar-Technology/msp_client_portal/commit/f7f8b336f2f7c281c9d0ce0d8d0843130038aa03))
+* **ci:** extend Portainer stack update PUT timeout to 10 minutes ([7afc202](https://github.com/Velmar-Technology/msp_client_portal/commit/7afc202e08cfdc1a18124cf2e0b7289dceda37e4))
+* **ci:** resolve repo-root compose path in Portainer stack updater ([4de9848](https://github.com/Velmar-Technology/msp_client_portal/commit/4de984894673ec3bcc7456f9522bf7a60d649729))
+* **ci:** skip npm cacache in Trivy scan and clean cache from server image ([5169b68](https://github.com/Velmar-Technology/msp_client_portal/commit/5169b68517b7b89956ac201f53ce58b8c68c170f))
+* **ci:** upload Trivy SARIF as workflow artifact instead of code scanning ([c85c03f](https://github.com/Velmar-Technology/msp_client_portal/commit/c85c03fa27a027d7e1e9bcc256216b965dd99e4c))
+* **deploy:** update Grafana admin password to meet 12+ character complexity policy ([2039e7f](https://github.com/Velmar-Technology/msp_client_portal/commit/2039e7f510ff108e6a8a79c22689fc74529c9a27))
+* **metrics:** standardize Node.js default Prometheus metric names for Grafana dashboards ([0dd7095](https://github.com/Velmar-Technology/msp_client_portal/commit/0dd7095e25d3d7a5ef37caf19216ae58c88f55f5))
+* **telemetry:** ensure Datadog RUM stands by gracefully when env variables are empty in tests ([8389fd2](https://github.com/Velmar-Technology/msp_client_portal/commit/8389fd2bf1bbf33d4fdaba484a980f974c0d32b2))
+
 ## [1.5.2](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.5.1...v1.5.2) (2026-08-23)
 
 
