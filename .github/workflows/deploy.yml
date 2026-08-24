@@ -13,6 +13,13 @@ name: Release & Deploy
 # Required repository configuration (Settings):
 #   1. Environment "production" with required reviewers for manual approval.
 #   2. Branch protection on main requiring the "CI / Quality Gates" checks.
+#
+# Security gate override (use sparingly — changes are recorded in the audit log):
+#   - Manual runs: set the "skipSecurityGate" input to true. Trivy still scans and
+#     uploads SARIF artifacts, but HIGH/CRITICAL CVEs won't block release/deploy.
+#   - Tag pushes: create a repository variable DISABLE_SECURITY_GATE=true
+#     (Settings → Secrets and variables → Actions → Variables), re-run the failed
+#     run, then flip it back to false. Works retroactively on existing tags.
 
 on:
   push:
@@ -25,6 +32,11 @@ on:
         required: false
         default: ""
         type: string
+      skipSecurityGate:
+        description: "Report-only security scan — HIGH/CRITICAL CVEs won't block release/deploy"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -233,6 +245,11 @@ jobs:
     permissions:
       contents: read
       packages: read
+    env:
+      # Bypass switch: manual dispatch input OR repository variable kill-switch
+      # (Settings → Secrets and variables → Actions → Variables). The variable is
+      # honored at runtime even when re-running old tag pushes.
+      SECURITY_GATE_BYPASSED: ${{ inputs.skipSecurityGate == true || vars.DISABLE_SECURITY_GATE == 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -244,6 +261,11 @@ jobs:
             digest: ${{ needs.build-client.outputs.digest }}
             sarif: trivy-client.sarif
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.1
+        with:
+          persist-credentials: false
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.4.0
         with:
@@ -260,8 +282,18 @@ jobs:
           output: ${{ matrix.sarif }}
           severity: HIGH,CRITICAL
           limit-severities-for-sarif: true
-          exit-code: "1"
+          exit-code: ${{ env.SECURITY_GATE_BYPASSED == 'true' && '0' || '1' }}
           ignore-unfixed: true
+
+      - name: Record Gate Status
+        if: always()
+        run: |
+          if [ "${SECURITY_GATE_BYPASSED}" = "true" ]; then
+            echo "::warning::Security gate BYPASSED for this run — findings are report-only."
+            echo "> ⚠️ Security gate bypassed — HIGH/CRITICAL findings did not block this release." >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "Security gate enforced (HIGH/CRITICAL blocking)."
+          fi
 
       - name: Upload Scan Results as Artifact
         if: always()
