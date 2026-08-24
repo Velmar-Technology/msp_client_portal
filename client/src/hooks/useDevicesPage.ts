@@ -340,6 +340,9 @@ export function useDevicesPage() {
     [fetchActiveSubscriptions, t]
   );
 
+  const [deviceToDelete, setDeviceToDelete] = useState<Partial<SubscriptionEquipment> | null>(null);
+  const [deleteDeviceLoading, setDeleteDeviceLoading] = useState(false);
+
   const handleDeleteAdminDevice = useCallback(
     async (equipmentId: string) => {
       setDeleteDeviceLoading(true);
@@ -360,9 +363,6 @@ export function useDevicesPage() {
     },
     [fetchActiveSubscriptions, t]
   );
-
-  const [deviceToDelete, setDeviceToDelete] = useState<Partial<SubscriptionEquipment> | null>(null);
-  const [deleteDeviceLoading, setDeleteDeviceLoading] = useState(false);
 
   const activeSub = useMemo(() => {
     return activeSubscriptions.find((sub) => sub.id === selectedSubscriptionId) || activeSubscriptions[0];
