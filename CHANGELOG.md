@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.5.4](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.5.3...v1.5.4) (2026-08-24)
+
+
+### Features
+
+* **equipment:** add admin device registration and management with full test coverage ([1c98327](https://github.com/Velmar-Technology/msp_client_portal/commit/1c983279a9c8874947a1f5f1acd51f674a7aec69))
+* **infra:** configure America/Santo_Domingo timezone for all services in production and local stacks ([b18af3e](https://github.com/Velmar-Technology/msp_client_portal/commit/b18af3e363c66251497035827f70608f9f2518da))
+
+
+### Bug Fixes
+
+* **ci:** normalize Portainer API key format with dynamic JWT/API-key fallback ([f618e05](https://github.com/Velmar-Technology/msp_client_portal/commit/f618e05317a98107816cab17a3cd2c85b74e35f0))
+* **ci:** robust portainer stack updater with auto-resolution and diagnostic logging ([c3e2a34](https://github.com/Velmar-Technology/msp_client_portal/commit/c3e2a347377346507d4ea4d3d78aa432c45b6f2d))
+* **client:** reorder useState hook declarations before callbacks in useDevicesPage ([60c3566](https://github.com/Velmar-Technology/msp_client_portal/commit/60c356675f2711762e10492f253540cca87061d6))
+* **client:** restrict email templates gallery to admin & fix toFixed TypeError in CRM ([3fd0f26](https://github.com/Velmar-Technology/msp_client_portal/commit/3fd0f268ffcee0bd9891865f471e4c5210c12b4f))
+* **equipment:** use SubscriptionStatus enum in EquipmentService ([43af71d](https://github.com/Velmar-Technology/msp_client_portal/commit/43af71dbd9d268801a1fd01112bae8ee1251b068))
+
 ## [1.5.3](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.5.2...v1.5.3) (2026-08-24)
 
 
