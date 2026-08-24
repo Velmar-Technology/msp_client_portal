@@ -321,12 +321,64 @@ jobs:
           retention-days: 30
 
   # ------------------------------------------------------------------
-  # 5. GitHub Release — generated notes from commits since last tag
+  # 5a. Build Cross-Platform Agent Binaries (Windows & Linux)
+  # ------------------------------------------------------------------
+  build-agent-binaries:
+    name: Build Agent Binary (${{ matrix.os }})
+    if: needs.prepare.outputs.is_tag == 'true'
+    needs: [prepare, quality-gates]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary_name: msp-agent.exe
+            asset_name: msp-agent-windows-x86_64.exe
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary_name: msp-agent
+            asset_name: msp-agent-linux-x86_64
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install Linux Dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y pkg-config libssl-dev
+
+      - name: Build Release Binary
+        run: cargo build --release --manifest-path packages/msp-agent/Cargo.toml --target ${{ matrix.target }}
+
+      - name: Package Release Binary
+        shell: bash
+        run: |
+          mkdir -p dist-bin
+          cp "packages/msp-agent/target/${{ matrix.target }}/release/${{ matrix.binary_name }}" "dist-bin/${{ matrix.asset_name }}"
+
+      - name: Upload Binary Artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: agent-bin-${{ matrix.os }}
+          path: dist-bin/*
+          retention-days: 5
+
+  # ------------------------------------------------------------------
+  # 5b. GitHub Release — generated notes & compiled agent binaries
   # ------------------------------------------------------------------
   create-release:
     name: Create GitHub Release
     if: needs.prepare.outputs.is_tag == 'true'
-    needs: [prepare, security-scan]
+    needs: [prepare, security-scan, build-agent-binaries]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -337,12 +389,25 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Create Release
+      - name: Download Windows Agent Binary
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+        with:
+          name: agent-bin-windows-latest
+          path: release-assets/
+
+      - name: Download Linux Agent Binary
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+        with:
+          name: agent-bin-ubuntu-latest
+          path: release-assets/
+
+      - name: Create Release with Agent Binaries
         uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           tag_name: ${{ github.ref_name }}
           generate_release_notes: true
           make_latest: true
+          files: release-assets/*
 
   # ------------------------------------------------------------------
   # 6. Deploy to production — gated by "production" environment approval.
