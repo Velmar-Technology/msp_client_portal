@@ -1,4 +1,6 @@
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
+import http from 'http';
+import https from 'https';
 import { logger } from '@shared/utils/logger';
 
 export interface ZabbixHostMetrics {
@@ -17,6 +19,7 @@ export class ZabbixService {
   private user: string;
   private pass: string;
   private token: string | null = null;
+  private client: AxiosInstance;
 
   constructor(
     url = process.env.ZABBIX_URL || 'http://localhost:8080/api_jsonrpc.php',
@@ -26,12 +29,18 @@ export class ZabbixService {
     this.url = url;
     this.user = user;
     this.pass = pass;
+
+    this.client = axios.create({
+      httpAgent: new http.Agent({ keepAlive: true, maxSockets: 10, keepAliveMsecs: 10000 }),
+      httpsAgent: new https.Agent({ keepAlive: true, maxSockets: 10, keepAliveMsecs: 10000, rejectUnauthorized: false }),
+      timeout: 5000,
+    });
   }
 
-  private async jsonRpcCall(method: string, params: any = {}, useAuth = true): Promise<any> {
+  private async jsonRpcCall(method: string, params: any = {}, useAuth = true, isRetry = false): Promise<any> {
     try {
       const auth = useAuth ? this.token : null;
-      const response = await axios.post(
+      const response = await this.client.post(
         this.url,
         {
           jsonrpc: '2.0',
@@ -39,12 +48,33 @@ export class ZabbixService {
           params,
           id: Date.now(),
           auth,
-        },
-        { timeout: 3000 }
+        }
       );
 
       if (response.data?.error) {
-        logger.warn(`Zabbix API call error for method ${method}:`, response.data.error);
+        const errData = response.data.error;
+        const errMessage = typeof errData === 'string' ? errData : (errData.data || errData.message || JSON.stringify(errData));
+
+        // Detect session expiration / invalid auth token
+        const isAuthError =
+          useAuth &&
+          !isRetry &&
+          (errData.code === -32602 ||
+            errMessage.includes('Session terminated') ||
+            errMessage.includes('re-login') ||
+            errMessage.includes('Not authorized') ||
+            errMessage.includes('Session'));
+
+        if (isAuthError) {
+          logger.warn(`Zabbix session expired for ${method}, refreshing token and retrying...`);
+          this.token = null;
+          const newToken = await this.authenticate();
+          if (newToken) {
+            return this.jsonRpcCall(method, params, useAuth, true);
+          }
+        }
+
+        logger.warn(`Zabbix API call error for method ${method}:`, errData);
         return null;
       }
 
