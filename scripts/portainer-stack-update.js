@@ -79,19 +79,44 @@ async function main() {
   }
 
   const composeContent = fs.readFileSync(composePath, 'utf8');
-  const authHeaders = {
-    'X-API-Key': apiKey,
-    'Content-Type': 'application/json'
-  };
+
+  // Normalize and detect authentication type (API Key vs JWT)
+  let cleanKey = apiKey.replace(/^["']|["']$/g, '').trim();
+  if (cleanKey.startsWith('Bearer ')) {
+    cleanKey = cleanKey.slice(7).trim();
+  }
+
+  function getAuthHeaders(key, useJwt = false) {
+    if (useJwt || key.startsWith('eyJ')) {
+      return { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' };
+    }
+    return { 'X-API-Key': key, 'Content-Type': 'application/json' };
+  }
+
+  let authHeaders = getAuthHeaders(cleanKey);
 
   log(`Connecting to Portainer at ${portainerUrl}...`);
+
+  async function authenticatedRequest(urlStr, options = {}, postData = null) {
+    let res = await request(urlStr, { ...options, headers: authHeaders }, postData);
+    // If 401 and using X-API-Key, try falling back to Authorization Bearer
+    if (res.statusCode === 401 && !authHeaders['Authorization']) {
+      const fallbackHeaders = getAuthHeaders(cleanKey, true);
+      const retryRes = await request(urlStr, { ...options, headers: fallbackHeaders }, postData);
+      if (retryRes.statusCode === 200) {
+        authHeaders = fallbackHeaders;
+        return retryRes;
+      }
+    }
+    return res;
+  }
 
   let stack = null;
   let stackId = null;
 
   // 1. If numeric ID, try direct GET first
   if (/^\d+$/.test(stackTarget)) {
-    const directRes = await request(`${portainerUrl}/api/stacks/${stackTarget}`, { headers: authHeaders });
+    const directRes = await authenticatedRequest(`${portainerUrl}/api/stacks/${stackTarget}`);
     if (directRes.statusCode === 200 && directRes.json?.Id) {
       stack = directRes.json;
       stackId = stack.Id;
@@ -102,10 +127,13 @@ async function main() {
   // 2. If not found yet, query /api/stacks catalog
   if (!stack) {
     log(`Resolving stack '${stackTarget}' from Portainer stacks catalog...`);
-    const allRes = await request(`${portainerUrl}/api/stacks`, { headers: authHeaders });
+    const allRes = await authenticatedRequest(`${portainerUrl}/api/stacks`);
 
     if (allRes.statusCode !== 200 || !Array.isArray(allRes.json)) {
       error(`Failed to list stacks from ${portainerUrl}/api/stacks (HTTP ${allRes.statusCode}): ${allRes.body}`);
+      if (allRes.statusCode === 401) {
+        error(`Portainer rejected the credentials in PORTAINER_API_KEY. Please verify the secret in GitHub: Settings -> Secrets and variables -> Actions -> PORTAINER_API_KEY (Format: ptr_...).`);
+      }
       process.exit(1);
     }
 
@@ -120,7 +148,7 @@ async function main() {
     if (!endpointId) endpointId = matched.EndpointId;
 
     // Fetch complete stack details (with Env array)
-    const fullRes = await request(`${portainerUrl}/api/stacks/${stackId}`, { headers: authHeaders });
+    const fullRes = await authenticatedRequest(`${portainerUrl}/api/stacks/${stackId}`);
     if (fullRes.statusCode === 200 && fullRes.json?.Id) {
       stack = fullRes.json;
     } else {
