@@ -9,6 +9,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: msp_password
       POSTGRES_DB: msp_helpdesk
+      TZ: America/Santo_Domingo
+      PGTZ: America/Santo_Domingo
     ports:
       - "5432:5432"
     volumes:
@@ -31,6 +33,7 @@ services:
     ports:
       - "3001:3001"
     environment:
+      - TZ=America/Santo_Domingo
       - DB_HOST=db
       - DB_PORT=5432
       - DB_NAME=msp_helpdesk
@@ -62,6 +65,8 @@ services:
       POSTGRES_USER: zabbix
       POSTGRES_PASSWORD: zabbix_password
       POSTGRES_DB: zabbix
+      TZ: America/Santo_Domingo
+      PGTZ: America/Santo_Domingo
     volumes:
       - zabbix_pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -80,6 +85,7 @@ services:
       zabbix-db:
         condition: service_healthy
     environment:
+      TZ: America/Santo_Domingo
       DB_SERVER_HOST: zabbix-db
       POSTGRES_USER: zabbix
       POSTGRES_PASSWORD: zabbix_password
@@ -97,6 +103,7 @@ services:
     ports:
       - "8080:8080"
     environment:
+      TZ: America/Santo_Domingo
       ZBX_SERVER_HOST: zabbix-server
       DB_SERVER_HOST: zabbix-db
       POSTGRES_USER: zabbix
@@ -112,6 +119,7 @@ services:
     depends_on:
       - zabbix-server
     environment:
+      TZ: America/Santo_Domingo
       ZBX_SERVER_HOST: "127.0.0.1,zabbix-server"
       ZBX_HOSTNAME: "Zabbix server"
 
@@ -124,6 +132,7 @@ services:
     depends_on:
       - server
     environment:
+      - TZ=America/Santo_Domingo
       - RUST_LOG=info
       - MSP_GATEWAY_URL=ws://server:3001/agent-ws
       - MSP_AGENT_ID=00000000-0000-0000-0000-000000000001
@@ -139,6 +148,8 @@ services:
         VITE_APP_VERSION: "1.3.5"
     container_name: msp_client
     restart: always
+    environment:
+      - TZ=America/Santo_Domingo
     depends_on:
       - server
     ports:

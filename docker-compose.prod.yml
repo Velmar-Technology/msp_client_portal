@@ -11,6 +11,8 @@ services:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME:-msp_helpdesk}
+      TZ: ${TZ:-America/Santo_Domingo}
+      PGTZ: ${TZ:-America/Santo_Domingo}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -44,6 +46,7 @@ services:
       db:
         condition: service_healthy
     environment:
+      - TZ=${TZ:-America/Santo_Domingo}
       - DB_HOST=db
       - DB_PORT=5432
       - DB_NAME=${DB_NAME:-msp_helpdesk}
@@ -108,6 +111,8 @@ services:
       POSTGRES_USER: ${ZABBIX_DB_USER:-zabbix}
       POSTGRES_PASSWORD: ${ZABBIX_DB_PASSWORD:-zabbix_password}
       POSTGRES_DB: ${ZABBIX_DB_NAME:-zabbix}
+      TZ: ${TZ:-America/Santo_Domingo}
+      PGTZ: ${TZ:-America/Santo_Domingo}
     volumes:
       - zabbix_pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -136,6 +141,7 @@ services:
       zabbix-db:
         condition: service_healthy
     environment:
+      TZ: ${TZ:-America/Santo_Domingo}
       DB_SERVER_HOST: zabbix-db
       POSTGRES_USER: ${ZABBIX_DB_USER:-zabbix}
       POSTGRES_PASSWORD: ${ZABBIX_DB_PASSWORD:-zabbix_password}
@@ -162,12 +168,13 @@ services:
       zabbix-server:
         condition: service_started
     environment:
+      TZ: ${TZ:-America/Santo_Domingo}
       ZBX_SERVER_HOST: zabbix-server
       DB_SERVER_HOST: zabbix-db
       POSTGRES_USER: ${ZABBIX_DB_USER:-zabbix}
       POSTGRES_PASSWORD: ${ZABBIX_DB_PASSWORD:-zabbix_password}
       POSTGRES_DB: ${ZABBIX_DB_NAME:-zabbix}
-      PHP_TZ: "America/Santo_Domingo"
+      PHP_TZ: ${TZ:-America/Santo_Domingo}
     deploy:
       resources:
         limits:
@@ -195,6 +202,7 @@ services:
     depends_on:
       - zabbix-server
     environment:
+      TZ: ${TZ:-America/Santo_Domingo}
       ZBX_SERVER_HOST: "127.0.0.1,zabbix-server"
       ZBX_HOSTNAME: "Zabbix server"
     deploy:
@@ -211,6 +219,7 @@ services:
     container_name: msp_client_prod
     restart: always
     environment:
+      - TZ=${TZ:-America/Santo_Domingo}
       - VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
       - VITE_FARO_URL=${VITE_FARO_URL:-https://helpdesk.velmartech.com.do/collect}
       - VITE_FARO_APP_NAME=${VITE_FARO_APP_NAME:-msp-client-portal}
@@ -253,6 +262,7 @@ services:
     image: amir20/dozzle:latest
     container_name: msp_portal_logs
     environment:
+      - TZ=${TZ:-America/Santo_Domingo}
       - DOZZLE_BASE=/logs
       - DOZZLE_FILTER=label=com.docker.compose.project=msp_portal
     networks:
@@ -285,6 +295,8 @@ services:
     container_name: msp_prometheus
     restart: always
     user: "0:0"
+    environment:
+      - TZ=${TZ:-America/Santo_Domingo}
     entrypoint:
       - /bin/sh
       - -c
@@ -341,6 +353,8 @@ services:
     image: grafana/alloy:v1.2.0
     container_name: msp_alloy
     restart: always
+    environment:
+      - TZ=${TZ:-America/Santo_Domingo}
     entrypoint:
       - /bin/sh
       - -c
@@ -386,6 +400,7 @@ services:
     container_name: msp_grafana
     restart: always
     environment:
+      - TZ=${TZ:-America/Santo_Domingo}
       - GF_SECURITY_ADMIN_USER=epolanco@velmartech.com.do
       - GF_SECURITY_ADMIN_EMAIL=epolanco@velmartech.com.do
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-Epolanco36}
@@ -417,7 +432,6 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.msp-grafana.rule=Host(`helpdesk.velmartech.com.do`) && PathPrefix(`/grafana`)"
       - "traefik.http.routers.msp-grafana.entrypoints=websecure"
-      - "traefik.http.routers.msp-grafana.tls=true"
       - "traefik.http.routers.msp-grafana.tls.certresolver=myresolver"
       - "traefik.http.routers.msp-grafana.priority=100"
       - "traefik.http.services.msp-grafana-svc.loadbalancer.server.port=3000"
