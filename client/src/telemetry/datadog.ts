@@ -24,10 +24,8 @@ export function initDatadogRum(): boolean {
     return false;
   }
 
-  const applicationId =
-    import.meta.env.VITE_DD_APPLICATION_ID || '8c0ad8cc-116b-4682-8f71-ff6f1c918a93';
-  const clientToken =
-    import.meta.env.VITE_DD_CLIENT_TOKEN || 'pubd2f42aac4ebc63e6188e14ba4b954316';
+  const applicationId = import.meta.env.VITE_DD_APPLICATION_ID;
+  const clientToken = import.meta.env.VITE_DD_CLIENT_TOKEN;
   const site = import.meta.env.VITE_DD_SITE || 'datadoghq.com';
   const service = import.meta.env.VITE_DD_SERVICE || 'msp-client-portal';
   const env = import.meta.env.VITE_DD_ENV || import.meta.env.MODE || 'production';
@@ -37,7 +35,7 @@ export function initDatadogRum(): boolean {
   if (!applicationId || !clientToken) {
     if (import.meta.env.DEV) {
       console.info(
-        '[Datadog RUM] VITE_DD_APPLICATION_ID or VITE_DD_CLIENT_TOKEN is not configured. Datadog RUM is in standby mode.'
+        '[Datadog RUM]   or VITE_DD_CLIENT_TOKEN is not configured. Datadog RUM is in standby mode.'
       );
     }
     return false;
