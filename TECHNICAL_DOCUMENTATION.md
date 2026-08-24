@@ -1672,5 +1672,52 @@ La aplicación implementa patrones avanzados de URLs para aplicaciones SaaS que 
 ### 6.2. Hook `useUrlState`
 El hook [`useUrlState.ts`](file:///c:/Users/Public/Workspace/msp_client_portal/client/src/hooks/useUrlState.ts) encapsula `useSearchParams` de `react-router-dom` para ofrecer actualización atómica y reactiva de los query parameters sin perder otros filtros o estados activos en la URL.
 
+---
 
+## 7. Infraestructura de Almacenamiento en la Nube y Túnel WireGuard (TrueNAS / Nextcloud)
 
+Para el aprovisionamiento automatizado de cuotas de respaldo en la nube (25 GB por slot de equipo en `subscription_equipment`) y el acceso remoto multi-dispositivo de los clientes, la plataforma se integra con una instancia dedicada de **Nextcloud** desplegada sobre **TrueNAS SCALE** (`cloud-storage-srv-1`).
+
+### 7.1. Topología del Túnel Sitio a Cliente (Site-to-Client)
+
+Dado que el almacenamiento del cliente se ubica tras una IP WAN dinámica sin puertos públicos abiertos en su router perimetral, se implementa un túnel cifrado **WireGuard**:
+
+```
+Clientes (Navegador / App de Escritorio Nextcloud)
+                      │
+                [ HTTPS / TLS ]
+                      ▼
+VPS Traefik Ingress (Linode 172.235.145.77)
+                      │
+              [ reverse-proxy net ]
+                      ▼
+Nginx Gateway (`cloud_gateway` / Stack 18)
+                      │
+                      │ WireGuard Hub (10.13.13.1 / Stack 14)
+                      │ [ UDP:51820 cifrado ]
+                      ▼
+TrueNAS Host (`cloud_wg_client` / Stack 19) [10.13.13.3]
+                      │
+             [ Puerto Host :30027 ]
+                      ▼
+Contenedor Nextcloud (`ix-nextcloud`: 172.16.1.5:80)
+```
+
+### 7.2. Tabla de Enrutamiento y Direcciones IP
+
+| Nodo / Servicio | Rol de Red | Dirección IP / Puerto | Propósito |
+| :--- | :--- | :--- | :--- |
+| **Linode VPS Hub** | `wg0` Hub | `10.13.13.1:51820` | Concentrador de túneles WireGuard |
+| **TrueNAS SCALE** | `wg0` Spoke | `10.13.13.3/32` | Cliente WireGuard (host netns) |
+| **Nextcloud WebDAV/OCS** | Servicio Interno | `10.13.13.3:30027` | Comunicación directa de `NextcloudService` |
+| **Acceso Público** | Dominio Traefik | `https://cloud.velmartech.com.do` | Acceso para clientes y sincronización de escritorio |
+
+### 7.3. Operación en el Backend (`NextcloudService.ts`)
+
+El servicio [`NextcloudService.ts`](file:///c:/Users/Public/Workspace/msp_client_portal/server/src/modules/system/services/NextcloudService.ts) del módulo de sistema interactúa directamente con `10.13.13.3:30027`:
+- **`getStorageUsage()`**: Consulta la cuota utilizada y disponible mediante WebDAV `PROPFIND` en `/remote.php/dav/files/{user}/`.
+- **`provisionUser()`**: Crea cuentas individuales por slot mediante el API OCS (`POST /ocs/v1.php/cloud/users`).
+- **`deleteUser()`**: Elimina cuentas al reducir slots o cancelar suscripciones (`DELETE /ocs/v1.php/cloud/users/{id}`).
+- **`getUserStorage()`**: Obtiene métricas individuales de almacenamiento en bytes para el portal de clientes.
+
+Para especificaciones operativas, scripts de diagnóstico y runbooks de infraestructura, consultar [`docs/infrastructure/WIREGUARD_NEXTCLOUD_INTEGRATION.md`](file:///c:/Users/Public/Workspace/msp_client_portal/docs/infrastructure/WIREGUARD_NEXTCLOUD_INTEGRATION.md).

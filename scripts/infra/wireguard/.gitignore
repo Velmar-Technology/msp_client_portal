@@ -1,0 +1,7 @@
+*.json
+*.conf
+*.b64
+*.txt
+*.key
+*.log
+.env

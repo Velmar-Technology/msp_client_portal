@@ -297,6 +297,17 @@ The platform features a **Token-Driven Homogeneous Email Design System** shared 
 
 ---
 
+## ☁️ Cloud Storage & Infrastructure Integration
+
+The portal integrates with **Nextcloud** running on **TrueNAS SCALE** (`cloud-storage-srv-1`) to provide automatic cloud backup storage (25 GB per device slot) to clients.
+
+- **WireGuard Site-to-Client Tunnel:** Secures internal communication between the helpdesk VPS (`10.13.13.1`) and customer TrueNAS (`10.13.13.3:30027`), bypassing dynamic WAN IPs and firewall NAT barriers without open incoming router ports.
+- **Traefik Public Ingress:** Exposes client browser and desktop/mobile sync access at `https://cloud.velmartech.com.do` via Traefik reverse proxy.
+- **Backend Provisioning Service:** [`server/src/modules/system/services/NextcloudService.ts`](file:///c:/Users/Public/Workspace/msp_client_portal/server/src/modules/system/services/NextcloudService.ts) automatically creates and manages client storage accounts via OCS REST and WebDAV APIs.
+- **Infrastructure Docs & Runbooks:** Full architectural guide, IP topology, and diagnostic scripts are available in [`docs/infrastructure/WIREGUARD_NEXTCLOUD_INTEGRATION.md`](file:///c:/Users/Public/Workspace/msp_client_portal/docs/infrastructure/WIREGUARD_NEXTCLOUD_INTEGRATION.md) and [`scripts/infra/wireguard/`](file:///c:/Users/Public/Workspace/msp_client_portal/scripts/infra/wireguard/).
+
+---
+
 ## 📖 API Documentation
 
 Interactive Swagger API documentation is available when the server is running:
@@ -304,3 +315,4 @@ Interactive Swagger API documentation is available when the server is running:
 - **Direct Backend URL:** [http://localhost:3001/api-docs](http://localhost:3001/api-docs)
 - **API v1 Endpoint URL:** [http://localhost:3001/api/v1/api-docs](http://localhost:3001/api/v1/api-docs)
 - **Frontend Proxy URL (Dev):** [http://localhost:5173/api-docs](http://localhost:5173/api-docs)
+
