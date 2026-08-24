@@ -4,6 +4,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import path from 'path';
 import fs from 'fs';
+import http from 'http';
+import { WebSocketServer } from 'ws';
 import swaggerUi from 'swagger-ui-express';
 import { env } from '@shared/config/env';
 import { testConnection, startPinger } from '@shared/config/database';
@@ -13,6 +15,7 @@ import { logger } from '@shared/utils/logger';
 import { createExpressErrorMiddleware } from '@shared/errors';
 import routes from './routes';
 import { swaggerSpec } from '@shared/swagger/swagger.config';
+import { agentGateway } from '@modules/rmm/services/AgentGateway';
 
 const app = express();
 
@@ -57,6 +60,16 @@ app.use('/api/v1', routes);
 // ---- Global Error Handler (must be last) ----
 app.use(createExpressErrorMiddleware({ logger, isProduction: env.NODE_ENV === 'production' }));
 
+// ---- Create HTTP Server (shared for Express + WebSocket) ----
+const httpServer = http.createServer(app);
+
+// ---- WebSocket Server for Remote Agent Gateway ----
+const wss = new WebSocketServer({
+  server: httpServer,
+  path: '/agent-ws',
+});
+agentGateway.init(wss);
+
 // ---- Start Server ----
 async function startServer(): Promise<void> {
   try {
@@ -69,9 +82,10 @@ async function startServer(): Promise<void> {
     // Start background database health pinger once DB connection & migrations are complete
     startPinger();
 
-    app.listen(env.PORT, () => {
+    httpServer.listen(env.PORT, () => {
       logger.info(`Velmar Technology SRL MSP API Server running on port ${env.PORT}`);
       logger.info(`API Docs available at http://localhost:${env.PORT}/api-docs and http://localhost:${env.PORT}/api/v1/api-docs`);
+      logger.info(`Agent WebSocket Gateway available at ws://localhost:${env.PORT}/agent-ws`);
       logger.info(`Environment: ${env.NODE_ENV}`);
       
       // Start background subscriptions renewal scheduler
@@ -92,3 +106,4 @@ startServer();
 
 export default app;
 // Server restarted to register CRM domain router endpoints
+

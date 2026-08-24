@@ -84,4 +84,218 @@ export function registerRmmTools(server: McpServer, apiClient: MspApiClient) {
       }
     }
   );
+
+  // ── Remote Agent Gateway Tools ────────────────────────────────────────────
+
+  // 4. Tool: msp_remote_agent_status
+  server.tool(
+    'msp_remote_agent_status',
+    'Check if the MSP Rust endpoint agent is connected and online for a specific client device. Returns hostname, OS, agent version, and connection time.',
+    {
+      equipmentId: z.string().uuid().describe('The UUID of the equipment/device to check agent status for'),
+    },
+    async ({ equipmentId }) => {
+      try {
+        const status = await apiClient.getAgentStatus(equipmentId);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(status, null, 2),
+            },
+          ],
+        };
+      } catch (err: any) {
+        return {
+          isError: true,
+          content: [{ type: 'text', text: `Failed to check agent status: ${err.message}` }],
+        };
+      }
+    }
+  );
+
+  // 5. Tool: msp_remote_diagnose_pc
+  server.tool(
+    'msp_remote_diagnose_pc',
+    'Execute live hardware diagnostics (CPU, RAM, Disk, Network, OS) directly on a remote client endpoint via the Rust agent tunnel. The agent must be online.',
+    {
+      equipmentId: z.string().uuid().describe('The UUID of the remote client device to diagnose'),
+    },
+    async ({ equipmentId }) => {
+      try {
+        const result = await apiClient.getRemoteDiagnostics(equipmentId);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      } catch (err: any) {
+        return {
+          isError: true,
+          content: [{ type: 'text', text: `Remote diagnosis failed: ${err.message}` }],
+        };
+      }
+    }
+  );
+
+  // 6. Tool: msp_remote_get_event_logs
+  server.tool(
+    'msp_remote_get_event_logs',
+    'Query Windows Application or System error/warning/critical events from the Event Log on a remote client endpoint via the Rust agent tunnel.',
+    {
+      equipmentId: z.string().uuid().describe('The UUID of the remote client device'),
+      logName: z.enum(['Application', 'System']).default('Application').describe('The Windows Event Log channel to query'),
+      level: z.enum(['Error', 'Warning', 'Critical']).default('Error').describe('Event severity level to filter'),
+      maxEvents: z.number().min(1).max(20).default(5).describe('Maximum number of events to retrieve'),
+    },
+    async ({ equipmentId, logName, level, maxEvents }) => {
+      try {
+        const result = await apiClient.getRemoteEventLogs(equipmentId, logName, level, maxEvents);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      } catch (err: any) {
+        return {
+          isError: true,
+          content: [{ type: 'text', text: `Remote event log query failed: ${err.message}` }],
+        };
+      }
+    }
+  );
+
+  // 7. Tool: msp_remote_security_audit
+  server.tool(
+    'msp_remote_security_audit',
+    'Run a security posture audit on a remote client endpoint: BitLocker encryption status, Windows Defender protection, Firewall profiles, and pending reboot flags.',
+    {
+      equipmentId: z.string().uuid().describe('The UUID of the remote client device'),
+    },
+    async ({ equipmentId }) => {
+      try {
+        const result = await apiClient.getRemoteSecurityAudit(equipmentId);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      } catch (err: any) {
+        return {
+          isError: true,
+          content: [{ type: 'text', text: `Remote security audit failed: ${err.message}` }],
+        };
+      }
+    }
+  );
+
+  // 8. Tool: msp_remote_exec_command
+  server.tool(
+    'msp_remote_exec_command',
+    'Execute a supported remediation command on a remote client endpoint via the Rust agent. Supported commands: RESTART_SERVICE, INSPECT_OPEN_PORTS, LIST_STARTUP_PROGRAMS, LIST_PROCESSES, FLUSH_DNS_RENEW_DHCP, PING.',
+    {
+      equipmentId: z.string().uuid().describe('The UUID of the remote client device'),
+      command: z.enum([
+        'RESTART_SERVICE',
+        'INSPECT_OPEN_PORTS',
+        'LIST_STARTUP_PROGRAMS',
+        'LIST_PROCESSES',
+        'FLUSH_DNS_RENEW_DHCP',
+        'PING',
+      ]).describe('The agent command to execute'),
+      payload: z.record(z.any()).optional().describe('Optional parameters for the command (e.g. { "service_name": "Spooler" } or { "limit": 25, "sort_by": "memory" })'),
+    },
+    async ({ equipmentId, command, payload }) => {
+      try {
+        const result = await apiClient.execAgentCommand(equipmentId, command, payload);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      } catch (err: any) {
+        return {
+          isError: true,
+          content: [{ type: 'text', text: `Remote command execution failed: ${err.message}` }],
+        };
+      }
+    }
+  );
+
+  // 9. Tool: msp_remote_list_processes
+  server.tool(
+    'msp_remote_list_processes',
+    'List live active running processes on a remote client endpoint via the Rust agent tunnel, sorted by memory or CPU consumption.',
+    {
+      equipmentId: z.string().uuid().describe('The UUID of the remote client device'),
+      limit: z.number().min(1).max(100).default(25).describe('Maximum number of processes to return (default: 25)'),
+      sortBy: z.enum(['memory', 'cpu']).default('memory').describe('Sort field: memory (MB) or cpu (%)'),
+    },
+    async ({ equipmentId, limit, sortBy }) => {
+      try {
+        const result = await apiClient.execAgentCommand(equipmentId, 'LIST_PROCESSES', {
+          limit,
+          sort_by: sortBy,
+        });
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      } catch (err: any) {
+        return {
+          isError: true,
+          content: [{ type: 'text', text: `Failed to list remote processes: ${err.message}` }],
+        };
+      }
+    }
+  );
+
+  // 10. Tool: msp_remote_exec_powershell
+  server.tool(
+    'msp_remote_exec_powershell',
+    'Execute a PowerShell command, script block, or administrative query directly on a remote client endpoint via the Rust agent tunnel. Returns stdout, stderr, exit code, and execution time.',
+    {
+      equipmentId: z.string().uuid().describe('The UUID of the remote client device'),
+      script: z.string().min(1).describe('The PowerShell command or script string to execute on the endpoint'),
+    },
+    async ({ equipmentId, script }) => {
+      try {
+        const result = await apiClient.execAgentCommand(equipmentId, 'EXEC_POWERSHELL', {
+          script,
+        });
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      } catch (err: any) {
+        return {
+          isError: true,
+          content: [{ type: 'text', text: `Failed to execute remote PowerShell: ${err.message}` }],
+        };
+      }
+    }
+  );
 }
+
+
+

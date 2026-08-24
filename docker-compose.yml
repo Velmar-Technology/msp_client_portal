@@ -115,6 +115,20 @@ services:
       ZBX_SERVER_HOST: "127.0.0.1,zabbix-server"
       ZBX_HOSTNAME: "Zabbix server"
 
+  agent:
+    build:
+      context: packages/msp-agent
+      dockerfile: Dockerfile
+    container_name: msp_rust_agent
+    restart: always
+    depends_on:
+      - server
+    environment:
+      - RUST_LOG=info
+      - MSP_GATEWAY_URL=ws://server:3001/agent-ws
+      - MSP_AGENT_ID=00000000-0000-0000-0000-000000000001
+      - MSP_AGENT_TOKEN=dev-token
+
   client:
     build:
       context: .

@@ -1,0 +1,31 @@
+[package]
+name = "msp-agent"
+version = "1.0.0"
+edition = "2021"
+description = "MSP Endpoint Agent — Lightweight Rust background agent for remote diagnostics, event log queries, security audits, and service remediation via WebSocket tunnel."
+authors = ["Velmar Technology SRL"]
+
+[[bin]]
+name = "msp-agent"
+path = "src/main.rs"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
+futures-util = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sysinfo = "0.32"
+uuid = { version = "1.11", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+log = "0.4"
+env_logger = "0.11"
+
+[target.'cfg(windows)'.dependencies]
+windows-service = "0.7"
+
+[profile.release]
+opt-level = "z"     # Optimize for binary size
+lto = true          # Link-Time Optimization
+strip = true        # Strip debug symbols
+codegen-units = 1   # Single codegen unit for max optimization

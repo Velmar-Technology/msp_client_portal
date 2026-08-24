@@ -26,6 +26,21 @@ readonly STATE_FILE=".previous_version"
 readonly HEALTH_RETRIES="${HEALTH_RETRIES:-12}"
 readonly HEALTH_INTERVAL="${HEALTH_INTERVAL:-5}"
 
+# Resolves the compose invocation: Compose v2 plugin first, standalone binary as
+# fallback. Fails with actionable guidance when neither is installed.
+detect_compose() {
+  if docker compose version >/dev/null 2>&1; then
+    COMPOSE=(docker compose)
+  elif command -v docker-compose >/dev/null 2>&1; then
+    COMPOSE=(docker-compose)
+  else
+    log "ERROR: Docker Compose not found on this host"
+    log "Install the v2 plugin: sudo apt-get update && sudo apt-get install -y docker-compose-plugin"
+    exit 1
+  fi
+  log "Using compose command: ${COMPOSE[*]}"
+}
+
 log() { printf '[deploy] %s\n' "$*"; }
 
 require_env() {
@@ -66,7 +81,9 @@ verify_health() {
 
 on_failure() {
   log "Deployment FAILED — attempting automatic rollback"
-  bash "${ROLLBACK_SCRIPT}" || log "ERROR: rollback script also failed — manual intervention required"
+  # VERSION is unset so rollback.sh falls back to the recorded last-known-good
+  # version instead of re-deploying the failed target forwarded by the CD job.
+  (unset VERSION; bash "${ROLLBACK_SCRIPT}") || log "ERROR: rollback script also failed — manual intervention required"
 }
 
 main() {
@@ -77,6 +94,7 @@ main() {
 
   cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+  detect_compose
   record_rollback_point
 
   log "Authenticating against GHCR as ${GHCR_USER}"
@@ -87,8 +105,8 @@ main() {
 
   trap on_failure ERR
 
-  docker compose -f "${COMPOSE_FILE}" pull server client
-  docker compose -f "${COMPOSE_FILE}" up -d --remove-orphans --wait --wait-timeout 180
+  "${COMPOSE[@]}" -f "${COMPOSE_FILE}" pull server client
+  "${COMPOSE[@]}" -f "${COMPOSE_FILE}" up -d --remove-orphans --wait --wait-timeout 180
 
   verify_health
   trap - ERR

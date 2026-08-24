@@ -37,3 +37,10 @@ coverage/
 # Temp
 tmp/
 temp/
+
+# Rust
+target/
+**/target/
+**/*.rs.bk
+*.pdb
+

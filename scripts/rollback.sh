@@ -17,8 +17,23 @@ readonly STATE_FILE=".previous_version"
 
 log() { printf '[rollback] %s\n' "$*"; }
 
+detect_compose() {
+  if docker compose version >/dev/null 2>&1; then
+    COMPOSE=(docker compose)
+  elif command -v docker-compose >/dev/null 2>&1; then
+    COMPOSE=(docker-compose)
+  else
+    log "ERROR: Docker Compose not found on this host"
+    log "Install the v2 plugin: sudo apt-get update && sudo apt-get install -y docker-compose-plugin"
+    exit 1
+  fi
+  log "Using compose command: ${COMPOSE[*]}"
+}
+
 main() {
   cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+  detect_compose
 
   local target="${VERSION:-}"
   if [ -z "${target}" ]; then
@@ -38,8 +53,8 @@ main() {
   export VERSION="${target}" REPOSITORY_OWNER
 
   log "Rolling back to version ${target}"
-  docker compose -f "${COMPOSE_FILE}" pull server client
-  docker compose -f "${COMPOSE_FILE}" up -d --remove-orphans --wait --wait-timeout 180
+  "${COMPOSE[@]}" -f "${COMPOSE_FILE}" pull server client
+  "${COMPOSE[@]}" -f "${COMPOSE_FILE}" up -d --remove-orphans --wait --wait-timeout 180
 
   log "Rollback to ${target} completed"
 }

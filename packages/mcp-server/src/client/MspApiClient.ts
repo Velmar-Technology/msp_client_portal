@@ -127,4 +127,93 @@ export class MspApiClient {
       url: `/system/health/${tenantId}`,
     });
   }
+
+  // --- Remote Agent Gateway (Rust Endpoint Agent Relay) ---
+
+  /**
+   * Checks if a remote Rust agent is connected for the given equipment.
+   */
+  async getAgentStatus(equipmentId: string): Promise<{
+    online: boolean;
+    hostname?: string;
+    agentVersion?: string;
+    os?: string;
+    connectedAt?: string;
+    lastHeartbeat?: string;
+  }> {
+    const res = await this.request<any>({
+      method: 'GET',
+      url: `/rmm/agent/${equipmentId}/status`,
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Returns all currently connected remote agents.
+   */
+  async getConnectedAgents(): Promise<Array<{
+    equipmentId: string;
+    hostname?: string;
+    agentVersion?: string;
+    os?: string;
+    connectedAt: string;
+    lastHeartbeat: string;
+  }>> {
+    const res = await this.request<any>({
+      method: 'GET',
+      url: '/rmm/agent/connected',
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Dispatches an arbitrary command to a remote agent and returns the response.
+   */
+  async execAgentCommand(equipmentId: string, command: string, payload?: any): Promise<any> {
+    const res = await this.request<any>({
+      method: 'POST',
+      url: `/rmm/agent/${equipmentId}/exec`,
+      data: { command, payload },
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Runs a full DIAGNOSE_PC on the remote endpoint.
+   */
+  async getRemoteDiagnostics(equipmentId: string): Promise<any> {
+    const res = await this.request<any>({
+      method: 'POST',
+      url: `/rmm/agent/${equipmentId}/diagnostics`,
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Queries Windows Event Logs on the remote endpoint.
+   */
+  async getRemoteEventLogs(equipmentId: string, logName?: string, level?: string, maxEvents?: number): Promise<any> {
+    const res = await this.request<any>({
+      method: 'POST',
+      url: `/rmm/agent/${equipmentId}/event-logs`,
+      data: {
+        log_name: logName || 'Application',
+        level: level || 'Error',
+        max_events: maxEvents || 5,
+      },
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Runs a security posture audit on the remote endpoint.
+   */
+  async getRemoteSecurityAudit(equipmentId: string): Promise<any> {
+    const res = await this.request<any>({
+      method: 'POST',
+      url: `/rmm/agent/${equipmentId}/security-audit`,
+    });
+    return res.data || res;
+  }
 }
+
