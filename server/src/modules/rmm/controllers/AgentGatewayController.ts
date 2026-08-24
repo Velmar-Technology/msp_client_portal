@@ -11,7 +11,7 @@ export class AgentGatewayController {
    * Returns whether the remote Rust agent is connected and its metadata.
    */
   async getAgentStatus(req: Request, res: Response): Promise<void> {
-    const equipmentId = req.params.equipmentId;
+    const equipmentId = String(req.params.equipmentId);
     const status = agentGateway.getAgentStatus(equipmentId);
     res.json({ success: true, data: status });
   }
@@ -32,7 +32,7 @@ export class AgentGatewayController {
    * Body: { command: string, payload?: any, timeoutMs?: number }
    */
   async execCommand(req: Request, res: Response): Promise<void> {
-    const equipmentId = req.params.equipmentId;
+    const equipmentId = String(req.params.equipmentId);
     const { command, payload, timeoutMs } = req.body;
 
     if (!command || typeof command !== 'string') {
@@ -49,7 +49,7 @@ export class AgentGatewayController {
    * Shorthand endpoint to run a full DIAGNOSE_PC on the remote agent.
    */
   async getDiagnostics(req: Request, res: Response): Promise<void> {
-    const equipmentId = req.params.equipmentId;
+    const equipmentId = String(req.params.equipmentId);
     const result = await agentGateway.sendCommand(equipmentId, 'DIAGNOSE_PC');
     res.json({ success: true, data: result });
   }
@@ -61,7 +61,7 @@ export class AgentGatewayController {
    * Body: { log_name?: string, level?: string, max_events?: number }
    */
   async getEventLogs(req: Request, res: Response): Promise<void> {
-    const equipmentId = req.params.equipmentId;
+    const equipmentId = String(req.params.equipmentId);
     const { log_name, level, max_events } = req.body;
     const result = await agentGateway.sendCommand(equipmentId, 'GET_EVENT_LOGS', {
       log_name: log_name || 'Application',
@@ -76,7 +76,7 @@ export class AgentGatewayController {
    * Runs a security posture audit (BitLocker, Defender, Firewall) on the remote endpoint.
    */
   async getSecurityAudit(req: Request, res: Response): Promise<void> {
-    const equipmentId = req.params.equipmentId;
+    const equipmentId = String(req.params.equipmentId);
     const result = await agentGateway.sendCommand(equipmentId, 'SECURITY_AUDIT');
     res.json({ success: true, data: result });
   }

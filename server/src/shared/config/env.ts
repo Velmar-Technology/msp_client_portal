@@ -59,6 +59,12 @@ const envSchema = z.object({
   PAYPAL_CLIENT_ID: z.string().default(''),
   PAYPAL_CLIENT_SECRET: z.string().default(''),
   PAYPAL_API_URL: z.string().default(''),
+
+  // Zabbix RMM
+  ZABBIX_URL: z.string().default('http://localhost:8080/api_jsonrpc.php'),
+  ZABBIX_USER: z.string().default('Admin'),
+  ZABBIX_PASSWORD: z.string().default('zabbix'),
+  ZABBIX_WEBHOOK_SECRET: z.string().default(''),
 });
 
 const parsed = envSchema.safeParse(process.env);

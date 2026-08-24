@@ -129,10 +129,7 @@ export class AgentGateway {
         `[AgentGateway] Agent disconnected: ${equipmentId} (code=${code}, reason=${reason.toString()}). Active: ${this.activeSockets.size}`
       );
 
-      // Reject all pending requests for this agent
-      for (const [corrId, pending] of this.pendingRequests.entries()) {
-        // We can't easily filter by equipmentId here, so timeout will handle cleanup
-      }
+      // Timeout will handle cleanup of pending requests for this agent
     });
 
     ws.on('error', (err: Error) => {
