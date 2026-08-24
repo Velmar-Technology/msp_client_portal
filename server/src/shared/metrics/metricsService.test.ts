@@ -18,6 +18,7 @@ describe('MetricsService', () => {
     expect(metricsOutput).toContain('msp_http_requests_total');
     expect(metricsOutput).toContain('msp_ws_active_connections');
     expect(metricsOutput).toContain('msp_rate_limit_exceeded_total');
-    expect(metricsOutput).toContain('msp_process_cpu_user_seconds_total');
+    expect(metricsOutput).toContain('process_cpu_user_seconds_total');
+    expect(metricsOutput).toContain('nodejs_heap_size_used_bytes');
   });
 });

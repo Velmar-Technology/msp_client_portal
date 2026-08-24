@@ -6,7 +6,6 @@ export const register = new client.Registry();
 // Enable the collection of default Node.js process and runtime metrics
 client.collectDefaultMetrics({
   register,
-  prefix: 'msp_',
 });
 
 // ---- Custom Application Metrics ----
