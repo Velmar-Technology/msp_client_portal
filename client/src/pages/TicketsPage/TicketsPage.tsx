@@ -3,7 +3,7 @@ import { Plus, Eye, MoreHorizontal, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Page } from "@/components/Page";
 import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef, Column } from "@tanstack/react-table";
 import { useTickets } from "@/hooks/useTicketsPage";
 import type { Ticket, TicketResponse } from "@/services/ticketService";
 import { ticketService } from "@/services/ticketService";
@@ -174,7 +174,7 @@ export function TicketsPage() {
         ? [
             {
               accessorKey: "client_name",
-              header: ({ column }: { column: any }) => (
+              header: ({ column }: { column: Column<Ticket, unknown> }) => (
                 <DataTableColumnHeader column={column} title={t("tickets.colClient")} />
               ),
               cell: ({ row }: { row: { original: Ticket } }) => (
