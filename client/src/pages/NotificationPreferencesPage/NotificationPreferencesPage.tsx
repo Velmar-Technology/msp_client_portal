@@ -8,20 +8,16 @@ import { SKELETON_DISPLAY_DELAY_MS } from "@/constants/ui";
 import {
   Bell,
   Mail,
-  Smartphone,
   Save,
+
   CheckCircle2,
   AlertCircle,
-  Ticket,
-  UserCheck,
-  RefreshCw,
-  XCircle,
-  MessageCircle,
   Lock,
   Loader2,
   History,
   Sliders,
 } from "lucide-react";
+
 import {
   type NotificationPreferencesMap,
   type NotificationEventType,
@@ -34,59 +30,11 @@ import { useTranslation } from "react-i18next";
 import { NotificationHistorySection } from "./NotificationHistorySection";
 import { EmailTemplatesGallerySection } from "./EmailTemplatesGallerySection";
 
-/**
- * Event definitions for the preference matrix.
- */
-const EVENT_DEFINITIONS: {
-  key: NotificationEventType;
-  label: string;
-  description: string;
-  icon: typeof Bell;
-}[] = [
-  {
-    key: "TICKET_CREATED",
-    label: "Ticket Created",
-    description: "When a new support ticket is opened",
-    icon: Ticket,
-  },
-  {
-    key: "TICKET_ASSIGNED",
-    label: "Ticket Assigned",
-    description: "When a ticket is assigned to a technician",
-    icon: UserCheck,
-  },
-  {
-    key: "TICKET_STATUS_CHANGED",
-    label: "Status Changed",
-    description: "When a ticket status is updated",
-    icon: RefreshCw,
-  },
-  {
-    key: "TICKET_CANCELLED",
-    label: "Ticket Cancelled",
-    description: "When a ticket is cancelled",
-    icon: XCircle,
-  },
-  {
-    key: "NEW_REPLY",
-    label: "New Reply",
-    description: "When someone replies to your ticket",
-    icon: MessageCircle,
-  },
-];
+import {
+  NOTIFICATION_EVENT_DEFINITIONS as EVENT_DEFINITIONS,
+  NOTIFICATION_CHANNEL_DEFINITIONS as CHANNEL_DEFINITIONS,
+} from "@/constants/notifications";
 
-/**
- * Channel definitions for the preference matrix columns.
- */
-const CHANNEL_DEFINITIONS: {
-  key: keyof ChannelPreference;
-  label: string;
-  icon: typeof Bell;
-}[] = [
-  { key: "in_app", label: "In-App", icon: Bell },
-  { key: "email", label: "Email", icon: Mail },
-  { key: "whatsapp", label: "WhatsApp", icon: Smartphone },
-];
 
 /* --- Sub-Components --- */
 

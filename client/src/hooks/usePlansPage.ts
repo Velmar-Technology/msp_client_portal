@@ -350,6 +350,14 @@ export function usePlansPage() {
         try {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const buttonConfig: any = {
+            style: {
+              layout: "vertical",
+              color: "gold",
+              shape: "rect",
+              label: "paypal",
+              tagline: false,
+              height: 44,
+            },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onApprove: async (data: any) => {
               setPaymentMessage(t("plans.toasts.paymentApprovedActivating"));
@@ -433,6 +441,14 @@ export function usePlansPage() {
           if (activeSub) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             upgradeButtonsInstance = (window as any).paypal.Buttons({
+              style: {
+                layout: "vertical",
+                color: "gold",
+                shape: "rect",
+                label: "paypal",
+                tagline: false,
+                height: 44,
+              },
               createOrder: async () => {
                 if (!acceptedTosRef.current) {
                   addToast({
@@ -584,6 +600,14 @@ export function usePlansPage() {
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           buttonsInstance = (window as any).paypal.Buttons({
+            style: {
+              layout: "vertical",
+              color: "gold",
+              shape: "rect",
+              label: "paypal",
+              tagline: false,
+              height: 44,
+            },
             createOrder: async () => {
               setPaymentMessage(t("plans.preparingCheckout"));
               try {

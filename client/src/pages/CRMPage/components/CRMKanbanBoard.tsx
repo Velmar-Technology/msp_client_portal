@@ -11,34 +11,8 @@ interface CRMKanbanBoardProps {
   onUpdateStage: (id: string, stage: LeadStage) => void;
 }
 
-const STAGES: { key: LeadStage; color: string; border: string; headerBg: string }[] = [
-  { key: "NEW", color: "text-blue-600 dark:text-blue-400", border: "border-blue-500/30", headerBg: "bg-blue-500/10" },
-  {
-    key: "QUALIFIED",
-    color: "text-purple-600 dark:text-purple-400",
-    border: "border-purple-500/30",
-    headerBg: "bg-purple-500/10",
-  },
-  {
-    key: "PROPOSITION",
-    color: "text-amber-600 dark:text-amber-400",
-    border: "border-amber-500/30",
-    headerBg: "bg-amber-500/10",
-  },
-  {
-    key: "WON",
-    color: "text-emerald-600 dark:text-emerald-400",
-    border: "border-emerald-500/30",
-    headerBg: "bg-emerald-500/10",
-  },
-  { key: "LOST", color: "text-zinc-500 dark:text-zinc-400", border: "border-zinc-500/30", headerBg: "bg-zinc-500/10" },
-];
+import { CRM_STAGES as STAGES, CRM_NEXT_STAGE as NEXT_STAGE } from "@/constants/crm";
 
-const NEXT_STAGE: Partial<Record<LeadStage, LeadStage>> = {
-  NEW: "QUALIFIED",
-  QUALIFIED: "PROPOSITION",
-  PROPOSITION: "WON",
-};
 
 export function CRMKanbanBoard({ leads, stats, onSelectLead, onUpdateStage }: CRMKanbanBoardProps) {
   const { t, i18n } = useTranslation();

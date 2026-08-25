@@ -12,6 +12,14 @@ export interface ChangePasswordPayload {
 export type UserRole = 'CLIENT' | 'TECHNICIAN' | 'ADMIN';
 export type ClientType = 'CLIENT' | 'ENTERPRISE' | 'STUDENT' | 'OTHER';
 
+export interface TechnicianUser {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  specialty?: string | null;
+}
+
 export interface ManagedUser {
   id: string;
   email: string;
@@ -87,7 +95,7 @@ export const userService = {
     await api.put('/users/me/password', data);
   },
 
-  async getTechnicians(): Promise<unknown[]> {
+  async getTechnicians(): Promise<TechnicianUser[]> {
     const response = await api.get('/users/technicians');
     return response.data.data;
   },

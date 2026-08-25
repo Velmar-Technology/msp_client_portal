@@ -4,6 +4,8 @@ import { ticketService } from "@/services/ticketService";
 import type { Ticket, TicketEvent, TicketAttachment, TicketResponse } from "@/services/ticketService";
 import { useAuth } from "@/hooks/useAuth";
 import { userService } from "@/services/userService";
+import type { TechnicianUser } from "@/services/userService";
+import { useTicketReadStore } from "@/store/useTicketReadStore";
 
 export function useTicketDetail(ticketId: string | undefined) {
   const { t, i18n } = useTranslation();
@@ -15,7 +17,7 @@ export function useTicketDetail(ticketId: string | undefined) {
   const [error, setError] = useState<{ title: string; message: string } | null>(null);
 
   // Technician assignment state
-  const [technicians, setTechnicians] = useState<any[]>([]);
+  const [technicians, setTechnicians] = useState<TechnicianUser[]>([]);
   const [loadingTechs, setLoadingTechs] = useState(false);
   const [assigning, setAssigning] = useState(false);
   const [assignMessage, setAssignMessage] = useState<{ text: string; isError: boolean } | null>(null);
@@ -56,10 +58,12 @@ export function useTicketDetail(ticketId: string | undefined) {
       setTimeline(events as (TicketEvent & { changed_by_name?: string })[]);
       setAttachments(atts);
       setResponses(resps);
-    } catch (err: any) {
+      useTicketReadStore.getState().markAsRead(tData.id, user?.id);
+    } catch (err: unknown) {
       console.error('Failed to load ticket', err);
-      const status = err?.response?.status;
-      const code = err?.response?.data?.code;
+      const axiosErr = err as { response?: { status?: number; data?: { code?: string; message?: string } } };
+      const status = axiosErr?.response?.status;
+      const code = axiosErr?.response?.data?.code;
       if (status === 400 || code === 'VALIDATION_ERROR') {
         setError({
           title: t('ticketDetail.invalidTicketId'),
@@ -73,13 +77,13 @@ export function useTicketDetail(ticketId: string | undefined) {
       } else {
         setError({
           title: t('ticketDetail.invalidTicketId'),
-          message: err?.response?.data?.message || t('ticketDetail.invalidTicketIdDesc'),
+          message: axiosErr?.response?.data?.message || t('ticketDetail.invalidTicketIdDesc'),
         });
       }
     } finally {
       setLoading(false);
     }
-  }, [ticketId, t]);
+  }, [ticketId, t, user]);
 
   useEffect(() => {
     loadTicketData();

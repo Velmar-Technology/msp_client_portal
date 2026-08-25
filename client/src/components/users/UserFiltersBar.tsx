@@ -1,6 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { Search, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import {
   Select,
   SelectContent,
@@ -34,25 +38,28 @@ export function UserFiltersBar({
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 mb-3 w-full">
       {/* Search */}
-      <div className="relative flex-1 min-w-50">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-        <Input
+      <InputGroup className="flex-1 min-w-50">
+        <InputGroupInput
           placeholder={t("userManagement.searchPlaceholder")}
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full pl-8 pr-8 h-8 bg-card border-border rounded-md text-xs text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:border-ring/50 shadow-2xs transition-all"
         />
+        <InputGroupAddon>
+          <Search />
+        </InputGroupAddon>
         {searchQuery && (
-          <button
-            onClick={() => onSearchChange("")}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-sm hover:bg-muted/80 transition-colors cursor-pointer"
-            type="button"
-            aria-label="Clear search"
-          >
-            <X className="h-3 w-3" />
-          </button>
+          <InputGroupAddon align="inline-end">
+            <button
+              onClick={() => onSearchChange("")}
+              className="text-muted-foreground hover:text-foreground p-0.5 rounded-sm hover:bg-muted/80 transition-colors cursor-pointer"
+              type="button"
+              aria-label="Clear search"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </InputGroupAddon>
         )}
-      </div>
+      </InputGroup>
 
       <div className="flex items-center gap-2">
         {/* Role Filter */}

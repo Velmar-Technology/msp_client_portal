@@ -1,19 +1,31 @@
 import { useState, useEffect, useMemo } from "react";
-import { X, Calendar as CalendarIcon, Clock, Wrench, Loader2, AlertCircle } from "lucide-react";
+import { X, Calendar as CalendarIcon, Clock, Loader2, AlertCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { maintenanceService, type DeviceMaintenance, type MaintenanceType } from "@/services/maintenanceService";
 import type { SubscriptionEquipment } from "@/services/equipmentService";
 import { DatePicker } from "@/components/shared";
+import { Button } from "@/components/ui/button";
 import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Field, FieldGroup } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ScheduleMaintenanceModalProps {
   equipment: Partial<SubscriptionEquipment> | null;
@@ -49,9 +61,12 @@ export function ScheduleMaintenanceModal({
   const [notes, setNotes] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
 
-  // Filter only provisioned (active) equipment
+  // Filter only provisioned (active) equipment with valid ID
   const provisionedEquipment = useMemo(() => {
-    return allEquipment.filter((eq) => eq.status === "ACTIVE");
+    return allEquipment.filter(
+      (eq): eq is Partial<SubscriptionEquipment> & { id: string } =>
+        Boolean(eq.id && eq.status === "ACTIVE")
+    );
   }, [allEquipment]);
 
   useEffect(() => {
@@ -131,233 +146,243 @@ export function ScheduleMaintenanceModal({
   };
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <AlertDialogContent className="max-w-lg w-full bg-white dark:bg-card border border-zinc-200 dark:border-zinc-800 rounded-xl p-0 overflow-hidden flex flex-col">
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="max-w-lg w-full bg-card border border-border rounded-xl p-0 overflow-hidden flex flex-col">
         {/* Header */}
-        <AlertDialogHeader className="px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-800 flex flex-row justify-between items-center bg-zinc-50 dark:bg-zinc-900/50 space-y-0 text-left">
+        <DialogHeader className="py-3.5 border-b border-border flex flex-row justify-between items-center space-y-0 text-left">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-primary/10 rounded-md text-primary">
-              <Wrench className="h-4 w-4" />
-            </div>
             <div>
-              <AlertDialogTitle className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{t("maintenance.modalTitle")}</AlertDialogTitle>
-              <AlertDialogDescription className="text-[10px] text-zinc-500">{t("maintenance.modalSubtitle")}</AlertDialogDescription>
+              <DialogTitle className="text-sm font-bold text-foreground font-heading">
+                {t("maintenance.modalTitle")}
+              </DialogTitle>
+              <DialogDescription className="text-[10px] text-muted-foreground font-medium">
+                {t("maintenance.modalSubtitle")}
+              </DialogDescription>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            disabled={loading}
-            className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+            className="p-1 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted/80 transition-colors cursor-pointer"
+            aria-label="Close modal"
           >
             <X className="h-4 w-4" />
           </button>
-        </AlertDialogHeader>
+        </DialogHeader>
 
         {/* Body */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs">
-          {/* Target Device Selection */}
-          <div className="space-y-1">
-            <label htmlFor="maint-target-device" className="block text-[10px] uppercase font-bold text-zinc-400">
-              {t("maintenance.labelSelectDevice")}
-            </label>
-            {provisionedEquipment.length > 1 && !equipment?.id ? (
-              <select
-                id="maint-target-device"
-                value={selectedEquipId}
-                onChange={(e) => {
-                  const newId = e.target.value;
-                  setSelectedEquipId(newId);
-                  const selectedEq = provisionedEquipment.find((item) => item.id === newId);
-                  if (selectedEq) {
-                    setTitle(
-                      t("maintenance.defaultTitle", {
-                        name: selectedEq.device_name || t("devices.unnamedDevice"),
-                      }),
-                    );
-                  }
-                }}
-                className="w-full h-8 px-2.5 border border-zinc-200 dark:border-zinc-800 rounded-md bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-zinc-400"
-              >
-                {provisionedEquipment.map((eq) => (
-                  <option key={eq.id} value={eq.id}>
-                    {eq.device_name || t("devices.unnamedDevice")} ({eq.device_serial || t("devices.noSerial")}) -{" "}
-                    {eq.client_name || ""}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <div className="p-2.5 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-md flex justify-between items-center">
-                <div>
-                  <p className="font-bold text-zinc-900 dark:text-zinc-100">
-                    {activeTargetEquip?.device_name || t("devices.unnamedDevice")}
-                  </p>
-                  <p className="text-[10px] text-zinc-500 font-mono">
-                    {activeTargetEquip?.device_serial || t("devices.noSerial")}
-                  </p>
+        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          <FieldGroup className="gap-3.5">
+            {/* Target Device Selection */}
+            <Field>
+              <Label htmlFor="maint-target-device" className="text-[10px] uppercase font-bold text-muted-foreground">
+                {t("maintenance.labelSelectDevice")}
+              </Label>
+              {provisionedEquipment.length > 1 && !equipment?.id ? (
+                <Select
+                  value={selectedEquipId}
+                  onValueChange={(newId) => {
+                    setSelectedEquipId(newId);
+                    const selectedEq = provisionedEquipment.find((item) => item.id === newId);
+                    if (selectedEq) {
+                      setTitle(
+                        t("maintenance.defaultTitle", {
+                          name: selectedEq.device_name || t("devices.unnamedDevice"),
+                        }),
+                      );
+                    }
+                  }}
+                >
+                  <SelectTrigger id="maint-target-device" className="w-full text-xs">
+                    <SelectValue placeholder={t("maintenance.labelSelectDevice")} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border-border">
+                    {provisionedEquipment.map((eq) => (
+                      <SelectItem key={eq.id} value={eq.id} className="text-xs">
+                        {eq.device_name || t("devices.unnamedDevice")} ({eq.device_serial || t("devices.noSerial")})
+                        {eq.client_name ? ` - ${eq.client_name}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="flex justify-between items-center py-1">
+                  <div>
+                    <p className="font-semibold text-foreground text-xs">
+                      {activeTargetEquip?.device_name || t("devices.unnamedDevice")}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground font-mono">
+                      {activeTargetEquip?.device_serial || t("devices.noSerial")}
+                    </p>
+                  </div>
+                  {activeTargetEquip?.client_name && (
+                    <span className="text-[9px] bg-muted px-1.5 py-0.5 rounded font-medium text-muted-foreground border border-border/50">
+                      {activeTargetEquip.client_name}
+                    </span>
+                  )}
                 </div>
-                {activeTargetEquip?.client_name && (
-                  <span className="text-[9px] bg-zinc-200 dark:bg-zinc-800 px-1.5 py-0.5 rounded font-medium text-zinc-700 dark:text-zinc-300">
-                    {activeTargetEquip.client_name}
+              )}
+            </Field>
+
+            {/* Schedule Mode Selector */}
+            <Field>
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">
+                {t("maintenance.labelSchedulingMethod")}
+              </Label>
+              <div className="grid grid-cols-2 gap-1.5 bg-muted/40 p-1 rounded-lg border border-border/50">
+                <Button
+                  type="button"
+                  variant={scheduleMode === "PREDEFINED" ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={() => setScheduleMode("PREDEFINED")}
+                  className="h-auto py-2 px-2.5 flex items-center justify-start gap-2 text-left shadow-none cursor-pointer"
+                >
+                  <Clock className="h-3.5 w-3.5 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="font-semibold text-xs leading-none">{t("maintenance.modePredefinedTitle")}</p>
+                    <p className="text-[10px] text-muted-foreground font-normal mt-0.5 truncate">{t("maintenance.modePredefinedDesc")}</p>
+                  </div>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant={scheduleMode === "CUSTOM" ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={() => setScheduleMode("CUSTOM")}
+                  className="h-auto py-2 px-2.5 flex items-center justify-start gap-2 text-left shadow-none cursor-pointer"
+                >
+                  <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="font-semibold text-xs leading-none">{t("maintenance.modeCustomTitle")}</p>
+                    <p className="text-[10px] text-muted-foreground font-normal mt-0.5 truncate">{t("maintenance.modeCustomDesc")}</p>
+                  </div>
+                </Button>
+              </div>
+            </Field>
+
+            {/* Dynamic Schedule Fields */}
+            {scheduleMode === "PREDEFINED" ? (
+              <Field>
+                <Label htmlFor="maint-interval" className="text-[10px] uppercase font-bold text-muted-foreground">
+                  {t("maintenance.labelPredefinedMonths")}
+                </Label>
+                <div className="grid grid-cols-3 gap-2 pt-0.5">
+                  {[
+                    { months: 3, label: t("maintenance.months3") },
+                    { months: 6, label: t("maintenance.months6Default") },
+                    { months: 12, label: t("maintenance.months12") },
+                  ].map((opt) => (
+                    <Button
+                      key={opt.months}
+                      type="button"
+                      variant={monthsAhead === opt.months ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setMonthsAhead(opt.months)}
+                      className="font-semibold text-center cursor-pointer"
+                    >
+                      {opt.label}
+                    </Button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1.5">
+                  <AlertCircle className="h-3 w-3 text-amber-500 shrink-0" />
+                  <span>
+                    {t("maintenance.predefinedNote", {
+                      date: predefinedDateDisplay,
+                    })}
                   </span>
-                )}
-              </div>
+                </p>
+              </Field>
+            ) : (
+              <Field>
+                <Label htmlFor="maint-custom-date" className="text-[10px] uppercase font-bold text-muted-foreground">
+                  {t("maintenance.labelDatePicker")}
+                </Label>
+                <DatePicker
+                  id="maint-custom-date"
+                  value={customDate}
+                  onChange={setCustomDate}
+                  disabledBefore={new Date()}
+                  className="w-full text-xs"
+                />
+              </Field>
             )}
-          </div>
 
-          {/* Schedule Mode Selector */}
-          <div className="space-y-1.5">
-            <label className="block text-[10px] uppercase font-bold text-zinc-400">
-              {t("maintenance.labelSchedulingMethod")}
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setScheduleMode("PREDEFINED")}
-                className={`p-2.5 rounded-lg border text-left flex items-start gap-2.5 transition-all cursor-pointer ${
-                  scheduleMode === "PREDEFINED"
-                    ? "border-primary bg-primary/5 text-primary ring-1 ring-primary/20"
-                    : "border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 text-zinc-600 dark:text-zinc-400"
-                }`}
-              >
-                <Clock className="h-4 w-4 shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-bold text-xs">{t("maintenance.modePredefinedTitle")}</p>
-                  <p className="text-[10px] opacity-75 mt-0.5 leading-tight">{t("maintenance.modePredefinedDesc")}</p>
-                </div>
-              </button>
+            {/* Technician Assignment (Admin/Tech) */}
+            {isAdminOrTech && technicians.length > 0 && (
+              <Field>
+                <Label htmlFor="maint-assigned-tech" className="text-[10px] uppercase font-bold text-muted-foreground">
+                  {t("maintenance.labelAssignTech")}
+                </Label>
+                <Select
+                  value={assignedTechId || "unassigned"}
+                  onValueChange={(val) => setAssignedTechId(val === "unassigned" ? "" : val)}
+                >
+                  <SelectTrigger id="maint-assigned-tech" className="w-full text-xs">
+                    <SelectValue placeholder={t("maintenance.unassignedTech")} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border-border">
+                    <SelectItem value="unassigned" className="text-xs">
+                      {t("maintenance.unassignedTech")}
+                    </SelectItem>
+                    {technicians.map((tech) => (
+                      <SelectItem key={tech.id} value={tech.id} className="text-xs">
+                        {tech.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            )}
 
-              <button
-                type="button"
-                onClick={() => setScheduleMode("CUSTOM")}
-                className={`p-2.5 rounded-lg border text-left flex items-start gap-2.5 transition-all cursor-pointer ${
-                  scheduleMode === "CUSTOM"
-                    ? "border-primary bg-primary/5 text-primary ring-1 ring-primary/20"
-                    : "border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 text-zinc-600 dark:text-zinc-400"
-                }`}
-              >
-                <CalendarIcon className="h-4 w-4 shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-bold text-xs">{t("maintenance.modeCustomTitle")}</p>
-                  <p className="text-[10px] opacity-75 mt-0.5 leading-tight">{t("maintenance.modeCustomDesc")}</p>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* Dynamic Schedule Fields */}
-          {scheduleMode === "PREDEFINED" ? (
-            <div className="space-y-1.5 bg-zinc-50 dark:bg-zinc-900/30 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800">
-              <label htmlFor="maint-interval" className="block text-[10px] uppercase font-bold text-zinc-400">
-                {t("maintenance.labelPredefinedMonths")}
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { months: 3, label: t("maintenance.months3") },
-                  { months: 6, label: t("maintenance.months6Default") },
-                  { months: 12, label: t("maintenance.months12") },
-                ].map((opt) => (
-                  <button
-                    key={opt.months}
-                    type="button"
-                    onClick={() => setMonthsAhead(opt.months)}
-                    className={`py-1.5 px-2 rounded text-xs font-semibold text-center border transition-all cursor-pointer ${
-                      monthsAhead === opt.months
-                        ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent shadow-sm"
-                        : "bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900"
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-              <p className="text-[10px] text-zinc-400 flex items-center gap-1 mt-1">
-                <AlertCircle className="h-3 w-3 text-amber-500" />
-                {t("maintenance.predefinedNote", {
-                  date: predefinedDateDisplay,
-                })}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-1.5 bg-zinc-50 dark:bg-zinc-900/30 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800">
-              <label htmlFor="maint-custom-date" className="block text-[10px] uppercase font-bold text-zinc-400">
-                {t("maintenance.labelDatePicker")}
-              </label>
-              <DatePicker
-                id="maint-custom-date"
-                value={customDate}
-                onChange={setCustomDate}
-                disabledBefore={new Date()}
-                className="w-full h-8 text-xs"
+            {/* Title Input */}
+            <Field>
+              <Label htmlFor="maint-title-input" className="text-[10px] uppercase font-bold text-muted-foreground">
+                {t("maintenance.labelTitle")}
+              </Label>
+              <Input
+                id="maint-title-input"
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={t("maintenance.titlePlaceholder")}
+                className="w-full text-xs"
               />
-            </div>
-          )}
+            </Field>
 
-          {/* Technician Assignment (Admin/Tech) */}
-          {isAdminOrTech && technicians.length > 0 && (
-            <div className="space-y-1">
-              <label htmlFor="maint-assigned-tech" className="block text-[10px] uppercase font-bold text-zinc-400">
-                {t("maintenance.labelAssignTech")}
-              </label>
-              <select
-                id="maint-assigned-tech"
-                value={assignedTechId}
-                onChange={(e) => setAssignedTechId(e.target.value)}
-                className="w-full h-8 px-2.5 border border-zinc-200 dark:border-zinc-800 rounded-md bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-zinc-400"
-              >
-                <option value="">{t("maintenance.unassignedTech")}</option>
-                {technicians.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Title Input */}
-          <div className="space-y-1">
-            <label htmlFor="maint-title-input" className="block text-[10px] uppercase font-bold text-zinc-400">
-              {t("maintenance.labelTitle")}
-            </label>
-            <input
-              id="maint-title-input"
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={t("maintenance.titlePlaceholder")}
-              className="w-full h-8 px-2.5 border border-zinc-200 dark:border-zinc-800 rounded-md bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-zinc-400"
-            />
-          </div>
-
-          {/* Notes Input */}
-          <div className="space-y-1">
-            <label htmlFor="maint-notes-input" className="block text-[10px] uppercase font-bold text-zinc-400">
-              {t("maintenance.labelNotes")}
-            </label>
-            <textarea
-              id="maint-notes-input"
-              rows={2}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder={t("maintenance.notesPlaceholder")}
-              className="w-full p-2 border border-zinc-200 dark:border-zinc-800 rounded-md bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-zinc-400 resize-none text-xs"
-            />
-          </div>
+            {/* Notes Input */}
+            <Field>
+              <Label htmlFor="maint-notes-input" className="text-[10px] uppercase font-bold text-muted-foreground">
+                {t("maintenance.labelNotes")}
+              </Label>
+              <Textarea
+                id="maint-notes-input"
+                rows={2}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder={t("maintenance.notesPlaceholder")}
+                className="w-full resize-none text-xs"
+              />
+            </Field>
+          </FieldGroup>
 
           {/* Actions */}
-          <AlertDialogFooter className="flex justify-end gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
-            <AlertDialogCancel
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="h-8 px-3 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md transition-colors cursor-pointer mt-0"
-            >
-              {t("common.cancel")}
-            </AlertDialogCancel>
-            <button
+          <DialogFooter className="flex justify-end gap-2 pt-3 border-t border-border">
+            <DialogClose asChild>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={loading}
+                onClick={onClose}
+                className="cursor-pointer"
+              >
+                {t("common.cancel")}
+              </Button>
+            </DialogClose>
+            <Button
               type="submit"
               disabled={loading}
-              className="h-8 px-4 text-xs font-semibold bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 rounded-md transition-opacity cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+              className="gap-1.5 cursor-pointer font-semibold"
             >
               {loading ? (
                 <>
@@ -367,11 +392,12 @@ export function ScheduleMaintenanceModal({
               ) : (
                 <span>{t("maintenance.confirmSchedule")}</span>
               )}
-            </button>
-          </AlertDialogFooter>
+            </Button>
+          </DialogFooter>
         </form>
-      </AlertDialogContent>
-    </AlertDialog>
+      </DialogContent>
+    </Dialog>
   );
 }
 
+export default ScheduleMaintenanceModal;

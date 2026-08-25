@@ -9,14 +9,14 @@ import {
   InputOTPSeparator,
 } from "@/components/ui/input-otp";
 import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 interface ActivateWithOtpModalProps {
   isOpen: boolean;
@@ -49,17 +49,17 @@ export function ActivateWithOtpModal({ isOpen, loading, onClose, onActivate }: A
   };
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <AlertDialogContent className="max-w-md w-full bg-card border border-zinc-200 dark:border-zinc-800 rounded-lg p-0 text-zinc-900 dark:text-zinc-100 flex flex-col overflow-hidden">
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="max-w-md w-full bg-card border border-zinc-200 dark:border-zinc-800 rounded-lg p-0 text-zinc-900 dark:text-zinc-100 flex flex-col overflow-hidden">
         {/* Modal Header */}
-        <AlertDialogHeader className="px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-800 flex flex-row justify-between items-center bg-white dark:bg-zinc-950 space-y-0 text-left">
+        <DialogHeader className="px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-800 flex flex-row justify-between items-center bg-white dark:bg-zinc-950 space-y-0 text-left">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 rounded-md border border-zinc-200 dark:border-zinc-800">
               <KeyRound className="h-4 w-4" />
             </div>
             <div>
-              <AlertDialogTitle className="text-sm font-bold text-zinc-900 dark:text-zinc-50">{t("devices.activateWithCodeTitle")}</AlertDialogTitle>
-              <AlertDialogDescription className="text-[10px] text-zinc-500 font-medium">{t("devices.activateWithCodeSubtitle")}</AlertDialogDescription>
+              <DialogTitle className="text-sm font-bold text-zinc-900 dark:text-zinc-50">{t("devices.activateWithCodeTitle")}</DialogTitle>
+              <DialogDescription className="text-[10px] text-zinc-500 font-medium">{t("devices.activateWithCodeSubtitle")}</DialogDescription>
             </div>
           </div>
           <button
@@ -69,7 +69,7 @@ export function ActivateWithOtpModal({ isOpen, loading, onClose, onActivate }: A
           >
             <X className="h-4 w-4" />
           </button>
-        </AlertDialogHeader>
+        </DialogHeader>
 
         {/* Modal Body */}
         <div className="p-5 space-y-4">
@@ -136,15 +136,15 @@ export function ActivateWithOtpModal({ isOpen, loading, onClose, onActivate }: A
         </div>
 
         {/* Modal Footer */}
-        <AlertDialogFooter className="p-5 border-t border-zinc-200 dark:border-zinc-800 flex flex-row justify-end gap-2">
-          <AlertDialogCancel
+        <DialogFooter className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex flex-row justify-end gap-2 bg-zinc-50/50 dark:bg-zinc-950/40">
+          <DialogClose
             type="button"
             onClick={onClose}
             disabled={loading}
             className="h-8 px-3 text-xs font-semibold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md transition-colors cursor-pointer disabled:opacity-50 mt-0"
           >
             {t("devices.cancel")}
-          </AlertDialogCancel>
+          </DialogClose>
           <button
             type="button"
             onClick={() => onActivate(otp, deviceName.trim(), deviceSerial.trim())}
@@ -163,9 +163,8 @@ export function ActivateWithOtpModal({ isOpen, loading, onClose, onActivate }: A
               </>
             )}
           </button>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
-

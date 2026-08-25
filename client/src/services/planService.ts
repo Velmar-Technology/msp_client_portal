@@ -1,7 +1,8 @@
 import api from "@/services/api";
 
-export const PLAN_CLIENT_TYPES = ["CLIENT", "ENTERPRISE", "STUDENT", "OTHER"] as const;
-export type PlanClientType = (typeof PLAN_CLIENT_TYPES)[number];
+import { PLAN_CLIENT_TYPES, type PlanClientType } from "@/constants/subscriptions";
+export { PLAN_CLIENT_TYPES, type PlanClientType };
+
 
 export interface PlanFeature {
   code?: string;

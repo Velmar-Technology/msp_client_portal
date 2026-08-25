@@ -584,14 +584,13 @@ describe('DevicesPage', () => {
       expect(screen.getByText('Showing 1–7 of 7 devices')).toBeInTheDocument();
     });
 
-    // Find the select element that has value "10"
-    const selects = screen.getAllByRole('combobox') as HTMLSelectElement[];
-    const limitSelectEl = selects.find((sel) => sel.value === '10');
-    expect(limitSelectEl).toBeDefined();
+    // Find the select trigger element with testid and choose limit 5
+    const limitSelectEl = screen.getByTestId('pagination-limit-trigger');
+    expect(limitSelectEl).toBeInTheDocument();
 
-    if (limitSelectEl) {
-      fireEvent.change(limitSelectEl, { target: { value: '5' } });
-    }
+    fireEvent.click(limitSelectEl);
+    const option5 = await screen.findByRole('option', { name: '5' });
+    fireEvent.click(option5);
 
     // Now page 1 should only display Workstation-1 to Workstation-5, and NOT Workstation-6 or Workstation-7
     await waitFor(() => {

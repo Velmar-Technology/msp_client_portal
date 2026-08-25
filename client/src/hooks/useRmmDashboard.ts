@@ -5,7 +5,9 @@ import { equipmentService, type SubscriptionEquipment } from '@/services/equipme
 import type { SortingState } from '@tanstack/react-table';
 import { toast } from 'sonner';
 
-export const RMM_TELEMETRY_POLL_INTERVAL_MS = 30000;
+import { RMM_TELEMETRY_POLL_INTERVAL_MS } from "@/constants/ui";
+export { RMM_TELEMETRY_POLL_INTERVAL_MS };
+
 
 export interface SelectedDevice {
   id: string;

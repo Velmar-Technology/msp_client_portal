@@ -5,7 +5,8 @@ import type { Notification } from "@/services/notificationService";
 import { toast } from 'sonner';
 import { getAuthItem } from '@/lib/authStorage';
 
-const BELL_CLEARED_KEY = 'msp_bell_cleared_at';
+import { BELL_CLEARED_STORAGE_KEY as BELL_CLEARED_KEY } from "@/constants/storage";
+
 
 function getStoredBellClearedAt(): number | null {
   try {

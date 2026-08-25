@@ -24,23 +24,10 @@ import { userService } from "@/services/userService";
 import type { Ticket } from "@/services/ticketService";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useDeferredLoading } from "@/hooks/useDeferredLoading";
+import { statusColor, priorityColor } from "@/constants/tickets";
 import { SKELETON_DISPLAY_DELAY_MS } from "@/constants/ui";
 
-const statusColor: Record<string, string> = {
-  OPEN: 'bg-primary/10 text-primary',
-  IN_PROGRESS: 'bg-secondary text-secondary-foreground',
-  AWAITING_PAYMENT: 'bg-secondary text-secondary-foreground',
-  RESOLVED: 'bg-primary/10 text-primary',
-  CLOSED: 'bg-muted text-muted-foreground',
-  CANCELLED: 'bg-destructive/10 text-destructive',
-};
 
-const priorityColor: Record<string, string> = {
-  LOW: 'text-muted-foreground',
-  MEDIUM: 'text-foreground font-medium',
-  HIGH: 'text-destructive font-semibold',
-  CRITICAL: 'text-destructive font-bold',
-};
 
 // Sub-component to handle active SLA timers per ticket
 function SLACountdownRow({ ticket, onNavigate }: { ticket: Ticket; onNavigate: (id: string) => void }) {

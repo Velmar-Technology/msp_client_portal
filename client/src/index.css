@@ -257,3 +257,28 @@
     background: var(--scrollbar-thumb-hover);
   }
 }
+
+/* PayPal Smart Payment Buttons container & layout optimization */
+.paypal-checkout-container,
+[id^="paypal-"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 44px;
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+
+.paypal-checkout-container iframe,
+[id^="paypal-"] iframe {
+  width: 100% !important;
+  max-width: 100% !important;
+  display: block !important;
+}
+
+.paypal-checkout-container .paypal-buttons,
+[id^="paypal-"] .paypal-buttons {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-bottom: 0 !important;
+}

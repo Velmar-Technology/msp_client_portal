@@ -25,8 +25,11 @@ export type PreloadableComponent<T = ComponentType<any>> = React.LazyExoticCompo
   preload: () => Promise<{ default: T }>;
 };
 
-const CHUNK_RELOAD_STORAGE_KEY = "msp_chunk_retry_reload_timestamp";
-const CHUNK_RELOAD_COOLDOWN_MS = 10000; // 10s cooldown to prevent reload loops
+import {
+  CHUNK_RELOAD_STORAGE_KEY,
+  CHUNK_RELOAD_COOLDOWN_MS,
+} from "@/constants/storage";
+
 
 /**
  * Checks if a chunk load error is likely caused by a stale deployment / missing asset hash.

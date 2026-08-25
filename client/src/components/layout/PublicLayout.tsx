@@ -5,6 +5,13 @@ import { Globe, ArrowRight, LayoutDashboard, Headphones, FileText, Lock, CreditC
 import logoUrl from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { APP_METADATA } from "@/config/metadata";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function PublicLayout() {
   const { t, i18n } = useTranslation();
@@ -41,22 +48,22 @@ export function PublicLayout() {
           {/* Header Action Items */}
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Language Selector */}
-            <div className="flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-full px-2.5 py-1 text-xs font-semibold">
-              <Globe className="h-3.5 w-3.5 text-zinc-500" />
-              <select
+            <Select
+              value={i18n.language?.startsWith("es") ? "es_DO" : "en_US"}
+              onValueChange={(val) => i18n.changeLanguage(val)}
+            >
+              <SelectTrigger
                 aria-label="Select Language"
-                value={i18n.language || "en_US"}
-                onChange={(e) => i18n.changeLanguage(e.target.value)}
-                className="bg-transparent text-xs font-semibold text-zinc-700 dark:text-zinc-300 focus:outline-none cursor-pointer"
+                className="h-8 rounded-full border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 px-3 text-xs font-semibold gap-1.5 cursor-pointer"
               >
-                <option value="en_US" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">
-                  EN
-                </option>
-                <option value="es_DO" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">
-                  ES
-                </option>
-              </select>
-            </div>
+                <Globe className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border">
+                <SelectItem value="en_US" className="text-xs font-medium">EN</SelectItem>
+                <SelectItem value="es_DO" className="text-xs font-medium">ES</SelectItem>
+              </SelectContent>
+            </Select>
 
             {isAuthenticated ? (
               <Button asChild size="sm" className="gap-1.5 rounded-full font-bold">

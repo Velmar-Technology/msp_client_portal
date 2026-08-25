@@ -3,7 +3,7 @@ import { Plus, Eye, MoreHorizontal, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Page } from "@/components/Page";
 import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef, Column } from "@tanstack/react-table";
 import { useTickets } from "@/hooks/useTicketsPage";
 import type { Ticket, TicketResponse } from "@/services/ticketService";
 import { ticketService } from "@/services/ticketService";
@@ -27,79 +27,94 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { priorityColor } from "@/constants/tickets";
+import { cn } from "@/lib/utils";
+import { useTicketReadStore } from "@/store/useTicketReadStore";
 
-const priorityColor: Record<string, string> = {
-  LOW: "text-muted-foreground",
-  MEDIUM: "text-foreground font-medium",
-  HIGH: "text-destructive font-semibold",
-  CRITICAL: "text-destructive font-bold",
-};
-
-// 1. Decoupled Hover Card Title Sub-component
-export function TicketTitleWithHoverCard({ ticket }: { ticket: Ticket }) {
+// 1. Decoupled Hover Card Title Sub-component with Read/Unread Indicator
+export function TicketTitleWithHoverCard({ ticket, userId }: { ticket: Ticket; userId?: string }) {
   const { t } = useTranslation();
   const [lastResponse, setLastResponse] = useState<TicketResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const isRead = useTicketReadStore((state) => state.isTicketRead(ticket.id, userId));
+  const markAsRead = useTicketReadStore((state) => state.markAsRead);
 
   const handleOpenChange = async (open: boolean) => {
-    if (open && !hasLoaded && !loading) {
-      setLoading(true);
-      try {
-        const responses = await ticketService.getResponses(ticket.id);
-        if (responses.length > 0) {
-          const sorted = [...responses].sort(
-            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-          );
-          setLastResponse(sorted[0]);
+    if (open) {
+      markAsRead(ticket.id, userId);
+      if (!hasLoaded && !loading) {
+        setLoading(true);
+        try {
+          const responses = await ticketService.getResponses(ticket.id);
+          if (responses.length > 0) {
+            const sorted = [...responses].sort(
+              (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+            );
+            setLastResponse(sorted[0]);
+          }
+          setHasLoaded(true);
+        } catch (err) {
+          console.error("Failed to load last response", err);
+        } finally {
+          setLoading(false);
         }
-        setHasLoaded(true);
-      } catch (err) {
-        console.error("Failed to load last response", err);
-      } finally {
-        setLoading(false);
       }
     }
   };
 
   return (
-    <HoverCard onOpenChange={handleOpenChange}>
-      <HoverCardTrigger asChild>
-        <span className="text-xs font-semibold text-foreground truncate max-w-xs block cursor-pointer hover:underline">
-          {ticket.title}
-        </span>
-      </HoverCardTrigger>
-      <HoverCardContent className="w-72 bg-card border border-border p-3 shadow-md rounded-md">
-        <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
-          <h4 className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
-            {t("ticketDetail.responsesTitle") || "Last Response"}
-          </h4>
-          {loading ? (
-            <div className="flex justify-center py-2">
-              <div className="w-3.5 h-3.5 border-2 border-border border-t-primary rounded-full animate-spin" />
-            </div>
-          ) : lastResponse ? (
-            <div className="space-y-1">
-              <div className="flex justify-between items-center text-[9px] text-muted-foreground font-medium">
-                <span className="truncate max-w-37.5">
-                  {lastResponse.user_name} ({lastResponse.user_role})
-                </span>
-                <span>{new Date(lastResponse.created_at).toLocaleDateString()}</span>
+    <div className="flex items-center gap-1.5 min-w-0">
+      {!isRead && (
+        <span
+          className="h-1.5 w-1.5 rounded-full bg-primary shrink-0 inline-block animate-pulse"
+          title={t("tickets.unread", "Unread")}
+          aria-label={t("tickets.unread", "Unread")}
+        />
+      )}
+      <HoverCard onOpenChange={handleOpenChange}>
+        <HoverCardTrigger asChild>
+          <span
+            className={cn(
+              "text-xs truncate max-w-xs block cursor-pointer hover:underline",
+              isRead ? "font-normal text-muted-foreground hover:text-foreground" : "font-semibold text-foreground"
+            )}
+          >
+            {ticket.title}
+          </span>
+        </HoverCardTrigger>
+        <HoverCardContent className="w-72 bg-card border border-border p-3 shadow-md rounded-md">
+          <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
+            <h4 className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
+              {t("ticketDetail.responsesTitle") || "Last Response"}
+            </h4>
+            {loading ? (
+              <div className="flex justify-center py-2">
+                <div className="w-3.5 h-3.5 border-2 border-border border-t-primary rounded-full animate-spin" />
               </div>
-              <ScrollArea className="h-16 bg-muted/40 p-1.5 rounded border border-border">
-                <p className="text-[10px] leading-relaxed text-foreground text-left font-normal whitespace-pre-wrap">
-                  {lastResponse.message}
-                </p>
-              </ScrollArea>
-            </div>
-          ) : (
-            <p className="text-[10px] text-muted-foreground italic">
-              {t("ticketDetail.noResponses") || "No responses yet."}
-            </p>
-          )}
-        </div>
-      </HoverCardContent>
-    </HoverCard>
+            ) : lastResponse ? (
+              <div className="space-y-1">
+                <div className="flex justify-between items-center text-[9px] text-muted-foreground font-medium">
+                  <span className="truncate max-w-37.5">
+                    {lastResponse.user_name} ({lastResponse.user_role})
+                  </span>
+                  <span>{new Date(lastResponse.created_at).toLocaleDateString()}</span>
+                </div>
+                <ScrollArea className="h-16 bg-muted/40 p-1.5 rounded border border-border">
+                  <p className="text-[10px] leading-relaxed text-foreground text-left font-normal whitespace-pre-wrap">
+                    {lastResponse.message}
+                  </p>
+                </ScrollArea>
+              </div>
+            ) : (
+              <p className="text-[10px] text-muted-foreground italic">
+                {t("ticketDetail.noResponses") || "No responses yet."}
+              </p>
+            )}
+          </div>
+        </HoverCardContent>
+      </HoverCard>
+    </div>
   );
 }
 
@@ -144,6 +159,8 @@ export function TicketsPage() {
     handleTicketAction,
   } = useTickets();
 
+  const markTicketAsRead = useTicketReadStore((state) => state.markAsRead);
+
   const columns = useMemo<ColumnDef<Ticket>[]>(
     () => [
       {
@@ -151,13 +168,13 @@ export function TicketsPage() {
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title={t("tickets.colTitle")} />
         ),
-        cell: ({ row }) => <TicketTitleWithHoverCard ticket={row.original} />,
+        cell: ({ row }) => <TicketTitleWithHoverCard ticket={row.original} userId={user?.id} />,
       },
       ...(user?.role === "ADMIN" || user?.role === "TECHNICIAN"
         ? [
             {
               accessorKey: "client_name",
-              header: ({ column }: { column: any }) => (
+              header: ({ column }: { column: Column<Ticket, unknown> }) => (
                 <DataTableColumnHeader column={column} title={t("tickets.colClient")} />
               ),
               cell: ({ row }: { row: { original: Ticket } }) => (
@@ -261,7 +278,10 @@ export function TicketsPage() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-card border border-border">
                   <DropdownMenuItem
-                    onClick={() => navigate(`/tickets/${tItem.id}`)}
+                    onClick={() => {
+                      markTicketAsRead(tItem.id, user?.id);
+                      navigate(`/tickets/${tItem.id}`);
+                    }}
                     className="flex items-center gap-2 text-xs cursor-pointer text-foreground"
                   >
                     <Eye className="h-3.5 w-3.5" />
@@ -283,7 +303,7 @@ export function TicketsPage() {
         },
       },
     ],
-    [t, i18n.language, user, navigate, handleTicketAction],
+    [t, i18n.language, user, navigate, handleTicketAction, markTicketAsRead],
   );
 
   return (
@@ -309,7 +329,10 @@ export function TicketsPage() {
         data={tickets}
         loading={loading}
         noDataMessage={t("tickets.noTicketsFound")}
-        onRowClick={(ticket) => navigate(`/tickets/${ticket.id}`)}
+        onRowClick={(ticket) => {
+          markTicketAsRead(ticket.id, user?.id);
+          navigate(`/tickets/${ticket.id}`);
+        }}
         sorting={sorting}
         onSortingChange={handleSortingChange}
         enableSorting

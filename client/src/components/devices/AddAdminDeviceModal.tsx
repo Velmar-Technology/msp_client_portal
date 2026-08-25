@@ -11,14 +11,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 interface AddAdminDeviceModalProps {
   isOpen: boolean;
@@ -63,32 +63,32 @@ export function AddAdminDeviceModal({
   };
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={(open) => { if (!open && !loading) onClose(); }}>
-      <AlertDialogContent className="max-w-md w-full bg-card border border-zinc-200 dark:border-zinc-800 rounded-lg p-0 text-zinc-900 dark:text-zinc-100 flex flex-col overflow-hidden">
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open && !loading) onClose(); }}>
+      <DialogContent className="max-w-md w-full bg-card border border-zinc-200 dark:border-zinc-800 rounded-lg p-0 text-zinc-900 dark:text-zinc-100 flex flex-col overflow-hidden">
         {/* Modal Header */}
-        <AlertDialogHeader className="px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-800 flex flex-row justify-between items-center bg-white dark:bg-zinc-950 space-y-0 text-left">
+        <DialogHeader className="px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-800 flex flex-row justify-between items-center bg-white dark:bg-zinc-950 space-y-0 text-left">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-primary/10 text-primary rounded-md border border-primary/20">
               <Laptop className="h-4 w-4" />
             </div>
             <div>
-              <AlertDialogTitle className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
-                {t("devices.addAdminDeviceTitle", "Add Managed Device")}
-              </AlertDialogTitle>
-              <AlertDialogDescription className="text-[10px] text-zinc-500 font-medium">
-                {t("devices.addAdminDeviceSubtitle", "Directly register infrastructure or internal equipment without a subscription.")}
-              </AlertDialogDescription>
+              <DialogTitle className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
+                {t("devices.addAdminDeviceTitle", "Add New Hardware Asset")}
+              </DialogTitle>
+              <DialogDescription className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                {t("devices.addAdminDeviceDesc", "Provision hardware on behalf of a tenant or general inventory")}
+              </DialogDescription>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-md transition-colors cursor-pointer text-zinc-400 disabled:opacity-50"
+            className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors disabled:opacity-50"
           >
             <X className="h-4 w-4" />
           </button>
-        </AlertDialogHeader>
+        </DialogHeader>
 
         {/* Modal Form Body */}
         <form onSubmit={handleSubmit}>
@@ -154,15 +154,15 @@ export function AddAdminDeviceModal({
           </div>
 
           {/* Modal Footer */}
-          <AlertDialogFooter className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex flex-row justify-end gap-2 bg-zinc-50/50 dark:bg-zinc-950/40">
-            <AlertDialogCancel
+          <DialogFooter className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex flex-row justify-end gap-2 bg-zinc-50/50 dark:bg-zinc-950/40">
+            <DialogClose
               type="button"
               onClick={onClose}
               disabled={loading}
               className="h-8 px-3 text-xs font-semibold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md transition-colors cursor-pointer disabled:opacity-50 mt-0"
             >
               {t("devices.cancel", "Cancel")}
-            </AlertDialogCancel>
+            </DialogClose>
             <Button
               type="submit"
               disabled={!canSubmit}
@@ -180,10 +180,10 @@ export function AddAdminDeviceModal({
                 </>
               )}
             </Button>
-          </AlertDialogFooter>
+          </DialogFooter>
         </form>
-      </AlertDialogContent>
-    </AlertDialog>
+      </DialogContent>
+    </Dialog>
   );
 }
 

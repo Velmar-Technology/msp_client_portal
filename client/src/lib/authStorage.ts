@@ -9,11 +9,13 @@
  * that on page reload we know which backing store to read from.
  */
 
-const REMEMBER_KEY = 'rememberMe';
+import {
+  REMEMBER_ME_STORAGE_KEY as REMEMBER_KEY,
+  AUTH_STORAGE_KEYS as AUTH_KEYS,
+} from "@/constants/storage";
 
-/** Auth keys that should be routed through this abstraction. */
-const AUTH_KEYS = ['accessToken', 'refreshToken', 'user'] as const;
 type AuthKey = (typeof AUTH_KEYS)[number];
+
 
 function isAuthKey(key: string): key is AuthKey {
   return (AUTH_KEYS as readonly string[]).includes(key);

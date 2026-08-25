@@ -4,26 +4,11 @@ export type TranslateFn = (key: string, options?: Record<string, string>) => str
 
 type ActivityType = LeadActivity["activity_type"];
 
-const ACTIVITY_TYPE_KEYS: Partial<Record<ActivityType, string>> = {
-  EMAIL_SENT: "email",
-  QUOTE_SENT: "quoteSent",
-  QUOTE_REMINDER: "quoteReminder",
-  QUOTE_STATUS_CHANGE: "quoteStatusChange",
-  CALL: "call",
-  MEETING: "meeting",
-  NOTE: "note",
-  STAGE_CHANGE: "stageChange",
-  PLAN_ASSIGNED: "planAssigned",
-  SUB_MODIFIED: "subModified",
-};
+import {
+  ACTIVITY_TYPE_KEYS,
+  QUOTATION_TITLE_TO_STATUS_KEY,
+} from "@/constants/crm";
 
-const QUOTATION_TITLE_TO_STATUS_KEY: Record<string, string> = {
-  "Quotation Drafted": "draft",
-  "Quotation Sent": "sent",
-  "Quotation Accepted": "accepted",
-  "Quotation Declined": "declined",
-  "Quotation Expired": "expired",
-};
 
 function translateStage(stageCode: string, t: TranslateFn): string {
   return t(`crm.stages.${stageCode.toLowerCase()}`);

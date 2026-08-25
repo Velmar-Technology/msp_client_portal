@@ -34,7 +34,7 @@ export function StorageOverview({ storage, loading, t }: StorageOverviewProps) {
 
   if (!storage) {
     return (
-      <div className="flex min-h-[120px] flex-col rounded-lg border border-zinc-200 bg-white p-3.5 shadow-xs transition-all duration-200 hover:border-zinc-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700">
+      <div className="flex min-h-30 flex-col rounded-lg border border-zinc-200 bg-white p-3.5 shadow-xs transition-all duration-200 hover:border-zinc-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700">
         <div className="flex items-center justify-between gap-2">
           <span className="truncate text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
             {t("dashboard.cloudStorage")}
@@ -47,7 +47,7 @@ export function StorageOverview({ storage, loading, t }: StorageOverviewProps) {
           <div className="rounded-full bg-red-50 p-2 text-red-500 dark:bg-red-950/40 dark:text-red-400">
             <CloudOff className="h-4 w-4" />
           </div>
-          <p className="max-w-[210px] text-[11px] leading-snug text-zinc-500 dark:text-zinc-400">
+          <p className="max-w-52.5 text-[11px] leading-snug text-zinc-500 dark:text-zinc-400">
             {t("dashboard.storageError")}
           </p>
         </div>
@@ -262,7 +262,7 @@ export function AdminDashboardView() {
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                       <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
                     </span>
-                    {t("tickets.statusOpen") || "OPEN"}
+                    {t("tickets.statusOpen")}
                   </span>
                 ) : undefined
               }

@@ -39,18 +39,18 @@ export const BANK_ACCOUNTS: BankAccountInfo[] = [
       <img src="/banreservas.jpg" alt="Banreservas Logo" className="w-full h-full object-cover rounded" />
     ),
   },
-  {
-    id: "bhd",
-    name: "Banco BHD",
-    accountNumber: "29949640016",
-    type: "Ahorro",
-    typeKey: "plans.typeAhorro",
-    logoBg: "bg-[#00875A]",
-    borderColor: "border-[#006b47]",
-    badgeBg:
-      "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50",
-    logoSvg: (
-      <img src="/bhd.png" alt="Banco BHD Logo" className="w-full h-full object-cover rounded" />
-    ),
-  },
+  // {
+  //   id: "bhd",
+  //   name: "Banco BHD",
+  //   accountNumber: "29949640016",
+  //   type: "Ahorro",
+  //   typeKey: "plans.typeAhorro",
+  //   logoBg: "bg-[#00875A]",
+  //   borderColor: "border-[#006b47]",
+  //   badgeBg:
+  //     "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50",
+  //   logoSvg: (
+  //     <img src="/bhd.png" alt="Banco BHD Logo" className="w-full h-full object-cover rounded" />
+  //   ),
+  // },
 ];

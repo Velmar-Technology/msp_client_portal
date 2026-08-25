@@ -1,22 +1,21 @@
 import { useMemo, useState } from "react";
-import { Download, Package, BookOpen, Compass, FileText, Search, LayoutGrid, List } from "lucide-react";
+import { Download, FileText, Search, LayoutGrid, List } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Page } from "@/components/Page";
-import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useResourcesPage } from "@/hooks/useResourcesPage";
-import type { ResourceItem, ResourceCategory } from "@/lib/resourceCatalog";
+import type { ResourceItem } from "@/lib/resourceCatalog";
 import { cn } from "@/lib/utils";
 
-const CATEGORY_ICONS: Record<ResourceCategory, React.ComponentType<{ className?: string }>> = {
-  software: Package,
-  manual: BookOpen,
-  guide: Compass,
-  document: FileText,
-};
+import { RESOURCE_CATEGORY_ICONS as CATEGORY_ICONS } from "@/constants/resources";
 
 function ResourceCard({ item, onDownload }: { item: ResourceItem; onDownload: (item: ResourceItem) => void }) {
   const { t } = useTranslation();
@@ -163,16 +162,16 @@ export function ResourcesPage() {
       <div className="space-y-4">
         {/* Toolbar */}
         <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              type="text"
+          <InputGroup className="w-full sm:w-72">
+            <InputGroupInput
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder={t("resources.searchPlaceholder")}
-              className="pl-8 text-xs"
             />
-          </div>
+            <InputGroupAddon>
+              <Search />
+            </InputGroupAddon>
+          </InputGroup>
           <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
