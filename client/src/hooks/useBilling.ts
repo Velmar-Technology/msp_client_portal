@@ -64,6 +64,9 @@ export function useBilling() {
     (inv: Invoice) => {
       setSelectedInvoice(inv);
       setShowPayModalInternal(true);
+      setShowDetailsModalInternal(false);
+      setShowMarkPaidModalInternal(false);
+      setShowCancelModalInternal(false);
       setParams({ openModal: "pay-invoice", invoiceId: inv.id });
     },
     [setParams]
@@ -79,6 +82,9 @@ export function useBilling() {
     (inv: Invoice) => {
       setSelectedInvoiceToMarkPaid(inv);
       setShowMarkPaidModalInternal(true);
+      setShowDetailsModalInternal(false);
+      setShowPayModalInternal(false);
+      setShowCancelModalInternal(false);
       setParams({ openModal: "mark-paid", invoiceId: inv.id });
     },
     [setParams]
@@ -94,6 +100,9 @@ export function useBilling() {
     (inv: Invoice) => {
       setSelectedInvoiceDetails(inv);
       setShowDetailsModalInternal(true);
+      setShowPayModalInternal(false);
+      setShowMarkPaidModalInternal(false);
+      setShowCancelModalInternal(false);
       setParams({ openModal: "invoice-details", invoiceId: inv.id });
     },
     [setParams]
@@ -109,6 +118,9 @@ export function useBilling() {
     (inv: Invoice) => {
       setSelectedInvoiceToCancel(inv);
       setShowCancelModalInternal(true);
+      setShowDetailsModalInternal(false);
+      setShowPayModalInternal(false);
+      setShowMarkPaidModalInternal(false);
       setParams({ openModal: "cancel-invoice", invoiceId: inv.id });
     },
     [setParams]
@@ -132,17 +144,34 @@ export function useBilling() {
         if (openModalParam === "pay-invoice") {
           setSelectedInvoice(inv);
           setShowPayModalInternal(true);
+          setShowDetailsModalInternal(false);
+          setShowMarkPaidModalInternal(false);
+          setShowCancelModalInternal(false);
         } else if (openModalParam === "mark-paid") {
           setSelectedInvoiceToMarkPaid(inv);
           setShowMarkPaidModalInternal(true);
+          setShowDetailsModalInternal(false);
+          setShowPayModalInternal(false);
+          setShowCancelModalInternal(false);
         } else if (openModalParam === "cancel-invoice") {
           setSelectedInvoiceToCancel(inv);
           setShowCancelModalInternal(true);
+          setShowDetailsModalInternal(false);
+          setShowPayModalInternal(false);
+          setShowMarkPaidModalInternal(false);
         } else if (openModalParam === "invoice-details" || !openModalParam) {
           setSelectedInvoiceDetails(inv);
           setShowDetailsModalInternal(true);
+          setShowPayModalInternal(false);
+          setShowMarkPaidModalInternal(false);
+          setShowCancelModalInternal(false);
         }
       }
+    } else if (!openModalParam) {
+      setShowPayModalInternal(false);
+      setShowMarkPaidModalInternal(false);
+      setShowCancelModalInternal(false);
+      setShowDetailsModalInternal(false);
     }
   }, [allInvoices, getParam, location.state]);
 

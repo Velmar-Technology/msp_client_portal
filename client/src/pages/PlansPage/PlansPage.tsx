@@ -28,6 +28,8 @@ import { EditPlanModal } from "@/pages/PlansPage/components/EditPlanModal";
 import { DeletePlanAlertDialog } from "@/pages/PlansPage/components/DeletePlanAlertDialog";
 import { ChangeTierPanel } from "@/pages/PlansPage/components/ChangeTierPanel";
 import { CheckoutSheet } from "@/components/checkout-sheet";
+import { SUBSCRIPTION_STATUS_COLORS } from "@/constants/subscriptions";
+
 
 type SubDialogAction = "add_device" | "remove_device" | "cancel" | "pay";
 
@@ -139,13 +141,9 @@ export function PlansPage() {
   );
 
   const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      ACTIVE: "bg-primary/10 text-primary border-primary/20",
-      EXPIRING: "bg-secondary text-secondary-foreground border-border",
-      CANCELLED: "bg-muted text-muted-foreground border-border",
-    };
-    return colors[status] || "bg-muted text-muted-foreground border-border";
+    return SUBSCRIPTION_STATUS_COLORS[status] || "bg-muted text-muted-foreground border-border";
   };
+
 
   const subscriptionDashboardColumns = useMemo<ColumnDef<Subscription>[]>(
     () => [

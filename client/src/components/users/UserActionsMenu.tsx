@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { MoreHorizontal, ShieldCheck, Wrench, User, UserX, UserCheck, Building2, GraduationCap, Tag, Trash2 } from "lucide-react";
+import { MoreHorizontal, UserX, UserCheck, Trash2 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -21,18 +22,11 @@ interface UserActionsMenuProps {
   onDelete?: (userId: string, userName: string) => void;
 }
 
-const ROLE_OPTIONS: { value: UserRole; icon: React.ComponentType<{ className?: string }>; labelKey: string }[] = [
-  { value: "ADMIN", icon: ShieldCheck, labelKey: "userManagement.roleAdmin" },
-  { value: "TECHNICIAN", icon: Wrench, labelKey: "userManagement.roleTech" },
-  { value: "CLIENT", icon: User, labelKey: "userManagement.roleClient" },
-];
+import {
+  USER_ROLE_OPTIONS as ROLE_OPTIONS,
+  CLIENT_TYPE_OPTIONS,
+} from "@/constants/users";
 
-const CLIENT_TYPE_OPTIONS: { value: ClientType; icon: React.ComponentType<{ className?: string }>; labelKey: string }[] = [
-  { value: "CLIENT", icon: User, labelKey: "register.clientTypeCLIENT" },
-  { value: "ENTERPRISE", icon: Building2, labelKey: "register.clientTypeENTERPRISE" },
-  { value: "STUDENT", icon: GraduationCap, labelKey: "register.clientTypeSTUDENT" },
-  { value: "OTHER", icon: Tag, labelKey: "register.clientTypeOTHER" },
-];
 
 export function UserActionsMenu({
   user,

@@ -7,10 +7,9 @@ import {
   type ChannelPreference,
 } from "../services/notificationPreferenceService";
 
-export const FORCE_IN_APP_EVENTS: NotificationEventType[] = [
-  "TICKET_CREATED",
-  "TICKET_STATUS_CHANGED",
-];
+import { FORCE_IN_APP_EVENTS } from "@/constants/notifications";
+export { FORCE_IN_APP_EVENTS };
+
 
 export function useNotificationPreferences() {
   const { t } = useTranslation();

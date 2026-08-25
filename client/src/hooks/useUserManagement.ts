@@ -38,7 +38,8 @@ const INITIAL_CONFIRMATION: ConfirmationState = {
   newValue: "",
 };
 
-const DEFAULT_PAGE_SIZE = 20;
+import { DEFAULT_PAGE_SIZE } from "@/constants/ui";
+
 
 // ---- Hook ----
 

@@ -1,11 +1,18 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useLocation } from "react-router-dom";
 import { Download, CreditCard, Loader2, Shield, CheckCircle, FileText, Eye, XCircle, Copy, Check, Building2 } from "lucide-react";
 import { Page } from "@/components/Page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -24,14 +31,8 @@ import { invoiceService } from "@/services/invoiceService";
 import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 
-/* --- Sub-Components --- */
+import { INVOICE_STATUS_COLORS as statusColor } from "@/constants/billing";
 
-const statusColor: Record<string, string> = {
-  PENDING: "bg-secondary text-secondary-foreground border-border",
-  PAID: "bg-primary/10 text-primary border-primary/20",
-  OVERDUE: "bg-destructive/10 text-destructive border-destructive/20",
-  CANCELLED: "bg-muted text-muted-foreground border-border",
-};
 
 const PayModal = ({
   isOpen,
@@ -99,6 +100,14 @@ const PayModal = ({
         container.innerHTML = "";
         try {
           buttonsInstance = (window as any).paypal.Buttons({
+            style: {
+              layout: "vertical",
+              color: "gold",
+              shape: "rect",
+              label: "paypal",
+              tagline: false,
+              height: 44,
+            },
             createOrder: async () => {
               setPaymentMessage(t("billing.paymentProcessing") || "Preparing checkout...");
               try {
@@ -213,30 +222,32 @@ const PayModal = ({
                 </TabsList>
 
                 <TabsContent value="card" className="space-y-3 mt-0">
-                  <p className="text-xs text-zinc-500 leading-normal">
-                    {t("plans.paypalPaymentNotice") ||
-                      "Please complete your checkout payment securely using PayPal. Once approved, your invoice will mark as paid immediately."}
-                  </p>
-
-                  {paymentMessage && (
-                    <div
-                      className={`py-1.5 px-3 rounded text-[11px] font-medium text-center border ${
-                        paymentMessage.includes("success") || paymentMessage.includes("approved")
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/50"
-                          : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/50 animate-pulse"
-                      }`}
-                    >
-                      {paymentMessage}
+                  <div className="rounded-xl border border-border bg-card p-3.5 space-y-3 shadow-xs">
+                    <div className="flex items-center justify-between text-xs pb-2 border-b border-border">
+                      <span className="font-semibold text-foreground flex items-center gap-1.5 font-heading">
+                        <Shield className="h-3.5 w-3.5 text-primary" />
+                        {t("billing.secureCheckout") || "Secure Instant Checkout"}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground font-mono">
+                        PayPal &bull; Cards
+                      </span>
                     </div>
-                  )}
 
-                  <div
-                    id="paypal-invoice-pay-container"
-                    className="my-2 min-h-30 flex items-center justify-center bg-muted/20 rounded-lg p-3 border border-border border-dashed"
-                  >
-                    <span className="text-xs text-muted-foreground">
-                      {t("plans.loadingPayPalCheckout") || "Loading PayPal Checkout..."}
-                    </span>
+                    <p className="text-xs text-muted-foreground leading-normal">
+                      {t("billing.paypalPaymentNotice") ||
+                        t("plans.paypalPaymentNotice") ||
+                        "Please complete your checkout payment securely using PayPal. Once approved, your invoice will mark as paid immediately."}
+                    </p>
+
+                    <div
+                      id="paypal-invoice-pay-container"
+                      className="w-full min-h-27.5 relative z-0"
+                    >
+                      <div className="flex items-center justify-center gap-2 py-6 text-xs text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                        <span>{t("plans.loadingPayPalCheckout")}</span>
+                      </div>
+                    </div>
                   </div>
                 </TabsContent>
 
@@ -249,7 +260,7 @@ const PayModal = ({
                     <div className="space-y-2 text-left">
                       <h4 className="text-[11px] font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5 font-heading">
                         <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                        {t("plans.bankAccountsTitle") || "CUENTAS BANCARIAS"}
+                        {t("plans.bankAccountsTitle")}
                       </h4>
 
                       <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
@@ -519,20 +530,22 @@ const InvoiceDetailsModal = ({
   const isUnpaid = invoice.status === "PENDING" || invoice.status === "OVERDUE";
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <AlertDialogContent className="sm:max-w-lg bg-white dark:bg-card border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-6 text-zinc-900 dark:text-zinc-100">
-        <AlertDialogHeader className="pb-4 border-b border-zinc-200 dark:border-zinc-800 flex flex-row items-center justify-between">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent size="lg" className="bg-white dark:bg-card border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-6 text-zinc-900 dark:text-zinc-100">
+        <DialogHeader className="pb-4 border-b border-zinc-200 dark:border-zinc-800 flex flex-row items-center justify-between">
           <div>
-            <AlertDialogTitle className="text-base font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
+            <DialogTitle className="text-base font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
               <FileText className="h-4.5 w-4.5 text-zinc-500" />
               {t("billing.invoiceDetails") || "Invoice Details"}
-            </AlertDialogTitle>
-            <p className="text-xs text-zinc-500 font-mono mt-0.5">{invoice.invoice_number}</p>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-zinc-500 font-mono mt-0.5">
+              {invoice.invoice_number}
+            </DialogDescription>
           </div>
           <span className={`px-2.5 py-1 text-xs font-semibold rounded-md border ${statusColor[invoice.status]}`}>
             {getStatusLabel(invoice.status)}
           </span>
-        </AlertDialogHeader>
+        </DialogHeader>
 
         <div className="py-4 space-y-4">
           <div className="grid grid-cols-2 gap-4 text-xs">
@@ -605,7 +618,7 @@ const InvoiceDetailsModal = ({
           </div>
         </div>
 
-        <AlertDialogFooter className="pt-3 border-t border-zinc-200 dark:border-zinc-800 sm:justify-between items-center gap-2 flex-col-reverse sm:flex-row">
+        <DialogFooter className="pt-3 border-t border-zinc-200 dark:border-zinc-800 sm:justify-between items-center gap-2 flex-col-reverse sm:flex-row">
           <Button
             variant="outline"
             size="sm"
@@ -618,20 +631,17 @@ const InvoiceDetailsModal = ({
           </Button>
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            <AlertDialogCancel
+            <DialogClose
               onClick={onClose}
               className="px-3.5 py-1.5 text-xs font-semibold border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg transition-colors cursor-pointer"
             >
               {t("common.close") || "Close"}
-            </AlertDialogCancel>
+            </DialogClose>
 
             {isUnpaid && isClient && (
               <Button
                 size="sm"
-                onClick={() => {
-                  onClose();
-                  onPay(invoice);
-                }}
+                onClick={() => onPay(invoice)}
                 className="text-xs font-semibold gap-1.5 cursor-pointer shadow-sm"
               >
                 <CreditCard className="h-3.5 w-3.5" />
@@ -642,10 +652,7 @@ const InvoiceDetailsModal = ({
             {isUnpaid && isAdmin && (
               <Button
                 size="sm"
-                onClick={() => {
-                  onClose();
-                  onMarkPaid(invoice);
-                }}
+                onClick={() => onMarkPaid(invoice)}
                 className="text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 cursor-pointer shadow-sm"
               >
                 <CheckCircle className="h-3.5 w-3.5" />
@@ -657,10 +664,7 @@ const InvoiceDetailsModal = ({
               <Button
                 variant="destructive"
                 size="sm"
-                onClick={() => {
-                  onClose();
-                  onCancel(invoice);
-                }}
+                onClick={() => onCancel(invoice)}
                 className="text-xs font-semibold gap-1.5 cursor-pointer shadow-sm"
               >
                 <XCircle className="h-3.5 w-3.5" />
@@ -668,9 +672,9 @@ const InvoiceDetailsModal = ({
               </Button>
             )}
           </div>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -678,7 +682,6 @@ const InvoiceDetailsModal = ({
 
 export function BillingPage() {
   const { user } = useAuth();
-  const location = useLocation();
   const isClient = user?.role === "CLIENT";
   const isAdmin = user?.role === "ADMIN";
 
@@ -715,27 +718,13 @@ export function BillingPage() {
     openCancelModal,
     closeCancelModal,
     handleCancelInvoice,
-    allInvoices,
     selectedInvoiceDetails,
+
     showDetailsModal,
     openDetailsModal,
     closeDetailsModal,
     fetchInvoices,
   } = useBilling();
-
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const queryInvoiceId = searchParams.get("invoiceId");
-    const state = location.state as { invoiceId?: string } | undefined;
-    const targetInvoiceId = state?.invoiceId || queryInvoiceId;
-
-    if (targetInvoiceId && allInvoices.length > 0) {
-      const found = allInvoices.find((inv) => inv.id === targetInvoiceId);
-      if (found) {
-        openDetailsModal(found);
-      }
-    }
-  }, [location.state, location.search, allInvoices, openDetailsModal]);
 
   const getStatusLabel = useCallback(
     (status: string) => {

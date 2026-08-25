@@ -56,7 +56,9 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 
-export const CRM_TAX_RATE = 0.18;
+import { TAX_RATE as CRM_TAX_RATE } from "@/constants/billing";
+export { CRM_TAX_RATE };
+
 
 const editLeadFormSchema = z.object({
   contactName: z.string().min(1, "crm.validation.contactNameRequired").max(255),
@@ -128,22 +130,10 @@ interface CRMLeadDetailSheetProps {
   onDeleteLead?: (id: string) => Promise<void>;
 }
 
-const STAGES: LeadStage[] = ["NEW", "QUALIFIED", "PROPOSITION", "WON", "LOST"];
+import { CRM_VALID_STAGES as STAGES, QUOTATION_STATUS_BADGES } from "@/constants/crm";
 
 function getQuotationBadgeVariant(status: QuotationStatus) {
-  switch (status) {
-    case "ACCEPTED":
-      return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
-    case "DECLINED":
-      return "bg-destructive/10 text-destructive border-destructive/20";
-    case "SENT":
-      return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20";
-    case "EXPIRED":
-      return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
-    case "DRAFT":
-    default:
-      return "bg-muted text-muted-foreground border-border";
-  }
+  return QUOTATION_STATUS_BADGES[status] || "bg-muted text-muted-foreground border-border";
 }
 
 export function CRMLeadDetailSheet({

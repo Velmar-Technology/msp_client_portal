@@ -12,7 +12,7 @@ TRUNCATE TABLE ticket_responses, ticket_events, ticket_attachments, tickets, sub
    18, 
    '[
      {"code": "HELPDESK_SUPPORT", "text": {"en_US": "Chat & Remote Support (Mon-Fri 9:00 AM - 4:00 PM AST)", "es_DO": "Chat & Soporte Remoto (Lun-Vie 9:00 AM - 4:00 PM)"}, "params": {"type": "8x5"}, "included": true},
-     {"code": "CLOUD_STORAGE", "text": {"en_US": "25 GB Cloud Storage (Nextcloud AGPLv3)", "es_DO": "25 GB Almacenamiento en la Nube (Nextcloud AGPLv3)"}, "params": {"limit": 25, "unit": "GB"}, "included": true},
+     {"code": "CLOUD_STORAGE", "text": {"en_US": "25 GB Cloud Storage", "es_DO": "25 GB Almacenamiento en la Nube"}, "params": {"limit": 25, "unit": "GB"}, "included": true},
      {"code": "BACKUP_INCLUDED", "text": {"en_US": "Backup included", "es_DO": "Copia de Seguridad Incluida"}, "included": true},
      {"code": "SLA_LEVEL", "text": {"en_US": "SLA Response within 8 business hours", "es_DO": "SLA (8 horas hábiles de respuesta ACK)"}, "params": {"level": "Bronze", "response": "8 hours"}, "included": true},
      {"code": "RMM_PATCH_MANAGEMENT", "text": {"en_US": "Remote RMM Monitoring & Security Patching", "es_DO": "Monitoreo Remoto RMM & Parches de Seguridad"}, "included": true}

@@ -33,8 +33,8 @@ import {
   CalendarClock,
 } from "lucide-react";
 
-const VALID_STAGES = ["NEW", "QUALIFIED", "PROPOSITION", "WON", "LOST"];
-const VALID_PRIORITIES = ["LOW", "MEDIUM", "HIGH"];
+import { CRM_VALID_STAGES as VALID_STAGES, CRM_VALID_PRIORITIES as VALID_PRIORITIES } from "@/constants/crm";
+
 
 type LeadPriorityAlias = "LOW" | "MEDIUM" | "HIGH";
 
@@ -85,8 +85,9 @@ export function CRMPage() {
 
   const paramView = getParam("view") === "kanban" ? "kanban" : "table";
   const paramSearch = getParam("search");
-  const paramStage = VALID_STAGES.includes(getParam("stage")) ? getParam("stage") : "";
-  const paramPriority = VALID_PRIORITIES.includes(getParam("priority")) ? getParam("priority") : "";
+  const paramStage = VALID_STAGES.includes(getParam("stage") as any) ? getParam("stage") : "";
+  const paramPriority = (VALID_PRIORITIES as readonly string[]).includes(getParam("priority")) ? getParam("priority") : "";
+
   const paramPage = Math.max(1, parseInt(getParam("page", "1"), 10) || 1);
   const paramLeadId = getParam("lead");
   const isNewLeadModalOpen = getParam("openModal") === "new-lead";

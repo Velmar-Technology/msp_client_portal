@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Shield, Loader2 } from "lucide-react";
 import type { Plan } from "@/services/planService";
 import type { Subscription } from "@/services/subscriptionService";
 import { Button } from "@/components/ui/button";
@@ -92,22 +93,37 @@ export function SubscriptionModifyForm({
       )}
 
       {requiresPayment ? (
-        <div className="mt-2 border-t border-border pt-3">
-          <p className="text-xs text-muted-foreground mb-2 leading-normal">
-            {t("plans.addDevicesPaymentNotice") ||
-              "Adding more devices requires a PayPal payment to activate the additional licenses immediately."}
-          </p>
-          <div
-            id="paypal-upgrade-button-container"
-            className="my-1.5 min-h-25 flex items-center justify-center bg-muted/20 rounded-md p-3 border border-border border-dashed"
-          >
-            <span className="text-xs text-muted-foreground">
-              {t("plans.loadingPayPal") || "Loading PayPal Checkout..."}
-            </span>
+        <div className="mt-2 border-t border-border pt-3 space-y-3">
+          <div className="rounded-xl border border-border bg-card p-3.5 space-y-3 shadow-xs">
+            <div className="flex items-center justify-between text-xs pb-2 border-b border-border">
+              <span className="font-semibold text-foreground flex items-center gap-1.5 font-heading">
+                <Shield className="h-3.5 w-3.5 text-primary" />
+                {t("plans.secureCheckout") || "Secure Instant Checkout"}
+              </span>
+              <span className="text-[11px] text-muted-foreground font-mono">
+                PayPal &bull; Cards
+              </span>
+            </div>
+
+            <p className="text-xs text-muted-foreground leading-normal">
+              {t("plans.addDevicesPaymentNotice") ||
+                "Adding more devices requires a PayPal payment to activate the additional licenses immediately."}
+            </p>
+
+            <div
+              id="paypal-upgrade-button-container"
+              className="w-full min-h-[110px] relative z-0"
+            >
+              <div className="flex items-center justify-center gap-2 py-6 text-xs text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                <span>{t("plans.loadingPayPal") || "Loading PayPal Checkout..."}</span>
+              </div>
+            </div>
+
+            {paymentMessage && (
+              <p className="text-xs text-foreground font-semibold mt-1.5">{paymentMessage}</p>
+            )}
           </div>
-          {paymentMessage && (
-            <p className="text-xs text-foreground font-semibold mt-1.5">{paymentMessage}</p>
-          )}
         </div>
       ) : (
         <Button

@@ -1,6 +1,6 @@
 import { useState, type SyntheticEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Copy, Check, Building2 } from "lucide-react";
+import { Copy, Check, Building2, Shield, Loader2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { BANK_ACCOUNTS } from "@/constants/bankAccounts";
 
@@ -89,28 +89,43 @@ export function PaymentFields({
             </TabsList>
 
             <TabsContent value="card" className="space-y-3 mt-0">
-              <p className="text-xs text-muted-foreground leading-normal">
-                {t("plans.paypalPaymentNotice") ||
-                  "Please complete your checkout payment securely using PayPal. Once approved, your subscription will activate immediately."}
-              </p>
-              {paymentMessage && (
-                <div
-                  className={`py-1.5 px-3 rounded text-[11px] font-medium text-center border ${
-                    paymentMessage.includes("activated") || paymentMessage.includes("successfully")
-                      ? "bg-primary/10 text-primary border-primary/20"
-                      : "bg-secondary text-secondary-foreground border-border animate-pulse"
-                  }`}
-                >
-                  {paymentMessage}
+              <div className="rounded-xl border border-border bg-card p-3.5 space-y-3 shadow-xs">
+                <div className="flex items-center justify-between text-xs pb-2 border-b border-border">
+                  <span className="font-semibold text-foreground flex items-center gap-1.5 font-heading">
+                    <Shield className="h-3.5 w-3.5 text-primary" />
+                    {t("plans.secureCheckout")}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground font-mono">
+                    PayPal &bull; Cards
+                  </span>
                 </div>
-              )}
-              <div
-                id={paypalContainerId}
-                className="my-2 min-h-30 flex items-center justify-center bg-muted/20 rounded-lg p-3 border border-border border-dashed"
-              >
-                <span className="text-xs text-muted-foreground">
-                  {t("plans.loadingPayPalCheckout") || "Loading PayPal Checkout..."}
-                </span>
+
+                <p className="text-xs text-muted-foreground leading-normal">
+                  {t("plans.paypalPaymentNotice") ||
+                    "Please complete your checkout payment securely using PayPal. Once approved, your subscription will activate immediately."}
+                </p>
+
+                {paymentMessage && (
+                  <div
+                    className={`py-2 px-3 rounded-lg text-xs font-medium text-center border ${
+                      paymentMessage.includes("activated") || paymentMessage.includes("successfully")
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/60"
+                        : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/60 animate-pulse"
+                    }`}
+                  >
+                    {paymentMessage}
+                  </div>
+                )}
+
+                <div
+                  id={paypalContainerId}
+                  className="w-full min-h-[110px] relative z-0"
+                >
+                  <div className="flex items-center justify-center gap-2 py-6 text-xs text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    <span>{t("plans.loadingPayPalCheckout") || "Loading PayPal Checkout..."}</span>
+                  </div>
+                </div>
               </div>
             </TabsContent>
 

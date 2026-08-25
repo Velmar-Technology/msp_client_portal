@@ -27,13 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-const priorityColor: Record<string, string> = {
-  LOW: "text-muted-foreground",
-  MEDIUM: "text-foreground font-medium",
-  HIGH: "text-destructive font-semibold",
-  CRITICAL: "text-destructive font-bold",
-};
+import { priorityColor } from "@/constants/tickets";
 
 // 1. Decoupled Hover Card Title Sub-component
 export function TicketTitleWithHoverCard({ ticket }: { ticket: Ticket }) {
