@@ -285,8 +285,9 @@ export function DataTable<TData, TValue>({
                   >
                     <SelectTrigger
                       id={`filter-${filter.id}`}
+                      size="lg"
                       aria-label={filter.placeholder || filter.id}
-                      className="h-8 p-2.5 min-w-32.5 rounded-md text-xs font-medium bg-card text-foreground border border-border shadow-2xs hover:bg-accent/40 hover:border-border/80 focus:ring-1 focus:ring-ring cursor-pointer gap-2"
+                      className="min-w-32.5 rounded-md text-xs font-medium bg-card text-foreground border border-border shadow-2xs hover:bg-accent/40 hover:border-border/80 focus:ring-1 focus:ring-ring cursor-pointer gap-2"
                     >
                       <SelectValue placeholder={filter.placeholder || "Select..."} />
                     </SelectTrigger>

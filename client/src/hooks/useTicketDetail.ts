@@ -4,6 +4,7 @@ import { ticketService } from "@/services/ticketService";
 import type { Ticket, TicketEvent, TicketAttachment, TicketResponse } from "@/services/ticketService";
 import { useAuth } from "@/hooks/useAuth";
 import { userService } from "@/services/userService";
+import { useTicketReadStore } from "@/store/useTicketReadStore";
 
 export function useTicketDetail(ticketId: string | undefined) {
   const { t, i18n } = useTranslation();
@@ -56,6 +57,7 @@ export function useTicketDetail(ticketId: string | undefined) {
       setTimeline(events as (TicketEvent & { changed_by_name?: string })[]);
       setAttachments(atts);
       setResponses(resps);
+      useTicketReadStore.getState().markAsRead(tData.id, user?.id);
     } catch (err: any) {
       console.error('Failed to load ticket', err);
       const status = err?.response?.status;
