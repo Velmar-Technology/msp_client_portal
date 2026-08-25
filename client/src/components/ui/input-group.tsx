@@ -59,8 +59,7 @@ function InputGroupAddon({
   )
 }
 
-interface InputGroupInputProps
-  extends React.ComponentProps<"input"> {}
+type InputGroupInputProps = React.ComponentProps<"input">
 
 function InputGroupInput({ className, type = "text", ...props }: InputGroupInputProps) {
   return (
