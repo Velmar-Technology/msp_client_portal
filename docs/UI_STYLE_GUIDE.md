@@ -248,9 +248,75 @@ For workflow states, tickets, transactions, and CRM leads:
 ### 4. Overlays & Drawers (shadcn `Sheet`, `Dialog`, `AlertDialog`)
 
 * **Lead / Detail Drawers**: Use `@/components/ui/sheet` (`Sheet`, `SheetContent`, `SheetHeader`, `SheetTitle`).
-* **Creation Modals**: Use `@/components/ui/dialog` (`Dialog`, `DialogContent`, `DialogHeader`, `DialogTitle`).
-* **Destructive Confirmations**: Use `@/components/ui/alert-dialog` (`AlertDialog`, `AlertDialogContent`, `AlertDialogAction` with `bg-destructive hover:bg-destructive/90 text-white`).
+* **Modals & Dialogs**: `import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog"`
+* **Confirmations**: `import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"`
 * **Row Context Actions**: Use `@/components/ui/dropdown-menu` (`DropdownMenu`, `DropdownMenuTrigger`, `DropdownMenuContent`, `DropdownMenuItem`).
+
+#### Standard Modal / Dialog Example (`@/components/ui/dialog`)
+```tsx
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+
+<Dialog open={isOpen} onOpenChange={setIsOpen}>
+  <DialogContent size="lg">
+    <DialogHeader>
+      <DialogTitle>{t("tickets.createModalTitle")}</DialogTitle>
+      <DialogDescription>{t("tickets.modalDescription")}</DialogDescription>
+    </DialogHeader>
+    <div className="space-y-4 py-2">
+      {/* Form Fields */}
+    </div>
+    <DialogFooter className="flex gap-2 sm:justify-end">
+      <DialogClose asChild>
+        <Button variant="outline">{t("common.cancel")}</Button>
+      </DialogClose>
+      <Button type="submit">{t("common.save")}</Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+```
+
+#### Destructive / Action Confirmation Example (`@/components/ui/alert-dialog`)
+```tsx
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+
+<AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+  <AlertDialogContent size="default">
+    <AlertDialogHeader>
+      <AlertDialogTitle>{t("common.confirmDelete")}</AlertDialogTitle>
+      <AlertDialogDescription>
+        {t("common.deleteWarning")}
+      </AlertDialogDescription>
+    </AlertDialogHeader>
+    <AlertDialogFooter>
+      <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+      <AlertDialogAction
+        variant="destructive"
+        onClick={handleDelete}
+      >
+        {t("common.delete")}
+      </AlertDialogAction>
+    </AlertDialogFooter>
+  </AlertDialogContent>
+</AlertDialog>
+```
 
 ---
 

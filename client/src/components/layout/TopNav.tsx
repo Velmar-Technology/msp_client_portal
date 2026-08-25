@@ -14,7 +14,11 @@ import { useTopNav, type FlatItem } from "@/hooks/useTopNav";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { NotificationBell } from "@/components/layout/NotificationBell";
-import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 
 // 1. SearchBar Sub-component
 interface SearchBarProps {
@@ -46,11 +50,9 @@ export function SearchBar({
 }: SearchBarProps) {
   return (
     <div ref={containerRef} className="hidden md:flex items-center flex-1 max-w-sm mx-6 relative">
-      <div className="relative w-full">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-        <Input
+      <InputGroup className="w-full bg-muted/40 rounded-sm">
+        <InputGroupInput
           id="topnav-search"
-          type="text"
           placeholder={t("topNav.search")}
           value={searchQuery}
           onChange={(e) => {
@@ -63,9 +65,11 @@ export function SearchBar({
             prefetchInvoices();
           }}
           onKeyDown={handleKeyDown}
-          className="w-full pl-8 pr-3 h-8 bg-muted/40 border-border rounded-sm text-xs placeholder:text-muted-foreground text-foreground"
         />
-      </div>
+        <InputGroupAddon>
+          <Search />
+        </InputGroupAddon>
+      </InputGroup>
 
       {isOpen && (
         <div className="absolute top-full left-0 mt-1 w-full bg-card border border-border rounded-sm shadow-xl overflow-hidden z-50 text-foreground select-none max-h-95 overflow-y-auto custom-scrollbar">

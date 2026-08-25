@@ -8,8 +8,20 @@
     "edit": "Editar",
     "loading": "Cargando...",
     "saving": "Guardando...",
-    "pickDate": "Seleccionar fecha"
+    "pickDate": "Seleccionar fecha",
+    "table": {
+      "showing": "Mostrando {{start}}–{{end}} de {{total}}",
+      "noResults": "Sin resultados.",
+      "search": "Buscar...",
+      "prevPage": "Página anterior",
+      "nextPage": "Página siguiente",
+      "selectAll": "Seleccionar todos",
+      "selectRow": "Seleccionar fila",
+      "clearSearch": "Limpiar búsqueda",
+      "resetFilters": "Restablecer filtros"
+    }
   },
+
   "nav": {
     "dashboard": "Panel de Control",
     "tickets": "Tickets",

@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
+
 import type { ColumnDef, RowSelectionState, SortingState, Column, OnChangeFn } from "@tanstack/react-table";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -9,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Inbox, Search, X, RotateCcw, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Empty, EmptyHeader, EmptyTitle, EmptyMedia } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -119,7 +121,7 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   loading = false,
-  noDataMessage = "No results.",
+  noDataMessage,
   onRowClick,
   className,
   enableRowSelection = false,
@@ -134,6 +136,7 @@ export function DataTable<TData, TValue>({
   enableSorting = true,
   manualSorting = false,
 }: DataTableProps<TData, TValue>) {
+  const { t } = useTranslation();
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [internalSorting, setInternalSorting] = useState<SortingState>(defaultSorting || []);
 
@@ -154,9 +157,15 @@ export function DataTable<TData, TValue>({
       id: "select",
       header: ({ table }) => (
         <Checkbox
-          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+          checked={
+            table.getIsAllPageRowsSelected()
+              ? true
+              : table.getIsSomePageRowsSelected()
+              ? "indeterminate"
+              : false
+          }
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
+          aria-label={t("common.table.selectAll", "Select all")}
           onClick={(e) => e.stopPropagation()}
         />
       ),
@@ -164,7 +173,7 @@ export function DataTable<TData, TValue>({
         <Checkbox
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
+          aria-label={t("common.table.selectRow", "Select row")}
           onClick={(e) => e.stopPropagation()}
         />
       ),
@@ -173,7 +182,7 @@ export function DataTable<TData, TValue>({
     };
 
     return [selectColumn, ...columns];
-  }, [columns, enableRowSelection]);
+  }, [columns, enableRowSelection, t]);
 
   const table = useReactTable({
     data,
@@ -207,8 +216,13 @@ export function DataTable<TData, TValue>({
 
   // Compute default showing text
   const defaultShowingText = pagination
-    ? `Showing ${pagination.totalItems === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1}–${Math.min(pagination.page * pagination.limit, pagination.totalItems)} of ${pagination.totalItems}`
+    ? t("common.table.showing", "Showing {{start}}–{{end}} of {{total}}", {
+        start: pagination.totalItems === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1,
+        end: Math.min(pagination.page * pagination.limit, pagination.totalItems),
+        total: pagination.totalItems,
+      })
     : "";
+
 
   const hasActiveFilters = useMemo(() => {
     const hasSearch = Boolean(search?.value && search.value.trim().length > 0);
@@ -235,27 +249,29 @@ export function DataTable<TData, TValue>({
       {(search || (filters && filters.length > 0)) && (
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full max-w-full min-w-0">
           {search && (
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-              <Input
+            <InputGroup className="flex-1 min-w-50">
+              <InputGroupInput
                 id={`${search.placeholder?.replace(/\s+/g, "-").toLowerCase() || "search"}-input`}
-                type="text"
-                placeholder={search.placeholder || "Search..."}
+                placeholder={search.placeholder || t("common.table.search", "Search...")}
                 value={search.value}
                 onChange={(e) => search.onChange(e.target.value)}
-                className="w-full pl-8 pr-8 h-8 bg-card border-border rounded-md text-xs text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:border-ring/50 shadow-2xs transition-all"
               />
+              <InputGroupAddon>
+                <Search />
+              </InputGroupAddon>
               {search.value && (
-                <button
-                  type="button"
-                  aria-label="Clear search"
-                  onClick={() => search.onChange("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-sm hover:bg-muted/80 transition-colors cursor-pointer"
-                >
-                  <X className="h-3 w-3" />
-                </button>
+                <InputGroupAddon align="inline-end">
+                  <button
+                    type="button"
+                    aria-label={t("common.table.clearSearch", "Clear search")}
+                    onClick={() => search.onChange("")}
+                    className="text-muted-foreground hover:text-foreground p-0.5 rounded-sm hover:bg-muted/80 transition-colors cursor-pointer"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </InputGroupAddon>
               )}
-            </div>
+            </InputGroup>
           )}
           {filters && filters.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 min-w-0">
@@ -270,7 +286,7 @@ export function DataTable<TData, TValue>({
                     <SelectTrigger
                       id={`filter-${filter.id}`}
                       aria-label={filter.placeholder || filter.id}
-                      className="h-8 px-2.5 min-w-[130px] rounded-md text-xs font-medium bg-card text-foreground border border-border shadow-2xs hover:bg-accent/40 hover:border-border/80 focus:ring-1 focus:ring-ring cursor-pointer gap-2"
+                      className="h-8 p-2.5 min-w-32.5 rounded-md text-xs font-medium bg-card text-foreground border border-border shadow-2xs hover:bg-accent/40 hover:border-border/80 focus:ring-1 focus:ring-ring cursor-pointer gap-2"
                     >
                       <SelectValue placeholder={filter.placeholder || "Select..."} />
                     </SelectTrigger>
@@ -296,10 +312,10 @@ export function DataTable<TData, TValue>({
                   size="sm"
                   onClick={handleResetFilters}
                   className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground gap-1 cursor-pointer transition-colors"
-                  title="Reset filters"
+                  title={t("common.table.resetFilters", "Reset filters")}
                 >
                   <RotateCcw className="h-3 w-3" />
-                  <span className="hidden sm:inline">Reset</span>
+                  <span className="hidden sm:inline">{t("common.table.resetFilters", "Reset")}</span>
                 </Button>
               )}
             </div>
@@ -387,7 +403,9 @@ export function DataTable<TData, TValue>({
                       <Inbox className="h-4 w-4" />
                     </EmptyMedia>
                     <EmptyHeader>
-                      <EmptyTitle className="text-foreground text-sm font-semibold">{noDataMessage}</EmptyTitle>
+                      <EmptyTitle className="text-foreground text-sm font-semibold">
+                        {noDataMessage || t("common.table.noResults", "No results.")}
+                      </EmptyTitle>
                     </EmptyHeader>
                   </Empty>
                 </TableCell>
@@ -404,22 +422,30 @@ export function DataTable<TData, TValue>({
             </span>
             <div className="flex items-center gap-2">
               {pagination.onLimitChange && (
-                <select
-                  value={pagination.limit}
-                  onChange={(e) => pagination.onLimitChange?.(Number(e.target.value))}
-                  className="px-2 h-6 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-sm text-[10px] focus:outline-none cursor-pointer text-zinc-700 dark:text-zinc-300 font-semibold"
+                <Select
+                  value={String(pagination.limit)}
+                  onValueChange={(val) => pagination.onLimitChange?.(Number(val))}
                 >
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                </select>
+                  <SelectTrigger
+                    data-testid="pagination-limit-trigger"
+                    aria-label={t("common.table.pageSize", "Page size")}
+                    className="h-6 px-2 text-[10px] font-semibold bg-background border-border min-w-14 cursor-pointer"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border-border min-w-14">
+                    <SelectItem value="5" className="text-[10px] font-semibold">5</SelectItem>
+                    <SelectItem value="10" className="text-[10px] font-semibold">10</SelectItem>
+                    <SelectItem value="20" className="text-[10px] font-semibold">20</SelectItem>
+                    <SelectItem value="50" className="text-[10px] font-semibold">50</SelectItem>
+                  </SelectContent>
+                </Select>
               )}
               <div className="flex items-center gap-1">
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label="Previous page"
+                  aria-label={t("common.table.prevPage", "Previous page")}
                   className="h-6 w-6 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-30 cursor-pointer"
                   disabled={pagination.page <= 1}
                   onClick={() => pagination.onPageChange(Math.max(1, pagination.page - 1))}
@@ -429,7 +455,7 @@ export function DataTable<TData, TValue>({
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label="Next page"
+                  aria-label={t("common.table.nextPage", "Next page")}
                   className="h-6 w-6 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-30 cursor-pointer"
                   disabled={pagination.page >= pagination.totalPages}
                   onClick={() => pagination.onPageChange(Math.min(pagination.totalPages, pagination.page + 1))}
@@ -444,4 +470,5 @@ export function DataTable<TData, TValue>({
     </div>
   );
 }
+
 

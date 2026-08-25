@@ -112,7 +112,7 @@ export function SubscriptionModifyForm({
 
             <div
               id="paypal-upgrade-button-container"
-              className="w-full min-h-[110px] relative z-0"
+              className="w-full min-h-27.5 relative z-0"
             >
               <div className="flex items-center justify-center gap-2 py-6 text-xs text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin text-primary" />

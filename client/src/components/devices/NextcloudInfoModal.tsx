@@ -3,14 +3,14 @@ import { X, Cloud, Loader2, Copy, Check, HardDrive } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { equipmentService } from "@/services/equipmentService";
 import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 interface NextcloudInfoData {
   nextcloud_username: string | null;
@@ -103,17 +103,17 @@ export function NextcloudInfoModal({
   const deviceSerial = info?.device_serial;
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <AlertDialogContent className="max-w-md w-full bg-card border border-border rounded-lg p-0 text-foreground flex flex-col overflow-hidden">
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="max-w-md w-full bg-card border border-border rounded-lg p-0 text-foreground flex flex-col overflow-hidden">
         {/* Modal Header */}
-        <AlertDialogHeader className="px-5 py-3.5 border-b border-border flex flex-row justify-between items-center bg-card space-y-0 text-left">
+        <DialogHeader className="px-5 py-3.5 border-b border-border flex flex-row justify-between items-center bg-card space-y-0 text-left">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-primary/10 text-primary rounded-md border border-primary/20">
               <Cloud className="h-4 w-4" />
             </div>
             <div>
-              <AlertDialogTitle className="text-sm font-bold text-foreground font-heading">{t("devices.nextcloudModalTitle")}</AlertDialogTitle>
-              <AlertDialogDescription className="text-[10px] text-muted-foreground font-medium">{deviceName}</AlertDialogDescription>
+              <DialogTitle className="text-sm font-bold text-foreground font-heading">{t("devices.nextcloudModalTitle")}</DialogTitle>
+              <DialogDescription className="text-[10px] text-muted-foreground font-medium">{deviceName}</DialogDescription>
             </div>
           </div>
           <button
@@ -122,7 +122,7 @@ export function NextcloudInfoModal({
           >
             <X className="h-4 w-4" />
           </button>
-        </AlertDialogHeader>
+        </DialogHeader>
 
         {/* Modal Body */}
         <div className="p-5 space-y-4">
@@ -245,17 +245,17 @@ export function NextcloudInfoModal({
         </div>
 
         {/* Modal Footer */}
-        <AlertDialogFooter className="px-5 py-3 bg-muted/30 border-t border-border flex justify-end">
-          <AlertDialogCancel
+        <DialogFooter className="px-5 py-3 bg-muted/30 border-t border-border flex justify-end">
+          <DialogClose
             type="button"
             onClick={onClose}
             className="px-4 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md text-xs font-semibold transition-opacity cursor-pointer border-0"
           >
             {t("billing.close")}
-          </AlertDialogCancel>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          </DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

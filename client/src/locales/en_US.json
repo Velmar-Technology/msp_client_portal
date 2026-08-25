@@ -8,8 +8,20 @@
     "edit": "Edit",
     "loading": "Loading...",
     "saving": "Saving...",
-    "pickDate": "Pick a date"
+    "pickDate": "Pick a date",
+    "table": {
+      "showing": "Showing {{start}}–{{end}} of {{total}}",
+      "noResults": "No results.",
+      "search": "Search...",
+      "prevPage": "Previous page",
+      "nextPage": "Next page",
+      "selectAll": "Select all",
+      "selectRow": "Select row",
+      "clearSearch": "Clear search",
+      "resetFilters": "Reset filters"
+    }
   },
+
   "nav": {
     "dashboard": "Dashboard",
     "tickets": "Tickets",
@@ -1368,7 +1380,7 @@
     "modeCustomDesc": "Pick a specific calendar date",
     "labelPredefinedMonths": "Select Interval",
     "months3": "3 Months",
-    "months6Default": "6 Months (Default)",
+    "months6Default": "6 Months",
     "months12": "12 Months",
     "predefinedNote": "Maintenance will be scheduled for {{date}}",
     "labelDatePicker": "Select Specific Date",

@@ -7,15 +7,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/shared";
 import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogTrigger,
-  AlertDialogCancel,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface LogExpenseDialogProps {
   onExpenseLogged: () => void;
@@ -85,8 +92,8 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
   };
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-      <AlertDialogTrigger asChild>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
         <Button
           variant="outline"
           size="sm"
@@ -95,115 +102,134 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
           <Plus className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
           {t("financial.addExpense")}
         </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent className="sm:max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-5 rounded-lg shadow-lg">
-        <AlertDialogHeader>
-          <AlertDialogTitle className="text-sm font-bold text-zinc-900 dark:text-zinc-50 font-heading">
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md bg-card border border-border p-5 rounded-xl shadow-lg">
+        <DialogHeader>
+          <DialogTitle className="text-sm font-bold text-foreground font-heading">
             {t("financial.expenseFormTitle")}
-          </AlertDialogTitle>
-          <AlertDialogDescription className="text-xs text-zinc-500 dark:text-zinc-400">
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
             {t("financial.expenseFormDesc")}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
+          </DialogDescription>
+        </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-3">
           {/* Description */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-              {t("financial.descriptionLabel")}
+            <label htmlFor="expense-description" className="text-[10px] uppercase font-bold text-muted-foreground">
+              {t("financial.expenseDescription")} *
             </label>
             <Input
+              id="expense-description"
+              type="text"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={t("financial.descriptionPlaceholder") || "e.g. Vercel hosting bill"}
-              className={errors.description ? "border-destructive focus-visible:ring-destructive/30" : ""}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                if (errors.description) setErrors((prev) => ({ ...prev, description: undefined }));
+              }}
+              placeholder={t("financial.descriptionPlaceholder")}
+              className={`h-8 text-xs ${errors.description ? "border-destructive focus-visible:ring-destructive/20" : ""}`}
             />
             {errors.description && (
-              <span className="text-[10px] text-destructive dark:text-red-400 font-medium">{errors.description}</span>
+              <span className="text-[10px] text-destructive">{errors.description}</span>
             )}
           </div>
 
           {/* Amount */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-              {t("financial.amountLabel")}
+            <label htmlFor="expense-amount" className="text-[10px] uppercase font-bold text-muted-foreground">
+              {t("financial.expenseAmount")} ($) *
             </label>
             <Input
+              id="expense-amount"
               type="number"
               step="0.01"
               min="0.01"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => {
+                setAmount(e.target.value);
+                if (errors.amount) setErrors((prev) => ({ ...prev, amount: undefined }));
+              }}
               placeholder="0.00"
-              className={errors.amount ? "border-destructive focus-visible:ring-destructive/30" : ""}
+              className={`h-8 text-xs ${errors.amount ? "border-destructive focus-visible:ring-destructive/20" : ""}`}
             />
             {errors.amount && (
-              <span className="text-[10px] text-destructive dark:text-red-400 font-medium">{errors.amount}</span>
+              <span className="text-[10px] text-destructive">{errors.amount}</span>
             )}
-          </div>
-
-          {/* Reference / Identifier */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-              {t("financial.identifierLabel")}
-            </label>
-            <Input
-              value={expenseIdentifier}
-              onChange={(e) => setExpenseIdentifier(e.target.value)}
-              placeholder={t("financial.identifierPlaceholder") || "e.g. INV-10023"}
-            />
           </div>
 
           {/* Category */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-              {t("financial.categoryLabel")}
+            <label htmlFor="expense-category" className="text-[10px] uppercase font-bold text-muted-foreground">
+              {t("financial.expenseCategory")}
             </label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="h-7 rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs font-medium text-zinc-700 shadow-xs outline-none transition-all hover:border-zinc-300 focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:border-zinc-700 dark:focus:border-zinc-600 cursor-pointer"
-            >
-              <option value="cloudInfra">{t("financial.cloudInfra")}</option>
-              <option value="salaries">{t("financial.salaries")}</option>
-              <option value="marketing">{t("financial.marketing")}</option>
-              <option value="officeSpace">{t("financial.officeSpace")}</option>
-              <option value="other">{t("financial.other")}</option>
-            </select>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger id="expense-category" className="h-8 w-full text-xs">
+                <SelectValue placeholder={t("financial.expenseCategory")} />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border">
+                <SelectItem value="software" className="text-xs">{t("financial.categorySoftware")}</SelectItem>
+                <SelectItem value="hardware" className="text-xs">{t("financial.categoryHardware")}</SelectItem>
+                <SelectItem value="contractor" className="text-xs">{t("financial.categoryContractor")}</SelectItem>
+                <SelectItem value="office" className="text-xs">{t("financial.categoryOffice")}</SelectItem>
+                <SelectItem value="utilities" className="text-xs">{t("financial.categoryUtilities")}</SelectItem>
+                <SelectItem value="other" className="text-xs">{t("financial.categoryOther")}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Date */}
+          {/* Reference / Invoice Identifier (Optional) */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">{t("financial.dateLabel")}</label>
+            <label htmlFor="expense-identifier" className="text-[10px] uppercase font-bold text-muted-foreground">
+              {t("financial.identifierLabel")}
+            </label>
+            <Input
+              id="expense-identifier"
+              type="text"
+              value={expenseIdentifier}
+              onChange={(e) => setExpenseIdentifier(e.target.value)}
+              placeholder={t("financial.identifierPlaceholder")}
+              className="h-8 text-xs"
+            />
+          </div>
+
+          {/* Expense Date */}
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="expense-date" className="text-[10px] uppercase font-bold text-muted-foreground">
+              {t("financial.expenseDate")}
+            </label>
             <DatePicker
+              id="expense-date"
               value={expenseDate}
               onChange={setExpenseDate}
               className="w-full"
             />
           </div>
 
-          <AlertDialogFooter className="mt-4 flex items-center justify-end gap-2">
-            <AlertDialogCancel
-              type="button"
-              onClick={() => setIsOpen(false)}
-              disabled={isSaving}
-              className="h-7 text-xs cursor-pointer mt-0"
-            >
-              {t("financial.cancel")}
-            </AlertDialogCancel>
+          <DialogFooter className="mt-4 flex items-center justify-end gap-2">
+            <DialogClose asChild>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsOpen(false)}
+                disabled={isSaving}
+                className="h-7 text-xs cursor-pointer mt-0"
+              >
+                {t("financial.cancel")}
+              </Button>
+            </DialogClose>
             <Button
               type="submit"
               size="sm"
               disabled={isSaving}
-              className="h-7 text-xs bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 hover:opacity-90 transition-opacity font-medium flex items-center gap-1 cursor-pointer"
+              className="h-7 text-xs font-medium flex items-center gap-1 cursor-pointer"
             >
               {isSaving && <Loader2 className="h-3 w-3 animate-spin" />}
               {isSaving ? t("financial.savingExpense") : t("financial.addExpense")}
             </Button>
-          </AlertDialogFooter>
+          </DialogFooter>
         </form>
-      </AlertDialogContent>
-    </AlertDialog>
+      </DialogContent>
+    </Dialog>
   );
 }
-

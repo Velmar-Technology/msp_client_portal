@@ -19,7 +19,11 @@ import { useNotificationHistory, type ReadFilter, type TypeFilter } from "@/hook
 import type { Notification } from "@/services/notificationService";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import {
   Select,
   SelectContent,
@@ -199,16 +203,16 @@ export function NotificationHistorySection() {
       <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-3 shadow-xs">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           {/* Search Input */}
-          <div className="relative flex-1 min-w-50">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-            <Input
-              type="text"
+          <InputGroup className="flex-1 min-w-50 bg-muted/40">
+            <InputGroupInput
               placeholder={t("notificationHistory.searchPlaceholder", "Search notifications...")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 text-xs bg-muted/40"
             />
-          </div>
+            <InputGroupAddon>
+              <Search />
+            </InputGroupAddon>
+          </InputGroup>
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2 self-end sm:self-auto">

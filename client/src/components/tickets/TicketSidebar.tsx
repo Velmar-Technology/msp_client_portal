@@ -21,6 +21,13 @@ import {
   AttachmentTitle,
   AttachmentTrigger,
 } from '@/components/ui/attachment';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { Ticket, TicketAttachment } from '@/services/ticketService';
 import type { useSLATimer } from '@/hooks/useSLATimer';
 import { formatFileSize, getAttachmentIcon, getAttachmentUrl } from './ticketUtils';
@@ -193,21 +200,22 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
                 {t('ticketDetail.assignTechnician')}
               </label>
               <div className="flex gap-2">
-                <select
-                  value={selectedTechId}
-                  onChange={(e) => setSelectedTechId(e.target.value)}
+                <Select
+                  value={selectedTechId || undefined}
+                  onValueChange={setSelectedTechId}
                   disabled={loadingTechs || assigning}
-                  className="flex-1 px-2.5 py-1.5 bg-background border border-input rounded-md text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50 cursor-pointer"
                 >
-                  <option value="" disabled>
-                    {t('ticketDetail.assignTechnician')}...
-                  </option>
-                  {technicians.map((tech) => (
-                    <option key={tech.id} value={tech.id}>
-                      {tech.name} {tech.specialty ? `(${tech.specialty})` : ''}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="flex-1 h-8 text-xs bg-background border-input">
+                    <SelectValue placeholder={`${t('ticketDetail.assignTechnician')}...`} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border-border">
+                    {technicians.map((tech) => (
+                      <SelectItem key={tech.id} value={tech.id} className="text-xs">
+                        {tech.name} {tech.specialty ? `(${tech.specialty})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Button
                   onClick={() => onAssign(selectedTechId)}
                   disabled={!selectedTechId || selectedTechId === ticket.assigned_tech_id || assigning}

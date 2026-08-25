@@ -28,7 +28,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Page } from "@/components/Page";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import {
   Select,
   SelectContent,
@@ -419,16 +423,16 @@ export function MaintenancePage() {
         {/* Filters Toolbar - Calendar view only */}
         {viewMode === "CALENDAR" && (
           <div className="bg-card p-3 border border-border rounded-xl shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
-            <div className="relative w-full md:max-w-xs">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                type="text"
+            <InputGroup size="sm" className="w-full md:max-w-xs bg-muted/40">
+              <InputGroupInput
                 placeholder={t("maintenance.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 h-7 bg-muted/40 border-border text-xs"
               />
-            </div>
+              <InputGroupAddon>
+                <Search />
+              </InputGroupAddon>
+            </InputGroup>
 
             <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
               {/* Status Filter */}

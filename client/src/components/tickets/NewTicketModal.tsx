@@ -10,14 +10,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export interface NewTicketModalProps {
   onClose: () => void;
@@ -102,21 +109,21 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
   }
 
   return (
-    <AlertDialog
+    <Dialog
       open={true}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
     >
-      <AlertDialogContent className="sm:max-w-lg bg-card border border-border rounded-xl shadow-xl p-6 text-foreground text-sm">
-        <AlertDialogHeader>
-          <AlertDialogTitle
+      <DialogContent className="sm:max-w-lg bg-card border border-border rounded-xl shadow-xl p-6 text-foreground text-sm">
+        <DialogHeader>
+          <DialogTitle
             className="text-xl font-bold text-foreground mb-2 text-left"
           >
             {t("tickets.createModalTitle")}
-          </AlertDialogTitle>
-          <AlertDialogDescription className="sr-only">{t("tickets.createModalTitle")}</AlertDialogDescription>
-        </AlertDialogHeader>
+          </DialogTitle>
+          <DialogDescription className="sr-only">{t("tickets.createModalTitle")}</DialogDescription>
+        </DialogHeader>
         <form onSubmit={handleCreateTicket} className="space-y-4">
           <div>
             <Label htmlFor="new-ticket-title" className="block text-sm font-medium text-foreground mb-1.5">
@@ -139,6 +146,7 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
               value={newDesc}
               onChange={(e) => setNewDesc(e.target.value)}
               placeholder={t("tickets.modalDescPlaceholder")}
+              className="text-xs"
               required
               minLength={10}
               rows={4}
@@ -149,32 +157,32 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
               <Label htmlFor="new-ticket-category" className="block text-sm font-medium text-foreground mb-1.5">
                 {t("tickets.modalCategoryLabel")}
               </Label>
-              <select
-                id="new-ticket-category"
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-input rounded-md text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
-              >
-                <option value="REPAIR">{t("tickets.categories.REPAIR")}</option>
-                <option value="WARRANTY">{t("tickets.categories.WARRANTY")}</option>
-                <option value="SERVICE_OUTAGE">{t("tickets.categories.SERVICE_OUTAGE")}</option>
-              </select>
+              <Select value={newCategory} onValueChange={setNewCategory}>
+                <SelectTrigger id="new-ticket-category" className="w-full">
+                  <SelectValue placeholder={t("tickets.modalCategoryLabel")} />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border">
+                  <SelectItem value="REPAIR">{t("tickets.categories.REPAIR")}</SelectItem>
+                  <SelectItem value="WARRANTY">{t("tickets.categories.WARRANTY")}</SelectItem>
+                  <SelectItem value="SERVICE_OUTAGE">{t("tickets.categories.SERVICE_OUTAGE")}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="new-ticket-priority" className="block text-sm font-medium text-foreground mb-1.5">
                 {t("tickets.modalPriorityLabel")}
               </Label>
-              <select
-                id="new-ticket-priority"
-                value={newPriority}
-                onChange={(e) => setNewPriority(e.target.value)}
-                className="w-full px-3 py-2 border border-input rounded-md text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
-              >
-                <option value="LOW">{t("tickets.priorities.LOW")}</option>
-                <option value="MEDIUM">{t("tickets.priorities.MEDIUM")}</option>
-                <option value="HIGH">{t("tickets.priorities.HIGH")}</option>
-                <option value="CRITICAL">{t("tickets.priorities.CRITICAL")}</option>
-              </select>
+              <Select value={newPriority} onValueChange={setNewPriority}>
+                <SelectTrigger id="new-ticket-priority" className="w-full">
+                  <SelectValue placeholder={t("tickets.modalPriorityLabel")} />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border">
+                  <SelectItem value="LOW">{t("tickets.priorities.LOW")}</SelectItem>
+                  <SelectItem value="MEDIUM">{t("tickets.priorities.MEDIUM")}</SelectItem>
+                  <SelectItem value="HIGH">{t("tickets.priorities.HIGH")}</SelectItem>
+                  <SelectItem value="CRITICAL">{t("tickets.priorities.CRITICAL")}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           {(devicesLoading || devicesFailed || devices.length > 0) && (
@@ -187,19 +195,24 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
               ) : devicesFailed ? (
                 <div className="text-sm text-destructive">{t("tickets.modalDeviceLoadError")}</div>
               ) : (
-                <select
-                  id="new-ticket-device"
-                  value={selectedEquipmentId}
-                  onChange={(e) => setSelectedEquipmentId(e.target.value)}
-                  className="w-full px-3 py-2 border border-input rounded-md text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
+                <Select
+                  value={selectedEquipmentId || "none"}
+                  onValueChange={(val) => setSelectedEquipmentId(val === "none" ? "" : val)}
                 >
-                  <option value="">{t("tickets.modalDevicePlaceholder")}</option>
-                  {devices.map((device) => (
-                    <option key={device.id} value={device.id}>
-                      {device.device_name || `Device ${device.slot_index + 1}`}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger id="new-ticket-device" className="w-full">
+                    <SelectValue placeholder={t("tickets.modalDevicePlaceholder")} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border-border">
+                    <SelectItem value="none">
+                      {t("tickets.modalDevicePlaceholder")}
+                    </SelectItem>
+                    {devices.map((device) => (
+                      <SelectItem key={device.id} value={device.id}>
+                        {device.device_name || `Device ${device.slot_index + 1}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
             </div>
           )}
@@ -259,13 +272,13 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
               )}
             </div>
           </div>
-          <AlertDialogFooter className="flex gap-3 pt-2 sm:flex-row sm:justify-stretch">
-            <AlertDialogCancel
+          <DialogFooter className="flex gap-3 pt-2 sm:flex-row sm:justify-stretch">
+            <DialogClose
               onClick={onClose}
               className="flex-1 cursor-pointer"
             >
               {t("tickets.modalCancel")}
-            </AlertDialogCancel>
+            </DialogClose>
             <Button
               type="submit"
               disabled={submitting}
@@ -273,10 +286,10 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
             >
               {submitting ? t("tickets.modalCreating") : t("tickets.modalCreate")}
             </Button>
-          </AlertDialogFooter>
+          </DialogFooter>
         </form>
-      </AlertDialogContent>
-    </AlertDialog>
+      </DialogContent>
+    </Dialog>
   );
 });
 

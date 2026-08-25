@@ -2,7 +2,11 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Search, ChevronDown, ChevronUp, Mail, Phone, Clock, PlusCircle, HelpCircle } from 'lucide-react';
 import { Page } from '@/components/Page';
-import { Input } from '@/components/ui/input';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from '@/components/ui/input-group';
 import { Button } from '@/components/ui/button';
 import { useHelpPage } from '@/hooks/useHelpPage';
 import type { FAQ, Category } from '@/hooks/useHelpPage';
@@ -19,16 +23,16 @@ const HelpSearchHeader: React.FC<HeaderProps> = ({ t, searchQuery, setSearchQuer
       <h1 className="text-sm font-bold text-foreground leading-none font-heading">{t('help.title')}</h1>
       <p className="text-xs text-muted-foreground mt-1">{t('help.subtitle')}</p>
     </div>
-    <div className="relative w-full md:max-w-xs shrink-0">
-      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-      <Input
-        type="text"
+    <InputGroup size="sm" className="w-full md:max-w-xs shrink-0 bg-muted/40">
+      <InputGroupInput
         placeholder={t('help.searchPlaceholder')}
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
-        className="w-full h-7 pl-8 pr-3 py-1 text-xs bg-muted/40 border-border rounded-md focus-visible:ring-1 focus-visible:ring-ring"
       />
-    </div>
+      <InputGroupAddon>
+        <Search />
+      </InputGroupAddon>
+    </InputGroup>
   </div>
 );
 
