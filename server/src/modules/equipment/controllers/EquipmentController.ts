@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { equipmentService, EquipmentService } from '@modules/equipment/services/EquipmentService';
 import { ForbiddenError, ValidationError } from '@shared/errors';
+import { env } from '@shared/config/env';
 
 export class EquipmentController {
   constructor(private equipmentSvc: EquipmentService = equipmentService) {}
@@ -142,6 +143,66 @@ export class EquipmentController {
       success: true,
       data: info,
     });
+  }
+
+  async getDeployScript(req: Request, res: Response): Promise<void> {
+    if (req.user!.role !== 'ADMIN') {
+      throw new ForbiddenError('Only administrators can generate deployment scripts');
+    }
+    const subId = req.params.subId as string;
+    const slotIndex = parseInt(req.params.slotIndex as string, 10);
+    const info = await this.equipmentSvc.getNextcloudInfo(subId, slotIndex, req.user!.tenantId, true);
+
+    if (!info.nextcloud_username || !info.nextcloud_password) {
+      throw new ValidationError('Slot must be active with provisioned Nextcloud credentials');
+    }
+
+    const serverUrl = env.NEXTCLOUD_EXTERNAL_URL;
+    const username = info.nextcloud_username;
+    const password = info.nextcloud_password;
+
+    const script = `$ProgressPreference = 'SilentlyContinue'
+Write-Host "=== Nextcloud Client Deployment ===" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Server: ${serverUrl}" -ForegroundColor Yellow
+Write-Host "User:   ${username}" -ForegroundColor Yellow
+Write-Host ""
+
+Write-Host "[1/3] Downloading Nextcloud Desktop Client v34.0.3..." -ForegroundColor Green
+$msiUrl = "https://download.nextcloud.com/desktop/releases/Windows/Nextcloud-34.0.3-x64.msi"
+$tempMsi = "$env:TEMP\\nc.msi"
+Invoke-RestMethod -Uri $msiUrl -OutFile $tempMsi
+
+Write-Host "[2/3] Installing silently with auto-provisioning..." -ForegroundColor Green
+$args = @(
+    "/i", "\`"$tempMsi\`"",
+    "/qn",
+    "/norestart",
+    "LAUNCHONBOOT=1",
+    "SERVERURL=${serverUrl}",
+    "USER=${username}",
+    "PASSWORD=${password}"
+)
+Start-Process "msiexec.exe" -ArgumentList $args -Wait -NoNewWindow
+Remove-Item $tempMsi -Force
+
+Write-Host "[3/3] Launching Nextcloud..." -ForegroundColor Green
+$ncPath = "$env:ProgramFiles\\Nextcloud\\nextcloud.exe"
+if (Test-Path $ncPath) {
+    Start-Process $ncPath
+    Write-Host ""
+    Write-Host "Deployment complete! Nextcloud client installed and configured." -ForegroundColor Green
+} else {
+    Write-Host ""
+    Write-Host "Installation complete. Please launch Nextcloud manually." -ForegroundColor Yellow
+}
+Write-Host ""
+Write-Host "Press any key to exit..."
+$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")`;
+
+    res.setHeader('Content-Type', 'text/plain');
+    res.setHeader('Content-Disposition', 'attachment; filename="deploy-nextcloud.ps1"');
+    res.send(script);
   }
 }
 

@@ -109,4 +109,9 @@ export const equipmentService = {
     const response = await api.get(`/equipment/subscriptions/${subId}/slots/${slotIndex}/nextcloud`);
     return response.data.data;
   },
+
+  async getDeployScriptUrl(subId: string, slotIndex: number): Promise<string> {
+    const baseUrl = api.defaults.baseURL || '';
+    return `${baseUrl}/equipment/subscriptions/${subId}/slots/${slotIndex}/deploy-script`;
+  },
 };
