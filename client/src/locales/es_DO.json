@@ -1025,7 +1025,12 @@
     "activateWithCodeSubmit": "Activar Dispositivo",
     "activateWithCodeSuccessTitle": "Dispositivo Activado",
     "activateWithCodeSuccessDesc": "El dispositivo {{name}} fue activado con éxito con el código de activación proporcionado.",
-    "activateWithCodeFailed": "Error al activar el dispositivo con el código proporcionado."
+      "activateWithCodeFailed": "Error al activar el dispositivo con el código proporcionado.",
+      "deployClient": "Instalar Cliente de Escritorio",
+      "deployCopyCommand": "Copiar Comando de Instalación",
+      "deployCommandCopied": "Comando de instalación copiado al portapapeles",
+      "deployNote": "Ejecute este comando en la PC de Windows objetivo como Administrador para instalar y configurar el cliente de escritorio Nextcloud.",
+      "deployWarning": "Este comando contiene credenciales. Asegúrese de que la PC objetivo esté en una red segura."
   },
   "resources": {
     "title": "Recursos",

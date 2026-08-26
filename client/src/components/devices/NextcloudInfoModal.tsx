@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { X, Cloud, Loader2, Copy, Check, HardDrive } from "lucide-react";
+import { X, Cloud, Loader2, Copy, Check, HardDrive, MonitorDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { equipmentService } from "@/services/equipmentService";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -202,6 +203,37 @@ export function NextcloudInfoModal({
                   )}
                 </div>
               </div>
+
+              {/* Deploy Client Section */}
+              {info?.nextcloud_username && subId && slotIndex !== null && slotIndex !== undefined && (
+                <div className="space-y-2">
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider flex items-center gap-1 font-heading">
+                    <MonitorDown className="h-3 w-3" />
+                    {t("devices.deployClient")}
+                  </p>
+                  <div className="bg-muted/40 p-3 rounded-md border border-border space-y-2">
+                    <p className="text-[10px] text-muted-foreground">{t("devices.deployNote")}</p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={async () => {
+                        const url = await equipmentService.getDeployScriptUrl(subId!, slotIndex!);
+                        navigator.clipboard.writeText(`powershell -Command "irm ${url} | iex"`);
+                        setCopiedField("deploy");
+                        setTimeout(() => setCopiedField(null), 2000);
+                      }}
+                      className="h-7 text-xs font-semibold cursor-pointer w-full"
+                    >
+                      {copiedField === "deploy" ? (
+                        <><Check className="h-3.5 w-3.5 mr-1 text-primary" /> {t("devices.deployCommandCopied")}</>
+                      ) : (
+                        <><Copy className="h-3.5 w-3.5 mr-1" /> {t("devices.deployCopyCommand")}</>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {/* Storage Usage Card */}
               <div className="space-y-2">
