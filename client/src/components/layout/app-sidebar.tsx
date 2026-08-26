@@ -300,8 +300,6 @@ export function AppSidebar() {
 
   const isPublicLegalPage = location.pathname === "/" || location.pathname === "/terms" || location.pathname === "/privacy";
 
-  const appVersion = import.meta.env.VITE_APP_VERSION as string | undefined;
-
   const groupedSubs = useMemo(() => {
     const groups = new Map<string, Subscription[]>();
     for (const sub of activeSubscriptions) {
@@ -394,11 +392,6 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
-        )}
-        {appVersion && (
-          <div className="px-2.5 pb-1 pt-0.5 text-[9px] font-medium text-muted-foreground/50 group-data-[collapsible=icon]:hidden">
-            v{appVersion}
-          </div>
         )}
       </SidebarFooter>
     </ShadcnSidebar>
