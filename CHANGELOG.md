@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.5.5](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.5.4...v1.5.5) (2026-08-26)
+
+
+### Features
+
+* **i18n:** prioritize user preference and fallback to browser language detection ([9106276](https://github.com/Velmar-Technology/msp_client_portal/commit/910627604e1edfc57d4612798ac66f4757d5d20a))
+* **tickets:** implement mark as read on first open and align filter dropdown height ([cb42723](https://github.com/Velmar-Technology/msp_client_portal/commit/cb42723019536ae94a3c0d35e81de4d97211199c))
+
+
+### Bug Fixes
+
+* **client:** resolve empty interface lint error in input-group ([a7cc9b6](https://github.com/Velmar-Technology/msp_client_portal/commit/a7cc9b67d051a50749660c0b3b46f97a3f98cd84))
+* **client:** resolve linter warnings and type mismatches in ticket hooks and page ([d532b4b](https://github.com/Velmar-Technology/msp_client_portal/commit/d532b4baba867312a3162f5f4007d870d2f942b7))
+* **system:** enhance Nextcloud password generation and provisioning error handling ([a68a54c](https://github.com/Velmar-Technology/msp_client_portal/commit/a68a54ca8ee98a3f14954dff651fae1f36db8163))
+
 ## [1.5.4](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.5.3...v1.5.4) (2026-08-24)
 
 
