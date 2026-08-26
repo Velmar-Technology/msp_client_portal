@@ -60,4 +60,9 @@ router.get('/subscriptions/:subId/slots/:slotIndex/nextcloud', (req, res) =>
   equipmentController.getSlotNextcloudInfo(req, res)
 );
 
+/** GET /api/v1/equipment/subscriptions/:subId/slots/:slotIndex/deploy-script — Generate PowerShell deployment script */
+router.get('/subscriptions/:subId/slots/:slotIndex/deploy-script', rbacMiddleware(UserRole.ADMIN), (req, res) =>
+  equipmentController.getDeployScript(req, res)
+);
+
 export default router;

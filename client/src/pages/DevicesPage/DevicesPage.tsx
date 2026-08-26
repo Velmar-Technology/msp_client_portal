@@ -1,10 +1,11 @@
 import { memo, useCallback, useState, useMemo } from "react";
-import { X, Laptop, Loader2, MoreHorizontal, Cloud, Check, KeyRound, Copy, Activity } from "lucide-react";
+import { X, Laptop, Loader2, MoreHorizontal, Cloud, Check, KeyRound, Copy, Activity, MonitorDown } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { useDevicesPage } from "@/hooks/useDevicesPage";
 import type { Subscription } from "@/services/subscriptionService";
 import type { SubscriptionEquipment } from "@/services/equipmentService";
+import { equipmentService } from "@/services/equipmentService";
 import { Page } from "@/components/Page";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -455,6 +456,32 @@ export const ActivationWizardModal = memo(function ActivationWizardModal({
                 </div>
               </div>
 
+              {currentSlot?.status === "ACTIVE" && currentSlot?.nextcloud_username && currentSlot?.subscription_id && currentSlot?.slot_index !== undefined && (
+                <div className="bg-blue-50/50 dark:bg-blue-950/20 p-3 rounded-md border border-blue-200 dark:border-blue-800/40 space-y-2 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <MonitorDown className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                    <span className="font-semibold text-blue-700 dark:text-blue-300">{t("devices.deployClient")}</span>
+                  </div>
+                  <p className="text-[10px] text-blue-600/70 dark:text-blue-400/60">{t("devices.deployNote")}</p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      equipmentService.getDeployScriptUrl(currentSlot.subscription_id!, currentSlot.slot_index!)
+                        .then((url) => {
+                          navigator.clipboard.writeText(`powershell -Command "irm ${url} | iex"`);
+                          toast.success(t("devices.deployCommandCopied"));
+                        });
+                    }}
+                    className="h-7 px-3 text-xs font-semibold border-blue-200 dark:border-blue-800/60 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/30 cursor-pointer"
+                  >
+                    <Copy className="w-3 h-3 mr-1" />
+                    {t("devices.deployCopyCommand")}
+                  </Button>
+                </div>
+              )}
+
               <AlertDialogFooter className="pt-3 border-t border-zinc-200 dark:border-zinc-800">
                 <AlertDialogAction
                   type="button"
@@ -484,6 +511,7 @@ interface DeviceActionsCellProps {
   onStartActivationWizard: (subId: string, slotIndex: number, otp: string | null) => void;
   onGenerateOTP: (subId: string, slotIndex: number) => void;
   onDeleteAdminDevice?: (equip: Partial<SubscriptionEquipment>) => void;
+  onDeployClient?: (equip: Partial<SubscriptionEquipment>) => void;
 }
 
 const DeviceActionsCell = memo(function DeviceActionsCell({
@@ -497,6 +525,7 @@ const DeviceActionsCell = memo(function DeviceActionsCell({
   onStartActivationWizard,
   onGenerateOTP,
   onDeleteAdminDevice,
+  onDeployClient,
 }: DeviceActionsCellProps) {
   const { t } = useTranslation();
   const idx = equip.slot_index !== undefined ? equip.slot_index : rowIndex;
@@ -526,6 +555,11 @@ const DeviceActionsCell = memo(function DeviceActionsCell({
               {equip.nextcloud_username && (
                 <DropdownMenuItem onClick={() => onOpenNcModal(equip)}>
                   {t("devices.actionNextcloudInfo")}
+                </DropdownMenuItem>
+              )}
+              {equip.nextcloud_username && equip.subscription_id && equip.slot_index !== undefined && onDeployClient && (
+                <DropdownMenuItem onClick={() => onDeployClient(equip)}>
+                  {t("devices.deployClient")}
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem onClick={() => onOpenScheduleMaint(equip)}>
@@ -726,6 +760,17 @@ export function DevicesPage() {
     setNcModalEquip(null);
   }, []);
 
+  const handleDeployClient = useCallback(async (equip: Partial<SubscriptionEquipment>) => {
+    if (!equip.subscription_id || equip.slot_index === undefined) return;
+    try {
+      const url = await equipmentService.getDeployScriptUrl(equip.subscription_id, equip.slot_index);
+      navigator.clipboard.writeText(`powershell -Command "irm ${url} | iex"`);
+      toast.success(t("devices.deployCommandCopied"));
+    } catch {
+      toast.error("Failed to generate deploy command");
+    }
+  }, [t]);
+
   const handleBrowsePlans = useCallback(() => {
     navigate("/plans");
   }, [navigate]);
@@ -890,6 +935,7 @@ export function DevicesPage() {
             onStartActivationWizard={handleStartActivationWizard}
             onGenerateOTP={handleGenerateOTP}
             onDeleteAdminDevice={setDeviceToDelete}
+            onDeployClient={handleDeployClient}
           />
         );
       },

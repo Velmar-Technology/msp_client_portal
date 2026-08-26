@@ -1029,7 +1029,12 @@
     "activateWithCodeSubmit": "Activate Device",
     "activateWithCodeSuccessTitle": "Device Activated",
     "activateWithCodeSuccessDesc": "Device {{name}} successfully activated with the provided activation code.",
-    "activateWithCodeFailed": "Failed to activate the device with the provided code."
+      "activateWithCodeFailed": "Failed to activate the device with the provided code.",
+      "deployClient": "Deploy Desktop Client",
+      "deployCopyCommand": "Copy Deploy Command",
+      "deployCommandCopied": "Deploy command copied to clipboard",
+      "deployNote": "Run this command on the target Windows PC as Administrator to install and configure the Nextcloud desktop client.",
+      "deployWarning": "This command contains credentials. Ensure the target PC is on a secure network."
   },
   "resources": {
     "title": "Resources",
