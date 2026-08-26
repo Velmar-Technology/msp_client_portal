@@ -494,6 +494,13 @@ export class CRMService {
     return updated;
   }
 
+  async deleteActivity(id: string, tenantId: string): Promise<void> {
+    const deleted = await this.activityRepo.deleteActivity(id, tenantId);
+    if (!deleted) {
+      throw new NotFoundError('Activity not found');
+    }
+  }
+
   async getQuotationsForLead(leadId: string, tenantId: string): Promise<Quotation[]> {
     return this.quotationRepo.findByLead(leadId, tenantId);
   }

@@ -82,6 +82,7 @@ vi.mock("@/services/crmService", () => ({
     convertLeadToSubscription: vi.fn(),
     logActivity: vi.fn(),
     updateActivity: vi.fn(),
+    deleteActivity: vi.fn(),
     getActivities: vi.fn(),
     getQuotations: vi.fn(),
     modifySubscription: vi.fn(),
@@ -401,6 +402,7 @@ describe("CRMPage", () => {
       created_at: "2026-08-21",
       line_items: [],
     };
+    vi.mocked(crmService.getLeadById).mockResolvedValue({ ...mockLeads[0], stage: "WON" });
     vi.mocked(crmService.convertLeadToSubscription).mockResolvedValue({
       lead: { ...mockLeads[0], stage: "WON" },
       subscription: { id: "sub-1", status: "ACTIVE", plan: "STANDARD", equipment_count: 3 },
@@ -409,7 +411,7 @@ describe("CRMPage", () => {
     });
 
     useCRMStore.setState({
-      selectedLead: mockLeads[0],
+      selectedLead: { ...mockLeads[0], stage: "WON" },
     });
 
     render(
@@ -428,6 +430,7 @@ describe("CRMPage", () => {
 
     // Click convert button
     const convertBtn = await screen.findByRole("button", { name: /Activate Subscription/i });
+    expect(convertBtn).not.toBeDisabled();
     fireEvent.click(convertBtn);
 
     await waitFor(() => {
@@ -435,6 +438,32 @@ describe("CRMPage", () => {
         planId: "STANDARD",
       }));
     });
+  });
+
+  test("disables subscription activation button if lead is not in WON stage", async () => {
+    vi.mocked(crmService.getLeadById).mockResolvedValue({ ...mockLeads[0], stage: "NEW" });
+
+    useCRMStore.setState({
+      selectedLead: { ...mockLeads[0], stage: "NEW" },
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/crm?lead=lead-1"]}>
+        <CRMPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Bruce Wayne")).toBeInTheDocument();
+
+    // Click subscription tab
+    const subTab = screen.getByRole("tab", { name: /Plan \/ Sub/i });
+    fireEvent.pointerDown(subTab, { button: 0 });
+    fireEvent.mouseDown(subTab, { button: 0 });
+    fireEvent.click(subTab);
+
+    // Verify convert button is disabled
+    const convertBtn = await screen.findByRole("button", { name: /Activate Subscription/i });
+    expect(convertBtn).toBeDisabled();
   });
 
   test("allows deleting a lead from detail sheet with confirmation", async () => {
@@ -462,6 +491,92 @@ describe("CRMPage", () => {
 
     await waitFor(() => {
       expect(crmService.deleteLead).toHaveBeenCalledWith("lead-1");
+    });
+  });
+
+  test("allows editing a follow-up activity from detail sheet", async () => {
+    vi.mocked(crmService.updateActivity).mockResolvedValue({
+      ...mockActivities[0],
+      title: "Updated Discovery Call",
+      summary: "Updated discovery notes",
+    });
+
+    useCRMStore.setState({
+      selectedLead: mockLeads[0],
+      leadActivities: mockActivities,
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/crm?lead=lead-1"]}>
+        <CRMPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Bruce Wayne")).toBeInTheDocument();
+
+    // Click follow-up tab
+    const followUpTab = screen.getByRole("tab", { name: /Follow-up/i });
+    fireEvent.pointerDown(followUpTab, { button: 0 });
+    fireEvent.mouseDown(followUpTab, { button: 0 });
+    fireEvent.click(followUpTab);
+
+    // Find and click the edit button for the follow-up
+    const editBtn = await screen.findByTitle(/Edit/i);
+    fireEvent.click(editBtn);
+
+    // Modal should be open
+    expect(await screen.findByText("Edit Follow-up / Activity")).toBeInTheDocument();
+
+    const titleInput = screen.getByDisplayValue("Introductory Discovery Call");
+    fireEvent.change(titleInput, { target: { value: "Updated Discovery Call" } });
+
+    const saveBtn = screen.getByRole("button", { name: /^Save/i });
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(crmService.updateActivity).toHaveBeenCalledWith(
+        "act-1",
+        expect.objectContaining({
+          title: "Updated Discovery Call",
+        }),
+      );
+    });
+  });
+
+  test("allows deleting a follow-up activity from detail sheet with confirmation", async () => {
+    vi.mocked(crmService.deleteActivity).mockResolvedValue(undefined);
+
+    useCRMStore.setState({
+      selectedLead: mockLeads[0],
+      leadActivities: mockActivities,
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/crm?lead=lead-1"]}>
+        <CRMPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Bruce Wayne")).toBeInTheDocument();
+
+    // Click follow-up tab
+    const followUpTab = screen.getByRole("tab", { name: /Follow-up/i });
+    fireEvent.pointerDown(followUpTab, { button: 0 });
+    fireEvent.mouseDown(followUpTab, { button: 0 });
+    fireEvent.click(followUpTab);
+
+    // Find and click the delete button for the follow-up
+    const deleteBtn = await screen.findByTitle(/Delete/i);
+    fireEvent.click(deleteBtn);
+
+    // Confirmation dialog should be visible
+    expect(await screen.findByText("Delete Follow-up Activity?")).toBeInTheDocument();
+
+    const confirmDeleteBtn = screen.getByRole("button", { name: /^Delete$/i });
+    fireEvent.click(confirmDeleteBtn);
+
+    await waitFor(() => {
+      expect(crmService.deleteActivity).toHaveBeenCalledWith("act-1");
     });
   });
 });
