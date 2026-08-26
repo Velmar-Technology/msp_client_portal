@@ -249,6 +249,28 @@ describe('EquipmentService', () => {
       ).rejects.toThrow('Activation code (OTP) not found or invalid');
     });
 
+    it('should throw ExternalServiceError when Nextcloud provisioning fails', async () => {
+      const mockSub = { id: subId, plan: 'PL-002', tenant_id: tenantId, equipment_count: 1 };
+      const mockSlot = { id: 'slot-1', slot_index: 0, status: 'PENDING_ACTIVATION', tenant_id: tenantId };
+
+      mocks.subFindById.mockResolvedValue(mockSub);
+      mocks.equipFindBySlot.mockResolvedValue(mockSlot);
+      mocks.ncProvisionUser.mockRejectedValue(new Error('Password is present in compromised password list'));
+
+      await expect(
+        equipmentService.activateSlot({
+          subscriptionId: subId,
+          slotIndex: 0,
+          deviceName: 'Workstation 1',
+          deviceSerial: 'SN12345',
+          tenantId,
+        })
+      ).rejects.toThrow('Failed to provision Nextcloud user credentials');
+
+      // Slot should NOT be activated
+      expect(mocks.equipUpdate).not.toHaveBeenCalled();
+    });
+
     it('should throw when the OTP has expired', async () => {
       const mockSlot = {
         id: 'slot-1',

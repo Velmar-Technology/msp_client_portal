@@ -3,7 +3,7 @@ import { subscriptionRepository, SubscriptionRepository } from '@modules/subscri
 import { planRepository, PlanRepository } from '@modules/subscriptions';
 import { nextcloudService, NextcloudService } from '@modules/system';
 import { rmmPatchService, RmmPatchService } from '@modules/rmm/services/RmmPatchService';
-import { NotFoundError, ForbiddenError, ValidationError } from '@shared/errors';
+import { NotFoundError, ForbiddenError, ValidationError, ExternalServiceError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
 import { SubscriptionEquipment, EquipmentWithDetails, SubscriptionStatus } from '@shared/types';
 
@@ -199,7 +199,7 @@ export class EquipmentService {
   }
 
   /**
-   * Provisions Nextcloud user credentials with safe fallback on failure.
+   * Provisions Nextcloud user credentials. Throws ExternalServiceError on failure.
    */
   private async provisionNextcloudUser(
     username: string,
@@ -213,8 +213,12 @@ export class EquipmentService {
         displayName,
       });
     } catch (error) {
-      logger.error('Failed to provision Nextcloud user. Falling back to mock credentials in dev.', { error });
-      return 'mockPass-' + Math.random().toString(36).slice(-8);
+      logger.error('Failed to provision Nextcloud user', { username, error });
+      throw new ExternalServiceError('Failed to provision Nextcloud user credentials', {
+        service: 'nextcloud',
+        username,
+        cause: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 

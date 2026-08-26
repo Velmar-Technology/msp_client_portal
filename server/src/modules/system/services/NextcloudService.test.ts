@@ -1,5 +1,5 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { nextcloudService } from './NextcloudService';
+import { NextcloudService, nextcloudService } from './NextcloudService';
 import { env } from '@shared/config/env';
 
 describe('NextcloudService', () => {
@@ -64,6 +64,48 @@ describe('NextcloudService', () => {
       expect(result.total).toBe(5000000000000);
       expect(result.percentage).toBe(0);
       expect(result.status).toBe('online');
+    });
+  });
+
+  describe('generateSecurePassword', () => {
+    it('should generate a password of the requested length', () => {
+      const pw = NextcloudService.generateSecurePassword(20);
+      expect(pw).toHaveLength(20);
+    });
+
+    it('should default to 20 characters', () => {
+      const pw = NextcloudService.generateSecurePassword();
+      expect(pw).toHaveLength(20);
+    });
+
+    it('should contain at least one uppercase letter', () => {
+      const pw = NextcloudService.generateSecurePassword();
+      expect(pw).toMatch(/[A-Z]/);
+    });
+
+    it('should contain at least one lowercase letter', () => {
+      const pw = NextcloudService.generateSecurePassword();
+      expect(pw).toMatch(/[a-z]/);
+    });
+
+    it('should contain at least one digit', () => {
+      const pw = NextcloudService.generateSecurePassword();
+      expect(pw).toMatch(/[0-9]/);
+    });
+
+    it('should contain at least one special character', () => {
+      const pw = NextcloudService.generateSecurePassword();
+      expect(pw).toMatch(/[!@#$%^&*\-_=+?]/);
+    });
+
+    it('should not contain ambiguous characters (0, O, I, l, 1)', () => {
+      const pw = NextcloudService.generateSecurePassword();
+      expect(pw).not.toMatch(/[0OIl1]/);
+    });
+
+    it('should generate unique passwords on each call', () => {
+      const passwords = new Set(Array.from({ length: 50 }, () => NextcloudService.generateSecurePassword()));
+      expect(passwords.size).toBe(50);
     });
   });
 
