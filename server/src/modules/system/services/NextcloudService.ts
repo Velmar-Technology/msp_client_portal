@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import { env } from '@shared/config/env';
 import { logger } from '@shared/utils/logger';
 import { InternalServerError, ExternalServiceError } from '@shared/errors';
@@ -11,6 +12,39 @@ export interface StorageStatus {
 }
 
 export class NextcloudService {
+  /**
+   * Generates a cryptographically secure password that satisfies Nextcloud's password_policy
+   * requirements: mixed case, digits, special characters, and not in compromised list.
+   */
+  static generateSecurePassword(length = 20): string {
+    const uppercase = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const lowercase = 'abcdefghjkmnpqrstuvwxyz';
+    const digits = '23456789';
+    const special = '!@#$%^&*-_=+?';
+
+    const allChars = uppercase + lowercase + digits + special;
+
+    let password = '';
+    const bytes = randomBytes(length);
+    for (let i = 0; i < length; i++) {
+      password += allChars[bytes[i] % allChars.length];
+    }
+
+    // Guarantee at least one character from each required class
+    const pick = (set: string) => set[randomBytes(1)[0] % set.length];
+    const overrides = [
+      { char: pick(uppercase), pos: 0 },
+      { char: pick(lowercase), pos: Math.floor(length / 4) },
+      { char: pick(digits), pos: Math.floor(length / 2) },
+      { char: pick(special), pos: Math.floor((3 * length) / 4) },
+    ];
+    const arr = password.split('');
+    for (const o of overrides) {
+      arr[o.pos] = o.char;
+    }
+    return arr.join('');
+  }
+
   /**
    * Fetches storage quota from Nextcloud server via WebDAV PROPFIND.
    * If connection fails or credentials are not configured, returns a fallback mock response.
@@ -156,8 +190,8 @@ export class NextcloudService {
     const baseUrl = rawUrl.replace(/\/+$/, '');
     const ocsUrl = `${baseUrl}/ocs/v1.php/cloud/users?format=json`;
 
-    // Generate random secure password for the provisioned user
-    const password = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+    // Generate cryptographically secure password for the provisioned user
+    const password = NextcloudService.generateSecurePassword();
 
     const authHeader = 'Basic ' + Buffer.from(`${adminUser}:${adminPass}`).toString('base64');
     
