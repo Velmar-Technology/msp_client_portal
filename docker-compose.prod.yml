@@ -193,7 +193,10 @@ services:
       - "traefik.http.routers.msp-zabbix.tls.certresolver=myresolver"
       - "traefik.http.routers.msp-zabbix.priority=100"
       - "traefik.http.middlewares.zabbix-auth.basicauth.users=admin:$$2y$$10$$DmHxqQNulxwaAz6MOYPx9.wDHaBDCIK4ctEDo2gyc3KIWTp77NGLW"
-      - "traefik.http.routers.msp-zabbix.middlewares=zabbix-auth"
+      - "traefik.http.middlewares.msp-zabbix-redirect.redirectregex.regex=^(https?://[^/]+)/zabbix([?#].*)?$$"
+      - "traefik.http.middlewares.msp-zabbix-redirect.redirectregex.replacement=$${1}/zabbix/$${2}"
+      - "traefik.http.middlewares.msp-zabbix-strip.stripprefix.prefixes=/zabbix"
+      - "traefik.http.routers.msp-zabbix.middlewares=msp-zabbix-redirect,zabbix-auth,msp-zabbix-strip"
       - "traefik.http.services.msp-zabbix-svc.loadbalancer.server.port=8080"
 
   zabbix-agent:
