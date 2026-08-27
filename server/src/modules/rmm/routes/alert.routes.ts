@@ -9,13 +9,10 @@ import { UserRole } from '@shared/types';
 
 const router = Router();
 
-// All alert routes require authentication
-router.use(authMiddleware);
-
 /** POST /api/v1/alerts/rmm — Ingest an RMM alert for flapping/self-healing processing */
-router.post('/rmm', rbacMiddleware(UserRole.ADMIN), validate(ProcessRmmAlertDTO), (req, res) => alertController.processRmmAlert(req, res));
+router.post('/rmm', authMiddleware, rbacMiddleware(UserRole.ADMIN), validate(ProcessRmmAlertDTO), (req, res) => alertController.processRmmAlert(req, res));
 
-/** POST /api/v1/alerts/zabbix-webhook — Ingest Zabbix webhook triggers */
+/** POST /api/v1/alerts/zabbix-webhook — Ingest Zabbix webhook triggers (secret-only auth, no JWT) */
 router.post('/zabbix-webhook', zabbixWebhookAuth, (req, res) => alertController.processZabbixWebhook(req, res));
 
 export default router;
