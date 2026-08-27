@@ -155,7 +155,7 @@ const AccountDetailsForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
               <Globe className="h-3.5 w-3.5 text-muted-foreground" /> {t("profile.languageSetting")}
             </label>
             <Select value={language} onValueChange={(val) => setLanguage(val)}>
-              <SelectTrigger id="profile-language-select" className="w-full">
+              <SelectTrigger id="profile-language-select" size="lg" className="w-full text-xs">
                 <SelectValue placeholder={t("profile.languageSetting")} />
               </SelectTrigger>
               <SelectContent>

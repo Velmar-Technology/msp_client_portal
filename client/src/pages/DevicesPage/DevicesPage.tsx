@@ -113,7 +113,8 @@ export const SubscriptionSelector = memo(function SubscriptionSelector({
           <SelectTrigger
             id="active-sub-select-devices"
             aria-label={t("devices.selectSubscription")}
-            className="w-full h-8 px-2.5 rounded text-xs font-semibold bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5 justify-between"
+            size="lg"
+            className="w-full px-2.5 rounded text-xs font-semibold bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5 justify-between"
           >
             <SelectValue placeholder={t("devices.selectSubscription")} />
           </SelectTrigger>

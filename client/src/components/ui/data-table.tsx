@@ -430,7 +430,8 @@ export function DataTable<TData, TValue>({
                   <SelectTrigger
                     data-testid="pagination-limit-trigger"
                     aria-label={t("common.table.pageSize", "Page size")}
-                    className="h-6 px-2 text-[10px] font-semibold bg-background border-border min-w-14 cursor-pointer"
+                    size="xs"
+                    className="px-2 text-[10px] font-semibold bg-background border-border min-w-14 cursor-pointer"
                   >
                     <SelectValue />
                   </SelectTrigger>

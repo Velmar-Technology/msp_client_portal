@@ -26,13 +26,7 @@ interface EditActivityDialogProps {
   onSave: (activityId: string, data: UpdateActivityPayload) => Promise<void>;
 }
 
-export function EditActivityDialog({
-  activity,
-  open,
-  onOpenChange,
-  actionLoading,
-  onSave,
-}: EditActivityDialogProps) {
+export function EditActivityDialog({ activity, open, onOpenChange, actionLoading, onSave }: EditActivityDialogProps) {
   const { t } = useTranslation();
 
   const [editActType, setEditActType] = useState<LeadActivity["activity_type"]>("CALL");
@@ -98,14 +92,11 @@ export function EditActivityDialog({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <div>
-              <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+              <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1 min-h-[14px] truncate">
                 {t("crm.activityType")}
               </label>
-              <Select
-                value={editActType}
-                onValueChange={(v) => setEditActType(v as LeadActivity["activity_type"])}
-              >
-                <SelectTrigger className="w-full h-8 text-xs">
+              <Select value={editActType} onValueChange={(v) => setEditActType(v as LeadActivity["activity_type"])}>
+                <SelectTrigger size="lg" className="w-full text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -114,22 +105,27 @@ export function EditActivityDialog({
                   <SelectItem value="EMAIL_SENT">{t("crm.activities.email")}</SelectItem>
                   <SelectItem value="NOTE">{t("crm.activities.note")}</SelectItem>
                   <SelectItem value="QUOTE_SENT">{t("crm.activities.quoteSent") || "Quotation Sent"}</SelectItem>
+                  <SelectItem value="QUOTE_REMINDER">
+                    {t("crm.activities.quoteReminder") || "Quotation Reminder"}
+                  </SelectItem>
+                  <SelectItem value="QUOTE_STATUS_CHANGE">
+                    {t("crm.activities.quoteStatusChange") || "Quotation Status Change"}
+                  </SelectItem>
                   <SelectItem value="STAGE_CHANGE">{t("crm.activities.stageChange") || "Stage Change"}</SelectItem>
                   <SelectItem value="PLAN_ASSIGNED">{t("crm.activities.planAssigned") || "Plan Assigned"}</SelectItem>
-                  <SelectItem value="SUB_MODIFIED">{t("crm.activities.subModified") || "Subscription Modified"}</SelectItem>
+                  <SelectItem value="SUB_MODIFIED">
+                    {t("crm.activities.subModified") || "Subscription Modified"}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+              <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1 min-h-[14px] truncate">
                 {t("crm.activityStatus") || "Status"}
               </label>
-              <Select
-                value={editActStatus}
-                onValueChange={(v) => setEditActStatus(v as LeadActivity["status"])}
-              >
-                <SelectTrigger className="w-full h-8 text-xs">
+              <Select value={editActStatus} onValueChange={(v) => setEditActStatus(v as LeadActivity["status"])}>
+                <SelectTrigger size="lg" className="w-full text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -145,11 +141,7 @@ export function EditActivityDialog({
             <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
               {t("crm.dueDate")}
             </label>
-            <DatePicker
-              value={editActDueDate}
-              onChange={(v) => setEditActDueDate(v)}
-              className="w-full"
-            />
+            <DatePicker value={editActDueDate} onChange={(v) => setEditActDueDate(v)} className="w-full" />
           </div>
 
           <div>
@@ -163,9 +155,7 @@ export function EditActivityDialog({
               className="h-8 text-xs"
               aria-invalid={Boolean(editActErrors.title)}
             />
-            {editActErrors.title && (
-              <p className="text-[10px] text-destructive mt-1">{t(editActErrors.title)}</p>
-            )}
+            {editActErrors.title && <p className="text-[10px] text-destructive mt-1">{t(editActErrors.title)}</p>}
           </div>
 
           <div>
@@ -182,11 +172,7 @@ export function EditActivityDialog({
           </div>
 
           <AlertDialogFooter className="pt-2 sm:justify-end gap-2">
-            <AlertDialogCancel
-              type="button"
-              onClick={() => onOpenChange(false)}
-              className="text-xs cursor-pointer"
-            >
+            <AlertDialogCancel type="button" onClick={() => onOpenChange(false)} className="text-xs cursor-pointer">
               {t("common.cancel") || "Cancel"}
             </AlertDialogCancel>
             <Button
@@ -194,7 +180,7 @@ export function EditActivityDialog({
               disabled={isSaving || actionLoading}
               className="text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
             >
-              {isSaving ? (t("common.saving") || "Saving...") : (t("common.save") || "Save Changes")}
+              {isSaving ? t("common.saving") || "Saving..." : t("common.save") || "Save Changes"}
             </Button>
           </AlertDialogFooter>
         </form>

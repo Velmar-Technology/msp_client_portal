@@ -306,7 +306,7 @@ export function LoginPage() {
           value={i18n.language || "en_US"}
           onValueChange={(newLang) => i18n.changeLanguage(newLang)}
         >
-          <SelectTrigger className="h-6 border-0 bg-transparent text-xs font-semibold text-foreground shadow-none px-2 focus:ring-0 cursor-pointer">
+          <SelectTrigger size="sm" className="border-0 bg-transparent text-xs font-semibold text-foreground shadow-none px-2 focus:ring-0 cursor-pointer">
             <SelectValue />
           </SelectTrigger>
           <SelectContent align="end">

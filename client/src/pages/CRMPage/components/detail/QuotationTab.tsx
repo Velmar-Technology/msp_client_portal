@@ -111,7 +111,7 @@ export function QuotationTab({
             {t("plans.selectPlan")}
           </label>
           <Select value={effectivePlanId} onValueChange={setSelectedPlanId}>
-            <SelectTrigger className="w-full h-9 text-xs bg-background text-foreground">
+            <SelectTrigger size="lg" className="w-full text-xs bg-background text-foreground">
               <SelectValue placeholder={t("plans.selectPlan")} />
             </SelectTrigger>
             <SelectContent>

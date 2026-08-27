@@ -191,7 +191,7 @@ export function CRMNewLeadModal({
                   {t("plans.selectCustomer")}
                 </Label>
                 <Select value={selectedClientId} onValueChange={handleClientChange}>
-                  <SelectTrigger id="crm-client-select" className="w-full text-xs font-medium">
+                  <SelectTrigger id="crm-client-select" size="lg" className="w-full text-xs font-medium">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -226,7 +226,7 @@ export function CRMNewLeadModal({
                     onChange={(e) => setContactName(e.target.value)}
                     placeholder={t("crm.contactNamePlaceholder")}
                     aria-invalid={Boolean(errors.contactName)}
-                    className="text-xs"
+                    className="h-8 text-xs"
                   />
                   {errors.contactName && (
                     <p className="text-[10px] text-destructive font-medium">{t(errors.contactName)}</p>
@@ -244,7 +244,7 @@ export function CRMNewLeadModal({
                     onChange={(e) => setContactEmail(e.target.value)}
                     placeholder={t("crm.contactEmailPlaceholder")}
                     aria-invalid={Boolean(errors.contactEmail)}
-                    className="text-xs"
+                    className="h-8 text-xs"
                   />
                   {errors.contactEmail && (
                     <p className="text-[10px] text-destructive font-medium">{t(errors.contactEmail)}</p>
@@ -262,7 +262,7 @@ export function CRMNewLeadModal({
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
                     placeholder={t("crm.companyNamePlaceholder")}
-                    className="text-xs"
+                    className="h-8 text-xs"
                   />
                 </div>
 
@@ -275,7 +275,7 @@ export function CRMNewLeadModal({
                     value={contactPhone}
                     onChange={(e) => setContactPhone(e.target.value)}
                     placeholder={t("crm.contactPhonePlaceholder")}
-                    className="text-xs"
+                    className="h-8 text-xs"
                   />
                 </div>
               </div>
@@ -296,7 +296,7 @@ export function CRMNewLeadModal({
                     {t("plans.plan")} *
                   </Label>
                   <Select value={effectivePlanId} onValueChange={setPlanId}>
-                    <SelectTrigger id="crm-plan-select" className="w-full text-xs font-medium">
+                    <SelectTrigger id="crm-plan-select" size="lg" className="w-full text-xs font-medium">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -322,7 +322,7 @@ export function CRMNewLeadModal({
                     max={500}
                     value={equipmentCount}
                     onChange={(e) => setEquipmentCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                    className="font-mono text-xs"
+                    className="font-mono text-xs h-8"
                   />
                 </div>
 
@@ -331,7 +331,7 @@ export function CRMNewLeadModal({
                     {t("plans.billingCycle")}
                   </Label>
                   <Select value={billingCycle} onValueChange={(v) => setBillingCycle(v as "monthly" | "annual")}>
-                    <SelectTrigger id="crm-billing-cycle" className="w-full text-xs font-medium">
+                    <SelectTrigger id="crm-billing-cycle" size="lg" className="w-full text-xs font-medium">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -346,7 +346,7 @@ export function CRMNewLeadModal({
                     {t("crm.columns.priority")}
                   </Label>
                   <Select value={priority} onValueChange={(v) => setPriority(v as LeadPriority)}>
-                    <SelectTrigger id="crm-priority-select" className="w-full text-xs font-medium">
+                    <SelectTrigger id="crm-priority-select" size="lg" className="w-full text-xs font-medium">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

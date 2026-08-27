@@ -383,7 +383,7 @@ export function CRMLeadDetailSheet({
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                      <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1 min-h-[14px] truncate">
                         Win Prob (%)
                       </label>
                       <Input
@@ -402,14 +402,14 @@ export function CRMLeadDetailSheet({
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                      <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1 min-h-[14px] truncate">
                         {t("tickets.tablePriority") || "Priority"}
                       </label>
                       <Select
                         value={leadForm.priority}
                         onValueChange={(v) => setLeadForm((prev) => ({ ...prev, priority: v as LeadPriority }))}
                       >
-                        <SelectTrigger className="w-full h-8 text-xs bg-background text-foreground">
+                        <SelectTrigger size="lg" className="w-full text-xs bg-background text-foreground">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>

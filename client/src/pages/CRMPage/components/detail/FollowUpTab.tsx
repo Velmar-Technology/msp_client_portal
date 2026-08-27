@@ -125,14 +125,11 @@ export function FollowUpTab({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+            <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1 min-h-[14px] truncate">
               {t("crm.activityType")}
             </label>
-            <Select
-              value={activityType}
-              onValueChange={(v) => setActivityType(v as LeadActivity["activity_type"])}
-            >
-              <SelectTrigger className="w-full">
+            <Select value={activityType} onValueChange={(v) => setActivityType(v as LeadActivity["activity_type"])}>
+              <SelectTrigger size="lg" className="w-full text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -140,12 +137,18 @@ export function FollowUpTab({
                 <SelectItem value="MEETING">{t("crm.activities.meeting")}</SelectItem>
                 <SelectItem value="EMAIL_SENT">{t("crm.activities.email")}</SelectItem>
                 <SelectItem value="NOTE">{t("crm.activities.note")}</SelectItem>
+                <SelectItem value="QUOTE_SENT">{t("crm.activities.quoteSent") || "Quotation Sent"}</SelectItem>
+                <SelectItem value="QUOTE_REMINDER">{t("crm.activities.quoteReminder") || "Quotation Reminder"}</SelectItem>
+                <SelectItem value="QUOTE_STATUS_CHANGE">{t("crm.activities.quoteStatusChange") || "Quotation Status Change"}</SelectItem>
+                <SelectItem value="STAGE_CHANGE">{t("crm.activities.stageChange") || "Stage Change"}</SelectItem>
+                <SelectItem value="PLAN_ASSIGNED">{t("crm.activities.planAssigned") || "Plan Assigned"}</SelectItem>
+                <SelectItem value="SUB_MODIFIED">{t("crm.activities.subModified") || "Subscription Modified"}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+            <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1 min-h-[14px] truncate">
               {t("crm.dueDate")}
             </label>
             <DatePicker
@@ -154,7 +157,7 @@ export function FollowUpTab({
                 setActivityDueDate(v);
                 if (v) setActivityIsPending(true);
               }}
-              className="w-full"
+              className="w-full h-8 text-xs"
             />
           </div>
         </div>
@@ -169,9 +172,7 @@ export function FollowUpTab({
             placeholder={t("crm.activityTitlePlaceholder")}
             aria-invalid={Boolean(activityErrors.title)}
           />
-          {activityErrors.title && (
-            <p className="text-[10px] text-destructive mt-1">{t(activityErrors.title)}</p>
-          )}
+          {activityErrors.title && <p className="text-[10px] text-destructive mt-1">{t(activityErrors.title)}</p>}
         </div>
 
         <div>
@@ -217,10 +218,7 @@ export function FollowUpTab({
             {followUpActivities.map((act) => {
               const isPending = act.status === "PENDING";
               return (
-                <div
-                  key={act.id}
-                  className="bg-card border border-border rounded-xl p-3 shadow-xs space-y-2 text-xs"
-                >
+                <div key={act.id} className="bg-card border border-border rounded-xl p-3 shadow-xs space-y-2 text-xs">
                   <div className="flex items-start justify-between gap-2">
                     <div className="space-y-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
@@ -243,9 +241,7 @@ export function FollowUpTab({
                           {act.status}
                         </Badge>
                       </div>
-                      {act.summary && (
-                        <p className="text-muted-foreground text-xs leading-relaxed">{act.summary}</p>
-                      )}
+                      {act.summary && <p className="text-muted-foreground text-xs leading-relaxed">{act.summary}</p>}
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <Button
@@ -257,7 +253,6 @@ export function FollowUpTab({
                         className="h-6 px-2 text-[10px] gap-1 cursor-pointer"
                       >
                         <Pencil className="h-3 w-3" />
-                        <span>{t("common.edit") || "Edit"}</span>
                       </Button>
                       {onOpenDeleteActivity && (
                         <Button
@@ -269,7 +264,6 @@ export function FollowUpTab({
                           className="h-6 px-2 text-[10px] gap-1 text-destructive hover:bg-destructive/10 cursor-pointer"
                         >
                           <Trash2 className="h-3 w-3" />
-                          <span>{t("common.delete") || "Delete"}</span>
                         </Button>
                       )}
                     </div>

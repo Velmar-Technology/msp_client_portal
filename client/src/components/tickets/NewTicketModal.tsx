@@ -158,7 +158,7 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
                 {t("tickets.modalCategoryLabel")}
               </Label>
               <Select value={newCategory} onValueChange={setNewCategory}>
-                <SelectTrigger id="new-ticket-category" className="w-full">
+                <SelectTrigger id="new-ticket-category" size="lg" className="w-full text-xs">
                   <SelectValue placeholder={t("tickets.modalCategoryLabel")} />
                 </SelectTrigger>
                 <SelectContent className="bg-popover border-border">
@@ -173,7 +173,7 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
                 {t("tickets.modalPriorityLabel")}
               </Label>
               <Select value={newPriority} onValueChange={setNewPriority}>
-                <SelectTrigger id="new-ticket-priority" className="w-full">
+                <SelectTrigger id="new-ticket-priority" size="lg" className="w-full text-xs">
                   <SelectValue placeholder={t("tickets.modalPriorityLabel")} />
                 </SelectTrigger>
                 <SelectContent className="bg-popover border-border">
@@ -199,7 +199,7 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
                   value={selectedEquipmentId || "none"}
                   onValueChange={(val) => setSelectedEquipmentId(val === "none" ? "" : val)}
                 >
-                  <SelectTrigger id="new-ticket-device" className="w-full">
+                  <SelectTrigger id="new-ticket-device" size="lg" className="w-full text-xs">
                     <SelectValue placeholder={t("tickets.modalDevicePlaceholder")} />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-border">

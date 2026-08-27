@@ -428,7 +428,7 @@ export function UserManagementPage() {
               value={selectedBulkRole}
               onValueChange={(val) => setSelectedBulkRole(val as UserRole)}
             >
-              <SelectTrigger id="bulk-role-select" className="w-full">
+              <SelectTrigger id="bulk-role-select" size="lg" className="w-full text-xs">
                 <SelectValue placeholder={t("userManagement.selectRole") || "Select Role"} />
               </SelectTrigger>
               <SelectContent>
@@ -479,7 +479,7 @@ export function UserManagementPage() {
               value={selectedBulkClientType}
               onValueChange={(val) => setSelectedBulkClientType(val as ClientType)}
             >
-              <SelectTrigger id="bulk-client-type-select" className="w-full">
+              <SelectTrigger id="bulk-client-type-select" size="lg" className="w-full text-xs">
                 <SelectValue placeholder={t("userManagement.selectClientType") || "Select Client Type"} />
               </SelectTrigger>
               <SelectContent>

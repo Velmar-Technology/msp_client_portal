@@ -134,7 +134,7 @@ export function AddAdminDeviceModal({
                     {t("devices.tenantLabel", "Target Workspace / Client")}
                   </label>
                   <Select value={selectedTenantId} onValueChange={setSelectedTenantId}>
-                    <SelectTrigger id="admin-dev-tenant" className="w-full h-8 text-xs bg-card">
+                    <SelectTrigger id="admin-dev-tenant" size="lg" className="w-full text-xs bg-card">
                       <div className="flex items-center gap-1.5 truncate">
                         <Building2 className="h-3 w-3 text-zinc-400 shrink-0" />
                         <SelectValue placeholder={t("devices.filterAllClients", "Select Workspace")} />

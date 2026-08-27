@@ -193,7 +193,7 @@ export function ScheduleMaintenanceModal({
                     }
                   }}
                 >
-                  <SelectTrigger id="maint-target-device" className="w-full text-xs">
+                  <SelectTrigger id="maint-target-device" size="lg" className="w-full text-xs">
                     <SelectValue placeholder={t("maintenance.labelSelectDevice")} />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-border">
@@ -318,7 +318,7 @@ export function ScheduleMaintenanceModal({
                   value={assignedTechId || "unassigned"}
                   onValueChange={(val) => setAssignedTechId(val === "unassigned" ? "" : val)}
                 >
-                  <SelectTrigger id="maint-assigned-tech" className="w-full text-xs">
+                  <SelectTrigger id="maint-assigned-tech" size="lg" className="w-full text-xs">
                     <SelectValue placeholder={t("maintenance.unassignedTech")} />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-border">

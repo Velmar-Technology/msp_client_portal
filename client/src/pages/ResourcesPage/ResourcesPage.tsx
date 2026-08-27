@@ -186,7 +186,8 @@ export function ResourcesPage() {
                     <SelectTrigger
                       id="resources-os-filter"
                       aria-label={t("resources.filterByOs")}
-                      className="h-7 px-2.5 rounded text-xs font-semibold bg-card text-foreground shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5"
+                      size="default"
+                      className="px-2.5 rounded text-xs font-semibold bg-card text-foreground shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5"
                     >
                       <SelectValue placeholder={t("resources.filterByOs")} />
                     </SelectTrigger>
@@ -212,7 +213,8 @@ export function ResourcesPage() {
                     <SelectTrigger
                       id="resources-plan-filter"
                       aria-label={t("resources.filterByPlan")}
-                      className="h-7 px-2.5 rounded text-xs font-semibold bg-card text-foreground shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5"
+                      size="default"
+                      className="px-2.5 rounded text-xs font-semibold bg-card text-foreground shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5"
                     >
                       <SelectValue placeholder={t("resources.filterByPlan")} />
                     </SelectTrigger>
