@@ -152,7 +152,7 @@ graph LR
 |---|---|---|---|---|
 | **3** | `traefik` | 3 | `traefik:v3.6.4` | Reverse proxy, TLS termination, Let's Encrypt |
 | **14** | `wireguard` | 3 | `linuxserver/wireguard:latest` | WireGuard hub (host netns) |
-| **17** | `msp_portal` | 3 | Node.js app | MSP backend (`NEXTCLOUD_URL=10.13.13.3:30027`) |
+| **17** | `msp_portal` | 3 | 12-service Compose stack | MSP backend + client, PostgreSQL, Zabbix observability, Dozzle, Prometheus/Grafana, Faro/Alloy (`NEXTCLOUD_URL=10.13.13.3:30027`) → see §4.4 |
 | **18** | `cloud-gateway` | 3 | `nginx:alpine` | Dual nginx proxy (Nextcloud + TrueNAS panel) |
 | **19** | `cloud-wg` | 4 | `linuxserver/wireguard:latest` | WireGuard client on TrueNAS (host netns) |
 
@@ -186,6 +186,16 @@ traefik.http.routers.nas-panel.middlewares=nas-auth
 ```
 
 > ⚠️ **Known Traefik Gotcha**: When a single container defines multiple routers/services, every router MUST have an explicit `.service=` binding label. Without it, Traefik cannot auto-link and disables all routers on that container.
+
+### 4.4 Stack 17 — msp_portal (Deep Dive Pointer)
+
+The **`msp_portal`** stack hosts the entire MSP Client Portal plus its observability suite (see the full specification in [`MSP_PORTAL_STACK.md`](MSP_PORTAL_STACK.md)):
+
+- **Application:** `db` (PostgreSQL 16) + `server` (`ghcr.io/velmar-technology/msp-services-server:<VERSION>`, port 3001, `NEXTCLOUD_URL=10.13.13.3:30027`) + `client` (nginx SPA, catch-all route).
+- **Zabbix monitoring:** `zabbix-db`, `zabbix-server` (published `:10051`), `zabbix-web` (nginx frontend, exposed at `https://helpdesk.velmartech.com.do/zabbix/` behind basic-auth) and `zabbix-agent` (agent2, shares the server netns).
+- **Telemetry / hygiene:** `logs` (Dozzle, `/logs`), `prometheus` (`v2.54.0`, `/prometheus`, scrapes `traefik:8080`, `alloy:12345`, `server:3001/api/v1/metrics`), `alloy` (Faro receiver, `/collect`), `grafana` (`/grafana/`, Zabbix app plugin preinstalled).
+- **2026-08-27 zabbix fix:** `/zabbix` route previously 404'd because the Zabbix nginx serves only at `/`. Traefik now redirects `/zabbix` → `/zabbix/` and strips the prefix via `msp-zabbix-redirect` + `msp-zabbix-strip` (labels on `zabbix-web`). Detail in §5 of `MSP_PORTAL_STACK.md`.
+- **Deployment:** CI pipeline (`deploy.yml`)/redeploy scripts push the repo-owned `docker-compose.prod.yml` to Portainer with a pinned `VERSION`; rollback = re-pin previous tag.
 
 ---
 
