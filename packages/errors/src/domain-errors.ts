@@ -178,3 +178,20 @@ export class InvalidFileTypeError extends ValidationError {
     super(message, details, originalError);
   }
 }
+
+/**
+ * 409 Distributed/resource lock could not be acquired before timeout
+ */
+export class LockAcquisitionError extends AppError {
+  public readonly code = 'LOCK_ACQUISITION_ERROR';
+  public readonly statusCode = 409;
+
+  constructor(message: string, details?: Record<string, any>, originalError?: unknown) {
+    super({
+      message,
+      details,
+      originalError,
+      isOperational: true
+    });
+  }
+}

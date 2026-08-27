@@ -1,17 +1,27 @@
 import { BaseRepository } from '@shared/repositories/BaseRepository';
-import { Plan, PlanFilters } from '@shared/types';
+import { Plan, PlanFilters, CachePort } from '@shared/types';
 import { db, plans } from '@shared/db';
 import { eq, and, ilike, asc, count, SQL } from 'drizzle-orm';
+import { cacheManager } from '@shared/utils/cache';
 
 export class PlanRepository extends BaseRepository<Plan> {
-  constructor() {
+  constructor(private cache: CachePort = cacheManager) {
     super(plans, 'plans');
   }
 
   async findById(id: string): Promise<Plan | null> {
     if (!id) return null;
-    const result = await db.select().from(plans).where(eq(plans.id, id));
-    return (result[0] as Plan) || null;
+
+    return this.cache.wrapVersioned<Plan | null>(
+      'plans',
+      'global',
+      `id:${id}`,
+      3600,
+      async () => {
+        const result = await db.select().from(plans).where(eq(plans.id, id));
+        return (result[0] as Plan) || null;
+      }
+    );
   }
 
   async create(data: Omit<Plan, 'created_at' | 'updated_at'>): Promise<Plan> {
@@ -19,6 +29,10 @@ export class PlanRepository extends BaseRepository<Plan> {
       .insert(plans)
       .values(data)
       .returning();
+
+    // Atomic generation invalidation
+    await this.cache.invalidateScope('plans', 'global');
+
     return results[0] as Plan;
   }
 
@@ -34,43 +48,58 @@ export class PlanRepository extends BaseRepository<Plan> {
       })
       .where(eq(plans.id, id))
       .returning();
+
+    // Atomic generation invalidation across all nodes
+    await this.cache.invalidateScope('plans', 'global');
+
     return (results[0] as Plan) || null;
   }
 
   async findWithFilters(filters: PlanFilters): Promise<{ plans: Plan[]; total: number }> {
-    const conditions: (SQL | undefined)[] = [];
+    const filterKey = `filters:${JSON.stringify(filters)}`;
 
-    if (filters.includeInactive === false) {
-      conditions.push(eq(plans.active, true));
-    }
-    if (filters.clientType) {
-      conditions.push(eq(plans.client_type, filters.clientType));
-    }
-    if (filters.search) {
-      conditions.push(ilike(plans.id, `%${filters.search}%`));
-    }
+    return this.cache.wrapVersioned(
+      'plans',
+      'global',
+      filterKey,
+      300,
+      async () => {
+        const conditions: (SQL | undefined)[] = [];
 
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-    const page = filters.page || 1;
-    const limit = filters.limit || 20;
-    const offset = (page - 1) * limit;
+        if (filters.includeInactive === false) {
+          conditions.push(eq(plans.active, true));
+        }
+        if (filters.clientType) {
+          conditions.push(eq(plans.client_type, filters.clientType));
+        }
+        if (filters.search) {
+          conditions.push(ilike(plans.id, `%${filters.search}%`));
+        }
 
-    const countResult = await db
-      .select({ val: count() })
-      .from(plans)
-      .where(whereClause);
-    const total = countResult[0]?.val ?? 0;
+        const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+        const page = filters.page || 1;
+        const limit = filters.limit || 20;
+        const offset = (page - 1) * limit;
 
-    const results = await db
-      .select()
-      .from(plans)
-      .where(whereClause)
-      .orderBy(asc(plans.price), asc(plans.id))
-      .limit(limit)
-      .offset(offset);
+        const countResult = await db
+          .select({ val: count() })
+          .from(plans)
+          .where(whereClause);
+        const total = countResult[0]?.val ?? 0;
 
-    return { plans: results as Plan[], total };
+        const results = await db
+          .select()
+          .from(plans)
+          .where(whereClause)
+          .orderBy(asc(plans.price), asc(plans.id))
+          .limit(limit)
+          .offset(offset);
+
+        return { plans: results as Plan[], total };
+      }
+    );
   }
 }
 
 export const planRepository = new PlanRepository();
+

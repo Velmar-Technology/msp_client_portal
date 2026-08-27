@@ -203,6 +203,19 @@ export interface EscalationCandidate {
   responseCount: number;
 }
 
+// ---- Cache Abstraction (Port) ----
+
+export interface CachePort {
+  wrapVersioned<T>(
+    namespace: string,
+    scope: string,
+    identifier: string,
+    ttlSeconds: number,
+    fetcher: () => Promise<T>
+  ): Promise<T>;
+  invalidateScope(namespace: string, scope?: string): Promise<number>;
+}
+
 // ---- API Response Types ----
 
 export interface ApiResponse<T = unknown> {
