@@ -475,11 +475,26 @@ Configuration parsing error
 **** Tunnel /config/wg_confs/wg0.conf failed, will stop all others! ****
 ```
 
-**Cause**: The linuxserver `init` feeds the conf to the low-level `wg addconf`, which only understands `[Interface]`/`[Peer]` keys. Command lines (`PostUp`/`PostDown`) must be parsed out first — the parser only recognizes them when they sit inside the `[Interface]` block. Appending them **after a `[Peer]` section** leaks them into the `wg addconf` input and aborts the whole tunnel (observed 2026-08-27 on the Stack 19 client).
+**Cause**: The actual parser is **`wg-quick`** (invoked by the linuxserver `svc-wireguard/run`, which merely loops `wg-quick up <conf>`). Its `parse_options()` is a *position-tracking* state machine:
 
-**Diagnosis**: `docker logs` the WG container; look for `Line unrecognized:` + `Tunnel failed`.
+```bash
+[[ $key == "["* ]] && interface_section=0          # ANY [ line exits the [Interface] section
+[[ $key == "[Interface]" ]] && interface_section=1 # only this re-enters it
+if [[ $interface_section -eq 1 ]]; then
+    case "$key" in
+    ...
+    PostUp) POST_UP+=( "$value" ); continue ;;     # consumed ONLY while inside [Interface]
+    ...
+    esac
+fi
+WG_CONFIG+="$line"$'\n'                            # everything else passes through verbatim
+```
 
-**Fix**: Place every `PostUp`/`PostDown` line **inside the `[Interface]` section**, never after a `[Peer]`, then restart the container:
+The `[Peer]` header resets the flag to 0, so a `PostUp` placed **after** `[Peer]` is **not consumed** — it falls through to `WG_CONFIG` and is fed verbatim to `wg addconf` (log: `[#] wg addconf wg0 /dev/fd/63`). The low-level `wg` tool only knows `[Interface]`/`[Peer]` protocol keys, rejects `PostUp` with `Line unrecognized`, and `wg-quick` aborts — wiping `wg0` and blocking every other tunnel. (Observed 2026-08-27 on the Stack 19 client.)
+
+**Diagnosis**: `docker logs` the WG container; look for `[#] wg addconf wg0 /dev/fd/63` followed by `Line unrecognized:` + `Tunnel failed`.
+
+**Fix**: Place every `PostUp`/`PreUp`/`PostDown`/`PreDown` line **inside the `[Interface]` section**, never after a `[Peer]`, then restart the container:
 ```bash
 # restart via Portainer (endpoint 3 / 4) — wg-quick re-runs PostUp, self-heals routes + rules
 ```
