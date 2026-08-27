@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { env } from '@shared/config/env';
-import { userRepository, UserRepository } from '@modules/auth/repositories/UserRepository';
-import { tenantRepository, TenantRepository } from '@modules/auth/repositories/TenantRepository';
+import { userRepository, UserRepository } from '../repositories/UserRepository';
+import { tenantRepository, TenantRepository } from '../repositories/TenantRepository';
 import { hashPassword, comparePassword } from '@shared/utils/passwordUtils';
 import { ConflictError, ValidationError, UnauthorizedError, ForbiddenError, InternalServerError, NotFoundError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';

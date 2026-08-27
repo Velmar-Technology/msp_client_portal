@@ -4,6 +4,7 @@ import { SystemService } from './SystemService';
 describe('SystemService', () => {
   let mockSystemRepo: any;
   let mockStorageService: any;
+  let mockZabbixService: any;
   let systemService: SystemService;
 
   beforeEach(() => {
@@ -23,7 +24,14 @@ describe('SystemService', () => {
         status: 'online',
       }),
     };
-    systemService = new SystemService(mockSystemRepo, mockStorageService);
+    mockZabbixService = {
+      checkHealth: vi.fn().mockResolvedValue({
+        reachable: true,
+        latencyMs: 25,
+        version: '6.0.48',
+      }),
+    };
+    systemService = new SystemService(mockSystemRepo, mockStorageService, mockZabbixService);
   });
 
   it('should return operational status when DB and Storage are healthy', async () => {

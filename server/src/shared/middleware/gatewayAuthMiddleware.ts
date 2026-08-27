@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { env } from '@shared/config/env';
 import { JwtPayload } from '@shared/types';
-import { userRepository } from '@modules/auth/repositories/UserRepository';
+import { userRepository } from '@modules/auth';
 
 /**
  * Ingress Gateway Authentication & Header Injection Middleware.

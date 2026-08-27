@@ -67,6 +67,17 @@ const envSchema = z.object({
   ZABBIX_PASSWORD: z.string().default('zabbix'),
   ZABBIX_WEBHOOK_SECRET: z.string().default(''),
 
+  // Redis Cache & Locks
+  REDIS_HOST: z.string().default('localhost'),
+  REDIS_PORT: z.coerce.number().default(6379),
+  REDIS_PASSWORD: z.string().optional(),
+  REDIS_DB: z.coerce.number().default(0),
+  REDIS_ENABLED: z
+    .string()
+    .default('true')
+    .transform((v) => v === 'true' || v === '1'),
+  REDIS_TIMEOUT_MS: z.coerce.number().default(2000),
+
   // Datadog APM & Observability (Optional)
   DD_API_KEY: z.string().optional(),
   DD_SITE: z.string().default('datadoghq.com'),

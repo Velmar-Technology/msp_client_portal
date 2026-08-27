@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.6.0](https://github.com-work/Velmar-Technology/msp_client_portal/compare/v1.5.5...v1.6.0) (2026-08-27)
+
+
+### Features
+
+* **equipment:** add automated Nextcloud desktop client deployment ([#16](https://github.com-work/Velmar-Technology/msp_client_portal/issues/16)) ([e99dd44](https://github.com-work/Velmar-Technology/msp_client_portal/commit/e99dd44e4fdd013f95d5ff171d7a73e0d6932613))
+* **rmm:** add webhook HMAC verification and ZabbixService resilience ([033d8ad](https://github.com-work/Velmar-Technology/msp_client_portal/commit/033d8adaf43934e2e3f520b464f7f3d598a09aa9))
+* **shared:** add Redis-backed tiered cache with distributed locking ([c26f86f](https://github.com-work/Velmar-Technology/msp_client_portal/commit/c26f86fe2ce40f3c1baaac61815d8f7e1c758233))
+
+
+### Bug Fixes
+
+* **build:** ensure husky prepare script is skipped in production and Docker builds ([95b1e99](https://github.com-work/Velmar-Technology/msp_client_portal/commit/95b1e99578330bef9d2a1865cc9e35d7176c48a4))
+* **client:** remove app version display from sidebar footer ([bb13d7f](https://github.com-work/Velmar-Technology/msp_client_portal/commit/bb13d7f3fbdaf64a2c7f8abc977b0a70a8392a2a))
+* **rmm:** allow zabbix-webhook to bypass JWT auth ([40b6046](https://github.com-work/Velmar-Technology/msp_client_portal/commit/40b6046468984155762255832e37a19a6a7bff7f))
+
+## [1.5.5](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.5.4...v1.5.5) (2026-08-26)
+
+
+### Features
+
+* **i18n:** prioritize user preference and fallback to browser language detection ([9106276](https://github.com/Velmar-Technology/msp_client_portal/commit/910627604e1edfc57d4612798ac66f4757d5d20a))
+* **tickets:** implement mark as read on first open and align filter dropdown height ([cb42723](https://github.com/Velmar-Technology/msp_client_portal/commit/cb42723019536ae94a3c0d35e81de4d97211199c))
+
+
+### Bug Fixes
+
+* **client:** resolve empty interface lint error in input-group ([a7cc9b6](https://github.com/Velmar-Technology/msp_client_portal/commit/a7cc9b67d051a50749660c0b3b46f97a3f98cd84))
+* **client:** resolve linter warnings and type mismatches in ticket hooks and page ([d532b4b](https://github.com/Velmar-Technology/msp_client_portal/commit/d532b4baba867312a3162f5f4007d870d2f942b7))
+* **system:** enhance Nextcloud password generation and provisioning error handling ([a68a54c](https://github.com/Velmar-Technology/msp_client_portal/commit/a68a54ca8ee98a3f14954dff651fae1f36db8163))
+
 ## [1.5.4](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.5.3...v1.5.4) (2026-08-24)
 
 

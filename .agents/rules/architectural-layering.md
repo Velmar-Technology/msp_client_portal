@@ -82,8 +82,8 @@ $$\text{Level 1: Primitives (/components/ui)} \longleftarrow \text{Level 2: Shar
    - **Repositories**: Translate Drizzle ORM queries into typed domain objects. Extend `BaseRepository` where applicable. Must not contain business logic or circular service dependencies.
 
 4. **Frameworks & Drivers (`server/src/modules/<domain>/routes/`, `server/src/shared/db/`, `server/src/shared/utils/`)**:
-   - Express router bindings, database connection pool (`db.ts`), email/WhatsApp utility drivers, PDF generation.
-   - Framework-specific drivers and persistence code are confined here and never leaked into domain services.
+   - Express router bindings, database connection pool (`db.ts`), email/WhatsApp utility drivers, PDF generation, and the tiered cache (`shared/utils/cache/` — Redis + in-memory LRU fallback, generation-based invalidation, `DistributedLock`).
+   - Framework-specific drivers and persistence code are confined here and never leaked into domain services. The cache is consumed through the `CachePort` abstraction and injected into repositories/services via their constructors, wired as a `cacheManager` singleton in each module's gateway (`index.ts`).
 
 5. **API Gateway Layer (`server/src/shared/middleware/gateway*.ts`)**:
    - Ingress handling for downstream route clusters:

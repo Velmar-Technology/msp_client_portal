@@ -32,7 +32,7 @@ server/src/
 │   ├── policies/                   # Access control policy definitions
 │   ├── repositories/               # Shared base repositories (BaseRepository.ts)
 │   ├── types/                      # Primitive entity interfaces & enums
-│   └── utils/                      # Shared utility drivers (logger, passwordUtils, pdfGenerator)
+│   └── utils/                      # Shared utility drivers (logger, passwordUtils, pdfGenerator, cache)
 │
 └── modules/                        # Business Domain Bounded Contexts
     ├── auth/                       # Controllers, Repositories, Routes, Services & Co-located Tests
@@ -308,6 +308,8 @@ The portal integrates with **Nextcloud** running on **TrueNAS SCALE** (`cloud-st
 
 ---
 
+---
+
 ## 📖 API Documentation
 
 Interactive Swagger API documentation is available when the server is running:
@@ -315,4 +317,39 @@ Interactive Swagger API documentation is available when the server is running:
 - **Direct Backend URL:** [http://localhost:3001/api-docs](http://localhost:3001/api-docs)
 - **API v1 Endpoint URL:** [http://localhost:3001/api/v1/api-docs](http://localhost:3001/api/v1/api-docs)
 - **Frontend Proxy URL (Dev):** [http://localhost:5173/api-docs](http://localhost:5173/api-docs)
+
+---
+
+## 🛠️ Git Workflow, Commit Conventions & Pre-Commit Hooks
+
+The repository strictly enforces **[Conventional Commits](https://www.conventionalcommits.org/)** specifications locally via **Husky** and **Commitlint** to ensure clean git histories and automated semantic release tagging (`commit-and-tag-version`).
+
+### Commit Format
+```text
+<type>(<scope>): <short description in imperative mood>
+
+[optional body with detailed changelog / context]
+
+[optional footer(s): Closes #123, BREAKING CHANGE: ...]
+```
+
+### Allowed Types
+- `feat`: New feature or capability
+- `fix`: Bug fix
+- `docs`: Documentation updates
+- `style`: Formatting, missing semi colons, UI alignment (no code logic change)
+- `refactor`: Refactoring code without changing public behavior or fixing bugs
+- `perf`: Performance optimizations
+- `test`: Adding or correcting tests
+- `build`: Build system or dependency updates
+- `ci`: CI configuration and scripts (`.github/workflows/`)
+- `chore`: Maintenance tasks, releases (`chore(release): 1.5.5`)
+- `revert`: Reverting a previous commit
+
+### Common Domain Scopes
+`rmm`, `client`, `server`, `equipment`, `system`, `tickets`, `billing`, `subscriptions`, `crm`, `notifications`, `auth`, `ui`, `i18n`, `web`, `infra`, `shared`, `deps`
+
+### Pre-Commit / Commit-Msg Validation
+Hooks are automatically installed via `npm run prepare` (configured in root `package.json`). Whenever you run `git commit`, Husky invokes Commitlint to validate your commit message before it is accepted.
+
 
