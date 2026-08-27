@@ -7,10 +7,14 @@
     "packages/*"
   ],
   "scripts": {
-    "build:packages": "npm -w packages/errors run build"
+    "build:packages": "npm -w packages/errors run build",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
     "commit-and-tag-version": "^12.7.3",
+    "husky": "^9.1.7",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "typescript": "6.0.3"

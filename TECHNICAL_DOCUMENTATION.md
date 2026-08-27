@@ -1721,3 +1721,41 @@ El servicio [`NextcloudService.ts`](file:///c:/Users/Public/Workspace/msp_client
 - **`getUserStorage()`**: Obtiene métricas individuales de almacenamiento en bytes para el portal de clientes.
 
 Para especificaciones operativas, scripts de diagnóstico y runbooks de infraestructura, consultar [`docs/infrastructure/WIREGUARD_NEXTCLOUD_INTEGRATION.md`](file:///c:/Users/Public/Workspace/msp_client_portal/docs/infrastructure/WIREGUARD_NEXTCLOUD_INTEGRATION.md).
+
+---
+
+## 8. Estándares de Git, Convención de Commits y Hooks Locales (Husky & Commitlint)
+
+El monorepo implementa **Conventional Commits** y validación automatizada mediante **Husky** y **Commitlint** a nivel raíz para garantizar un historial limpio y habilitar el versionamiento semántico automatizado (`commit-and-tag-version`).
+
+### 8.1. Estructura de Mensajes de Commit
+```text
+<type>(<scope>): <resumen en modo imperativo>
+
+[cuerpo opcional con lista de cambios detallados y justificación técnica]
+
+[pie opcional con referencia a issues: Closes #123]
+```
+
+### 8.2. Tipos Admitidos
+- `feat`: Nuevas funcionalidades o capacidades añadidas.
+- `fix`: Corrección de errores (bugs).
+- `docs`: Modificaciones exclusivamente en archivos de documentación.
+- `style`: Ajustes visuales, formateo de código, estilos CSS o UI sin alterar lógica.
+- `refactor`: Reestructuración de código sin alterar el comportamiento observable ni corregir bugs.
+- `perf`: Mejoras de rendimiento y optimización de consultas/renders.
+- `test`: Creación o ajuste de pruebas unitarias y de integración.
+- `build`: Cambios en dependencias, empaquetado o herramientas de compilación.
+- `ci`: Modificaciones en pipelines de CI/CD (`.github/workflows/`).
+- `chore`: Tareas de mantenimiento y lanzamientos de versión (`chore(release): 1.5.5`).
+- `revert`: Reversión de un commit previo.
+
+### 8.3. Ámbitos (Scopes) del Dominio
+- **Módulos**: `auth`, `tickets`, `billing`, `subscriptions`, `rmm`, `equipment`, `crm`, `notifications`, `system`
+- **Capas Globales**: `client`, `server`, `ui`, `i18n`, `infra`, `shared`, `deps`
+
+### 8.4. Validación Automatizada con Husky y Commitlint
+- **Configuración**: [`.commitlintrc.json`](file:///c:/Users/eapolanco/Workspace/msp_client_portal/.commitlintrc.json) extiende `@commitlint/config-conventional`.
+- **Hook de Git**: [`.husky/commit-msg`](file:///c:/Users/eapolanco/Workspace/msp_client_portal/.husky/commit-msg) intercepta el comando `git commit` y valida la sintaxis antes de permitir la creación del commit.
+- **Instalación Automática**: El script `prepare` en el [`package.json`](file:///c:/Users/eapolanco/Workspace/msp_client_portal/package.json) raíz instala los hooks automáticamente tras ejecutar `npm install`.
+

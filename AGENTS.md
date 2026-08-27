@@ -481,3 +481,27 @@ To ensure zero miscommunication, minimize rework, and respect user design intent
 - **Recommended Defaults**: Always prefix the recommended / best-practice option with `(Recommended)` as the first choice.
 - **Clear Scope Separation**: Split distinct decisions into separate questions (e.g., data source binding, navigation section headers, search depth / keyboard shortcuts, responsive behavior).
 - **Wait for Input**: Block execution until the user selects their preferred choices or provides custom input.
+
+---
+
+## 🔀 Git Workflow & Commit Discipline (Enforced via Husky & Commitlint)
+
+All commits in this monorepo must strictly adhere to the **Conventional Commits** specification. Pre-commit/commit-msg validation is enforced locally via `.husky/commit-msg` invoking `@commitlint/cli`.
+
+### 1. Commit Structure
+```text
+<type>(<scope>): <imperative summary>
+
+[optional bulleted description of what & why]
+
+[optional issue reference: Resolves #123]
+```
+
+### 2. Scope & Type Guidelines
+- **Allowed Types**: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
+- **Mandatory Scopes**: Use the domain module name or architectural boundary:
+  - Modules: `auth`, `tickets`, `billing`, `subscriptions`, `rmm`, `equipment`, `crm`, `notifications`, `system`
+  - Cross-cutting: `client`, `server`, `ui`, `i18n`, `infra`, `shared`, `deps`
+- **Imperative Mood**: Use "add", "fix", "update", "remove", "refactor" (never "added", "fixing", "updates").
+- **Atomic Commits**: Keep commits isolated to a single logical change. Do not bundle refactors with new features or security middlewares.
+
