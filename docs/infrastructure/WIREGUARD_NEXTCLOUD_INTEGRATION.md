@@ -1,6 +1,6 @@
 # Infrastructure Specification: Velmar MSP ↔ TrueNAS/Nextcloud WireGuard Integration
 
-_Status: Deployed & Active · Last Verified: 2026-08-25 · Version: 2.0_
+_Status: Deployed & Active · Last Verified: 2026-08-27 · Version: 2.1_
 
 ---
 
@@ -8,7 +8,7 @@ _Status: Deployed & Active · Last Verified: 2026-08-25 · Version: 2.0_
 
 ### Project Overview
 
-The MSP Client Portal provides automated cloud storage provisioning and backup quotas (25 GB per device slot) to clients via an external **Nextcloud** instance running on **TrueNAS SCALE** (`cloud-storage-srv-1`). The customer TrueNAS environment sits behind a **dynamic WAN IP** (`64.32.126.122`, subject to ISP renewal) with no public port forwards exposed on customer perimeter firewalls.
+The MSP Client Portal provides automated cloud storage provisioning and backup quotas (25 GB per device slot) to clients via an external **Nextcloud** instance running on **TrueNAS SCALE** (`cloud-storage-srv-1`). The customer TrueNAS environment sits behind a **dynamic WAN IP** (currently `148.255.235.38`, subject to ISP renewal) with no public port forwards exposed on customer perimeter firewalls.
 
 A persistent **WireGuard Site-to-Client Tunnel** connects the helpdesk VPS hub with the TrueNAS host, establishing a stable `10.13.13.0/24` transit network immune to dynamic IP changes. Public-facing services are reverse-proxied through the VPS using **Traefik v3.6.4** with automatic Let's Encrypt TLS certificate issuance.
 
@@ -275,9 +275,12 @@ ip route add 10.13.13.3/32 dev wg0
 ### 7.1 Tunnel Layer
 
 - [ ] WireGuard handshake completed (both sides show `latest handshake: < 2 min`)
-- [ ] Hub `wg show` displays NAS peer at endpoint `64.32.126.122:51820`
+- [ ] Hub `wg show` displays NAS peer at endpoint `148.255.235.38:51820` (dynamic — updates on ISP renewal)
 - [ ] Hub route `10.13.13.3/32 dev wg0` exists (`ip route get 10.13.13.3`)
-- [ ] Ping from hub: `ping -c5 10.13.13.3` → 0% loss, ~44ms RTT
+- [ ] Ping from hub: `ping -c5 10.13.13.3` → 0% loss, ~39ms RTT
+- [ ] Full-MTU DF probe: `ping -M do -s 1392 10.13.13.3` → 0% loss (inner max at tunnel MTU 1420)
+- [ ] MSS clamp active on **both** ends: `iptables -t mangle -L POSTROUTING -n -v` shows `TCPMSS clamp to PMTU` (hub + client)
+- [ ] Tunnel drop counters stay ≈ 0 after bulk transfers: `cat /sys/class/net/wg0/statistics/{rx_dropped,tx_dropped,rx_errors}` (hub `tx_dropped` cumulative pre-clamp was 1422)
 - [ ] HTTPS direct from hub host netns: `curl -sk https://10.13.13.3/` → 302 (TrueNAS redirect)
 - [ ] Transfer counters growing: `wg show wg0` shows active bytes rx/tx
 
@@ -309,6 +312,40 @@ ip route add 10.13.13.3/32 dev wg0
 - [ ] `sto01.velmartech.com.do` resolves to `172.235.145.77`
 - [ ] Traefik issues Let's Encrypt certificates automatically after DNS propagation
 - [ ] Browser shows valid lock icon for both hostnames
+
+### 7.6 Tunnel MTU & MSS Clamp (PPPoE 1492 Path) — Applied 2026-08-27
+
+**Path MTU finding.** The intermediate path from the VPS to the TrueNAS WAN endpoint is **1492** (PPPoE-class ISP). Evidence:
+
+```bash
+ping -M do -s 1472 148.255.235.38
+# From 196.3.74.200 icmp_seq=1 Frag needed and DF set (mtu = 1492)
+```
+
+The tunnel inner MTU (1420) fits — outer frame 1420+60 = **1480 ≤ 1492** — so the tunnel is viable, but oversized DF packets on that fragile path cause stalls. The hub had accrued **1422 cumulative `tx_dropped`** on `wg0` before the fix (RX errors 32).
+
+**Fix — TCP MSS clamping on both tunnel egresses.** Rules live under the `[Interface]` block (the linuxserver init **rejects** command lines placed after the `[Peer]` block — see Issue 6):
+
+```ini
+# /config/wg_confs/wg0.conf — Hub Stack 14 [Interface]
+PostUp   = iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -o %i -j TCPMSS --clamp-mss-to-pmtu; iptables -A FORWARD -i %i -j ACCEPT; iptables -A FORWARD -o %i -j ACCEPT; iptables -t nat -A POSTROUTING -o eth+ -j MASQUERADE
+PostDown = iptables -t mangle -D POSTROUTING -p tcp --tcp-flags SYN,RST SYN -o %i -j TCPMSS --clamp-mss-to-pmtu; iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACCEPT; iptables -t nat -D POSTROUTING -o eth+ -j MASQUERADE
+
+# /config/wg_confs/wg0.conf — Client Stack 19 [Interface]
+PostUp   = iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -o %i -j TCPMSS --clamp-mss-to-pmtu
+PostDown = iptables -t mangle -D POSTROUTING -p tcp --tcp-flags SYN,RST SYN -o %i -j TCPMSS --clamp-mss-to-pmtu
+```
+
+**Verification commands**
+```bash
+iptables -t mangle -L POSTROUTING -n -v        # TCPMSS clamp present (both hosts)
+ping -M do -s 1392 10.13.13.3                  # 0% loss at full tunnel MTU (~38.6 ms RTT)
+cat /sys/class/net/wg0/statistics/tx_dropped   # trending 0 after bulk transfers
+```
+
+**Throughput baseline (pre → post clamp).** hub→NAS 1.46 → **1.47 MB/s**; NAS→hub 1.24 → **1.32 MB/s** (~38.6 ms RTT, 32 MB flows). Bulk TCP is **WAN-line capped** (~10–12 Mbps asymmetric residential link), not tunnel-bound — the clamp removes fragmentation/stall risk but cannot raise the customer line rate. Nextcloud over the tunnel verified: `curl http://10.13.13.3:30027/status.php` → **HTTP 200 in 0.1 s**.
+
+**Optional future levers** (not applied): align Docker bridge MTUs to 1420 on both hosts, or lower WG tunnel MTU to 1412 (adds 8B headroom for outer jumbo frames).
 
 ---
 
@@ -428,6 +465,24 @@ proxy_pass https://10.13.13.3:443;   # ✓ correct
 **Cause**: Traefik retries LE TLS-challenge for domains without DNS A records, burning rate-limit quota.
 
 **Mitigation**: Only create DNS records when ready to verify. LE authorization failure limit is 5 per hostname per hour. Previous `cloud.*` burns have expired; `atlas`/`sto01` start clean.
+
+### Issue 6: linuxserver Init Rejects `PostUp`/`PostDown` after `[Peer]`
+
+**Symptom**: After adding an MSS-clamp `PostUp` line, the tunnel **fails to come up** — container log shows:
+```
+Line unrecognized: `PostUp=iptables-tmangle-A...'
+Configuration parsing error
+**** Tunnel /config/wg_confs/wg0.conf failed, will stop all others! ****
+```
+
+**Cause**: The linuxserver `init` feeds the conf to the low-level `wg addconf`, which only understands `[Interface]`/`[Peer]` keys. Command lines (`PostUp`/`PostDown`) must be parsed out first — the parser only recognizes them when they sit inside the `[Interface]` block. Appending them **after a `[Peer]` section** leaks them into the `wg addconf` input and aborts the whole tunnel (observed 2026-08-27 on the Stack 19 client).
+
+**Diagnosis**: `docker logs` the WG container; look for `Line unrecognized:` + `Tunnel failed`.
+
+**Fix**: Place every `PostUp`/`PostDown` line **inside the `[Interface]` section**, never after a `[Peer]`, then restart the container:
+```bash
+# restart via Portainer (endpoint 3 / 4) — wg-quick re-runs PostUp, self-heals routes + rules
+```
 
 ---
 
@@ -563,4 +618,4 @@ Mapping is maintained internally only — never exposed in public documentation 
 
 ---
 
-_Last updated: 2026-08-25 (Pi-hole Phase 1 added) · Author: Network Architecture Team · Review cycle: Quarterly_
+_Last updated: 2026-08-27 (MSS clamp + PPPoE 1492 MTU section, endpoint refresh) · Author: Network Architecture Team · Review cycle: Quarterly_
