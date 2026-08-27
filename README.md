@@ -32,7 +32,7 @@ server/src/
 │   ├── policies/                   # Access control policy definitions
 │   ├── repositories/               # Shared base repositories (BaseRepository.ts)
 │   ├── types/                      # Primitive entity interfaces & enums
-│   └── utils/                      # Shared utility drivers (logger, passwordUtils, pdfGenerator)
+│   └── utils/                      # Shared utility drivers (logger, passwordUtils, pdfGenerator, cache)
 │
 └── modules/                        # Business Domain Bounded Contexts
     ├── auth/                       # Controllers, Repositories, Routes, Services & Co-located Tests

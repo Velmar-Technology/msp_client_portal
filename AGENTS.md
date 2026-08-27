@@ -30,8 +30,8 @@ Clean Architecture mandates that source code dependencies must strictly point **
 ### Layer Mapping & Status
 
 1. **Entities Layer (`server/src/shared/types/`, `server/src/shared/db/schema/`)**:
-   - Contains domain interfaces (`Ticket`, `User`, `Subscription`, `Invoice`, `Equipment`, `Deal`, `Lead`), status enums (`TicketStatus`, `UserRole`, `SubscriptionStatus`), and Drizzle schema table definitions.
-   - _Compliance_: Pure domain types have no outward dependencies.
+   - Contains domain interfaces (`Ticket`, `User`, `Subscription`, `Invoice`, `Equipment`, `Deal`, `Lead`), status enums (`TicketStatus`, `UserRole`, `SubscriptionStatus`), Drizzle schema table definitions, and cross-cutting port abstractions (e.g., `CachePort` for the tiered cache).
+   - _Compliance_: Pure domain types and ports have no outward dependencies.
 
 2. **Use Cases / Service Layer (`server/src/modules/<domain>/services/`)**:
    - Houses application business logic: ticket quota validation, 1-hour SLA cancellation enforcement, technician round-robin allocation, subscription renewal calculations, payment handling, and lead/deal pipelines.
@@ -42,8 +42,8 @@ Clean Architecture mandates that source code dependencies must strictly point **
    - _Compliance_: No controller imports a repository or the `db` pool directly; all data access flows through the service layer.
 
 4. **Frameworks & Drivers (`server/src/modules/<domain>/routes/`, `server/src/shared/db/`, `client/src/components/`)**:
-   - Contains Express routes, database connection pool (`db.ts`), email/WhatsApp utility drivers, and React UI components.
-   - _Compliance_: Framework-specific code (Drizzle ORM access, static bank account data) is confined to `server/src/shared/db/`, module repositories, and `client/src/constants/` — it does not leak into domain services or UI feature components.
+   - Contains Express routes, database connection pool (`db.ts`), email/WhatsApp utility drivers, the tiered cache infrastructure (`server/src/shared/utils/cache/` — Redis with in-memory LRU fallback, generation-based invalidation, and `DistributedLock`), and React UI components.
+   - _Compliance_: Framework-specific code (Drizzle ORM access, static bank account data) is confined to `server/src/shared/db/`, module repositories, and `client/src/constants/` — it does not leak into domain services or UI feature components. The cache is a framework/driver concern consumed through the `CachePort` abstraction; it is injected into repositories/services via their constructors and wired as a singleton (`cacheManager`) in each module's gateway (`index.ts`).
 
 5. **The API Gateway Layer (`server/src/shared/middleware/gateway*.ts`)**:
    - Sits in front of downstream route clusters to handle global ingress logic uniformly:
@@ -206,7 +206,7 @@ msp_client_portal/
 │   │   ├── policies/               # Access control policy definitions (TicketAccessPolicy)
 │   │   ├── repositories/           # Shared base repositories (BaseRepository.ts)
 │   │   ├── types/                  # Entities: Pure interfaces & enums
-│   │   └── utils/                  # Shared utility drivers (logger, emailService, pdfGenerator)
+│   │   └── utils/                  # Shared utility drivers (logger, emailService, pdfGenerator, cache)
 │   │
 │   └── modules/                    # Business Domain Bounded Contexts
 │       ├── auth/                   # Authentication, user management, RBAC
