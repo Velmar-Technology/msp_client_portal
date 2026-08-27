@@ -3,6 +3,7 @@ import { User, UserRole, CachePort } from '@shared/types';
 import { db, users } from '@shared/db';
 import { eq, and, or, ilike, asc, desc, sql, count, inArray } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
+import { cacheManager } from '@shared/utils/cache';
 
 export interface UserListFilters {
   role?: UserRole;
@@ -15,7 +16,7 @@ export interface UserListFilters {
 }
 
 export class UserRepository extends BaseRepository<User> {
-  constructor(private cache: CachePort) {
+  constructor(private cache: CachePort = cacheManager) {
     super(users, 'users');
   }
 
@@ -367,4 +368,6 @@ export class UserRepository extends BaseRepository<User> {
     await this.cache.invalidateScope('users', 'global');
   }
 }
+
+export const userRepository = new UserRepository();
 

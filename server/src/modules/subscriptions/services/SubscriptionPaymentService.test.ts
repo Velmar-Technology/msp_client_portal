@@ -35,6 +35,7 @@ vi.mock('@modules/billing', () => {
       calculateUpgradePricing: mocks.pricingCalculateUpgrade,
       calculatePricing: mocks.pricingCalculate,
     },
+    invoiceRepository: {},
   };
 });
 

@@ -2,9 +2,10 @@ import { BaseRepository } from '@shared/repositories/BaseRepository';
 import { Plan, PlanFilters, CachePort } from '@shared/types';
 import { db, plans } from '@shared/db';
 import { eq, and, ilike, asc, count, SQL } from 'drizzle-orm';
+import { cacheManager } from '@shared/utils/cache';
 
 export class PlanRepository extends BaseRepository<Plan> {
-  constructor(private cache: CachePort) {
+  constructor(private cache: CachePort = cacheManager) {
     super(plans, 'plans');
   }
 
@@ -99,4 +100,6 @@ export class PlanRepository extends BaseRepository<Plan> {
     );
   }
 }
+
+export const planRepository = new PlanRepository();
 

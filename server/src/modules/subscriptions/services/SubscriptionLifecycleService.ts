@@ -1,6 +1,6 @@
 import { SubscriptionRepository, subscriptionRepository } from '@modules/subscriptions/repositories/SubscriptionRepository';
 import { UserRepository, userRepository } from '@modules/auth';
-import { PlanRepository, planRepository } from '@modules/subscriptions';
+import { PlanRepository, planRepository } from '../repositories/PlanRepository';
 import { InvoiceRepository, invoiceRepository } from '@modules/billing';
 import { EquipmentRepository, equipmentRepository } from '@modules/equipment';
 import { NextcloudService, nextcloudService } from '@modules/system';
