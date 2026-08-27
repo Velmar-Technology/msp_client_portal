@@ -48,7 +48,7 @@ interface FollowUpTabProps {
 }
 
 export function FollowUpTab({
-  lead,
+  lead: _lead,
   activities,
   actionLoading,
   onLogActivity,

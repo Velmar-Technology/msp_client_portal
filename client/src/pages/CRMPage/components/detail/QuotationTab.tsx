@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -116,10 +116,12 @@ export function QuotationTab({
             </SelectTrigger>
             <SelectContent>
               {plans.map((p) => {
-                const name =
+                const name: string =
                   typeof p.name === "object" && p.name !== null
-                    ? p.name[isSpanish ? "es_DO" : "en_US"] || Object.values(p.name)[0]
-                    : p.name || p.id;
+                    ? String((p.name as Record<string, string>)[isSpanish ? "es_DO" : "en_US"] || Object.values(p.name)[0] || p.id)
+                    : typeof p.name === "string"
+                      ? p.name
+                      : String(p.id);
                 return (
                   <SelectItem key={p.id} value={p.id}>
                     {name} (${p.price}/mo per device)

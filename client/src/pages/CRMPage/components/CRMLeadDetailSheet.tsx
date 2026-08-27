@@ -31,7 +31,6 @@ import {
   Building2,
   MessageSquare,
   Sparkles,
-  UserCheck,
   Check,
   X,
   Pencil,
@@ -293,38 +292,6 @@ export function CRMLeadDetailSheet({
               )}
             </div>
 
-            {/* Pipeline Stage Bar - Full Width Segmented Stepper */}
-            <div className="w-full">
-              <div className="grid grid-cols-5 gap-1 p-1 bg-muted/70 rounded-xl border border-border/80">
-                {STAGES.map((s) => {
-                  const isActive = lead.stage === s;
-                  const isWon = s === "WON";
-                  const isLost = s === "LOST";
-
-                  return (
-                    <Button
-                      key={s}
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onUpdateStage(lead.id, s)}
-                      className={`h-7 px-1 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer truncate ${
-                        isActive
-                          ? isWon
-                            ? "bg-emerald-600 text-white shadow-xs hover:bg-emerald-600 hover:text-white"
-                            : isLost
-                              ? "bg-zinc-600 text-white shadow-xs hover:bg-zinc-600 hover:text-white"
-                              : "bg-primary text-primary-foreground shadow-xs hover:bg-primary hover:text-primary-foreground"
-                          : "text-muted-foreground hover:text-foreground hover:bg-background/60"
-                      }`}
-                    >
-                      {t(`crm.stages.${s.toLowerCase()}`) || s}
-                    </Button>
-                  );
-                })}
-              </div>
-            </div>
-
             {/* Lead Summary Contact Info or Inline Edit Form */}
             {isEditingLead ? (
               <form
@@ -337,29 +304,6 @@ export function CRMLeadDetailSheet({
                     <Pencil className="h-3.5 w-3.5 text-primary" />
                     {t("crm.editLead") || "Edit Lead Information"}
                   </h4>
-                  <div className="flex items-center gap-1.5">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsEditingLead(false)}
-                      disabled={actionLoading}
-                      className="h-7 px-2 text-xs cursor-pointer"
-                    >
-                      <X className="h-3.5 w-3.5 mr-1" />
-                      {t("crm.cancelEdit") || "Cancel"}
-                    </Button>
-                    <Button
-                      type="submit"
-                      size="sm"
-                      onClick={handleSaveLeadInfo}
-                      disabled={actionLoading}
-                      className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer bg-primary text-primary-foreground shadow-xs"
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                      {actionLoading ? "..." : t("crm.saveLead") || "Save Changes"}
-                    </Button>
-                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -490,37 +434,93 @@ export function CRMLeadDetailSheet({
                     className="text-xs bg-background text-foreground"
                   />
                 </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/60">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditingLead(false)}
+                    disabled={actionLoading}
+                    className="h-8 px-3 text-xs cursor-pointer"
+                  >
+                    <X className="h-3.5 w-3.5 mr-1" />
+                    {t("crm.cancelEdit") || "Cancel"}
+                  </Button>
+                  <Button
+                    type="submit"
+                    size="sm"
+                    disabled={actionLoading}
+                    className="h-8 px-4 text-xs font-semibold gap-1.5 cursor-pointer bg-primary text-primary-foreground shadow-xs"
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                    {actionLoading ? "..." : t("crm.saveLead") || "Save Changes"}
+                  </Button>
+                </div>
               </form>
             ) : (
-              <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
-                <div className="flex flex-wrap items-center gap-2.5 text-xs text-muted-foreground font-mono">
-                  <span className="flex items-center gap-1">
-                    <Mail className="h-3 w-3 text-zinc-400" />
-                    {lead.contact_email}
-                  </span>
-                  {lead.contact_phone && (
+              <>
+                <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
+                  <div className="flex flex-wrap items-center gap-2.5 text-xs text-muted-foreground font-mono">
                     <span className="flex items-center gap-1">
-                      <Phone className="h-3 w-3 text-zinc-400" />
-                      {lead.contact_phone}
+                      <Mail className="h-3 w-3 text-zinc-400" />
+                      {lead.contact_email}
                     </span>
-                  )}
-                  <Badge
-                    variant="outline"
-                    className={`text-[9px] uppercase font-mono font-bold ${
-                      lead.priority === "HIGH"
-                        ? "bg-destructive/10 text-destructive border-destructive/20"
-                        : lead.priority === "MEDIUM"
-                          ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
-                          : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
-                    }`}
-                  >
-                    {t(`crm.priorities.${(lead.priority || "medium").toLowerCase()}`) || lead.priority}
-                  </Badge>
-                  <span className="text-[10px] text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded border border-border/40">
-                    {lead.probability ?? 10}% {t("crm.stats.winRate") || "Prob"}
-                  </span>
+                    {lead.contact_phone && (
+                      <span className="flex items-center gap-1">
+                        <Phone className="h-3 w-3 text-zinc-400" />
+                        {lead.contact_phone}
+                      </span>
+                    )}
+                    <Badge
+                      variant="outline"
+                      className={`text-[9px] uppercase font-mono font-bold ${
+                        lead.priority === "HIGH"
+                          ? "bg-destructive/10 text-destructive border-destructive/20"
+                          : lead.priority === "MEDIUM"
+                            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                            : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
+                      }`}
+                    >
+                      {t(`crm.priorities.${(lead.priority || "medium").toLowerCase()}`) || lead.priority}
+                    </Badge>
+                    <span className="text-[10px] text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded border border-border/40">
+                      {lead.probability ?? 10}% {t("crm.stats.winRate") || "Prob"}
+                    </span>
+                  </div>
                 </div>
-              </div>
+                {/* Stage Bar */}
+                <div className="w-full">
+                  <div className="grid grid-cols-5 gap-1 p-1 bg-muted/70 rounded-xl border border-border/80">
+                    {STAGES.map((s) => {
+                      const isActive = lead.stage === s;
+                      const isWon = s === "WON";
+                      const isLost = s === "LOST";
+
+                      return (
+                        <Button
+                          key={s}
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onUpdateStage(lead.id, s)}
+                          className={`h-7 px-1 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer truncate ${
+                            isActive
+                              ? isWon
+                                ? "bg-emerald-600 text-white shadow-xs hover:bg-emerald-600 hover:text-white"
+                                : isLost
+                                  ? "bg-zinc-600 text-white shadow-xs hover:bg-zinc-600 hover:text-white"
+                                  : "bg-primary text-primary-foreground shadow-xs hover:bg-primary hover:text-primary-foreground"
+                              : "text-muted-foreground hover:text-foreground hover:bg-background/60"
+                          }`}
+                        >
+                          {t(`crm.stages.${s.toLowerCase()}`) || s}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
             )}
 
             {!isEditingLead && lead.notes && (
