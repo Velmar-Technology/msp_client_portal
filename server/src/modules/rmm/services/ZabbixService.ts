@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import http from 'http';
 import https from 'https';
+import { cacheManager, CacheManager } from '@shared/utils/cache';
 import { logger } from '@shared/utils/logger';
 
 export interface ZabbixHostMetrics {
@@ -21,7 +22,6 @@ export interface ZabbixHealthCheck {
 }
 
 const TOKEN_TTL_MS = 55 * 60 * 1000;
-const HEALTH_CACHE_TTL_MS = 30_000;
 const MAX_RETRIES = 2;
 const BASE_RETRY_DELAY_MS = 1_000;
 
@@ -33,8 +33,6 @@ export class ZabbixService {
   private token: string | null = null;
   private tokenExpiresAt = 0;
   private connected = false;
-  private lastHealthCheck = 0;
-  private healthCache: ZabbixHealthCheck | null = null;
   private client: AxiosInstance;
 
   constructor(
@@ -42,6 +40,7 @@ export class ZabbixService {
     user = process.env.ZABBIX_USER || 'Admin',
     pass = process.env.ZABBIX_PASSWORD || 'zabbix',
     hostDns = 'host.docker.internal',
+    private cache: CacheManager = cacheManager,
   ) {
     this.url = url;
     this.user = user;
@@ -166,37 +165,30 @@ export class ZabbixService {
   }
 
   async checkHealth(): Promise<ZabbixHealthCheck> {
-    const now = Date.now();
-    if (this.healthCache && now - this.lastHealthCheck < HEALTH_CACHE_TTL_MS) {
-      return this.healthCache;
-    }
+    return this.cache.wrap<ZabbixHealthCheck>('rmm:zabbix:health', 30, async () => {
+      const start = Date.now();
+      try {
+        const response = await this.client.post(
+          this.url,
+          {
+            jsonrpc: '2.0',
+            method: 'apiinfo.version',
+            params: {},
+            id: Date.now(),
+          }
+        );
 
-    const start = Date.now();
-    try {
-      const response = await this.client.post(
-        this.url,
-        {
-          jsonrpc: '2.0',
-          method: 'apiinfo.version',
-          params: {},
-          id: Date.now(),
-        }
-      );
-
-      const latencyMs = Date.now() - start;
-      const version = response.data?.result;
-      this.healthCache = { reachable: true, latencyMs, version };
-      this.lastHealthCheck = now;
-      this.connected = true;
-    } catch (err: any) {
-      const latencyMs = Date.now() - start;
-      this.healthCache = { reachable: false, latencyMs };
-      this.lastHealthCheck = now;
-      this.connected = false;
-      logger.warn('Zabbix health check failed', { error: err.message, latencyMs });
-    }
-
-    return this.healthCache;
+        const latencyMs = Date.now() - start;
+        const version = response.data?.result;
+        this.connected = true;
+        return { reachable: true, latencyMs, version };
+      } catch (err: any) {
+        const latencyMs = Date.now() - start;
+        this.connected = false;
+        logger.warn('Zabbix health check failed', { error: err.message, latencyMs });
+        return { reachable: false, latencyMs };
+      }
+    });
   }
 
   async syncHost(equipmentId: string, deviceName: string): Promise<string> {

@@ -1,4 +1,4 @@
-import { planRepository, PlanRepository } from '@modules/subscriptions/repositories/PlanRepository';
+import { planRepository, PlanRepository } from '@modules/subscriptions';
 import { planAccessPolicy, PlanAccessPolicy } from '@shared/policies/PlanAccessPolicy';
 import { NotFoundError } from '@shared/errors';
 import { Plan, PlanFilters, UserContext } from '@shared/types';

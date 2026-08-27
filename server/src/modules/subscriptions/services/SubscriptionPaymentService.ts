@@ -1,4 +1,4 @@
-import { PlanRepository, planRepository } from '@modules/subscriptions/repositories/PlanRepository';
+import { PlanRepository, planRepository } from '@modules/subscriptions';
 import { SubscriptionRepository, subscriptionRepository } from '@modules/subscriptions/repositories/SubscriptionRepository';
 import { PaypalService, paypalService } from '@modules/billing';
 import { BillingPricingService, billingPricingService } from '@modules/billing';

@@ -1,5 +1,5 @@
 import { SubscriptionRepository, subscriptionRepository } from '@modules/subscriptions/repositories/SubscriptionRepository';
-import { PlanRepository, planRepository } from '@modules/subscriptions/repositories/PlanRepository';
+import { PlanRepository, planRepository } from '@modules/subscriptions';
 import { InvoiceRepository, invoiceRepository } from '@modules/billing';
 import { EquipmentRepository, equipmentRepository } from '@modules/equipment';
 import { UserRepository, userRepository } from '@modules/auth';

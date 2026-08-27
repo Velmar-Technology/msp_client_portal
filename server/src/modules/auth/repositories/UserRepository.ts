@@ -1,5 +1,5 @@
 import { BaseRepository } from '@shared/repositories/BaseRepository';
-import { User, UserRole } from '@shared/types';
+import { User, UserRole, CachePort } from '@shared/types';
 import { db, users } from '@shared/db';
 import { eq, and, or, ilike, asc, desc, sql, count, inArray } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
@@ -15,8 +15,20 @@ export interface UserListFilters {
 }
 
 export class UserRepository extends BaseRepository<User> {
-  constructor() {
+  constructor(private cache: CachePort) {
     super(users, 'users');
+  }
+
+  override async findById(id: string): Promise<User | null> {
+    if (!id) return null;
+
+    return this.cache.wrapVersioned<User | null>(
+      'users',
+      'global',
+      `id:${id}`,
+      1800,
+      () => super.findById(id)
+    );
   }
 
   private buildFilterConditions(filters: UserListFilters): SQL | undefined {
@@ -123,6 +135,7 @@ export class UserRepository extends BaseRepository<User> {
       .set({ role, updated_at: sql`NOW()` })
       .where(eq(users.id, id))
       .returning();
+    await this.cache.invalidateScope('users', 'global');
     return (results[0] as User) || null;
   }
 
@@ -132,6 +145,7 @@ export class UserRepository extends BaseRepository<User> {
       .set({ is_active: isActive, updated_at: sql`NOW()` })
       .where(eq(users.id, id))
       .returning();
+    await this.cache.invalidateScope('users', 'global');
     return (results[0] as User) || null;
   }
 
@@ -142,6 +156,7 @@ export class UserRepository extends BaseRepository<User> {
       .set({ is_active: isActive, updated_at: sql`NOW()` })
       .where(inArray(users.id, ids))
       .returning();
+    await this.cache.invalidateScope('users', 'global');
     return results.length;
   }
 
@@ -152,6 +167,7 @@ export class UserRepository extends BaseRepository<User> {
       .set({ role, updated_at: sql`NOW()` })
       .where(inArray(users.id, ids))
       .returning();
+    await this.cache.invalidateScope('users', 'global');
     return results.length;
   }
 
@@ -161,6 +177,7 @@ export class UserRepository extends BaseRepository<User> {
       .set({ client_type: clientType, updated_at: sql`NOW()` })
       .where(eq(users.id, id))
       .returning();
+    await this.cache.invalidateScope('users', 'global');
     return (results[0] as User) || null;
   }
 
@@ -171,6 +188,7 @@ export class UserRepository extends BaseRepository<User> {
       .set({ client_type: clientType, updated_at: sql`NOW()` })
       .where(inArray(users.id, ids))
       .returning();
+    await this.cache.invalidateScope('users', 'global');
     return results.length;
   }
 
@@ -180,14 +198,21 @@ export class UserRepository extends BaseRepository<User> {
       .delete(users)
       .where(inArray(users.id, ids))
       .returning();
+    await this.cache.invalidateScope('users', 'global');
     return results.length;
   }
 
-
-
   async findByEmail(email: string): Promise<User | null> {
-    const results = await db.select().from(users).where(eq(users.email, email));
-    return (results[0] as User) || null;
+    return this.cache.wrapVersioned<User | null>(
+      'users',
+      'global',
+      `email:${email.toLowerCase().trim()}`,
+      1800,
+      async () => {
+        const results = await db.select().from(users).where(eq(users.email, email));
+        return (results[0] as User) || null;
+      }
+    );
   }
 
   async findByRole(role: UserRole): Promise<User[]> {
@@ -284,6 +309,8 @@ export class UserRepository extends BaseRepository<User> {
         phone_number: data.phone_number || null,
       })
       .returning();
+
+    await this.cache.invalidateScope('users', 'global');
     return results[0] as User;
   }
 
@@ -302,6 +329,8 @@ export class UserRepository extends BaseRepository<User> {
       .set(updateData)
       .where(eq(users.id, id))
       .returning();
+
+    await this.cache.invalidateScope('users', 'global');
     return (results[0] as User) || null;
   }
 
@@ -311,6 +340,7 @@ export class UserRepository extends BaseRepository<User> {
       otp_code: null,
       otp_expires: null
     }).where(eq(users.id, id));
+    await this.cache.invalidateScope('users', 'global');
   }
 
   async setOTP(id: string, otpCode: string, otpExpires: Date): Promise<void> {
@@ -318,10 +348,12 @@ export class UserRepository extends BaseRepository<User> {
       otp_code: otpCode,
       otp_expires: otpExpires
     }).where(eq(users.id, id));
+    await this.cache.invalidateScope('users', 'global');
   }
 
   async updatePassword(id: string, passwordHash: string): Promise<void> {
     await db.update(users).set({ password_hash: passwordHash }).where(eq(users.id, id));
+    await this.cache.invalidateScope('users', 'global');
   }
 
   async updateLastLogin(id: string, ip: string): Promise<void> {
@@ -332,7 +364,7 @@ export class UserRepository extends BaseRepository<User> {
         last_login_ip: ip,
       })
       .where(eq(users.id, id));
+    await this.cache.invalidateScope('users', 'global');
   }
 }
 
-export const userRepository = new UserRepository();

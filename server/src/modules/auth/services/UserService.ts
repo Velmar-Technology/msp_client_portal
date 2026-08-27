@@ -1,4 +1,4 @@
-import { userRepository, UserRepository } from '@modules/auth/repositories/UserRepository';
+import { userRepository, UserRepository } from '@modules/auth';
 import type { UserListFilters } from '@modules/auth/repositories/UserRepository';
 import { NotFoundError, ConflictError, UnauthorizedError, ForbiddenError, InternalServerError } from '@shared/errors';
 import { User, UserRole } from '@shared/types';
