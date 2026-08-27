@@ -1,5 +1,6 @@
 import { nextcloudService } from '@modules/system/services/NextcloudService';
 import { systemRepository, SystemRepository } from '@modules/system/repositories/SystemRepository';
+import { zabbixService, ZabbixService } from '@modules/rmm/services/ZabbixService';
 
 export interface ApiStatusItem {
   id: string;
@@ -54,6 +55,7 @@ export class SystemService {
   constructor(
     private systemRepo: SystemRepository = systemRepository,
     private storageService = nextcloudService,
+    private zabbixSvc: ZabbixService = zabbixService,
   ) {}
 
   /**
@@ -222,7 +224,17 @@ export class SystemService {
       message: ncMessage,
     });
 
-    // 3. API Module & Integration Endpoint Health Definitions
+    // 3. Live Zabbix health check (uses actual API round-trip)
+    let zabbixHealth: { reachable: boolean; latencyMs: number; version?: string } = { reachable: false, latencyMs: 0 };
+    if (process.env.ZABBIX_URL) {
+      try {
+        zabbixHealth = await this.zabbixSvc.checkHealth();
+      } catch {
+        zabbixHealth = { reachable: false, latencyMs: 0 };
+      }
+    }
+
+    // 4. API Module & Integration Endpoint Health Definitions
     const apiEndpoints: Array<{
       id: string;
       name: string;
@@ -269,7 +281,7 @@ export class SystemService {
         name: 'Zabbix RMM Telemetry Engine',
         category: 'INTEGRATION',
         endpoint: process.env.ZABBIX_URL || 'http://localhost:8080/api_jsonrpc.php',
-        baseLatency: 35,
+        baseLatency: zabbixHealth.latencyMs || 35,
         envConfigKey: 'ZABBIX_URL',
       },
       {
@@ -294,14 +306,20 @@ export class SystemService {
       let status: 'OPERATIONAL' | 'DEGRADED' | 'DOWN' = 'OPERATIONAL';
       let message = 'All endpoints responding normally';
 
-      // Evaluate integration configuration if applicable
-      if (ep.envConfigKey) {
+      if (ep.id === 'api_zabbix') {
+        if (!process.env.ZABBIX_URL) {
+          message = 'Unconfigured: ZABBIX_URL environment variable is missing';
+        } else if (!zabbixHealth.reachable) {
+          status = 'DEGRADED';
+          message = `Zabbix API unreachable (latency: ${zabbixHealth.latencyMs}ms)`;
+        } else {
+          message = `Zabbix ${zabbixHealth.version || 'unknown'} — reachable (${zabbixHealth.latencyMs}ms)`;
+        }
+      } else if (ep.envConfigKey) {
         const val = process.env[ep.envConfigKey];
         if (!val || val.trim() === '') {
-          status = 'OPERATIONAL';
           message = `Unconfigured: ${ep.envConfigKey} environment variable is missing`;
         } else if (ep.placeholderIndicator && val.toLowerCase().includes(ep.placeholderIndicator)) {
-          status = 'OPERATIONAL';
           message = `Demo/Stub Mode: ${ep.envConfigKey} using default placeholder`;
         }
       }
