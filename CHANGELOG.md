@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.7.3](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.7.2...v1.7.3) (2026-08-28)
+
+
+### Features
+
+* **msp-agent:** add windows background service support, protected self-relocation, and slot persistence ([6df7d4e](https://github.com/Velmar-Technology/msp_client_portal/commit/6df7d4e7dc58fc6da0840807fdc2d4ecdc31fc88))
+
 ## [1.7.2](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.7.1...v1.7.2) (2026-08-28)
 
 
