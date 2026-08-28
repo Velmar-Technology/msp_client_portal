@@ -137,7 +137,6 @@ export const SubscriptionSelector = memo(function SubscriptionSelector({
 // 3. Memoized Actions Cell to prevent cross-row re-renders on dropdown open/close
 interface DeviceActionsCellProps {
   equip: Partial<SubscriptionEquipment>;
-  rowIndex: number;
   isAdmin?: boolean;
   onOpenNcModal: (equip: Partial<SubscriptionEquipment>) => void;
   onOpenScheduleMaint: (equip: Partial<SubscriptionEquipment>) => void;
@@ -546,6 +545,7 @@ export function DevicesPage() {
     handleOpenScheduleMaint,
     handleOpenNcModal,
     handleRequestRevoke,
+    handleRequestRepair,
     handleOpenActivateWithOtp,
     setDeviceToDelete,
     isAdmin,
