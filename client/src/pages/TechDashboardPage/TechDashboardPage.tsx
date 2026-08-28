@@ -14,7 +14,6 @@ import {
   Clock,
   AlertTriangle,
   ClipboardList,
-  ArrowRight,
   AlertCircle,
   MoreHorizontal,
   ChevronRight,
