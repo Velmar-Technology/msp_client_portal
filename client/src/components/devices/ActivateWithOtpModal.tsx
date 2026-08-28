@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { X, KeyRound, Loader2, Laptop } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, KeyRound, Loader2, Laptop, BadgeCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
+import { equipmentService } from "@/services/equipmentService";
 import {
   InputOTP,
   InputOTPGroup,
@@ -23,13 +24,24 @@ interface ActivateWithOtpModalProps {
   loading: boolean;
   onClose: () => void;
   onActivate: (otp: string, deviceName: string, deviceSerial: string) => void;
+  subscriptionId?: string | null;
+  slotIndex?: number | null;
 }
 
-export function ActivateWithOtpModal({ isOpen, loading, onClose, onActivate }: ActivateWithOtpModalProps) {
+export function ActivateWithOtpModal({
+  isOpen,
+  loading,
+  onClose,
+  onActivate,
+  subscriptionId,
+  slotIndex,
+}: ActivateWithOtpModalProps) {
   const { t } = useTranslation();
   const [otp, setOtp] = useState("");
   const [deviceName, setDeviceName] = useState("");
   const [deviceSerial, setDeviceSerial] = useState("");
+  const [detectedIdentity, setDetectedIdentity] = useState<{ hostname: string; serial: string } | null>(null);
+  const [identityChecking, setIdentityChecking] = useState(false);
 
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
   if (isOpen !== prevIsOpen) {
@@ -38,6 +50,8 @@ export function ActivateWithOtpModal({ isOpen, loading, onClose, onActivate }: A
       setOtp("");
       setDeviceName("");
       setDeviceSerial("");
+      setDetectedIdentity(null);
+      setIdentityChecking(false);
     }
   }
 
@@ -48,11 +62,45 @@ export function ActivateWithOtpModal({ isOpen, loading, onClose, onActivate }: A
     setOtp(value.replace(/\D/g, "").slice(0, 6));
   };
 
+  useEffect(() => {
+    let cancelled = false;
+    if (!isValidOtp) {
+      setDetectedIdentity(null);
+      setIdentityChecking(false);
+      return;
+    }
+    const lookup = equipmentService.getAgentIdentityByOtp;
+    if (!lookup) {
+      setIdentityChecking(false);
+      return;
+    }
+    setIdentityChecking(true);
+    Promise.resolve()
+      .then(() => lookup(otp))
+      .then((info) => {
+        if (cancelled) return;
+        const hostname = info?.hostname?.trim() || "";
+        const serial = info?.serial?.trim() || "";
+        setDetectedIdentity(hostname || serial ? { hostname, serial } : null);
+        if (hostname) setDeviceName((prev) => prev || hostname);
+        if (serial) setDeviceSerial((prev) => prev || serial);
+      })
+      .catch(() => {
+        if (!cancelled) setDetectedIdentity(null);
+      })
+      .finally(() => {
+        if (!cancelled) setIdentityChecking(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [otp, isValidOtp]);
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="max-w-md w-full bg-card border border-zinc-200 dark:border-zinc-800 rounded-lg p-0 text-zinc-900 dark:text-zinc-100 flex flex-col overflow-hidden">
         {/* Modal Header */}
-        <DialogHeader className="px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-800 flex flex-row justify-between items-center bg-white dark:bg-zinc-950 space-y-0 text-left">
+        <DialogHeader className="px-5 py-3.5 border-b border-zinc-200 flex flex-row justify-between dark:border-zinc-800 items-center bg-white dark:bg-card space-y-0 text-left">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 rounded-md border border-zinc-200 dark:border-zinc-800">
               <KeyRound className="h-4 w-4" />
@@ -73,6 +121,12 @@ export function ActivateWithOtpModal({ isOpen, loading, onClose, onActivate }: A
 
         {/* Modal Body */}
         <div className="p-5 space-y-4">
+          {subscriptionId && slotIndex !== null && slotIndex !== undefined && (
+            <div className="flex items-center gap-1.5 text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-900/30 border border-zinc-200 dark:border-zinc-800 rounded-md px-2.5 py-1.5 self-start">
+              <Laptop className="w-3 h-3 text-zinc-400" />
+              {t("devices.bindingSlotContext", { slot: slotIndex + 1 })}
+            </div>
+          )}
           <p className="text-xs text-zinc-500 leading-normal">{t("devices.activateWithCodeDesc")}</p>
 
           <div className="flex flex-col items-center">
@@ -105,30 +159,43 @@ export function ActivateWithOtpModal({ isOpen, loading, onClose, onActivate }: A
           </div>
 
           <div className="space-y-3.5">
+            {identityChecking && (
+              <div className="flex items-center gap-1.5 text-[10px] font-medium text-zinc-500">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                {t("devices.detectedIdentityChecking")}
+              </div>
+            )}
+            {detectedIdentity && (
+              <div className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                <BadgeCheck className="w-3.5 h-3.5" />
+                {t("devices.detectedIdentityHint")}
+              </div>
+            )}
+
             <div>
               <label htmlFor="activate-otp-dev-name" className="block text-[10px] uppercase font-bold text-zinc-400 mb-1">
-                {t("devices.wizardStep2NameLabel")}
+                {t("devices.deviceNameLabel")}
               </label>
               <Input
                 id="activate-otp-dev-name"
                 type="text"
                 value={deviceName}
                 onChange={(e) => setDeviceName(e.target.value)}
-                placeholder={t("devices.wizardStep2NamePlaceholder")}
+                placeholder={t("devices.deviceNamePlaceholder")}
                 className="w-full bg-card border rounded-md text-xs h-8"
               />
             </div>
 
             <div>
               <label htmlFor="activate-otp-dev-serial" className="block text-[10px] uppercase font-bold text-zinc-400 mb-1">
-                {t("devices.wizardStep2SerialLabel")}
+                {t("devices.deviceSerialLabel")}
               </label>
               <Input
                 id="activate-otp-dev-serial"
                 type="text"
                 value={deviceSerial}
                 onChange={(e) => setDeviceSerial(e.target.value)}
-                placeholder={t("devices.wizardStep2SerialPlaceholder")}
+                placeholder={t("devices.deviceSerialPlaceholder")}
                 className="w-full bg-card border rounded-md text-xs h-8"
               />
             </div>
@@ -136,7 +203,7 @@ export function ActivateWithOtpModal({ isOpen, loading, onClose, onActivate }: A
         </div>
 
         {/* Modal Footer */}
-        <DialogFooter className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex flex-row justify-end gap-2 bg-zinc-50/50 dark:bg-zinc-950/40">
+        <DialogFooter className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex flex-row justify-end gap-2 bg-zinc-50/50 dark:bg-card">
           <DialogClose
             type="button"
             onClick={onClose}
@@ -154,7 +221,7 @@ export function ActivateWithOtpModal({ isOpen, loading, onClose, onActivate }: A
             {loading ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>{t("devices.wizardStep2Activating")}</span>
+                <span>{t("devices.activating")}</span>
               </>
             ) : (
               <>

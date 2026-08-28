@@ -18,9 +18,47 @@ interface ConnectedAgent {
   connectedAt: Date;
   lastHeartbeat: Date;
   hostname?: string;
+  serialNumber?: string;
+  manufacturer?: string;
+  systemModel?: string;
   agentVersion?: string;
   os?: string;
+  token?: string;
+  /** Portal slot id this agent has been bound to (set after BIND). */
+  slotId?: string;
 }
+
+/** Identity/registration payload forwarded by the Rust endpoint agent on connect. */
+export interface AgentHelloPayload {
+  agent_id?: string;
+  agent_version?: string;
+  hostname?: string;
+  serial_number?: string;
+  manufacturer?: string;
+  system_model?: string;
+  os?: string;
+  timestamp?: string;
+  /** Agent-issued 6-digit pairing code (present only while the device is unbound). */
+  pairing_code?: string;
+  /** RFC3339 expiry of the pairing code (present only while unbound). */
+  pairing_code_expires_at?: string;
+  /** "BOUND" when the device has been linked to a subscription slot. */
+  binding_state?: string;
+}
+
+/** Ephemeral entry for an agent-issued pairing code awaiting slot linkage. */
+export interface PairingEntry {
+  agentId: string;
+  hello: AgentHelloPayload;
+  expiresAt: Date;
+}
+
+/** Callback signature invoked once per registered agent connection. */
+export type AgentHelloHandler = (
+  equipmentId: string,
+  hello: AgentHelloPayload,
+  token: string | null
+) => void | Promise<void>;
 
 export interface AgentCommandResult {
   equipmentId: string;
@@ -40,7 +78,33 @@ export interface AgentCommandResult {
 export class AgentGateway {
   private activeSockets = new Map<string, ConnectedAgent>();
   private pendingRequests = new Map<string, PendingRequest>();
+  private pairingRegistry = new Map<string, PairingEntry>();
   private static readonly DEFAULT_TIMEOUT_MS = 15_000;
+  private static readonly PAIRING_CODE_REGEX = /^\d{6}$/;
+  private onAgentHelloHandler: AgentHelloHandler | null = null;
+
+  /**
+   * Registers a listener that is invoked (fire-and-forget) whenever an agent
+   * completes its registration handshake. Used by the equipment module to
+   * reconcile agent-discovered identity against the stored device record.
+   */
+  onAgentHello(handler: AgentHelloHandler): void {
+    this.onAgentHelloHandler = handler;
+  }
+
+  /** Invokes the registered hello handler without ever breaking the WS loop. */
+  private async invokeAgentHelloHandler(
+    equipmentId: string,
+    hello: AgentHelloPayload,
+    token: string | null
+  ): Promise<void> {
+    if (!this.onAgentHelloHandler) return;
+    try {
+      await this.onAgentHelloHandler(equipmentId, hello, token);
+    } catch (err) {
+      logger.error(`[AgentGateway] onAgentHello handler failed for ${equipmentId}:`, err);
+    }
+  }
 
   /**
    * Initializes the WebSocket server and binds connection lifecycle handlers.
@@ -50,6 +114,10 @@ export class AgentGateway {
     wss.on('connection', (ws: WebSocket, req: IncomingMessage) => {
       this.handleConnection(ws, req);
     });
+
+    // Garbage-collect expired agent-issued pairing codes.
+    const sweep = setInterval(() => this.sweepExpiredPairings(), 60_000);
+    sweep.unref?.();
 
     logger.info('[AgentGateway] Initialized and listening for agent connections.');
   }
@@ -88,6 +156,7 @@ export class AgentGateway {
       ws,
       connectedAt: new Date(),
       lastHeartbeat: new Date(),
+      token,
     };
 
     this.activeSockets.set(equipmentId, agent);
@@ -102,12 +171,17 @@ export class AgentGateway {
         // Handle AGENT_HELLO registration payload
         if (data.command === 'AGENT_HELLO' && data.payload) {
           agent.hostname = data.payload.hostname;
+          agent.serialNumber = data.payload.serial_number;
+          agent.manufacturer = data.payload.manufacturer;
+          agent.systemModel = data.payload.system_model;
           agent.agentVersion = data.payload.agent_version;
           agent.os = data.payload.os;
           agent.lastHeartbeat = new Date();
           logger.info(
             `[AgentGateway] Agent ${equipmentId} registered: ${agent.hostname} (v${agent.agentVersion}, ${agent.os})`
           );
+          this.registerPairing(equipmentId, data.payload);
+          this.invokeAgentHelloHandler(equipmentId, data.payload, agent.token ?? null);
           return;
         }
 
@@ -127,6 +201,7 @@ export class AgentGateway {
     // ── Disconnect Handler ──
     ws.on('close', (code: number, reason: Buffer) => {
       this.activeSockets.delete(equipmentId);
+      this.purgePairingForAgent(equipmentId);
       metricsService.decWsConnection('agent-ws');
       logger.info(
         `[AgentGateway] Agent disconnected: ${equipmentId} (code=${code}, reason=${reason.toString()}). Active: ${this.activeSockets.size}`
@@ -221,8 +296,12 @@ export class AgentGateway {
   getAgentStatus(equipmentId: string): {
     online: boolean;
     hostname?: string;
+    serialNumber?: string;
+    manufacturer?: string;
+    systemModel?: string;
     agentVersion?: string;
     os?: string;
+    slotId?: string;
     connectedAt?: string;
     lastHeartbeat?: string;
   } {
@@ -233,8 +312,12 @@ export class AgentGateway {
     return {
       online: true,
       hostname: agent.hostname,
+      serialNumber: agent.serialNumber,
+      manufacturer: agent.manufacturer,
+      systemModel: agent.systemModel,
       agentVersion: agent.agentVersion,
       os: agent.os,
+      slotId: agent.slotId,
       connectedAt: agent.connectedAt.toISOString(),
       lastHeartbeat: agent.lastHeartbeat.toISOString(),
     };
@@ -246,8 +329,12 @@ export class AgentGateway {
   getConnectedAgents(): Array<{
     equipmentId: string;
     hostname?: string;
+    serialNumber?: string;
+    manufacturer?: string;
+    systemModel?: string;
     agentVersion?: string;
     os?: string;
+    slotId?: string;
     connectedAt: string;
     lastHeartbeat: string;
   }> {
@@ -257,14 +344,116 @@ export class AgentGateway {
         agents.push({
           equipmentId: eqId,
           hostname: agent.hostname,
+          serialNumber: agent.serialNumber,
+          manufacturer: agent.manufacturer,
+          systemModel: agent.systemModel,
           agentVersion: agent.agentVersion,
           os: agent.os,
+          slotId: agent.slotId,
           connectedAt: agent.connectedAt.toISOString(),
           lastHeartbeat: agent.lastHeartbeat.toISOString(),
         });
       }
     }
     return agents;
+  }
+
+  // ── Agent-Issued Pairing Codes ───────────────────────────────────────────────
+
+  /**
+   * Registers or replaces the pairing code announced by an unbound agent.
+   * Codes must be 6 digits and carry a future RFC3339 expiry; otherwise the
+   * announcement is ignored. A new code supersedes any previous one for the
+   * same agent.
+   */
+  registerPairing(agentId: string, hello: AgentHelloPayload): void {
+    const code = hello.pairing_code;
+    const expiry = hello.pairing_code_expires_at;
+    if (!code || !AgentGateway.PAIRING_CODE_REGEX.test(code) || !expiry) {
+      return;
+    }
+    const expiresAt = new Date(expiry);
+    if (Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() <= Date.now()) {
+      logger.warn(`[AgentGateway] Ignoring expired/invalid pairing code from ${agentId}.`);
+      return;
+    }
+    this.purgePairingForAgent(agentId);
+    this.pairingRegistry.set(code, { agentId, hello, expiresAt });
+    logger.info(
+      `[AgentGateway] Agent ${agentId} issued pairing code ${code} (expires ${expiresAt.toISOString()}).`
+    );
+  }
+
+  /**
+   * Resolves an agent-issued pairing code to its connected agent and identity.
+   * Returns null when the code is unknown, expired, or its agent is offline.
+   */
+  getPairingByCode(code: string): PairingEntry | null {
+    const entry = this.pairingRegistry.get(code);
+    if (!entry) return null;
+    if (entry.expiresAt.getTime() <= Date.now()) {
+      this.pairingRegistry.delete(code);
+      return null;
+    }
+    const agent = this.activeSockets.get(entry.agentId);
+    if (!agent || agent.ws.readyState !== WebSocket.OPEN) {
+      this.pairingRegistry.delete(code);
+      return null;
+    }
+    return entry;
+  }
+
+  /**
+   * Confirms a slot binding with the agent: purges its pairing code, marks the
+   * connection as bound, and pushes a BIND command carrying the slot id and the
+   * freshly provisioned per-device secret. Returns false when the agent is
+   * offline (caller should abort the binding).
+   */
+  bindAgent(agentId: string, slotId: string, agentToken: string): boolean {
+    this.purgePairingForAgent(agentId);
+    const agent = this.activeSockets.get(agentId);
+    if (!agent || agent.ws.readyState !== WebSocket.OPEN) {
+      return false;
+    }
+    agent.slotId = slotId;
+    const envelope = JSON.stringify({
+      correlation_id: crypto.randomUUID(),
+      command: 'BIND',
+      payload: {
+        slot_id: slotId,
+        agent_token: agentToken,
+        agent_instance_id: agentId,
+      },
+    });
+    try {
+      agent.ws.send(envelope, (err) => {
+        if (err) logger.error(`[AgentGateway] Failed to send BIND to ${agentId}:`, err);
+      });
+      logger.info(`[AgentGateway] Sent BIND to agent ${agentId} for slot ${slotId}.`);
+      return true;
+    } catch (err) {
+      logger.error(`[AgentGateway] Error sending BIND to ${agentId}:`, err);
+      return false;
+    }
+  }
+
+  /** Drops every pairing entry that belongs to the given agent. */
+  private purgePairingForAgent(agentId: string): void {
+    for (const [code, entry] of this.pairingRegistry) {
+      if (entry.agentId === agentId) {
+        this.pairingRegistry.delete(code);
+      }
+    }
+  }
+
+  /** Removes pairing codes that have passed their TTL. */
+  private sweepExpiredPairings(): void {
+    const now = Date.now();
+    for (const [code, entry] of this.pairingRegistry) {
+      if (entry.expiresAt.getTime() <= now) {
+        this.pairingRegistry.delete(code);
+      }
+    }
   }
 }
 

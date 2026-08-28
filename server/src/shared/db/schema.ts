@@ -219,6 +219,7 @@ export const subscriptions = pgTable(
     tenant_id: uuid('tenant_id')
       .references(() => tenants.id, { onDelete: 'cascade' })
       .notNull(),
+    last_warning_sent_at: timestamp('last_warning_sent_at', { withTimezone: true }),
     created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
     updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
   },
@@ -354,6 +355,11 @@ export const subscriptionEquipment = pgTable(
     status: varchar('status', { length: 50 }).default('PENDING_ACTIVATION').notNull(),
     device_name: varchar('device_name', { length: 255 }),
     device_serial: varchar('device_serial', { length: 255 }),
+    agent_instance_id: uuid('agent_instance_id'),
+    agent_hostname: varchar('agent_hostname', { length: 255 }),
+    agent_serial: varchar('agent_serial', { length: 255 }),
+    agent_last_seen_at: timestamp('agent_last_seen_at', { withTimezone: true }),
+    agent_token: varchar('agent_token', { length: 255 }),
     otp: varchar('otp', { length: 10 }),
     otp_expires_at: timestamp('otp_expires_at', { withTimezone: true }),
     nextcloud_username: varchar('nextcloud_username', { length: 255 }),

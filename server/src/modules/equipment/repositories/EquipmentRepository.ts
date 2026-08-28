@@ -17,6 +17,10 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
         status: subscriptionEquipment.status,
         device_name: subscriptionEquipment.device_name,
         device_serial: subscriptionEquipment.device_serial,
+        agent_instance_id: subscriptionEquipment.agent_instance_id,
+        agent_hostname: subscriptionEquipment.agent_hostname,
+        agent_serial: subscriptionEquipment.agent_serial,
+        agent_last_seen_at: subscriptionEquipment.agent_last_seen_at,
         otp: subscriptionEquipment.otp,
         otp_expires_at: subscriptionEquipment.otp_expires_at,
         nextcloud_username: subscriptionEquipment.nextcloud_username,
@@ -61,6 +65,19 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
     return (results[0] as SubscriptionEquipment) || null;
   }
 
+  /**
+   * Locates the slot bound to a physical agent installation (its stable
+   * install UUID). Returns all columns including the per-device secret so the
+   * service can enforce the token gate during reconciliation.
+   */
+  async findByAgentInstanceId(agentInstanceId: string): Promise<SubscriptionEquipment | null> {
+    const results = await db
+      .select()
+      .from(subscriptionEquipment)
+      .where(eq(subscriptionEquipment.agent_instance_id, agentInstanceId));
+    return (results[0] as SubscriptionEquipment) || null;
+  }
+
   async create(data: {
     subscription_id: string;
     slot_index: number;
@@ -92,6 +109,39 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
     return (results[0] as SubscriptionEquipment) || null;
   }
 
+  /**
+   * Applies agent-discovered identity to a device slot. Because the remote agent
+   * is the authoritative source of truth, the visible device_name/device_serial
+   * are overwritten alongside the agent_* audit columns when detected.
+   */
+  async updateAgentIdentity(
+    id: string,
+    identity: {
+      hostname?: string | null;
+      serial?: string | null;
+      lastSeenAt: Date;
+    }
+  ): Promise<SubscriptionEquipment | null> {
+    const set: Record<string, unknown> = {
+      agent_last_seen_at: identity.lastSeenAt,
+      updated_at: new Date(),
+    };
+    if (identity.hostname !== undefined) {
+      set.agent_hostname = identity.hostname;
+      set.device_name = identity.hostname;
+    }
+    if (identity.serial !== undefined) {
+      set.agent_serial = identity.serial;
+      set.device_serial = identity.serial;
+    }
+    const results = await db
+      .update(subscriptionEquipment)
+      .set(set)
+      .where(eq(subscriptionEquipment.id, id))
+      .returning();
+    return (results[0] as SubscriptionEquipment) || null;
+  }
+
   async findActiveByClient(clientId: string, tenantId: string): Promise<SubscriptionEquipment[]> {
     const results = await db
       .select({
@@ -101,6 +151,10 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
         status: subscriptionEquipment.status,
         device_name: subscriptionEquipment.device_name,
         device_serial: subscriptionEquipment.device_serial,
+        agent_instance_id: subscriptionEquipment.agent_instance_id,
+        agent_hostname: subscriptionEquipment.agent_hostname,
+        agent_serial: subscriptionEquipment.agent_serial,
+        agent_last_seen_at: subscriptionEquipment.agent_last_seen_at,
         otp: subscriptionEquipment.otp,
         otp_expires_at: subscriptionEquipment.otp_expires_at,
         nextcloud_username: subscriptionEquipment.nextcloud_username,
@@ -144,6 +198,10 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
         status: subscriptionEquipment.status,
         device_name: subscriptionEquipment.device_name,
         device_serial: subscriptionEquipment.device_serial,
+        agent_instance_id: subscriptionEquipment.agent_instance_id,
+        agent_hostname: subscriptionEquipment.agent_hostname,
+        agent_serial: subscriptionEquipment.agent_serial,
+        agent_last_seen_at: subscriptionEquipment.agent_last_seen_at,
         otp: subscriptionEquipment.otp,
         otp_expires_at: subscriptionEquipment.otp_expires_at,
         nextcloud_username: subscriptionEquipment.nextcloud_username,
@@ -194,6 +252,10 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
         status: subscriptionEquipment.status,
         device_name: subscriptionEquipment.device_name,
         device_serial: subscriptionEquipment.device_serial,
+        agent_instance_id: subscriptionEquipment.agent_instance_id,
+        agent_hostname: subscriptionEquipment.agent_hostname,
+        agent_serial: subscriptionEquipment.agent_serial,
+        agent_last_seen_at: subscriptionEquipment.agent_last_seen_at,
         otp: subscriptionEquipment.otp,
         otp_expires_at: subscriptionEquipment.otp_expires_at,
         nextcloud_username: subscriptionEquipment.nextcloud_username,
@@ -243,6 +305,10 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
         status: subscriptionEquipment.status,
         device_name: subscriptionEquipment.device_name,
         device_serial: subscriptionEquipment.device_serial,
+        agent_instance_id: subscriptionEquipment.agent_instance_id,
+        agent_hostname: subscriptionEquipment.agent_hostname,
+        agent_serial: subscriptionEquipment.agent_serial,
+        agent_last_seen_at: subscriptionEquipment.agent_last_seen_at,
         otp: subscriptionEquipment.otp,
         otp_expires_at: subscriptionEquipment.otp_expires_at,
         nextcloud_username: subscriptionEquipment.nextcloud_username,

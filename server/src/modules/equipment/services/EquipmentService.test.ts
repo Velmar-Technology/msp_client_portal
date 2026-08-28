@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => {
     equipFindBySubscription: vi.fn(),
     equipFindBySlot: vi.fn(),
     equipFindByOtp: vi.fn(),
+    equipFindById: vi.fn(),
+    equipUpdateAgentIdentity: vi.fn(),
     equipCreate: vi.fn(),
     equipUpdate: vi.fn(),
     equipFindAllWithDetails: vi.fn(),
@@ -20,6 +22,18 @@ const mocks = vi.hoisted(() => {
     ncProvisionUser: vi.fn(),
     ncDeleteUser: vi.fn(),
     ncGetUserStorage: vi.fn(),
+    equipFindByAgentInstanceId: vi.fn(),
+    gatewayGetPairingByCode: vi.fn(),
+    gatewayBindAgent: vi.fn(),
+  };
+});
+
+vi.mock('@modules/rmm/services/AgentGateway', () => {
+  return {
+    agentGateway: {
+      getPairingByCode: mocks.gatewayGetPairingByCode,
+      bindAgent: mocks.gatewayBindAgent,
+    },
   };
 });
 
@@ -41,6 +55,9 @@ vi.mock('@modules/equipment/repositories/EquipmentRepository', () => {
       findBySubscription: mocks.equipFindBySubscription,
       findBySlot: mocks.equipFindBySlot,
       findByOtp: mocks.equipFindByOtp,
+      findById: mocks.equipFindById,
+      findByAgentInstanceId: mocks.equipFindByAgentInstanceId,
+      updateAgentIdentity: mocks.equipUpdateAgentIdentity,
       create: mocks.equipCreate,
       update: mocks.equipUpdate,
       findAllWithDetails: mocks.equipFindAllWithDetails,
@@ -127,86 +144,129 @@ describe('EquipmentService', () => {
     });
   });
 
-  describe('generateSlotOTP', () => {
-    it('should generate a 6 digit OTP and expiration date', async () => {
-      const mockSub = { id: subId, tenant_id: tenantId, equipment_count: 1 };
-      const mockSlot = { id: 'slot-1', slot_index: 0, status: 'PENDING_ACTIVATION', tenant_id: tenantId };
-
-      mocks.subFindById.mockResolvedValue(mockSub);
-      mocks.equipFindBySubscription.mockResolvedValue([mockSlot]);
-      mocks.equipFindBySlot.mockResolvedValue(mockSlot);
-      mocks.equipUpdate.mockImplementation((id, data) => Promise.resolve({ id, ...data }));
-
-      const result = await equipmentService.generateSlotOTP(subId, 0, tenantId, true);
-
-      expect(result.otp).toMatch(/^\d{6}$/);
-      expect(result.otp_expires_at).toBeInstanceOf(Date);
-      expect(mocks.equipUpdate).toHaveBeenCalled();
+  describe('bindAndActivateSlot', () => {
+    const pairingEntry = (overrides: any = {}) => ({
+      agentId: 'agent-abc',
+      hello: {
+        agent_id: 'agent-abc',
+        hostname: 'LAPTOP-X',
+        serial_number: 'SN-A500',
+        manufacturer: 'Lenovo',
+        system_model: 'ThinkPad T14',
+        reported_at: new Date().toISOString(),
+        ...(overrides.hello || {}),
+      },
+      expiresAt: new Date(Date.now() + 60_000),
+      ...overrides,
     });
 
-    it('should reject if non-admin/client attempts to generate OTP', async () => {
-      await expect(equipmentService.generateSlotOTP(subId, 0, tenantId, false)).rejects.toThrow(
-        'Client users are not authorized to generate activation codes'
-      );
-    });
-
-    it('should bypass tenant check if byAdmin is true', async () => {
-      const mockSub = { id: subId, tenant_id: 'different-tenant-id', equipment_count: 1 };
-      const mockSlot = { id: 'slot-1', slot_index: 0, status: 'PENDING_ACTIVATION', tenant_id: 'different-tenant-id' };
-
-      mocks.subFindById.mockResolvedValue(mockSub);
-      mocks.equipFindBySubscription.mockResolvedValue([mockSlot]);
-      mocks.equipFindBySlot.mockResolvedValue(mockSlot);
-      mocks.equipUpdate.mockImplementation((id, data) => Promise.resolve({ id, ...data }));
-
-      const result = await equipmentService.generateSlotOTP(subId, 0, tenantId, true);
-      expect(result.otp).toMatch(/^\d{6}$/);
-    });
-  });
-
-  describe('activateSlot', () => {
-    it('should provision a user in Nextcloud and activate the slot', async () => {
+    it('should bind the agent to the slot and activate it using agent-provided identity', async () => {
       const mockSub = { id: subId, plan: 'PL-002', tenant_id: tenantId, equipment_count: 1 };
       const mockSlot = { id: 'slot-1', slot_index: 0, status: 'PENDING_ACTIVATION', tenant_id: tenantId };
 
+      mocks.gatewayGetPairingByCode.mockReturnValue(pairingEntry());
       mocks.subFindById.mockResolvedValue(mockSub);
       mocks.equipFindBySlot.mockResolvedValue(mockSlot);
       mocks.ncProvisionUser.mockResolvedValue('randomPass123');
       mocks.equipUpdate.mockImplementation((id, data) => Promise.resolve({ id, ...data }));
+      mocks.gatewayBindAgent.mockReturnValue(true);
 
-      const result = await equipmentService.activateSlot({
+      const result = await equipmentService.bindAndActivateSlot({
+        code: '123456',
         subscriptionId: subId,
         slotIndex: 0,
-        deviceName: 'Workstation 1',
-        deviceSerial: 'SN12345',
         tenantId,
       });
 
       expect(result.status).toBe('ACTIVE');
-      expect(result.device_name).toBe('Workstation 1');
-      expect(result.device_serial).toBe('SN12345');
+      expect(result.device_name).toBe('LAPTOP-X');
+      expect(result.device_serial).toBe('SN-A500');
+      expect(result.agent_instance_id).toBe('agent-abc');
       expect(result.nextcloud_password).toBe('randomPass123');
       expect(mocks.ncProvisionUser).toHaveBeenCalledWith({
         username: `client_tenant-1_slot_1`,
         quota: '50 GB',
-        displayName: 'Workstation 1 (SN12345)',
+        displayName: 'LAPTOP-X (SN-A500)',
       });
+      expect(mocks.gatewayBindAgent).toHaveBeenCalledWith(
+        'agent-abc',
+        'slot-1',
+        expect.stringMatching(/^[a-f0-9]{64}$/)
+      );
+      expect(result).not.toHaveProperty('agent_token');
     });
 
-    it('should bypass tenant check if byAdmin option is true', async () => {
-      const mockSub = { id: subId, plan: 'PL-002', tenant_id: 'different-tenant-id', equipment_count: 1 };
-      const mockSlot = { id: 'slot-1', slot_index: 0, status: 'PENDING_ACTIVATION', tenant_id: 'different-tenant-id' };
+    it('should fall back to provided/derived device fields when the agent reports no identity', async () => {
+      const mockSub = { id: subId, plan: 'PL-002', tenant_id: tenantId, equipment_count: 1 };
+      const mockSlot = { id: 'slot-1', slot_index: 0, status: 'PENDING_ACTIVATION', tenant_id: tenantId };
 
+      mocks.gatewayGetPairingByCode.mockReturnValue(
+        pairingEntry({ hello: { agent_id: 'agent-abc', reported_at: new Date().toISOString() } })
+      );
       mocks.subFindById.mockResolvedValue(mockSub);
       mocks.equipFindBySlot.mockResolvedValue(mockSlot);
       mocks.ncProvisionUser.mockResolvedValue('randomPass123');
       mocks.equipUpdate.mockImplementation((id, data) => Promise.resolve({ id, ...data }));
+      mocks.gatewayBindAgent.mockReturnValue(true);
 
-      const result = await equipmentService.activateSlot({
+      const result = await equipmentService.bindAndActivateSlot({
+        code: '123456',
         subscriptionId: subId,
         slotIndex: 0,
-        deviceName: 'Workstation 1',
-        deviceSerial: 'SN12345',
+        deviceName: 'Manual Device',
+        deviceSerial: 'SN-MANUAL',
+        tenantId,
+      });
+
+      expect(result.device_name).toBe('Manual Device');
+      expect(result.device_serial).toBe('SN-MANUAL');
+    });
+
+    it('should throw NotFoundError when the pairing code is unknown', async () => {
+      mocks.gatewayGetPairingByCode.mockReturnValue(null);
+
+      await expect(
+        equipmentService.bindAndActivateSlot({ code: '000000', subscriptionId: subId, slotIndex: 0, tenantId })
+      ).rejects.toThrow('Activation code (OTP) not found or invalid');
+      expect(mocks.equipUpdate).not.toHaveBeenCalled();
+    });
+
+    it('should throw when the slot does not exist', async () => {
+      mocks.gatewayGetPairingByCode.mockReturnValue(pairingEntry());
+      mocks.equipFindBySlot.mockResolvedValue(null);
+
+      await expect(
+        equipmentService.bindAndActivateSlot({ code: '123456', subscriptionId: subId, slotIndex: 0, tenantId })
+      ).rejects.toThrow('Equipment slot not found');
+    });
+
+    it('should deny non-admin binding to another tenant slot', async () => {
+      const mockSlot = { id: 'slot-1', slot_index: 0, status: 'PENDING_ACTIVATION', tenant_id: 'different-tenant-id' };
+
+      mocks.gatewayGetPairingByCode.mockReturnValue(pairingEntry());
+      mocks.equipFindBySlot.mockResolvedValue(mockSlot);
+
+      await expect(
+        equipmentService.bindAndActivateSlot({ code: '123456', subscriptionId: subId, slotIndex: 0, tenantId })
+      ).rejects.toThrow('Access denied');
+      expect(mocks.ncProvisionUser).not.toHaveBeenCalled();
+    });
+
+    it('should allow admins to bind any tenant slot', async () => {
+      const mockSub = { id: subId, plan: 'PL-002', tenant_id: 'different-tenant-id', equipment_count: 1 };
+      const mockSlot = { id: 'slot-1', slot_index: 0, status: 'PENDING_ACTIVATION', tenant_id: 'different-tenant-id' };
+
+      mocks.gatewayGetPairingByCode.mockReturnValue(pairingEntry());
+      mocks.equipFindBySlot.mockResolvedValue(mockSlot);
+      mocks.subFindById.mockResolvedValue(mockSub);
+      mocks.ncProvisionUser.mockResolvedValue('randomPass123');
+      mocks.equipUpdate.mockImplementation((id, data) => Promise.resolve({ id, ...data }));
+      mocks.gatewayBindAgent.mockReturnValue(true);
+
+      const result = await equipmentService.bindAndActivateSlot({
+        code: '123456',
+        subscriptionId: subId,
+        slotIndex: 0,
         tenantId,
         byAdmin: true,
       });
@@ -214,129 +274,66 @@ describe('EquipmentService', () => {
       expect(result.status).toBe('ACTIVE');
     });
 
-    it('should activate a slot using an OTP code lookup', async () => {
-      const mockSub = { id: subId, plan: 'PL-002', tenant_id: tenantId, equipment_count: 1 };
-      const mockSlot = { id: 'slot-1', slot_index: 0, status: 'PENDING_ACTIVATION', tenant_id: tenantId };
+    it('should reject activation of an already-active slot', async () => {
+      const mockSlot = { id: 'slot-1', slot_index: 0, status: 'ACTIVE', tenant_id: tenantId };
 
-      mocks.equipFindByOtp.mockResolvedValue(mockSlot);
-      mocks.subFindById.mockResolvedValue(mockSub);
-      mocks.ncProvisionUser.mockResolvedValue('randomPass123');
-      mocks.equipUpdate.mockImplementation((id, data) => Promise.resolve({ id, ...data }));
-
-      const result = await equipmentService.activateSlot({
-        otp: '123456',
-        deviceName: 'Workstation OTP',
-        deviceSerial: 'SN-OTP-01',
-        tenantId,
-      });
-
-      expect(mocks.equipFindByOtp).toHaveBeenCalledWith('123456');
-      expect(result.status).toBe('ACTIVE');
-      expect(result.device_name).toBe('Workstation OTP');
-      expect(result.nextcloud_password).toBe('randomPass123');
-    });
-
-    it('should throw when the OTP is not found', async () => {
-      mocks.equipFindByOtp.mockResolvedValue(null);
-
-      await expect(
-        equipmentService.activateSlot({
-          otp: '000000',
-          deviceName: 'Workstation',
-          deviceSerial: 'SN-1',
-          tenantId,
-        })
-      ).rejects.toThrow('Activation code (OTP) not found or invalid');
-    });
-
-    it('should throw ExternalServiceError when Nextcloud provisioning fails', async () => {
-      const mockSub = { id: subId, plan: 'PL-002', tenant_id: tenantId, equipment_count: 1 };
-      const mockSlot = { id: 'slot-1', slot_index: 0, status: 'PENDING_ACTIVATION', tenant_id: tenantId };
-
-      mocks.subFindById.mockResolvedValue(mockSub);
+      mocks.gatewayGetPairingByCode.mockReturnValue(pairingEntry());
       mocks.equipFindBySlot.mockResolvedValue(mockSlot);
-      mocks.ncProvisionUser.mockRejectedValue(new Error('Password is present in compromised password list'));
 
       await expect(
-        equipmentService.activateSlot({
-          subscriptionId: subId,
-          slotIndex: 0,
-          deviceName: 'Workstation 1',
-          deviceSerial: 'SN12345',
-          tenantId,
-        })
-      ).rejects.toThrow('Failed to provision Nextcloud user credentials');
-
-      // Slot should NOT be activated
-      expect(mocks.equipUpdate).not.toHaveBeenCalled();
+        equipmentService.bindAndActivateSlot({ code: '123456', subscriptionId: subId, slotIndex: 0, tenantId })
+      ).rejects.toThrow('Slot is already active');
     });
 
-    it('should throw when the OTP has expired', async () => {
+    it('should reject a slot already bound to a different agent', async () => {
       const mockSlot = {
         id: 'slot-1',
         slot_index: 0,
         status: 'PENDING_ACTIVATION',
         tenant_id: tenantId,
-        otp_expires_at: new Date(Date.now() - 1000),
+        agent_instance_id: 'agent-other',
       };
 
-      mocks.equipFindByOtp.mockResolvedValue(mockSlot);
+      mocks.gatewayGetPairingByCode.mockReturnValue(pairingEntry());
+      mocks.equipFindBySlot.mockResolvedValue(mockSlot);
 
       await expect(
-        equipmentService.activateSlot({
-          otp: '123456',
-          deviceName: 'Workstation',
-          deviceSerial: 'SN-1',
-          tenantId,
-        })
-      ).rejects.toThrow('Activation code (OTP) has expired');
+        equipmentService.bindAndActivateSlot({ code: '123456', subscriptionId: subId, slotIndex: 0, tenantId })
+      ).rejects.toThrow('Slot is already bound to a different agent');
     });
 
-    it('should deny OTP activation when the slot belongs to another tenant', async () => {
-      const mockSlot = {
-        id: 'slot-1',
-        slot_index: 0,
-        status: 'PENDING_ACTIVATION',
-        tenant_id: 'different-tenant-id',
-        otp_expires_at: new Date(Date.now() + 600000),
-      };
+    it('should throw ExternalServiceError without touching the slot when Nextcloud provisioning fails', async () => {
+      const mockSub = { id: subId, plan: 'PL-002', tenant_id: tenantId, equipment_count: 1 };
+      const mockSlot = { id: 'slot-1', slot_index: 0, status: 'PENDING_ACTIVATION', tenant_id: tenantId };
 
-      mocks.equipFindByOtp.mockResolvedValue(mockSlot);
-
-      await expect(
-        equipmentService.activateSlot({
-          otp: '123456',
-          deviceName: 'Workstation',
-          deviceSerial: 'SN-1',
-          tenantId,
-        })
-      ).rejects.toThrow('Access denied');
-    });
-
-    it('should bypass tenant check when activating with OTP as admin', async () => {
-      const mockSub = { id: subId, plan: 'PL-002', tenant_id: 'different-tenant-id', equipment_count: 1 };
-      const mockSlot = {
-        id: 'slot-1',
-        slot_index: 0,
-        status: 'PENDING_ACTIVATION',
-        tenant_id: 'different-tenant-id',
-        otp_expires_at: new Date(Date.now() + 600000),
-      };
-
-      mocks.equipFindByOtp.mockResolvedValue(mockSlot);
+      mocks.gatewayGetPairingByCode.mockReturnValue(pairingEntry());
+      mocks.equipFindBySlot.mockResolvedValue(mockSlot);
       mocks.subFindById.mockResolvedValue(mockSub);
+      mocks.ncProvisionUser.mockRejectedValue(new Error('compromised password'));
+
+      await expect(
+        equipmentService.bindAndActivateSlot({ code: '123456', subscriptionId: subId, slotIndex: 0, tenantId })
+      ).rejects.toThrow('Failed to provision Nextcloud user credentials');
+      expect(mocks.equipUpdate).not.toHaveBeenCalled();
+      expect(mocks.gatewayBindAgent).not.toHaveBeenCalled();
+    });
+
+    it('should roll back the slot and clean up Nextcloud when the agent goes offline before BIND', async () => {
+      const mockSub = { id: subId, plan: 'PL-002', tenant_id: tenantId, equipment_count: 1 };
+      const mockSlot = { id: 'slot-1', slot_index: 0, status: 'PENDING_ACTIVATION', tenant_id: tenantId };
+
+      mocks.gatewayGetPairingByCode.mockReturnValue(pairingEntry());
+      mocks.subFindById.mockResolvedValue(mockSub);
+      mocks.equipFindBySlot.mockResolvedValue(mockSlot);
       mocks.ncProvisionUser.mockResolvedValue('randomPass123');
       mocks.equipUpdate.mockImplementation((id, data) => Promise.resolve({ id, ...data }));
+      mocks.gatewayBindAgent.mockReturnValue(false);
 
-      const result = await equipmentService.activateSlot({
-        otp: '123456',
-        deviceName: 'Workstation',
-        deviceSerial: 'SN-1',
-        tenantId,
-        byAdmin: true,
-      });
-
-      expect(result.status).toBe('ACTIVE');
+      await expect(
+        equipmentService.bindAndActivateSlot({ code: '123456', subscriptionId: subId, slotIndex: 0, tenantId })
+      ).rejects.toThrow('Agent went offline');
+      expect(mocks.equipUpdate).toHaveBeenCalledTimes(2);
+      expect(mocks.ncDeleteUser).toHaveBeenCalledWith(`client_tenant-1_slot_1`);
     });
   });
 
@@ -483,18 +480,6 @@ describe('EquipmentService', () => {
     });
   });
 
-  describe('generateNumericOTP', () => {
-    it('should generate a numeric string of requested digits', () => {
-      const otp = equipmentService.generateNumericOTP(6);
-      expect(otp).toMatch(/^\d{6}$/);
-    });
-
-    it('should default to 6 digits', () => {
-      const otp = equipmentService.generateNumericOTP();
-      expect(otp).toHaveLength(6);
-    });
-  });
-
   describe('resolveStorageQuota', () => {
     it('should return 25 GB for PL-001 plan', async () => {
       const quota = await equipmentService.resolveStorageQuota('PL-001');
@@ -620,6 +605,150 @@ describe('EquipmentService', () => {
       await expect(
         equipmentService.deleteAdminEquipment('equip-cli-1', 'admin-1')
       ).rejects.toThrow('Only admin-owned equipment can be deleted');
+    });
+  });
+
+  describe('reconcileAgentIdentity', () => {
+    it('should overwrite device identity when the slot has no agent_token (lenient mode)', async () => {
+      const slot = { id: 'slot-1', agent_token: null, tenant_id: tenantId };
+      mocks.equipFindById.mockResolvedValue(slot);
+      mocks.equipUpdateAgentIdentity.mockResolvedValue({ ...slot, device_name: 'SRV-01' });
+
+      await equipmentService.reconcileAgentIdentity(
+        'slot-1',
+        { hostname: 'SRV-01', serial_number: 'CN-XYZ' },
+        null
+      );
+
+      expect(mocks.equipFindById).toHaveBeenCalledWith('slot-1');
+      expect(mocks.equipUpdateAgentIdentity).toHaveBeenCalledWith(
+        'slot-1',
+        expect.objectContaining({
+          hostname: 'SRV-01',
+          serial: 'CN-XYZ',
+          lastSeenAt: expect.any(Date),
+        })
+      );
+    });
+
+    it('should reject the write when the presented token does not match the slot token', async () => {
+      const slot = { id: 'slot-1', agent_token: 'secret-abc', tenant_id: tenantId };
+      mocks.equipFindById.mockResolvedValue(slot);
+
+      await equipmentService.reconcileAgentIdentity(
+        'slot-1',
+        { hostname: 'SRV-01', serial_number: 'CN-XYZ' },
+        'wrong-secret'
+      );
+
+      expect(mocks.equipUpdateAgentIdentity).not.toHaveBeenCalled();
+    });
+
+    it('should apply the identity when the presented token matches the slot token', async () => {
+      const slot = { id: 'slot-1', agent_token: 'secret-abc', tenant_id: tenantId };
+      mocks.equipFindById.mockResolvedValue(slot);
+      mocks.equipUpdateAgentIdentity.mockResolvedValue({ ...slot, device_name: 'SRV-01' });
+
+      await equipmentService.reconcileAgentIdentity(
+        'slot-1',
+        { hostname: 'SRV-01', serial_number: 'CN-XYZ' },
+        'secret-abc'
+      );
+
+      expect(mocks.equipUpdateAgentIdentity).toHaveBeenCalledTimes(1);
+    });
+
+    it('should no-op when no equipment record matches the agent id', async () => {
+      mocks.equipFindById.mockResolvedValue(null);
+
+      await equipmentService.reconcileAgentIdentity(
+        'unknown-slot',
+        { hostname: 'SRV-99' },
+        null
+      );
+
+      expect(mocks.equipUpdateAgentIdentity).not.toHaveBeenCalled();
+    });
+
+    it('should no-op when the hello carries no hostname or serial', async () => {
+      await equipmentService.reconcileAgentIdentity(
+        'slot-1',
+        { agent_version: '0.4.0' },
+        null
+      );
+
+      expect(mocks.equipFindById).not.toHaveBeenCalled();
+      expect(mocks.equipUpdateAgentIdentity).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getAgentIdentityByOtp', () => {
+    it('should return agent-discovered identity from the pairing registry', async () => {
+      mocks.gatewayGetPairingByCode.mockReturnValue({
+        agentId: 'agent-abc',
+        hello: {
+          agent_id: 'agent-abc',
+          hostname: 'AGENT-SRV',
+          serial_number: 'AGENT-SN',
+          manufacturer: 'Dell',
+          system_model: 'PowerEdge',
+          timestamp: '2026-08-01T00:00:00.000Z',
+        },
+        expiresAt: new Date(Date.now() + 60_000),
+      });
+
+      const result = await equipmentService.getAgentIdentityByOtp('123456', tenantId);
+
+      expect(mocks.gatewayGetPairingByCode).toHaveBeenCalledWith('123456');
+      expect(result.hostname).toBe('AGENT-SRV');
+      expect(result.serial).toBe('AGENT-SN');
+      expect(result.lastSeenAt).toBeInstanceOf(Date);
+    });
+
+    it('should return nulls when the agent reports no identity', async () => {
+      mocks.gatewayGetPairingByCode.mockReturnValue({
+        agentId: 'agent-abc',
+        hello: { agent_id: 'agent-abc', reported_at: new Date().toISOString() },
+        expiresAt: new Date(Date.now() + 60_000),
+      });
+
+      const result = await equipmentService.getAgentIdentityByOtp('123456', tenantId);
+
+      expect(result.hostname).toBeNull();
+      expect(result.serial).toBeNull();
+    });
+
+    it('should throw NotFoundError when the activation code is unknown', async () => {
+      mocks.gatewayGetPairingByCode.mockReturnValue(null);
+
+      await expect(
+        equipmentService.getAgentIdentityByOtp('000000', tenantId)
+      ).rejects.toThrow('Activation code (OTP) not found or invalid');
+    });
+  });
+
+  describe('resolveAgentIdForSlot', () => {
+    it('should return the identifier unchanged when it is already an agent instance id', async () => {
+      mocks.equipFindByAgentInstanceId.mockResolvedValue({ id: 'slot-1', agent_instance_id: 'agent-abc' });
+
+      const result = await equipmentService.resolveAgentIdForSlot('agent-abc');
+      expect(result).toBe('agent-abc');
+    });
+
+    it('should resolve a slot UUID to its bound agent instance', async () => {
+      mocks.equipFindByAgentInstanceId.mockResolvedValue(null);
+      mocks.equipFindById.mockResolvedValue({ id: 'slot-1', agent_instance_id: 'agent-abc' });
+
+      const result = await equipmentService.resolveAgentIdForSlot('slot-1');
+      expect(result).toBe('agent-abc');
+    });
+
+    it('should return the identifier unchanged when no binding exists', async () => {
+      mocks.equipFindByAgentInstanceId.mockResolvedValue(null);
+      mocks.equipFindById.mockResolvedValue(null);
+
+      const result = await equipmentService.resolveAgentIdForSlot('slot-1');
+      expect(result).toBe('slot-1');
     });
   });
 });

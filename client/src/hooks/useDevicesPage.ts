@@ -47,24 +47,24 @@ export function useDevicesPage() {
   const [selectedClient, setSelectedClient] = useState<string>("");
   const [selectedPlan, setSelectedPlan] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<string>("");
+  
+  // Revoke confirmation state
+  const [revokeTarget, setRevokeTarget] = useState<Partial<SubscriptionEquipment> | null>(null);
+  const [revokeLoading, setRevokeLoading] = useState(false);
 
   // Pagination states
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
 
-  // Activation Wizard State
-  const [activationWizardSubId, setActivationWizardSubId] = useState<string | null>(null);
-  const [activationWizardSlotIdx, setActivationWizardSlotIdx] = useState<number | null>(null);
-  const [activationWizardStep, setActivationWizardStep] = useState<1 | 2 | 3>(1);
-  const [activationDeviceName, setActivationDeviceName] = useState("");
-  const [activationDeviceSerial, setActivationDeviceSerial] = useState("");
-  const [activationWizardLoading, setActivationWizardLoading] = useState(false);
+  // Activation (slot binding) State
+  const [activateTargetSubId, setActivateTargetSubId] = useState<string | null>(null);
+  const [activateTargetSlotIdx, setActivateTargetSlotIdx] = useState<number | null>(null);
 
   const isAdmin = user?.role === "ADMIN";
 
   // Reset page to 1 when filters or search change
   useEffect(() => {
-     
+      
     setPage(1);
   }, [searchTerm, selectedClient, selectedStatus, selectedSubscriptionId]);
 
@@ -156,16 +156,16 @@ export function useDevicesPage() {
       }
     } catch (err) {
       console.error("Failed to load active subscriptions", err);
-      toast.error("Error", {
-        description: "Failed to retrieve active subscriptions for device management.",
+      toast.error(t("common.error"), {
+        description: t("devices.fetchFailed") || "Failed to retrieve active subscriptions for device management.",
       });
     } finally {
       setLoading(false);
     }
-  }, [user?.role, isAdmin]);
+  }, [user?.role, isAdmin, t]);
 
   useEffect(() => {
-     
+      
     fetchActiveSubscriptions();
   }, [fetchActiveSubscriptions]);
 
@@ -184,91 +184,29 @@ export function useDevicesPage() {
     );
   }, []);
 
-  const handleGenerateOTP = useCallback(async (subId: string, slotIndex: number) => {
-    try {
-      const updatedSlot = await equipmentService.generateOTP(subId, slotIndex);
-      updateDeviceList(subId, slotIndex, updatedSlot);
-      toast.success(t("devices.otpGeneratedTitle") || "OTP Generated", {
-        description: t("devices.otpGeneratedDesc", { otp: updatedSlot.otp, slot: slotIndex + 1 }) || `Temporary activation code ${updatedSlot.otp} generated for slot #${slotIndex + 1}.`,
-      });
-    } catch (err) {
-      console.error("Failed to generate OTP:", err);
-      const error = err as { response?: { data?: { message?: string } }; message?: string };
-      toast.error(t("common.error") || "Error", {
-        description: error.response?.data?.message || error.message || "Failed to generate OTP.",
-      });
-    }
-  }, [updateDeviceList, t]);
-
   const handleRevokeEquipment = useCallback(async (subId: string, slotIndex: number) => {
     try {
       const updatedSlot = await equipmentService.deactivateSlot(subId, slotIndex);
       updateDeviceList(subId, slotIndex, updatedSlot);
-      toast.info(t("devices.slotRevokedTitle") || "Slot Revoked", {
+      toast.info(t("devices.slotRevokedTitle"), {
         description: t("devices.slotRevokedDesc") || "Device slot revoked. Cloud storage account deleted.",
       });
     } catch (err) {
       console.error("Failed to revoke device:", err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
-      toast.error(t("common.error") || "Error", {
+      toast.error(t("common.error"), {
         description: error.response?.data?.message || error.message || t("devices.revokeFailed") || "Failed to deactivate slot.",
       });
     }
   }, [updateDeviceList, t]);
 
-  const handleStartActivationWizard = useCallback(async (subId: string, slotIndex: number, currentOtp?: string | null) => {
-    if (!currentOtp && user?.role === "CLIENT") {
-      toast.error("Activation Code Required", {
-        description: "An administrator must generate an activation code before you can activate this slot.",
-      });
-      return;
-    }
-    setActivationWizardSubId(subId);
-    setActivationWizardSlotIdx(slotIndex);
-    setActivationDeviceName(`Workstation-${slotIndex + 1}`);
-    setActivationDeviceSerial(`SN-SIM-${Math.floor(100000 + Math.random() * 900000)}`);
-    setActivationWizardStep(1);
-
-    if (!currentOtp && user?.role !== "CLIENT") {
-      try {
-        await handleGenerateOTP(subId, slotIndex);
-      } catch (err) {
-        console.error("Failed to auto-generate OTP for wizard:", err);
-      }
-    }
-  }, [handleGenerateOTP, user?.role]);
-
-  const handleWizardActivate = useCallback(async () => {
-    if (!activationWizardSubId || activationWizardSlotIdx === null) return;
-    setActivationWizardLoading(true);
-    try {
-      const updatedSlot = await equipmentService.activateSlot(
-        activationWizardSubId,
-        activationWizardSlotIdx,
-        activationDeviceName,
-        activationDeviceSerial
-      );
-      updateDeviceList(activationWizardSubId, activationWizardSlotIdx, updatedSlot);
-      toast.success("Device Activated", {
-        description: `Device ${activationDeviceName} successfully activated. Nextcloud backup account provisioned.`,
-      });
-      setActivationWizardStep(3);
-    } catch (err) {
-      console.error("Failed to activate device in wizard:", err);
-      const error = err as { response?: { data?: { message?: string } }; message?: string };
-      toast.error("Error", {
-        description: error.response?.data?.message || error.message || "Failed to activate device.",
-      });
-    } finally {
-      setActivationWizardLoading(false);
-    }
-  }, [activationWizardSubId, activationWizardSlotIdx, activationDeviceName, activationDeviceSerial, updateDeviceList]);
-
-  // Standalone "Activate with Code" (OTP) flow state
+  // Slot-binding "Activate with Code" (pairing code) flow state
   const [activateOtpModalOpen, setActivateOtpModalOpen] = useState(false);
   const [activateOtpLoading, setActivateOtpLoading] = useState(false);
 
-  const handleOpenActivateWithOtp = useCallback(() => {
+  const handleOpenActivateWithOtp = useCallback((subId: string, slotIndex: number) => {
+    setActivateTargetSubId(subId);
+    setActivateTargetSlotIdx(slotIndex);
     setActivateOtpModalOpen(true);
   }, []);
 
@@ -279,29 +217,34 @@ export function useDevicesPage() {
 
   const handleActivateWithOtp = useCallback(
     async (otp: string, deviceName: string, deviceSerial: string) => {
+      if (!activateTargetSubId || activateTargetSlotIdx === null) return;
       setActivateOtpLoading(true);
       try {
-        const updatedSlot = await equipmentService.activateWithOtp(otp, deviceName, deviceSerial);
-        if (updatedSlot.subscription_id && updatedSlot.slot_index !== undefined) {
-          updateDeviceList(updatedSlot.subscription_id, updatedSlot.slot_index, updatedSlot);
-        }
+        const updatedSlot = await equipmentService.activateWithOtp({
+          otp,
+          subscriptionId: activateTargetSubId,
+          slotIndex: activateTargetSlotIdx,
+          deviceName,
+          deviceSerial,
+        });
+        updateDeviceList(activateTargetSubId, activateTargetSlotIdx, updatedSlot);
         setActivateOtpModalOpen(false);
-        toast.success(t("devices.activateWithCodeSuccessTitle") || "Device Activated", {
+        toast.success(t("devices.activateWithCodeSuccessTitle"), {
           description:
             t("devices.activateWithCodeSuccessDesc", { name: deviceName }) ||
             `Device ${deviceName} successfully activated with activation code.`,
         });
       } catch (err) {
-        console.error("Failed to activate device with OTP:", err);
+        console.error("Failed to activate device with code:", err);
         const error = err as { response?: { data?: { message?: string } }; message?: string };
-        toast.error(t("common.error") || "Error", {
+        toast.error(t("common.error"), {
           description: error.response?.data?.message || error.message || t("devices.activateWithCodeFailed") || "Failed to activate device with the provided code.",
         });
       } finally {
         setActivateOtpLoading(false);
       }
     },
-    [updateDeviceList, t]
+    [activateTargetSubId, activateTargetSlotIdx, updateDeviceList, t]
   );
 
   // Standalone "Add Admin Device" flow state
@@ -325,12 +268,12 @@ export function useDevicesPage() {
         await fetchActiveSubscriptions();
         setAddDeviceModalOpen(false);
         toast.success(t("devices.addAdminDeviceSuccess", { name: data.deviceName }) || "Device added successfully", {
-          description: `Device ${data.deviceName} has been registered and provisioned.`,
+          description: t("devices.addAdminDeviceSuccessDesc") || `Device ${data.deviceName} has been registered and provisioned.`,
         });
       } catch (err) {
         console.error("Failed to add admin device:", err);
         const error = err as { response?: { data?: { message?: string } }; message?: string };
-        toast.error(t("common.error") || "Error", {
+        toast.error(t("common.error"), {
           description: error.response?.data?.message || error.message || "Failed to add device.",
         });
       } finally {
@@ -354,7 +297,7 @@ export function useDevicesPage() {
       } catch (err) {
         console.error("Failed to delete admin device:", err);
         const error = err as { response?: { data?: { message?: string } }; message?: string };
-        toast.error(t("common.error") || "Error", {
+        toast.error(t("common.error"), {
           description: error.response?.data?.message || error.message || "Failed to delete device.",
         });
       } finally {
@@ -367,6 +310,30 @@ export function useDevicesPage() {
   const activeSub = useMemo(() => {
     return activeSubscriptions.find((sub) => sub.id === selectedSubscriptionId) || activeSubscriptions[0];
   }, [activeSubscriptions, selectedSubscriptionId]);
+
+  // Revoke confirmation handlers
+  const handleRequestRevoke = useCallback((equip: Partial<SubscriptionEquipment>) => {
+    setRevokeTarget(equip);
+  }, []);
+
+  const confirmRevoke = useCallback(async () => {
+    if (!revokeTarget) return;
+    setRevokeLoading(true);
+    try {
+      const subId = revokeTarget.subscription_id || activeSub?.id;
+      const slotIndex = revokeTarget.slot_index;
+      if (subId !== undefined && slotIndex !== undefined) {
+        await handleRevokeEquipment(subId, slotIndex);
+      }
+    } finally {
+      setRevokeLoading(false);
+      setRevokeTarget(null);
+    }
+  }, [revokeTarget, activeSub, handleRevokeEquipment]);
+
+  const cancelRevoke = useCallback(() => {
+    setRevokeTarget(null);
+  }, []);
 
   const uniqueClients = useMemo(() => {
     const clients = new Map<string, string>();
@@ -502,46 +469,6 @@ export function useDevicesPage() {
     return sortedEquipment.slice(startIndex, startIndex + limit);
   }, [sortedEquipment, page, limit]);
 
-  const handleBulkGenerateOTP = useCallback(
-    async (selected: Partial<SubscriptionEquipment>[]) => {
-      const pendingSlots = selected.filter(
-        (equip) => equip.status !== "ACTIVE" && (equip.subscription_id || activeSub?.id) && equip.slot_index !== undefined
-      );
-      if (pendingSlots.length === 0) {
-        toast.info(t("common.info") || "Info", {
-          description: t("devices.noPendingForOtp") || "No selected devices require OTP generation.",
-        });
-        return;
-      }
-      setBulkProcessing(true);
-      let successCount = 0;
-      try {
-        await Promise.allSettled(
-          pendingSlots.map(async (slot) => {
-            const subId = slot.subscription_id || activeSub?.id;
-            if (subId !== undefined && slot.slot_index !== undefined) {
-              const updatedSlot = await equipmentService.generateOTP(subId, slot.slot_index);
-              updateDeviceList(subId, slot.slot_index, updatedSlot);
-              successCount++;
-            }
-          })
-        );
-        if (successCount > 0) {
-          toast.success(t("common.success") || "Success", {
-            description:
-              t("devices.bulkGenerateOtpSuccess", { count: successCount }) ||
-              `Generated OTPs for ${successCount} pending slot(s).`,
-          });
-        }
-      } catch (err) {
-        console.error("Bulk OTP generation failed:", err);
-      } finally {
-        setBulkProcessing(false);
-      }
-    },
-    [activeSub, updateDeviceList, t]
-  );
-
   const handleBulkDeactivateClick = useCallback(
     (selected: Partial<SubscriptionEquipment>[]) => {
       const activeSlots = selected.filter(
@@ -620,7 +547,7 @@ export function useDevicesPage() {
       document.body.removeChild(link);
 
       toast.success(t("common.success") || "Success", {
-        description: `Exported ${rowsToExport.length} device(s) to CSV.`,
+        description: t("devices.bulkExportSuccess") || `Exported ${rowsToExport.length} device(s) to CSV.`,
       });
     },
     [filteredEquipment, t]
@@ -639,40 +566,31 @@ export function useDevicesPage() {
     subscriptionEquipment,
     searchTerm,
     setSearchTerm,
-    activationWizardSubId,
-    setActivationWizardSubId,
-    activationWizardSlotIdx,
-    setActivationWizardSlotIdx,
-    activationWizardStep,
-    setActivationWizardStep,
-    activationDeviceName,
-    setActivationDeviceName,
-    activationDeviceSerial,
-    setActivationDeviceSerial,
-    activationWizardLoading,
+    activateTargetSubId,
+    activateTargetSlotIdx,
     activeSub,
     filteredEquipment,
     paginatedEquipment,
     fetchActiveSubscriptions,
-    handleGenerateOTP,
     handleRevokeEquipment,
-    handleStartActivationWizard,
-    handleWizardActivate,
     activateOtpModalOpen,
     setActivateOtpModalOpen,
     activateOtpLoading,
+    setActivateOtpLoading,
     handleOpenActivateWithOtp,
     handleCloseActivateWithOtp,
     handleActivateWithOtp,
     addDeviceModalOpen,
     setAddDeviceModalOpen,
     addDeviceLoading,
+    setAddDeviceLoading,
     handleOpenAddDevice,
     handleCloseAddDevice,
     handleAddAdminDevice,
     deviceToDelete,
     setDeviceToDelete,
     deleteDeviceLoading,
+    setDeleteDeviceLoading,
     handleDeleteAdminDevice,
     isAdmin,
     adminDevices,
@@ -697,11 +615,20 @@ export function useDevicesPage() {
     showBulkDeactivateAlert,
     setShowBulkDeactivateAlert,
     bulkDeactivateTargets,
+    setBulkDeactivateTargets,
     bulkProcessing,
-    handleBulkGenerateOTP,
+    setBulkProcessing,
     handleBulkDeactivateClick,
     confirmBulkDeactivate,
     handleBulkExportCSV,
+    // Revoke confirmation
+    revokeTarget,
+    setRevokeTarget,
+    revokeLoading,
+    setRevokeLoading,
+    handleRequestRevoke,
+    confirmRevoke,
+    cancelRevoke,
     sorting,
     setSorting,
   };

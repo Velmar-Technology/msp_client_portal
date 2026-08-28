@@ -95,8 +95,6 @@ vi.mock('@/services/subscriptionService', () => ({
 vi.mock('@/services/equipmentService', () => ({
   equipmentService: {
     getSlots: vi.fn().mockRejectedValue(new Error('Mock API error')),
-    generateOTP: vi.fn(),
-    activateSlot: vi.fn(),
     deactivateSlot: vi.fn(),
   },
 }));

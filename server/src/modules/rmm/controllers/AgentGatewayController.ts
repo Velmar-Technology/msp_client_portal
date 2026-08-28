@@ -1,18 +1,31 @@
 import { Request, Response } from 'express';
 import { agentGateway } from '@modules/rmm/services/AgentGateway';
+import { EquipmentService, equipmentService } from '@modules/equipment';
+import { ValidationError } from '@shared/errors';
 
 /**
  * REST controller exposing the Agent Gateway to technicians and the MCP server.
  * All endpoints require authentication and ADMIN or TECHNICIAN role.
  */
 export class AgentGatewayController {
+  constructor(private equipmentSvc: EquipmentService = equipmentService) {}
+
+  /**
+   * Resolves a technician-supplied slot UUID to the physical agent's install
+   * UUID, so command routing works whether the caller knows the slot or the
+   * agent instance.
+   */
+  private async resolveTarget(equipmentId: string): Promise<string> {
+    return this.equipmentSvc.resolveAgentIdForSlot(equipmentId);
+  }
+
   /**
    * GET /api/v1/rmm/agent/:equipmentId/status
    * Returns whether the remote Rust agent is connected and its metadata.
    */
   async getAgentStatus(req: Request, res: Response): Promise<void> {
-    const equipmentId = String(req.params.equipmentId);
-    const status = agentGateway.getAgentStatus(equipmentId);
+    const target = await this.resolveTarget(String(req.params.equipmentId));
+    const status = agentGateway.getAgentStatus(target);
     res.json({ success: true, data: status });
   }
 
@@ -32,15 +45,14 @@ export class AgentGatewayController {
    * Body: { command: string, payload?: any, timeoutMs?: number }
    */
   async execCommand(req: Request, res: Response): Promise<void> {
-    const equipmentId = String(req.params.equipmentId);
     const { command, payload, timeoutMs } = req.body;
 
     if (!command || typeof command !== 'string') {
-      res.status(400).json({ success: false, error: 'Missing or invalid "command" in request body.' });
-      return;
+      throw new ValidationError('Missing or invalid "command" in request body.');
     }
 
-    const result = await agentGateway.sendCommand(equipmentId, command, payload, timeoutMs);
+    const target = await this.resolveTarget(String(req.params.equipmentId));
+    const result = await agentGateway.sendCommand(target, command, payload, timeoutMs);
     res.json({ success: true, data: result });
   }
 
@@ -49,8 +61,8 @@ export class AgentGatewayController {
    * Shorthand endpoint to run a full DIAGNOSE_PC on the remote agent.
    */
   async getDiagnostics(req: Request, res: Response): Promise<void> {
-    const equipmentId = String(req.params.equipmentId);
-    const result = await agentGateway.sendCommand(equipmentId, 'DIAGNOSE_PC');
+    const target = await this.resolveTarget(String(req.params.equipmentId));
+    const result = await agentGateway.sendCommand(target, 'DIAGNOSE_PC');
     res.json({ success: true, data: result });
   }
 
@@ -61,9 +73,9 @@ export class AgentGatewayController {
    * Body: { log_name?: string, level?: string, max_events?: number }
    */
   async getEventLogs(req: Request, res: Response): Promise<void> {
-    const equipmentId = String(req.params.equipmentId);
     const { log_name, level, max_events } = req.body;
-    const result = await agentGateway.sendCommand(equipmentId, 'GET_EVENT_LOGS', {
+    const target = await this.resolveTarget(String(req.params.equipmentId));
+    const result = await agentGateway.sendCommand(target, 'GET_EVENT_LOGS', {
       log_name: log_name || 'Application',
       level: level || 'Error',
       max_events: max_events || 5,
@@ -76,8 +88,8 @@ export class AgentGatewayController {
    * Runs a security posture audit (BitLocker, Defender, Firewall) on the remote endpoint.
    */
   async getSecurityAudit(req: Request, res: Response): Promise<void> {
-    const equipmentId = String(req.params.equipmentId);
-    const result = await agentGateway.sendCommand(equipmentId, 'SECURITY_AUDIT');
+    const target = await this.resolveTarget(String(req.params.equipmentId));
+    const result = await agentGateway.sendCommand(target, 'SECURITY_AUDIT');
     res.json({ success: true, data: result });
   }
 }

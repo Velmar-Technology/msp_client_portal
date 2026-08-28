@@ -145,6 +145,7 @@ export interface Subscription {
   equipment_count: number;
   paypal_order_id?: string;
   tenant_id: string;
+  last_warning_sent_at?: Date | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -382,6 +383,11 @@ export interface SubscriptionEquipment {
   status: 'PENDING_ACTIVATION' | 'ACTIVE';
   device_name: string | null;
   device_serial: string | null;
+  agent_instance_id?: string | null;
+  agent_hostname?: string | null;
+  agent_serial?: string | null;
+  agent_last_seen_at?: Date | null;
+  agent_token?: string | null;
   otp: string | null;
   otp_expires_at: Date | null;
   nextcloud_username: string | null;

@@ -16,52 +16,25 @@ export class EquipmentController {
     });
   }
 
-  async generateOTP(req: Request, res: Response): Promise<void> {
-    if (req.user!.role === 'CLIENT') {
-      throw new ForbiddenError('Client users are not authorized to generate activation codes');
-    }
-    const subId = req.params.subId as string;
-    const slotIndex = parseInt(req.params.slotIndex as string, 10);
-    const byAdmin = req.user!.role === 'ADMIN' || req.user!.role === 'TECHNICIAN';
-    const slot = await this.equipmentSvc.generateSlotOTP(subId, slotIndex, req.user!.tenantId, byAdmin);
-    res.json({
-      success: true,
-      data: slot,
-    });
-  }
-
-  async activateSlot(req: Request, res: Response): Promise<void> {
-    const subId = req.params.subId as string;
-    const slotIndex = parseInt(req.params.slotIndex as string, 10);
-    const { deviceName, deviceSerial } = req.body;
-    const byAdmin = req.user!.role === 'ADMIN';
-
-    const slot = await this.equipmentSvc.activateSlot({
-      subscriptionId: subId,
-      slotIndex,
-      deviceName: (deviceName as string) || `Workstation-${slotIndex + 1}`,
-      deviceSerial: (deviceSerial as string) || `SN-SIM-${Math.floor(100000 + Math.random() * 900000)}`,
-      tenantId: req.user!.tenantId,
-      byAdmin,
-    });
-
-    res.json({
-      success: true,
-      data: slot,
-    });
-  }
-
   async activateWithOtp(req: Request, res: Response): Promise<void> {
-    const { otp, deviceName, deviceSerial } = req.body;
+    const { otp, subscriptionId, slotIndex, deviceName, deviceSerial } = req.body;
 
     if (typeof otp !== 'string' || !/^\d{6}$/.test(otp)) {
       throw new ValidationError('Activation code (OTP) must be a 6-digit numeric code');
     }
+    if (typeof subscriptionId !== 'string' || !subscriptionId.trim()) {
+      throw new ValidationError('subscriptionId is required to select the slot to bind');
+    }
+    if (!Number.isInteger(slotIndex) || (slotIndex as number) < 0) {
+      throw new ValidationError('slotIndex must be a non-negative integer');
+    }
 
-    const slot = await this.equipmentSvc.activateSlot({
-      otp,
-      deviceName: (deviceName as string) || `Workstation-${Math.floor(100000 + Math.random() * 900000)}`,
-      deviceSerial: (deviceSerial as string) || `SN-SIM-${Math.floor(100000 + Math.random() * 900000)}`,
+    const slot = await this.equipmentSvc.bindAndActivateSlot({
+      code: otp,
+      subscriptionId,
+      slotIndex: slotIndex as number,
+      deviceName: (deviceName as string) || undefined,
+      deviceSerial: (deviceSerial as string) || undefined,
       tenantId: req.user!.tenantId,
       byAdmin: req.user!.role !== 'CLIENT',
     });
@@ -69,6 +42,18 @@ export class EquipmentController {
     res.json({
       success: true,
       data: slot,
+    });
+  }
+
+  async getAgentIdentity(req: Request, res: Response): Promise<void> {
+    const otp = (req.query.otp as string) || '';
+    if (!/^\d{6}$/.test(otp)) {
+      throw new ValidationError('Activation code (OTP) must be a 6-digit numeric code');
+    }
+    const info = await this.equipmentSvc.getAgentIdentityByOtp(otp, req.user!.tenantId, req.user!.role !== 'CLIENT');
+    res.json({
+      success: true,
+      data: info,
     });
   }
 

@@ -100,7 +100,7 @@ export function AddAdminDeviceModal({
             <div className="space-y-3.5">
               <div>
                 <label htmlFor="admin-dev-name" className="block text-[10px] uppercase font-bold text-zinc-400 mb-1">
-                  {t("devices.wizardStep2NameLabel", "Device Name / Label")} *
+                  {t("devices.deviceNameLabel", "Device Name / Label")} *
                 </label>
                 <Input
                   id="admin-dev-name"
@@ -116,7 +116,7 @@ export function AddAdminDeviceModal({
 
               <div>
                 <label htmlFor="admin-dev-serial" className="block text-[10px] uppercase font-bold text-zinc-400 mb-1">
-                  {t("devices.wizardStep2SerialLabel", "Device Serial Number")}
+                  {t("devices.deviceSerialLabel", "Device Serial Number")}
                 </label>
                 <Input
                   id="admin-dev-serial"
@@ -171,7 +171,7 @@ export function AddAdminDeviceModal({
               {loading ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>{t("devices.wizardStep2Activating", "Adding...")}</span>
+                  <span>{t("devices.activating", "Adding...")}</span>
                 </>
               ) : (
                 <>

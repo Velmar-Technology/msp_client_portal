@@ -3,16 +3,24 @@ import { subscriptionRepository, SubscriptionRepository } from '@modules/subscri
 import { planRepository, PlanRepository } from '@modules/subscriptions';
 import { nextcloudService, NextcloudService } from '@modules/system';
 import { rmmPatchService, RmmPatchService } from '@modules/rmm/services/RmmPatchService';
-import { NotFoundError, ForbiddenError, ValidationError, ExternalServiceError } from '@shared/errors';
+import { AgentHelloPayload, agentGateway } from '@modules/rmm/services/AgentGateway';
+import {
+  NotFoundError,
+  ForbiddenError,
+  ValidationError,
+  ExternalServiceError,
+  ConflictError,
+} from '@shared/errors';
 import { logger } from '@shared/utils/logger';
 import { SubscriptionEquipment, EquipmentWithDetails, SubscriptionStatus } from '@shared/types';
+import crypto from 'crypto';
 
-export interface ActivateSlotOptions {
-  subscriptionId?: string;
-  slotIndex?: number;
-  otp?: string;
-  deviceName: string;
-  deviceSerial: string;
+export interface BindAndActivateSlotOptions {
+  code: string;
+  subscriptionId: string;
+  slotIndex: number;
+  deviceName?: string;
+  deviceSerial?: string;
   tenantId: string;
   byAdmin?: boolean;
 }
@@ -54,15 +62,6 @@ export class EquipmentService {
 
   private get rmmPatchService(): RmmPatchService {
     return this.rmmPatchSvc || rmmPatchService;
-  }
-
-  /**
-   * Utility helper to generate a numeric OTP string.
-   */
-  generateNumericOTP(digits = 6): string {
-    const min = Math.pow(10, digits - 1);
-    const max = Math.pow(10, digits) - 1;
-    return String(Math.floor(min + Math.random() * (max - min + 1)));
   }
 
   /**
@@ -108,35 +107,84 @@ export class EquipmentService {
   }
 
   /**
-   * Generates a 6-digit OTP for slot activation.
+   * Generates a 64-char per-device agent secret used to authenticate the
+   * remote endpoint agent when it connects and claims identity updates.
    */
-  async generateSlotOTP(subscriptionId: string, slotIndex: number, tenantId: string, byAdmin = false): Promise<SubscriptionEquipment> {
-    if (!byAdmin) {
-      throw new ForbiddenError('Client users are not authorized to generate activation codes');
+  private generateAgentToken(): string {
+    return crypto.randomBytes(32).toString('hex');
+  }
+
+  /**
+   * Reconciles agent-discovered identity (hostname/serial) against a device
+   * slot. The remote agent is the authoritative source of truth, so detected
+   * values overwrite the customer-entered device fields. When the slot carries
+   * a per-device agent_token, a matching secret on the WebSocket connection is
+   * required before any write is applied; legacy slots without a token are
+   * trusted in lenient mode.
+   */
+  async reconcileAgentIdentity(
+    equipmentId: string,
+    hello: AgentHelloPayload,
+    token: string | null
+  ): Promise<void> {
+    const hostname = (hello.hostname || '').trim();
+    const serial = (hello.serial_number || '').trim();
+    if (!hostname && !serial) {
+      logger.warn('[EquipmentService] Agent hello carried no identity; skipping reconcile', { equipmentId });
+      return;
     }
-    await this.getEquipmentSlots(subscriptionId, tenantId, byAdmin);
 
-    const slot = await this.equipmentRepository.findBySlot(subscriptionId, slotIndex);
-    if (!slot) throw new NotFoundError('Equipment slot not found');
-    if (!byAdmin && slot.tenant_id !== tenantId) throw new ForbiddenError('Access denied');
-
-    const otp = this.generateNumericOTP(6);
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
-    if (slot.nextcloud_username) {
-      await this.cleanupNextcloudUser(slot.nextcloud_username);
+    const slot =
+      (await this.equipmentRepository.findByAgentInstanceId(equipmentId)) ||
+      (await this.equipmentRepository.findById(equipmentId));
+    if (!slot) {
+      logger.warn('[EquipmentService] No equipment record for connecting agent', { equipmentId });
+      return;
     }
 
-    const updated = await this.equipmentRepository.update(slot.id, {
-      status: 'PENDING_ACTIVATION',
-      otp,
-      otp_expires_at: expiresAt,
-      device_name: null,
-      device_serial: null,
-      nextcloud_username: null,
-      nextcloud_password: null,
-    });
-    return updated!;
+    if (slot.agent_token) {
+      if (!token || token !== slot.agent_token) {
+        logger.warn('[EquipmentService] Agent token mismatch; identity write rejected', { equipmentId });
+        return;
+      }
+    } else {
+      logger.info('[EquipmentService] Slot has no agent_token; trusting hello in lenient mode', { equipmentId });
+    }
+
+    const identity: { hostname?: string; serial?: string; lastSeenAt: Date } = {
+      lastSeenAt: new Date(),
+    };
+    if (hostname) identity.hostname = hostname;
+    if (serial) identity.serial = serial;
+
+    const updated = await this.equipmentRepository.updateAgentIdentity(equipmentId, identity);
+    if (updated) {
+      logger.info('[EquipmentService] Reconciled agent identity for device', {
+        equipmentId,
+        hostname: hostname || null,
+        serial: serial || null,
+      });
+    }
+  }
+
+  /**
+   * Returns the agent-discovered identity prefill for an agent-issued pairing
+   * code, so clients can confirm device details instead of typing them from
+   * memory. The code is resolved against the live agent gateway registry.
+   */
+  async getAgentIdentityByOtp(
+    otp: string,
+    _tenantId: string,
+    _byAdmin = false
+  ): Promise<{ hostname: string | null; serial: string | null; lastSeenAt: Date | null }> {
+    const entry = agentGateway.getPairingByCode(otp);
+    if (!entry) throw new NotFoundError('Activation code (OTP) not found or invalid');
+
+    return {
+      hostname: (entry.hello.hostname || '').trim() || null,
+      serial: (entry.hello.serial_number || '').trim() || null,
+      lastSeenAt: new Date(entry.hello.timestamp ?? Date.now()),
+    };
   }
 
   /**
@@ -151,25 +199,99 @@ export class EquipmentService {
   }
 
   /**
-   * Resolves target slot for activation based on OTP or subscriptionId + slotIndex.
+   * Binds the physical agent behind an agent-issued pairing code to a specific
+   * subscription slot and activates the device. The agent is the source of
+   * truth for identity (hostname/serial overridden when still unset), Nextcloud
+   * + RMM are provisioned, and a freshly generated per-device secret is pushed
+   * to the agent over the WebSocket. Returns the slot without the secret.
    */
-  private async resolveSlotToActivate(options: ActivateSlotOptions): Promise<SubscriptionEquipment> {
-    if (options.otp) {
-      const slot = await this.equipmentRepository.findByOtp(options.otp);
-      if (!slot) throw new NotFoundError('Activation code (OTP) not found or invalid');
-      if (slot.otp_expires_at && slot.otp_expires_at < new Date()) {
-        throw new ValidationError('Activation code (OTP) has expired');
-      }
-      if (!options.byAdmin && slot.tenant_id !== options.tenantId) throw new ForbiddenError('Access denied');
-      return slot;
+  async bindAndActivateSlot(options: BindAndActivateSlotOptions): Promise<SubscriptionEquipment> {
+    const entry = agentGateway.getPairingByCode(options.code);
+    if (!entry) throw new NotFoundError('Activation code (OTP) not found or invalid');
+
+    const slot = await this.equipmentRepository.findBySlot(options.subscriptionId, options.slotIndex);
+    if (!slot) throw new NotFoundError('Equipment slot not found');
+    if (!options.byAdmin && slot.tenant_id !== options.tenantId) throw new ForbiddenError('Access denied');
+    if (slot.status === 'ACTIVE') {
+      throw new ConflictError('Slot is already active');
     }
-    if (options.subscriptionId !== undefined && options.slotIndex !== undefined) {
-      const slot = await this.equipmentRepository.findBySlot(options.subscriptionId, options.slotIndex);
-      if (!slot) throw new NotFoundError('Slot not found');
-      if (!options.byAdmin && slot.tenant_id !== options.tenantId) throw new ForbiddenError('Access denied');
-      return slot;
+    if (slot.agent_instance_id && slot.agent_instance_id !== entry.agentId) {
+      throw new ConflictError('Slot is already bound to a different agent');
     }
-    throw new ValidationError('Must provide either OTP or SubscriptionId + SlotIndex');
+
+    const hostname = (entry.hello.hostname || '').trim();
+    const serial = (entry.hello.serial_number || '').trim();
+    const deviceName = hostname || options.deviceName || `Workstation-${options.slotIndex + 1}`;
+    const deviceSerial = serial || options.deviceSerial || `SN-SIM-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    // Provision Nextcloud + RMM first so failures surface before the slot is touched.
+    const sub = await this.subRepo.findById(slot.subscription_id);
+    if (!sub) throw new NotFoundError('Subscription not found');
+
+    const quota = await this.resolveStorageQuota(sub.plan);
+    const username = `client_${sub.tenant_id.slice(0, 8)}_slot_${slot.slot_index + 1}`;
+    const displayName = `${deviceName} (${deviceSerial})`;
+    const password = await this.provisionNextcloudUser(username, quota, displayName);
+
+    const token = this.generateAgentToken();
+    const updated = await this.equipmentRepository.update(slot.id, {
+      status: 'ACTIVE',
+      device_name: deviceName,
+      device_serial: deviceSerial,
+      agent_instance_id: entry.agentId,
+      agent_hostname: hostname || deviceName,
+      agent_serial: serial || deviceSerial,
+      agent_last_seen_at: new Date(),
+      agent_token: token,
+      otp: null,
+      otp_expires_at: null,
+      nextcloud_username: username,
+      nextcloud_password: password,
+    });
+
+    // Auto-provision equipment into Zabbix RMM.
+    try {
+      await this.rmmPatchService.triggerPatchScan(slot.id, slot.tenant_id);
+      logger.info('Auto-provisioned equipment to RMM/Zabbix upon slot binding', { equipmentId: slot.id, deviceName });
+    } catch (err) {
+      logger.warn('Deferred RMM auto-provisioning on slot binding', { equipmentId: slot.id, err });
+    }
+
+    // Deliver the secret + binding to the agent. If the socket dropped in the
+    // meantime, roll back the half-bound slot and instruct the user to retry.
+    const bound = agentGateway.bindAgent(entry.agentId, slot.id, token);
+    if (!bound) {
+      await this.equipmentRepository.update(slot.id, {
+        status: 'PENDING_ACTIVATION',
+        agent_instance_id: null,
+        agent_hostname: null,
+        agent_serial: null,
+        agent_token: null,
+      });
+      await this.cleanupNextcloudUser(username);
+      throw new ValidationError('Agent went offline; please retry activation while the device is connected');
+    }
+
+    return this.stripSecrets(updated!);
+  }
+
+  /**
+   * Returns the physical agent target for a slot identifier, so downstream
+   * controllers can route commands by slot UUID while agents are addressed by
+   * their stable install UUID.
+   */
+  async resolveAgentIdForSlot(targetId: string): Promise<string> {
+    const slot = await this.equipmentRepository.findByAgentInstanceId(targetId);
+    if (slot) return targetId;
+    const equipment = await this.equipmentRepository.findById(targetId);
+    if (equipment?.agent_instance_id) return equipment.agent_instance_id;
+    return targetId;
+  }
+
+  private stripSecrets<T extends SubscriptionEquipment>(slot: T): Omit<T, 'agent_token'> {
+    const { agent_token, ...rest } = slot as any;
+    void agent_token;
+    return rest as Omit<T, 'agent_token'>;
   }
 
   /**
@@ -220,40 +342,6 @@ export class EquipmentService {
         cause: error instanceof Error ? error.message : String(error),
       });
     }
-  }
-
-  /**
-   * Activates a slot (via OTP lookup or direct simulation).
-   */
-  async activateSlot(options: ActivateSlotOptions): Promise<SubscriptionEquipment> {
-    const slot = await this.resolveSlotToActivate(options);
-    const sub = await this.subRepo.findById(slot.subscription_id);
-    if (!sub) throw new NotFoundError('Subscription not found');
-
-    const quota = await this.resolveStorageQuota(sub.plan);
-    const username = `client_${sub.tenant_id.slice(0, 8)}_slot_${slot.slot_index + 1}`;
-    const displayName = `${options.deviceName} (${options.deviceSerial})`;
-    const password = await this.provisionNextcloudUser(username, quota, displayName);
-
-    const updated = await this.equipmentRepository.update(slot.id, {
-      status: 'ACTIVE',
-      device_name: options.deviceName,
-      device_serial: options.deviceSerial,
-      otp: null,
-      otp_expires_at: null,
-      nextcloud_username: username,
-      nextcloud_password: password,
-    });
-
-    // Auto-provision equipment into Zabbix RMM
-    try {
-      await this.rmmPatchService.triggerPatchScan(slot.id, slot.tenant_id);
-      logger.info('Auto-provisioned equipment to RMM/Zabbix upon slot activation', { equipmentId: slot.id, deviceName: options.deviceName });
-    } catch (err) {
-      logger.warn('Deferred RMM auto-provisioning on slot activation', { equipmentId: slot.id, err });
-    }
-
-    return updated!;
   }
 
   /**

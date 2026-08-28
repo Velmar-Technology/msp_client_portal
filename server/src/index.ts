@@ -17,6 +17,7 @@ import { createExpressErrorMiddleware } from '@shared/errors';
 import routes from './routes';
 import { swaggerSpec } from '@shared/swagger/swagger.config';
 import { agentGateway } from '@modules/rmm/services/AgentGateway';
+import { equipmentService } from '@modules/equipment/services/EquipmentService';
 import { metricsMiddleware } from '@shared/middleware/metricsMiddleware';
 import { metricsService } from '@shared/metrics/metricsService';
 
@@ -81,6 +82,12 @@ const wss = new WebSocketServer({
   path: '/agent-ws',
 });
 agentGateway.init(wss);
+
+// Reconcile agent-discovered identity onto equipment records whenever an agent
+// completes its registration handshake. Errors are contained by the handler.
+agentGateway.onAgentHello((equipmentId, hello, token) =>
+  equipmentService.reconcileAgentIdentity(equipmentId, hello, token)
+);
 
 // ---- Start Server ----
 async function startServer(): Promise<void> {
