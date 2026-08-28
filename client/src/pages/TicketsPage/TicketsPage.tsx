@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Eye, MoreHorizontal, Ban } from "lucide-react";
+import { Plus, Eye, MoreHorizontal, Ban, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Page } from "@/components/Page";
 import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
@@ -23,6 +23,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
@@ -261,40 +262,68 @@ export function TicketsPage() {
       {
         id: "actions",
         header: () => (
-          <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-            {t("tickets.colActions")}
-          </span>
+          <div className="text-right">
+            <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+              {t("tickets.colActions")}
+            </span>
+          </div>
         ),
         enableSorting: false,
         cell: ({ row }) => {
           const tItem = row.original;
+          const canCancel = tItem.status !== "CLOSED" && tItem.status !== "CANCELLED" && tItem.status !== "RESOLVED";
+
           return (
-            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-end gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  markTicketAsRead(tItem.id, user?.id);
+                  navigate(`/tickets/${tItem.id}`);
+                }}
+                className="h-7 px-2 text-xs font-semibold gap-1 cursor-pointer"
+              >
+                <span>{t("tickets.viewDetails")}</span>
+                <ChevronRight className="h-3 w-3" />
+              </Button>
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 p-0 cursor-pointer text-muted-foreground hover:text-foreground">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={(e) => e.stopPropagation()}
+                    className="h-7 w-7 cursor-pointer"
+                  >
                     <MoreHorizontal className="h-3.5 w-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-card border border-border">
+                <DropdownMenuContent align="end" className="w-48 bg-card text-foreground border border-border">
                   <DropdownMenuItem
                     onClick={() => {
                       markTicketAsRead(tItem.id, user?.id);
                       navigate(`/tickets/${tItem.id}`);
                     }}
-                    className="flex items-center gap-2 text-xs cursor-pointer text-foreground"
+                    className="text-xs cursor-pointer"
                   >
-                    <Eye className="h-3.5 w-3.5" />
+                    <Eye className="h-3.5 w-3.5 mr-1" />
                     {t("tickets.viewDetails")}
                   </DropdownMenuItem>
-                  {tItem.status !== "CLOSED" && tItem.status !== "CANCELLED" && tItem.status !== "RESOLVED" && (
-                    <DropdownMenuItem
-                      onClick={() => handleTicketAction("cancel", tItem)}
-                      className="flex items-center gap-2 text-xs text-destructive focus:text-destructive cursor-pointer"
-                    >
-                      <Ban className="h-3.5 w-3.5" />
-                      {t("tickets.cancelTicket")}
-                    </DropdownMenuItem>
+                  {canCancel && (
+                    <>
+                      <DropdownMenuSeparator className="bg-border" />
+                      <DropdownMenuItem
+                        onClick={() => handleTicketAction("cancel", tItem)}
+                        className="text-xs text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+                      >
+                        <Ban className="h-3.5 w-3.5 mr-1 text-destructive" />
+                        {t("tickets.cancelTicket")}
+                      </DropdownMenuItem>
+                    </>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>

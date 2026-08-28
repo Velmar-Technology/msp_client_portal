@@ -89,7 +89,8 @@ export function CRMDataTable({
         };
       case "QUALIFIED":
         return {
-          badgeClass: "bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 border border-purple-500/20",
+          badgeClass:
+            "bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 border border-purple-500/20",
           dotClass: "bg-purple-500",
         };
       case "PROPOSITION":
@@ -99,12 +100,14 @@ export function CRMDataTable({
         };
       case "WON":
         return {
-          badgeClass: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-500/20",
+          badgeClass:
+            "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-500/20",
           dotClass: "bg-emerald-500",
         };
       case "LOST":
         return {
-          badgeClass: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800/80 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700",
+          badgeClass:
+            "bg-zinc-100 text-zinc-600 dark:bg-zinc-800/80 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700",
           dotClass: "bg-zinc-400",
         };
       default:
@@ -295,18 +298,6 @@ export function CRMDataTable({
                     {t("crm.quickStage")}
                   </DropdownMenuLabel>
                   <DropdownMenuItem
-                    onClick={() => onUpdateStage(lead.id, "QUALIFIED")}
-                    className="text-xs cursor-pointer"
-                  >
-                    {t("crm.stages.qualified")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => onUpdateStage(lead.id, "PROPOSITION")}
-                    className="text-xs cursor-pointer"
-                  >
-                    {t("crm.stages.proposition")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
                     onClick={() => onUpdateStage(lead.id, "WON")}
                     className="text-xs text-emerald-600 font-semibold cursor-pointer"
                   >
@@ -379,7 +370,10 @@ export function CRMDataTable({
         label: t("crm.bulkWon"),
         onClick: (selectedRows) => {
           if (onBulkUpdateStage) {
-            onBulkUpdateStage(selectedRows.map((row) => row.id), "WON");
+            onBulkUpdateStage(
+              selectedRows.map((row) => row.id),
+              "WON",
+            );
           } else {
             selectedRows.forEach((row) => onUpdateStage(row.id, "WON"));
           }
@@ -390,7 +384,10 @@ export function CRMDataTable({
         variant: "destructive",
         onClick: (selectedRows) => {
           if (onBulkUpdateStage) {
-            onBulkUpdateStage(selectedRows.map((row) => row.id), "LOST");
+            onBulkUpdateStage(
+              selectedRows.map((row) => row.id),
+              "LOST",
+            );
           } else {
             selectedRows.forEach((row) => onUpdateStage(row.id, "LOST"));
           }
@@ -453,10 +450,7 @@ export function CRMDataTable({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="pt-2 sm:justify-end gap-2">
-            <AlertDialogCancel
-              onClick={() => setLeadToDelete(null)}
-              className="text-xs cursor-pointer"
-            >
+            <AlertDialogCancel onClick={() => setLeadToDelete(null)} className="text-xs cursor-pointer">
               {t("common.cancel") || "Cancel"}
             </AlertDialogCancel>
             <AlertDialogAction
@@ -489,10 +483,7 @@ export function CRMDataTable({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="pt-2 sm:justify-end gap-2">
-            <AlertDialogCancel
-              onClick={() => setBulkToDelete(null)}
-              className="text-xs cursor-pointer"
-            >
+            <AlertDialogCancel onClick={() => setBulkToDelete(null)} className="text-xs cursor-pointer">
               {t("common.cancel") || "Cancel"}
             </AlertDialogCancel>
             <AlertDialogAction
