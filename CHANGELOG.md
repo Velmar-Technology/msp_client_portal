@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.7.2](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.7.1...v1.7.2) (2026-08-28)
+
+
+### Features
+
+* **ui:** standardize table actions columns and controls across application ([da10d59](https://github.com/Velmar-Technology/msp_client_portal/commit/da10d59600123c4e068e87ba36ee25510bdc70f3))
+
+
+### Bug Fixes
+
+* **client:** add aria-label to plan subscription action button and polyfill storage in test setup ([be91425](https://github.com/Velmar-Technology/msp_client_portal/commit/be91425dfe0dbbbf6900ba6f0624929a8f553499))
+* **client:** remove unused icon imports in PlansPage and TechDashboardPage ([24bd9db](https://github.com/Velmar-Technology/msp_client_portal/commit/24bd9db0db7803bc7e491e22667f97ec582050a7))
+
 ## [1.7.1](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.7.0...v1.7.1) (2026-08-28)
 
 
