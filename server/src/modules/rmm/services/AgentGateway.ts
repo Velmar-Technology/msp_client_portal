@@ -26,6 +26,10 @@ interface ConnectedAgent {
   token?: string;
   /** Portal slot id this agent has been bound to (set after BIND). */
   slotId?: string;
+  /** Whether the connection is secured via TLS/HTTPS/WSS. */
+  isSecure?: boolean;
+  /** Protocol scheme used ('wss' or 'ws'). */
+  transport?: 'wss' | 'ws';
 }
 
 /** Identity/registration payload forwarded by the Rust endpoint agent on connect. */
@@ -127,7 +131,16 @@ export class AgentGateway {
    * Validates agent_id and token from query parameters.
    */
   private handleConnection(ws: WebSocket, req: IncomingMessage): void {
-    const url = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
+    const isEncrypted = Boolean((req.socket as any)?.encrypted);
+    const forwardedProto = req.headers['x-forwarded-proto'];
+    const isForwardedSecure = typeof forwardedProto === 'string'
+      ? forwardedProto.includes('https') || forwardedProto.includes('wss')
+      : false;
+    const isSecure = isEncrypted || isForwardedSecure;
+    const protocol = isSecure ? 'https' : 'http';
+    const transport: 'wss' | 'ws' = isSecure ? 'wss' : 'ws';
+
+    const url = new URL(req.url || '', `${protocol}://${req.headers.host || 'localhost'}`);
     const equipmentId = url.searchParams.get('agent_id');
     const token = url.searchParams.get('token');
 
@@ -157,11 +170,15 @@ export class AgentGateway {
       connectedAt: new Date(),
       lastHeartbeat: new Date(),
       token,
+      isSecure,
+      transport,
     };
 
     this.activeSockets.set(equipmentId, agent);
     metricsService.incWsConnection('agent-ws');
-    logger.info(`[AgentGateway] Agent connected: ${equipmentId}. Total active: ${this.activeSockets.size}`);
+    logger.info(
+      `[AgentGateway] Agent connected over ${transport.toUpperCase()}: ${equipmentId}. Total active: ${this.activeSockets.size}`
+    );
 
     // ── Message Handler ──
     ws.on('message', (raw: RawData) => {
@@ -304,6 +321,8 @@ export class AgentGateway {
     slotId?: string;
     connectedAt?: string;
     lastHeartbeat?: string;
+    isSecure?: boolean;
+    transport?: 'wss' | 'ws';
   } {
     const agent = this.activeSockets.get(equipmentId);
     if (!agent || agent.ws.readyState !== WebSocket.OPEN) {
@@ -320,6 +339,8 @@ export class AgentGateway {
       slotId: agent.slotId,
       connectedAt: agent.connectedAt.toISOString(),
       lastHeartbeat: agent.lastHeartbeat.toISOString(),
+      isSecure: agent.isSecure ?? false,
+      transport: agent.transport ?? 'ws',
     };
   }
 
@@ -337,6 +358,8 @@ export class AgentGateway {
     slotId?: string;
     connectedAt: string;
     lastHeartbeat: string;
+    isSecure: boolean;
+    transport: 'wss' | 'ws';
   }> {
     const agents: Array<any> = [];
     for (const [eqId, agent] of this.activeSockets.entries()) {
@@ -352,6 +375,8 @@ export class AgentGateway {
           slotId: agent.slotId,
           connectedAt: agent.connectedAt.toISOString(),
           lastHeartbeat: agent.lastHeartbeat.toISOString(),
+          isSecure: agent.isSecure ?? false,
+          transport: agent.transport ?? 'ws',
         });
       }
     }

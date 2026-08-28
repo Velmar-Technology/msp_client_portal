@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import path from 'path';
 import fs from 'fs';
 import http from 'http';
+import https from 'https';
 import { WebSocketServer } from 'ws';
 import swaggerUi from 'swagger-ui-express';
 import { env } from '@shared/config/env';
@@ -22,6 +23,9 @@ import { metricsMiddleware } from '@shared/middleware/metricsMiddleware';
 import { metricsService } from '@shared/metrics/metricsService';
 
 const app = express();
+
+// Trust reverse proxy (Traefik / Nginx) headers for TLS/HTTPS detection (X-Forwarded-Proto, etc.)
+app.set('trust proxy', 1);
 
 // ---- Observability & Metrics Middleware ----
 app.use(metricsMiddleware);
@@ -73,12 +77,39 @@ app.use('/api/v1', routes);
 // ---- Global Error Handler (must be last) ----
 app.use(createExpressErrorMiddleware({ logger, isProduction: env.NODE_ENV === 'production' }));
 
-// ---- Create HTTP Server (shared for Express + WebSocket) ----
-const httpServer = http.createServer(app);
+// ---- Create Server (shared for Express + WebSocket, HTTP or HTTPS/WSS) ----
+let server: http.Server | https.Server;
+let isHttps = false;
 
-// ---- WebSocket Server for Remote Agent Gateway ----
+if (
+  (env.ENABLE_HTTPS || (env.SSL_KEY_PATH && env.SSL_CERT_PATH)) &&
+  env.SSL_KEY_PATH &&
+  env.SSL_CERT_PATH &&
+  fs.existsSync(env.SSL_KEY_PATH) &&
+  fs.existsSync(env.SSL_CERT_PATH)
+) {
+  const sslOptions: https.ServerOptions = {
+    key: fs.readFileSync(env.SSL_KEY_PATH),
+    cert: fs.readFileSync(env.SSL_CERT_PATH),
+    ca: env.SSL_CA_PATH && fs.existsSync(env.SSL_CA_PATH) ? fs.readFileSync(env.SSL_CA_PATH) : undefined,
+  };
+  server = https.createServer(sslOptions, app);
+  isHttps = true;
+} else if (env.SSL_KEY && env.SSL_CERT) {
+  const sslOptions: https.ServerOptions = {
+    key: env.SSL_KEY,
+    cert: env.SSL_CERT,
+    ca: env.SSL_CA,
+  };
+  server = https.createServer(sslOptions, app);
+  isHttps = true;
+} else {
+  server = http.createServer(app);
+}
+
+// ---- WebSocket Server for Remote Agent Gateway (supports WS and WSS) ----
 const wss = new WebSocketServer({
-  server: httpServer,
+  server,
   path: '/agent-ws',
 });
 agentGateway.init(wss);
@@ -101,10 +132,15 @@ async function startServer(): Promise<void> {
     // Start background database health pinger once DB connection & migrations are complete
     startPinger();
 
-    httpServer.listen(env.PORT, () => {
-      logger.info(`Velmar Technology SRL MSP API Server running on port ${env.PORT}`);
-      logger.info(`API Docs available at http://localhost:${env.PORT}/api-docs and http://localhost:${env.PORT}/api/v1/api-docs`);
-      logger.info(`Agent WebSocket Gateway available at ws://localhost:${env.PORT}/agent-ws`);
+    server.listen(env.PORT, () => {
+      const httpProto = isHttps ? 'https' : 'http';
+      const wsProto = isHttps ? 'wss' : 'ws';
+      logger.info(`Velmar Technology SRL MSP API Server running on port ${env.PORT} (${httpProto.toUpperCase()})`);
+      logger.info(`API Docs available at ${httpProto}://localhost:${env.PORT}/api-docs and ${httpProto}://localhost:${env.PORT}/api/v1/api-docs`);
+      logger.info(`Agent WebSocket Gateway available at ${wsProto}://localhost:${env.PORT}/agent-ws (supports WSS over TLS / Reverse Proxy)`);
+      if (env.EXTERNAL_GATEWAY_URL) {
+        logger.info(`External WSS Gateway URL: ${env.EXTERNAL_GATEWAY_URL}`);
+      }
       logger.info(`Environment: ${env.NODE_ENV}`);
       
       // Start background subscriptions renewal scheduler

@@ -28,7 +28,7 @@ impl AgentConfig {
     fn from_env() -> Self {
         Self {
             gateway_url: std::env::var("MSP_GATEWAY_URL")
-                .unwrap_or_else(|_| "ws://localhost:3001/agent-ws".into()),
+                .unwrap_or_else(|_| "wss://helpdesk.velmartech.com.do/agent-ws".into()),
             agent_token: std::env::var("MSP_AGENT_TOKEN").unwrap_or_default(),
             reconnect_delay_secs: std::env::var("MSP_RECONNECT_DELAY")
                 .ok()

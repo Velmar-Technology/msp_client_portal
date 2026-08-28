@@ -123,7 +123,7 @@ services:
           memory: 64M
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.msp-server.rule=Host(`helpdesk.velmartech.com.do`) && (PathPrefix(`/api`) || PathPrefix(`/uploads`))"
+      - "traefik.http.routers.msp-server.rule=Host(`helpdesk.velmartech.com.do`) && (PathPrefix(`/api`) || PathPrefix(`/uploads`) || PathPrefix(`/agent-ws`))"
       - "traefik.http.routers.msp-server.entrypoints=websecure"
       - "traefik.http.routers.msp-server.tls=true"
       - "traefik.http.routers.msp-server.tls.certresolver=myresolver"
