@@ -7,7 +7,11 @@
     "server/package.json",
     "server/package-lock.json",
     "packages/errors/package.json",
-    "packages/mcp-server/package.json"
+    "packages/mcp-server/package.json",
+    {
+      "filename": "packages/msp-agent/Cargo.toml",
+      "updater": "scripts/cargo-updater.js"
+    }
   ],
   "scripts": {
     "postbump": "node scripts/sync-versions.js && npm install --package-lock-only --ignore-scripts --no-audit --no-fund --legacy-peer-deps"

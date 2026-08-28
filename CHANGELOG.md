@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.7.0](https://github.com-work/Velmar-Technology/msp_client_portal/compare/v1.6.1...v1.7.0) (2026-08-28)
+
+
+### Features
+
+* **agent:** add --help and --version flags ([11ab925](https://github.com-work/Velmar-Technology/msp_client_portal/commit/11ab92570d32d9f0588601f6509ea63c8c1b6bec))
+* **equipment:** add agent-issued pairing codes and slot binding ([c50efd5](https://github.com-work/Velmar-Technology/msp_client_portal/commit/c50efd5ae2a6835532015543008eacfa37fbcdde))
+* **equipment:** add slot re-pair flow preserving Nextcloud account and data ([06c4ce4](https://github.com-work/Velmar-Technology/msp_client_portal/commit/06c4ce416956385196b0bd6888fb4e2d0a6037ad))
+
+
+### Bug Fixes
+
+* **client:** remove unused rowIndex in DeviceActionsCellProps and add missing useMemo deps ([271bdc3](https://github.com-work/Velmar-Technology/msp_client_portal/commit/271bdc38f4a4c09255639c7461895c07ab7fe165))
+* **shared:** revive Date types in cache and dedupe expiry warnings ([06ebb69](https://github.com-work/Velmar-Technology/msp_client_portal/commit/06ebb696cba830898fdffb6817098f953b3da7a5))
+
 ## [1.6.1](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.6.0...v1.6.1) (2026-08-28)
 
 
