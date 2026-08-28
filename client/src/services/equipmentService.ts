@@ -79,6 +79,11 @@ export const equipmentService = {
     return response.data.data;
   },
 
+  async repairSlot(subId: string, slotIndex: number): Promise<SubscriptionEquipment> {
+    const response = await api.post(`/equipment/subscriptions/${subId}/slots/${slotIndex}/re-pair`);
+    return response.data.data;
+  },
+
   async getAllDevicesForAdmin(): Promise<SubscriptionEquipment[]> {
     const response = await api.get('/equipment/admin/devices');
     return response.data.data;

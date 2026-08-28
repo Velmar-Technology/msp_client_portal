@@ -210,6 +210,25 @@ export function useDevicesPage() {
     setActivateOtpModalOpen(true);
   }, []);
 
+  const handleRepairEquipment = useCallback(async (subId: string, slotIndex: number) => {
+    try {
+      const updatedSlot = await equipmentService.repairSlot(subId, slotIndex);
+      updateDeviceList(subId, slotIndex, updatedSlot);
+      toast.success(t("devices.repairSuccessTitle") || "Device re-paired", {
+        description:
+          t("devices.repairSuccessDesc") ||
+          "Device unbound. Cloud account preserved with a rotated password. Enter the new agent's code to re-link.",
+      });
+      handleOpenActivateWithOtp(subId, slotIndex);
+    } catch (err) {
+      console.error("Failed to re-pair device:", err);
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(t("common.error"), {
+        description: error.response?.data?.message || error.message || t("devices.repairFailed") || "Failed to re-pair device.",
+      });
+    }
+  }, [updateDeviceList, t, handleOpenActivateWithOtp]);
+
   const handleCloseActivateWithOtp = useCallback(() => {
     if (activateOtpLoading) return;
     setActivateOtpModalOpen(false);
@@ -333,6 +352,33 @@ export function useDevicesPage() {
 
   const cancelRevoke = useCallback(() => {
     setRevokeTarget(null);
+  }, []);
+
+  // Re-pair confirmation handlers (non-destructive unbind for replacement agent)
+  const [repairTarget, setRepairTarget] = useState<Partial<SubscriptionEquipment> | null>(null);
+  const [repairLoading, setRepairLoading] = useState(false);
+
+  const handleRequestRepair = useCallback((equip: Partial<SubscriptionEquipment>) => {
+    setRepairTarget(equip);
+  }, []);
+
+  const confirmRepair = useCallback(async () => {
+    if (!repairTarget) return;
+    setRepairLoading(true);
+    try {
+      const subId = repairTarget.subscription_id || activeSub?.id;
+      const slotIndex = repairTarget.slot_index;
+      if (subId !== undefined && slotIndex !== undefined) {
+        await handleRepairEquipment(subId, slotIndex);
+      }
+    } finally {
+      setRepairLoading(false);
+      setRepairTarget(null);
+    }
+  }, [repairTarget, activeSub, handleRepairEquipment]);
+
+  const cancelRepair = useCallback(() => {
+    setRepairTarget(null);
   }, []);
 
   const uniqueClients = useMemo(() => {
@@ -573,6 +619,7 @@ export function useDevicesPage() {
     paginatedEquipment,
     fetchActiveSubscriptions,
     handleRevokeEquipment,
+    handleRepairEquipment,
     activateOtpModalOpen,
     setActivateOtpModalOpen,
     activateOtpLoading,
@@ -629,6 +676,13 @@ export function useDevicesPage() {
     handleRequestRevoke,
     confirmRevoke,
     cancelRevoke,
+    repairTarget,
+    setRepairTarget,
+    repairLoading,
+    setRepairLoading,
+    handleRequestRepair,
+    confirmRepair,
+    cancelRepair,
     sorting,
     setSorting,
   };

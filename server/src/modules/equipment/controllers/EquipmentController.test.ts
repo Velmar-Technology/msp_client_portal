@@ -13,6 +13,7 @@ describe('EquipmentController', () => {
       getEquipmentSlots: vi.fn(),
       bindAndActivateSlot: vi.fn(),
       deactivateSlot: vi.fn(),
+      unbindSlotForRepair: vi.fn(),
       getActiveDevicesForClient: vi.fn(),
       getAllDevicesForAdmin: vi.fn(),
       getNextcloudInfo: vi.fn(),
@@ -111,6 +112,29 @@ describe('EquipmentController', () => {
 
       expect(mockEquipmentSvc.getAllDevicesForAdmin).toHaveBeenCalled();
       expect(res.json).toHaveBeenCalledWith({ success: true, data: devices });
+    });
+  });
+
+  describe('repairSlot', () => {
+    it('should unbind the slot for re-pairing on behalf of the client owner', async () => {
+      req.params = { subId: 'sub-1', slotIndex: '0' };
+      const slot = { id: 'slot-1', status: 'PENDING_ACTIVATION', nextcloud_username: 'client_tenant_slot_1' };
+      mockEquipmentSvc.unbindSlotForRepair.mockResolvedValue(slot);
+
+      await controller.repairSlot(req, res);
+
+      expect(mockEquipmentSvc.unbindSlotForRepair).toHaveBeenCalledWith('sub-1', 0, 'tenant-123', false);
+      expect(res.json).toHaveBeenCalledWith({ success: true, data: slot });
+    });
+
+    it('should pass admin bypass flag for ADMIN users', async () => {
+      req.user!.role = UserRole.ADMIN;
+      req.params = { subId: 'sub-1', slotIndex: '2' };
+      mockEquipmentSvc.unbindSlotForRepair.mockResolvedValue({ id: 'slot-1', status: 'PENDING_ACTIVATION' });
+
+      await controller.repairSlot(req, res);
+
+      expect(mockEquipmentSvc.unbindSlotForRepair).toHaveBeenCalledWith('sub-1', 2, 'tenant-123', true);
     });
   });
 

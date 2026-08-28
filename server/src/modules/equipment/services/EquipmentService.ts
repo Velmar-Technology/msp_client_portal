@@ -224,14 +224,25 @@ export class EquipmentService {
     const deviceName = hostname || options.deviceName || `Workstation-${options.slotIndex + 1}`;
     const deviceSerial = serial || options.deviceSerial || `SN-SIM-${Math.floor(100000 + Math.random() * 900000)}`;
 
-    // Provision Nextcloud + RMM first so failures surface before the slot is touched.
-    const sub = await this.subRepo.findById(slot.subscription_id);
-    if (!sub) throw new NotFoundError('Subscription not found');
+    // Re-pairing an already-provisioned slot reuses the existing Nextcloud
+    // account (preserving cloud data); a fresh slot provisions a new account.
+    const reuseAccount = Boolean(slot.nextcloud_username && slot.nextcloud_password);
 
-    const quota = await this.resolveStorageQuota(sub.plan);
-    const username = `client_${sub.tenant_id.slice(0, 8)}_slot_${slot.slot_index + 1}`;
-    const displayName = `${deviceName} (${deviceSerial})`;
-    const password = await this.provisionNextcloudUser(username, quota, displayName);
+    let username: string;
+    let password: string;
+    if (reuseAccount) {
+      username = slot.nextcloud_username!;
+      password = slot.nextcloud_password!;
+    } else {
+      // Provision Nextcloud first so failures surface before the slot is touched.
+      const sub = await this.subRepo.findById(slot.subscription_id);
+      if (!sub) throw new NotFoundError('Subscription not found');
+
+      const quota = await this.resolveStorageQuota(sub.plan);
+      username = `client_${sub.tenant_id.slice(0, 8)}_slot_${slot.slot_index + 1}`;
+      const displayName = `${deviceName} (${deviceSerial})`;
+      password = await this.provisionNextcloudUser(username, quota, displayName);
+    }
 
     const token = this.generateAgentToken();
     const updated = await this.equipmentRepository.update(slot.id, {
@@ -268,9 +279,55 @@ export class EquipmentService {
         agent_serial: null,
         agent_token: null,
       });
-      await this.cleanupNextcloudUser(username);
+      if (!reuseAccount) {
+        await this.cleanupNextcloudUser(username);
+      }
       throw new ValidationError('Agent went offline; please retry activation while the device is connected');
     }
+
+    return this.stripSecrets(updated!);
+  }
+
+  /**
+   * Unbinds an active slot so a replacement agent (e.g. after the PC was wiped
+   * or the agent reinstalled) can re-pair against the same slot. The Nextcloud
+   * account is preserved but its password is rotated, revoking the wiped
+   * machine's access immediately. Returns the slot in PENDING_ACTIVATION state.
+   */
+  async unbindSlotForRepair(
+    subscriptionId: string,
+    slotIndex: number,
+    tenantId: string,
+    byAdmin = false
+  ): Promise<SubscriptionEquipment> {
+    const slot = await this.equipmentRepository.findBySlot(subscriptionId, slotIndex);
+    if (!slot) throw new NotFoundError('Slot not found');
+    if (!byAdmin && slot.tenant_id !== tenantId) throw new ForbiddenError('Access denied');
+    if (slot.status !== 'ACTIVE') {
+      throw new ConflictError('Slot must be active before it can be re-paired');
+    }
+
+    let nextcloudPassword = slot.nextcloud_password;
+    if (slot.nextcloud_username) {
+      try {
+        nextcloudPassword = await this.nextcloudService.setUserPassword(slot.nextcloud_username);
+      } catch (err) {
+        logger.warn('Failed to rotate Nextcloud password during re-pair; keeping existing credentials', {
+          username: slot.nextcloud_username,
+          err,
+        });
+      }
+    }
+
+    const updated = await this.equipmentRepository.update(slot.id, {
+      status: 'PENDING_ACTIVATION',
+      agent_instance_id: null,
+      agent_token: null,
+      agent_hostname: null,
+      agent_serial: null,
+      agent_last_seen_at: null,
+      ...(nextcloudPassword ? { nextcloud_password: nextcloudPassword } : {}),
+    });
 
     return this.stripSecrets(updated!);
   }
@@ -364,6 +421,11 @@ export class EquipmentService {
       otp_expires_at: null,
       nextcloud_username: null,
       nextcloud_password: null,
+      agent_instance_id: null,
+      agent_token: null,
+      agent_hostname: null,
+      agent_serial: null,
+      agent_last_seen_at: null,
     });
 
     return updated!;

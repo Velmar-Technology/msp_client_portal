@@ -68,6 +68,17 @@ export class EquipmentController {
     });
   }
 
+  async repairSlot(req: Request, res: Response): Promise<void> {
+    const subId = req.params.subId as string;
+    const slotIndex = parseInt(req.params.slotIndex as string, 10);
+    const byAdmin = req.user!.role === 'ADMIN';
+    const slot = await this.equipmentSvc.unbindSlotForRepair(subId, slotIndex, req.user!.tenantId, byAdmin);
+    res.json({
+      success: true,
+      data: slot,
+    });
+  }
+
   async getMyDevices(req: Request, res: Response): Promise<void> {
     const isClient = req.user!.role === 'CLIENT';
     const devices = isClient

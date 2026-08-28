@@ -230,6 +230,63 @@ export class NextcloudService {
   }
 
   /**
+   * Rotates a user's password in Nextcloud while preserving the account and all
+   * of its data. Used when re-pairing a device to the same slot, so the wiped
+   * machine loses access to the cloud account immediately.
+   */
+  async setUserPassword(username: string): Promise<string> {
+    const adminUser = env.NEXTCLOUD_APP_USER;
+    const adminPass = env.NEXTCLOUD_APP_PASS;
+    let rawUrl = env.NEXTCLOUD_URL;
+
+    if (!adminUser || !adminPass || !rawUrl) {
+      throw new InternalServerError('Nextcloud configuration is incomplete');
+    }
+
+    if (!/^https?:\/\//i.test(rawUrl)) {
+      rawUrl = `http://${rawUrl}`;
+    }
+    const baseUrl = rawUrl.replace(/\/+$/, '');
+    const ocsUrl = `${baseUrl}/ocs/v1.php/cloud/users/${encodeURIComponent(username)}?format=json`;
+
+    const password = NextcloudService.generateSecurePassword();
+    const authHeader = 'Basic ' + Buffer.from(`${adminUser}:${adminPass}`).toString('base64');
+
+    const params = new URLSearchParams();
+    params.append('key', 'password');
+    params.append('value', password);
+
+    const response = await fetch(ocsUrl, {
+      method: 'PUT',
+      headers: {
+        'OCS-APIRequest': 'true',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': authHeader,
+      },
+      body: params,
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new ExternalServiceError('Nextcloud password reset request failed', {
+        service: 'nextcloud',
+        upstream: response.status,
+        detail: errText,
+      });
+    }
+
+    const data = await response.json() as any;
+    const statusCode = data?.ocs?.meta?.statuscode;
+    if (statusCode !== 100) {
+      const msg = data?.ocs?.meta?.message || 'Unknown error';
+      throw new ExternalServiceError(`Nextcloud OCS error: ${msg}`, { service: 'nextcloud', ocsCode: statusCode });
+    }
+
+    // Return the new password so it can be stored alongside the slot.
+    return password;
+  }
+
+  /**
    * Deletes a user account in Nextcloud.
    */
   async deleteUser(username: string): Promise<void> {

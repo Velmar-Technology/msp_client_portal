@@ -50,6 +50,11 @@ router.post('/subscriptions/:subId/slots/:slotIndex/deactivate', (req, res) =>
   equipmentController.deactivateSlot(req, res)
 );
 
+/** POST /api/v1/equipment/subscriptions/:subId/slots/:slotIndex/re-pair — Unbind a slot for re-pairing with a replacement agent (admin or client owner) */
+router.post('/subscriptions/:subId/slots/:slotIndex/re-pair', (req, res) =>
+  equipmentController.repairSlot(req, res)
+);
+
 /** GET /api/v1/equipment/subscriptions/:subId/slots/:slotIndex/nextcloud — Get Nextcloud info for a slot */
 router.get('/subscriptions/:subId/slots/:slotIndex/nextcloud', (req, res) =>
   equipmentController.getSlotNextcloudInfo(req, res)

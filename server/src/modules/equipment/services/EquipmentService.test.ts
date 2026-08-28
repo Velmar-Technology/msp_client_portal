@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => {
     ncProvisionUser: vi.fn(),
     ncDeleteUser: vi.fn(),
     ncGetUserStorage: vi.fn(),
+    ncSetUserPassword: vi.fn(),
     equipFindByAgentInstanceId: vi.fn(),
     gatewayGetPairingByCode: vi.fn(),
     gatewayBindAgent: vi.fn(),
@@ -82,6 +83,7 @@ vi.mock('@modules/system/services/NextcloudService', () => {
       provisionUser: mocks.ncProvisionUser,
       deleteUser: mocks.ncDeleteUser,
       getUserStorage: mocks.ncGetUserStorage,
+      setUserPassword: mocks.ncSetUserPassword,
     },
   };
 });
@@ -302,6 +304,58 @@ describe('EquipmentService', () => {
       ).rejects.toThrow('Slot is already bound to a different agent');
     });
 
+    it('should re-bind a re-paired slot reusing the existing Nextcloud account', async () => {
+      const mockSlot = {
+        id: 'slot-1',
+        slot_index: 0,
+        status: 'PENDING_ACTIVATION',
+        tenant_id: tenantId,
+        agent_instance_id: null,
+        nextcloud_username: 'client_tenant-1_slot_1',
+        nextcloud_password: 'storedPass123',
+      };
+
+      mocks.gatewayGetPairingByCode.mockReturnValue(pairingEntry());
+      mocks.equipFindBySlot.mockResolvedValue(mockSlot);
+      mocks.equipUpdate.mockImplementation((id, data) => Promise.resolve({ id, ...data }));
+      mocks.gatewayBindAgent.mockReturnValue(true);
+
+      const result = await equipmentService.bindAndActivateSlot({
+        code: '123456',
+        subscriptionId: subId,
+        slotIndex: 0,
+        tenantId,
+      });
+
+      expect(mocks.ncProvisionUser).not.toHaveBeenCalled();
+      expect(result.status).toBe('ACTIVE');
+      expect(result.agent_instance_id).toBe('agent-abc');
+      expect(result.nextcloud_username).toBe('client_tenant-1_slot_1');
+      expect(result.nextcloud_password).toBe('storedPass123');
+    });
+
+    it('should roll back without deleting the reused Nextcloud account when the agent goes offline', async () => {
+      const mockSlot = {
+        id: 'slot-1',
+        slot_index: 0,
+        status: 'PENDING_ACTIVATION',
+        tenant_id: tenantId,
+        agent_instance_id: null,
+        nextcloud_username: 'client_tenant-1_slot_1',
+        nextcloud_password: 'storedPass123',
+      };
+
+      mocks.gatewayGetPairingByCode.mockReturnValue(pairingEntry());
+      mocks.equipFindBySlot.mockResolvedValue(mockSlot);
+      mocks.equipUpdate.mockImplementation((id, data) => Promise.resolve({ id, ...data }));
+      mocks.gatewayBindAgent.mockReturnValue(false);
+
+      await expect(
+        equipmentService.bindAndActivateSlot({ code: '123456', subscriptionId: subId, slotIndex: 0, tenantId })
+      ).rejects.toThrow('Agent went offline');
+      expect(mocks.ncDeleteUser).not.toHaveBeenCalled();
+    });
+
     it('should throw ExternalServiceError without touching the slot when Nextcloud provisioning fails', async () => {
       const mockSub = { id: subId, plan: 'PL-002', tenant_id: tenantId, equipment_count: 1 };
       const mockSlot = { id: 'slot-1', slot_index: 0, status: 'PENDING_ACTIVATION', tenant_id: tenantId };
@@ -357,6 +411,11 @@ describe('EquipmentService', () => {
       expect(result.status).toBe('PENDING_ACTIVATION');
       expect(result.device_name).toBeNull();
       expect(result.nextcloud_username).toBeNull();
+      expect(result.agent_instance_id).toBeNull();
+      expect(result.agent_token).toBeNull();
+      expect(result.agent_hostname).toBeNull();
+      expect(result.agent_serial).toBeNull();
+      expect(result.agent_last_seen_at).toBeNull();
     });
 
     it('should bypass tenant check if byAdmin is true', async () => {
@@ -374,6 +433,113 @@ describe('EquipmentService', () => {
 
       const result = await equipmentService.deactivateSlot(subId, 0, tenantId, true);
       expect(result.status).toBe('PENDING_ACTIVATION');
+    });
+  });
+
+  describe('unbindSlotForRepair', () => {
+    it('should unbind an active slot preserving the Nextcloud account and rotating its password', async () => {
+      const mockSlot = {
+        id: 'slot-1',
+        slot_index: 0,
+        status: 'ACTIVE',
+        tenant_id: tenantId,
+        agent_instance_id: 'agent-abc',
+        agent_token: 'tok-1',
+        agent_hostname: 'LAPTOP-X',
+        agent_serial: 'SN-A500',
+        agent_last_seen_at: new Date(),
+        nextcloud_username: 'client_tenant-1_slot_1',
+        nextcloud_password: 'oldPass123',
+        device_name: 'LAPTOP-X',
+        device_serial: 'SN-A500',
+      };
+
+      mocks.equipFindBySlot.mockResolvedValue(mockSlot);
+      mocks.ncSetUserPassword.mockResolvedValue('newPass456');
+      mocks.equipUpdate.mockImplementation((id, data) => Promise.resolve({ id, ...mockSlot, ...data }));
+
+      const result = await equipmentService.unbindSlotForRepair(subId, 0, tenantId);
+
+      expect(mocks.ncSetUserPassword).toHaveBeenCalledWith('client_tenant-1_slot_1');
+      expect(result.status).toBe('PENDING_ACTIVATION');
+      expect(result.nextcloud_username).toBe('client_tenant-1_slot_1');
+      expect(result.nextcloud_password).toBe('newPass456');
+      expect(result.agent_instance_id).toBeNull();
+      expect(result.agent_token).toBeUndefined();
+      expect(result.agent_hostname).toBeNull();
+      expect(result.agent_serial).toBeNull();
+      expect(result.agent_last_seen_at).toBeNull();
+      expect(result.device_name).toBe('LAPTOP-X');
+    });
+
+    it('should keep the existing Nextcloud password when password rotation fails', async () => {
+      const mockSlot = {
+        id: 'slot-1',
+        slot_index: 0,
+        status: 'ACTIVE',
+        tenant_id: tenantId,
+        agent_instance_id: 'agent-abc',
+        nextcloud_username: 'client_tenant-1_slot_1',
+        nextcloud_password: 'oldPass123',
+      };
+
+      mocks.equipFindBySlot.mockResolvedValue(mockSlot);
+      mocks.ncSetUserPassword.mockRejectedValue(new Error('nextcloud down'));
+      mocks.equipUpdate.mockImplementation((id, data) => Promise.resolve({ id, ...data }));
+
+      const result = await equipmentService.unbindSlotForRepair(subId, 0, tenantId);
+
+      expect(result.status).toBe('PENDING_ACTIVATION');
+      expect(result.nextcloud_password).toBe('oldPass123');
+      expect(mocks.equipUpdate).toHaveBeenCalledWith('slot-1', expect.objectContaining({ nextcloud_password: 'oldPass123' }));
+    });
+
+    it('should deny a non-admin owner from another tenant', async () => {
+      const mockSlot = {
+        id: 'slot-1',
+        slot_index: 0,
+        status: 'ACTIVE',
+        tenant_id: 'different-tenant-id',
+      };
+
+      mocks.equipFindBySlot.mockResolvedValue(mockSlot);
+
+      await expect(equipmentService.unbindSlotForRepair(subId, 0, tenantId)).rejects.toThrow('Access denied');
+      expect(mocks.equipUpdate).not.toHaveBeenCalled();
+    });
+
+    it('should allow admins to unbind any tenant slot', async () => {
+      const mockSlot = {
+        id: 'slot-1',
+        slot_index: 0,
+        status: 'ACTIVE',
+        tenant_id: 'different-tenant-id',
+      };
+
+      mocks.equipFindBySlot.mockResolvedValue(mockSlot);
+      mocks.equipUpdate.mockImplementation((id, data) => Promise.resolve({ id, ...data }));
+
+      const result = await equipmentService.unbindSlotForRepair(subId, 0, tenantId, true);
+      expect(result.status).toBe('PENDING_ACTIVATION');
+    });
+
+    it('should throw ConflictError when the slot is not active', async () => {
+      const mockSlot = {
+        id: 'slot-1',
+        slot_index: 0,
+        status: 'PENDING_ACTIVATION',
+        tenant_id: tenantId,
+      };
+
+      mocks.equipFindBySlot.mockResolvedValue(mockSlot);
+
+      await expect(equipmentService.unbindSlotForRepair(subId, 0, tenantId)).rejects.toThrow('Slot must be active');
+      expect(mocks.equipUpdate).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundError when the slot does not exist', async () => {
+      mocks.equipFindBySlot.mockResolvedValue(null);
+      await expect(equipmentService.unbindSlotForRepair(subId, 0, tenantId)).rejects.toThrow('Slot not found');
     });
   });
 

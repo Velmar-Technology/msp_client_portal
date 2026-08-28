@@ -142,6 +142,7 @@ interface DeviceActionsCellProps {
   onOpenNcModal: (equip: Partial<SubscriptionEquipment>) => void;
   onOpenScheduleMaint: (equip: Partial<SubscriptionEquipment>) => void;
   onRequestRevoke: (equip: Partial<SubscriptionEquipment>) => void;
+  onRequestRepair: (equip: Partial<SubscriptionEquipment>) => void;
   onOpenActivateWithOtp: (subId: string, slotIndex: number) => void;
   onDeleteAdminDevice?: (equip: Partial<SubscriptionEquipment>) => void;
   onDeployClient?: (equip: Partial<SubscriptionEquipment>) => void;
@@ -153,6 +154,7 @@ const DeviceActionsCell = memo(function DeviceActionsCell({
   onOpenNcModal,
   onOpenScheduleMaint,
   onRequestRevoke,
+  onRequestRepair,
   onOpenActivateWithOtp,
   onDeleteAdminDevice,
   onDeployClient,
@@ -193,6 +195,9 @@ const DeviceActionsCell = memo(function DeviceActionsCell({
               )}
               <DropdownMenuItem onClick={() => onOpenScheduleMaint(equip)}>
                 {t("maintenance.scheduleBtn")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onRequestRepair(equip)}>
+                {t("devices.actionRepair", "Re-pair Device")}
               </DropdownMenuItem>
               <DropdownMenuItem variant="destructive" onClick={() => onRequestRevoke(equip)}>
                 {t("devices.actionDeactivate")}
@@ -255,6 +260,11 @@ export function DevicesPage() {
     revokeLoading,
     confirmRevoke,
     cancelRevoke,
+    repairTarget,
+    repairLoading,
+    confirmRepair,
+    cancelRepair,
+    handleRequestRepair,
     activateOtpModalOpen,
     activateOtpLoading,
     handleOpenActivateWithOtp,
@@ -521,6 +531,7 @@ export function DevicesPage() {
             onOpenNcModal={handleOpenNcModal}
             onOpenScheduleMaint={handleOpenScheduleMaint}
             onRequestRevoke={handleRequestRevoke}
+            onRequestRepair={handleRequestRepair}
             onOpenActivateWithOtp={handleOpenActivateWithOtp}
             onDeleteAdminDevice={setDeviceToDelete}
             onDeployClient={handleDeployClient}
@@ -811,6 +822,45 @@ export function DevicesPage() {
             >
               {revokeLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               <span>{t("devices.revokeConfirmAction") || "Yes, Deactivate"}</span>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Re-pair Confirmation Modal (non-destructive unbind for replacement agent) */}
+      <AlertDialog
+        open={!!repairTarget}
+        onOpenChange={(open) => {
+          if (!open && !repairLoading) cancelRepair();
+        }}
+      >
+        <AlertDialogContent className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 max-w-sm rounded-lg p-5">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-sm font-bold">
+              {t("devices.repairConfirmTitle") || "Re-pair Device"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-zinc-500 leading-relaxed mt-1">
+              {t("devices.repairConfirmDesc", {
+                name: repairTarget?.device_name || repairTarget?.nextcloud_username || t("devices.unnamedDevice"),
+              }) ||
+                "This will unbind the current agent so a replacement device can be linked. Cloud backup data is preserved but the access password will be reset."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 gap-2 flex justify-end">
+            <AlertDialogCancel
+              disabled={repairLoading}
+              className="h-8 px-3 rounded-md text-xs font-semibold cursor-pointer border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+            >
+              {t("devices.cancel") || "Cancel"}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              type="button"
+              disabled={repairLoading}
+              className="h-8 px-3 rounded-md text-xs font-semibold cursor-pointer bg-blue-600 hover:bg-blue-700 text-white border-0"
+              onClick={confirmRepair}
+            >
+              {repairLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span>{t("devices.repairConfirmAction") || "Yes, Re-pair"}</span>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
