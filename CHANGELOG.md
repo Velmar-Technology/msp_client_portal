@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.7.1](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.7.0...v1.7.1) (2026-08-28)
+
+
+### Features
+
+* **rmm:** enable WSS support for agent-ws endpoint and configure default gateway URL ([08649a7](https://github.com/Velmar-Technology/msp_client_portal/commit/08649a7026fe67ff4fb3d057264911e8da8e7079))
+
+
+### Bug Fixes
+
+* **tickets:** filter selectable devices by provisioned status ([574af3e](https://github.com/Velmar-Technology/msp_client_portal/commit/574af3e84b44b7a8d1a3ee8ae4a63ff1b4be904e))
+
 ## [1.7.0](https://github.com-work/Velmar-Technology/msp_client_portal/compare/v1.6.1...v1.7.0) (2026-08-28)
 
 
