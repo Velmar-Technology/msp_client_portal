@@ -14,9 +14,20 @@ import {
   Clock,
   AlertTriangle,
   ClipboardList,
-  ArrowRight,
   AlertCircle,
+  MoreHorizontal,
+  ChevronRight,
+  Eye,
+  CreditCard,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu';
 import { useAuth } from "@/hooks/useAuth";
 import { useSLATimer } from "@/hooks/useSLATimer";
 import { ticketService } from "@/services/ticketService";
@@ -182,55 +193,116 @@ export function TechDashboardPage() {
     {
       id: 'actions',
       header: () => (
-        <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider block text-right">
-          {t('common.actions')}
-        </span>
+        <div className="text-right">
+          <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
+            {t('common.actions')}
+          </span>
+        </div>
       ),
       cell: ({ row }) => {
         const ticket = row.original;
+        const isOpen = ticket.status === 'OPEN';
+        const isInProgress = ticket.status === 'IN_PROGRESS';
+
         return (
-          <div className="flex gap-2 justify-end items-center" onClick={(e) => e.stopPropagation()}>
-            {ticket.status === 'OPEN' && (
+          <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+            {isOpen ? (
               <Button
+                type="button"
                 variant="outline"
-                size="xs"
+                size="sm"
                 onClick={() => handleStatusTransition(ticket.id, 'IN_PROGRESS')}
                 disabled={updatingId === ticket.id}
-                className="bg-warning text-[#0F172A] hover:bg-warning/90 border-0 text-[11px] font-bold h-6 px-2.5 cursor-pointer"
+                className="h-7 px-2 text-xs font-semibold gap-1 cursor-pointer bg-warning/10 text-amber-600 dark:text-amber-400 border-warning/30 hover:bg-warning/20"
               >
-                {t('techDashboard.startWork')}
+                <span>{t('techDashboard.startWork')}</span>
+                <Play className="h-3 w-3" />
+              </Button>
+            ) : isInProgress ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleStatusTransition(ticket.id, 'RESOLVED')}
+                disabled={updatingId === ticket.id}
+                className="h-7 px-2 text-xs font-semibold gap-1 cursor-pointer bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
+              >
+                <span>{t('techDashboard.resolveTicket')}</span>
+                <CheckCircle2 className="h-3 w-3" />
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/tickets/${ticket.id}`)}
+                className="h-7 px-2 text-xs font-semibold gap-1 cursor-pointer"
+              >
+                <span>{t('dashboard.viewDetails') || 'View'}</span>
+                <ChevronRight className="h-3 w-3" />
               </Button>
             )}
-            {ticket.status === 'IN_PROGRESS' && (
-              <>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button
-                  variant="secondary"
-                  size="xs"
-                  onClick={() => handleStatusTransition(ticket.id, 'AWAITING_PAYMENT')}
-                  disabled={updatingId === ticket.id}
-                  className="text-[11px] font-semibold h-6 px-2.5 cursor-pointer"
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7 cursor-pointer"
                 >
-                  {t('techDashboard.awaitingPayment')}
+                  <MoreHorizontal className="h-3.5 w-3.5" />
                 </Button>
-                <Button
-                  size="xs"
-                  onClick={() => handleStatusTransition(ticket.id, 'RESOLVED')}
-                  disabled={updatingId === ticket.id}
-                  className="text-[11px] font-bold h-6 px-2.5 cursor-pointer"
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 bg-card text-foreground border border-border">
+                <DropdownMenuLabel className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
+                  {t('common.actions')}
+                </DropdownMenuLabel>
+                <DropdownMenuItem
+                  onClick={() => navigate(`/tickets/${ticket.id}`)}
+                  className="text-xs cursor-pointer"
                 >
-                  {t('techDashboard.resolveTicket')}
-                </Button>
-              </>
-            )}
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              onClick={() => navigate(`/tickets/${ticket.id}`)}
-              className="h-6 w-6 text-muted-foreground hover:text-primary cursor-pointer"
-              title={t('dashboard.viewDetails')}
-            >
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
+                  <Eye className="h-3.5 w-3.5 mr-1" />
+                  {t('dashboard.viewDetails') || 'View Details'}
+                </DropdownMenuItem>
+
+                {isOpen && (
+                  <>
+                    <DropdownMenuSeparator className="bg-border" />
+                    <DropdownMenuItem
+                      onClick={() => handleStatusTransition(ticket.id, 'IN_PROGRESS')}
+                      disabled={updatingId === ticket.id}
+                      className="text-xs font-semibold text-amber-600 dark:text-amber-400 cursor-pointer"
+                    >
+                      <Play className="h-3.5 w-3.5 mr-1" />
+                      {t('techDashboard.startWork')}
+                    </DropdownMenuItem>
+                  </>
+                )}
+
+                {isInProgress && (
+                  <>
+                    <DropdownMenuSeparator className="bg-border" />
+                    <DropdownMenuItem
+                      onClick={() => handleStatusTransition(ticket.id, 'AWAITING_PAYMENT')}
+                      disabled={updatingId === ticket.id}
+                      className="text-xs text-secondary cursor-pointer"
+                    >
+                      <CreditCard className="h-3.5 w-3.5 mr-1" />
+                      {t('techDashboard.awaitingPayment')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleStatusTransition(ticket.id, 'RESOLVED')}
+                      disabled={updatingId === ticket.id}
+                      className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 cursor-pointer"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                      {t('techDashboard.resolveTicket')}
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         );
       },

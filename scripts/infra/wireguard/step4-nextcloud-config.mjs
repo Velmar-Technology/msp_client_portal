@@ -2,7 +2,7 @@ import { containers, exec } from './papi.mjs';
 
 const EP = 4;
 const USER = 'www-data';
-const PUBLIC_HOST = 'cloud.velmartech.com.do';
+const PUBLIC_HOST = 'atlas.velmartech.com.do';
 const TUNNEL_IP = '10.13.13.3';
 const HUB_IP = '10.13.13.1';
 
@@ -27,20 +27,21 @@ if (!r.stdout.includes(PUBLIC_HOST)) {
 
 r = await occ('config:system:get', 'trusted_proxies');
 console.log('--- trusted_proxies before ---\n' + (r.stdout || '(empty)'), r.stderr.slice(0, 100));
-if (!r.stdout.includes(HUB_IP)) {
-  const idx = r.stdout.trim() ? r.stdout.trim().split('\n').filter(l => l.trim()).length : 0;
-  const s = await occ('config:system:set', 'trusted_proxies', String(idx), '--value=' + HUB_IP);
-  console.log(`set trusted_proxies ${idx}=${HUB_IP}: exit ${s.exitCode}`, s.stderr.slice(0, 150));
+const proxies = [HUB_IP, TUNNEL_IP, '172.16.0.0/12', '127.0.0.1'];
+for (const p of proxies) {
+  if (!r.stdout.includes(p)) {
+    const idx = r.stdout.trim() ? r.stdout.trim().split('\n').filter(l => l.trim()).length : 0;
+    const s = await occ('config:system:set', 'trusted_proxies', String(idx), '--value=' + p);
+    console.log(`set trusted_proxies ${idx}=${p}: exit ${s.exitCode}`, s.stderr.slice(0, 150));
+  }
 }
 
-let o = await occ('config:system:get', 'overwrite.cli.url');
-if (!(o.stdout || '').includes('https://' + PUBLIC_HOST)) {
-  const s = await occ('config:system:set', 'overwrite.cli.url', '--value=https://' + PUBLIC_HOST);
-  console.log('set overwrite.cli.url: exit', s.exitCode, s.stderr.slice(0, 150));
-}
+await occ('config:system:set', 'overwriteprotocol', '--value=https');
+await occ('config:system:set', 'overwritehost', '--value=' + PUBLIC_HOST);
+await occ('config:system:set', 'overwrite.cli.url', '--value=https://' + PUBLIC_HOST);
 
 // final state
-for (const key of ['trusted_domains', 'trusted_proxies', 'overwrite.cli.url']) {
+for (const key of ['trusted_domains', 'trusted_proxies', 'overwriteprotocol', 'overwritehost', 'overwrite.cli.url']) {
   const g = await occ('config:system:get', key);
   console.log(`--- ${key} after ---\n${g.stdout}`);
 }

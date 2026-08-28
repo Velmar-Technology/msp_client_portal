@@ -116,42 +116,49 @@ export const RmmDeviceTableRow: React.FC<RmmDeviceTableRowProps> = memo(({
       </TableCell>
 
       <TableCell className="py-3 px-4 text-right">
-        <div className="flex justify-end">
+        <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onScanDevice(device.id)}
+            disabled={isScanning}
+            className="h-7 px-2 text-xs font-semibold gap-1 cursor-pointer"
+          >
+            <span>{t('rmm.tableScanTooltip') || 'Scan'}</span>
+            <RefreshCw className={`h-3 w-3 ${isScanning ? 'animate-spin' : ''}`} />
+          </Button>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 type="button"
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                variant="outline"
+                size="icon"
+                className="h-7 w-7 cursor-pointer"
                 aria-label={t('rmm.tableActions')}
               >
-                <span className="sr-only">{t('rmm.tableActions')}</span>
-                <MoreHorizontal className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
+                <MoreHorizontal className="h-3.5 w-3.5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuLabel>{t('rmm.tableActions')}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
+            <DropdownMenuContent align="end" className="w-48 bg-card text-foreground border border-border">
+              <DropdownMenuLabel className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
+                {t('rmm.tableActions')}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-border" />
               <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onScanDevice(device.id);
-                }}
+                onClick={() => onScanDevice(device.id)}
                 disabled={isScanning}
-                className="cursor-pointer"
+                className="text-xs cursor-pointer"
               >
-                <RefreshCw className={`mr-2 h-3.5 w-3.5 ${isScanning ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`mr-1 h-3.5 w-3.5 ${isScanning ? 'animate-spin' : ''}`} />
                 <span>{t('rmm.tableScanTooltip')}</span>
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenPatchModal(device.id, deviceName);
-                }}
-                className="cursor-pointer"
+                onClick={() => onOpenPatchModal(device.id, deviceName)}
+                className="text-xs cursor-pointer"
               >
-                <ShieldCheck className="mr-2 h-3.5 w-3.5 text-amber-500" />
+                <ShieldCheck className="mr-1 h-3.5 w-3.5 text-amber-500" />
                 <span>{t('rmm.tablePatchModalTooltip')}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>

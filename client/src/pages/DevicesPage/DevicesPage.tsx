@@ -1,5 +1,5 @@
 import { memo, useCallback, useState, useMemo } from "react";
-import { Laptop, Loader2, MoreHorizontal, Cloud, Activity } from "lucide-react";
+import { Laptop, Loader2, MoreHorizontal, Cloud, Activity, ChevronRight, Calendar, RefreshCw, Trash2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { useDevicesPage } from "@/hooks/useDevicesPage";
@@ -149,82 +149,109 @@ interface DeviceActionsCellProps {
 
 const DeviceActionsCell = memo(function DeviceActionsCell({
   equip,
-  isAdmin = false,
   onOpenNcModal,
   onOpenScheduleMaint,
   onRequestRevoke,
   onRequestRepair,
   onOpenActivateWithOtp,
-  onDeleteAdminDevice,
   onDeployClient,
 }: DeviceActionsCellProps) {
   const { t } = useTranslation();
-  const isAdminOwned = isAdmin && (equip.client_role === "ADMIN" || !equip.client_role);
+
+  const isActive = equip.status === "ACTIVE";
 
   return (
-    <div className="text-right" onClick={(e) => e.stopPropagation()}>
+    <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+      {isActive ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => onOpenScheduleMaint(equip)}
+          className="h-7 px-2 text-xs font-semibold gap-1 cursor-pointer"
+        >
+          <span>{t("maintenance.scheduleBtn") || "Schedule"}</span>
+          <ChevronRight className="h-3 w-3" />
+        </Button>
+      ) : (
+        equip.subscription_id !== undefined &&
+        equip.slot_index !== undefined && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onOpenActivateWithOtp(equip.subscription_id!, equip.slot_index!)}
+            className="h-7 px-2 text-xs font-semibold gap-1 cursor-pointer"
+          >
+            <span>{t("devices.activateDevice") || "Activate"}</span>
+            <ChevronRight className="h-3 w-3" />
+          </Button>
+        )
+      )}
+
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            variant="ghost"
-            size="icon-xs"
+            type="button"
+            variant="outline"
+            size="icon"
             aria-label={t("devices.tableActions")}
-            className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
+            className="h-7 w-7 cursor-pointer"
           >
             <MoreHorizontal className="h-3.5 w-3.5" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="end"
-          className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 w-36"
+          className="w-48 bg-card text-foreground border border-border"
         >
-          <DropdownMenuLabel className="text-xs">{t("devices.actionsLabel")}</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {equip.status === "ACTIVE" ? (
+          <DropdownMenuLabel className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
+            {t("devices.actionsLabel")}
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator className="bg-border" />
+          {isActive ? (
             <>
               {equip.nextcloud_username && (
-                <DropdownMenuItem onClick={() => onOpenNcModal(equip)}>
+                <DropdownMenuItem onClick={() => onOpenNcModal(equip)} className="text-xs cursor-pointer">
+                  <Cloud className="h-3.5 w-3.5 mr-1" />
                   {t("devices.actionNextcloudInfo")}
                 </DropdownMenuItem>
               )}
-              {equip.nextcloud_username && equip.subscription_id && equip.slot_index !== undefined && onDeployClient && (
-                <DropdownMenuItem onClick={() => onDeployClient(equip)}>
-                  {t("devices.deployClient")}
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem onClick={() => onOpenScheduleMaint(equip)}>
+              {equip.nextcloud_username &&
+                equip.subscription_id &&
+                equip.slot_index !== undefined &&
+                onDeployClient && (
+                  <DropdownMenuItem onClick={() => onDeployClient(equip)} className="text-xs cursor-pointer">
+                    <Laptop className="h-3.5 w-3.5 mr-1" />
+                    {t("devices.deployClient")}
+                  </DropdownMenuItem>
+                )}
+              <DropdownMenuItem onClick={() => onOpenScheduleMaint(equip)} className="text-xs cursor-pointer">
+                <Calendar className="h-3.5 w-3.5 mr-1" />
                 {t("maintenance.scheduleBtn")}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onRequestRepair(equip)}>
+              <DropdownMenuItem onClick={() => onRequestRepair(equip)} className="text-xs cursor-pointer">
+                <RefreshCw className="h-3.5 w-3.5 mr-1" />
                 {t("devices.actionRepair", "Re-pair Device")}
               </DropdownMenuItem>
-              <DropdownMenuItem variant="destructive" onClick={() => onRequestRevoke(equip)}>
+              <DropdownMenuSeparator className="bg-border" />
+              <DropdownMenuItem
+                onClick={() => onRequestRevoke(equip)}
+                className="text-xs text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1 text-destructive" />
                 {t("devices.actionDeactivate")}
               </DropdownMenuItem>
-              {isAdminOwned && (
-                <DropdownMenuItem
-                  variant="destructive"
-                  onClick={() => onDeleteAdminDevice && onDeleteAdminDevice(equip)}
-                >
-                  {t("devices.actionDelete", "Delete Device")}
-                </DropdownMenuItem>
-              )}
             </>
           ) : (
             <>
               {equip.subscription_id !== undefined && equip.slot_index !== undefined && (
                 <DropdownMenuItem
                   onClick={() => onOpenActivateWithOtp(equip.subscription_id!, equip.slot_index!)}
+                  className="text-xs cursor-pointer"
                 >
+                  <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
                   {t("devices.activateDevice")}
-                </DropdownMenuItem>
-              )}
-              {isAdminOwned && (
-                <DropdownMenuItem
-                  variant="destructive"
-                  onClick={() => onDeleteAdminDevice && onDeleteAdminDevice(equip)}
-                >
-                  {t("devices.actionDelete", "Delete Device")}
                 </DropdownMenuItem>
               )}
             </>
@@ -271,7 +298,6 @@ export function DevicesPage() {
     handleActivateWithOtp,
     addDeviceModalOpen,
     addDeviceLoading,
-    handleOpenAddDevice,
     handleCloseAddDevice,
     handleAddAdminDevice,
     deviceToDelete,
@@ -308,6 +334,22 @@ export function DevicesPage() {
     if (!activeSub) return 0;
     return activeSub.equipment_count || (subscriptionEquipment[activeSub.id] || []).length;
   }, [isAdmin, adminDevices, filteredEquipment.length, activeSub, subscriptionEquipment]);
+
+  const firstAvailableSlot = useMemo(() => {
+    const unactive = filteredEquipment.find(
+      (e) => (e.status === "PENDING_ACTIVATION" || !e.status || e.status !== "ACTIVE") && e.subscription_id && e.slot_index !== undefined,
+    );
+    if (unactive && unactive.subscription_id && unactive.slot_index !== undefined) {
+      return { subscription_id: unactive.subscription_id, slot_index: unactive.slot_index };
+    }
+
+    const subId = selectedSubscriptionId || activeSub?.id;
+    if (subId) {
+      const existing = subscriptionEquipment[subId] || [];
+      return { subscription_id: subId, slot_index: existing.length };
+    }
+    return null;
+  }, [filteredEquipment, selectedSubscriptionId, activeSub, subscriptionEquipment]);
 
   const [maintModalEquip, setMaintModalEquip] = useState<Partial<SubscriptionEquipment> | null>(null);
   const [isMaintModalOpen, setIsMaintModalOpen] = useState(false);
@@ -354,16 +396,19 @@ export function DevicesPage() {
     setNcModalEquip(null);
   }, []);
 
-  const handleDeployClient = useCallback(async (equip: Partial<SubscriptionEquipment>) => {
-    if (!equip.subscription_id || equip.slot_index === undefined) return;
-    try {
-      const url = await equipmentService.getDeployScriptUrl(equip.subscription_id, equip.slot_index);
-      navigator.clipboard.writeText(`powershell -Command "irm ${url} | iex"`);
-      toast.success(t("devices.deployCommandCopied"));
-    } catch {
-      toast.error(t("devices.deployCommandFailed") || "Failed to generate deploy command");
-    }
-  }, [t]);
+  const handleDeployClient = useCallback(
+    async (equip: Partial<SubscriptionEquipment>) => {
+      if (!equip.subscription_id || equip.slot_index === undefined) return;
+      try {
+        const url = await equipmentService.getDeployScriptUrl(equip.subscription_id, equip.slot_index);
+        navigator.clipboard.writeText(`powershell -Command "irm ${url} | iex"`);
+        toast.success(t("devices.deployCommandCopied"));
+      } catch {
+        toast.error(t("devices.deployCommandFailed") || "Failed to generate deploy command");
+      }
+    },
+    [t],
+  );
 
   const handleBrowsePlans = useCallback(() => {
     navigate("/plans");
@@ -516,9 +561,11 @@ export function DevicesPage() {
       id: "actions",
       enableSorting: false,
       header: () => (
-        <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
-          {t("devices.tableActions")}
-        </span>
+        <div className="text-right">
+          <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
+            {t("devices.tableActions")}
+          </span>
+        </div>
       ),
       cell: ({ row }) => {
         const equip = row.original;
@@ -532,7 +579,6 @@ export function DevicesPage() {
             onRequestRevoke={handleRequestRevoke}
             onRequestRepair={handleRequestRepair}
             onOpenActivateWithOtp={handleOpenActivateWithOtp}
-            onDeleteAdminDevice={setDeviceToDelete}
             onDeployClient={handleDeployClient}
           />
         );
@@ -547,7 +593,6 @@ export function DevicesPage() {
     handleRequestRevoke,
     handleRequestRepair,
     handleOpenActivateWithOtp,
-    setDeviceToDelete,
     isAdmin,
   ]);
 
@@ -561,7 +606,6 @@ export function DevicesPage() {
   );
 
   const filtersConfig = useMemo(() => {
-    if (!isAdmin) return undefined;
     return [
       {
         id: "status",
@@ -571,7 +615,7 @@ export function DevicesPage() {
         placeholder: t("devices.filterAllStatuses"),
       },
     ];
-  }, [isAdmin, selectedStatus, setSelectedStatus, statusFilterOptions, t]);
+  }, [selectedStatus, setSelectedStatus, statusFilterOptions, t]);
 
   const paginationConfig = useMemo(
     () => ({
@@ -643,15 +687,20 @@ export function DevicesPage() {
                   <div className="lg:col-span-3 space-y-4">
                     {/* Toolbar: Actions */}
                     <div className="flex items-center justify-end gap-2">
-                      {isAdmin && (
+                      {firstAvailableSlot && (
                         <Button
                           type="button"
                           size="sm"
-                          onClick={handleOpenAddDevice}
+                          onClick={() =>
+                            handleOpenActivateWithOtp(
+                              firstAvailableSlot.subscription_id,
+                              firstAvailableSlot.slot_index,
+                            )
+                          }
                           className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
                         >
                           <Laptop className="h-3.5 w-3.5" />
-                          <span>{t("devices.addDevice", "Add Device")}</span>
+                          <span>{t("devices.activateDevice", "Activate Device")}</span>
                         </Button>
                       )}
                     </div>

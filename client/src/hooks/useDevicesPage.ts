@@ -416,10 +416,11 @@ export function useDevicesPage() {
 
   const filteredEquipment = useMemo(() => {
     const search = searchTerm.toLowerCase().trim();
+    const hasStatusFilter = Boolean(selectedStatus && selectedStatus !== "all");
+
     if (isAdmin) {
       const hasSearch = search.length > 0;
       const hasClientFilter = Boolean(selectedClient && selectedClient !== "all");
-      const hasStatusFilter = Boolean(selectedStatus && selectedStatus !== "all");
 
       if (!hasSearch && !hasClientFilter && !hasStatusFilter) {
         return adminDevices || [];
@@ -427,7 +428,12 @@ export function useDevicesPage() {
 
       return (adminDevices || []).filter((device) => {
         if (hasClientFilter && device.tenant_id !== selectedClient) return false;
-        if (hasStatusFilter && device.status !== selectedStatus) return false;
+        if (hasStatusFilter) {
+          const isPending = device.status === "PENDING_ACTIVATION" || !device.status || device.status !== "ACTIVE";
+          if (selectedStatus === "ACTIVE" && device.status !== "ACTIVE") return false;
+          if (selectedStatus === "PENDING_ACTIVATION" && !isPending) return false;
+          if (selectedStatus !== "ACTIVE" && selectedStatus !== "PENDING_ACTIVATION" && device.status !== selectedStatus) return false;
+        }
 
         if (hasSearch) {
           const matchSearch =
@@ -446,13 +452,25 @@ export function useDevicesPage() {
     } else {
       if (!activeSub) return [];
       const equipList = subscriptionEquipment[activeSub.id] || [];
-      if (!search) return equipList;
-      return equipList.filter(
-        (device) =>
-          (device.id && device.id.toLowerCase().includes(search)) ||
-          (device.device_name && device.device_name.toLowerCase().includes(search)) ||
-          (device.device_serial && device.device_serial.toLowerCase().includes(search))
-      );
+
+      return equipList.filter((device) => {
+        if (hasStatusFilter) {
+          const isPending = device.status === "PENDING_ACTIVATION" || !device.status || device.status !== "ACTIVE";
+          if (selectedStatus === "ACTIVE" && device.status !== "ACTIVE") return false;
+          if (selectedStatus === "PENDING_ACTIVATION" && !isPending) return false;
+          if (selectedStatus !== "ACTIVE" && selectedStatus !== "PENDING_ACTIVATION" && device.status !== selectedStatus) return false;
+        }
+
+        if (search) {
+          const matchSearch =
+            (device.id && device.id.toLowerCase().includes(search)) ||
+            (device.device_name && device.device_name.toLowerCase().includes(search)) ||
+            (device.device_serial && device.device_serial.toLowerCase().includes(search));
+          if (!matchSearch) return false;
+        }
+
+        return true;
+      });
     }
   }, [adminDevices, subscriptionEquipment, activeSub, searchTerm, isAdmin, selectedClient, selectedStatus]);
 
@@ -460,7 +478,19 @@ export function useDevicesPage() {
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const sortedEquipment = useMemo(() => {
-    if (sorting.length === 0) return filteredEquipment;
+    if (sorting.length === 0) {
+      // Default order: show ACTIVE first, followed by PENDING, ordered by slot index
+      return [...filteredEquipment].sort((a, b) => {
+        const aActive = a.status === "ACTIVE" ? 1 : 0;
+        const bActive = b.status === "ACTIVE" ? 1 : 0;
+        if (aActive !== bActive) {
+          return bActive - aActive;
+        }
+        const slotA = a.slot_index !== undefined ? a.slot_index : 9999;
+        const slotB = b.slot_index !== undefined ? b.slot_index : 9999;
+        return slotA - slotB;
+      });
+    }
     const result = [...filteredEquipment];
     const sort = sorting[0];
     const { id, desc } = sort;
@@ -479,8 +509,9 @@ export function useDevicesPage() {
         valA = a.plan || "";
         valB = b.plan || "";
       } else if (id === "status") {
-        valA = a.status || "";
-        valB = b.status || "";
+        const aActive = a.status === "ACTIVE" ? 1 : 0;
+        const bActive = b.status === "ACTIVE" ? 1 : 0;
+        return desc ? aActive - bActive : bActive - aActive;
       } else if (id === "deviceDetails") {
         valA = a.device_name || a.otp || "";
         valB = b.device_name || b.otp || "";

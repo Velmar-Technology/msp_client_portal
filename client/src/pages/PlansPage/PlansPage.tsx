@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from "react";
-import { ChevronDown, Plus, Minus, RefreshCw, Mail, Ban, CreditCard, ShoppingBag, Info } from "lucide-react";
+import { Plus, Minus, RefreshCw, Mail, Ban, CreditCard, ShoppingBag, Info, MoreHorizontal } from "lucide-react";
 import { Page } from "@/components/Page";
 import { Button } from "@/components/ui/button";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -217,106 +217,135 @@ export function PlansPage() {
       },
       {
         id: "actions",
-        header: t("plans.actions") || "Actions",
+        header: () => (
+          <div className="text-right">
+            <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+              {t("plans.actions") || "Actions"}
+            </span>
+          </div>
+        ),
         cell: ({ row }) => {
           const sub = row.original;
           return (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 px-2.5 text-xs text-foreground font-semibold cursor-pointer gap-1"
-                >
-                  {t("plans.manageTab") || "Manage"} <ChevronDown className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-44 bg-card text-foreground border border-border"
+            <div className="flex items-center justify-end gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (isAdmin) {
+                    handleUpdateSubscriptionDirect(sub.id, sub.plan, sub.equipment_count + 1);
+                  } else {
+                    openActionDialog("add_device", sub);
+                  }
+                }}
+                className="h-7 px-2 text-xs font-semibold gap-1 cursor-pointer"
               >
-                <DropdownMenuItem
-                  onClick={() => {
-                    if (isAdmin) {
-                      handleUpdateSubscriptionDirect(sub.id, sub.plan, sub.equipment_count + 1);
-                    } else {
-                      openActionDialog("add_device", sub);
-                    }
-                  }}
-                  className="cursor-pointer flex items-center gap-1.5 text-xs py-1.5"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  {t("plans.addDevice") || "Add Device"}
-                </DropdownMenuItem>
+                <span>{t("plans.addDevice") || "Add Device"}</span>
+                <Plus className="h-3 w-3" />
+              </Button>
 
-                <DropdownMenuItem
-                  disabled={sub.equipment_count <= 1}
-                  onClick={() => {
-                    if (isAdmin) {
-                      handleUpdateSubscriptionDirect(sub.id, sub.plan, sub.equipment_count - 1);
-                    } else {
-                      openActionDialog("remove_device", sub);
-                    }
-                  }}
-                  className="cursor-pointer flex items-center gap-1.5 text-xs py-1.5 disabled:opacity-50 disabled:pointer-events-none"
-                >
-                  <Minus className="h-3.5 w-3.5" />
-                  {t("plans.removeDevice") || "Remove Device"}
-                </DropdownMenuItem>
-
-                {!isAdmin && (
-                  <DropdownMenuItem
-                    onClick={() => openActionDialog("pay", sub)}
-                    className="cursor-pointer flex items-center gap-1.5 text-xs py-1.5"
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={(e) => e.stopPropagation()}
+                    className="h-7 w-7 cursor-pointer"
+                    aria-label={t("plans.manageTab") || "Manage Subscription"}
                   >
-                    <CreditCard className="h-3.5 w-3.5" />
-                    {t("plans.payRenewal") || "Pay Renewal"}
+                    <MoreHorizontal className="h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-48 bg-card text-foreground border border-border"
+                >
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (isAdmin) {
+                        handleUpdateSubscriptionDirect(sub.id, sub.plan, sub.equipment_count + 1);
+                      } else {
+                        openActionDialog("add_device", sub);
+                      }
+                    }}
+                    className="cursor-pointer text-xs"
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1" />
+                    {t("plans.addDevice") || "Add Device"}
                   </DropdownMenuItem>
-                )}
 
-                <DropdownMenuSeparator className="bg-border" />
+                  <DropdownMenuItem
+                    disabled={sub.equipment_count <= 1}
+                    onClick={() => {
+                      if (isAdmin) {
+                        handleUpdateSubscriptionDirect(sub.id, sub.plan, sub.equipment_count - 1);
+                      } else {
+                        openActionDialog("remove_device", sub);
+                      }
+                    }}
+                    className="cursor-pointer text-xs disabled:opacity-50 disabled:pointer-events-none"
+                  >
+                    <Minus className="h-3.5 w-3.5 mr-1" />
+                    {t("plans.removeDevice") || "Remove Device"}
+                  </DropdownMenuItem>
 
-                <DropdownMenuItem
-                  onClick={() => {
-                    setUserSelectedPlan(sub.plan);
-                    setTierChangeSubId(sub.id);
-                    toast.info(t("plans.changeTierTitle") || "Change Plan Tier", {
-                      description: t("plans.changePlanMsg") || "Select a different plan tier to switch or subscribe.",
-                    });
-                  }}
-                  className="cursor-pointer flex items-center gap-1.5 text-xs py-1.5"
-                >
-                  <RefreshCw className="h-3.5 w-3.5" />
-                  {t("plans.changePlanTier") || "Change Plan Tier"}
-                </DropdownMenuItem>
+                  {!isAdmin && (
+                    <DropdownMenuItem
+                      onClick={() => openActionDialog("pay", sub)}
+                      className="cursor-pointer text-xs text-primary font-semibold"
+                    >
+                      <CreditCard className="h-3.5 w-3.5 mr-1" />
+                      {t("plans.payRenewal") || "Pay Renewal"}
+                    </DropdownMenuItem>
+                  )}
 
-                <DropdownMenuItem
-                  onClick={() => {
-                    toast.info(t("plans.contactSupportTitle") || "Contact Support", {
-                      description:
-                        t("plans.contactSupportMsg", { email: "soporte@velmartech.com.do" }) ||
-                        "Need assistance? Email: soporte@velmartech.com.do",
-                    });
-                    window.location.href = "mailto:soporte@velmartech.com.do?subject=Subscription Support Request";
-                  }}
-                  className="cursor-pointer flex items-center gap-1.5 text-xs py-1.5"
-                >
-                  <Mail className="h-3.5 w-3.5" />
-                  {t("plans.contactSupport") || "Contact Support"}
-                </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-border" />
 
-                <DropdownMenuSeparator className="bg-border" />
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setUserSelectedPlan(sub.plan);
+                      setTierChangeSubId(sub.id);
+                      toast.info(t("plans.changeTierTitle") || "Change Plan Tier", {
+                        description: t("plans.changePlanMsg") || "Select a different plan tier to switch or subscribe.",
+                      });
+                    }}
+                    className="cursor-pointer text-xs"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                    {t("plans.changePlanTier") || "Change Plan Tier"}
+                  </DropdownMenuItem>
 
-                <DropdownMenuItem
-                  onClick={() => openActionDialog("cancel", sub)}
-                  variant="destructive"
-                  className="cursor-pointer flex items-center gap-1.5 text-xs py-1.5 text-destructive focus:bg-destructive/10"
-                >
-                  <Ban className="h-3.5 w-3.5" />
-                  {t("plans.cancelSubscription") || "Cancel Subscription"}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      toast.info(t("plans.contactSupportTitle") || "Contact Support", {
+                        description:
+                          t("plans.contactSupportMsg", { email: "soporte@velmartech.com.do" }) ||
+                          "Need assistance? Email: soporte@velmartech.com.do",
+                      });
+                      window.location.href = "mailto:soporte@velmartech.com.do?subject=Subscription Support Request";
+                    }}
+                    className="cursor-pointer text-xs"
+                  >
+                    <Mail className="h-3.5 w-3.5 mr-1" />
+                    {t("plans.contactSupport") || "Contact Support"}
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator className="bg-border" />
+
+                  <DropdownMenuItem
+                    onClick={() => openActionDialog("cancel", sub)}
+                    variant="destructive"
+                    className="cursor-pointer text-xs text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive"
+                  >
+                    <Ban className="h-3.5 w-3.5 mr-1 text-destructive" />
+                    {t("plans.cancelSubscription") || "Cancel Subscription"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           );
         },
       },
