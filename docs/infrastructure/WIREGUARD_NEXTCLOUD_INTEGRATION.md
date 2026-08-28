@@ -201,10 +201,9 @@ The **`msp_portal`** stack hosts the entire MSP Client Portal plus its observabi
 
 ## 5. Nextcloud Configuration
 
-Applied via `occ` commands inside container `ix-nextcloud-nextcloud-1` on endpoint 4:
+Applied via `occ` commands inside container `ix-nextcloud-nextcloud-1` on endpoint 4 (or automation script `scripts/infra/wireguard/fix-nextcloud-https.mjs`):
 
-```bash
-# trusted_domains (index 5 updated from cloud.* → atlas.*)
+```yaml
 trusted_domains:
   - 0: 10.0.0.254
   - 1: 127.0.0.1
@@ -215,11 +214,21 @@ trusted_domains:
   - 6: 10.13.13.3
 
 trusted_proxies:
-  - 10.13.13.1            # WireGuard hub (VPS host netns)
+  - 0: 10.13.13.1         # WireGuard hub (VPS host netns)
+  - 1: 10.13.13.3         # WireGuard client (TrueNAS host netns)
+  - 2: 172.16.0.0/12      # Docker bridge subnet
+  - 3: 127.0.0.1          # Localhost
 
-overwrite.cli.url: https://atlas.velmartech.com.do
 overwriteprotocol: https
+overwritehost: atlas.velmartech.com.do
+overwrite.cli.url: https://atlas.velmartech.com.do
 ```
+
+### 5.1 Reverse Proxy & Desktop Client OAuth Requirements
+When Nextcloud runs behind an external SSL-terminating reverse proxy (Traefik / Nginx on the VPS over WireGuard) without direct local TLS, the following parameters are mandatory:
+1. **`overwriteprotocol => 'https'`**: Forces all internal Nextcloud URLs and OAuth 2 / login redirect flows to use `https://`. Without this, the Nextcloud desktop/mobile client blocks login with `"The returned server URL does not start with HTTPS despite the login URL started with HTTPS"`.
+2. **`overwritehost => 'atlas.velmartech.com.do'`**: Ensures redirect headers and CalDAV/WebDAV discovery match the public domain.
+3. **`trusted_proxies`**: Instructs Nextcloud to respect `X-Forwarded-Proto` and `X-Forwarded-For` from the WireGuard transit IPs.
 
 ---
 

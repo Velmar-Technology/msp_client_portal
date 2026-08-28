@@ -22,6 +22,7 @@ $env:PORTAINER_API_KEY = "<YOUR_PORTAINER_API_KEY>"
 | Script | Purpose | Usage |
 |---|---|---|
 | **`papi.mjs`** | Core Portainer REST client with multiplexed Docker exec stream demuxing | Library imported by other scripts |
+| **`fix-nextcloud-https.mjs`** | Enforce HTTPS overwrite parameters & trusted proxies on Nextcloud container via `occ` | `node fix-nextcloud-https.mjs` |
 | **`run-in.mjs`** | Execute commands inside any container across any Portainer endpoint | `node run-in.mjs <endpointId> <containerSubstring> <command...>` |
 | **`probe-tunnel.mjs`** | Probe ping, TCP, and transfer byte metrics across the WireGuard interface | `node probe-tunnel.mjs` |
 | **`poll-nas.mjs`** | Query container status on TrueNAS (Endpoint 4) with automated retry | `node poll-nas.mjs` |
