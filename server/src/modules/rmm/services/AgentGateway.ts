@@ -42,6 +42,7 @@ export interface AgentHelloPayload {
   system_model?: string;
   os?: string;
   timestamp?: string;
+  slot_id?: string;
   /** Agent-issued 6-digit pairing code (present only while the device is unbound). */
   pairing_code?: string;
   /** RFC3339 expiry of the pairing code (present only while unbound). */
@@ -403,6 +404,10 @@ export class AgentGateway {
       return;
     }
     this.purgePairingForAgent(agentId);
+    const agent = this.activeSockets.get(agentId);
+    if (agent) {
+      agent.slotId = undefined;
+    }
     this.pairingRegistry.set(code, { agentId, hello, expiresAt });
     logger.info(
       `[AgentGateway] Agent ${agentId} issued pairing code ${code} (expires ${expiresAt.toISOString()}).`
@@ -426,6 +431,16 @@ export class AgentGateway {
       return null;
     }
     return entry;
+  }
+
+  /**
+   * Links a connected agent to an equipment slot ID (e.g. after identity reconciliation).
+   */
+  setAgentSlotId(agentId: string, slotId: string): void {
+    const agent = this.activeSockets.get(agentId);
+    if (agent) {
+      agent.slotId = slotId;
+    }
   }
 
   /**
@@ -458,6 +473,37 @@ export class AgentGateway {
       return true;
     } catch (err) {
       logger.error(`[AgentGateway] Error sending BIND to ${agentId}:`, err);
+      return false;
+    }
+  }
+
+  /**
+   * Unlinks an agent from a slot (e.g. when unbind/re-pair is triggered by client or admin).
+   * Purges pairing codes, removes slotId linkage, and pushes an UNBIND command to the agent.
+   */
+  unbindAgent(agentId: string, slotId?: string): boolean {
+    this.purgePairingForAgent(agentId);
+    const agent = this.activeSockets.get(agentId);
+    if (!agent || agent.ws.readyState !== WebSocket.OPEN) {
+      return false;
+    }
+    agent.slotId = undefined;
+    const envelope = JSON.stringify({
+      correlation_id: crypto.randomUUID(),
+      command: 'UNBIND',
+      payload: {
+        slot_id: slotId || null,
+        reason: 'Unbound by client',
+      },
+    });
+    try {
+      agent.ws.send(envelope, (err) => {
+        if (err) logger.error(`[AgentGateway] Failed to send UNBIND to ${agentId}:`, err);
+      });
+      logger.info(`[AgentGateway] Sent UNBIND to agent ${agentId} for slot ${slotId || 'unknown'}.`);
+      return true;
+    } catch (err) {
+      logger.error(`[AgentGateway] Error sending UNBIND to ${agentId}:`, err);
       return false;
     }
   }

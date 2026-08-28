@@ -26,6 +26,8 @@ const mocks = vi.hoisted(() => {
     equipFindByAgentInstanceId: vi.fn(),
     gatewayGetPairingByCode: vi.fn(),
     gatewayBindAgent: vi.fn(),
+    gatewayUnbindAgent: vi.fn(),
+    gatewaySetAgentSlotId: vi.fn(),
   };
 });
 
@@ -34,6 +36,8 @@ vi.mock('@modules/rmm/services/AgentGateway', () => {
     agentGateway: {
       getPairingByCode: mocks.gatewayGetPairingByCode,
       bindAgent: mocks.gatewayBindAgent,
+      unbindAgent: mocks.gatewayUnbindAgent,
+      setAgentSlotId: mocks.gatewaySetAgentSlotId,
     },
   };
 });
@@ -456,11 +460,12 @@ describe('EquipmentService', () => {
 
       mocks.equipFindBySlot.mockResolvedValue(mockSlot);
       mocks.ncSetUserPassword.mockResolvedValue('newPass456');
-      mocks.equipUpdate.mockImplementation((id, data) => Promise.resolve({ id, ...mockSlot, ...data }));
+      mocks.equipUpdate.mockImplementation((id, data) => Promise.resolve({ ...mockSlot, ...data, id }));
 
       const result = await equipmentService.unbindSlotForRepair(subId, 0, tenantId);
 
       expect(mocks.ncSetUserPassword).toHaveBeenCalledWith('client_tenant-1_slot_1');
+      expect(mocks.gatewayUnbindAgent).toHaveBeenCalledWith('agent-abc', 'slot-1');
       expect(result.status).toBe('PENDING_ACTIVATION');
       expect(result.nextcloud_username).toBe('client_tenant-1_slot_1');
       expect(result.nextcloud_password).toBe('newPass456');
@@ -810,8 +815,8 @@ describe('EquipmentService', () => {
       expect(mocks.equipUpdateAgentIdentity).not.toHaveBeenCalled();
     });
 
-    it('should apply the identity when the presented token matches the slot token', async () => {
-      const slot = { id: 'slot-1', agent_token: 'secret-abc', tenant_id: tenantId };
+    it('should apply the identity and set gateway slotId when the presented token matches the slot token', async () => {
+      const slot = { id: 'slot-1', status: 'ACTIVE', agent_token: 'secret-abc', tenant_id: tenantId };
       mocks.equipFindById.mockResolvedValue(slot);
       mocks.equipUpdateAgentIdentity.mockResolvedValue({ ...slot, device_name: 'SRV-01' });
 
@@ -821,30 +826,81 @@ describe('EquipmentService', () => {
         'secret-abc'
       );
 
+      expect(mocks.gatewaySetAgentSlotId).toHaveBeenCalledWith('slot-1', 'slot-1');
       expect(mocks.equipUpdateAgentIdentity).toHaveBeenCalledTimes(1);
     });
 
-    it('should no-op when no equipment record matches the agent id', async () => {
+    it('should notify agentGateway.unbindAgent when an agent claims to be bound for an unlinked slot', async () => {
+      mocks.equipFindById.mockResolvedValue(null);
+
+      await equipmentService.reconcileAgentIdentity(
+        'orphaned-agent',
+        { hostname: 'SRV-99', binding_state: 'BOUND', slot_id: 'old-slot-id' },
+        'old-token'
+      );
+
+      expect(mocks.gatewayUnbindAgent).toHaveBeenCalledWith('orphaned-agent', 'old-slot-id');
+      expect(mocks.equipUpdateAgentIdentity).not.toHaveBeenCalled();
+    });
+
+    it('should no-op when no equipment record matches the agent id and agent is unbound', async () => {
       mocks.equipFindById.mockResolvedValue(null);
 
       await equipmentService.reconcileAgentIdentity(
         'unknown-slot',
-        { hostname: 'SRV-99' },
+        { hostname: 'SRV-99', pairing_code: '123456' },
         null
       );
 
+      expect(mocks.gatewayUnbindAgent).not.toHaveBeenCalled();
       expect(mocks.equipUpdateAgentIdentity).not.toHaveBeenCalled();
     });
 
-    it('should no-op when the hello carries no hostname or serial', async () => {
+    it('should not update identity when the hello carries no hostname or serial on active slot', async () => {
+      const slot = { id: 'slot-1', status: 'ACTIVE', agent_token: 'secret-abc', tenant_id: tenantId };
+      mocks.equipFindById.mockResolvedValue(slot);
+
       await equipmentService.reconcileAgentIdentity(
         'slot-1',
         { agent_version: '0.4.0' },
-        null
+        'secret-abc'
       );
 
-      expect(mocks.equipFindById).not.toHaveBeenCalled();
+      expect(mocks.gatewaySetAgentSlotId).toHaveBeenCalledWith('slot-1', 'slot-1');
       expect(mocks.equipUpdateAgentIdentity).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('deactivateSlot', () => {
+    it('should deactivate slot, delete Nextcloud user, and notify gateway to unbind agent', async () => {
+      const mockSlot = {
+        id: 'slot-1',
+        slot_index: 0,
+        status: 'ACTIVE',
+        tenant_id: tenantId,
+        agent_instance_id: 'agent-xyz',
+        nextcloud_username: 'client_tenant-1_slot_1',
+      };
+
+      mocks.equipFindBySlot.mockResolvedValue(mockSlot);
+      mocks.ncDeleteUser.mockResolvedValue(true);
+      mocks.equipUpdate.mockImplementation((id, data) => Promise.resolve({ ...mockSlot, ...data, id }));
+
+      const result = await equipmentService.deactivateSlot(subId, 0, tenantId);
+
+      expect(mocks.ncDeleteUser).toHaveBeenCalledWith('client_tenant-1_slot_1');
+      expect(mocks.gatewayUnbindAgent).toHaveBeenCalledWith('agent-xyz', 'slot-1');
+      expect(result.status).toBe('PENDING_ACTIVATION');
+      expect(result.agent_instance_id).toBeNull();
+      expect(result.nextcloud_username).toBeNull();
+    });
+
+    it('should throw ForbiddenError when tenant does not match and not admin', async () => {
+      const mockSlot = { id: 'slot-1', slot_index: 0, tenant_id: 'other-tenant' };
+      mocks.equipFindBySlot.mockResolvedValue(mockSlot);
+
+      await expect(equipmentService.deactivateSlot(subId, 0, tenantId)).rejects.toThrow('Access denied');
+      expect(mocks.equipUpdate).not.toHaveBeenCalled();
     });
   });
 
