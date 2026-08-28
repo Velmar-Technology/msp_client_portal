@@ -21,6 +21,21 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: msp_redis
+    restart: always
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   server:
     build:
       context: .
@@ -29,6 +44,8 @@ services:
     restart: always
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     ports:
       - "3001:3001"
@@ -39,6 +56,9 @@ services:
       - DB_NAME=msp_helpdesk
       - DB_USER=postgres
       - DB_PASSWORD=msp_password
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_ENABLED=true
       - PORT=3001
       - NODE_ENV=development
       - JWT_SECRET=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
@@ -161,6 +181,8 @@ volumes:
   zabbix_pgdata:
     driver: local
   uploads_data:
+    driver: local
+  redisdata:
     driver: local
 
 

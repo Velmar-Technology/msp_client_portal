@@ -15,6 +15,8 @@ import {
   List as ListIcon,
   User,
   Laptop,
+  Eye,
+  Ban,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
@@ -281,51 +283,79 @@ export function MaintenancePage() {
     {
       id: "actions",
       header: () => (
-        <span className="uppercase text-[10px] font-bold text-muted-foreground tracking-wider text-right">
-          {t("common.actions")}
-        </span>
+        <div className="text-right">
+          <span className="uppercase text-[10px] font-bold text-muted-foreground tracking-wider">
+            {t("common.actions")}
+          </span>
+        </div>
       ),
       cell: ({ row }) => {
         const item = row.original;
         return (
-          <div className="text-right">
+          <div className="flex items-center justify-end gap-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedEventDetails(item);
+              }}
+              className="h-7 px-2 text-xs font-semibold gap-1 cursor-pointer"
+            >
+              <span>{t("maintenance.viewDetails") || "View Details"}</span>
+              <ChevronRight className="h-3 w-3" />
+            </Button>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={(e) => e.stopPropagation()}
+                  className="h-7 w-7 cursor-pointer"
                 >
                   <MoreHorizontal className="h-3.5 w-3.5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="bg-card border border-border"
+                className="w-48 bg-card text-foreground border border-border"
               >
-                <DropdownMenuLabel className="text-xs text-foreground font-heading">{t("maintenance.actionsLabel")}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setSelectedEventDetails(item)} className="cursor-pointer text-xs text-foreground">
+                <DropdownMenuLabel className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
+                  {t("maintenance.actionsLabel")}
+                </DropdownMenuLabel>
+                <DropdownMenuItem
+                  onClick={() => setSelectedEventDetails(item)}
+                  className="text-xs cursor-pointer"
+                >
+                  <Eye className="h-3.5 w-3.5 mr-1" />
                   {t("maintenance.viewDetails")}
                 </DropdownMenuItem>
                 {isAdminOrTech && (
                   <>
+                    <DropdownMenuSeparator className="bg-border" />
                     <DropdownMenuItem
                       onClick={() => handleStatusChange(item.id, "IN_PROGRESS")}
-                      className="cursor-pointer text-xs text-secondary focus:text-secondary"
+                      className="text-xs text-secondary focus:text-secondary cursor-pointer"
                     >
+                      <Clock className="h-3.5 w-3.5 mr-1" />
                       {t("maintenance.markInProgress")}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => handleStatusChange(item.id, "COMPLETED")}
-                      className="cursor-pointer text-xs text-primary focus:text-primary"
+                      className="text-xs text-primary focus:text-primary cursor-pointer"
                     >
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
                       {t("maintenance.markCompleted")}
                     </DropdownMenuItem>
+                    <DropdownMenuSeparator className="bg-border" />
                     <DropdownMenuItem
                       onClick={() => handleStatusChange(item.id, "CANCELLED")}
-                      className="cursor-pointer text-xs text-destructive focus:text-destructive"
+                      className="text-xs text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive cursor-pointer"
                     >
+                      <Ban className="h-3.5 w-3.5 mr-1 text-destructive" />
                       {t("maintenance.markCancelled")}
                     </DropdownMenuItem>
                   </>

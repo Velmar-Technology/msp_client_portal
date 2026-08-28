@@ -216,20 +216,24 @@ export function UserManagementPage() {
       {
         id: "actions",
         header: () => (
-          <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-            {t("userManagement.colActions")}
-          </span>
+          <div className="text-right">
+            <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+              {t("userManagement.colActions")}
+            </span>
+          </div>
         ),
         enableSorting: false,
         cell: ({ row }) => (
-          <UserActionsMenu
-            user={row.original}
-            currentUserId={currentUserId}
-            onRoleChange={requestRoleChange}
-            onStatusToggle={requestStatusToggle}
-            onClientTypeChange={requestClientTypeChange}
-            onDelete={requestUserDelete}
-          />
+          <div className="flex items-center justify-end">
+            <UserActionsMenu
+              user={row.original}
+              currentUserId={currentUserId}
+              onRoleChange={requestRoleChange}
+              onStatusToggle={requestStatusToggle}
+              onClientTypeChange={requestClientTypeChange}
+              onDelete={requestUserDelete}
+            />
+          </div>
         ),
       },
     ],

@@ -1,5 +1,18 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { Download, CreditCard, Loader2, Shield, CheckCircle, FileText, Eye, XCircle, Copy, Check, Building2 } from "lucide-react";
+import {
+  Download,
+  CreditCard,
+  Loader2,
+  Shield,
+  CheckCircle,
+  FileText,
+  XCircle,
+  Copy,
+  Check,
+  Building2,
+  MoreHorizontal,
+  ChevronRight,
+} from "lucide-react";
 import { Page } from "@/components/Page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +35,13 @@ import {
   AlertDialogTitle,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { BANK_ACCOUNTS } from "@/constants/bankAccounts";
 import { useBilling } from "@/hooks/useBilling";
@@ -32,7 +52,6 @@ import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 
 import { INVOICE_STATUS_COLORS as statusColor } from "@/constants/billing";
-
 
 const PayModal = ({
   isOpen,
@@ -228,9 +247,7 @@ const PayModal = ({
                         <Shield className="h-3.5 w-3.5 text-primary" />
                         {t("billing.secureCheckout") || "Secure Instant Checkout"}
                       </span>
-                      <span className="text-[11px] text-muted-foreground font-mono">
-                        PayPal &bull; Cards
-                      </span>
+                      <span className="text-[11px] text-muted-foreground font-mono">PayPal &bull; Cards</span>
                     </div>
 
                     <p className="text-xs text-muted-foreground leading-normal">
@@ -239,10 +256,7 @@ const PayModal = ({
                         "Please complete your checkout payment securely using PayPal. Once approved, your invoice will mark as paid immediately."}
                     </p>
 
-                    <div
-                      id="paypal-invoice-pay-container"
-                      className="w-full min-h-27.5 relative z-0"
-                    >
+                    <div id="paypal-invoice-pay-container" className="w-full min-h-27.5 relative z-0">
                       <div className="flex items-center justify-center gap-2 py-6 text-xs text-muted-foreground">
                         <Loader2 className="h-4 w-4 animate-spin text-primary" />
                         <span>{t("plans.loadingPayPalCheckout")}</span>
@@ -254,7 +268,8 @@ const PayModal = ({
                 <TabsContent value="transfer" className="mt-0 space-y-3">
                   <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 p-3 space-y-3">
                     <p className="text-xs text-zinc-600 dark:text-zinc-400 text-center leading-normal">
-                      {t("plans.transferInstructions") || "Transfer to any of the following accounts and specify invoice number in description:"}
+                      {t("plans.transferInstructions") ||
+                        "Transfer to any of the following accounts and specify invoice number in description:"}
                     </p>
 
                     <div className="space-y-2 text-left">
@@ -278,11 +293,11 @@ const PayModal = ({
                                   >
                                     {bank.logoSvg}
                                   </div>
-                                  <span className="text-xs font-semibold text-foreground">
-                                    {bank.name}
-                                  </span>
+                                  <span className="text-xs font-semibold text-foreground">{bank.name}</span>
                                 </div>
-                                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${bank.badgeBg}`}>
+                                <span
+                                  className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${bank.badgeBg}`}
+                                >
                                   {t(bank.typeKey) || bank.type}
                                 </span>
                               </div>
@@ -318,7 +333,8 @@ const PayModal = ({
                     </div>
 
                     <div className="p-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40 rounded text-[11px] text-blue-700 dark:text-blue-300">
-                      {t("plans.bankTransferInstructions") || "Please complete the bank transfer and send your receipt to billing@velmartech.com.do"}
+                      {t("plans.bankTransferInstructions") ||
+                        "Please complete the bank transfer and send your receipt to billing@velmartech.com.do"}
                     </div>
                   </div>
                 </TabsContent>
@@ -531,7 +547,10 @@ const InvoiceDetailsModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent size="lg" className="bg-white dark:bg-card border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-6 text-zinc-900 dark:text-zinc-100">
+      <DialogContent
+        size="lg"
+        className="bg-white dark:bg-card border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-6 text-zinc-900 dark:text-zinc-100"
+      >
         <DialogHeader className="pb-4 border-b border-zinc-200 dark:border-zinc-800 flex flex-row items-center justify-between">
           <div>
             <DialogTitle className="text-base font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
@@ -844,7 +863,9 @@ export function BillingPage() {
                 : "bg-zinc-400";
 
           return (
-            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-medium border ${badgeClasses}`}>
+            <span
+              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-medium border ${badgeClasses}`}
+            >
               <span className={`mr-1 h-1 w-1 rounded-full ${dotClass}`} />
               {getStatusLabel(status)}
             </span>
@@ -855,72 +876,92 @@ export function BillingPage() {
         id: "actions",
         enableSorting: false,
         header: () => (
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-            {t("billing.tableActions")}
-          </span>
-        ),
-        cell: ({ row }) => (
-          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => openDetailsModal(row.original)}
-              className="h-7 w-7 p-0 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer"
-              title={t("billing.invoiceDetails") || "View Details"}
-            >
-              <Eye className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handleDownload(row.original)}
-              disabled={downloadingId === row.original.id}
-              className="h-7 w-7 p-0 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer disabled:opacity-50"
-              title={t("billing.downloadInvoice")}
-            >
-              {downloadingId === row.original.id ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-zinc-400 dark:text-zinc-500" />
-              ) : (
-                <Download className="h-3.5 w-3.5" />
-              )}
-            </Button>
-            {(row.original.status === "PENDING" || row.original.status === "OVERDUE") && (
-              <>
-                {isClient && (
-                  <Button
-                    size="sm"
-                    onClick={() => openPayModal(row.original)}
-                    className="h-7 px-2.5 text-xs font-semibold gap-1 cursor-pointer"
-                    title={t("billing.payNow")}
-                  >
-                    <CreditCard className="h-3.5 w-3.5" />
-                    <span>{t("billing.payNow") || "Pay"}</span>
-                  </Button>
-                )}
-                {isAdmin && (
-                  <Button
-                    size="sm"
-                    onClick={() => openMarkPaidModal(row.original)}
-                    className="h-7 px-2.5 text-xs font-semibold gap-1 bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
-                    title={t("billing.markAsPaid") || "Mark as Paid"}
-                  >
-                    <CheckCircle className="h-3.5 w-3.5" />
-                    <span>{t("billing.markAsPaid") || "Mark Paid"}</span>
-                  </Button>
-                )}
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => openCancelModal(row.original)}
-                  className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 border-red-200 dark:border-red-900/50 cursor-pointer"
-                  title={t("billing.cancelInvoice") || "Cancel Invoice"}
-                >
-                  <XCircle className="h-3.5 w-3.5" />
-                </Button>
-              </>
-            )}
+          <div className="text-right">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              {t("billing.tableActions")}
+            </span>
           </div>
         ),
+        cell: ({ row }) => {
+          const inv = row.original;
+          const isPendingOrOverdue = inv.status === "PENDING" || inv.status === "OVERDUE";
+          return (
+            <div className="flex items-center justify-end gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openDetailsModal(inv);
+                }}
+                className="h-7 px-2 text-xs font-semibold gap-1 cursor-pointer"
+              >
+                <span>{t("billing.viewDetails") || "View Details"}</span>
+                <ChevronRight className="h-3 w-3" />
+              </Button>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={(e) => e.stopPropagation()}
+                    className="h-7 w-7 cursor-pointer"
+                  >
+                    <MoreHorizontal className="h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 bg-card text-foreground border border-border">
+                  <DropdownMenuItem
+                    onClick={() => handleDownload(inv)}
+                    disabled={downloadingId === inv.id}
+                    className="text-xs cursor-pointer"
+                  >
+                    {downloadingId === inv.id ? (
+                      <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                    ) : (
+                      <Download className="h-3.5 w-3.5 mr-1" />
+                    )}
+                    {t("billing.downloadInvoice")}
+                  </DropdownMenuItem>
+
+                  {isPendingOrOverdue && (
+                    <>
+                      {isClient && (
+                        <DropdownMenuItem
+                          onClick={() => openPayModal(inv)}
+                          className="text-xs text-primary font-semibold cursor-pointer"
+                        >
+                          <CreditCard className="h-3.5 w-3.5 mr-1" />
+                          {t("billing.payNow") || "Pay"}
+                        </DropdownMenuItem>
+                      )}
+                      {isAdmin && (
+                        <DropdownMenuItem
+                          onClick={() => openMarkPaidModal(inv)}
+                          className="text-xs text-emerald-600 font-semibold cursor-pointer"
+                        >
+                          <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                          {t("billing.markAsPaid") || "Mark Paid"}
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator className="bg-border" />
+                      <DropdownMenuItem
+                        onClick={() => openCancelModal(inv)}
+                        className="text-xs text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+                      >
+                        <XCircle className="h-3.5 w-3.5 mr-1 text-destructive" />
+                        {t("billing.cancelInvoice") || "Cancel Invoice"}
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          );
+        },
       },
     ],
     [

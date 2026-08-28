@@ -43,12 +43,18 @@ export function UserActionsMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-7 w-7">
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          onClick={(e) => e.stopPropagation()}
+          className="h-7 w-7 cursor-pointer"
+        >
           <MoreHorizontal className="h-3.5 w-3.5" />
           <span className="sr-only">{t("userManagement.actions")}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-52">
+      <DropdownMenuContent align="end" className="w-52 bg-card text-foreground border border-border">
         <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground tracking-wider font-bold">
           {t("userManagement.changeRole")}
         </DropdownMenuLabel>
@@ -58,7 +64,7 @@ export function UserActionsMenu({
               key={value}
               disabled={isSelf || user.role === value}
               onClick={() => onRoleChange(user.id, user.name, value)}
-              className="text-xs gap-2"
+              className="text-xs gap-2 cursor-pointer"
             >
               <Icon className="h-3.5 w-3.5" />
               {t(labelKey)}
@@ -70,7 +76,7 @@ export function UserActionsMenu({
             </DropdownMenuItem>
           ))}
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator className="bg-border" />
         <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground tracking-wider font-bold">
           {t("userManagement.changeClientType") || "Client Type"}
         </DropdownMenuLabel>
@@ -80,7 +86,7 @@ export function UserActionsMenu({
               key={value}
               disabled={user.client_type === value}
               onClick={() => onClientTypeChange(user.id, user.name, value)}
-              className="text-xs gap-2"
+              className="text-xs gap-2 cursor-pointer"
             >
               <Icon className="h-3.5 w-3.5" />
               {t(labelKey)}
@@ -92,12 +98,12 @@ export function UserActionsMenu({
             </DropdownMenuItem>
           ))}
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator className="bg-border" />
         {user.is_active ? (
           <DropdownMenuItem
             disabled={isSelf}
             onClick={() => onStatusToggle(user.id, user.name, false)}
-            className="text-xs gap-2 text-secondary focus:text-secondary"
+            className="text-xs gap-2 text-secondary focus:text-secondary cursor-pointer"
           >
             <UserX className="h-3.5 w-3.5" />
             {t("userManagement.deactivate")}
@@ -106,7 +112,7 @@ export function UserActionsMenu({
           <DropdownMenuItem
             disabled={isSelf}
             onClick={() => onStatusToggle(user.id, user.name, true)}
-            className="text-xs gap-2 text-primary focus:text-primary"
+            className="text-xs gap-2 text-primary focus:text-primary cursor-pointer"
           >
             <UserCheck className="h-3.5 w-3.5" />
             {t("userManagement.reactivate")}
@@ -114,13 +120,13 @@ export function UserActionsMenu({
         )}
         {onDelete && (
           <>
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className="bg-border" />
             <DropdownMenuItem
               disabled={isSelf}
               onClick={() => onDelete(user.id, user.name)}
-              className="text-xs gap-2 text-destructive focus:text-destructive"
+              className="text-xs gap-2 text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive cursor-pointer"
             >
-              <Trash2 className="h-3.5 w-3.5" />
+              <Trash2 className="h-3.5 w-3.5 text-destructive" />
               {t("userManagement.deleteUser") || "Delete User"}
             </DropdownMenuItem>
           </>
