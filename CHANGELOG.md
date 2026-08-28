@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.6.1](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.6.0...v1.6.1) (2026-08-28)
+
+
+### Features
+
+* **crm:** enhance lead detail sheet with modular architecture, follow-up management, and clean layout ([6c9a8ed](https://github.com/Velmar-Technology/msp_client_portal/commit/6c9a8ed1766463708f291e037074ff2c9e26ec22))
+* **infra:** add Redis container and environment wiring to docker-compose.prod.yml ([498ce3a](https://github.com/Velmar-Technology/msp_client_portal/commit/498ce3ada855533b6436b1a1461bbdda10e9ef9c))
+
+
+### Bug Fixes
+
+* **infra:** serve zabbix frontend under /zabbix/ subpath ([a1793f6](https://github.com/Velmar-Technology/msp_client_portal/commit/a1793f60fc03afc8c2a68043a973ba501f05be4b))
+* **ui:** standardize SelectTrigger sizing variants and align form controls across application ([b9a481f](https://github.com/Velmar-Technology/msp_client_portal/commit/b9a481fe50cbe156f15b021928360d7f2f2e721d))
+
 ## [1.6.0](https://github.com-work/Velmar-Technology/msp_client_portal/compare/v1.5.5...v1.6.0) (2026-08-27)
 
 
