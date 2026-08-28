@@ -385,4 +385,42 @@ describe('AgentGateway', () => {
     expect(gateway.bindAgent('eq-046', 'slot-0002', 'secret')).toBe(false);
     expect(gateway.getPairingByCode('999999')).toBeNull();
   });
+
+  it('should detect direct TLS / WSS connections and report secure transport', () => {
+    const ws = new MockWebSocket();
+    const req = {
+      url: '/?agent_id=eq-wss-01&token=secure-token',
+      headers: { host: 'localhost:3001' },
+      socket: { encrypted: true },
+    };
+    wss.emit('connection', ws, req);
+
+    const status = gateway.getAgentStatus('eq-wss-01');
+    expect(status.online).toBe(true);
+    expect(status.isSecure).toBe(true);
+    expect(status.transport).toBe('wss');
+
+    const connectedList = gateway.getConnectedAgents();
+    const agentEntry = connectedList.find((a) => a.equipmentId === 'eq-wss-01');
+    expect(agentEntry).toBeDefined();
+    expect(agentEntry?.isSecure).toBe(true);
+    expect(agentEntry?.transport).toBe('wss');
+  });
+
+  it('should detect reverse proxy TLS / WSS headers (x-forwarded-proto)', () => {
+    const ws = new MockWebSocket();
+    const req = {
+      url: '/?agent_id=eq-wss-02&token=secure-token',
+      headers: {
+        host: 'helpdesk.velmartech.com.do',
+        'x-forwarded-proto': 'https',
+      },
+    };
+    wss.emit('connection', ws, req);
+
+    const status = gateway.getAgentStatus('eq-wss-02');
+    expect(status.online).toBe(true);
+    expect(status.isSecure).toBe(true);
+    expect(status.transport).toBe('wss');
+  });
 });

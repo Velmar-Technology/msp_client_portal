@@ -140,7 +140,8 @@ export function useTicketsPage() {
     async function loadDevices() {
       try {
         const result = await equipmentService.getMyDevices();
-        setDevices(result);
+        const provisioned = (result || []).filter((d) => d.status === "ACTIVE");
+        setDevices(provisioned);
       } catch (err) {
         console.error("Failed to load devices", err);
       }

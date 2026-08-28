@@ -20,7 +20,7 @@ All configuration is via environment variables:
 
 | Variable | Default | Description |
 | :--- | :--- | :--- |
-| `MSP_GATEWAY_URL` | `ws://localhost:3001/agent-ws` | WebSocket gateway URL |
+| `MSP_GATEWAY_URL` | `wss://helpdesk.velmartech.com.do/agent-ws` | WebSocket gateway URL |
 | `MSP_AGENT_ID` | *(auto-generated UUID)* | Equipment UUID from the MSP Portal |
 | `MSP_AGENT_TOKEN` | `dev-token` | Pre-shared secret for authentication |
 | `MSP_RECONNECT_DELAY` | `5` | Initial reconnection delay (seconds) |
@@ -52,7 +52,7 @@ The compiled binary is at `target/release/msp-agent.exe`.
 
 ### Manual (foreground)
 ```powershell
-$env:MSP_GATEWAY_URL = "wss://api.yourmsp.com/agent-ws"
+$env:MSP_GATEWAY_URL = "wss://helpdesk.velmartech.com.do/agent-ws"
 $env:MSP_AGENT_ID = "equipment-uuid-from-portal"
 $env:MSP_AGENT_TOKEN = "your-agent-secret-token"
 .\target\release\msp-agent.exe
@@ -69,7 +69,7 @@ Set environment variables via the registry for the service:
 ```powershell
 $regPath = "HKLM:\SYSTEM\CurrentControlSet\Services\MSP Endpoint Agent"
 New-ItemProperty -Path $regPath -Name Environment -Value @(
-    "MSP_GATEWAY_URL=wss://api.yourmsp.com/agent-ws",
+    "MSP_GATEWAY_URL=wss://helpdesk.velmartech.com.do/agent-ws",
     "MSP_AGENT_ID=equipment-uuid",
     "MSP_AGENT_TOKEN=secret-token"
 ) -PropertyType MultiString -Force

@@ -58,8 +58,7 @@ export function StorageOverview({ storage, loading, t }: StorageOverviewProps) {
   const isOffline = storage.status === "offline";
   const isUnlimited = storage.total === "unlimited";
   const isUnknown = storage.total === "unknown";
-  const usagePercentage =
-    isOffline || isUnlimited || isUnknown ? 0 : Math.min(100, Math.round(storage.percentage));
+  const usagePercentage = isOffline || isUnlimited || isUnknown ? 0 : Math.min(100, Math.round(storage.percentage));
 
   const totalLabel = isOffline
     ? t("dashboard.unavailable")
@@ -198,7 +197,7 @@ export function RecentInvoices({ invoices, t, language, getStatusLabel, getStatu
   ];
 
   return (
-    <div className="bg-zinc-50/50 dark:bg-zinc-900/30 rounded-lg overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+    <div className="bg-zinc-50/50 dark:bg-zinc-900/30 rounded-lg border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
       <div className="p-3 border-b border-zinc-200/60 dark:border-zinc-800/60 flex justify-between items-center bg-zinc-50/20 dark:bg-zinc-900/10 mb-3">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
           {t("dashboard.recentInvoices")}

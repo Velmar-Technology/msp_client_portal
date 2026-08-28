@@ -86,6 +86,19 @@ const envSchema = z.object({
   DD_VERSION: z.string().default('1.5.2'),
   DD_TRACE_ENABLED: z.string().default('false'),
   DD_AGENT_HOST: z.string().optional(),
+
+  // SSL / TLS / HTTPS / WSS Support
+  ENABLE_HTTPS: z
+    .string()
+    .default('false')
+    .transform((v) => v === 'true' || v === '1'),
+  SSL_KEY_PATH: z.string().optional(),
+  SSL_CERT_PATH: z.string().optional(),
+  SSL_CA_PATH: z.string().optional(),
+  SSL_KEY: z.string().optional(),
+  SSL_CERT: z.string().optional(),
+  SSL_CA: z.string().optional(),
+  EXTERNAL_GATEWAY_URL: z.string().default('wss://helpdesk.velmartech.com.do/agent-ws'),
 });
 
 const parsed = envSchema.safeParse(process.env);

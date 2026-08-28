@@ -50,7 +50,8 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
       try {
         const result = await equipmentService.getMyDevices();
         if (!cancelled) {
-          setDevices(result);
+          const provisioned = (result || []).filter((device) => device.status === "ACTIVE");
+          setDevices(provisioned);
           setDevicesFailed(false);
         }
       } catch (err) {
