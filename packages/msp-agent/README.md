@@ -48,32 +48,54 @@ The compiled binary is at `target/release/msp-agent.exe`.
 
 ---
 
-## 🚀 Run
+## 🚀 Run & Service Management
 
-### Manual (foreground)
+### 1. Automatic Windows Background Service (Recommended)
+
+Run PowerShell **as Administrator**:
+
 ```powershell
-$env:MSP_GATEWAY_URL = "wss://helpdesk.velmartech.com.do/agent-ws"
-$env:MSP_AGENT_ID = "equipment-uuid-from-portal"
-$env:MSP_AGENT_TOKEN = "your-agent-secret-token"
-.\target\release\msp-agent.exe
+# 1. Install as an automatic Windows Service
+# (Automatically relocates binary to 'C:\Program Files\MSP\msp-agent\' and sets up protected storage)
+.\msp-agent.exe install
+
+# 2. Start the background service immediately
+.\msp-agent.exe start
+
+# 3. Check service status (RUNNING / STOPPED)
+.\msp-agent.exe status
+
+# 4. View live service logs
+.\msp-agent.exe log
 ```
 
-### Install as Windows Service
+#### Service Management Commands
+
+| Command | Action |
+| :--- | :--- |
+| `.\msp-agent.exe install` | Relocates binary to `C:\Program Files\MSP\msp-agent\` and installs auto-start Windows Service |
+| `.\msp-agent.exe start` | Starts the installed Windows background service |
+| `.\msp-agent.exe status` | Displays current state (`RUNNING` / `STOPPED`) and PID |
+| `.\msp-agent.exe log` | Displays the latest background service logs |
+| `.\msp-agent.exe stop` | Stops the running background service |
+| `.\msp-agent.exe uninstall` | Stops and removes the service from Windows |
+
+### 2. Manual / Foreground Console Mode (Testing)
+
 ```powershell
-sc.exe create "MSP Endpoint Agent" binpath="C:\MSP\msp-agent.exe" start=auto
-sc.exe description "MSP Endpoint Agent" "Velmar Technology MSP remote diagnostics agent"
-sc.exe start "MSP Endpoint Agent"
+$env:MSP_GATEWAY_URL = "ws://localhost:3001/agent-ws"
+.\msp-agent.exe
 ```
 
-Set environment variables via the registry for the service:
-```powershell
-$regPath = "HKLM:\SYSTEM\CurrentControlSet\Services\MSP Endpoint Agent"
-New-ItemProperty -Path $regPath -Name Environment -Value @(
-    "MSP_GATEWAY_URL=wss://helpdesk.velmartech.com.do/agent-ws",
-    "MSP_AGENT_ID=equipment-uuid",
-    "MSP_AGENT_TOKEN=secret-token"
-) -PropertyType MultiString -Force
-```
+When started unbound for the first time, it displays a **6-digit pairing code** with a 15-minute TTL. Enter this code into the MSP Client Portal to link the PC to its subscription slot.
+
+---
+
+## 📁 Protected System Paths
+
+- **Binary**: `C:\Program Files\MSP\msp-agent\msp-agent.exe`
+- **State & Identity**: `C:\ProgramData\MSP\msp-agent.json` (stores `instance_id`, `slot_id`, `agent_token`)
+- **Service Log**: `C:\ProgramData\MSP\msp-agent.log`
 
 ---
 

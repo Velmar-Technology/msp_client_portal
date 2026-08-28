@@ -127,18 +127,17 @@ export class EquipmentService {
     hello: AgentHelloPayload,
     token: string | null
   ): Promise<void> {
-    const hostname = (hello.hostname || '').trim();
-    const serial = (hello.serial_number || '').trim();
-    if (!hostname && !serial) {
-      logger.warn('[EquipmentService] Agent hello carried no identity; skipping reconcile', { equipmentId });
-      return;
-    }
-
     const slot =
       (await this.equipmentRepository.findByAgentInstanceId(equipmentId)) ||
       (await this.equipmentRepository.findById(equipmentId));
-    if (!slot) {
-      logger.warn('[EquipmentService] No equipment record for connecting agent', { equipmentId });
+
+    if (!slot || slot.status === 'PENDING_ACTIVATION') {
+      if (hello.binding_state === 'BOUND' || hello.slot_id || (token && token !== 'dev-token')) {
+        logger.info('[EquipmentService] Agent claims bound state for unlinked/inactive slot; sending UNBIND', { equipmentId });
+        agentGateway.unbindAgent(equipmentId, hello.slot_id);
+      } else {
+        logger.warn('[EquipmentService] No equipment record for connecting agent', { equipmentId });
+      }
       return;
     }
 
@@ -149,6 +148,15 @@ export class EquipmentService {
       }
     } else {
       logger.info('[EquipmentService] Slot has no agent_token; trusting hello in lenient mode', { equipmentId });
+    }
+
+    // Link live connection to the active slot in agentGateway
+    agentGateway.setAgentSlotId(equipmentId, slot.id);
+
+    const hostname = (hello.hostname || '').trim();
+    const serial = (hello.serial_number || '').trim();
+    if (!hostname && !serial) {
+      return;
     }
 
     const identity: { hostname?: string; serial?: string; lastSeenAt: Date } = {
@@ -319,6 +327,7 @@ export class EquipmentService {
       }
     }
 
+    const agentInstanceId = slot.agent_instance_id;
     const updated = await this.equipmentRepository.update(slot.id, {
       status: 'PENDING_ACTIVATION',
       agent_instance_id: null,
@@ -328,6 +337,10 @@ export class EquipmentService {
       agent_last_seen_at: null,
       ...(nextcloudPassword ? { nextcloud_password: nextcloudPassword } : {}),
     });
+
+    if (agentInstanceId) {
+      agentGateway.unbindAgent(agentInstanceId, slot.id);
+    }
 
     return this.stripSecrets(updated!);
   }
@@ -413,6 +426,7 @@ export class EquipmentService {
       await this.cleanupNextcloudUser(slot.nextcloud_username);
     }
 
+    const agentInstanceId = slot.agent_instance_id;
     const updated = await this.equipmentRepository.update(slot.id, {
       status: 'PENDING_ACTIVATION',
       device_name: null,
@@ -427,6 +441,10 @@ export class EquipmentService {
       agent_serial: null,
       agent_last_seen_at: null,
     });
+
+    if (agentInstanceId) {
+      agentGateway.unbindAgent(agentInstanceId, slot.id);
+    }
 
     return updated!;
   }

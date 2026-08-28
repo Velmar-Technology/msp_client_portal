@@ -43,11 +43,37 @@ impl AgentState {
         if let Ok(over) = std::env::var("MSP_AGENT_CONFIG") {
             return PathBuf::from(over).join("msp-agent.json");
         }
+
+        #[cfg(windows)]
+        {
+            if let Ok(prog_data) = std::env::var("ProgramData") {
+                let msp_dir = PathBuf::from(prog_data).join("MSP");
+                let msp_json = msp_dir.join("msp-agent.json");
+                if msp_json.exists() {
+                    return msp_json;
+                }
+            }
+        }
+
         let dir = std::env::current_exe()
             .ok()
             .and_then(|exe| exe.parent().map(|p| p.to_path_buf()))
             .unwrap_or_else(|| PathBuf::from("."));
-        dir.join("msp-agent.json")
+        let local_json = dir.join("msp-agent.json");
+        if local_json.exists() {
+            return local_json;
+        }
+
+        #[cfg(windows)]
+        {
+            if let Ok(prog_data) = std::env::var("ProgramData") {
+                let msp_dir = PathBuf::from(prog_data).join("MSP");
+                let _ = std::fs::create_dir_all(&msp_dir);
+                return msp_dir.join("msp-agent.json");
+            }
+        }
+
+        local_json
     }
 
     pub fn load() -> Self {
@@ -66,6 +92,9 @@ impl AgentState {
     }
 
     pub fn save_to(&self, path: &Path) -> std::io::Result<()> {
+        if let Some(parent) = path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
         let raw = serde_json::to_vec_pretty(self)?;
         std::fs::write(path, raw)
     }
@@ -108,6 +137,13 @@ impl AgentState {
         self.slot_id = Some(slot_id.into());
         self.agent_token = Some(agent_token.into());
         self.clear_pairing_code();
+    }
+
+    /// Unbinds the agent, clears persisted slot_id and agent_token, and generates a fresh pairing code.
+    pub fn unbind(&mut self) -> String {
+        self.slot_id = None;
+        self.agent_token = None;
+        self.issue_pairing_code()
     }
 
     fn is_valid_code(raw: &str) -> bool {
@@ -177,6 +213,19 @@ mod tests {
         assert_eq!(state.slot_id.as_deref(), Some("00000000-0000-4000-8000-000000000001"));
         assert_eq!(state.agent_token.as_deref(), Some("secret-token"));
         assert!(state.active_pairing_code().is_none());
+    }
+
+    #[test]
+    fn unbind_clears_bound_state_and_issues_new_pairing_code() {
+        let mut state = AgentState::default();
+        state.bind("00000000-0000-4000-8000-000000000001", "secret-token");
+        assert!(state.is_bound());
+
+        let new_code = state.unbind();
+        assert!(!state.is_bound());
+        assert_eq!(state.slot_id, None);
+        assert_eq!(state.agent_token, None);
+        assert_eq!(state.active_pairing_code(), Some(new_code.as_str()));
     }
 
     #[test]
