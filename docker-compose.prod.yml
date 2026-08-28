@@ -29,6 +29,29 @@ services:
           cpus: '0.05'
           memory: 64M
 
+  redis:
+    image: redis:7-alpine
+    container_name: msp_redis_prod
+    restart: always
+    command: ["redis-server", "--appendonly", "yes"]
+    networks:
+      - default
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.20'
+          memory: 128M
+        reservations:
+          cpus: '0.01'
+          memory: 16M
+
   server:
     image: ghcr.io/${REPOSITORY_OWNER:-velmar-technology}/msp-services-server:${VERSION:-latest}
     container_name: msp_server_prod
@@ -45,6 +68,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
     environment:
       - TZ=${TZ:-America/Santo_Domingo}
       - DB_HOST=db
@@ -54,6 +79,9 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - PORT=3001
       - NODE_ENV=production
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_ENABLED=${REDIS_ENABLED:-true}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - CORS_ORIGIN=${CORS_ORIGIN}
@@ -445,6 +473,8 @@ services:
 
 volumes:
   pgdata:
+    driver: local
+  redisdata:
     driver: local
   uploads_data:
     driver: local
