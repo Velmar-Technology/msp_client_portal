@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "build:packages": "npm -w packages/errors run build",
+    "release": "commit-and-tag-version",
     "prepare": "node -e \"if (process.env.NODE_ENV !== 'production') { try { require('child_process').execSync('npx --no husky', { stdio: 'inherit' }); } catch (e) {} }\""
   },
   "devDependencies": {

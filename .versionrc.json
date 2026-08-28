@@ -6,9 +6,10 @@
     "client/package-lock.json",
     "server/package.json",
     "server/package-lock.json",
-    "packages/errors/package.json"
+    "packages/errors/package.json",
+    "packages/mcp-server/package.json"
   ],
   "scripts": {
-    "postbump": "npm install --package-lock-only --ignore-scripts --no-audit --no-fund --legacy-peer-deps"
+    "postbump": "node scripts/sync-versions.js && npm install --package-lock-only --ignore-scripts --no-audit --no-fund --legacy-peer-deps"
   }
 }
