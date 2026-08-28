@@ -443,7 +443,8 @@ export function RegisterPage() {
                                 aria-required="true"
                                 aria-invalid={fieldState.invalid}
                                 aria-describedby={fieldState.invalid ? "reg-clientType-error" : undefined}
-                                className="w-full h-9 data-[size=default]:h-9 px-3 py-1.5 border border-input rounded-lg text-xs bg-background focus-visible:ring-1 focus-visible:ring-ring transition-all text-foreground shadow-xs cursor-pointer"
+                                size="lg"
+                                className="w-full px-3 py-1.5 border border-input rounded-lg text-xs bg-background focus-visible:ring-1 focus-visible:ring-ring transition-all text-foreground shadow-xs cursor-pointer"
                               >
                                 <SelectValue placeholder={t("register.clientType")} />
                               </SelectTrigger>

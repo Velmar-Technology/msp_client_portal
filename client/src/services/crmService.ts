@@ -174,6 +174,14 @@ export interface CreateActivityPayload {
   status?: "PENDING" | "COMPLETED" | "CANCELLED";
 }
 
+export interface UpdateActivityPayload {
+  title?: string;
+  activityType?: LeadActivity["activity_type"];
+  summary?: string | null;
+  dueDate?: string | null;
+  status?: "PENDING" | "COMPLETED" | "CANCELLED";
+}
+
 export interface GetLeadsParams {
   search?: string;
   stage?: LeadStage;
@@ -264,9 +272,13 @@ export const crmService = {
     return response.data.data;
   },
 
-  async updateActivity(activityId: string, data: { status?: string; summary?: string }): Promise<LeadActivity> {
+  async updateActivity(activityId: string, data: UpdateActivityPayload): Promise<LeadActivity> {
     const response = await api.patch(`/crm/activities/${activityId}`, data);
     return response.data.data;
+  },
+
+  async deleteActivity(activityId: string): Promise<void> {
+    await api.delete(`/crm/activities/${activityId}`);
   },
 
   async getQuotations(leadId: string): Promise<Quotation[]> {

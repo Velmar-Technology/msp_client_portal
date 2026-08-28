@@ -93,6 +93,9 @@ export class LeadActivityRepository extends BaseRepository<LeadActivity> {
     if (!id || !isUuid(id)) return null;
 
     const valuesToUpdate: Record<string, unknown> = {};
+    if (data.title !== undefined) valuesToUpdate.title = data.title;
+    if (data.activityType !== undefined) valuesToUpdate.activity_type = data.activityType;
+    if (data.dueDate !== undefined) valuesToUpdate.due_date = data.dueDate ? new Date(data.dueDate) : null;
     if (data.status !== undefined) {
       valuesToUpdate.status = data.status;
       if (data.status === 'COMPLETED') {
@@ -108,6 +111,15 @@ export class LeadActivityRepository extends BaseRepository<LeadActivity> {
       .where(and(eq(leadActivities.id, id), eq(leadActivities.tenant_id, tenantId)));
 
     return this.findActivityById(id, tenantId);
+  }
+
+  async deleteActivity(id: string, tenantId: string): Promise<boolean> {
+    if (!id || !isUuid(id)) return false;
+    const result = await db
+      .delete(leadActivities)
+      .where(and(eq(leadActivities.id, id), eq(leadActivities.tenant_id, tenantId)))
+      .returning();
+    return result.length > 0;
   }
 
   async findActivityById(id: string, tenantId?: string): Promise<LeadActivity | null> {

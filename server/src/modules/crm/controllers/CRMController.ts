@@ -107,6 +107,11 @@ export class CRMController {
     res.json({ success: true, data: activity });
   }
 
+  async deleteActivity(req: Request, res: Response): Promise<void> {
+    await this.service.deleteActivity(req.params.activityId as string, req.user!.tenantId);
+    res.json({ success: true, message: 'Activity deleted successfully' });
+  }
+
   async getQuotations(req: Request, res: Response): Promise<void> {
     const quotations = await this.service.getQuotationsForLead(req.params.id as string, req.user!.tenantId);
     res.json({ success: true, data: quotations });

@@ -281,7 +281,7 @@ export function NotificationHistorySection() {
           </div>
 
           <Select value={readFilter} onValueChange={(val) => setReadFilter(val as ReadFilter)}>
-            <SelectTrigger size="sm" className="h-7 text-xs w-27.5">
+            <SelectTrigger size="default" className="text-xs w-27.5">
               <SelectValue placeholder={t("notificationHistory.statusPlaceholder", "Status")} />
             </SelectTrigger>
             <SelectContent className="bg-card border-border">
@@ -292,7 +292,7 @@ export function NotificationHistorySection() {
           </Select>
 
           <Select value={typeFilter} onValueChange={(val) => setTypeFilter(val as TypeFilter)}>
-            <SelectTrigger size="sm" className="h-7 text-xs w-42.5">
+            <SelectTrigger size="default" className="text-xs w-42.5">
               <SelectValue placeholder={t("notificationHistory.eventTypePlaceholder", "Event Type")} />
             </SelectTrigger>
             <SelectContent className="bg-card border-border">

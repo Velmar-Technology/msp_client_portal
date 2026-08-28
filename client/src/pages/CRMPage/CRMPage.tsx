@@ -74,6 +74,7 @@ export function CRMPage() {
     convertLeadToSubscription,
     logActivity,
     updateActivity,
+    deleteActivity,
     modifySubscription,
     cancelSubscription,
   } = useCRMStore();
@@ -462,6 +463,9 @@ export function CRMPage() {
           }}
           onUpdateActivity={async (activityId, data) => {
             await updateActivity(activityId, data);
+          }}
+          onDeleteActivity={async (activityId) => {
+            await deleteActivity(activityId);
           }}
           onModifySubscription={async (subId, planId, count) => {
             await modifySubscription({ subId, planId, equipmentCount: count, leadId: selectedLead?.id });

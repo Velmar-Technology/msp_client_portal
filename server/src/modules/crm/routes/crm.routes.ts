@@ -69,6 +69,9 @@ router.post('/leads/:id/activities', validate(CreateLeadActivityDTO), (req, res)
 /** PATCH /api/v1/crm/activities/:activityId — Update activity status or notes */
 router.patch('/activities/:activityId', validate(UpdateLeadActivityDTO), (req, res) => crmController.updateActivity(req, res));
 
+/** DELETE /api/v1/crm/activities/:activityId — Delete a scheduled activity / follow-up */
+router.delete('/activities/:activityId', (req, res) => crmController.deleteActivity(req, res));
+
 /** GET /api/v1/crm/leads/:id/quotations — Get quotations created for a lead */
 router.get('/leads/:id/quotations', (req, res) => crmController.getQuotations(req, res));
 

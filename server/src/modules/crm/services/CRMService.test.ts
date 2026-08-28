@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => {
       findUpcomingByTenant: vi.fn(),
       createActivity: vi.fn(),
       updateActivity: vi.fn(),
+      deleteActivity: vi.fn(),
     },
     quotationRepo: {
       createQuotation: vi.fn(),
@@ -612,6 +613,21 @@ describe('CRMService', () => {
       mocks.leadRepo.findLeadById.mockResolvedValue(null);
 
       await expect(service.deleteLead('lead-999', 'tenant-1')).rejects.toThrow(NotFoundError);
+    });
+  });
+
+  describe('deleteActivity', () => {
+    it('deletes activity when found in tenant', async () => {
+      mocks.activityRepo.deleteActivity.mockResolvedValue(true);
+
+      await service.deleteActivity('act-1', 'tenant-1');
+      expect(mocks.activityRepo.deleteActivity).toHaveBeenCalledWith('act-1', 'tenant-1');
+    });
+
+    it('throws NotFoundError if activity does not exist', async () => {
+      mocks.activityRepo.deleteActivity.mockResolvedValue(false);
+
+      await expect(service.deleteActivity('act-999', 'tenant-1')).rejects.toThrow(NotFoundError);
     });
   });
 });

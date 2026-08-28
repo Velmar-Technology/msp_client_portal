@@ -205,7 +205,7 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
                   onValueChange={setSelectedTechId}
                   disabled={loadingTechs || assigning}
                 >
-                  <SelectTrigger className="flex-1 h-8 text-xs bg-background border-input">
+                  <SelectTrigger size="lg" className="flex-1 text-xs bg-background border-input">
                     <SelectValue placeholder={`${t('ticketDetail.assignTechnician')}...`} />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-border">

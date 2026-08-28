@@ -414,7 +414,7 @@ export function PlansPage() {
                   value={clientTypeFilter}
                   onValueChange={(val) => setClientTypeFilter(val as "ALL" | typeof clientTypeFilter)}
                 >
-                  <SelectTrigger id="client-type-filter" className="h-7 text-xs">
+                  <SelectTrigger id="client-type-filter" size="default" className="text-xs">
                     <SelectValue placeholder={t("plans.allAudiences") || "All plans"} />
                   </SelectTrigger>
                   <SelectContent>

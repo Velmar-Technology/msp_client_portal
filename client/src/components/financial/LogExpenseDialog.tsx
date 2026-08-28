@@ -164,7 +164,7 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
               {t("financial.expenseCategory")}
             </label>
             <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger id="expense-category" className="h-8 w-full text-xs">
+              <SelectTrigger id="expense-category" size="lg" className="w-full text-xs">
                 <SelectValue placeholder={t("financial.expenseCategory")} />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border">

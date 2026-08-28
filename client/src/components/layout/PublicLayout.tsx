@@ -54,7 +54,8 @@ export function PublicLayout() {
             >
               <SelectTrigger
                 aria-label="Select Language"
-                className="h-8 rounded-full border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 px-3 text-xs font-semibold gap-1.5 cursor-pointer"
+                size="lg"
+                className="rounded-full border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 px-3 text-xs font-semibold gap-1.5 cursor-pointer"
               >
                 <Globe className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
                 <SelectValue />

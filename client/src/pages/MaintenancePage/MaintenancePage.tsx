@@ -442,7 +442,7 @@ export function MaintenancePage() {
                   value={statusFilter}
                   onValueChange={(val) => setStatusFilter(val)}
                 >
-                  <SelectTrigger className="w-36 h-7 text-xs font-medium bg-background">
+                  <SelectTrigger size="default" className="w-36 text-xs font-medium bg-background">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -462,7 +462,7 @@ export function MaintenancePage() {
                   value={selectedTechFilter}
                   onValueChange={(val) => setSelectedTechFilter(val)}
                 >
-                  <SelectTrigger className="w-36 h-7 text-xs font-medium bg-background">
+                  <SelectTrigger size="default" className="w-36 text-xs font-medium bg-background">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

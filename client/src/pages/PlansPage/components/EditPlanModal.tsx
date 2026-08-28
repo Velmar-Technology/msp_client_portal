@@ -299,7 +299,7 @@ export function EditPlanModal({
                     value={editClientType}
                     onValueChange={(val) => setEditClientType(val)}
                   >
-                    <SelectTrigger id="edit-client-type" className="w-full text-xs font-medium">
+                    <SelectTrigger id="edit-client-type" size="lg" className="w-full text-xs font-medium">
                       <SelectValue placeholder={t('plans.clientType')} />
                     </SelectTrigger>
                     <SelectContent>

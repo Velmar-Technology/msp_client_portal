@@ -114,6 +114,20 @@ export const CancelSubscriptionDTO = z.object({
 export type CancelSubscriptionInput = z.infer<typeof CancelSubscriptionDTO>;
 
 export const UpdateLeadActivityDTO = z.object({
+  title: z.string().min(1).max(255).optional(),
+  activityType: z.enum([
+    'CALL',
+    'MEETING',
+    'NOTE',
+    'EMAIL_SENT',
+    'QUOTE_SENT',
+    'QUOTE_REMINDER',
+    'QUOTE_STATUS_CHANGE',
+    'STAGE_CHANGE',
+    'PLAN_ASSIGNED',
+    'SUB_MODIFIED',
+  ]).optional(),
+  dueDate: z.string().optional().nullable(),
   status: z.enum(['PENDING', 'COMPLETED', 'CANCELLED']).optional(),
   summary: z.string().optional().nullable(),
   completedAt: z.string().datetime().optional().nullable(),

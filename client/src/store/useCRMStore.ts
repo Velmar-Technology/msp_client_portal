@@ -14,6 +14,7 @@ import {
   type ConvertLeadPayload,
   type ConvertLeadResult,
   type CreateActivityPayload,
+  type UpdateActivityPayload,
   type GetLeadsParams,
 } from "@/services/crmService";
 
@@ -51,7 +52,8 @@ export interface CRMState {
   updateQuotationStatus: (quotationId: string, status: Quotation["status"]) => Promise<Quotation>;
   convertLeadToSubscription: (leadId: string, data?: ConvertLeadPayload) => Promise<ConvertLeadResult>;
   logActivity: (leadId: string, data: CreateActivityPayload) => Promise<void>;
-  updateActivity: (activityId: string, data: { status?: string; summary?: string }) => Promise<void>;
+  updateActivity: (activityId: string, data: UpdateActivityPayload) => Promise<void>;
+  deleteActivity: (activityId: string) => Promise<void>;
   modifySubscription: (data: { subId: string; planId: string; equipmentCount: number; leadId?: string }) => Promise<void>;
   cancelSubscription: (data: { subId: string; leadId?: string }) => Promise<void>;
 }
@@ -333,16 +335,29 @@ export const useCRMStore = create<CRMState>()(
         }
       },
 
-      updateActivity: async (activityId: string, data: { status?: string; summary?: string }) => {
+      updateActivity: async (activityId: string, data: UpdateActivityPayload) => {
         try {
           const updated = await crmService.updateActivity(activityId, data);
           set((state) => ({
             leadActivities: state.leadActivities.map((a) => (a.id === activityId ? updated : a)),
-            upcomingActivities: state.upcomingActivities.filter((a) => a.id !== activityId),
+            upcomingActivities: state.upcomingActivities.map((a) => (a.id === activityId ? updated : a)),
           }));
           get().fetchUpcomingActivities();
         } catch (err) {
           console.error("Failed to update activity", err);
+          throw err;
+        }
+      },
+
+      deleteActivity: async (activityId: string) => {
+        try {
+          await crmService.deleteActivity(activityId);
+          set((state) => ({
+            leadActivities: state.leadActivities.filter((a) => a.id !== activityId),
+            upcomingActivities: state.upcomingActivities.filter((a) => a.id !== activityId),
+          }));
+        } catch (err) {
+          console.error("Failed to delete activity", err);
           throw err;
         }
       },

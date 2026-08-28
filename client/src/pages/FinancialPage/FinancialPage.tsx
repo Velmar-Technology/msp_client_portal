@@ -89,7 +89,7 @@ export function FinancialPage() {
             value={dateRange}
             onValueChange={(val) => setDateRange(val as DateRange)}
           >
-            <SelectTrigger className="w-36 h-7 text-xs font-medium bg-background">
+            <SelectTrigger size="default" className="w-36 text-xs font-medium bg-background">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

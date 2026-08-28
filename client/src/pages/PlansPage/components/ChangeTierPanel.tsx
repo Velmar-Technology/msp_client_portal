@@ -88,7 +88,7 @@ export function ChangeTierPanel({
             value={currentPlan.id}
             onValueChange={(val) => onSelectPlan(val)}
           >
-            <SelectTrigger id="tier-change-plan-select" className="w-full h-7 text-xs">
+            <SelectTrigger id="tier-change-plan-select" size="default" className="w-full text-xs">
               <SelectValue placeholder={t("plans.selectNewTier")} />
             </SelectTrigger>
             <SelectContent>

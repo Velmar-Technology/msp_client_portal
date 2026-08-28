@@ -173,63 +173,62 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
 
 ## CI/CD Pipeline & VPS Deployment Guide
 
-Continuous Integration and Deployment is automated via GitHub Actions ([.github/workflows/deploy.yml](file:///.github/workflows/deploy.yml)).
+Continuous Integration and Deployment is automated via GitHub Actions ([.github/workflows/deploy.yml](.github/workflows/deploy.yml)). Deployment is **Portainer-owned**: CI builds images, pushes them to GitHub Container Registry, and updates the production stack through the Portainer REST API — it no longer shells out to `docker compose up` on the host.
 
 ```
-┌─────────────────────────┐
-│ Git Push Tag (v*) or    │
-│ Manual Dispatch Trigger │
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐     Build & Push     ┌────────────────────────┐
-│  Build & Push Job       ├─────────────────────►│ GitHub Container       │
-│  (Docker Buildx)        │                      │ Registry (ghcr.io)     │
-└────────────┬────────────┘                      └───────────┬────────────┘
-             │                                               │
-             ▼                                               │ Pull latest
-┌─────────────────────────┐    Copy Compose via SCP          │ Docker images
-│  Deploy to VPS Job      ├──────────────────────────┐       │
-└─────────────────────────┘                          │       ▼
-                                                     ▼────────────────────┐
-                                                     │ Target VPS Host    │
-                                                     │ (docker compose up)│
-                                                     └────────────────────┘
+┌──────────────────────────────┐
+│ Git Push Tag (v*) or         │
+│ Manual Dispatch (workflow)   │
+└──────────────┬───────────────┘
+               ▼
+┌──────────────────────────────────────┐
+│ prepare → quality-gates              │
+│   (lint · typecheck · tests)         │
+│ build-server + build-client          │
+│   → ghcr.io :<version>/:<sha>/:latest│
+│ security-scan (Trivy HIGH/CRITICAL)  │
+│ build-agent-binaries + create-release│
+└──────────────┬───────────────────────┘
+               ▼
+┌──────────────────────────────────────────────────────┐
+│ deploy-production (environment approval gate)         │
+│ 1. capture rollback point (running msp_server_prod)   │
+│ 2. pre-warm GHCR pulls on VPS (SSH)                   │
+│ 3. portainer-stack-update.sh <VERSION>                │
+│ 4. health verify /api/v1/health (12×5s)               │
+│ 5. auto-rollback → previous VERSION on failure        │
+└──────────────┬───────────────────────────────────────┘
+               ▼
+          notify (webhook)
 ```
 
 ### 1. GitHub Actions Workflow Trigger
 
 - **Automated Trigger:** Pushing a version tag matching `v*` (e.g. `v1.2.0`).
-- **Manual Trigger:** `workflow_dispatch` trigger with optional custom `releaseVersion` input.
+- **Manual Trigger:** `workflow_dispatch` with optional `releaseVersion` input (plus a `skipSecurityGate` override).
 
-### 2. Build & Push Docker Images Job (`build-and-push`)
+### 2. Build & Push Docker Images
 
-- Computes release version from tag, dispatch input, or `client/package.json`.
-- Log in to **GitHub Container Registry (`ghcr.io`)**.
-- Builds and pushes backend server Docker image (`server/Dockerfile`) with tags:
-  - `ghcr.io/<owner>/msp-services-server:latest`
-  - `ghcr.io/<owner>/msp-services-server:<sha>`
-  - `ghcr.io/<owner>/msp-services-server:<version>`
-- Validates secrets (`VITE_GOOGLE_CLIENT_ID`, `VITE_PAYPAL_CLIENT_ID`).
-- Builds and pushes frontend client Docker image (`client/Dockerfile`) passing build args (`VITE_GOOGLE_CLIENT_ID`, `VITE_APP_VERSION`, `VITE_PAYPAL_CLIENT_ID`) with tags:
-  - `ghcr.io/<owner>/msp-services-client:latest`
-  - `ghcr.io/<owner>/msp-services-client:<sha>`
-  - `ghcr.io/<owner>/msp-services-client:<version>`
+- `prepare` resolves the release version (tag → dispatch input → `client/package.json`).
+- `quality-gates` (lint/typecheck/tests) must pass before anything ships.
+- **Server** (`server/Dockerfile`) and **Client** (`client/Dockerfile`) are built with Docker Buildx (SBOM + OCI provenance) and pushed to GHCR with tags `:<version>`, `:<sha>`, `:latest`:
+  - `ghcr.io/<owner>/msp-services-server:...`
+  - `ghcr.io/<owner>/msp-services-client:...`
+  - Client build args are baked at compile time: `VITE_GOOGLE_CLIENT_ID`, `VITE_APP_VERSION`, `VITE_PAYPAL_CLIENT_ID`, `VITE_DD_*`.
+- `security-scan` runs Trivy — HIGH/CRITICAL CVEs block release (SARIF uploaded; bypassable per-run or via the `DISABLE_SECURITY_GATE` repo variable).
 
-### 3. VPS Deployment Job (`deploy`)
+### 3. Production Deployment via Portainer (`deploy-production`)
 
-- **SCP Transfer:** Transfers `docker-compose.prod.yml` to `~/msp-client-portal` on VPS via SSH (`appleboy/scp-action`).
-- **SSH Deployment:** Executes remote deployment commands (`appleboy/ssh-action`):
-  ```bash
-  mkdir -p ~/msp-client-portal
-  cd ~/msp-client-portal
-  echo "${GITHUB_TOKEN}" | docker login ghcr.io -u ${ACTOR} --password-stdin
-  export REPOSITORY_OWNER=${OWNER_LC}
-  export VERSION=${RELEASE_VERSION}
-  docker compose -f docker-compose.prod.yml pull
-  docker compose -f docker-compose.prod.yml up -d
-  docker logout ghcr.io
-  ```
+- **Approval gate:** Runs in the `production` GitHub Environment (required reviewers); URL `https://helpdesk.velmartech.com.do`.
+- **Rollback point:** Captures the currently-running `msp_server_prod` image tag from the Portainer Docker API.
+- **Pre-warm:** Pulls the new server/client images on the VPS over SSH to shrink the synchronous Portainer update window (best-effort; needs a one-time `docker login ghcr.io` with a `read:packages` PAT).
+- **Stack update:** `bash scripts/portainer-stack-update.sh "${VERSION}"` submits the repo-owned `docker-compose.prod.yml` with a pinned `VERSION` to Portainer (`PUT /api/stacks/:id?endpointId=:id`, `prune:true`, `pullImage:true`).
+- **Health gate:** `docker exec msp_server_prod node -e "fetch('http://127.0.0.1:3001/api/v1/health')…"` — up to 12 attempts.
+- **Auto-rollback:** On update or health failure, re-pins the previous `VERSION` through the same script and re-verifies.
+- **Required secrets:** `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_PORT`, `PORTAINER_URL`, `PORTAINER_API_KEY`, `PORTAINER_ENDPOINT_ID` (`3`), `PORTAINER_STACK_ID` (`17`), `VITE_GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_ID`, `VITE_PAYPAL_CLIENT_ID`, `DEPLOY_WEBHOOK_URL`.
+- **TLS caveat:** `PORTAINER_TLS_INSECURE=true` currently trusts Portainer's self-signed cert — remove once Portainer sits behind Traefik with a CA-signed cert.
+
+> **Manual redeploy & rollback:** [`docs/infrastructure/MSP_PORTAL_STACK.md`](docs/infrastructure/MSP_PORTAL_STACK.md) §7 (`scripts/portainer-stack-update.js <version>` or the Portainer UI → Stacks → `msp_portal` → Pull & redeploy).
 
 ---
 
@@ -277,9 +276,9 @@ Continuous Integration and Deployment is automated via GitHub Actions ([.github/
 
 The frontend relies on **shadcn/ui** primitives located in `client/src/components/ui/`. Modern structural skeleton loaders replace standard loading spinners for enhanced perceived performance:
 
-- **Skeleton Primitive:** [skeleton.tsx](file:///c:/Users/Public/Workspace/msp_client_portal/client/src/components/ui/skeleton.tsx)
-- **DataTable Skeleton:** [data-table.tsx](file:///c:/Users/Public/Workspace/msp_client_portal/client/src/components/ui/data-table.tsx) displays skeleton rows matching table structure when `loading` is active.
-- **Ticket Detail Skeleton:** [TicketDetailPage.tsx](file:///c:/Users/Public/Workspace/msp_client_portal/client/src/pages/TicketDetailPage.tsx) renders layout grid skeletons during asynchronous data fetches.
+- **Skeleton Primitive:** [skeleton.tsx](client/src/components/ui/skeleton.tsx)
+- **DataTable Skeleton:** [data-table.tsx](client/src/components/ui/data-table.tsx) displays skeleton rows matching table structure when `loading` is active.
+- **Ticket Detail Skeleton:** [TicketDetailPage.tsx](client/src/pages/TicketDetailPage.tsx) renders layout grid skeletons during asynchronous data fetches.
 
 ---
 
@@ -287,13 +286,13 @@ The frontend relies on **shadcn/ui** primitives located in `client/src/component
 
 The platform features a **Token-Driven Homogeneous Email Design System** shared conceptually between the frontend live preview and backend dispatch engine:
 
-- **Frontend Template Suite:** [`client/src/email-templates/`](file:///c:/Users/Public/Workspace/msp_client_portal/client/src/email-templates)
+- **Frontend Template Suite:** [`client/src/email-templates/`](client/src/email-templates/)
   - `tokens.ts`: Unified design tokens for brand palette (`#0C4A6E`, `#38BDF8`, `#2563EB`), typography, spacing, and shadows.
   - `components.tsx`: Standardized sub-components (`Greeting`, `InfoCard`, `DetailRow`, `Badge`, `Callout`, `Disclaimer`, `HighlightCode`, `FallbackLink`).
   - `EmailWrapper.tsx`: Responsive layout shell with header gradient, 3px colored accent bar, and bilingual footer.
   - `PasswordResetTemplate.tsx`, `OTPTemplate.tsx`, `TicketCreatedTemplate.tsx`, `InvoiceReminderTemplate.tsx`.
 - **Live Interactive Gallery:** Accessible in the client portal under **Notifications & Preferences** (`/notifications`), providing live multi-template inspection with English and Spanish language switching.
-- **Backend Email Dispatcher:** [`server/src/shared/utils/emailService.ts`](file:///c:/Users/Public/Workspace/msp_client_portal/server/src/shared/utils/emailService.ts) renders and sends identical HTML for all system notifications via Nodemailer SMTP.
+- **Backend Email Dispatcher:** [`server/src/shared/utils/emailService.ts`](server/src/shared/utils/emailService.ts) renders and sends identical HTML for all system notifications via Nodemailer SMTP.
 
 ---
 
@@ -302,9 +301,9 @@ The platform features a **Token-Driven Homogeneous Email Design System** shared 
 The portal integrates with **Nextcloud** running on **TrueNAS SCALE** (`cloud-storage-srv-1`) to provide automatic cloud backup storage (25 GB per device slot) to clients.
 
 - **WireGuard Site-to-Client Tunnel:** Secures internal communication between the helpdesk VPS (`10.13.13.1`) and customer TrueNAS (`10.13.13.3:30027`), bypassing dynamic WAN IPs and firewall NAT barriers without open incoming router ports.
-- **Traefik Public Ingress:** Exposes client browser and desktop/mobile sync access at `https://cloud.velmartech.com.do` via Traefik reverse proxy.
-- **Backend Provisioning Service:** [`server/src/modules/system/services/NextcloudService.ts`](file:///c:/Users/Public/Workspace/msp_client_portal/server/src/modules/system/services/NextcloudService.ts) automatically creates and manages client storage accounts via OCS REST and WebDAV APIs.
-- **Infrastructure Docs & Runbooks:** Full architectural guide, IP topology, and diagnostic scripts are available in [`docs/infrastructure/WIREGUARD_NEXTCLOUD_INTEGRATION.md`](file:///c:/Users/Public/Workspace/msp_client_portal/docs/infrastructure/WIREGUARD_NEXTCLOUD_INTEGRATION.md) and [`scripts/infra/wireguard/`](file:///c:/Users/Public/Workspace/msp_client_portal/scripts/infra/wireguard/).
+- **Traefik Public Ingress:** Exposes Nextcloud sync at `https://atlas.velmartech.com.do` via Traefik reverse proxy through the tunnel; the portal itself runs at `https://helpdesk.velmartech.com.do`.
+- **Backend Provisioning Service:** [`server/src/modules/system/services/NextcloudService.ts`](server/src/modules/system/services/NextcloudService.ts) automatically creates and manages client storage accounts via OCS REST and WebDAV APIs.
+- **Infrastructure Docs & Runbooks:** Full architectural guide, IP topology, and diagnostic scripts are available in [`docs/infrastructure/WIREGUARD_NEXTCLOUD_INTEGRATION.md`](docs/infrastructure/WIREGUARD_NEXTCLOUD_INTEGRATION.md) and [`scripts/infra/wireguard/`](scripts/infra/wireguard/). The production `msp_portal` stack (12 services, Traefik routing, Zabbix subpath fix, deploy/rollback) is documented in [`docs/infrastructure/MSP_PORTAL_STACK.md`](docs/infrastructure/MSP_PORTAL_STACK.md).
 
 ---
 

@@ -69,7 +69,7 @@ export function UserFiltersBar({
             onRoleFilterChange(value === "ALL" ? "" : (value as RoleFilter))
           }
         >
-          <SelectTrigger className="h-8 min-w-32.5 px-2.5 text-xs font-medium bg-card text-foreground border border-border shadow-2xs hover:bg-accent/40 hover:border-border/80 focus:ring-1 focus:ring-ring cursor-pointer gap-2">
+          <SelectTrigger size="lg" className="min-w-32.5 px-2.5 text-xs font-medium bg-card text-foreground border border-border shadow-2xs hover:bg-accent/40 hover:border-border/80 focus:ring-1 focus:ring-ring cursor-pointer gap-2">
             <SelectValue placeholder={t("userManagement.filterRole")} />
           </SelectTrigger>
           <SelectContent className="bg-popover border-border shadow-md rounded-md">
@@ -85,7 +85,7 @@ export function UserFiltersBar({
           value={statusFilter}
           onValueChange={(value) => onStatusFilterChange(value as StatusFilter)}
         >
-          <SelectTrigger className="h-8 min-w-32.5 px-2.5 text-xs font-medium bg-card text-foreground border border-border shadow-2xs hover:bg-accent/40 hover:border-border/80 focus:ring-1 focus:ring-ring cursor-pointer gap-2">
+          <SelectTrigger size="lg" className="min-w-32.5 px-2.5 text-xs font-medium bg-card text-foreground border border-border shadow-2xs hover:bg-accent/40 hover:border-border/80 focus:ring-1 focus:ring-ring cursor-pointer gap-2">
             <SelectValue placeholder={t("userManagement.filterStatus")} />
           </SelectTrigger>
           <SelectContent className="bg-popover border-border shadow-md rounded-md">
