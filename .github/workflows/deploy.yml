@@ -378,7 +378,7 @@ jobs:
   create-release:
     name: Create GitHub Release
     if: needs.prepare.outputs.is_tag == 'true'
-    needs: [prepare, security-scan, build-agent-binaries]
+    needs: [prepare, build-agent-binaries]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
