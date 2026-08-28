@@ -7,6 +7,10 @@ export interface SubscriptionEquipment {
   status: 'PENDING_ACTIVATION' | 'ACTIVE';
   device_name: string | null;
   device_serial: string | null;
+  agent_instance_id?: string | null;
+  agent_hostname?: string | null;
+  agent_serial?: string | null;
+  agent_last_seen_at?: string | null;
   otp: string | null;
   otp_expires_at: string | null;
   nextcloud_username: string | null;
@@ -46,35 +50,37 @@ export const equipmentService = {
     return response.data.data;
   },
 
-  async generateOTP(subId: string, slotIndex: number): Promise<SubscriptionEquipment> {
-    const response = await api.post(`/equipment/subscriptions/${subId}/slots/${slotIndex}/otp`);
-    return response.data.data;
-  },
-
-  async activateSlot(
-    subId: string,
-    slotIndex: number,
-    deviceName: string,
-    deviceSerial: string
+  async activateWithOtp(
+    data: {
+      otp: string;
+      subscriptionId: string;
+      slotIndex: number;
+      deviceName?: string;
+      deviceSerial?: string;
+    }
   ): Promise<SubscriptionEquipment> {
-    const response = await api.post(`/equipment/subscriptions/${subId}/slots/${slotIndex}/activate`, {
-      deviceName,
-      deviceSerial,
-    });
+    const response = await api.post('/equipment/activate-with-otp', data);
     return response.data.data;
   },
 
-  async activateWithOtp(otp: string, deviceName: string, deviceSerial: string): Promise<SubscriptionEquipment> {
-    const response = await api.post('/equipment/activate-with-otp', {
-      otp,
-      deviceName,
-      deviceSerial,
+  async getAgentIdentityByOtp(otp: string): Promise<{
+    hostname: string | null;
+    serial: string | null;
+    lastSeenAt: string | null;
+  }> {
+    const response = await api.get('/equipment/agent-identity', {
+      params: { otp },
     });
     return response.data.data;
   },
 
   async deactivateSlot(subId: string, slotIndex: number): Promise<SubscriptionEquipment> {
     const response = await api.post(`/equipment/subscriptions/${subId}/slots/${slotIndex}/deactivate`);
+    return response.data.data;
+  },
+
+  async repairSlot(subId: string, slotIndex: number): Promise<SubscriptionEquipment> {
+    const response = await api.post(`/equipment/subscriptions/${subId}/slots/${slotIndex}/re-pair`);
     return response.data.data;
   },
 

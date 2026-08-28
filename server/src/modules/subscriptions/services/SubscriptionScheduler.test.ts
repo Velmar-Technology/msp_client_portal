@@ -3,13 +3,16 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 const mocks = vi.hoisted(() => {
   return {
     subFindPendingRenewal: vi.fn(),
+    subFindExpiringSoon: vi.fn(),
     subUpdateRenewal: vi.fn(),
     subUpdateStatus: vi.fn(),
+    subUpdateLastExpiryWarningSentAt: vi.fn(),
     planFindById: vi.fn(),
     invoiceFindByNumber: vi.fn(),
     invoiceCreate: vi.fn(),
     paypalGetSubscription: vi.fn(),
     createInAppNotification: vi.fn(),
+    onSubscriptionExpiringSoon: vi.fn(),
     sendInvoiceDueEmail: vi.fn().mockResolvedValue({}),
   };
 });
@@ -40,8 +43,10 @@ vi.mock('@modules/subscriptions/repositories/SubscriptionRepository', () => {
   return {
     subscriptionRepository: {
       findPendingRenewal: mocks.subFindPendingRenewal,
+      findExpiringSoon: mocks.subFindExpiringSoon,
       updateRenewal: mocks.subUpdateRenewal,
       updateStatus: mocks.subUpdateStatus,
+      updateLastExpiryWarningSentAt: mocks.subUpdateLastExpiryWarningSentAt,
     },
   };
 });
@@ -81,6 +86,7 @@ vi.mock('@modules/notifications', () => {
   return {
     notificationService: {
       createInAppNotification: mocks.createInAppNotification,
+      onSubscriptionExpiringSoon: mocks.onSubscriptionExpiringSoon,
     },
   };
 });
@@ -95,9 +101,46 @@ describe('SubscriptionScheduler', () => {
 
   it('should do nothing if no subscriptions are pending renewal', async () => {
     mocks.subFindPendingRenewal.mockResolvedValue([]);
+    mocks.subFindExpiringSoon.mockResolvedValue([]);
     await subscriptionScheduler.checkAndRenewSubscriptions();
     expect(mocks.subFindPendingRenewal).toHaveBeenCalled();
     expect(mocks.planFindById).not.toHaveBeenCalled();
+  });
+
+  it('sends an expiry warning exactly once and stamps last_warning_sent_at', async () => {
+    const expiringSub = {
+      id: 'sub-expiring',
+      client_id: 'client-999',
+      service_name: 'Basic Support',
+      plan: 'PL-004',
+      status: 'ACTIVE',
+      renewal_date: new Date(Date.now() + 2 * 24 * 3600 * 1000), // 2 days out
+      equipment_count: 1,
+      paypal_order_id: 'MOCK-SUB-EXP',
+      tenant_id: 'tenant-abc',
+    };
+
+    mocks.subFindPendingRenewal.mockResolvedValue([]);
+    mocks.subFindExpiringSoon.mockResolvedValue([expiringSub]);
+    mocks.onSubscriptionExpiringSoon.mockResolvedValue(undefined);
+    mocks.subUpdateLastExpiryWarningSentAt.mockResolvedValue(undefined);
+
+    await subscriptionScheduler.checkAndRenewSubscriptions();
+
+    expect(mocks.subFindExpiringSoon).toHaveBeenCalledWith(expect.any(Date), expect.any(Date));
+    expect(mocks.onSubscriptionExpiringSoon).toHaveBeenCalledWith(
+      expiringSub,
+      expect.objectContaining({ id: 'client-999' })
+    );
+    expect(mocks.subUpdateLastExpiryWarningSentAt).toHaveBeenCalledWith('sub-expiring', expect.any(Date));
+
+    // Second tick: already-warned subs are excluded by the repository query, so nothing is re-sent
+    mocks.subFindExpiringSoon.mockResolvedValue([]);
+
+    await subscriptionScheduler.checkAndRenewSubscriptions();
+
+    expect(mocks.onSubscriptionExpiringSoon).toHaveBeenCalledTimes(1);
+    expect(mocks.subUpdateLastExpiryWarningSentAt).toHaveBeenCalledTimes(1);
   });
 
   it('should successfully renew a mock subscription', async () => {

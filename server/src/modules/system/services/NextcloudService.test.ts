@@ -109,6 +109,43 @@ describe('NextcloudService', () => {
     });
   });
 
+  describe('setUserPassword', () => {
+    it('should rotate the password and return the new generated password', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ ocs: { meta: { statuscode: 100, message: 'OK' } } }),
+      } as Response);
+
+      const password = await nextcloudService.setUserPassword('client_tenant-123_slot_1');
+
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      const [, init] = fetchSpy.mock.calls[0];
+      expect(init!.method).toBe('PUT');
+      const body = init!.body as URLSearchParams;
+      expect(body.get('key')).toBe('password');
+      expect(password).toMatch(/^[A-Za-z0-9!@#$%^&*\-_=+?]{20}$/);
+    });
+
+    it('should throw when the Nextcloud edit-user request fails', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: false,
+        text: () => Promise.resolve('nextcloud auth failed'),
+      } as Response);
+
+      await expect(nextcloudService.setUserPassword('client_tenant-123_slot_1')).rejects.toThrow(
+        'Nextcloud password reset request failed'
+      );
+    });
+
+    it('should throw a validation error when config is incomplete', async () => {
+      env.NEXTCLOUD_APP_USER = '';
+
+      await expect(nextcloudService.setUserPassword('client_tenant-123_slot_1')).rejects.toThrow(
+        'Nextcloud configuration is incomplete'
+      );
+    });
+  });
+
   describe('getStorageUsage', () => {
     it('should return fallback status if Nextcloud configuration is missing', async () => {
       env.NEXTCLOUD_APP_USER = ''; // Clear username

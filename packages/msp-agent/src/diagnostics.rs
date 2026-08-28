@@ -450,7 +450,123 @@ pub fn exec_powershell_script(payload: &Option<Value>) -> Value {
     }
 }
 
+/// Captures the authoritative machine identity: OS hostname, BIOS/system serial
+/// number, hardware manufacturer, and system model. This lets the MSP portal
+/// reconcile customer-entered device details against the true machine.
+///
+/// The serial is read via platform-native tooling:
+/// - Windows: `Get-CimInstance Win32_BIOS` (falls back to `Win32_ComputerSystemProduct`)
+/// - macOS:   the I/O registry `IOPlatformSerialNumber`
+/// - Linux:   the DMI `product_serial` sysfs node
+pub fn gather_device_identity() -> Value {
+    let hostname = sysinfo::System::host_name().unwrap_or_else(|| "Unknown".into());
+    serde_json::json!({
+        "hostname": hostname,
+        "bios_serial": bios_serial(),
+        "manufacturer": manufacturer(),
+        "system_model": system_model(),
+        "collected_at": chrono::Utc::now().to_rfc3339()
+    })
+}
+
+/// Builds a stable identity payload from raw parts (pure helper, unit-testable).
+pub fn identity_payload(
+    hostname: impl Into<String>,
+    bios_serial: impl Into<String>,
+    manufacturer: impl Into<String>,
+    system_model: impl Into<String>,
+) -> Value {
+    serde_json::json!({
+        "hostname": hostname.into(),
+        "bios_serial": bios_serial.into(),
+        "manufacturer": manufacturer.into(),
+        "system_model": system_model.into(),
+    })
+}
+
+/// Reads the hardware BIOS/system serial number as a trimmed string. Empty when
+/// unavailable or when the platform reports a vendor placeholder value.
+pub fn bios_serial() -> String {
+    let mut serial = if cfg!(windows) {
+        run_platform_shell(
+            "Get-CimInstance -ClassName Win32_BIOS -ErrorAction Stop | Select-Object -ExpandProperty SerialNumber"
+        )
+    } else if cfg!(target_os = "macos") {
+        run_platform_shell(
+            "ioreg -l | grep IOPlatformSerialNumber | awk -F'\"' '{print $4}'"
+        )
+    } else if cfg!(target_os = "linux") {
+        run_platform_shell("cat /sys/class/dmi/id/product_serial 2>/dev/null")
+    } else {
+        String::new()
+    };
+
+    if serial.is_empty() && cfg!(windows) {
+        serial = run_platform_shell(
+            "Get-CimInstance -ClassName Win32_ComputerSystemProduct -ErrorAction SilentlyContinue | Select-Object -ExpandProperty UUID"
+        );
+    }
+
+    normalize_serial(&serial).unwrap_or_default()
+}
+
+/// Reports the hardware manufacturer (Windows only; empty elsewhere).
+pub fn manufacturer() -> String {
+    if cfg!(windows) {
+        run_platform_shell(
+            "Get-CimInstance -ClassName Win32_ComputerSystem -ErrorAction Stop | Select-Object -ExpandProperty Manufacturer"
+        )
+    } else {
+        String::new()
+    }
+}
+
+/// Reports the system model name (Windows only; empty elsewhere).
+pub fn system_model() -> String {
+    if cfg!(windows) {
+        run_platform_shell(
+            "Get-CimInstance -ClassName Win32_ComputerSystem -ErrorAction Stop | Select-Object -ExpandProperty Model"
+        )
+    } else {
+        String::new()
+    }
+}
+
+/// Filters out vendor placeholder serials (e.g. "To be filled by O.E.M.").
+fn normalize_serial(raw: &str) -> Option<String> {
+    let value = raw.trim_matches(['\r', '\n', ' ']).trim().to_string();
+    let lower = value.to_ascii_lowercase();
+    if value.is_empty()
+        || lower == "none"
+        || lower == "system serial number"
+        || lower == "default string"
+        || lower.contains("to be filled")
+        || lower.contains("o.e.m.")
+    {
+        None
+    } else {
+        Some(value)
+    }
+}
+
 // ── Internal Helpers ──────────────────────────────────────────────────────────
+
+/// Runs a command through the platform shell (PowerShell on Windows, `sh`
+/// elsewhere) and returns the trimmed stdout. Returns an empty string on error.
+fn run_platform_shell(command: &str) -> String {
+    let (cmd, args) = if cfg!(windows) {
+        (
+            "powershell",
+            vec!["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", command],
+        )
+    } else {
+        ("sh", vec!["-c", command])
+    };
+    match std::process::Command::new(cmd).args(&args).output() {
+        Ok(output) => String::from_utf8_lossy(&output.stdout).trim().to_string(),
+        Err(_) => String::new(),
+    }
+}
 
 /// Runs a PowerShell command and parses the JSON output. Returns `Value::Null` on failure.
 fn run_ps_json(command: &str) -> Value {
@@ -474,5 +590,32 @@ fn run_ps_text(command: &str) -> String {
     {
         Ok(output) => String::from_utf8_lossy(&output.stdout).trim().to_string(),
         Err(e) => format!("Error: {}", e),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn identity_payload_includes_all_fields() {
+        let payload = identity_payload("SRV-0421", "CN-9XYZ123", "Dell Inc.", "XPS 15");
+
+        assert_eq!(payload["hostname"], "SRV-0421");
+        assert_eq!(payload["bios_serial"], "CN-9XYZ123");
+        assert_eq!(payload["manufacturer"], "Dell Inc.");
+        assert_eq!(payload["system_model"], "XPS 15");
+    }
+
+    #[test]
+    fn normalize_serial_keeps_real_serials() {
+        assert_eq!(
+            normalize_serial("  CN-9XYZ123  "),
+            Some("CN-9XYZ123".to_string())
+        );
+        assert_eq!(normalize_serial("System Serial Number"), None);
+        assert_eq!(normalize_serial("To be filled by O.E.M."), None);
+        assert_eq!(normalize_serial("none"), None);
+        assert_eq!(normalize_serial(""), None);
     }
 }

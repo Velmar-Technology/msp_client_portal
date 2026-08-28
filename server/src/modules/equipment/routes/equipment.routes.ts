@@ -30,6 +30,11 @@ router.get('/my-devices', (req, res) =>
   equipmentController.getMyDevices(req, res)
 );
 
+/** GET /api/v1/equipment/agent-identity?otp=XXXXXX — Agent-discovered identity prefill for a slot by activation code */
+router.get('/agent-identity', (req, res) =>
+  equipmentController.getAgentIdentity(req, res)
+);
+
 /** POST /api/v1/equipment/activate-with-otp — Activate a slot by entering a generated OTP code */
 router.post('/activate-with-otp', validate(ActivateWithOtpDTO, 'body'), (req, res) =>
   equipmentController.activateWithOtp(req, res)
@@ -40,19 +45,14 @@ router.get('/subscriptions/:subId/slots', (req, res) =>
   equipmentController.getSlots(req, res)
 );
 
-/** POST /api/v1/equipment/subscriptions/:subId/slots/:slotIndex/otp — Generate OTP code */
-router.post('/subscriptions/:subId/slots/:slotIndex/otp', rbacMiddleware(UserRole.ADMIN, UserRole.TECHNICIAN), (req, res) =>
-  equipmentController.generateOTP(req, res)
-);
-
-/** POST /api/v1/equipment/subscriptions/:subId/slots/:slotIndex/activate — Activate equipment */
-router.post('/subscriptions/:subId/slots/:slotIndex/activate', (req, res) =>
-  equipmentController.activateSlot(req, res)
-);
-
 /** POST /api/v1/equipment/subscriptions/:subId/slots/:slotIndex/deactivate — Deactivate equipment */
 router.post('/subscriptions/:subId/slots/:slotIndex/deactivate', (req, res) =>
   equipmentController.deactivateSlot(req, res)
+);
+
+/** POST /api/v1/equipment/subscriptions/:subId/slots/:slotIndex/re-pair — Unbind a slot for re-pairing with a replacement agent (admin or client owner) */
+router.post('/subscriptions/:subId/slots/:slotIndex/re-pair', (req, res) =>
+  equipmentController.repairSlot(req, res)
 );
 
 /** GET /api/v1/equipment/subscriptions/:subId/slots/:slotIndex/nextcloud — Get Nextcloud info for a slot */

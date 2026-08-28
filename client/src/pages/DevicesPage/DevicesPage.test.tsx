@@ -18,9 +18,8 @@ vi.mock('@/services/equipmentService', () => ({
   equipmentService: {
     getSlots: vi.fn(),
     getMyDevices: vi.fn(),
-    generateOTP: vi.fn(),
-    activateSlot: vi.fn(),
     activateWithOtp: vi.fn(),
+    getAgentIdentityByOtp: vi.fn(),
     deactivateSlot: vi.fn(),
     getAllDevicesForAdmin: vi.fn(),
     addAdminDevice: vi.fn(),
@@ -123,6 +122,11 @@ describe('DevicesPage', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockUser.role = 'CLIENT';
+    vi.mocked(equipmentService.getAgentIdentityByOtp).mockResolvedValue({
+      hostname: null,
+      serial: null,
+      lastSeenAt: null,
+    });
     if (typeof window !== 'undefined') {
       window.HTMLElement.prototype.scrollIntoView = vi.fn();
       window.HTMLElement.prototype.hasPointerCapture = vi.fn();
@@ -146,7 +150,7 @@ describe('DevicesPage', () => {
     });
   });
 
-  test('renders devices table and runs simulated activation wizard', async () => {
+  test('renders devices table and pairs a pending slot via the Activate Device flow', async () => {
     mockUser.role = 'ADMIN';
     const activeSubs = [
       {
@@ -200,16 +204,10 @@ describe('DevicesPage', () => {
     vi.mocked(equipmentService.getMyDevices).mockResolvedValue([...mockSlots]);
     vi.mocked(equipmentService.getAllDevicesForAdmin).mockResolvedValue([...mockSlots]);
 
-    vi.mocked(equipmentService.generateOTP).mockImplementation(async (subId, slotIndex) => {
-      mockSlots[slotIndex].otp = '123456';
-      mockSlots[slotIndex].otp_expires_at = new Date(Date.now() + 600000).toISOString();
-      return mockSlots[slotIndex];
-    });
-
-    vi.mocked(equipmentService.activateSlot).mockImplementation(async (subId, slotIndex, name, serial) => {
+    vi.mocked(equipmentService.activateWithOtp).mockImplementation(async ({ slotIndex, deviceName, deviceSerial }) => {
       mockSlots[slotIndex].status = 'ACTIVE';
-      mockSlots[slotIndex].device_name = name;
-      mockSlots[slotIndex].device_serial = serial;
+      mockSlots[slotIndex].device_name = deviceName || null;
+      mockSlots[slotIndex].device_serial = deviceSerial || null;
       mockSlots[slotIndex].nextcloud_username = 'backup_user_2';
       mockSlots[slotIndex].nextcloud_password = 'backup_password_2';
       return mockSlots[slotIndex];
@@ -244,38 +242,29 @@ describe('DevicesPage', () => {
     const actionsButtons = screen.getAllByRole('button', { name: 'Actions' });
     fireEvent.click(actionsButtons[1]);
 
-    // Click Generate OTP on Slot #2 from the menu
-    const generateOtpMenuItem = screen.getByRole('menuitem', { name: 'Generate Activation OTP' });
-    fireEvent.click(generateOtpMenuItem);
+    // Click Activate Device on Slot #2 from the menu
+    const activateMenuItem = screen.getByRole('menuitem', { name: 'Activate Device' });
+    fireEvent.click(activateMenuItem);
 
-    // Verify toast is shown and OTP UI is rendered in Wizard Step 1
+    // Activate with Code modal opens scoped to the slot
     await waitFor(() => {
-      expect(screen.getByText('Device Activation Wizard')).toBeInTheDocument();
-      expect(mockToast.success).toHaveBeenCalledWith('OTP Generated', expect.any(Object));
-      expect(screen.getByText('123456')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Activate Device' })).toBeInTheDocument();
+      expect(screen.getByText('Pairing to slot #2')).toBeInTheDocument();
     });
 
-    // Click next in wizard
-    const nextBtn = screen.getByRole('button', { name: 'Next: Enter Device Info' });
-    fireEvent.click(nextBtn);
+    // Enter the pairing code shown by the device agent
+    fireEvent.change(screen.getByLabelText('Pairing Code'), { target: { value: '123456' } });
+    fireEvent.change(screen.getByLabelText('Device Name / Label'), { target: { value: 'Simulated Laptop' } });
+    fireEvent.change(screen.getByLabelText('Device Serial Number'), { target: { value: 'SN-SIM-111' } });
 
-    // Fill in Device Name and Serial in Step 2
-    const nameInput = screen.getByLabelText('Device Name / Label');
-    fireEvent.change(nameInput, { target: { value: 'Simulated Laptop' } });
+    // Confirm pairing
+    fireEvent.click(screen.getByRole('button', { name: 'Pair Device' }));
 
-    // Click activate
-    const activateBtn = screen.getByRole('button', { name: 'Activate & Provision Backup' });
-    fireEvent.click(activateBtn);
-
-    // Expect Step 3 success screen
+    // Expect activation success and closed modal
     await waitFor(() => {
       expect(mockToast.success).toHaveBeenCalledWith('Device Activated', expect.any(Object));
-      expect(screen.getAllByText('Simulated Laptop')[0]).toBeInTheDocument();
+      expect(screen.queryByText('Pairing to slot #2')).toBeNull();
     });
-
-    // Close wizard
-    const completeBtn = screen.getByRole('button', { name: 'Complete Activation' });
-    fireEvent.click(completeBtn);
 
     // Wait for the table to finish reloading and show both active slots
     await waitFor(() => {
@@ -297,12 +286,18 @@ describe('DevicesPage', () => {
     const deactivateMenuItems = screen.getAllByRole('menuitem', { name: 'Deactivate Device' });
     fireEvent.click(deactivateMenuItems[1]);
 
+    // Confirmation dialog appears → confirm the deactivation
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Deactivate Device' })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, Deactivate' }));
+
     await waitFor(() => {
       expect(mockToast.info).toHaveBeenCalledWith('Slot Revoked', expect.any(Object));
     });
   });
 
-  test('blocks CLIENT role users from generating OTPs', async () => {
+  test('CLIENT role opens the slot-scoped Activate Device modal', async () => {
     mockUser.role = 'CLIENT';
     const activeSubs = [
       {
@@ -352,11 +347,85 @@ describe('DevicesPage', () => {
     const actionsBtn = screen.getByRole('button', { name: 'Actions' });
     fireEvent.click(actionsBtn);
 
-    const generateBtn = screen.getByRole('menuitem', { name: 'Generate Activation OTP' });
-    fireEvent.click(generateBtn);
+    // Clients pick the slot from the table and open the unified activation entry
+    const activateItem = screen.getByRole('menuitem', { name: 'Activate Device' });
+    fireEvent.click(activateItem);
 
     await waitFor(() => {
-      expect(mockToast.error).toHaveBeenCalledWith('Activation Code Required', expect.any(Object));
+      expect(screen.getByRole('heading', { name: 'Activate Device' })).toBeInTheDocument();
+      expect(screen.getByText('Pairing to slot #1')).toBeInTheDocument();
+    });
+  });
+
+  test('confirms single-device deactivation before revoking for CLIENT role', async () => {
+    mockUser.role = 'CLIENT';
+    const activeSub = {
+      id: 'sub-revoke',
+      client_id: 'user-client',
+      service_name: 'Basic Support',
+      plan: 'BASIC' as const,
+      status: 'ACTIVE' as const,
+      renewal_date: '2026-07-22T00:00:00.000Z',
+      equipment_count: 1,
+      tenant_id: 'tenant-1',
+      created_at: '2026-06-22',
+      updated_at: '2026-06-22',
+    };
+
+    const mockSlot: SubscriptionEquipment = {
+      id: 'slot-revoke',
+      subscription_id: 'sub-revoke',
+      slot_index: 0,
+      status: 'ACTIVE',
+      device_name: 'Revoke Me Laptop',
+      device_serial: 'SN-REVOKE-01',
+      otp: null,
+      otp_expires_at: null,
+      nextcloud_username: 'nc_revoke_user',
+      nextcloud_password: 'nc_revoke_pass',
+      tenant_id: 'tenant-1',
+      created_at: '2026-06-22',
+      updated_at: '2026-06-22',
+    };
+
+    vi.mocked(subscriptionService.getAll).mockResolvedValue([activeSub as any]);
+    vi.mocked(equipmentService.getMyDevices).mockResolvedValue([mockSlot]);
+    vi.mocked(equipmentService.deactivateSlot).mockResolvedValue({
+      ...mockSlot,
+      status: 'PENDING_ACTIVATION',
+      device_name: null,
+      device_serial: null,
+      nextcloud_username: null,
+      nextcloud_password: null,
+    } as any);
+
+    render(
+      <MemoryRouter>
+        <DevicesPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Revoke Me Laptop')).toBeInTheDocument();
+    });
+
+    const actionsBtn = screen.getByRole('button', { name: 'Actions' });
+    fireEvent.click(actionsBtn);
+
+    const deactivateItem = screen.getByRole('menuitem', { name: 'Deactivate Device' });
+    fireEvent.click(deactivateItem);
+
+    // Confirmation required before the API is called
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Deactivate Device' })).toBeInTheDocument();
+    });
+    expect(equipmentService.deactivateSlot).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, Deactivate' }));
+
+    await waitFor(() => {
+      expect(equipmentService.deactivateSlot).toHaveBeenCalledWith('sub-revoke', 0);
+      expect(mockToast.info).toHaveBeenCalledWith('Slot Revoked', expect.any(Object));
     });
   });
 
@@ -687,62 +756,6 @@ describe('DevicesPage', () => {
     expect(equipmentService.getNextcloudInfo).toHaveBeenCalledWith('sub-nc-test', 0);
   });
 
-  test('supports bulk OTP generation on pending devices', async () => {
-    mockUser.role = 'ADMIN';
-    const mockAdminDevices = [
-      {
-        id: 'slot-bulk-1',
-        subscription_id: 'sub-bulk',
-        slot_index: 0,
-        status: 'PENDING_ACTIVATION' as const,
-        device_name: null,
-        device_serial: null,
-        tenant_id: 'tenant-1',
-        tenant_name: 'Acme Corp',
-        client_name: 'John Mitchell',
-        client_email: 'john@example.com',
-        plan: 'BASIC',
-      },
-    ];
-
-    vi.mocked(equipmentService.getAllDevicesForAdmin).mockResolvedValue(mockAdminDevices as any);
-    vi.mocked(equipmentService.generateOTP).mockResolvedValue({
-      ...mockAdminDevices[0],
-      otp: '654321',
-      otp_expires_at: new Date().toISOString(),
-    } as any);
-
-    render(
-      <MemoryRouter>
-        <DevicesPage />
-      </MemoryRouter>
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText('PENDING ACTIVATION')).toBeInTheDocument();
-    });
-
-    const selectAllCheckbox = screen.getByLabelText('Select all');
-    fireEvent.click(selectAllCheckbox);
-
-    await waitFor(() => {
-      expect(screen.getByText('1 selected')).toBeInTheDocument();
-    });
-
-    const generateOtpsBtn = screen.getByRole('button', { name: 'Generate OTPs' });
-    fireEvent.click(generateOtpsBtn);
-
-    await waitFor(() => {
-      expect(equipmentService.generateOTP).toHaveBeenCalledWith('sub-bulk', 0);
-      expect(mockToast.success).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({
-          description: expect.stringContaining('Generated OTPs for 1 pending slot(s).'),
-        })
-      );
-    });
-  });
-
   test('supports bulk deactivation on active devices', async () => {
     mockUser.role = 'ADMIN';
     const mockAdminDevices = [
@@ -809,7 +822,7 @@ describe('DevicesPage', () => {
     });
   });
 
-  test('activates a device with a standalone OTP code', async () => {
+  test('pairs and activates a pending device slot with a pairing code', async () => {
     mockUser.role = 'CLIENT';
     vi.mocked(subscriptionService.getAll).mockResolvedValue([
       {
@@ -853,25 +866,89 @@ describe('DevicesPage', () => {
       expect(screen.getByText('PENDING ACTIVATION')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Activate with Code' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Actions' }));
 
     await waitFor(() => {
-      expect(screen.getByText('Activate with Activation Code')).toBeInTheDocument();
+      expect(screen.getByRole('menuitem', { name: 'Activate Device' })).toBeInTheDocument();
     });
 
-    fireEvent.change(screen.getByLabelText('Activation Code'), { target: { value: '123456' } });
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Activate Device' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Activate Device' })).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByLabelText('Pairing Code'), { target: { value: '123456' } });
     fireEvent.change(screen.getByLabelText('Device Name / Label'), { target: { value: 'OTP Laptop' } });
     fireEvent.change(screen.getByLabelText('Device Serial Number'), { target: { value: 'SN-OTP-01' } });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Activate Device' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pair Device' }));
 
     await waitFor(() => {
-      expect(equipmentService.activateWithOtp).toHaveBeenCalledWith('123456', 'OTP Laptop', 'SN-OTP-01');
+      expect(equipmentService.activateWithOtp).toHaveBeenCalledWith({
+        otp: '123456',
+        subscriptionId: 'sub-otp-test',
+        slotIndex: 0,
+        deviceName: 'OTP Laptop',
+        deviceSerial: 'SN-OTP-01',
+      });
       expect(mockToast.success).toHaveBeenCalledWith('Device Activated', expect.any(Object));
     });
   });
 
-  test('hides bulk Generate OTP action for CLIENT role but displays it for ADMIN role', async () => {
+  test('prefills device identity from the agent when a valid OTP is entered', async () => {
+    const activeSub = {
+      id: 'sub-agent-test',
+      client_id: 'user-client',
+      service_name: 'Basic Plan',
+      plan: 'BASIC',
+      status: 'ACTIVE' as const,
+      renewal_date: '2026-07-22T00:00:00.000Z',
+      equipment_count: 1,
+      tenant_id: 'tenant-1',
+      created_at: '2026-06-22',
+      updated_at: '2026-06-22',
+    } as any;
+    vi.mocked(subscriptionService.getAll).mockResolvedValue([activeSub]);
+    vi.mocked(equipmentService.getMyDevices).mockResolvedValue([]);
+
+    vi.mocked(equipmentService.getAgentIdentityByOtp).mockResolvedValue({
+      hostname: 'AGENT-SRV-77',
+      serial: 'CN-AGENT-XYZ',
+      lastSeenAt: '2026-08-01T00:00:00.000Z',
+    });
+
+    render(
+      <MemoryRouter>
+        <DevicesPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('PENDING ACTIVATION')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Actions' }));
+
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Activate Device' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Activate Device' })).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByLabelText('Pairing Code'), { target: { value: '123456' } });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Device Name / Label')).toHaveValue('AGENT-SRV-77');
+      expect(screen.getByLabelText('Device Serial Number')).toHaveValue('CN-AGENT-XYZ');
+    });
+
+    expect(
+      screen.getByText('Device details detected via MSP Agent — confirm below.')
+    ).toBeInTheDocument();
+  });
+
+  test('exposes the slot-scoped Activate Device action for CLIENT and ADMIN roles', async () => {
     mockUser.role = 'CLIENT';
     const activeSub = {
       id: 'sub-bulk-1',
@@ -920,6 +997,11 @@ describe('DevicesPage', () => {
     expect(screen.queryByRole('button', { name: 'Generate OTPs' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Deactivate Devices' })).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Actions' }));
+    await waitFor(() => {
+      expect(screen.getByRole('menuitem', { name: 'Activate Device' })).toBeInTheDocument();
+    });
+
     mockUser.role = 'ADMIN';
     vi.mocked(equipmentService.getAllDevicesForAdmin).mockResolvedValue([
       {
@@ -945,54 +1027,13 @@ describe('DevicesPage', () => {
     const checkboxes = screen.getAllByRole('checkbox', { name: 'Select row' });
     fireEvent.click(checkboxes[0]);
 
-    expect(screen.getByRole('button', { name: 'Generate OTPs' })).toBeInTheDocument();
-  });
+    expect(screen.queryByRole('button', { name: 'Generate OTPs' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Deactivate Devices' })).toBeInTheDocument();
 
-  test('copies OTP code to clipboard when copy button is clicked', async () => {
-    const writeTextMock = vi.fn().mockResolvedValue(undefined);
-    Object.assign(navigator, {
-      clipboard: {
-        writeText: writeTextMock,
-      },
-    });
-
-    mockUser.role = 'ADMIN';
-    const mockSlots: any[] = [
-      {
-        id: 'slot-otp-1',
-        subscription_id: 'sub-basic',
-        slot_index: 0,
-        status: 'PENDING_ACTIVATION',
-        device_name: null,
-        device_serial: null,
-        otp: '987654',
-        otp_expires_at: new Date(Date.now() + 600000).toISOString(),
-        tenant_id: 'tenant-1',
-        client_name: 'John Doe',
-        tenant_name: 'Tenant 1',
-        plan: 'BASIC',
-        service_name: 'Basic Plan',
-      },
-    ];
-
-    vi.mocked(subscriptionService.getAll).mockResolvedValue([]);
-    vi.mocked(equipmentService.getAllDevicesForAdmin).mockResolvedValue(mockSlots);
-
-    render(
-      <MemoryRouter>
-        <DevicesPage />
-      </MemoryRouter>
-    );
-
+    fireEvent.click(screen.getAllByRole('button', { name: 'Actions' })[0]);
     await waitFor(() => {
-      expect(screen.getByText('OTP: 987654')).toBeInTheDocument();
+      expect(screen.getAllByRole('menuitem', { name: 'Activate Device' }).length).toBeGreaterThan(0);
     });
-
-    const copyBtn = screen.getByRole('button', { name: 'Copy OTP' });
-    fireEvent.click(copyBtn);
-
-    expect(writeTextMock).toHaveBeenCalledWith('987654');
-    expect(mockToast.success).toHaveBeenCalledWith('OTP copied to clipboard!');
   });
 
   test('renders Add Device button for ADMIN and submits new device', async () => {

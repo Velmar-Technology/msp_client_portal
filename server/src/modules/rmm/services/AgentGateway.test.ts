@@ -155,6 +155,9 @@ describe('AgentGateway', () => {
         agent_id: 'eq-030',
         agent_version: '1.0.0',
         hostname: 'WORKSTATION-42',
+        serial_number: 'CN-9XYZ123',
+        manufacturer: 'Dell Inc.',
+        system_model: 'XPS 15',
         os: 'Windows 11 Pro 26100',
         timestamp: new Date().toISOString(),
       },
@@ -163,7 +166,223 @@ describe('AgentGateway', () => {
     const status = gateway.getAgentStatus('eq-030');
     expect(status.online).toBe(true);
     expect(status.hostname).toBe('WORKSTATION-42');
+    expect(status.serialNumber).toBe('CN-9XYZ123');
+    expect(status.manufacturer).toBe('Dell Inc.');
+    expect(status.systemModel).toBe('XPS 15');
     expect(status.agentVersion).toBe('1.0.0');
     expect(status.os).toBe('Windows 11 Pro 26100');
+  });
+
+  it('should invoke the onAgentHello handler with identity + token', async () => {
+    const handler = vi.fn();
+    gateway.onAgentHello(handler);
+
+    const ws = new MockWebSocket();
+    wss.emit('connection', ws, createMockReq('eq-031', 'device-secret-42'));
+
+    ws.emit('message', JSON.stringify({
+      correlation_id: 'hello-2',
+      command: 'AGENT_HELLO',
+      payload: {
+        agent_id: 'eq-031',
+        hostname: 'SRV-0421',
+        serial_number: 'CN-555',
+        system_model: 'OptiPlex 3080',
+      },
+    }));
+
+    await vi.waitFor(() => expect(handler).toHaveBeenCalledTimes(1));
+
+    expect(handler).toHaveBeenCalledWith(
+      'eq-031',
+      expect.objectContaining({ hostname: 'SRV-0421', serial_number: 'CN-555' }),
+      'device-secret-42'
+    );
+  });
+
+  it('should not invoke the hello handler when none is registered', async () => {
+    const ws = new MockWebSocket();
+    wss.emit('connection', ws, createMockReq('eq-032'));
+
+    ws.emit('message', JSON.stringify({
+      correlation_id: 'hello-3',
+      command: 'AGENT_HELLO',
+      payload: { agent_id: 'eq-032', hostname: 'LONELY-PC' },
+    }));
+
+    await vi.waitFor(() => expect(gateway.getAgentStatus('eq-032').hostname).toBe('LONELY-PC'));
+  });
+
+  it('should contain errors thrown by the hello handler', async () => {
+    const handler = vi.fn(() => Promise.reject(new Error('boom')));
+    gateway.onAgentHello(handler);
+
+    const ws = new MockWebSocket();
+    wss.emit('connection', ws, createMockReq('eq-033'));
+
+    ws.emit('message', JSON.stringify({
+      correlation_id: 'hello-4',
+      command: 'AGENT_HELLO',
+      payload: { agent_id: 'eq-033', hostname: 'ERR-PC' },
+    }));
+
+    await vi.waitFor(() => expect(handler).toHaveBeenCalledTimes(1));
+    expect(gateway.getAgentStatus('eq-033').hostname).toBe('ERR-PC');
+  });
+
+  // ── Agent-Issued Pairing Codes ───────────────────────────────────────────────
+
+  it('should register an agent-issued pairing code on hello', () => {
+    const ws = new MockWebSocket();
+    wss.emit('connection', ws, createMockReq('eq-040'));
+
+    ws.emit('message', JSON.stringify({
+      correlation_id: 'hello-pair',
+      command: 'AGENT_HELLO',
+      payload: {
+        agent_id: 'eq-040',
+        hostname: 'UNBOUND-PC',
+        serial_number: 'CN-PAIR-11',
+        pairing_code: '483920',
+        pairing_code_expires_at: new Date(Date.now() + 60_000).toISOString(),
+      },
+    }));
+
+    const entry = gateway.getPairingByCode('483920');
+    expect(entry).not.toBeNull();
+    expect(entry!.agentId).toBe('eq-040');
+    expect(entry!.hello.hostname).toBe('UNBOUND-PC');
+  });
+
+  it('should return null for an unknown pairing code', () => {
+    expect(gateway.getPairingByCode('123456')).toBeNull();
+  });
+
+  it('should ignore malformed or expired pairing codes', () => {
+    const ws = new MockWebSocket();
+    wss.emit('connection', ws, createMockReq('eq-041'));
+
+    ws.emit('message', JSON.stringify({
+      correlation_id: 'hello-bad-pair',
+      command: 'AGENT_HELLO',
+      payload: {
+        agent_id: 'eq-041',
+        pairing_code: 'not-a-code',
+        pairing_code_expires_at: new Date(Date.now() + 60_000).toISOString(),
+      },
+    }));
+    expect(gateway.getPairingByCode('not-a-code')).toBeNull();
+
+    ws.emit('message', JSON.stringify({
+      correlation_id: 'hello-expired-pair',
+      command: 'AGENT_HELLO',
+      payload: {
+        agent_id: 'eq-041',
+        pairing_code: '654321',
+        pairing_code_expires_at: new Date(Date.now() - 60_000).toISOString(),
+      },
+    }));
+    expect(gateway.getPairingByCode('654321')).toBeNull();
+  });
+
+  it('should supersede previous pairing code when an agent issues a new one', () => {
+    const ws = new MockWebSocket();
+    wss.emit('connection', ws, createMockReq('eq-042'));
+
+    const sendHello = (code: string) =>
+      ws.emit('message', JSON.stringify({
+        correlation_id: `hello-${code}`,
+        command: 'AGENT_HELLO',
+        payload: {
+          agent_id: 'eq-042',
+          pairing_code: code,
+          pairing_code_expires_at: new Date(Date.now() + 60_000).toISOString(),
+        },
+      }));
+
+    sendHello('111111');
+    sendHello('222222');
+
+    expect(gateway.getPairingByCode('111111')).toBeNull();
+    expect(gateway.getPairingByCode('222222')).not.toBeNull();
+  });
+
+  it('should purge pairing code when the issuing agent disconnects', () => {
+    const ws = new MockWebSocket();
+    wss.emit('connection', ws, createMockReq('eq-043'));
+
+    ws.emit('message', JSON.stringify({
+      correlation_id: 'hello-pair-2',
+      command: 'AGENT_HELLO',
+      payload: {
+        agent_id: 'eq-043',
+        pairing_code: '777777',
+        pairing_code_expires_at: new Date(Date.now() + 60_000).toISOString(),
+      },
+    }));
+    expect(gateway.getPairingByCode('777777')).not.toBeNull();
+
+    ws.emit('close', 1000, Buffer.from('Normal closure'));
+    expect(gateway.getPairingByCode('777777')).toBeNull();
+  });
+
+  it('should return null for a code whose agent is offline', () => {
+    const ws = new MockWebSocket();
+    wss.emit('connection', ws, createMockReq('eq-044'));
+
+    ws.emit('message', JSON.stringify({
+      correlation_id: 'hello-pair-3',
+      command: 'AGENT_HELLO',
+      payload: {
+        agent_id: 'eq-044',
+        pairing_code: '888888',
+        pairing_code_expires_at: new Date(Date.now() + 60_000).toISOString(),
+      },
+    }));
+    expect(gateway.getPairingByCode('888888')).not.toBeNull();
+
+    // Force the agent socket to appear disconnected
+    ws.readyState = 3;
+    expect(gateway.getPairingByCode('888888')).toBeNull();
+  });
+
+  it('should push BIND to an online agent and mark the socket bound', () => {
+    const ws = new MockWebSocket();
+    let sentEnvelope: any = null;
+    ws.send = vi.fn((data: string, cb?: (err?: Error) => void) => {
+      sentEnvelope = JSON.parse(data);
+      if (cb) cb();
+    });
+
+    wss.emit('connection', ws, createMockReq('eq-045'));
+
+    const sent = gateway.bindAgent('eq-045', 'slot-0001', 'provisioned-secret');
+    expect(sent).toBe(true);
+    expect(sentEnvelope.command).toBe('BIND');
+    expect(sentEnvelope.payload).toEqual({
+      slot_id: 'slot-0001',
+      agent_token: 'provisioned-secret',
+      agent_instance_id: 'eq-045',
+    });
+    expect(gateway.getAgentStatus('eq-045').slotId).toBe('slot-0001');
+  });
+
+  it('should fail BIND for an offline agent and purge its pairing code', () => {
+    const ws = new MockWebSocket();
+    wss.emit('connection', ws, createMockReq('eq-046'));
+
+    ws.emit('message', JSON.stringify({
+      correlation_id: 'hello-pair-4',
+      command: 'AGENT_HELLO',
+      payload: {
+        agent_id: 'eq-046',
+        pairing_code: '999999',
+        pairing_code_expires_at: new Date(Date.now() + 60_000).toISOString(),
+      },
+    }));
+
+    ws.readyState = 3;
+    expect(gateway.bindAgent('eq-046', 'slot-0002', 'secret')).toBe(false);
+    expect(gateway.getPairingByCode('999999')).toBeNull();
   });
 });

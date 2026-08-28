@@ -157,6 +157,24 @@ describe('AuthService', () => {
       expect(mocks.updateLastLogin).toHaveBeenCalledWith('user-1', '192.168.1.200');
     });
 
+    it('should handle last_login_at returned as an ISO string (cache round-trip)', async () => {
+      const mockUser = createMockUser({
+        last_login_at: '2025-06-15T10:30:00.000Z',
+        last_login_ip: '10.0.0.5',
+      });
+      mocks.findByEmail.mockResolvedValue(mockUser);
+      mocks.comparePassword.mockResolvedValue(true);
+      mocks.updateLastLogin.mockResolvedValue(undefined);
+
+      const result = await authService.login(
+        { email: 'user@example.com', password: 'password123' },
+        '192.168.1.200'
+      );
+
+      expect(result.user.lastLoginAt).toBe('2025-06-15T10:30:00.000Z');
+      expect(result.user.lastLoginIp).toBe('10.0.0.5');
+    });
+
     it('should call updateLastLogin with the new IP address', async () => {
       const mockUser = createMockUser();
       mocks.findByEmail.mockResolvedValue(mockUser);
