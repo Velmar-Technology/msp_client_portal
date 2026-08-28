@@ -124,7 +124,7 @@ export class AuthService {
     }
 
     // Capture previous login data before updating
-    const previousLoginAt = user.last_login_at ? user.last_login_at.toISOString() : null;
+    const previousLoginAt = user.last_login_at ? new Date(user.last_login_at).toISOString() : null;
     const previousLoginIp = user.last_login_ip;
 
     // Update last login timestamp and IP
@@ -190,7 +190,7 @@ export class AuthService {
     let isNewUser = false;
 
     // Capture previous login data before updating
-    const previousLoginAt = user?.last_login_at ? user.last_login_at.toISOString() : null;
+    const previousLoginAt = user?.last_login_at ? new Date(user.last_login_at).toISOString() : null;
     const previousLoginIp = user?.last_login_ip ?? null;
 
     if (!user) {

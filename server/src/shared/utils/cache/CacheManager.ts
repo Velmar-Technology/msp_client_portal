@@ -4,6 +4,22 @@ import { GenerationTracker, generationTracker } from './GenerationTracker';
 import { logger } from '@shared/utils/logger';
 import type { CachePort } from '@shared/types';
 
+/**
+ * Matches strictly serialized ISO-8601 UTC timestamps produced by Date.prototype.toISOString()
+ * (e.g. "2026-08-27T22:00:00.000Z"). Used to restore Date values degraded to strings by JSON round-trips.
+ */
+const ISO_DATETIME_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/;
+
+function reviveDates(_key: string, value: unknown): unknown {
+  if (typeof value === 'string' && ISO_DATETIME_RE.test(value)) {
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime()) && date.toISOString() === value) {
+      return date;
+    }
+  }
+  return value;
+}
+
 export interface CacheMetrics {
   hits: number;
   misses: number;
@@ -96,7 +112,7 @@ export class CacheManager implements CachePort {
           return null;
         }
         try {
-          const parsed = JSON.parse(raw) as T;
+          const parsed = JSON.parse(raw, reviveDates) as T;
           this.metrics.hits++;
           return parsed;
         } catch {

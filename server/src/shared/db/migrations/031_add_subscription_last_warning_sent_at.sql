@@ -1,0 +1,2 @@
+-- Migration 031: Add last_warning_sent_at to subscriptions table to deduplicate expiring-subscription expiry warnings
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS last_warning_sent_at TIMESTAMP WITH TIME ZONE;

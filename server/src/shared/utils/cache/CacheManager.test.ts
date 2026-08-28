@@ -79,6 +79,58 @@ describe('CacheManager', () => {
     expect(await cacheManager.get('temp')).toBeNull();
   });
 
+  it('restores Date values degraded to ISO strings by the Redis JSON round-trip', async () => {
+    const storedJson: Record<string, string> = {};
+    const fakeRedis = {
+      get: vi.fn(async (key: string) => storedJson[key] ?? null),
+      set: vi.fn(async (key: string, value: string) => {
+        storedJson[key] = value;
+      }),
+      del: vi.fn(async (key: string) => {
+        delete storedJson[key];
+      }),
+    };
+
+    mockRedisService.getClient = vi.fn().mockReturnValue(fakeRedis);
+    const redisCache = new CacheManager(mockRedisService, memoryCache, genTracker, 50);
+
+    const lastLoginAt = new Date('2025-06-15T10:30:00.000Z');
+    await redisCache.set('user:email:test', { id: 'user-1', lastLoginAt }, 60);
+
+    // The serialized payload must carry the degraded ISO string (simulating the real Redis write)
+    const rawStored = storedJson['user:email:test'];
+    expect(rawStored).toBe(JSON.stringify({ id: 'user-1', lastLoginAt: '2025-06-15T10:30:00.000Z' }));
+
+    const result = await redisCache.get<{ id: string; lastLoginAt: Date }>('user:email:test');
+    expect(result?.id).toBe('user-1');
+    expect(result?.lastLoginAt).toBeInstanceOf(Date);
+    expect(result?.lastLoginAt.toISOString()).toBe('2025-06-15T10:30:00.000Z');
+  });
+
+  it('leaves non-date strings untouched during cache reads', async () => {
+    const storedJson: Record<string, string> = {};
+    const fakeRedis = {
+      get: vi.fn(async (key: string) => storedJson[key] ?? null),
+      set: vi.fn(async (key: string, value: string) => {
+        storedJson[key] = value;
+      }),
+      del: vi.fn(async (key: string) => {
+        delete storedJson[key];
+      }),
+    };
+
+    mockRedisService.getClient = vi.fn().mockReturnValue(fakeRedis);
+    const redisCache = new CacheManager(mockRedisService, memoryCache, genTracker, 50);
+
+    const payload = { name: 'hello', id: 'plan-1', ref: '2026-01-01' };
+    await redisCache.set('plans:plan-1', payload, 60);
+
+    const result = await redisCache.get<typeof payload>('plans:plan-1');
+    expect(result).toEqual(payload);
+    expect(result?.name).toBe('hello');
+    expect(result?.ref).toBe('2026-01-01');
+  });
+
   it('transparently falls back to in-memory store when Redis throws or times out', async () => {
     const errorRedis = {
       get: vi.fn().mockRejectedValue(new Error('Redis connection timeout')),

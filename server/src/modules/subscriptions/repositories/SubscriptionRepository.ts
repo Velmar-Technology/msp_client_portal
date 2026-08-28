@@ -1,7 +1,7 @@
 import { BaseRepository } from '@shared/repositories/BaseRepository';
 import { Subscription, SubscriptionStatus } from '@shared/types';
 import { db, subscriptions, plans } from '@shared/db';
-import { eq, desc, and, or, lt, lte, gt } from 'drizzle-orm';
+import { eq, desc, and, or, lt, lte, gt, isNull } from 'drizzle-orm';
 
 export class SubscriptionRepository extends BaseRepository<Subscription> {
   constructor() {
@@ -111,11 +111,19 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
       .where(
         and(
           eq(subscriptions.status, 'ACTIVE'),
+          isNull(subscriptions.last_warning_sent_at),
           gt(subscriptions.renewal_date, now),
           lte(subscriptions.renewal_date, thresholdDate)
         )
       );
     return results as Subscription[];
+  }
+
+  async updateLastExpiryWarningSentAt(id: string, sentAt: Date): Promise<void> {
+    await db
+      .update(subscriptions)
+      .set({ last_warning_sent_at: sentAt })
+      .where(eq(subscriptions.id, id));
   }
 
   async updateRenewal(id: string, renewalDate: Date, status: SubscriptionStatus): Promise<Subscription | null> {
@@ -124,6 +132,7 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
       .set({
         renewal_date: renewalDate,
         status,
+        last_warning_sent_at: null,
         updated_at: new Date(),
       })
       .where(eq(subscriptions.id, id))

@@ -100,6 +100,7 @@ export class SubscriptionScheduler {
           continue;
         }
         await this.notificationSvc.onSubscriptionExpiringSoon(sub, client);
+        await this.subscriptionRepo.updateLastExpiryWarningSentAt(sub.id, now);
       } catch (err) {
         logger.error(`Failed to send expiry warning for subscription ${sub.id}`, { err });
       }
