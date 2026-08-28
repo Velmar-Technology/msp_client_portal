@@ -324,8 +324,39 @@ fn handle_refresh_pairing_code() -> Value {
 
 // ── Entry Point with Exponential Backoff Reconnection ─────────────────────────
 
+/// Prints help message to stdout.
+fn print_help() {
+    println!("MSP Endpoint Agent — Lightweight Rust background agent for remote diagnostics, event log queries, security audits, and service remediation via WebSocket tunnel.");
+    println!("");
+    println!("Usage:");
+    println!("  msp-agent.exe [OPTIONS]");
+    println!("");
+    println!("Options:");
+    println!("  -h, --help       Print help information");
+    println!("  -V, --version    Print version information");
+    println!("");
+    println!("Environment variables:");
+    println!("  MSP_GATEWAY_URL   WebSocket gateway URL (default: ws://localhost:3001/agent-ws)");
+    println!("  MSP_AGENT_ID      Equipment UUID from the MSP Portal (auto-generated if unset)");
+    println!("  MSP_AGENT_TOKEN   Pre-shared secret for authentication (default: \"dev-token\" if empty)");
+    println!("  MSP_RECONNECT_DELAY Initial reconnection delay in seconds (default: 5)");
+    println!("  MSP_MAX_RECONNECT_DELAY Maximum reconnection delay in seconds (default: 120)");
+    println!("");
+    println!("The agent makes an outbound TLS WebSocket connection, so it works behind NAT, corporate firewalls, and VPNs without any port-forwarding configuration.");
+}
+
 #[tokio::main]
 async fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    if args.contains(&"--help".to_string()) || args.contains(&"-h".to_string()) {
+        print_help();
+        return;
+    }
+    if args.contains(&"--version".to_string()) || args.contains(&"-V".to_string()) {
+        println!("msp-agent {}", env!("CARGO_PKG_VERSION"));
+        return;
+    }
+
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
     let config = AgentConfig::from_env();
