@@ -7,6 +7,15 @@ import { userService } from "@/services/userService";
 import type { TechnicianUser } from "@/services/userService";
 import { useTicketReadStore } from "@/store/useTicketReadStore";
 
+/**
+ * Custom hook managing the Ticket Detail view.
+ * Handles ticket fetching, audit timeline, real-time replies, technician assignment, file attachments, and SLA status tracking.
+ *
+ * @see BL-101 (1-Hour SLA Cancellation)
+ * @see BL-301 (RBAC & State Machine)
+ * @param ticketId - Ticket unique identifier string.
+ * @returns State and event handlers for ticket lifecycle, comments, attachments, and assignments.
+ */
 export function useTicketDetail(ticketId: string | undefined) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();

@@ -12,6 +12,10 @@ export interface TicketReadState {
 
 const DEFAULT_USER_KEY = "anonymous";
 
+/**
+ * Persistent store tracking per-user read/unread status for tickets.
+ * Persists read markers in browser storage across sessions.
+ */
 export const useTicketReadStore = create<TicketReadState>()(
   persist(
     (set, get) => ({

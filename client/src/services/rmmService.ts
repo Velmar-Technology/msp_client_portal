@@ -43,22 +43,51 @@ export interface RmmDeviceTelemetry {
   device_serial?: string | null;
 }
 
+/**
+ * Remote Monitoring and Management (RMM) telemetry and patch service.
+ * Manages device health metrics, automated patch auditing, and remote remediation scans.
+ */
 export const rmmService = {
+  /**
+   * Retrieves high-level RMM monitoring metrics and automated remediation efficiencies.
+   *
+   * @see BL-103 (Alert Noise & Auto-Remediation)
+   * @returns Promise resolving to RmmOverviewStats.
+   */
   async getOverview(): Promise<RmmOverviewStats> {
     const response = await api.get('/rmm/overview');
     return response.data.data;
   },
 
+  /**
+   * Retrieves available and installed security/system patches for a specific device.
+   *
+   * @param equipmentId - Equipment UUID.
+   * @returns Promise resolving to array of RmmPatchItem items.
+   */
   async getEquipmentPatches(equipmentId: string): Promise<RmmPatchItem[]> {
     const response = await api.get(`/rmm/devices/${equipmentId}/patches`);
     return response.data.data;
   },
 
+  /**
+   * Triggers an on-demand hardware telemetry diagnostic and vulnerability patch scan.
+   *
+   * @param equipmentId - Equipment UUID.
+   * @returns Promise resolving to updated RmmDeviceTelemetry diagnostics.
+   */
   async triggerScan(equipmentId: string): Promise<RmmDeviceTelemetry> {
     const response = await api.post(`/rmm/devices/${equipmentId}/patches/scan`);
     return response.data.data;
   },
 
+  /**
+   * Initiates installation of selected software/security patches on a remote device.
+   *
+   * @param equipmentId - Equipment UUID.
+   * @param patchIds - Array of patch identifiers to install.
+   * @returns Promise resolving to updated RmmPatchItem list showing installation status.
+   */
   async applyPatches(equipmentId: string, patchIds: string[]): Promise<RmmPatchItem[]> {
     const response = await api.post(`/rmm/devices/${equipmentId}/patches/apply`, { patchIds });
     return response.data.data;

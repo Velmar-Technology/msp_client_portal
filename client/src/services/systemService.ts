@@ -57,12 +57,25 @@ export interface SystemApiStatusResponse {
   envMissingCount: number;
 }
 
+/**
+ * System health, storage quotas, and microservice status diagnostics service.
+ */
 export const systemService = {
+  /**
+   * Retrieves server disk usage and Nextcloud cloud storage quota metrics.
+   *
+   * @returns Promise resolving to StorageStatus metrics.
+   */
   async getStorageUsage(): Promise<StorageStatus> {
     const response = await api.get('/system/storage');
     return response.data.data;
   },
 
+  /**
+   * Retrieves operational health check, latency benchmarks, and environment variable configuration audit.
+   *
+   * @returns Promise resolving to SystemApiStatusResponse health report.
+   */
   async getApiStatus(): Promise<SystemApiStatusResponse> {
     const response = await api.get('/system/api-status');
     return response.data.data;

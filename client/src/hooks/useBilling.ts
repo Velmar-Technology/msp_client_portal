@@ -5,6 +5,13 @@ import { invoiceService } from "@/services/invoiceService";
 import type { Invoice } from "@/services/invoiceService";
 import { useUrlState } from "@/hooks/useUrlState";
 
+/**
+ * Custom hook orchestrating the Billing & Invoices page.
+ * Handles invoice pagination, URL synchronization, payment modal flows, PayPal capture, and PDF downloads.
+ *
+ * @see BL-401 (Subscription Reactivation)
+ * @returns Object providing invoices data, filter state, pagination handlers, and modal action controllers.
+ */
 export function useBilling() {
   const { t, i18n } = useTranslation();
   const location = useLocation();

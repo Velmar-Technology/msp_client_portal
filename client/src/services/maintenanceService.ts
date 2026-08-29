@@ -53,27 +53,63 @@ export interface MaintenanceFilterParams {
   status?: MaintenanceStatus;
 }
 
+/**
+ * Preventative and scheduled hardware maintenance service.
+ * Coordinates maintenance windows, technician assignments, and service schedules.
+ */
 export const maintenanceService = {
+  /**
+   * Retrieves scheduled maintenance tasks matching filter criteria.
+   *
+   * @param params - Query parameters (startDate, endDate, clientId, techId, equipmentId, status).
+   * @returns Promise resolving to list of DeviceMaintenance records.
+   */
   async getMaintenances(params?: MaintenanceFilterParams): Promise<DeviceMaintenance[]> {
     const response = await api.get('/maintenance', { params });
     return response.data.data;
   },
 
+  /**
+   * Retrieves a specific maintenance task by its unique ID.
+   *
+   * @param id - Maintenance UUID.
+   * @returns Promise resolving to DeviceMaintenance entity.
+   * @throws {NotFoundError} If maintenance record does not exist.
+   */
   async getById(id: string): Promise<DeviceMaintenance> {
     const response = await api.get(`/maintenance/${id}`);
     return response.data.data;
   },
 
+  /**
+   * Schedules a new device maintenance task.
+   *
+   * @param payload - Maintenance creation attributes (equipmentId, scheduledDate, monthsAhead, maintenanceType, assignedTechId, title, notes).
+   * @returns Promise resolving to scheduled DeviceMaintenance entity.
+   */
   async createMaintenance(payload: CreateMaintenancePayload): Promise<DeviceMaintenance> {
     const response = await api.post('/maintenance', payload);
     return response.data.data;
   },
 
+  /**
+   * Updates an existing maintenance schedule, status, or assigned technician.
+   *
+   * @param id - Maintenance UUID.
+   * @param payload - Updated maintenance attributes.
+   * @returns Promise resolving to updated DeviceMaintenance entity.
+   */
   async updateMaintenance(id: string, payload: UpdateMaintenancePayload): Promise<DeviceMaintenance> {
     const response = await api.put(`/maintenance/${id}`, payload);
     return response.data.data;
   },
 
+  /**
+   * Cancels and deletes a scheduled maintenance task.
+   *
+   * @param id - Maintenance UUID.
+   * @returns Promise resolving to boolean indicating success.
+   */
   async deleteMaintenance(id: string): Promise<boolean> {
     const response = await api.delete(`/maintenance/${id}`);
     return response.data.data.success;

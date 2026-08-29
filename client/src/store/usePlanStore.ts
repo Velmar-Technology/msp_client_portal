@@ -18,6 +18,9 @@ export interface PlanState {
   deletePlan: (id: string) => Promise<void>;
 }
 
+/**
+ * Service plan management store for catalog browsing and administrative tier configuration.
+ */
 export const usePlanStore = create<PlanState>()(
   devtools(
     (set) => ({

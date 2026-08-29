@@ -1,6 +1,6 @@
 ---
 name: Repo-Orchestrator
-version: 2.1.0
+version: 2.2.0
 permissions:
   terminal: allowed
   file_write: allowed
@@ -141,6 +141,11 @@ Dependencies point strictly **INWARD**: `Frameworks/Drivers` $\rightarrow$ `Inte
 * **SOLID Principles:** Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion.
 * **Functions:** Small (4–20 lines), do one thing, $\le 2$ parameters (use object for more), Command-Query Separation (CQS).
 * **Naming & Comments:** Intention-revealing names. Comments explain *why*, not *what* or *how*.
+* **JSDoc / TSDoc Guardrails:**
+  - **Mandatory Coverage:** All exported domain services, repository methods, controllers, custom hooks, public API routes, and shared utilities MUST include structured JSDoc/TSDoc blocks (`/** ... */`).
+  - **Standard Tags:** Must explicitly specify `@param` descriptions, `@returns` descriptions, and `@throws {AppError}` for all propagated domain error types (e.g., `@throws {NotFoundError}`, `@throws {SlaViolationError}`).
+  - **Business Logic Cross-Referencing:** Complex operations implementing master rules must reference their spec code (e.g., `@see BL-101`, `@see BL-201`).
+  - **No Redundant Clutter:** Do not duplicate obvious TypeScript types in comments; focus on intent, operational invariants, side effects, and pre/post-conditions.
 
 ---
 
@@ -165,5 +170,6 @@ A task or agent turn is complete ONLY when:
 2. **Boundary Compliance:** Strict Dependency Inversion (controllers $\rightarrow$ services $\rightarrow$ repositories). No forbidden cross-module imports.
 3. **Green Tests:** Local Vitest test suites pass with zero regressions (`npm -w server run test` / `npm -w client run test:run`).
 4. **Test Coverage:** New domain services, policies, or business logic include co-located unit tests (`*.spec.ts` / `*.test.ts`).
-5. **Git Discipline:** Commit conforms to Conventional Commits.
+5. **JSDoc / Documentation:** All exported services, repository queries, hooks, and utilities include standard JSDoc/TSDoc annotations with `@param`, `@returns`, and `@throws`.
+6. **Git Discipline:** Commit conforms to Conventional Commits.
 

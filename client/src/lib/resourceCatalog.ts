@@ -23,6 +23,12 @@ import {
   LEGACY_PLAN_MAP,
 } from "@/constants/resources";
 
+/**
+ * Normalizes a raw plan string into a valid PlanTier enum, accounting for legacy plan aliases.
+ *
+ * @param plan - Raw plan string identifier from database, subscription, or URL state.
+ * @returns Normalized `PlanTier` value or `null` if unrecognized.
+ */
 export function normalizePlan(plan: string | null | undefined): PlanTier | null {
   if (!plan) return null;
   const upper = plan.toUpperCase();
@@ -30,6 +36,14 @@ export function normalizePlan(plan: string | null | undefined): PlanTier | null 
   return LEGACY_PLAN_MAP[upper] || null;
 }
 
+/**
+ * Filters the resource catalog items by the user's active subscription plans.
+ *
+ * @param catalog - List of downloadable resource items.
+ * @param planIds - Array of active plan tiers the user has access to.
+ * @param showAll - Flag to bypass plan filtering and return all resources.
+ * @returns Filtered subset of resource items matching user permissions.
+ */
 export function filterResourcesByPlan(
   catalog: ResourceItem[],
   planIds: PlanTier[],
@@ -45,6 +59,13 @@ export function filterResourcesByPlan(
   );
 }
 
+/**
+ * Filters the resource catalog items by the target operating system.
+ *
+ * @param catalog - List of downloadable resource items.
+ * @param osFilter - Selected operating system filter ('ALL' | 'WINDOWS' | 'MACOS' | 'LINUX').
+ * @returns Filtered subset of resource items targeting the specified OS.
+ */
 export function filterResourcesByOs(
   catalog: ResourceItem[],
   osFilter: OsFilter
@@ -56,6 +77,12 @@ export function filterResourcesByOs(
   });
 }
 
+/**
+ * Triggers a browser download for a designated resource catalog item.
+ *
+ * @param item - Resource item containing target download URL and default filename.
+ * @returns void
+ */
 export function triggerResourceDownload(item: ResourceItem): void {
   const link = document.createElement("a");
   link.href = item.url;

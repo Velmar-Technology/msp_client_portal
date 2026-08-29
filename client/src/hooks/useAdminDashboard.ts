@@ -8,6 +8,12 @@ import { ticketService } from "@/services/ticketService";
 import { maintenanceService } from "@/services/maintenanceService";
 import type { DeviceMaintenance } from "@/services/maintenanceService";
 
+/**
+ * Custom hook providing overview metrics and aggregate data for the Admin Dashboard.
+ * Loads recent invoices, system storage telemetry, ticket status summaries, and upcoming maintenance tasks.
+ *
+ * @returns Aggregated metrics, recent entity records, localized table columns, and loading indicators.
+ */
 export function useAdminDashboard() {
   const { t, i18n } = useTranslation();
 

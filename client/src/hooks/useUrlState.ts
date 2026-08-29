@@ -7,6 +7,9 @@ export interface SetUrlParamsOptions {
 
 /**
  * Type-safe custom hook for reading, writing, and synchronizing React Router URL search parameters.
+ * Facilitates URL state synchronization for active tabs, filter query parameters, search inputs, and open modals.
+ *
+ * @returns Object providing utility getters and setters (`getParam`, `getNumberParam`, `setParam`, `setParams`, `removeParam`, `removeParams`, `queryParams`).
  */
 export function useUrlState() {
   const [searchParams, setSearchParams] = useSearchParams();

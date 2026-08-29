@@ -5,6 +5,11 @@ import { getAuthItem, setAuthItem } from '@/lib/authStorage';
 import { trackApiError } from '@/telemetry/faro';
 import { trackDatadogError } from '@/telemetry/datadog';
 
+/**
+ * Pre-configured Axios instance for MSP Client Portal API communications.
+ * Includes bearer token injection, automated token refresh on 401 Unauthorized responses,
+ * error telemetry logging (Grafana Faro & Datadog RUM), and user-friendly toast notifications.
+ */
 const api = axios.create({
   baseURL: '/api/v1',
   headers: {
