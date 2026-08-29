@@ -423,4 +423,40 @@ describe('AgentGateway', () => {
     expect(status.isSecure).toBe(true);
     expect(status.transport).toBe('wss');
   });
+
+  it('should set agent slotId via setAgentSlotId upon reconciliation', () => {
+    const ws = new MockWebSocket();
+    wss.emit('connection', ws, createMockReq('eq-slot-link'));
+
+    expect(gateway.getAgentStatus('eq-slot-link').slotId).toBeUndefined();
+    gateway.setAgentSlotId('eq-slot-link', 'slot-reconciled-99');
+    expect(gateway.getAgentStatus('eq-slot-link').slotId).toBe('slot-reconciled-99');
+  });
+
+  it('should send UNBIND command to connected agent and clear slotId', () => {
+    const ws = new MockWebSocket();
+    let sentEnvelope: any = null;
+    ws.send = vi.fn((data: string, cb?: (err?: Error) => void) => {
+      sentEnvelope = JSON.parse(data);
+      if (cb) cb();
+    });
+
+    wss.emit('connection', ws, createMockReq('eq-unbind-01'));
+    gateway.setAgentSlotId('eq-unbind-01', 'slot-100');
+    expect(gateway.getAgentStatus('eq-unbind-01').slotId).toBe('slot-100');
+
+    const result = gateway.unbindAgent('eq-unbind-01', 'slot-100');
+    expect(result).toBe(true);
+    expect(sentEnvelope.command).toBe('UNBIND');
+    expect(sentEnvelope.payload).toEqual({
+      slot_id: 'slot-100',
+      reason: 'Unbound by client',
+    });
+    expect(gateway.getAgentStatus('eq-unbind-01').slotId).toBeUndefined();
+  });
+
+  it('should return false when unbindAgent is called for an offline agent', () => {
+    const result = gateway.unbindAgent('non-existent-agent', 'slot-999');
+    expect(result).toBe(false);
+  });
 });

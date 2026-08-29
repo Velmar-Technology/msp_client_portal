@@ -255,6 +255,7 @@ export function PlansPage() {
                     aria-label="Manage Subscription"
                     onClick={(e) => e.stopPropagation()}
                     className="h-7 w-7 cursor-pointer"
+                    aria-label={t("plans.manageTab") || "Manage Subscription"}
                   >
                     <MoreHorizontal className="h-3.5 w-3.5" />
                   </Button>

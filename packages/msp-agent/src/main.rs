@@ -1,5 +1,6 @@
 mod diagnostics;
 mod pairing;
+mod service;
 
 use futures_util::{SinkExt, StreamExt};
 use log::{error, info, warn};
@@ -11,24 +12,28 @@ use tokio_tungstenite::{connect_async, tungstenite::Message};
 
 // ── Configuration ─────────────────────────────────────────────────────────────
 
-/// Runtime configuration, loaded from environment variables.
-struct AgentConfig {
+/// Runtime configuration, loaded from CLI flags and environment variables.
+#[derive(Debug, Clone)]
+pub struct AgentConfig {
     /// WebSocket gateway URL (e.g. wss://api.yourmsp.com/agent-ws)
-    gateway_url: String,
+    pub gateway_url: String,
     /// Optional pre-shared secret token. When empty the persisted binding
     /// secret is used; unbound agents fall back to "dev-token".
-    agent_token: String,
+    pub agent_token: String,
     /// Seconds between reconnection attempts on disconnect
-    reconnect_delay_secs: u64,
+    pub reconnect_delay_secs: u64,
     /// Maximum reconnection delay cap (exponential backoff ceiling)
-    max_reconnect_delay_secs: u64,
+    pub max_reconnect_delay_secs: u64,
 }
 
 impl AgentConfig {
-    fn from_env() -> Self {
+    pub fn from_args_and_env(args: &[String]) -> Self {
+        let gateway_url = extract_gateway_arg(args)
+            .or_else(|| std::env::var("MSP_GATEWAY_URL").ok())
+            .unwrap_or_else(|| "wss://helpdesk.velmartech.com.do/agent-ws".into());
+
         Self {
-            gateway_url: std::env::var("MSP_GATEWAY_URL")
-                .unwrap_or_else(|_| "wss://helpdesk.velmartech.com.do/agent-ws".into()),
+            gateway_url,
             agent_token: std::env::var("MSP_AGENT_TOKEN").unwrap_or_default(),
             reconnect_delay_secs: std::env::var("MSP_RECONNECT_DELAY")
                 .ok()
@@ -40,6 +45,19 @@ impl AgentConfig {
                 .unwrap_or(120),
         }
     }
+}
+
+/// Helper to parse `--gateway <URL>`, `-g <URL>`, or `--gateway=<URL>` from CLI arguments.
+fn extract_gateway_arg(args: &[String]) -> Option<String> {
+    for (i, arg) in args.iter().enumerate() {
+        if (arg == "--gateway" || arg == "-g") && i + 1 < args.len() {
+            return Some(args[i + 1].clone());
+        }
+        if let Some(stripped) = arg.strip_prefix("--gateway=") {
+            return Some(stripped.to_string());
+        }
+    }
+    None
 }
 
 /// Resolves the secret the agent presents on the WebSocket: an explicit env
@@ -82,6 +100,9 @@ fn build_hello_payload(state: &AgentState) -> Value {
 
     if state.is_bound() {
         payload["binding_state"] = Value::String("BOUND".into());
+        if let Some(slot) = &state.slot_id {
+            payload["slot_id"] = Value::String(slot.clone());
+        }
     } else if let Some(code) = state.active_pairing_code() {
         payload["pairing_code"] = Value::String(code.to_string());
         if let Some(exp) = &state.pairing_code_expires_at {
@@ -166,7 +187,6 @@ async fn run_session(config: &AgentConfig) -> Result<SessionOutcome, Box<dyn std
 
     if !state.is_bound() {
         info!("Device is UNBOUND. Pairing code is required for slot linkage.");
-        print_pairing_banner(&state);
     }
 
     let (mut writer, mut reader) = ws_stream.split();
@@ -208,6 +228,20 @@ async fn run_session(config: &AgentConfig) -> Result<SessionOutcome, Box<dyn std
                                 return Ok(SessionOutcome::Relinked);
                             }
                             continue;
+                        }
+
+                        // ── UNBIND: server unlinks this device from slot (by client) ──
+                        if envelope.command == "UNBIND" {
+                            let unbind_result = handle_unbind(&envelope);
+                            let response = AgentEnvelope {
+                                correlation_id: envelope.correlation_id,
+                                command: "RESPONSE".into(),
+                                payload: Some(unbind_result),
+                            };
+                            writer
+                                .send(Message::Text(serde_json::to_string(&response)?))
+                                .await?;
+                            return Ok(SessionOutcome::Relinked);
                         }
 
                         // ── REFRESH_PAIRING_CODE: re-issue an unbound code ──
@@ -300,6 +334,28 @@ fn handle_bind(envelope: &AgentEnvelope) -> Value {
     })
 }
 
+/// Executes the server's UNBIND command: unlinks from slot, generates a fresh
+/// pairing code, and persists the unbound state.
+fn handle_unbind(_envelope: &AgentEnvelope) -> Value {
+    let mut state = AgentState::load();
+    let new_code = state.unbind();
+    if let Err(err) = state.save() {
+        error!("[agent] Failed to persist unbound state: {}", err);
+        return serde_json::json!({
+            "success": false,
+            "error": format!("Failed to persist unbound state: {err}")
+        });
+    }
+
+    info!("Device unlinked from slot by client. Reconnecting in pairing mode.");
+    print_pairing_banner(&state);
+    serde_json::json!({
+        "success": true,
+        "pairing_code": new_code,
+        "pairing_code_expires_at": state.pairing_code_expires_at
+    })
+}
+
 /// Executes the server's REFRESH_PAIRING_CODE command (unbound agents only).
 fn handle_refresh_pairing_code() -> Value {
     let mut state = AgentState::load();
@@ -326,50 +382,68 @@ fn handle_refresh_pairing_code() -> Value {
 
 /// Prints help message to stdout.
 fn print_help() {
-    println!("MSP Endpoint Agent — Lightweight Rust background agent for remote diagnostics, event log queries, security audits, and service remediation via WebSocket tunnel.");
+    println!("MSP Endpoint Agent v{} — Lightweight background agent for remote diagnostics,", env!("CARGO_PKG_VERSION"));
+    println!("event log queries, security audits, telemetry, and automated service remediation.");
     println!("");
     println!("Usage:");
-    println!("  msp-agent.exe [OPTIONS]");
+    println!("  msp-agent.exe [COMMAND] [OPTIONS]");
+    println!("");
+    println!("Commands:");
+    println!("  install          Relocate binary to 'C:\\Program Files\\MSP\\msp-agent\\' and register");
+    println!("                   as an automatic Windows Background Service (Run as Admin)");
+    println!("  uninstall        Stop and remove the Windows Background Service (Run as Admin)");
+    println!("  start            Start the installed Windows Background Service");
+    println!("  stop             Stop the running Windows Background Service");
+    println!("  status           Display current service status (RUNNING / STOPPED) and PID");
+    println!("  log, logs        Print recent service execution logs from 'C:\\ProgramData\\MSP\\msp-agent.log'");
+    println!("  console          Run interactively in foreground console mode (default if no command provided)");
     println!("");
     println!("Options:");
-    println!("  -h, --help       Print help information");
-    println!("  -V, --version    Print version information");
+    println!("  -g, --gateway <URL>  Override WebSocket gateway URL (e.g. ws://localhost:3001/agent-ws)");
+    println!("  -h, --help           Print this help documentation");
+    println!("  -V, --version        Print version information");
+    println!("  --service            Internal flag invoked by Windows Service Control Manager (SCM)");
     println!("");
-    println!("Environment variables:");
-    println!("  MSP_GATEWAY_URL   WebSocket gateway URL (default: ws://localhost:3001/agent-ws)");
-    println!("  MSP_AGENT_ID      Equipment UUID from the MSP Portal (auto-generated if unset)");
-    println!("  MSP_AGENT_TOKEN   Pre-shared secret for authentication (default: \"dev-token\" if empty)");
-    println!("  MSP_RECONNECT_DELAY Initial reconnection delay in seconds (default: 5)");
-    println!("  MSP_MAX_RECONNECT_DELAY Maximum reconnection delay in seconds (default: 120)");
+    println!("Protected Paths:");
+    println!("  Binary:          C:\\Program Files\\MSP\\msp-agent\\msp-agent.exe");
+    println!("  State & Config:  C:\\ProgramData\\MSP\\msp-agent.json");
+    println!("  Service Log:     C:\\ProgramData\\MSP\\msp-agent.log");
     println!("");
-    println!("The agent makes an outbound TLS WebSocket connection, so it works behind NAT, corporate firewalls, and VPNs without any port-forwarding configuration.");
+    println!("Environment Variables:");
+    println!("  MSP_GATEWAY_URL          WebSocket gateway URL (default: wss://helpdesk.velmartech.com.do/agent-ws)");
+    println!("  MSP_AGENT_ID             Equipment UUID override (auto-generated if unset)");
+    println!("  MSP_AGENT_TOKEN          Pre-shared secret for authentication (default: \"dev-token\" if empty)");
+    println!("  MSP_AGENT_CONFIG         Custom directory path for msp-agent.json");
+    println!("  MSP_AGENT_LOG            Custom file path for service log file");
+    println!("  MSP_RECONNECT_DELAY      Initial reconnection delay in seconds (default: 5)");
+    println!("  MSP_MAX_RECONNECT_DELAY  Maximum reconnection delay ceiling in seconds (default: 120)");
+    println!("");
+    println!("Quick Start Examples:");
+    println!("  1. Install as Windows Service:   .\\msp-agent.exe install");
+    println!("     (with local gateway):         .\\msp-agent.exe install --gateway ws://localhost:3001/agent-ws");
+    println!("  2. Start the Service:            .\\msp-agent.exe start");
+    println!("  3. Check Service Status:         .\\msp-agent.exe status");
+    println!("  4. View Live Service Logs:       .\\msp-agent.exe log");
+    println!("  5. Run in Console Mode:          .\\msp-agent.exe --gateway ws://localhost:3001/agent-ws");
+    println!("");
+    println!("The agent makes an outbound TLS WebSocket connection, so it operates behind NAT,");
+    println!("corporate firewalls, and VPNs without any inbound port-forwarding configuration.");
 }
 
-#[tokio::main]
-async fn main() {
-    let args: Vec<String> = std::env::args().collect();
-    if args.contains(&"--help".to_string()) || args.contains(&"-h".to_string()) {
-        print_help();
-        return;
-    }
-    if args.contains(&"--version".to_string()) || args.contains(&"-V".to_string()) {
-        println!("msp-agent {}", env!("CARGO_PKG_VERSION"));
-        return;
-    }
-
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
-
-    let config = AgentConfig::from_env();
+/// Main async agent connection and command execution loop.
+pub async fn run_agent_loop(config: AgentConfig) {
     let mut delay = config.reconnect_delay_secs;
 
     let mut state = AgentState::load();
     // Unbound agents must always hold a live 6-digit pairing code so the
     // portal can link this device to a subscription slot. Issue one on first
-    // boot or after a code expires, and persist it before the first hello.
-    if !state.is_bound() && state.active_pairing_code().is_none() {
-        state.issue_pairing_code();
-        if let Err(err) = state.save() {
-            error!("[agent] Failed to persist initial pairing code: {}", err);
+    // boot or after a code expires, and display it once on startup.
+    if !state.is_bound() {
+        if state.active_pairing_code().is_none() {
+            state.issue_pairing_code();
+            if let Err(err) = state.save() {
+                error!("[agent] Failed to persist initial pairing code: {}", err);
+            }
         }
         print_pairing_banner(&state);
     }
@@ -413,4 +487,146 @@ async fn main() {
             }
         }
     }
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args: Vec<String> = std::env::args().collect();
+
+    if args.contains(&"--help".to_string()) || args.contains(&"-h".to_string()) {
+        print_help();
+        return Ok(());
+    }
+    if args.contains(&"--version".to_string()) || args.contains(&"-V".to_string()) {
+        println!("msp-agent {}", env!("CARGO_PKG_VERSION"));
+        return Ok(());
+    }
+
+    let gateway_override = extract_gateway_arg(&args);
+
+    // Windows Service Management CLI Subcommands
+    if args.iter().any(|a| a == "install") {
+        return service::windows_service_impl::install(gateway_override);
+    }
+    if args.iter().any(|a| a == "uninstall" || a == "remove") {
+        return service::windows_service_impl::uninstall();
+    }
+    if args.iter().any(|a| a == "start") {
+        return service::windows_service_impl::start();
+    }
+    if args.iter().any(|a| a == "stop") {
+        return service::windows_service_impl::stop();
+    }
+    if args.iter().any(|a| a == "status") {
+        return service::windows_service_impl::status();
+    }
+    if args.iter().any(|a| a == "log" || a == "logs") {
+        let path = log_file_path();
+        if path.exists() {
+            println!("Service Log: {:?}\n---", path);
+            match std::fs::read_to_string(&path) {
+                Ok(content) => {
+                    let lines: Vec<&str> = content.lines().collect();
+                    let start = if lines.len() > 100 { lines.len() - 100 } else { 0 };
+                    for line in &lines[start..] {
+                        println!("{}", line);
+                    }
+                }
+                Err(e) => eprintln!("Failed to read log file: {}", e),
+            }
+        } else {
+            println!("No log file found at {:?}", path);
+        }
+        return Ok(());
+    }
+
+    init_logger();
+
+    // If spawned by Windows Service Control Manager (SCM) or with --service flag
+    if args.iter().any(|a| a == "--service") {
+        if let Err(e) = service::windows_service_impl::dispatch() {
+            eprintln!("Failed to start Windows service dispatcher: {:?}", e);
+        }
+        return Ok(());
+    }
+
+    let config = AgentConfig::from_args_and_env(&args);
+
+    // Interactive console mode / standalone execution
+    let rt = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()?;
+
+    rt.block_on(async {
+        run_agent_loop(config).await;
+    });
+
+    Ok(())
+}
+
+/// Returns the path to the persistent service log file.
+pub fn log_file_path() -> std::path::PathBuf {
+    if let Ok(over) = std::env::var("MSP_AGENT_LOG") {
+        return std::path::PathBuf::from(over);
+    }
+    #[cfg(windows)]
+    {
+        if let Ok(prog_data) = std::env::var("ProgramData") {
+            let msp_dir = std::path::PathBuf::from(prog_data).join("MSP");
+            let _ = std::fs::create_dir_all(&msp_dir);
+            return msp_dir.join("msp-agent.log");
+        }
+    }
+    let dir = std::env::current_exe()
+        .ok()
+        .and_then(|exe| exe.parent().map(|p| p.to_path_buf()))
+        .unwrap_or_else(|| std::path::PathBuf::from("."));
+    dir.join("msp-agent.log")
+}
+
+struct DualWriter {
+    file: Option<std::sync::Mutex<std::fs::File>>,
+}
+
+impl std::io::Write for DualWriter {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        let _ = std::io::stdout().write_all(buf);
+        if let Some(ref f) = self.file {
+            if let Ok(mut handle) = f.lock() {
+                let _ = handle.write_all(buf);
+            }
+        }
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        let _ = std::io::stdout().flush();
+        if let Some(ref f) = self.file {
+            if let Ok(mut handle) = f.lock() {
+                let _ = handle.flush();
+            }
+        }
+        Ok(())
+    }
+}
+
+fn init_logger() {
+    let log_path = log_file_path();
+    let file_handle = if let Some(parent) = log_path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+        std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&log_path)
+            .ok()
+    } else {
+        None
+    };
+
+    let writer = DualWriter {
+        file: file_handle.map(std::sync::Mutex::new),
+    };
+
+    let _ = env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
+        .target(env_logger::Target::Pipe(Box::new(writer)))
+        .try_init();
 }
