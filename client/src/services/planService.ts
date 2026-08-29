@@ -31,7 +31,17 @@ export interface PlanFilters {
   limit?: number;
 }
 
+/**
+ * Service tier and subscription plan catalog service.
+ * Manages plan definitions, features, pricing, and client type targeting.
+ */
 export const planService = {
+  /**
+   * Retrieves all available service plans according to filter parameters.
+   *
+   * @param filters - Query filters (search keyword, clientType, pagination).
+   * @returns Promise resolving to array of Plan objects.
+   */
   async getAll(filters: PlanFilters = {}): Promise<Plan[]> {
     const params = new URLSearchParams();
     if (filters.search) params.set("search", filters.search);
@@ -43,6 +53,12 @@ export const planService = {
     return response.data.data;
   },
 
+  /**
+   * Admin: Creates a new service subscription plan tier.
+   *
+   * @param data - Plan definition payload (name, description, price, features, recommended, client_type, active).
+   * @returns Promise resolving to created Plan entity.
+   */
   async create(
     data: Omit<Plan, 'created_at' | 'updated_at'>
   ): Promise<Plan> {
@@ -50,6 +66,13 @@ export const planService = {
     return response.data.data;
   },
 
+  /**
+   * Admin: Modifies an existing service subscription plan.
+   *
+   * @param id - Plan UUID.
+   * @param data - Partial plan attributes to update.
+   * @returns Promise resolving to updated Plan entity.
+   */
   async update(
     id: string,
     data: Partial<Omit<Plan, 'id' | 'created_at' | 'updated_at'>>
@@ -58,6 +81,12 @@ export const planService = {
     return response.data.data;
   },
 
+  /**
+   * Admin: Deactivates or removes a service plan.
+   *
+   * @param id - Plan UUID.
+   * @returns Promise resolving to deleted/deactivated Plan entity.
+   */
   async delete(id: string): Promise<Plan> {
     const response = await api.delete(`/plans/${id}`);
     return response.data.data;

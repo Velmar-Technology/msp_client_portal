@@ -5,7 +5,19 @@ import { notificationService, NotificationService } from '@modules/notifications
 import { NotFoundError, ValidationError, InternalServerError } from '@shared/errors';
 import { Ticket, UserRole } from '@shared/types';
 
+/**
+ * Domain service managing explicit technician assignment to tickets,
+ * event audit trail logging, and real-time technician notification.
+ */
 export class TicketAssignmentService {
+  /**
+   * Initializes TicketAssignmentService with repositories and notification service.
+   *
+   * @param ticketRepo - Ticket data repository
+   * @param eventRepo - Ticket audit event repository
+   * @param userRepo - User repository for validating technician role
+   * @param notifSvc - Notification service for real-time alerts
+   */
   constructor(
     private ticketRepo: TicketRepository = ticketRepository,
     private eventRepo: TicketEventRepository = ticketEventRepository,
@@ -13,6 +25,18 @@ export class TicketAssignmentService {
     private notifSvc: NotificationService = notificationService,
   ) {}
 
+  /**
+   * Assigns a ticket to a specific technician, records the assignment audit event,
+   * and sends an assignment notification to the technician.
+   *
+   * @param ticketId - Target ticket UUID
+   * @param techId - User ID of the technician being assigned
+   * @param actorId - User ID of the administrator or user initiating the assignment
+   * @returns Updated Ticket entity with assigned technician
+   * @throws {NotFoundError} When the ticket or technician is not found
+   * @throws {ValidationError} When the assigned user does not have the TECHNICIAN role
+   * @throws {InternalServerError} When database mutation fails
+   */
   async assignTicket(ticketId: string, techId: string, actorId: string): Promise<Ticket> {
     const ticket = await this.ticketRepo.findById(ticketId);
     if (!ticket) {

@@ -19,7 +19,21 @@ export type RmmAlertOutcome =
   | { status: 'SELF_HEALED'; ticket: Ticket }
   | { status: 'TICKET_CREATED'; ticket: Ticket };
 
+/**
+ * Domain service processing RMM and Zabbix telemetry alerts, enforcing 15-minute deduplication,
+ * self-healing auto-resolution (<300s), and 24h flapping detection escalations to Tier 2.
+ *
+ * @see BL-103 (Alert Noise & Auto-Remediation)
+ */
 export class AlertService {
+  /**
+   * Initializes AlertService with alert, ticket, event repositories, and ticket creation service dependencies.
+   *
+   * @param rmmAlertRepo - RMM alert event repository
+   * @param ticketRepo - Support ticket repository
+   * @param eventRepo - Ticket audit event repository
+   * @param creationSvc - Ticket creation domain service
+   */
   constructor(
     private rmmAlertRepo: RmmAlertRepository = rmmAlertRepository,
     private ticketRepo: TicketRepository = ticketRepository,
@@ -27,6 +41,15 @@ export class AlertService {
     private creationSvc: TicketCreationService = ticketCreationService,
   ) {}
 
+  /**
+   * Ingests and transforms external Zabbix webhook payload into normalized RMM alert parameters.
+   *
+   * @param payload - Zabbix webhook payload
+   * @param fallbackTenantId - Tenant UUID fallback
+   * @param fallbackUserId - Optional user ID fallback
+   * @returns RmmAlertOutcome result
+   * @see BL-103
+   */
   async processZabbixWebhook(payload: ZabbixWebhookPayload, fallbackTenantId: string, fallbackUserId?: string): Promise<RmmAlertOutcome> {
     const alertType = payload.alertType || payload.triggername || 'ZABBIX_ALERT';
     const assetId = payload.assetId || payload.hostname || 'UNKNOWN_HOST';
@@ -55,7 +78,16 @@ export class AlertService {
     return this.processRMMAlert(input);
   }
 
-
+  /**
+   * Executes RMM alert evaluation:
+   * 1. 15-minute deduplication window for same asset (BL-103).
+   * 2. Flapping detection (>=3 triggers in 24h) tagging [FLAPPING_ALERT] and routing to Tier 2 (BL-103).
+   * 3. Self-healing evaluation (executionTimeMs < 300,000ms auto-closes as RESOLVED_AUTOMATED).
+   *
+   * @param input - RmmAlertInput data
+   * @returns RmmAlertOutcome indicating DEDUPLICATED, FLAPPING, SELF_HEALED, or TICKET_CREATED
+   * @see BL-103
+   */
   async processRMMAlert(input: RmmAlertInput): Promise<RmmAlertOutcome> {
     const now = new Date();
 
@@ -133,22 +165,50 @@ export class AlertService {
 
   // ---- KPI Calculators ----
 
+  /**
+   * Calculates the noise reduction ratio percentage across ingested alerts.
+   *
+   * @param totalAlerts - Total alerts received
+   * @param humanTouchTickets - Number of alerts converted to manual technician tickets
+   * @returns Ratio scalar between 0 and 1
+   */
   calculateNoiseReductionRatio(totalAlerts: number, humanTouchTickets: number): number {
     if (totalAlerts <= 0) return 0;
     return Math.max(0, (totalAlerts - humanTouchTickets) / totalAlerts);
   }
 
+  /**
+   * Calculates the percentage efficiency of automated self-healing scripts.
+   *
+   * @param autoClosedCount - Count of tickets auto-closed
+   * @param flappingOverridesCount - Count of tickets escalating as flapping alerts
+   * @returns Efficiency ratio between 0 and 1
+   */
   calculateSelfHealingEfficiency(autoClosedCount: number, flappingOverridesCount: number): number {
     const total = autoClosedCount + flappingOverridesCount;
     if (total <= 0) return 0;
     return autoClosedCount / total;
   }
 
+  /**
+   * Computes the automated first-contact resolution percentage.
+   *
+   * @param automatedResolvedCount - Count of automatically resolved tickets
+   * @param totalTicketsIngested - Total tickets ingested from alerts
+   * @returns Resolution ratio between 0 and 1
+   */
   calculateFirstContactResolutionAutomation(automatedResolvedCount: number, totalTicketsIngested: number): number {
     if (totalTicketsIngested <= 0) return 0;
     return automatedResolvedCount / totalTicketsIngested;
   }
 
+  /**
+   * Transitions ticket to RESOLVED_AUTOMATED status and logs audit trail event.
+   *
+   * @param ticket - Created ticket
+   * @param input - Alert input parameters
+   * @returns Updated Ticket entity
+   */
   private async autoCloseTicket(ticket: Ticket, input: RmmAlertInput): Promise<Ticket> {
     const updated = await this.ticketRepo.updateStatus(ticket.id, TicketStatus.RESOLVED_AUTOMATED);
     await this.eventRepo.create({

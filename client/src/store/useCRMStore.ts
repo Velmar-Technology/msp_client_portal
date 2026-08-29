@@ -58,6 +58,12 @@ export interface CRMState {
   cancelSubscription: (data: { subId: string; leadId?: string }) => Promise<void>;
 }
 
+/**
+ * CRM pipeline and lead management store.
+ * Manages lead lists, kanban/table view modes, sales quotations, and lead activities.
+ *
+ * @see BL-501 (CRM Lead Pipeline)
+ */
 export const useCRMStore = create<CRMState>()(
   devtools(
     (set, get) => ({

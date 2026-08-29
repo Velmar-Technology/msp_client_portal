@@ -25,16 +25,21 @@ export interface AuthContextType {
 }
 
 /**
- * AuthProvider is kept for backward compatibility with existing imports,
- * but it no longer provides a React Context. It simply renders its children.
+ * AuthProvider component wrapper.
+ * Kept for backward compatibility with existing imports; delegates global auth state to Zustand.
+ *
+ * @param props - Component children to render.
+ * @returns React element.
  */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
 /**
- * Hook to consume auth state.
- * Backed by Zustand for clean state access and centralized actions.
+ * Custom hook to consume global authentication state and dispatch auth actions.
+ * Backed by `useAuthStore` (Zustand) for optimized selector subscriptions.
+ *
+ * @returns AuthContextType containing current user, authentication status, and auth methods.
  */
 export function useAuth(): AuthContextType {
   const store = useAuthStore();

@@ -19,6 +19,10 @@ export interface SubscriptionState {
   setSelectedClientId: (id: string) => void;
 }
 
+/**
+ * Global subscription and equipment allocation store.
+ * Manages active subscription instances, per-tier hardware counts, and client selection.
+ */
 export const useSubscriptionStore = create<SubscriptionState>()(
   devtools(
     (set) => ({

@@ -15,7 +15,19 @@ export interface EnrichedInvoiceLineItem {
 
 export type EnrichedInvoice = Invoice & { line_items?: EnrichedInvoiceLineItem[] };
 
+/**
+ * Domain service managing invoice retrieval, line item dynamic enrichment, cancellation workflows, and PDF downloads.
+ */
 export class InvoiceManagementService {
+  /**
+   * Initializes InvoiceManagementService with repository, PDF, notification, and policy dependencies.
+   *
+   * @param invoiceRepo - Invoice repository
+   * @param subscriptionRepo - Subscription repository
+   * @param pdfService - Invoice PDF generator service
+   * @param notifService - Invoice notification service
+   * @param accessPolicy - Invoice access policy
+   */
   constructor(
     private invoiceRepo: InvoiceRepository = invoiceRepository,
     private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
@@ -28,6 +40,16 @@ export class InvoiceManagementService {
     return this.subscriptionRepo || subscriptionRepository;
   }
 
+  /**
+   * Retrieves an invoice by UUID with multi-tenant access policy verification.
+   *
+   * @param id - Invoice UUID
+   * @param tenantId - Calling user's tenant UUID
+   * @param userRole - Calling user's role
+   * @returns Authorized Invoice entity
+   * @throws {NotFoundError} When invoice does not exist
+   * @throws {ForbiddenError} When tenant access is disallowed
+   */
   async getInvoiceById(id: string, tenantId: string, userRole: UserRole): Promise<Invoice> {
     const invoice = await this.invoiceRepo.findById(id);
     if (!invoice) throw new NotFoundError('Invoice not found');
@@ -35,6 +57,15 @@ export class InvoiceManagementService {
     return invoice;
   }
 
+  /**
+   * Retrieves paginated invoices enriched with matched subscription line items.
+   *
+   * @param tenantId - Calling user tenant UUID
+   * @param userRole - Calling user role
+   * @param page - Page number
+   * @param limit - Page size
+   * @returns Object with enriched invoices array and total count
+   */
   async getClientInvoices(
     tenantId: string,
     userRole: UserRole,
@@ -56,6 +87,12 @@ export class InvoiceManagementService {
     return { invoices: enriched, total };
   }
 
+  /**
+   * Dynamically calculates and attaches descriptive line items by matching client subscription history.
+   *
+   * @param inv - Raw Invoice entity
+   * @returns Enriched invoice with line_items
+   */
   private async enrichInvoiceWithLineItems(inv: Invoice): Promise<EnrichedInvoice> {
     try {
       const subs = await this.subscriptionRepo.findByClient(inv.client_id, inv.tenant_id);
@@ -89,6 +126,18 @@ export class InvoiceManagementService {
     return inv;
   }
 
+  /**
+   * Cancels an unpaid invoice, cancelling any linked expired subscriptions and dispatching cancellation alerts.
+   *
+   * @param id - Invoice UUID
+   * @param tenantId - Tenant UUID
+   * @param userRole - Calling user role
+   * @param userId - Calling user ID
+   * @param reason - Optional cancellation reason
+   * @returns Cancelled invoice entity
+   * @throws {ValidationError} When invoice is already paid
+   * @throws {InternalServerError} When database update fails
+   */
   async cancelInvoice(id: string, tenantId: string, userRole: UserRole, userId: string, reason?: string): Promise<Invoice> {
     const invoice = await this.getInvoiceById(id, tenantId, userRole);
 
@@ -110,6 +159,11 @@ export class InvoiceManagementService {
     return updatedInvoice;
   }
 
+  /**
+   * Helper cascading invoice cancellation to expired subscription contracts.
+   *
+   * @param invoice - Cancelled invoice
+   */
   private async cancelRelatedSubscriptionIfExpired(invoice: Invoice): Promise<void> {
     try {
       const clientSubs = await this.subRepo.findByClient(invoice.client_id, invoice.tenant_id);
@@ -133,6 +187,15 @@ export class InvoiceManagementService {
     }
   }
 
+  /**
+   * Renders and streams the binary PDF for an authorized invoice.
+   *
+   * @param id - Invoice UUID
+   * @param tenantId - Tenant UUID
+   * @param userRole - Calling user role
+   * @param lang - Optional language code
+   * @returns Object containing PDF buffer and invoice number
+   */
   async downloadInvoice(id: string, tenantId: string, userRole: UserRole, lang?: string): Promise<{ pdfBuffer: Buffer; invoiceNumber: string }> {
     const invoice = await this.getInvoiceById(id, tenantId, userRole);
     return this.pdfService.generatePdf(invoice, lang);

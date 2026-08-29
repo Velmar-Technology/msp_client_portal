@@ -4,12 +4,30 @@ import { NotFoundError, ConflictError, InternalServerError } from '@shared/error
 import { Plan, PlanClientType, UserContext } from '@shared/types';
 import { CreatePlanInput, UpdatePlanInput } from '@shared/dtos/plan.dto';
 
+/**
+ * Domain service managing plan catalog CRUD operations, administrative access assertions, and soft deletions.
+ */
 export class PlanAdminService {
+  /**
+   * Initializes PlanAdminService with plan repository and access policy dependencies.
+   *
+   * @param planRepo - Plan repository
+   * @param accessPol - Plan access policy
+   */
   constructor(
     private planRepo: PlanRepository = planRepository,
     private accessPol: PlanAccessPolicy = planAccessPolicy,
   ) {}
 
+  /**
+   * Creates a new pricing plan tier (Admin only).
+   *
+   * @param data - CreatePlanInput attributes
+   * @param ctx - Authenticated user context
+   * @returns Created Plan entity
+   * @throws {ForbiddenError} When user is not an administrator
+   * @throws {ConflictError} When plan with the requested ID already exists
+   */
   async createPlan(data: CreatePlanInput, ctx: UserContext): Promise<Plan> {
     this.accessPol.assertAdminMutation(ctx);
     const existing = await this.planRepo.findById(data.id);
@@ -29,6 +47,17 @@ export class PlanAdminService {
     });
   }
 
+  /**
+   * Updates existing plan attributes (Admin only).
+   *
+   * @param id - Plan ID
+   * @param data - UpdatePlanInput attributes
+   * @param ctx - Authenticated user context
+   * @returns Updated Plan entity
+   * @throws {ForbiddenError} When user is not an administrator
+   * @throws {NotFoundError} When plan is not found
+   * @throws {InternalServerError} When database update fails
+   */
   async updatePlan(id: string, data: UpdatePlanInput, ctx: UserContext): Promise<Plan> {
     this.accessPol.assertAdminMutation(ctx);
     const plan = await this.planRepo.findById(id);
@@ -43,6 +72,16 @@ export class PlanAdminService {
     return updated;
   }
 
+  /**
+   * Soft-deletes a plan by deactivating it (Admin only).
+   *
+   * @param id - Plan ID
+   * @param ctx - Authenticated user context
+   * @returns Updated Plan entity with active = false
+   * @throws {ForbiddenError} When user is not an administrator
+   * @throws {NotFoundError} When plan is not found
+   * @throws {InternalServerError} When database update fails
+   */
   async softDeletePlan(id: string, ctx: UserContext): Promise<Plan> {
     this.accessPol.assertAdminMutation(ctx);
     const plan = await this.planRepo.findById(id);

@@ -43,23 +43,35 @@ export const rateLimitHitsTotal = new client.Counter({
 });
 register.registerMetric(rateLimitHitsTotal);
 
+/**
+ * Service managing Prometheus metrics collection, scraping format output, and HTTP/WebSocket telemetry recording.
+ */
 export class MetricsService {
   /**
-   * Return the MIME content type for Prometheus metrics scraping
+   * Returns the MIME content type for Prometheus metrics scraping.
+   *
+   * @returns MIME content type string
    */
   getContentType(): string {
     return register.contentType;
   }
 
   /**
-   * Return formatted Prometheus metrics string
+   * Returns formatted Prometheus metrics text.
+   *
+   * @returns Prometheus metrics serialization string
    */
   async getMetrics(): Promise<string> {
     return register.metrics();
   }
 
   /**
-   * Record HTTP request completion telemetry
+   * Records HTTP request completion telemetry (duration histogram observation and request counter increment).
+   *
+   * @param method - HTTP verb (e.g. GET, POST)
+   * @param route - Normalized path
+   * @param statusCode - Response status code
+   * @param durationSeconds - Execution duration in seconds
    */
   recordHttpRequest(method: string, route: string, statusCode: number | string, durationSeconds: number): void {
     const labels = {
@@ -72,18 +84,27 @@ export class MetricsService {
   }
 
   /**
-   * WebSocket connection tracking
+   * Increments active WebSocket connection gauge.
+   *
+   * @param gateway - Gateway name label (default: 'agent-ws')
    */
   incWsConnection(gateway = 'agent-ws'): void {
     wsActiveConnections.inc({ gateway });
   }
 
+  /**
+   * Decrements active WebSocket connection gauge.
+   *
+   * @param gateway - Gateway name label (default: 'agent-ws')
+   */
   decWsConnection(gateway = 'agent-ws'): void {
     wsActiveConnections.dec({ gateway });
   }
 
   /**
-   * Record rate limit breach event
+   * Records rate limit breach occurrence counter.
+   *
+   * @param tenantKey - Tenant UUID or IP address string
    */
   recordRateLimitHit(tenantKey = 'anonymous'): void {
     rateLimitHitsTotal.inc({ tenant_key: tenantKey });

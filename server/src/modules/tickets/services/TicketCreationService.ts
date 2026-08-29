@@ -19,7 +19,24 @@ export interface CreateAlertTicketOptions {
   assignment?: AlertTicketAssignment | null;
 }
 
+/**
+ * Domain service responsible for ticket creation workflows, quota enforcement,
+ * initial audit event generation, notification dispatch, and round-robin / capacity assignment.
+ *
+ * @see BL-201 (Feature Quota Enforcement)
+ * @see BL-102 (Round-Robin Technician Dispatch)
+ */
 export class TicketCreationService {
+  /**
+   * Initializes TicketCreationService with repositories, assignment, notifications, and quota services.
+   *
+   * @param ticketRepo - Ticket data repository
+   * @param eventRepo - Ticket audit event repository
+   * @param userRepo - User repository for client and technician lookups
+   * @param assignmentSvc - Assignment domain service for technician dispatch
+   * @param notifSvc - Notification service for real-time alerts
+   * @param quotaSvc - Quota service for plan limit enforcement
+   */
   constructor(
     private ticketRepo: TicketRepository = ticketRepository,
     private eventRepo: TicketEventRepository = ticketEventRepository,
@@ -53,6 +70,18 @@ export class TicketCreationService {
     return this.quotaSvc || ticketQuotaService;
   }
 
+  /**
+   * Creates a new support ticket from client request after validating subscription quotas,
+   * creates an initial audit event, automatically assigns an available technician,
+   * and dispatches email/notification alerts.
+   *
+   * @param data - Ticket creation details (title, description, category, priority, equipmentId)
+   * @param ctx - Authenticated user context (userId, tenantId, role)
+   * @returns Newly created and assigned Ticket entity
+   * @throws {TicketLimitExceededError} When the tenant or device has exceeded monthly ticket quotas (BL-201)
+   * @see BL-201
+   * @see BL-102
+   */
   async createTicket(data: CreateTicketInput, ctx: UserContext): Promise<Ticket> {
     await this.quotasSvc.enforceTicketLimit(ctx.userId, ctx.tenantId, data.equipmentId);
 
@@ -86,6 +115,13 @@ export class TicketCreationService {
     return ticket;
   }
 
+  /**
+   * Creates an automated support ticket from an RMM alert trigger (e.g. agent offline, high CPU, disk full).
+   *
+   * @param input - RMM alert payload
+   * @param opts - Ticket status, category, priority, tag prefix, and assignment strategy configuration
+   * @returns Newly created Ticket entity
+   */
   async createTicketFromAlert(input: RmmAlertInput, opts: CreateAlertTicketOptions): Promise<Ticket> {
     const baseTitle = input.title || `RMM Alert: ${input.alertType}`;
     const title = opts.tag ? `${opts.tag} ${baseTitle}` : baseTitle;
@@ -117,6 +153,14 @@ export class TicketCreationService {
     return ticket;
   }
 
+  /**
+   * Attempts to auto-assign a technician based on ticket category, specialty, and priority.
+   *
+   * @param ticket - Target Ticket entity
+   * @param category - Ticket domain category
+   * @param requestedSpecialty - Optional technician specialty filter
+   * @param priority - Ticket priority level
+   */
   private async assignIfPossible(
     ticket: Ticket,
     category: Ticket['category'],

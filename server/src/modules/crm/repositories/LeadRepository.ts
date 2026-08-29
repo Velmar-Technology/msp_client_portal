@@ -6,11 +6,24 @@ import { db, pool } from '@shared/db';
 import { eq, and } from 'drizzle-orm';
 import { validate as isUuid } from 'uuid';
 
+/**
+ * Data repository managing CRM prospective leads, filtering queries, pipeline statistics, and lifecycle mutations.
+ */
 export class LeadRepository extends BaseRepository<Lead> {
+  /**
+   * Initializes LeadRepository for the leads database table.
+   */
   constructor() {
     super(leads, 'leads');
   }
 
+  /**
+   * Retrieves a paginated and filtered list of leads joined with client user and assigned technician details.
+   *
+   * @param tenantId - Tenant UUID
+   * @param query - Filtering parameters (search, stage, priority, assignedUserId, page, limit)
+   * @returns Object with leads array and total record count
+   */
   async findByTenant(tenantId: string, query: GetLeadsQueryInput = {}): Promise<{ leads: Lead[]; total: number }> {
     const { search, stage, priority, assignedUserId, page = 1, limit = 50 } = query;
     const offset = (page - 1) * limit;
@@ -111,6 +124,13 @@ export class LeadRepository extends BaseRepository<Lead> {
     return { leads: formattedLeads, total };
   }
 
+  /**
+   * Retrieves a single lead by UUID joined with user and plan metadata.
+   *
+   * @param id - Lead UUID
+   * @param tenantId - Optional tenant UUID
+   * @returns Lead entity or null
+   */
   async findLeadById(id: string, tenantId?: string): Promise<Lead | null> {
     if (!id || !isUuid(id)) return null;
 
@@ -177,6 +197,13 @@ export class LeadRepository extends BaseRepository<Lead> {
     };
   }
 
+  /**
+   * Inserts a new lead record into the database.
+   *
+   * @param data - Lead attributes
+   * @param tenantId - Tenant UUID
+   * @returns Created Lead entity
+   */
   async createLead(data: CreateLeadInput, tenantId: string): Promise<Lead> {
     const result = await db
       .insert(leads)
@@ -204,6 +231,14 @@ export class LeadRepository extends BaseRepository<Lead> {
     return fullLead || (created as unknown as Lead);
   }
 
+  /**
+   * Updates fields on an existing lead record.
+   *
+   * @param id - Lead UUID
+   * @param data - Partial update attributes
+   * @param tenantId - Tenant UUID
+   * @returns Updated Lead entity or null
+   */
   async updateLead(id: string, data: UpdateLeadInput, tenantId: string): Promise<Lead | null> {
     if (!id || !isUuid(id)) return null;
 
@@ -235,6 +270,13 @@ export class LeadRepository extends BaseRepository<Lead> {
     return this.findLeadById(id, tenantId);
   }
 
+  /**
+   * Deletes a lead record by UUID and tenant.
+   *
+   * @param id - Lead UUID
+   * @param tenantId - Tenant UUID
+   * @returns True if deleted, false otherwise
+   */
   async deleteLead(id: string, tenantId: string): Promise<boolean> {
     if (!id || !isUuid(id)) return false;
     const result = await db
@@ -244,6 +286,12 @@ export class LeadRepository extends BaseRepository<Lead> {
     return result.length > 0;
   }
 
+  /**
+   * Calculates aggregated CRM pipeline metrics (total leads, pipeline value, won revenue, conversion rate).
+   *
+   * @param tenantId - Tenant UUID
+   * @returns CrmPipelineStats summary metrics
+   */
   async getPipelineStats(tenantId: string): Promise<CrmPipelineStats> {
     const sqlQuery = `
       SELECT 

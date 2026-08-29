@@ -15,7 +15,21 @@ function getLocalizedValue(val: any): string {
   return '';
 }
 
+/**
+ * Domain service orchestrating PayPal payment integrations for subscriptions, recurring billing agreements,
+ * checkout verification, and device quota upgrade transactions.
+ *
+ * @see BL-401 (Subscription Reactivation upon Payment)
+ */
 export class SubscriptionPaymentService {
+  /**
+   * Initializes SubscriptionPaymentService with plan, paypal, pricing, and subscription repositories.
+   *
+   * @param planRepo - Plan repository
+   * @param paypalSvc - PayPal integration service
+   * @param pricingSvc - Billing pricing calculation service
+   * @param subscriptionRepo - Subscription repository
+   */
   constructor(
     private planRepo: PlanRepository = planRepository,
     private paypalSvc: PaypalService = paypalService,
@@ -23,6 +37,14 @@ export class SubscriptionPaymentService {
     private subscriptionRepo: SubscriptionRepository = subscriptionRepository
   ) {}
 
+  /**
+   * Generates a PayPal checkout order for a new plan subscription or device quota upgrade.
+   *
+   * @param data - Target plan ID, equipment/device count, billing cycle, and optional current subscription ID for upgrades
+   * @returns Object containing generated PayPal order ID
+   * @throws {NotFoundError} When plan or current subscription is not found
+   * @throws {ValidationError} When upgrade device count is not greater than existing count
+   */
   async createPaypalOrderForSubscription(data: {
     plan: string;
     equipmentCount: number;
@@ -60,6 +82,13 @@ export class SubscriptionPaymentService {
     return { orderId: order.id };
   }
 
+  /**
+   * Creates an automated recurring PayPal subscription agreement with return and cancel callback URLs.
+   *
+   * @param data - Target plan ID, equipment quantity, and billing cycle
+   * @returns Subscription ID and customer approval link
+   * @throws {NotFoundError} When plan is not found
+   */
   async createPaypalSubscription(data: {
     plan: string;
     equipmentCount: number;
@@ -126,6 +155,14 @@ export class SubscriptionPaymentService {
     return this.pricingSvc || billingPricingService;
   }
 
+  /**
+   * Verifies and captures a PayPal order for a subscription, ensuring the paid amount matches expected plan total.
+   *
+   * @param paypalOrderId - PayPal order ID
+   * @param expectedTotal - Expected dollar amount
+   * @throws {ValidationError} When payment was not completed or paid amount does not match expected total
+   * @see BL-401
+   */
   async verifyPaypalOrderPayment(paypalOrderId: string, expectedTotal: number): Promise<void> {
     const order = await this.paypal.getOrder(paypalOrderId);
     if (order.status === 'APPROVED') {
@@ -144,6 +181,13 @@ export class SubscriptionPaymentService {
     }
   }
 
+  /**
+   * Verifies and captures a PayPal order for device upgrades, ensuring captured funds match expected difference.
+   *
+   * @param paypalOrderId - PayPal order ID
+   * @param expectedUpgradeTotal - Expected incremental charge
+   * @throws {ValidationError} When payment was not completed or amounts do not match
+   */
   async verifyPaypalUpgradePayment(paypalOrderId: string, expectedUpgradeTotal: number): Promise<void> {
     const order = await this.paypal.getOrder(paypalOrderId);
     if (order.status === 'APPROVED') {

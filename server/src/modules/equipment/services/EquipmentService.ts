@@ -2,8 +2,7 @@ import { equipmentRepository, EquipmentRepository } from '@modules/equipment/rep
 import { subscriptionRepository, SubscriptionRepository } from '@modules/subscriptions';
 import { planRepository, PlanRepository } from '@modules/subscriptions';
 import { nextcloudService, NextcloudService } from '@modules/system';
-import { rmmPatchService, RmmPatchService } from '@modules/rmm/services/RmmPatchService';
-import { AgentHelloPayload, agentGateway } from '@modules/rmm/services/AgentGateway';
+import { rmmPatchService, RmmPatchService, AgentHelloPayload, agentGateway } from '@modules/rmm';
 import {
   NotFoundError,
   ForbiddenError,
@@ -35,7 +34,20 @@ export interface NextcloudStorageInfo {
   status: string;
 }
 
+/**
+ * Domain service managing subscription hardware slots, Nextcloud cloud storage accounts,
+ * remote agent identity reconciliation, and direct admin device provisioning.
+ */
 export class EquipmentService {
+  /**
+   * Initializes EquipmentService with equipment, subscription, plan, Nextcloud, and RMM dependencies.
+   *
+   * @param equipmentRepo - Equipment inventory repository
+   * @param subscriptionRepo - Subscription repository
+   * @param planRepo - Plan catalog repository
+   * @param nextcloudSvc - Nextcloud user provisioning service
+   * @param rmmPatchSvc - RMM patch & telemetry bridge service
+   */
   constructor(
     private equipmentRepo: EquipmentRepository = equipmentRepository,
     private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
@@ -66,6 +78,12 @@ export class EquipmentService {
 
   /**
    * Internal command method to initialize missing slots for a subscription.
+   *
+   * @param subscriptionId - Target subscription UUID
+   * @param targetCount - Expected number of slots
+   * @param tenantId - Tenant UUID
+   * @param existingSlots - Array of currently allocated slots
+   * @returns Complete array of SubscriptionEquipment slots
    */
   private async ensureSlotsInitialized(
     subscriptionId: string,
@@ -95,6 +113,13 @@ export class EquipmentService {
 
   /**
    * Retrieves equipment slots for a subscription, creating missing slots if necessary.
+   *
+   * @param subscriptionId - Subscription UUID
+   * @param tenantId - Tenant UUID
+   * @param byAdmin - True if administrator
+   * @returns Array of SubscriptionEquipment slots
+   * @throws {NotFoundError} When subscription not found
+   * @throws {ForbiddenError} When tenant access is disallowed
    */
   async getEquipmentSlots(subscriptionId: string, tenantId: string, byAdmin = false): Promise<SubscriptionEquipment[]> {
     const sub = await this.subRepo.findById(subscriptionId);
@@ -109,6 +134,8 @@ export class EquipmentService {
   /**
    * Generates a 64-char per-device agent secret used to authenticate the
    * remote endpoint agent when it connects and claims identity updates.
+   *
+   * @returns Hex-encoded crypto token
    */
   private generateAgentToken(): string {
     return crypto.randomBytes(32).toString('hex');
@@ -121,6 +148,10 @@ export class EquipmentService {
    * a per-device agent_token, a matching secret on the WebSocket connection is
    * required before any write is applied; legacy slots without a token are
    * trusted in lenient mode.
+   *
+   * @param equipmentId - Equipment slot or agent instance UUID
+   * @param hello - Discovered identity metadata
+   * @param token - Agent secret token
    */
   async reconcileAgentIdentity(
     equipmentId: string,
@@ -179,6 +210,12 @@ export class EquipmentService {
    * Returns the agent-discovered identity prefill for an agent-issued pairing
    * code, so clients can confirm device details instead of typing them from
    * memory. The code is resolved against the live agent gateway registry.
+   *
+   * @param otp - 6-digit pairing code
+   * @param _tenantId - Tenant UUID
+   * @param _byAdmin - True if administrator
+   * @returns Discovered hostname, serial, and last seen timestamp
+   * @throws {NotFoundError} When pairing code is unknown or expired
    */
   async getAgentIdentityByOtp(
     otp: string,
@@ -197,6 +234,8 @@ export class EquipmentService {
 
   /**
    * Safely attempts to remove Nextcloud user account without breaking workflow.
+   *
+   * @param username - Nextcloud username
    */
   private async cleanupNextcloudUser(username: string): Promise<void> {
     try {
@@ -212,6 +251,13 @@ export class EquipmentService {
    * truth for identity (hostname/serial overridden when still unset), Nextcloud
    * + RMM are provisioned, and a freshly generated per-device secret is pushed
    * to the agent over the WebSocket. Returns the slot without the secret.
+   *
+   * @param options - BindAndActivateSlotOptions properties
+   * @returns Activated SubscriptionEquipment slot
+   * @throws {NotFoundError} When OTP, subscription, or slot is not found
+   * @throws {ForbiddenError} When access across tenant is denied
+   * @throws {ConflictError} When slot is already active or bound to different agent
+   * @throws {ValidationError} When agent disconnects during binding handshake
    */
   async bindAndActivateSlot(options: BindAndActivateSlotOptions): Promise<SubscriptionEquipment> {
     const entry = agentGateway.getPairingByCode(options.code);
@@ -301,6 +347,15 @@ export class EquipmentService {
    * or the agent reinstalled) can re-pair against the same slot. The Nextcloud
    * account is preserved but its password is rotated, revoking the wiped
    * machine's access immediately. Returns the slot in PENDING_ACTIVATION state.
+   *
+   * @param subscriptionId - Subscription UUID
+   * @param slotIndex - Zero-indexed slot position
+   * @param tenantId - Tenant UUID
+   * @param byAdmin - True if administrator
+   * @returns Unbound SubscriptionEquipment slot
+   * @throws {NotFoundError} When slot not found
+   * @throws {ForbiddenError} When access denied across tenant
+   * @throws {ConflictError} When slot is not currently active
    */
   async unbindSlotForRepair(
     subscriptionId: string,
@@ -349,6 +404,9 @@ export class EquipmentService {
    * Returns the physical agent target for a slot identifier, so downstream
    * controllers can route commands by slot UUID while agents are addressed by
    * their stable install UUID.
+   *
+   * @param targetId - Slot UUID or agent instance ID
+   * @returns Resolved agent UUID
    */
   async resolveAgentIdForSlot(targetId: string): Promise<string> {
     const slot = await this.equipmentRepository.findByAgentInstanceId(targetId);
@@ -358,6 +416,12 @@ export class EquipmentService {
     return targetId;
   }
 
+  /**
+   * Strips agent_token secret from slot response before returning to clients.
+   *
+   * @param slot - Slot entity
+   * @returns Slot entity without agent_token
+   */
   private stripSecrets<T extends SubscriptionEquipment>(slot: T): Omit<T, 'agent_token'> {
     const { agent_token, ...rest } = slot as any;
     void agent_token;
@@ -366,6 +430,9 @@ export class EquipmentService {
 
   /**
    * Resolves storage quota string from subscription plan or plan details.
+   *
+   * @param planId - Plan identifier
+   * @returns Storage quota string (e.g. '50 GB')
    */
   async resolveStorageQuota(planId: string): Promise<string> {
     if (planId.includes('PL-001')) return '25 GB';
@@ -392,6 +459,12 @@ export class EquipmentService {
 
   /**
    * Provisions Nextcloud user credentials. Throws ExternalServiceError on failure.
+   *
+   * @param username - Nextcloud username
+   * @param quota - Storage quota
+   * @param displayName - Display name
+   * @returns Generated Nextcloud user password
+   * @throws {ExternalServiceError} When Nextcloud user creation fails
    */
   private async provisionNextcloudUser(
     username: string,
@@ -416,6 +489,14 @@ export class EquipmentService {
 
   /**
    * Deactivates/revokes an equipment slot and deletes its Nextcloud account.
+   *
+   * @param subscriptionId - Subscription UUID
+   * @param slotIndex - Slot position index
+   * @param tenantId - Tenant UUID
+   * @param byAdmin - True if administrator
+   * @returns Reset SubscriptionEquipment slot in PENDING_ACTIVATION state
+   * @throws {NotFoundError} When slot is not found
+   * @throws {ForbiddenError} When access denied across tenant boundary
    */
   async deactivateSlot(subscriptionId: string, slotIndex: number, tenantId: string, byAdmin = false): Promise<SubscriptionEquipment> {
     const slot = await this.equipmentRepository.findBySlot(subscriptionId, slotIndex);
@@ -451,6 +532,9 @@ export class EquipmentService {
 
   /**
    * Helper method to auto-provision missing telemetry for active devices.
+   *
+   * @param devices - Array of equipment device entities
+   * @returns Devices array enriched with telemetry
    */
   private async ensureTelemetryProvisioned<T extends SubscriptionEquipment>(devices: T[]): Promise<T[]> {
     const missingTelemetry = devices.filter((d) => d.status === 'ACTIVE' && (d.cpu_usage == null || d.agent_status == null));
@@ -484,6 +568,10 @@ export class EquipmentService {
 
   /**
    * Gets all active devices (equipment) for a client across their active subscriptions.
+   *
+   * @param clientId - Client user UUID
+   * @param tenantId - Tenant UUID
+   * @returns Array of active SubscriptionEquipment devices with telemetry
    */
   async getActiveDevicesForClient(clientId: string, tenantId: string): Promise<SubscriptionEquipment[]> {
     const isUuid = typeof clientId === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(clientId);
@@ -506,6 +594,8 @@ export class EquipmentService {
 
   /**
    * Gets all client devices across all subscriptions and tenants (for Admin view).
+   *
+   * @returns Array of all EquipmentWithDetails devices with telemetry
    */
   async getAllDevicesForAdmin(): Promise<EquipmentWithDetails[]> {
     const activeSubs = await this.subRepo.findAllActive();
@@ -519,6 +609,14 @@ export class EquipmentService {
 
   /**
    * Gets Nextcloud credentials and live storage info for a specific slot on demand.
+   *
+   * @param subscriptionId - Subscription UUID
+   * @param slotIndex - Slot index
+   * @param tenantId - Tenant UUID
+   * @param byAdmin - True if administrator
+   * @returns NextcloudStorageInfo credentials and storage metrics
+   * @throws {NotFoundError} When slot not found
+   * @throws {ForbiddenError} When access denied across tenant
    */
   async getNextcloudInfo(
     subscriptionId: string,
@@ -556,6 +654,10 @@ export class EquipmentService {
 
   /**
    * Directly provisions/adds a device for an ADMIN without requiring an upfront paid subscription.
+   *
+   * @param options - Admin device provisioning parameters
+   * @returns Provisioned SubscriptionEquipment slot
+   * @throws {ValidationError} When device name is empty
    */
   async addAdminDevice(options: {
     deviceName: string;
@@ -633,6 +735,12 @@ export class EquipmentService {
   /**
    * Permanently deletes an admin-owned equipment record and cleans up associated external resources.
    * Client-owned equipment slots cannot be deleted through this endpoint.
+   *
+   * @param equipmentId - Equipment UUID
+   * @param _adminUserId - Admin user UUID
+   * @returns Object with deletion success flag and ID
+   * @throws {NotFoundError} When equipment record is missing
+   * @throws {ForbiddenError} When attempting to delete non-admin client equipment
    */
   async deleteAdminEquipment(equipmentId: string, _adminUserId: string): Promise<{ success: boolean; id: string }> {
     const equip = await this.equipmentRepository.findByIdWithDetails(equipmentId);

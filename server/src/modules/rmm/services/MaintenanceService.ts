@@ -7,13 +7,33 @@ import { DeviceMaintenance, UserRole, MaintenanceStatus, MaintenanceType } from 
 import { CreateMaintenanceInput, UpdateMaintenanceInput, MaintenanceQueryInput } from '@shared/dtos/maintenance.dto';
 import { notificationService, NotificationService } from '@modules/notifications';
 
+/**
+ * Domain service managing preventative device maintenance schedules, periodic intervals, and technician assignments.
+ */
 export class MaintenanceService {
+  /**
+   * Initializes MaintenanceService with maintenance, equipment, subscription, and notification dependencies.
+   *
+   * @param maintenanceRepo - Device maintenance repository
+   * @param equipmentRepo - Equipment repository
+   * @param subscriptionRepo - Subscription repository
+   * @param notifSvc - Notification service
+   */
   constructor(
     private maintenanceRepo: MaintenanceRepository = maintenanceRepository,
     private equipmentRepo: EquipmentRepository = equipmentRepository,
     private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
     private notifSvc: NotificationService = notificationService,
   ) {}
+
+  /**
+   * Retrieves preventative maintenance schedules matching query filters and role visibility rules.
+   *
+   * @param tenantId - Calling user tenant UUID
+   * @param user - Calling user ID and role
+   * @param query - Date range, client, tech, equipment, and status filters
+   * @returns Array of DeviceMaintenance entities with computed overdue statuses
+   */
   async getMaintenances(
     tenantId: string,
     user: { id: string; role: UserRole },
@@ -75,6 +95,16 @@ export class MaintenanceService {
     return processed;
   }
 
+  /**
+   * Retrieves a single maintenance schedule by UUID with tenant authorization check.
+   *
+   * @param id - Maintenance UUID
+   * @param tenantId - Tenant UUID
+   * @param user - Calling user ID and role
+   * @returns DeviceMaintenance entity
+   * @throws {NotFoundError} When maintenance schedule not found
+   * @throws {ForbiddenError} When client accesses another client's schedule
+   */
   async getMaintenanceById(id: string, tenantId: string, user: { id: string; role: UserRole }): Promise<DeviceMaintenance> {
     const effectiveTenantId = user.role === UserRole.CLIENT ? tenantId : undefined;
     const item = await this.maintenanceRepo.findByIdWithDetails(id, effectiveTenantId);
@@ -87,6 +117,16 @@ export class MaintenanceService {
     return item;
   }
 
+  /**
+   * Schedules a routine or custom preventative maintenance window for an equipment asset.
+   *
+   * @param tenantId - Tenant UUID
+   * @param user - Calling user ID and role
+   * @param data - CreateMaintenanceInput properties
+   * @returns Created DeviceMaintenance entity
+   * @throws {NotFoundError} When equipment or subscription is missing
+   * @throws {ForbiddenError} When scheduling for unauthorized device
+   */
   async scheduleMaintenance(
     tenantId: string,
     user: { id: string; role: UserRole },
@@ -157,6 +197,17 @@ export class MaintenanceService {
     return (await this.maintenanceRepo.findByIdWithDetails(newMaintenance.id, targetTenantId)) || newMaintenance;
   }
 
+  /**
+   * Updates an existing preventative maintenance record (Tech/Admin only).
+   *
+   * @param tenantId - Tenant UUID
+   * @param user - Calling user ID and role
+   * @param id - Maintenance UUID
+   * @param data - UpdateMaintenanceInput properties
+   * @returns Updated DeviceMaintenance entity
+   * @throws {NotFoundError} When schedule not found
+   * @throws {ForbiddenError} When client attempts update
+   */
   async updateMaintenance(
     tenantId: string,
     user: { id: string; role: UserRole },
@@ -209,6 +260,16 @@ export class MaintenanceService {
     return updated || existing;
   }
 
+  /**
+   * Deletes a scheduled maintenance record (Tech/Admin only).
+   *
+   * @param tenantId - Tenant UUID
+   * @param user - Calling user ID and role
+   * @param id - Maintenance UUID
+   * @returns Object with success boolean
+   * @throws {NotFoundError} When schedule not found
+   * @throws {ForbiddenError} When client attempts delete
+   */
   async deleteMaintenance(tenantId: string, user: { id: string; role: UserRole }, id: string): Promise<{ success: boolean }> {
     if (user.role === UserRole.CLIENT) {
       throw new ForbiddenError('Only technicians or administrators can delete maintenance schedules');

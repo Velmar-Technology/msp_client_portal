@@ -1,5 +1,5 @@
 import { memo, useCallback, useState, useMemo } from "react";
-import { Laptop, Loader2, MoreHorizontal, Cloud, Activity, ChevronRight, Calendar, RefreshCw, Trash2, CheckCircle2 } from "lucide-react";
+import { Laptop, Loader2, MoreHorizontal, Cloud, Activity, ChevronRight, Calendar, RefreshCw, Trash2, CheckCircle2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { useDevicesPage } from "@/hooks/useDevicesPage";
@@ -137,7 +137,6 @@ export const SubscriptionSelector = memo(function SubscriptionSelector({
 // 3. Memoized Actions Cell to prevent cross-row re-renders on dropdown open/close
 interface DeviceActionsCellProps {
   equip: Partial<SubscriptionEquipment>;
-  isAdmin?: boolean;
   onOpenNcModal: (equip: Partial<SubscriptionEquipment>) => void;
   onOpenScheduleMaint: (equip: Partial<SubscriptionEquipment>) => void;
   onRequestRevoke: (equip: Partial<SubscriptionEquipment>) => void;
@@ -195,7 +194,7 @@ const DeviceActionsCell = memo(function DeviceActionsCell({
             type="button"
             variant="outline"
             size="icon"
-            aria-label={t("devices.tableActions")}
+            aria-label={t("common.actions", "Actions")}
             className="h-7 w-7 cursor-pointer"
           >
             <MoreHorizontal className="h-3.5 w-3.5" />
@@ -240,7 +239,9 @@ const DeviceActionsCell = memo(function DeviceActionsCell({
                 className="text-xs text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive cursor-pointer"
               >
                 <Trash2 className="h-3.5 w-3.5 mr-1 text-destructive" />
-                {t("devices.actionDeactivate")}
+                {equip.client_role === "ADMIN"
+                  ? t("devices.actionDelete", "Delete Device")
+                  : t("devices.actionDeactivate", "Deactivate Device")}
               </DropdownMenuItem>
             </>
           ) : (
@@ -298,6 +299,7 @@ export function DevicesPage() {
     handleActivateWithOtp,
     addDeviceModalOpen,
     addDeviceLoading,
+    handleOpenAddDevice,
     handleCloseAddDevice,
     handleAddAdminDevice,
     deviceToDelete,
@@ -573,10 +575,9 @@ export function DevicesPage() {
         return (
           <DeviceActionsCell
             equip={equip}
-            isAdmin={isAdmin}
             onOpenNcModal={handleOpenNcModal}
             onOpenScheduleMaint={handleOpenScheduleMaint}
-            onRequestRevoke={handleRequestRevoke}
+            onRequestRevoke={equip.client_role === "ADMIN" ? setDeviceToDelete : handleRequestRevoke}
             onRequestRepair={handleRequestRepair}
             onOpenActivateWithOtp={handleOpenActivateWithOtp}
             onDeployClient={handleDeployClient}
@@ -594,6 +595,7 @@ export function DevicesPage() {
     handleRequestRepair,
     handleOpenActivateWithOtp,
     isAdmin,
+    setDeviceToDelete,
   ]);
 
   const searchConfig = useMemo(
@@ -635,7 +637,24 @@ export function DevicesPage() {
   );
 
   return (
-    <Page title={t("nav.devices")} subtitle={t("devices.subtitle")} isLoading={loading}>
+    <Page
+      title={t("nav.devices")}
+      subtitle={t("devices.subtitle")}
+      isLoading={loading}
+      actions={
+        isAdmin ? (
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleOpenAddDevice}
+            className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span>{t("devices.addDevice", "Add Device")}</span>
+          </Button>
+        ) : undefined
+      }
+    >
       <div className="space-y-6">
         {/* Navigation Section Switcher: Device Inventory vs RMM Monitoring & Patches */}
         <div className="border-b border-zinc-200 dark:border-zinc-800 pb-2">

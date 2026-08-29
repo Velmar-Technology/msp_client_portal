@@ -9,7 +9,22 @@ import { logger } from '@shared/utils/logger';
 import { ESCALATION_THRESHOLDS_MS, TIER_2_SPECIALTY } from '@shared/config/constants';
 import { Ticket, TicketStatus } from '@shared/types';
 
+/**
+ * Domain service enforcing automatic Tier 2 ticket escalation for unworked OPEN tickets exceeding priority SLA windows.
+ *
+ * @see BL-104 (Tier Escalation & Priority Thresholds)
+ */
 export class EscalationService {
+  /**
+   * Initializes EscalationService with repositories, assignment, and notification services.
+   *
+   * @param ticketRepo - Ticket data repository
+   * @param eventRepo - Ticket audit event repository
+   * @param responseRepo - Ticket conversation response repository
+   * @param userRepo - User repository
+   * @param assignmentSvc - Technician assignment service
+   * @param notifSvc - Notification service for escalation alerts
+   */
   constructor(
     private ticketRepo: TicketRepository = ticketRepository,
     private eventRepo: TicketEventRepository = ticketEventRepository,
@@ -19,6 +34,16 @@ export class EscalationService {
     private notifSvc: NotificationService = notificationService,
   ) {}
 
+  /**
+   * Evaluates an individual ticket against SLA escalation rules (BL-104).
+   * Escalates unworked OPEN tickets beyond their priority threshold to a Tier 2 specialist.
+   *
+   * @param ticketId - Target ticket UUID
+   * @returns Escalated Ticket entity or null if ticket is not eligible for escalation
+   * @throws {NotFoundError} When ticket does not exist
+   * @throws {InternalServerError} When reassignment fails
+   * @see BL-104
+   */
   async enforceEscalation(ticketId: string): Promise<Ticket | null> {
     const ticket = await this.ticketRepo.findById(ticketId);
     if (!ticket) {
@@ -68,6 +93,13 @@ export class EscalationService {
     return fullUpdatedTicket;
   }
 
+  /**
+   * Sweeps all pending open tickets created prior to minimum escalation SLA threshold and processes escalations.
+   *
+   * @param tenantId - Optional tenant UUID filter
+   * @returns Object containing count of escalated tickets
+   * @see BL-104
+   */
   async processPendingEscalations(tenantId?: string): Promise<{ escalated: number }> {
     const minThreshold = Math.min(...Object.values(ESCALATION_THRESHOLDS_MS));
     const cutoff = new Date(Date.now() - minThreshold);
@@ -90,18 +122,36 @@ export class EscalationService {
     return { escalated };
   }
 
+  /**
+   * Checks whether the ticket age is still within priority escalation SLA threshold.
+   *
+   * @param ticket - Ticket entity
+   * @returns True if within SLA window, false if threshold exceeded
+   */
   private isWithinThreshold(ticket: Ticket): boolean {
     const threshold = ESCALATION_THRESHOLDS_MS[ticket.priority];
     if (!threshold) return true;
     return Date.now() - new Date(ticket.created_at).getTime() <= threshold;
   }
 
+  /**
+   * Determines if a ticket has had any technician responses or work recorded.
+   *
+   * @param ticket - Ticket entity
+   * @returns True if unworked (no tech assigned or no tech responses)
+   */
   private async isUnworked(ticket: Ticket): Promise<boolean> {
     if (!ticket.assigned_tech_id) return true;
     const responses = await this.responseRepo.findByTicket(ticket.id);
     return responses.length === 0;
   }
 
+  /**
+   * Checks if the assigned technician already possesses Tier 2 specialty credentials.
+   *
+   * @param ticket - Ticket entity
+   * @returns True if already assigned to a Tier 2 technician
+   */
   private async isAssignedToTierTwo(ticket: Ticket): Promise<boolean> {
     if (!ticket.assigned_tech_id) return false;
     const current = await this.userRepo.findById(ticket.assigned_tech_id);

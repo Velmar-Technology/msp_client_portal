@@ -17,6 +17,10 @@ export interface CheckoutState {
   setPaymentMessage: (message: string | null) => void;
 }
 
+/**
+ * Global checkout and modal workflow state store.
+ * Coordinates modal visibility, subscription modifications, and device delta adjustments.
+ */
 export const useCheckoutStore = create<CheckoutState>()(
   devtools(
     (set) => ({

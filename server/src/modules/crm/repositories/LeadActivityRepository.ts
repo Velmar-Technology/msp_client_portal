@@ -6,11 +6,23 @@ import { db, pool } from '@shared/db';
 import { eq, and } from 'drizzle-orm';
 import { validate as isUuid } from 'uuid';
 
+/**
+ * Data repository managing CRM timeline events, tasks, calls, reminders, and stage transitions.
+ */
 export class LeadActivityRepository extends BaseRepository<LeadActivity> {
+  /**
+   * Initializes LeadActivityRepository for the lead_activities database table.
+   */
   constructor() {
     super(leadActivities, 'lead_activities');
   }
 
+  /**
+   * Helper mapping database row into standardized LeadActivity entity.
+   *
+   * @param row - Raw Postgres row
+   * @returns Formatted LeadActivity entity
+   */
   private mapActivityRow(row: Record<string, unknown>): LeadActivity {
     return {
       id: row.id as string,
@@ -30,6 +42,13 @@ export class LeadActivityRepository extends BaseRepository<LeadActivity> {
     };
   }
 
+  /**
+   * Retrieves all chronological activity events logged for a specific lead.
+   *
+   * @param leadId - Lead UUID
+   * @param tenantId - Tenant UUID
+   * @returns Array of LeadActivity entities
+   */
   async findByLead(leadId: string, tenantId: string): Promise<LeadActivity[]> {
     if (!leadId || !isUuid(leadId)) return [];
 
@@ -47,6 +66,14 @@ export class LeadActivityRepository extends BaseRepository<LeadActivity> {
     return res.rows.map((row) => this.mapActivityRow(row));
   }
 
+  /**
+   * Creates and inserts a new activity log entry or scheduled task.
+   *
+   * @param data - CreateLeadActivityInput parameters
+   * @param tenantId - Tenant UUID
+   * @param userId - Optional creator user UUID
+   * @returns Created LeadActivity entity
+   */
   async createActivity(data: CreateLeadActivityInput, tenantId: string, userId?: string): Promise<LeadActivity> {
     const result = await db
       .insert(leadActivities)
@@ -67,6 +94,12 @@ export class LeadActivityRepository extends BaseRepository<LeadActivity> {
     return this.mapActivityRow(created);
   }
 
+  /**
+   * Retrieves pending tasks and reminder activities due within the next 7 days across the tenant.
+   *
+   * @param tenantId - Tenant UUID
+   * @returns Array of upcoming LeadActivity entities
+   */
   async findUpcomingByTenant(tenantId: string): Promise<LeadActivity[]> {
     const sqlQuery = `
       SELECT
@@ -89,6 +122,14 @@ export class LeadActivityRepository extends BaseRepository<LeadActivity> {
     return res.rows.map((row) => this.mapActivityRow(row));
   }
 
+  /**
+   * Updates an existing lead activity record.
+   *
+   * @param id - Activity UUID
+   * @param data - Update fields
+   * @param tenantId - Tenant UUID
+   * @returns Updated LeadActivity entity or null
+   */
   async updateActivity(id: string, data: UpdateLeadActivityInput, tenantId: string): Promise<LeadActivity | null> {
     if (!id || !isUuid(id)) return null;
 
@@ -113,6 +154,13 @@ export class LeadActivityRepository extends BaseRepository<LeadActivity> {
     return this.findActivityById(id, tenantId);
   }
 
+  /**
+   * Deletes an activity record by UUID.
+   *
+   * @param id - Activity UUID
+   * @param tenantId - Tenant UUID
+   * @returns True if deleted, false otherwise
+   */
   async deleteActivity(id: string, tenantId: string): Promise<boolean> {
     if (!id || !isUuid(id)) return false;
     const result = await db
@@ -122,6 +170,13 @@ export class LeadActivityRepository extends BaseRepository<LeadActivity> {
     return result.length > 0;
   }
 
+  /**
+   * Finds a single activity by UUID joined with user metadata.
+   *
+   * @param id - Activity UUID
+   * @param tenantId - Optional tenant UUID
+   * @returns LeadActivity entity or null
+   */
   async findActivityById(id: string, tenantId?: string): Promise<LeadActivity | null> {
     if (!id || !isUuid(id)) return null;
 

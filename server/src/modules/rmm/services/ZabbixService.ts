@@ -25,6 +25,10 @@ const TOKEN_TTL_MS = 55 * 60 * 1000;
 const MAX_RETRIES = 2;
 const BASE_RETRY_DELAY_MS = 1_000;
 
+/**
+ * Integration service communicating with Zabbix monitoring server via JSON-RPC,
+ * authenticating sessions, querying telemetry metrics, synchronizing hosts, and executing remote scripts.
+ */
 export class ZabbixService {
   private url: string;
   private user: string;
@@ -35,6 +39,15 @@ export class ZabbixService {
   private connected = false;
   private client: AxiosInstance;
 
+  /**
+   * Initializes ZabbixService with connection parameters and HTTP keep-alive agents.
+   *
+   * @param url - Zabbix JSON-RPC API endpoint
+   * @param user - API username
+   * @param pass - API password
+   * @param hostDns - Agent DNS hostname
+   * @param cache - CacheManager instance
+   */
   constructor(
     url = process.env.ZABBIX_URL || 'http://localhost:8080/api_jsonrpc.php',
     user = process.env.ZABBIX_USER || 'Admin',
@@ -54,6 +67,14 @@ export class ZabbixService {
     });
   }
 
+  /**
+   * Invokes a Zabbix JSON-RPC method with automated exponential backoff and auth recovery.
+   *
+   * @param method - JSON-RPC method name
+   * @param params - Method parameters
+   * @param useAuth - True to include auth token
+   * @returns RPC result payload
+   */
   private async jsonRpcCallWithRetry(method: string, params: any = {}, useAuth = true): Promise<any> {
     let lastError: any = null;
 
@@ -84,6 +105,15 @@ export class ZabbixService {
     throw lastError;
   }
 
+  /**
+   * Executes HTTP POST call formatting JSON-RPC 2.0 structure and handling token expiry errors.
+   *
+   * @param method - JSON-RPC method
+   * @param params - Method parameters
+   * @param useAuth - Include auth token
+   * @param isRetry - Flag preventing infinite recursive retries
+   * @returns JSON-RPC result data
+   */
   private async jsonRpcCall(method: string, params: any = {}, useAuth = true, isRetry = false): Promise<any> {
     const auth = useAuth ? this.token : null;
     const response = await this.client.post(
@@ -130,6 +160,11 @@ export class ZabbixService {
     return response.data?.result;
   }
 
+  /**
+   * Authenticates with Zabbix JSON-RPC API or returns existing non-expired auth token.
+   *
+   * @returns Auth token string or null if login failed
+   */
   async authenticate(): Promise<string | null> {
     if (this.token && Date.now() < this.tokenExpiresAt) {
       return this.token;
@@ -164,6 +199,11 @@ export class ZabbixService {
     }
   }
 
+  /**
+   * Performs quick health check verifying Zabbix API connectivity and API version.
+   *
+   * @returns ZabbixHealthCheck result with reachability and latency
+   */
   async checkHealth(): Promise<ZabbixHealthCheck> {
     return this.cache.wrap<ZabbixHealthCheck>('rmm:zabbix:health', 30, async () => {
       const start = Date.now();
@@ -191,6 +231,13 @@ export class ZabbixService {
     });
   }
 
+  /**
+   * Synchronizes host entry in Zabbix, linking Windows agent templates.
+   *
+   * @param equipmentId - Equipment UUID
+   * @param deviceName - Human-readable device label
+   * @returns Zabbix host ID
+   */
   async syncHost(equipmentId: string, deviceName: string): Promise<string> {
     await this.authenticate();
     const technicalHost = (deviceName || equipmentId.substring(0, 8)).trim();
@@ -255,6 +302,13 @@ export class ZabbixService {
     return fallbackId;
   }
 
+  /**
+   * Fetches real-time host CPU, memory, disk, and pending patch metrics from Zabbix agent items.
+   *
+   * @param equipmentId - Equipment UUID
+   * @param zabbixHostId - Optional Zabbix host ID
+   * @returns ZabbixHostMetrics telemetry readings
+   */
   async getHostTelemetry(equipmentId: string, zabbixHostId?: string | null): Promise<ZabbixHostMetrics> {
     if (zabbixHostId && !zabbixHostId.startsWith('zbx-')) {
       try {
@@ -349,6 +403,13 @@ export class ZabbixService {
     };
   }
 
+  /**
+   * Dispatches remote script execution request for patch installation to Zabbix agent.
+   *
+   * @param zabbixHostId - Zabbix host ID
+   * @param patchId - Knowledgebase or CVE patch ID
+   * @returns True when script execution initiated
+   */
   async executePatchScript(zabbixHostId: string, patchId: string): Promise<boolean> {
     await this.authenticate();
     logger.info(`Triggering Zabbix patch script for host ${zabbixHostId}, patch: ${patchId}`);
@@ -373,6 +434,11 @@ export class ZabbixService {
     return true;
   }
 
+  /**
+   * Returns current connectivity status boolean with Zabbix server.
+   *
+   * @returns True if connected
+   */
   isConnected(): boolean {
     return this.connected;
   }

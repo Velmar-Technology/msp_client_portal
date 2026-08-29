@@ -11,7 +11,19 @@ interface HelpdeskQuota {
   limit: number;
 }
 
+/**
+ * Domain service enforcing subscription plan quotas and device ticket limits.
+ *
+ * @see BL-201 (Feature Quota Enforcement)
+ */
 export class TicketQuotaService {
+  /**
+   * Initializes TicketQuotaService with subscription, plan, and ticket repositories.
+   *
+   * @param subscriptionRepo - Subscription data repository
+   * @param planRepo - Service plan data repository
+   * @param ticketRepo - Ticket data repository
+   */
   constructor(
     private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
     private planRepo: PlanRepository = planRepository,
@@ -30,6 +42,18 @@ export class TicketQuotaService {
     return this.ticketRepo || ticketRepository;
   }
 
+  /**
+   * Validates that the client has an active subscription and has not exceeded monthly ticket quotas.
+   * Checks per-device limits when equipmentId is provided, or per-tenant account limits otherwise.
+   *
+   * @param clientId - Client user ID
+   * @param tenantId - Tenant UUID
+   * @param equipmentId - Optional equipment asset ID
+   * @returns Resolves when within allowed quota
+   * @throws {ForbiddenError} When client has no active subscription
+   * @throws {TicketLimitExceededError} When monthly ticket quota has been reached (BL-201)
+   * @see BL-201
+   */
   async enforceTicketLimit(clientId: string, tenantId: string, equipmentId?: string): Promise<void> {
     const subs = await this.subsRepo.findByClient(clientId, tenantId);
     const activeSubs = subs.filter(
@@ -53,6 +77,12 @@ export class TicketQuotaService {
     }
   }
 
+  /**
+   * Evaluates active subscriptions to calculate maximum allowed helpdesk ticket limits.
+   *
+   * @param activeSubs - Array of active client subscriptions
+   * @returns HelpdeskQuota summary
+   */
   private async resolveQuota(activeSubs: Subscription[]): Promise<HelpdeskQuota> {
     let checkedAnyFeature = false;
     let unlimited = false;
@@ -83,6 +113,14 @@ export class TicketQuotaService {
     return { checkedAnyFeature, unlimited, limit: maxLimit };
   }
 
+  /**
+   * Verifies that the specific equipment asset has not exceeded its monthly ticket limit.
+   *
+   * @param equipmentId - Equipment UUID
+   * @param limit - Max tickets per device per month
+   * @throws {TicketLimitExceededError} When limit is exceeded
+   * @see BL-201
+   */
   private async enforceDeviceQuota(equipmentId: string, limit: number): Promise<void> {
     const deviceTicketCount = await this.ticketsRepo.countEquipmentTicketsInCurrentMonth(equipmentId);
     if (deviceTicketCount >= limit) {
@@ -92,6 +130,14 @@ export class TicketQuotaService {
     }
   }
 
+  /**
+   * Verifies that the client account has not exceeded its monthly total ticket limit.
+   *
+   * @param clientId - Client user ID
+   * @param limit - Max tickets per account per month
+   * @throws {TicketLimitExceededError} When limit is exceeded
+   * @see BL-201
+   */
   private async enforceAccountQuota(clientId: string, limit: number): Promise<void> {
     const clientTicketCount = await this.ticketsRepo.countClientTicketsInCurrentMonth(clientId);
     if (clientTicketCount >= limit) {

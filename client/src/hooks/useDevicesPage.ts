@@ -10,6 +10,12 @@ import { equipmentService } from "@/services/equipmentService";
 import type { SubscriptionEquipment } from "@/services/equipmentService";
 import type { SortingState } from "@tanstack/react-table";
 
+/**
+ * Custom hook managing the Devices & Inventory page.
+ * Coordinates equipment slot allocations, OTP activations, Nextcloud credential inspection, RMM diagnostics, and script downloads.
+ *
+ * @returns State and event handlers for device lists, slot actions, modals, and telemetry.
+ */
 export function useDevicesPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();

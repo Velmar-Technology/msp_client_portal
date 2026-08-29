@@ -54,6 +54,10 @@ const getInitialUser = (): AuthUser | null => {
   }
 };
 
+/**
+ * Global authentication and user session store powered by Zustand.
+ * Synchronizes session identity with telemetry (Grafana Faro & Datadog RUM) and storage abstractions.
+ */
 export const useAuthStore = create<AuthState>()(
   devtools(
     (set) => ({

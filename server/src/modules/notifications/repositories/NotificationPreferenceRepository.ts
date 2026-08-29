@@ -16,13 +16,22 @@ export const DEFAULT_PREFERENCES: NotificationPreferencesMap = {
   SUBSCRIPTION_EXPIRING_SOON: { in_app: true, email: true, whatsapp: false },
 };
 
+/**
+ * Data repository managing user notification channel preference overrides and default configurations.
+ */
 export class NotificationPreferenceRepository extends BaseRepository<NotificationPreference> {
+  /**
+   * Initializes NotificationPreferenceRepository for the notification_preferences database table.
+   */
   constructor() {
     super(notificationPreferences, 'notification_preferences');
   }
 
   /**
-   * Find a user's notification preferences row.
+   * Finds a user's notification preferences database row.
+   *
+   * @param userId - User UUID
+   * @returns NotificationPreference entity or null
    */
   async findByUserId(userId: string): Promise<NotificationPreference | null> {
     const results = await db
@@ -33,8 +42,12 @@ export class NotificationPreferenceRepository extends BaseRepository<Notificatio
   }
 
   /**
-   * Insert or update (upsert) user preferences.
-   * Uses the unique constraint on user_id for conflict resolution.
+   * Inserts or updates (upserts) user notification preferences.
+   *
+   * @param userId - User UUID
+   * @param tenantId - Tenant UUID
+   * @param preferences - NotificationPreferencesMap object
+   * @returns Created or updated NotificationPreference entity
    */
   async upsert(
     userId: string,
@@ -60,7 +73,10 @@ export class NotificationPreferenceRepository extends BaseRepository<Notificatio
   }
 
   /**
-   * Returns the user's effective preferences (saved or defaults).
+   * Returns the user's effective preferences merged with global defaults.
+   *
+   * @param userId - User UUID
+   * @returns Effective NotificationPreferencesMap
    */
   async getEffectivePreferences(userId: string): Promise<NotificationPreferencesMap> {
     const row = await this.findByUserId(userId);

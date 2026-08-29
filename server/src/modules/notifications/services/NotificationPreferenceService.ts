@@ -19,19 +19,34 @@ const FORCE_IN_APP_EVENTS: NotificationEventType[] = [
   'TICKET_STATUS_CHANGED',
 ];
 
+/**
+ * Domain service managing per-user multi-channel notification preferences, default fallbacks, and critical event locks.
+ */
 export class NotificationPreferenceService {
-  constructor(private preferenceRepo: NotificationPreferenceRepository = notificationPreferenceRepository) {}
   /**
-   * Get the user's effective notification preferences.
-   * Returns defaults for users who haven't customized yet.
+   * Initializes NotificationPreferenceService with repository dependency.
+   *
+   * @param preferenceRepo - Notification preference data repository
+   */
+  constructor(private preferenceRepo: NotificationPreferenceRepository = notificationPreferenceRepository) {}
+
+  /**
+   * Retrieves the user's effective notification preferences, falling back to defaults if unconfigured.
+   *
+   * @param userId - User UUID
+   * @returns NotificationPreferencesMap mapping event types to active channels
    */
   async getPreferences(userId: string): Promise<NotificationPreferencesMap> {
     return this.preferenceRepo.getEffectivePreferences(userId);
   }
 
   /**
-   * Validate and save updated preferences.
-   * Enforces that critical events keep in_app = true.
+   * Validates and updates notification preferences, enforcing mandatory in-app delivery on critical operational events.
+   *
+   * @param userId - User UUID
+   * @param tenantId - Tenant UUID
+   * @param preferences - Updated preferences map
+   * @returns Updated NotificationPreference entity
    */
   async updatePreferences(
     userId: string,
@@ -57,8 +72,12 @@ export class NotificationPreferenceService {
   }
 
   /**
-   * Quick channel gate — checks if a notification should be dispatched
-   * to a given channel for a specific user and event type.
+   * Evaluates whether a notification should be dispatched to a channel for a specific user and event type.
+   *
+   * @param userId - User UUID
+   * @param eventType - NotificationEventType trigger
+   * @param channel - Target channel ('in_app' | 'email' | 'whatsapp')
+   * @returns True if channel is enabled or fails open
    */
   async shouldNotify(
     userId: string,

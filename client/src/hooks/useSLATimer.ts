@@ -6,9 +6,13 @@ export interface SLATimerTicketInput {
 }
 
 /**
- * Custom hook that provides a countdown timer for the SLA 1-hour window.
- * Shows remaining time for warranty/service ticket modifications.
- * Supports both object argument `useSLATimer(ticket)` and two string arguments `useSLATimer(createdAt, category)`.
+ * Custom hook that provides a real-time countdown timer for the 1-hour SLA cancellation window.
+ * Displays remaining time for eligible warranty and service outage tickets.
+ *
+ * @see BL-101 (1-Hour SLA Cancellation)
+ * @param ticketOrCreatedAt - Ticket object or ISO timestamp string of creation time.
+ * @param categoryParam - Optional ticket category string if timestamp string is passed as first argument.
+ * @returns Object with remaining milliseconds, countdown minutes, seconds, formatted time string, and expired flag.
  */
 export function useSLATimer(
   ticketOrCreatedAt?: SLATimerTicketInput | string | null,

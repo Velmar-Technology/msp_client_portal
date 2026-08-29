@@ -43,7 +43,17 @@ export interface FinancialStatsResult {
   transactions: FinancialTransaction[];
 }
 
+/**
+ * Domain service calculating executive financial KPIs, MRR, operating margins, expense category shares, and chart data points.
+ */
 export class FinancialStatsService {
+  /**
+   * Initializes FinancialStatsService with invoice, subscription, and expense repository dependencies.
+   *
+   * @param invoiceRepo - Invoice repository
+   * @param subscriptionRepo - Subscription repository
+   * @param expenseRepo - Operational expenses repository
+   */
   constructor(
     private invoiceRepo: InvoiceRepository = invoiceRepository,
     private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
@@ -229,6 +239,15 @@ export class FinancialStatsService {
     return txns;
   }
 
+  /**
+   * Computes high-level financial KPIs (Revenue, MRR, Expenses, Margin), monthly historical trends,
+   * category cost allocation, and transaction logs.
+   *
+   * @param tenantId - Calling user tenant UUID
+   * @param userRole - Calling user role
+   * @param range - Time horizon ('30_days', 'quarter', 'year')
+   * @returns FinancialStatsResult containing KPIs, graphs, breakdowns, and recent transactions
+   */
   async getFinancialStats(tenantId: string, userRole: UserRole, range: FinancialRange): Promise<FinancialStatsResult> {
     const isClient = userRole === UserRole.CLIENT;
     const tenantFilter = isClient ? tenantId : undefined;

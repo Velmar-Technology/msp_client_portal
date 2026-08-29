@@ -5,13 +5,35 @@ import { distributedLock, DistributedLock } from '@shared/utils/cache';
 import { logger } from '@shared/utils/logger';
 import { IAssignmentStrategy } from './IAssignmentStrategy';
 
+/**
+ * Round-robin technician assignment strategy with distributed lock concurrency control.
+ * Rotates assignments across specialists or general pool in balanced cyclical sequence.
+ *
+ * @see BL-102 (Round-Robin Technician Dispatch)
+ */
 export class RoundRobinAssignmentStrategy implements IAssignmentStrategy {
+  /**
+   * Initializes RoundRobinAssignmentStrategy with dependencies.
+   *
+   * @param userRepo - User repository
+   * @param roundRobinRepo - Round-robin state repository
+   * @param lock - Distributed lock primitive
+   */
   constructor(
     private userRepo: UserRepository = userRepository,
     private roundRobinRepo: RoundRobinRepository = roundRobinRepository,
     private lock: DistributedLock = distributedLock
   ) {}
 
+  /**
+   * Rotates and assigns the next technician in round-robin order within a distributed lock.
+   *
+   * @param category - Ticket category
+   * @param requestedSpecialty - Optional specialist domain filter
+   * @param _priority - Optional priority level
+   * @returns Next assigned technician or null if no technicians available
+   * @see BL-102
+   */
   async assign(category: TicketCategory, requestedSpecialty?: string, _priority?: TicketPriority): Promise<User | null> {
     return this.lock.withLock(`round_robin:${category}`, 3000, async () => {
       let technicians: User[];

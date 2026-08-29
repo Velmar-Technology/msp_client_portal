@@ -3,11 +3,25 @@ import { Expense } from '@shared/types';
 import { db, expenses } from '@shared/db';
 import { eq, desc, count } from 'drizzle-orm';
 
+/**
+ * Data repository for operational expense records, category allocations, and tenant aggregations.
+ */
 export class ExpenseRepository extends BaseRepository<Expense> {
+  /**
+   * Initializes ExpenseRepository for the expenses database table.
+   */
   constructor() {
     super(expenses, 'expenses');
   }
 
+  /**
+   * Retrieves paginated expense records scoped to a specific tenant organization.
+   *
+   * @param tenantId - Tenant UUID
+   * @param limit - Page size
+   * @param offset - Offset index
+   * @returns Array of Expense entities
+   */
   async findByTenant(tenantId: string, limit = 20, offset = 0): Promise<Expense[]> {
     const results = await db
       .select()
@@ -19,6 +33,12 @@ export class ExpenseRepository extends BaseRepository<Expense> {
     return results as Expense[];
   }
 
+  /**
+   * Counts the total number of expenses recorded for a tenant organization.
+   *
+   * @param tenantId - Tenant UUID
+   * @returns Total count of records
+   */
   async countByTenant(tenantId: string): Promise<number> {
     const results = await db
       .select({ val: count() })
@@ -27,6 +47,12 @@ export class ExpenseRepository extends BaseRepository<Expense> {
     return results[0]?.val ?? 0;
   }
 
+  /**
+   * Retrieves all expenses ordered by date for financial analytics and KPI calculations.
+   *
+   * @param tenantId - Optional tenant UUID filter
+   * @returns Array of Expense entities
+   */
   async getAllForStats(tenantId?: string): Promise<Expense[]> {
     if (tenantId) {
       return (await db
@@ -41,6 +67,12 @@ export class ExpenseRepository extends BaseRepository<Expense> {
       .orderBy(desc(expenses.expense_date))) as Expense[];
   }
 
+  /**
+   * Inserts a new operational expense entry.
+   *
+   * @param data - Expense data (amount, description, category, expense_date, tenant_id, expense_identifier)
+   * @returns Created Expense entity
+   */
   async create(data: {
     amount: number;
     description: string;

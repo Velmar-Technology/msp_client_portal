@@ -24,16 +24,19 @@ const getDefaultOptions = () => ({
 const rateLimitStore = new Map<string, RateLimitRecord>();
 
 /**
- * Helper to clear rate limit store state (useful for unit testing).
+ * Resets the in-memory rate limit store (primarily for unit testing).
  */
 export function resetRateLimitStore(): void {
   rateLimitStore.clear();
 }
 
 /**
- * Ingress Gateway Multi-Tenant Rate Limiting Middleware.
- * Protects downstream microservices/clusters from noisy neighbors by tracking request rate
- * grouped by `X-Tenant-Id` (for authenticated calls) or client IP (for unauthenticated calls).
+ * Ingress Gateway Multi-Tenant Rate Limiting Middleware Factory.
+ * Protects downstream services by tracking request rates grouped by `X-Tenant-Id` or client IP.
+ *
+ * @param options - RateLimiterOptions with custom windowMs and maxRequests
+ * @returns Express rate limiting middleware function
+ * @throws {RateLimitError} When request count exceeds maxRequests within windowMs
  */
 export function createGatewayRateLimiter(options: RateLimiterOptions = {}) {
   const defaults = getDefaultOptions();

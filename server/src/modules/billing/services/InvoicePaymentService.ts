@@ -7,7 +7,22 @@ import { ValidationError, InternalServerError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
 import { Invoice, InvoiceStatus, SubscriptionStatus, UserRole } from '@shared/types';
 
+/**
+ * Domain service managing invoice payment captures via PayPal or manual admin confirmation,
+ * activating linked client subscriptions upon successful settlement.
+ *
+ * @see BL-401 (Subscription Reactivation upon Payment)
+ */
 export class InvoicePaymentService {
+  /**
+   * Initializes InvoicePaymentService with invoice, subscription, paypal, notification, and policy dependencies.
+   *
+   * @param invoiceRepo - Invoice repository
+   * @param subscriptionRepo - Subscription repository
+   * @param paypalSvc - PayPal integration service
+   * @param notifService - Invoice notification service
+   * @param accessPolicy - Invoice access policy
+   */
   constructor(
     private invoiceRepo: InvoiceRepository = invoiceRepository,
     private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
@@ -20,6 +35,13 @@ export class InvoicePaymentService {
     return this.subscriptionRepo || subscriptionRepository;
   }
 
+  /**
+   * Re-activates any EXPIRED subscriptions for the client after invoice settlement (BL-401).
+   *
+   * @param clientId - Client user UUID
+   * @param tenantId - Tenant UUID
+   * @see BL-401
+   */
   private async activateExpiredSubscriptionsForClient(clientId: string, tenantId: string): Promise<void> {
     try {
       const clientSubs = await this.subRepo.findByClient(clientId, tenantId);
@@ -33,6 +55,13 @@ export class InvoicePaymentService {
     }
   }
 
+  /**
+   * Generates a PayPal checkout order for an unpaid invoice.
+   *
+   * @param invoice - Invoice entity
+   * @returns Object with PayPal order ID
+   * @throws {ValidationError} When invoice is already paid
+   */
   async createPaypalOrder(invoice: Invoice): Promise<{ orderId: string }> {
     if (invoice.status === InvoiceStatus.PAID) {
       throw new ValidationError('Invoice is already paid');
@@ -41,6 +70,16 @@ export class InvoicePaymentService {
     return { orderId: order.id };
   }
 
+  /**
+   * Captures an approved PayPal order, transitions the invoice to PAID, reactivates expired subscriptions, and dispatches receipt emails.
+   *
+   * @param invoice - Target invoice entity
+   * @param paypalOrderId - PayPal order ID to capture
+   * @returns Updated Invoice entity
+   * @throws {ValidationError} When PayPal capture status is not COMPLETED
+   * @throws {InternalServerError} When database status update fails
+   * @see BL-401
+   */
   async capturePaypalOrder(invoice: Invoice, paypalOrderId: string): Promise<Invoice> {
     if (invoice.status === InvoiceStatus.PAID) {
       return invoice;
@@ -62,6 +101,16 @@ export class InvoicePaymentService {
     return updatedInvoice;
   }
 
+  /**
+   * Manually marks an invoice as PAID (e.g. for wire transfers or cash payments).
+   *
+   * @param invoice - Target invoice entity
+   * @param userRole - Calling user's role (must be ADMIN)
+   * @returns Updated Invoice entity
+   * @throws {ForbiddenError} When user is not an administrator
+   * @throws {InternalServerError} When database update fails
+   * @see BL-401
+   */
   async markAsPaid(invoice: Invoice, userRole: UserRole): Promise<Invoice> {
     this.accessPolicy.assertAdmin(userRole, 'Only administrators can mark invoices as paid manually');
 

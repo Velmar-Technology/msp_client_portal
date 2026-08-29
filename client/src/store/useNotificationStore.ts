@@ -34,6 +34,10 @@ export interface NotificationState {
   stopStream: () => void;
 }
 
+/**
+ * Notification and Server-Sent Events (SSE) streaming store.
+ * Manages live real-time notification streams, automatic reconnects, unread badges, and toast triggers.
+ */
 export const useNotificationStore = create<NotificationState>()(
   devtools(
     (set, get) => ({

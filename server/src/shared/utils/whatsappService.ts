@@ -12,6 +12,11 @@ import { NotificationPayload } from '@shared/types';
  * Replace the sendWhatsApp function body with the real API call.
  */
 
+/**
+ * Dispatches a WhatsApp notification payload through gateway or logs stub in development.
+ *
+ * @param payload - NotificationPayload containing phone number, subject, and message text
+ */
 export async function sendWhatsApp(payload: NotificationPayload): Promise<void> {
   // STUB: Log the message instead of sending in development/stub environment.
   logger.info('📱 [STUB] WhatsApp message queued', {
@@ -23,7 +28,12 @@ export async function sendWhatsApp(payload: NotificationPayload): Promise<void> 
 }
 
 /**
- * Send a ticket status update via WhatsApp.
+ * Sends a ticket status change alert via WhatsApp message.
+ *
+ * @param phoneNumber - Recipient phone number / MSISDN
+ * @param ticketId - Ticket UUID
+ * @param newStatus - Updated status string
+ * @param notes - Optional remarks
  */
 export async function sendTicketStatusWhatsApp(
   phoneNumber: string,
@@ -53,7 +63,10 @@ export async function sendTicketStatusWhatsApp(
 }
 
 /**
- * Send account verification OTP code via WhatsApp.
+ * Sends an OTP account verification code via WhatsApp message.
+ *
+ * @param phoneNumber - Recipient phone number
+ * @param otp - 6-digit OTP string
  */
 export async function sendOTPWhatsApp(
   phoneNumber: string,

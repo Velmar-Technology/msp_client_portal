@@ -4,9 +4,17 @@ import { UnauthorizedError, ForbiddenError } from '@shared/errors';
 
 /**
  * Role-Based Access Control (RBAC) middleware factory.
- * Pass allowed roles to restrict endpoint access.
+ * Restricts endpoint invocation strictly to designated user roles.
  *
- * Usage: rbacMiddleware(UserRole.ADMIN, UserRole.TECHNICIAN)
+ * @example
+ * ```ts
+ * router.get('/admin', rbacMiddleware(UserRole.ADMIN), handler);
+ * ```
+ *
+ * @param allowedRoles - Variadic list of permitted UserRole values
+ * @returns Express middleware function
+ * @throws {UnauthorizedError} When req.user is absent
+ * @throws {ForbiddenError} When user role is not among allowedRoles
  */
 export function rbacMiddleware(...allowedRoles: UserRole[]) {
   return (req: Request, _res: Response, next: NextFunction): void => {

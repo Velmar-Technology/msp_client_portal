@@ -10,6 +10,10 @@ import { userRepository } from '@modules/auth';
  * - `X-User-Id`
  * - `X-Tenant-Id`
  * Also populates `req.user` for downstream context compatibility.
+ *
+ * @param req - Express request
+ * @param _res - Express response
+ * @param next - Express next function
  */
 export async function gatewayAuthMiddleware(
   req: Request,

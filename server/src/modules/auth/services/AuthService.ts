@@ -14,13 +14,29 @@ import crypto from 'crypto';
 import { sendOTPWhatsApp } from '@shared/utils/whatsappService';
 import { sendOTPEmail, sendPasswordResetEmail } from '@shared/utils/emailService';
 
+/**
+ * Authentication service handling user registration, credential verification,
+ * OAuth logins, token rotation, email verification, and password resets.
+ */
 export class AuthService {
+  /**
+   * Initializes AuthService with repository dependencies.
+   *
+   * @param userRepo - Data repository for user operations
+   * @param tenantRepo - Data repository for tenant operations
+   */
   constructor(
     private userRepo: UserRepository = userRepository,
     private tenantRepo: TenantRepository = tenantRepository,
   ) {}
+
   /**
-   * Register a new user account.
+   * Registers a new client account, provisions a dedicated tenant with a unique subdomain,
+   * generates an activation OTP, and dispatches verification notifications via email and WhatsApp.
+   *
+   * @param data - User registration payload including credentials, tenant name, and client metadata
+   * @returns User profile summary and registration confirmation message
+   * @throws {ConflictError} When an account with the specified email already exists
    */
   async register(data: RegisterInput): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null; clientType: string; phoneNumber: string | null }, message: string }> {
     // Check for existing user
@@ -102,7 +118,14 @@ export class AuthService {
   }
 
   /**
-   * Authenticate user with email and password.
+   * Authenticates a user with email and password credentials, verifies activation status,
+   * records login telemetry, and issues JWT access and refresh token pair.
+   *
+   * @param data - Login credentials (email and password)
+   * @param ipAddress - Client IP address extracted from the HTTP request
+   * @returns User profile data along with access/refresh tokens
+   * @throws {UnauthorizedError} When credentials do not match or user is not found
+   * @throws {ForbiddenError} When user account is deactivated or email is not verified
    */
   async login(data: LoginInput, ipAddress: string): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null; lastLoginAt: string | null; lastLoginIp: string | null; clientType: string; phoneNumber: string | null }; tokens: AuthTokens }> {
     const user = await this.userRepo.findByEmail(data.email);
@@ -146,7 +169,16 @@ export class AuthService {
   }
 
   /**
-   * Authenticate or register a user with Google OAuth.
+   * Authenticates or provisions a user account via Google OAuth ID Token.
+   * Automatically creates tenant and user record on first login, and auto-verifies email.
+   *
+   * @param data - Google authentication payload containing ID token and optional tenant name
+   * @param ipAddress - Client IP address extracted from request headers
+   * @returns User profile, JWT tokens, and `isNewUser` flag indicating whether account was created
+   * @throws {ValidationError} When mock Google login is attempted outside development environment
+   * @throws {InternalServerError} When Google OAuth client ID is missing in configuration
+   * @throws {UnauthorizedError} When Google ID token signature or payload verification fails
+   * @throws {ForbiddenError} When existing user account is deactivated
    */
   async googleAuth(data: GoogleAuthInput, ipAddress: string): Promise<{
     user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null; lastLoginAt: string | null; lastLoginIp: string | null; clientType: string; phoneNumber: string | null };
@@ -254,9 +286,13 @@ export class AuthService {
     };
   }
 
-
   /**
-   * Refresh access token using a valid refresh token.
+   * Validates a JWT refresh token and issues a freshly signed token pair.
+   *
+   * @param refreshToken - Raw JWT refresh token string
+   * @returns Newly generated access and refresh tokens
+   * @throws {UnauthorizedError} When refresh token signature is invalid, expired, or user not found
+   * @throws {ForbiddenError} When user account is deactivated or unverified
    */
   async refreshToken(refreshToken: string): Promise<AuthTokens> {
     try {
@@ -282,7 +318,12 @@ export class AuthService {
   }
 
   /**
-   * Verify user's email using a valid OTP.
+   * Validates the 6-digit OTP code against the user's registered account and marks email as verified.
+   *
+   * @param email - Target user email address
+   * @param otp - 6-digit one-time password entered by user
+   * @returns Resolves when verification completes successfully
+   * @throws {ValidationError} When user is not found, already verified, OTP does not match, or OTP expired
    */
   async verifyEmail(email: string, otp: string): Promise<void> {
     const user = await this.userRepo.findByEmail(email);
@@ -307,7 +348,11 @@ export class AuthService {
   }
 
   /**
-   * Initiate password reset flow — generates token and sends reset email.
+   * Initiates the password recovery workflow by generating a time-limited reset JWT and sending an email.
+   *
+   * @param email - Target account email address
+   * @returns Resolves after generating token and dispatching reset email
+   * @throws {NotFoundError} When no account exists with the provided email address
    */
   async forgotPassword(email: string): Promise<void> {
     const user = await this.userRepo.findByEmail(email);
@@ -332,7 +377,12 @@ export class AuthService {
   }
 
   /**
-   * Reset password using a valid reset token.
+   * Validates a password reset token and persists the newly hashed password to the database.
+   *
+   * @param token - JWT password reset token
+   * @param newPassword - Plaintext replacement password
+   * @returns Resolves when password update is complete
+   * @throws {ValidationError} When reset token is invalid, tampered with, or expired
    */
   async resetPassword(token: string, newPassword: string): Promise<void> {
     try {
@@ -346,7 +396,10 @@ export class AuthService {
   }
 
   /**
-   * Generate JWT access and refresh tokens.
+   * Generates cryptographically signed access and refresh JWTs for a user session.
+   *
+   * @param payload - User session details including user ID, email, role, and tenant ID
+   * @returns Token bundle containing access and refresh tokens
    */
   private generateTokens(payload: JwtPayload): AuthTokens {
     const accessToken = jwt.sign(payload, env.JWT_SECRET, {

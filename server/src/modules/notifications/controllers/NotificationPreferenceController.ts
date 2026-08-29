@@ -2,10 +2,15 @@ import { Request, Response } from 'express';
 import { ValidationError } from '@shared/errors';
 import { notificationPreferenceService } from '@modules/notifications/services/NotificationPreferenceService';
 
+/**
+ * Controller handling HTTP requests for user notification preference inspection and updates.
+ */
 export class NotificationPreferenceController {
   /**
-   * GET /api/v1/notification-preferences
-   * Returns the current user's notification preferences.
+   * Handles querying notification preferences for the authenticated user.
+   *
+   * @param req - Express request
+   * @param res - Express response returning preferences map
    */
   async getPreferences(req: Request, res: Response): Promise<void> {
     const preferences = await notificationPreferenceService.getPreferences(req.user!.userId);
@@ -16,8 +21,11 @@ export class NotificationPreferenceController {
   }
 
   /**
-   * PUT /api/v1/notification-preferences
-   * Updates the current user's notification preferences.
+   * Handles saving updated notification preferences for the authenticated user.
+   *
+   * @param req - Express request with preferences payload in body
+   * @param res - Express response returning updated preferences
+   * @throws {ValidationError} When preferences payload is missing or not an object
    */
   async updatePreferences(req: Request, res: Response): Promise<void> {
     const { preferences } = req.body;

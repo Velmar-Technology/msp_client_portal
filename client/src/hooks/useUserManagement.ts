@@ -43,6 +43,12 @@ import { DEFAULT_PAGE_SIZE } from "@/constants/ui";
 
 // ---- Hook ----
 
+/**
+ * Custom hook orchestrating the Admin User Management dashboard.
+ * Coordinates user directory pagination, filters, role/status mutations, bulk actions, and confirmation modals.
+ *
+ * @returns State and mutation handlers for managing users, aggregate metrics, and modal dialogs.
+ */
 export function useUserManagement() {
   const { t, i18n } = useTranslation();
   const { getParam, getNumberParam, setParam, setParams } = useUrlState();

@@ -12,12 +12,29 @@ import { logger } from '@shared/utils/logger';
  * cached keys across all Express instances without requiring expensive `KEYS`
  * pattern scans or manual key flushes. Old keys expire via TTL.
  */
+/**
+ * Generation-based Cache Invalidation Tracker.
+ *
+ * Formats versioned cache keys with dynamic generation tokens:
+ *   e.g. "tenant:tenant-123:plans:v2:plan-tier-1"
+ *
+ * When an entity or collection changes, incrementing the generation counter
+ * (via atomic `INCR gen:tenant:tenant-123:plans`) instantly invalidates all
+ * cached keys across all Express instances without requiring expensive `KEYS`
+ * pattern scans or manual key flushes. Old keys expire via TTL.
+ */
 export class GenerationTracker {
   // In-memory generation cache to avoid Redis roundtrips on every key lookup
   private localGenCache = new Map<string, { gen: number; expiresAt: number }>();
   private localGenFallback = new Map<string, number>();
   private readonly localTtlMs: number;
 
+  /**
+   * Initializes GenerationTracker with RedisClientService dependency.
+   *
+   * @param redisService - Redis client management service
+   * @param localTtlMs - Local memory memoization TTL in milliseconds (default: 2000)
+   */
   constructor(
     private redisService: RedisClientService = redisClientService,
     localTtlMs = 2000 // 2 seconds local generation memoization
@@ -25,12 +42,23 @@ export class GenerationTracker {
     this.localTtlMs = localTtlMs;
   }
 
+  /**
+   * Builds the Redis generation key for a namespace and scope.
+   *
+   * @param namespace - Domain namespace
+   * @param scope - Scope or tenant identifier
+   * @returns Key string
+   */
   private getGenKey(namespace: string, scope = 'global'): string {
     return `gen:${namespace}:${scope}`;
   }
 
   /**
-   * Retrieves the current generation counter for a namespace and scope.
+   * Retrieves the active generation counter for a namespace and scope.
+   *
+   * @param namespace - Domain namespace (e.g. 'plans')
+   * @param scope - Scope or tenant identifier (default: 'global')
+   * @returns Current generation sequence number
    */
   async getGeneration(namespace: string, scope = 'global'): Promise<number> {
     const genKey = this.getGenKey(namespace, scope);
@@ -66,8 +94,12 @@ export class GenerationTracker {
   }
 
   /**
-   * Atomically increments the generation counter for the namespace/scope.
+   * Atomically increments the generation counter for the namespace and scope.
    * This immediately invalidates all cached keys under this scope across all nodes.
+   *
+   * @param namespace - Domain namespace
+   * @param scope - Scope or tenant identifier (default: 'global')
+   * @returns Incremented generation number
    */
   async invalidate(namespace: string, scope = 'global'): Promise<number> {
     const genKey = this.getGenKey(namespace, scope);
@@ -101,7 +133,11 @@ export class GenerationTracker {
   /**
    * Formats a versioned cache key incorporating the active generation.
    *
-   * Example output: "plans:global:v3:business_pro"
+   * @example "plans:global:v3:business_pro"
+   * @param namespace - Domain namespace
+   * @param scope - Scope or tenant identifier
+   * @param identifier - Key identifier
+   * @returns Versioned cache key string
    */
   async formatVersionedKey(namespace: string, scope: string, identifier: string): Promise<string> {
     const gen = await this.getGeneration(namespace, scope);

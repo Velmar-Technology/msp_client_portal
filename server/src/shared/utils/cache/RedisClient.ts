@@ -11,6 +11,9 @@ export interface RedisHealth {
   operationsCount: number;
 }
 
+/**
+ * Service managing Redis connection lifecycle, auto-reconnection strategies, health state tracking, and graceful fallback gating.
+ */
 export class RedisClientService {
   private client: Redis | null = null;
   private healthState: RedisHealthState = 'disconnected';
@@ -18,6 +21,9 @@ export class RedisClientService {
   private operationsCount = 0;
   private isConnecting = false;
 
+  /**
+   * Initializes RedisClientService and triggers client connection if REDIS_ENABLED is true.
+   */
   constructor() {
     if (env.REDIS_ENABLED) {
       this.initClient();
@@ -27,6 +33,9 @@ export class RedisClientService {
     }
   }
 
+  /**
+   * Configures ioredis client with fail-fast options and retry policies.
+   */
   private initClient(): void {
     if (this.client) return;
 
@@ -64,6 +73,9 @@ export class RedisClientService {
     }
   }
 
+  /**
+   * Binds lifecycle event listeners to the ioredis instance.
+   */
   private bindEvents(): void {
     if (!this.client) return;
 
@@ -94,6 +106,9 @@ export class RedisClientService {
     });
   }
 
+  /**
+   * Connects to the Redis cluster/server.
+   */
   private async connect(): Promise<void> {
     if (!this.client || this.isConnecting || this.healthState === 'connected') return;
 
@@ -110,16 +125,28 @@ export class RedisClientService {
   }
 
   /**
-   * Returns true only when Redis is fully connected and capable of executing commands.
+   * Evaluates if Redis is currently connected and capable of executing commands.
+   *
+   * @returns True if ready, false otherwise
    */
   isReady(): boolean {
     return this.client !== null && this.healthState === 'connected' && this.client.status === 'ready';
   }
 
+  /**
+   * Retrieves active Redis client or null if offline/degraded.
+   *
+   * @returns Active Redis instance or null
+   */
   getClient(): Redis | null {
     return this.isReady() ? this.client : null;
   }
 
+  /**
+   * Returns current Redis health status, readiness, error, and total command count.
+   *
+   * @returns RedisHealth snapshot
+   */
   getHealth(): RedisHealth {
     return {
       state: this.healthState,
@@ -129,10 +156,16 @@ export class RedisClientService {
     };
   }
 
+  /**
+   * Increments operations counter for metrics reporting.
+   */
   incrementOps(): void {
     this.operationsCount++;
   }
 
+  /**
+   * Gracefully shuts down the Redis connection.
+   */
   async quit(): Promise<void> {
     if (this.client) {
       try {

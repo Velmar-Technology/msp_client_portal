@@ -8,6 +8,12 @@ import { invoiceService } from "@/services/invoiceService";
 import type { Invoice } from "@/services/invoiceService";
 import { equipmentService } from "@/services/equipmentService";
 
+/**
+ * Calculates Nextcloud storage quota in Gigabytes (GB) allocated for a given subscription plan ID.
+ *
+ * @param planId - Plan code or identifier string.
+ * @returns Allocated storage quota in gigabytes.
+ */
 export const getPlanStorageQuotaGB = (planId: string): number => {
   if (planId.includes('PL-001')) return 25;
   if (planId.includes('PL-002')) return 50;
@@ -21,6 +27,13 @@ export const getPlanStorageQuotaGB = (planId: string): number => {
   return 25;
 };
 
+/**
+ * Formats a raw numeric byte value into a localized human-readable file size string (e.g. "250 GB").
+ *
+ * @param bytes - Size in raw bytes.
+ * @param decimals - Decimal points to format. Defaults to 1.
+ * @returns Human-readable size string.
+ */
 export const formatBytes = (bytes: number, decimals = 1): string => {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -30,6 +43,12 @@ export const formatBytes = (bytes: number, decimals = 1): string => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 };
 
+/**
+ * Custom hook providing overview metrics and summary data for the Client Dashboard.
+ * Coordinates ticket status counters, active subscriptions, recent invoices, and storage utilization.
+ *
+ * @returns Client dashboard metrics, recent subscription/invoice records, and navigation actions.
+ */
 export function useClientDashboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();

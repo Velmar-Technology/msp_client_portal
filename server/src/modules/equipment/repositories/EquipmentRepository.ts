@@ -3,11 +3,23 @@ import { SubscriptionEquipment, EquipmentWithDetails } from '@shared/types';
 import { db, subscriptionEquipment, subscriptions, users, tenants, rmmDeviceTelemetry } from '@shared/db';
 import { eq, and, or, desc, sql, inArray } from 'drizzle-orm';
 
+/**
+ * Data repository managing hardware equipment slots, agent binding credentials, and relational telemetry joins.
+ */
 export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
+  /**
+   * Initializes EquipmentRepository for the subscription_equipment database table.
+   */
   constructor() {
     super(subscriptionEquipment, 'subscription_equipment');
   }
 
+  /**
+   * Retrieves all hardware slots for a subscription joined with RMM telemetry metrics.
+   *
+   * @param subscriptionId - Subscription UUID
+   * @returns Array of SubscriptionEquipment slots with telemetry
+   */
   async findBySubscription(subscriptionId: string): Promise<SubscriptionEquipment[]> {
     const results = await db
       .select({
@@ -44,6 +56,13 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
     return results as SubscriptionEquipment[];
   }
 
+  /**
+   * Finds a specific hardware slot by subscription UUID and zero-indexed slot position.
+   *
+   * @param subscriptionId - Subscription UUID
+   * @param slotIndex - Slot position index
+   * @returns SubscriptionEquipment entity or null
+   */
   async findBySlot(subscriptionId: string, slotIndex: number): Promise<SubscriptionEquipment | null> {
     const results = await db
       .select()
@@ -57,6 +76,12 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
     return (results[0] as SubscriptionEquipment) || null;
   }
 
+  /**
+   * Locates a slot by its 6-digit one-time pairing OTP code.
+   *
+   * @param otp - 6-digit pairing code
+   * @returns SubscriptionEquipment entity or null
+   */
   async findByOtp(otp: string): Promise<SubscriptionEquipment | null> {
     const results = await db
       .select()
@@ -69,6 +94,9 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
    * Locates the slot bound to a physical agent installation (its stable
    * install UUID). Returns all columns including the per-device secret so the
    * service can enforce the token gate during reconciliation.
+   *
+   * @param agentInstanceId - Agent instance UUID
+   * @returns SubscriptionEquipment entity or null
    */
   async findByAgentInstanceId(agentInstanceId: string): Promise<SubscriptionEquipment | null> {
     const results = await db
@@ -78,6 +106,12 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
     return (results[0] as SubscriptionEquipment) || null;
   }
 
+  /**
+   * Inserts a new equipment slot record.
+   *
+   * @param data - Slot attributes
+   * @returns Created SubscriptionEquipment entity
+   */
   async create(data: {
     subscription_id: string;
     slot_index: number;
@@ -97,6 +131,13 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
     return results[0] as SubscriptionEquipment;
   }
 
+  /**
+   * Updates fields on an existing equipment slot.
+   *
+   * @param id - Slot UUID
+   * @param data - Partial update attributes
+   * @returns Updated SubscriptionEquipment entity or null
+   */
   async update(id: string, data: Partial<SubscriptionEquipment>): Promise<SubscriptionEquipment | null> {
     const results = await db
       .update(subscriptionEquipment)
@@ -113,6 +154,10 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
    * Applies agent-discovered identity to a device slot. Because the remote agent
    * is the authoritative source of truth, the visible device_name/device_serial
    * are overwritten alongside the agent_* audit columns when detected.
+   *
+   * @param id - Equipment slot UUID
+   * @param identity - Discovered hostname, serial, and last seen timestamp
+   * @returns Updated SubscriptionEquipment entity or null
    */
   async updateAgentIdentity(
     id: string,
@@ -142,6 +187,13 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
     return (results[0] as SubscriptionEquipment) || null;
   }
 
+  /**
+   * Retrieves active devices belonging to a client user across active/expiring subscriptions.
+   *
+   * @param clientId - Client user UUID
+   * @param tenantId - Tenant UUID
+   * @returns Array of active SubscriptionEquipment entities
+   */
   async findActiveByClient(clientId: string, tenantId: string): Promise<SubscriptionEquipment[]> {
     const results = await db
       .select({
@@ -189,6 +241,11 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
     return results as SubscriptionEquipment[];
   }
 
+  /**
+   * Retrieves all devices globally joined with user, subscription, tenant, and telemetry details (Admin view).
+   *
+   * @returns Array of enriched EquipmentWithDetails entities
+   */
   async findAllWithDetails(): Promise<EquipmentWithDetails[]> {
     const results = await db
       .select({
@@ -243,6 +300,12 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
     return results as EquipmentWithDetails[];
   }
 
+  /**
+   * Retrieves a single device by ID joined with client, subscription, and telemetry details.
+   *
+   * @param id - Equipment slot UUID
+   * @returns EquipmentWithDetails entity or null
+   */
   async findByIdWithDetails(id: string): Promise<EquipmentWithDetails | null> {
     const results = await db
       .select({
@@ -288,6 +351,12 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
     return (results[0] as EquipmentWithDetails) || null;
   }
 
+  /**
+   * Retrieves all equipment slots associated with a tenant UUID.
+   *
+   * @param tenantId - Tenant UUID
+   * @returns Array of SubscriptionEquipment entities
+   */
   async findByTenantId(tenantId: string): Promise<SubscriptionEquipment[]> {
     const results = await db
       .select()
@@ -296,6 +365,12 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
     return results as SubscriptionEquipment[];
   }
 
+  /**
+   * Retrieves all active equipment devices for a tenant joined with telemetry.
+   *
+   * @param tenantId - Tenant UUID
+   * @returns Array of active SubscriptionEquipment entities
+   */
   async findActiveByTenant(tenantId: string): Promise<SubscriptionEquipment[]> {
     const results = await db
       .select({
@@ -337,6 +412,5 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
     return results as SubscriptionEquipment[];
   }
 }
-
 
 export const equipmentRepository = new EquipmentRepository();

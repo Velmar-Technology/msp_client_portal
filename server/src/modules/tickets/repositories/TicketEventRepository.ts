@@ -3,11 +3,23 @@ import { TicketEvent, TicketStatus } from '@shared/types';
 import { db, ticketEvents, users } from '@shared/db';
 import { eq, asc } from 'drizzle-orm';
 
+/**
+ * Data repository for ticket lifecycle event audit trails and status timeline history.
+ */
 export class TicketEventRepository extends BaseRepository<TicketEvent> {
+  /**
+   * Initializes TicketEventRepository for the ticket_events table.
+   */
   constructor() {
     super(ticketEvents, 'ticket_events');
   }
 
+  /**
+   * Records a new lifecycle status change or assignment audit event for a ticket.
+   *
+   * @param data - Audit event attributes
+   * @returns Created TicketEvent record
+   */
   async create(data: {
     ticket_id: string;
     old_status: TicketStatus | null;
@@ -30,6 +42,12 @@ export class TicketEventRepository extends BaseRepository<TicketEvent> {
     return results[0] as TicketEvent;
   }
 
+  /**
+   * Retrieves the chronological audit event timeline for a ticket, joined with actor names and roles.
+   *
+   * @param ticketId - Unique ticket UUID
+   * @returns Array of enriched TicketEvent records
+   */
   async findByTicket(ticketId: string): Promise<TicketEvent[]> {
     const results = await db
       .select({

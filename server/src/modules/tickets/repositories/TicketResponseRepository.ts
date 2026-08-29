@@ -3,11 +3,23 @@ import { TicketResponse } from '@shared/types';
 import { db, ticketResponses, users } from '@shared/db';
 import { eq, asc } from 'drizzle-orm';
 
+/**
+ * Data repository for ticket message responses and conversational threads.
+ */
 export class TicketResponseRepository extends BaseRepository<TicketResponse> {
+  /**
+   * Initializes TicketResponseRepository for the ticket_responses table.
+   */
   constructor() {
     super(ticketResponses, 'ticket_responses');
   }
 
+  /**
+   * Inserts a new reply message into a ticket conversation thread.
+   *
+   * @param data - Response attributes (ticketId, userId, message, tenantId)
+   * @returns Created TicketResponse entity
+   */
   async create(data: {
     ticket_id: string;
     user_id: string;
@@ -26,6 +38,12 @@ export class TicketResponseRepository extends BaseRepository<TicketResponse> {
     return results[0] as TicketResponse;
   }
 
+  /**
+   * Retrieves all conversational responses for a ticket, joined with author details.
+   *
+   * @param ticketId - Unique ticket UUID
+   * @returns Array of TicketResponse records in chronological order
+   */
   async findByTicket(ticketId: string): Promise<TicketResponse[]> {
     const results = await db
       .select({

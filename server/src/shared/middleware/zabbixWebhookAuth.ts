@@ -12,6 +12,11 @@ const PLACEHOLDER_SECRETS = ['secret_key', 'your_zabbix_webhook_secret_here', ''
  *
  * If ZABBIX_WEBHOOK_SECRET is not configured or is a placeholder,
  * verification is skipped (graceful degradation for dev/unconfigured envs).
+ *
+ * @param req - Express request
+ * @param _res - Express response
+ * @param next - Express next function
+ * @throws {ForbiddenError} When secret is missing or fails timing-safe match
  */
 export function zabbixWebhookAuth(req: Request, _res: Response, next: NextFunction): void {
   const configuredSecret = env.ZABBIX_WEBHOOK_SECRET?.trim() || '';

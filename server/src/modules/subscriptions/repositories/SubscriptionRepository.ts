@@ -3,11 +3,23 @@ import { Subscription, SubscriptionStatus } from '@shared/types';
 import { db, subscriptions, plans } from '@shared/db';
 import { eq, desc, and, or, lt, lte, gt, isNull } from 'drizzle-orm';
 
+/**
+ * Data repository for client subscriptions, PayPal agreement IDs, renewals, and expiration warnings.
+ */
 export class SubscriptionRepository extends BaseRepository<Subscription> {
+  /**
+   * Initializes SubscriptionRepository for the subscriptions database table.
+   */
   constructor() {
     super(subscriptions, 'subscriptions');
   }
 
+  /**
+   * Retrieves all subscription contracts belonging to a specific tenant organization.
+   *
+   * @param tenantId - Tenant UUID
+   * @returns Array of Subscription entities
+   */
   async findByTenant(tenantId: string): Promise<Subscription[]> {
     const results = await db
       .select()
@@ -17,6 +29,13 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     return results as Subscription[];
   }
 
+  /**
+   * Retrieves subscriptions belonging to a specific client user and optional tenant organization.
+   *
+   * @param clientId - Client user UUID
+   * @param tenantId - Optional tenant UUID
+   * @returns Array of Subscription entities
+   */
   async findByClient(clientId: string, tenantId?: string): Promise<Subscription[]> {
     const conditions = [eq(subscriptions.client_id, clientId)];
     if (tenantId) {
@@ -30,6 +49,12 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     return results as Subscription[];
   }
 
+  /**
+   * Finds a subscription by its external PayPal order or subscription agreement ID.
+   *
+   * @param paypalOrderId - PayPal ID
+   * @returns Subscription entity or null if not found
+   */
   async findByPaypalOrderId(paypalOrderId: string): Promise<Subscription | null> {
     const results = await db
       .select()
@@ -39,6 +64,12 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     return (results[0] as Subscription) || null;
   }
 
+  /**
+   * Inserts a new subscription contract record.
+   *
+   * @param data - Subscription creation attributes
+   * @returns Created Subscription entity
+   */
   async create(data: {
     client_id: string;
     service_name: string;
@@ -65,6 +96,14 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     return results[0] as Subscription;
   }
 
+  /**
+   * Updates the plan tier or equipment slot limit on a subscription.
+   *
+   * @param id - Subscription UUID
+   * @param plan - New plan tier string
+   * @param equipmentCount - Optional new equipment count
+   * @returns Updated Subscription entity or null
+   */
   async updatePlan(id: string, plan: string, equipmentCount?: number): Promise<Subscription | null> {
     const updateData: any = { plan };
     if (equipmentCount !== undefined) {
@@ -79,6 +118,13 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     return (results[0] as Subscription) || null;
   }
 
+  /**
+   * Updates the lifecycle status of a subscription.
+   *
+   * @param id - Subscription UUID
+   * @param status - Target SubscriptionStatus
+   * @returns Updated Subscription entity or null
+   */
   async updateStatus(id: string, status: SubscriptionStatus): Promise<Subscription | null> {
     const results = await db
       .update(subscriptions)
@@ -88,6 +134,12 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     return (results[0] as Subscription) || null;
   }
 
+  /**
+   * Finds active or expiring subscriptions whose renewal date is in the past for renewal processing.
+   *
+   * @param now - Reference timestamp
+   * @returns Array of subscriptions due for renewal
+   */
   async findPendingRenewal(now: Date): Promise<Subscription[]> {
     const results = await db
       .select()
@@ -104,6 +156,13 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     return results as Subscription[];
   }
 
+  /**
+   * Finds active subscriptions expiring before a threshold date that have not received advance warnings.
+   *
+   * @param thresholdDate - Date boundary for warnings
+   * @param now - Current reference timestamp
+   * @returns Array of expiring subscriptions
+   */
   async findExpiringSoon(thresholdDate: Date, now: Date): Promise<Subscription[]> {
     const results = await db
       .select()
@@ -119,6 +178,12 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     return results as Subscription[];
   }
 
+  /**
+   * Updates the timestamp when an advance expiration warning was sent for this subscription.
+   *
+   * @param id - Subscription UUID
+   * @param sentAt - Timestamp of warning
+   */
   async updateLastExpiryWarningSentAt(id: string, sentAt: Date): Promise<void> {
     await db
       .update(subscriptions)
@@ -126,6 +191,14 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
       .where(eq(subscriptions.id, id));
   }
 
+  /**
+   * Updates the renewal date and resets warning timestamps on a renewed subscription.
+   *
+   * @param id - Subscription UUID
+   * @param renewalDate - Next renewal date
+   * @param status - Updated subscription status
+   * @returns Updated Subscription entity or null
+   */
   async updateRenewal(id: string, renewalDate: Date, status: SubscriptionStatus): Promise<Subscription | null> {
     const results = await db
       .update(subscriptions)
@@ -140,6 +213,11 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     return (results[0] as Subscription) || null;
   }
 
+  /**
+   * Retrieves all currently active and expiring subscriptions.
+   *
+   * @returns Array of active/expiring Subscription entities
+   */
   async findAllActive(): Promise<Subscription[]> {
     const results = await db
       .select()
@@ -153,6 +231,12 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     return results as Subscription[];
   }
 
+  /**
+   * Retrieves active subscriptions joined with plan pricing details for MRR calculations.
+   *
+   * @param tenantId - Optional tenant UUID filter
+   * @returns Array of subscription records with plan price
+   */
   async getActiveSubscriptionsWithPlan(tenantId?: string): Promise<any[]> {
     const conditions = [
       or(

@@ -1,14 +1,28 @@
 import { RmmPatchRepository, rmmPatchRepository } from '@modules/rmm/repositories/RmmPatchRepository';
 import { RmmTelemetryRepository, rmmTelemetryRepository } from '@modules/rmm/repositories/RmmTelemetryRepository';
-import { EquipmentRepository, equipmentRepository } from '@modules/equipment/repositories/EquipmentRepository';
-import { SubscriptionRepository, subscriptionRepository } from '@modules/subscriptions/repositories/SubscriptionRepository';
+import { EquipmentRepository, equipmentRepository } from '@modules/equipment';
+import { SubscriptionRepository, subscriptionRepository } from '@modules/subscriptions';
 import { AlertService, alertService } from '@modules/rmm/services/AlertService';
 import { ZabbixService, zabbixService } from '@modules/rmm/services/ZabbixService';
 import { NotFoundError, ForbiddenError } from '@shared/errors';
 import { RmmPatchItem, RmmDeviceTelemetry, RmmOverviewStats, RmmPatchStatus, RmmPatchSeverity } from '@shared/types';
 import { logger } from '@shared/utils/logger';
 
+/**
+ * Domain service managing RMM patch deployments, Zabbix agent synchronization,
+ * hardware telemetry polling, and overall RMM infrastructure statistics.
+ */
 export class RmmPatchService {
+  /**
+   * Initializes RmmPatchService with repositories and domain services.
+   *
+   * @param patchRepo - RMM patch repository
+   * @param telemetryRepo - RMM device telemetry repository
+   * @param equipRepo - Equipment inventory repository
+   * @param subRepo - Subscription repository
+   * @param zabbixSvc - Zabbix agent bridge service
+   * @param alertSvc - RMM alert service
+   */
   constructor(
     private patchRepo: RmmPatchRepository = rmmPatchRepository,
     private telemetryRepo: RmmTelemetryRepository = rmmTelemetryRepository,
@@ -42,6 +56,12 @@ export class RmmPatchService {
     return this.alertSvc || alertService;
   }
 
+  /**
+   * Asserts whether a tenant's active subscription tier includes the RMM_PATCH_MANAGEMENT entitlement.
+   *
+   * @param tenantId - Tenant UUID
+   * @param byAdmin - True if invoked by administrator
+   */
   async checkFeatureEntitlement(tenantId?: string, byAdmin = false): Promise<void> {
     if (byAdmin || !tenantId) return;
     const subscriptions = await this.subscriptionRepository.findByTenant(tenantId);
@@ -64,6 +84,16 @@ export class RmmPatchService {
     }
   }
 
+  /**
+   * Retrieves pending and installed software patches for an equipment asset, seeding default patches if empty.
+   *
+   * @param equipmentId - Equipment UUID
+   * @param tenantId - Calling user tenant UUID
+   * @param byAdmin - True if administrator
+   * @returns Array of RmmPatchItem entities
+   * @throws {NotFoundError} When equipment does not exist
+   * @throws {ForbiddenError} When tenant access is disallowed
+   */
   async getEquipmentPatches(equipmentId: string, tenantId?: string, byAdmin = false): Promise<RmmPatchItem[]> {
     const equipment = await this.equipmentRepository.findById(equipmentId);
     if (!equipment) {
@@ -111,6 +141,16 @@ export class RmmPatchService {
     return patches;
   }
 
+  /**
+   * Syncs hardware host with Zabbix agent, queries real-time telemetry metrics, and upserts database telemetry.
+   *
+   * @param equipmentId - Equipment UUID
+   * @param tenantId - Calling user tenant UUID
+   * @param byAdmin - True if administrator
+   * @returns Updated RmmDeviceTelemetry entity
+   * @throws {NotFoundError} When equipment is not found
+   * @throws {ForbiddenError} When access denied across tenant boundary
+   */
   async triggerPatchScan(equipmentId: string, tenantId?: string, byAdmin = false): Promise<RmmDeviceTelemetry> {
     const equipment = await this.equipmentRepository.findById(equipmentId);
     if (!equipment) {
@@ -148,6 +188,17 @@ export class RmmPatchService {
     return telemetry;
   }
 
+  /**
+   * Executes remote patch deployment scripts on the target host via Zabbix agent integration.
+   *
+   * @param equipmentId - Equipment UUID
+   * @param patchIds - List of patch UUIDs to install
+   * @param tenantId - Calling user tenant UUID
+   * @param byAdmin - True if administrator
+   * @returns Array of installed RmmPatchItem records
+   * @throws {NotFoundError} When equipment not found
+   * @throws {ForbiddenError} When unauthorized
+   */
   async applyPatches(equipmentId: string, patchIds: string[], tenantId?: string, byAdmin = false): Promise<RmmPatchItem[]> {
     await this.checkFeatureEntitlement(tenantId, byAdmin);
 
@@ -186,6 +237,13 @@ export class RmmPatchService {
     return updatedPatches;
   }
 
+  /**
+   * Aggregates tenant or global device health metrics, online/offline counts, pending patches, and automation ratios.
+   *
+   * @param tenantId - Optional tenant UUID filter
+   * @param byAdmin - True if administrator
+   * @returns RmmOverviewStats summary metrics
+   */
   async getRmmOverview(tenantId?: string, byAdmin = false): Promise<RmmOverviewStats> {
     const devices = byAdmin || !tenantId
       ? await this.telemetryRepository.findAll()

@@ -21,11 +21,19 @@ end
 export class DistributedLock {
   private localMutexes = new Map<string, Promise<void>>();
 
+  /**
+   * Initializes DistributedLock with RedisClientService dependency.
+   *
+   * @param redisService - Redis client management service
+   */
   constructor(private redisService: RedisClientService = redisClientService) {}
 
   /**
-   * Attempts to acquire a distributed lock on `resourceKey`.
-   * Returns a lock token if acquired, or null if already locked.
+   * Attempts to acquire an atomic distributed lock on `resourceKey`.
+   *
+   * @param resourceKey - Unique identifier of resource to lock
+   * @param ttlMs - Lock expiration lifetime in milliseconds (default: 5000)
+   * @returns Lock token UUID string if acquired, or null if locked by another caller
    */
   async acquireLock(resourceKey: string, ttlMs = 5000): Promise<string | null> {
     const lockKey = `lock:${resourceKey}`;
@@ -56,7 +64,11 @@ export class DistributedLock {
   }
 
   /**
-   * Releases a previously acquired lock using its token.
+   * Releases a previously acquired lock using its token via atomic Lua script execution.
+   *
+   * @param resourceKey - Unique identifier of resource
+   * @param token - Token UUID received from acquireLock
+   * @returns True if lock was released, false if expired or owned by another process
    */
   async releaseLock(resourceKey: string, token: string): Promise<boolean> {
     const lockKey = `lock:${resourceKey}`;
@@ -79,8 +91,15 @@ export class DistributedLock {
   }
 
   /**
-   * Executes a callback within a guarded lock block.
-   * Retries acquisition with backoff until acquired or timeout exceeded.
+   * Executes an asynchronous task inside an exclusive distributed lock boundary with exponential backoff retries.
+   *
+   * @typeParam T - Callback return type
+   * @param resourceKey - Unique identifier of resource to lock
+   * @param ttlMs - Lock TTL duration in milliseconds
+   * @param callback - Critical section async function
+   * @param maxWaitMs - Maximum wait time before aborting in milliseconds (default: 3000)
+   * @returns Callback result
+   * @throws {LockAcquisitionError} When the lock cannot be acquired within maxWaitMs
    */
   async withLock<T>(
     resourceKey: string,

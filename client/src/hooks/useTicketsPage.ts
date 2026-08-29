@@ -9,6 +9,14 @@ import type { SubscriptionEquipment } from "@/services/equipmentService";
 import { useUrlState } from "@/hooks/useUrlState";
 import { useAuth } from "@/hooks/useAuth";
 
+/**
+ * Custom hook managing the Tickets listing page.
+ * Coordinates ticket query filters, pagination, TanStack Table sorting, URL state synchronization, and ticket creation modals.
+ *
+ * @see BL-102 (Round-Robin Dispatch)
+ * @see BL-201 (Feature Quota)
+ * @returns State and event handlers for ticket data grid, filters, sorting, and modal actions.
+ */
 export function useTicketsPage() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();

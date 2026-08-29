@@ -93,11 +93,24 @@ export class AgentGateway {
    * completes its registration handshake. Used by the equipment module to
    * reconcile agent-discovered identity against the stored device record.
    */
+  /**
+   * Registers a listener that is invoked (fire-and-forget) whenever an agent
+   * completes its registration handshake. Used by the equipment module to
+   * reconcile agent-discovered identity against the stored device record.
+   *
+   * @param handler - Callback function receiving equipmentId, hello payload, and token
+   */
   onAgentHello(handler: AgentHelloHandler): void {
     this.onAgentHelloHandler = handler;
   }
 
-  /** Invokes the registered hello handler without ever breaking the WS loop. */
+  /**
+   * Invokes the registered hello handler without ever breaking the WS loop.
+   *
+   * @param equipmentId - Unique equipment identifier
+   * @param hello - AgentHelloPayload metadata
+   * @param token - Optional auth token
+   */
   private async invokeAgentHelloHandler(
     equipmentId: string,
     hello: AgentHelloPayload,
@@ -114,6 +127,8 @@ export class AgentGateway {
   /**
    * Initializes the WebSocket server and binds connection lifecycle handlers.
    * Should be called once during server startup with the shared WSS instance.
+   *
+   * @param wss - WebSocketServer instance
    */
   init(wss: WebSocketServer): void {
     wss.on('connection', (ws: WebSocket, req: IncomingMessage) => {
@@ -130,6 +145,9 @@ export class AgentGateway {
   /**
    * Processes a new inbound WebSocket connection from a Rust endpoint agent.
    * Validates agent_id and token from query parameters.
+   *
+   * @param ws - Inbound WebSocket
+   * @param req - Incoming HTTP upgrade message
    */
   private handleConnection(ws: WebSocket, req: IncomingMessage): void {
     const isEncrypted = Boolean((req.socket as any)?.encrypted);
@@ -310,6 +328,9 @@ export class AgentGateway {
 
   /**
    * Returns the online/offline status and metadata for a specific agent.
+   *
+   * @param equipmentId - Equipment UUID
+   * @returns Agent status metadata
    */
   getAgentStatus(equipmentId: string): {
     online: boolean;
@@ -347,6 +368,8 @@ export class AgentGateway {
 
   /**
    * Returns a list of all currently connected agents with metadata.
+   *
+   * @returns Array of connected agent records
    */
   getConnectedAgents(): Array<{
     equipmentId: string;
@@ -391,6 +414,9 @@ export class AgentGateway {
    * Codes must be 6 digits and carry a future RFC3339 expiry; otherwise the
    * announcement is ignored. A new code supersedes any previous one for the
    * same agent.
+   *
+   * @param agentId - Agent instance UUID
+   * @param hello - AgentHelloPayload containing pairing code and expiration
    */
   registerPairing(agentId: string, hello: AgentHelloPayload): void {
     const code = hello.pairing_code;
@@ -417,6 +443,9 @@ export class AgentGateway {
   /**
    * Resolves an agent-issued pairing code to its connected agent and identity.
    * Returns null when the code is unknown, expired, or its agent is offline.
+   *
+   * @param code - 6-digit pairing code
+   * @returns PairingEntry or null
    */
   getPairingByCode(code: string): PairingEntry | null {
     const entry = this.pairingRegistry.get(code);
@@ -448,6 +477,11 @@ export class AgentGateway {
    * connection as bound, and pushes a BIND command carrying the slot id and the
    * freshly provisioned per-device secret. Returns false when the agent is
    * offline (caller should abort the binding).
+   *
+   * @param agentId - Agent instance UUID
+   * @param slotId - Equipment slot UUID
+   * @param agentToken - Device authentication secret
+   * @returns True if BIND command successfully sent to agent
    */
   bindAgent(agentId: string, slotId: string, agentToken: string): boolean {
     this.purgePairingForAgent(agentId);
@@ -517,7 +551,9 @@ export class AgentGateway {
     }
   }
 
-  /** Removes pairing codes that have passed their TTL. */
+  /**
+   * Removes pairing codes that have passed their TTL.
+   */
   private sweepExpiredPairings(): void {
     const now = Date.now();
     for (const [code, entry] of this.pairingRegistry) {

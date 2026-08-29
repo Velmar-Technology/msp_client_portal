@@ -4,9 +4,17 @@ import { ValidationError } from '@shared/errors';
 
 /**
  * Generic Zod validation middleware factory.
- * Validates request body, query, or params against a Zod schema.
+ * Validates request body, query, or params against a Zod schema and mutates with parsed/coerced values.
  *
- * Usage: validate(CreateTicketDTO, 'body')
+ * @example
+ * ```ts
+ * router.post('/tickets', validate(CreateTicketDTO, 'body'), handler);
+ * ```
+ *
+ * @param schema - Zod validation schema
+ * @param source - Request property to validate ('body' | 'query' | 'params')
+ * @returns Express middleware function
+ * @throws {ValidationError} When schema validation fails
  */
 export function validate(schema: ZodSchema, source: 'body' | 'query' | 'params' = 'body') {
   return (req: Request, _res: Response, next: NextFunction): void => {

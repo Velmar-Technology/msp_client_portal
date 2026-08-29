@@ -6,8 +6,10 @@ import { db } from './index';
  * PostgreSQL's `app.current_tenant_id` session variable. This guarantees that
  * Row-Level Security (RLS) policies filter queries exclusively to the specified tenant context.
  *
- * @param tenantId Target tenant UUID
- * @param callback Async function executing queries against the transactional database client
+ * @typeParam T - Callback return value type
+ * @param tenantId - Target tenant UUID
+ * @param callback - Async function executing queries against the transactional database client
+ * @returns Result of the transactional callback
  */
 export async function withTenantContext<T>(
   tenantId: string,
