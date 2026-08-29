@@ -450,8 +450,10 @@ describe('PlansPage', () => {
       expect(await screen.findByText('Select New Tier')).toBeInTheDocument();
 
       // Increment devices twice: 2 -> 4
-      fireEvent.click(screen.getByRole('button', { name: 'Add Device' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Add Device' }));
+      const panel = (await screen.findByText('Change Plan Tier')).closest('div.bg-card') as HTMLElement;
+      const addBtn = within(panel).getByRole('button', { name: 'Add Device' });
+      fireEvent.click(addBtn);
+      fireEvent.click(addBtn);
 
       // Accept Terms of Service
       fireEvent.click(screen.getByLabelText(/Terms of Service/i));

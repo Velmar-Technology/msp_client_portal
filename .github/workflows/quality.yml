@@ -7,8 +7,30 @@ permissions:
   contents: read
 
 jobs:
+  guardrail:
+    name: AGENTS.md Protected Paths Guard
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check Protected Paths Violation
+        run: |
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }} HEAD)
+          echo "Inspecting changed files against AGENTS.md protected paths..."
+          if echo "$CHANGED_FILES" | grep -E '^(\.github/workflows/|\.husky/|\.env|\.env\.|server/src/shared/db/migrations/)'; then
+            echo "❌ ERROR: PR modifies protected path(s) prohibited by AGENTS.md Section 9!"
+            exit 1
+          fi
+          echo "✅ No protected paths modified."
+
   gates:
     name: Gates (${{ matrix.workspace }})
+    needs: [guardrail]
+    if: always() && (needs.guardrail.result == 'success' || needs.guardrail.result == 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: 25
     strategy:

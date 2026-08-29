@@ -1,6 +1,6 @@
 import { nextcloudService } from '@modules/system/services/NextcloudService';
 import { systemRepository, SystemRepository } from '@modules/system/repositories/SystemRepository';
-import { zabbixService, ZabbixService } from '@modules/rmm/services/ZabbixService';
+import { zabbixService, ZabbixService } from '@modules/rmm';
 
 export interface ApiStatusItem {
   id: string;

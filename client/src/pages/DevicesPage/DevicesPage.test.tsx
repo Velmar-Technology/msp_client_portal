@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import React from 'react';
 import { DevicesPage } from "@/pages/DevicesPage/DevicesPage";
@@ -55,14 +55,14 @@ vi.mock('@/store/useNotificationStore', () => ({
 }));
 
 let mockLanguage = 'en_US';
-const mockT = (key: string, options?: Record<string, string | number>) => {
+const mockT = (key: string, options?: string | Record<string, string | number>) => {
   const parts = key.split('.');
   let current: unknown = enTranslations;
   for (const part of parts) {
     if (current && typeof current === 'object' && part in (current as Record<string, unknown>)) {
       current = (current as Record<string, unknown>)[part];
     } else {
-      return key;
+      return typeof options === 'string' ? options : key;
     }
   }
   if (typeof current === 'string') {
@@ -75,7 +75,7 @@ const mockT = (key: string, options?: Record<string, string | number>) => {
     }
     return current;
   }
-  return key;
+  return typeof options === 'string' ? options : key;
 };
 
 vi.mock('react-i18next', () => ({
@@ -1123,7 +1123,8 @@ describe('DevicesPage', () => {
       expect(screen.getByText('Core Server')).toBeInTheDocument();
     });
 
-    const actionsBtn = screen.getByRole('button', { name: /actions/i });
+    const row = screen.getByText('Core Server').closest('tr')!;
+    const actionsBtn = within(row).getByRole('button', { name: 'Actions' });
     fireEvent.click(actionsBtn);
 
     await waitFor(() => {

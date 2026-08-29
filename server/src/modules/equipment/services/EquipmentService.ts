@@ -2,8 +2,7 @@ import { equipmentRepository, EquipmentRepository } from '@modules/equipment/rep
 import { subscriptionRepository, SubscriptionRepository } from '@modules/subscriptions';
 import { planRepository, PlanRepository } from '@modules/subscriptions';
 import { nextcloudService, NextcloudService } from '@modules/system';
-import { rmmPatchService, RmmPatchService } from '@modules/rmm/services/RmmPatchService';
-import { AgentHelloPayload, agentGateway } from '@modules/rmm/services/AgentGateway';
+import { rmmPatchService, RmmPatchService, AgentHelloPayload, agentGateway } from '@modules/rmm';
 import {
   NotFoundError,
   ForbiddenError,

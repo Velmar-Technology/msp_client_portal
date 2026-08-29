@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from "react";
-import { ChevronDown, Plus, Minus, RefreshCw, Mail, Ban, CreditCard, ShoppingBag, Info, MoreHorizontal } from "lucide-react";
+import { Plus, Minus, RefreshCw, Mail, Ban, CreditCard, ShoppingBag, Info, MoreHorizontal } from "lucide-react";
 import { Page } from "@/components/Page";
 import { Button } from "@/components/ui/button";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -252,6 +252,7 @@ export function PlansPage() {
                     type="button"
                     variant="outline"
                     size="icon"
+                    aria-label="Manage Subscription"
                     onClick={(e) => e.stopPropagation()}
                     className="h-7 w-7 cursor-pointer"
                   >

@@ -72,6 +72,65 @@ module.exports = [
       ]
     }
   },
+  // 4. Module Gateway Isolation (AGENTS.md Section 3.6):
+  // Cross-module imports of internal repositories, controllers, services, or routes are FORBIDDEN.
+  // Modules must strictly consume other domains via public gateway: @modules/<domain>.
+  ...[
+    "auth",
+    "billing",
+    "crm",
+    "equipment",
+    "notifications",
+    "rmm",
+    "subscriptions",
+    "system",
+    "tickets"
+  ].map((domain) => {
+    const otherDomains = [
+      "auth",
+      "billing",
+      "crm",
+      "equipment",
+      "notifications",
+      "rmm",
+      "subscriptions",
+      "system",
+      "tickets"
+    ].filter((d) => d !== domain);
+
+    const restrictedGroups = otherDomains.flatMap((other) => [
+      `@modules/${other}/repositories/**`,
+      `@modules/${other}/controllers/**`,
+      `@modules/${other}/services/**`,
+      `@modules/${other}/routes/**`,
+      `@modules/${other}/schemas/**`,
+      `@/modules/${other}/repositories/**`,
+      `@/modules/${other}/controllers/**`,
+      `@/modules/${other}/services/**`,
+      `@/modules/${other}/routes/**`,
+      `@/modules/${other}/schemas/**`,
+      `../${other}/**`,
+      `../../${other}/**`,
+      `../../../${other}/**`
+    ]);
+
+    return {
+      files: [`src/modules/${domain}/**/*.ts`],
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          {
+            patterns: [
+              {
+                group: restrictedGroups,
+                message: `Module Gateway Rule (AGENTS.md Sec 3.6): Cross-module internal access forbidden. Consume '${domain}' external dependencies strictly via public gateway: @modules/<other_domain>.`
+              }
+            ]
+          }
+        ]
+      }
+    };
+  }),
   {
     ignores: ["dist/**", "node_modules/**"],
   }

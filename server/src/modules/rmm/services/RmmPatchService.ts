@@ -1,7 +1,7 @@
 import { RmmPatchRepository, rmmPatchRepository } from '@modules/rmm/repositories/RmmPatchRepository';
 import { RmmTelemetryRepository, rmmTelemetryRepository } from '@modules/rmm/repositories/RmmTelemetryRepository';
-import { EquipmentRepository, equipmentRepository } from '@modules/equipment/repositories/EquipmentRepository';
-import { SubscriptionRepository, subscriptionRepository } from '@modules/subscriptions/repositories/SubscriptionRepository';
+import { EquipmentRepository, equipmentRepository } from '@modules/equipment';
+import { SubscriptionRepository, subscriptionRepository } from '@modules/subscriptions';
 import { AlertService, alertService } from '@modules/rmm/services/AlertService';
 import { ZabbixService, zabbixService } from '@modules/rmm/services/ZabbixService';
 import { NotFoundError, ForbiddenError } from '@shared/errors';
