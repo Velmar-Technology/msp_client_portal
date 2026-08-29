@@ -56,6 +56,7 @@ Dependencies point strictly **INWARD**: `Frameworks/Drivers` $\rightarrow$ `Inte
 4. **Controller Layer (`server/src/modules/<domain>/controllers/`)**: Translates HTTP requests to service calls. Express 5 native async error propagation (no `try/catch (err) { next(err); }` boilerplate; never return inline error JSON `res.status(400).json(...)`). Never import repositories or `db` pool directly.
 5. **API Gateway (`server/src/shared/middleware/gateway*.ts`)**: Injects `X-User-Id` / `X-Tenant-Id` headers and enforces sliding-window multi-tenant rate limits (`1000 req/15m`).
 6. **Module Gateway (`server/src/modules/<domain>/index.ts`)**: Every domain module (`auth`, `tickets`, `billing`, `subscriptions`, `rmm`, `equipment`, `crm`, `notifications`, `system`) exposes its public API strictly via `index.ts`. Cross-module imports of internal repositories, controllers, or ORM schemas are **FORBIDDEN**.
+7. **Redis Caching & Concurrency (`server/src/shared/utils/cache/`)**: Consumed via `CachePort` abstraction. Implements Redis (`ioredis`) with in-memory LRU fallback, generation-based cache invalidation, and `DistributedLock` for race-condition mitigation in critical mutations.
 
 ---
 
@@ -92,17 +93,22 @@ Dependencies point strictly **INWARD**: `Frameworks/Drivers` $\rightarrow$ `Inte
 
 ---
 
-## 6. Frontend Architectural Standards (React 19 / Vite / Tailwind v4)
+## 6. Frontend Architectural Standards & State Management (React 19 / Vite / Tailwind v4)
 
 1. **4-Level Component Hierarchy**:
    $$\text{L1: Primitives (/components/ui)} \leftarrow \text{L2: Shared Blocks (/components/shared, layout)} \leftarrow \text{L3: Feature Components (/components/[domain])} \leftarrow \text{L4: Pages (/pages, /routes)}$$
    - Lower layers NEVER import higher layers. Feature modules never cross-import directly.
-   - ALL UI elements MUST use `shadcn/ui` primitives in `client/src/components/ui/`.
-2. **Forms & Validation**: All inputs/dialogs MUST validate with Zod schemas (`schema.safeParse`) mirroring backend DTOs. Password fields require complexity validation (min 8 chars, upper, lower, number, match confirmation).
-3. **i18n Localization**: Zero hardcoded UI text. All strings use `useTranslation()` (`t("namespace.key")`) and must exist in `en_US.json` and `es_DO.json`. No inspecting `t()` return values to guess language.
-4. **URL State Synchronization**: Page sub-views (`?tab=...`), table filters (`?status=...`, `?search=...`), and modals (`?openModal=...`) must sync via `useUrlState`.
-5. **Control Heights**: Uniform compact standard `h-7` (28px) for buttons, inputs, and select triggers (`xs: h-5`, `sm: h-6`, `default: h-7`, `lg: h-8`). No ad-hoc heights.
-6. **Performance & Code Splitting**:
+   - **`shadcn/ui` (`radix-ui`) Primitives**: ALL UI elements (Button, Dialog, Input, Select, Badge, Card, Table) MUST use `client/src/components/ui/`. Never write raw `<button>`, `<input>`, or `<select>`.
+2. **`Zod` Schema & DTO Validation**:
+   - **Dual-Boundary Validation**: Backend DTO schemas in `@shared/dtos/` and Frontend form schemas in `client/src/components/` paired with `@hookform/resolvers/zod`.
+   - All input mutations MUST execute `schema.safeParse(...)` before processing. Password fields require complexity validation (min 8 chars, uppercase, lowercase, number, match confirmation).
+3. **`Zustand` Client State Management (`client/src/store/`)**:
+   - Confined strictly to global UI/session state (auth session, active tenant, theme, sidebar state).
+   - Use atomic selector patterns (`useStore(state => state.property)`) to prevent unnecessary re-renders. Never store ephemeral server cache data in Zustand.
+4. **i18n Localization**: Zero hardcoded UI text. All strings use `useTranslation()` (`t("namespace.key")`) and must exist in `en_US.json` and `es_DO.json`. No inspecting `t()` return values to guess language.
+5. **URL State Synchronization**: Page sub-views (`?tab=...`), table filters (`?status=...`, `?search=...`), and modals (`?openModal=...`) must sync via `useUrlState`.
+6. **Control Heights**: Uniform compact standard `h-7` (28px) for buttons, inputs, and select triggers (`xs: h-5`, `sm: h-6`, `default: h-7`, `lg: h-8`). No ad-hoc heights.
+7. **Performance & Code Splitting**:
    - Top-level routes use `lazyWithRetry` from `@/lib/lazyWithRetry`.
    - Suspense fallback MUST use localized domain skeletons (`DashboardSkeleton`, `TablePageSkeleton`, `DetailSkeleton`, `ContentPageSkeleton`) inside `<RouteSuspenseWrapper>`. No generic fullscreen spinners.
    - Skeleton flicker prevention: Use `useDeferredLoading(loading, SKELETON_DISPLAY_DELAY_MS)`.
