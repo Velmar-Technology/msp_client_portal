@@ -28,6 +28,9 @@ const fileFilter = (
   }
 };
 
+/**
+ * Multer upload middleware configured with UUID filename hashing, MIME whitelist filtering, and file size limits.
+ */
 export const upload = multer({
   storage,
   fileFilter,

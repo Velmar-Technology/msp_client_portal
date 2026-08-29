@@ -61,7 +61,24 @@ const QUOTATION_STATUS_ACTIVITY_TITLES: Record<QuotationStatus, string> = {
 
 const FOLLOW_UP_REMINDER_DAYS = 3;
 
+/**
+ * Domain service orchestrating the CRM sales pipeline, lead stage progressions,
+ * quotation dispatching, activity tracking, and auto-provisioning client subscriptions upon deal close.
+ *
+ * @see BL-501 CRM Lead Pipeline Progression & Conversion
+ */
 export class CRMService {
+  /**
+   * Initializes CRMService with lead, activity, quotation, user, plan, subscription, and invoice repositories.
+   *
+   * @param leadRepo - Lead repository
+   * @param activityRepo - Lead activity timeline repository
+   * @param quotationRepo - Quotation repository
+   * @param userRepo - User repository
+   * @param planRepo - Plan catalog repository
+   * @param subService - Subscription lifecycle service
+   * @param invoiceRepo - Invoice repository
+   */
   constructor(
     private leadRepo: LeadRepository = leadRepository,
     private activityRepo: LeadActivityRepository = leadActivityRepository,
@@ -72,10 +89,25 @@ export class CRMService {
     private invoiceRepo: InvoiceRepository = invoiceRepository,
   ) {}
 
+  /**
+   * Retrieves a paginated and filtered list of leads for a tenant.
+   *
+   * @param tenantId - Tenant UUID
+   * @param query - Filtering and pagination parameters
+   * @returns Object with leads array and total count
+   */
   async getLeads(tenantId: string, query: GetLeadsQueryInput = {}): Promise<{ leads: Lead[]; total: number }> {
     return this.leadRepo.findByTenant(tenantId, query);
   }
 
+  /**
+   * Retrieves a single lead by UUID.
+   *
+   * @param id - Lead UUID
+   * @param tenantId - Tenant UUID
+   * @returns Lead entity
+   * @throws {NotFoundError} When lead is not found
+   */
   async getLeadById(id: string, tenantId: string): Promise<Lead> {
     const lead = await this.leadRepo.findLeadById(id, tenantId);
     if (!lead) {
@@ -84,10 +116,24 @@ export class CRMService {
     return lead;
   }
 
+  /**
+   * Retrieves pipeline performance metrics (leads per stage, weighted revenue, conversion rates).
+   *
+   * @param tenantId - Tenant UUID
+   * @returns CrmPipelineStats aggregate metrics
+   */
   async getPipelineStats(tenantId: string): Promise<CrmPipelineStats> {
     return this.leadRepo.getPipelineStats(tenantId);
   }
 
+  /**
+   * Creates a new lead in the CRM pipeline and logs initial creation activity.
+   *
+   * @param data - Lead creation parameters
+   * @param tenantId - Tenant UUID
+   * @param creatorUserId - Creator user UUID
+   * @returns Created Lead entity
+   */
   async createLead(data: CreateLeadInput, tenantId: string, creatorUserId?: string): Promise<Lead> {
     let validPlanId: string | null = null;
     let expectedRev = data.expectedRevenue;
@@ -128,6 +174,16 @@ export class CRMService {
     return lead;
   }
 
+  /**
+   * Updates lead attributes, calculates probabilities on stage change, and logs activity.
+   *
+   * @param id - Lead UUID
+   * @param data - Update fields
+   * @param tenantId - Tenant UUID
+   * @param userId - Modifying user UUID
+   * @returns Updated Lead entity
+   * @throws {NotFoundError} When lead is not found
+   */
   async updateLead(id: string, data: UpdateLeadInput, tenantId: string, userId?: string): Promise<Lead> {
     const existing = await this.getLeadById(id, tenantId);
 
@@ -165,6 +221,17 @@ export class CRMService {
     return updated;
   }
 
+  /**
+   * Advances or changes a lead's pipeline stage.
+   *
+   * @see BL-501
+   * @param id - Lead UUID
+   * @param stage - Target LeadStage
+   * @param lostReason - Optional reason if stage is LOST
+   * @param tenantId - Tenant UUID
+   * @param userId - Modifying user UUID
+   * @returns Updated Lead entity
+   */
   async updateLeadStage(
     id: string,
     stage: LeadStage,
@@ -175,6 +242,13 @@ export class CRMService {
     return this.updateLead(id, { stage, lostReason, probability: STAGE_PROBABILITIES[stage] }, tenantId, userId);
   }
 
+  /**
+   * Deletes a lead record from the tenant's CRM database.
+   *
+   * @param id - Lead UUID
+   * @param tenantId - Tenant UUID
+   * @throws {NotFoundError} When lead does not exist
+   */
   async deleteLead(id: string, tenantId: string): Promise<void> {
     await this.getLeadById(id, tenantId);
     const deleted = await this.leadRepo.deleteLead(id, tenantId);
@@ -183,6 +257,15 @@ export class CRMService {
     }
   }
 
+  /**
+   * Generates a formal price quotation, dispatches an email, advances lead stage to PROPOSITION, and schedules a follow-up.
+   *
+   * @param data - SendCrmQuotationInput parameters
+   * @param tenantId - Tenant UUID
+   * @param userId - Creating user UUID
+   * @returns Created Quotation entity
+   * @throws {NotFoundError} When plan is not found
+   */
   async sendQuotation(data: SendCrmQuotationInput, tenantId: string, userId?: string): Promise<Quotation> {
     const plan = await this.planRepo.findById(data.planId);
     if (!plan) {
@@ -278,6 +361,13 @@ export class CRMService {
     return quotation;
   }
 
+  /**
+   * Automatically creates a reminder task 3 days after quotation delivery.
+   *
+   * @param leadId - Lead UUID
+   * @param quotationNumber - Quotation display number
+   * @param tenantId - Tenant UUID
+   */
   private async scheduleFollowUpReminder(
     leadId: string,
     quotationNumber: string,
@@ -297,6 +387,16 @@ export class CRMService {
     );
   }
 
+  /**
+   * Resends a quotation email reminder for an existing quotation in SENT status.
+   *
+   * @param data - ResendCrmQuotationInput parameters
+   * @param tenantId - Tenant UUID
+   * @param userId - Actor user UUID
+   * @returns Updated Quotation entity
+   * @throws {NotFoundError} When quotation or plan is not found
+   * @throws {ValidationError} When quotation is not in SENT status
+   */
   async resendQuotation(data: ResendCrmQuotationInput, tenantId: string, userId?: string): Promise<Quotation> {
     const quotation = await this.quotationRepo.findQuotationById(data.quotationId, tenantId);
     if (!quotation) {
@@ -354,6 +454,18 @@ export class CRMService {
     return updated || quotation;
   }
 
+  /**
+   * Converts a lead into an active client subscription. Automatically provisions user account if needed,
+   * creates subscription and initial invoice, marks lead as WON (100%), and logs timeline event.
+   *
+   * @see BL-501
+   * @param data - ConvertLeadToSubscriptionInput parameters
+   * @param tenantId - Tenant UUID
+   * @param userId - Converting user UUID
+   * @returns Object with updated lead, subscription, invoice, and clientCreated flag
+   * @throws {ValidationError} When leadId or plan is missing, or email exists under another tenant
+   * @throws {NotFoundError} When plan is not found
+   */
   async convertLeadToSubscription(
     data: ConvertLeadToSubscriptionInput,
     tenantId: string,
@@ -474,10 +586,26 @@ export class CRMService {
     return { lead: updatedLead || lead, subscription, invoice, clientCreated };
   }
 
+  /**
+   * Retrieves all logged activities and interactions for a given lead.
+   *
+   * @param leadId - Lead UUID
+   * @param tenantId - Tenant UUID
+   * @returns Array of LeadActivity entities
+   */
   async getActivitiesForLead(leadId: string, tenantId: string): Promise<LeadActivity[]> {
     return this.activityRepo.findByLead(leadId, tenantId);
   }
 
+  /**
+   * Manually logs an interaction or scheduled task for a lead.
+   *
+   * @param data - CreateLeadActivityInput parameters
+   * @param tenantId - Tenant UUID
+   * @param userId - Logging user UUID
+   * @returns Created LeadActivity entity
+   * @throws {ValidationError} When leadId is missing
+   */
   async logActivity(data: CreateLeadActivityInput, tenantId: string, userId?: string): Promise<LeadActivity> {
     if (!data.leadId) {
       throw new ValidationError('Lead ID is required');
@@ -486,6 +614,15 @@ export class CRMService {
     return this.activityRepo.createActivity(data, tenantId, userId);
   }
 
+  /**
+   * Updates an existing lead activity record.
+   *
+   * @param id - Activity UUID
+   * @param data - Update fields
+   * @param tenantId - Tenant UUID
+   * @returns Updated LeadActivity entity
+   * @throws {NotFoundError} When activity not found
+   */
   async updateActivity(id: string, data: UpdateLeadActivityInput, tenantId: string): Promise<LeadActivity> {
     const updated = await this.activityRepo.updateActivity(id, data, tenantId);
     if (!updated) {
@@ -494,6 +631,13 @@ export class CRMService {
     return updated;
   }
 
+  /**
+   * Deletes an activity record.
+   *
+   * @param id - Activity UUID
+   * @param tenantId - Tenant UUID
+   * @throws {NotFoundError} When activity not found
+   */
   async deleteActivity(id: string, tenantId: string): Promise<void> {
     const deleted = await this.activityRepo.deleteActivity(id, tenantId);
     if (!deleted) {
@@ -501,10 +645,28 @@ export class CRMService {
     }
   }
 
+  /**
+   * Retrieves all quotations linked to a specific lead.
+   *
+   * @param leadId - Lead UUID
+   * @param tenantId - Tenant UUID
+   * @returns Array of Quotation entities
+   */
   async getQuotationsForLead(leadId: string, tenantId: string): Promise<Quotation[]> {
     return this.quotationRepo.findByLead(leadId, tenantId);
   }
 
+  /**
+   * Updates quotation status following valid state transition rules and logs timeline activity.
+   *
+   * @param quotationId - Quotation UUID
+   * @param status - Target QuotationStatus
+   * @param tenantId - Tenant UUID
+   * @param userId - Modifying user UUID
+   * @returns Updated Quotation entity
+   * @throws {NotFoundError} When quotation not found
+   * @throws {ValidationError} When state transition is invalid
+   */
   async updateQuotationStatus(
     quotationId: string,
     status: QuotationStatus,
@@ -544,10 +706,27 @@ export class CRMService {
     return updated || quotation;
   }
 
+  /**
+   * Retrieves upcoming and pending activities across all leads for a tenant.
+   *
+   * @param tenantId - Tenant UUID
+   * @returns Array of upcoming LeadActivity entities
+   */
   async getUpcomingActivities(tenantId: string): Promise<LeadActivity[]> {
     return this.activityRepo.findUpcomingByTenant(tenantId);
   }
 
+  /**
+   * Modifies an active customer subscription and logs the modification on the CRM timeline.
+   *
+   * @param subId - Subscription UUID
+   * @param planId - Target plan ID
+   * @param equipmentCount - Number of devices
+   * @param tenantId - Tenant UUID
+   * @param leadId - Optional lead UUID to associate activity
+   * @param userId - Modifying user UUID
+   * @returns Updated Subscription entity
+   */
   async modifyCustomerSubscription(
     subId: string,
     planId: string,
@@ -583,6 +762,15 @@ export class CRMService {
     return updatedSub;
   }
 
+  /**
+   * Cancels a customer subscription from the CRM interface and logs cancellation on the lead timeline.
+   *
+   * @param subId - Subscription UUID
+   * @param tenantId - Tenant UUID
+   * @param leadId - Optional lead UUID to associate activity
+   * @param userId - Modifying user UUID
+   * @returns Cancelled Subscription entity
+   */
   async cancelCustomerSubscription(
     subId: string,
     tenantId: string,

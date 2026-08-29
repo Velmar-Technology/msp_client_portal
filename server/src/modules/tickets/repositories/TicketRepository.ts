@@ -5,11 +5,24 @@ import { eq, ne, gte, and, or, ilike, desc, asc, count, lt, inArray, SQL, isNull
 import { alias } from 'drizzle-orm/pg-core';
 import { validate as isUuid } from 'uuid';
 
+/**
+ * Data repository for support tickets, multi-parameter filtering, technician assignments,
+ * status summary aggregates, SLA escalation sweeps, and attachments.
+ */
 export class TicketRepository extends BaseRepository<Ticket> {
+  /**
+   * Initializes TicketRepository for the tickets table.
+   */
   constructor() {
     super(tickets, 'tickets');
   }
 
+  /**
+   * Retrieves an enriched ticket entity by UUID, joining client, technician, and equipment metadata.
+   *
+   * @param id - Unique ticket UUID
+   * @returns Enriched Ticket entity or null if not found
+   */
   override async findById(id: string): Promise<Ticket | null> {
     if (!id || !isUuid(id)) {
       return null;
@@ -47,6 +60,12 @@ export class TicketRepository extends BaseRepository<Ticket> {
     return (results[0] as unknown as Ticket) || null;
   }
 
+  /**
+   * Inserts a new support ticket record.
+   *
+   * @param data - Ticket creation properties
+   * @returns Created Ticket entity
+   */
   async create(data: {
     title: string;
     description: string;
@@ -71,6 +90,14 @@ export class TicketRepository extends BaseRepository<Ticket> {
     return results[0] as Ticket;
   }
 
+  /**
+   * Retrieves paginated tickets filed by a specific client.
+   *
+   * @param clientId - Client user UUID
+   * @param limit - Page size
+   * @param offset - Offset index
+   * @returns Array of tickets
+   */
   async findByClient(clientId: string, limit = 20, offset = 0): Promise<Ticket[]> {
     const results = await db
       .select()
@@ -82,6 +109,14 @@ export class TicketRepository extends BaseRepository<Ticket> {
     return results as Ticket[];
   }
 
+  /**
+   * Retrieves paginated tickets assigned to a specific technician.
+   *
+   * @param techId - Technician user UUID
+   * @param limit - Page size
+   * @param offset - Offset index
+   * @returns Array of tickets
+   */
   async findByTechnician(techId: string, limit = 20, offset = 0): Promise<Ticket[]> {
     const results = await db
       .select()
@@ -93,6 +128,12 @@ export class TicketRepository extends BaseRepository<Ticket> {
     return results as Ticket[];
   }
 
+  /**
+   * Retrieves active open or in-progress tickets assigned across a list of technicians for load calculation.
+   *
+   * @param techIds - Array of technician user UUIDs
+   * @returns Array of active tickets
+   */
   async findOpenTicketsForTechnicians(techIds: string[]): Promise<Ticket[]> {
     if (techIds.length === 0) return [];
     const results = await db
@@ -107,6 +148,12 @@ export class TicketRepository extends BaseRepository<Ticket> {
     return results as Ticket[];
   }
 
+  /**
+   * Finds OPEN tickets created before a cutoff timestamp with their response count for SLA escalation evaluation.
+   *
+   * @param cutoff - Expiration threshold timestamp
+   * @returns Array of candidate tickets for escalation
+   */
   async findPendingEscalations(cutoff: Date): Promise<EscalationCandidate[]> {
     const results = await db
       .select({
@@ -127,6 +174,12 @@ export class TicketRepository extends BaseRepository<Ticket> {
     return results as unknown as EscalationCandidate[];
   }
 
+  /**
+   * Retrieves a paginated and filtered ticket dataset with total count.
+   *
+   * @param filters - Search query, category, priority, status, client/tech/tenant/equipment filters
+   * @returns Filtered tickets list and total record count
+   */
   async findWithFilters(filters: TicketFilters): Promise<{ tickets: Ticket[]; total: number }> {
     const conditions: (SQL | undefined)[] = [];
 
@@ -234,6 +287,13 @@ export class TicketRepository extends BaseRepository<Ticket> {
     return { tickets: results as unknown as Ticket[], total };
   }
 
+  /**
+   * Updates the lifecycle status of a ticket.
+   *
+   * @param id - Unique ticket UUID
+   * @param status - Target TicketStatus
+   * @returns Updated Ticket entity or null
+   */
   async updateStatus(id: string, status: TicketStatus): Promise<Ticket | null> {
     if (!id || !isUuid(id)) {
       return null;
@@ -246,6 +306,13 @@ export class TicketRepository extends BaseRepository<Ticket> {
     return (results[0] as Ticket) || null;
   }
 
+  /**
+   * Updates the assigned technician on a ticket.
+   *
+   * @param id - Unique ticket UUID
+   * @param techId - Technician user UUID
+   * @returns Updated Ticket entity or null
+   */
   async assignTechnician(id: string, techId: string): Promise<Ticket | null> {
     if (!id || !isUuid(id) || !isUuid(techId)) {
       return null;
@@ -258,6 +325,14 @@ export class TicketRepository extends BaseRepository<Ticket> {
     return (results[0] as Ticket) || null;
   }
 
+  /**
+   * Calculates a breakdown of ticket counts by status, scoped to optional client, technician, or tenant filters.
+   *
+   * @param clientId - Optional client filter
+   * @param assignedTechId - Optional technician filter
+   * @param tenantId - Optional tenant filter
+   * @returns Record mapping TicketStatus to count
+   */
   async countByStatus(clientId?: string, assignedTechId?: string, tenantId?: string): Promise<Record<string, number>> {
     const conditions: (SQL | undefined)[] = [];
 
@@ -294,6 +369,12 @@ export class TicketRepository extends BaseRepository<Ticket> {
 
   // ---- Attachments ----
 
+  /**
+   * Stores a file attachment associated with a ticket or ticket response.
+   *
+   * @param data - Attachment metadata and file storage path
+   * @returns Created TicketAttachment entity
+   */
   async addAttachment(data: {
     ticket_id: string;
     response_id?: string | null;
@@ -318,6 +399,12 @@ export class TicketRepository extends BaseRepository<Ticket> {
     return results[0] as TicketAttachment;
   }
 
+  /**
+   * Retrieves initial attachments uploaded directly to the ticket (excluding response attachments).
+   *
+   * @param ticketId - Unique ticket UUID
+   * @returns Array of TicketAttachment records
+   */
   async getAttachments(ticketId: string): Promise<TicketAttachment[]> {
     if (!ticketId || !isUuid(ticketId)) {
       return [];
@@ -330,6 +417,12 @@ export class TicketRepository extends BaseRepository<Ticket> {
     return results as TicketAttachment[];
   }
 
+  /**
+   * Retrieves all attachments attached to subsequent ticket responses.
+   *
+   * @param ticketId - Unique ticket UUID
+   * @returns Array of TicketAttachment records
+   */
   async getAttachmentsByResponses(ticketId: string): Promise<TicketAttachment[]> {
     if (!ticketId || !isUuid(ticketId)) {
       return [];
@@ -342,6 +435,13 @@ export class TicketRepository extends BaseRepository<Ticket> {
     return results as TicketAttachment[];
   }
 
+  /**
+   * Counts non-cancelled tickets created by a client in the current calendar month.
+   *
+   * @param clientId - Client user UUID
+   * @returns Count of tickets created this month
+   * @see BL-201
+   */
   async countClientTicketsInCurrentMonth(clientId: string): Promise<number> {
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
@@ -361,6 +461,13 @@ export class TicketRepository extends BaseRepository<Ticket> {
     return countResult[0]?.val ?? 0;
   }
 
+  /**
+   * Counts non-cancelled tickets created for a specific equipment asset in the current calendar month.
+   *
+   * @param equipmentId - Equipment UUID
+   * @returns Count of tickets created for device this month
+   * @see BL-201
+   */
   async countEquipmentTicketsInCurrentMonth(equipmentId: string): Promise<number> {
     const startOfMonth = new Date();
     startOfMonth.setDate(1);

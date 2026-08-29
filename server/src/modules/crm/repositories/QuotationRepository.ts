@@ -5,11 +5,22 @@ import { db, pool } from '@shared/db';
 import { eq, and } from 'drizzle-orm';
 import { validate as isUuid } from 'uuid';
 
+/**
+ * Data repository managing commercial quotation records, auto-number generation, and status lifecycles.
+ */
 export class QuotationRepository extends BaseRepository<Quotation> {
+  /**
+   * Initializes QuotationRepository for the quotations database table.
+   */
   constructor() {
     super(quotations, 'quotations');
   }
 
+  /**
+   * Generates the next sequential quotation number for the current year (e.g. QT-2026-0001).
+   *
+   * @returns Formatted quotation number string
+   */
   async generateQuotationNumber(): Promise<string> {
     const year = new Date().getFullYear();
     const prefix = `QT-${year}-`;
@@ -32,6 +43,12 @@ export class QuotationRepository extends BaseRepository<Quotation> {
     return `${prefix}${String(nextNum).padStart(4, '0')}`;
   }
 
+  /**
+   * Inserts a new quotation record with calculated subtotals, taxes, and expiration dates.
+   *
+   * @param data - Quotation creation parameters
+   * @returns Created Quotation entity
+   */
   async createQuotation(data: {
     tenantId: string;
     leadId?: string | null;
@@ -75,6 +92,13 @@ export class QuotationRepository extends BaseRepository<Quotation> {
     return full || (created as unknown as Quotation);
   }
 
+  /**
+   * Retrieves a single quotation by UUID joined with plan and creator metadata.
+   *
+   * @param id - Quotation UUID
+   * @param tenantId - Optional tenant UUID
+   * @returns Quotation entity or null
+   */
   async findQuotationById(id: string, tenantId?: string): Promise<Quotation | null> {
     if (!id || !isUuid(id)) return null;
 
@@ -126,6 +150,13 @@ export class QuotationRepository extends BaseRepository<Quotation> {
     };
   }
 
+  /**
+   * Retrieves all quotations linked to a specific lead UUID.
+   *
+   * @param leadId - Lead UUID
+   * @param tenantId - Tenant UUID
+   * @returns Array of Quotation entities
+   */
   async findByLead(leadId: string, tenantId: string): Promise<Quotation[]> {
     if (!leadId || !isUuid(leadId)) return [];
 
@@ -169,6 +200,12 @@ export class QuotationRepository extends BaseRepository<Quotation> {
     }));
   }
 
+  /**
+   * Updates the last_reminder_sent_at timestamp to now.
+   *
+   * @param id - Quotation UUID
+   * @param tenantId - Tenant UUID
+   */
   async updateReminderTimestamp(id: string, tenantId: string): Promise<void> {
     await db
       .update(quotations)
@@ -178,6 +215,13 @@ export class QuotationRepository extends BaseRepository<Quotation> {
       .where(and(eq(quotations.id, id), eq(quotations.tenant_id, tenantId)));
   }
 
+  /**
+   * Updates quotation status (e.g. SENT, ACCEPTED, DECLINED, EXPIRED).
+   *
+   * @param id - Quotation UUID
+   * @param status - Target QuotationStatus
+   * @param tenantId - Tenant UUID
+   */
   async updateQuotationStatus(id: string, status: QuotationStatus, tenantId: string): Promise<void> {
     await db
       .update(quotations)

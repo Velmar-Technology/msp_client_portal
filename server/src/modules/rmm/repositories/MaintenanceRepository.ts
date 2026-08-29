@@ -8,11 +8,24 @@ import { alias } from 'drizzle-orm/pg-core';
 const techUser = alias(users, 'techUser');
 const clientUser = alias(users, 'clientUser');
 
+/**
+ * Data repository managing device maintenance schedule records, relational joins with equipment, client, tech, and subscriptions.
+ */
 export class MaintenanceRepository extends BaseRepository<DeviceMaintenance> {
+  /**
+   * Initializes MaintenanceRepository for the device_maintenances database table.
+   */
   constructor() {
     super(deviceMaintenances, 'device_maintenances');
   }
 
+  /**
+   * Retrieves maintenance schedules matching tenant boundary and query filters.
+   *
+   * @param tenantId - Optional tenant UUID filter
+   * @param filters - Optional date range, client, tech, equipment, and status criteria
+   * @returns Array of enriched DeviceMaintenance entities
+   */
   async findByTenant(
     tenantId?: string,
     filters?: {
@@ -85,6 +98,13 @@ export class MaintenanceRepository extends BaseRepository<DeviceMaintenance> {
     return results as DeviceMaintenance[];
   }
 
+  /**
+   * Retrieves a single maintenance schedule by UUID joined with equipment, subscription, client, and tech details.
+   *
+   * @param id - Maintenance UUID
+   * @param tenantId - Optional tenant UUID
+   * @returns Enriched DeviceMaintenance entity or null
+   */
   async findByIdWithDetails(id: string, tenantId?: string): Promise<DeviceMaintenance | null> {
     const conditions = [eq(deviceMaintenances.id, id)];
     if (tenantId) {
@@ -124,6 +144,12 @@ export class MaintenanceRepository extends BaseRepository<DeviceMaintenance> {
     return (results[0] as DeviceMaintenance) || null;
   }
 
+  /**
+   * Retrieves all maintenance records associated with a specific equipment slot.
+   *
+   * @param equipmentId - Equipment UUID
+   * @returns Array of DeviceMaintenance entities
+   */
   async findByEquipmentId(equipmentId: string): Promise<DeviceMaintenance[]> {
     const results = await db
       .select()
@@ -133,6 +159,12 @@ export class MaintenanceRepository extends BaseRepository<DeviceMaintenance> {
     return results as DeviceMaintenance[];
   }
 
+  /**
+   * Inserts a new maintenance schedule record.
+   *
+   * @param data - Creation attributes
+   * @returns Created DeviceMaintenance entity
+   */
   async create(data: {
     equipment_id: string;
     subscription_id: string;
@@ -153,6 +185,13 @@ export class MaintenanceRepository extends BaseRepository<DeviceMaintenance> {
     return results[0] as DeviceMaintenance;
   }
 
+  /**
+   * Updates fields on an existing maintenance schedule.
+   *
+   * @param id - Maintenance UUID
+   * @param data - Partial update attributes
+   * @returns Updated DeviceMaintenance entity or null
+   */
   async update(id: string, data: Partial<DeviceMaintenance>): Promise<DeviceMaintenance | null> {
     const results = await db
       .update(deviceMaintenances)
@@ -165,6 +204,13 @@ export class MaintenanceRepository extends BaseRepository<DeviceMaintenance> {
     return (results[0] as DeviceMaintenance) || null;
   }
 
+  /**
+   * Deletes a maintenance schedule record.
+   *
+   * @param id - Maintenance UUID
+   * @param tenantId - Optional tenant UUID
+   * @returns True if deleted
+   */
   async delete(id: string, tenantId?: string): Promise<boolean> {
     const conditions = [eq(deviceMaintenances.id, id)];
     if (tenantId) {

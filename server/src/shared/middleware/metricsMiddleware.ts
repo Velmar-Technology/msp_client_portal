@@ -2,7 +2,11 @@ import { Request, Response, NextFunction } from 'express';
 import { metricsService } from '@shared/metrics/metricsService';
 
 /**
- * Express middleware to record HTTP request metrics (latency, counts, status codes).
+ * Express middleware recording HTTP request duration, route counts, and response status codes to Prometheus metrics.
+ *
+ * @param req - Express request
+ * @param res - Express response
+ * @param next - Express next function
  */
 export function metricsMiddleware(req: Request, res: Response, next: NextFunction): void {
   // Skip metrics collection for metrics endpoint itself and static assets

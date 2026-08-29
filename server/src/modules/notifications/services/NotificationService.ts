@@ -22,22 +22,29 @@ export interface SSEClientStream {
 }
 
 /**
- * Notification Service — Orchestrates multi-channel and in-app notifications.
- * Delegates to email, WhatsApp, and handles in-app SSE streaming.
- * Respects per-user notification preferences before dispatching to each channel.
- * Notifications are fire-and-forget: they should never break the main flow.
+ * Notification Service — Orchestrates multi-channel (email, WhatsApp, in-app SSE) delivery
+ * across ticket lifecycle, billing renewal warnings, and user notification preference evaluations.
  */
 export class NotificationService {
   // In-memory registry of active SSE connections: userId -> SSEClientStream[]
   private sseClients = new Map<string, SSEClientStream[]>();
 
+  /**
+   * Initializes NotificationService with repository and preference service dependencies.
+   *
+   * @param notificationRepo - In-app notification repository
+   * @param preferenceSvc - User notification preferences service
+   */
   constructor(
     private notificationRepo: NotificationRepository = notificationRepository,
     private preferenceSvc: NotificationPreferenceService = notificationPreferenceService,
   ) {}
 
   /**
-   * Register a user's SSE connection.
+   * Registers a user's SSE connection for live real-time notification streaming and portal presence.
+   *
+   * @param userId - User UUID
+   * @param res - Downstream SSE response stream
    */
   registerSSEClient(userId: string, res: SSEClientStream): void {
     // Configure headers for SSE
@@ -85,14 +92,20 @@ export class NotificationService {
   }
 
   /**
-   * Query the IDs of users with at least one live SSE connection (portal presence).
+   * Queries the IDs of users with at least one live SSE connection (portal presence).
+   *
+   * @returns Array of user UUIDs currently connected
    */
   getConnectedUserIds(): string[] {
     return [...this.sseClients.keys()];
   }
 
   /**
-   * Push real-time event to connected user tabs.
+   * Pushes real-time SSE event to all connected browser tabs for a user.
+   *
+   * @param userId - User UUID
+   * @param event - SSE event name
+   * @param data - Payload data object
    */
   private sendRealTimeUpdate(userId: string, event: string, data: any): void {
     const clients = this.sseClients.get(userId);
@@ -109,7 +122,10 @@ export class NotificationService {
   }
 
   /**
-   * Create an in-app notification and broadcast it in real time.
+   * Creates an in-app notification record and broadcasts it over SSE to active sessions.
+   *
+   * @param data - In-app notification creation payload
+   * @returns Created Notification entity or null on error
    */
   async createInAppNotification(data: {
     userId: string;
@@ -144,7 +160,10 @@ export class NotificationService {
   }
 
   /**
-   * Notify client when a new ticket is created.
+   * Dispatches notifications (email and in-app) when a new ticket is opened.
+   *
+   * @param ticket - Created Ticket entity
+   * @param client - Client User entity
    */
   async onTicketCreated(ticket: Ticket, client: User): Promise<void> {
     const eventType: NotificationEventType = 'TICKET_CREATED';
@@ -189,7 +208,11 @@ export class NotificationService {
   }
 
   /**
-   * Notify client when ticket status changes.
+   * Dispatches notifications (email, WhatsApp, in-app) when ticket status changes.
+   *
+   * @param ticket - Updated Ticket entity
+   * @param client - Client User entity
+   * @param notes - Optional status transition notes
    */
   async onTicketStatusChanged(ticket: Ticket, client: User, notes?: string): Promise<void> {
     const eventType: NotificationEventType = 'TICKET_STATUS_CHANGED';
@@ -260,7 +283,10 @@ export class NotificationService {
   }
 
   /**
-   * Notify technician when a ticket is assigned to them.
+   * Dispatches email and in-app notifications when a ticket is assigned to a technician.
+   *
+   * @param ticket - Assigned Ticket entity
+   * @param technician - Assigned technician User entity
    */
   async onTicketAssigned(ticket: Ticket, technician: User): Promise<void> {
     const eventType: NotificationEventType = 'TICKET_ASSIGNED';
@@ -289,7 +315,12 @@ export class NotificationService {
   }
 
   /**
-   * Notify party when a new response is posted on a ticket.
+   * Dispatches email and in-app notifications when a response message is added to a ticket thread.
+   *
+   * @param ticket - Ticket entity
+   * @param recipient - Recipient User entity
+   * @param senderName - Display name of the responder
+   * @param message - Message response body
    */
   async onTicketResponseCreated(ticket: Ticket, recipient: User, senderName: string, message: string): Promise<void> {
     const eventType: NotificationEventType = 'NEW_REPLY';
@@ -319,7 +350,10 @@ export class NotificationService {
   }
 
   /**
-   * Notify client when their subscription is expiring within 7 days.
+   * Dispatches email and in-app advance warning notifications when a subscription renewal is due in 7 days.
+   *
+   * @param subscription - Subscription entity
+   * @param client - Client User entity
    */
   async onSubscriptionExpiringSoon(subscription: Subscription, client: User): Promise<void> {
     const eventType: NotificationEventType = 'SUBSCRIPTION_EXPIRING_SOON';
@@ -358,22 +392,53 @@ export class NotificationService {
     }
   }
 
+  /**
+   * Retrieves chronological in-app notifications for a user.
+   *
+   * @param userId - User UUID
+   * @returns Array of Notification entities
+   */
   async getUserNotifications(userId: string): Promise<Notification[]> {
     return this.notificationRepo.findByUser(userId);
   }
 
+  /**
+   * Retrieves count of unread notifications for a user.
+   *
+   * @param userId - User UUID
+   * @returns Unread notification count
+   */
   async getUnreadCount(userId: string): Promise<number> {
     return this.notificationRepo.getUnreadCount(userId);
   }
 
+  /**
+   * Marks a specific in-app notification as read.
+   *
+   * @param id - Notification UUID
+   * @param userId - User UUID
+   * @returns Updated Notification entity or null
+   */
   async markAsRead(id: string, userId: string): Promise<Notification | null> {
     return this.notificationRepo.markAsRead(id, userId);
   }
 
+  /**
+   * Marks all unread in-app notifications for a user as read.
+   *
+   * @param userId - User UUID
+   * @returns Number of marked notifications
+   */
   async markAllAsRead(userId: string): Promise<number> {
     return this.notificationRepo.markAllAsRead(userId);
   }
 
+  /**
+   * Deletes all in-app notifications for a user.
+   *
+   * @param userId - User UUID
+   * @returns Number of deleted notifications
+   */
   async clearAllForUser(userId: string): Promise<number> {
     return this.notificationRepo.deleteAllForUser(userId);
   }

@@ -201,6 +201,16 @@ const labels: Record<string, any> = {
   }
 };
 
+/**
+ * Generates a compliant PDF-1.4 binary buffer invoice document complete with embedded branding, logo, and line item tables.
+ *
+ * @param invoice - Invoice entity with billing details
+ * @param clientName - Client billing contact name
+ * @param clientEmail - Client billing contact email
+ * @param tenantName - Client organization name
+ * @param language - Target localization code ('es_DO' | 'en_US')
+ * @returns Generated PDF binary Buffer
+ */
 export function generateInvoicePdf(
   invoice: Invoice,
   clientName: string,

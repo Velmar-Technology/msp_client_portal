@@ -3,7 +3,14 @@ import { logger } from '@shared/utils/logger';
 import { InternalServerError } from '@shared/errors';
 import { Invoice } from '@shared/types';
 
+/**
+ * External integration service managing PayPal REST API authentication,
+ * order creation, payment capture, catalog product definitions, and recurring subscription lifecycles.
+ */
 export class PaypalService {
+  /**
+   * Base URL for the PayPal REST API depending on configured environment.
+   */
   public get baseUrl(): string {
     if (env.PAYPAL_API_URL && env.PAYPAL_API_URL.trim() !== '') {
       return env.PAYPAL_API_URL.replace(/\/+$/, '');
@@ -14,12 +21,20 @@ export class PaypalService {
       : 'https://api-m.paypal.com';
   }
 
+  /**
+   * Determines if mock mode should be used when credentials are not configured.
+   *
+   * @returns True if running without live credentials
+   */
   private isMockMode(): boolean {
     return !env.PAYPAL_CLIENT_ID || !env.PAYPAL_CLIENT_SECRET;
   }
 
   /**
-   * Retrieves an OAuth 2.0 access token from PayPal.
+   * Retrieves an OAuth 2.0 client credentials bearer token from PayPal.
+   *
+   * @returns Active access token string
+   * @throws {InternalServerError} When authentication with PayPal fails
    */
   async getAccessToken(): Promise<string> {
     if (this.isMockMode()) {
@@ -52,7 +67,11 @@ export class PaypalService {
   }
 
   /**
-   * Creates a PayPal checkout order for a specific invoice.
+   * Creates a PayPal v2 checkout order for a specific invoice.
+   *
+   * @param invoice - Target invoice entity
+   * @returns Object containing PayPal order ID and status
+   * @throws {InternalServerError} When order creation fails
    */
   async createOrder(invoice: Invoice): Promise<{ id: string; status: string }> {
     if (this.isMockMode()) {
@@ -99,7 +118,11 @@ export class PaypalService {
   }
 
   /**
-   * Captures the payment for an authorized PayPal order.
+   * Captures the payment for an authorized PayPal checkout order.
+   *
+   * @param paypalOrderId - PayPal order ID
+   * @returns Capture status and optional capture ID
+   * @throws {InternalServerError} When capture fails
    */
   async captureOrder(paypalOrderId: string): Promise<{ status: string; captureId?: string }> {
     if (this.isMockMode() || paypalOrderId.startsWith('MOCK-')) {
@@ -144,6 +167,13 @@ export class PaypalService {
     }
   }
 
+  /**
+   * Fetches order details from PayPal for a given order ID.
+   *
+   * @param paypalOrderId - PayPal order ID
+   * @returns Order details
+   * @throws {InternalServerError} When retrieval fails
+   */
   async getOrder(paypalOrderId: string): Promise<{ id: string; status: string; purchase_units?: any }> {
     if (this.isMockMode() || paypalOrderId.startsWith('MOCK-')) {
       logger.info(`[PayPal Mock] Retrieved mock order ${paypalOrderId}`);
@@ -184,6 +214,15 @@ export class PaypalService {
     }
   }
 
+  /**
+   * Creates an arbitrary amount PayPal checkout order with custom description and reference ID.
+   *
+   * @param amount - Charge amount in USD
+   * @param description - Line item description
+   * @param referenceId - Internal transaction reference ID
+   * @returns Order ID and status
+   * @throws {InternalServerError} When order creation fails
+   */
   async createOrderForAmount(amount: number, description: string, referenceId: string): Promise<{ id: string; status: string }> {
     if (this.isMockMode()) {
       const mockOrderId = `MOCK-PAYPAL-${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
@@ -228,6 +267,14 @@ export class PaypalService {
     }
   }
 
+  /**
+   * Creates a catalog product on PayPal for subscription plan associations.
+   *
+   * @param name - Product name
+   * @param description - Product description
+   * @returns Created or existing product ID
+   * @throws {InternalServerError} When product creation fails
+   */
   async createProduct(name: string, description: string): Promise<string> {
     const productId = 'MSP-PLAN-SUPPORT';
     if (this.isMockMode()) {
@@ -270,6 +317,17 @@ export class PaypalService {
     }
   }
 
+  /**
+   * Creates a recurring billing plan on PayPal linked to a product catalog ID.
+   *
+   * @param productId - Catalog product ID
+   * @param name - Plan name
+   * @param description - Plan description
+   * @param price - Periodic recurring price
+   * @param billingCycle - 'monthly' or 'annual'
+   * @returns Created PayPal billing plan ID
+   * @throws {InternalServerError} When plan creation fails
+   */
   async createPlan(productId: string, name: string, description: string, price: number, billingCycle: 'monthly' | 'annual'): Promise<string> {
     if (this.isMockMode()) {
       const mockPlanId = `MOCK-PLAN-${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
@@ -331,6 +389,16 @@ export class PaypalService {
     }
   }
 
+  /**
+   * Creates a recurring subscription agreement for a plan with return/cancel redirect URLs.
+   *
+   * @param paypalPlanId - PayPal billing plan ID
+   * @param quantity - Subscription quantity / seat count
+   * @param returnUrl - Success redirect URL
+   * @param cancelUrl - Cancellation redirect URL
+   * @returns Subscription ID and PayPal approval link
+   * @throws {InternalServerError} When subscription creation fails
+   */
   async createSubscription(paypalPlanId: string, quantity: number, returnUrl: string, cancelUrl: string): Promise<{ id: string; approveUrl: string }> {
     if (this.isMockMode() || paypalPlanId.startsWith('MOCK-')) {
       const mockSubId = `MOCK-SUB-${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
@@ -385,6 +453,13 @@ export class PaypalService {
     }
   }
 
+  /**
+   * Fetches real-time status and next billing timestamp for a subscription from PayPal.
+   *
+   * @param subscriptionId - PayPal subscription agreement ID
+   * @returns Subscription status and next billing timestamp
+   * @throws {InternalServerError} When retrieval fails
+   */
   async getSubscription(subscriptionId: string): Promise<{ status: string; nextBillingTime: string }> {
     if (this.isMockMode() || subscriptionId.startsWith('MOCK-')) {
       logger.info(`[PayPal Mock] Get subscription details for ${subscriptionId}`);
@@ -423,6 +498,13 @@ export class PaypalService {
     }
   }
 
+  /**
+   * Updates the seat/hardware quantity for an active PayPal subscription.
+   *
+   * @param subscriptionId - PayPal subscription agreement ID
+   * @param quantity - New seat/device quantity
+   * @throws {InternalServerError} When update fails
+   */
   async updateSubscriptionQuantity(subscriptionId: string, quantity: number): Promise<void> {
     if (this.isMockMode() || subscriptionId.startsWith('MOCK-')) {
       logger.info(`[PayPal Mock] Updated subscription ${subscriptionId} quantity to ${quantity}`);
@@ -459,6 +541,13 @@ export class PaypalService {
     }
   }
 
+  /**
+   * Cancels an active recurring subscription agreement in PayPal.
+   *
+   * @param subscriptionId - PayPal subscription agreement ID
+   * @param reason - Cancellation reason description
+   * @throws {InternalServerError} When cancellation fails
+   */
   async cancelSubscription(subscriptionId: string, reason = 'Cancelled by user'): Promise<void> {
     if (this.isMockMode() || subscriptionId.startsWith('MOCK-')) {
       logger.info(`[PayPal Mock] Cancelled subscription ${subscriptionId} (reason: ${reason})`);

@@ -3,11 +3,23 @@ import { RmmDeviceTelemetry } from '@shared/types';
 import { db, rmmDeviceTelemetry, subscriptionEquipment } from '@shared/db';
 import { eq } from 'drizzle-orm';
 
+/**
+ * Data repository managing real-time hardware telemetry records (CPU, memory, disk, online status).
+ */
 export class RmmTelemetryRepository extends BaseRepository<RmmDeviceTelemetry> {
+  /**
+   * Initializes RmmTelemetryRepository for the rmm_device_telemetry database table.
+   */
   constructor() {
     super(rmmDeviceTelemetry, 'rmm_device_telemetry');
   }
 
+  /**
+   * Retrieves telemetry metrics for an equipment asset joined with device metadata.
+   *
+   * @param equipmentId - Equipment UUID
+   * @returns RmmDeviceTelemetry entity or null
+   */
   async findByEquipment(equipmentId: string): Promise<RmmDeviceTelemetry | null> {
     const results = await db
       .select({
@@ -35,6 +47,12 @@ export class RmmTelemetryRepository extends BaseRepository<RmmDeviceTelemetry> {
     return (results[0] as RmmDeviceTelemetry) || null;
   }
 
+  /**
+   * Retrieves telemetry metrics for all devices within a tenant organization.
+   *
+   * @param tenantId - Tenant UUID
+   * @returns Array of RmmDeviceTelemetry entities
+   */
   async findByTenant(tenantId: string): Promise<RmmDeviceTelemetry[]> {
     const results = await db
       .select({
@@ -62,6 +80,12 @@ export class RmmTelemetryRepository extends BaseRepository<RmmDeviceTelemetry> {
     return results as RmmDeviceTelemetry[];
   }
 
+  /**
+   * Upserts telemetry snapshot for an equipment device record.
+   *
+   * @param data - Telemetry metric payload
+   * @returns Created or updated RmmDeviceTelemetry entity
+   */
   async upsertTelemetry(data: {
     equipment_id: string;
     tenant_id: string;

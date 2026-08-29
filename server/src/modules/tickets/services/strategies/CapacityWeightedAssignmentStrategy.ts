@@ -5,12 +5,33 @@ import { PRIORITY_WEIGHTS, LOAD_CAPACITY_THRESHOLD } from '@shared/config/consta
 import { logger } from '@shared/utils/logger';
 import { IAssignmentStrategy } from './IAssignmentStrategy';
 
+/**
+ * Capacity-weighted technician assignment strategy. Evaluates technician active workload
+ * using priority weights (CRITICAL=4, HIGH=2, MEDIUM=1, LOW=0.5) to distribute tickets to the least loaded technician.
+ *
+ * @see BL-104 (Capacity-Weighted Load Balancing)
+ */
 export class CapacityWeightedAssignmentStrategy implements IAssignmentStrategy {
+  /**
+   * Initializes CapacityWeightedAssignmentStrategy with user and ticket repositories.
+   *
+   * @param userRepo - User repository
+   * @param ticketRepo - Ticket repository for calculating technician active load
+   */
   constructor(
     private userRepo: UserRepository = userRepository,
     private ticketRepo: TicketRepository = ticketRepository,
   ) {}
 
+  /**
+   * Assigns a ticket to the technician with the lowest weighted load, respecting specialist filtering.
+   *
+   * @param category - Ticket category
+   * @param requestedSpecialty - Optional requested technician specialty
+   * @param priority - Ticket priority level
+   * @returns Selected technician User entity or null if no technicians available
+   * @see BL-104
+   */
   async assign(category: TicketCategory, requestedSpecialty?: string, priority?: TicketPriority): Promise<User | null> {
     const specialists = requestedSpecialty ? await this.userRepo.findTechniciansBySpecialty(requestedSpecialty) : [];
 
@@ -57,6 +78,12 @@ export class CapacityWeightedAssignmentStrategy implements IAssignmentStrategy {
     return selected;
   }
 
+  /**
+   * Calculates total weighted active ticket load for a pool of technicians.
+   *
+   * @param techs - Array of technician User entities
+   * @returns Map of technicianId -> cumulative weighted load score
+   */
   private async calculateLoads(techs: User[]): Promise<Map<string, number>> {
     const loads = new Map<string, number>();
     if (techs.length === 0) return loads;

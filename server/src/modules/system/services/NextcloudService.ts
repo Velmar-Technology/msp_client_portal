@@ -11,10 +11,17 @@ export interface StorageStatus {
   status: 'online' | 'offline';
 }
 
+/**
+ * Domain service integrating with Nextcloud server via WebDAV PROPFIND and OCS REST APIs
+ * for cloud storage provisioning, user lifecycle management, and quota tracking.
+ */
 export class NextcloudService {
   /**
    * Generates a cryptographically secure password that satisfies Nextcloud's password_policy
    * requirements: mixed case, digits, special characters, and not in compromised list.
+   *
+   * @param length - Desired password length (default: 20)
+   * @returns Generated secure password string
    */
   static generateSecurePassword(length = 20): string {
     const uppercase = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -46,8 +53,10 @@ export class NextcloudService {
   }
 
   /**
-   * Fetches storage quota from Nextcloud server via WebDAV PROPFIND.
+   * Fetches global storage quota from Nextcloud server via WebDAV PROPFIND.
    * If connection fails or credentials are not configured, returns a fallback mock response.
+   *
+   * @returns StorageStatus containing used, available, total, and percentage
    */
   async getStorageUsage(): Promise<StorageStatus> {
     const username = env.NEXTCLOUD_APP_USER;
@@ -88,7 +97,6 @@ export class NextcloudService {
           'Authorization': authHeader,
         },
         body: xmlBody,
-        
         signal: controller.signal,
       });
 
@@ -107,7 +115,10 @@ export class NextcloudService {
   }
 
   /**
-   * Helper to parse used/available bytes from WebDAV XML response
+   * Helper to parse used/available bytes from WebDAV XML response.
+   *
+   * @param xmlText - WebDAV XML response string
+   * @returns StorageStatus
    */
   parseQuotaXml(xmlText: string): StorageStatus {
     const usedMatch = xmlText.match(/<[a-zA-Z0-9:]*quota-used-bytes>([^<]+)<\/[a-zA-Z0-9:]*quota-used-bytes>/);
@@ -169,6 +180,11 @@ export class NextcloudService {
 
   /**
    * Provisions a new user account in Nextcloud with the specified quota.
+   *
+   * @param options - Account provisioning parameters (username, email, quota, displayName)
+   * @returns Generated user account password
+   * @throws {InternalServerError} When Nextcloud config is incomplete
+   * @throws {ExternalServiceError} When OCS API request fails
    */
   async provisionUser(options: {
     username: string;
@@ -233,6 +249,11 @@ export class NextcloudService {
    * Rotates a user's password in Nextcloud while preserving the account and all
    * of its data. Used when re-pairing a device to the same slot, so the wiped
    * machine loses access to the cloud account immediately.
+   *
+   * @param username - Nextcloud username
+   * @returns Newly generated password
+   * @throws {InternalServerError} When Nextcloud config is incomplete
+   * @throws {ExternalServiceError} When password update fails
    */
   async setUserPassword(username: string): Promise<string> {
     const adminUser = env.NEXTCLOUD_APP_USER;
@@ -288,6 +309,10 @@ export class NextcloudService {
 
   /**
    * Deletes a user account in Nextcloud.
+   *
+   * @param username - Nextcloud username
+   * @throws {InternalServerError} When Nextcloud config is incomplete
+   * @throws {ExternalServiceError} When user deletion fails
    */
   async deleteUser(username: string): Promise<void> {
     const adminUser = env.NEXTCLOUD_APP_USER;
@@ -329,6 +354,10 @@ export class NextcloudService {
 
   /**
    * Retrieves a specific user's storage quota details from Nextcloud.
+   *
+   * @param username - Nextcloud username
+   * @returns Object with used and total bytes
+   * @throws {InternalServerError} When Nextcloud config is incomplete
    */
   async getUserStorage(username: string): Promise<{ used: number; total: number }> {
     const adminUser = env.NEXTCLOUD_APP_USER;
@@ -383,7 +412,9 @@ export class NextcloudService {
   }
 
   /**
-   * Returns a standard fallback response when Nextcloud connection fails
+   * Returns a standard fallback response when Nextcloud connection fails.
+   *
+   * @returns Fallback StorageStatus
    */
   private getFallbackStatus(): StorageStatus {
     const total = 5000000000000; // 5.0 TB

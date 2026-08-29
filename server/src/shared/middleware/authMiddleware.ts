@@ -6,8 +6,12 @@ import { UnauthorizedError } from '@shared/errors';
 import { userRepository } from '@modules/auth';
 
 /**
- * JWT authentication middleware.
- * Verifies the Bearer token and attaches the decoded user to req.user.
+ * Express middleware validating incoming JWT Bearer tokens and populating req.user context.
+ *
+ * @param req - Express request
+ * @param _res - Express response
+ * @param next - Express next function
+ * @throws {UnauthorizedError} When token is missing, invalid, or expired
  */
 export async function authMiddleware(req: Request, _res: Response, next: NextFunction): Promise<void> {
   const authHeader = req.headers.authorization;

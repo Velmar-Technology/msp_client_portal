@@ -11,7 +11,26 @@ import { sendInvoiceDueEmail } from '@shared/utils/emailService';
 import { logger } from '@shared/utils/logger';
 import { Subscription, SubscriptionStatus, InvoiceStatus } from '@shared/types';
 
+/**
+ * Domain service executing automated subscription renewals, periodic billing invoice creation,
+ * Nextcloud account de-provisioning on cancellation, and billing notification dispatching.
+ *
+ * @see BL-402 (Renewal Scheduler & Hardware Multiplier)
+ */
 export class SubscriptionRenewalService {
+  /**
+   * Initializes SubscriptionRenewalService with all necessary domain repositories and external adapters.
+   *
+   * @param subscriptionRepo - Subscription repository
+   * @param planRepo - Plan repository
+   * @param invoiceRepo - Invoice repository
+   * @param equipmentRepo - Equipment inventory repository
+   * @param userRepo - User repository
+   * @param nextcloudSvc - Nextcloud user management service
+   * @param paypalSvc - PayPal integration service
+   * @param notifSvc - Notification service
+   * @param pricingSvc - Pricing calculation service
+   */
   constructor(
     private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
     private planRepo: PlanRepository = planRepository,
@@ -24,6 +43,11 @@ export class SubscriptionRenewalService {
     private pricingSvc: BillingPricingService = billingPricingService
   ) {}
 
+  /**
+   * Finalizes an expiring subscription at the end of its billing period by cancelling slots and de-provisioning Nextcloud users.
+   *
+   * @param sub - Expiring subscription entity
+   */
   private async finalizeExpiringSubscription(sub: Subscription): Promise<void> {
     logger.info(`Subscription ${sub.id} reached end of paid billing period (${sub.renewal_date}). Finalizing cancellation.`);
     await this.subscriptionRepo.updateStatus(sub.id, SubscriptionStatus.CANCELLED);
@@ -58,6 +82,13 @@ export class SubscriptionRenewalService {
     });
   }
 
+  /**
+   * Calculates the next periodic renewal date based on billing cycle (monthly vs annual).
+   *
+   * @param currentRenewalDate - Current expiration date
+   * @param billingCycle - 'monthly' or 'annual'
+   * @returns Projected next renewal Date
+   */
   private calculateNextRenewalDate(currentRenewalDate: Date, billingCycle: 'monthly' | 'annual'): Date {
     const nextDate = new Date(currentRenewalDate);
     if (billingCycle === 'annual') {
@@ -68,6 +99,13 @@ export class SubscriptionRenewalService {
     return nextDate;
   }
 
+  /**
+   * Queries PayPal API for active subscription status and next billing timestamp.
+   *
+   * @param sub - Subscription entity
+   * @param billingCycle - Billing cycle
+   * @returns Status object containing new renewal date and execution flag
+   */
   private async handlePaypalSubscriptionRenewal(sub: Subscription, billingCycle: 'monthly' | 'annual'): Promise<{ newRenewalDate: Date | null; shouldProceed: boolean }> {
     if (sub.paypal_order_id?.startsWith('MOCK-SUB-')) {
       const newRenewalDate = this.calculateNextRenewalDate(new Date(sub.renewal_date), billingCycle);
@@ -99,6 +137,13 @@ export class SubscriptionRenewalService {
     return { newRenewalDate, shouldProceed: true };
   }
 
+  /**
+   * Processes renewal cycle for an active subscription, advancing renewal date, creating a renewal invoice,
+   * and notifying client (BL-402).
+   *
+   * @param sub - Subscription due for renewal
+   * @see BL-402
+   */
   async renewSubscription(sub: Subscription): Promise<void> {
     logger.info(`Processing renewal for subscription ${sub.id} (client: ${sub.client_id})`);
 

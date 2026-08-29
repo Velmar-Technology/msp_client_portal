@@ -51,7 +51,18 @@ export interface SystemApiStatusResponse {
   envMissingCount: number;
 }
 
+/**
+ * Domain service providing real-time system diagnostics, health checks,
+ * environment configuration audits, and API latency measurements.
+ */
 export class SystemService {
+  /**
+   * Initializes SystemService with system repository, Nextcloud, and Zabbix service dependencies.
+   *
+   * @param systemRepo - System repository for database health checks
+   * @param storageService - Nextcloud storage service
+   * @param zabbixSvc - Zabbix monitoring service
+   */
   constructor(
     private systemRepo: SystemRepository = systemRepository,
     private storageService = nextcloudService,
@@ -60,6 +71,9 @@ export class SystemService {
 
   /**
    * Inspects all 34 system environment variables (from process.env or .env) and evaluates their runtime configuration status.
+   *
+   * @param envMap - Environment dictionary (defaults to process.env)
+   * @returns Array of EnvVarStatusItem auditing each variable
    */
   getEnvVariablesStatus(envMap: Record<string, string | undefined> = process.env): EnvVarStatusItem[] {
     const definitions: Array<{
@@ -173,6 +187,8 @@ export class SystemService {
 
   /**
    * Performs real-time health checks on database, storage, application API endpoints, and environment variables.
+   *
+   * @returns SystemApiStatusResponse with comprehensive health metrics
    */
   async getApiStatus(): Promise<SystemApiStatusResponse> {
     const now = new Date().toISOString();

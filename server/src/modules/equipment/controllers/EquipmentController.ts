@@ -3,9 +3,23 @@ import { equipmentService, EquipmentService } from '@modules/equipment/services/
 import { ForbiddenError, ValidationError } from '@shared/errors';
 import { env } from '@shared/config/env';
 
+/**
+ * Controller handling HTTP requests for hardware slot management, OTP binding, Nextcloud credentials, and device provisioning.
+ */
 export class EquipmentController {
+  /**
+   * Initializes EquipmentController with EquipmentService dependency.
+   *
+   * @param equipmentSvc - Equipment domain service
+   */
   constructor(private equipmentSvc: EquipmentService = equipmentService) {}
 
+  /**
+   * Handles querying hardware equipment slots allocated to a subscription.
+   *
+   * @param req - Express request with subId in params
+   * @param res - Express response returning array of slots
+   */
   async getSlots(req: Request, res: Response): Promise<void> {
     const subId = req.params.subId as string;
     const byAdmin = req.user!.role === 'ADMIN';
@@ -16,6 +30,13 @@ export class EquipmentController {
     });
   }
 
+  /**
+   * Handles activating and binding a device slot using an agent-issued pairing OTP.
+   *
+   * @param req - Express request with OTP and slot parameters in body
+   * @param res - Express response returning activated slot
+   * @throws {ValidationError} When OTP or slot parameters are malformed
+   */
   async activateWithOtp(req: Request, res: Response): Promise<void> {
     const { otp, subscriptionId, slotIndex, deviceName, deviceSerial } = req.body;
 
@@ -45,6 +66,13 @@ export class EquipmentController {
     });
   }
 
+  /**
+   * Handles retrieving live agent identity discovery prefill from a pairing OTP.
+   *
+   * @param req - Express request with OTP in query
+   * @param res - Express response returning discovered identity
+   * @throws {ValidationError} When OTP format is invalid
+   */
   async getAgentIdentity(req: Request, res: Response): Promise<void> {
     const otp = (req.query.otp as string) || '';
     if (!/^\d{6}$/.test(otp)) {
@@ -57,6 +85,12 @@ export class EquipmentController {
     });
   }
 
+  /**
+   * Handles deactivating an equipment slot and purging its cloud credentials.
+   *
+   * @param req - Express request with subId and slotIndex in params
+   * @param res - Express response returning reset slot
+   */
   async deactivateSlot(req: Request, res: Response): Promise<void> {
     const subId = req.params.subId as string;
     const slotIndex = parseInt(req.params.slotIndex as string, 10);
@@ -68,6 +102,12 @@ export class EquipmentController {
     });
   }
 
+  /**
+   * Handles unbinding an active slot for re-pairing and rotating Nextcloud access secrets.
+   *
+   * @param req - Express request with subId and slotIndex in params
+   * @param res - Express response returning unbound slot in PENDING_ACTIVATION state
+   */
   async repairSlot(req: Request, res: Response): Promise<void> {
     const subId = req.params.subId as string;
     const slotIndex = parseInt(req.params.slotIndex as string, 10);
@@ -79,6 +119,12 @@ export class EquipmentController {
     });
   }
 
+  /**
+   * Handles retrieving all active devices for the authenticated client or all devices for admins.
+   *
+   * @param req - Express request
+   * @param res - Express response returning array of active devices
+   */
   async getMyDevices(req: Request, res: Response): Promise<void> {
     const isClient = req.user!.role === 'CLIENT';
     const devices = isClient
@@ -90,6 +136,12 @@ export class EquipmentController {
     });
   }
 
+  /**
+   * Handles retrieving all devices globally across all tenants (Admin only).
+   *
+   * @param _req - Express request
+   * @param res - Express response returning array of all devices
+   */
   async getAllDevicesForAdmin(_req: Request, res: Response): Promise<void> {
     const devices = await this.equipmentSvc.getAllDevicesForAdmin();
     res.json({
@@ -98,6 +150,13 @@ export class EquipmentController {
     });
   }
 
+  /**
+   * Handles direct provisioning of an infrastructure device by an administrator.
+   *
+   * @param req - Express request with device parameters in body
+   * @param res - Express response returning HTTP 201 with created device slot
+   * @throws {ForbiddenError} When user is not an administrator
+   */
   async addAdminDevice(req: Request, res: Response): Promise<void> {
     if (req.user!.role !== 'ADMIN') {
       throw new ForbiddenError('Only administrators can register devices directly');
@@ -118,6 +177,13 @@ export class EquipmentController {
     });
   }
 
+  /**
+   * Handles permanently deleting an admin-owned equipment record.
+   *
+   * @param req - Express request with device ID in params
+   * @param res - Express response returning deletion status
+   * @throws {ForbiddenError} When user is not an administrator
+   */
   async deleteAdminDevice(req: Request, res: Response): Promise<void> {
     if (req.user!.role !== 'ADMIN') {
       throw new ForbiddenError('Only administrators can delete equipment');
@@ -130,6 +196,12 @@ export class EquipmentController {
     });
   }
 
+  /**
+   * Handles querying Nextcloud credentials and live storage usage for a specific device slot.
+   *
+   * @param req - Express request with subId and slotIndex in params
+   * @param res - Express response returning NextcloudStorageInfo
+   */
   async getSlotNextcloudInfo(req: Request, res: Response): Promise<void> {
     const subId = req.params.subId as string;
     const slotIndex = parseInt(req.params.slotIndex as string, 10);
@@ -141,6 +213,14 @@ export class EquipmentController {
     });
   }
 
+  /**
+   * Handles downloading an automated PowerShell deployment script for Nextcloud sync client installation.
+   *
+   * @param req - Express request with subId and slotIndex in params
+   * @param res - Express response returning PowerShell script download attachment
+   * @throws {ForbiddenError} When user is not an administrator
+   * @throws {ValidationError} When slot lacks provisioned Nextcloud credentials
+   */
   async getDeployScript(req: Request, res: Response): Promise<void> {
     if (req.user!.role !== 'ADMIN') {
       throw new ForbiddenError('Only administrators can generate deployment scripts');

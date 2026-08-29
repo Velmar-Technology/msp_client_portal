@@ -31,6 +31,11 @@ async function checkColumnExists(client: PoolClient, tableName: string, columnNa
   return res.rows[0].exists;
 }
 
+/**
+ * Ensures an administrator user account and tenant exist in the database, seeding from environment credentials if absent.
+ *
+ * @param client - PostgreSQL PoolClient connection
+ */
 export async function ensureAdminExists(client: PoolClient): Promise<void> {
   logger.info('Checking if an administrator user exists...');
   
@@ -92,6 +97,9 @@ export async function ensureAdminExists(client: PoolClient): Promise<void> {
   }
 }
 
+/**
+ * Runs pending SQL migrations sequentially inside transactional blocks and ensures initial admin bootstrap.
+ */
 export async function migrate(): Promise<void> {
   const migrationsDir = path.join(__dirname, 'migrations');
   const files = fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql')).sort();

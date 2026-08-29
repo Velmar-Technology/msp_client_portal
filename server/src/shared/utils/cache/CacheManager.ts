@@ -48,6 +48,14 @@ export class CacheManager implements CachePort {
 
   private readonly opTimeoutMs: number;
 
+  /**
+   * Initializes CacheManager with Redis, memory fallback cache, and generation tracker.
+   *
+   * @param redisService - Redis client management service
+   * @param memoryCache - Memory fallback LRU cache
+   * @param genTracker - Generation tracker for versioned cache keys
+   * @param opTimeoutMs - Operation timeout before fallback in milliseconds (default: 150)
+   */
   constructor(
     private redisService: RedisClientService = redisClientService,
     private memoryCache: MemoryFallbackCache = memoryFallbackCache,
@@ -57,6 +65,13 @@ export class CacheManager implements CachePort {
     this.opTimeoutMs = opTimeoutMs;
   }
 
+  /**
+   * Executes a Redis operation race with a circuit-breaker timeout, seamlessly falling back to memory.
+   *
+   * @param promise - Redis operation promise
+   * @param fallbackFn - Fallback memory operation function
+   * @returns Result from Redis or memory fallback
+   */
   private async withTimeout<T>(promise: Promise<T>, fallbackFn: () => T | Promise<T>): Promise<T> {
     let timeoutHandle: NodeJS.Timeout | undefined;
 
@@ -88,7 +103,11 @@ export class CacheManager implements CachePort {
   }
 
   /**
-   * Retrieves an item from the cache.
+   * Retrieves an item from the cache with automatic Date revival.
+   *
+   * @typeParam T - Cached value type
+   * @param key - Cache key string
+   * @returns Cached value or null if miss
    */
   async get<T>(key: string): Promise<T | null> {
     const redis = this.redisService.getClient();
@@ -133,7 +152,12 @@ export class CacheManager implements CachePort {
   }
 
   /**
-   * Stores an item in the cache with an optional TTL (in seconds).
+   * Stores an item in the cache across memory and Redis with an optional TTL (in seconds).
+   *
+   * @typeParam T - Cached value type
+   * @param key - Cache key string
+   * @param value - Value to cache
+   * @param ttlSeconds - Expiry in seconds (default: 300)
    */
   async set<T>(key: string, value: T, ttlSeconds = 300): Promise<void> {
     this.metrics.sets++;
@@ -158,7 +182,9 @@ export class CacheManager implements CachePort {
   }
 
   /**
-   * Deletes an item from the cache.
+   * Deletes an item from memory cache and Redis.
+   *
+   * @param key - Cache key string
    */
   async del(key: string): Promise<void> {
     this.memoryCache.del(key);
@@ -177,6 +203,12 @@ export class CacheManager implements CachePort {
 
   /**
    * Cache-Aside Wrapper: Fetches from cache, or evaluates fetcher and caches the result.
+   *
+   * @typeParam T - Cached value type
+   * @param key - Cache key string
+   * @param ttlSeconds - Time to live in seconds
+   * @param fetcher - Async loader function
+   * @returns Cached or freshly fetched value
    */
   async wrap<T>(key: string, ttlSeconds: number, fetcher: () => Promise<T>): Promise<T> {
     const cached = await this.get<T>(key);
@@ -195,6 +227,14 @@ export class CacheManager implements CachePort {
   /**
    * Versioned Cache-Aside Wrapper: Builds generation-aware key and caches value.
    * On invalidation, generation increment makes this key instantly stale across all workers.
+   *
+   * @typeParam T - Cached value type
+   * @param namespace - Domain namespace (e.g. 'tickets')
+   * @param scope - Scope or tenant identifier
+   * @param identifier - Key identifier
+   * @param ttlSeconds - Time to live in seconds
+   * @param fetcher - Async loader function
+   * @returns Cached or freshly fetched value
    */
   async wrapVersioned<T>(
     namespace: string,
@@ -208,16 +248,28 @@ export class CacheManager implements CachePort {
   }
 
   /**
-   * Invalidates all cached items under a specific namespace and scope atomically.
+   * Invalidates all cached items under a specific namespace and scope atomically via generation bumping.
+   *
+   * @param namespace - Domain namespace
+   * @param scope - Scope or tenant identifier (default: 'global')
+   * @returns New generation number
    */
   async invalidateScope(namespace: string, scope = 'global'): Promise<number> {
     return this.genTracker.invalidate(namespace, scope);
   }
 
+  /**
+   * Retrieves operational cache metrics (hits, misses, sets, fallbacks, errors).
+   *
+   * @returns CacheMetrics snapshot
+   */
   getMetrics(): CacheMetrics {
     return { ...this.metrics };
   }
 
+  /**
+   * Resets all operational cache counters to zero.
+   */
   resetMetrics(): void {
     this.metrics = { hits: 0, misses: 0, sets: 0, fallbacks: 0, errors: 0 };
   }

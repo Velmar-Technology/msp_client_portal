@@ -7,7 +7,19 @@ import { NotFoundError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
 import { Ticket, TicketAttachment, TicketResponse, UploadedFile, UserContext, UserRole } from '@shared/types';
 
+/**
+ * Domain service managing conversational message responses and reply attachments on support tickets.
+ */
 export class TicketResponseService {
+  /**
+   * Initializes TicketResponseService with repository, user, notification, and policy dependencies.
+   *
+   * @param ticketRepo - Ticket data repository
+   * @param responseRepo - Ticket conversation response repository
+   * @param userRepo - User repository for sender/recipient details
+   * @param notifSvc - Notification service for real-time alerts
+   * @param accessPol - Ticket access policy
+   */
   constructor(
     private ticketRepo: TicketRepository = ticketRepository,
     private responseRepo: TicketResponseRepository = ticketResponseRepository,
@@ -16,6 +28,15 @@ export class TicketResponseService {
     private accessPol: TicketAccessPolicy = ticketAccessPolicy,
   ) {}
 
+  /**
+   * Retrieves all conversational responses and their associated file attachments for a ticket.
+   *
+   * @param ticketId - Target ticket UUID
+   * @param ctx - Authenticated user context
+   * @returns Array of TicketResponse entities enriched with attachments
+   * @throws {NotFoundError} When ticket is not found
+   * @throws {ForbiddenError} When access to ticket is disallowed
+   */
   async getTicketResponses(ticketId: string, ctx: UserContext): Promise<TicketResponse[]> {
     await this.requireTicket(ticketId, ctx);
 
@@ -30,6 +51,17 @@ export class TicketResponseService {
     }));
   }
 
+  /**
+   * Posts a new reply message and optional file attachments to a ticket, and sends a notification to the counterparty.
+   *
+   * @param ticketId - Target ticket UUID
+   * @param message - Response body text
+   * @param ctx - Authenticated user context of the sender
+   * @param files - Optional list of uploaded file attachments
+   * @returns Newly created TicketResponse entity enriched with sender metadata
+   * @throws {NotFoundError} When ticket is not found
+   * @throws {ForbiddenError} When access is disallowed
+   */
   async addTicketResponse(
     ticketId: string,
     message: string,
@@ -70,6 +102,15 @@ export class TicketResponseService {
     };
   }
 
+  /**
+   * Validates ticket existence and read access.
+   *
+   * @param ticketId - Target ticket UUID
+   * @param ctx - Authenticated user context
+   * @returns Authorized Ticket entity
+   * @throws {NotFoundError} When ticket not found
+   * @throws {ForbiddenError} When access is forbidden
+   */
   private async requireTicket(ticketId: string, ctx: UserContext): Promise<Ticket> {
     const ticket = await this.ticketRepo.findById(ticketId);
     if (!ticket) {
@@ -79,6 +120,12 @@ export class TicketResponseService {
     return ticket;
   }
 
+  /**
+   * Helper to group a flat list of ticket attachments by their associated response ID.
+   *
+   * @param attachments - Array of attachments
+   * @returns Map of responseId -> TicketAttachment[]
+   */
   private groupAttachmentsByResponse(attachments: TicketAttachment[]): Map<string, TicketAttachment[]> {
     const grouped = new Map<string, TicketAttachment[]>();
     for (const attachment of attachments) {
@@ -90,6 +137,13 @@ export class TicketResponseService {
     return grouped;
   }
 
+  /**
+   * Dispatches a notification to the counterparty (technician if client responded, or client if technician responded).
+   *
+   * @param ticket - Target Ticket entity
+   * @param ctx - Authenticated sender context
+   * @param message - Reply message content
+   */
   private async notifyResponseRecipient(ticket: Ticket, ctx: UserContext, message: string): Promise<void> {
     try {
       const sender = await this.userRepo.findById(ctx.userId);

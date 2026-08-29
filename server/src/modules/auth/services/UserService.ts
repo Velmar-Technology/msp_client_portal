@@ -24,15 +24,40 @@ function sanitizeUser(user: User): Omit<User, 'password_hash'> {
   return sanitized;
 }
 
+/**
+ * Domain service managing user profiles, password changes, technician/client directories,
+ * and administrative user lifecycle operations.
+ */
 export class UserService {
+  /**
+   * Initializes UserService with UserRepository dependency.
+   *
+   * @param userRepo - Data repository for user operations
+   */
   constructor(private userRepo: UserRepository = userRepository) {}
 
+  /**
+   * Retrieves the sanitized profile of a user by ID.
+   *
+   * @param userId - Unique user identifier
+   * @returns Sanitized user profile without password hash
+   * @throws {NotFoundError} When user does not exist
+   */
   async getProfile(userId: string): Promise<Omit<User, 'password_hash'>> {
     const user = await this.userRepo.findById(userId);
     if (!user) throw new NotFoundError('User not found');
     return sanitizeUser(user);
   }
 
+  /**
+   * Updates an existing user's profile details with conflict checking for email addresses.
+   *
+   * @param userId - Unique user identifier
+   * @param data - Updated profile attributes
+   * @returns Sanitized updated user entity
+   * @throws {ConflictError} When requested email address is already claimed by another user
+   * @throws {InternalServerError} When database update fails
+   */
   async updateProfile(userId: string, data: UpdateProfileInput): Promise<Omit<User, 'password_hash'>> {
     if (data.email) {
       const existing = await this.userRepo.findByEmail(data.email);
@@ -46,6 +71,15 @@ export class UserService {
     return sanitizeUser(updated);
   }
 
+  /**
+   * Changes the current user's password after verifying existing credentials.
+   *
+   * @param userId - Unique user identifier
+   * @param data - Current and new password payload
+   * @returns Resolves when password update succeeds
+   * @throws {NotFoundError} When user does not exist
+   * @throws {UnauthorizedError} When current password verification fails
+   */
   async changePassword(userId: string, data: ChangePasswordInput): Promise<void> {
     const user = await this.userRepo.findById(userId);
     if (!user) throw new NotFoundError('User not found');
@@ -59,11 +93,21 @@ export class UserService {
     await this.userRepo.updatePassword(userId, hashed);
   }
 
+  /**
+   * Retrieves all active technician users in the platform.
+   *
+   * @returns List of sanitized technician user profiles
+   */
   async getTechnicians(): Promise<Omit<User, 'password_hash'>[]> {
     const techs = await this.userRepo.findByRole(UserRole.TECHNICIAN);
     return techs.map(sanitizeUser);
   }
 
+  /**
+   * Retrieves all active client users across tenants.
+   *
+   * @returns List of sanitized client user profiles
+   */
   async getClients(): Promise<Omit<User, 'password_hash'>[]> {
     const clients = await this.userRepo.findAllClients();
     return clients.map(sanitizeUser);
@@ -71,6 +115,12 @@ export class UserService {
 
   // ---- Admin User Management ----
 
+  /**
+   * Retrieves a paginated list of users with multi-column filtering and sorting.
+   *
+   * @param params - Pagination, search, role, status, and sorting parameters
+   * @returns Paginated result object with list of users, total count, and page metadata
+   */
   async getAllUsers(params: {
     page?: number;
     limit?: number;
@@ -122,6 +172,17 @@ export class UserService {
     };
   }
 
+  /**
+   * Updates the role of a target user account (Admin only). Prevents self-demotion.
+   *
+   * @param adminUserId - Authenticated admin ID initiating the request
+   * @param targetUserId - ID of user whose role is being changed
+   * @param newRole - Target UserRole value
+   * @returns Updated sanitized user entity
+   * @throws {ForbiddenError} When admin attempts to modify their own role
+   * @throws {NotFoundError} When target user is not found
+   * @throws {InternalServerError} When database update fails
+   */
   async updateUserRole(
     adminUserId: string,
     targetUserId: string,
@@ -140,6 +201,17 @@ export class UserService {
     return sanitizeUser(updated);
   }
 
+  /**
+   * Activates or disables a user account. Prevents admin self-deactivation.
+   *
+   * @param adminUserId - Authenticated admin ID initiating the request
+   * @param targetUserId - ID of user being updated
+   * @param isActive - New active status
+   * @returns Updated sanitized user entity
+   * @throws {ForbiddenError} When admin attempts to deactivate their own account
+   * @throws {NotFoundError} When target user is not found
+   * @throws {InternalServerError} When database update fails
+   */
   async toggleUserStatus(
     adminUserId: string,
     targetUserId: string,
@@ -158,6 +230,14 @@ export class UserService {
     return sanitizeUser(updated);
   }
 
+  /**
+   * Updates the active status of multiple users simultaneously, skipping self-updates.
+   *
+   * @param adminUserId - Authenticated admin ID
+   * @param targetUserIds - Array of target user IDs
+   * @param isActive - New active status
+   * @returns Object containing count of updated users
+   */
   async bulkUpdateStatus(
     adminUserId: string,
     targetUserIds: string[],
@@ -171,6 +251,14 @@ export class UserService {
     return { updatedCount };
   }
 
+  /**
+   * Updates the system role for multiple users in bulk, skipping self-updates.
+   *
+   * @param adminUserId - Authenticated admin ID
+   * @param targetUserIds - Array of target user IDs
+   * @param newRole - New target UserRole
+   * @returns Object containing count of updated users
+   */
   async bulkUpdateRole(
     adminUserId: string,
     targetUserIds: string[],
@@ -184,6 +272,16 @@ export class UserService {
     return { updatedCount };
   }
 
+  /**
+   * Updates the client type classification for a user.
+   *
+   * @param _adminUserId - Authenticated admin ID
+   * @param targetUserId - ID of user being updated
+   * @param newClientType - New client type string
+   * @returns Updated sanitized user entity
+   * @throws {NotFoundError} When target user is not found
+   * @throws {InternalServerError} When database update fails
+   */
   async updateUserClientType(
     _adminUserId: string,
     targetUserId: string,
@@ -198,6 +296,14 @@ export class UserService {
     return sanitizeUser(updated);
   }
 
+  /**
+   * Updates the client type classification for multiple users in bulk.
+   *
+   * @param _adminUserId - Authenticated admin ID
+   * @param targetUserIds - Array of target user IDs
+   * @param newClientType - New client type string
+   * @returns Object containing count of updated users
+   */
   async bulkUpdateClientType(
     _adminUserId: string,
     targetUserIds: string[],
@@ -210,6 +316,15 @@ export class UserService {
     return { updatedCount };
   }
 
+  /**
+   * Deletes a user account. Prevents admin self-deletion.
+   *
+   * @param adminUserId - Authenticated admin ID
+   * @param targetUserId - ID of user to delete
+   * @returns Resolves when deletion is complete
+   * @throws {ForbiddenError} When admin attempts to delete own account
+   * @throws {NotFoundError} When target user is not found
+   */
   async deleteUser(adminUserId: string, targetUserId: string): Promise<void> {
     if (adminUserId === targetUserId) {
       throw new ForbiddenError('You cannot delete your own account');
@@ -221,6 +336,13 @@ export class UserService {
     await this.userRepo.deleteById(targetUserId);
   }
 
+  /**
+   * Deletes multiple user accounts in bulk, filtering out the admin's own ID.
+   *
+   * @param adminUserId - Authenticated admin ID
+   * @param targetUserIds - Array of target user IDs
+   * @returns Object containing count of deleted users
+   */
   async bulkDeleteUsers(
     adminUserId: string,
     targetUserIds: string[]
@@ -233,8 +355,11 @@ export class UserService {
     return { deletedCount };
   }
 
-
-
+  /**
+   * Aggregates platform-wide user statistics including total users, role breakdown, and active counts.
+   *
+   * @returns Platform user metrics summary
+   */
   async getUserStats(): Promise<UserStats> {
     const [byRole, byStatus] = await Promise.all([
       this.userRepo.countByRole(),

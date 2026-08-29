@@ -4,11 +4,25 @@ import { db, plans } from '@shared/db';
 import { eq, and, ilike, asc, count, SQL } from 'drizzle-orm';
 import { cacheManager } from '@shared/utils/cache';
 
+/**
+ * Data repository managing service plans, cached with versioned generation tracking.
+ */
 export class PlanRepository extends BaseRepository<Plan> {
+  /**
+   * Initializes PlanRepository with CachePort abstraction.
+   *
+   * @param cache - CachePort implementation
+   */
   constructor(private cache: CachePort = cacheManager) {
     super(plans, 'plans');
   }
 
+  /**
+   * Finds a plan by ID, backed by generation-tracked Redis/memory caching.
+   *
+   * @param id - Plan string ID or UUID
+   * @returns Plan entity or null
+   */
   async findById(id: string): Promise<Plan | null> {
     if (!id) return null;
 
@@ -24,6 +38,12 @@ export class PlanRepository extends BaseRepository<Plan> {
     );
   }
 
+  /**
+   * Inserts a new plan record and invalidates the cached plans scope.
+   *
+   * @param data - Plan record properties
+   * @returns Created Plan entity
+   */
   async create(data: Omit<Plan, 'created_at' | 'updated_at'>): Promise<Plan> {
     const results = await db
       .insert(plans)
@@ -36,6 +56,13 @@ export class PlanRepository extends BaseRepository<Plan> {
     return results[0] as Plan;
   }
 
+  /**
+   * Updates an existing plan and atomically invalidates all cached plan queries.
+   *
+   * @param id - Plan ID
+   * @param data - Updated plan properties
+   * @returns Updated Plan entity or null
+   */
   async update(
     id: string,
     data: Partial<Omit<Plan, 'id' | 'created_at' | 'updated_at'>>
@@ -55,6 +82,12 @@ export class PlanRepository extends BaseRepository<Plan> {
     return (results[0] as Plan) || null;
   }
 
+  /**
+   * Finds plans matching filters (active state, client type, search term) with caching.
+   *
+   * @param filters - PlanFilters object
+   * @returns List of plans and total count
+   */
   async findWithFilters(filters: PlanFilters): Promise<{ plans: Plan[]; total: number }> {
     const filterKey = `filters:${JSON.stringify(filters)}`;
 

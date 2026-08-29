@@ -7,10 +7,25 @@ import { logger } from '@shared/utils/logger';
 
 const EXPIRY_WARNING_DAYS = 7;
 
+/**
+ * Periodic background daemon sweeping expiring subscriptions, triggering automated renewals,
+ * and dispatching advance expiration notices and due billing emails.
+ *
+ * @see BL-402 (Renewal Scheduler & Hardware Multiplier)
+ */
 export class SubscriptionScheduler {
   private intervalId: NodeJS.Timeout | null = null;
   private isProcessing = false;
 
+  /**
+   * Initializes SubscriptionScheduler with subscription, billing, notification, and user repositories.
+   *
+   * @param subscriptionRepo - Subscription repository
+   * @param notifSvc - Invoice notification service
+   * @param renewalSvc - Subscription renewal execution service
+   * @param notificationSvc - In-app and event notification service
+   * @param userRepo - User repository
+   */
   constructor(
     private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
     private notifSvc: InvoiceNotificationService = invoiceNotificationService,
@@ -19,6 +34,11 @@ export class SubscriptionScheduler {
     private userRepo: UserRepository = userRepository,
   ) {}
 
+  /**
+   * Starts the recurring background subscription sweep timer loop.
+   *
+   * @param intervalMs - Polling interval in milliseconds (default 15000ms)
+   */
   start(intervalMs = 15000): void {
     if (this.intervalId) return;
 
@@ -41,6 +61,9 @@ export class SubscriptionScheduler {
     }, intervalMs);
   }
 
+  /**
+   * Stops the recurring background subscription scheduler timer.
+   */
   stop(): void {
     if (this.intervalId) {
       clearInterval(this.intervalId);
@@ -49,10 +72,19 @@ export class SubscriptionScheduler {
     }
   }
 
+  /**
+   * Manual entry point to trigger a subscription evaluation cycle immediately.
+   */
   async processSubscriptions(): Promise<void> {
     return this.checkAndRenewSubscriptions();
   }
 
+  /**
+   * Main evaluation loop: sends overdue email reminders, sends 7-day expiration notices,
+   * and triggers renewal for contracts reaching expiration (BL-402).
+   *
+   * @see BL-402
+   */
   async checkAndRenewSubscriptions(): Promise<void> {
     const now = new Date();
 
@@ -83,6 +115,11 @@ export class SubscriptionScheduler {
     }
   }
 
+  /**
+   * Identifies subscriptions expiring within 7 days and dispatches advance warning notices.
+   *
+   * @param now - Reference current timestamp
+   */
   private async checkAndSendExpiryWarnings(now: Date): Promise<void> {
     const thresholdDate = new Date(now);
     thresholdDate.setDate(thresholdDate.getDate() + EXPIRY_WARNING_DAYS);

@@ -7,13 +7,31 @@ export interface DbHealthResult {
   message: string;
 }
 
+/**
+ * Repository performing low-level database connection pool health inspections and ping latency measurements.
+ */
 export class SystemRepository {
+  /**
+   * Initializes SystemRepository with database pool reference.
+   *
+   * @param dbInstance - Drizzle database instance
+   */
   constructor(private dbInstance = db) {}
 
+  /**
+   * Retrieves connection pool health metrics (active connections, failure counts, state).
+   *
+   * @returns PoolHealthStatus
+   */
   getPoolHealth(): PoolHealthStatus {
     return getPoolHealth();
   }
 
+  /**
+   * Pings the PostgreSQL database with SELECT 1 and calculates connection latency and health state.
+   *
+   * @returns DbHealthResult status, latencyMs, and message
+   */
   async pingDatabase(): Promise<DbHealthResult> {
     const start = Date.now();
     const poolHealth = this.getPoolHealth();

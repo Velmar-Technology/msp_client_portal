@@ -13,7 +13,25 @@ import { logger } from '@shared/utils/logger';
 import { Subscription, SubscriptionStatus, InvoiceStatus, UserRole } from '@shared/types';
 import { CreateSubscriptionInput, UpdateSubscriptionInput } from '@shared/dtos/subscription.dto';
 
+/**
+ * Domain service managing subscription creation, PayPal verification, slot allocations,
+ * device upgrades/downgrades, and cancellation de-provisioning workflows.
+ */
 export class SubscriptionLifecycleService {
+  /**
+   * Initializes SubscriptionLifecycleService with dependencies across domain modules.
+   *
+   * @param subscriptionRepo - Subscription repository
+   * @param userRepo - User repository
+   * @param planRepo - Plan repository
+   * @param invoiceRepo - Invoice repository
+   * @param equipmentRepo - Equipment inventory repository
+   * @param nextcloudSvc - Nextcloud integration service
+   * @param paypalSvc - PayPal integration service
+   * @param notifSvc - In-app notification service
+   * @param pricingSvc - Pricing calculation service
+   * @param subPaymentSvc - Subscription payment verification service
+   */
   constructor(
     private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
     private userRepo: UserRepository = userRepository,
@@ -27,6 +45,15 @@ export class SubscriptionLifecycleService {
     private subPaymentSvc: SubscriptionPaymentService = subscriptionPaymentService
   ) {}
 
+  /**
+   * Asserts that a target user exists, is assigned the CLIENT role, and matches tenant boundaries.
+   *
+   * @param clientId - Client user UUID
+   * @param tenantId - Tenant UUID
+   * @throws {NotFoundError} When user does not exist
+   * @throws {ForbiddenError} When user belongs to another tenant
+   * @throws {ValidationError} When user role is not CLIENT
+   */
   private async validateClientUser(clientId: string, tenantId: string): Promise<void> {
     const clientUser = await this.userRepo.findById(clientId);
     if (!clientUser) throw new NotFoundError('Client user not found');
@@ -34,6 +61,14 @@ export class SubscriptionLifecycleService {
     if (clientUser.role !== 'CLIENT') throw new ValidationError('Target user must have CLIENT role');
   }
 
+  /**
+   * Prevents creating duplicate active subscriptions for the exact same plan tier.
+   *
+   * @param clientId - Client user UUID
+   * @param tenantId - Tenant UUID
+   * @param plan - Target plan tier identifier
+   * @throws {ValidationError} When an active subscription for the plan already exists
+   */
   private async checkDuplicateActivePlan(clientId: string, tenantId: string, plan: string): Promise<void> {
     const existingSubs = await this.subscriptionRepo.findByClient(clientId, tenantId);
     const hasActivePlan = existingSubs.some((sub) => sub.plan === plan && sub.status === 'ACTIVE');
@@ -42,6 +77,12 @@ export class SubscriptionLifecycleService {
     }
   }
 
+  /**
+   * Projects the initial renewal date (1 month vs 1 year from now).
+   *
+   * @param billingCycle - 'monthly' or 'annual'
+   * @returns Projected renewal date
+   */
   private calculateRenewalDate(billingCycle: 'monthly' | 'annual'): Date {
     const renewalDate = new Date();
     if (billingCycle === 'annual') {
@@ -52,6 +93,13 @@ export class SubscriptionLifecycleService {
     return renewalDate;
   }
 
+  /**
+   * Pre-provisions blank equipment slot records in PENDING_ACTIVATION state matching device count.
+   *
+   * @param subscriptionId - Target subscription UUID
+   * @param equipmentCount - Number of hardware slots
+   * @param tenantId - Tenant UUID
+   */
   private async initializeEquipmentSlots(subscriptionId: string, equipmentCount: number, tenantId: string): Promise<void> {
     for (let i = 0; i < equipmentCount; i++) {
       await this.equipmentRepo.create({
@@ -63,6 +111,17 @@ export class SubscriptionLifecycleService {
     }
   }
 
+  /**
+   * Generates the initial invoice record corresponding to the new subscription contract.
+   *
+   * @param plan - Plan identifier
+   * @param equipmentCount - Number of equipment units
+   * @param billingCycle - 'monthly' or 'annual'
+   * @param clientId - Client user UUID
+   * @param tenantId - Tenant UUID
+   * @param isBankTransfer - Whether payment is wire transfer
+   * @param byAdmin - Whether created by administrator
+   */
   private async createInitialInvoice(
     plan: string,
     equipmentCount: number,
@@ -97,6 +156,15 @@ export class SubscriptionLifecycleService {
     });
   }
 
+  /**
+   * Sends in-app activation or bank transfer intent notifications to client and admins.
+   *
+   * @param clientId - Client user UUID
+   * @param tenantId - Tenant UUID
+   * @param serviceName - Formatted plan display title
+   * @param isBankTransfer - True if wire transfer
+   * @param byAdmin - True if created by admin
+   */
   private async notifySubscriptionCreation(
     clientId: string,
     tenantId: string,
@@ -147,6 +215,16 @@ export class SubscriptionLifecycleService {
     }
   }
 
+  /**
+   * Creates and initializes a new subscription contract, validating payment, provisioning slots, and logging invoices.
+   *
+   * @param data - CreateSubscriptionInput attributes
+   * @param clientId - Client user UUID
+   * @param tenantId - Tenant UUID
+   * @param byAdmin - Whether invoked by administrator
+   * @returns Created Subscription entity
+   * @throws {ValidationError} When PayPal payment verification fails or duplicate plan active
+   */
   async createSubscription(data: CreateSubscriptionInput, clientId: string, tenantId: string, byAdmin = false): Promise<Subscription> {
     await this.validateClientUser(clientId, tenantId);
 
@@ -209,6 +287,12 @@ export class SubscriptionLifecycleService {
     return subscription;
   }
 
+  /**
+   * Cleans up de-provisioned hardware slots and Nextcloud user credentials during a subscription downgrade.
+   *
+   * @param subscriptionId - Target subscription UUID
+   * @param newCount - Downscaled equipment slot limit
+   */
   private async handleDowngradeEquipmentCleanup(subscriptionId: string, newCount: number): Promise<void> {
     const slots = await this.equipmentRepo.findBySubscription(subscriptionId);
     for (const slot of slots) {
@@ -231,6 +315,11 @@ export class SubscriptionLifecycleService {
     }
   }
 
+  /**
+   * De-provisions all hardware slot credentials and Nextcloud accounts for a fully cancelled subscription.
+   *
+   * @param subscriptionId - Target subscription UUID
+   */
   private async handleCancellationEquipmentCleanup(subscriptionId: string): Promise<void> {
     const slots = await this.equipmentRepo.findBySubscription(subscriptionId);
     for (const slot of slots) {
@@ -253,6 +342,18 @@ export class SubscriptionLifecycleService {
     }
   }
 
+  /**
+   * Updates plan tier, equipment slot capacity, or cancellation status on a subscription.
+   *
+   * @param id - Subscription UUID
+   * @param data - UpdateSubscriptionInput attributes
+   * @param tenantId - Tenant UUID
+   * @param byAdmin - Whether invoked by administrator
+   * @returns Updated Subscription entity
+   * @throws {NotFoundError} When subscription or plan not found
+   * @throws {ForbiddenError} When subscription does not belong to tenant
+   * @throws {ValidationError} When PayPal order ID missing for device upgrade
+   */
   async updateSubscription(id: string, data: UpdateSubscriptionInput, tenantId: string, byAdmin = false): Promise<Subscription> {
     const sub = await this.subscriptionRepo.findById(id);
     if (!sub) throw new NotFoundError('Subscription not found');

@@ -8,20 +8,30 @@ import { ValidationError } from '@shared/errors';
  * All endpoints require authentication and ADMIN or TECHNICIAN role.
  */
 export class AgentGatewayController {
+  /**
+   * Initializes AgentGatewayController with EquipmentService dependency.
+   *
+   * @param equipmentSvc - Equipment domain service
+   */
   constructor(private equipmentSvc: EquipmentService = equipmentService) {}
 
   /**
    * Resolves a technician-supplied slot UUID to the physical agent's install
    * UUID, so command routing works whether the caller knows the slot or the
    * agent instance.
+   *
+   * @param equipmentId - Equipment slot or agent UUID
+   * @returns Resolved agent UUID
    */
   private async resolveTarget(equipmentId: string): Promise<string> {
     return this.equipmentSvc.resolveAgentIdForSlot(equipmentId);
   }
 
   /**
-   * GET /api/v1/rmm/agent/:equipmentId/status
    * Returns whether the remote Rust agent is connected and its metadata.
+   *
+   * @param req - Express request with equipmentId in params
+   * @param res - Express response returning agent status
    */
   async getAgentStatus(req: Request, res: Response): Promise<void> {
     const target = await this.resolveTarget(String(req.params.equipmentId));
@@ -30,8 +40,10 @@ export class AgentGatewayController {
   }
 
   /**
-   * GET /api/v1/rmm/agent/connected
    * Returns a list of all currently connected agents.
+   *
+   * @param _req - Express request
+   * @param res - Express response returning connected agents array
    */
   async getConnectedAgents(_req: Request, res: Response): Promise<void> {
     const agents = agentGateway.getConnectedAgents();
@@ -39,10 +51,11 @@ export class AgentGatewayController {
   }
 
   /**
-   * POST /api/v1/rmm/agent/:equipmentId/exec
    * Dispatches an arbitrary command to a remote agent and returns the response.
    *
-   * Body: { command: string, payload?: any, timeoutMs?: number }
+   * @param req - Express request with equipmentId in params and command, payload, timeoutMs in body
+   * @param res - Express response returning command execution result
+   * @throws {ValidationError} When command is missing or invalid
    */
   async execCommand(req: Request, res: Response): Promise<void> {
     const { command, payload, timeoutMs } = req.body;
@@ -57,8 +70,10 @@ export class AgentGatewayController {
   }
 
   /**
-   * POST /api/v1/rmm/agent/:equipmentId/diagnostics
    * Shorthand endpoint to run a full DIAGNOSE_PC on the remote agent.
+   *
+   * @param req - Express request with equipmentId in params
+   * @param res - Express response returning diagnostics data
    */
   async getDiagnostics(req: Request, res: Response): Promise<void> {
     const target = await this.resolveTarget(String(req.params.equipmentId));
@@ -67,10 +82,10 @@ export class AgentGatewayController {
   }
 
   /**
-   * POST /api/v1/rmm/agent/:equipmentId/event-logs
    * Queries Windows Event Logs on the remote endpoint.
    *
-   * Body: { log_name?: string, level?: string, max_events?: number }
+   * @param req - Express request with equipmentId in params and log filters in body
+   * @param res - Express response returning event logs
    */
   async getEventLogs(req: Request, res: Response): Promise<void> {
     const { log_name, level, max_events } = req.body;
@@ -84,8 +99,10 @@ export class AgentGatewayController {
   }
 
   /**
-   * POST /api/v1/rmm/agent/:equipmentId/security-audit
    * Runs a security posture audit (BitLocker, Defender, Firewall) on the remote endpoint.
+   *
+   * @param req - Express request with equipmentId in params
+   * @param res - Express response returning security audit results
    */
   async getSecurityAudit(req: Request, res: Response): Promise<void> {
     const target = await this.resolveTarget(String(req.params.equipmentId));

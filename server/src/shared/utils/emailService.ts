@@ -98,6 +98,11 @@ function getTransporter(): nodemailer.Transporter {
   return transporter;
 }
 
+/**
+ * Sends a transactional email through Nodemailer SMTP or logs payload when running in stub mode.
+ *
+ * @param payload - NotificationPayload containing recipient, subject, and HTML body
+ */
 export async function sendEmail(payload: NotificationPayload): Promise<void> {
   const transport = getTransporter();
   const usingSMTP = !useStubTransporter;
@@ -310,7 +315,11 @@ function renderDisclaimer(text: string): string {
 /* ── Transactional Email Senders ──────────────────────────── */
 
 /**
- * Send a ticket creation welcome email to the client.
+ * Sends a ticket creation welcome email to the client containing ticket metadata.
+ *
+ * @param clientEmail - Recipient email address
+ * @param clientName - Recipient display name
+ * @param ticket - Created Ticket entity
  */
 export async function sendTicketCreatedEmail(
   clientEmail: string,
@@ -375,7 +384,12 @@ export async function sendTicketCreatedEmail(
 }
 
 /**
- * Send a ticket status update email to the client with comments/notes.
+ * Sends a ticket status update notification email to the client with optional notes.
+ *
+ * @param clientEmail - Recipient email address
+ * @param clientName - Recipient display name
+ * @param ticket - Updated Ticket entity
+ * @param notes - Optional status transition notes from technician
  */
 export async function sendTicketStatusChangedEmail(
   clientEmail: string,
@@ -452,7 +466,11 @@ export async function sendTicketStatusChangedEmail(
 }
 
 /**
- * Send a ticket assignment notification email to the technician.
+ * Sends a ticket assignment notification email to the assigned technician.
+ *
+ * @param technicianEmail - Technician email address
+ * @param technicianName - Technician display name
+ * @param ticket - Assigned Ticket entity
  */
 export async function sendTicketAssignedEmail(
   technicianEmail: string,
@@ -520,7 +538,12 @@ export async function sendTicketAssignedEmail(
 }
 
 /**
- * Send a ticket status update email to the client (legacy fallback).
+ * Sends a ticket status update email to the client (legacy fallback).
+ *
+ * @param clientEmail - Recipient email address
+ * @param ticketId - Ticket UUID
+ * @param newStatus - New ticket status string
+ * @param notes - Optional status transition notes
  */
 export async function sendTicketStatusEmail(
   clientEmail: string,
@@ -564,7 +587,13 @@ export async function sendTicketStatusEmail(
 }
 
 /**
- * Send a notification when a new response is added to a ticket.
+ * Sends a notification email when a new response is posted to a ticket thread.
+ *
+ * @param recipientEmail - Recipient email address
+ * @param recipientName - Recipient display name
+ * @param senderName - Sender display name
+ * @param ticket - Ticket entity
+ * @param message - New reply message body
  */
 export async function sendTicketResponseEmail(
   recipientEmail: string,
@@ -621,7 +650,17 @@ export async function sendTicketResponseEmail(
 }
 
 /**
- * Send a plan quotation email to the client/customer.
+ * Sends a plan quotation estimate email to the prospective client.
+ *
+ * @param clientEmail - Recipient email address
+ * @param clientName - Recipient display name
+ * @param plan - Quoted Plan entity
+ * @param billingCycle - Billing cadence ('monthly' | 'annual')
+ * @param equipmentCount - Number of covered devices
+ * @param subtotal - Subtotal amount
+ * @param tax - Tax amount
+ * @param total - Total price
+ * @param language - Recipient language code (e.g., 'es_DO', 'en_US')
  */
 export async function sendQuotationEmail(
   clientEmail: string,
@@ -749,7 +788,12 @@ export async function sendQuotationEmail(
 }
 
 /**
- * Send an invoice payment due email notification to the client.
+ * Sends an invoice payment due email notification to the client.
+ *
+ * @param clientEmail - Recipient email address
+ * @param clientName - Recipient display name
+ * @param invoice - Invoice entity
+ * @param language - Language code ('es_DO', 'en_US')
  */
 export async function sendInvoiceDueEmail(
   clientEmail: string,
@@ -828,7 +872,13 @@ export async function sendInvoiceDueEmail(
 }
 
 /**
- * Send a subscription expiry warning email to the client (7 days before renewal).
+ * Sends a subscription expiry warning email to the client (7 days before renewal).
+ *
+ * @param clientEmail - Recipient email address
+ * @param clientName - Recipient display name
+ * @param serviceName - Subscribed service/plan name
+ * @param renewalDate - Scheduled renewal date
+ * @param language - Language code ('es_DO', 'en_US')
  */
 export async function sendSubscriptionExpiringEmail(
   clientEmail: string,
@@ -905,7 +955,12 @@ export async function sendSubscriptionExpiringEmail(
 }
 
 /**
- * Send an OTP verification email to the newly registered user.
+ * Sends an OTP 6-digit verification code email to a user.
+ *
+ * @param recipientEmail - Recipient email address
+ * @param recipientName - Recipient display name
+ * @param otp - 6-digit OTP string
+ * @param language - Optional language code ('es_DO', 'en_US')
  */
 export async function sendOTPEmail(
   recipientEmail: string,
@@ -951,7 +1006,12 @@ export async function sendOTPEmail(
 }
 
 /**
- * Send a password reset email to the user with secure token and reset link.
+ * Sends a password reset email to the user with a secure reset link.
+ *
+ * @param recipientEmail - Recipient email address
+ * @param recipientName - Recipient display name
+ * @param resetToken - Cryptographic reset token string
+ * @param language - Optional language code ('es_DO', 'en_US')
  */
 export async function sendPasswordResetEmail(
   recipientEmail: string,

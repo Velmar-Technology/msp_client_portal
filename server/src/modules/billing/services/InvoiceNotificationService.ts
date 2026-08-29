@@ -5,15 +5,31 @@ import { notificationService, NotificationService } from '@modules/notifications
 import { sendInvoiceDueEmail } from '@shared/utils/emailService';
 import { logger } from '@shared/utils/logger';
 
+/**
+ * Domain service dispatching in-app alerts and anti-spam throttled email reminders for invoice lifecycle events.
+ */
 export class InvoiceNotificationService {
+  /** Minimum interval (3 days in milliseconds) enforced between recurring payment reminder emails. */
   readonly MIN_NOTIFICATION_INTERVAL_MS = 3 * 24 * 60 * 60 * 1000;
 
+  /**
+   * Initializes InvoiceNotificationService with user repository, invoice repository, and notification service dependencies.
+   *
+   * @param userRepo - User repository
+   * @param invoiceRepo - Invoice repository
+   * @param notifService - In-app notification service
+   */
   constructor(
     private userRepo: UserRepository = userRepository,
     private invoiceRepo: InvoiceRepository = invoiceRepository,
     private notifService: NotificationService = notificationService,
   ) {}
 
+  /**
+   * Dispatches in-app notifications to client and all administrators after an online payment is received.
+   *
+   * @param invoice - Paid invoice entity
+   */
   async notifyPaymentReceived(invoice: Invoice): Promise<void> {
     await this.notifService.createInAppNotification({
       userId: invoice.client_id,
@@ -43,6 +59,11 @@ export class InvoiceNotificationService {
     }
   }
 
+  /**
+   * Dispatches in-app confirmation notifications after an administrator manually confirms payment.
+   *
+   * @param invoice - Paid invoice entity
+   */
   async notifyManualPaymentConfirmed(invoice: Invoice): Promise<void> {
     await this.notifService.createInAppNotification({
       userId: invoice.client_id,
@@ -72,6 +93,14 @@ export class InvoiceNotificationService {
     }
   }
 
+  /**
+   * Dispatches notifications when an invoice is cancelled.
+   *
+   * @param invoice - Cancelled invoice entity
+   * @param userId - Initiating user ID
+   * @param userRole - Initiating user role
+   * @param reason - Optional cancellation reason
+   */
   async notifyInvoiceCancelled(invoice: Invoice, userId: string, userRole: UserRole, reason?: string): Promise<void> {
     const reasonSuffix = reason ? ` Reason: ${reason}` : '';
     await this.notifService.createInAppNotification({
@@ -106,12 +135,26 @@ export class InvoiceNotificationService {
     }
   }
 
+  /**
+   * Checks whether an invoice reminder email can be sent based on 3-day minimum interval anti-spam rules.
+   *
+   * @param lastSentAt - Date/timestamp of previous email
+   * @param now - Current reference timestamp
+   * @returns True if eligible for new email
+   */
   isEligibleForEmailNotification(lastSentAt: Date | string | null | undefined, now = new Date()): boolean {
     if (!lastSentAt) return true;
     const lastSentMs = new Date(lastSentAt).getTime();
     return (now.getTime() - lastSentMs) >= this.MIN_NOTIFICATION_INTERVAL_MS;
   }
 
+  /**
+   * Evaluates and sends an email payment reminder for an unpaid due invoice, updating last_email_sent_at.
+   *
+   * @param invoice - Invoice entity
+   * @param now - Current reference timestamp
+   * @returns True if email was successfully sent
+   */
   async processDueInvoiceEmailNotification(invoice: Invoice, now = new Date()): Promise<boolean> {
     if (invoice.status === 'PAID' || invoice.status === 'CANCELLED') {
       return false;
@@ -138,6 +181,12 @@ export class InvoiceNotificationService {
     return true;
   }
 
+  /**
+   * Sweeps all pending overdue/due invoices and sends eligible email reminders.
+   *
+   * @param now - Current reference timestamp
+   * @returns Total number of emails sent
+   */
   async checkAndSendDueInvoiceNotifications(now = new Date()): Promise<number> {
     const pendingInvoices = await this.invoiceRepo.findPendingDueInvoices();
     let sentCount = 0;

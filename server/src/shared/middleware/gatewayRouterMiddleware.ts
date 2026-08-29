@@ -50,7 +50,11 @@ gatewayClusterRouter.use('/rmm', rmmRoutes);
 gatewayClusterRouter.use('/crm', crmRoutes);
 
 /**
- * Middleware ensuring standard Gateway Header propagation on all cluster requests.
+ * Middleware ensuring standard Gateway Header (`X-User-Id`, `X-Tenant-Id`) propagation on all cluster requests.
+ *
+ * @param req - Express request
+ * @param _res - Express response
+ * @param next - Express next function
  */
 export function gatewayHeaderPropagatorMiddleware(
   req: Request,
