@@ -242,10 +242,8 @@ Continuous Integration and Deployment is automated via GitHub Actions ([.github/
 2. **Database Migrations:**
 
    ```bash
-   # From project root:
-   npm run db:migrate --prefix server
-   # Run multi-tenancy schema migration script:
-   npx tsx server/src/shared/db/apply_migration_003.ts
+   # Run all pending migrations:
+   npm -w server run db:migrate
    ```
 
 3. **Database Seeding:**
