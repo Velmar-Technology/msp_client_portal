@@ -3,6 +3,7 @@ import { ticketResponseRepository, TicketResponseRepository } from '@modules/tic
 import { userRepository, UserRepository } from '@modules/auth';
 import { notificationService, NotificationService } from '@modules/notifications';
 import { ticketAccessPolicy, TicketAccessPolicy } from '@shared/policies/TicketAccessPolicy';
+import { accountStatusPolicy, AccountStatusPolicy } from '@shared/policies/AccountStatusPolicy';
 import { NotFoundError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
 import { Ticket, TicketAttachment, TicketResponse, UploadedFile, UserContext, UserRole } from '@shared/types';
@@ -19,6 +20,7 @@ export class TicketResponseService {
    * @param userRepo - User repository for sender/recipient details
    * @param notifSvc - Notification service for real-time alerts
    * @param accessPol - Ticket access policy
+   * @param accountPol - Account status policy for read-only / suspension enforcement
    */
   constructor(
     private ticketRepo: TicketRepository = ticketRepository,
@@ -26,6 +28,7 @@ export class TicketResponseService {
     private userRepo: UserRepository = userRepository,
     private notifSvc: NotificationService = notificationService,
     private accessPol: TicketAccessPolicy = ticketAccessPolicy,
+    private accountPol: AccountStatusPolicy = accountStatusPolicy,
   ) {}
 
   /**
@@ -59,6 +62,7 @@ export class TicketResponseService {
    * @param ctx - Authenticated user context of the sender
    * @param files - Optional list of uploaded file attachments
    * @returns Newly created TicketResponse entity enriched with sender metadata
+   * @throws {ForbiddenError} When the account is in Read-Only, Suspended, or Purged state (Section 9.3)
    * @throws {NotFoundError} When ticket is not found
    * @throws {ForbiddenError} When access is disallowed
    */
@@ -68,6 +72,7 @@ export class TicketResponseService {
     ctx: UserContext,
     files: UploadedFile[] = [],
   ): Promise<TicketResponse> {
+    this.accountPol.assertWriteAllowed(ctx);
     const ticket = await this.requireTicket(ticketId, ctx);
 
     const response = await this.responseRepo.create({

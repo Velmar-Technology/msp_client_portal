@@ -40,6 +40,23 @@ describe('BillingPricingService', () => {
       expect(result.tax).toBe(172.8);
       expect(result.total).toBe(1132.8);
     });
+    it('should calculate pricing with DOP currency', () => {
+      const result = pricingService.calculatePricing(5800, 1, 'monthly', 'DOP');
+      expect(result.subtotal).toBe(5800);
+      expect(result.tax).toBe(1044); // 5800 * 0.18
+      expect(result.total).toBe(6844);
+      expect(result.currency).toBe('DOP');
+    });
+  });
+
+  describe('formatCurrency', () => {
+    it('formats USD amount properly', () => {
+      expect(pricingService.formatCurrency(150, 'USD')).toBe('$150.00 USD');
+    });
+
+    it('formats DOP amount properly', () => {
+      expect(pricingService.formatCurrency(6844, 'DOP')).toBe('RD$ 6,844.00 DOP');
+    });
   });
 
   describe('generateInvoiceNumber', () => {

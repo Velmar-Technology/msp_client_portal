@@ -6,6 +6,7 @@ export const UpdateProfileDTO = z.object({
   language: z.enum(['en_US', 'es_DO']).optional(),
   avatar_url: z.string().max(1000).optional().nullable(),
   phone_number: z.string().max(50).optional().nullable(),
+  rnc: z.string().max(20).optional().nullable(),
 });
 export type UpdateProfileInput = z.infer<typeof UpdateProfileDTO>;
 

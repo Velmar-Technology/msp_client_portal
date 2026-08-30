@@ -1,4 +1,4 @@
-import { User, ShieldCheck, Mail, Phone, Lock, Save, Globe, Edit, Clock, Loader2, Info, Key, Copy, KeyRound } from "lucide-react";
+import { User, ShieldCheck, Mail, Phone, Lock, Save, Globe, Edit, Clock, Loader2, Info, Key, Copy, KeyRound, FileText } from "lucide-react";
 import { Page } from "@/components/Page";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -89,7 +89,7 @@ const ProfileIdentityCard = ({
 };
 
 const AccountDetailsForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) => {
-  const { t, name, setName, email, setEmail, phoneNumber, setPhoneNumber, language, setLanguage, saving, isDirty, handleSave } = hook;
+  const { t, name, setName, email, setEmail, phoneNumber, setPhoneNumber, rnc, setRnc, language, setLanguage, saving, isDirty, handleSave } = hook;
 
   return (
     <form
@@ -150,6 +150,22 @@ const AccountDetailsForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
           </div>
 
           <div>
+            <label
+              htmlFor="profile-rnc"
+              className="mb-1.5 flex items-center gap-2 text-xs font-medium text-foreground"
+            >
+              <FileText className="h-3.5 w-3.5 text-muted-foreground" /> {t("billing.rncLabel", "RNC / Cédula (NCF)")}
+            </label>
+            <Input
+              id="profile-rnc"
+              type="text"
+              value={rnc}
+              onChange={(e) => setRnc(e.target.value)}
+              placeholder={t("billing.rncPlaceholder", "e.g. 1-32-12345-6 or 402-0000000-0")}
+            />
+          </div>
+
+          <div className="md:col-span-2">
             <label htmlFor="profile-language-select" className="mb-1.5 flex items-center gap-2 text-xs font-medium text-foreground">
               <Globe className="h-3.5 w-3.5 text-muted-foreground" /> {t("profile.languageSetting")}
             </label>

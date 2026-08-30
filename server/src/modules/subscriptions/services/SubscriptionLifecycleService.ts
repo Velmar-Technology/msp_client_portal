@@ -1,7 +1,7 @@
 import { SubscriptionRepository, subscriptionRepository } from '@modules/subscriptions/repositories/SubscriptionRepository';
-import { UserRepository, userRepository } from '@modules/auth';
+import { UserRepository, userRepository, TenantRepository, tenantRepository } from '@modules/auth';
 import { PlanRepository, planRepository } from '../repositories/PlanRepository';
-import { InvoiceRepository, invoiceRepository } from '@modules/billing';
+import { InvoiceRepository, invoiceRepository, NcfService, ncfService } from '@modules/billing';
 import { EquipmentRepository, equipmentRepository } from '@modules/equipment';
 import { NextcloudService, nextcloudService } from '@modules/system';
 import { PaypalService, paypalService } from '@modules/billing';
@@ -31,6 +31,8 @@ export class SubscriptionLifecycleService {
    * @param notifSvc - In-app notification service
    * @param pricingSvc - Pricing calculation service
    * @param subPaymentSvc - Subscription payment verification service
+   * @param ncfSvc - Dominican NCF generation service
+   * @param tenantRepo - Tenant repository
    */
   constructor(
     private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
@@ -42,7 +44,9 @@ export class SubscriptionLifecycleService {
     private paypalSvc: PaypalService = paypalService,
     private notifSvc: NotificationService = notificationService,
     private pricingSvc: BillingPricingService = billingPricingService,
-    private subPaymentSvc: SubscriptionPaymentService = subscriptionPaymentService
+    private subPaymentSvc: SubscriptionPaymentService = subscriptionPaymentService,
+    private ncfSvc: NcfService = ncfService,
+    private tenantRepo: TenantRepository = tenantRepository
   ) {}
 
   /**
@@ -137,6 +141,11 @@ export class SubscriptionLifecycleService {
     const pricing = this.pricingSvc.calculatePricing(planDetails.price, equipmentCount, billingCycle);
     const invoiceNumber = await this.pricingSvc.generateInvoiceNumber();
 
+    const client = await this.userRepo.findById(clientId);
+    const tenant = await this.tenantRepo.findById(tenantId);
+    const effectiveRnc = client?.rnc || tenant?.rnc || null;
+    const ncf = await this.ncfSvc.assignNcfIfEligible(effectiveRnc);
+
     const dueDate = new Date();
     if (isBankTransfer || byAdmin) {
       dueDate.setDate(dueDate.getDate() + 30);
@@ -150,6 +159,9 @@ export class SubscriptionLifecycleService {
       amount: pricing.subtotal,
       tax_amount: pricing.tax,
       total: pricing.total,
+      currency: 'USD',
+      ncf,
+      rnc: effectiveRnc,
       due_date: dueDate,
       tenant_id: tenantId,
       status: invoiceStatus,
@@ -427,6 +439,11 @@ export class SubscriptionLifecycleService {
           const additionalCount = newCount - sub.equipment_count;
           const upgradePricing = this.pricingSvc.calculateUpgradePricing(planDetails.price, additionalCount, billingCycle);
 
+          const client = await this.userRepo.findById(sub.client_id);
+          const tenant = await this.tenantRepo.findById(tenantId);
+          const effectiveRnc = client?.rnc || tenant?.rnc || null;
+          const ncf = await this.ncfSvc.assignNcfIfEligible(effectiveRnc);
+
           if (data.paypalOrderId) {
             await this.subPaymentSvc.verifyPaypalUpgradePayment(data.paypalOrderId, upgradePricing.total);
             const invoiceNumber = await this.pricingSvc.generateInvoiceNumber();
@@ -436,6 +453,9 @@ export class SubscriptionLifecycleService {
               amount: upgradePricing.subtotal,
               tax_amount: upgradePricing.tax,
               total: upgradePricing.total,
+              currency: 'USD',
+              ncf,
+              rnc: effectiveRnc,
               due_date: new Date(),
               tenant_id: tenantId,
               status: InvoiceStatus.PAID,
@@ -451,6 +471,9 @@ export class SubscriptionLifecycleService {
               amount: upgradePricing.subtotal,
               tax_amount: upgradePricing.tax,
               total: upgradePricing.total,
+              currency: 'USD',
+              ncf,
+              rnc: effectiveRnc,
               due_date: dueDate,
               tenant_id: tenantId,
               status: InvoiceStatus.PENDING,

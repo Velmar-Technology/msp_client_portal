@@ -16,6 +16,7 @@ export interface CustomerBillingInfo {
   clientType?: string | null;
   clientId?: string | null;
   accountNumber?: string | null;
+  rnc?: string | null;
 }
 
 /**
@@ -62,6 +63,7 @@ const labels: Record<string, Record<string, string>> = {
     invoice: 'INVOICE',
     invoiceDetails: 'INVOICE DETAILS',
     number: 'Invoice Number:',
+    ncf: 'NCF (Tax Voucher):',
     date: 'Invoice Date:',
     dueDate: 'Due Date:',
     paymentTermsLabel: 'Terms:',
@@ -70,6 +72,7 @@ const labels: Record<string, Record<string, string>> = {
     billTo: 'BILL TO / CUSTOMER',
     clientName: 'Contact:',
     company: 'Company:',
+    rnc: 'RNC / Tax ID:',
     email: 'Email:',
     phone: 'Phone:',
     accountRef: 'Client Ref:',
@@ -79,17 +82,19 @@ const labels: Record<string, Record<string, string>> = {
     invoicerAddress: APP_METADATA.address,
     invoicerPhone: `Tel: ${APP_METADATA.phone}`,
     invoicerBillingEmail: `Billing: ${APP_METADATA.billingEmail}`,
+    invoicerRnc: `RNC: ${APP_METADATA.rnc}`,
     desc: 'Description & Scope',
     qty: 'Qty',
     unitPrice: 'Unit Price',
     amount: 'Amount',
     subtotal: 'Subtotal:',
-    tax: 'Tax (18% ITBIS):',
+    tax: 'ITBIS (18% Tax):',
     total: 'Total Amount Due:',
-    paymentTerms: 'Payment Terms & Instructions',
+    paymentTerms: 'Payment Terms & Suspension Policy (Sec. 9)',
     paymentDue: 'Payment is due within 14 days of invoice issue date.',
     paymentPortal: 'Please settle invoices via the Client Portal or PayPal gateway.',
     paymentMethods: 'Accepted methods: PayPal, Bank Wire Transfer, Credit/Debit Card.',
+    nonPaymentScale: 'Non-payment scale: Day 5 (Read-Only), Day 15 (Suspension), Day 30 (Data Purge).',
     thankYou: `Thank you for choosing ${APP_METADATA.company} for your IT operations!`,
     support: `Support: ${APP_METADATA.email} | ${APP_METADATA.phone}`,
     serviceDesc: APP_METADATA.tagline,
@@ -102,6 +107,7 @@ const labels: Record<string, Record<string, string>> = {
     invoice: 'FACTURA',
     invoiceDetails: 'DETALLES DE FACTURA',
     number: 'No. Factura:',
+    ncf: 'NCF (Crédito Fiscal):',
     date: 'Fecha Factura:',
     dueDate: 'Fecha Vencimiento:',
     paymentTermsLabel: 'Condición:',
@@ -110,6 +116,7 @@ const labels: Record<string, Record<string, string>> = {
     billTo: 'FACTURAR A / CLIENTE',
     clientName: 'Contacto:',
     company: 'Empresa:',
+    rnc: 'RNC / Cédula:',
     email: 'Correo:',
     phone: 'Teléfono:',
     accountRef: 'Ref. Cliente:',
@@ -119,17 +126,19 @@ const labels: Record<string, Record<string, string>> = {
     invoicerAddress: APP_METADATA.address,
     invoicerPhone: `Tel: ${APP_METADATA.phone}`,
     invoicerBillingEmail: `Facturación: ${APP_METADATA.billingEmail}`,
+    invoicerRnc: `RNC: ${APP_METADATA.rnc}`,
     desc: 'Descripción y Alcance',
     qty: 'Cant',
     unitPrice: 'Precio Unitario',
     amount: 'Monto',
     subtotal: 'Subtotal:',
-    tax: 'Impuesto (18% ITBIS):',
+    tax: 'ITBIS (18% Impuesto):',
     total: 'Total a Pagar:',
-    paymentTerms: 'Términos y Datos de Pago',
+    paymentTerms: 'Términos y Política de Impagos (Sec. 9)',
     paymentDue: 'El pago vence dentro de los 14 días posteriores a la emisión de la factura.',
     paymentPortal: 'Favor realizar sus pagos a través del Portal de Clientes o PayPal.',
-    paymentMethods: 'Métodos aceptados: PayPal, Transferencia Bancaria, Tarjeta de Crédito/Débito.',
+    paymentMethods: 'Métodos: PayPal, Transferencia Bancaria, Tarjeta de Crédito/Débito.',
+    nonPaymentScale: 'Escala impagos: Día 5 (Solo Lectura), Día 15 (Suspensión), Día 30 (Purga Datos).',
     thankYou: `¡Gracias por confiar en ${APP_METADATA.company} para sus operaciones de TI!`,
     support: `Soporte: ${APP_METADATA.email} | ${APP_METADATA.phone}`,
     serviceDesc: 'Suscripción de Servicios de TI Gestionados y Soporte Técnico',
@@ -142,7 +151,7 @@ const labels: Record<string, Record<string, string>> = {
 
 /**
  * Generates a compliant PDF binary buffer invoice document complete with embedded branding,
- * full customer billing details, provider contact info, and line item tables using PDFKit.
+ * full customer billing details, provider contact info, NCF fiscal numbers, RNC, and line item tables using PDFKit.
  *
  * @param invoice - Invoice entity with billing details and optional line items
  * @param customerOrName - Full customer metadata object or client name string (for backwards compatibility)
@@ -170,6 +179,15 @@ export function generateInvoicePdf(
           : customerOrName;
 
       const t = labels[language] || labels['en_US'];
+      const currency = invoice.currency || 'USD';
+      const isDop = currency === 'DOP';
+      const currSymbol = isDop ? 'RD$ ' : '$';
+      const currSuffix = isDop ? ' DOP' : ' USD';
+
+      const formatMoney = (val: number | string) => {
+        return currSymbol + Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      };
+
       const doc = new PDFDocument({
         size: 'A4',
         margin: 50,
@@ -200,9 +218,9 @@ export function generateInvoicePdf(
         year: 'numeric',
       });
 
-      const subtotalVal = '$' + Number(invoice.amount).toFixed(2);
-      const taxVal = '$' + Number(invoice.tax_amount).toFixed(2);
-      const totalVal = '$' + Number(invoice.total).toFixed(2);
+      const subtotalVal = formatMoney(invoice.amount);
+      const taxVal = formatMoney(invoice.tax_amount);
+      const totalVal = formatMoney(invoice.total) + currSuffix;
 
       // Status configuration
       let statusText = t.pending;
@@ -249,20 +267,21 @@ export function generateInvoicePdf(
       }
 
       // Invoicer Provider Info
-      doc.font('Helvetica-Bold').fontSize(12).fillColor('#0f172a').text(t.invoicerTitle, headerTextX, 48);
-      doc.font('Helvetica').fontSize(8).fillColor('#64748b').text(t.invoicerTagline, headerTextX, 63);
-      doc.font('Helvetica').fontSize(7.5).fillColor('#64748b').text(`${t.invoicerAddress}  •  ${t.invoicerPhone}`, headerTextX, 74);
-      doc.font('Helvetica').fontSize(7.5).fillColor('#64748b').text(`${t.invoicerBillingEmail}  •  ${APP_METADATA.website}`, headerTextX, 85);
+      doc.font('Helvetica-Bold').fontSize(11).fillColor('#0f172a').text(t.invoicerTitle, headerTextX, 46);
+      doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#174a7b').text(t.invoicerRnc, headerTextX, 59);
+      doc.font('Helvetica').fontSize(7.5).fillColor('#64748b').text(t.invoicerTagline, headerTextX, 70);
+      doc.font('Helvetica').fontSize(7).fillColor('#64748b').text(`${t.invoicerAddress}  •  ${t.invoicerPhone}`, headerTextX, 80);
+      doc.font('Helvetica').fontSize(7).fillColor('#64748b').text(`${t.invoicerBillingEmail}  •  ${APP_METADATA.website}`, headerTextX, 90);
 
       // Document Title (Right side)
-      doc.font('Helvetica-Bold').fontSize(22).fillColor('#174a7b').text(t.invoice, 370, 46, {
+      doc.font('Helvetica-Bold').fontSize(20).fillColor('#174a7b').text(t.invoice, 370, 44, {
         width: 175,
         align: 'right',
       });
 
       // Status Badge Pill
-      doc.roundedRect(445, 75, 100, 18, 3).fillAndStroke(statusBgColor, statusBorderColor);
-      doc.font('Helvetica-Bold').fontSize(8.5).fillColor(statusTextColor).text(statusText.toUpperCase(), 445, 80, {
+      doc.roundedRect(445, 70, 100, 18, 3).fillAndStroke(statusBgColor, statusBorderColor);
+      doc.font('Helvetica-Bold').fontSize(8.5).fillColor(statusTextColor).text(statusText.toUpperCase(), 445, 75, {
         width: 100,
         align: 'center',
       });
@@ -272,53 +291,68 @@ export function generateInvoicePdf(
 
       // 4. Two-Column Metadata & Customer Details Box
       const boxY = 114;
-      const boxHeight = 88;
+      const boxHeight = 92;
       const colWidth = 242;
 
       // Left Box: Invoice Details
       doc.roundedRect(50, boxY, colWidth, boxHeight, 4).fillAndStroke('#f8fafc', '#e2e8f0');
-      doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#1e293b').text(t.invoiceDetails, 60, boxY + 8);
+      doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#1e293b').text(t.invoiceDetails, 60, boxY + 7);
 
-      doc.font('Helvetica-Bold').fontSize(8).fillColor('#64748b').text(t.number, 60, boxY + 23);
-      doc.font('Helvetica-Bold').fontSize(8).fillColor('#0f172a').text(invoice.invoice_number, 140, boxY + 23);
+      doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#64748b').text(t.number, 60, boxY + 20);
+      doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#0f172a').text(invoice.invoice_number, 140, boxY + 20);
 
-      doc.font('Helvetica-Bold').fontSize(8).fillColor('#64748b').text(t.date, 60, boxY + 37);
-      doc.font('Helvetica').fontSize(8).fillColor('#334155').text(dateStr, 140, boxY + 37);
+      if (invoice.ncf) {
+        doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#174a7b').text(t.ncf, 60, boxY + 34);
+        doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#174a7b').text(invoice.ncf, 140, boxY + 34);
+      }
 
-      doc.font('Helvetica-Bold').fontSize(8).fillColor('#64748b').text(t.dueDate, 60, boxY + 51);
-      doc.font('Helvetica').fontSize(8).fillColor('#334155').text(dueDateStr, 140, boxY + 51);
+      const dateLineY = invoice.ncf ? boxY + 48 : boxY + 34;
+      const dueDateLineY = invoice.ncf ? boxY + 62 : boxY + 48;
+      const termsLineY = invoice.ncf ? boxY + 76 : boxY + 62;
 
-      doc.font('Helvetica-Bold').fontSize(8).fillColor('#64748b').text(t.paymentTermsLabel, 60, boxY + 65);
-      doc.font('Helvetica').fontSize(8).fillColor('#334155').text(t.paymentTermsValue, 140, boxY + 65);
+      doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#64748b').text(t.date, 60, dateLineY);
+      doc.font('Helvetica').fontSize(7.5).fillColor('#334155').text(dateStr, 140, dateLineY);
+
+      doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#64748b').text(t.dueDate, 60, dueDateLineY);
+      doc.font('Helvetica').fontSize(7.5).fillColor('#334155').text(dueDateStr, 140, dueDateLineY);
+
+      doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#64748b').text(t.paymentTermsLabel, 60, termsLineY);
+      doc.font('Helvetica').fontSize(7.5).fillColor('#334155').text(t.paymentTermsValue, 140, termsLineY);
 
       // Right Box: Customer & Bill To Details
       const rightBoxX = 303;
       doc.roundedRect(rightBoxX, boxY, colWidth, boxHeight, 4).fillAndStroke('#f8fafc', '#e2e8f0');
-      doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#1e293b').text(t.billTo, rightBoxX + 10, boxY + 8);
+      doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#1e293b').text(t.billTo, rightBoxX + 10, boxY + 7);
 
       const customerCompany = customer.tenantName || 'N/A';
       const customerContact = customer.name || 'N/A';
       const customerEmail = customer.email || 'N/A';
       const customerPhone = customer.phoneNumber || 'N/A';
-      const customerType = customer.clientType ? `[${customer.clientType}]` : '';
+      const effectiveRnc = customer.rnc || invoice.rnc;
 
-      doc.font('Helvetica-Bold').fontSize(8).fillColor('#64748b').text(t.company, rightBoxX + 10, boxY + 23);
-      doc.font('Helvetica-Bold').fontSize(8).fillColor('#0f172a').text(customerCompany, rightBoxX + 65, boxY + 23, { width: 170, ellipsis: true });
+      doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#64748b').text(t.company, rightBoxX + 10, boxY + 20);
+      doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#0f172a').text(customerCompany, rightBoxX + 65, boxY + 20, { width: 170, ellipsis: true });
 
-      doc.font('Helvetica-Bold').fontSize(8).fillColor('#64748b').text(t.clientName, rightBoxX + 10, boxY + 37);
-      doc.font('Helvetica').fontSize(8).fillColor('#334155').text(customerContact, rightBoxX + 65, boxY + 37, { width: 170, ellipsis: true });
-
-      doc.font('Helvetica-Bold').fontSize(8).fillColor('#64748b').text(t.email, rightBoxX + 10, boxY + 51);
-      doc.font('Helvetica').fontSize(8).fillColor('#334155').text(customerEmail, rightBoxX + 65, boxY + 51, { width: 170, ellipsis: true });
-
-      doc.font('Helvetica-Bold').fontSize(8).fillColor('#64748b').text(t.phone, rightBoxX + 10, boxY + 65);
-      doc.font('Helvetica').fontSize(8).fillColor('#334155').text(customerPhone, rightBoxX + 65, boxY + 65, { width: 110, ellipsis: true });
-      if (customerType) {
-        doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#64748b').text(customerType, rightBoxX + 175, boxY + 65, { width: 60, align: 'right' });
+      if (effectiveRnc) {
+        doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#174a7b').text(t.rnc, rightBoxX + 10, boxY + 34);
+        doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#174a7b').text(effectiveRnc, rightBoxX + 65, boxY + 34, { width: 170, ellipsis: true });
       }
 
+      const clientLineY = effectiveRnc ? boxY + 48 : boxY + 34;
+      const emailLineY = effectiveRnc ? boxY + 62 : boxY + 48;
+      const phoneLineY = effectiveRnc ? boxY + 76 : boxY + 62;
+
+      doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#64748b').text(t.clientName, rightBoxX + 10, clientLineY);
+      doc.font('Helvetica').fontSize(7.5).fillColor('#334155').text(customerContact, rightBoxX + 65, clientLineY, { width: 170, ellipsis: true });
+
+      doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#64748b').text(t.email, rightBoxX + 10, emailLineY);
+      doc.font('Helvetica').fontSize(7.5).fillColor('#334155').text(customerEmail, rightBoxX + 65, emailLineY, { width: 170, ellipsis: true });
+
+      doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#64748b').text(t.phone, rightBoxX + 10, phoneLineY);
+      doc.font('Helvetica').fontSize(7.5).fillColor('#334155').text(customerPhone, rightBoxX + 65, phoneLineY, { width: 170, ellipsis: true });
+
       // 5. Line Items Table Header
-      const tableHeaderY = 212;
+      const tableHeaderY = 216;
       const tableHeaderHeight = 22;
       doc.rect(50, tableHeaderY, 495, tableHeaderHeight).fill('#0f172a');
 
@@ -351,8 +385,8 @@ export function generateInvoicePdf(
         doc.rect(50, currentY, 495, rowHeight).fill(rowBg);
 
         const itemQty = item.quantity || 1;
-        const itemUnitPrice = '$' + Number(item.unit_price).toFixed(2);
-        const itemAmount = '$' + Number(item.amount ?? item.quantity * item.unit_price).toFixed(2);
+        const itemUnitPrice = formatMoney(item.unit_price);
+        const itemAmount = formatMoney(item.amount ?? item.quantity * item.unit_price);
 
         doc.font('Helvetica').fontSize(8.5).fillColor('#1e293b');
         doc.text(item.description, 60, currentY + 6, { width: 250, ellipsis: true });
@@ -370,29 +404,30 @@ export function generateInvoicePdf(
       const summaryY = Math.max(currentY + 16, 290);
 
       // Left Side: Payment Details & Instructions Box
-      doc.roundedRect(50, summaryY, 275, 78, 4).fillAndStroke('#f8fafc', '#e2e8f0');
-      doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#1e293b').text(t.paymentTerms, 60, summaryY + 8);
-      doc.font('Helvetica').fontSize(7.5).fillColor('#64748b').text(t.paymentDue, 60, summaryY + 22, { width: 255 });
-      doc.font('Helvetica').fontSize(7.5).fillColor('#64748b').text(t.paymentPortal, 60, summaryY + 36, { width: 255 });
-      doc.font('Helvetica').fontSize(7.5).fillColor('#64748b').text(t.paymentMethods, 60, summaryY + 50, { width: 255 });
+      doc.roundedRect(50, summaryY, 275, 86, 4).fillAndStroke('#f8fafc', '#e2e8f0');
+      doc.font('Helvetica-Bold').fontSize(8).fillColor('#1e293b').text(t.paymentTerms, 60, summaryY + 7);
+      doc.font('Helvetica').fontSize(7).fillColor('#64748b').text(t.paymentDue, 60, summaryY + 19, { width: 255 });
+      doc.font('Helvetica').fontSize(7).fillColor('#64748b').text(t.paymentPortal, 60, summaryY + 31, { width: 255 });
+      doc.font('Helvetica').fontSize(7).fillColor('#64748b').text(t.paymentMethods, 60, summaryY + 43, { width: 255 });
+      doc.font('Helvetica-Bold').fontSize(6.8).fillColor('#dc2626').text(t.nonPaymentScale, 60, summaryY + 57, { width: 255 });
 
       // Right Side: Calculations Breakdown Box
-      const totalsX = 345;
-      const totalsWidth = 200;
-      doc.roundedRect(totalsX, summaryY, totalsWidth, 78, 4).fillAndStroke('#ffffff', '#e2e8f0');
+      const totalsX = 335;
+      const totalsWidth = 210;
+      doc.roundedRect(totalsX, summaryY, totalsWidth, 86, 4).fillAndStroke('#ffffff', '#e2e8f0');
 
-      doc.font('Helvetica').fontSize(8.5).fillColor('#64748b').text(t.subtotal, totalsX + 12, summaryY + 10, { width: 95 });
-      doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#0f172a').text(subtotalVal, totalsX + 110, summaryY + 10, { width: 78, align: 'right' });
+      doc.font('Helvetica').fontSize(8).fillColor('#64748b').text(t.subtotal, totalsX + 12, summaryY + 10, { width: 95 });
+      doc.font('Helvetica-Bold').fontSize(8).fillColor('#0f172a').text(subtotalVal, totalsX + 110, summaryY + 10, { width: 88, align: 'right' });
 
-      doc.font('Helvetica').fontSize(8.5).fillColor('#64748b').text(t.tax, totalsX + 12, summaryY + 26, { width: 95 });
-      doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#0f172a').text(taxVal, totalsX + 110, summaryY + 26, { width: 78, align: 'right' });
+      doc.font('Helvetica').fontSize(8).fillColor('#64748b').text(t.tax, totalsX + 12, summaryY + 26, { width: 95 });
+      doc.font('Helvetica-Bold').fontSize(8).fillColor('#0f172a').text(taxVal, totalsX + 110, summaryY + 26, { width: 88, align: 'right' });
 
       // Divider inside totals box
-      doc.strokeColor('#cbd5e1').lineWidth(0.75).moveTo(totalsX + 10, summaryY + 42).lineTo(totalsX + totalsWidth - 10, summaryY + 42).stroke();
+      doc.strokeColor('#cbd5e1').lineWidth(0.75).moveTo(totalsX + 10, summaryY + 44).lineTo(totalsX + totalsWidth - 10, summaryY + 44).stroke();
 
       // Total Line
-      doc.font('Helvetica-Bold').fontSize(9.5).fillColor('#0f172a').text(t.total, totalsX + 12, summaryY + 52, { width: 95 });
-      doc.font('Helvetica-Bold').fontSize(11).fillColor('#174a7b').text(totalVal, totalsX + 105, summaryY + 50, { width: 83, align: 'right' });
+      doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#0f172a').text(t.total, totalsX + 12, summaryY + 54, { width: 95 });
+      doc.font('Helvetica-Bold').fontSize(10).fillColor('#174a7b').text(totalVal, totalsX + 90, summaryY + 52, { width: 110, align: 'right' });
 
       // 8. Footer (Fixed at bottom)
       const footerY = 765;

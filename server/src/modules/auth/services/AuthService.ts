@@ -127,7 +127,24 @@ export class AuthService {
    * @throws {UnauthorizedError} When credentials do not match or user is not found
    * @throws {ForbiddenError} When user account is deactivated or email is not verified
    */
-  async login(data: LoginInput, ipAddress: string): Promise<{ user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null; lastLoginAt: string | null; lastLoginIp: string | null; clientType: string; phoneNumber: string | null }; tokens: AuthTokens }> {
+  async login(data: LoginInput, ipAddress: string): Promise<{
+    user: {
+      id: string;
+      email: string;
+      name: string;
+      role: UserRole;
+      language: string;
+      tenantId: string;
+      avatarUrl: string | null;
+      lastLoginAt: string | null;
+      lastLoginIp: string | null;
+      clientType: string;
+      phoneNumber: string | null;
+      accountStatus?: any;
+      rnc?: string | null;
+    };
+    tokens: AuthTokens;
+  }> {
     const user = await this.userRepo.findByEmail(data.email);
     if (!user) {
       throw new UnauthorizedError('Invalid email or password');
@@ -160,10 +177,11 @@ export class AuthService {
       email: user.email,
       role: user.role,
       tenantId: user.tenant_id,
+      accountStatus: user.account_status,
     });
 
     return {
-      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id, avatarUrl: user.avatar_url, lastLoginAt: previousLoginAt, lastLoginIp: previousLoginIp, clientType: user.client_type, phoneNumber: user.phone_number ?? null },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id, avatarUrl: user.avatar_url, lastLoginAt: previousLoginAt, lastLoginIp: previousLoginIp, clientType: user.client_type, phoneNumber: user.phone_number ?? null, accountStatus: user.account_status, rnc: user.rnc ?? null },
       tokens,
     };
   }
@@ -180,21 +198,21 @@ export class AuthService {
    * @throws {UnauthorizedError} When Google ID token signature or payload verification fails
    * @throws {ForbiddenError} When existing user account is deactivated
    */
-  async googleAuth(data: GoogleAuthInput, ipAddress: string): Promise<{
-    user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null; lastLoginAt: string | null; lastLoginIp: string | null; clientType: string; phoneNumber: string | null };
+  async googleAuth(data: GoogleAuthInput & { mockEmail?: string; mockName?: string }, ipAddress: string): Promise<{
+    user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null; lastLoginAt: string | null; lastLoginIp: string | null; clientType: string; phoneNumber: string | null; accountStatus?: any; rnc?: string | null };
     tokens: AuthTokens;
     isNewUser: boolean;
   }> {
     let email: string;
     let name: string;
 
-    if (data.idToken.startsWith('mock-google-token-')) {
+    if (data.idToken.startsWith('mock-google-token-') || data.idToken === 'mock-google-id-token') {
       if (env.NODE_ENV === 'production') {
         throw new ValidationError('Mock Google login is only allowed in development');
       }
       const parts = data.idToken.split('-');
-      email = parts[3] || 'mock@example.com';
-      name = parts[4] || 'Mock User';
+      email = parts[3] || data.mockEmail || 'demo-client@velmar.com';
+      name = parts[4] || data.mockName || 'Demo Client';
     } else {
       if (!env.GOOGLE_CLIENT_ID) {
         throw new InternalServerError('Google client ID is not configured');
@@ -277,10 +295,11 @@ export class AuthService {
       email: user.email,
       role: user.role,
       tenantId: user.tenant_id,
+      accountStatus: user.account_status,
     });
 
     return {
-      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id, avatarUrl: user.avatar_url, lastLoginAt: previousLoginAt, lastLoginIp: previousLoginIp, clientType: user.client_type, phoneNumber: user.phone_number ?? null },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id, avatarUrl: user.avatar_url, lastLoginAt: previousLoginAt, lastLoginIp: previousLoginIp, clientType: user.client_type, phoneNumber: user.phone_number ?? null, accountStatus: user.account_status, rnc: user.rnc ?? null },
       tokens,
       isNewUser,
     };
@@ -311,6 +330,7 @@ export class AuthService {
         email: user.email,
         role: user.role,
         tenantId: user.tenant_id,
+        accountStatus: user.account_status,
       });
     } catch {
       throw new UnauthorizedError('Invalid or expired refresh token');

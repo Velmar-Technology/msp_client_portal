@@ -75,6 +75,8 @@ Dependencies point strictly **INWARD**: `Frameworks/Drivers` $\rightarrow$ `Inte
 | **BL-402** | Renewal Scheduler | Cron evaluates expiry, calculates hardware multiplier ($M_{\text{equip}}$), creates invoices, and dispatches billing emails. |
 | **BL-501** | CRM Lead Pipeline | Deals progress: `NEW` $\rightarrow$ `QUALIFIED` $\rightarrow$ `PROPOSAL` $\rightarrow$ `NEGOTIATION` $\rightarrow$ `WON`/`LOST`. `WON` auto-provisions client tenant. |
 | **BL-601** | Account Health | $H = 0.40 S_{\text{ticket}} + 0.30 S_{\text{hardware}} + 0.30 S_{\text{security}}$. Score $< 70\%$ flags QBR review task. |
+| **BL-701** | NCF & 18% ITBIS Tax | Rates in USD or DOP apply 18% ITBIS tax. Automatically generates Series B01 sequential NCF vouchers when tenant or client supplies a valid DGII Modulo 11/10 RNC or Cédula. |
+| **BL-702** | 4-Tier Non-Payment Scale | Evaluates oldest overdue invoice: Day 1 (Collection Notice), Day 5 (`READ_ONLY` mode, write mutations blocked), Day 15 (`SUSPENDED` mode, access halted), Day 30 (`PURGED` mode, Nextcloud storage and device credentials permanently deleted for storage liberation with zero liability). Settling payments restores account to `ACTIVE`. |
 
 ---
 

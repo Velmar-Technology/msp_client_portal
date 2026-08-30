@@ -33,12 +33,18 @@ export const invoiceStatusEnum = pgEnum('invoice_status', ['PENDING', 'PAID', 'O
 export const leadStageEnum = pgEnum('lead_stage', ['NEW', 'QUALIFIED', 'PROPOSITION', 'WON', 'LOST']);
 export const leadPriorityEnum = pgEnum('lead_priority', ['LOW', 'MEDIUM', 'HIGH']);
 export const quotationStatusEnum = pgEnum('quotation_status', ['DRAFT', 'SENT', 'ACCEPTED', 'DECLINED', 'EXPIRED']);
+export const accountStatusEnum = pgEnum('account_status', ['ACTIVE', 'READ_ONLY', 'SUSPENDED', 'PURGED']);
 
 // ---- Tenants ----
 export const tenants = pgTable('tenants', {
   id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
   name: varchar('name', { length: 255 }).notNull(),
   subdomain: varchar('subdomain', { length: 100 }).unique(),
+  rnc: varchar('rnc', { length: 50 }),
+  account_status: accountStatusEnum('account_status').default('ACTIVE').notNull(),
+  read_only_at: timestamp('read_only_at', { withTimezone: true }),
+  suspended_at: timestamp('suspended_at', { withTimezone: true }),
+  purged_at: timestamp('purged_at', { withTimezone: true }),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
@@ -54,6 +60,8 @@ export const users = pgTable(
     role: userRoleEnum('role').default('CLIENT').notNull(),
     specialty: varchar('specialty', { length: 100 }),
     is_active: boolean('is_active').default(true),
+    account_status: accountStatusEnum('account_status').default('ACTIVE').notNull(),
+    rnc: varchar('rnc', { length: 50 }),
     email_verified: boolean('email_verified').default(false),
     otp_code: varchar('otp_code', { length: 10 }),
     otp_expires: timestamp('otp_expires', { withTimezone: true }),
@@ -243,6 +251,9 @@ export const invoices = pgTable(
     amount: decimal('amount', { precision: 12, scale: 2 }).$type<number>().notNull(),
     tax_amount: decimal('tax_amount', { precision: 12, scale: 2 }).$type<number>().default(0).notNull(),
     total: decimal('total', { precision: 12, scale: 2 }).$type<number>().notNull(),
+    currency: varchar('currency', { length: 10 }).default('USD').notNull(),
+    ncf: varchar('ncf', { length: 50 }),
+    rnc: varchar('rnc', { length: 50 }),
     status: invoiceStatusEnum('status').default('PENDING').notNull(),
     invoice_date: date('invoice_date', { mode: 'date' }).defaultNow().notNull(),
     due_date: date('due_date', { mode: 'date' }).notNull(),

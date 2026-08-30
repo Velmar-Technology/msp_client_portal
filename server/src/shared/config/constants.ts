@@ -18,6 +18,15 @@ export const APP_METADATA = {
   supportHours: 'Mon - Fri: 9:00 AM - 4:00 PM EST',
   address: 'San Pedro de Macoris, Dominican Republic',
   securityStandard: 'AES-256 Encryption',
+  rnc: '1-32-23734-1',
+} as const;
+
+/** Non-Payment suspension scale milestones in overdue days (Section 9.3) */
+export const NON_PAYMENT_SCALE_DAYS = {
+  DAY_1_NOTICE: 1,
+  DAY_5_READ_ONLY: 5,
+  DAY_15_SUSPENSION: 15,
+  DAY_30_PURGE: 30,
 } as const;
 
 /** SLA window in milliseconds — 1 hour for warranty/service ticket modifications */

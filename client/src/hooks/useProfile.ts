@@ -22,6 +22,7 @@ export function useProfile() {
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
   const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || "");
+  const [rnc, setRnc] = useState(user?.rnc || "");
   const [language, setLanguage] = useState(user?.language || "en_US");
   const [saving, setSaving] = useState(false);
 
@@ -84,8 +85,8 @@ export function useProfile() {
     e.preventDefault();
     setSaving(true);
     try {
-      await userService.updateProfile({ name, email, language, phoneNumber });
-      updateUser({ name, email, language, phoneNumber });
+      await userService.updateProfile({ name, email, language, phoneNumber, rnc });
+      updateUser({ name, email, language, phoneNumber, rnc });
       await i18n.changeLanguage(language);
       toast.success(t("profile.success"));
     } catch {
@@ -93,7 +94,7 @@ export function useProfile() {
     } finally {
       setSaving(false);
     }
-  }, [name, email, language, phoneNumber, t, i18n, updateUser]);
+  }, [name, email, language, phoneNumber, rnc, t, i18n, updateUser]);
 
   const formatRelativeTime = useCallback((isoDate: string): string => {
     const now = Date.now();
@@ -133,6 +134,7 @@ export function useProfile() {
     if (months === 1) return "1 month ago";
     return `${months} months ago`;
   }, [i18n.language]);
+
   const lastLoginText = user?.lastLoginAt
     ? t("profile.lastLogin", {
         time: formatRelativeTime(user.lastLoginAt),
@@ -144,6 +146,7 @@ export function useProfile() {
     name !== (user?.name || "") ||
     email !== (user?.email || "") ||
     phoneNumber !== (user?.phoneNumber || "") ||
+    rnc !== (user?.rnc || "") ||
     language !== (user?.language || "en_US");
 
   const isPasswordDirty =
@@ -185,6 +188,7 @@ export function useProfile() {
     name, setName,
     email, setEmail,
     phoneNumber, setPhoneNumber,
+    rnc, setRnc,
     language, setLanguage,
     saving,
     isDirty,

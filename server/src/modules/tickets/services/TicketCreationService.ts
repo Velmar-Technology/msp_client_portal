@@ -4,6 +4,7 @@ import { userRepository, UserRepository } from '@modules/auth';
 import { assignmentService, AssignmentService } from '@modules/tickets/services/AssignmentService';
 import { notificationService, NotificationService } from '@modules/notifications';
 import { ticketQuotaService, TicketQuotaService } from '@modules/tickets/services/TicketQuotaService';
+import { accountStatusPolicy, AccountStatusPolicy } from '@shared/policies/AccountStatusPolicy';
 import { logger } from '@shared/utils/logger';
 import { Ticket, TicketPriority, TicketStatus, UserContext } from '@shared/types';
 import { CreateTicketInput } from '@shared/dtos/ticket.dto';
@@ -25,6 +26,7 @@ export interface CreateAlertTicketOptions {
  *
  * @see BL-201 (Feature Quota Enforcement)
  * @see BL-102 (Round-Robin Technician Dispatch)
+ * @see Section 9.3 (Non-Payment Suspension Scale - Read-Only lock)
  */
 export class TicketCreationService {
   /**
@@ -36,6 +38,7 @@ export class TicketCreationService {
    * @param assignmentSvc - Assignment domain service for technician dispatch
    * @param notifSvc - Notification service for real-time alerts
    * @param quotaSvc - Quota service for plan limit enforcement
+   * @param accountPol - Account status policy for read-only / suspension enforcement
    */
   constructor(
     private ticketRepo: TicketRepository = ticketRepository,
@@ -44,6 +47,7 @@ export class TicketCreationService {
     private assignmentSvc: AssignmentService = assignmentService,
     private notifSvc: NotificationService = notificationService,
     private quotaSvc: TicketQuotaService = ticketQuotaService,
+    private accountPol: AccountStatusPolicy = accountStatusPolicy,
   ) {}
 
   private get ticketsRepo(): TicketRepository {
@@ -70,6 +74,10 @@ export class TicketCreationService {
     return this.quotaSvc || ticketQuotaService;
   }
 
+  private get accountPolicy(): AccountStatusPolicy {
+    return this.accountPol || accountStatusPolicy;
+  }
+
   /**
    * Creates a new support ticket from client request after validating subscription quotas,
    * creates an initial audit event, automatically assigns an available technician,
@@ -78,11 +86,14 @@ export class TicketCreationService {
    * @param data - Ticket creation details (title, description, category, priority, equipmentId)
    * @param ctx - Authenticated user context (userId, tenantId, role)
    * @returns Newly created and assigned Ticket entity
+   * @throws {ForbiddenError} When the account is in Read-Only, Suspended, or Purged state (Section 9.3)
    * @throws {TicketLimitExceededError} When the tenant or device has exceeded monthly ticket quotas (BL-201)
    * @see BL-201
    * @see BL-102
+   * @see Section 9.3
    */
   async createTicket(data: CreateTicketInput, ctx: UserContext): Promise<Ticket> {
+    this.accountPolicy.assertWriteAllowed(ctx);
     await this.quotasSvc.enforceTicketLimit(ctx.userId, ctx.tenantId, data.equipmentId);
 
     const priority = data.priority ?? TicketPriority.MEDIUM;

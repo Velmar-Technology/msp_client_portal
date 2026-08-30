@@ -49,6 +49,7 @@ import { useAuth } from "@/hooks/useAuth";
 import type { Invoice } from "@/services/invoiceService";
 import { invoiceService } from "@/services/invoiceService";
 import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
+import { Badge } from "@/components/ui/badge";
 import type { ColumnDef } from "@tanstack/react-table";
 
 import { INVOICE_STATUS_COLORS as statusColor } from "@/constants/billing";
@@ -567,7 +568,7 @@ const InvoiceDetailsModal = ({
         </DialogHeader>
 
         <div className="py-4 space-y-4">
-          <div className="grid grid-cols-2 gap-4 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
             <div className="bg-zinc-50/50 dark:bg-zinc-900/40 p-3 rounded-lg border border-zinc-100 dark:border-zinc-800/80">
               <span className="text-zinc-400 block text-[10px] uppercase font-bold tracking-wider">
                 {t("billing.tableDate") || "Invoice Date"}
@@ -584,6 +585,26 @@ const InvoiceDetailsModal = ({
                 {formatDate(invoice.due_date)}
               </span>
             </div>
+            {invoice.ncf ? (
+              <div className="bg-primary/5 dark:bg-primary/10 p-3 rounded-lg border border-primary/20">
+                <span className="text-primary/70 block text-[10px] uppercase font-bold tracking-wider">
+                  {t("billing.ncfLabel") || "NCF"}
+                </span>
+                <span className="font-mono font-bold text-primary mt-1 block">
+                  {invoice.ncf}
+                </span>
+              </div>
+            ) : null}
+            {invoice.rnc ? (
+              <div className="bg-zinc-50/50 dark:bg-zinc-900/40 p-3 rounded-lg border border-zinc-100 dark:border-zinc-800/80">
+                <span className="text-zinc-400 block text-[10px] uppercase font-bold tracking-wider">
+                  {t("billing.rncLabel") || "RNC"}
+                </span>
+                <span className="font-mono font-medium text-zinc-800 dark:text-zinc-200 mt-1 block">
+                  {invoice.rnc}
+                </span>
+              </div>
+            ) : null}
           </div>
 
           {/* Line Items Table */}
@@ -610,10 +631,10 @@ const InvoiceDetailsModal = ({
                     {item.quantity}
                   </span>
                   <span className="col-span-2 text-right text-zinc-600 dark:text-zinc-400 font-mono">
-                    ${Number(item.unit_price).toFixed(2)}
+                    {invoice.currency === 'DOP' ? 'RD$ ' : '$'}{Number(item.unit_price).toFixed(2)}
                   </span>
                   <span className="col-span-2 text-right text-zinc-800 dark:text-zinc-200 font-mono font-medium">
-                    ${(Number(item.unit_price) * item.quantity).toFixed(2)}
+                    {invoice.currency === 'DOP' ? 'RD$ ' : '$'}{(Number(item.unit_price) * item.quantity).toFixed(2)}
                   </span>
                 </div>
               ))}
@@ -624,15 +645,15 @@ const InvoiceDetailsModal = ({
           <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 p-4 text-xs space-y-2.5">
             <div className="flex justify-between items-center text-zinc-600 dark:text-zinc-400">
               <span>{t("billing.tableAmount") || "Subtotal"}</span>
-              <span className="font-mono font-medium">${Number(invoice.amount).toFixed(2)}</span>
+              <span className="font-mono font-medium">{invoice.currency === 'DOP' ? `RD$ ${Number(invoice.amount).toFixed(2)} DOP` : `$${Number(invoice.amount).toFixed(2)}`}</span>
             </div>
             <div className="flex justify-between items-center text-zinc-600 dark:text-zinc-400">
-              <span>{t("billing.tableTax") || "Tax (18%)"}</span>
-              <span className="font-mono font-medium">${Number(invoice.tax_amount).toFixed(2)}</span>
+              <span>{t("billing.itbisTax") || "ITBIS (18%)"}</span>
+              <span className="font-mono font-medium">{invoice.currency === 'DOP' ? `RD$ ${Number(invoice.tax_amount).toFixed(2)} DOP` : `$${Number(invoice.tax_amount).toFixed(2)}`}</span>
             </div>
             <div className="border-t border-zinc-200 dark:border-zinc-800 pt-2.5 flex justify-between items-center text-sm font-semibold">
               <span className="text-zinc-950 dark:text-zinc-50">{t("billing.tableTotal") || "Total"}</span>
-              <span className="text-primary font-bold font-mono text-base">${Number(invoice.total).toFixed(2)}</span>
+              <span className="text-primary font-bold font-mono text-base">{invoice.currency === 'DOP' ? `RD$ ${Number(invoice.total).toFixed(2)} DOP` : `$${Number(invoice.total).toFixed(2)}`}</span>
             </div>
           </div>
         </div>
@@ -775,14 +796,21 @@ export function BillingPage() {
         accessorKey: "invoice_number",
         header: ({ column }) => <DataTableColumnHeader column={column} title={t("billing.tableInvoiceNo")} />,
         cell: ({ row }) => (
-          <Button
-            variant="link"
-            size="sm"
-            onClick={() => openDetailsModal(row.original)}
-            className="h-auto p-0 text-sm font-medium text-foreground hover:text-primary hover:underline font-mono text-left cursor-pointer"
-          >
-            {row.original.invoice_number}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="link"
+              size="sm"
+              onClick={() => openDetailsModal(row.original)}
+              className="h-auto p-0 text-sm font-medium text-foreground hover:text-primary hover:underline font-mono text-left cursor-pointer"
+            >
+              {row.original.invoice_number}
+            </Button>
+            {row.original.ncf && (
+              <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0 border-primary/30 text-primary bg-primary/5">
+                {row.original.ncf}
+              </Badge>
+            )}
+          </div>
         ),
       },
       {
@@ -810,7 +838,7 @@ export function BillingPage() {
         header: ({ column }) => <DataTableColumnHeader column={column} title={t("billing.tableAmount")} />,
         cell: ({ row }) => (
           <span className="text-sm text-zinc-900 dark:text-zinc-100 font-mono">
-            ${Number(row.original.amount).toFixed(2)}
+            {row.original.currency === 'DOP' ? 'RD$ ' : '$'}{Number(row.original.amount).toFixed(2)}
           </span>
         ),
       },
@@ -821,7 +849,7 @@ export function BillingPage() {
         header: ({ column }) => <DataTableColumnHeader column={column} title={t("billing.tableTax")} />,
         cell: ({ row }) => (
           <span className="text-sm text-zinc-500 dark:text-zinc-400 font-mono">
-            ${Number(row.original.tax_amount).toFixed(2)}
+            {row.original.currency === 'DOP' ? 'RD$ ' : '$'}{Number(row.original.tax_amount).toFixed(2)}
           </span>
         ),
       },
@@ -832,7 +860,7 @@ export function BillingPage() {
         header: ({ column }) => <DataTableColumnHeader column={column} title={t("billing.tableTotal")} />,
         cell: ({ row }) => (
           <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 font-mono">
-            ${Number(row.original.total).toFixed(2)}
+            {row.original.currency === 'DOP' ? 'RD$ ' : '$'}{Number(row.original.total).toFixed(2)}
           </span>
         ),
       },

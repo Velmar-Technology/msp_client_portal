@@ -126,6 +126,18 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
     $$H = 0.40 \times S_{\text{ticket}} + 0.30 \times S_{\text{hardware}} + 0.30 \times S_{\text{security}}$$
   - Accounts scoring below $70\%$ flag the vCIO to schedule a Quarterly Business Review (QBR).
 
+### Module 6: Rates, Invoicing (NCF), Taxes (ITBIS) & Non-Payment System (Section 9)
+
+- **BL-701: Dominican Tax Compliance & NCF Series B01** (`NcfService.assignNcfIfEligible`, `BillingPricingService.calculatePricing`)
+  - Rates in USD or DOP apply eighteen percent (18%) ITBIS tax on invoice subtotal.
+  - Automatically issues valid sequential Series B01 Tax Credit Invoices (`B0100000001` - `B0199999999`) when client or tenant registers a valid DGII Modulo 11 (RNC) or Modulo 10 Luhn (Cédula).
+- **BL-702: 4-Tier Non-Payment Suspension Scale** (`NonPaymentSuspensionService.evaluateOverdueAccounts`)
+  - **Day 1 Overdue:** Automated electronic collection notification email and in-app alert.
+  - **Day 5 Overdue:** Account changes to `READ_ONLY` mode (ticket creation, replies, and file uploads blocked).
+  - **Day 15 Overdue:** Full platform access and technical support suspended (`account_status = 'SUSPENDED'`, `is_active = false`).
+  - **Day 30 Overdue:** Permanent technical purge and deletion of data from servers for storage liberation with zero liability to the company (`account_status = 'PURGED'`). Purges Nextcloud storage accounts and hardware bindings.
+  - **Restoration:** Payment capture automatically restores tenant and all users to `ACTIVE`.
+
 ---
 
 ## Core Data Journeys & Command-Query Separation (CQS)

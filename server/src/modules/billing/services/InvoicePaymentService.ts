@@ -2,6 +2,7 @@ import { InvoiceRepository, invoiceRepository } from '@modules/billing/repositor
 import { SubscriptionRepository, subscriptionRepository } from '@modules/subscriptions';
 import { PaypalService, paypalService } from '@modules/billing/services/PaypalService';
 import { InvoiceNotificationService, invoiceNotificationService } from '@modules/billing/services/InvoiceNotificationService';
+import { NonPaymentSuspensionService, nonPaymentSuspensionService } from '@modules/billing/services/NonPaymentSuspensionService';
 import { InvoiceAccessPolicy, invoiceAccessPolicy } from '@shared/policies/InvoiceAccessPolicy';
 import { ValidationError, InternalServerError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
@@ -9,9 +10,10 @@ import { Invoice, InvoiceStatus, SubscriptionStatus, UserRole } from '@shared/ty
 
 /**
  * Domain service managing invoice payment captures via PayPal or manual admin confirmation,
- * activating linked client subscriptions upon successful settlement.
+ * activating linked client subscriptions upon successful settlement, and restoring accounts from suspension.
  *
  * @see BL-401 (Subscription Reactivation upon Payment)
+ * @see Section 9.3 (Account Restoration upon Non-Payment Settlement)
  */
 export class InvoicePaymentService {
   /**
@@ -22,13 +24,15 @@ export class InvoicePaymentService {
    * @param paypalSvc - PayPal integration service
    * @param notifService - Invoice notification service
    * @param accessPolicy - Invoice access policy
+   * @param nonPaymentSvc - Non-payment suspension service
    */
   constructor(
     private invoiceRepo: InvoiceRepository = invoiceRepository,
     private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
     private paypalSvc: PaypalService = paypalService,
     private notifService: InvoiceNotificationService = invoiceNotificationService,
-    private accessPolicy: InvoiceAccessPolicy = invoiceAccessPolicy
+    private accessPolicy: InvoiceAccessPolicy = invoiceAccessPolicy,
+    private nonPaymentSvc: NonPaymentSuspensionService = nonPaymentSuspensionService
   ) {}
 
   private get subRepo(): SubscriptionRepository {
@@ -96,6 +100,7 @@ export class InvoicePaymentService {
     }
 
     await this.activateExpiredSubscriptionsForClient(invoice.client_id, invoice.tenant_id);
+    await this.nonPaymentSvc.restoreAccountIfPaid(invoice.client_id, invoice.tenant_id);
     await this.notifService.notifyPaymentReceived(invoice);
 
     return updatedInvoice;
@@ -124,6 +129,7 @@ export class InvoicePaymentService {
     }
 
     await this.activateExpiredSubscriptionsForClient(invoice.client_id, invoice.tenant_id);
+    await this.nonPaymentSvc.restoreAccountIfPaid(invoice.client_id, invoice.tenant_id);
     await this.notifService.notifyManualPaymentConfirmed(invoice);
 
     return updatedInvoice;

@@ -115,6 +115,7 @@ export class InvoicePdfService {
       phoneNumber: client.phone_number,
       clientType: client.client_type,
       clientId: client.id,
+      rnc: client.rnc || tenant.rnc || undefined,
     };
 
     const pdfBuffer = await generateInvoicePdf(

@@ -464,13 +464,14 @@ export class UserRepository extends BaseRepository<User> {
    * @param data - Profile fields to modify
    * @returns Updated user entity or null
    */
-  async updateProfile(id: string, data: Partial<Pick<User, 'name' | 'email' | 'language' | 'avatar_url' | 'phone_number'>>): Promise<User | null> {
+  async updateProfile(id: string, data: Partial<Pick<User, 'name' | 'email' | 'language' | 'avatar_url' | 'phone_number' | 'rnc'>>): Promise<User | null> {
     const updateData: any = {};
     if (data.name !== undefined) updateData.name = data.name;
     if (data.email !== undefined) updateData.email = data.email;
     if (data.language !== undefined) updateData.language = data.language;
     if (data.avatar_url !== undefined) updateData.avatar_url = data.avatar_url;
     if (data.phone_number !== undefined) updateData.phone_number = data.phone_number;
+    if (data.rnc !== undefined) updateData.rnc = data.rnc;
 
     if (Object.keys(updateData).length === 0) return this.findById(id);
 
@@ -540,7 +541,72 @@ export class UserRepository extends BaseRepository<User> {
       .where(eq(users.id, id));
     await this.cache.invalidateScope('users', 'global');
   }
+
+  /**
+   * Updates the account status for a specific user.
+   *
+   * @param userId - Target user ID
+   * @param status - Target AccountStatus
+   * @param isActive - Optional boolean to update is_active
+   */
+  async updateAccountStatus(userId: string, status: any, isActive?: boolean): Promise<User | null> {
+    const updateData: Record<string, any> = {
+      account_status: status,
+      updated_at: new Date(),
+    };
+    if (isActive !== undefined) {
+      updateData.is_active = isActive;
+    }
+
+    const results = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, userId))
+      .returning();
+    await this.cache.invalidateScope('users', 'global');
+    return (results[0] as User) || null;
+  }
+
+  /**
+   * Updates the account status and active state for all users belonging to a tenant organization.
+   *
+   * @param tenantId - Target tenant UUID
+   * @param status - Target AccountStatus
+   * @param isActive - Optional boolean to update is_active
+   */
+  async updateAccountStatusByTenant(tenantId: string, status: any, isActive?: boolean): Promise<void> {
+    const updateData: Record<string, any> = {
+      account_status: status,
+      updated_at: new Date(),
+    };
+    if (isActive !== undefined) {
+      updateData.is_active = isActive;
+    }
+
+    await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.tenant_id, tenantId));
+    await this.cache.invalidateScope('users', 'global');
+  }
+
+  /**
+   * Updates the official tax RNC number for a user profile.
+   *
+   * @param userId - Target user ID
+   * @param rnc - Dominican RNC string
+   */
+  async updateRnc(userId: string, rnc: string | null): Promise<User | null> {
+    const results = await db
+      .update(users)
+      .set({ rnc, updated_at: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    await this.cache.invalidateScope('users', 'global');
+    return (results[0] as User) || null;
+  }
 }
 
 export const userRepository = new UserRepository();
+
 

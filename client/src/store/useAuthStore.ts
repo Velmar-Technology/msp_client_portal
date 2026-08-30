@@ -17,6 +17,8 @@ export interface AuthUser {
   avatarUrl?: string | null;
   lastLoginAt?: string | null;
   lastLoginIp?: string | null;
+  accountStatus?: 'ACTIVE' | 'READ_ONLY' | 'SUSPENDED' | 'PURGED';
+  rnc?: string | null;
 }
 
 export interface AuthState {
