@@ -423,7 +423,7 @@ describe("CRMPage", () => {
     expect(await screen.findByText("Bruce Wayne")).toBeInTheDocument();
 
     // Click subscription tab
-    const subTab = screen.getByRole("tab", { name: /Plan \/ Sub/i });
+    const subTab = screen.getByRole("tab", { name: /Subscribe/i });
     fireEvent.pointerDown(subTab, { button: 0 });
     fireEvent.mouseDown(subTab, { button: 0 });
     fireEvent.click(subTab);
@@ -456,7 +456,7 @@ describe("CRMPage", () => {
     expect(await screen.findByText("Bruce Wayne")).toBeInTheDocument();
 
     // Click subscription tab
-    const subTab = screen.getByRole("tab", { name: /Plan \/ Sub/i });
+    const subTab = screen.getByRole("tab", { name: /Subscribe/i });
     fireEvent.pointerDown(subTab, { button: 0 });
     fireEvent.mouseDown(subTab, { button: 0 });
     fireEvent.click(subTab);
