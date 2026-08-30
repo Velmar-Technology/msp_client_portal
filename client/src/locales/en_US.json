@@ -1158,6 +1158,7 @@
     "cancelSuccess": "Invoice cancelled successfully.",
     "statusCancelled": "CANCELLED",
     "invoiceDetails": "Invoice Details",
+    "viewDetails": "View Details",
     "itemDescription": "Description",
     "itemQty": "Qty",
     "itemUnitPrice": "Unit Price",

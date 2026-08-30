@@ -897,7 +897,7 @@ export function BillingPage() {
                 }}
                 className="h-7 px-2 text-xs font-semibold gap-1 cursor-pointer"
               >
-                <span>{t("billing.viewDetails") || "View Details"}</span>
+                <span>{t("billing.viewDetails")}</span>
                 <ChevronRight className="h-3 w-3" />
               </Button>
 

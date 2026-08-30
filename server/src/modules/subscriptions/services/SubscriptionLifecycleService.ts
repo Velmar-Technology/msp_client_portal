@@ -343,7 +343,59 @@ export class SubscriptionLifecycleService {
   }
 
   /**
+   * Dispatches in-app notifications to the client and administrators for a bank transfer upgrade intent.
+   *
+   * @param clientId - Client user UUID
+   * @param tenantId - Tenant UUID
+   * @param serviceName - Formatted plan display title
+   * @param additionalCount - Number of additional device slots
+   * @param invoiceNumber - Generated invoice reference
+   */
+  private async notifyUpgradeIntent(
+    clientId: string,
+    tenantId: string,
+    serviceName: string,
+    additionalCount: number,
+    invoiceNumber: string
+  ): Promise<void> {
+    await this.notifSvc.createInAppNotification({
+      userId: clientId,
+      title: 'Bank Transfer Intent Received',
+      message: `Your request to add ${additionalCount} device(s) to ${serviceName} was received. Invoice #${invoiceNumber} is awaiting payment confirmation.`,
+      type: 'INVOICE_CREATED',
+      link: '/billing',
+      tenantId,
+    }).catch((err) => {
+      logger.error('Failed to create in-app notification for device upgrade intent:', { err });
+    });
+
+    try {
+      const adminUsers = await this.userRepo.findByRole(UserRole.ADMIN);
+      const clientUser = await this.userRepo.findById(clientId);
+      const clientName = clientUser?.name || 'A customer';
+
+      for (const admin of adminUsers) {
+        if (admin.tenant_id === tenantId) {
+          await this.notifSvc.createInAppNotification({
+            userId: admin.id,
+            title: 'New Device Upgrade Wire Intent',
+            message: `${clientName} registered a bank transfer intent to add ${additionalCount} device(s) to ${serviceName} (Invoice #${invoiceNumber}).`,
+            type: 'INVOICE_CREATED',
+            link: '/billing',
+            tenantId,
+          }).catch((err) => {
+            logger.error('Failed to notify admin of device upgrade wire intent:', { err });
+          });
+        }
+      }
+    } catch (err) {
+      logger.error('Failed to fetch admin users for upgrade notification:', { err });
+    }
+  }
+
+  /**
    * Updates plan tier, equipment slot capacity, or cancellation status on a subscription.
+   * Supports both automated PayPal upgrades and Wire Transfer invoice generation.
    *
    * @param id - Subscription UUID
    * @param data - UpdateSubscriptionInput attributes
@@ -352,7 +404,6 @@ export class SubscriptionLifecycleService {
    * @returns Updated Subscription entity
    * @throws {NotFoundError} When subscription or plan not found
    * @throws {ForbiddenError} When subscription does not belong to tenant
-   * @throws {ValidationError} When PayPal order ID missing for device upgrade
    */
   async updateSubscription(id: string, data: UpdateSubscriptionInput, tenantId: string, byAdmin = false): Promise<Subscription> {
     const sub = await this.subscriptionRepo.findById(id);
@@ -369,9 +420,6 @@ export class SubscriptionLifecycleService {
         if (sub.paypal_order_id && (sub.paypal_order_id.startsWith('I-') || sub.paypal_order_id.startsWith('MOCK-SUB-'))) {
           await this.paypalSvc.updateSubscriptionQuantity(sub.paypal_order_id, newCount);
         } else if (newCount > sub.equipment_count) {
-          if (!data.paypalOrderId) {
-            throw new ValidationError('PayPal order ID is required to add more devices');
-          }
           const planDetails = await this.planRepo.findById(newPlan);
           if (!planDetails) throw new NotFoundError('Plan not found');
 
@@ -379,7 +427,46 @@ export class SubscriptionLifecycleService {
           const additionalCount = newCount - sub.equipment_count;
           const upgradePricing = this.pricingSvc.calculateUpgradePricing(planDetails.price, additionalCount, billingCycle);
 
-          await this.subPaymentSvc.verifyPaypalUpgradePayment(data.paypalOrderId, upgradePricing.total);
+          if (data.paypalOrderId) {
+            await this.subPaymentSvc.verifyPaypalUpgradePayment(data.paypalOrderId, upgradePricing.total);
+            const invoiceNumber = await this.pricingSvc.generateInvoiceNumber();
+            await this.invoiceRepo.create({
+              invoice_number: invoiceNumber,
+              client_id: sub.client_id,
+              amount: upgradePricing.subtotal,
+              tax_amount: upgradePricing.tax,
+              total: upgradePricing.total,
+              due_date: new Date(),
+              tenant_id: tenantId,
+              status: InvoiceStatus.PAID,
+            });
+          } else {
+            // Wire Transfer / Bank Transfer intent
+            const invoiceNumber = await this.pricingSvc.generateInvoiceNumber();
+            const dueDate = new Date();
+            dueDate.setDate(dueDate.getDate() + 30);
+            await this.invoiceRepo.create({
+              invoice_number: invoiceNumber,
+              client_id: sub.client_id,
+              amount: upgradePricing.subtotal,
+              tax_amount: upgradePricing.tax,
+              total: upgradePricing.total,
+              due_date: dueDate,
+              tenant_id: tenantId,
+              status: InvoiceStatus.PENDING,
+            });
+            await this.notifyUpgradeIntent(sub.client_id, tenantId, sub.service_name, additionalCount, invoiceNumber);
+          }
+
+          // Pre-provision additional equipment slots in PENDING_ACTIVATION state
+          for (let i = sub.equipment_count; i < newCount; i++) {
+            await this.equipmentRepo.create({
+              subscription_id: sub.id,
+              slot_index: i,
+              status: 'PENDING_ACTIVATION',
+              tenant_id: tenantId,
+            });
+          }
         }
       }
 

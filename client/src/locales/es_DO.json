@@ -1153,7 +1153,8 @@
     "cancelReasonPlaceholder": "Ej. El cliente decidió no proceder con la transferencia bancaria",
     "cancelSuccess": "Factura cancelada con éxito.",
     "statusCancelled": "Cancelada",
-    "invoiceDetails": "Detalles de Factura"
+    "invoiceDetails": "Detalles de Factura",
+    "viewDetails": "Ver Detalles"
   },
   "help": {
     "title": "Ayuda y Documentación",
