@@ -583,7 +583,21 @@
     "resolveTicket": "Resolver",
     "awaitingPayment": "Esperar Pago",
     "statusUpdateSuccess": "Estado actualizado con éxito",
-    "statusUpdateError": "Error al actualizar el estado"
+    "statusUpdateError": "Error al actualizar el estado",
+    "myEarnings": "Mis Ganancias",
+    "totalEarned": "Total Ganado",
+    "pendingPayout": "Pendiente de Pago",
+    "approvedPayout": "Aprobado",
+    "paidPayout": "Pagado",
+    "slaMetRate": "Cumplimiento de SLA",
+    "earningsLedger": "Comisiones por Tickets Cerrados",
+    "earningsLedgerDesc": "Supervise las comisiones ganadas por ticket resuelto con multiplicadores de prioridad y bonos de SLA.",
+    "ticketBounty": "Comisión",
+    "baseRate": "Base",
+    "slaBonus": "Bono SLA",
+    "multiplier": "Multiplicador",
+    "earnedAt": "Fecha de Cierre",
+    "noEarnings": "Aún no hay comisiones registradas. ¡Resuelva tickets asignados para ganar incentivos!"
   },
   "plans": {
     "title": "Selección de Plan",

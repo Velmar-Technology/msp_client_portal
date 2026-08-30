@@ -675,3 +675,70 @@ export interface CrmPipelineStats {
   };
 }
 
+// ---- Technician Earnings & Rates Types ----
+
+export enum EarningStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  PAID = 'PAID',
+  VOIDED = 'VOIDED',
+}
+
+export interface TechnicianRate {
+  id: string;
+  technician_id: string | null;
+  base_closed_rate: number;
+  sla_bonus_rate: number;
+  currency: string;
+  multiplier_critical: number;
+  multiplier_high: number;
+  multiplier_medium: number;
+  multiplier_low: number;
+  tenant_id: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface TechnicianEarningBreakdown {
+  priority: string;
+  category: string;
+  priorityMultiplier: number;
+  slaMet: boolean;
+  resolutionTimeMinutes: number;
+  targetSlaMinutes?: number;
+}
+
+export interface TechnicianEarning {
+  id: string;
+  ticket_id: string;
+  technician_id: string;
+  base_amount: number;
+  sla_bonus_amount: number;
+  final_amount: number;
+  currency: string;
+  status: EarningStatus | string;
+  breakdown: TechnicianEarningBreakdown;
+  expense_id: string | null;
+  tenant_id: string;
+  earned_at: Date;
+  paid_at: Date | null;
+  created_at: Date;
+  updated_at: Date;
+  ticket_title?: string;
+  technician_name?: string;
+  technician_email?: string;
+}
+
+export interface TechnicianEarningsSummary {
+  technician_id: string;
+  technician_name?: string;
+  total_closed_tickets: number;
+  total_earned: number;
+  pending_amount: number;
+  approved_amount: number;
+  paid_amount: number;
+  sla_met_count: number;
+  sla_met_rate: number;
+}
+
+

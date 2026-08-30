@@ -19,6 +19,9 @@ import {
   ChevronRight,
   Eye,
   CreditCard,
+  DollarSign,
+  Award,
+  Zap,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -32,11 +35,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSLATimer } from "@/hooks/useSLATimer";
 import { ticketService } from "@/services/ticketService";
 import { userService } from "@/services/userService";
+import { earningsService, type TechnicianEarning, type TechnicianEarningsSummary } from "@/services/earningsService";
 import type { Ticket } from "@/services/ticketService";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useDeferredLoading } from "@/hooks/useDeferredLoading";
 import { statusColor, priorityColor } from "@/constants/tickets";
 import { SKELETON_DISPLAY_DELAY_MS } from "@/constants/ui";
+
 
 
 
@@ -74,23 +79,31 @@ export function TechDashboardPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [statusSummary, setStatusSummary] = useState<Record<string, number>>({});
   const [specialty, setSpecialty] = useState<string | null>(null);
+  const [earningsSummary, setEarningsSummary] = useState<TechnicianEarningsSummary | null>(null);
+  const [earningsList, setEarningsList] = useState<TechnicianEarning[]>([]);
+  const [activeTab, setActiveTab] = useState<'tickets' | 'earnings'>('tickets');
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [actionMessage, setActionMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  // Load ticket data and summary
+  // Load ticket data, earnings summary, and user profile
   const loadDashboardData = useCallback(async () => {
     try {
-      const [summary, ticketList, profile] = await Promise.all([
+      const [summary, ticketList, profile, earningsData] = await Promise.all([
         ticketService.getStatusSummary(),
         ticketService.getAll({ limit: 100 }), // Fetch recent tickets assigned to this tech
         userService.getProfile(),
+        earningsService.getMyEarnings({ limit: 100 }).catch(() => ({ summary: { technician_id: '', total_closed_tickets: 0, total_earned: 0, pending_amount: 0, approved_amount: 0, paid_amount: 0, sla_met_count: 0, sla_met_rate: 0 }, items: [], total: 0 })),
       ]);
       setStatusSummary(summary);
       setTickets(ticketList.data);
       setSpecialty((profile.specialty as string) || null);
+      if (earningsData) {
+        setEarningsSummary(earningsData.summary);
+        setEarningsList(earningsData.items);
+      }
     } catch (err) {
       console.error('Failed to load technician dashboard data', err);
     }
@@ -309,6 +322,73 @@ export function TechDashboardPage() {
     },
   ], [t, updatingId, handleStatusTransition, navigate, getCategoryLabel, getPriorityLabel, getStatusLabel]);
 
+  const earningsColumns = useMemo<ColumnDef<TechnicianEarning>[]>(() => [
+    {
+      accessorKey: 'ticket_title',
+      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t('tickets.tableTitle')}</span>,
+      cell: ({ row }) => (
+        <div className="flex flex-col max-w-50 cursor-pointer" onClick={() => navigate(`/tickets/${row.original.ticket_id}`)}>
+          <span className="text-xs font-semibold text-foreground truncate hover:text-primary">{row.original.ticket_title || 'Support Ticket'}</span>
+          <span className="text-[10px] text-muted-foreground font-mono">Ref: {row.original.ticket_id.substring(0, 8)}</span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'breakdown.priorityMultiplier',
+      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t('techDashboard.multiplier')}</span>,
+      cell: ({ row }) => (
+        <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-foreground">
+          {row.original.breakdown?.priority || 'NORMAL'} ({row.original.breakdown?.priorityMultiplier || 1.0}x)
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'base_amount',
+      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t('techDashboard.baseRate')}</span>,
+      cell: ({ row }) => <span className="text-xs text-muted-foreground">${Number(row.original.base_amount).toFixed(2)}</span>,
+    },
+    {
+      accessorKey: 'sla_bonus_amount',
+      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t('techDashboard.slaBonus')}</span>,
+      cell: ({ row }) => {
+        const isMet = row.original.breakdown?.slaMet;
+        return (
+          <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded ${isMet ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-zinc-500/10 text-muted-foreground'}`}>
+            {isMet ? <Zap className="h-3 w-3" /> : null}
+            {isMet ? `+$${Number(row.original.sla_bonus_amount).toFixed(2)}` : '$0.00'}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: 'final_amount',
+      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t('techDashboard.ticketBounty')}</span>,
+      cell: ({ row }) => (
+        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+          ${Number(row.original.final_amount).toFixed(2)} {row.original.currency}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'status',
+      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t('tickets.tableStatus')}</span>,
+      cell: ({ row }) => {
+        const st = row.original.status;
+        const colorMap: Record<string, string> = {
+          PENDING: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
+          APPROVED: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20',
+          PAID: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
+          VOIDED: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20',
+        };
+        return (
+          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${colorMap[st] || 'bg-muted text-muted-foreground'}`}>
+            {st}
+          </span>
+        );
+      },
+    },
+  ], [t, navigate]);
+
   // Filtered tickets list for display
   const filteredTickets = tickets.filter((ticket) => {
     const matchesSearch =
@@ -382,7 +462,7 @@ export function TechDashboardPage() {
       <div className="flex flex-col gap-4">
         {/* Metrics Row */}
         <section aria-label="Technician Metrics">
-          <StatsGrid className="w-full">
+          <StatsGrid className="w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
             {/* Total Assigned */}
             <SummaryCard
               icon={<ClipboardList className="h-3.5 w-3.5" />}
@@ -409,6 +489,16 @@ export function TechDashboardPage() {
               icon={<CheckCircle2 className="h-3.5 w-3.5" />}
               title={t('techDashboard.resolvedTickets')}
               value={completedCount}
+            />
+
+            {/* My Earnings & Closed Bounties */}
+            <SummaryCard
+              icon={<DollarSign className="h-3.5 w-3.5 text-emerald-500" />}
+              title={t('techDashboard.myEarnings')}
+              value={`$${(earningsSummary?.total_earned || 0).toFixed(2)}`}
+              trend={`${earningsSummary?.sla_met_rate || 0}%`}
+              isPositiveTrend={true}
+              subtitle={`${t('techDashboard.slaMetRate')}`}
             />
           </StatsGrid>
         </section>
@@ -446,6 +536,39 @@ export function TechDashboardPage() {
 
         {/* Tickets Listing & Controls (Spans 8 cols on desktop) */}
         <div className="lg:col-span-8 bg-card border border-border rounded-xl overflow-hidden shadow-xs flex flex-col">
+          {/* Tab Selection Header */}
+          <div className="flex items-center justify-between border-b border-border bg-muted/30 px-4 py-2.5">
+            <div className="flex items-center gap-1.5">
+              <Button
+                type="button"
+                variant={activeTab === 'tickets' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveTab('tickets')}
+                className="h-7 text-xs font-semibold gap-1.5 cursor-pointer"
+              >
+                <ClipboardList className="h-3.5 w-3.5" />
+                <span>{t('techDashboard.assignedTickets')}</span>
+                <span className="ml-1 text-[10px] bg-primary/10 text-primary font-bold px-1.5 py-0.5 rounded-full">
+                  {filteredTickets.length}
+                </span>
+              </Button>
+
+              <Button
+                type="button"
+                variant={activeTab === 'earnings' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveTab('earnings')}
+                className="h-7 text-xs font-semibold gap-1.5 cursor-pointer text-emerald-600 dark:text-emerald-400"
+              >
+                <Award className="h-3.5 w-3.5" />
+                <span>{t('techDashboard.myEarnings')}</span>
+                <span className="ml-1 text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold px-1.5 py-0.5 rounded-full">
+                  {earningsList.length}
+                </span>
+              </Button>
+            </div>
+          </div>
+
           {/* Action Message Alert */}
           {actionMessage && (
             <div className="p-4 border-b border-border">
@@ -461,42 +584,60 @@ export function TechDashboardPage() {
             </div>
           )}
 
-          {/* Tickets Table */}
-          <DataTable
-            columns={columns}
-            data={paginatedTickets}
-            loading={false}
-            noDataMessage={t('tickets.noTicketsFound')}
-            onRowClick={(ticket) => navigate(`/tickets/${ticket.id}`)}
-            className="border-none rounded-none"
-            search={{
-              value: search,
-              onChange: (val) => { setSearch(val); setTicketPage(1); },
-              placeholder: t('tickets.searchPlaceholder'),
-            }}
-            filters={[
-              {
-                id: 'status',
-                value: statusFilter,
-                onChange: (val) => { setStatusFilter(val); setTicketPage(1); },
-                options: [
-                  { value: 'OPEN', label: t('tickets.filterOpen') },
-                  { value: 'IN_PROGRESS', label: t('tickets.filterInProgress') },
-                  { value: 'RESOLVED', label: t('tickets.filterResolved') },
-                  { value: 'CLOSED', label: t('tickets.filterClosed') },
-                ],
-                placeholder: t('tickets.filterAllStatuses'),
-              }
-            ]}
-            pagination={{
-              page: ticketPage,
-              totalPages: ticketTotalPages,
-              totalItems: filteredTickets.length,
-              limit: ticketsLimit,
-              onPageChange: setTicketPage,
-              onLimitChange: handleTicketLimitChange,
-            }}
-          />
+          {/* Tickets or Earnings Table */}
+          {activeTab === 'tickets' ? (
+            <DataTable
+              columns={columns}
+              data={paginatedTickets}
+              loading={false}
+              noDataMessage={t('tickets.noTicketsFound')}
+              onRowClick={(ticket) => navigate(`/tickets/${ticket.id}`)}
+              className="border-none rounded-none"
+              search={{
+                value: search,
+                onChange: (val) => { setSearch(val); setTicketPage(1); },
+                placeholder: t('tickets.searchPlaceholder'),
+              }}
+              filters={[
+                {
+                  id: 'status',
+                  value: statusFilter,
+                  onChange: (val) => { setStatusFilter(val); setTicketPage(1); },
+                  options: [
+                    { value: 'OPEN', label: t('tickets.filterOpen') },
+                    { value: 'IN_PROGRESS', label: t('tickets.filterInProgress') },
+                    { value: 'RESOLVED', label: t('tickets.filterResolved') },
+                    { value: 'CLOSED', label: t('tickets.filterClosed') },
+                  ],
+                  placeholder: t('tickets.filterAllStatuses'),
+                }
+              ]}
+              pagination={{
+                page: ticketPage,
+                totalPages: ticketTotalPages,
+                totalItems: filteredTickets.length,
+                limit: ticketsLimit,
+                onPageChange: setTicketPage,
+                onLimitChange: handleTicketLimitChange,
+              }}
+            />
+          ) : (
+            <DataTable
+              columns={earningsColumns}
+              data={earningsList}
+              loading={false}
+              noDataMessage={t('techDashboard.noEarnings')}
+              className="border-none rounded-none"
+              pagination={{
+                page: 1,
+                totalPages: 1,
+                totalItems: earningsList.length,
+                limit: 50,
+                onPageChange: () => {},
+                onLimitChange: () => {},
+              }}
+            />
+          )}
         </div>
       </div>
         </section>

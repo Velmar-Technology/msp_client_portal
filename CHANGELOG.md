@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.8.0] (2026-08-30)
+
+### Features
+
+* **billing:** implement technician closed-ticket commissions, SLA bonuses, pre-split OpEx ledger, and batch payroll approval (`BL-801`)
+* **finance:** implement 70/30 net revenue & profit distribution model between HQ and Lead Engineer Admin (`BL-802`)
+* **tech-dashboard:** add live earnings metrics, SLA compliance rate, and bounty ledger tab to `TechDashboardPage`
+* **financial-dashboard:** add `TechnicianPayrollTable` component with batch payout processing and CSV exports to `FinancialPage`
+
 ## [1.7.3](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.7.2...v1.7.3) (2026-08-28)
 
 

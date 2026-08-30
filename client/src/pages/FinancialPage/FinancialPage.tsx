@@ -1,10 +1,12 @@
 import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
-import { Download } from "lucide-react";
+import { Download, BarChart3, Users } from "lucide-react";
 import { useFinancialDashboard } from "@/hooks/useFinancialDashboard";
 import type { DateRange } from "@/hooks/useFinancialDashboard";
+import { useUrlState } from "@/hooks/useUrlState";
 import { KpiCards } from "@/components/financial/KpiCards";
 import { TransactionsTable } from "@/components/financial/TransactionsTable";
+import { TechnicianPayrollTable } from "@/components/financial/TechnicianPayrollTable";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -21,6 +23,7 @@ import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { ChunkErrorBoundary } from "@/components/shared/ChunkErrorBoundary";
 import { useDeferredLoading } from "@/hooks/useDeferredLoading";
 import { SKELETON_DISPLAY_DELAY_MS } from "@/constants/ui";
+
 
 // ---- Lazily loaded heavy chart components ----
 const RevenueChart = lazyWithRetry(() =>
@@ -64,6 +67,9 @@ export function FinancialPage() {
     transactions,
   } = useFinancialDashboard();
 
+  const { getParam, setParam } = useUrlState();
+  const activeTab = getParam("tab", "overview");
+
   const totalExpensesFormatted = kpis.find((kpi) => kpi.key === "expenses")?.value ?? "$0.00";
   const showSkeleton = useDeferredLoading(isLoading, SKELETON_DISPLAY_DELAY_MS);
 
@@ -84,81 +90,114 @@ export function FinancialPage() {
       subtitle={t("financial.subtitle")}
       actions={
         <>
-          {/* Date Selector */}
-          <Select
-            value={dateRange}
-            onValueChange={(val) => setDateRange(val as DateRange)}
-          >
-            <SelectTrigger size="default" className="w-36 text-xs font-medium bg-background">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="30_days">{t("financial.last30Days")}</SelectItem>
-              <SelectItem value="quarter">{t("financial.thisQuarter")}</SelectItem>
-              <SelectItem value="year">{t("financial.yearToDate")}</SelectItem>
-            </SelectContent>
-          </Select>
+          {/* Sub-tab Switcher */}
+          <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border mr-1">
+            <Button
+              type="button"
+              variant={activeTab === "overview" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setParam("tab", "overview")}
+              className="h-6.5 text-xs font-semibold gap-1 px-2.5 cursor-pointer"
+            >
+              <BarChart3 className="h-3 w-3" />
+              <span>Overview & Charts</span>
+            </Button>
+            <Button
+              type="button"
+              variant={activeTab === "payroll" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setParam("tab", "payroll")}
+              className="h-6.5 text-xs font-semibold gap-1 px-2.5 cursor-pointer text-emerald-600 dark:text-emerald-400"
+            >
+              <Users className="h-3 w-3" />
+              <span>Technician Commissions</span>
+            </Button>
+          </div>
 
-          {/* Export Button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExport}
-            disabled={isExporting}
-            className="h-7 flex items-center gap-1 px-3 text-xs font-medium bg-white hover:bg-zinc-50 text-zinc-700 border-zinc-200 cursor-pointer dark:border-zinc-800 dark:bg-zinc-900 hover:text-zinc-900 dark:hover:bg-zinc-800/80 dark:text-zinc-300 dark:hover:text-zinc-100"
-          >
-            <Download className={`h-3 w-3 text-zinc-500 dark:text-zinc-400 ${isExporting ? "animate-spin" : ""}`} />
-            {isExporting ? t("financial.exporting") : t("financial.export")}
-          </Button>
+          {activeTab === "overview" && (
+            <>
+              {/* Date Selector */}
+              <Select
+                value={dateRange}
+                onValueChange={(val) => setDateRange(val as DateRange)}
+              >
+                <SelectTrigger size="default" className="h-7 w-36 text-xs font-medium bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="30_days">{t("financial.last30Days")}</SelectItem>
+                  <SelectItem value="quarter">{t("financial.thisQuarter")}</SelectItem>
+                  <SelectItem value="year">{t("financial.yearToDate")}</SelectItem>
+                </SelectContent>
+              </Select>
 
-          {/* Log Expense Button (ADMIN only) */}
-          {isAdmin && <LogExpenseDialog onExpenseLogged={refresh} />}
+              {/* Export Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+                disabled={isExporting}
+                className="h-7 flex items-center gap-1 px-3 text-xs font-medium bg-white hover:bg-zinc-50 text-zinc-700 border-zinc-200 cursor-pointer dark:border-zinc-800 dark:bg-zinc-900 hover:text-zinc-900 dark:hover:bg-zinc-800/80 dark:text-zinc-300 dark:hover:text-zinc-100"
+              >
+                <Download className={`h-3 w-3 text-zinc-500 dark:text-zinc-400 ${isExporting ? "animate-spin" : ""}`} />
+                {isExporting ? t("financial.exporting") : t("financial.export")}
+              </Button>
+
+              {/* Log Expense Button (ADMIN only) */}
+              {isAdmin && <LogExpenseDialog onExpenseLogged={refresh} />}
+            </>
+          )}
         </>
       }
     >
-      <div className="flex flex-col gap-4">
-        {/* KPI Summary Cards (Top Row) */}
-        <section aria-label="KPI Metrics">
-          <KpiCards kpis={kpis} />
-        </section>
+      {activeTab === "payroll" ? (
+        <TechnicianPayrollTable />
+      ) : (
+        <div className="flex flex-col gap-4">
+          {/* KPI Summary Cards (Top Row) */}
+          <section aria-label="KPI Metrics">
+            <KpiCards kpis={kpis} />
+          </section>
 
-        {/* Interactive Charts Section (Middle Grid) */}
-        <section className="grid grid-cols-1 gap-4 lg:grid-cols-3" aria-label="Financial Trends">
-          {/* Left: Revenue vs Expenses (Col-span 2) */}
-          <div className="lg:col-span-2">
-            <ChunkErrorBoundary fallback={<ChartSkeletonPlaceholder className="h-72" />}>
-              <Suspense fallback={<ChartSkeletonPlaceholder className="h-72" />}>
-                <RevenueChart
-                  data={monthlyData}
-                  hoveredIndex={hoveredMonthIndex}
-                  setHoveredIndex={setHoveredMonthIndex}
-                />
-              </Suspense>
-            </ChunkErrorBoundary>
-          </div>
+          {/* Interactive Charts Section (Middle Grid) */}
+          <section className="grid grid-cols-1 gap-4 lg:grid-cols-3" aria-label="Financial Trends">
+            {/* Left: Revenue vs Expenses (Col-span 2) */}
+            <div className="lg:col-span-2">
+              <ChunkErrorBoundary fallback={<ChartSkeletonPlaceholder className="h-72" />}>
+                <Suspense fallback={<ChartSkeletonPlaceholder className="h-72" />}>
+                  <RevenueChart
+                    data={monthlyData}
+                    hoveredIndex={hoveredMonthIndex}
+                    setHoveredIndex={setHoveredMonthIndex}
+                  />
+                </Suspense>
+              </ChunkErrorBoundary>
+            </div>
 
-          {/* Right: Expense Breakdown (Col-span 1) */}
-          <div className="lg:col-span-1">
-            <ChunkErrorBoundary fallback={<ChartSkeletonPlaceholder className="h-72" />}>
-              <Suspense fallback={<ChartSkeletonPlaceholder className="h-72" />}>
-                <ExpenseDoughnut
-                  categories={expenseCategories}
-                  hoveredIndex={hoveredCategoryIndex}
-                  setHoveredIndex={setHoveredCategoryIndex}
-                  totalExpenses={totalExpensesFormatted}
-                />
-              </Suspense>
-            </ChunkErrorBoundary>
-          </div>
-        </section>
+            {/* Right: Expense Breakdown (Col-span 1) */}
+            <div className="lg:col-span-1">
+              <ChunkErrorBoundary fallback={<ChartSkeletonPlaceholder className="h-72" />}>
+                <Suspense fallback={<ChartSkeletonPlaceholder className="h-72" />}>
+                  <ExpenseDoughnut
+                    categories={expenseCategories}
+                    hoveredIndex={hoveredCategoryIndex}
+                    setHoveredIndex={setHoveredCategoryIndex}
+                    totalExpenses={totalExpensesFormatted}
+                  />
+                </Suspense>
+              </ChunkErrorBoundary>
+            </div>
+          </section>
 
-        {/* Recent Transactions Section (Bottom Table) */}
-        <section aria-label="Ledger Movements" className="mt-1">
-          <TransactionsTable transactions={transactions} />
-        </section>
-      </div>
+          {/* Recent Transactions Section (Bottom Table) */}
+          <section aria-label="Ledger Movements" className="mt-1">
+            <TransactionsTable transactions={transactions} />
+          </section>
+        </div>
+      )}
     </Page>
   );
 }
 
 export default FinancialPage;
+

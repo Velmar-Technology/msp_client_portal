@@ -393,6 +393,25 @@ Esta capa orquesta las transacciones, valida reglas complejas (como SLAs y lími
 - `StorageStatus`
 
 
+#### [TechnicianEarningsService.ts](file:///c:/Users/eapolanco/Workspace/msp_client_portal/server/src/modules/system/services/TechnicianEarningsService.ts)
+*Ruta: `server/src/modules/system/services/TechnicianEarningsService.ts`*
+
+##### Clase: `TechnicianEarningsService`
+| Método / Función | Argumentos | Descripción / Rol |
+| :--- | :--- | :--- |
+| `calculateAndRecordEarnings` | `ticket: Ticket, technicianId: string, tenantId: string` | Calcula base rate × multiplicador de prioridad + bono SLA, registra el pago en `technician_earnings` y genera asiento de gasto operativo pre-split en `expenses` (`Labor & Technician Commissions`). |
+| `voidEarningsForReopenedTicket` | `ticketId: string, tenantId?: string` | Anula automáticamente comisiones pendientes si el ticket es reabierto durante el período de retención de 48 horas. |
+| `getTechnicianEarnings` | `technicianId: string, tenantId: string, page = 1, limit = 50` | Retorna el resumen consolidado de ganancias, tasa de adherencia a SLA y listado paginado para el técnico autenticado. |
+| `getAdminEarningsOverview` | `tenantId: string, status?: string, page = 1, limit = 50` | Retorna la nómina global de comisiones para revisión administrativa y conciliación de pagos. |
+| `processBatchPayout` | `earningIds: string[], ctx: UserContext` | Procesa en lote el desembolso de comisiones marcándolas como `PAID` con timestamp de pago. |
+| `updateRates` | `data: Partial<TechnicianRate>, ctx: UserContext` | Configura tasas base de comisión, bonos SLA y multiplicadores por prioridad. |
+
+##### Interfaces definidas:
+- `TechnicianEarning`
+- `TechnicianRate`
+- `TechnicianEarningsSummary`
+- `TechnicianEarningBreakdown`
+
 #### [NotificationPreferenceService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/notifications/services/NotificationPreferenceService.ts)
 *Ruta: `server/src/modules/notifications/services/NotificationPreferenceService.ts`*
 
@@ -578,8 +597,16 @@ Reciben peticiones HTTP de Express, extraen parámetros y llaman a la capa de Se
 | `createPaypalOrder` | `req: Request, res: Response` | Mapeo o funcionalidad interna |
 | `capturePaypalOrder` | `req: Request, res: Response` | Mapeo o funcionalidad interna |
 | `download` | `req: Request, res: Response` | Mapeo o funcionalidad interna |
-| `getFinancialStats` | `req: Request, res: Response` | Mapeo o funcionalidad interna |
+#### [TechnicianEarningsController.ts](file:///c:/Users/eapolanco/Workspace/msp_client_portal/server/src/modules/system/controllers/TechnicianEarningsController.ts)
+*Ruta: `server/src/modules/system/controllers/TechnicianEarningsController.ts`*
 
+##### Clase: `TechnicianEarningsController`
+| Método / Función | Argumentos | Descripción / Rol |
+| :--- | :--- | :--- |
+| `getMyEarnings` | `req: Request, res: Response` | `GET /api/v1/system/technicians/me/earnings` — Retorna comisiones, bono SLA y desglose de tickets cerrados para el técnico autenticado. |
+| `getAdminEarningsOverview` | `req: Request, res: Response` | `GET /api/v1/system/technicians/earnings` — Retorna nómina general y desglose de desembolsos para administradores. |
+| `processBatchPayout` | `req: Request, res: Response` | `POST /api/v1/system/technicians/earnings/payout` — Procesa pago por lote marcando registros seleccionados como `PAID`. |
+| `updateRates` | `req: Request, res: Response` | `PUT /api/v1/system/technicians/rates` — Configura tasas base, bono SLA y multiplicadores. |
 
 #### [NotificationController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/notifications/controllers/NotificationController.ts)
 *Ruta: `server/src/modules/notifications/controllers/NotificationController.ts`*
@@ -931,6 +958,22 @@ El frontend cuenta con un sistema de diseño de correos electrónicos homogéneo
 - `UserListResponse`
 - `UserStats`
 - `UserListParams`
+
+
+#### [earningsService.ts](file:///c:/Users/eapolanco/Workspace/msp_client_portal/client/src/services/earningsService.ts)
+*Ruta: `client/src/services/earningsService.ts`*
+
+##### Interfaces definidas:
+- `TechnicianEarning`
+- `TechnicianRate`
+- `TechnicianEarningsSummary`
+- `TechnicianEarningBreakdown`
+
+##### Métodos expuestos:
+- `getMyEarnings(params)`: Consulta comisiones del técnico conectado.
+- `getAdminOverview(params)`: Consulta nómina general de técnicos para administradores.
+- `processBatchPayout(earningIds)`: Ejecuta desembolsos en lote (`PAID`).
+- `updateRates(data)`: Configura tarifas base y multiplicadores.
 
 
 

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { systemController } from '@modules/system/controllers/SystemController';
+import { technicianEarningsController } from '@modules/system/controllers/TechnicianEarningsController';
 import { authMiddleware } from '@shared/middleware/authMiddleware';
 import { rbacMiddleware } from '@shared/middleware/rbacMiddleware';
 import { UserRole } from '@shared/types';
@@ -22,4 +23,33 @@ router.get(
   (req, res) => systemController.getApiStatus(req, res),
 );
 
+/** GET /api/v1/system/technicians/me/earnings — Get personal earnings and closed-ticket history (Technician & Admin) */
+router.get(
+  '/technicians/me/earnings',
+  rbacMiddleware(UserRole.TECHNICIAN, UserRole.ADMIN),
+  (req, res) => technicianEarningsController.getMyEarnings(req, res),
+);
+
+/** GET /api/v1/system/technicians/earnings — Get organization-wide technician earnings roster (Admin only) */
+router.get(
+  '/technicians/earnings',
+  rbacMiddleware(UserRole.ADMIN),
+  (req, res) => technicianEarningsController.getAdminEarningsOverview(req, res),
+);
+
+/** POST /api/v1/system/technicians/earnings/payout — Process batch payout for earnings (Admin only) */
+router.post(
+  '/technicians/earnings/payout',
+  rbacMiddleware(UserRole.ADMIN),
+  (req, res) => technicianEarningsController.processBatchPayout(req, res),
+);
+
+/** PUT /api/v1/system/technicians/rates — Update technician closed rate and priority multipliers (Admin only) */
+router.put(
+  '/technicians/rates',
+  rbacMiddleware(UserRole.ADMIN),
+  (req, res) => technicianEarningsController.updateRates(req, res),
+);
+
 export default router;
+

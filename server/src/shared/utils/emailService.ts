@@ -117,28 +117,28 @@ export async function sendEmail(payload: NotificationPayload): Promise<void> {
     });
 
     if (usingSMTP) {
-      logger.info('📧 Email sent successfully', {
+      logger.info('Email sent successfully', {
         to: payload.to,
         subject: payload.subject,
         messageId: info.messageId,
       });
     } else {
-      logger.info('📧 [STUB] Email logged', {
+      logger.info('Email logged', {
         to: payload.to,
         subject: payload.subject,
       });
     }
   } catch (error) {
-    logger.error('📧 Failed to send email', {
+    logger.error('Failed to send email', {
       to: payload.to,
       subject: payload.subject,
       error,
     });
 
     if (usingSMTP) {
-      logger.warn('📧 Falling back to STUB mode for subsequent emails due to send failure');
+      logger.warn('Falling back to STUB mode for subsequent emails due to send failure');
       useStubTransporter = true;
-      logger.info('📧 [STUB FALLBACK] Email logged due to SMTP send failure', {
+      logger.info('Email logged due to SMTP send failure', {
         to: payload.to,
         subject: payload.subject,
         body: payload.body,

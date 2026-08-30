@@ -583,7 +583,21 @@
     "resolveTicket": "Resolve",
     "awaitingPayment": "Awaiting Payment",
     "statusUpdateSuccess": "Status updated successfully",
-    "statusUpdateError": "Failed to update status"
+    "statusUpdateError": "Failed to update status",
+    "myEarnings": "My Earnings",
+    "totalEarned": "Total Earned",
+    "pendingPayout": "Pending Payout",
+    "approvedPayout": "Approved",
+    "paidPayout": "Paid",
+    "slaMetRate": "SLA Met Rate",
+    "earningsLedger": "Closed Ticket Bounties & Earnings",
+    "earningsLedgerDesc": "Track earned commissions per closed ticket with priority multipliers and SLA performance bonuses.",
+    "ticketBounty": "Bounty",
+    "baseRate": "Base",
+    "slaBonus": "SLA Bonus",
+    "multiplier": "Multiplier",
+    "earnedAt": "Earned Date",
+    "noEarnings": "No ticket closed earnings recorded yet. Resolve assigned tickets to earn bounties!"
   },
   "plans": {
     "title": "Plan Selection",

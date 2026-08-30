@@ -149,6 +149,17 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
   - **Day 30 Overdue:** Permanent technical purge and deletion of data from servers for storage liberation with zero liability to the company (`account_status = 'PURGED'`). Purges Nextcloud storage accounts and hardware bindings.
   - **Restoration:** Payment capture automatically restores tenant and all users to `ACTIVE`.
 
+### Module 7: Technician Commissions, Pre-Split OpEx & Profit Distribution
+
+- **BL-801: Closed-Ticket Commission & Holdback Subsystem** (`TechnicianEarningsService.calculateAndRecordEarnings`)
+  - Closed tickets yield a per-ticket commission: Base rate ($8.00 USD) $\times$ priority multiplier (LOW: 1.0x, MEDIUM: 1.25x, HIGH: 1.75x, CRITICAL: 2.5x) $+$ SLA bonus ($4.00 USD if resolved within target business hours).
+  - Automatically posted as a Pre-Split Operating Expense (`Labor & Technician Commissions`) in the `expenses` ledger upon `RESOLVED`/`CLOSED`.
+  - Automated resolutions (`RESOLVED_AUTOMATED`) yield $0 commission.
+  - 48-hour holdback (`PENDING` state). If a ticket is reopened during holdback, `voidEarningsForReopenedTicket` marks the earning `VOIDED`.
+- **BL-802: 70/30 Net Revenue & Profit Split Model** (`FinancialStatsService`)
+  - Net Profit Pool $= \text{Gross Paid Invoices} - \text{Total Operating Expenses}$ (which includes technician labor commissions).
+  - Profit is split: **70% to HQ Company** (which absorbs 70% of technician commission expenses) and **30% to Lead Engineer / Admin**.
+
 ---
 
 ## Core Data Journeys & Command-Query Separation (CQS)
@@ -182,6 +193,17 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
    - _Command:_ `activateExpiredSubscriptionsForClient` updates linked `EXPIRED` client subscriptions to `ACTIVE`.
    - _Command:_ `notificationService.createInAppNotification` alerts client and admins.
 3. **Outputs:** Invoice status `PAID`, subscriptions `ACTIVE`, HTTP 200 returned.
+
+### Journey 4: Ticket Resolution, Commission OpEx & Batch Payout
+
+1. **Inputs:** Technician marks ticket `RESOLVED` or `CLOSED` via `PATCH /api/v1/tickets/:id/status`.
+2. **Execution:**
+   - _Command:_ `TicketStatusService.updateStatus` transitions ticket.
+   - _Command:_ `TechnicianEarningsService.calculateAndRecordEarnings` calculates rate $\times$ priority multiplier $+$ SLA bonus.
+   - _Command:_ Automatically inserts Pre-Split OpEx entry into `expenses` (`category = 'Labor & Technician Commissions'`).
+   - _Command:_ Inserts ledger row into `technician_earnings`.
+   - _Admin Payout:_ Admin submits batch approval via `POST /api/v1/system/technicians/earnings/payout`, transitioning selected records to `PAID`.
+3. **Outputs:** Ticket resolved, bounty logged as OpEx, visible on Tech Dashboard & Admin Payroll table.
 
 ---
 

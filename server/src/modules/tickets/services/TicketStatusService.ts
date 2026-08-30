@@ -2,6 +2,7 @@ import { ticketRepository, TicketRepository } from '@modules/tickets/repositorie
 import { ticketEventRepository, TicketEventRepository } from '@modules/tickets/repositories/TicketEventRepository';
 import { userRepository, UserRepository } from '@modules/auth';
 import { notificationService, NotificationService } from '@modules/notifications';
+import { technicianEarningsService, TechnicianEarningsService } from '@modules/system';
 import { ticketAccessPolicy, TicketAccessPolicy } from '@shared/policies/TicketAccessPolicy';
 import { NotFoundError, InternalServerError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
@@ -10,20 +11,21 @@ import { UpdateTicketStatusInput } from '@shared/dtos/ticket.dto';
 
 /**
  * Domain service managing ticket status state transitions, SLA cancellation constraints,
- * audit event logging, and status change client notifications.
+ * audit event logging, status change client notifications, and technician closure commission calculation.
  *
  * @see BL-101 (1-Hour SLA Cancellation Rule)
  * @see BL-301 (RBAC & Status Transition State Machine)
  */
 export class TicketStatusService {
   /**
-   * Initializes TicketStatusService with repository, notification, and policy dependencies.
+   * Initializes TicketStatusService with repository, notification, earnings, and policy dependencies.
    *
    * @param ticketRepo - Ticket data repository
    * @param eventRepo - Ticket audit event repository
    * @param userRepo - User repository for client lookup
    * @param notifSvc - Notification service for real-time dispatch
    * @param accessPol - Ticket access and state transition policy
+   * @param earningsSvc - Technician earnings and OpEx calculation service
    */
   constructor(
     private ticketRepo: TicketRepository = ticketRepository,
@@ -31,6 +33,7 @@ export class TicketStatusService {
     private userRepo: UserRepository = userRepository,
     private notifSvc: NotificationService = notificationService,
     private accessPol: TicketAccessPolicy = ticketAccessPolicy,
+    private earningsSvc: TechnicianEarningsService = technicianEarningsService,
   ) {}
 
   /**
@@ -79,6 +82,23 @@ export class TicketStatusService {
     });
 
     await this.notifyClientOfStatusChange(ticketId, updated, data.notes);
+
+    // Trigger technician closure earnings or void if reopened
+    if (data.status === TicketStatus.RESOLVED || data.status === TicketStatus.CLOSED) {
+      const closingTechId = updated.assigned_tech_id || ctx.userId;
+      if (closingTechId && ctx.role === 'TECHNICIAN' || ctx.role === 'ADMIN') {
+        this.earningsSvc.calculateAndRecordEarnings(updated, closingTechId, ticket.tenant_id).catch((err) => {
+          logger.error('Failed to calculate technician earnings for ticket closure', { error: err, ticketId });
+        });
+      }
+    } else if (
+      (ticket.status === TicketStatus.RESOLVED || ticket.status === TicketStatus.CLOSED) &&
+      (data.status === TicketStatus.OPEN || data.status === TicketStatus.IN_PROGRESS || data.status === TicketStatus.CANCELLED)
+    ) {
+      this.earningsSvc.voidEarningsForReopenedTicket(ticketId, ticket.tenant_id).catch((err) => {
+        logger.error('Failed to void technician earnings on ticket reopen', { error: err, ticketId });
+      });
+    }
 
     logger.info('Ticket status updated', { ticketId, from: ticket.status, to: data.status, updatedBy: ctx.userId });
     return updated;
