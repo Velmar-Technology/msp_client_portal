@@ -104,11 +104,18 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
 - **BL-203: Out-of-Scope Project Guardrails** (`TicketService.enforceScope`)
   - Shifts out-of-scope requests (hardware moves, site setups) to `PENDING_ESTIMATE` pending client authorization.
 
-### Module 3: Access Control & Ticket State Machine
+### Module 3: Access Control, SOTA Hybrid Authorization & State Machine
 
-- **BL-301: Ticket State Machine & RBAC** (`TicketService.updateTicketStatus`)
+- **BL-301: Ticket State Machine & RBAC** (`TicketService.updateTicketStatus`, `TicketAccessPolicy`)
   - All status transitions must comply with the `STATUS_TRANSITIONS` state matrix.
   - Multi-tenant RBAC enforces isolation: Clients are limited to `CANCELLED` status changes; Technicians manage assigned tickets; Admins hold global permissions.
+
+- **BL-302: SOTA Hybrid Authorization Engine (RBAC + ABAC + ReBAC)** (`HybridPolicyEngine`, `ZanzibarTupleStore`, `PolicyAsCodeEngine`)
+  - **Layer 1 (RBAC Baseline):** Evaluates coarse actor classification (`CLIENT`, `TECHNICIAN`, `ADMIN`).
+  - **Layer 2 (ReBAC / Zanzibar):** Resolves fine-grained relationship graph tuples (`<subject>#<relation>@<object>`) with hierarchical inheritance (`owner` $\rightarrow$ `editor` $\rightarrow$ `viewer`).
+  - **Layer 3 (ABAC / PaC):** Evaluates declarative Policy-as-Code rules, temporal SLA windows (`BL-101`), and Non-Payment account tier restrictions (`BL-702`).
+  - **AI / RAG Vector ACLs (`VectorAclService`):** Dual-phase security generating database pre-retrieval SQL/pgvector `WHERE` clauses and post-retrieval chunk sanitization.
+  - **Continuous Adaptive Trust (`ContinuousAdaptiveTrustService`):** Real-time anomaly risk scoring (impossible travel, data exfiltration) and unsupervised role mining algorithms.
 
 ### Module 4: Billing Automation & Invoicing Lifecycle
 
@@ -316,6 +323,20 @@ The portal integrates with **Nextcloud** running on **TrueNAS SCALE** (`cloud-st
 - **Infrastructure Docs & Runbooks:** Full architectural guide, IP topology, and diagnostic scripts are available in [`docs/infrastructure/WIREGUARD_NEXTCLOUD_INTEGRATION.md`](docs/infrastructure/WIREGUARD_NEXTCLOUD_INTEGRATION.md) and [`scripts/infra/wireguard/`](scripts/infra/wireguard/). The production `msp_portal` stack (12 services, Traefik routing, Zabbix subpath fix, deploy/rollback) is documented in [`docs/infrastructure/MSP_PORTAL_STACK.md`](docs/infrastructure/MSP_PORTAL_STACK.md).
 
 ---
+
+## 🛡️ SOTA Authorization Engine & Live Demonstration
+
+The platform includes a State-of-the-Art (SOTA) Authorization subsystem (`server/src/shared/authz/`) combining **RBAC**, **Google Zanzibar ReBAC**, **Policy-as-Code ABAC**, **AI/RAG Vector ACLs**, and **Continuous Adaptive Trust**.
+
+To run the interactive live demonstration in your terminal:
+```bash
+npm -w server exec tsx src/shared/scripts/demoAuthz.ts
+```
+
+To run all authorization unit tests:
+```bash
+npm -w server exec vitest run src/shared/authz/ src/shared/middleware/authzMiddleware.test.ts
+```
 
 ---
 

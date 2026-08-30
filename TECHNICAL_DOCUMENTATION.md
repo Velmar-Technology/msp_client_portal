@@ -25,12 +25,19 @@ graph TD
     Controllers --> Client
 ```
 
-1. **Capa API Gateway (`middleware/gateway*.ts`):** Punto de entrada unificado que ejecuta la decodificación de JWT, la inyección de cabeceras estándar (`X-User-Id`, `X-Tenant-Id`), el control de tasa de peticiones por inquilino (*Multi-Tenant Rate Limiting*) y el enrutamiento a clústeres.
-2. **Rutas (`routes/`):** Define los endpoints de la API. No contiene lógica de negocio, solo delega en los controladores correspondientes.
-3. **Controladores (`controllers/`):** Manejan la entrada HTTP (`req`, `res`), validan las entradas de datos (usando Zod a través de middlewares) y delegan la lógica de negocio a los servicios.
-4. **Servicios (`services/`):** Contienen toda la lógica de negocio nuclear del sistema (e.g., asignación de tickets mediante Round-Robin, políticas de SLA de 1 hora, facturación automática, sincronización con Nextcloud). No tienen conocimiento de la capa HTTP.
-5. **Repositorios (`repositories/`):** Es la única capa autorizada para realizar consultas SQL (o sentencias Drizzle) a la base de datos PostgreSQL.
-6. **Seguridad a Nivel de Fila (RLS) y Esquema DB (`db/`):** Define las tablas relacionales y sus políticas de aislamiento por inquilino (*Row-Level Security*) usando `app.current_tenant_id` y `withTenantContext`.
+1. **Capa API Gateway (`shared/middleware/gateway*.ts`):** Punto de entrada unificado que ejecuta la decodificación de JWT, la inyección de cabeceras estándar (`X-User-Id`, `X-Tenant-Id`), el control de tasa de peticiones por inquilino (*Multi-Tenant Rate Limiting*) y el enrutamiento a clústeres.
+2. **Middleware de Autorización Universal (`shared/middleware/authzMiddleware.ts`):** Fábrica declarativa `authorize(action, resourceType, extractResource)` que conecta las rutas de Express con el Policy Decision Point (PDP) híbrido.
+3. **Rutas (`routes/`):** Define los endpoints de la API. No contiene lógica de negocio, solo delega en los controladores correspondientes.
+4. **Controladores (`controllers/`):** Manejan la entrada HTTP (`req`, `res`), validan las entradas de datos (usando Zod a través de middlewares) y delegan la lógica de negocio a los servicios.
+5. **Servicios (`services/`):** Contienen toda la lógica de negocio nuclear del sistema (e.g., asignación de tickets mediante Round-Robin, políticas de SLA de 1 hora, facturación automática, sincronización con Nextcloud). No tienen conocimiento de la capa HTTP.
+6. **Repositorios (`repositories/`):** Es la única capa autorizada para realizar consultas SQL (o sentencias Drizzle) a la base de datos PostgreSQL.
+7. **Seguridad a Nivel de Fila (RLS) y Esquema DB (`shared/db/`):** Define las tablas relacionales y sus políticas de aislamiento por inquilino (*Row-Level Security*) usando `app.current_tenant_id` y `withTenantContext`.
+8. **Motor de Autorización SOTA (`shared/authz/`):** Subsistema de autorización híbrido desacoplado (*Policy Decision Point - PDP*) que unifica tres capas de seguridad:
+   - **RBAC (Control Coarse-Grained):** Verificación de identidad y roles base (`CLIENT`, `TECHNICIAN`, `ADMIN`).
+   - **ReBAC (Zanzibar Graph Engine - `ZanzibarTupleStore`):** Evaluación de tuplas de relación `<sujeto>#<relación>@<objeto>` con herencia jerárquica (`owner` $\rightarrow$ `editor` $\rightarrow$ `viewer`).
+   - **ABAC / Policy-as-Code (`PolicyAsCodeEngine`):** Predicados contextuales dinámicos versionados (ventana SLA de 1 hora `BL-101`, aislamiento multi-inquilino estricto, y escala de impagos `BL-702`).
+   - **Seguridad Vectorial para IA/RAG (`VectorAclService`):** Autorización de doble fase con pre-filtrado SQL/pgvector y sanitización post-recuperación de chunks de conocimiento.
+   - **Confianza Adaptativa Continua & Minería de Roles (`ContinuousAdaptiveTrustService`):** Detección en tiempo real de anomalías de sesión (viaje imposible, exfiltración masiva de datos) y optimización de permisos no utilizados mediante clustering no supervisado.
 
 ---
 

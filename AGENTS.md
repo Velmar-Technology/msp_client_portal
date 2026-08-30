@@ -71,6 +71,7 @@ Dependencies point strictly **INWARD**: `Frameworks/Drivers` $\rightarrow$ `Inte
 | **BL-201** | Feature Quota | Enforces plan ticket limits (e.g. 5 tickets/device/mo). Blocks creation with `TicketLimitExceededError`. |
 | **BL-202** | License True-Up | Nightly reconciliation of cloud seats/RMM agents against baseline contracts for next billing cycle. |
 | **BL-301** | RBAC & State Machine | Transitions must satisfy `STATUS_TRANSITIONS` matrix. Clients: tenant isolation, cancel only. Techs: assigned tickets. Admins: global. |
+| **BL-302** | SOTA Hybrid Authorization | Unified PDP (`server/src/shared/authz/`) orchestrating RBAC (roles), Zanzibar ReBAC (`<subject>#<relation>@<object>`), Policy-as-Code ABAC (SLA/Non-payment), Vector AI ACL pre-filtering, and Continuous Adaptive Trust. |
 | **BL-401** | Subscription Reactivation | PayPal capture or admin `markAsPaid` transitions linked `EXPIRED` client subscriptions to `ACTIVE` and broadcasts alerts. |
 | **BL-402** | Renewal Scheduler | Cron evaluates expiry, calculates hardware multiplier ($M_{\text{equip}}$), creates invoices, and dispatches billing emails. |
 | **BL-501** | CRM Lead Pipeline | Deals progress: `NEW` $\rightarrow$ `QUALIFIED` $\rightarrow$ `PROPOSAL` $\rightarrow$ `NEGOTIATION` $\rightarrow$ `WON`/`LOST`. `WON` auto-provisions client tenant. |
