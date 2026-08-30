@@ -125,7 +125,6 @@ export async function sendEmail(payload: NotificationPayload): Promise<void> {
       logger.info('📧 [STUB] Email logged', {
         to: payload.to,
         subject: payload.subject,
-        body: payload.body,
       });
     }
   } catch (error) {
