@@ -22,7 +22,7 @@ export const expenseService = {
    * @param limit - Page size limit.
    * @returns Promise resolving to expense list and pagination metadata.
    */
-  async getAll(page = 1, limit = 20): Promise<{ data: Expense[]; pagination: { total: number; totalPages: number } }> {
+  async getAll(page = 1, limit = 10): Promise<{ data: Expense[]; pagination: { total: number; totalPages: number } }> {
     const response = await api.get('/expenses', { params: { page, limit } });
     return response.data;
   },

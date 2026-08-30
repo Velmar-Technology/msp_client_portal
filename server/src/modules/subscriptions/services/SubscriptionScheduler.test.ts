@@ -67,6 +67,9 @@ vi.mock('@modules/billing', () => {
       findPendingDueInvoices: vi.fn().mockResolvedValue([]),
       updateLastEmailSentAt: vi.fn().mockResolvedValue({}),
     },
+    expenseRepository: {
+      create: vi.fn().mockResolvedValue({ id: 'mock-expense-id' }),
+    },
     paypalService: {
       getSubscription: mocks.paypalGetSubscription,
     },

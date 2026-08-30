@@ -123,7 +123,6 @@ export function TicketTitleWithHoverCard({ ticket, userId }: { ticket: Ticket; u
 export function TicketsPage() {
   const {
     t,
-    i18n,
     user,
     tickets,
     loading,
@@ -143,6 +142,8 @@ export function TicketsPage() {
     setCategoryFilter,
     priorityFilter,
     setPriorityFilter,
+    dateRangeFilter,
+    setDateRangeFilter,
     showNewTicket,
     setShowNewTicket,
     ticketToCancel,
@@ -246,21 +247,6 @@ export function TicketsPage() {
         },
       },
       {
-        accessorKey: "created_at",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title={t("tickets.colCreated")} />
-        ),
-        cell: ({ row }) => (
-          <span className="text-xs text-muted-foreground font-mono">
-            {new Date(row.original.created_at).toLocaleDateString(i18n.language === "es_DO" ? "es-DO" : "en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </span>
-        ),
-      },
-      {
         id: "actions",
         header: () => (
           <div className="text-right">
@@ -333,7 +319,7 @@ export function TicketsPage() {
         },
       },
     ],
-    [t, i18n.language, user, navigate, handleTicketAction, markTicketAsRead],
+    [t, user, navigate, handleTicketAction, markTicketAsRead],
   );
 
   return (
@@ -412,6 +398,18 @@ export function TicketsPage() {
               { value: "CRITICAL", label: t("tickets.priorities.CRITICAL") },
             ],
             placeholder: t("tickets.filterAllPriorities"),
+          },
+          {
+            id: "dateRange",
+            value: dateRangeFilter,
+            onChange: setDateRangeFilter,
+            options: [
+              { value: "all", label: t("tickets.filterAllDates") },
+              { value: "today", label: t("tickets.filterToday") },
+              { value: "7d", label: t("tickets.filterLast7Days") },
+              { value: "30d", label: t("tickets.filterLast30Days") },
+              { value: "month", label: t("tickets.filterThisMonth") },
+            ],
           },
         ]}
         enableRowSelection

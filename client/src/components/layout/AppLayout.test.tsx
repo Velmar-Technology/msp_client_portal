@@ -91,7 +91,7 @@ describe('AppLayout UI Blocker', () => {
     await waitFor(() => {
       expect(screen.getByText('Dashboard Content')).toBeInTheDocument();
     });
-    expect(screen.queryByText('Active Plan Required')).not.toBeInTheDocument();
+    expect(screen.queryByText('layout.blockedTitle')).not.toBeInTheDocument();
   });
 
   test('blocks UI for CLIENT user without active subscription on non-plans route', async () => {
@@ -113,7 +113,7 @@ describe('AppLayout UI Blocker', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Active Plan Required')).toBeInTheDocument();
+      expect(screen.getByText('layout.blockedTitle')).toBeInTheDocument();
     });
     expect(screen.queryByText('Dashboard Content')).not.toBeInTheDocument();
   });
@@ -139,7 +139,7 @@ describe('AppLayout UI Blocker', () => {
     await waitFor(() => {
       expect(screen.getByText('Plans Page Content')).toBeInTheDocument();
     });
-    expect(screen.queryByText('Active Plan Required')).not.toBeInTheDocument();
+    expect(screen.queryByText('layout.blockedTitle')).not.toBeInTheDocument();
   });
 
   test('does not block UI for CLIENT user without active subscription on /terms route', async () => {
@@ -163,7 +163,7 @@ describe('AppLayout UI Blocker', () => {
     await waitFor(() => {
       expect(screen.getByText('Terms Page Content')).toBeInTheDocument();
     });
-    expect(screen.queryByText('Active Plan Required')).not.toBeInTheDocument();
+    expect(screen.queryByText('layout.blockedTitle')).not.toBeInTheDocument();
   });
 
   test('does not block UI for CLIENT user without active subscription on /privacy route', async () => {
@@ -187,7 +187,7 @@ describe('AppLayout UI Blocker', () => {
     await waitFor(() => {
       expect(screen.getByText('Privacy Page Content')).toBeInTheDocument();
     });
-    expect(screen.queryByText('Active Plan Required')).not.toBeInTheDocument();
+    expect(screen.queryByText('layout.blockedTitle')).not.toBeInTheDocument();
   });
 
   test('does not block UI for CLIENT user without active subscription on /help route', async () => {
@@ -211,7 +211,7 @@ describe('AppLayout UI Blocker', () => {
     await waitFor(() => {
       expect(screen.getByText('Help Page Content')).toBeInTheDocument();
     });
-    expect(screen.queryByText('Active Plan Required')).not.toBeInTheDocument();
+    expect(screen.queryByText('layout.blockedTitle')).not.toBeInTheDocument();
   });
 
   test('does not block UI for CLIENT user without active subscription on /billing route', async () => {
@@ -235,7 +235,7 @@ describe('AppLayout UI Blocker', () => {
     await waitFor(() => {
       expect(screen.getByText('Billing Page Content')).toBeInTheDocument();
     });
-    expect(screen.queryByText('Active Plan Required')).not.toBeInTheDocument();
+    expect(screen.queryByText('layout.blockedTitle')).not.toBeInTheDocument();
   });
 
   test('does not block UI for ADMIN user without active subscription', async () => {
@@ -257,6 +257,6 @@ describe('AppLayout UI Blocker', () => {
     await waitFor(() => {
       expect(screen.getByText('Admin Dashboard')).toBeInTheDocument();
     });
-    expect(screen.queryByText('Active Plan Required')).not.toBeInTheDocument();
+    expect(screen.queryByText('layout.blockedTitle')).not.toBeInTheDocument();
   });
 });

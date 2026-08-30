@@ -25,12 +25,23 @@ graph TD
     Controllers --> Client
 ```
 
-1. **Capa API Gateway (`middleware/gateway*.ts`):** Punto de entrada unificado que ejecuta la decodificación de JWT, la inyección de cabeceras estándar (`X-User-Id`, `X-Tenant-Id`), el control de tasa de peticiones por inquilino (*Multi-Tenant Rate Limiting*) y el enrutamiento a clústeres.
-2. **Rutas (`routes/`):** Define los endpoints de la API. No contiene lógica de negocio, solo delega en los controladores correspondientes.
-3. **Controladores (`controllers/`):** Manejan la entrada HTTP (`req`, `res`), validan las entradas de datos (usando Zod a través de middlewares) y delegan la lógica de negocio a los servicios.
-4. **Servicios (`services/`):** Contienen toda la lógica de negocio nuclear del sistema (e.g., asignación de tickets mediante Round-Robin, políticas de SLA de 1 hora, facturación automática, sincronización con Nextcloud). No tienen conocimiento de la capa HTTP.
-5. **Repositorios (`repositories/`):** Es la única capa autorizada para realizar consultas SQL (o sentencias Drizzle) a la base de datos PostgreSQL.
-6. **Seguridad a Nivel de Fila (RLS) y Esquema DB (`db/`):** Define las tablas relacionales y sus políticas de aislamiento por inquilino (*Row-Level Security*) usando `app.current_tenant_id` y `withTenantContext`.
+1. **Capa API Gateway (`shared/middleware/gateway*.ts`):** Punto de entrada unificado que ejecuta la decodificación de JWT, la inyección de cabeceras estándar (`X-User-Id`, `X-Tenant-Id`), el control de tasa de peticiones por inquilino (*Multi-Tenant Rate Limiting*) y el enrutamiento a clústeres.
+2. **Middleware de Autorización Universal (`shared/middleware/authzMiddleware.ts`):** Fábrica declarativa `authorize(action, resourceType, extractResource)` que conecta las rutas de Express con el Policy Decision Point (PDP) híbrido.
+3. **Rutas (`routes/`):** Define los endpoints de la API. No contiene lógica de negocio, solo delega en los controladores correspondientes.
+4. **Controladores (`controllers/`):** Manejan la entrada HTTP (`req`, `res`), validan las entradas de datos (usando Zod a través de middlewares) y delegan la lógica de negocio a los servicios.
+5. **Servicios (`services/`):** Contienen toda la lógica de negocio nuclear del sistema (e.g., asignación de tickets mediante Round-Robin, políticas de SLA de 1 hora, facturación automática, sincronización con Nextcloud). No tienen conocimiento de la capa HTTP.
+6. **Repositorios (`repositories/`):** Es la única capa autorizada para realizar consultas SQL (o sentencias Drizzle) a la base de datos PostgreSQL.
+7. **Seguridad a Nivel de Fila (RLS) y Esquema DB (`shared/db/`):** Define las tablas relacionales y sus políticas de aislamiento por inquilino (*Row-Level Security*) usando `app.current_tenant_id` y `withTenantContext`.
+8. **Motor de Autorización SOTA & Zero Standing Privileges (`shared/authz/`):** Subsistema de autorización híbrido desacoplado (*Policy Decision Point - PDP*) que unifica la gestión de privilegios mínimos de última generación (SOTA PoLP):
+   - **Acceso Efímero y Just-In-Time (Zero Standing Privileges - `EphemeralAccessService`):** Erradica los privilegios permanentes 24/7. Las solicitudes de elevación temporal (`createRequest`) requieren justificación de negocio y duración limitada (`JIT_CONSTANTS.MIN_DURATION_MINUTES` a `MAX_DURATION_MINUTES`), inyectando tuplas temporales en el grafo Zanzibar con auto-expiración y barrido en segundo plano (`sweepExpiredGrants`).
+   - **Identidad de Cargas de Trabajo y M2M Secretless (`WorkloadIdentityService`):** Gestión de identidades no humanas (agentes RMM, workers en segundo plano, agentes de IA) bajo estándares SPIFFE (`spiffe://msp.portal/tenant/{tenantId}/{type}/{id}`). Genera y valida tokens criptográficos firmados (HMAC-SHA256) de vida ultra-corta con delimitación estricta de acciones y prefijos de recursos permitidos.
+   - **Minería de Roles y Reducción Continua de Privilegios (`ContinuousAdaptiveTrustService.mineRoles`):** Algoritmo de clustering no supervisado sobre flujos de `EntitlementLog`. Detecta deriva de permisos (>40% no utilizados) y genera diffs de parche estructurados (`PruningPatchDiff`) para pull requests automatizados de minimización de privilegios.
+   - **Autenticación Contextual y Step-Up MFA Dinámico (`ContinuousAdaptiveTrustService`, `HybridPolicyEngine`):** Evaluación continua de telemetría multi-vector (picos de datos >50MB, ráfagas de peticiones, viajes imposibles, dispositivos no conformes y actividad fuera de horario). Eleva el riesgo a `MEDIUM`/`HIGH` activando desafíos de Step-Up MFA sin interrumpir sesiones legítimas.
+   - **RBAC (Control Coarse-Grained Baseline):** Verificación de identidad y mapeo de acciones por rol (`CLIENT`, `TECHNICIAN`, `ADMIN`).
+   - **ReBAC (Zanzibar Graph Engine - `ZanzibarTupleStore`):** Evaluación de tuplas de relación `<sujeto>#<relación>@<objeto>` con herencia jerárquica (`owner` $\rightarrow$ `editor` $\rightarrow$ `viewer`).
+   - **ABAC / Policy-as-Code (`PolicyAsCodeEngine`):** Predicados contextuales dinámicos versionados (ventana SLA de 1 hora `BL-101`, aislamiento multi-inquilino estricto, y escala de impagos `BL-702`).
+   - **Seguridad Vectorial para IA/RAG (`VectorAclService`):** Autorización de doble fase con pre-filtrado SQL/pgvector y sanitización post-recuperación de chunks de conocimiento.
+   - **Constantes Centralizadas (`constants.ts`):** Definición única y tipada de pesos de riesgo, umbrales de telemetría, tiempos de vida de tokens de workload y duraciones de elevación JIT.
 
 ---
 
@@ -382,6 +393,25 @@ Esta capa orquesta las transacciones, valida reglas complejas (como SLAs y lími
 - `StorageStatus`
 
 
+#### [TechnicianEarningsService.ts](file:///c:/Users/eapolanco/Workspace/msp_client_portal/server/src/modules/system/services/TechnicianEarningsService.ts)
+*Ruta: `server/src/modules/system/services/TechnicianEarningsService.ts`*
+
+##### Clase: `TechnicianEarningsService`
+| Método / Función | Argumentos | Descripción / Rol |
+| :--- | :--- | :--- |
+| `calculateAndRecordEarnings` | `ticket: Ticket, technicianId: string, tenantId: string` | Calcula base rate × multiplicador de prioridad + bono SLA, registra el pago en `technician_earnings` y genera asiento de gasto operativo pre-split en `expenses` (`Labor & Technician Commissions`). |
+| `voidEarningsForReopenedTicket` | `ticketId: string, tenantId?: string` | Anula automáticamente comisiones pendientes si el ticket es reabierto durante el período de retención de 48 horas. |
+| `getTechnicianEarnings` | `technicianId: string, tenantId: string, page = 1, limit = 50` | Retorna el resumen consolidado de ganancias, tasa de adherencia a SLA y listado paginado para el técnico autenticado. |
+| `getAdminEarningsOverview` | `tenantId: string, status?: string, page = 1, limit = 50` | Retorna la nómina global de comisiones para revisión administrativa y conciliación de pagos. |
+| `processBatchPayout` | `earningIds: string[], ctx: UserContext` | Procesa en lote el desembolso de comisiones marcándolas como `PAID` con timestamp de pago. |
+| `updateRates` | `data: Partial<TechnicianRate>, ctx: UserContext` | Configura tasas base de comisión, bonos SLA y multiplicadores por prioridad. |
+
+##### Interfaces definidas:
+- `TechnicianEarning`
+- `TechnicianRate`
+- `TechnicianEarningsSummary`
+- `TechnicianEarningBreakdown`
+
 #### [NotificationPreferenceService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/notifications/services/NotificationPreferenceService.ts)
 *Ruta: `server/src/modules/notifications/services/NotificationPreferenceService.ts`*
 
@@ -567,8 +597,16 @@ Reciben peticiones HTTP de Express, extraen parámetros y llaman a la capa de Se
 | `createPaypalOrder` | `req: Request, res: Response` | Mapeo o funcionalidad interna |
 | `capturePaypalOrder` | `req: Request, res: Response` | Mapeo o funcionalidad interna |
 | `download` | `req: Request, res: Response` | Mapeo o funcionalidad interna |
-| `getFinancialStats` | `req: Request, res: Response` | Mapeo o funcionalidad interna |
+#### [TechnicianEarningsController.ts](file:///c:/Users/eapolanco/Workspace/msp_client_portal/server/src/modules/system/controllers/TechnicianEarningsController.ts)
+*Ruta: `server/src/modules/system/controllers/TechnicianEarningsController.ts`*
 
+##### Clase: `TechnicianEarningsController`
+| Método / Función | Argumentos | Descripción / Rol |
+| :--- | :--- | :--- |
+| `getMyEarnings` | `req: Request, res: Response` | `GET /api/v1/system/technicians/me/earnings` — Retorna comisiones, bono SLA y desglose de tickets cerrados para el técnico autenticado. |
+| `getAdminEarningsOverview` | `req: Request, res: Response` | `GET /api/v1/system/technicians/earnings` — Retorna nómina general y desglose de desembolsos para administradores. |
+| `processBatchPayout` | `req: Request, res: Response` | `POST /api/v1/system/technicians/earnings/payout` — Procesa pago por lote marcando registros seleccionados como `PAID`. |
+| `updateRates` | `req: Request, res: Response` | `PUT /api/v1/system/technicians/rates` — Configura tasas base, bono SLA y multiplicadores. |
 
 #### [NotificationController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/notifications/controllers/NotificationController.ts)
 *Ruta: `server/src/modules/notifications/controllers/NotificationController.ts`*
@@ -920,6 +958,22 @@ El frontend cuenta con un sistema de diseño de correos electrónicos homogéneo
 - `UserListResponse`
 - `UserStats`
 - `UserListParams`
+
+
+#### [earningsService.ts](file:///c:/Users/eapolanco/Workspace/msp_client_portal/client/src/services/earningsService.ts)
+*Ruta: `client/src/services/earningsService.ts`*
+
+##### Interfaces definidas:
+- `TechnicianEarning`
+- `TechnicianRate`
+- `TechnicianEarningsSummary`
+- `TechnicianEarningBreakdown`
+
+##### Métodos expuestos:
+- `getMyEarnings(params)`: Consulta comisiones del técnico conectado.
+- `getAdminOverview(params)`: Consulta nómina general de técnicos para administradores.
+- `processBatchPayout(earningIds)`: Ejecuta desembolsos en lote (`PAID`).
+- `updateRates(data)`: Configura tarifas base y multiplicadores.
 
 
 

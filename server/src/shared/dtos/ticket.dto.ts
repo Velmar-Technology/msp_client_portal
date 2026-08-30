@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { TicketCategory, TicketPriority, TicketStatus } from '@shared/types';
+import { DEFAULT_LIMIT } from '@shared/config/constants';
 
 export const CreateTicketDTO = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters').max(500),
@@ -10,7 +11,8 @@ export const CreateTicketDTO = z.object({
   priority: z.nativeEnum(TicketPriority).optional().default(TicketPriority.MEDIUM),
   equipmentId: z.string().uuid('Invalid equipment ID').optional(),
 });
-export type CreateTicketInput = z.infer<typeof CreateTicketDTO>;
+export type CreateTicketInput = z.input<typeof CreateTicketDTO>;
+export type CreateTicketOutput = z.output<typeof CreateTicketDTO>;
 
 export const UpdateTicketStatusDTO = z.object({
   status: z.nativeEnum(TicketStatus, {
@@ -28,10 +30,11 @@ export const TicketQueryDTO = z.object({
   priority: z.nativeEnum(TicketPriority).optional(),
   equipmentId: z.string().uuid().optional(),
   search: z.string().optional(),
+  dateRange: z.string().optional(),
   sortBy: z.string().optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
   page: z.coerce.number().int().positive().optional().default(1),
-  limit: z.coerce.number().int().positive().max(100).optional().default(20),
+  limit: z.coerce.number().int().positive().max(100).optional().default(DEFAULT_LIMIT),
 });
 export type TicketQueryInput = z.infer<typeof TicketQueryDTO>;
 

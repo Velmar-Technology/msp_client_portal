@@ -1,9 +1,11 @@
 import { useState, useEffect, memo } from "react";
-import { X } from "lucide-react";
+import { X, Clock } from "lucide-react";
 import { ticketService } from "@/services/ticketService";
 import { equipmentService } from "@/services/equipmentService";
 import type { SubscriptionEquipment } from "@/services/equipmentService";
 import { useTranslation } from "react-i18next";
+import { useBusinessHours } from "@/hooks/useBusinessHours";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,6 +35,7 @@ export interface NewTicketModalProps {
 
 export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated }: NewTicketModalProps) {
   const { t } = useTranslation();
+  const { isOpen: isBusinessHoursOpen } = useBusinessHours();
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newCategory, setNewCategory] = useState("REPAIR");
@@ -52,6 +55,15 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
         if (!cancelled) {
           const provisioned = (result || []).filter((device) => device.status === "ACTIVE");
           setDevices(provisioned);
+          if (provisioned.length === 1) {
+            const d = provisioned[0];
+            const limit = d.monthly_ticket_limit;
+            const hasLimit = typeof limit === 'number' && limit > 0;
+            const isLimitReached = hasLimit && (d.monthly_ticket_count ?? 0) >= limit;
+            if (!isLimitReached) {
+              setSelectedEquipmentId(d.id);
+            }
+          }
           setDevicesFailed(false);
         }
       } catch (err) {
@@ -80,6 +92,9 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
 
   async function handleCreateTicket(e: React.FormEvent) {
     e.preventDefault();
+    if (devices.length > 0 && !selectedEquipmentId) {
+      return;
+    }
     setSubmitting(true);
     try {
       const ticket = await ticketService.create({
@@ -116,28 +131,53 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
         if (!open) onClose();
       }}
     >
-      <DialogContent className="sm:max-w-lg bg-card border border-border rounded-xl shadow-xl p-6 text-foreground text-sm">
-        <DialogHeader>
-          <DialogTitle
-            className="text-xl font-bold text-foreground mb-2 text-left"
-          >
-            {t("tickets.createModalTitle")}
-          </DialogTitle>
-          <DialogDescription className="sr-only">{t("tickets.createModalTitle")}</DialogDescription>
+      <DialogContent className="max-w-2xl bg-card border-border shadow-lg p-0 overflow-hidden sm:max-w-xl">
+        <DialogHeader className="p-6 pb-2">
+          <div className="flex justify-between items-center">
+            <DialogTitle className="text-xl font-bold font-heading text-foreground">
+              {t("tickets.createModalTitle")}
+            </DialogTitle>
+            <DialogClose asChild>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                className="text-muted-foreground hover:text-foreground"
+                aria-label={t("common.close") || "Close"}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogClose>
+          </div>
+          <DialogDescription className="text-xs text-muted-foreground">
+            {t("tickets.createModalDesc")}
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleCreateTicket} className="space-y-4">
+
+        <form onSubmit={handleCreateTicket} className="p-6 pt-2 space-y-4">
+          {!isBusinessHoursOpen && (
+            <Alert className="bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400">
+              <Clock className="h-4 w-4" />
+              <AlertTitle className="font-semibold text-xs tracking-wide uppercase">
+                {t("tickets.afterHoursBannerTitle")}
+              </AlertTitle>
+              <AlertDescription className="text-xs mt-1 leading-relaxed">
+                {t("tickets.afterHoursNotice")}
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div>
             <Label htmlFor="new-ticket-title" className="block text-sm font-medium text-foreground mb-1.5">
-              {t("tickets.modalTitleLabel")}
+              {t("tickets.modalTitleLabel")} <span className="text-destructive">*</span>
             </Label>
             <Input
               id="new-ticket-title"
               type="text"
+              required
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               placeholder={t("tickets.modalTitlePlaceholder")}
-              required
-              minLength={5}
+              className="w-full text-xs"
             />
           </div>
           <div>
@@ -189,7 +229,7 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
           {(devicesLoading || devicesFailed || devices.length > 0) && (
             <div>
               <Label htmlFor="new-ticket-device" className="block text-sm font-medium text-foreground mb-1.5">
-                {t("tickets.modalDeviceLabel")}
+                {t("tickets.modalDeviceLabel")} <span className="text-destructive">*</span>
               </Label>
               {devicesLoading ? (
                 <div className="text-sm text-muted-foreground animate-pulse">{t("tickets.modalDeviceLoading")}</div>
@@ -197,21 +237,50 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
                 <div className="text-sm text-destructive">{t("tickets.modalDeviceLoadError")}</div>
               ) : (
                 <Select
-                  value={selectedEquipmentId || "none"}
-                  onValueChange={(val) => setSelectedEquipmentId(val === "none" ? "" : val)}
+                  value={selectedEquipmentId}
+                  onValueChange={setSelectedEquipmentId}
+                  required
                 >
                   <SelectTrigger id="new-ticket-device" size="lg" className="w-full text-xs">
                     <SelectValue placeholder={t("tickets.modalDevicePlaceholder")} />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-border">
-                    <SelectItem value="none">
-                      {t("tickets.modalDevicePlaceholder")}
-                    </SelectItem>
-                    {devices.map((device) => (
-                      <SelectItem key={device.id} value={device.id}>
-                        {device.device_name || `Device ${device.slot_index + 1}`}
-                      </SelectItem>
-                    ))}
+                    {devices.map((device) => {
+                      const limit = device.monthly_ticket_limit;
+                      const hasLimit = typeof limit === 'number' && limit > 0;
+                      const used = device.monthly_ticket_count ?? 0;
+                      const isLimitReached = hasLimit && used >= limit;
+                      const remaining = hasLimit ? Math.max(0, limit - used) : null;
+                      const deviceBaseName = device.device_name || `Device ${device.slot_index + 1}`;
+
+                      let quotaText = '';
+                      if (hasLimit && limit !== undefined && limit !== null) {
+                        if (isLimitReached) {
+                          quotaText = `(${t("tickets.deviceQuotaReached", { used, total: limit }) || `Limit reached (${used}/${limit})`})`;
+                        } else if (remaining !== null) {
+                          quotaText = `(${t("tickets.deviceQuotaRemaining", { remaining, total: limit }) || `${remaining}/${limit} left`})`;
+                        }
+                      } else if (device.monthly_ticket_limit === null) {
+                        quotaText = `(${t("tickets.deviceUnlimitedQuota") || "Unlimited"})`;
+                      }
+
+                      return (
+                        <SelectItem
+                          key={device.id}
+                          value={device.id}
+                          disabled={isLimitReached}
+                        >
+                          <div className="flex items-center justify-between w-full gap-2">
+                            <span>{deviceBaseName}</span>
+                            {quotaText && (
+                              <span className={`text-[10px] ${isLimitReached ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
+                                {quotaText}
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               )}
@@ -282,7 +351,7 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
             </DialogClose>
             <Button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || (devices.length > 0 && !selectedEquipmentId)}
               className="flex-1 cursor-pointer"
             >
               {submitting ? t("tickets.modalCreating") : t("tickets.modalCreate")}

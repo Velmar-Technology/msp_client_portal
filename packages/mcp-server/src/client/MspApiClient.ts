@@ -6,6 +6,9 @@ import type {
   DevicePatch,
   EquipmentSlot,
   ClientHealthReport,
+  EphemeralGrant,
+  AccessDecisionResult,
+  TrustScoreResult,
 } from '../types.js';
 
 export class MspApiClient {
@@ -216,5 +219,76 @@ export class MspApiClient {
     });
     return res.data || res;
   }
+
+  // --- AuthZ, JIT Ephemeral Access & Trust Scoring (BL-302) ---
+
+  /**
+   * Request JIT ephemeral privilege elevation.
+   */
+  async requestEphemeralAccess(params: {
+    role: string;
+    reason: string;
+    durationMinutes?: number;
+    emergencyBreakGlass?: boolean;
+  }): Promise<EphemeralGrant> {
+    const res = await this.request<any>({
+      method: 'POST',
+      url: '/authz/ephemeral/request',
+      data: params,
+    });
+    return res.data || res;
+  }
+
+  /**
+   * List active ephemeral privilege grants for the current subject or tenant.
+   */
+  async listActiveEphemeralGrants(): Promise<EphemeralGrant[]> {
+    const res = await this.request<any>({
+      method: 'GET',
+      url: '/authz/ephemeral/grants',
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Revoke an active ephemeral privilege grant.
+   */
+  async revokeEphemeralGrant(grantId: string, reason?: string): Promise<{ success: boolean; message: string }> {
+    const res = await this.request<any>({
+      method: 'POST',
+      url: `/authz/ephemeral/grants/${grantId}/revoke`,
+      data: { reason },
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Test an authorization decision against the PDP (RBAC/ReBAC/ABAC).
+   */
+  async checkAccessDecision(params: {
+    action: string;
+    resource: { type: string; id?: string; tenantId?: string };
+    context?: Record<string, any>;
+  }): Promise<AccessDecisionResult> {
+    const res = await this.request<any>({
+      method: 'POST',
+      url: '/authz/decision',
+      data: params,
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Query real-time continuous adaptive trust / risk score for an actor.
+   */
+  async getTrustScore(userId?: string): Promise<TrustScoreResult> {
+    const res = await this.request<any>({
+      method: 'GET',
+      url: '/authz/trust-score',
+      params: userId ? { userId } : undefined,
+    });
+    return res.data || res;
+  }
 }
+
 

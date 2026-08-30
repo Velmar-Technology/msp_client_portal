@@ -2,28 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
-## [1.8.0](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.7.3...v1.8.0) (2026-08-30)
-
+## [1.8.0] (2026-08-30)
 
 ### Features
 
-* **auth:** add API key generation and management in user profile ([54e2654](https://github.com/Velmar-Technology/msp_client_portal/commit/54e26549a17046f3ff02b18c3dd43a59a88f1803))
-* **billing:** implement rates, 18% ITBIS tax, NCF Series B01, and non-payment scale ([b363a83](https://github.com/Velmar-Technology/msp_client_portal/commit/b363a838a9d70740ba40b2a787602f35b1a968c3))
-* **billing:** migrate PDF generation to PDFKit with dynamic product descriptions ([a098d97](https://github.com/Velmar-Technology/msp_client_portal/commit/a098d97095114fb8e56a7f4f2c965710e6a4cf24))
-* **db:** update mock seed data and add chunked Faker.js seeder ([66b725a](https://github.com/Velmar-Technology/msp_client_portal/commit/66b725aa1496918c7b7b44c0e650e6a3e76dc699))
-* **infra:** implement AGENTS.md programmatic gatekeepers and module gateway rules ([c7c63ba](https://github.com/Velmar-Technology/msp_client_portal/commit/c7c63ba370446404259e36e6a82706db96b1931f))
-* **rmm:** add agent diagnostics, gateway endpoints, and MCP server tools ([a47ac36](https://github.com/Velmar-Technology/msp_client_portal/commit/a47ac3655044442fbe06a69c0e1b46ceb54c6850))
-
-
-### Bug Fixes
-
-* **client:** register /rmm route and navigation crumbs for device monitoring ([d390343](https://github.com/Velmar-Technology/msp_client_portal/commit/d3903439bd92449c9da8eae980967f2c6b57fe66))
-* **client:** remove duplicate aria-label attribute in PlansPage dropdown trigger ([0c75198](https://github.com/Velmar-Technology/msp_client_portal/commit/0c751986d0fb007f10f63886d97f2ecc61f485cd))
-* **mcp:** enforce backend proxy tunnel workflow for msp-agent tools ([23e0d92](https://github.com/Velmar-Technology/msp_client_portal/commit/23e0d9216e333f798d7e0f5e72e5f2621a74c119))
-* **server:** resolve @shared/types path alias in test files and refine deployment scripts ([173aa37](https://github.com/Velmar-Technology/msp_client_portal/commit/173aa371214ff89e40a3a35e4d4fc1cf169d0529))
-* **shared:** improve UUID validation in base and domain repositories ([78d5243](https://github.com/Velmar-Technology/msp_client_portal/commit/78d5243ae5f45bcf403554403b6ad6ef3ec2560f))
-* **subscriptions:** support wire transfer intent on device upgrades and clean prod compose ([7c07ae1](https://github.com/Velmar-Technology/msp_client_portal/commit/7c07ae10939be36c43fb5db06abcc5590352a4c5))
-* **tickets:** fix datatable pagination, filter resets and url state synchronization ([e9583ce](https://github.com/Velmar-Technology/msp_client_portal/commit/e9583ce2adbd41ee3d8e3ed478d740e89c8a3dd7))
+* **billing:** implement technician closed-ticket commissions, SLA bonuses, pre-split OpEx ledger, and batch payroll approval (`BL-801`)
+* **finance:** implement 70/30 net revenue & profit distribution model between HQ and Lead Engineer Admin (`BL-802`)
+* **tech-dashboard:** add live earnings metrics, SLA compliance rate, and bounty ledger tab to `TechDashboardPage`
+* **financial-dashboard:** add `TechnicianPayrollTable` component with batch payout processing and CSV exports to `FinancialPage`
 
 ## [1.7.3](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.7.2...v1.7.3) (2026-08-28)
 

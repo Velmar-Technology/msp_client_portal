@@ -3,6 +3,8 @@ import { subscriptionRepository, SubscriptionRepository } from '@modules/subscri
 import { planRepository, PlanRepository } from '@modules/subscriptions';
 import { nextcloudService, NextcloudService } from '@modules/system';
 import { rmmPatchService, RmmPatchService, AgentHelloPayload, agentGateway } from '@modules/rmm';
+import { ticketRepository, TicketRepository } from '@modules/tickets';
+import { HELPDESK_SUPPORT_FEATURE_CODE } from '@shared/config/constants';
 import {
   NotFoundError,
   ForbiddenError,
@@ -40,13 +42,14 @@ export interface NextcloudStorageInfo {
  */
 export class EquipmentService {
   /**
-   * Initializes EquipmentService with equipment, subscription, plan, Nextcloud, and RMM dependencies.
+   * Initializes EquipmentService with equipment, subscription, plan, Nextcloud, RMM, and ticket dependencies.
    *
    * @param equipmentRepo - Equipment inventory repository
    * @param subscriptionRepo - Subscription repository
    * @param planRepo - Plan catalog repository
    * @param nextcloudSvc - Nextcloud user provisioning service
    * @param rmmPatchSvc - RMM patch & telemetry bridge service
+   * @param ticketRepo - Ticket repository for quota calculation
    */
   constructor(
     private equipmentRepo: EquipmentRepository = equipmentRepository,
@@ -54,6 +57,7 @@ export class EquipmentService {
     private planRepo: PlanRepository = planRepository,
     private nextcloudSvc: NextcloudService = nextcloudService,
     private rmmPatchSvc: RmmPatchService = rmmPatchService,
+    private ticketRepo: TicketRepository = ticketRepository,
   ) {}
 
   private get equipmentRepository(): EquipmentRepository {
@@ -66,6 +70,10 @@ export class EquipmentService {
 
   private get planRepository(): PlanRepository {
     return this.planRepo || planRepository;
+  }
+
+  private get ticketsRepo(): TicketRepository {
+    return this.ticketRepo || ticketRepository;
   }
 
   private get nextcloudService(): NextcloudService {
@@ -589,7 +597,55 @@ export class EquipmentService {
       ? await this.equipmentRepository.findActiveByTenant(tenantId)
       : await this.equipmentRepository.findActiveByClient(clientId, tenantId);
 
-    return refreshed.length > 0 ? refreshed : devices;
+    const result = refreshed.length > 0 ? refreshed : devices;
+    return this.enrichDevicesWithQuota(result);
+  }
+
+  /**
+   * Enriches equipment slots with their current month ticket consumption count and plan limit.
+   *
+   * @param devices - Array of SubscriptionEquipment
+   * @returns Enriched array with monthly_ticket_count and monthly_ticket_limit
+   */
+  private async enrichDevicesWithQuota<T extends SubscriptionEquipment>(devices: T[]): Promise<T[]> {
+    if (devices.length === 0) return devices;
+
+    const subPlanLimitMap = new Map<string, number | null>();
+
+    for (const device of devices) {
+      const count = await this.ticketsRepo.countEquipmentTicketsInCurrentMonth(device.id);
+      device.monthly_ticket_count = count;
+
+      if (device.subscription_id) {
+        if (!subPlanLimitMap.has(device.subscription_id)) {
+          const sub = await this.subRepo.findById(device.subscription_id);
+          if (sub?.plan) {
+            const plan = await this.planRepository.findById(sub.plan);
+            let limit: number | null = null;
+            if (plan && Array.isArray(plan.features)) {
+              for (const f of plan.features) {
+                if (f.code === HELPDESK_SUPPORT_FEATURE_CODE && f.included !== false) {
+                  const val = f.params?.limit;
+                  if (!val || val === 'Unlimited') {
+                    limit = null;
+                  } else {
+                    const parsed = parseInt(String(val), 10);
+                    if (!isNaN(parsed)) limit = parsed;
+                  }
+                  break;
+                }
+              }
+            }
+            subPlanLimitMap.set(device.subscription_id, limit);
+          } else {
+            subPlanLimitMap.set(device.subscription_id, null);
+          }
+        }
+        device.monthly_ticket_limit = subPlanLimitMap.get(device.subscription_id) ?? null;
+      }
+    }
+
+    return devices;
   }
 
   /**
@@ -604,7 +660,8 @@ export class EquipmentService {
     }
     const devices = await this.equipmentRepository.findAllWithDetails();
     await this.ensureTelemetryProvisioned(devices);
-    return this.equipmentRepository.findAllWithDetails();
+    const refreshed = await this.equipmentRepository.findAllWithDetails();
+    return this.enrichDevicesWithQuota(refreshed);
   }
 
   /**

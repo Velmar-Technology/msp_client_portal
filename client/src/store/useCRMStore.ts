@@ -79,7 +79,7 @@ export const useCRMStore = create<CRMState>()(
       detailLoading: false,
       actionLoading: false,
       viewMode: "table",
-      filters: { page: 1, limit: 25 },
+      filters: { page: 1, limit: 10 },
 
       setViewMode: (viewMode) => set({ viewMode }),
 

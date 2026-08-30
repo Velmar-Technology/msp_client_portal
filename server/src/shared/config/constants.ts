@@ -15,10 +15,22 @@ export const APP_METADATA = {
   privacyEmail: 'privacidad@velmartech.com.do',
   phone: '+1 (849) 925-7586',
   emergencyPhone: '+1 (829) 925-7586',
-  supportHours: 'Mon - Fri: 9:00 AM - 4:00 PM EST',
+  supportHours: 'Mon - Fri: 9:00 AM - 4:00 PM AST',
   address: 'San Pedro de Macoris, Dominican Republic',
   securityStandard: 'AES-256 Encryption',
   rnc: '1-32-23734-1',
+} as const;
+
+/** Business hours configuration for Section 3.1 & 3.2 SLA calculation */
+export const BUSINESS_HOURS_CONFIG = {
+  /** IANA timezone identifier for Atlantic Standard Time (Dominican Republic) */
+  timezone: 'America/Santo_Domingo',
+  /** Business day start hour in AST (24h format) */
+  startHour: 9,
+  /** Business day end hour in AST (24h format) */
+  endHour: 16,
+  /** Number of active business hours per day (endHour - startHour) */
+  dailyHours: 7,
 } as const;
 
 /** Non-Payment suspension scale milestones in overdue days (Section 9.3) */
@@ -66,7 +78,7 @@ export const FLAPPING_ALERT_TAG = '[FLAPPING_ALERT]';
 
 /** Default pagination */
 export const DEFAULT_PAGE = 1;
-export const DEFAULT_LIMIT = 20;
+export const DEFAULT_LIMIT = 10;
 export const MAX_LIMIT = 100;
 
 /** Supported file types for ticket attachments */

@@ -34,6 +34,7 @@ export const leadStageEnum = pgEnum('lead_stage', ['NEW', 'QUALIFIED', 'PROPOSIT
 export const leadPriorityEnum = pgEnum('lead_priority', ['LOW', 'MEDIUM', 'HIGH']);
 export const quotationStatusEnum = pgEnum('quotation_status', ['DRAFT', 'SENT', 'ACCEPTED', 'DECLINED', 'EXPIRED']);
 export const accountStatusEnum = pgEnum('account_status', ['ACTIVE', 'READ_ONLY', 'SUSPENDED', 'PURGED']);
+export const earningStatusEnum = pgEnum('earning_status', ['PENDING', 'APPROVED', 'PAID', 'VOIDED']);
 
 // ---- Tenants ----
 export const tenants = pgTable('tenants', {
@@ -603,3 +604,64 @@ export const leadActivities = pgTable(
     index('idx_lead_activities_status').on(table.status),
   ]
 );
+
+// ---- Technician Rates & Compensation Rules ----
+export const technicianRates = pgTable(
+  'technician_rates',
+  {
+    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    technician_id: uuid('technician_id').references(() => users.id, { onDelete: 'cascade' }),
+    base_closed_rate: decimal('base_closed_rate', { precision: 10, scale: 2 }).$type<number>().default(8.00).notNull(),
+    sla_bonus_rate: decimal('sla_bonus_rate', { precision: 10, scale: 2 }).$type<number>().default(4.00).notNull(),
+    currency: varchar('currency', { length: 10 }).default('USD').notNull(),
+    multiplier_critical: decimal('multiplier_critical', { precision: 4, scale: 2 }).$type<number>().default(2.50).notNull(),
+    multiplier_high: decimal('multiplier_high', { precision: 4, scale: 2 }).$type<number>().default(1.75).notNull(),
+    multiplier_medium: decimal('multiplier_medium', { precision: 4, scale: 2 }).$type<number>().default(1.25).notNull(),
+    multiplier_low: decimal('multiplier_low', { precision: 4, scale: 2 }).$type<number>().default(1.00).notNull(),
+    tenant_id: uuid('tenant_id')
+      .references(() => tenants.id, { onDelete: 'cascade' })
+      .notNull(),
+    created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    index('idx_tech_rates_tech').on(table.technician_id),
+    index('idx_tech_rates_tenant').on(table.tenant_id),
+  ]
+);
+
+// ---- Technician Earnings Ledger ----
+export const technicianEarnings = pgTable(
+  'technician_earnings',
+  {
+    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    ticket_id: uuid('ticket_id')
+      .references(() => tickets.id, { onDelete: 'cascade' })
+      .notNull(),
+    technician_id: uuid('technician_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    base_amount: decimal('base_amount', { precision: 10, scale: 2 }).$type<number>().notNull(),
+    sla_bonus_amount: decimal('sla_bonus_amount', { precision: 10, scale: 2 }).$type<number>().default(0).notNull(),
+    final_amount: decimal('final_amount', { precision: 10, scale: 2 }).$type<number>().notNull(),
+    currency: varchar('currency', { length: 10 }).default('USD').notNull(),
+    status: earningStatusEnum('status').default('PENDING').notNull(),
+    breakdown: jsonb('breakdown').notNull(),
+    expense_id: uuid('expense_id').references(() => expenses.id, { onDelete: 'set null' }),
+    tenant_id: uuid('tenant_id')
+      .references(() => tenants.id, { onDelete: 'cascade' })
+      .notNull(),
+    earned_at: timestamp('earned_at', { withTimezone: true }).defaultNow(),
+    paid_at: timestamp('paid_at', { withTimezone: true }),
+    created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    index('idx_earnings_tech').on(table.technician_id),
+    index('idx_earnings_ticket').on(table.ticket_id),
+    index('idx_earnings_status').on(table.status),
+    index('idx_earnings_tenant').on(table.tenant_id),
+    index('idx_earnings_earned_at').on(table.earned_at),
+  ]
+);
+

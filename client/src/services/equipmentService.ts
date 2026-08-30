@@ -29,6 +29,8 @@ export interface SubscriptionEquipment {
   uptime?: string | number | null;
   uptime_seconds?: number | null;
   last_sync_at?: string | null;
+  monthly_ticket_count?: number;
+  monthly_ticket_limit?: number | null;
   created_at: string;
   updated_at: string;
   client_name?: string;

@@ -10,7 +10,7 @@ import alertRoutes from '@modules/rmm/routes/alert.routes';
 import rmmRoutes from '@modules/rmm/routes/rmm.routes';
 import maintenanceRoutes from '@modules/rmm/routes/maintenance.routes';
 import planRoutes from '@modules/subscriptions/routes/plan.routes';
-import systemRoutes from '@modules/system/routes/system.routes';
+import { systemRoutes } from '@modules/system';
 import notificationRoutes from '@modules/notifications/routes/notification.routes';
 import notificationPreferenceRoutes from '@modules/notifications/routes/notificationPreference.routes';
 import { crmRoutes } from '@modules/crm';

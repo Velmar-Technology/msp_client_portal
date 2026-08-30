@@ -13,6 +13,14 @@ const mocks = vi.hoisted(() => {
   };
 });
 
+// Mock businessHours to use raw wall-clock time so escalation tests remain
+// deterministic regardless of when they run (weekends, holidays, after-hours).
+// Business hours math is exercised by businessHours.test.ts independently.
+vi.mock('@shared/utils/businessHours', () => ({
+  calculateElapsedBusinessMs: (startDate: Date, endDate: Date = new Date()) =>
+    endDate.getTime() - startDate.getTime(),
+}));
+
 vi.mock('@modules/tickets/repositories/TicketRepository', () => {
   return {
     ticketRepository: {

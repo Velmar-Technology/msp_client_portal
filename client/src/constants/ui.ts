@@ -9,7 +9,7 @@
 export const SKELETON_DISPLAY_DELAY_MS = 1000;
 
 /** Default number of items per page in data tables */
-export const DEFAULT_PAGE_SIZE = 20;
+export const DEFAULT_PAGE_SIZE = 10;
 
 /** Mobile breakpoint in pixels for responsive triggers */
 export const MOBILE_BREAKPOINT = 768;

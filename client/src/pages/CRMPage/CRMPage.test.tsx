@@ -255,7 +255,7 @@ describe("CRMPage", () => {
       loading: false,
       actionLoading: false,
       viewMode: "table",
-      filters: { page: 1, limit: 25 },
+      filters: { page: 1, limit: 10 },
     });
   });
 

@@ -1,9 +1,10 @@
 import { BaseRepository } from '@shared/repositories/BaseRepository';
 import { Ticket, TicketAttachment, TicketFilters, TicketStatus, TicketCategory, TicketPriority, EscalationCandidate } from '@shared/types';
 import { db, tickets, users, ticketAttachments, ticketResponses, subscriptionEquipment } from '@shared/db';
-import { eq, ne, gte, and, or, ilike, desc, asc, count, lt, inArray, SQL, isNull, isNotNull, sql } from 'drizzle-orm';
+import { eq, ne, gte, lte, and, or, ilike, desc, asc, count, lt, inArray, SQL, isNull, isNotNull, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { isUuid } from '@shared/utils/validation';
+import { DEFAULT_LIMIT, DEFAULT_PAGE } from '@shared/config/constants';
 
 /**
  * Data repository for support tickets, multi-parameter filtering, technician assignments,
@@ -98,7 +99,7 @@ export class TicketRepository extends BaseRepository<Ticket> {
    * @param offset - Offset index
    * @returns Array of tickets
    */
-  async findByClient(clientId: string, limit = 20, offset = 0): Promise<Ticket[]> {
+  async findByClient(clientId: string, limit = DEFAULT_LIMIT, offset = 0): Promise<Ticket[]> {
     const results = await db
       .select()
       .from(tickets)
@@ -117,7 +118,7 @@ export class TicketRepository extends BaseRepository<Ticket> {
    * @param offset - Offset index
    * @returns Array of tickets
    */
-  async findByTechnician(techId: string, limit = 20, offset = 0): Promise<Ticket[]> {
+  async findByTechnician(techId: string, limit = DEFAULT_LIMIT, offset = 0): Promise<Ticket[]> {
     const results = await db
       .select()
       .from(tickets)
@@ -214,10 +215,32 @@ export class TicketRepository extends BaseRepository<Ticket> {
         )
       );
     }
+    if (filters.dateRange && filters.dateRange !== 'all') {
+      const now = new Date();
+      if (filters.dateRange === 'today') {
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        conditions.push(gte(tickets.created_at, startOfDay));
+      } else if (filters.dateRange === '7d') {
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        conditions.push(gte(tickets.created_at, sevenDaysAgo));
+      } else if (filters.dateRange === '30d') {
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        conditions.push(gte(tickets.created_at, thirtyDaysAgo));
+      } else if (filters.dateRange === 'month') {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        conditions.push(gte(tickets.created_at, startOfMonth));
+      }
+    }
+    if (filters.startDate) {
+      conditions.push(gte(tickets.created_at, new Date(filters.startDate)));
+    }
+    if (filters.endDate) {
+      conditions.push(lte(tickets.created_at, new Date(filters.endDate)));
+    }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-    const page = filters.page || 1;
-    const limit = filters.limit || 20;
+    const page = Number(filters.page) || DEFAULT_PAGE;
+    const limit = Number(filters.limit) || DEFAULT_LIMIT;
     const offset = (page - 1) * limit;
 
     const countResult = await db
@@ -443,6 +466,9 @@ export class TicketRepository extends BaseRepository<Ticket> {
    * @see BL-201
    */
   async countClientTicketsInCurrentMonth(clientId: string): Promise<number> {
+    if (!clientId || !isUuid(clientId)) {
+      return 0;
+    }
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
@@ -469,6 +495,9 @@ export class TicketRepository extends BaseRepository<Ticket> {
    * @see BL-201
    */
   async countEquipmentTicketsInCurrentMonth(equipmentId: string): Promise<number> {
+    if (!equipmentId || !isUuid(equipmentId)) {
+      return 0;
+    }
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);

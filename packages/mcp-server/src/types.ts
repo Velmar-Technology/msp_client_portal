@@ -68,3 +68,31 @@ export interface ClientHealthReport {
   slaBreachRisk: boolean;
   recommendations: string[];
 }
+
+export interface EphemeralGrant {
+  id: string;
+  userId: string;
+  tenantId: string;
+  elevatedRole: string;
+  grantedAt: string;
+  expiresAt: string;
+  reason: string;
+  status: 'PENDING' | 'ACTIVE' | 'EXPIRED' | 'REVOKED';
+  isBreakGlass?: boolean;
+}
+
+export interface AccessDecisionResult {
+  allowed: boolean;
+  reason?: string;
+  decisionTier?: 'RBAC' | 'REBAC' | 'ABAC' | 'EPHEMERAL_ZSP' | 'DENIED';
+  evaluatedAt: string;
+}
+
+export interface TrustScoreResult {
+  userId: string;
+  riskScore: number;
+  trustLevel: 'HIGH_TRUST' | 'NORMAL' | 'ELEVATED_RISK' | 'CRITICAL_ANOMALY';
+  mfaRequired: boolean;
+  factors: string[];
+}
+

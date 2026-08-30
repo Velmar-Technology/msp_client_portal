@@ -104,11 +104,22 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
 - **BL-203: Out-of-Scope Project Guardrails** (`TicketService.enforceScope`)
   - Shifts out-of-scope requests (hardware moves, site setups) to `PENDING_ESTIMATE` pending client authorization.
 
-### Module 3: Access Control & Ticket State Machine
+### Module 3: Access Control, SOTA Hybrid Authorization & State Machine
 
-- **BL-301: Ticket State Machine & RBAC** (`TicketService.updateTicketStatus`)
+- **BL-301: Ticket State Machine & RBAC** (`TicketService.updateTicketStatus`, `TicketAccessPolicy`)
   - All status transitions must comply with the `STATUS_TRANSITIONS` state matrix.
   - Multi-tenant RBAC enforces isolation: Clients are limited to `CANCELLED` status changes; Technicians manage assigned tickets; Admins hold global permissions.
+
+- **BL-302: SOTA Hybrid Authorization & Zero Standing Privileges (PoLP / ZSP Engine)** (`HybridPolicyEngine`, `ZanzibarTupleStore`, `EphemeralAccessService`, `WorkloadIdentityService`, `ContinuousAdaptiveTrustService`, `PolicyAsCodeEngine`, `constants.ts`)
+  - **Zero Standing Privileges & JIT Access (`EphemeralAccessService`):** Eliminates 24/7 root access. Standard engineer accounts hold minimal base privileges. Temporary break-glass access packages are requested on-demand (`1` to `480` minutes TTL) with mandatory business justifications, dynamically injected into the Zanzibar relation graph, and auto-purged upon expiration.
+  - **Continuous Right-Sizing via AI Role Mining (`ContinuousAdaptiveTrustService.mineRoles`):** Unsupervised clustering analyzing telemetry streams (`EntitlementLog`). Detects entitlement drift ($>40\%$ unused capabilities) and generates automated pull-request pruning diffs (`PruningPatchDiff`) to trim standing permissions down to active operational requirements.
+  - **Workload Identity & Machine-to-Machine PoLP (`WorkloadIdentityService`):** Eliminates static API keys and long-lived database credentials for non-human workloads (RMM agents, background workers, AI agents, CI/CD). Issues cryptographically signed (HMAC-SHA256), short-lived (5m default TTL) SPIFFE tokens (`spiffe://msp.portal/tenant/{tenantId}/{type}/{id}`) with strict action and resource-prefix narrowing.
+  - **Contextual & Behavioral Step-Up Authentication (`ContinuousAdaptiveTrustService`, `HybridPolicyEngine`):** Continuous multi-vector risk evaluation (data spikes $>50\text{MB}$, request velocity bursts, impossible geographic travel, unmanaged/non-compliant devices, and anomalous off-hours activity). Medium/High risk dynamically triggers Step-Up MFA challenges without terminating legitimate workflows.
+  - **Layer 1 (RBAC Baseline):** Evaluates coarse actor classification (`CLIENT`, `TECHNICIAN`, `ADMIN`) and action boundary mappings.
+  - **Layer 2 (ReBAC / Zanzibar):** Resolves fine-grained relationship graph tuples (`<subject>#<relation>@<object>`) with hierarchical inheritance (`owner` $\rightarrow$ `editor` $\rightarrow$ `viewer`).
+  - **Layer 3 (ABAC / PaC):** Evaluates declarative Policy-as-Code rules, temporal SLA windows (`BL-101`), and Non-Payment account tier restrictions (`BL-702`).
+  - **AI / RAG Vector ACLs (`VectorAclService`):** Dual-phase security generating database pre-retrieval SQL/pgvector `WHERE` clauses and post-retrieval chunk sanitization.
+  - **Centralized Constants (`constants.ts`):** Single source of truth for JIT limits, risk scoring weights, risk thresholds, telemetry thresholds, role mining boundaries, and workload identity token lifetimes.
 
 ### Module 4: Billing Automation & Invoicing Lifecycle
 
@@ -137,6 +148,17 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
   - **Day 15 Overdue:** Full platform access and technical support suspended (`account_status = 'SUSPENDED'`, `is_active = false`).
   - **Day 30 Overdue:** Permanent technical purge and deletion of data from servers for storage liberation with zero liability to the company (`account_status = 'PURGED'`). Purges Nextcloud storage accounts and hardware bindings.
   - **Restoration:** Payment capture automatically restores tenant and all users to `ACTIVE`.
+
+### Module 7: Technician Commissions, Pre-Split OpEx & Profit Distribution
+
+- **BL-801: Closed-Ticket Commission & Holdback Subsystem** (`TechnicianEarningsService.calculateAndRecordEarnings`)
+  - Closed tickets yield a per-ticket commission: Base rate ($8.00 USD) $\times$ priority multiplier (LOW: 1.0x, MEDIUM: 1.25x, HIGH: 1.75x, CRITICAL: 2.5x) $+$ SLA bonus ($4.00 USD if resolved within target business hours).
+  - Automatically posted as a Pre-Split Operating Expense (`Labor & Technician Commissions`) in the `expenses` ledger upon `RESOLVED`/`CLOSED`.
+  - Automated resolutions (`RESOLVED_AUTOMATED`) yield $0 commission.
+  - 48-hour holdback (`PENDING` state). If a ticket is reopened during holdback, `voidEarningsForReopenedTicket` marks the earning `VOIDED`.
+- **BL-802: 70/30 Net Revenue & Profit Split Model** (`FinancialStatsService`)
+  - Net Profit Pool $= \text{Gross Paid Invoices} - \text{Total Operating Expenses}$ (which includes technician labor commissions).
+  - Profit is split: **70% to HQ Company** (which absorbs 70% of technician commission expenses) and **30% to Lead Engineer / Admin**.
 
 ---
 
@@ -171,6 +193,17 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
    - _Command:_ `activateExpiredSubscriptionsForClient` updates linked `EXPIRED` client subscriptions to `ACTIVE`.
    - _Command:_ `notificationService.createInAppNotification` alerts client and admins.
 3. **Outputs:** Invoice status `PAID`, subscriptions `ACTIVE`, HTTP 200 returned.
+
+### Journey 4: Ticket Resolution, Commission OpEx & Batch Payout
+
+1. **Inputs:** Technician marks ticket `RESOLVED` or `CLOSED` via `PATCH /api/v1/tickets/:id/status`.
+2. **Execution:**
+   - _Command:_ `TicketStatusService.updateStatus` transitions ticket.
+   - _Command:_ `TechnicianEarningsService.calculateAndRecordEarnings` calculates rate $\times$ priority multiplier $+$ SLA bonus.
+   - _Command:_ Automatically inserts Pre-Split OpEx entry into `expenses` (`category = 'Labor & Technician Commissions'`).
+   - _Command:_ Inserts ledger row into `technician_earnings`.
+   - _Admin Payout:_ Admin submits batch approval via `POST /api/v1/system/technicians/earnings/payout`, transitioning selected records to `PAID`.
+3. **Outputs:** Ticket resolved, bounty logged as OpEx, visible on Tech Dashboard & Admin Payroll table.
 
 ---
 
@@ -316,6 +349,20 @@ The portal integrates with **Nextcloud** running on **TrueNAS SCALE** (`cloud-st
 - **Infrastructure Docs & Runbooks:** Full architectural guide, IP topology, and diagnostic scripts are available in [`docs/infrastructure/WIREGUARD_NEXTCLOUD_INTEGRATION.md`](docs/infrastructure/WIREGUARD_NEXTCLOUD_INTEGRATION.md) and [`scripts/infra/wireguard/`](scripts/infra/wireguard/). The production `msp_portal` stack (12 services, Traefik routing, Zabbix subpath fix, deploy/rollback) is documented in [`docs/infrastructure/MSP_PORTAL_STACK.md`](docs/infrastructure/MSP_PORTAL_STACK.md).
 
 ---
+
+## 🛡️ SOTA Authorization Engine & Live Demonstration
+
+The platform includes a State-of-the-Art (SOTA) Authorization subsystem (`server/src/shared/authz/`) combining **RBAC**, **Google Zanzibar ReBAC**, **Policy-as-Code ABAC**, **AI/RAG Vector ACLs**, and **Continuous Adaptive Trust**.
+
+To run the interactive live demonstration in your terminal:
+```bash
+npm -w server exec tsx src/shared/scripts/demoAuthz.ts
+```
+
+To run all authorization unit tests:
+```bash
+npm -w server exec vitest run src/shared/authz/ src/shared/middleware/authzMiddleware.test.ts
+```
 
 ---
 

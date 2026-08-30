@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import { env } from '@shared/config/env';
 import { logger } from './logger';
+import { getEffectiveSlaStartTime } from './businessHours';
 import { NotificationPayload, Ticket, Plan, Invoice } from '@shared/types';
 
 /**
@@ -116,28 +117,28 @@ export async function sendEmail(payload: NotificationPayload): Promise<void> {
     });
 
     if (usingSMTP) {
-      logger.info('📧 Email sent successfully', {
+      logger.info('Email sent successfully', {
         to: payload.to,
         subject: payload.subject,
         messageId: info.messageId,
       });
     } else {
-      logger.info('📧 [STUB] Email logged', {
+      logger.info('Email logged', {
         to: payload.to,
         subject: payload.subject,
       });
     }
   } catch (error) {
-    logger.error('📧 Failed to send email', {
+    logger.error('Failed to send email', {
       to: payload.to,
       subject: payload.subject,
       error,
     });
 
     if (usingSMTP) {
-      logger.warn('📧 Falling back to STUB mode for subsequent emails due to send failure');
+      logger.warn('Falling back to STUB mode for subsequent emails due to send failure');
       useStubTransporter = true;
-      logger.info('📧 [STUB FALLBACK] Email logged due to SMTP send failure', {
+      logger.info('Email logged due to SMTP send failure', {
         to: payload.to,
         subject: payload.subject,
         body: payload.body,
@@ -354,8 +355,28 @@ export async function sendTicketCreatedEmail(
     </div>
   `;
 
+  const effectiveStart = getEffectiveSlaStartTime(new Date(ticket.created_at));
+  const isAfterHours = effectiveStart.getTime() !== new Date(ticket.created_at).getTime();
+  let afterHoursCallout = '';
+  if (isAfterHours) {
+    const formattedDate = effectiveStart.toLocaleString('en-US', {
+      timeZone: 'America/Santo_Domingo',
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+    afterHoursCallout = renderCallout(
+      `<strong>Support Hours & SLA Notice:</strong> This request was received outside our technical support hours (Mon–Fri 9:00 AM – 4:00 PM AST). Your ticket has been registered in our queue, and response time (SLA) evaluation will begin on <strong>${formattedDate} AST</strong> (Section 3.2).`,
+      'warning'
+    );
+  }
+
   const contentHtml = `
     <h2 style="color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 12px;">Hello ${clientName},</h2>
+    ${afterHoursCallout}
     <p style="font-size: 15px; color: #475569; margin-top: 0; margin-bottom: 24px;">
       We have received your support request and successfully opened a ticket. Our engineering team has been notified, and a technician will begin diagnosing your request shortly.
     </p>

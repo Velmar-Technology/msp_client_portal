@@ -32,6 +32,7 @@ export function useTicketsPage() {
   const [categoryFilter, setCategoryFilterInternal] = useState(() => getParam("category", ""));
   const [priorityFilter, setPriorityFilterInternal] = useState(() => getParam("priority", ""));
   const [deviceFilter, setDeviceFilterInternal] = useState(() => getParam("device", ""));
+  const [dateRangeFilter, setDateRangeFilterInternal] = useState(() => getParam("dateRange", "all"));
   const [loading, setLoading] = useState(true);
 
   // Sorting
@@ -57,6 +58,7 @@ export function useTicketsPage() {
     const urlCategory = getParam("category", "");
     const urlPriority = getParam("priority", "");
     const urlDevice = getParam("device", "");
+    const urlDateRange = getParam("dateRange", "all");
 
     setPageInternal((prev) => (prev !== urlPage ? urlPage : prev));
     setLimitInternal((prev) => (prev !== urlLimit ? urlLimit : prev));
@@ -65,6 +67,7 @@ export function useTicketsPage() {
     setCategoryFilterInternal((prev) => (prev !== urlCategory ? urlCategory : prev));
     setPriorityFilterInternal((prev) => (prev !== urlPriority ? urlPriority : prev));
     setDeviceFilterInternal((prev) => (prev !== urlDevice ? urlDevice : prev));
+    setDateRangeFilterInternal((prev) => (prev !== urlDateRange ? urlDateRange : prev));
   }, [searchParams, getParam, getNumberParam]);
 
   const setPage = useCallback(
@@ -116,6 +119,15 @@ export function useTicketsPage() {
       setDeviceFilterInternal(newDevice);
       setPageInternal(1);
       setParams({ device: newDevice || null, page: null });
+    },
+    [setParams]
+  );
+
+  const setDateRangeFilter = useCallback(
+    (newDateRange: string) => {
+      setDateRangeFilterInternal(newDateRange);
+      setPageInternal(1);
+      setParams({ dateRange: newDateRange === "all" ? null : newDateRange || null, page: null });
     },
     [setParams]
   );
@@ -191,6 +203,7 @@ export function useTicketsPage() {
       if (priorityFilter) params.priority = priorityFilter;
       if (search) params.search = search;
       if (deviceFilter) params.equipmentId = deviceFilter;
+      if (dateRangeFilter && dateRangeFilter !== "all") params.dateRange = dateRangeFilter;
 
       const activeSort = sorting[0];
       if (activeSort) {
@@ -206,7 +219,7 @@ export function useTicketsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, statusFilter, categoryFilter, priorityFilter, search, deviceFilter, sorting]);
+  }, [page, limit, statusFilter, categoryFilter, priorityFilter, search, deviceFilter, dateRangeFilter, sorting]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -310,6 +323,8 @@ export function useTicketsPage() {
     setPriorityFilter,
     deviceFilter,
     setDeviceFilter,
+    dateRangeFilter,
+    setDateRangeFilter,
     devices,
     loading,
     showNewTicket,

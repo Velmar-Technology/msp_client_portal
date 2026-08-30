@@ -71,12 +71,15 @@ Dependencies point strictly **INWARD**: `Frameworks/Drivers` $\rightarrow$ `Inte
 | **BL-201** | Feature Quota | Enforces plan ticket limits (e.g. 5 tickets/device/mo). Blocks creation with `TicketLimitExceededError`. |
 | **BL-202** | License True-Up | Nightly reconciliation of cloud seats/RMM agents against baseline contracts for next billing cycle. |
 | **BL-301** | RBAC & State Machine | Transitions must satisfy `STATUS_TRANSITIONS` matrix. Clients: tenant isolation, cancel only. Techs: assigned tickets. Admins: global. |
+| **BL-302** | SOTA Hybrid Authorization & ZSP | Unified PDP (`server/src/shared/authz/`) orchestrating RBAC (roles), Zanzibar ReBAC (`<subject>#<relation>@<object>`), Policy-as-Code ABAC (SLA/Non-payment), Vector AI ACL pre-filtering, Zero Standing Privileges with JIT Ephemeral Access (`EphemeralAccessService`), SPIFFE Workload Identity (`WorkloadIdentityService`), AI Role Mining Pruning (`ContinuousAdaptiveTrustService.mineRoles`), and Contextual Step-Up MFA. |
 | **BL-401** | Subscription Reactivation | PayPal capture or admin `markAsPaid` transitions linked `EXPIRED` client subscriptions to `ACTIVE` and broadcasts alerts. |
 | **BL-402** | Renewal Scheduler | Cron evaluates expiry, calculates hardware multiplier ($M_{\text{equip}}$), creates invoices, and dispatches billing emails. |
 | **BL-501** | CRM Lead Pipeline | Deals progress: `NEW` $\rightarrow$ `QUALIFIED` $\rightarrow$ `PROPOSAL` $\rightarrow$ `NEGOTIATION` $\rightarrow$ `WON`/`LOST`. `WON` auto-provisions client tenant. |
 | **BL-601** | Account Health | $H = 0.40 S_{\text{ticket}} + 0.30 S_{\text{hardware}} + 0.30 S_{\text{security}}$. Score $< 70\%$ flags QBR review task. |
 | **BL-701** | NCF & 18% ITBIS Tax | Rates in USD or DOP apply 18% ITBIS tax. Automatically generates Series B01 sequential NCF vouchers when tenant or client supplies a valid DGII Modulo 11/10 RNC or Cédula. |
 | **BL-702** | 4-Tier Non-Payment Scale | Evaluates oldest overdue invoice: Day 1 (Collection Notice), Day 5 (`READ_ONLY` mode, write mutations blocked), Day 15 (`SUSPENDED` mode, access halted), Day 30 (`PURGED` mode, Nextcloud storage and device credentials permanently deleted for storage liberation with zero liability). Settling payments restores account to `ACTIVE`. |
+| **BL-801** | Technician Commissions & OpEx | Per-closed-ticket bounties ($8.00 base $\times$ priority multiplier [LOW 1.0x, MED 1.25x, HIGH 1.75x, CRITICAL 2.5x] + $4.00 SLA bonus). Auto-posted as Pre-Split OpEx (`Labor & Technician Commissions`) in `expenses` table upon `RESOLVED`/`CLOSED`. 48h holdback with automatic voiding upon ticket reopening (`voidEarningsForReopenedTicket`). Automated resolutions (`RESOLVED_AUTOMATED`) yield $0. |
+| **BL-802** | 70/30 Net Profit Split | Net Earnings $= \text{Gross Paid Revenue} - \text{Total Deductible OpEx}$ (including technician labor bounties). Profit distributed: HQ Company absorbs 70% of costs and takes 70% of net pool; Lead Engineer / Admin takes 30% of net pool. |
 
 ---
 

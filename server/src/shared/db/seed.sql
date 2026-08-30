@@ -80,7 +80,7 @@ INSERT INTO plans (id, name, description, price, features, recommended, client_t
    true),
 
   ('PL-004', 
-   '{"en_US": "Custom / Corporate", "es_DO": "Custom / Corporativo"}'::jsonb, 
+   '{"en_US": "Corporate", "es_DO": "Custom / Corporativo"}'::jsonb, 
    '{"en_US": "All-inclusive corporate plan with 1h SLA for critical P1 issues.", "es_DO": "Plan corporativo todo incluido con SLA de 1h para casos críticos P1."}'::jsonb, 
    85, 
    '[

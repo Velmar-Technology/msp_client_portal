@@ -23,6 +23,12 @@
     }
   },
 
+  "layout": {
+    "blockedTitle": "Active Plan Required",
+    "blockedDescription": "To access the portal, manage tickets, and request support, please subscribe to an active support plan.",
+    "choosePlan": "Choose a Support Plan"
+  },
+
   "nav": {
     "dashboard": "Dashboard",
     "tickets": "Tickets",
@@ -406,6 +412,12 @@
     "filterAllStatuses": "All Statuses",
     "filterAllCategories": "All Categories",
     "filterAllPriorities": "All Priorities",
+    "filterDateRange": "Date Created",
+    "filterAllDates": "All Time",
+    "filterToday": "Today",
+    "filterLast7Days": "Last 7 Days",
+    "filterLast30Days": "Last 30 Days",
+    "filterThisMonth": "This Month",
     "filterOpen": "Open",
     "filterInProgress": "In Progress",
     "filterAwaitingPayment": "Awaiting Payment",
@@ -439,6 +451,9 @@
     "statusCancelled": "Cancelled",
     "of": "of",
     "createModalTitle": "Create New Ticket",
+    "createModalDesc": "Fill in the details below to submit a support request to our engineering team.",
+    "afterHoursBannerTitle": "Outside Support Business Hours",
+    "afterHoursNotice": "Technical support operates Mon–Fri from 9:00 AM to 4:00 PM AST (excluding holidays). Your ticket will be recorded immediately, but response time (SLA) calculation will begin at 9:00 AM on the following business day.",
     "modalTitleLabel": "Title",
     "modalTitlePlaceholder": "Brief description of the issue",
     "modalDescLabel": "Description",
@@ -488,10 +503,15 @@
     "filterAllDevices": "All Devices",
     "tableDevice": "Device",
     "noDevice": "—",
-    "modalDeviceLabel": "Device (Optional)",
+    "modalDeviceLabel": "Device",
     "modalDevicePlaceholder": "Select a device...",
     "modalDeviceLoading": "Loading devices...",
-    "modalDeviceLoadError": "Couldn't load your devices. Try refreshing the page."
+    "modalDeviceLoadError": "Couldn't load your devices. Try refreshing the page.",
+    "modalDeviceRequired": "Please select a device to link with this ticket.",
+    "noActiveDevices": "No active device slots found. Please activate an equipment slot first.",
+    "deviceQuotaRemaining": "{{remaining}}/{{total}} tickets left this month",
+    "deviceQuotaReached": "Limit reached ({{used}}/{{total}} this month)",
+    "deviceUnlimitedQuota": "Unlimited tickets"
   },
   "ticketDetail": {
     "invalidTicketId": "Ticket ID Invalid",
@@ -542,6 +562,9 @@
     "slaDescription": "Warranty & Service Outage ticket SLA is active.",
     "slaRemaining": "Remaining:",
     "information": "Information",
+    "afterHoursBadge": "After-Hours Submission",
+    "slaStartsAt": "SLA Starts:",
+    "afterHoursExplanation": "Submitted outside business hours (Mon-Fri 9:00 AM - 4:00 PM AST). SLA response time evaluation begins on {{time}}.",
     "assignment": "Assignment",
     "client": "Client",
     "assignBtn": "Assign"
@@ -560,7 +583,21 @@
     "resolveTicket": "Resolve",
     "awaitingPayment": "Awaiting Payment",
     "statusUpdateSuccess": "Status updated successfully",
-    "statusUpdateError": "Failed to update status"
+    "statusUpdateError": "Failed to update status",
+    "myEarnings": "My Earnings",
+    "totalEarned": "Total Earned",
+    "pendingPayout": "Pending Payout",
+    "approvedPayout": "Approved",
+    "paidPayout": "Paid",
+    "slaMetRate": "SLA Met Rate",
+    "earningsLedger": "Closed Ticket Bounties & Earnings",
+    "earningsLedgerDesc": "Track earned commissions per closed ticket with priority multipliers and SLA performance bonuses.",
+    "ticketBounty": "Bounty",
+    "baseRate": "Base",
+    "slaBonus": "SLA Bonus",
+    "multiplier": "Multiplier",
+    "earnedAt": "Earned Date",
+    "noEarnings": "No ticket closed earnings recorded yet. Resolve assigned tickets to earn bounties!"
   },
   "plans": {
     "title": "Plan Selection",

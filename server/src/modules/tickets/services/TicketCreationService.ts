@@ -1,10 +1,12 @@
 import { ticketRepository, TicketRepository } from '@modules/tickets/repositories/TicketRepository';
 import { ticketEventRepository, TicketEventRepository } from '@modules/tickets/repositories/TicketEventRepository';
 import { userRepository, UserRepository } from '@modules/auth';
+import { equipmentRepository, EquipmentRepository } from '@modules/equipment';
 import { assignmentService, AssignmentService } from '@modules/tickets/services/AssignmentService';
 import { notificationService, NotificationService } from '@modules/notifications';
 import { ticketQuotaService, TicketQuotaService } from '@modules/tickets/services/TicketQuotaService';
 import { accountStatusPolicy, AccountStatusPolicy } from '@shared/policies/AccountStatusPolicy';
+import { NotFoundError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
 import { Ticket, TicketPriority, TicketStatus, UserContext } from '@shared/types';
 import { CreateTicketInput } from '@shared/dtos/ticket.dto';
@@ -39,6 +41,7 @@ export class TicketCreationService {
    * @param notifSvc - Notification service for real-time alerts
    * @param quotaSvc - Quota service for plan limit enforcement
    * @param accountPol - Account status policy for read-only / suspension enforcement
+   * @param equipmentRepo - Equipment repository for hardware slot verification
    */
   constructor(
     private ticketRepo: TicketRepository = ticketRepository,
@@ -48,6 +51,7 @@ export class TicketCreationService {
     private notifSvc: NotificationService = notificationService,
     private quotaSvc: TicketQuotaService = ticketQuotaService,
     private accountPol: AccountStatusPolicy = accountStatusPolicy,
+    private equipmentRepo: EquipmentRepository = equipmentRepository,
   ) {}
 
   private get ticketsRepo(): TicketRepository {
@@ -78,6 +82,10 @@ export class TicketCreationService {
     return this.accountPol || accountStatusPolicy;
   }
 
+  private get equipRepo(): EquipmentRepository {
+    return this.equipmentRepo || equipmentRepository;
+  }
+
   /**
    * Creates a new support ticket from client request after validating subscription quotas,
    * creates an initial audit event, automatically assigns an available technician,
@@ -87,6 +95,7 @@ export class TicketCreationService {
    * @param ctx - Authenticated user context (userId, tenantId, role)
    * @returns Newly created and assigned Ticket entity
    * @throws {ForbiddenError} When the account is in Read-Only, Suspended, or Purged state (Section 9.3)
+   * @throws {NotFoundError} When the equipment slot does not exist or belong to the client tenant
    * @throws {TicketLimitExceededError} When the tenant or device has exceeded monthly ticket quotas (BL-201)
    * @see BL-201
    * @see BL-102
@@ -94,6 +103,14 @@ export class TicketCreationService {
    */
   async createTicket(data: CreateTicketInput, ctx: UserContext): Promise<Ticket> {
     this.accountPolicy.assertWriteAllowed(ctx);
+
+    if (data.equipmentId) {
+      const equipment = await this.equipRepo.findById(data.equipmentId);
+      if (!equipment || equipment.tenant_id !== ctx.tenantId) {
+        throw new NotFoundError('Equipment device slot not found or unauthorized');
+      }
+    }
+
     await this.quotasSvc.enforceTicketLimit(ctx.userId, ctx.tenantId, data.equipmentId);
 
     const priority = data.priority ?? TicketPriority.MEDIUM;

@@ -1,6 +1,7 @@
 import { Ticket, TicketFilters, TicketStatus, UserContext, UserRole } from '@shared/types';
 import { ForbiddenError, InvalidTransitionError, SlaViolationError } from '@shared/errors';
 import { SLA_WINDOW_MS, STATUS_TRANSITIONS } from '@shared/config/constants';
+import { calculateElapsedBusinessMs } from '@shared/utils/businessHours';
 
 export type { UserContext };
 
@@ -75,12 +76,12 @@ export class TicketAccessPolicy {
    * @throws {SlaViolationError} When elapsed time exceeds SLA_WINDOW_MS (60 minutes)
    */
   enforceSLARule(ticket: Ticket): void {
-    const elapsed = Date.now() - new Date(ticket.created_at).getTime();
+    const elapsed = calculateElapsedBusinessMs(new Date(ticket.created_at));
     if (elapsed > SLA_WINDOW_MS) {
       const minutesAgo = Math.floor(elapsed / 60000);
       throw new SlaViolationError(
-        `SLA window expired. This ticket was created ${minutesAgo} minutes ago. ` +
-        `Warranty and service outage tickets can only be cancelled within 60 minutes of creation.`,
+        `SLA window expired. This ticket was created ${minutesAgo} business minutes ago. ` +
+        `Warranty and service outage tickets can only be cancelled within 60 minutes of SLA start.`,
       );
     }
   }

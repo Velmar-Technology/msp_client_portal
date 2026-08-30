@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { getEffectiveSlaStartTime } from '@/lib/businessHours';
 
 export interface SLATimerTicketInput {
   created_at?: string;
   category?: string;
+  status?: string;
 }
 
 /**
@@ -12,29 +14,36 @@ export interface SLATimerTicketInput {
  * @see BL-101 (1-Hour SLA Cancellation)
  * @param ticketOrCreatedAt - Ticket object or ISO timestamp string of creation time.
  * @param categoryParam - Optional ticket category string if timestamp string is passed as first argument.
+ * @param statusParam - Optional ticket status string.
  * @returns Object with remaining milliseconds, countdown minutes, seconds, formatted time string, and expired flag.
  */
 export function useSLATimer(
   ticketOrCreatedAt?: SLATimerTicketInput | string | null,
-  categoryParam?: string | null
+  categoryParam?: string | null,
+  statusParam?: string | null
 ) {
   const SLA_WINDOW_MS = 60 * 60 * 1000; // 1 hour
   const applicableCategories = ['WARRANTY', 'SERVICE_OUTAGE'];
+  const terminalStatuses = ['RESOLVED', 'RESOLVED_AUTOMATED', 'CLOSED', 'CANCELLED'];
 
   let createdAtStr = '';
   let categoryStr = '';
+  let statusStr = '';
 
   if (typeof ticketOrCreatedAt === 'string') {
     createdAtStr = ticketOrCreatedAt;
     categoryStr = categoryParam || '';
+    statusStr = statusParam || '';
   } else if (ticketOrCreatedAt && typeof ticketOrCreatedAt === 'object') {
     createdAtStr = ticketOrCreatedAt.created_at || '';
     categoryStr = ticketOrCreatedAt.category || '';
+    statusStr = ticketOrCreatedAt.status || statusParam || '';
   }
 
-  const isApplicable = applicableCategories.includes(categoryStr) && !!createdAtStr;
-  const createdTime = createdAtStr ? new Date(createdAtStr).getTime() : 0;
-  const deadline = createdTime + SLA_WINDOW_MS;
+  const isTerminal = terminalStatuses.includes(statusStr);
+  const isApplicable = !isTerminal && applicableCategories.includes(categoryStr) && !!createdAtStr;
+  const effectiveStartTime = createdAtStr ? getEffectiveSlaStartTime(new Date(createdAtStr)).getTime() : 0;
+  const deadline = effectiveStartTime + SLA_WINDOW_MS;
 
   const [remaining, setRemaining] = useState(() => {
     if (!isApplicable || !createdAtStr) return 0;

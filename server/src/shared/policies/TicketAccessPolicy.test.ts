@@ -1,4 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+vi.mock('@shared/utils/businessHours', () => ({
+  calculateElapsedBusinessMs: (startDate: Date, endDate: Date = new Date()) =>
+    endDate.getTime() - startDate.getTime(),
+}));
+
 import { ticketAccessPolicy, TicketAccessPolicy } from './TicketAccessPolicy';
 import { Ticket, TicketCategory, TicketFilters, TicketStatus, UserContext, UserRole } from '@shared/types';
 

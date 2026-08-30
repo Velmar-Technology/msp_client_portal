@@ -93,6 +93,66 @@ export async function seedWithFaker(): Promise<void> {
     }
     await insertChunked('tenants', schema.tenants, newTenants);
 
+    // 3.5 Generate Bulk Technicians (20 MSP Technicians with diverse specialties)
+    const technicianSpecialties = [
+      'Networking',
+      'Hardware & POS',
+      'Cloud & Security',
+      'Tier 2',
+      'Tier 2 Specialist',
+      'Cybersecurity',
+      'Linux & Infrastructure',
+      'Systems Administration',
+      'Database & Storage',
+      'VoIP & Telecom',
+    ];
+
+    const newTechnicians: Array<typeof schema.users.$inferInsert> = [];
+    const newTechPreferences: Array<typeof schema.notificationPreferences.$inferInsert> = [];
+
+    for (let i = 0; i < 20; i++) {
+      const id = faker.string.uuid();
+      const firstName = faker.person.firstName();
+      const lastName = faker.person.lastName();
+      const name = `${firstName} ${lastName}`;
+      const cleanFirst = firstName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const cleanLast = lastName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const email = `${cleanFirst}.${cleanLast}.${i + 1}@msp-services.com`;
+      const specialty = faker.helpers.arrayElement(technicianSpecialties);
+
+      newTechnicians.push({
+        id,
+        email,
+        name,
+        password_hash: defaultPasswordHash,
+        role: 'TECHNICIAN',
+        specialty,
+        is_active: true,
+        email_verified: true,
+        language: faker.helpers.arrayElement(['en_US', 'es_DO']),
+        client_type: 'CLIENT',
+        phone_number: faker.phone.number({ style: 'international' }),
+        tenant_id: providerTenantId,
+      });
+
+      newTechPreferences.push({
+        id: faker.string.uuid(),
+        user_id: id,
+        tenant_id: providerTenantId,
+        preferences: {
+          TICKET_CREATED: { in_app: true, email: true, whatsapp: false },
+          TICKET_ASSIGNED: { in_app: true, email: true, whatsapp: true },
+          TICKET_STATUS_CHANGED: { in_app: true, email: true, whatsapp: true },
+          TICKET_CANCELLED: { in_app: true, email: true, whatsapp: false },
+          NEW_REPLY: { in_app: true, email: true, whatsapp: true },
+        },
+      });
+
+      techUserIds.push(id);
+    }
+    await insertChunked('users (technicians)', schema.users, newTechnicians);
+    await insertChunked('notification_preferences', schema.notificationPreferences, newTechPreferences);
+
     // 4. Generate Bulk Users (250 users matched to tenants)
     const newUsers: Array<typeof schema.users.$inferInsert> = [];
     const clientUsers: Array<{ id: string; tenantId: string; name: string; email: string }> = [];
