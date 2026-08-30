@@ -109,7 +109,7 @@ export function CRMPage() {
       stage: (paramStage || undefined) as LeadStage | undefined,
       priority: (paramPriority || undefined) as LeadPriorityAlias | undefined,
       page: paramPage,
-      limit: filters.limit || 25,
+      limit: filters.limit || 10,
     });
   }, [paramSearch, paramStage, paramPriority, paramPage, filters.limit, setFilters]);
 
@@ -409,7 +409,7 @@ export function CRMPage() {
               priorityFilter={paramPriority}
               onPriorityFilterChange={handlePriorityFilterChange}
               page={paramPage}
-              limit={filters.limit || 25}
+              limit={filters.limit || 10}
               onPageChange={handlePageChange}
             />
           ) : (

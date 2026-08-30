@@ -52,8 +52,8 @@ export class TicketController {
     const ctx = this.getUserContext(req);
     const { tickets, total } = await ticketQueryService.getTickets(filters, ctx);
 
-    const page = filters.page || DEFAULT_PAGE;
-    const limit = filters.limit || DEFAULT_LIMIT;
+    const page = Number(filters.page) || DEFAULT_PAGE;
+    const limit = Number(filters.limit) || DEFAULT_LIMIT;
 
     res.json({
       success: true,

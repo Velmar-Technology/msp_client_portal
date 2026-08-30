@@ -78,7 +78,7 @@ export const FLAPPING_ALERT_TAG = '[FLAPPING_ALERT]';
 
 /** Default pagination */
 export const DEFAULT_PAGE = 1;
-export const DEFAULT_LIMIT = 20;
+export const DEFAULT_LIMIT = 10;
 export const MAX_LIMIT = 100;
 
 /** Supported file types for ticket attachments */

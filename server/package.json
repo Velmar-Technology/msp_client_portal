@@ -14,6 +14,7 @@
     "db:migrate": "tsx src/shared/db/migrate.ts",
     "db:seed": "tsx src/shared/db/seed.ts",
     "db:seed:faker": "tsx src/shared/db/seedFaker.ts",
+    "db:seed:technicians": "tsx src/shared/db/seedTechnicians.ts",
     "db:reset": "tsx src/shared/db/reset.ts"
   },
   "dependencies": {

@@ -56,7 +56,7 @@ describe('PlanController', () => {
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockPlans,
-        pagination: { page: 1, limit: 20, total: 2, totalPages: 1 },
+        pagination: { page: 1, limit: 10, total: 2, totalPages: 1 },
       });
     });
 

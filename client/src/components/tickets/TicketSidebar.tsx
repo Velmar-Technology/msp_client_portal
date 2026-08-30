@@ -148,7 +148,7 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
               )}
             </span>
           </div>
-          {slaAwareness?.isAfterHours && (
+          {!['RESOLVED', 'RESOLVED_AUTOMATED', 'CLOSED', 'CANCELLED'].includes(ticket.status) && slaAwareness?.isAfterHours && (
             <div className="border-t border-border pt-3 flex flex-col gap-1.5">
               <div className="flex justify-between items-center text-xs">
                 <span className="text-muted-foreground flex items-center gap-1">

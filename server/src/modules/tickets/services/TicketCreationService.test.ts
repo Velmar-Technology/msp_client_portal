@@ -75,6 +75,14 @@ vi.mock('@modules/notifications/services/NotificationService', () => {
   };
 });
 
+vi.mock('@modules/equipment', () => {
+  return {
+    equipmentRepository: {
+      findById: vi.fn(),
+    },
+  };
+});
+
 vi.mock('./TicketQuotaService', () => {
   return {
     ticketQuotaService: {
@@ -85,6 +93,7 @@ vi.mock('./TicketQuotaService', () => {
 
 import { ticketCreationService, TicketCreationService } from './TicketCreationService';
 import { RmmAlertInput, TicketCategory, TicketPriority, TicketStatus, UserContext, UserRole } from '@shared/types';
+import { CreateTicketInput } from '@shared/dtos/ticket.dto';
 
 describe('TicketCreationService', () => {
   const createInput = {
@@ -166,7 +175,12 @@ describe('TicketCreationService', () => {
       mocks.ticketCreate.mockResolvedValue(createdTicket({ priority: TicketPriority.MEDIUM }));
       mocks.assignNext.mockResolvedValue(null);
 
-      await ticketCreationService.createTicket({ ...createInput, priority: undefined }, ctx);
+      const inputWithoutPriority: CreateTicketInput = {
+        title: createInput.title,
+        description: createInput.description,
+        category: createInput.category,
+      };
+      await ticketCreationService.createTicket(inputWithoutPriority, ctx);
 
       expect(mocks.assignNext).toHaveBeenCalledWith(
         TicketCategory.SERVICE_OUTAGE,
@@ -184,6 +198,44 @@ describe('TicketCreationService', () => {
         statusCode: 403,
         code: 'TICKET_LIMIT_EXCEEDED',
       });
+      expect(mocks.ticketCreate).not.toHaveBeenCalled();
+    });
+
+    it('creates ticket linked to equipment slot when valid and within quota', async () => {
+      const { equipmentRepository } = await import('@modules/equipment');
+      vi.mocked(equipmentRepository.findById).mockResolvedValue({
+        id: 'equip-1',
+        tenant_id: ctx.tenantId,
+        subscription_id: 'sub-1',
+        slot_index: 0,
+      } as any);
+      mocks.enforceTicketLimit.mockResolvedValue(undefined);
+      const created = createdTicket({ equipment_id: 'equip-1' });
+      mocks.ticketCreate.mockResolvedValue(created);
+      mocks.assignNext.mockResolvedValue(null);
+      mocks.userFindById.mockResolvedValue({ id: ctx.userId, name: 'Client User' });
+
+      const result = await ticketCreationService.createTicket({ ...createInput, equipmentId: 'equip-1' }, ctx);
+
+      expect(mocks.enforceTicketLimit).toHaveBeenCalledWith(ctx.userId, ctx.tenantId, 'equip-1');
+      expect(mocks.ticketCreate).toHaveBeenCalledWith(expect.objectContaining({
+        equipment_id: 'equip-1',
+      }));
+      expect(result.equipment_id).toBe('equip-1');
+    });
+
+    it('rejects creation when equipment slot does not belong to tenant or is not found', async () => {
+      const { equipmentRepository } = await import('@modules/equipment');
+      vi.mocked(equipmentRepository.findById).mockResolvedValue({
+        id: 'equip-foreign',
+        tenant_id: 'other-tenant',
+        subscription_id: 'sub-2',
+        slot_index: 0,
+      } as any);
+
+      await expect(
+        ticketCreationService.createTicket({ ...createInput, equipmentId: 'equip-foreign' }, ctx)
+      ).rejects.toThrow('Equipment device slot not found or unauthorized');
       expect(mocks.ticketCreate).not.toHaveBeenCalled();
     });
   });

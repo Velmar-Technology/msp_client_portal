@@ -301,6 +301,9 @@ export interface TicketFilters {
   tenantId?: string;
   equipmentId?: string;
   search?: string;
+  dateRange?: string;
+  startDate?: string | Date;
+  endDate?: string | Date;
   page?: number;
   limit?: number;
   sortBy?: string;
@@ -424,6 +427,8 @@ export interface SubscriptionEquipment {
   disk_total_gb?: number | null;
   pending_patch_count?: number | null;
   last_sync_at?: Date | null;
+  monthly_ticket_count?: number;
+  monthly_ticket_limit?: number | null;
   created_at: Date;
   updated_at: Date;
 }

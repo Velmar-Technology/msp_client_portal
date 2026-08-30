@@ -35,7 +35,7 @@ export const invoiceService = {
    * @param limit - Page size.
    * @returns Promise resolving to invoice list and pagination metadata.
    */
-  async getAll(page = 1, limit = 20): Promise<{ data: Invoice[]; pagination: { total: number; totalPages: number } }> {
+  async getAll(page = 1, limit = 10): Promise<{ data: Invoice[]; pagination: { total: number; totalPages: number } }> {
     const response = await api.get('/invoices', { params: { page, limit } });
     return response.data;
   },

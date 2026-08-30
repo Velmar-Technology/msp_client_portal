@@ -43,7 +43,7 @@ import { SKELETON_DISPLAY_DELAY_MS } from "@/constants/ui";
 // Sub-component to handle active SLA timers per ticket
 function SLACountdownRow({ ticket, onNavigate }: { ticket: Ticket; onNavigate: (id: string) => void }) {
   const { t } = useTranslation();
-  const sla = useSLATimer(ticket.created_at, ticket.category);
+  const sla = useSLATimer(ticket);
 
   if (!sla.isApplicable || sla.isExpired) return null;
 
