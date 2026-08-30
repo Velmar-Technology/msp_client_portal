@@ -133,7 +133,6 @@ export function useProfile() {
     if (months === 1) return "1 month ago";
     return `${months} months ago`;
   }, [i18n.language]);
-
   const lastLoginText = user?.lastLoginAt
     ? t("profile.lastLogin", {
         time: formatRelativeTime(user.lastLoginAt),
@@ -151,6 +150,32 @@ export function useProfile() {
     currentPassword.length > 0 ||
     newPassword.length > 0 ||
     confirmPassword.length > 0;
+
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [generatingApiKey, setGeneratingApiKey] = useState(false);
+
+  const handleGenerateApiKey = useCallback(async () => {
+    setGeneratingApiKey(true);
+    try {
+      const key = await userService.generateApiKey();
+      setApiKey(key);
+      toast.success(t("profile.apiKeySuccess", "API key generated successfully"));
+    } catch {
+      toast.error(t("profile.apiKeyError", "Failed to generate API key"));
+    } finally {
+      setGeneratingApiKey(false);
+    }
+  }, [t]);
+
+  const handleCopyApiKey = useCallback(async () => {
+    if (!apiKey) return;
+    try {
+      await navigator.clipboard.writeText(apiKey);
+      toast.success(t("profile.apiKeyCopied", "API key copied to clipboard!"));
+    } catch {
+      toast.error(t("common.copyFailed", "Failed to copy to clipboard"));
+    }
+  }, [apiKey, t]);
 
   return {
     t,
@@ -171,11 +196,13 @@ export function useProfile() {
     changingPassword,
     isPasswordDirty,
     lastLoginText,
+    apiKey,
+    generatingApiKey,
     handleAvatarClick,
     handleAvatarChange,
     handlePasswordChange,
     handleSave,
+    handleGenerateApiKey,
+    handleCopyApiKey,
   };
 }
-
-

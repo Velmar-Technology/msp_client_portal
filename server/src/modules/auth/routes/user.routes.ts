@@ -116,6 +116,9 @@ router.post('/me/avatar', upload.single('avatar'), (req, res) => userController.
 /** PUT /api/v1/users/me/password — Change current user password */
 router.put('/me/password', validate(ChangePasswordDTO), (req, res) => userController.changePassword(req, res));
 
+/** POST /api/v1/users/me/api-key — Generate API key for current user */
+router.post('/me/api-key', (req, res) => userController.generateApiKey(req, res));
+
 /** GET /api/v1/users/technicians — List technicians (Admin/Tech only) */
 router.get(
   '/technicians',

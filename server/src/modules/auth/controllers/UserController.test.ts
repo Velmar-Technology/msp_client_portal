@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => {
     bulkUpdateClientType: vi.fn(),
     deleteUser: vi.fn(),
     bulkDeleteUsers: vi.fn(),
+    generateApiKey: vi.fn(),
   };
 });
 
@@ -23,6 +24,7 @@ vi.mock('@modules/auth/services/UserService', () => {
       bulkUpdateClientType: mocks.bulkUpdateClientType,
       deleteUser: mocks.deleteUser,
       bulkDeleteUsers: mocks.bulkDeleteUsers,
+      generateApiKey: mocks.generateApiKey,
     },
   };
 });
@@ -220,6 +222,28 @@ describe('UserController', () => {
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: { deletedCount: 2 },
+      });
+    });
+  });
+
+  describe('generateApiKey', () => {
+    it('should call userService.generateApiKey and return token in response', async () => {
+      const req = {
+        user: { userId: 'user-1' },
+      } as unknown as Request;
+
+      const res = {
+        json: vi.fn(),
+      } as unknown as Response;
+
+      mocks.generateApiKey.mockResolvedValue('jwt-mock-api-key-token');
+
+      await userController.generateApiKey(req, res);
+
+      expect(mocks.generateApiKey).toHaveBeenCalledWith('user-1');
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        data: { apiKey: 'jwt-mock-api-key-token' },
       });
     });
   });

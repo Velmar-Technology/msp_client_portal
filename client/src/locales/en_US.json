@@ -208,7 +208,18 @@
     "avatarInput": "Avatar upload input",
     "avatarSuccess": "Profile picture updated successfully",
     "avatarError": "Failed to upload profile picture",
-    "phoneNumber": "Phone Number (WhatsApp)"
+    "phoneNumber": "Phone Number (WhatsApp)",
+    "apiKeyTitle": "API Key Management",
+    "apiKeySubtitle": "Programmatic Access Token",
+    "apiKeyDesc": "Generate a 30-day JWT API key for programmatic API access and automated scripting.",
+    "generateApiKey": "Generate API Key",
+    "generatingApiKey": "Generating...",
+    "apiKeyLabel": "Your API Key (Valid for 30 days)",
+    "copyApiKey": "Copy Key",
+    "apiKeyCopied": "API key copied to clipboard!",
+    "apiKeySuccess": "API key generated successfully",
+    "apiKeyError": "Failed to generate API key",
+    "apiKeyWarning": "Keep this API key secure. It grants programmatic access with your account permissions."
   },
   "dashboard": {
     "systemOverview": "System Overview",

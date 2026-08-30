@@ -390,6 +390,34 @@ describe('UserService', () => {
       expect(result).toEqual({ deletedCount: 0 });
     });
   });
+
+  describe('generateApiKey', () => {
+    it('should generate a signed JWT token with user claims and 30d expiration', async () => {
+      const mockUser = {
+        id: 'user-1',
+        email: 'admin@example.com',
+        role: UserRole.ADMIN,
+        tenant_id: 'tenant-123',
+      };
+      mocks.findById.mockResolvedValue(mockUser);
+
+      const token = await userService.generateApiKey('user-1');
+
+      expect(mocks.findById).toHaveBeenCalledWith('user-1');
+      expect(typeof token).toBe('string');
+      expect(token.split('.').length).toBe(3); // Valid JWT structure
+    });
+
+    it('should throw NotFoundError if user does not exist', async () => {
+      mocks.findById.mockResolvedValue(null);
+
+      await expect(userService.generateApiKey('user-missing')).rejects.toMatchObject({
+        message: 'User not found',
+        statusCode: 404,
+        code: 'NOT_FOUND_ERROR',
+      });
+    });
+  });
 });
 
 

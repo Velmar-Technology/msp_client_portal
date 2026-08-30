@@ -250,6 +250,17 @@ export class UserController {
     );
     res.json({ success: true, data: result });
   }
+
+  /**
+   * Generates an API key (JWT token) for programmatic API access for the authenticated user.
+   *
+   * @param req - Express request with authenticated UserContext
+   * @param res - Express response returning generated API key
+   */
+  async generateApiKey(req: Request, res: Response): Promise<void> {
+    const apiKey = await userService.generateApiKey(req.user!.userId);
+    res.json({ success: true, data: { apiKey } });
+  }
 }
 
 export const userController = new UserController();

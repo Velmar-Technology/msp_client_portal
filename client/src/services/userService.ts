@@ -267,5 +267,15 @@ export const userService = {
     const response = await api.delete('/users/bulk', { data: { userIds } });
     return response.data.data;
   },
+
+  /**
+   * Generates a 30-day JWT API key for programmatic access for the current user.
+   *
+   * @returns Promise resolving to the generated API key token string.
+   */
+  async generateApiKey(): Promise<string> {
+    const response = await api.post('/users/me/api-key');
+    return response.data.data.apiKey;
+  },
 };
 
