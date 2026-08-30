@@ -161,10 +161,6 @@ export class InvoiceNotificationService {
     }
 
     if (!this.isEligibleForEmailNotification(invoice.last_email_sent_at, now)) {
-      logger.info(`Skipped email reminder for invoice ${invoice.invoice_number}: Notification sent within the last 3 days.`, {
-        invoiceId: invoice.id,
-        lastSentAt: invoice.last_email_sent_at,
-      });
       return false;
     }
 

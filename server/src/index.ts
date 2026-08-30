@@ -22,6 +22,7 @@ import { equipmentService } from '@modules/equipment/services/EquipmentService';
 import { metricsMiddleware } from '@shared/middleware/metricsMiddleware';
 import { metricsService } from '@shared/metrics/metricsService';
 
+// Initialize Express Application
 const app = express();
 
 // Trust reverse proxy (Traefik / Nginx) headers for TLS/HTTPS detection (X-Forwarded-Proto, etc.)
@@ -73,6 +74,7 @@ app.use('/api/v1/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swagge
 
 // ---- API Routes ----
 app.use('/api/v1', routes);
+app.use(routes);
 
 // ---- Global Error Handler (must be last) ----
 app.use(createExpressErrorMiddleware({ logger, isProduction: env.NODE_ENV === 'production' }));

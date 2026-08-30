@@ -40,8 +40,8 @@ La base de datos está modelada para soportar **Multi-tenancy (Multi-inquilino)*
 
 | Tabla / Modelo | Propósito | Campos Clave |
 | :--- | :--- | :--- |
-| **tenants** | Inquilinos del portal (empresas cliente directas). | `id`, `name`, `subdomain`, `created_at`, `updated_at` |
-| **users** | Usuarios del sistema con roles diferenciados. | `id`, `email`, `name`, `password_hash`, `role` (CLIENT, TECHNICIAN, ADMIN), `specialty`, `is_active`, `tenant_id` |
+| **tenants** | Inquilinos del portal (empresas cliente directas). | `id`, `name`, `subdomain`, `rnc`, `account_status` (ACTIVE, READ_ONLY, SUSPENDED, PURGED), `read_only_at`, `suspended_at`, `purged_at`, `created_at`, `updated_at` |
+| **users** | Usuarios del sistema con roles diferenciados. | `id`, `email`, `name`, `password_hash`, `role` (CLIENT, TECHNICIAN, ADMIN), `account_status`, `rnc`, `specialty`, `is_active`, `tenant_id` |
 | **tickets** | Entidades de solicitudes de soporte. | `id`, `title`, `description`, `category` (REPAIR, WARRANTY, SERVICE_OUTAGE), `status` (OPEN, IN_PROGRESS, AWAITING_PAYMENT, etc.), `priority`, `client_id`, `assigned_tech_id`, `tenant_id` |
 | **ticket_attachments** | Archivos adjuntos para tickets o respuestas. | `id`, `ticket_id`, `response_id`, `filename`, `path`, `mime_type`, `size_bytes`, `tenant_id` |
 | **ticket_events** | Registro histórico de cambios de estado del ticket. | `id`, `ticket_id`, `old_status`, `new_status`, `changed_by`, `notes` |
@@ -49,7 +49,7 @@ La base de datos está modelada para soportar **Multi-tenancy (Multi-inquilino)*
 | **plans** | Planes de suscripción disponibles en la plataforma. | `id`, `name`, `description`, `price`, `features`, `recommended`, `client_type`, `active` |
 | **subscriptions** | Suscripciones de clientes ligadas a planes. | `id`, `client_id`, `service_name`, `plan` (ID del plan), `status`, `renewal_date`, `equipment_count`, `paypal_order_id`, `tenant_id` |
 | **subscription_equipment** | Dispositivos/slots asignados a una suscripción (e.g. Nextcloud). | `id`, `subscription_id`, `slot_index`, `status` (PENDING_ACTIVATION, ACTIVE), `device_name`, `device_serial`, `otp`, `nextcloud_username`, `nextcloud_password`, `tenant_id` |
-| **invoices** | Facturas de clientes generadas para sus suscripciones. | `id`, `invoice_number`, `client_id`, `amount`, `tax_amount`, `total`, `status` (PENDING, PAID, OVERDUE), `due_date`, `tenant_id` |
+| **invoices** | Facturas de clientes generadas para sus suscripciones. | `id`, `invoice_number`, `client_id`, `amount`, `tax_amount` (18% ITBIS), `total`, `currency` (USD, DOP), `ncf` (Serie B01), `rnc`, `status` (PENDING, PAID, OVERDUE), `due_date`, `tenant_id` |
 | **round_robin_state** | Estado del asignador Round-Robin para técnicos. | `category`, `last_assigned_tech_id`, `updated_at` |
 | **notifications** | Notificaciones internas del sistema. | `id`, `user_id`, `title`, `message`, `link`, `ticket_id`, `read`, `tenant_id` |
 | **notification_preferences** | Preferencias de canal por evento. | `id`, `user_id`, `preferences` (JSON de canales in_app, email, whatsapp por evento), `tenant_id` |
@@ -63,6 +63,8 @@ Definidas centralmente en [types/index.ts](file:///c:/Users/DELL/Desktop/wordspa
 
 - **Enums de Dominio:**
   - `UserRole`: CLIENT, TECHNICIAN, ADMIN
+  - `AccountStatus`: ACTIVE, READ_ONLY, SUSPENDED, PURGED
+  - `Currency`: USD, DOP
   - `TicketStatus`: OPEN, IN_PROGRESS, AWAITING_PAYMENT, RESOLVED, CLOSED, CANCELLED
   - `TicketCategory`: REPAIR, WARRANTY, SERVICE_OUTAGE
   - `TicketPriority`: LOW, MEDIUM, HIGH, CRITICAL
@@ -1758,4 +1760,28 @@ El monorepo implementa **Conventional Commits** y validación automatizada media
 - **Configuración**: [`.commitlintrc.json`](file:///c:/Users/eapolanco/Workspace/msp_client_portal/.commitlintrc.json) extiende `@commitlint/config-conventional`.
 - **Hook de Git**: [`.husky/commit-msg`](file:///c:/Users/eapolanco/Workspace/msp_client_portal/.husky/commit-msg) intercepta el comando `git commit` y valida la sintaxis antes de permitir la creación del commit.
 - **Instalación Automática**: El script `prepare` en el [`package.json`](file:///c:/Users/eapolanco/Workspace/msp_client_portal/package.json) raíz instala los hooks automáticamente tras ejecutar `npm install`.
+
+---
+
+## 9. Tarifas, Facturación (NCF), Impuestos (ITBIS) y Sistema de Falta de Pago
+
+### 9.1. Impuestos e ITBIS 18% y Multi-Moneda
+- **Cálculo de ITBIS**: Todas las tarifas y precios calculados por `BillingPricingService` no incluyen el dieciocho por ciento (18%) de ITBIS, el cual se aplica automáticamente sobre el subtotal de la factura final.
+- **Monedas Admitidas**: Soporte completo para Dólares Estadounidenses (`USD`) y Pesos Dominicanos (`DOP`) con formateo regional (`$100.00 USD` / `RD$ 5,800.00 DOP`).
+
+### 9.2. Emisión de Comprobantes Fiscales (NCF) y Validación de RNC
+- **Validación DGII (`rncValidator.ts`)**:
+  - RNC de Personas Jurídicas: 9 dígitos numéricos validados con algoritmo **Módulo 11**.
+  - Cédula de Personas Físicas: 11 dígitos numéricos validados con algoritmo **Módulo 10 (Luhn)**.
+- **Generación Secuencial de NCF Serie B01 (`NcfService.ts`)**:
+  - Emite comprobantes de Factura de Crédito Fiscal (`B0100000001` - `B0199999999`) cuando el cliente o la empresa inquilina posee un RNC válido registrado antes del corte de facturación.
+
+### 9.3. Escala Gradual de Suspensión por Falta de Pago
+El servicio `NonPaymentSuspensionService` y la tarea programada `SubscriptionScheduler` evalúan la factura vencida más antigua de cada cliente/inquilino aplicando las siguientes fases:
+- **Día 1 de Vencimiento**: Notificación electrónica de cobro automatizada (`sendInvoiceOverdueNoticeEmail`) y alerta en la plataforma.
+- **Día 5 de Vencimiento**: Transición a **Modo Solo Lectura (`READ_ONLY`)**. La directiva `AccountStatusPolicy.assertWriteAllowed` bloquea la creación de tickets, respuestas en hilos, subida de archivos adjuntos y vinculación de nuevos equipos.
+- **Día 15 de Vencimiento**: **Suspensión Total (`SUSPENDED`)**. Se desactiva el acceso a la plataforma (`is_active = false`) y se pausan los servicios de soporte técnico.
+- **Día 30 de Vencimiento**: **Depuración Técnica Permanente (`PURGED`)**. Para liberación de almacenamiento en servidores, se eliminan las cuentas de usuario de almacenamiento en la nube (Nextcloud) vía API y se revocan las credenciales de agentes de hardware, con cero responsabilidad para LA EMPRESA.
+- **Restablecimiento Automático**: La liquidación y pago de las facturas pendientes mediante PayPal o confirmación de transferencia bancaria ejecuta `restoreAccountIfPaid()`, restableciendo inmediatamente el inquilino y los usuarios al estado `ACTIVE`.
+
 

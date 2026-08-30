@@ -22,6 +22,7 @@ export function useProfile() {
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
   const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || "");
+  const [rnc, setRnc] = useState(user?.rnc || "");
   const [language, setLanguage] = useState(user?.language || "en_US");
   const [saving, setSaving] = useState(false);
 
@@ -84,8 +85,8 @@ export function useProfile() {
     e.preventDefault();
     setSaving(true);
     try {
-      await userService.updateProfile({ name, email, language, phoneNumber });
-      updateUser({ name, email, language, phoneNumber });
+      await userService.updateProfile({ name, email, language, phoneNumber, rnc });
+      updateUser({ name, email, language, phoneNumber, rnc });
       await i18n.changeLanguage(language);
       toast.success(t("profile.success"));
     } catch {
@@ -93,7 +94,7 @@ export function useProfile() {
     } finally {
       setSaving(false);
     }
-  }, [name, email, language, phoneNumber, t, i18n, updateUser]);
+  }, [name, email, language, phoneNumber, rnc, t, i18n, updateUser]);
 
   const formatRelativeTime = useCallback((isoDate: string): string => {
     const now = Date.now();
@@ -145,12 +146,39 @@ export function useProfile() {
     name !== (user?.name || "") ||
     email !== (user?.email || "") ||
     phoneNumber !== (user?.phoneNumber || "") ||
+    rnc !== (user?.rnc || "") ||
     language !== (user?.language || "en_US");
 
   const isPasswordDirty =
     currentPassword.length > 0 ||
     newPassword.length > 0 ||
     confirmPassword.length > 0;
+
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [generatingApiKey, setGeneratingApiKey] = useState(false);
+
+  const handleGenerateApiKey = useCallback(async () => {
+    setGeneratingApiKey(true);
+    try {
+      const key = await userService.generateApiKey();
+      setApiKey(key);
+      toast.success(t("profile.apiKeySuccess", "API key generated successfully"));
+    } catch {
+      toast.error(t("profile.apiKeyError", "Failed to generate API key"));
+    } finally {
+      setGeneratingApiKey(false);
+    }
+  }, [t]);
+
+  const handleCopyApiKey = useCallback(async () => {
+    if (!apiKey) return;
+    try {
+      await navigator.clipboard.writeText(apiKey);
+      toast.success(t("profile.apiKeyCopied", "API key copied to clipboard!"));
+    } catch {
+      toast.error(t("common.copyFailed", "Failed to copy to clipboard"));
+    }
+  }, [apiKey, t]);
 
   return {
     t,
@@ -160,6 +188,7 @@ export function useProfile() {
     name, setName,
     email, setEmail,
     phoneNumber, setPhoneNumber,
+    rnc, setRnc,
     language, setLanguage,
     saving,
     isDirty,
@@ -171,11 +200,13 @@ export function useProfile() {
     changingPassword,
     isPasswordDirty,
     lastLoginText,
+    apiKey,
+    generatingApiKey,
     handleAvatarClick,
     handleAvatarChange,
     handlePasswordChange,
     handleSave,
+    handleGenerateApiKey,
+    handleCopyApiKey,
   };
 }
-
-

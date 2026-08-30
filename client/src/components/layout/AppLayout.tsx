@@ -1,9 +1,10 @@
 import { Outlet, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Shield } from "lucide-react";
+import { Shield, AlertTriangle } from "lucide-react";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { TopNav } from "@/components/layout/TopNav";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 import { useAppLayout } from "@/hooks/useAppLayout";
 import { MaxWidthWrapper } from "@/components/max-width-wrapper";
 
@@ -57,9 +58,32 @@ export function BlockedPortalAlert({ onChoosePlan, choosePlanLabel }: BlockedPor
   );
 }
 
+export function ReadOnlyNoticeBanner({ onGoToBilling }: { onGoToBilling: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="mb-4 bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 px-4 py-3 rounded-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs animate-fade-in shadow-xs">
+      <div className="flex items-center gap-2">
+        <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
+        <div>
+          <span className="font-semibold">{t("billing.readOnlyBannerTitle")}: </span>
+          <span className="text-amber-800/90 dark:text-amber-300/90">{t("billing.readOnlyBannerDesc")}</span>
+        </div>
+      </div>
+      <Button
+        variant="outline"
+        size="xs"
+        onClick={onGoToBilling}
+        className="shrink-0 border-amber-500/40 text-amber-900 dark:text-amber-100 hover:bg-amber-500/20"
+      >
+        {t("billing.viewInvoices")}
+      </Button>
+    </div>
+  );
+}
+
 // 3. Parent Layout Wrapper
 export function AppLayout() {
-  const { navigate, isBlocked } = useAppLayout();
+  const { navigate, isBlocked, isReadOnly } = useAppLayout();
 
   return (
     <SidebarProvider>
@@ -72,7 +96,10 @@ export function AppLayout() {
           {isBlocked ? (
             <BlockedPortalAlert onChoosePlan={() => navigate("/plans")} choosePlanLabel="Choose a Support Plan" />
           ) : (
-            <Outlet />
+            <>
+              {isReadOnly && <ReadOnlyNoticeBanner onGoToBilling={() => navigate("/billing")} />}
+              <Outlet />
+            </>
           )}
         </main>
         <Footer />

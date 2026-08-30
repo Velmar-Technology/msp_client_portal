@@ -78,6 +78,14 @@ vi.mock('@modules/billing', () => {
     },
     invoiceNotificationService: {
       notifyInvoiceDue: vi.fn(),
+      checkAndSendDueInvoiceNotifications: vi.fn().mockResolvedValue(0),
+    },
+    ncfService: {
+      assignNcfIfEligible: vi.fn().mockResolvedValue(null),
+      isValidNcf: vi.fn().mockReturnValue(true),
+    },
+    nonPaymentSuspensionService: {
+      evaluateOverdueAccounts: vi.fn().mockResolvedValue({ evaluatedInvoices: 0, noticesSent: 0, readOnlyApplied: 0, suspensionsApplied: 0, purgesExecuted: 0 }),
     },
   };
 });

@@ -1,5 +1,4 @@
-import React from "react";
-import { User, ShieldCheck, Mail, Phone, Lock, Save, Globe, Edit, Clock, Loader2, Info, Key } from "lucide-react";
+import { User, ShieldCheck, Mail, Phone, Lock, Save, Globe, Edit, Clock, Loader2, Info, Key, Copy, KeyRound, FileText } from "lucide-react";
 import { Page } from "@/components/Page";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -90,7 +89,7 @@ const ProfileIdentityCard = ({
 };
 
 const AccountDetailsForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) => {
-  const { t, name, setName, email, setEmail, phoneNumber, setPhoneNumber, language, setLanguage, saving, isDirty, handleSave } = hook;
+  const { t, name, setName, email, setEmail, phoneNumber, setPhoneNumber, rnc, setRnc, language, setLanguage, saving, isDirty, handleSave } = hook;
 
   return (
     <form
@@ -151,6 +150,22 @@ const AccountDetailsForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
           </div>
 
           <div>
+            <label
+              htmlFor="profile-rnc"
+              className="mb-1.5 flex items-center gap-2 text-xs font-medium text-foreground"
+            >
+              <FileText className="h-3.5 w-3.5 text-muted-foreground" /> {t("billing.rncLabel", "RNC / Cédula (NCF)")}
+            </label>
+            <Input
+              id="profile-rnc"
+              type="text"
+              value={rnc}
+              onChange={(e) => setRnc(e.target.value)}
+              placeholder={t("billing.rncPlaceholder", "e.g. 1-32-12345-6 or 402-0000000-0")}
+            />
+          </div>
+
+          <div className="md:col-span-2">
             <label htmlFor="profile-language-select" className="mb-1.5 flex items-center gap-2 text-xs font-medium text-foreground">
               <Globe className="h-3.5 w-3.5 text-muted-foreground" /> {t("profile.languageSetting")}
             </label>
@@ -279,6 +294,76 @@ const ChangePasswordForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
   );
 };
 
+const ApiKeyManagementCard = ({ hook }: { hook: ReturnType<typeof useProfile> }) => {
+  const { t, apiKey, generatingApiKey, handleGenerateApiKey, handleCopyApiKey } = hook;
+
+  return (
+    <section className="overflow-hidden rounded-xl border border-border bg-card shadow-xs">
+      <div className="border-b border-border bg-muted/30 px-6 py-4 flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground font-heading flex items-center gap-2">
+            <KeyRound className="h-4 w-4 text-primary" />
+            {t("profile.apiKeyTitle")}
+          </h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {t("profile.apiKeyDesc")}
+          </p>
+        </div>
+        <Button
+          type="button"
+          onClick={handleGenerateApiKey}
+          disabled={generatingApiKey}
+          className="flex items-center gap-2 cursor-pointer"
+        >
+          {generatingApiKey ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Key className="h-3.5 w-3.5" />
+          )}
+          {generatingApiKey ? t("profile.generatingApiKey") : t("profile.generateApiKey")}
+        </Button>
+      </div>
+
+      {apiKey && (
+        <div className="p-6 space-y-4 bg-muted/10 border-t border-border">
+          <div>
+            <label
+              htmlFor="profile-api-key-output"
+              className="mb-1.5 flex items-center gap-2 text-xs font-medium text-foreground"
+            >
+              <KeyRound className="h-3.5 w-3.5 text-muted-foreground" />
+              {t("profile.apiKeyLabel")}
+            </label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="profile-api-key-output"
+                type="text"
+                readOnly
+                value={apiKey}
+                className="font-mono text-xs bg-muted/40 select-all"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCopyApiKey}
+                className="flex shrink-0 items-center gap-1.5 cursor-pointer"
+              >
+                <Copy className="h-3.5 w-3.5" />
+                {t("profile.copyApiKey")}
+              </Button>
+            </div>
+          </div>
+
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Info className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+            {t("profile.apiKeyWarning")}
+          </p>
+        </div>
+      )}
+    </section>
+  );
+};
+
 /* --- Main Component --- */
 
 export function ProfilePage() {
@@ -299,6 +384,7 @@ export function ProfilePage() {
         />
         <AccountDetailsForm hook={profileHook} />
         <ChangePasswordForm hook={profileHook} />
+        <ApiKeyManagementCard hook={profileHook} />
       </div>
     </Page>
   );

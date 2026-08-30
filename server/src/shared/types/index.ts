@@ -48,12 +48,26 @@ export enum InvoiceStatus {
   CANCELLED = 'CANCELLED',
 }
 
+export enum AccountStatus {
+  ACTIVE = 'ACTIVE',
+  READ_ONLY = 'READ_ONLY',
+  SUSPENDED = 'SUSPENDED',
+  PURGED = 'PURGED',
+}
+
+export type Currency = 'USD' | 'DOP';
+
 // ---- Entity Interfaces ----
 
 export interface Tenant {
   id: string;
   name: string;
   subdomain: string | null;
+  rnc?: string | null;
+  account_status?: AccountStatus;
+  read_only_at?: Date | null;
+  suspended_at?: Date | null;
+  purged_at?: Date | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -66,6 +80,8 @@ export interface User {
   role: UserRole;
   specialty: string | null;
   is_active: boolean;
+  account_status?: AccountStatus;
+  rnc?: string | null;
   email_verified: boolean;
   otp_code: string | null;
   otp_expires: Date | null;
@@ -157,6 +173,9 @@ export interface Invoice {
   amount: number;
   tax_amount: number;
   total: number;
+  currency?: string;
+  ncf?: string | null;
+  rnc?: string | null;
   status: InvoiceStatus;
   invoice_date: Date;
   due_date: Date;
@@ -247,6 +266,7 @@ export interface JwtPayload {
   email: string;
   role: UserRole;
   tenantId: string;
+  accountStatus?: AccountStatus;
 }
 
 /** Authenticated caller identity used to scope every ticket use case. */
@@ -254,6 +274,7 @@ export interface UserContext {
   userId: string;
   role: UserRole;
   tenantId: string;
+  accountStatus?: AccountStatus;
 }
 
 /** Uploaded file metadata produced by the multer upload driver. */

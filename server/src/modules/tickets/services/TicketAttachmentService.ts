@@ -1,10 +1,11 @@
 import { ticketRepository, TicketRepository } from '@modules/tickets/repositories/TicketRepository';
 import { ticketAccessPolicy, TicketAccessPolicy } from '@shared/policies/TicketAccessPolicy';
+import { accountStatusPolicy, AccountStatusPolicy } from '@shared/policies/AccountStatusPolicy';
 import { NotFoundError } from '@shared/errors';
 import { Ticket, TicketAttachment, UploadedFile, UserContext } from '@shared/types';
 
 /**
- * Domain service managing ticket file attachments with tenant security and RBAC validation.
+ * Domain service managing ticket file attachments with tenant security, RBAC validation, and read-only enforcement.
  */
 export class TicketAttachmentService {
   /**
@@ -12,10 +13,12 @@ export class TicketAttachmentService {
    *
    * @param ticketRepo - Ticket data repository
    * @param accessPol - Ticket access policy
+   * @param accountPol - Account status policy
    */
   constructor(
     private ticketRepo: TicketRepository = ticketRepository,
     private accessPol: TicketAccessPolicy = ticketAccessPolicy,
+    private accountPol: AccountStatusPolicy = accountStatusPolicy,
   ) {}
 
   /**
@@ -39,10 +42,12 @@ export class TicketAttachmentService {
    * @param file - Uploaded file metadata (filename, path, mimetype, size)
    * @param ctx - Authenticated user context
    * @returns Newly created TicketAttachment entity
+   * @throws {ForbiddenError} When account is in Read-Only, Suspended, or Purged state (Section 9.3)
    * @throws {NotFoundError} When ticket does not exist
    * @throws {ForbiddenError} When user lacks access to ticket
    */
   async addAttachment(ticketId: string, file: UploadedFile, ctx: UserContext): Promise<TicketAttachment> {
+    this.accountPol.assertWriteAllowed(ctx);
     const ticket = await this.requireTicket(ticketId, ctx);
 
     return this.ticketRepo.addAttachment({

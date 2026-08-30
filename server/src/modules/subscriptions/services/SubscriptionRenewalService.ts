@@ -1,8 +1,8 @@
 import { SubscriptionRepository, subscriptionRepository } from '../repositories/SubscriptionRepository';
 import { PlanRepository, planRepository } from '../repositories/PlanRepository';
-import { InvoiceRepository, invoiceRepository } from '@modules/billing';
+import { InvoiceRepository, invoiceRepository, NcfService, ncfService } from '@modules/billing';
 import { EquipmentRepository, equipmentRepository } from '@modules/equipment';
-import { UserRepository, userRepository } from '@modules/auth';
+import { UserRepository, userRepository, TenantRepository, tenantRepository } from '@modules/auth';
 import { NextcloudService, nextcloudService } from '@modules/system';
 import { PaypalService, paypalService } from '@modules/billing';
 import { NotificationService, notificationService } from '@modules/notifications';
@@ -30,6 +30,8 @@ export class SubscriptionRenewalService {
    * @param paypalSvc - PayPal integration service
    * @param notifSvc - Notification service
    * @param pricingSvc - Pricing calculation service
+   * @param ncfSvc - NCF issuance service
+   * @param tenantRepo - Tenant repository
    */
   constructor(
     private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
@@ -40,7 +42,9 @@ export class SubscriptionRenewalService {
     private nextcloudSvc: NextcloudService = nextcloudService,
     private paypalSvc: PaypalService = paypalService,
     private notifSvc: NotificationService = notificationService,
-    private pricingSvc: BillingPricingService = billingPricingService
+    private pricingSvc: BillingPricingService = billingPricingService,
+    private ncfSvc: NcfService = ncfService,
+    private tenantRepo: TenantRepository = tenantRepository
   ) {}
 
   /**
@@ -176,12 +180,20 @@ export class SubscriptionRenewalService {
     const pricing = this.pricingSvc.calculatePricing(planDetails.price, sub.equipment_count, billingCycle);
     const invoiceNumber = await this.pricingSvc.generateInvoiceNumber();
 
+    const client = await this.userRepo.findById(sub.client_id);
+    const tenant = await this.tenantRepo.findById(sub.tenant_id);
+    const effectiveRnc = client?.rnc || tenant?.rnc || null;
+    const ncf = await this.ncfSvc.assignNcfIfEligible(effectiveRnc);
+
     const createdInvoice = await this.invoiceRepo.create({
       invoice_number: invoiceNumber,
       client_id: sub.client_id,
       amount: pricing.subtotal,
       tax_amount: pricing.tax,
       total: pricing.total,
+      currency: 'USD',
+      ncf,
+      rnc: effectiveRnc,
       due_date: newRenewalDate,
       tenant_id: sub.tenant_id,
       status: InvoiceStatus.PAID,

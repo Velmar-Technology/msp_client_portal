@@ -1,4 +1,5 @@
 import api from "@/services/api";
+import { getAuthItem } from "@/lib/authStorage";
 
 export interface SubscriptionEquipment {
   id: string;
@@ -183,14 +184,31 @@ export const equipmentService = {
   },
 
   /**
-   * Constructs the URL for downloading the automated RMM agent deployment script.
+   * Constructs the URL for downloading the automated RMM agent deployment script with a 5-minute short-lived token.
    *
    * @param subId - Subscription UUID.
    * @param slotIndex - Slot index number.
    * @returns Promise resolving to script download URL.
    */
   async getDeployScriptUrl(subId: string, slotIndex: number): Promise<string> {
-    const baseUrl = api.defaults.baseURL || '';
-    return `${baseUrl}/equipment/subscriptions/${subId}/slots/${slotIndex}/deploy-script`;
+    const baseUrl = api.defaults.baseURL || '/api/v1';
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const cleanBaseUrl = baseUrl.startsWith('http')
+      ? baseUrl
+      : `${origin}${baseUrl.startsWith('/') ? '' : '/'}${baseUrl}`;
+
+    try {
+      const response = await api.get(`/equipment/subscriptions/${subId}/slots/${slotIndex}/deploy-token`);
+      const deployToken = response.data?.data?.token;
+      if (deployToken) {
+        return `${cleanBaseUrl}/equipment/subscriptions/${subId}/slots/${slotIndex}/deploy-script?token=${encodeURIComponent(deployToken)}`;
+      }
+    } catch {
+      // Fallback to accessToken from storage if offline or during degraded state
+    }
+
+    const token = getAuthItem('accessToken');
+    const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : '';
+    return `${cleanBaseUrl}/equipment/subscriptions/${subId}/slots/${slotIndex}/deploy-script${tokenQuery}`;
   },
 };

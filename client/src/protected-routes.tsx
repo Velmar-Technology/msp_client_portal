@@ -174,7 +174,16 @@ const RAW_PROTECTED_ROUTES: Omit<AppRouteConfig, "handle">[] = [
         <DevicesPage />
       </RouteSuspenseWrapper>
     ),
-    allowedRoles: ["CLIENT", "ADMIN"],
+    allowedRoles: ["CLIENT", "ADMIN", "TECHNICIAN"],
+  },
+  {
+    path: "/rmm",
+    element: (
+      <RouteSuspenseWrapper fallback={<TablePageSkeleton />}>
+        <DevicesPage />
+      </RouteSuspenseWrapper>
+    ),
+    allowedRoles: ["CLIENT", "ADMIN", "TECHNICIAN"],
   },
   {
     path: "/resources",
@@ -311,6 +320,7 @@ export const routePreloaders: Record<string, () => Promise<unknown>> = {
   "/plans": () => PlansPage.preload(),
   "/billing": () => BillingPage.preload(),
   "/devices": () => DevicesPage.preload(),
+  "/rmm": () => DevicesPage.preload(),
   "/resources": () => ResourcesPage.preload(),
   "/maintenance": () => MaintenancePage.preload(),
   "/tech/dashboard": () => TechDashboardPage.preload(),

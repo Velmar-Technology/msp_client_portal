@@ -14,13 +14,18 @@ import { userRepository } from '@modules/auth';
  * @throws {UnauthorizedError} When token is missing, invalid, or expired
  */
 export async function authMiddleware(req: Request, _res: Response, next: NextFunction): Promise<void> {
+  let token: string | undefined;
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return next(new UnauthorizedError('Missing or invalid authorization header'));
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  } else if (typeof req.query?.token === 'string' && req.query.token.length > 0) {
+    token = req.query.token as string;
   }
 
-  const token = authHeader.split(' ')[1];
+  if (!token) {
+    return next(new UnauthorizedError('Missing or invalid authorization header'));
+  }
 
   try {
     const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;

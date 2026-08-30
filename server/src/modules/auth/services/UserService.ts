@@ -1,8 +1,10 @@
 import { userRepository, UserRepository, type UserListFilters } from '../repositories/UserRepository';
 import { NotFoundError, ConflictError, UnauthorizedError, ForbiddenError, InternalServerError } from '@shared/errors';
-import { User, UserRole } from '@shared/types';
+import { User, UserRole, JwtPayload } from '@shared/types';
 import { UpdateProfileInput, ChangePasswordInput } from '@shared/dtos/user.dto';
 import { hashPassword, comparePassword } from '@shared/utils/passwordUtils';
+import jwt from 'jsonwebtoken';
+import { env } from '@shared/config/env';
 
 export interface UserListResponse {
   users: Omit<User, 'password_hash'>[];
@@ -374,6 +376,36 @@ export class UserService {
       active: byStatus.active,
       inactive: byStatus.inactive,
     };
+  }
+
+  /**
+   * Generates an API key (JWT token) for the authenticated user.
+   * API keys have a longer expiration time (30 days) than regular session tokens.
+   *
+   * @param userId - Unique user identifier
+   * @returns Generated API key as a JWT token string
+   * @throws {NotFoundError} When user does not exist
+   * @throws {InternalServerError} When token generation fails
+   * @see BL-XXX (if applicable - API key generation for admin/programmatic access)
+   */
+  async generateApiKey(userId: string): Promise<string> {
+    const user = await this.userRepo.findById(userId);
+    if (!user) throw new NotFoundError('User not found');
+
+    // Prepare JWT payload with user information
+    const payload: JwtPayload = {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      tenantId: user.tenant_id,
+    };
+
+    // Generate token with 30-day expiration (longer than regular session tokens)
+    const token = jwt.sign(payload, env.JWT_SECRET, {
+      expiresIn: '30d', // API keys valid for 30 days
+    });
+
+    return token;
   }
 }
 

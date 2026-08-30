@@ -53,6 +53,12 @@ export const faqsEn: FAQ[] = [
     question: "How do I update my profile, notifications, or schedule maintenance?",
     answer: "Update your name, email, language, password, and avatar from the 'Profile' section. Choose which notification channels you receive (Portal, Email, and WhatsApp) under 'Notifications'. To plan routine checkups on your devices, use the 'Maintenance' section to schedule preventive maintenance with your assigned technician.",
     category: "technical"
+  },
+  {
+    id: 9,
+    question: "What are the rules regarding rates, NCF, taxes (ITBIS), and non-payment?",
+    answer: "Prices are expressed in USD or DOP plus 18% ITBIS tax. Tax Credit Invoices (NCF) are issued if a valid RNC is provided before billing cutoff. For overdue accounts: Day 1 triggers an automated payment notice, Day 5 sets the account to read-only mode, Day 15 suspends access to the platform and support, and Day 30 permanently deletes data from servers for storage liberation.",
+    category: "billing"
   }
 ];
 
@@ -104,5 +110,11 @@ export const faqsEs: FAQ[] = [
     question: "¿Cómo actualizo mi perfil, notificaciones o programo mantenimientos?",
     answer: "Actualice su nombre, correo electrónico, idioma, contraseña y avatar desde la sección de 'Perfil'. Elija qué canales de notificación desea recibir (Portal, Email y WhatsApp) en 'Notificaciones'. Para planificar revisiones rutinarias de sus equipos, use la sección de 'Mantenimiento' y programe mantenimiento preventivo con su técnico asignado.",
     category: "technical"
+  },
+  {
+    id: 9,
+    question: "¿Cuáles son las normas sobre tarifas, NCF, impuestos (ITBIS) y mora?",
+    answer: "Los precios se expresan en USD o DOP más el 18% de ITBIS. Se emiten Comprobantes de Crédito Fiscal (NCF) si se provee un RNC válido antes del cierre del ciclo. Ante impagos: el Día 1 se emite aviso de cobro automático, el Día 5 la cuenta pasa a modo solo lectura, el Día 15 se suspende el acceso a plataforma y soporte, y al Día 30 se purgan y eliminan definitivamente los datos de los servidores.",
+    category: "billing"
   }
 ];

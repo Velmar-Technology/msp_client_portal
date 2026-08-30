@@ -9,6 +9,8 @@ export * from './services/BillingPricingService';
 export * from './services/FinancialStatsService';
 export * from './services/ExpenseService';
 export * from './services/PaypalService';
+export * from './services/NcfService';
+export * from './services/NonPaymentSuspensionService';
 export * from './routes/invoice.routes';
 export * from './routes/expense.routes';
 

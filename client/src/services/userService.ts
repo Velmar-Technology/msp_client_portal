@@ -83,13 +83,14 @@ export const userService = {
    * @param data - Profile fields to update (name, email, language, avatarUrl, phoneNumber).
    * @returns Promise resolving to updated profile data.
    */
-  async updateProfile(data: { name?: string; email?: string; language?: string; avatarUrl?: string | null; phoneNumber?: string | null }): Promise<Record<string, unknown>> {
+  async updateProfile(data: { name?: string; email?: string; language?: string; avatarUrl?: string | null; phoneNumber?: string | null; rnc?: string | null }): Promise<Record<string, unknown>> {
     const payload = {
       name: data.name,
       email: data.email,
       language: data.language,
       avatar_url: data.avatarUrl,
       phone_number: data.phoneNumber,
+      rnc: data.rnc,
     };
     const response = await api.patch('/users/me', payload);
     return response.data.data;
@@ -266,6 +267,16 @@ export const userService = {
   async bulkDeleteUsers(userIds: string[]): Promise<{ deletedCount: number }> {
     const response = await api.delete('/users/bulk', { data: { userIds } });
     return response.data.data;
+  },
+
+  /**
+   * Generates a 30-day JWT API key for programmatic access for the current user.
+   *
+   * @returns Promise resolving to the generated API key token string.
+   */
+  async generateApiKey(): Promise<string> {
+    const response = await api.post('/users/me/api-key');
+    return response.data.data.apiKey;
   },
 };
 

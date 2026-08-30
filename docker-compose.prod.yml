@@ -12,7 +12,6 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME:-msp_helpdesk}
       TZ: ${TZ:-America/Santo_Domingo}
-      PGTZ: ${TZ:-America/Santo_Domingo}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -142,7 +141,6 @@ services:
       POSTGRES_PASSWORD: ${ZABBIX_DB_PASSWORD:-zabbix_password}
       POSTGRES_DB: ${ZABBIX_DB_NAME:-zabbix}
       TZ: ${TZ:-America/Santo_Domingo}
-      PGTZ: ${TZ:-America/Santo_Domingo}
     volumes:
       - zabbix_pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -251,17 +249,6 @@ services:
     image: ghcr.io/${REPOSITORY_OWNER:-velmar-technology}/msp-services-client:${VERSION:-latest}
     container_name: msp_client_prod
     restart: always
-    environment:
-      - TZ=${TZ:-America/Santo_Domingo}
-      - VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
-      - VITE_FARO_URL=${VITE_FARO_URL:-https://helpdesk.velmartech.com.do/collect}
-      - VITE_FARO_APP_NAME=${VITE_FARO_APP_NAME:-msp-client-portal}
-      - VITE_FARO_APP_ENV=${VITE_FARO_APP_ENV:-production}
-      - VITE_DD_APPLICATION_ID=${VITE_DD_APPLICATION_ID:-}
-      - VITE_DD_CLIENT_TOKEN=${VITE_DD_CLIENT_TOKEN:-}
-      - VITE_DD_SITE=${VITE_DD_SITE:-datadoghq.com}
-      - VITE_DD_SERVICE=${VITE_DD_SERVICE:-msp-client-portal}
-      - VITE_DD_ENV=${VITE_DD_ENV:-production}
     networks:
       - default
       - reverse-proxy
@@ -330,8 +317,6 @@ services:
     container_name: msp_prometheus
     restart: always
     user: "0:0"
-    environment:
-      - TZ=${TZ:-America/Santo_Domingo}
     entrypoint:
       - /bin/sh
       - -c
@@ -388,8 +373,6 @@ services:
     image: grafana/alloy:v1.2.0
     container_name: msp_alloy
     restart: always
-    environment:
-      - TZ=${TZ:-America/Santo_Domingo}
     entrypoint:
       - /bin/sh
       - -c

@@ -128,7 +128,7 @@ vi.mock('@modules/notifications', () => {
 });
 
 import { subscriptionService } from './SubscriptionService';
-import { SubscriptionStatus } from '@shared/types';
+import { SubscriptionStatus, InvoiceStatus } from '@shared/types';
 
 describe('SubscriptionService', () => {
   beforeEach(() => {
@@ -614,6 +614,7 @@ describe('SubscriptionService', () => {
     const mockSub = {
       id: 'sub-1',
       tenant_id: 'tenant-123',
+      client_id: 'client-1',
       service_name: 'Basic Support (Monthly)',
       plan: 'BASIC',
       status: SubscriptionStatus.ACTIVE,
@@ -653,20 +654,30 @@ describe('SubscriptionService', () => {
       expect(result).toEqual(mockUpdatedStatusSub);
     });
 
-    it('should throw badRequest when a client adds devices without a paypalOrderId', async () => {
-      await expect(
-        subscriptionService.updateSubscription(
-          'sub-1',
-          {
-            equipmentCount: 4,
-          },
-          'tenant-123',
-          false
-        )
-      ).rejects.toMatchObject({
-        statusCode: 400,
-        message: 'PayPal order ID is required to add more devices',
-      });
+    it('should successfully register a bank transfer intent and create pending invoice when client adds devices without paypalOrderId', async () => {
+      const mockUpdatedSub = { ...mockSub, equipment_count: 4 };
+      mocks.subUpdatePlan.mockResolvedValue(mockUpdatedSub);
+      mocks.invoiceCreate.mockResolvedValue({ id: 'inv-upgrade-1' });
+
+      const result = await subscriptionService.updateSubscription(
+        'sub-1',
+        {
+          equipmentCount: 4,
+        },
+        'tenant-123',
+        false
+      );
+
+      expect(mocks.invoiceCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: InvoiceStatus.PENDING,
+          client_id: 'client-1',
+          tenant_id: 'tenant-123',
+        })
+      );
+      expect(mocks.equipmentCreate).toHaveBeenCalledTimes(2); // Added 2 slots (from 2 to 4)
+      expect(mocks.subUpdatePlan).toHaveBeenCalledWith('sub-1', 'BASIC', 4);
+      expect(result).toEqual(mockUpdatedSub);
     });
 
     it('should successfully add devices when byAdmin is true even without paypalOrderId', async () => {

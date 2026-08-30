@@ -4,7 +4,7 @@ import { LeadActivity } from '@shared/types';
 import { CreateLeadActivityInput, UpdateLeadActivityInput } from '@shared/dtos/crm.dto';
 import { db, pool } from '@shared/db';
 import { eq, and } from 'drizzle-orm';
-import { validate as isUuid } from 'uuid';
+import { isUuid } from '@shared/utils/validation';
 
 /**
  * Data repository managing CRM timeline events, tasks, calls, reminders, and stage transitions.

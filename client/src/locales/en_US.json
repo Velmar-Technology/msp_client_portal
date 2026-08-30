@@ -11,6 +11,7 @@
     "pickDate": "Pick a date",
     "table": {
       "showing": "Showing {{start}}–{{end}} of {{total}}",
+      "pageSize": "Page size",
       "noResults": "No results.",
       "search": "Search...",
       "prevPage": "Previous page",
@@ -208,7 +209,18 @@
     "avatarInput": "Avatar upload input",
     "avatarSuccess": "Profile picture updated successfully",
     "avatarError": "Failed to upload profile picture",
-    "phoneNumber": "Phone Number (WhatsApp)"
+    "phoneNumber": "Phone Number (WhatsApp)",
+    "apiKeyTitle": "API Key Management",
+    "apiKeySubtitle": "Programmatic Access Token",
+    "apiKeyDesc": "Generate a 30-day JWT API key for programmatic API access and automated scripting.",
+    "generateApiKey": "Generate API Key",
+    "generatingApiKey": "Generating...",
+    "apiKeyLabel": "Your API Key (Valid for 30 days)",
+    "copyApiKey": "Copy Key",
+    "apiKeyCopied": "API key copied to clipboard!",
+    "apiKeySuccess": "API key generated successfully",
+    "apiKeyError": "Failed to generate API key",
+    "apiKeyWarning": "Keep this API key secure. It grants programmatic access with your account permissions."
   },
   "dashboard": {
     "systemOverview": "System Overview",
@@ -929,6 +941,8 @@
     "selectSubscription": "Select Subscription to Manage Devices",
     "subOptionLabel": "{{name}} ({{devicesStr}})",
     "filterAllClients": "All Clients",
+    "searchTenantPlaceholder": "Search client...",
+    "noTenantFound": "No client found.",
     "filterAllPlans": "All Plans",
     "filterAllStatuses": "All Statuses",
     "statusActive": "Active",
@@ -939,8 +953,8 @@
     "paginationShow": "Show:",
     "paginationPrev": "Previous page",
     "paginationNext": "Next page",
-    "tableClientTenant": "Client / Tenant",
-    "tablePlanService": "Plan / Service",
+    "tableClientTenant": "Client",
+    "tablePlanService": "Plan",
     "unknownClient": "Unknown Client",
     "unknownTenant": "Unknown Tenant",
     "notAvailable": "N/A",
@@ -1144,10 +1158,20 @@
     "cancelSuccess": "Invoice cancelled successfully.",
     "statusCancelled": "CANCELLED",
     "invoiceDetails": "Invoice Details",
+    "viewDetails": "View Details",
     "itemDescription": "Description",
     "itemQty": "Qty",
     "itemUnitPrice": "Unit Price",
-    "itemAmount": "Amount"
+    "itemAmount": "Amount",
+    "tableNcf": "NCF",
+    "tableCurrency": "Currency",
+    "rncLabel": "RNC / Tax ID",
+    "ncfLabel": "NCF (Tax Receipt)",
+    "itbisTax": "ITBIS (18%)",
+    "readOnlyBannerTitle": "Account in Read-Only Mode (Overdue Balance)",
+    "readOnlyBannerDesc": "Your account is in Read-Only mode due to an overdue balance (Section 9.3). Support ticket creation and file uploads are disabled until pending invoices are settled.",
+    "viewInvoices": "View Invoices",
+    "rncPlaceholder": "e.g. 1-32-12345-6"
   },
   "help": {
     "title": "Help & Documentation",
@@ -1668,7 +1692,7 @@
     },
     "tabs": {
       "quote": "Quotation",
-      "subscription": "Plan / Sub",
+      "subscription": "Subscribe",
       "followup": "Follow-up",
       "timeline": "Chatter"
     },

@@ -96,9 +96,22 @@ export function usePlansPage() {
 
   // Tab Selector State (synced with the ?tab= URL search parameter)
   const { getParam, setParam, setParams } = useUrlState();
-  const activeTab = getParam("tab", "browse") as PlansTab;
+  const urlTab = getParam("tab", "browse") as PlansTab;
+  const [activeTab, setActiveTabInternal] = useState<PlansTab>(() =>
+    urlTab === "manage" ? "manage" : "browse"
+  );
+
+  useEffect(() => {
+    const currentTabParam = getParam("tab", "browse") as PlansTab;
+    const resolvedTab = currentTabParam === "manage" ? "manage" : "browse";
+    setActiveTabInternal(resolvedTab);
+  }, [getParam]);
+
   const setActiveTab = useCallback(
-    (tab: PlansTab) => setParam("tab", tab === "browse" ? null : tab),
+    (tab: PlansTab) => {
+      setActiveTabInternal(tab);
+      setParam("tab", tab === "browse" ? null : tab);
+    },
     [setParam],
   );
 

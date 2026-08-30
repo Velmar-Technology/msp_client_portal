@@ -141,7 +141,9 @@ traefik.http.routers.msp-zabbix.middlewares=msp-zabbix-redirect,zabbix-auth,msp-
 
 ## 6. Environment Variable Reference
 
-Values are supplied by the **Portainer stack environment** (42 entries, including `VERSION`, persisted from the redeployment script) and the `${VAR}` placeholders in `docker-compose.prod.yml` fall back to their inline defaults. **Live secrets live in Portainer, not this document.**
+Values are supplied by the **Portainer stack environment** (persisted in the Portainer stack configuration) and the `${VAR}` placeholders in `docker-compose.prod.yml` fall back to their inline defaults. **Live secrets live in Portainer, not this document.**
+
+> **Note on Frontend (`client`):** The `client` container runs Nginx serving pre-compiled static assets. All `VITE_*` variables (`VITE_GOOGLE_CLIENT_ID`, `VITE_PAYPAL_CLIENT_ID`, `VITE_DD_*`, `VITE_FARO_*`) are baked into the JavaScript bundle at **image build time** via Docker build args (`client/Dockerfile`) and are not required at container runtime in `docker-compose.prod.yml`.
 
 | Group | Variables |
 |---|---|
@@ -150,14 +152,14 @@ Values are supplied by the **Portainer stack environment** (42 entries, includin
 | Auth / CORS | `JWT_SECRET`, `JWT_REFRESH_SECRET`, `CORS_ORIGIN=https://helpdesk.velmartech.com.do` |
 | SMTP | `SMTP_HOST` (Gmail), `SMTP_PORT` (587), `SMTP_USER`, `SMTP_PASSWORD` |
 | WhatsApp (opt-in) | `WHATSAPP_API_URL`, `WHATSAPP_API_KEY` (empty unless configured) |
-| Google OAuth | `GOOGLE_CLIENT_ID` (server) / `VITE_GOOGLE_CLIENT_ID` (client build) |
-| PayPal | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` |
+| Google OAuth | `GOOGLE_CLIENT_ID` (server) / `VITE_GOOGLE_CLIENT_ID` (client build arg) |
+| PayPal | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` (server) / `VITE_PAYPAL_CLIENT_ID` (client build arg) |
 | Nextcloud | `NEXTCLOUD_URL=10.13.13.3:30027`, `NEXTCLOUD_APP_USER`, `NEXTCLOUD_APP_PASS`, `NEXTCLOUD_TOTAL_CAPACITY`, `NEXTCLOUD_EXTERNAL_URL=https://atlas.velmartech.com.do` |
 | Zabbix | `ZABBIX_URL=http://zabbix-web:8080/api_jsonrpc.php`, `ZABBIX_USER=Admin`, `ZABBIX_PASSWORD`, `ZABBIX_WEBHOOK_SECRET`, `ZABBIX_DB_USER/PASSWORD/NAME` (defaults `zabbix` / `zabbix_password` / `zabbix`) |
-| Datadog (opt-in) | `DD_API_KEY`, `DD_SITE`, `DD_SERVICE`, `DD_ENV`, `DD_VERSION`, `DD_TRACE_ENABLED`, `DD_AGENT_HOST` + client build args `VITE_DD_*` |
+| Datadog (opt-in) | Server APM: `DD_API_KEY`, `DD_SITE`, `DD_SERVICE`, `DD_ENV`, `DD_VERSION`, `DD_TRACE_ENABLED`, `DD_AGENT_HOST` / Client RUM (build args): `VITE_DD_*` |
 | Grafana | `GRAFANA_ADMIN_PASSWORD` — overrides the fallback in compose; **ensure it is overridden** in the Portainer env |
-| Rails/Faro (client build) | `VITE_FARO_URL`, `VITE_FARO_APP_NAME`, `VITE_FARO_APP_ENV` |
-| Timezones | `TZ`, `PGTZ`, `PHP_TZ` (all `America/Santo_Domingo`) |
+| Faro / Telemetry (client build) | `VITE_FARO_URL`, `VITE_FARO_APP_NAME`, `VITE_FARO_APP_ENV` (baked at build time) |
+| Timezones | `TZ` (OS/Server/Postgres) and `PHP_TZ` (Zabbix Web) (`America/Santo_Domingo`) |
 
 ---
 

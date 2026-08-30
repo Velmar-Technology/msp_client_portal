@@ -30,6 +30,11 @@ router.get('/my-devices', (req, res) =>
   equipmentController.getMyDevices(req, res)
 );
 
+/** GET /api/v1/equipment/slots — Get registered equipment/device slots */
+router.get('/slots', (req, res) =>
+  equipmentController.getMyDevices(req, res)
+);
+
 /** GET /api/v1/equipment/agent-identity?otp=XXXXXX — Agent-discovered identity prefill for a slot by activation code */
 router.get('/agent-identity', (req, res) =>
   equipmentController.getAgentIdentity(req, res)
@@ -60,8 +65,13 @@ router.get('/subscriptions/:subId/slots/:slotIndex/nextcloud', (req, res) =>
   equipmentController.getSlotNextcloudInfo(req, res)
 );
 
+/** GET /api/v1/equipment/subscriptions/:subId/slots/:slotIndex/deploy-token — Generate a short-lived 5-minute deploy token */
+router.get('/subscriptions/:subId/slots/:slotIndex/deploy-token', rbacMiddleware(UserRole.ADMIN, UserRole.CLIENT), (req, res) =>
+  equipmentController.getDeployToken(req, res)
+);
+
 /** GET /api/v1/equipment/subscriptions/:subId/slots/:slotIndex/deploy-script — Generate PowerShell deployment script */
-router.get('/subscriptions/:subId/slots/:slotIndex/deploy-script', rbacMiddleware(UserRole.ADMIN), (req, res) =>
+router.get('/subscriptions/:subId/slots/:slotIndex/deploy-script', rbacMiddleware(UserRole.ADMIN, UserRole.CLIENT), (req, res) =>
   equipmentController.getDeployScript(req, res)
 );
 

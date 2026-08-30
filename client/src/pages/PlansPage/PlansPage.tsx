@@ -27,8 +27,10 @@ import { ActiveSubscriptionsDashboard } from "@/pages/PlansPage/components/Activ
 import { EditPlanModal } from "@/pages/PlansPage/components/EditPlanModal";
 import { DeletePlanAlertDialog } from "@/pages/PlansPage/components/DeletePlanAlertDialog";
 import { ChangeTierPanel } from "@/pages/PlansPage/components/ChangeTierPanel";
-import { CheckoutSheet } from "@/components/checkout-sheet";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { SUBSCRIPTION_STATUS_COLORS } from "@/constants/subscriptions";
+import CheckoutSheet from "@/components/checkout-sheet";
 
 
 type SubDialogAction = "add_device" | "remove_device" | "cancel" | "pay";
@@ -392,35 +394,36 @@ export function PlansPage() {
         )
       }
     >
-      {/* Tabs Section */}
+      {/* Navigation Section Switcher: Browse Plans vs Active Subscriptions */}
       {showTabs && (
-        <div className="border-b border-border flex gap-4 mb-5">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className={`rounded-none border-b-2 px-3 pb-2 pt-0 h-auto text-xs font-semibold cursor-pointer shadow-none ${
-              activeTab !== "manage"
-                ? "border-primary text-foreground font-heading"
-                : "text-muted-foreground hover:text-foreground border-transparent"
-            }`}
-            onClick={() => setActiveTab("browse")}
-          >
-            {t("plans.browseTab")}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className={`rounded-none border-b-2 px-3 pb-2 pt-0 h-auto text-xs font-semibold cursor-pointer shadow-none ${
-              activeTab === "manage"
-                ? "border-primary text-foreground font-heading"
-                : "text-muted-foreground hover:text-foreground border-transparent"
-            }`}
-            onClick={() => setActiveTab("manage")}
-          >
-            {t("plans.manageTab")}
-          </Button>
+        <div className="border-b border-zinc-200 dark:border-zinc-800 pb-2 mb-5">
+          <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as "browse" | "manage")} className="w-full">
+            <TabsList className="bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg">
+              <TabsTrigger
+                value="browse"
+                onClick={() => setActiveTab("browse")}
+                className="gap-2 text-xs font-medium px-4 py-1.5 cursor-pointer data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-xs"
+              >
+                <ShoppingBag className="h-3.5 w-3.5" />
+                <span>{t("plans.browseTab")}</span>
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="manage"
+                onClick={() => setActiveTab("manage")}
+                className="gap-2 text-xs font-medium px-4 py-1.5 cursor-pointer data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-xs"
+              >
+                <CreditCard className="h-3.5 w-3.5 text-blue-500" />
+                <span>{t("plans.manageTab")}</span>
+                <Badge
+                  variant="secondary"
+                  className="ml-1 text-[10px] font-mono px-1.5 py-0 min-w-5 inline-flex justify-center"
+                >
+                  {activeSubscriptions.length}
+                </Badge>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       )}
 

@@ -1,5 +1,5 @@
 import { InvoiceRepository, invoiceRepository } from '@modules/billing/repositories/InvoiceRepository';
-import { SubscriptionRepository, subscriptionRepository } from '@modules/subscriptions';
+import { SubscriptionRepository, subscriptionRepository, PlanRepository, planRepository } from '@modules/subscriptions';
 import { InvoicePdfService, invoicePdfService } from '@modules/billing/services/InvoicePdfService';
 import { InvoiceNotificationService, invoiceNotificationService } from '@modules/billing/services/InvoiceNotificationService';
 import { InvoiceAccessPolicy, invoiceAccessPolicy } from '@shared/policies/InvoiceAccessPolicy';
@@ -27,17 +27,23 @@ export class InvoiceManagementService {
    * @param pdfService - Invoice PDF generator service
    * @param notifService - Invoice notification service
    * @param accessPolicy - Invoice access policy
+   * @param planRepo - Plan repository
    */
   constructor(
     private invoiceRepo: InvoiceRepository = invoiceRepository,
     private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
     private pdfService: InvoicePdfService = invoicePdfService,
     private notifService: InvoiceNotificationService = invoiceNotificationService,
-    private accessPolicy: InvoiceAccessPolicy = invoiceAccessPolicy
+    private accessPolicy: InvoiceAccessPolicy = invoiceAccessPolicy,
+    private planRepo: PlanRepository = planRepository
   ) {}
 
   private get subRepo(): SubscriptionRepository {
     return this.subscriptionRepo || subscriptionRepository;
+  }
+
+  private get planRepository(): PlanRepository {
+    return this.planRepo || planRepository;
   }
 
   /**
@@ -108,12 +114,34 @@ export class InvoiceManagementService {
         }
       }
       if (bestMatch) {
+        const plan = await this.planRepository.findById(bestMatch.plan);
+        let planName = bestMatch.service_name;
+        let productDesc = '';
+
+        if (plan) {
+          if (typeof plan.name === 'object' && plan.name !== null) {
+            planName = (plan.name as Record<string, string>)['en_US'] || (plan.name as Record<string, string>)['es_DO'] || bestMatch.service_name;
+          } else if (typeof plan.name === 'string') {
+            planName = plan.name;
+          }
+
+          if (typeof plan.description === 'object' && plan.description !== null) {
+            productDesc = (plan.description as Record<string, string>)['en_US'] || (plan.description as Record<string, string>)['es_DO'] || '';
+          } else if (typeof plan.description === 'string') {
+            productDesc = plan.description;
+          }
+        }
+
+        const fullDesc = productDesc
+          ? `${planName} — ${productDesc}`
+          : `${planName} (${bestMatch.plan.toUpperCase()} Plan)`;
+
         const qty = bestMatch.equipment_count || 1;
         return {
           ...inv,
           line_items: [
             {
-              description: bestMatch.service_name,
+              description: fullDesc,
               quantity: qty,
               unit_price: Number(inv.amount) / qty,
             },
@@ -198,7 +226,8 @@ export class InvoiceManagementService {
    */
   async downloadInvoice(id: string, tenantId: string, userRole: UserRole, lang?: string): Promise<{ pdfBuffer: Buffer; invoiceNumber: string }> {
     const invoice = await this.getInvoiceById(id, tenantId, userRole);
-    return this.pdfService.generatePdf(invoice, lang);
+    const enriched = await this.enrichInvoiceWithLineItems(invoice);
+    return this.pdfService.generatePdf(enriched, lang);
   }
 }
 

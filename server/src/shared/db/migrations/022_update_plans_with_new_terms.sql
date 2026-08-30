@@ -57,7 +57,7 @@ INSERT INTO plans (id, name, description, price, features, recommended, client_t
      {"text": {"en_US": "Dedicated Engineer Remote Support", "es_DO": "Soporte Remoto de Ingeniero Dedicado"}, "included": true},
      {"text": {"en_US": "Continuous Network Vulnerability Scanning", "es_DO": "Escaneo Continuo de Vulnerabilidades en Red"}, "included": true},
      {"text": {"en_US": "Asset Lifecycle Tracking", "es_DO": "Seguimiento del Ciclo de Vida de los Activos"}, "included": true},
-     {"text": {"en_US": "Executive Technical Escalation", "es_DO": "Escalación Jerárquica Ejecutiva"}, "included": true},
+     {"text": {"en_US": "Executive Technical Escalation", "es_DO": "Escalación Jerárquica Ejecutiva"}, "included": true}
    ]'::jsonb, 
    false, 
    'ENTERPRISE'),

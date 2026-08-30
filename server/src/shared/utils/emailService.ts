@@ -125,7 +125,6 @@ export async function sendEmail(payload: NotificationPayload): Promise<void> {
       logger.info('📧 [STUB] Email logged', {
         to: payload.to,
         subject: payload.subject,
-        body: payload.body,
       });
     }
   } catch (error) {
@@ -866,6 +865,323 @@ export async function sendInvoiceDueEmail(
     subject: isSpanish
       ? `Recordatorio de Pago: Factura ${invoice.invoice_number}`
       : `Payment Reminder: Invoice ${invoice.invoice_number}`,
+    body,
+    type: 'EMAIL',
+  });
+}
+
+/**
+ * Sends a Day 1 overdue collection notice email to the client per Section 9.3.
+ *
+ * @param clientEmail - Recipient email address
+ * @param clientName - Recipient display name
+ * @param invoice - Overdue invoice entity
+ * @param overdueDays - Days past due date
+ * @param language - Language code ('es_DO', 'en_US')
+ */
+export async function sendInvoiceOverdueNoticeEmail(
+  clientEmail: string,
+  clientName: string,
+  invoice: Invoice,
+  overdueDays: number,
+  language = 'en_US',
+): Promise<void> {
+  const isSpanish = language.startsWith('es');
+  const portalUrl = `${env.CORS_ORIGIN || 'http://localhost:5173'}/billing?openModal=pay-invoice&invoiceId=${invoice.id}`;
+  const curr = invoice.currency || 'USD';
+  const formattedTotal = curr === 'DOP'
+    ? `RD$ ${Number(invoice.total).toLocaleString('en-US', { minimumFractionDigits: 2 })} DOP`
+    : `$${Number(invoice.total).toFixed(2)} USD`;
+
+  const preheader = isSpanish
+    ? `Aviso de cobro electrónico: La factura ${invoice.invoice_number} se encuentra vencida.`
+    : `Electronic collection notice: Invoice ${invoice.invoice_number} is overdue.`;
+
+  const title = isSpanish ? 'Aviso de Factura Vencida (Día 1)' : 'Overdue Invoice Notice (Day 1)';
+
+  const cardHtml = `
+    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+      <tr>
+        <td style="padding: 6px 0; color: #64748B; width: 160px; font-weight: 500;">${isSpanish ? 'No. Factura:' : 'Invoice No:'}</td>
+        <td style="padding: 6px 0; color: #0F172A; font-weight: 600; font-family: monospace;">${invoice.invoice_number}</td>
+      </tr>
+      <tr>
+        <td style="padding: 6px 0; color: #64748B; font-weight: 500;">${isSpanish ? 'Días en Mora:' : 'Days Overdue:'}</td>
+        <td style="padding: 6px 0; color: #DC2626; font-weight: 700;">${overdueDays} ${isSpanish ? 'día(s)' : 'day(s)'}</td>
+      </tr>
+      <tr style="border-top: 2px solid #0F172A;">
+        <td style="padding: 10px 0; color: #0F172A; font-weight: 700; font-size: 16px;">${isSpanish ? 'Monto Vencido:' : 'Overdue Amount:'}</td>
+        <td style="padding: 10px 0; color: #DC2626; font-weight: 700; font-size: 18px;">${formattedTotal}</td>
+      </tr>
+    </table>
+  `;
+
+  const contentHtml = `
+    <h2 style="color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 12px;">
+      ${isSpanish ? `Estimado/a ${clientName},` : `Dear ${clientName},`}
+    </h2>
+    <p style="font-size: 15px; color: #475569; margin-top: 0; margin-bottom: 24px;">
+      ${isSpanish
+        ? `Le notificamos formalmente que la factura <strong>${invoice.invoice_number}</strong> ha sobrepasado su fecha de vencimiento. Según nuestros Términos y Condiciones (Sección 9.3), le instamos a regularizar su estado de cuenta a la brevedad para evitar restricciones operativas.`
+        : `This is an official notice that invoice <strong>${invoice.invoice_number}</strong> is now past due. In accordance with our Terms of Service (Section 9.3), please settle your outstanding balance promptly to avoid account restrictions.`}
+    </p>
+    ${renderInfoCard(isSpanish ? 'Detalles de la Deuda' : 'Debt Details', cardHtml, palette.danger)}
+    ${renderCallout(
+      isSpanish
+        ? '<strong>Escala de Impagos:</strong> Al Día 5 de mora su cuenta entrará en Modo Solo Lectura. Al Día 15 el acceso será suspendido.'
+        : '<strong>Non-Payment Scale:</strong> On Day 5 overdue, your account will enter Read-Only mode. On Day 15, platform access will be fully suspended.',
+      'danger'
+    )}
+  `;
+
+  const body = getEmailLayout({
+    preheader,
+    title,
+    headerIcon: '⚠️',
+    accentColor: palette.danger,
+    language,
+    contentHtml,
+    actionUrl: portalUrl,
+    actionText: isSpanish ? 'Pagar Factura Ahora' : 'Pay Invoice Now',
+  });
+
+  await sendEmail({
+    to: clientEmail,
+    subject: isSpanish
+      ? `Aviso de Cobro: Factura Vencida ${invoice.invoice_number}`
+      : `Collection Notice: Overdue Invoice ${invoice.invoice_number}`,
+    body,
+    type: 'EMAIL',
+  });
+}
+
+/**
+ * Sends a Day 5 Read-Only mode activation email to the client per Section 9.3.
+ *
+ * @param clientEmail - Recipient email address
+ * @param clientName - Recipient display name
+ * @param language - Language code ('es_DO', 'en_US')
+ */
+export async function sendAccountReadOnlyNoticeEmail(
+  clientEmail: string,
+  clientName: string,
+  language = 'en_US',
+): Promise<void> {
+  const isSpanish = language.startsWith('es');
+  const portalUrl = `${env.CORS_ORIGIN || 'http://localhost:5173'}/billing`;
+
+  const preheader = isSpanish
+    ? 'Su cuenta ha entrado en Modo Solo Lectura debido a facturas vencidas (Día 5).'
+    : 'Your account is now in Read-Only mode due to overdue invoices (Day 5).';
+
+  const title = isSpanish ? 'Cuenta en Modo Solo Lectura (Día 5)' : 'Account in Read-Only Mode (Day 5)';
+
+  const contentHtml = `
+    <h2 style="color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 12px;">
+      ${isSpanish ? `Estimado/a ${clientName},` : `Dear ${clientName},`}
+    </h2>
+    <p style="font-size: 15px; color: #475569; margin-top: 0; margin-bottom: 24px;">
+      ${isSpanish
+        ? `Debido a que su cuenta acumula <strong>5 o más días de mora</strong> en facturas pendientes, su cuenta ha cambiado automáticamente a <strong>Modo Solo Lectura</strong> conforme a la Sección 9.3 de los Términos de Servicio.`
+        : `Because your account has reached <strong>5 days overdue</strong> on unpaid invoices, your account has automatically transitioned to <strong>Read-Only Mode</strong> per Section 9.3 of our Terms of Service.`}
+    </p>
+    ${renderCallout(
+      isSpanish
+        ? '<strong>Restricción Activa:</strong> No se pueden crear nuevos tickets, subir archivos ni modificar datos en la plataforma hasta regularizar el pago.'
+        : '<strong>Active Restriction:</strong> You cannot open new tickets, upload files, or modify platform data until your balance is settled.',
+      'warning'
+    )}
+    <p style="font-size: 14px; color: #DC2626; margin-top: 20px;">
+      ${isSpanish
+        ? '⚠️ <em>Próxima etapa:</em> Al Día 15 de mora, se suspenderá totalmente el acceso a la plataforma y servicios de soporte.'
+        : '⚠️ <em>Next stage:</em> On Day 15 overdue, platform access and support services will be fully suspended.'}
+    </p>
+  `;
+
+  const body = getEmailLayout({
+    preheader,
+    title,
+    headerIcon: '🔒',
+    accentColor: palette.warning,
+    language,
+    contentHtml,
+    actionUrl: portalUrl,
+    actionText: isSpanish ? 'Ir a Facturación y Pagar' : 'Go to Billing & Settle Balance',
+  });
+
+  await sendEmail({
+    to: clientEmail,
+    subject: isSpanish
+      ? 'Aviso Importante: Cuenta en Modo Solo Lectura por Mora'
+      : 'Important Notice: Account in Read-Only Mode due to Overdue Balance',
+    body,
+    type: 'EMAIL',
+  });
+}
+
+/**
+ * Sends a Day 15 full suspension notification email to the client per Section 9.3.
+ *
+ * @param clientEmail - Recipient email address
+ * @param clientName - Recipient display name
+ * @param language - Language code ('es_DO', 'en_US')
+ */
+export async function sendAccountSuspendedNoticeEmail(
+  clientEmail: string,
+  clientName: string,
+  language = 'en_US',
+): Promise<void> {
+  const isSpanish = language.startsWith('es');
+  const portalUrl = `${env.CORS_ORIGIN || 'http://localhost:5173'}/login`;
+
+  const preheader = isSpanish
+    ? 'Suspensión total de acceso y soporte por impago (Día 15 de mora).'
+    : 'Full suspension of platform access and support due to non-payment (Day 15 overdue).';
+
+  const title = isSpanish ? 'Suspensión Total de Servicios (Día 15)' : 'Full Service Suspension (Day 15)';
+
+  const contentHtml = `
+    <h2 style="color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 12px;">
+      ${isSpanish ? `Estimado/a ${clientName},` : `Dear ${clientName},`}
+    </h2>
+    <p style="font-size: 15px; color: #475569; margin-top: 0; margin-bottom: 24px;">
+      ${isSpanish
+        ? `Le informamos que al haber alcanzado <strong>15 días de mora</strong> en sus facturas vencidas, se ha aplicado la <strong>suspensión total de acceso a la plataforma y a los servicios de soporte técnico</strong>, de acuerdo con la Sección 9.3 de nuestros Términos y Condiciones.`
+        : `We regret to inform you that having reached <strong>15 days overdue</strong> on unpaid invoices, <strong>full suspension of access to the platform and technical support services</strong> has been applied in accordance with Section 9.3 of our Terms.`}
+    </p>
+    ${renderCallout(
+      isSpanish
+        ? '<strong>Advertencia Crítica:</strong> Si las facturas no son liquidadas antes del Día 30 de mora, se procederá a la purga técnica y eliminación definitiva de todos sus datos y copias de seguridad de nuestros servidores con cero responsabilidad para LA EMPRESA.'
+        : '<strong>Critical Warning:</strong> If invoices are not settled prior to Day 30 overdue, permanent technical purge and deletion of all server data and backups will occur with zero liability to THE COMPANY.',
+      'danger'
+    )}
+  `;
+
+  const body = getEmailLayout({
+    preheader,
+    title,
+    headerIcon: '🚫',
+    accentColor: palette.danger,
+    language,
+    contentHtml,
+    actionUrl: portalUrl,
+    actionText: isSpanish ? 'Acceder al Portal para Pagar' : 'Access Portal to Settle Balance',
+  });
+
+  await sendEmail({
+    to: clientEmail,
+    subject: isSpanish
+      ? 'Aviso Urgente: Suspensión de Servicios por Impago'
+      : 'Urgent Notice: Service Suspension due to Non-Payment',
+    body,
+    type: 'EMAIL',
+  });
+}
+
+/**
+ * Sends a Day 30 data purge notice email to the client per Section 9.3.
+ *
+ * @param clientEmail - Recipient email address
+ * @param clientName - Recipient display name
+ * @param language - Language code ('es_DO', 'en_US')
+ */
+export async function sendAccountPurgedNoticeEmail(
+  clientEmail: string,
+  clientName: string,
+  language = 'en_US',
+): Promise<void> {
+  const isSpanish = language.startsWith('es');
+
+  const preheader = isSpanish
+    ? 'Aviso de purga técnica definitiva de datos por 30 días de mora.'
+    : 'Notice of permanent technical data purge due to 30 days non-payment.';
+
+  const title = isSpanish ? 'Purga Técnica Definitiva de Datos (Día 30)' : 'Permanent Technical Data Purge (Day 30)';
+
+  const contentHtml = `
+    <h2 style="color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 12px;">
+      ${isSpanish ? `Estimado/a ${clientName},` : `Dear ${clientName},`}
+    </h2>
+    <p style="font-size: 15px; color: #475569; margin-top: 0; margin-bottom: 24px;">
+      ${isSpanish
+        ? `Habiendo transcurrido <strong>30 días de mora</strong> sin regularización de pago, se ha ejecutado la <strong>purga técnica y eliminación permanente de datos</strong> de los servidores para liberación de almacenamiento, conforme a la Sección 9.3 de los Términos de Servicio, con cero responsabilidad para Velmar Technology SRL.`
+        : `Having reached <strong>30 days of non-payment</strong> without settlement, permanent technical data purge has been executed across our servers for storage liberation in accordance with Section 9.3, with zero liability to Velmar Technology SRL.`}
+    </p>
+  `;
+
+  const body = getEmailLayout({
+    preheader,
+    title,
+    headerIcon: '🗑️',
+    accentColor: palette.heading,
+    language,
+    contentHtml,
+  });
+
+  await sendEmail({
+    to: clientEmail,
+    subject: isSpanish
+      ? 'Aviso de Purga Definitiva de Datos por Impago Prolongado'
+      : 'Notice of Permanent Data Purge due to Non-Payment',
+    body,
+    type: 'EMAIL',
+  });
+}
+
+/**
+ * Sends an Account Restoration Confirmation email to the client when payment is settled.
+ *
+ * @param clientEmail - Recipient email address
+ * @param clientName - Recipient display name
+ * @param language - Language code ('es_DO', 'en_US')
+ */
+export async function sendAccountRestoredEmail(
+  clientEmail: string,
+  clientName: string,
+  language = 'en_US',
+): Promise<void> {
+  const isSpanish = language.startsWith('es');
+  const portalUrl = `${env.CORS_ORIGIN || 'http://localhost:5173'}/dashboard`;
+
+  const preheader = isSpanish
+    ? 'Su cuenta ha sido restablecida a estado Activo exitosamente.'
+    : 'Your account has been successfully restored to Active status.';
+
+  const title = isSpanish ? 'Cuenta Restablecida a Estado Activo' : 'Account Restored to Active Status';
+
+  const contentHtml = `
+    <h2 style="color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 12px;">
+      ${isSpanish ? `Hola ${clientName},` : `Hello ${clientName},`}
+    </h2>
+    <p style="font-size: 15px; color: #475569; margin-top: 0; margin-bottom: 24px;">
+      ${isSpanish
+        ? 'Hemos recibido y procesado su pago satisfactoriamente. Todas las restricciones han sido levantadas y su cuenta se encuentra totalmente operativa.'
+        : 'Your payment has been successfully received and processed. All operational restrictions have been lifted, and your account is now fully active.'}
+    </p>
+    ${renderCallout(
+      isSpanish
+        ? 'Su acceso a soporte técnico, plataforma y almacenamiento en la nube está completamente restablecido.'
+        : 'Your technical support, platform access, and cloud storage have been fully restored.',
+      'info'
+    )}
+  `;
+
+  const body = getEmailLayout({
+    preheader,
+    title,
+    headerIcon: '✅',
+    accentColor: palette.success,
+    language,
+    contentHtml,
+    actionUrl: portalUrl,
+    actionText: isSpanish ? 'Acceder al Portal' : 'Access Portal',
+  });
+
+  await sendEmail({
+    to: clientEmail,
+    subject: isSpanish
+      ? 'Confirmación: Su cuenta ha sido restablecida a estado Activo'
+      : 'Confirmation: Your account has been restored to Active status',
     body,
     type: 'EMAIL',
   });

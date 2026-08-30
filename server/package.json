@@ -5,14 +5,16 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc && tsc-alias",
+    "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "start": "node dist/index.js",
     "lint": "eslint src/",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "test:email": "tsx src/scripts/testEmail.ts",
     "db:migrate": "tsx src/shared/db/migrate.ts",
-    "db:seed": "tsx src/db/seed.ts"
+    "db:seed": "tsx src/shared/db/seed.ts",
+    "db:seed:faker": "tsx src/shared/db/seedFaker.ts",
+    "db:reset": "tsx src/shared/db/reset.ts"
   },
   "dependencies": {
     "@shared/errors": "*",
@@ -28,6 +30,7 @@
     "jsonwebtoken": "9.0.2",
     "multer": "1.4.5-lts.2",
     "nodemailer": "6.9.16",
+    "pdfkit": "^0.20.2",
     "pg": "8.13.3",
     "prom-client": "^15.1.3",
     "swagger-jsdoc": "6.2.8",
@@ -38,6 +41,7 @@
     "zod": "3.24.2"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.6.0",
     "@types/bcrypt": "5.0.2",
     "@types/cors": "2.8.17",
     "@types/express": "5.0.2",
@@ -46,6 +50,7 @@
     "@types/multer": "1.4.12",
     "@types/node": "22.15.0",
     "@types/nodemailer": "6.4.17",
+    "@types/pdfkit": "^0.17.6",
     "@types/pg": "8.11.11",
     "@types/swagger-jsdoc": "6.0.4",
     "@types/swagger-ui-express": "4.1.8",

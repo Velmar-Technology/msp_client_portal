@@ -99,6 +99,9 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
    * @returns SubscriptionEquipment entity or null
    */
   async findByAgentInstanceId(agentInstanceId: string): Promise<SubscriptionEquipment | null> {
+    if (!agentInstanceId || !/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(agentInstanceId)) {
+      return null;
+    }
     const results = await db
       .select()
       .from(subscriptionEquipment)

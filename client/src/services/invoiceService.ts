@@ -13,6 +13,9 @@ export interface Invoice {
   amount: number;
   tax_amount: number;
   total: number;
+  currency?: 'USD' | 'DOP';
+  ncf?: string | null;
+  rnc?: string | null;
   status: 'PENDING' | 'PAID' | 'OVERDUE' | 'CANCELLED';
   invoice_date: string;
   due_date: string;

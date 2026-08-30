@@ -59,6 +59,9 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
     amount: number;
     tax_amount: number;
     total: number;
+    currency?: string;
+    ncf?: string | null;
+    rnc?: string | null;
     due_date: Date;
     tenant_id: string;
     status?: InvoiceStatus;
@@ -72,6 +75,9 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
         amount: data.amount,
         tax_amount: data.tax_amount,
         total: data.total,
+        currency: data.currency || 'USD',
+        ncf: data.ncf,
+        rnc: data.rnc,
         due_date: data.due_date,
         tenant_id: data.tenant_id,
         status: data.status,
@@ -142,6 +148,82 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
   }
 
   /**
+   * Finds an invoice by its issued NCF fiscal number.
+   *
+   * @param ncf - NCF fiscal voucher number
+   * @returns Matching Invoice or null
+   */
+  async findByNcf(ncf: string): Promise<Invoice | null> {
+    const results = await db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.ncf, ncf));
+    return (results[0] as Invoice) || null;
+  }
+
+  /**
+   * Retrieves the most recently created NCF series B01 voucher string.
+   *
+   * @returns Latest NCF string or null
+   */
+  async findLatestNcf(): Promise<string | null> {
+    const results = await db
+      .select({ ncf: invoices.ncf })
+      .from(invoices)
+      .orderBy(desc(invoices.ncf))
+      .limit(10);
+    const valid = results.find((r) => r.ncf && r.ncf.startsWith('B01'));
+    return valid?.ncf ?? null;
+  }
+
+  /**
+   * Retrieves all invoices for a specific client user.
+   *
+   * @param clientId - Client user UUID
+   * @param tenantId - Optional tenant organization UUID
+   * @returns Array of Invoice entities
+   */
+  async findByClient(clientId: string, tenantId?: string): Promise<Invoice[]> {
+    if (tenantId) {
+      const results = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.client_id, clientId))
+        .orderBy(desc(invoices.created_at));
+      return (results as Invoice[]).filter((inv) => inv.tenant_id === tenantId);
+    }
+    const results = await db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.client_id, clientId))
+      .orderBy(desc(invoices.created_at));
+    return results as Invoice[];
+  }
+
+  /**
+   * Retrieves all overdue/pending invoices across all tenants or for a specific tenant.
+   *
+   * @param tenantId - Optional tenant organization UUID
+   * @returns Array of unpaid invoices
+   */
+  async findOverdueInvoices(tenantId?: string): Promise<Invoice[]> {
+    if (tenantId) {
+      const results = await db
+        .select()
+        .from(invoices)
+        .where(inArray(invoices.status, [InvoiceStatus.PENDING, InvoiceStatus.OVERDUE]))
+        .orderBy(desc(invoices.due_date));
+      return (results as Invoice[]).filter((inv) => inv.tenant_id === tenantId);
+    }
+    const results = await db
+      .select()
+      .from(invoices)
+      .where(inArray(invoices.status, [InvoiceStatus.PENDING, InvoiceStatus.OVERDUE]))
+      .orderBy(desc(invoices.due_date));
+    return results as Invoice[];
+  }
+
+  /**
    * Retrieves all invoices ordered by date for financial analytics and KPI aggregations.
    *
    * @param tenantId - Optional tenant UUID filter
@@ -163,3 +245,4 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
 }
 
 export const invoiceRepository = new InvoiceRepository();
+

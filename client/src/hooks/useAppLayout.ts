@@ -65,9 +65,12 @@ export function useAppLayout() {
     location.pathname !== "/privacy" &&
     location.pathname !== "/help";
 
+  const isReadOnly = user?.accountStatus === 'READ_ONLY';
+
   return {
     user,
     navigate,
     isBlocked,
+    isReadOnly,
   };
 }

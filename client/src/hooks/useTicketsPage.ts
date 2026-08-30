@@ -22,7 +22,7 @@ export function useTicketsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { getParam, getNumberParam, setParam, setParams, removeParam } = useUrlState();
+  const { searchParams, getParam, getNumberParam, setParam, setParams, removeParam } = useUrlState();
 
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [total, setTotal] = useState(0);
@@ -48,6 +48,25 @@ export function useTicketsPage() {
   const [devices, setDevices] = useState<SubscriptionEquipment[]>([]);
   const [limit, setLimitInternal] = useState(() => getNumberParam("limit", 10));
 
+  // Two-way synchronization with URL search parameters (browser back/forward & direct navigation)
+  useEffect(() => {
+    const urlPage = getNumberParam("page", 1);
+    const urlLimit = getNumberParam("limit", 10);
+    const urlSearch = getParam("search", "");
+    const urlStatus = getParam("status", "");
+    const urlCategory = getParam("category", "");
+    const urlPriority = getParam("priority", "");
+    const urlDevice = getParam("device", "");
+
+    setPageInternal((prev) => (prev !== urlPage ? urlPage : prev));
+    setLimitInternal((prev) => (prev !== urlLimit ? urlLimit : prev));
+    setSearchInternal((prev) => (prev !== urlSearch ? urlSearch : prev));
+    setStatusFilterInternal((prev) => (prev !== urlStatus ? urlStatus : prev));
+    setCategoryFilterInternal((prev) => (prev !== urlCategory ? urlCategory : prev));
+    setPriorityFilterInternal((prev) => (prev !== urlPriority ? urlPriority : prev));
+    setDeviceFilterInternal((prev) => (prev !== urlDevice ? urlDevice : prev));
+  }, [searchParams, getParam, getNumberParam]);
+
   const setPage = useCallback(
     (newPage: number) => {
       setPageInternal(newPage);
@@ -59,6 +78,7 @@ export function useTicketsPage() {
   const setSearch = useCallback(
     (newSearch: string) => {
       setSearchInternal(newSearch);
+      setPageInternal(1);
       setParams({ search: newSearch || null, page: null });
     },
     [setParams]
@@ -67,6 +87,7 @@ export function useTicketsPage() {
   const setStatusFilter = useCallback(
     (newStatus: string) => {
       setStatusFilterInternal(newStatus);
+      setPageInternal(1);
       setParams({ status: newStatus || null, page: null });
     },
     [setParams]
@@ -75,6 +96,7 @@ export function useTicketsPage() {
   const setCategoryFilter = useCallback(
     (newCategory: string) => {
       setCategoryFilterInternal(newCategory);
+      setPageInternal(1);
       setParams({ category: newCategory || null, page: null });
     },
     [setParams]
@@ -83,6 +105,7 @@ export function useTicketsPage() {
   const setPriorityFilter = useCallback(
     (newPriority: string) => {
       setPriorityFilterInternal(newPriority);
+      setPageInternal(1);
       setParams({ priority: newPriority || null, page: null });
     },
     [setParams]
@@ -91,6 +114,7 @@ export function useTicketsPage() {
   const setDeviceFilter = useCallback(
     (newDevice: string) => {
       setDeviceFilterInternal(newDevice);
+      setPageInternal(1);
       setParams({ device: newDevice || null, page: null });
     },
     [setParams]
@@ -175,8 +199,8 @@ export function useTicketsPage() {
       }
 
       const result = await ticketService.getAll(params);
-      setTickets(result.data);
-      setTotal(result.pagination.total);
+      setTickets(result.data || []);
+      setTotal(result.pagination?.total ?? 0);
     } catch (err) {
       console.error("Failed to load tickets", err);
     } finally {
@@ -191,7 +215,14 @@ export function useTicketsPage() {
     return () => clearTimeout(timer);
   }, [loadTickets]);
 
-  const totalPages = useMemo(() => Math.ceil(total / limit), [total, limit]);
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit]);
+
+  // If current page exceeds totalPages (e.g. after filtering), reset back to totalPages
+  useEffect(() => {
+    if (total > 0 && page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [total, page, totalPages, setPage]);
 
   // Bulk cancel logic
   const handleBulkCancelClick = useCallback(() => {
