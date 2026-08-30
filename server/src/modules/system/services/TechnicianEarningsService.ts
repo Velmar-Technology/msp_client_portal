@@ -1,5 +1,5 @@
 import { technicianEarningsRepository, TechnicianEarningsRepository } from '../repositories/TechnicianEarningsRepository';
-import { expenseRepository, ExpenseRepository } from '@modules/billing/repositories/ExpenseRepository';
+import { expenseRepository, ExpenseRepository } from '@modules/billing';
 import { userRepository, UserRepository } from '@modules/auth';
 import { calculateElapsedBusinessMs } from '@shared/utils/businessHours';
 import { logger } from '@shared/utils/logger';
