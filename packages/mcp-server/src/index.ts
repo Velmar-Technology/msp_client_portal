@@ -6,9 +6,6 @@ import { MspApiClient } from './client/MspApiClient.js';
 import { registerTicketTools } from './tools/ticketTools.js';
 import { registerRmmTools } from './tools/rmmTools.js';
 import { registerEquipmentTools } from './tools/equipmentTools.js';
-import { registerLocalHostTools } from './tools/localHostTools.js';
-import { registerSecurityTools } from './tools/securityTools.js';
-import { registerRemediationTools } from './tools/remediationTools.js';
 import { registerMspResources } from './resources/mspResources.js';
 import { registerMspPrompts } from './prompts/mspPrompts.js';
 
@@ -46,13 +43,10 @@ const apiClient = new MspApiClient({
   tenantId,
 });
 
-// Register Tools, Resources & Prompts
+// Register Tools, Resources & Prompts (All routed via Backend API & msp-agent tunnel)
 registerTicketTools(server, apiClient);
 registerRmmTools(server, apiClient);
 registerEquipmentTools(server, apiClient);
-registerLocalHostTools(server);
-registerSecurityTools(server);
-registerRemediationTools(server);
 registerMspResources(server, apiClient);
 registerMspPrompts(server);
 
