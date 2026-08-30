@@ -23,6 +23,12 @@
     }
   },
 
+  "layout": {
+    "blockedTitle": "Active Plan Required",
+    "blockedDescription": "To access the portal, manage tickets, and request support, please subscribe to an active support plan.",
+    "choosePlan": "Choose a Support Plan"
+  },
+
   "nav": {
     "dashboard": "Dashboard",
     "tickets": "Tickets",

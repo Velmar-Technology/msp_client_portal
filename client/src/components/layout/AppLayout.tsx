@@ -15,7 +15,7 @@ export function Footer() {
   return (
     <footer className="w-full mt-auto bg-card border-t border-border py-3">
       <MaxWidthWrapper className="flex flex-col md:flex-row justify-between items-center gap-2 text-[10px] md:text-xs">
-        <span className="text-muted-foreground">{t("footer.copyright")}</span>
+        <span className="text-muted-foreground">{t("footer.copyright", { company: "Velmar Technology SRL" })}</span>
         <div className="flex gap-4">
           <Link to="/help" className="text-muted-foreground hover:text-foreground transition-colors">
             {t("footer.help")}
@@ -35,25 +35,28 @@ export function Footer() {
 // 2. High-Density Monochromatic Access Gate Card Sub-component
 interface BlockedPortalAlertProps {
   onChoosePlan: () => void;
-  choosePlanLabel: string;
+  choosePlanLabel?: string;
 }
 
 export function BlockedPortalAlert({ onChoosePlan, choosePlanLabel }: BlockedPortalAlertProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="max-w-sm w-full bg-card border border-border rounded-sm p-5 text-center shadow-xs animate-fade-in">
       <div className="w-10 h-10 bg-secondary/10 text-secondary rounded-full flex items-center justify-center mx-auto mb-3">
         <Shield className="h-5 w-5" />
       </div>
-      <h2 className="text-sm font-bold text-foreground font-heading mb-1">Active Plan Required</h2>
+      <h2 className="text-sm font-bold text-foreground font-heading mb-1">{t("layout.blockedTitle")}</h2>
       <p className="text-xs text-muted-foreground leading-relaxed mb-4">
-        To access the portal, manage tickets, and request support, please subscribe to an active support plan.
+        {t("layout.blockedDescription")}
       </p>
-      <button
+      <Button
+        size="sm"
         onClick={onChoosePlan}
-        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-1.5 rounded-sm text-xs font-semibold transition-opacity flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+        className="w-full text-xs font-semibold"
       >
-        {choosePlanLabel}
-      </button>
+        {choosePlanLabel || t("layout.choosePlan")}
+      </Button>
     </div>
   );
 }
@@ -83,6 +86,7 @@ export function ReadOnlyNoticeBanner({ onGoToBilling }: { onGoToBilling: () => v
 
 // 3. Parent Layout Wrapper
 export function AppLayout() {
+  const { t } = useTranslation();
   const { navigate, isBlocked, isReadOnly } = useAppLayout();
 
   return (
@@ -94,7 +98,7 @@ export function AppLayout() {
           className={`flex-1 p-4 md:px-8 md:py-4 bg-background overflow-x-hidden ${isBlocked ? "flex items-center justify-center" : ""}`}
         >
           {isBlocked ? (
-            <BlockedPortalAlert onChoosePlan={() => navigate("/plans")} choosePlanLabel="Choose a Support Plan" />
+            <BlockedPortalAlert onChoosePlan={() => navigate("/plans")} choosePlanLabel={t("layout.choosePlan")} />
           ) : (
             <>
               {isReadOnly && <ReadOnlyNoticeBanner onGoToBilling={() => navigate("/billing")} />}

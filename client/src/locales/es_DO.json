@@ -23,6 +23,12 @@
     }
   },
 
+  "layout": {
+    "blockedTitle": "Plan Activo Requerido",
+    "blockedDescription": "Para acceder al portal, gestionar tickets y solicitar soporte, suscríbase a un plan de soporte activo.",
+    "choosePlan": "Elegir un Plan de Soporte"
+  },
+
   "nav": {
     "dashboard": "Panel de Control",
     "tickets": "Tickets",
