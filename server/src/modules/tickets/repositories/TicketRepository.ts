@@ -3,7 +3,7 @@ import { Ticket, TicketAttachment, TicketFilters, TicketStatus, TicketCategory, 
 import { db, tickets, users, ticketAttachments, ticketResponses, subscriptionEquipment } from '@shared/db';
 import { eq, ne, gte, and, or, ilike, desc, asc, count, lt, inArray, SQL, isNull, isNotNull, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
-import { validate as isUuid } from 'uuid';
+import { isUuid } from '@shared/utils/validation';
 
 /**
  * Data repository for support tickets, multi-parameter filtering, technician assignments,

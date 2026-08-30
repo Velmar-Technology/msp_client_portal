@@ -1,6 +1,6 @@
 import { db, pool } from '@shared/db';
 import { eq, desc } from 'drizzle-orm';
-import { validate as isUuid } from 'uuid';
+import { isUuid } from '@shared/utils/validation';
 
 /**
  * Generic base repository providing reusable CRUD operations and raw pool execution helpers.

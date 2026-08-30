@@ -4,7 +4,7 @@ import { Lead, LeadStage, LeadPriority, CrmPipelineStats } from '@shared/types';
 import { CreateLeadInput, UpdateLeadInput, GetLeadsQueryInput } from '@shared/dtos/crm.dto';
 import { db, pool } from '@shared/db';
 import { eq, and } from 'drizzle-orm';
-import { validate as isUuid } from 'uuid';
+import { isUuid } from '@shared/utils/validation';
 
 /**
  * Data repository managing CRM prospective leads, filtering queries, pipeline statistics, and lifecycle mutations.

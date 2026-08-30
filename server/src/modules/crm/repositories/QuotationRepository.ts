@@ -3,7 +3,7 @@ import { quotations } from '@shared/db/schema';
 import { Quotation, QuotationStatus } from '@shared/types';
 import { db, pool } from '@shared/db';
 import { eq, and } from 'drizzle-orm';
-import { validate as isUuid } from 'uuid';
+import { isUuid } from '@shared/utils/validation';
 
 /**
  * Data repository managing commercial quotation records, auto-number generation, and status lifecycles.
