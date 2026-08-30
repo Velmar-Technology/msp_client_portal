@@ -27,14 +27,23 @@ if (fs.existsSync(cargoTomlPath)) {
   }
 }
 
-// 3. Sync packages/mcp-server/package.json
-const mcpPkgPath = path.join(rootDir, 'packages', 'mcp-server', 'package.json');
-if (fs.existsSync(mcpPkgPath)) {
-  const mcpPkg = JSON.parse(fs.readFileSync(mcpPkgPath, 'utf8'));
-  if (mcpPkg.version !== targetVersion) {
-    mcpPkg.version = targetVersion;
-    fs.writeFileSync(mcpPkgPath, JSON.stringify(mcpPkg, null, 2) + '\n', 'utf8');
-    console.log(`[sync-versions] Updated packages/mcp-server/package.json -> ${targetVersion}`);
+// 3. Sync all workspace package.json files
+const packagePaths = [
+  path.join(rootDir, 'packages', 'mcp-server', 'package.json'),
+  path.join(rootDir, 'packages', 'errors', 'package.json'),
+  path.join(rootDir, 'server', 'package.json'),
+  path.join(rootDir, 'client', 'package.json'),
+];
+
+for (const pkgPath of packagePaths) {
+  if (fs.existsSync(pkgPath)) {
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+    if (pkg.version !== targetVersion) {
+      pkg.version = targetVersion;
+      fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
+      const relPath = path.relative(rootDir, pkgPath).replace(/\\/g, '/');
+      console.log(`[sync-versions] Updated ${relPath} -> ${targetVersion}`);
+    }
   }
 }
 
