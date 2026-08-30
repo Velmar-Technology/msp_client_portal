@@ -135,6 +135,85 @@ export interface RoleMiningSuggestion {
   affectedUsers: string[];
   redundancyScore: number;
   entitlementDriftDetected: boolean;
+  pruningPatch?: PruningPatchDiff;
+}
+
+/**
+ * Concrete diff recommendation for automated PR pruning of unused entitlements.
+ */
+export interface PruningPatchDiff {
+  roleName: string;
+  retainedPermissions: string[];
+  revokedPermissions: string[];
+  generatedAt: Date;
+  summary: string;
+}
+
+/**
+ * Just-In-Time (JIT) Ephemeral Access Request representation.
+ */
+export interface JitAccessRequest {
+  id: string;
+  requesterId: string;
+  tenantId?: string;
+  requestedRole?: UserRole;
+  requestedRelations: RelationTuple[];
+  durationMinutes: number;
+  justification: string;
+  ticketId?: string;
+  status: 'PENDING' | 'APPROVED' | 'DENIED' | 'REVOKED' | 'EXPIRED';
+  createdAt: Date;
+}
+
+/**
+ * Active Time-Bounded JIT Grant.
+ */
+export interface JitGrant {
+  id: string;
+  requestId: string;
+  granteeId: string;
+  tenantId?: string;
+  grantedRelations: RelationTuple[];
+  grantedRole?: UserRole;
+  approvedBy: string;
+  issuedAt: Date;
+  expiresAt: Date;
+  status: 'ACTIVE' | 'REVOKED' | 'EXPIRED';
+}
+
+/**
+ * Workload / Non-Human Identity Cryptographic Claims (SPIFFE standard).
+ */
+export interface WorkloadClaims {
+  spiffeId: string;
+  workloadType: 'rmm_agent' | 'microservice' | 'ai_agent' | 'ci_pipeline';
+  tenantId: string;
+  allowedActions: string[];
+  allowedResourcePrefixes: string[];
+  issuedAt: number;
+  expiresAt: number;
+  nonce: string;
+}
+
+/**
+ * Verifiable Workload Identity Token Envelope.
+ */
+export interface WorkloadIdentityToken {
+  token: string;
+  claims: WorkloadClaims;
+  signature: string;
+}
+
+/**
+ * Contextual Step-Up MFA Challenge.
+ */
+export interface StepUpChallenge {
+  challengeId: string;
+  userId: string;
+  requiredAction: string;
+  resourceId: string;
+  expiresAt: Date;
+  verified: boolean;
 }
 
 /**

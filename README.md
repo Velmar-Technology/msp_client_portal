@@ -110,12 +110,16 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
   - All status transitions must comply with the `STATUS_TRANSITIONS` state matrix.
   - Multi-tenant RBAC enforces isolation: Clients are limited to `CANCELLED` status changes; Technicians manage assigned tickets; Admins hold global permissions.
 
-- **BL-302: SOTA Hybrid Authorization Engine (RBAC + ABAC + ReBAC)** (`HybridPolicyEngine`, `ZanzibarTupleStore`, `PolicyAsCodeEngine`)
-  - **Layer 1 (RBAC Baseline):** Evaluates coarse actor classification (`CLIENT`, `TECHNICIAN`, `ADMIN`).
+- **BL-302: SOTA Hybrid Authorization & Zero Standing Privileges (PoLP / ZSP Engine)** (`HybridPolicyEngine`, `ZanzibarTupleStore`, `EphemeralAccessService`, `WorkloadIdentityService`, `ContinuousAdaptiveTrustService`, `PolicyAsCodeEngine`, `constants.ts`)
+  - **Zero Standing Privileges & JIT Access (`EphemeralAccessService`):** Eliminates 24/7 root access. Standard engineer accounts hold minimal base privileges. Temporary break-glass access packages are requested on-demand (`1` to `480` minutes TTL) with mandatory business justifications, dynamically injected into the Zanzibar relation graph, and auto-purged upon expiration.
+  - **Continuous Right-Sizing via AI Role Mining (`ContinuousAdaptiveTrustService.mineRoles`):** Unsupervised clustering analyzing telemetry streams (`EntitlementLog`). Detects entitlement drift ($>40\%$ unused capabilities) and generates automated pull-request pruning diffs (`PruningPatchDiff`) to trim standing permissions down to active operational requirements.
+  - **Workload Identity & Machine-to-Machine PoLP (`WorkloadIdentityService`):** Eliminates static API keys and long-lived database credentials for non-human workloads (RMM agents, background workers, AI agents, CI/CD). Issues cryptographically signed (HMAC-SHA256), short-lived (5m default TTL) SPIFFE tokens (`spiffe://msp.portal/tenant/{tenantId}/{type}/{id}`) with strict action and resource-prefix narrowing.
+  - **Contextual & Behavioral Step-Up Authentication (`ContinuousAdaptiveTrustService`, `HybridPolicyEngine`):** Continuous multi-vector risk evaluation (data spikes $>50\text{MB}$, request velocity bursts, impossible geographic travel, unmanaged/non-compliant devices, and anomalous off-hours activity). Medium/High risk dynamically triggers Step-Up MFA challenges without terminating legitimate workflows.
+  - **Layer 1 (RBAC Baseline):** Evaluates coarse actor classification (`CLIENT`, `TECHNICIAN`, `ADMIN`) and action boundary mappings.
   - **Layer 2 (ReBAC / Zanzibar):** Resolves fine-grained relationship graph tuples (`<subject>#<relation>@<object>`) with hierarchical inheritance (`owner` $\rightarrow$ `editor` $\rightarrow$ `viewer`).
   - **Layer 3 (ABAC / PaC):** Evaluates declarative Policy-as-Code rules, temporal SLA windows (`BL-101`), and Non-Payment account tier restrictions (`BL-702`).
   - **AI / RAG Vector ACLs (`VectorAclService`):** Dual-phase security generating database pre-retrieval SQL/pgvector `WHERE` clauses and post-retrieval chunk sanitization.
-  - **Continuous Adaptive Trust (`ContinuousAdaptiveTrustService`):** Real-time anomaly risk scoring (impossible travel, data exfiltration) and unsupervised role mining algorithms.
+  - **Centralized Constants (`constants.ts`):** Single source of truth for JIT limits, risk scoring weights, risk thresholds, telemetry thresholds, role mining boundaries, and workload identity token lifetimes.
 
 ### Module 4: Billing Automation & Invoicing Lifecycle
 

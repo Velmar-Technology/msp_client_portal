@@ -97,6 +97,49 @@ describe('ContinuousAdaptiveTrustService', () => {
       expect(techSuggestion.includedPermissions).not.toContain('manage_billing_gateways');
       expect(techSuggestion.entitlementDriftDetected).toBe(true);
       expect(techSuggestion.redundancyScore).toBeGreaterThan(0.4);
+
+      // Verify automated PR pruning patch diff
+      expect(techSuggestion.pruningPatch).toBeDefined();
+      expect(techSuggestion.pruningPatch?.retainedPermissions).toEqual(techSuggestion.includedPermissions);
+      expect(techSuggestion.pruningPatch?.revokedPermissions).toContain('delete_database');
+      expect(techSuggestion.pruningPatch?.revokedPermissions).toContain('manage_billing_gateways');
+      expect(techSuggestion.pruningPatch?.summary).toContain('Automated Right-Sizing');
+    });
+  });
+
+  describe('Step-Up Challenge Management', () => {
+    it('creates, verifies, and validates step-up MFA challenges', () => {
+      const challenge = service.createStepUpChallenge('user-101', 'remote_exec_powershell', 'equipment:eq-1');
+      expect(challenge.challengeId).toMatch(/^stepup-/);
+      expect(challenge.verified).toBe(false);
+
+      expect(service.isStepUpVerified('user-101', 'remote_exec_powershell', 'equipment:eq-1')).toBe(false);
+
+      // Invalid code fails
+      const verifiedBad = service.verifyStepUpChallenge(challenge.challengeId, 'invalid');
+      expect(verifiedBad).toBe(false);
+
+      // Valid 6-digit MFA code succeeds
+      const verifiedGood = service.verifyStepUpChallenge(challenge.challengeId, '123456');
+      expect(verifiedGood).toBe(true);
+
+      // Verified status is recognized
+      expect(service.isStepUpVerified('user-101', 'remote_exec_powershell', 'equipment:eq-1')).toBe(true);
+    });
+
+    it('scores non-compliant devices with risk step-up', () => {
+      const telemetry: SessionTelemetry = {
+        userId: 'usr-dev-1',
+        clientIp: '192.168.1.50',
+        action: 'view_invoice',
+        timestamp: new Date(),
+      };
+
+      const assessment = service.evaluateSessionRisk(telemetry, { deviceCompliant: false });
+      expect(assessment.riskScore).toBe(30);
+      expect(assessment.riskLevel).toBe('MEDIUM');
+      expect(assessment.shouldTriggerStepUpMfa).toBe(true);
+      expect(assessment.anomalies[0]).toContain('Non-compliant or unmanaged device');
     });
   });
 });

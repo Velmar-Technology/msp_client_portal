@@ -32,12 +32,16 @@ graph TD
 5. **Servicios (`services/`):** Contienen toda la lógica de negocio nuclear del sistema (e.g., asignación de tickets mediante Round-Robin, políticas de SLA de 1 hora, facturación automática, sincronización con Nextcloud). No tienen conocimiento de la capa HTTP.
 6. **Repositorios (`repositories/`):** Es la única capa autorizada para realizar consultas SQL (o sentencias Drizzle) a la base de datos PostgreSQL.
 7. **Seguridad a Nivel de Fila (RLS) y Esquema DB (`shared/db/`):** Define las tablas relacionales y sus políticas de aislamiento por inquilino (*Row-Level Security*) usando `app.current_tenant_id` y `withTenantContext`.
-8. **Motor de Autorización SOTA (`shared/authz/`):** Subsistema de autorización híbrido desacoplado (*Policy Decision Point - PDP*) que unifica tres capas de seguridad:
-   - **RBAC (Control Coarse-Grained):** Verificación de identidad y roles base (`CLIENT`, `TECHNICIAN`, `ADMIN`).
+8. **Motor de Autorización SOTA & Zero Standing Privileges (`shared/authz/`):** Subsistema de autorización híbrido desacoplado (*Policy Decision Point - PDP*) que unifica la gestión de privilegios mínimos de última generación (SOTA PoLP):
+   - **Acceso Efímero y Just-In-Time (Zero Standing Privileges - `EphemeralAccessService`):** Erradica los privilegios permanentes 24/7. Las solicitudes de elevación temporal (`createRequest`) requieren justificación de negocio y duración limitada (`JIT_CONSTANTS.MIN_DURATION_MINUTES` a `MAX_DURATION_MINUTES`), inyectando tuplas temporales en el grafo Zanzibar con auto-expiración y barrido en segundo plano (`sweepExpiredGrants`).
+   - **Identidad de Cargas de Trabajo y M2M Secretless (`WorkloadIdentityService`):** Gestión de identidades no humanas (agentes RMM, workers en segundo plano, agentes de IA) bajo estándares SPIFFE (`spiffe://msp.portal/tenant/{tenantId}/{type}/{id}`). Genera y valida tokens criptográficos firmados (HMAC-SHA256) de vida ultra-corta con delimitación estricta de acciones y prefijos de recursos permitidos.
+   - **Minería de Roles y Reducción Continua de Privilegios (`ContinuousAdaptiveTrustService.mineRoles`):** Algoritmo de clustering no supervisado sobre flujos de `EntitlementLog`. Detecta deriva de permisos (>40% no utilizados) y genera diffs de parche estructurados (`PruningPatchDiff`) para pull requests automatizados de minimización de privilegios.
+   - **Autenticación Contextual y Step-Up MFA Dinámico (`ContinuousAdaptiveTrustService`, `HybridPolicyEngine`):** Evaluación continua de telemetría multi-vector (picos de datos >50MB, ráfagas de peticiones, viajes imposibles, dispositivos no conformes y actividad fuera de horario). Eleva el riesgo a `MEDIUM`/`HIGH` activando desafíos de Step-Up MFA sin interrumpir sesiones legítimas.
+   - **RBAC (Control Coarse-Grained Baseline):** Verificación de identidad y mapeo de acciones por rol (`CLIENT`, `TECHNICIAN`, `ADMIN`).
    - **ReBAC (Zanzibar Graph Engine - `ZanzibarTupleStore`):** Evaluación de tuplas de relación `<sujeto>#<relación>@<objeto>` con herencia jerárquica (`owner` $\rightarrow$ `editor` $\rightarrow$ `viewer`).
    - **ABAC / Policy-as-Code (`PolicyAsCodeEngine`):** Predicados contextuales dinámicos versionados (ventana SLA de 1 hora `BL-101`, aislamiento multi-inquilino estricto, y escala de impagos `BL-702`).
    - **Seguridad Vectorial para IA/RAG (`VectorAclService`):** Autorización de doble fase con pre-filtrado SQL/pgvector y sanitización post-recuperación de chunks de conocimiento.
-   - **Confianza Adaptativa Continua & Minería de Roles (`ContinuousAdaptiveTrustService`):** Detección en tiempo real de anomalías de sesión (viaje imposible, exfiltración masiva de datos) y optimización de permisos no utilizados mediante clustering no supervisado.
+   - **Constantes Centralizadas (`constants.ts`):** Definición única y tipada de pesos de riesgo, umbrales de telemetría, tiempos de vida de tokens de workload y duraciones de elevación JIT.
 
 ---
 

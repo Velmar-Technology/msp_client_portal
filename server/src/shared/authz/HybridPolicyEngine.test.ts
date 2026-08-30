@@ -98,4 +98,48 @@ describe('HybridPolicyEngine (Unified PDP)', () => {
     expect(decision.allowed).toBe(false);
     expect(decision.violatedPolicy).toBe('PAC-NONPAYMENT-GUARD-BL702');
   });
+
+  it('authorizes non-human service accounts via Workload Identity claims', async () => {
+    const ctx: AuthzContext = {
+      subject: {
+        id: 'agent-zabbix-1',
+        type: 'agent',
+        role: UserRole.TECHNICIAN,
+        attributes: {
+          workloadClaims: {
+            spiffeId: 'spiffe://msp.portal/tenant/t-1/rmm_agent/agent-1',
+            workloadType: 'rmm_agent',
+            tenantId: 't-1',
+            allowedActions: ['telemetry:write'],
+            allowedResourcePrefixes: ['equipment:eq-1'],
+            issuedAt: Math.floor(Date.now() / 1000),
+            expiresAt: Math.floor(Date.now() / 1000) + 300,
+            nonce: 'abc',
+          },
+        },
+      },
+      action: 'telemetry:write',
+      resource: { id: 'eq-1', type: 'equipment', tenantId: 't-1' },
+    };
+
+    const decision = await engine.evaluate(ctx);
+    expect(decision.allowed).toBe(true);
+    expect(decision.reason).toContain('Authorized via Cryptographic Workload Identity');
+  });
+
+  it('enforces Step-Up MFA when device compliance is flagged in environment', async () => {
+    engine.grantRelation('tech-1', 'editor', 'ticket', 'ticket-40');
+
+    const ctx: AuthzContext = {
+      subject: { id: 'tech-1', type: 'user', role: UserRole.TECHNICIAN, tenantId: 'tenant-1' },
+      action: 'update',
+      resource: { id: 'ticket-40', type: 'ticket', tenantId: 'tenant-1' },
+      environment: { deviceCompliant: false },
+    };
+
+    const decision = await engine.evaluate(ctx);
+    expect(decision.allowed).toBe(false);
+    expect(decision.requiredStepUpMfa).toBe(true);
+    expect(decision.reason).toContain('Step-Up MFA');
+  });
 });
