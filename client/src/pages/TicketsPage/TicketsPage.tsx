@@ -158,6 +158,7 @@ export function TicketsPage() {
     confirmBulkCancel,
     handleTicketCreated,
     handleTicketAction,
+    setSelectedTickets,
   } = useTickets();
 
   const markTicketAsRead = useTicketReadStore((state) => state.markAsRead);
@@ -413,6 +414,8 @@ export function TicketsPage() {
             placeholder: t("tickets.filterAllPriorities"),
           },
         ]}
+        enableRowSelection
+        onSelectedRowsChange={setSelectedTickets}
         bulkActions={[
           {
             label: t("tickets.bulkCancel"),

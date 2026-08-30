@@ -1,15 +1,21 @@
-import { useState, useEffect } from "react";
-import { X, Laptop, Loader2, Plus, Building2 } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { X, Laptop, Loader2, Plus, Building2, Check, ChevronsUpDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +25,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 interface AddAdminDeviceModalProps {
   isOpen: boolean;
@@ -41,14 +48,21 @@ export function AddAdminDeviceModal({
   const [deviceName, setDeviceName] = useState("");
   const [deviceSerial, setDeviceSerial] = useState("");
   const [selectedTenantId, setSelectedTenantId] = useState(defaultTenantId || "");
+  const [openTenantCombobox, setOpenTenantCombobox] = useState(false);
+
+  const sortedTenantOptions = useMemo(
+    () => [...tenantOptions].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" })),
+    [tenantOptions]
+  );
 
   useEffect(() => {
     if (isOpen) {
       setDeviceName("");
       setDeviceSerial(`SN-ADM-${Math.floor(100000 + Math.random() * 900000)}`);
-      setSelectedTenantId(defaultTenantId || (tenantOptions[0]?.id ?? ""));
+      setSelectedTenantId(defaultTenantId || (sortedTenantOptions[0]?.id ?? ""));
+      setOpenTenantCombobox(false);
     }
-  }, [isOpen, defaultTenantId, tenantOptions]);
+  }, [isOpen, defaultTenantId, sortedTenantOptions]);
 
   const canSubmit = deviceName.trim().length > 0 && !loading;
 
@@ -66,7 +80,7 @@ export function AddAdminDeviceModal({
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open && !loading) onClose(); }}>
       <DialogContent className="max-w-md w-full bg-card border border-zinc-200 dark:border-zinc-800 rounded-lg p-0 text-zinc-900 dark:text-zinc-100 flex flex-col overflow-hidden">
         {/* Modal Header */}
-        <DialogHeader className="px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-800 flex flex-row justify-between items-center bg-white dark:bg-zinc-950 space-y-0 text-left">
+        <DialogHeader className="px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-800 flex flex-row justify-between items-center bg-white dark:bg-card space-y-0 text-left">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-primary/10 text-primary rounded-md border border-primary/20">
               <Laptop className="h-4 w-4" />
@@ -128,26 +142,61 @@ export function AddAdminDeviceModal({
                 />
               </div>
 
-              {tenantOptions.length > 1 && (
+              {sortedTenantOptions.length > 1 && (
                 <div>
                   <label htmlFor="admin-dev-tenant" className="block text-[10px] uppercase font-bold text-zinc-400 mb-1">
                     {t("devices.tenantLabel", "Target Workspace / Client")}
                   </label>
-                  <Select value={selectedTenantId} onValueChange={setSelectedTenantId}>
-                    <SelectTrigger id="admin-dev-tenant" size="lg" className="w-full text-xs bg-card">
-                      <div className="flex items-center gap-1.5 truncate">
-                        <Building2 className="h-3 w-3 text-zinc-400 shrink-0" />
-                        <SelectValue placeholder={t("devices.filterAllClients", "Select Workspace")} />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border-border">
-                      {tenantOptions.map((opt) => (
-                        <SelectItem key={opt.id} value={opt.id} className="text-xs">
-                          {opt.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={openTenantCombobox} onOpenChange={setOpenTenantCombobox}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        id="admin-dev-tenant"
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={openTenantCombobox}
+                        className="w-full justify-between text-xs h-8 bg-card px-3 font-normal border border-border hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <Building2 className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+                          <span className="truncate">
+                            {selectedTenantId
+                              ? sortedTenantOptions.find((opt) => opt.id === selectedTenantId)?.name
+                              : t("devices.filterAllClients", "Select Workspace")}
+                          </span>
+                        </div>
+                        <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-card border-border shadow-md" align="start">
+                      <Command>
+                        <CommandInput placeholder={t("devices.searchTenantPlaceholder", "Search client...")} />
+                        <CommandList>
+                          <CommandEmpty>{t("devices.noTenantFound", "No client found.")}</CommandEmpty>
+                          <CommandGroup>
+                            {sortedTenantOptions.map((opt) => (
+                              <CommandItem
+                                key={opt.id}
+                                value={opt.name}
+                                onSelect={() => {
+                                  setSelectedTenantId(opt.id);
+                                  setOpenTenantCombobox(false);
+                                }}
+                                className="text-xs flex items-center justify-between cursor-pointer"
+                              >
+                                <span className="truncate">{opt.name}</span>
+                                <Check
+                                  className={cn(
+                                    "ml-auto h-3.5 w-3.5",
+                                    selectedTenantId === opt.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               )}
             </div>

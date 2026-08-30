@@ -11,6 +11,7 @@
     "pickDate": "Seleccionar fecha",
     "table": {
       "showing": "Mostrando {{start}}–{{end}} de {{total}}",
+      "pageSize": "Tamaño de página",
       "noResults": "Sin resultados.",
       "search": "Buscar...",
       "prevPage": "Página anterior",
@@ -940,6 +941,8 @@
     "selectSubscription": "Seleccione una Suscripción para Gestionar Dispositivos",
     "subOptionLabel": "{{name}} ({{devicesStr}})",
     "filterAllClients": "Todos los Clientes",
+    "searchTenantPlaceholder": "Buscar cliente...",
+    "noTenantFound": "No se encontró ningún cliente.",
     "filterAllPlans": "Todos los Planes",
     "filterAllStatuses": "Todos los Estados",
     "statusActive": "Activo",

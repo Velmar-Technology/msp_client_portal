@@ -11,6 +11,7 @@
     "pickDate": "Pick a date",
     "table": {
       "showing": "Showing {{start}}–{{end}} of {{total}}",
+      "pageSize": "Page size",
       "noResults": "No results.",
       "search": "Search...",
       "prevPage": "Previous page",
@@ -940,6 +941,8 @@
     "selectSubscription": "Select Subscription to Manage Devices",
     "subOptionLabel": "{{name}} ({{devicesStr}})",
     "filterAllClients": "All Clients",
+    "searchTenantPlaceholder": "Search client...",
+    "noTenantFound": "No client found.",
     "filterAllPlans": "All Plans",
     "filterAllStatuses": "All Statuses",
     "statusActive": "Active",
