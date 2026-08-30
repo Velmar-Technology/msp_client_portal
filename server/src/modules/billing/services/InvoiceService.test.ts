@@ -41,6 +41,10 @@ vi.mock('@modules/subscriptions', () => ({
     findByClient: mocks.subFindByClient,
     updateStatus: mocks.subUpdateStatus,
   },
+  planRepository: {
+    findById: vi.fn().mockResolvedValue(null),
+    findAll: vi.fn().mockResolvedValue([]),
+  },
 }));
 
 vi.mock('@modules/billing/repositories/ExpenseRepository', () => ({

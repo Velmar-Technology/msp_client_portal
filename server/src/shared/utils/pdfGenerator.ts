@@ -1,594 +1,432 @@
 import fs from 'fs';
 import path from 'path';
-import zlib from 'zlib';
+import PDFDocument from 'pdfkit';
 import { Invoice } from '@shared/types';
 import { APP_METADATA } from '@shared/config/constants';
 import { logger } from './logger';
 
-class SimplePdfDoc {
-  private objects: Buffer[] = [];
+/**
+ * Customer billing contact and organization metadata for invoice PDF generation.
+ */
+export interface CustomerBillingInfo {
+  name: string;
+  email: string;
+  tenantName: string;
+  phoneNumber?: string | null;
+  clientType?: string | null;
+  clientId?: string | null;
+  accountNumber?: string | null;
+}
 
-  addObject(content: string | Buffer): number {
-    const objId = this.objects.length + 1;
-    const body = typeof content === 'string' ? Buffer.from(content, 'binary') : content;
-    const fullObj = Buffer.concat([
-      Buffer.from(`${objId} 0 obj\n`),
-      body,
-      Buffer.from(`\nendobj\n`)
-    ]);
-    this.objects.push(fullObj);
-    return objId;
+/**
+ * Invoice line item entry for detailed scope/pricing breakdown.
+ */
+export interface InvoiceLineItem {
+  description: string;
+  quantity: number;
+  unit_price: number;
+  amount?: number;
+}
+
+/**
+ * Extended invoice entity with optional line items array.
+ */
+export type InvoiceWithLineItems = Invoice & {
+  line_items?: InvoiceLineItem[];
+};
+
+/**
+ * Resolves the absolute path to the client portal logo asset.
+ *
+ * @returns Absolute filepath if found, otherwise null
+ */
+function resolveLogoPath(): string | null {
+  const candidates = [
+    path.resolve(__dirname, '../../../client/src/assets/logo.png'),
+    path.resolve(__dirname, '../../../../client/src/assets/logo.png'),
+    path.resolve(process.cwd(), 'client/src/assets/logo.png'),
+    path.resolve(process.cwd(), '../client/src/assets/logo.png'),
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
   }
 
-  build(): Buffer {
-    const header = Buffer.from("%PDF-1.4\n%\xE2\xE3\xCF\xD3\n");
-    const offsets: number[] = [];
-    let currentOffset = header.length;
-
-    const bodyParts: Buffer[] = [];
-    for (let i = 0; i < this.objects.length; i++) {
-      offsets.push(currentOffset);
-      bodyParts.push(this.objects[i]);
-      currentOffset += this.objects[i].length;
-    }
-
-    const xrefOffset = currentOffset;
-    let xref = `xref\n0 ${this.objects.length + 1}\n0000000000 65535 f \n`;
-    for (let i = 0; i < offsets.length; i++) {
-      xref += offsets[i].toString().padStart(10, '0') + " 00000 n \n";
-    }
-
-    const trailer = `trailer\n<<\n  /Size ${this.objects.length + 1}\n  /Root 1 0 R\n>>\nstartxref\n${xrefOffset}\n%%EOF\n`;
-
-    return Buffer.concat([
-      header,
-      ...bodyParts,
-      Buffer.from(xref),
-      Buffer.from(trailer)
-    ]);
-  }
+  return null;
 }
 
-function escapePdfText(text: string): string {
-  return text.replace(/[\\()]/g, '\\$&');
-}
-
-interface LogoData {
-  width: number;
-  height: number;
-  rgbBuffer: Buffer;
-  alphaBuffer: Buffer;
-}
-
-function loadLogoPng(): LogoData | null {
-  try {
-    const pngPath = path.join(__dirname, '../../../client/src/assets/logo.png');
-    if (!fs.existsSync(pngPath)) return null;
-
-    const buf = fs.readFileSync(pngPath);
-    if (buf.slice(0, 8).toString('hex') !== '89504e470d0a1a0a') return null;
-
-    let offset = 8;
-    const idatChunks: Buffer[] = [];
-    let width = 0;
-    let height = 0;
-
-    while (offset < buf.length) {
-      const length = buf.readUInt32BE(offset);
-      const type = buf.slice(offset + 4, offset + 8).toString('ascii');
-      const data = buf.slice(offset + 8, offset + 8 + length);
-      
-      if (type === 'IHDR') {
-        width = data.readUInt32BE(0);
-        height = data.readUInt32BE(4);
-      } else if (type === 'IDAT') {
-        idatChunks.push(data);
-      } else if (type === 'IEND') {
-        break;
-      }
-      offset += 12 + length;
-    }
-
-    if (width === 0 || height === 0 || idatChunks.length === 0) return null;
-
-    const decompressed = zlib.inflateSync(Buffer.concat(idatChunks));
-    const scanlineLength = 1 + width * 4;
-    const rawPixels = Buffer.alloc(width * height * 4);
-
-    for (let y = 0; y < height; y++) {
-      const filterType = decompressed[y * scanlineLength];
-      const scanlineStart = y * scanlineLength + 1;
-
-      for (let x = 0; x < width * 4; x++) {
-        const val = decompressed[scanlineStart + x];
-        const left = x >= 4 ? rawPixels[y * width * 4 + x - 4] : 0;
-        const up = y > 0 ? rawPixels[(y - 1) * width * 4 + x] : 0;
-        const upLeft = (y > 0 && x >= 4) ? rawPixels[(y - 1) * width * 4 + x - 4] : 0;
-
-        let recon = 0;
-        if (filterType === 0) {
-          recon = val;
-        } else if (filterType === 1) {
-          recon = val + left;
-        } else if (filterType === 2) {
-          recon = val + up;
-        } else if (filterType === 3) {
-          recon = val + Math.floor((left + up) / 2);
-        } else if (filterType === 4) {
-          const p = left + up - upLeft;
-          const pa = Math.abs(p - left);
-          const pb = Math.abs(p - up);
-          const pc = Math.abs(p - upLeft);
-          if (pa <= pb && pa <= pc) {
-            recon = val + left;
-          } else if (pb <= pc) {
-            recon = val + up;
-          } else {
-            recon = val + upLeft;
-          }
-        }
-        rawPixels[y * width * 4 + x] = recon % 256;
-      }
-    }
-
-    const rgbBuffer = Buffer.alloc(width * height * 3);
-    const alphaBuffer = Buffer.alloc(width * height * 1);
-
-    let rgbOffset = 0;
-    let alphaOffset = 0;
-
-    for (let i = 0; i < rawPixels.length; i += 4) {
-      rgbBuffer[rgbOffset++] = rawPixels[i];
-      rgbBuffer[rgbOffset++] = rawPixels[i + 1];
-      rgbBuffer[rgbOffset++] = rawPixels[i + 2];
-      alphaBuffer[alphaOffset++] = rawPixels[i + 3];
-    }
-
-    return {
-      width,
-      height,
-      rgbBuffer: zlib.deflateSync(rgbBuffer),
-      alphaBuffer: zlib.deflateSync(alphaBuffer),
-    };
-  } catch (err) {
-    logger.error('Failed to parse PNG logo:', { err });
-    return null;
-  }
-}
-
-const labels: Record<string, any> = {
+const labels: Record<string, Record<string, string>> = {
   en_US: {
     invoice: 'INVOICE',
+    invoiceDetails: 'INVOICE DETAILS',
     number: 'Invoice Number:',
     date: 'Invoice Date:',
     dueDate: 'Due Date:',
+    paymentTermsLabel: 'Terms:',
+    paymentTermsValue: 'Net 14 Days',
     status: 'Status:',
-    billTo: 'Bill To:',
-    desc: 'Description',
+    billTo: 'BILL TO / CUSTOMER',
+    clientName: 'Contact:',
+    company: 'Company:',
+    email: 'Email:',
+    phone: 'Phone:',
+    accountRef: 'Client Ref:',
+    accountType: 'Type:',
+    invoicerTitle: APP_METADATA.company.toUpperCase(),
+    invoicerTagline: APP_METADATA.tagline,
+    invoicerAddress: APP_METADATA.address,
+    invoicerPhone: `Tel: ${APP_METADATA.phone}`,
+    invoicerBillingEmail: `Billing: ${APP_METADATA.billingEmail}`,
+    desc: 'Description & Scope',
     qty: 'Qty',
     unitPrice: 'Unit Price',
     amount: 'Amount',
     subtotal: 'Subtotal:',
-    tax: 'Tax (18%):',
-    total: 'Total:',
-    paymentTerms: 'Payment Details & Terms',
-    paymentDue: 'Payment is due within 14 days of invoice date.',
-    paymentPortal: 'Please pay using the client portal / PayPal integration.',
-    thankYou: 'Thank you for your business!',
-    support: `Need help? Support: ${APP_METADATA.email}`,
-    serviceDesc: 'Managed IT & Tech Support Subscription'
+    tax: 'Tax (18% ITBIS):',
+    total: 'Total Amount Due:',
+    paymentTerms: 'Payment Terms & Instructions',
+    paymentDue: 'Payment is due within 14 days of invoice issue date.',
+    paymentPortal: 'Please settle invoices via the Client Portal or PayPal gateway.',
+    paymentMethods: 'Accepted methods: PayPal, Bank Wire Transfer, Credit/Debit Card.',
+    thankYou: `Thank you for choosing ${APP_METADATA.company} for your IT operations!`,
+    support: `Support: ${APP_METADATA.email} | ${APP_METADATA.phone}`,
+    serviceDesc: APP_METADATA.tagline,
+    paid: 'Paid',
+    overdue: 'Overdue',
+    pending: 'Pending',
+    cancelled: 'Cancelled',
   },
   es_DO: {
     invoice: 'FACTURA',
+    invoiceDetails: 'DETALLES DE FACTURA',
     number: 'No. Factura:',
     date: 'Fecha Factura:',
     dueDate: 'Fecha Vencimiento:',
+    paymentTermsLabel: 'Condición:',
+    paymentTermsValue: '14 Días Netos',
     status: 'Estado:',
-    billTo: 'Facturar A:',
-    desc: 'Descripcion',
+    billTo: 'FACTURAR A / CLIENTE',
+    clientName: 'Contacto:',
+    company: 'Empresa:',
+    email: 'Correo:',
+    phone: 'Teléfono:',
+    accountRef: 'Ref. Cliente:',
+    accountType: 'Tipo:',
+    invoicerTitle: APP_METADATA.company.toUpperCase(),
+    invoicerTagline: 'Servicios de TI Gestionados y Soporte Empresarial',
+    invoicerAddress: APP_METADATA.address,
+    invoicerPhone: `Tel: ${APP_METADATA.phone}`,
+    invoicerBillingEmail: `Facturación: ${APP_METADATA.billingEmail}`,
+    desc: 'Descripción y Alcance',
     qty: 'Cant',
     unitPrice: 'Precio Unitario',
     amount: 'Monto',
     subtotal: 'Subtotal:',
-    tax: 'Impuesto (18%):',
-    total: 'Total:',
-    paymentTerms: 'Terminos y Detalles de Pago',
-    paymentDue: 'El pago vence dentro de los 14 dias posteriores a la fecha de la factura.',
-    paymentPortal: 'Por favor, pague utilizando el portal de clientes / integracion de PayPal.',
-    thankYou: '¡Gracias por su preferencia!',
-    support: `¿Necesita ayuda? Soporte: ${APP_METADATA.email}`,
-    serviceDesc: 'Suscripcion de Soporte Tecnico y TI Gestionado'
-  }
+    tax: 'Impuesto (18% ITBIS):',
+    total: 'Total a Pagar:',
+    paymentTerms: 'Términos y Datos de Pago',
+    paymentDue: 'El pago vence dentro de los 14 días posteriores a la emisión de la factura.',
+    paymentPortal: 'Favor realizar sus pagos a través del Portal de Clientes o PayPal.',
+    paymentMethods: 'Métodos aceptados: PayPal, Transferencia Bancaria, Tarjeta de Crédito/Débito.',
+    thankYou: `¡Gracias por confiar en ${APP_METADATA.company} para sus operaciones de TI!`,
+    support: `Soporte: ${APP_METADATA.email} | ${APP_METADATA.phone}`,
+    serviceDesc: 'Suscripción de Servicios de TI Gestionados y Soporte Técnico',
+    paid: 'Pagada',
+    overdue: 'Vencida',
+    pending: 'Pendiente',
+    cancelled: 'Cancelada',
+  },
 };
 
 /**
- * Generates a compliant PDF-1.4 binary buffer invoice document complete with embedded branding, logo, and line item tables.
+ * Generates a compliant PDF binary buffer invoice document complete with embedded branding,
+ * full customer billing details, provider contact info, and line item tables using PDFKit.
  *
- * @param invoice - Invoice entity with billing details
- * @param clientName - Client billing contact name
- * @param clientEmail - Client billing contact email
- * @param tenantName - Client organization name
+ * @param invoice - Invoice entity with billing details and optional line items
+ * @param customerOrName - Full customer metadata object or client name string (for backwards compatibility)
+ * @param clientEmail - Client billing contact email (optional if object provided)
+ * @param tenantName - Client organization name (optional if object provided)
  * @param language - Target localization code ('es_DO' | 'en_US')
- * @returns Generated PDF binary Buffer
+ * @returns Promise resolving to the generated PDF binary Buffer
  */
 export function generateInvoicePdf(
-  invoice: Invoice,
-  clientName: string,
-  clientEmail: string,
-  tenantName: string,
+  invoice: InvoiceWithLineItems,
+  customerOrName: string | CustomerBillingInfo,
+  clientEmail = '',
+  tenantName = '',
   language = 'en_US'
-): Buffer {
-  const t = labels[language] || labels['en_US'];
+): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    try {
+      const customer: CustomerBillingInfo =
+        typeof customerOrName === 'string'
+          ? {
+              name: customerOrName,
+              email: clientEmail,
+              tenantName: tenantName,
+            }
+          : customerOrName;
 
-  const doc = new SimplePdfDoc();
-  const logo = loadLogoPng();
+      const t = labels[language] || labels['en_US'];
+      const doc = new PDFDocument({
+        size: 'A4',
+        margin: 50,
+        info: {
+          Title: `Invoice ${invoice.invoice_number}`,
+          Author: 'Velmar Technology SRL',
+          Subject: `Billing Invoice ${invoice.invoice_number} - ${customer.tenantName || customer.name}`,
+        },
+      });
 
-  // Catalog
-  doc.addObject(`<< /Type /Catalog /Pages 2 0 R >>`);
-  // Pages
-  doc.addObject(`<< /Type /Pages /Kids [3 0 R] /Count 1 >>`);
-  // Page
-  if (logo) {
-    doc.addObject(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> /XObject << /Logo 7 0 R >> >> /Contents 6 0 R >>`);
-  } else {
-    doc.addObject(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>`);
-  }
-  // Font F1 (Regular Helvetica)
-  doc.addObject(`<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>`);
-  // Font F2 (Bold Helvetica)
-  doc.addObject(`<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>`);
+      const chunks: Buffer[] = [];
+      doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', (err: Error) => {
+        logger.error('PDFKit generation stream error:', { err });
+        reject(err);
+      });
 
-  // Content generation
-  const escapedClientName = escapePdfText(clientName);
-  const escapedClientEmail = escapePdfText(clientEmail);
-  const escapedTenantName = escapePdfText(tenantName);
-  const escapedInvoiceNum = escapePdfText(invoice.invoice_number);
+      // Date formatting
+      const dateStr = new Date(invoice.invoice_date).toLocaleDateString(language === 'es_DO' ? 'es-DO' : 'en-US', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
+      const dueDateStr = new Date(invoice.due_date).toLocaleDateString(language === 'es_DO' ? 'es-DO' : 'en-US', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
 
-  const dateStr = new Date(invoice.invoice_date).toLocaleDateString(language === 'es_DO' ? 'es-DO' : 'en-US', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
+      const subtotalVal = '$' + Number(invoice.amount).toFixed(2);
+      const taxVal = '$' + Number(invoice.tax_amount).toFixed(2);
+      const totalVal = '$' + Number(invoice.total).toFixed(2);
+
+      // Status configuration
+      let statusText = t.pending;
+      let statusBgColor = '#fef3c7'; // Light Amber
+      let statusBorderColor = '#d97706'; // Amber
+      let statusTextColor = '#92400e'; // Dark Amber
+
+      if (invoice.status === 'PAID') {
+        statusText = t.paid;
+        statusBgColor = '#dcfce7'; // Light Green
+        statusBorderColor = '#16a34a'; // Green
+        statusTextColor = '#166534'; // Dark Green
+      } else if (invoice.status === 'OVERDUE') {
+        statusText = t.overdue;
+        statusBgColor = '#fee2e2'; // Light Red
+        statusBorderColor = '#dc2626'; // Red
+        statusTextColor = '#991b1b'; // Dark Red
+      } else if (invoice.status === 'CANCELLED') {
+        statusText = t.cancelled;
+        statusBgColor = '#f3f4f6'; // Light Gray
+        statusBorderColor = '#9ca3af'; // Gray
+        statusTextColor = '#4b5563'; // Dark Gray
+      }
+
+      // 1. Top Brand Accent Bar
+      doc.rect(50, 36, 495, 5).fill('#174a7b');
+
+      // 2. Header & Invoicer Information
+      const logoPath = resolveLogoPath();
+      let headerTextX = 100;
+
+      if (logoPath) {
+        try {
+          doc.image(logoPath, 50, 48, { width: 42, height: 34, fit: [42, 34] });
+          headerTextX = 100;
+        } catch (imgErr) {
+          logger.warn('Failed to load logo image into PDF, drawing fallback vector:', { imgErr });
+          drawFallbackVectorLogo(doc, 50, 48);
+          headerTextX = 85;
+        }
+      } else {
+        drawFallbackVectorLogo(doc, 50, 48);
+        headerTextX = 85;
+      }
+
+      // Invoicer Provider Info
+      doc.font('Helvetica-Bold').fontSize(12).fillColor('#0f172a').text(t.invoicerTitle, headerTextX, 48);
+      doc.font('Helvetica').fontSize(8).fillColor('#64748b').text(t.invoicerTagline, headerTextX, 63);
+      doc.font('Helvetica').fontSize(7.5).fillColor('#64748b').text(`${t.invoicerAddress}  •  ${t.invoicerPhone}`, headerTextX, 74);
+      doc.font('Helvetica').fontSize(7.5).fillColor('#64748b').text(`${t.invoicerBillingEmail}  •  ${APP_METADATA.website}`, headerTextX, 85);
+
+      // Document Title (Right side)
+      doc.font('Helvetica-Bold').fontSize(22).fillColor('#174a7b').text(t.invoice, 370, 46, {
+        width: 175,
+        align: 'right',
+      });
+
+      // Status Badge Pill
+      doc.roundedRect(445, 75, 100, 18, 3).fillAndStroke(statusBgColor, statusBorderColor);
+      doc.font('Helvetica-Bold').fontSize(8.5).fillColor(statusTextColor).text(statusText.toUpperCase(), 445, 80, {
+        width: 100,
+        align: 'center',
+      });
+
+      // 3. Section Divider Line
+      doc.strokeColor('#e2e8f0').lineWidth(1).moveTo(50, 106).lineTo(545, 106).stroke();
+
+      // 4. Two-Column Metadata & Customer Details Box
+      const boxY = 114;
+      const boxHeight = 88;
+      const colWidth = 242;
+
+      // Left Box: Invoice Details
+      doc.roundedRect(50, boxY, colWidth, boxHeight, 4).fillAndStroke('#f8fafc', '#e2e8f0');
+      doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#1e293b').text(t.invoiceDetails, 60, boxY + 8);
+
+      doc.font('Helvetica-Bold').fontSize(8).fillColor('#64748b').text(t.number, 60, boxY + 23);
+      doc.font('Helvetica-Bold').fontSize(8).fillColor('#0f172a').text(invoice.invoice_number, 140, boxY + 23);
+
+      doc.font('Helvetica-Bold').fontSize(8).fillColor('#64748b').text(t.date, 60, boxY + 37);
+      doc.font('Helvetica').fontSize(8).fillColor('#334155').text(dateStr, 140, boxY + 37);
+
+      doc.font('Helvetica-Bold').fontSize(8).fillColor('#64748b').text(t.dueDate, 60, boxY + 51);
+      doc.font('Helvetica').fontSize(8).fillColor('#334155').text(dueDateStr, 140, boxY + 51);
+
+      doc.font('Helvetica-Bold').fontSize(8).fillColor('#64748b').text(t.paymentTermsLabel, 60, boxY + 65);
+      doc.font('Helvetica').fontSize(8).fillColor('#334155').text(t.paymentTermsValue, 140, boxY + 65);
+
+      // Right Box: Customer & Bill To Details
+      const rightBoxX = 303;
+      doc.roundedRect(rightBoxX, boxY, colWidth, boxHeight, 4).fillAndStroke('#f8fafc', '#e2e8f0');
+      doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#1e293b').text(t.billTo, rightBoxX + 10, boxY + 8);
+
+      const customerCompany = customer.tenantName || 'N/A';
+      const customerContact = customer.name || 'N/A';
+      const customerEmail = customer.email || 'N/A';
+      const customerPhone = customer.phoneNumber || 'N/A';
+      const customerType = customer.clientType ? `[${customer.clientType}]` : '';
+
+      doc.font('Helvetica-Bold').fontSize(8).fillColor('#64748b').text(t.company, rightBoxX + 10, boxY + 23);
+      doc.font('Helvetica-Bold').fontSize(8).fillColor('#0f172a').text(customerCompany, rightBoxX + 65, boxY + 23, { width: 170, ellipsis: true });
+
+      doc.font('Helvetica-Bold').fontSize(8).fillColor('#64748b').text(t.clientName, rightBoxX + 10, boxY + 37);
+      doc.font('Helvetica').fontSize(8).fillColor('#334155').text(customerContact, rightBoxX + 65, boxY + 37, { width: 170, ellipsis: true });
+
+      doc.font('Helvetica-Bold').fontSize(8).fillColor('#64748b').text(t.email, rightBoxX + 10, boxY + 51);
+      doc.font('Helvetica').fontSize(8).fillColor('#334155').text(customerEmail, rightBoxX + 65, boxY + 51, { width: 170, ellipsis: true });
+
+      doc.font('Helvetica-Bold').fontSize(8).fillColor('#64748b').text(t.phone, rightBoxX + 10, boxY + 65);
+      doc.font('Helvetica').fontSize(8).fillColor('#334155').text(customerPhone, rightBoxX + 65, boxY + 65, { width: 110, ellipsis: true });
+      if (customerType) {
+        doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#64748b').text(customerType, rightBoxX + 175, boxY + 65, { width: 60, align: 'right' });
+      }
+
+      // 5. Line Items Table Header
+      const tableHeaderY = 212;
+      const tableHeaderHeight = 22;
+      doc.rect(50, tableHeaderY, 495, tableHeaderHeight).fill('#0f172a');
+
+      doc.font('Helvetica-Bold').fontSize(8).fillColor('#ffffff');
+      doc.text(t.desc, 60, tableHeaderY + 6, { width: 250 });
+      doc.text(t.qty, 320, tableHeaderY + 6, { width: 40, align: 'center' });
+      doc.text(t.unitPrice, 370, tableHeaderY + 6, { width: 80, align: 'right' });
+      doc.text(t.amount, 460, tableHeaderY + 6, { width: 75, align: 'right' });
+
+      // 6. Dynamic Line Items List
+      const lineItems: InvoiceLineItem[] =
+        invoice.line_items && invoice.line_items.length > 0
+          ? invoice.line_items
+          : [
+              {
+                description: t.serviceDesc,
+                quantity: 1,
+                unit_price: Number(invoice.amount),
+                amount: Number(invoice.amount),
+              },
+            ];
+
+      let currentY = tableHeaderY + tableHeaderHeight;
+
+      lineItems.forEach((item, index) => {
+        const isEven = index % 2 === 0;
+        const rowBg = isEven ? '#ffffff' : '#f8fafc';
+        const rowHeight = 22;
+
+        doc.rect(50, currentY, 495, rowHeight).fill(rowBg);
+
+        const itemQty = item.quantity || 1;
+        const itemUnitPrice = '$' + Number(item.unit_price).toFixed(2);
+        const itemAmount = '$' + Number(item.amount ?? item.quantity * item.unit_price).toFixed(2);
+
+        doc.font('Helvetica').fontSize(8.5).fillColor('#1e293b');
+        doc.text(item.description, 60, currentY + 6, { width: 250, ellipsis: true });
+        doc.text(String(itemQty), 320, currentY + 6, { width: 40, align: 'center' });
+        doc.text(itemUnitPrice, 370, currentY + 6, { width: 80, align: 'right' });
+        doc.text(itemAmount, 460, currentY + 6, { width: 75, align: 'right' });
+
+        currentY += rowHeight;
+      });
+
+      // Table Bottom Border
+      doc.strokeColor('#e2e8f0').lineWidth(0.75).moveTo(50, currentY).lineTo(545, currentY).stroke();
+
+      // 7. Payment Terms & Totals Summary Section
+      const summaryY = Math.max(currentY + 16, 290);
+
+      // Left Side: Payment Details & Instructions Box
+      doc.roundedRect(50, summaryY, 275, 78, 4).fillAndStroke('#f8fafc', '#e2e8f0');
+      doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#1e293b').text(t.paymentTerms, 60, summaryY + 8);
+      doc.font('Helvetica').fontSize(7.5).fillColor('#64748b').text(t.paymentDue, 60, summaryY + 22, { width: 255 });
+      doc.font('Helvetica').fontSize(7.5).fillColor('#64748b').text(t.paymentPortal, 60, summaryY + 36, { width: 255 });
+      doc.font('Helvetica').fontSize(7.5).fillColor('#64748b').text(t.paymentMethods, 60, summaryY + 50, { width: 255 });
+
+      // Right Side: Calculations Breakdown Box
+      const totalsX = 345;
+      const totalsWidth = 200;
+      doc.roundedRect(totalsX, summaryY, totalsWidth, 78, 4).fillAndStroke('#ffffff', '#e2e8f0');
+
+      doc.font('Helvetica').fontSize(8.5).fillColor('#64748b').text(t.subtotal, totalsX + 12, summaryY + 10, { width: 95 });
+      doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#0f172a').text(subtotalVal, totalsX + 110, summaryY + 10, { width: 78, align: 'right' });
+
+      doc.font('Helvetica').fontSize(8.5).fillColor('#64748b').text(t.tax, totalsX + 12, summaryY + 26, { width: 95 });
+      doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#0f172a').text(taxVal, totalsX + 110, summaryY + 26, { width: 78, align: 'right' });
+
+      // Divider inside totals box
+      doc.strokeColor('#cbd5e1').lineWidth(0.75).moveTo(totalsX + 10, summaryY + 42).lineTo(totalsX + totalsWidth - 10, summaryY + 42).stroke();
+
+      // Total Line
+      doc.font('Helvetica-Bold').fontSize(9.5).fillColor('#0f172a').text(t.total, totalsX + 12, summaryY + 52, { width: 95 });
+      doc.font('Helvetica-Bold').fontSize(11).fillColor('#174a7b').text(totalVal, totalsX + 105, summaryY + 50, { width: 83, align: 'right' });
+
+      // 8. Footer (Fixed at bottom)
+      const footerY = 765;
+      doc.strokeColor('#e2e8f0').lineWidth(1).moveTo(50, footerY).lineTo(545, footerY).stroke();
+      doc.font('Helvetica').fontSize(8).fillColor('#64748b').text(t.thankYou, 50, footerY + 10);
+      doc.font('Helvetica').fontSize(8).fillColor('#64748b').text(t.support, 300, footerY + 10, {
+        width: 245,
+        align: 'right',
+      });
+
+      doc.end();
+    } catch (error) {
+      logger.error('Failed to generate PDF invoice document:', { error });
+      reject(error);
+    }
   });
-  const dueDateStr = new Date(invoice.due_date).toLocaleDateString(language === 'es_DO' ? 'es-DO' : 'en-US', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
+}
 
-  const escapedDate = escapePdfText(dateStr);
-  const escapedDueDate = escapePdfText(dueDateStr);
+/**
+ * Draws a fallback isometric vector cube logo when an external image asset is unavailable.
+ *
+ * @param doc - Active PDFKit document instance
+ * @param x - Start X coordinate
+ * @param y - Start Y coordinate
+ */
+function drawFallbackVectorLogo(doc: InstanceType<typeof PDFDocument>, x: number, y: number): void {
+  doc.save();
+  // Left face (Medium Blue)
+  doc.polygon([x, y + 10], [x, y + 25], [x + 12, y + 32], [x + 12, y + 17]).fill('#3f72af');
 
-  const subtotalVal = '$' + Number(invoice.amount).toFixed(2);
-  const taxVal = '$' + Number(invoice.tax_amount).toFixed(2);
-  const totalVal = '$' + Number(invoice.total).toFixed(2);
+  // Right face (Dark Blue)
+  doc.polygon([x + 12, y + 17], [x + 12, y + 32], [x + 24, y + 25], [x + 24, y + 10]).fill('#174a7b');
 
-  // Status-specific color and label
-  let statusText = String(invoice.status);
-  let statusColor = '0.95 0.6 0.1'; // Amber/Orange for pending
-  if (invoice.status === 'PAID') {
-    statusText = language === 'es_DO' ? 'Pagada' : 'Paid';
-    statusColor = '0.15 0.65 0.35'; // Cool green
-  } else if (invoice.status === 'OVERDUE') {
-    statusText = language === 'es_DO' ? 'Vencida' : 'Overdue';
-    statusColor = '0.85 0.18 0.18'; // Red
-  } else {
-    statusText = language === 'es_DO' ? 'Pendiente' : 'Pending';
-  }
-
-  const escapedStatus = escapePdfText(statusText);
-
-  // Construct PDF stream commands
-  const commands: string[] = [];
-
-  // Top accent bar (Primary brand color: Dark blue slate)
-  commands.push(`0.09 0.29 0.48 rg`);
-  commands.push(`50 780 495 6 re f`);
-
-  if (logo) {
-    // Draw Logo (positioned at x=50, y=738, width=40, height=31)
-    commands.push(`q`);
-    commands.push(`40 0 0 31 50 738 cm`);
-    commands.push(`/Logo Do`);
-    commands.push(`Q`);
-
-    // Company / Portal Title (Shifted right to x=98 to accommodate the logo)
-    commands.push(`BT`);
-    commands.push(`/F2 16 Tf`);
-    commands.push(`0.1 0.1 0.1 rg`);
-    commands.push(`98 750 Td`);
-    commands.push(`(MSP CLIENT PORTAL) Tj`);
-    commands.push(`ET`);
-
-    commands.push(`BT`);
-    commands.push(`/F1 10 Tf`);
-    commands.push(`0.4 0.4 0.4 rg`);
-    commands.push(`98 735 Td`);
-    commands.push(`(Managed IT Services & Support) Tj`);
-    commands.push(`ET`);
-
-    commands.push(`BT`);
-    commands.push(`/F1 9 Tf`);
-    commands.push(`0.4 0.4 0.4 rg`);
-    commands.push(`98 720 Td`);
-    commands.push(`(Support Email: ${APP_METADATA.email}) Tj`);
-    commands.push(`ET`);
-  } else {
-    // Fallback Vector Logo (Modern Isometric Cube)
-    // Left face (Medium Blue)
-    commands.push(`0.25 0.45 0.75 rg`);
-    commands.push(`50 740 m 50 755 l 62 762 l 62 747 l f`);
-    // Right face (Dark Blue)
-    commands.push(`0.09 0.29 0.48 rg`);
-    commands.push(`62 747 m 62 762 l 74 755 l 74 740 l f`);
-    // Top face (Teal/Light Blue)
-    commands.push(`0.4 0.7 0.9 rg`);
-    commands.push(`50 755 m 62 762 l 74 755 l 62 748 l f`);
-
-    // Company / Portal Title (Shifted right to x=85 to accommodate the vector logo)
-    commands.push(`BT`);
-    commands.push(`/F2 16 Tf`);
-    commands.push(`0.1 0.1 0.1 rg`);
-    commands.push(`85 750 Td`);
-    commands.push(`(MSP CLIENT PORTAL) Tj`);
-    commands.push(`ET`);
-
-    commands.push(`BT`);
-    commands.push(`/F1 10 Tf`);
-    commands.push(`0.4 0.4 0.4 rg`);
-    commands.push(`85 735 Td`);
-    commands.push(`(Managed IT Services & Support) Tj`);
-    commands.push(`ET`);
-
-    commands.push(`BT`);
-    commands.push(`/F1 9 Tf`);
-    commands.push(`0.4 0.4 0.4 rg`);
-    commands.push(`85 720 Td`);
-    commands.push(`(Support Email: ${APP_METADATA.email}) Tj`);
-    commands.push(`ET`);
-  }
-
-  // Document Title
-  commands.push(`BT`);
-  commands.push(`/F2 20 Tf`);
-  commands.push(`0.09 0.29 0.48 rg`);
-  commands.push(`400 750 Td`);
-  commands.push(`(${t.invoice}) Tj`);
-  commands.push(`ET`);
-
-  // Invoice Metadata (Left Column, starting at y = 660)
-  commands.push(`BT`);
-  commands.push(`/F2 10 Tf`);
-  commands.push(`0.1 0.1 0.1 rg`);
-  commands.push(`50 660 Td`);
-  commands.push(`(${t.number}) Tj`);
-  commands.push(`/F1 10 Tf`);
-  commands.push(`90 0 Td`);
-  commands.push(`(${escapedInvoiceNum}) Tj`);
-  commands.push(`ET`);
-
-  commands.push(`BT`);
-  commands.push(`/F2 10 Tf`);
-  commands.push(`50 642 Td`);
-  commands.push(`(${t.date}) Tj`);
-  commands.push(`/F1 10 Tf`);
-  commands.push(`90 0 Td`);
-  commands.push(`(${escapedDate}) Tj`);
-  commands.push(`ET`);
-
-  commands.push(`BT`);
-  commands.push(`/F2 10 Tf`);
-  commands.push(`50 624 Td`);
-  commands.push(`(${t.dueDate}) Tj`);
-  commands.push(`/F1 10 Tf`);
-  commands.push(`90 0 Td`);
-  commands.push(`(${escapedDueDate}) Tj`);
-  commands.push(`ET`);
-
-  // Status
-  commands.push(`BT`);
-  commands.push(`/F2 10 Tf`);
-  commands.push(`50 606 Td`);
-  commands.push(`(${t.status}) Tj`);
-  commands.push(`ET`);
-
-  commands.push(`BT`);
-  commands.push(`/F2 10 Tf`);
-  commands.push(`${statusColor} rg`);
-  commands.push(`140 606 Td`);
-  commands.push(`(${escapedStatus}) Tj`);
-  commands.push(`ET`);
-
-  // Bill To Metadata (Right Column, starting at y = 660)
-  commands.push(`BT`);
-  commands.push(`/F2 10 Tf`);
-  commands.push(`0.1 0.1 0.1 rg`);
-  commands.push(`350 660 Td`);
-  commands.push(`(${t.billTo}) Tj`);
-  commands.push(`ET`);
-
-  commands.push(`BT`);
-  commands.push(`/F1 10 Tf`);
-  commands.push(`0.2 0.2 0.2 rg`);
-  commands.push(`350 642 Td`);
-  commands.push(`(${escapedClientName}) Tj`);
-  commands.push(`ET`);
-
-  commands.push(`BT`);
-  commands.push(`/F1 10 Tf`);
-  commands.push(`350 624 Td`);
-  commands.push(`(${escapedClientEmail}) Tj`);
-  commands.push(`ET`);
-
-  commands.push(`BT`);
-  commands.push(`/F1 10 Tf`);
-  commands.push(`350 606 Td`);
-  commands.push(`(${escapedTenantName}) Tj`);
-  commands.push(`ET`);
-
-  // Divider line
-  commands.push(`0.8 G`);
-  commands.push(`1 w`);
-  commands.push(`50 580 m`);
-  commands.push(`545 580 l`);
-  commands.push(`S`);
-
-  // Table Header Background
-  commands.push(`0.95 0.95 0.95 rg`);
-  commands.push(`50 545 495 20 re`);
-  commands.push(`f`);
-
-  // Table Headers
-  commands.push(`BT`);
-  commands.push(`/F2 9 Tf`);
-  commands.push(`0.1 0.1 0.1 rg`);
-  commands.push(`60 551 Td`);
-  commands.push(`(${escapePdfText(t.desc)}) Tj`);
-  commands.push(`270 0 Td`);
-  commands.push(`(${escapePdfText(t.qty)}) Tj`);
-  commands.push(`50 0 Td`);
-  commands.push(`(${escapePdfText(t.unitPrice)}) Tj`);
-  commands.push(`70 0 Td`);
-  commands.push(`(${escapePdfText(t.amount)}) Tj`);
-  commands.push(`ET`);
-
-  // Table Item Row (y = 515)
-  commands.push(`BT`);
-  commands.push(`/F1 9 Tf`);
-  commands.push(`0.2 0.2 0.2 rg`);
-  commands.push(`60 520 Td`);
-  commands.push(`(${escapePdfText(t.serviceDesc)}) Tj`);
-  commands.push(`270 0 Td`);
-  commands.push(`(1) Tj`);
-  commands.push(`50 0 Td`);
-  commands.push(`(${escapePdfText(subtotalVal)}) Tj`);
-  commands.push(`70 0 Td`);
-  commands.push(`(${escapePdfText(subtotalVal)}) Tj`);
-  commands.push(`ET`);
-
-  // Table Divider Line
-  commands.push(`0.9 G`);
-  commands.push(`0.5 w`);
-  commands.push(`50 505 m`);
-  commands.push(`545 505 l`);
-  commands.push(`S`);
-
-  // Payment terms & Notes (Left Side, y = 460)
-  commands.push(`BT`);
-  commands.push(`/F2 9 Tf`);
-  commands.push(`0.1 0.1 0.1 rg`);
-  commands.push(`50 460 Td`);
-  commands.push(`(${escapePdfText(t.paymentTerms)}) Tj`);
-  commands.push(`ET`);
-
-  commands.push(`BT`);
-  commands.push(`/F1 8.5 Tf`);
-  commands.push(`0.4 0.4 0.4 rg`);
-  commands.push(`50 445 Td`);
-  commands.push(`(${escapePdfText(t.paymentDue)}) Tj`);
-  commands.push(`ET`);
-
-  commands.push(`BT`);
-  commands.push(`/F1 8.5 Tf`);
-  commands.push(`50 432 Td`);
-  commands.push(`(${escapePdfText(t.paymentPortal)}) Tj`);
-  commands.push(`ET`);
-
-  // Calculations Summary (Right Side, y = 460)
-  commands.push(`BT`);
-  commands.push(`/F1 9.5 Tf`);
-  commands.push(`0.3 0.3 0.3 rg`);
-  commands.push(`360 460 Td`);
-  commands.push(`(${escapePdfText(t.subtotal)}) Tj`);
-  commands.push(`110 0 Td`);
-  commands.push(`(${escapePdfText(subtotalVal)}) Tj`);
-  commands.push(`ET`);
-
-  commands.push(`BT`);
-  commands.push(`/F1 9.5 Tf`);
-  commands.push(`360 442 Td`);
-  commands.push(`(${escapePdfText(t.tax)}) Tj`);
-  commands.push(`110 0 Td`);
-  commands.push(`(${escapePdfText(taxVal)}) Tj`);
-  commands.push(`ET`);
-
-  // Summary Divider Line
-  commands.push(`0.8 G`);
-  commands.push(`1 w`);
-  commands.push(`360 430 m`);
-  commands.push(`545 430 l`);
-  commands.push(`S`);
-
-  // Total
-  commands.push(`BT`);
-  commands.push(`/F2 11 Tf`);
-  commands.push(`0.1 0.1 0.1 rg`);
-  commands.push(`360 412 Td`);
-  commands.push(`(${escapePdfText(t.total)}) Tj`);
-  commands.push(`110 0 Td`);
-  commands.push(`(${escapePdfText(totalVal)}) Tj`);
-  commands.push(`ET`);
-
-  // Footer divider line
-  commands.push(`0.8 G`);
-  commands.push(`1 w`);
-  commands.push(`50 100 m`);
-  commands.push(`545 100 l`);
-  commands.push(`S`);
-
-  // Footer Text
-  commands.push(`BT`);
-  commands.push(`/F1 8.5 Tf`);
-  commands.push(`0.4 0.4 0.4 rg`);
-  commands.push(`50 80 Td`);
-  commands.push(`(${escapePdfText(t.thankYou)}) Tj`);
-  commands.push(`ET`);
-
-  commands.push(`BT`);
-  commands.push(`/F1 8.5 Tf`);
-  commands.push(`380 80 Td`);
-  commands.push(`(${escapePdfText(t.support)}) Tj`);
-  commands.push(`ET`);
-
-  const streamContent = commands.join('\n');
-  const objContent = `<< /Length ${Buffer.from(streamContent, 'binary').length} >>\nstream\n${streamContent}\nendstream`;
-  
-  doc.addObject(objContent);
-
-  // Logo objects (obj 7 & 8)
-  if (logo) {
-    // Logo RGB (obj 7)
-    const rgbHeader = Buffer.from(`<<
-  /Type /XObject
-  /Subtype /Image
-  /Width ${logo.width}
-  /Height ${logo.height}
-  /ColorSpace /DeviceRGB
-  /BitsPerComponent 8
-  /Filter /FlateDecode
-  /SMask 8 0 R
-  /Length ${logo.rgbBuffer.length}
->>
-stream\n`, 'binary');
-    const rgbTrailer = Buffer.from('\nendstream', 'binary');
-    const rgbObjBuffer = Buffer.concat([rgbHeader, logo.rgbBuffer, rgbTrailer]);
-    doc.addObject(rgbObjBuffer);
-
-    // Logo Alpha Mask (obj 8)
-    const alphaHeader = Buffer.from(`<<
-  /Type /XObject
-  /Subtype /Image
-  /Width ${logo.width}
-  /Height ${logo.height}
-  /ColorSpace /DeviceGray
-  /BitsPerComponent 8
-  /Filter /FlateDecode
-  /Length ${logo.alphaBuffer.length}
->>
-stream\n`, 'binary');
-    const alphaTrailer = Buffer.from('\nendstream', 'binary');
-    const alphaObjBuffer = Buffer.concat([alphaHeader, logo.alphaBuffer, alphaTrailer]);
-    doc.addObject(alphaObjBuffer);
-  }
-
-  return doc.build();
+  // Top face (Teal/Light Blue)
+  doc.polygon([x, y + 10], [x + 12, y + 17], [x + 24, y + 10], [x + 12, y + 3]).fill('#66b2e6');
+  doc.restore();
 }
