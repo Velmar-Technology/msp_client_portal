@@ -12,7 +12,9 @@
     "test:watch": "vitest",
     "test:email": "tsx src/scripts/testEmail.ts",
     "db:migrate": "tsx src/shared/db/migrate.ts",
-    "db:seed": "tsx src/db/seed.ts"
+    "db:seed": "tsx src/shared/db/seed.ts",
+    "db:seed:faker": "tsx src/shared/db/seedFaker.ts",
+    "db:reset": "tsx src/shared/db/reset.ts"
   },
   "dependencies": {
     "@shared/errors": "*",
@@ -38,6 +40,7 @@
     "zod": "3.24.2"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.6.0",
     "@types/bcrypt": "5.0.2",
     "@types/cors": "2.8.17",
     "@types/express": "5.0.2",
