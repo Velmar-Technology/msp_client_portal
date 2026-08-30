@@ -36,6 +36,13 @@ Model Context Protocol (MCP) server providing LLMs (Antigravity, Claude Desktop,
 - **`msp_flush_dns_and_renew_dhcp`**: Flushes local DNS cache and renews DHCP lease.
 - **`msp_clean_temp_storage`**: Calculates and purges Windows/User temp files and dump files with dry-run support.
 
+### 7. 🔐 Zero Standing Privileges & Hybrid Authorization (BL-302)
+- **`msp_request_ephemeral_access`**: Requests Just-In-Time (JIT) elevated privilege access (`ADMIN`, `TECHNICIAN`, etc.) with TTL, justification, and emergency break-glass.
+- **`msp_list_active_jit_grants`**: Queries active ephemeral elevation grants and remaining validity TTL.
+- **`msp_revoke_ephemeral_grant`**: Immediately revokes an active ephemeral elevation grant.
+- **`msp_check_access_decision`**: Tests permission evaluation against the Unified PDP (RBAC + Zanzibar ReBAC + Policy-as-Code ABAC).
+- **`msp_get_trust_score`**: Queries real-time Continuous Adaptive Trust (CAT) risk anomaly score and risk factors.
+
 ---
 
 ## 📜 Built-In MCP Prompts
