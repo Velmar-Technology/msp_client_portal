@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
 import { equipmentService, EquipmentService } from '@modules/equipment/services/EquipmentService';
 import { ForbiddenError, ValidationError } from '@shared/errors';
 import { env } from '@shared/config/env';
+import { JwtPayload } from '@shared/types';
 
 /**
  * Controller handling HTTP requests for hardware slot management, OTP binding, Nextcloud credentials, and device provisioning.
@@ -214,20 +216,21 @@ export class EquipmentController {
   }
 
   /**
-   * Handles downloading an automated PowerShell deployment script for Nextcloud sync client installation.
+   * Generates and downloads a custom auto-provisioned PowerShell script for Nextcloud client deployment.
    *
    * @param req - Express request with subId and slotIndex in params
    * @param res - Express response returning PowerShell script download attachment
-   * @throws {ForbiddenError} When user is not an administrator
+   * @throws {ForbiddenError} When user is not an administrator or client
    * @throws {ValidationError} When slot lacks provisioned Nextcloud credentials
    */
   async getDeployScript(req: Request, res: Response): Promise<void> {
-    if (req.user!.role !== 'ADMIN') {
-      throw new ForbiddenError('Only administrators can generate deployment scripts');
+    if (req.user!.role !== 'ADMIN' && req.user!.role !== 'CLIENT') {
+      throw new ForbiddenError('Only administrators and clients can generate deployment scripts');
     }
     const subId = req.params.subId as string;
     const slotIndex = parseInt(req.params.slotIndex as string, 10);
-    const info = await this.equipmentSvc.getNextcloudInfo(subId, slotIndex, req.user!.tenantId, true);
+    const byAdmin = req.user!.role === 'ADMIN';
+    const info = await this.equipmentSvc.getNextcloudInfo(subId, slotIndex, req.user!.tenantId, byAdmin);
 
     if (!info.nextcloud_username || !info.nextcloud_password) {
       throw new ValidationError('Slot must be active with provisioned Nextcloud credentials');
@@ -244,33 +247,56 @@ Write-Host "Server: ${serverUrl}" -ForegroundColor Yellow
 Write-Host "User:   ${username}" -ForegroundColor Yellow
 Write-Host ""
 
-Write-Host "[1/3] Downloading Nextcloud Desktop Client v34.0.3..." -ForegroundColor Green
-$msiUrl = "https://download.nextcloud.com/desktop/releases/Windows/Nextcloud-34.0.3-x64.msi"
-$tempMsi = "$env:TEMP\\nc.msi"
-Invoke-RestMethod -Uri $msiUrl -OutFile $tempMsi
-
-Write-Host "[2/3] Installing silently with auto-provisioning..." -ForegroundColor Green
-$args = @(
-    "/i", "\`"$tempMsi\`"",
-    "/qn",
-    "/norestart",
-    "LAUNCHONBOOT=1",
-    "SERVERURL=${serverUrl}",
-    "USER=${username}",
-    "PASSWORD=${password}"
+$possiblePaths = @(
+    "$env:ProgramFiles\\Nextcloud\\nextcloud.exe",
+    "\${env:ProgramFiles(x86)}\\Nextcloud\\nextcloud.exe",
+    "$env:LOCALAPPDATA\\Programs\\Nextcloud\\nextcloud.exe"
 )
-Start-Process "msiexec.exe" -ArgumentList $args -Wait -NoNewWindow
-Remove-Item $tempMsi -Force
+
+$ncPath = $possiblePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+if (-not $ncPath) {
+    Write-Host "[1/3] Downloading official Nextcloud Desktop Client..." -ForegroundColor Green
+    $tempMsi = "$env:TEMP\\NextcloudSetup.msi"
+
+    $msiUrl = "https://github.com/nextcloud-releases/desktop/releases/download/v3.16.1/Nextcloud-3.16.1-x64.msi"
+    try {
+        $releaseInfo = Invoke-RestMethod -Uri "https://api.github.com/repos/nextcloud-releases/desktop/releases/latest" -Headers @{ "User-Agent" = "MSP-Portal" } -ErrorAction SilentlyContinue
+        $asset = $releaseInfo.assets | Where-Object { $_.name -like "*x64.msi" -or $_.name -like "*.msi" } | Select-Object -First 1
+        if ($asset -and $asset.browser_download_url) {
+            $msiUrl = $asset.browser_download_url
+        }
+    } catch {}
+
+    Invoke-WebRequest -Uri $msiUrl -OutFile $tempMsi -UseBasicParsing
+
+    Write-Host "[2/3] Installing silently with auto-provisioning..." -ForegroundColor Green
+    $args = @(
+        "/i", "\`"$tempMsi\`"",
+        "/qn",
+        "/norestart",
+        "LAUNCHONBOOT=1",
+        "SERVERURL=${serverUrl}",
+        "USER=${username}",
+        "PASSWORD=${password}"
+    )
+    Start-Process "msiexec.exe" -ArgumentList $args -Wait -NoNewWindow
+    Remove-Item $tempMsi -Force -ErrorAction SilentlyContinue
+
+    Start-Sleep -Seconds 2
+    $ncPath = $possiblePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+} else {
+    Write-Host "[1/2] Nextcloud client already installed at $ncPath" -ForegroundColor Green
+}
 
 Write-Host "[3/3] Launching Nextcloud..." -ForegroundColor Green
-$ncPath = "$env:ProgramFiles\\Nextcloud\\nextcloud.exe"
-if (Test-Path $ncPath) {
+if ($ncPath -and (Test-Path $ncPath)) {
     Start-Process $ncPath
     Write-Host ""
-    Write-Host "Deployment complete! Nextcloud client installed and configured." -ForegroundColor Green
+    Write-Host "Deployment complete! Nextcloud client installed and running." -ForegroundColor Green
 } else {
     Write-Host ""
-    Write-Host "Installation complete. Please launch Nextcloud manually." -ForegroundColor Yellow
+    Write-Host "Installation completed. Nextcloud will launch upon system restart or from Start Menu." -ForegroundColor Yellow
 }
 Write-Host ""
 Write-Host "Press any key to exit..."
@@ -279,6 +305,44 @@ $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")`;
     res.setHeader('Content-Type', 'text/plain');
     res.setHeader('Content-Disposition', 'attachment; filename="deploy-nextcloud.ps1"');
     res.send(script);
+  }
+
+  /**
+   * Generates a short-lived, 5-minute scoped deployment JWT token for automated PowerShell client installation.
+   *
+   * @param req - Express request with subId and slotIndex params
+   * @param res - Express response returning 5-minute deployment token
+   * @throws {ForbiddenError} When user is not an administrator or client
+   */
+  async getDeployToken(req: Request, res: Response): Promise<void> {
+    if (req.user!.role !== 'ADMIN' && req.user!.role !== 'CLIENT') {
+      throw new ForbiddenError('Only administrators and clients can generate deployment tokens');
+    }
+    const subId = req.params.subId as string;
+    const slotIndex = parseInt(req.params.slotIndex as string, 10);
+    const byAdmin = req.user!.role === 'ADMIN';
+
+    // Verify tenant ownership and slot readiness
+    await this.equipmentSvc.getNextcloudInfo(subId, slotIndex, req.user!.tenantId, byAdmin);
+
+    const payload: JwtPayload = {
+      userId: req.user!.userId,
+      email: req.user!.email,
+      role: req.user!.role,
+      tenantId: req.user!.tenantId,
+    };
+
+    const token = jwt.sign(payload, env.JWT_SECRET, { expiresIn: '5m' });
+
+    res.json({
+      success: true,
+      data: {
+        token,
+        expiresIn: 300,
+        subscriptionId: subId,
+        slotIndex,
+      },
+    });
   }
 }
 

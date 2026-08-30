@@ -20,10 +20,16 @@ export async function gatewayAuthMiddleware(
   _res: Response,
   next: NextFunction
 ): Promise<void> {
+  let token: string | undefined;
   const authHeader = req.headers.authorization;
 
   if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.split(' ')[1];
+    token = authHeader.split(' ')[1];
+  } else if (typeof req.query?.token === 'string' && req.query.token.length > 0) {
+    token = req.query.token as string;
+  }
+
+  if (token) {
     try {
       const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
 

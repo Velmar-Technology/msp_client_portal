@@ -950,8 +950,8 @@
     "paginationShow": "Show:",
     "paginationPrev": "Previous page",
     "paginationNext": "Next page",
-    "tableClientTenant": "Client / Tenant",
-    "tablePlanService": "Plan / Service",
+    "tableClientTenant": "Client",
+    "tablePlanService": "Plan",
     "unknownClient": "Unknown Client",
     "unknownTenant": "Unknown Tenant",
     "notAvailable": "N/A",
@@ -1679,7 +1679,7 @@
     },
     "tabs": {
       "quote": "Quotation",
-      "subscription": "Plan / Sub",
+      "subscription": "Subscribe",
       "followup": "Follow-up",
       "timeline": "Chatter"
     },

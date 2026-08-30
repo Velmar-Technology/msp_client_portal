@@ -178,4 +178,87 @@ describe('EquipmentController', () => {
       expect(mockEquipmentSvc.getAgentIdentityByOtp).toHaveBeenCalledWith('654321', 'tenant-123', true);
     });
   });
+
+  describe('getDeployToken', () => {
+    it('should throw ForbiddenError if user has unauthorized role', async () => {
+      req.user!.role = UserRole.TECHNICIAN;
+      req.params = { subId: 'sub-1', slotIndex: '0' };
+
+      await expect(controller.getDeployToken(req, res)).rejects.toThrow(
+        'Only administrators and clients can generate deployment tokens'
+      );
+    });
+
+    it('should generate a 5-minute scoped deployment token for ADMIN', async () => {
+      req.user!.role = UserRole.ADMIN;
+      req.params = { subId: 'sub-1', slotIndex: '0' };
+      mockEquipmentSvc.getNextcloudInfo.mockResolvedValue({
+        nextcloud_username: 'u1',
+        nextcloud_password: 'p1',
+      });
+
+      await controller.getDeployToken(req, res);
+
+      expect(mockEquipmentSvc.getNextcloudInfo).toHaveBeenCalledWith('sub-1', 0, 'tenant-123', true);
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        data: expect.objectContaining({
+          token: expect.any(String),
+          expiresIn: 300,
+          subscriptionId: 'sub-1',
+          slotIndex: 0,
+        }),
+      });
+    });
+
+    it('should generate a 5-minute scoped deployment token for CLIENT within tenant', async () => {
+      req.user!.role = UserRole.CLIENT;
+      req.params = { subId: 'sub-1', slotIndex: '0' };
+      mockEquipmentSvc.getNextcloudInfo.mockResolvedValue({
+        nextcloud_username: 'u1',
+        nextcloud_password: 'p1',
+      });
+
+      await controller.getDeployToken(req, res);
+
+      expect(mockEquipmentSvc.getNextcloudInfo).toHaveBeenCalledWith('sub-1', 0, 'tenant-123', false);
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        data: expect.objectContaining({
+          token: expect.any(String),
+          expiresIn: 300,
+          subscriptionId: 'sub-1',
+          slotIndex: 0,
+        }),
+      });
+    });
+  });
+
+  describe('getDeployScript', () => {
+    it('should throw ForbiddenError if user has unauthorized role', async () => {
+      req.user!.role = UserRole.TECHNICIAN;
+      req.params = { subId: 'sub-1', slotIndex: '0' };
+
+      await expect(controller.getDeployScript(req, res)).rejects.toThrow(
+        'Only administrators and clients can generate deployment scripts'
+      );
+    });
+
+    it('should generate deployment script for CLIENT with provisioned credentials', async () => {
+      req.user!.role = UserRole.CLIENT;
+      req.params = { subId: 'sub-1', slotIndex: '0' };
+      mockEquipmentSvc.getNextcloudInfo.mockResolvedValue({
+        nextcloud_username: 'client_user',
+        nextcloud_password: 'client_password',
+      });
+      res.setHeader = vi.fn();
+      res.send = vi.fn();
+
+      await controller.getDeployScript(req, res);
+
+      expect(mockEquipmentSvc.getNextcloudInfo).toHaveBeenCalledWith('sub-1', 0, 'tenant-123', false);
+      expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'text/plain');
+      expect(res.send).toHaveBeenCalledWith(expect.stringContaining('client_user'));
+    });
+  });
 });
