@@ -445,6 +445,8 @@
     "statusCancelled": "Cancelled",
     "of": "of",
     "createModalTitle": "Create New Ticket",
+    "afterHoursBannerTitle": "Outside Support Business Hours",
+    "afterHoursNotice": "Technical support operates Mon–Fri from 9:00 AM to 4:00 PM AST (excluding holidays). Your ticket will be recorded immediately, but response time (SLA) calculation will begin at 9:00 AM on the following business day.",
     "modalTitleLabel": "Title",
     "modalTitlePlaceholder": "Brief description of the issue",
     "modalDescLabel": "Description",
@@ -548,6 +550,9 @@
     "slaDescription": "Warranty & Service Outage ticket SLA is active.",
     "slaRemaining": "Remaining:",
     "information": "Information",
+    "afterHoursBadge": "After-Hours Submission",
+    "slaStartsAt": "SLA Starts:",
+    "afterHoursExplanation": "Submitted outside business hours (Mon-Fri 9:00 AM - 4:00 PM AST). SLA response time evaluation begins on {{time}}.",
     "assignment": "Assignment",
     "client": "Client",
     "assignBtn": "Assign"

@@ -445,6 +445,8 @@
     "statusCancelled": "Cancelado",
     "of": "de",
     "createModalTitle": "Crear Nuevo Ticket",
+    "afterHoursBannerTitle": "Fuera de Horario Laboral de Soporte",
+    "afterHoursNotice": "El soporte técnico opera de Lunes a Viernes de 9:00 AM a 4:00 PM AST (excluyendo días feriados). Su ticket se registrará de inmediato, pero el cálculo del tiempo de respuesta (SLA) iniciará a las 9:00 AM del siguiente día laborable.",
     "modalTitleLabel": "Título",
     "modalTitlePlaceholder": "Breve descripción del problema",
     "modalDescLabel": "Descripción",
@@ -548,6 +550,9 @@
     "slaDescription": "La ventana de SLA para tickets de Garantía y Caída de Servicio está activa.",
     "slaRemaining": "Restante:",
     "information": "Información",
+    "afterHoursBadge": "Recibido Fuera de Horario",
+    "slaStartsAt": "Inicio de SLA:",
+    "afterHoursExplanation": "Enviado fuera de horario laboral (Lun-Vie 9:00 AM - 4:00 PM AST). La evaluación del tiempo de respuesta (SLA) inicia el {{time}}.",
     "assignment": "Asignación",
     "client": "Cliente",
     "assignBtn": "Asignar"

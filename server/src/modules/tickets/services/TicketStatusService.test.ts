@@ -11,6 +11,11 @@ const mocks = vi.hoisted(() => {
   };
 });
 
+vi.mock('@shared/utils/businessHours', () => ({
+  calculateElapsedBusinessMs: (startDate: Date, endDate: Date = new Date()) =>
+    endDate.getTime() - startDate.getTime(),
+}));
+
 vi.mock('@modules/tickets/repositories/TicketRepository', () => {
   return {
     ticketRepository: {

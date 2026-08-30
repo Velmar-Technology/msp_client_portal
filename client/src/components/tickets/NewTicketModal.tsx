@@ -1,9 +1,11 @@
 import { useState, useEffect, memo } from "react";
-import { X } from "lucide-react";
+import { X, Clock } from "lucide-react";
 import { ticketService } from "@/services/ticketService";
 import { equipmentService } from "@/services/equipmentService";
 import type { SubscriptionEquipment } from "@/services/equipmentService";
 import { useTranslation } from "react-i18next";
+import { useBusinessHours } from "@/hooks/useBusinessHours";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,6 +35,7 @@ export interface NewTicketModalProps {
 
 export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated }: NewTicketModalProps) {
   const { t } = useTranslation();
+  const { isOpen: isBusinessHoursOpen } = useBusinessHours();
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newCategory, setNewCategory] = useState("REPAIR");
@@ -125,6 +128,21 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
           </DialogTitle>
           <DialogDescription className="sr-only">{t("tickets.createModalTitle")}</DialogDescription>
         </DialogHeader>
+
+        {!isBusinessHoursOpen && (
+          <Alert className="bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs">
+            <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <div>
+              <AlertTitle className="font-semibold text-xs text-amber-800 dark:text-amber-300">
+                {t("tickets.afterHoursBannerTitle")}
+              </AlertTitle>
+              <AlertDescription className="text-[11px] leading-relaxed text-amber-700 dark:text-amber-300/90 mt-0.5">
+                {t("tickets.afterHoursNotice")}
+              </AlertDescription>
+            </div>
+          </Alert>
+        )}
+
         <form onSubmit={handleCreateTicket} className="space-y-4">
           <div>
             <Label htmlFor="new-ticket-title" className="block text-sm font-medium text-foreground mb-1.5">

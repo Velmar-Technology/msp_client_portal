@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getEffectiveSlaStartTime } from '@/lib/businessHours';
 
 export interface SLATimerTicketInput {
   created_at?: string;
@@ -33,8 +34,8 @@ export function useSLATimer(
   }
 
   const isApplicable = applicableCategories.includes(categoryStr) && !!createdAtStr;
-  const createdTime = createdAtStr ? new Date(createdAtStr).getTime() : 0;
-  const deadline = createdTime + SLA_WINDOW_MS;
+  const effectiveStartTime = createdAtStr ? getEffectiveSlaStartTime(new Date(createdAtStr)).getTime() : 0;
+  const deadline = effectiveStartTime + SLA_WINDOW_MS;
 
   const [remaining, setRemaining] = useState(() => {
     if (!isApplicable || !createdAtStr) return 0;

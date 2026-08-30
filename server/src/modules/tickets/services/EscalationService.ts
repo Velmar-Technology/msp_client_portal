@@ -6,6 +6,7 @@ import { assignmentService, AssignmentService } from '@modules/tickets/services/
 import { notificationService, NotificationService } from '@modules/notifications';
 import { NotFoundError, InternalServerError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
+import { calculateElapsedBusinessMs } from '@shared/utils/businessHours';
 import { ESCALATION_THRESHOLDS_MS, TIER_2_SPECIALTY } from '@shared/config/constants';
 import { Ticket, TicketStatus } from '@shared/types';
 
@@ -123,15 +124,20 @@ export class EscalationService {
   }
 
   /**
-   * Checks whether the ticket age is still within priority escalation SLA threshold.
+   * Checks whether the ticket's elapsed business time is still within priority escalation SLA threshold.
+   * Uses business-hours-aware elapsed time so tickets submitted outside business hours
+   * are not prematurely escalated before staff have had their active SLA window.
    *
    * @param ticket - Ticket entity
    * @returns True if within SLA window, false if threshold exceeded
+   * @see Section 3.2 (SLA Calculation)
+   * @see BL-104
    */
   private isWithinThreshold(ticket: Ticket): boolean {
     const threshold = ESCALATION_THRESHOLDS_MS[ticket.priority];
     if (!threshold) return true;
-    return Date.now() - new Date(ticket.created_at).getTime() <= threshold;
+    const elapsedBusinessMs = calculateElapsedBusinessMs(new Date(ticket.created_at));
+    return elapsedBusinessMs <= threshold;
   }
 
   /**

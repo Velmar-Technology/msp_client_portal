@@ -7,6 +7,7 @@ import {
   Paperclip,
   Upload,
   Download,
+  Moon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,7 @@ import {
 } from '@/components/ui/select';
 import type { Ticket, TicketAttachment } from '@/services/ticketService';
 import type { useSLATimer } from '@/hooks/useSLATimer';
+import { useTicketSlaAwareness } from '@/hooks/useBusinessHours';
 import { formatFileSize, getAttachmentIcon, getAttachmentUrl } from './ticketUtils';
 import type { PreviewFileState } from './FilePreviewModal';
 
@@ -83,6 +85,7 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
   getCategoryLabel,
 }) => {
   const { t, i18n } = useTranslation();
+  const slaAwareness = useTicketSlaAwareness(ticket.created_at, i18n.language);
 
   return (
     <div className="flex flex-col gap-6 w-full">
@@ -141,10 +144,26 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
             <span className="font-semibold text-foreground font-mono">
               {new Date(ticket.created_at).toLocaleDateString(
                 i18n.language === 'es_DO' ? 'es-DO' : 'en-US',
-                { year: 'numeric', month: 'short', day: 'numeric' }
+                { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }
               )}
             </span>
           </div>
+          {slaAwareness?.isAfterHours && (
+            <div className="border-t border-border pt-3 flex flex-col gap-1.5">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-muted-foreground flex items-center gap-1">
+                  <Moon className="h-3 w-3 text-amber-500" />
+                  {t('ticketDetail.slaStartsAt')}
+                </span>
+                <span className="font-semibold text-amber-600 dark:text-amber-400 font-mono text-[11px]">
+                  {slaAwareness.formattedSlaStart}
+                </span>
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-snug">
+                {t('ticketDetail.afterHoursExplanation', { time: slaAwareness.formattedSlaStart })}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
