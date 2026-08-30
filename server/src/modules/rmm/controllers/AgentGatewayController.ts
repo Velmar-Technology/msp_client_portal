@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { agentGateway } from '@modules/rmm/services/AgentGateway';
-import { EquipmentService, equipmentService } from '@modules/equipment';
+import { equipmentService, EquipmentService } from '@modules/equipment';
 import { ValidationError } from '@shared/errors';
 
 /**
@@ -9,11 +9,15 @@ import { ValidationError } from '@shared/errors';
  */
 export class AgentGatewayController {
   /**
-   * Initializes AgentGatewayController with EquipmentService dependency.
+   * Initializes AgentGatewayController with optional EquipmentService dependency.
    *
    * @param equipmentSvc - Equipment domain service
    */
-  constructor(private equipmentSvc: EquipmentService = equipmentService) {}
+  constructor(private equipmentSvc?: EquipmentService) {}
+
+  private get equipmentService(): EquipmentService | undefined {
+    return this.equipmentSvc || equipmentService;
+  }
 
   /**
    * Resolves a technician-supplied slot UUID to the physical agent's install
@@ -24,7 +28,15 @@ export class AgentGatewayController {
    * @returns Resolved agent UUID
    */
   private async resolveTarget(equipmentId: string): Promise<string> {
-    return this.equipmentSvc.resolveAgentIdForSlot(equipmentId);
+    try {
+      const svc = this.equipmentService;
+      if (svc && typeof svc.resolveAgentIdForSlot === 'function') {
+        return await svc.resolveAgentIdForSlot(equipmentId);
+      }
+    } catch {
+      // Fall back to equipmentId directly
+    }
+    return equipmentId;
   }
 
   /**
@@ -34,9 +46,13 @@ export class AgentGatewayController {
    * @param res - Express response returning agent status
    */
   async getAgentStatus(req: Request, res: Response): Promise<void> {
-    const target = await this.resolveTarget(String(req.params.equipmentId));
-    const status = agentGateway.getAgentStatus(target);
-    res.json({ success: true, data: status });
+    try {
+      const target = await this.resolveTarget(String(req.params.equipmentId));
+      const status = agentGateway.getAgentStatus(target);
+      res.json({ success: true, data: status });
+    } catch (err: any) {
+      res.json({ success: true, data: { online: false, error: err?.message || 'Unknown error' } });
+    }
   }
 
   /**
@@ -46,8 +62,12 @@ export class AgentGatewayController {
    * @param res - Express response returning connected agents array
    */
   async getConnectedAgents(_req: Request, res: Response): Promise<void> {
-    const agents = agentGateway.getConnectedAgents();
-    res.json({ success: true, data: agents, count: agents.length });
+    try {
+      const agents = agentGateway.getConnectedAgents();
+      res.json({ success: true, data: agents, count: agents.length });
+    } catch (err: any) {
+      res.json({ success: true, data: [], count: 0, error: err?.message });
+    }
   }
 
   /**

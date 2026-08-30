@@ -15,7 +15,21 @@ import { registerMspPrompts } from './prompts/mspPrompts.js';
 // Load environment variables (.env)
 dotenv.config();
 
-const apiUrl = process.env.MSP_API_URL || 'http://localhost:3001/api/v1';
+/**
+ * Resolves the backend API base URL.
+ * Priority: MSP_SERVER_URL (server root, e.g. http://localhost:3001 — the
+ * `/api/v1` suffix is appended automatically) > MSP_API_URL (full API base,
+ * kept for backward compatibility) > local default.
+ */
+function resolveApiUrl(): string {
+  const serverUrl = process.env.MSP_SERVER_URL?.replace(/\/+$/, '');
+  if (serverUrl) {
+    return serverUrl.endsWith('/api/v1') ? serverUrl : `${serverUrl}/api/v1`;
+  }
+  return process.env.MSP_API_URL || 'http://localhost:3001/api/v1';
+}
+
+const apiUrl = resolveApiUrl();
 const apiToken = process.env.MSP_API_TOKEN || '';
 const tenantId = process.env.MSP_TENANT_ID;
 
@@ -46,7 +60,7 @@ registerMspPrompts(server);
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('[MSP MCP Server] Started and listening on stdio transport.');
+  console.error(`[MSP MCP Server] Started and listening on stdio transport. Backend API: ${apiUrl}`);
 }
 
 main().catch((error) => {

@@ -89,11 +89,12 @@ export class MspApiClient {
 
   // --- Equipment & Inventory Endpoints ---
   async getClientEquipment(tenantId?: string): Promise<EquipmentSlot[]> {
-    return this.request<EquipmentSlot[]>({
+    const res = await this.request<any>({
       method: 'GET',
-      url: '/equipment/slots',
+      url: '/equipment/my-devices',
       params: tenantId ? { tenantId } : undefined,
     });
+    return res.data || res;
   }
 
   // --- RMM Telemetry & Diagnostics ---

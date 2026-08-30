@@ -86,6 +86,30 @@ export function registerRmmTools(server: McpServer, apiClient: MspApiClient) {
   );
 
   // ── Remote Agent Gateway Tools ────────────────────────────────────────────
+  // Tool: msp_list_connected_agents
+  server.tool(
+    'msp_list_connected_agents',
+    'List all currently connected and online MSP Rust endpoint agents across all devices',
+    {},
+    async () => {
+      try {
+        const agents = await apiClient.getConnectedAgents();
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(agents, null, 2),
+            },
+          ],
+        };
+      } catch (err: any) {
+        return {
+          isError: true,
+          content: [{ type: 'text', text: `Failed to list connected agents: ${err.message}` }],
+        };
+      }
+    }
+  );
 
   // 4. Tool: msp_remote_agent_status
   server.tool(

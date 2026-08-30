@@ -84,7 +84,7 @@ pub fn gather_system_metrics() -> Value {
         0.0
     };
 
-    let disk_list: Vec<Value> = disks
+    let disk_list: Vec<DiskMetrics> = disks
         .iter()
         .map(|d| {
             let total = d.total_space();
@@ -95,52 +95,52 @@ pub fn gather_system_metrics() -> Value {
             } else {
                 0.0
             };
-            serde_json::json!({
-                "name": d.name().to_string_lossy(),
-                "mount_point": d.mount_point().to_string_lossy(),
-                "file_system": d.file_system().to_string_lossy(),
-                "total_bytes": total,
-                "available_bytes": available,
-                "used_bytes": used,
-                "usage_pct": (usage_pct * 10.0).round() / 10.0
-            })
+            DiskMetrics {
+                name: d.name().to_string_lossy().into_owned(),
+                mount_point: d.mount_point().to_string_lossy().into_owned(),
+                file_system: d.file_system().to_string_lossy().into_owned(),
+                total_bytes: total,
+                available_bytes: available,
+                used_bytes: used,
+                usage_pct: (usage_pct * 10.0).round() / 10.0,
+            }
         })
         .collect();
 
-    let net_list: Vec<Value> = networks
+    let net_list: Vec<NetworkAdapter> = networks
         .iter()
-        .map(|(name, data)| {
-            serde_json::json!({
-                "name": name,
-                "mac_address": data.mac_address().to_string(),
-                "received_bytes": data.total_received(),
-                "transmitted_bytes": data.total_transmitted()
-            })
+        .map(|(name, data)| NetworkAdapter {
+            name: name.clone(),
+            mac_address: data.mac_address().to_string(),
+            received_bytes: data.total_received(),
+            transmitted_bytes: data.total_transmitted(),
         })
         .collect();
 
-    serde_json::json!({
-        "hostname": System::host_name().unwrap_or_else(|| "Unknown".into()),
-        "os_name": System::name().unwrap_or_else(|| "Unknown".into()),
-        "os_version": System::long_os_version().unwrap_or_else(|| "Unknown".into()),
-        "architecture": std::env::consts::ARCH,
-        "uptime_hours": (System::uptime() as f64 / 3600.0 * 100.0).round() / 100.0,
-        "cpu": {
-            "brand": cpu_brand,
-            "core_count": core_count,
-            "global_usage_pct": (global_cpu * 10.0).round() / 10.0,
-            "per_core_usage": per_core.iter().map(|v| (v * 10.0).round() / 10.0).collect::<Vec<f32>>()
+    let metrics = SystemMetrics {
+        hostname: System::host_name().unwrap_or_else(|| "Unknown".into()),
+        os_name: System::name().unwrap_or_else(|| "Unknown".into()),
+        os_version: System::long_os_version().unwrap_or_else(|| "Unknown".into()),
+        architecture: std::env::consts::ARCH.to_string(),
+        uptime_hours: (System::uptime() as f64 / 3600.0 * 100.0).round() / 100.0,
+        cpu: CpuMetrics {
+            brand: cpu_brand,
+            core_count,
+            global_usage_pct: (global_cpu * 10.0).round() / 10.0,
+            per_core_usage: per_core.iter().map(|v| (v * 10.0).round() / 10.0).collect(),
         },
-        "memory": {
-            "total_bytes": total_mem,
-            "used_bytes": used_mem,
-            "free_bytes": free_mem,
-            "usage_pct": (mem_pct * 10.0).round() / 10.0
+        memory: MemoryMetrics {
+            total_bytes: total_mem,
+            used_bytes: used_mem,
+            free_bytes: free_mem,
+            usage_pct: (mem_pct * 10.0).round() / 10.0,
         },
-        "disks": disk_list,
-        "network": net_list,
-        "timestamp": chrono::Utc::now().to_rfc3339()
-    })
+        disks: disk_list,
+        network: net_list,
+        timestamp: chrono::Utc::now().to_rfc3339(),
+    };
+
+    serde_json::to_value(metrics).unwrap_or_else(|_| serde_json::json!({ "error": "metrics serialization failed" }))
 }
 
 /// Queries Windows Event Logs via PowerShell. Returns structured JSON array
@@ -460,13 +460,9 @@ pub fn exec_powershell_script(payload: &Option<Value>) -> Value {
 /// - Linux:   the DMI `product_serial` sysfs node
 pub fn gather_device_identity() -> Value {
     let hostname = sysinfo::System::host_name().unwrap_or_else(|| "Unknown".into());
-    serde_json::json!({
-        "hostname": hostname,
-        "bios_serial": bios_serial(),
-        "manufacturer": manufacturer(),
-        "system_model": system_model(),
-        "collected_at": chrono::Utc::now().to_rfc3339()
-    })
+    let mut payload = identity_payload(hostname, bios_serial(), manufacturer(), system_model());
+    payload["collected_at"] = Value::String(chrono::Utc::now().to_rfc3339());
+    payload
 }
 
 /// Builds a stable identity payload from raw parts (pure helper, unit-testable).
@@ -617,5 +613,101 @@ mod tests {
         assert_eq!(normalize_serial("To be filled by O.E.M."), None);
         assert_eq!(normalize_serial("none"), None);
         assert_eq!(normalize_serial(""), None);
+    }
+
+    #[test]
+    fn system_metrics_serializes_with_expected_keys() {
+        let metrics = SystemMetrics {
+            hostname: "SRV-0421".into(),
+            os_name: "Windows".into(),
+            os_version: "Windows 11 Pro".into(),
+            architecture: "x86_64".into(),
+            uptime_hours: 12.5,
+            cpu: CpuMetrics {
+                brand: "Intel".into(),
+                core_count: 8,
+                global_usage_pct: 25.5,
+                per_core_usage: vec![10.0, 20.0],
+            },
+            memory: MemoryMetrics {
+                total_bytes: 16_000,
+                used_bytes: 8_000,
+                free_bytes: 8_000,
+                usage_pct: 50.0,
+            },
+            disks: vec![DiskMetrics {
+                name: "C:".into(),
+                mount_point: "C:\\".into(),
+                file_system: "NTFS".into(),
+                total_bytes: 500_000,
+                available_bytes: 250_000,
+                used_bytes: 250_000,
+                usage_pct: 50.0,
+            }],
+            network: vec![NetworkAdapter {
+                name: "Ethernet".into(),
+                mac_address: "00:11:22:33:44:55".into(),
+                received_bytes: 1_000,
+                transmitted_bytes: 2_000,
+            }],
+            timestamp: "2026-08-29T00:00:00Z".into(),
+        };
+
+        let value = serde_json::to_value(&metrics).expect("serialization must succeed");
+
+        for key in [
+            "hostname", "os_name", "os_version", "architecture", "uptime_hours",
+            "cpu", "memory", "disks", "network", "timestamp",
+        ] {
+            assert!(value.get(key).is_some(), "missing top-level key: {key}");
+        }
+        for key in ["brand", "core_count", "global_usage_pct", "per_core_usage"] {
+            assert!(value["cpu"].get(key).is_some(), "missing cpu key: {key}");
+        }
+        for key in ["total_bytes", "used_bytes", "free_bytes", "usage_pct"] {
+            assert!(value["memory"].get(key).is_some(), "missing memory key: {key}");
+        }
+        for key in ["name", "mount_point", "file_system", "total_bytes", "available_bytes", "used_bytes", "usage_pct"] {
+            assert!(value["disks"][0].get(key).is_some(), "missing disk key: {key}");
+        }
+        for key in ["name", "mac_address", "received_bytes", "transmitted_bytes"] {
+            assert!(value["network"][0].get(key).is_some(), "missing network key: {key}");
+        }
+    }
+
+    #[test]
+    fn system_metrics_round_trips_through_json() {
+        let metrics = SystemMetrics {
+            hostname: "SRV-0421".into(),
+            os_name: "Windows".into(),
+            os_version: "Windows 11 Pro".into(),
+            architecture: "x86_64".into(),
+            uptime_hours: 1.25,
+            cpu: CpuMetrics {
+                brand: "AMD".into(),
+                core_count: 4,
+                global_usage_pct: 5.0,
+                per_core_usage: vec![1.0, 2.0, 3.0, 4.0],
+            },
+            memory: MemoryMetrics {
+                total_bytes: 8_000,
+                used_bytes: 4_000,
+                free_bytes: 4_000,
+                usage_pct: 50.0,
+            },
+            disks: vec![],
+            network: vec![],
+            timestamp: "2026-08-29T00:00:00Z".into(),
+        };
+
+        let value = serde_json::to_value(&metrics).expect("serialization must succeed");
+        let restored: SystemMetrics =
+            serde_json::from_value(value).expect("deserialization must succeed");
+
+        assert_eq!(restored.hostname, "SRV-0421");
+        assert_eq!(restored.cpu.core_count, 4);
+        assert_eq!(restored.memory.total_bytes, 8_000);
+        assert!(restored.disks.is_empty());
+        assert!(restored.network.is_empty());
     }
 }

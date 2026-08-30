@@ -30,6 +30,11 @@ router.get('/my-devices', (req, res) =>
   equipmentController.getMyDevices(req, res)
 );
 
+/** GET /api/v1/equipment/slots — Get registered equipment/device slots */
+router.get('/slots', (req, res) =>
+  equipmentController.getMyDevices(req, res)
+);
+
 /** GET /api/v1/equipment/agent-identity?otp=XXXXXX — Agent-discovered identity prefill for a slot by activation code */
 router.get('/agent-identity', (req, res) =>
   equipmentController.getAgentIdentity(req, res)
