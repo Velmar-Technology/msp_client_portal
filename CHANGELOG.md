@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.8.6](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.8.5...v1.8.6) (2026-08-31)
+
+
+### Features
+
+* **equipment:** require OTP pairing code for admin device provisioning ([8927452](https://github.com/Velmar-Technology/msp_client_portal/commit/892745266c7fdce826e12d6b565e941ef63151c2))
+
 ## [1.8.5](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.8.4...v1.8.5) (2026-08-31)
 
 
