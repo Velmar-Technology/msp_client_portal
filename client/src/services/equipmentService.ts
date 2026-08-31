@@ -142,13 +142,14 @@ export const equipmentService = {
   /**
    * Admin: Directly provisions an administrative device record.
    *
-   * @param data - Device attributes (name, serial, tenantId).
+   * @param data - Device attributes (name, serial, tenantId, otp).
    * @returns Promise resolving to created SubscriptionEquipment entity.
    */
   async addAdminDevice(data: {
     deviceName: string;
     deviceSerial?: string;
     tenantId?: string;
+    otp: string;
   }): Promise<SubscriptionEquipment> {
     const response = await api.post('/equipment/admin/devices', data);
     return response.data.data;

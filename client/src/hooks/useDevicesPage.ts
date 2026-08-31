@@ -286,7 +286,7 @@ export function useDevicesPage() {
   }, [addDeviceLoading]);
 
   const handleAddAdminDevice = useCallback(
-    async (data: { deviceName: string; deviceSerial?: string; tenantId?: string }) => {
+    async (data: { deviceName: string; deviceSerial?: string; tenantId?: string; otp: string }) => {
       setAddDeviceLoading(true);
       try {
         await equipmentService.addAdminDevice(data);

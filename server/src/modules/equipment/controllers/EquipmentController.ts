@@ -165,7 +165,7 @@ export class EquipmentController {
     if (req.user!.role !== 'ADMIN') {
       throw new ForbiddenError('Only administrators can register devices directly');
     }
-    const { deviceName, deviceSerial, tenantId } = req.body;
+    const { deviceName, deviceSerial, tenantId, otp } = req.body;
     const targetTenantId = (tenantId as string) || req.user!.tenantId;
 
     const device = await this.equipmentSvc.addAdminDevice({
@@ -173,6 +173,7 @@ export class EquipmentController {
       deviceSerial: deviceSerial as string,
       tenantId: targetTenantId,
       adminUserId: req.user!.userId,
+      otp: (otp as string) || '',
     });
 
     res.status(201).json({

@@ -121,10 +121,15 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
     status: 'PENDING_ACTIVATION' | 'ACTIVE';
     device_name?: string;
     device_serial?: string;
-    otp?: string;
-    otp_expires_at?: Date;
-    nextcloud_username?: string;
-    nextcloud_password?: string;
+    agent_instance_id?: string | null;
+    agent_hostname?: string | null;
+    agent_serial?: string | null;
+    agent_last_seen_at?: Date | null;
+    agent_token?: string | null;
+    otp?: string | null;
+    otp_expires_at?: Date | null;
+    nextcloud_username?: string | null;
+    nextcloud_password?: string | null;
     tenant_id: string;
   }): Promise<SubscriptionEquipment> {
     const results = await db

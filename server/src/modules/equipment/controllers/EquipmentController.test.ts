@@ -19,6 +19,8 @@ describe('EquipmentController', () => {
       getAllDevicesForAdmin: vi.fn(),
       getNextcloudInfo: vi.fn(),
       getAgentIdentityByOtp: vi.fn(),
+      addAdminDevice: vi.fn(),
+      deleteAdminDevice: vi.fn(),
     };
     controller = new EquipmentController(mockEquipmentSvc);
 
@@ -322,6 +324,44 @@ describe('EquipmentController', () => {
       await controller.downloadAgentBinary(req, res);
 
       expect(res.download).toHaveBeenCalledWith(expect.any(String), 'msp-agent.exe');
+    });
+  });
+
+  describe('addAdminDevice', () => {
+    it('should throw ForbiddenError if non-admin attempts to add device', async () => {
+      req.user!.role = UserRole.CLIENT;
+      await expect(controller.addAdminDevice(req, res)).rejects.toThrow(
+        'Only administrators can register devices directly'
+      );
+    });
+
+    it('should pass device parameters including OTP to equipmentSvc.addAdminDevice', async () => {
+      req.user!.role = UserRole.ADMIN;
+      req.body = {
+        deviceName: 'Host-Alpha',
+        deviceSerial: 'SN-REAL-123',
+        tenantId: 'tenant-abc',
+        otp: '654321',
+      };
+      mockEquipmentSvc.addAdminDevice.mockResolvedValue({
+        id: 'slot-123',
+        device_name: 'Host-Alpha',
+      });
+
+      await controller.addAdminDevice(req, res);
+
+      expect(mockEquipmentSvc.addAdminDevice).toHaveBeenCalledWith({
+        deviceName: 'Host-Alpha',
+        deviceSerial: 'SN-REAL-123',
+        tenantId: 'tenant-abc',
+        adminUserId: 'user-123',
+        otp: '654321',
+      });
+      expect(res.status).toHaveBeenCalledWith(201);
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        data: expect.objectContaining({ id: 'slot-123' }),
+      });
     });
   });
 });
