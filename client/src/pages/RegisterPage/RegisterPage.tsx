@@ -356,11 +356,12 @@ export function RegisterPage() {
               <form onSubmit={handleFormSubmit} className="space-y-4" autoComplete="off" noValidate>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Group 1: Personal & Organization Info */}
-                  <FieldSet className="p-3.5 bg-muted/40 border border-border rounded-xl space-y-2.5 shadow-xs">
-                    <FieldLegend className="flex items-center gap-1.5 pb-2 mb-0.5 border-b border-border text-[11px] font-bold text-foreground uppercase tracking-wider w-full font-heading">
-                      <User className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-                      <span>{t("register.personalGroupTitle")}</span>
-                    </FieldLegend>
+                  <FieldSet className="p-3.5 bg-muted/40 border border-border rounded-xl space-y-2.5 shadow-xs flex flex-col justify-between">
+                    <div className="space-y-2.5">
+                      <FieldLegend className="flex items-center gap-1.5 pb-2 mb-0.5 border-b border-border text-[11px] font-bold text-foreground uppercase tracking-wider w-full font-heading">
+                        <User className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                        <span>{t("register.personalGroupTitle")}</span>
+                      </FieldLegend>
 
                     <Controller
                       name="name"
@@ -486,6 +487,7 @@ export function RegisterPage() {
                         </Field>
                       )}
                     />
+                    </div>
                   </FieldSet>
 
                   {/* Group 2: Account & Credentials */}
