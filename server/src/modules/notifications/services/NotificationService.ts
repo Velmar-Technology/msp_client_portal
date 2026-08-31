@@ -171,7 +171,7 @@ export class NotificationService {
     // 1. Send Email Notification (if user allows it)
     if (await this.preferenceSvc.shouldNotify(client.id, eventType, 'email')) {
       try {
-        await sendTicketCreatedEmail(client.email, client.name, ticket);
+        await sendTicketCreatedEmail(client.email, client.name, ticket, client.language || 'en_US');
       } catch (error) {
         logger.error('Failed to send ticket creation notification email', { ticketId: ticket.id, error });
       }
@@ -230,7 +230,13 @@ export class NotificationService {
     // 1. Email & WhatsApp (check preferences per channel)
     if (await this.preferenceSvc.shouldNotify(client.id, eventType, 'email')) {
       try {
-        await sendTicketStatusChangedEmail(client.email, client.name, ticket, combinedNotes);
+        await sendTicketStatusChangedEmail(
+          client.email,
+          client.name,
+          ticket,
+          combinedNotes,
+          client.language || 'en_US',
+        );
       } catch (error) {
         logger.error('Failed to send status change email notification', {
           ticketId: ticket.id,
@@ -294,7 +300,12 @@ export class NotificationService {
     // 1. Email
     if (await this.preferenceSvc.shouldNotify(technician.id, eventType, 'email')) {
       try {
-        await sendTicketAssignedEmail(technician.email, technician.name, ticket);
+        await sendTicketAssignedEmail(
+          technician.email,
+          technician.name,
+          ticket,
+          technician.language || 'en_US',
+        );
       } catch (error) {
         logger.error('Failed to send assignment notification email', { ticketId: ticket.id, error });
       }
@@ -328,7 +339,14 @@ export class NotificationService {
     // 1. Email
     if (await this.preferenceSvc.shouldNotify(recipient.id, eventType, 'email')) {
       try {
-        await sendTicketResponseEmail(recipient.email, recipient.name, senderName, ticket, message);
+        await sendTicketResponseEmail(
+          recipient.email,
+          recipient.name,
+          senderName,
+          ticket,
+          message,
+          recipient.language || 'en_US',
+        );
       } catch (error) {
         logger.error('Failed to send ticket response notification email', { ticketId: ticket.id, error });
       }

@@ -82,7 +82,7 @@ describe('emailService', () => {
     expect(callArgs.html).toContain('Client Name');
     expect(callArgs.html).toContain(mockTicket.id);
     expect(callArgs.html).toContain('REPAIR');
-    expect(callArgs.html).toContain('HIGH');
+    expect(callArgs.html).toContain('High');
   });
 
   it('should send ticket status changed email with correct parameters', async () => {
@@ -160,4 +160,44 @@ describe('emailService', () => {
     expect(callArgs.html).toContain('User Name');
     expect(callArgs.html).toContain('654321');
   });
+
+  it('should adapt email template to Spanish (es_DO) when recipient language is Spanish', async () => {
+    await sendTicketCreatedEmail('cliente@example.com', 'Carlos Gómez', mockTicket, 'es_DO');
+
+    expect(mockSendMail).toHaveBeenCalledTimes(1);
+    const callArgs = mockSendMail.mock.calls[0][0] as any;
+    expect(callArgs.to).toBe('cliente@example.com');
+    expect(callArgs.subject).toContain('Ticket Abierto:');
+    expect(callArgs.html).toContain('Hola Carlos Gómez');
+    expect(callArgs.html).toContain('Ticket Abierto Exitosamente');
+    expect(callArgs.html).toContain('Seguir Ticket en el Portal');
+    expect(callArgs.html).toContain('Detalles del Ticket');
+    expect(callArgs.html).toContain('ID del Ticket:');
+    expect(callArgs.html).toContain('Descripción del Problema:');
+  });
+
+  it('should adapt ticket status email to Spanish (es_DO) with localized status badge', async () => {
+    const updatedTicket: Ticket = {
+      ...mockTicket,
+      status: 'IN_PROGRESS',
+    };
+
+    await sendTicketStatusChangedEmail(
+      'cliente@example.com',
+      'Carlos Gómez',
+      updatedTicket,
+      'Revisando componentes.',
+      'es_DO'
+    );
+
+    expect(mockSendMail).toHaveBeenCalledTimes(1);
+    const callArgs = mockSendMail.mock.calls[0][0] as any;
+    expect(callArgs.to).toBe('cliente@example.com');
+    expect(callArgs.subject).toContain('Actualización de Ticket [En Progreso]');
+    expect(callArgs.html).toContain('Hola Carlos Gómez');
+    expect(callArgs.html).toContain('En Progreso');
+    expect(callArgs.html).toContain('Observaciones del Técnico:');
+    expect(callArgs.html).toContain('Revisar Ticket e Historial');
+  });
 });
+
