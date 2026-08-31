@@ -26,7 +26,7 @@ function generateAdminJwt(): string {
 
 async function runMcpWorkflowTest() {
   console.log('================================================================');
-  console.log('🧪 VERIFYING MCP SERVER <-> BACKEND <-> AGENT WORKFLOW');
+  console.log('[TEST] VERIFYING MCP SERVER <-> BACKEND <-> AGENT WORKFLOW');
   console.log('================================================================\n');
 
   const token = generateAdminJwt();
@@ -107,9 +107,9 @@ async function runMcpWorkflowTest() {
 
   let passedToolIsolation = true;
   for (const t of tools) {
-    console.log(`   - 🛠️  ${t.name.padEnd(30)} : ${t.description.slice(0, 60)}...`);
+    console.log(`   - ${t.name.padEnd(30)} : ${t.description.slice(0, 60)}...`);
     if (disallowedTools.includes(t.name)) {
-      console.error(`   ❌ VIOLATION: Tool '${t.name}' executes unproxied on local host!`);
+      console.error(`   [VIOLATION] Tool '${t.name}' executes unproxied on local host!`);
       passedToolIsolation = false;
     }
   }
@@ -117,7 +117,7 @@ async function runMcpWorkflowTest() {
   if (!passedToolIsolation) {
     throw new Error('MCP server exposes unproxied host tools!');
   }
-  console.log('\n✅ Tool Isolation Check: 100% of registered tools route strictly through Backend & Agent!');
+  console.log('\n[OK] Tool Isolation Check: 100% of registered tools route strictly through Backend & Agent!');
 
   // 3. Test Calling Tools
   console.log('\n4. Testing Tool Invocations via Backend Proxy:');
@@ -148,12 +148,12 @@ async function runMcpWorkflowTest() {
   const promptsRes = await sendRpc('prompts/list', {});
   const prompts = promptsRes.result?.prompts || [];
   for (const p of prompts) {
-    console.log(`   - 📜 ${p.name}: ${p.description}`);
+    console.log(`   - ${p.name}: ${p.description}`);
   }
 
   serverProc.kill();
   console.log('\n================================================================');
-  console.log('🎉 MCP BACKEND + MSP-AGENT ONLY WORKFLOW TEST PASSED!');
+  console.log('MCP BACKEND + MSP-AGENT ONLY WORKFLOW TEST PASSED!');
   console.log('================================================================');
 }
 

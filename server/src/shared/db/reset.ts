@@ -32,7 +32,7 @@ async function resetDatabase(): Promise<void> {
       logger.info(`Running migration: ${file}`);
       await client.query(sql);
       await client.query('INSERT INTO _migrations (name) VALUES ($1) ON CONFLICT DO NOTHING', [file]);
-      logger.info(`✅ Migration complete: ${file}`);
+      logger.info(`Migration complete: ${file}`);
     }
 
     // 2. Seed database
@@ -40,10 +40,10 @@ async function resetDatabase(): Promise<void> {
     const seedSql = fs.readFileSync(seedFile, 'utf-8');
     logger.info('Seeding database...');
     await client.query(seedSql);
-    logger.info('✅ Database seeded successfully');
+    logger.info('Database seeded successfully');
 
   } catch (error) {
-    logger.error('❌ Database reset failed', { error });
+    logger.error('Database reset failed', { error });
     throw error;
   } finally {
     client.release();

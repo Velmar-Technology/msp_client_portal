@@ -28,7 +28,6 @@ export const PasswordResetTemplate: React.FC<PasswordResetEmailProps> = ({
       preheader={preheader}
       actionUrl={resetUrl}
       actionText={actionText}
-      headerIcon="🔐"
       accentColor={palette.cta}
       language={language}
     >

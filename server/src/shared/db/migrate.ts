@@ -199,7 +199,7 @@ export async function migrate(): Promise<void> {
         await client.query(sql);
         await client.query('INSERT INTO _migrations (name) VALUES ($1)', [file]);
         await client.query('COMMIT');
-        logger.info(`✅ Migration complete: ${file}`);
+        logger.info(`Migration complete: ${file}`);
       } catch (err) {
         await client.query('ROLLBACK');
         throw err;

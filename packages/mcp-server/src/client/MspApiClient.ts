@@ -466,7 +466,7 @@ export class MspApiClient {
 
     const recommendationList = details.recommendations.map((r) => `- ${r}`).join('\n');
 
-    const formattedMarkdownReport = `# 🛠️ MSP Device Maintenance & Component Custody Dossier
+    const formattedMarkdownReport = `# MSP Device Maintenance & Component Custody Dossier
 **Generated At:** ${new Date().toISOString()}  
 **Target Asset:** ${details.deviceName} (\`${details.deviceSerial}\` / Hostname: \`${details.hostname}\`)
 

@@ -277,7 +277,7 @@ Continuous Integration and Deployment is automated via GitHub Actions ([.github/
 
 ---
 
-## 💻 Local Setup & Development
+## Local Setup & Development
 
 ### Database Configuration & Setup
 
@@ -315,7 +315,7 @@ Continuous Integration and Deployment is automated via GitHub Actions ([.github/
 
 ---
 
-## 🎨 UI Primitives & Skeleton Loaders
+## UI Primitives & Skeleton Loaders
 
 The frontend relies on **shadcn/ui** primitives located in `client/src/components/ui/`. Modern structural skeleton loaders replace standard loading spinners for enhanced perceived performance:
 
@@ -325,7 +325,7 @@ The frontend relies on **shadcn/ui** primitives located in `client/src/component
 
 ---
 
-## 📧 Email Design System & Transactional Templates
+## Email Design System & Transactional Templates
 
 The platform features a **Token-Driven Homogeneous Email Design System** shared conceptually between the frontend live preview and backend dispatch engine:
 
@@ -339,7 +339,7 @@ The platform features a **Token-Driven Homogeneous Email Design System** shared 
 
 ---
 
-## ☁️ Cloud Storage & Infrastructure Integration
+## Cloud Storage & Infrastructure Integration
 
 The portal integrates with **Nextcloud** running on **TrueNAS SCALE** (`cloud-storage-srv-1`) to provide automatic cloud backup storage (25 GB per device slot) to clients.
 
@@ -350,7 +350,7 @@ The portal integrates with **Nextcloud** running on **TrueNAS SCALE** (`cloud-st
 
 ---
 
-## 🛡️ SOTA Authorization Engine & Live Demonstration
+## SOTA Authorization Engine & Live Demonstration
 
 The platform includes a State-of-the-Art (SOTA) Authorization subsystem (`server/src/shared/authz/`) combining **RBAC**, **Google Zanzibar ReBAC**, **Policy-as-Code ABAC**, **AI/RAG Vector ACLs**, and **Continuous Adaptive Trust**.
 
@@ -366,7 +366,7 @@ npm -w server exec vitest run src/shared/authz/ src/shared/middleware/authzMiddl
 
 ---
 
-## ⏱️ Distributed Background Tasks, Schedulers & Concurrency Controls
+## Distributed Background Tasks, Schedulers & Concurrency Controls
 
 The platform implements a distributed background job orchestration pattern designed for horizontally scalable Node.js clusters (e.g. Docker, PM2 cluster mode, Kubernetes):
 
@@ -384,7 +384,7 @@ The platform implements a distributed background job orchestration pattern desig
 
 ---
 
-## 📖 API Documentation
+## API Documentation
 
 Interactive Swagger API documentation is available when the server is running:
 
@@ -394,7 +394,7 @@ Interactive Swagger API documentation is available when the server is running:
 
 ---
 
-## 🛠️ Git Workflow, Commit Conventions & Pre-Commit Hooks
+## Git Workflow, Commit Conventions & Pre-Commit Hooks
 
 The repository strictly enforces **[Conventional Commits](https://www.conventionalcommits.org/)** specifications locally via **Husky** and **Commitlint** to ensure clean git histories and automated semantic release tagging (`commit-and-tag-version`).
 

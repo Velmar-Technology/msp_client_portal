@@ -21,7 +21,6 @@ export const OTPTemplate: React.FC<OTPEmailProps> = ({
     <EmailWrapper
       title={title}
       preheader={preheader}
-      headerIcon="✉️"
       accentColor={palette.brandAccent}
       language={language}
     >

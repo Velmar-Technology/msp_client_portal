@@ -1,6 +1,6 @@
 # UI Style Guide & shadcn/ui Design Standards
 
-## 📌 Architectural Foundation & shadcn/ui Integration
+## Architectural Foundation & shadcn/ui Integration
 
 The **MSP Client Portal** frontend follows a strict **4-Level Clean UI Architecture** anchored on **shadcn/ui base primitives (`client/src/components/ui/`)**:
 
@@ -15,7 +15,7 @@ All buttons, dialogs, dropdowns, inputs, sheets, tables, skeletons, cards, and b
 
 ---
 
-## 🎨 Design Tokens & Palette Specifications
+## Design Tokens & Palette Specifications
 
 The design system builds upon Tailwind `zinc` surfaces, crisp typography, and high information density:
 
@@ -33,7 +33,7 @@ The design system builds upon Tailwind `zinc` surfaces, crisp typography, and hi
 
 ---
 
-## 📐 Layout & Action Toolbar Standards
+## Layout & Action Toolbar Standards
 
 ### 1. Synchronized Control Height Standards (`h-7` Baseline)
 
@@ -175,7 +175,7 @@ The body of the page must be organized into semantic `<section>` blocks with `fl
 
 ---
 
-## 📊 Component Pattern Specifications
+## Component Pattern Specifications
 
 ### 1. KPI Summary Metric Cards
 

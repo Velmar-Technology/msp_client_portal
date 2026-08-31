@@ -11,20 +11,20 @@ import { UserRole } from '@shared/types';
 
 async function runDemo() {
   console.log('\n================================================================');
-  console.log('  🛡️  STATE-OF-THE-ART (SOTA) AUTHORIZATION ENGINE DEMO');
+  console.log('  STATE-OF-THE-ART (SOTA) AUTHORIZATION ENGINE DEMO');
   console.log('================================================================\n');
 
   // -------------------------------------------------------------
   // PILLAR 1: Hybrid Policy Engine (RBAC + ReBAC + ABAC)
   // -------------------------------------------------------------
-  console.log('🏛️  [PILLAR 1] Hybrid Authorization (RBAC + ReBAC + ABAC)');
+  console.log('[PILLAR 1] Hybrid Authorization (RBAC + ReBAC + ABAC)');
   console.log('----------------------------------------------------------------');
 
   // Step 1: Register Zanzibar relationship tuple
   console.log('1. Setting up Zanzibar Relation Tuple:');
   hybridPolicyEngine.grantRelation('tech-alex', 'assigned_technician', 'ticket', 't-100');
-  console.log('   ✓ Granted: user:tech-alex#assigned_technician@ticket:t-100');
-  console.log('   ✓ ReBAC Inheritance: Can user:tech-alex view ticket:t-100? ->',
+  console.log('   - Granted: user:tech-alex#assigned_technician@ticket:t-100');
+  console.log('   - ReBAC Inheritance: Can user:tech-alex view ticket:t-100? ->',
     zanzibarStore.check('user:tech-alex', 'viewer', 'ticket:t-100') ? 'ALLOWED (inherited)' : 'DENIED');
 
   // Step 2: Evaluate ReBAC + ABAC for Client Ticket Cancellation
@@ -42,7 +42,7 @@ async function runDemo() {
   };
 
   const freshDecision = await hybridPolicyEngine.evaluate(freshTicketContext);
-  console.log(`   - Cancellation on Fresh Ticket (< 60m): ${freshDecision.allowed ? '✅ ALLOWED' : '❌ DENIED'} (${freshDecision.reason})`);
+  console.log(`   - Cancellation on Fresh Ticket (< 60m): ${freshDecision.allowed ? '[ALLOWED]' : '[DENIED]'} (${freshDecision.reason})`);
 
   const expiredTicketContext: AuthzContext = {
     ...freshTicketContext,
@@ -53,7 +53,7 @@ async function runDemo() {
     },
   };
   const expiredDecision = await hybridPolicyEngine.evaluate(expiredTicketContext);
-  console.log(`   - Cancellation on Expired Ticket (> 60m SLA): ${expiredDecision.allowed ? '✅ ALLOWED' : '❌ DENIED'} (Violated: ${expiredDecision.violatedPolicy})`);
+  console.log(`   - Cancellation on Expired Ticket (> 60m SLA): ${expiredDecision.allowed ? '[ALLOWED]' : '[DENIED]'} (Violated: ${expiredDecision.violatedPolicy})`);
 
   // Step 3: Non-Payment Scale Lock (BL-702)
   console.log('\n3. Non-Payment Scale (BL-702) Write Lock:');
@@ -64,12 +64,12 @@ async function runDemo() {
     environment: { accountStatus: 'READ_ONLY' }, // Day 5 overdue
   };
   const suspendedDecision = await hybridPolicyEngine.evaluate(suspendedContext);
-  console.log(`   - Ticket Creation on READ_ONLY Overdue Account: ${suspendedDecision.allowed ? '✅ ALLOWED' : '❌ DENIED'} (Violated: ${suspendedDecision.violatedPolicy})`);
+  console.log(`   - Ticket Creation on READ_ONLY Overdue Account: ${suspendedDecision.allowed ? '[ALLOWED]' : '[DENIED]'} (Violated: ${suspendedDecision.violatedPolicy})`);
 
   // -------------------------------------------------------------
   // PILLAR 2: Document-Level Vector Security for AI / RAG
   // -------------------------------------------------------------
-  console.log('\n\n🤖 [PILLAR 2] Document-Level AI / RAG Vector Store Security');
+  console.log('\n\n[PILLAR 2] Document-Level AI / RAG Vector Store Security');
   console.log('----------------------------------------------------------------');
 
   const clientUser = { id: 'client-sarah', type: 'user' as const, role: UserRole.CLIENT, tenantId: 'tenant-acme' };
@@ -95,7 +95,7 @@ async function runDemo() {
   // -------------------------------------------------------------
   // PILLAR 3 & 4: Continuous Adaptive Trust & Role Mining
   // -------------------------------------------------------------
-  console.log('\n\n🕵️  [PILLAR 3 & 4] Continuous Adaptive Trust & Unsupervised Role Mining');
+  console.log('\n\n[PILLAR 3 & 4] Continuous Adaptive Trust & Unsupervised Role Mining');
   console.log('----------------------------------------------------------------');
 
   console.log('1. Zero-Trust Continuous Streaming Risk Scoring:');
@@ -138,7 +138,7 @@ async function runDemo() {
   });
 
   console.log('\n================================================================');
-  console.log('  ✨ ALL SOTA AUTHORIZATION PILLARS EXECUTED SUCCESSFULLY!');
+  console.log('  ALL SOTA AUTHORIZATION PILLARS EXECUTED SUCCESSFULLY!');
   console.log('================================================================\n');
 }
 

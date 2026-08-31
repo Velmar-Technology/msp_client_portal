@@ -4,7 +4,7 @@ The frontend client portal is built with **React 19**, **TypeScript**, **Vite**,
 
 ---
 
-## 📁 Directory Structure
+## Directory Structure
 
 ```
 client/src/
@@ -32,7 +32,7 @@ client/src/
 
 ---
 
-## 🎨 Design System & UI Architecture
+## Design System & UI Architecture
 
 1. **shadcn/ui Primitives**: All components strictly consume primitives from `src/components/ui/`.
 2. **Internationalization (i18n)**: All user-facing strings are localized via `react-i18next` (`useTranslation`) in both `en_US` and `es_DO`.
@@ -41,7 +41,7 @@ client/src/
 
 ---
 
-## 🛠️ Scripts & Development
+## Scripts & Development
 
 - `npm run dev`: Start local Vite development server (`http://localhost:5173`)
 - `npm run build`: Typecheck and produce optimized production bundle (`tsc -b && vite build`)

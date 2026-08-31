@@ -30,7 +30,6 @@ export const TicketCreatedTemplate: React.FC<TicketEmailProps> = ({
       preheader={preheader}
       actionUrl={ticketUrl}
       actionText={actionText}
-      headerIcon="🎫"
       accentColor={palette.brandLight}
       language={language}
     >
