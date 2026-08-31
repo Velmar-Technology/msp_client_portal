@@ -177,11 +177,16 @@ export class SubscriptionRenewalService {
 
     await this.subscriptionRepo.updateRenewal(sub.id, newRenewalDate, SubscriptionStatus.ACTIVE);
 
+    const client = await this.userRepo.findById(sub.client_id);
+    const tenant = await this.tenantRepo.findById(sub.tenant_id);
+    if (client?.role === 'ADMIN' || tenant?.subdomain === 'admin') {
+      logger.info(`Subscription ${sub.id} belongs to admin/provider tenant (${tenant?.subdomain || client?.email}). Renewal date advanced without billing invoice generation.`);
+      return;
+    }
+
     const pricing = this.pricingSvc.calculatePricing(planDetails.price, sub.equipment_count, billingCycle);
     const invoiceNumber = await this.pricingSvc.generateInvoiceNumber();
 
-    const client = await this.userRepo.findById(sub.client_id);
-    const tenant = await this.tenantRepo.findById(sub.tenant_id);
     const effectiveRnc = client?.rnc || tenant?.rnc || null;
     const ncf = await this.ncfSvc.assignNcfIfEligible(effectiveRnc);
 

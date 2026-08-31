@@ -243,3 +243,52 @@ export interface UserStatsSummary {
   inactive: number;
 }
 
+export interface InvoiceSummary {
+  id: string;
+  invoice_number: string;
+  client_id: string;
+  amount: number;
+  tax_amount: number;
+  total: number;
+  currency?: string;
+  ncf?: string | null;
+  rnc?: string | null;
+  status: 'PENDING' | 'PAID' | 'CANCELLED';
+  invoice_date: string;
+  due_date: string;
+  tenant_id: string;
+  last_email_sent_at?: string | null;
+  created_at: string;
+}
+
+export interface InvoiceListResult {
+  invoices: InvoiceSummary[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface FinancialStatsSummary {
+  totalRevenue?: number;
+  pendingRevenue?: number;
+  paidInvoicesCount?: number;
+  pendingInvoicesCount?: number;
+  revenueTrend?: Array<{ date: string; amount: number }>;
+  netProfitPool?: number;
+  technicianCommissionsTotal?: number;
+  [key: string]: any;
+}
+
+export interface ExpenseSummary {
+  id: string;
+  title: string;
+  description?: string | null;
+  amount: number;
+  category: string;
+  expense_date: string;
+  ticket_id?: string | null;
+  technician_id?: string | null;
+  created_at: string;
+}
+
+

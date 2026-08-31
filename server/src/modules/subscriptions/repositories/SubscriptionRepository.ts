@@ -1,7 +1,7 @@
 import { BaseRepository } from '@shared/repositories/BaseRepository';
 import { Subscription, SubscriptionStatus } from '@shared/types';
-import { db, subscriptions, plans } from '@shared/db';
-import { eq, desc, and, or, lt, lte, gt, isNull } from 'drizzle-orm';
+import { db, subscriptions, plans, users, tenants } from '@shared/db';
+import { eq, desc, and, or, lt, lte, gt, isNull, ne } from 'drizzle-orm';
 
 /**
  * Data repository for client subscriptions, PayPal agreement IDs, renewals, and expiration warnings.
@@ -242,7 +242,9 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
       or(
         eq(subscriptions.status, 'ACTIVE'),
         eq(subscriptions.status, 'EXPIRING')
-      )
+      ),
+      ne(users.role, 'ADMIN'),
+      ne(tenants.subdomain, 'admin')
     ];
     if (tenantId) {
       conditions.push(eq(subscriptions.tenant_id, tenantId));
@@ -259,6 +261,8 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
       })
       .from(subscriptions)
       .innerJoin(plans, eq(subscriptions.plan, plans.id))
+      .innerJoin(users, eq(subscriptions.client_id, users.id))
+      .innerJoin(tenants, eq(subscriptions.tenant_id, tenants.id))
       .where(and(...conditions));
     return results;
   }

@@ -17,6 +17,10 @@ import type {
   UserSummary,
   UserListResult,
   UserStatsSummary,
+  InvoiceSummary,
+  InvoiceListResult,
+  FinancialStatsSummary,
+  ExpenseSummary,
 } from '../types.js';
 
 export class MspApiClient {
@@ -772,6 +776,73 @@ ${recommendationList}
     const res = await this.request<any>({
       method: 'GET',
       url: '/users/stats',
+    });
+    return res.data || res;
+  }
+
+  // --- Billing & Invoices ---
+  /**
+   * List platform or client invoices with pagination.
+   *
+   * @param params - Pagination parameters
+   * @returns Paginated list of invoices
+   */
+  async listInvoices(params?: { page?: number; limit?: number }): Promise<InvoiceListResult> {
+    const queryParams: Record<string, any> = {};
+    if (params?.page) queryParams.page = params.page;
+    if (params?.limit) queryParams.limit = params.limit;
+
+    const res = await this.request<any>({
+      method: 'GET',
+      url: '/invoices',
+      params: queryParams,
+    });
+    return {
+      invoices: res.data || [],
+      total: res.pagination?.total ?? (res.data ? res.data.length : 0),
+      page: res.pagination?.page ?? 1,
+      totalPages: res.pagination?.totalPages ?? 1,
+    };
+  }
+
+  /**
+   * Retrieve detailed information for a specific invoice.
+   *
+   * @param invoiceId - UUID of the target invoice
+   * @returns Detailed invoice record
+   */
+  async getInvoice(invoiceId: string): Promise<InvoiceSummary> {
+    const res = await this.request<any>({
+      method: 'GET',
+      url: `/invoices/${invoiceId}`,
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Retrieve financial analytics and performance metrics.
+   *
+   * @param range - Time range filter ('30_days' | 'quarter' | 'year')
+   * @returns Financial KPIs and dashboard statistics
+   */
+  async getFinancialStats(range: '30_days' | 'quarter' | 'year' = '30_days'): Promise<FinancialStatsSummary> {
+    const res = await this.request<any>({
+      method: 'GET',
+      url: '/invoices/financial-stats',
+      params: { range },
+    });
+    return res.data || res;
+  }
+
+  /**
+   * List organization expenses and technician commission logs.
+   *
+   * @returns List of business expenses
+   */
+  async listExpenses(): Promise<ExpenseSummary[]> {
+    const res = await this.request<any>({
+      method: 'GET',
+      url: '/expenses',
     });
     return res.data || res;
   }
