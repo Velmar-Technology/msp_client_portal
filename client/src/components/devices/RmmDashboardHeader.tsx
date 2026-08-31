@@ -1,20 +1,20 @@
-import React, { memo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Radio, RefreshCw, Download, ChevronDown, Monitor, Laptop } from 'lucide-react';
+import React, { memo } from "react";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
+// import {
+//   DropdownMenu,
+//   DropdownMenuContent,
+//   DropdownMenuItem,
+//   DropdownMenuTrigger,
+// } from "@/components/ui/dropdown-menu";
+import { Radio, RefreshCw } from "lucide-react";
 
 export interface RmmDashboardHeaderProps {
   loading: boolean;
   onRefresh: () => void;
 }
 
-const GITHUB_RELEASE_BASE = 'https://github.com/Velmar-Technology/msp_client_portal/releases/latest/download';
+// const GITHUB_RELEASE_BASE = "https://github.com/Velmar-Technology/msp_client_portal/releases/latest/download";
 
 export const RmmDashboardHeader: React.FC<RmmDashboardHeaderProps> = memo(({ loading, onRefresh }) => {
   const { t } = useTranslation();
@@ -28,15 +28,11 @@ export const RmmDashboardHeader: React.FC<RmmDashboardHeaderProps> = memo(({ loa
             {t("rmm.headerEngine")}
           </span>
         </div>
-        <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
-          {t("rmm.headerTitle")}
-        </h2>
-        <p className="text-xs text-zinc-500 leading-relaxed max-w-2xl">
-          {t("rmm.headerSubtitle")}
-        </p>
+        <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">{t("rmm.headerTitle")}</h2>
+        <p className="text-xs text-zinc-500 leading-relaxed max-w-2xl">{t("rmm.headerSubtitle")}</p>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <DropdownMenu>
+        {/* <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
@@ -93,14 +89,14 @@ export const RmmDashboardHeader: React.FC<RmmDashboardHeaderProps> = memo(({ loa
               </a>
             </DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu> */}
 
         <Button
           onClick={onRefresh}
           disabled={loading}
           className="h-8 px-3 text-xs font-semibold bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 rounded-md shadow-xs transition-opacity cursor-pointer shrink-0 gap-1.5"
         >
-          <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
           <span>{t("rmm.headerRefresh")}</span>
         </Button>
       </div>
@@ -108,4 +104,4 @@ export const RmmDashboardHeader: React.FC<RmmDashboardHeaderProps> = memo(({ loa
   );
 });
 
-RmmDashboardHeader.displayName = 'RmmDashboardHeader';
+RmmDashboardHeader.displayName = "RmmDashboardHeader";

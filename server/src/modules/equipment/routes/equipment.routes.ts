@@ -8,6 +8,11 @@ import { UserRole } from '@shared/types';
 
 const router = Router();
 
+/** GET /api/v1/equipment/agent-binary — Download standalone msp-agent.exe binary (Public binary download) */
+router.get('/agent-binary', (req, res) =>
+  equipmentController.downloadAgentBinary(req, res)
+);
+
 router.use(authMiddleware);
 
 /** GET /api/v1/equipment/admin/devices — Get all devices for all clients (Admin only) */
@@ -70,9 +75,14 @@ router.get('/subscriptions/:subId/slots/:slotIndex/deploy-token', rbacMiddleware
   equipmentController.getDeployToken(req, res)
 );
 
-/** GET /api/v1/equipment/subscriptions/:subId/slots/:slotIndex/deploy-script — Generate PowerShell deployment script */
+/** GET /api/v1/equipment/subscriptions/:subId/slots/:slotIndex/deploy-script — Generate Nextcloud PowerShell deployment script */
 router.get('/subscriptions/:subId/slots/:slotIndex/deploy-script', rbacMiddleware(UserRole.ADMIN, UserRole.CLIENT), (req, res) =>
   equipmentController.getDeployScript(req, res)
+);
+
+/** GET /api/v1/equipment/subscriptions/:subId/slots/:slotIndex/agent-deploy-script — Generate MSP Agent PowerShell deployment script */
+router.get('/subscriptions/:subId/slots/:slotIndex/agent-deploy-script', rbacMiddleware(UserRole.ADMIN, UserRole.CLIENT), (req, res) =>
+  equipmentController.getAgentDeployScript(req, res)
 );
 
 export default router;

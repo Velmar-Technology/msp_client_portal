@@ -1,5 +1,19 @@
 import { memo, useCallback, useState, useMemo } from "react";
-import { Laptop, Loader2, MoreHorizontal, Cloud, Activity, ChevronRight, Calendar, RefreshCw, Trash2, CheckCircle2, Plus } from "lucide-react";
+import {
+  Laptop,
+  Loader2,
+  MoreHorizontal,
+  Cloud,
+  Activity,
+  ChevronRight,
+  Calendar,
+  RefreshCw,
+  Trash2,
+  CheckCircle2,
+  Plus,
+  Terminal,
+  ToolCase,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { useDevicesPage } from "@/hooks/useDevicesPage";
@@ -27,6 +41,11 @@ const ScheduleMaintenanceModal = lazyWithRetry(() =>
 const NextcloudInfoModal = lazyWithRetry(() =>
   import("@/components/devices/NextcloudInfoModal").then((m) => ({
     default: m.NextcloudInfoModal,
+  })),
+);
+const DeployAgentModal = lazyWithRetry(() =>
+  import("@/components/devices/DeployAgentModal").then((m) => ({
+    default: m.DeployAgentModal,
   })),
 );
 const ActivateWithOtpModal = lazyWithRetry(() =>
@@ -144,6 +163,7 @@ interface DeviceActionsCellProps {
   onOpenActivateWithOtp: (subId: string, slotIndex: number) => void;
   onDeleteAdminDevice?: (equip: Partial<SubscriptionEquipment>) => void;
   onDeployClient?: (equip: Partial<SubscriptionEquipment>) => void;
+  onDeployAgent?: (equip: Partial<SubscriptionEquipment>) => void;
 }
 
 const DeviceActionsCell = memo(function DeviceActionsCell({
@@ -154,6 +174,7 @@ const DeviceActionsCell = memo(function DeviceActionsCell({
   onRequestRepair,
   onOpenActivateWithOtp,
   onDeployClient,
+  onDeployAgent,
 }: DeviceActionsCellProps) {
   const { t } = useTranslation();
 
@@ -165,11 +186,12 @@ const DeviceActionsCell = memo(function DeviceActionsCell({
         <Button
           type="button"
           variant="outline"
+          title={t("maintenance.scheduleBtn")}
           size="sm"
           onClick={() => onOpenScheduleMaint(equip)}
           className="h-7 px-2 text-xs font-semibold gap-1 cursor-pointer"
         >
-          <span>{t("maintenance.scheduleBtn") || "Schedule"}</span>
+          <ToolCase className="h-3 w-3" />
           <ChevronRight className="h-3 w-3" />
         </Button>
       ) : (
@@ -200,14 +222,20 @@ const DeviceActionsCell = memo(function DeviceActionsCell({
             <MoreHorizontal className="h-3.5 w-3.5" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="end"
-          className="w-48 bg-card text-foreground border border-border"
-        >
+        <DropdownMenuContent align="end" className="w-52 bg-card text-foreground border border-border">
           <DropdownMenuLabel className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
             {t("devices.actionsLabel")}
           </DropdownMenuLabel>
           <DropdownMenuSeparator className="bg-border" />
+
+          {/* Quick Deploy Agent Action Available on all valid slots */}
+          {equip.subscription_id && equip.slot_index !== undefined && onDeployAgent && (
+            <DropdownMenuItem onClick={() => onDeployAgent(equip)} className="text-xs cursor-pointer text-foreground">
+              <Terminal className="h-3.5 w-3.5 mr-1" />
+              {t("devices.deployMspAgent", "Deploy MSP Agent")}
+            </DropdownMenuItem>
+          )}
+
           {isActive ? (
             <>
               {equip.nextcloud_username && (
@@ -339,7 +367,10 @@ export function DevicesPage() {
 
   const firstAvailableSlot = useMemo(() => {
     const unactive = filteredEquipment.find(
-      (e) => (e.status === "PENDING_ACTIVATION" || !e.status || e.status !== "ACTIVE") && e.subscription_id && e.slot_index !== undefined,
+      (e) =>
+        (e.status === "PENDING_ACTIVATION" || !e.status || e.status !== "ACTIVE") &&
+        e.subscription_id &&
+        e.slot_index !== undefined,
     );
     if (unactive && unactive.subscription_id && unactive.slot_index !== undefined) {
       return { subscription_id: unactive.subscription_id, slot_index: unactive.slot_index };
@@ -357,6 +388,8 @@ export function DevicesPage() {
   const [isMaintModalOpen, setIsMaintModalOpen] = useState(false);
   const [ncModalEquip, setNcModalEquip] = useState<Partial<SubscriptionEquipment> | null>(null);
   const [isNcModalOpen, setIsNcModalOpen] = useState(false);
+  const [deployAgentEquip, setDeployAgentEquip] = useState<Partial<SubscriptionEquipment> | null>(null);
+  const [isDeployAgentOpen, setIsDeployAgentOpen] = useState(false);
 
   const bulkActions = useMemo(
     () => [
@@ -382,6 +415,16 @@ export function DevicesPage() {
   const handleOpenNcModal = useCallback((equip: Partial<SubscriptionEquipment>) => {
     setNcModalEquip(equip);
     setIsNcModalOpen(true);
+  }, []);
+
+  const handleOpenDeployAgent = useCallback((equip: Partial<SubscriptionEquipment>) => {
+    setDeployAgentEquip(equip);
+    setIsDeployAgentOpen(true);
+  }, []);
+
+  const handleCloseDeployAgent = useCallback(() => {
+    setIsDeployAgentOpen(false);
+    setDeployAgentEquip(null);
   }, []);
 
   const handleCloseMaintModal = useCallback(() => {
@@ -581,6 +624,7 @@ export function DevicesPage() {
             onRequestRepair={handleRequestRepair}
             onOpenActivateWithOtp={handleOpenActivateWithOtp}
             onDeployClient={handleDeployClient}
+            onDeployAgent={handleOpenDeployAgent}
           />
         );
       },
@@ -589,6 +633,7 @@ export function DevicesPage() {
   }, [
     t,
     handleDeployClient,
+    handleOpenDeployAgent,
     handleOpenScheduleMaint,
     handleOpenNcModal,
     handleRequestRevoke,
@@ -711,10 +756,7 @@ export function DevicesPage() {
                           type="button"
                           size="sm"
                           onClick={() =>
-                            handleOpenActivateWithOtp(
-                              firstAvailableSlot.subscription_id,
-                              firstAvailableSlot.slot_index,
-                            )
+                            handleOpenActivateWithOtp(firstAvailableSlot.subscription_id, firstAvailableSlot.slot_index)
                           }
                           className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
                         >
@@ -823,6 +865,15 @@ export function DevicesPage() {
               fallbackUsername={ncModalEquip?.nextcloud_username}
               fallbackDeviceName={ncModalEquip?.device_name}
             />
+          </Suspense>
+        </ChunkErrorBoundary>
+      )}
+
+      {/* Deploy MSP Agent Modal */}
+      {isDeployAgentOpen && (
+        <ChunkErrorBoundary>
+          <Suspense fallback={null}>
+            <DeployAgentModal isOpen={isDeployAgentOpen} onClose={handleCloseDeployAgent} equip={deployAgentEquip} />
           </Suspense>
         </ChunkErrorBoundary>
       )}
