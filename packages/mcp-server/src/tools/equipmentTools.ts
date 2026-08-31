@@ -111,4 +111,35 @@ export function registerEquipmentTools(server: McpServer, apiClient: MspApiClien
       }
     }
   );
+
+  // 4. Tool: msp_get_device_maintenance_report
+  server.tool(
+    'msp_get_device_maintenance_report',
+    'Generate a 1-shot exhaustive client maintenance report and physical component serial custody dossier for a device',
+    {
+      identifier: z.string().describe('Equipment UUID, serial number (e.g. SN-B3MMEG9BRE), or hostname (e.g. WS-00981)'),
+    },
+    async ({ identifier }) => {
+      try {
+        const report = await apiClient.getDeviceMaintenanceReport(identifier);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: report.formattedMarkdownReport,
+            },
+            {
+              type: 'text',
+              text: JSON.stringify(report, null, 2),
+            },
+          ],
+        };
+      } catch (err: any) {
+        return {
+          isError: true,
+          content: [{ type: 'text', text: `Failed to generate device maintenance report: ${err.message}` }],
+        };
+      }
+    }
+  );
 }

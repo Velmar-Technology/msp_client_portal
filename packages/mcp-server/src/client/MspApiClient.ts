@@ -8,6 +8,7 @@ import type {
   EquipmentSlot,
   ClientSummary,
   DeviceComponentDetails,
+  DeviceMaintenanceReport,
   HardwareComponentItem,
   ClientHealthReport,
   EphemeralGrant,
@@ -431,6 +432,125 @@ export class MspApiClient {
       },
       maintenances,
       recommendations,
+    };
+  }
+
+  /**
+   * Generate an all-in-one comprehensive maintenance dossier & physical component custody report for a client device.
+   */
+  async getDeviceMaintenanceReport(identifier: string): Promise<DeviceMaintenanceReport> {
+    const details = await this.getDeviceComponents(identifier);
+
+    const healthSummary = details.recommendations.length > 0
+      ? details.recommendations[0]
+      : 'All hardware and software subsystems are operational.';
+
+    // Generate clean formatted Markdown report
+    const componentRows = details.componentInventory
+      .map(
+        (c) =>
+          `| **${c.type}** | ${c.brand} | ${c.model} | \`${c.serialNumber}\` | ${c.slotOrLocation || 'N/A'} | \`${c.status}\` |`
+      )
+      .join('\n');
+
+    const maintenanceRows =
+      details.maintenances && details.maintenances.length > 0
+        ? details.maintenances
+            .slice(0, 5)
+            .map(
+              (m) =>
+                `| ${m.scheduled_date || m.created_at || 'N/A'} | ${m.title || m.maintenance_type || 'Preventative Maintenance'} | \`${m.status || 'SCHEDULED'}\` | ${m.notes || 'Routine health audit'} |`
+            )
+            .join('\n')
+        : '| *N/A* | *No scheduled or historical maintenance windows on file* | `PENDING_CREATION` | *Ready for initial maintenance booking* |';
+
+    const recommendationList = details.recommendations.map((r) => `- ${r}`).join('\n');
+
+    const formattedMarkdownReport = `# 🛠️ MSP Device Maintenance & Component Custody Dossier
+**Generated At:** ${new Date().toISOString()}  
+**Target Asset:** ${details.deviceName} (\`${details.deviceSerial}\` / Hostname: \`${details.hostname}\`)
+
+---
+
+## 🏢 Client & Asset Overview
+- **Client Organization:** ${details.tenantName || 'N/A'} (\`${details.tenantId}\`)
+- **Primary Contact:** ${details.clientName || 'N/A'} (${details.clientEmail || 'N/A'})
+- **Device Brand / Category:** ${details.deviceBrand} (${details.deviceCategory})
+- **RMM Agent State:** \`${details.agentStatus}\` | **Slot Status:** \`${details.status}\`
+
+---
+
+## 🔒 Physical Hardware Custody & Serial Verification
+> **Chain of Custody Status:** \`${details.hardwareFingerprint.chainOfCustodyStatus}\`  
+> **Hardware Integrity Fingerprint:** \`${details.hardwareFingerprint.integrityHash}\`  
+> *Cryptographic signature matches ${details.hardwareFingerprint.totalAuditedComponents} audited physical hardware components.*
+
+| Component | Brand / OEM | Model / Specification | Serial Number | Physical Location | Audit Status |
+| :--- | :--- | :--- | :--- | :--- | :---: |
+${componentRows}
+
+---
+
+## 📊 Live Subsystem Telemetry & Health
+- **Processor (CPU):** ${details.components.cpu.model} — **${details.components.cpu.currentUsagePct}% load** (\`${details.components.cpu.status}\`)
+- **System Memory (RAM):** ${details.components.memory.spec} — **${details.components.memory.currentUsagePct}% used** (\`${details.components.memory.status}\`)
+- **Storage Subsystem:** ${details.components.storage.usedGb} GB / ${details.components.storage.totalGb} GB (${details.components.storage.usagePct}% used, ${details.components.storage.freeGb} GB free) — (\`${details.components.storage.status}\`)
+- **Security Patches:** ${details.components.osAndSecurity.pendingPatches} pending updates (\`${details.components.osAndSecurity.securityStatus}\`)
+- **Cloud Backup:** Nextcloud user \`${details.components.cloudStorage.username || 'Unassigned'}\` (${details.components.cloudStorage.provisioned ? 'Active' : 'Disabled'})
+
+---
+
+## 📅 Maintenance Job Records
+| Scheduled Date | Task / Work Order | Status | Notes |
+| :--- | :--- | :---: | :--- |
+${maintenanceRows}
+
+---
+
+## 💡 Client Actionable Recommendations
+${recommendationList}
+`;
+
+    return {
+      device: {
+        id: details.id,
+        name: details.deviceName,
+        serial: details.deviceSerial,
+        brand: details.deviceBrand,
+        category: details.deviceCategory,
+        hostname: details.hostname || 'N/A',
+        status: details.status,
+        agentStatus: details.agentStatus,
+      },
+      client: {
+        tenantId: details.tenantId,
+        tenantName: details.tenantName || 'N/A',
+        contactName: details.clientName || 'N/A',
+        contactEmail: details.clientEmail || 'N/A',
+      },
+      hardwareCustodyAudit: {
+        integrityHash: details.hardwareFingerprint.integrityHash,
+        chainOfCustodyStatus: details.hardwareFingerprint.chainOfCustodyStatus,
+        totalAuditedComponents: details.hardwareFingerprint.totalAuditedComponents,
+        auditTimestamp: details.hardwareFingerprint.auditTimestamp,
+        components: details.componentInventory,
+      },
+      telemetryAndHealth: {
+        cpuUsagePct: details.components.cpu.currentUsagePct,
+        memoryUsagePct: details.components.memory.currentUsagePct,
+        diskUsagePct: details.components.storage.usagePct,
+        diskUsedGb: details.components.storage.usedGb,
+        diskTotalGb: details.components.storage.totalGb,
+        freeGb: details.components.storage.freeGb,
+        pendingPatches: details.components.osAndSecurity.pendingPatches,
+        healthSummary,
+      },
+      maintenanceJobs: {
+        activeJobCount: details.maintenances?.length || 0,
+        recentJobs: details.maintenances || [],
+      },
+      recommendations: details.recommendations,
+      formattedMarkdownReport,
     };
   }
 

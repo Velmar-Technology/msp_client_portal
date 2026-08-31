@@ -208,5 +208,46 @@ describe('MSP MCP Server Tools Registration and Execution', () => {
     expect(details.components.osAndSecurity.pendingPatches).toBe(3);
     expect(details.recommendations.length).toBeGreaterThan(0);
   });
+
+  it('should generate an all-in-one maintenance report with formatted markdown', async () => {
+    const mockSlot = {
+      id: 'eq-uuid-200',
+      device_name: 'HPE ProLiant DL380 Gen10 Server',
+      device_serial: 'SN-HPE999SRV',
+      agent_hostname: 'WS-00999',
+      agent_status: 'ONLINE',
+      cpu_usage: '22.00',
+      memory_usage: '40.00',
+      disk_usage: '50.00',
+      disk_used_gb: '1000.00',
+      disk_total_gb: '2000.00',
+      pending_patch_count: 0,
+      tenant_id: 't-2',
+      tenant_name: 'Beta Industries',
+      client_name: 'Bob',
+      client_email: 'bob@beta.com',
+      status: 'ACTIVE',
+    };
+
+    vi.spyOn(mockApiClient, 'getClientEquipment').mockResolvedValue([mockSlot] as any);
+    vi.spyOn(mockApiClient, 'getDeviceMaintenances').mockResolvedValue([
+      {
+        id: 'maint-1',
+        scheduled_date: '2026-09-01T10:00:00Z',
+        title: 'Quarterly Server Preventative Maintenance',
+        status: 'SCHEDULED',
+        notes: 'Thermal paste check and backup verification',
+      },
+    ]);
+
+    const report = await mockApiClient.getDeviceMaintenanceReport('WS-00999');
+    expect(report.device.name).toBe('HPE ProLiant DL380 Gen10 Server');
+    expect(report.client.tenantName).toBe('Beta Industries');
+    expect(report.maintenanceJobs.activeJobCount).toBe(1);
+    expect(report.hardwareCustodyAudit.chainOfCustodyStatus).toBe('VERIFIED_INTACT');
+    expect(report.formattedMarkdownReport).toContain('MSP Device Maintenance & Component Custody Dossier');
+    expect(report.formattedMarkdownReport).toContain('Beta Industries');
+    expect(report.formattedMarkdownReport).toContain('Quarterly Server Preventative Maintenance');
+  });
 });
 

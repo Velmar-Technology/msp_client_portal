@@ -123,6 +123,48 @@ export interface DeviceComponentDetails {
   recommendations: string[];
 }
 
+export interface DeviceMaintenanceReport {
+  device: {
+    id: string;
+    name: string;
+    serial: string;
+    brand: string;
+    category: string;
+    hostname: string;
+    status: string;
+    agentStatus: string;
+  };
+  client: {
+    tenantId: string;
+    tenantName: string;
+    contactName: string;
+    contactEmail: string;
+  };
+  hardwareCustodyAudit: {
+    integrityHash: string;
+    chainOfCustodyStatus: 'VERIFIED_INTACT' | 'MODIFIED_VERIFIED' | 'DISCREPANCY_DETECTED';
+    totalAuditedComponents: number;
+    auditTimestamp: string;
+    components: HardwareComponentItem[];
+  };
+  telemetryAndHealth: {
+    cpuUsagePct: number;
+    memoryUsagePct: number;
+    diskUsagePct: number;
+    diskUsedGb: number;
+    diskTotalGb: number;
+    freeGb: number;
+    pendingPatches: number;
+    healthSummary: string;
+  };
+  maintenanceJobs: {
+    activeJobCount: number;
+    recentJobs: any[];
+  };
+  recommendations: string[];
+  formattedMarkdownReport: string;
+}
+
 export interface EquipmentSlot {
   id: string;
   subscriptionId: string;
