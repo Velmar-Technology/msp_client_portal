@@ -1,6 +1,6 @@
 {
   "name": "msp-services-server",
-  "version": "1.8.3",
+  "version": "1.8.4",
   "description": "MSP Help Desk — Backend API Server",
   "main": "dist/index.js",
   "scripts": {

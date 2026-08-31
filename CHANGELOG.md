@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.8.4](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.8.3...v1.8.4) (2026-08-31)
+
+
+### Features
+
+* **api-keys:** add key description and forever expiry option ([6e6fd85](https://github.com/Velmar-Technology/msp_client_portal/commit/6e6fd8586d5e88f3e74e0aa61a74d99bda69c1f1))
+
 ## [1.8.3](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.8.2...v1.8.3) (2026-08-31)
 
 
