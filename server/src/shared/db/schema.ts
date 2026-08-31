@@ -639,6 +639,8 @@ export const apiKeys = pgTable(
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
     name: varchar('name', { length: 100 }).notNull(),
+    description: varchar('description', { length: 255 }),
+    expires_in: varchar('expires_in', { length: 10 }).notNull().default('30d'),
     token_hash: varchar('token_hash', { length: 255 }).notNull(),
     last_used_at: timestamp('last_used_at', { withTimezone: true }),
     tenant_id: uuid('tenant_id')

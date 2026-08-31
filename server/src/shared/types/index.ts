@@ -190,10 +190,14 @@ export interface RoundRobinState {
   updated_at: Date;
 }
 
+export type ApiKeyExpiry = '30d' | 'forever';
+
 export interface ApiKey {
   id: string;
   user_id: string;
   name: string;
+  description: string | null;
+  expires_in: ApiKeyExpiry;
   token_hash: string;
   last_used_at: Date | null;
   tenant_id: string;
@@ -203,6 +207,8 @@ export interface ApiKey {
 export interface ApiKeySummary {
   id: string;
   name: string;
+  description: string | null;
+  expiresIn: ApiKeyExpiry;
   createdAt: Date;
   lastUsedAt: Date | null;
 }

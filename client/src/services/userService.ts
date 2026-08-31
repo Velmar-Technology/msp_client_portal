@@ -62,9 +62,13 @@ export interface UserListParams {
   sortOrder?: 'asc' | 'desc';
 }
 
+export type ApiKeyExpiry = '30d' | 'forever';
+
 export interface ApiKeySummary {
   id: string;
   name: string;
+  description: string | null;
+  expiresIn: ApiKeyExpiry;
   createdAt: string;
   lastUsedAt: string | null;
 }
@@ -281,14 +285,18 @@ export const userService = {
   },
 
 /**
-    * Generates a 30-day JWT API key for programmatic access for the current user.
+    * Generates a JWT API key for programmatic access for the current user.
     * The plaintext token is returned exactly once; only a hashed digest is stored.
     *
-    * @param name - Optional name for the API key
+    * @param options - Optional key configuration: name, description, and expiration policy
     * @returns Promise resolving to the generated API key metadata including the one-time fullKey.
     */
-   async generateApiKey(name?: string): Promise<GeneratedApiKey> {
-     const response = await api.post('/users/me/api-key', { name });
+   async generateApiKey(options?: { name?: string; description?: string; expiresIn?: ApiKeyExpiry }): Promise<GeneratedApiKey> {
+     const response = await api.post('/users/me/api-key', {
+       name: options?.name,
+       description: options?.description,
+       expiresIn: options?.expiresIn,
+     });
      return response.data.data;
    },
 
