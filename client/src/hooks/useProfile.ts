@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { userService } from "@/services/userService";
+import { userService, type ApiKeySummary } from "@/services/userService";
 import { useUrlState } from "@/hooks/useUrlState";
 
 export function useProfile() {
@@ -154,7 +154,7 @@ export function useProfile() {
     newPassword.length > 0 ||
     confirmPassword.length > 0;
 
-  const [apiKeys, setApiKeys] = useState<Array<{ id: string; name: string; createdAt: string; lastUsedAt: string | null }>>([]);
+  const [apiKeys, setApiKeys] = useState<ApiKeySummary[]>([]);
   const [generatingApiKey, setGeneratingApiKey] = useState(false);
   const [loadingApiKeys, setLoadingApiKeys] = useState(false);
   const [viewingApiKeyId, setViewingApiKeyId] = useState<string | null>(null);
@@ -181,7 +181,10 @@ export function useProfile() {
   const handleGenerateApiKey = useCallback(async () => {
     setGeneratingApiKey(true);
     try {
-      await userService.generateApiKey();
+      const generated = await userService.generateApiKey();
+      // The full key is only shown once at creation time; it cannot be retrieved later
+      setViewingApiKeyId(generated.id);
+      setFullApiKey(generated.fullKey);
       // Fetch updated list to include the new key
       await loadApiKeys();
       toast.success(t("profile.apiKeySuccess", "API key generated successfully"));
@@ -206,28 +209,6 @@ export function useProfile() {
       toast.error(t("profile.apiKeyDeleteError", "Failed to delete API key"));
     }
   }, [loadApiKeys, t]);
-
-  const handleViewApiKey = useCallback(async (keyId: string) => {
-    try {
-      // In a real implementation, we would fetch the full key from the server
-      // For now, we'll simulate by generating a temporary viewable key
-      // NOTE: In production, you would have an endpoint to securely retrieve the full key
-      // for viewing purposes only (not for regular use)
-      setViewingApiKeyId(keyId);
-      
-      // Simulate API call to get full key (would be replaced with actual implementation)
-      // This is a security consideration - in reality, you might only show the key once
-      // when it's generated, or have a secure way to view it temporarily
-      const keyToView = apiKeys.find(key => key.id === keyId);
-      if (keyToView) {
-        // For demo purposes, we're showing a masked version
-        // In reality, you'd fetch the actual key from a secure endpoint
-        setFullApiKey(`sk_live_${Math.random().toString(36).substring(2, 15)}`);
-      }
-    } catch {
-      toast.error(t("profile.apiKeyViewError", "Failed to retrieve API key"));
-    }
-  }, [apiKeys, t]);
 
   const handleCloseApiKeyView = useCallback(() => {
     setViewingApiKeyId(null);
@@ -265,8 +246,6 @@ return {
      handleSave,
      handleGenerateApiKey,
      handleDeleteApiKey,
-     handleViewApiKey,
      handleCloseApiKeyView,
-     // handleCopyApiKey removed as we now use the dialog approach
    };
 }

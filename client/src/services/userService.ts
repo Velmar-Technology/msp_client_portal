@@ -62,6 +62,17 @@ export interface UserListParams {
   sortOrder?: 'asc' | 'desc';
 }
 
+export interface ApiKeySummary {
+  id: string;
+  name: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+}
+
+export interface GeneratedApiKey extends ApiKeySummary {
+  fullKey: string;
+}
+
 /**
  * User and identity management service.
  * Handles self-service profile settings, technician/client directories, and admin RBAC operations.
@@ -271,21 +282,22 @@ export const userService = {
 
 /**
     * Generates a 30-day JWT API key for programmatic access for the current user.
+    * The plaintext token is returned exactly once; only a hashed digest is stored.
     *
     * @param name - Optional name for the API key
-    * @returns Promise resolving to the generated API key token string.
+    * @returns Promise resolving to the generated API key metadata including the one-time fullKey.
     */
-   async generateApiKey(name?: string): Promise<string> {
+   async generateApiKey(name?: string): Promise<GeneratedApiKey> {
      const response = await api.post('/users/me/api-key', { name });
-     return response.data.data.apiKey;
+     return response.data.data;
    },
 
    /**
     * Retrieves the list of API keys for the current user.
     *
-    * @returns Promise resolving to array of API key objects.
+    * @returns Promise resolving to array of API key summaries.
     */
-   async getApiKeys(): Promise<Array<{ id: string; name: string; createdAt: string; lastUsedAt: string | null }>> {
+   async getApiKeys(): Promise<ApiKeySummary[]> {
      const response = await api.get('/users/me/api-keys');
      return response.data.data;
    },

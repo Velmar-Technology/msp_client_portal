@@ -116,8 +116,14 @@ router.post('/me/avatar', upload.single('avatar'), (req, res) => userController.
 /** PUT /api/v1/users/me/password — Change current user password */
 router.put('/me/password', validate(ChangePasswordDTO), (req, res) => userController.changePassword(req, res));
 
-/** POST /api/v1/users/me/api-key — Generate API key for current user */
+/** POST /api/v1/users/me/api-key — Generate API key for current user (plaintext returned once) */
 router.post('/me/api-key', (req, res) => userController.generateApiKey(req, res));
+
+/** GET /api/v1/users/me/api-keys — List API keys for current user */
+router.get('/me/api-keys', (req, res) => userController.listApiKeys(req, res));
+
+/** DELETE /api/v1/users/me/api-key/:keyId — Delete an API key owned by current user */
+router.delete('/me/api-key/:keyId', (req, res) => userController.deleteApiKey(req, res));
 
 /** GET /api/v1/users/technicians — List technicians (Admin/Tech only) */
 router.get(

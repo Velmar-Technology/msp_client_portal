@@ -1,9 +1,11 @@
 import { userRepository, UserRepository, type UserListFilters } from '../repositories/UserRepository';
+import { apiKeyRepository, ApiKeyRepository } from '../repositories/ApiKeyRepository';
 import { NotFoundError, ConflictError, UnauthorizedError, ForbiddenError, InternalServerError } from '@shared/errors';
-import { User, UserRole, JwtPayload } from '@shared/types';
+import { User, UserRole, JwtPayload, ApiKeySummary, GeneratedApiKey } from '@shared/types';
 import { UpdateProfileInput, ChangePasswordInput } from '@shared/dtos/user.dto';
 import { hashPassword, comparePassword } from '@shared/utils/passwordUtils';
 import jwt from 'jsonwebtoken';
+import { createHash } from 'crypto';
 import { env } from '@shared/config/env';
 
 export interface UserListResponse {
@@ -32,11 +34,15 @@ function sanitizeUser(user: User): Omit<User, 'password_hash'> {
  */
 export class UserService {
   /**
-   * Initializes UserService with UserRepository dependency.
+   * Initializes UserService with UserRepository and ApiKeyRepository dependencies.
    *
    * @param userRepo - Data repository for user operations
+   * @param apiKeyRepo - Data repository for persisted API keys
    */
-  constructor(private userRepo: UserRepository = userRepository) {}
+  constructor(
+    private userRepo: UserRepository = userRepository,
+    private apiKeyRepo: ApiKeyRepository = apiKeyRepository
+  ) {}
 
   /**
    * Retrieves the sanitized profile of a user by ID.
@@ -379,16 +385,17 @@ export class UserService {
   }
 
   /**
-   * Generates an API key (JWT token) for the authenticated user.
+   * Generates an API key (JWT token) for the authenticated user, persists a hashed record,
+   * and returns the plaintext key exactly once for secure display at creation time.
    * API keys have a longer expiration time (30 days) than regular session tokens.
    *
    * @param userId - Unique user identifier
-   * @returns Generated API key as a JWT token string
+   * @param name - Optional human-readable label for the key (defaults to "Default Key")
+   * @returns Generated API key metadata including the one-time plaintext token
    * @throws {NotFoundError} When user does not exist
    * @throws {InternalServerError} When token generation fails
-   * @see BL-XXX (if applicable - API key generation for admin/programmatic access)
    */
-  async generateApiKey(userId: string): Promise<string> {
+  async generateApiKey(userId: string, name?: string): Promise<GeneratedApiKey> {
     const user = await this.userRepo.findById(userId);
     if (!user) throw new NotFoundError('User not found');
 
@@ -405,7 +412,54 @@ export class UserService {
       expiresIn: '30d', // API keys valid for 30 days
     });
 
-    return token;
+    // Persist only a SHA-256 digest so the plaintext key is never stored or recoverable
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+    const keyName = name?.trim() || 'Default Key';
+
+    const created = await this.apiKeyRepo.create({
+      userId: user.id,
+      tenantId: user.tenant_id,
+      name: keyName,
+      tokenHash,
+    });
+
+    return {
+      id: created.id,
+      name: created.name,
+      fullKey: token,
+      createdAt: created.created_at,
+      lastUsedAt: created.last_used_at,
+    };
+  }
+
+  /**
+   * Lists API key metadata (never plaintext tokens) owned by a user, newest first.
+   *
+   * @param userId - Unique user identifier
+   * @returns Array of API key summaries without underlying secrets
+   */
+  async listApiKeys(userId: string): Promise<ApiKeySummary[]> {
+    const keys = await this.apiKeyRepo.findByUserId(userId);
+    return keys.map((key) => ({
+      id: key.id,
+      name: key.name,
+      createdAt: key.created_at,
+      lastUsedAt: key.last_used_at,
+    }));
+  }
+
+  /**
+   * Deletes an API key only when it is owned by the requesting user.
+   *
+   * @param userId - Unique user identifier
+   * @param keyId - API key identifier to remove
+   * @throws {NotFoundError} When the key does not exist or is not owned by the user
+   */
+  async deleteApiKey(userId: string, keyId: string): Promise<void> {
+    const existing = await this.apiKeyRepo.findByIdAndUser(keyId, userId);
+    if (!existing) throw new NotFoundError('API key not found');
+
+    await this.apiKeyRepo.deleteById(keyId, userId);
   }
 }
 

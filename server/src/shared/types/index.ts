@@ -190,6 +190,27 @@ export interface RoundRobinState {
   updated_at: Date;
 }
 
+export interface ApiKey {
+  id: string;
+  user_id: string;
+  name: string;
+  token_hash: string;
+  last_used_at: Date | null;
+  tenant_id: string;
+  created_at: Date;
+}
+
+export interface ApiKeySummary {
+  id: string;
+  name: string;
+  createdAt: Date;
+  lastUsedAt: Date | null;
+}
+
+export interface GeneratedApiKey extends ApiKeySummary {
+  fullKey: string;
+}
+
 export interface RmmAlert {
   id: string;
   alert_type: string;

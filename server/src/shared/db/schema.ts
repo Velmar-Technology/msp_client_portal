@@ -630,6 +630,28 @@ export const technicianRates = pgTable(
   ]
 );
 
+// ---- API Keys ----
+export const apiKeys = pgTable(
+  'api_keys',
+  {
+    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    user_id: uuid('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    name: varchar('name', { length: 100 }).notNull(),
+    token_hash: varchar('token_hash', { length: 255 }).notNull(),
+    last_used_at: timestamp('last_used_at', { withTimezone: true }),
+    tenant_id: uuid('tenant_id')
+      .references(() => tenants.id, { onDelete: 'cascade' })
+      .notNull(),
+    created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    index('idx_api_keys_user').on(table.user_id),
+    index('idx_api_keys_tenant').on(table.tenant_id),
+  ]
+);
+
 // ---- Technician Earnings Ledger ----
 export const technicianEarnings = pgTable(
   'technician_earnings',
