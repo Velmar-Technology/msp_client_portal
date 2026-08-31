@@ -439,21 +439,20 @@ export function RegisterPage() {
                               </span>
                             </FieldLabel>
                             <Select value={field.value} onValueChange={field.onChange}>
-                              <SelectTrigger
-                                id="reg-clientType"
-                                aria-required="true"
-                                aria-invalid={fieldState.invalid}
-                                aria-describedby={fieldState.invalid ? "reg-clientType-error" : undefined}
-                                size="lg"
-                                className="w-full px-3 py-1.5 border border-input rounded-lg text-xs bg-background focus-visible:ring-1 focus-visible:ring-ring transition-all text-foreground shadow-xs cursor-pointer"
-                              >
+<SelectTrigger
+                                 id="reg-clientType"
+                                 aria-required="true"
+                                 aria-invalid={fieldState.invalid}
+                                 aria-describedby={fieldState.invalid ? "reg-clientType-error" : undefined}
+                                 size="lg"
+                                 className="w-full px-3 py-1.5 data-[size=lg]:px-3 data-[size=lg]:py-1.5 data-[size=lg]:h-9 border border-input rounded-lg text-xs bg-background focus-visible:ring-1 focus-visible:ring-ring transition-all text-foreground shadow-xs cursor-pointer"
+                               >
                                 <SelectValue placeholder={t("register.clientType")} />
                               </SelectTrigger>
                               <SelectContent className="bg-card border-border">
                                 <SelectItem value="CLIENT">{t("register.clientTypeCLIENT")}</SelectItem>
                                 <SelectItem value="ENTERPRISE">{t("register.clientTypeENTERPRISE")}</SelectItem>
                                 <SelectItem value="STUDENT">{t("register.clientTypeSTUDENT")}</SelectItem>
-                                <SelectItem value="OTHER">{t("register.clientTypeOTHER")}</SelectItem>
                               </SelectContent>
                             </Select>
                             {fieldState.invalid && <FieldError id="reg-clientType-error" errors={[fieldState.error]} />}
