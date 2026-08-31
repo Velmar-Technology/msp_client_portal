@@ -32,6 +32,7 @@ import { Page } from "@/components/Page";
 import { Button } from "@/components/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ViewToggle } from "@/components/ui/view-toggle";
 import { DataTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
@@ -406,30 +407,25 @@ export function MaintenancePage() {
               <span>{t("maintenance.scheduleBtn")}</span>
             </Button>
             {/* View Mode Toggle */}
-            <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-800">
-              <Button
-                type="button"
-                size="icon"
-                variant={viewMode === "CALENDAR" ? "secondary" : "ghost"}
-                onClick={() => setViewMode("CALENDAR")}
-                title={t("maintenance.viewCalendar")}
-                aria-label={t("maintenance.viewCalendar")}
-                className="h-7 w-7 p-0 cursor-pointer"
-              >
-                <LayoutGrid className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                type="button"
-                size="icon"
-                variant={viewMode === "LIST" ? "secondary" : "ghost"}
-                onClick={() => setViewMode("LIST")}
-                title={t("maintenance.viewList")}
-                aria-label={t("maintenance.viewList")}
-                className="h-7 w-7 p-0 cursor-pointer"
-              >
-                <ListIcon className="h-3.5 w-3.5" />
-              </Button>
-            </div>
+            <ViewToggle
+              size="sm"
+              value={viewMode}
+              onChange={setViewMode}
+              options={[
+                {
+                  value: "CALENDAR",
+                  icon: LayoutGrid,
+                  title: t("maintenance.viewCalendar"),
+                  ariaLabel: t("maintenance.viewCalendar"),
+                },
+                {
+                  value: "LIST",
+                  icon: ListIcon,
+                  title: t("maintenance.viewList"),
+                  ariaLabel: t("maintenance.viewList"),
+                },
+              ]}
+            />
           </div>
         </div>
 

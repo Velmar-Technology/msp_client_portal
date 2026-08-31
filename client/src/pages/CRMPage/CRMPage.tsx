@@ -21,6 +21,7 @@ import { CRMDataTable } from "@/pages/CRMPage/components/CRMDataTable";
 import { CRMKanbanBoard } from "@/pages/CRMPage/components/CRMKanbanBoard";
 import { CRMLeadDetailSheet } from "@/pages/CRMPage/components/CRMLeadDetailSheet";
 import { CRMNewLeadModal } from "@/pages/CRMPage/components/CRMNewLeadModal";
+import { ViewToggle } from "@/components/ui/view-toggle";
 import type { Lead, LeadStage, QuotationStatus } from "@/services/crmService";
 import { LayoutList, Kanban, Plus, TrendingUp, DollarSign, Briefcase, Target, CalendarClock } from "lucide-react";
 
@@ -217,28 +218,15 @@ export function CRMPage() {
             <Plus className="h-3.5 w-3.5" />
             <span>{t("crm.newLead")}</span>
           </Button>
-          <div className="flex items-center bg-zinc-100 p-0.5 rounded-lg border border-zinc-200 dark:bg-zinc-900 dark:border-zinc-800">
-            <Button
-              type="button"
-              size="sm"
-              variant={paramView === "table" ? "secondary" : "ghost"}
-              onClick={() => handleViewChange("table")}
-              className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer"
-            >
-              <LayoutList className="h-3.5 w-3.5" />
-              <span>{t("crm.views.table")}</span>
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={paramView === "kanban" ? "secondary" : "ghost"}
-              onClick={() => handleViewChange("kanban")}
-              className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer"
-            >
-              <Kanban className="h-3.5 w-3.5" />
-              <span>{t("crm.views.kanban")}</span>
-            </Button>
-          </div>
+          <ViewToggle
+            size="sm"
+            value={paramView}
+            onChange={handleViewChange}
+            options={[
+              { value: "table", icon: LayoutList, label: t("crm.views.table") },
+              { value: "kanban", icon: Kanban, label: t("crm.views.kanban") },
+            ]}
+          />
         </div>
       }
     >
