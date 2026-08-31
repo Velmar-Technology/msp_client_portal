@@ -269,14 +269,35 @@ export const userService = {
     return response.data.data;
   },
 
-  /**
-   * Generates a 30-day JWT API key for programmatic access for the current user.
-   *
-   * @returns Promise resolving to the generated API key token string.
-   */
-  async generateApiKey(): Promise<string> {
-    const response = await api.post('/users/me/api-key');
-    return response.data.data.apiKey;
-  },
-};
+/**
+    * Generates a 30-day JWT API key for programmatic access for the current user.
+    *
+    * @param name - Optional name for the API key
+    * @returns Promise resolving to the generated API key token string.
+    */
+   async generateApiKey(name?: string): Promise<string> {
+     const response = await api.post('/users/me/api-key', { name });
+     return response.data.data.apiKey;
+   },
+
+   /**
+    * Retrieves the list of API keys for the current user.
+    *
+    * @returns Promise resolving to array of API key objects.
+    */
+   async getApiKeys(): Promise<Array<{ id: string; name: string; createdAt: string; lastUsedAt: string | null }>> {
+     const response = await api.get('/users/me/api-keys');
+     return response.data.data;
+   },
+
+   /**
+    * Deletes an API key for the current user.
+    *
+    * @param keyId - The ID of the API key to delete
+    * @returns Promise resolving upon deletion.
+    */
+   async deleteApiKey(keyId: string): Promise<void> {
+     await api.delete(`/users/me/api-key/${keyId}`);
+   },
+ };
 

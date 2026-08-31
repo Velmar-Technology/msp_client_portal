@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Eye, EyeOff, AlertCircle, User, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, Globe, User, ShieldCheck } from "lucide-react";
 import logoUrl from "@/assets/logo.png";
 import { useTranslation } from "react-i18next";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -231,11 +231,27 @@ export function RegisterPage() {
     }
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 transition-colors py-4 md:py-6">
-      <div className="w-full max-w-2xl md:max-w-3xl animate-fade-in">
-        {/* Card */}
-        <main className="bg-card border border-border rounded-2xl p-5 md:p-6 shadow-xl relative overflow-hidden">
+return (
+     <div className="min-h-screen flex items-center justify-center bg-background px-4 transition-colors py-4 md:py-6">
+       {/* Top Bar Language Selector */}
+       <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 flex items-center gap-1.5 bg-card/80 backdrop-blur-sm border border-border rounded-full p-1 pl-2 shadow-xs">
+         <Globe className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+         <Select
+           value={i18n.language || "en_US"}
+           onValueChange={(newLang) => i18n.changeLanguage(newLang)}
+         >
+           <SelectTrigger size="sm" className="border-0 bg-transparent text-xs font-semibold text-foreground shadow-none px-2 focus:ring-0 cursor-pointer">
+             <SelectValue />
+           </SelectTrigger>
+           <SelectContent align="end">
+             <SelectItem value="en_US">English (US)</SelectItem>
+             <SelectItem value="es_DO">Español (DO)</SelectItem>
+           </SelectContent>
+         </Select>
+       </div>
+       <div className="w-full max-w-2xl md:max-w-3xl animate-fade-in">
+         {/* Card */}
+         <main className="bg-card border border-border rounded-2xl p-5 md:p-6 shadow-xl relative overflow-hidden">
           {/* Brand Logo & Header */}
           <header className="flex flex-col items-center justify-center mb-3 gap-2">
             <img
@@ -356,11 +372,12 @@ export function RegisterPage() {
               <form onSubmit={handleFormSubmit} className="space-y-4" autoComplete="off" noValidate>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Group 1: Personal & Organization Info */}
-                  <FieldSet className="p-3.5 bg-muted/40 border border-border rounded-xl space-y-2.5 shadow-xs">
-                    <FieldLegend className="flex items-center gap-1.5 pb-2 mb-0.5 border-b border-border text-[11px] font-bold text-foreground uppercase tracking-wider w-full font-heading">
-                      <User className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-                      <span>{t("register.personalGroupTitle")}</span>
-                    </FieldLegend>
+                  <FieldSet className="p-3.5 bg-muted/40 border border-border rounded-xl space-y-2.5 shadow-xs flex flex-col justify-between">
+                    <div className="space-y-2.5">
+                      <FieldLegend className="flex items-center gap-1.5 pb-2 mb-0.5 border-b border-border text-[11px] font-bold text-foreground uppercase tracking-wider w-full font-heading">
+                        <User className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                        <span>{t("register.personalGroupTitle")}</span>
+                      </FieldLegend>
 
                     <Controller
                       name="name"
@@ -438,21 +455,20 @@ export function RegisterPage() {
                               </span>
                             </FieldLabel>
                             <Select value={field.value} onValueChange={field.onChange}>
-                              <SelectTrigger
-                                id="reg-clientType"
-                                aria-required="true"
-                                aria-invalid={fieldState.invalid}
-                                aria-describedby={fieldState.invalid ? "reg-clientType-error" : undefined}
-                                size="lg"
-                                className="w-full px-3 py-1.5 border border-input rounded-lg text-xs bg-background focus-visible:ring-1 focus-visible:ring-ring transition-all text-foreground shadow-xs cursor-pointer"
-                              >
+<SelectTrigger
+                                 id="reg-clientType"
+                                 aria-required="true"
+                                 aria-invalid={fieldState.invalid}
+                                 aria-describedby={fieldState.invalid ? "reg-clientType-error" : undefined}
+                                 size="lg"
+                                 className="w-full px-3 py-1.5 data-[size=lg]:px-3 data-[size=lg]:py-1.5 data-[size=lg]:h-9 border border-input rounded-lg text-xs bg-background focus-visible:ring-1 focus-visible:ring-ring transition-all text-foreground shadow-xs cursor-pointer"
+                               >
                                 <SelectValue placeholder={t("register.clientType")} />
                               </SelectTrigger>
                               <SelectContent className="bg-card border-border">
                                 <SelectItem value="CLIENT">{t("register.clientTypeCLIENT")}</SelectItem>
                                 <SelectItem value="ENTERPRISE">{t("register.clientTypeENTERPRISE")}</SelectItem>
                                 <SelectItem value="STUDENT">{t("register.clientTypeSTUDENT")}</SelectItem>
-                                <SelectItem value="OTHER">{t("register.clientTypeOTHER")}</SelectItem>
                               </SelectContent>
                             </Select>
                             {fieldState.invalid && <FieldError id="reg-clientType-error" errors={[fieldState.error]} />}
@@ -486,6 +502,7 @@ export function RegisterPage() {
                         </Field>
                       )}
                     />
+                    </div>
                   </FieldSet>
 
                   {/* Group 2: Account & Credentials */}
@@ -583,7 +600,7 @@ export function RegisterPage() {
                               <Field data-invalid={fieldState.invalid}>
                                 <FieldLabel
                                   htmlFor="reg-confirm"
-                                  className="block text-[10px] font-bold text-foreground uppercase tracking-wider mb-1 mt-3 items-center justify-between"
+                                  className="block text-[10px] font-bold text-foreground uppercase tracking-wider mb-1 mt-2.5 items-center justify-between"
                                 >
                                   <span>{t("register.confirmPassword")}</span>
                                   <span className="text-destructive ml-0.5" aria-hidden="true">

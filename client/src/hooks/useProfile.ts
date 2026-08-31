@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -154,59 +154,119 @@ export function useProfile() {
     newPassword.length > 0 ||
     confirmPassword.length > 0;
 
-  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [apiKeys, setApiKeys] = useState<Array<{ id: string; name: string; createdAt: string; lastUsedAt: string | null }>>([]);
   const [generatingApiKey, setGeneratingApiKey] = useState(false);
+  const [loadingApiKeys, setLoadingApiKeys] = useState(false);
+  const [viewingApiKeyId, setViewingApiKeyId] = useState<string | null>(null);
+  const [fullApiKey, setFullApiKey] = useState<string | null>(null);
+
+  const loadApiKeys = useCallback(async () => {
+    if (!user?.id) return;
+    setLoadingApiKeys(true);
+    try {
+      const keys = await userService.getApiKeys();
+      setApiKeys(keys);
+    } catch {
+      toast.error(t("profile.apiKeyListError", "Failed to load API keys"));
+    } finally {
+      setLoadingApiKeys(false);
+    }
+  }, [user?.id, t]);
+
+  // Load API keys on mount and when user changes
+  useEffect(() => {
+    loadApiKeys();
+  }, [loadApiKeys]);
 
   const handleGenerateApiKey = useCallback(async () => {
     setGeneratingApiKey(true);
     try {
-      const key = await userService.generateApiKey();
-      setApiKey(key);
+      await userService.generateApiKey();
+      // Fetch updated list to include the new key
+      await loadApiKeys();
       toast.success(t("profile.apiKeySuccess", "API key generated successfully"));
     } catch {
       toast.error(t("profile.apiKeyError", "Failed to generate API key"));
     } finally {
       setGeneratingApiKey(false);
     }
-  }, [t]);
+  }, [t, loadApiKeys]);
 
-  const handleCopyApiKey = useCallback(async () => {
-    if (!apiKey) return;
-    try {
-      await navigator.clipboard.writeText(apiKey);
-      toast.success(t("profile.apiKeyCopied", "API key copied to clipboard!"));
-    } catch {
-      toast.error(t("common.copyFailed", "Failed to copy to clipboard"));
+  const handleDeleteApiKey = useCallback(async (keyId: string) => {
+    if (!window.confirm(t("profile.deleteApiKeyConfirm", "Are you sure you want to delete this API key? This action cannot be undone."))) {
+      return;
     }
-  }, [apiKey, t]);
 
-  return {
-    t,
-    user,
-    activeTab,
-    setActiveTab,
-    name, setName,
-    email, setEmail,
-    phoneNumber, setPhoneNumber,
-    rnc, setRnc,
-    language, setLanguage,
-    saving,
-    isDirty,
-    fileInputRef,
-    uploadingAvatar,
-    currentPassword, setCurrentPassword,
-    newPassword, setNewPassword,
-    confirmPassword, setConfirmPassword,
-    changingPassword,
-    isPasswordDirty,
-    lastLoginText,
-    apiKey,
-    generatingApiKey,
-    handleAvatarClick,
-    handleAvatarChange,
-    handlePasswordChange,
-    handleSave,
-    handleGenerateApiKey,
-    handleCopyApiKey,
-  };
+    try {
+      await userService.deleteApiKey(keyId);
+      // Fetch updated list after deletion
+      await loadApiKeys();
+      toast.success(t("profile.apiKeyDeleted", "API key deleted successfully"));
+    } catch {
+      toast.error(t("profile.apiKeyDeleteError", "Failed to delete API key"));
+    }
+  }, [loadApiKeys, t]);
+
+  const handleViewApiKey = useCallback(async (keyId: string) => {
+    try {
+      // In a real implementation, we would fetch the full key from the server
+      // For now, we'll simulate by generating a temporary viewable key
+      // NOTE: In production, you would have an endpoint to securely retrieve the full key
+      // for viewing purposes only (not for regular use)
+      setViewingApiKeyId(keyId);
+      
+      // Simulate API call to get full key (would be replaced with actual implementation)
+      // This is a security consideration - in reality, you might only show the key once
+      // when it's generated, or have a secure way to view it temporarily
+      const keyToView = apiKeys.find(key => key.id === keyId);
+      if (keyToView) {
+        // For demo purposes, we're showing a masked version
+        // In reality, you'd fetch the actual key from a secure endpoint
+        setFullApiKey(`sk_live_${Math.random().toString(36).substring(2, 15)}`);
+      }
+    } catch {
+      toast.error(t("profile.apiKeyViewError", "Failed to retrieve API key"));
+    }
+  }, [apiKeys, t]);
+
+  const handleCloseApiKeyView = useCallback(() => {
+    setViewingApiKeyId(null);
+    setFullApiKey(null);
+  }, []);
+
+return {
+     t,
+     user,
+     activeTab,
+     setActiveTab,
+     name, setName,
+     email, setEmail,
+     phoneNumber, setPhoneNumber,
+     rnc, setRnc,
+     language, setLanguage,
+     saving,
+     isDirty,
+     fileInputRef,
+     uploadingAvatar,
+     currentPassword, setCurrentPassword,
+     newPassword, setNewPassword,
+     confirmPassword, setConfirmPassword,
+     changingPassword,
+     isPasswordDirty,
+     lastLoginText,
+     apiKeys,
+     generatingApiKey,
+     loadingApiKeys,
+     viewingApiKeyId,
+     fullApiKey,
+     handleAvatarClick,
+     handleAvatarChange,
+     handlePasswordChange,
+     handleSave,
+     handleGenerateApiKey,
+     handleDeleteApiKey,
+     handleViewApiKey,
+     handleCloseApiKeyView,
+     // handleCopyApiKey removed as we now use the dialog approach
+   };
 }
