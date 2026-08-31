@@ -16,6 +16,10 @@ const mocks = vi.hoisted(() => {
     bulkDelete: vi.fn(),
     hashPassword: vi.fn(),
     comparePassword: vi.fn(),
+    createApiKey: vi.fn(),
+    findByUserId: vi.fn(),
+    findByIdAndUser: vi.fn(),
+    deleteApiKeyById: vi.fn(),
   };
 });
 
@@ -43,6 +47,17 @@ vi.mock('@shared/utils/passwordUtils', () => {
   return {
     hashPassword: mocks.hashPassword,
     comparePassword: mocks.comparePassword,
+  };
+});
+
+vi.mock('@modules/auth/repositories/ApiKeyRepository', () => {
+  return {
+    apiKeyRepository: {
+      create: mocks.createApiKey,
+      findByUserId: mocks.findByUserId,
+      findByIdAndUser: mocks.findByIdAndUser,
+      deleteById: mocks.deleteApiKeyById,
+    },
   };
 });
 
@@ -392,7 +407,49 @@ describe('UserService', () => {
   });
 
   describe('generateApiKey', () => {
-    it('should generate a signed JWT token with user claims and 30d expiration', async () => {
+    it('should persist a hashed key and return the plaintext token exactly once', async () => {
+      const mockUser = {
+        id: 'user-1',
+        email: 'admin@example.com',
+        role: UserRole.ADMIN,
+        tenant_id: 'tenant-123',
+      };
+      const mockCreated = {
+        id: 'key-1',
+        name: 'CI Key',
+        created_at: new Date('2026-08-30T00:00:00Z'),
+        last_used_at: null,
+        token_hash: 'abc123',
+      };
+      mocks.findById.mockResolvedValue(mockUser);
+      mocks.createApiKey.mockResolvedValue(mockCreated);
+
+      const result = await userService.generateApiKey('user-1', 'CI Key');
+
+      expect(mocks.findById).toHaveBeenCalledWith('user-1');
+      expect(mocks.createApiKey).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'user-1',
+          tenantId: 'tenant-123',
+          name: 'CI Key',
+        })
+      );
+      // Only a SHA-256 digest should be persisted, never the raw token
+      const tokenHashArg = mocks.createApiKey.mock.calls[0][0].tokenHash as string;
+      expect(tokenHashArg).toMatch(/^[a-f0-9]{64}$/);
+      const token = result.fullKey;
+      expect(token.split('.').length).toBe(3); // Valid JWT structure
+      expect(tokenHashArg).not.toBe(token);
+      expect(result).toMatchObject({
+        id: 'key-1',
+        name: 'CI Key',
+        fullKey: expect.any(String),
+        createdAt: mockCreated.created_at,
+        lastUsedAt: null,
+      });
+    });
+
+    it('should default the key name when none is provided', async () => {
       const mockUser = {
         id: 'user-1',
         email: 'admin@example.com',
@@ -400,12 +457,19 @@ describe('UserService', () => {
         tenant_id: 'tenant-123',
       };
       mocks.findById.mockResolvedValue(mockUser);
+      mocks.createApiKey.mockResolvedValue({
+        id: 'key-1',
+        name: 'Default Key',
+        token_hash: 'abc',
+        created_at: new Date(),
+        last_used_at: null,
+      });
 
-      const token = await userService.generateApiKey('user-1');
+      await userService.generateApiKey('user-1');
 
-      expect(mocks.findById).toHaveBeenCalledWith('user-1');
-      expect(typeof token).toBe('string');
-      expect(token.split('.').length).toBe(3); // Valid JWT structure
+      expect(mocks.createApiKey).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Default Key' })
+      );
     });
 
     it('should throw NotFoundError if user does not exist', async () => {
@@ -416,6 +480,57 @@ describe('UserService', () => {
         statusCode: 404,
         code: 'NOT_FOUND_ERROR',
       });
+      expect(mocks.createApiKey).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('listApiKeys', () => {
+    it('should map persisted keys to summaries without exposing token hashes', async () => {
+      mocks.findByUserId.mockResolvedValue([
+        {
+          id: 'key-1',
+          name: 'CI Key',
+          token_hash: 'secret-hash',
+          created_at: new Date('2026-08-30T00:00:00Z'),
+          last_used_at: null,
+        },
+      ]);
+
+      const result = await userService.listApiKeys('user-1');
+
+      expect(mocks.findByUserId).toHaveBeenCalledWith('user-1');
+      expect(result).toEqual([
+        {
+          id: 'key-1',
+          name: 'CI Key',
+          createdAt: expect.any(Date),
+          lastUsedAt: null,
+        },
+      ]);
+      expect(JSON.stringify(result)).not.toContain('secret-hash');
+    });
+  });
+
+  describe('deleteApiKey', () => {
+    it('should delete a key owned by the requesting user', async () => {
+      mocks.findByIdAndUser.mockResolvedValue({ id: 'key-1' });
+      mocks.deleteApiKeyById.mockResolvedValue(true);
+
+      await userService.deleteApiKey('user-1', 'key-1');
+
+      expect(mocks.findByIdAndUser).toHaveBeenCalledWith('key-1', 'user-1');
+      expect(mocks.deleteApiKeyById).toHaveBeenCalledWith('key-1', 'user-1');
+    });
+
+    it('should throw NotFoundError for an unowned or missing key', async () => {
+      mocks.findByIdAndUser.mockResolvedValue(null);
+
+      await expect(userService.deleteApiKey('user-1', 'key-unknown')).rejects.toMatchObject({
+        message: 'API key not found',
+        statusCode: 404,
+        code: 'NOT_FOUND_ERROR',
+      });
+      expect(mocks.deleteApiKeyById).not.toHaveBeenCalled();
     });
   });
 });

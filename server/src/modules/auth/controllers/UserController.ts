@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { InvalidFileTypeError } from '@shared/errors';
+import { InvalidFileTypeError, ValidationError } from '@shared/errors';
 import { userService } from '@modules/auth/services/UserService';
 import {
   UpdateProfileInput,
@@ -11,6 +11,7 @@ import {
   UpdateUserClientTypeInput,
   BulkUpdateUserClientTypeInput,
   BulkDeleteUsersInput,
+  GenerateApiKeyDTO,
 } from '@shared/dtos/user.dto';
 import { UserRole } from '@shared/types';
 
@@ -253,13 +254,46 @@ export class UserController {
 
   /**
    * Generates an API key (JWT token) for programmatic API access for the authenticated user.
+   * The plaintext token is returned exactly once at creation; only a hashed digest is persisted.
    *
    * @param req - Express request with authenticated UserContext
-   * @param res - Express response returning generated API key
+   * @param res - Express response returning generated API key metadata
+   * @throws {ValidationError} When the request body is not a valid GenerateApiKeyInput
    */
   async generateApiKey(req: Request, res: Response): Promise<void> {
-    const apiKey = await userService.generateApiKey(req.user!.userId);
-    res.json({ success: true, data: { apiKey } });
+    const parsed = GenerateApiKeyDTO.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      const fields = parsed.error.errors.map((e) => ({
+        field: e.path.join('.'),
+        message: e.message,
+      }));
+      throw new ValidationError('Validation failed', { fields });
+    }
+
+    const apiKey = await userService.generateApiKey(req.user!.userId, parsed.data.name);
+    res.json({ success: true, data: apiKey });
+  }
+
+  /**
+   * Lists API key metadata owned by the authenticated user (plaintext tokens are never exposed).
+   *
+   * @param req - Express request with authenticated UserContext
+   * @param res - Express response returning the user's API key summaries
+   */
+  async listApiKeys(req: Request, res: Response): Promise<void> {
+    const keys = await userService.listApiKeys(req.user!.userId);
+    res.json({ success: true, data: keys });
+  }
+
+  /**
+   * Deletes an API key owned by the authenticated user.
+   *
+   * @param req - Express request with authenticated UserContext and target key ID param
+   * @param res - Express response confirming deletion
+   */
+  async deleteApiKey(req: Request<{ keyId: string }>, res: Response): Promise<void> {
+    await userService.deleteApiKey(req.user!.userId, req.params.keyId);
+    res.json({ success: true, data: { deleted: true } });
   }
 }
 

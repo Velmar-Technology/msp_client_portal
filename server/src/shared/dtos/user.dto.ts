@@ -83,4 +83,16 @@ export const BulkDeleteUsersDTO = z.object({
 });
 export type BulkDeleteUsersInput = z.infer<typeof BulkDeleteUsersDTO>;
 
+// ---- API Key DTOs ----
+
+export const GenerateApiKeyDTO = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, 'API key name cannot be empty')
+    .max(100, 'API key name cannot exceed 100 characters')
+    .optional(),
+});
+export type GenerateApiKeyInput = z.infer<typeof GenerateApiKeyDTO>;
+
 

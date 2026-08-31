@@ -1,4 +1,4 @@
-import { User, ShieldCheck, Mail, Phone, Lock, Save, Globe, Edit, Clock, Loader2, Info, Key, KeyRound, FileText, Eye, X } from "lucide-react";
+import { User, ShieldCheck, Mail, Phone, Lock, Save, Globe, Edit, Clock, Loader2, Info, Key, KeyRound, FileText, X } from "lucide-react";
 import { toast } from "sonner";
 import { Page } from "@/components/Page";
 import { Input } from "@/components/ui/input";
@@ -308,7 +308,7 @@ const ChangePasswordForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
 
 export function ProfilePage() {
   const profileHook = useProfile();
-  const { t, user, lastLoginText, uploadingAvatar, fileInputRef, handleAvatarClick, handleAvatarChange, apiKeys, generatingApiKey, loadingApiKeys, viewingApiKeyId, fullApiKey, handleGenerateApiKey, handleDeleteApiKey, handleViewApiKey, handleCloseApiKeyView } = profileHook;
+  const { t, user, lastLoginText, uploadingAvatar, fileInputRef, handleAvatarClick, handleAvatarChange, apiKeys, generatingApiKey, loadingApiKeys, viewingApiKeyId, fullApiKey, handleGenerateApiKey, handleDeleteApiKey, handleCloseApiKeyView } = profileHook;
 
   // Only show API key management for ADMIN users
   const isAdmin = user?.role === 'ADMIN';
@@ -336,12 +336,9 @@ export function ProfilePage() {
               <div className="border-b border-border bg-muted/30 px-6 py-4 flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-semibold text-foreground font-heading flex items-center gap-2">
-                    <KeyRound className="h-4 w-4 text-primary" />
+                    <KeyRound className="h-4 w-4 text-muted-foreground" />
                     {t("profile.apiKeyTitle")}
                   </h3>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {t("profile.apiKeyDesc")}
-                  </p>
                 </div>
                 <Button
                   type="button"
@@ -387,14 +384,6 @@ export function ProfilePage() {
                       cell: ({ row }) => (
                         <div className="flex gap-2">
                           <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleViewApiKey(row.original.id)}
-                            className="hover:text-primary"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
                             variant="destructive"
                             size="icon"
                             onClick={() => handleDeleteApiKey(row.original.id)}
@@ -427,7 +416,7 @@ export function ProfilePage() {
         )}
       </div>
 
-      {/* API Key View Dialog */}
+      {/* API Key View Dialog - shown once right after generation (key cannot be retrieved later) */}
       <AlertDialog
         open={viewingApiKeyId !== null}
         onOpenChange={(open) => { if (!open) handleCloseApiKeyView(); }}
@@ -436,41 +425,39 @@ export function ProfilePage() {
           <AlertDialogHeader>
             <AlertDialogTitle>{t("profile.apiKeyViewTitle", "API Key")}</AlertDialogTitle>
           </AlertDialogHeader>
-          <AlertDialogContent>
-            <div className="space-y-4">
-              <div>
-                <Label
-                  htmlFor="view-api-key-output"
-                  className="mb-2 text-xs font-medium text-foreground"
+          <div className="space-y-4">
+            <div>
+              <Label
+                htmlFor="view-api-key-output"
+                className="mb-2 text-xs font-medium text-foreground"
+              >
+                {t("profile.apiKeyLabel")}
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="view-api-key-output"
+                  type="text"
+                  value={fullApiKey || ""}
+                  readOnly
+                  className="font-mono text-xs bg-muted/40 select-all w-full"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(fullApiKey || "");
+                    toast.success(t("profile.apiKeyCopied", "API key copied to clipboard!"));
+                  }}
+                  disabled={!fullApiKey}
                 >
-                  {t("profile.apiKeyLabel")}
-                </Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="view-api-key-output"
-                    type="text"
-                    value={fullApiKey || ""}
-                    readOnly
-                    className="font-mono text-xs bg-muted/40 select-all w-full"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      navigator.clipboard.writeText(fullApiKey || "");
-                      toast.success(t("profile.apiKeyCopied", "API key copied to clipboard!"));
-                    }}
-                    disabled={!fullApiKey}
-                  >
-                    {t("profile.copyApiKey")}
-                  </Button>
-                </div>
+                  {t("profile.copyApiKey")}
+                </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {t("profile.apiKeyWarning")}
-              </p>
             </div>
-          </AlertDialogContent>
+            <p className="text-xs text-muted-foreground">
+              {t("profile.apiKeyWarning")}
+            </p>
+          </div>
           <AlertDialogFooter>
             <Button
               type="button"

@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => {
     deleteUser: vi.fn(),
     bulkDeleteUsers: vi.fn(),
     generateApiKey: vi.fn(),
+    listApiKeys: vi.fn(),
+    deleteApiKey: vi.fn(),
   };
 });
 
@@ -25,6 +27,8 @@ vi.mock('@modules/auth/services/UserService', () => {
       deleteUser: mocks.deleteUser,
       bulkDeleteUsers: mocks.bulkDeleteUsers,
       generateApiKey: mocks.generateApiKey,
+      listApiKeys: mocks.listApiKeys,
+      deleteApiKey: mocks.deleteApiKey,
     },
   };
 });
@@ -227,7 +231,54 @@ describe('UserController', () => {
   });
 
   describe('generateApiKey', () => {
-    it('should call userService.generateApiKey and return token in response', async () => {
+    it('should call userService.generateApiKey and return generated key metadata in response', async () => {
+      const req = {
+        user: { userId: 'user-1' },
+        body: { name: 'CI Key' },
+      } as unknown as Request;
+
+      const res = {
+        json: vi.fn(),
+      } as unknown as Response;
+
+      const mockKey = {
+        id: 'key-1',
+        name: 'CI Key',
+        fullKey: 'jwt-mock-api-key-token',
+        createdAt: new Date(),
+        lastUsedAt: null,
+      };
+      mocks.generateApiKey.mockResolvedValue(mockKey);
+
+      await userController.generateApiKey(req, res);
+
+      expect(mocks.generateApiKey).toHaveBeenCalledWith('user-1', 'CI Key');
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        data: mockKey,
+      });
+    });
+
+    it('should reject invalid body with a ValidationError', async () => {
+      const req = {
+        user: { userId: 'user-1' },
+        body: { name: 123 },
+      } as unknown as Request;
+
+      const res = {
+        json: vi.fn(),
+      } as unknown as Response;
+
+      await expect(userController.generateApiKey(req, res)).rejects.toMatchObject({
+        message: 'Validation failed',
+        statusCode: 400,
+      });
+      expect(mocks.generateApiKey).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('listApiKeys', () => {
+    it('should call userService.listApiKeys and return the keys', async () => {
       const req = {
         user: { userId: 'user-1' },
       } as unknown as Request;
@@ -236,15 +287,31 @@ describe('UserController', () => {
         json: vi.fn(),
       } as unknown as Response;
 
-      mocks.generateApiKey.mockResolvedValue('jwt-mock-api-key-token');
+      const mockKeys = [{ id: 'key-1', name: 'CI Key', createdAt: new Date(), lastUsedAt: null }];
+      mocks.listApiKeys.mockResolvedValue(mockKeys);
 
-      await userController.generateApiKey(req, res);
+      await userController.listApiKeys(req, res);
 
-      expect(mocks.generateApiKey).toHaveBeenCalledWith('user-1');
-      expect(res.json).toHaveBeenCalledWith({
-        success: true,
-        data: { apiKey: 'jwt-mock-api-key-token' },
-      });
+      expect(mocks.listApiKeys).toHaveBeenCalledWith('user-1');
+      expect(res.json).toHaveBeenCalledWith({ success: true, data: mockKeys });
+    });
+  });
+
+  describe('deleteApiKey', () => {
+    it('should call userService.deleteApiKey and return deletion confirmation', async () => {
+      const req = {
+        user: { userId: 'user-1' },
+        params: { keyId: 'key-1' },
+      } as unknown as Request;
+
+      const res = {
+        json: vi.fn(),
+      } as unknown as Response;
+
+      await userController.deleteApiKey(req, res);
+
+      expect(mocks.deleteApiKey).toHaveBeenCalledWith('user-1', 'key-1');
+      expect(res.json).toHaveBeenCalledWith({ success: true, data: { deleted: true } });
     });
   });
 });
