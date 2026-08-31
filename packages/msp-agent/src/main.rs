@@ -137,6 +137,7 @@ fn dispatch_command(command: &str, payload: &Option<Value>) -> Value {
     match command {
         "DIAGNOSE_PC" => diagnostics::gather_system_metrics(),
         "GET_REMOTE_IDENTITY" => diagnostics::gather_device_identity(),
+        "INSPECT_HARDWARE_INVENTORY" | "GET_HARDWARE_COMPONENTS" => diagnostics::inspect_hardware_components(),
         "GET_EVENT_LOGS" => diagnostics::query_event_logs(payload),
         "SECURITY_AUDIT" => diagnostics::audit_security_posture(),
         "RESTART_SERVICE" => diagnostics::restart_service(payload),

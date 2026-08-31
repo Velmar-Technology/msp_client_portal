@@ -472,7 +472,7 @@ export class MspApiClient {
 
 ---
 
-## 🏢 Client & Asset Overview
+## Client & Asset Overview
 - **Client Organization:** ${details.tenantName || 'N/A'} (\`${details.tenantId}\`)
 - **Primary Contact:** ${details.clientName || 'N/A'} (${details.clientEmail || 'N/A'})
 - **Device Brand / Category:** ${details.deviceBrand} (${details.deviceCategory})
@@ -480,7 +480,7 @@ export class MspApiClient {
 
 ---
 
-## 🔒 Physical Hardware Custody & Serial Verification
+## Physical Hardware Custody & Serial Verification
 > **Chain of Custody Status:** \`${details.hardwareFingerprint.chainOfCustodyStatus}\`  
 > **Hardware Integrity Fingerprint:** \`${details.hardwareFingerprint.integrityHash}\`  
 > *Cryptographic signature matches ${details.hardwareFingerprint.totalAuditedComponents} audited physical hardware components.*
@@ -491,7 +491,7 @@ ${componentRows}
 
 ---
 
-## 📊 Live Subsystem Telemetry & Health
+## Live Subsystem Telemetry & Health
 - **Processor (CPU):** ${details.components.cpu.model} — **${details.components.cpu.currentUsagePct}% load** (\`${details.components.cpu.status}\`)
 - **System Memory (RAM):** ${details.components.memory.spec} — **${details.components.memory.currentUsagePct}% used** (\`${details.components.memory.status}\`)
 - **Storage Subsystem:** ${details.components.storage.usedGb} GB / ${details.components.storage.totalGb} GB (${details.components.storage.usagePct}% used, ${details.components.storage.freeGb} GB free) — (\`${details.components.storage.status}\`)
@@ -500,14 +500,14 @@ ${componentRows}
 
 ---
 
-## 📅 Maintenance Job Records
+## Maintenance Job Records
 | Scheduled Date | Task / Work Order | Status | Notes |
 | :--- | :--- | :---: | :--- |
 ${maintenanceRows}
 
 ---
 
-## 💡 Client Actionable Recommendations
+## Client Actionable Recommendations
 ${recommendationList}
 `;
 
