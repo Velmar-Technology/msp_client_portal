@@ -123,32 +123,27 @@ export const SubscriptionSelector = memo(function SubscriptionSelector({
 }: SubscriptionSelectorProps) {
   const { t } = useTranslation();
   return (
-    <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 shadow-sm max-w-sm">
-      <label htmlFor="active-sub-select-devices" className="block text-[10px] uppercase font-bold text-zinc-400 mb-1.5">
-        {t("devices.selectSubscription")}
-      </label>
-      <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-800">
-        <Select value={selectedId} onValueChange={onChange}>
-          <SelectTrigger
-            id="active-sub-select-devices"
-            aria-label={t("devices.selectSubscription")}
-            size="lg"
-            className="w-full px-2.5 rounded text-xs font-semibold bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5 justify-between"
-          >
-            <SelectValue placeholder={t("devices.selectSubscription")} />
-          </SelectTrigger>
-          <SelectContent className="bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800">
-            {subscriptions.map((sub) => (
-              <SelectItem key={sub.id} value={sub.id} className="text-xs font-medium cursor-pointer">
-                {t("devices.subOptionLabel", {
-                  name: sub.service_name,
-                  devicesStr: t("plans.devicesCount", { count: sub.equipment_count }),
-                })}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+    <div className="flex items-center gap-1.5">
+      <Select value={selectedId} onValueChange={onChange}>
+        <SelectTrigger
+          id="active-sub-select-devices"
+          aria-label={t("devices.selectSubscription")}
+          size="default"
+          className="w-48 sm:w-56 text-xs font-medium bg-background"
+        >
+          <SelectValue placeholder={t("devices.selectSubscription")} />
+        </SelectTrigger>
+        <SelectContent className="bg-popover border-border">
+          {subscriptions.map((sub) => (
+            <SelectItem key={sub.id} value={sub.id} className="text-xs font-medium cursor-pointer">
+              {t("devices.subOptionLabel", {
+                name: sub.service_name,
+                devicesStr: t("plans.devicesCount", { count: sub.equipment_count }),
+              })}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 });
@@ -685,17 +680,6 @@ export function DevicesPage() {
     <Page
       title={t("nav.devices")}
       subtitle={t("devices.subtitle")}
-      actions={
-        isAdmin ? (
-          <Button
-            onClick={handleOpenAddDevice}
-            className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>{t("devices.addDevice", "Add Device")}</span>
-          </Button>
-        ) : undefined
-      }
       isLoading={loading}
     >
       <div className="space-y-6">
@@ -737,33 +721,51 @@ export function DevicesPage() {
               </div>
             ) : (
               <div className="space-y-4 text-foreground animate-fade-in">
-                {activeSubscriptions.length > 1 && !isAdmin && (
-                  <SubscriptionSelector
-                    subscriptions={activeSubscriptions}
-                    selectedId={selectedSubscriptionId}
-                    onChange={setSelectedSubscriptionId}
-                  />
-                )}
+                {/* Top Control Bar */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white dark:bg-zinc-950 p-3.5 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-xs">
+                  <div className="flex flex-wrap items-center gap-3">
+                    {activeSubscriptions.length > 1 && !isAdmin && (
+                      <SubscriptionSelector
+                        subscriptions={activeSubscriptions}
+                        selectedId={selectedSubscriptionId}
+                        onChange={setSelectedSubscriptionId}
+                      />
+                    )}
+                  </div>
+
+                  {/* Action Controls */}
+                  <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end">
+                    {firstAvailableSlot && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          handleOpenActivateWithOtp(firstAvailableSlot.subscription_id, firstAvailableSlot.slot_index)
+                        }
+                        className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
+                      >
+                        <Laptop className="h-3.5 w-3.5" />
+                        <span>{t("devices.activateDevice", "Activate Device")}</span>
+                      </Button>
+                    )}
+
+                    {isAdmin && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleOpenAddDevice}
+                        className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer shadow-xs"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        <span>{t("devices.addDevice", "Add Device")}</span>
+                      </Button>
+                    )}
+                  </div>
+                </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
                   <div className="lg:col-span-3 space-y-4">
-                    {/* Toolbar: Actions */}
-                    <div className="flex items-center justify-end gap-2">
-                      {firstAvailableSlot && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() =>
-                            handleOpenActivateWithOtp(firstAvailableSlot.subscription_id, firstAvailableSlot.slot_index)
-                          }
-                          className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
-                        >
-                          <Laptop className="h-3.5 w-3.5" />
-                          <span>{t("devices.activateDevice", "Activate Device")}</span>
-                        </Button>
-                      )}
-                    </div>
-
                     {/* Device List Data Table */}
                     <DataTable
                       columns={equipmentColumns}

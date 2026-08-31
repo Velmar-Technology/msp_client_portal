@@ -22,19 +22,9 @@ import { CRMKanbanBoard } from "@/pages/CRMPage/components/CRMKanbanBoard";
 import { CRMLeadDetailSheet } from "@/pages/CRMPage/components/CRMLeadDetailSheet";
 import { CRMNewLeadModal } from "@/pages/CRMPage/components/CRMNewLeadModal";
 import type { Lead, LeadStage, QuotationStatus } from "@/services/crmService";
-import {
-  LayoutList,
-  Kanban,
-  Plus,
-  TrendingUp,
-  DollarSign,
-  Briefcase,
-  Target,
-  CalendarClock,
-} from "lucide-react";
+import { LayoutList, Kanban, Plus, TrendingUp, DollarSign, Briefcase, Target, CalendarClock } from "lucide-react";
 
 import { CRM_VALID_STAGES as VALID_STAGES, CRM_VALID_PRIORITIES as VALID_PRIORITIES } from "@/constants/crm";
-
 
 type LeadPriorityAlias = "LOW" | "MEDIUM" | "HIGH";
 
@@ -87,7 +77,9 @@ export function CRMPage() {
   const paramView = getParam("view") === "kanban" ? "kanban" : "table";
   const paramSearch = getParam("search");
   const paramStage = VALID_STAGES.includes(getParam("stage") as any) ? getParam("stage") : "";
-  const paramPriority = (VALID_PRIORITIES as readonly string[]).includes(getParam("priority")) ? getParam("priority") : "";
+  const paramPriority = (VALID_PRIORITIES as readonly string[]).includes(getParam("priority"))
+    ? getParam("priority")
+    : "";
 
   const paramPage = Math.max(1, parseInt(getParam("page", "1"), 10) || 1);
   const paramLeadId = getParam("lead");
@@ -127,8 +119,14 @@ export function CRMPage() {
   );
 
   const handleSearchChange = useCallback((val: string) => setParams({ search: val || null, page: null }), [setParams]);
-  const handleStageFilterChange = useCallback((val: string) => setParams({ stage: val || null, page: null }), [setParams]);
-  const handlePriorityFilterChange = useCallback((val: string) => setParams({ priority: val || null, page: null }), [setParams]);
+  const handleStageFilterChange = useCallback(
+    (val: string) => setParams({ stage: val || null, page: null }),
+    [setParams],
+  );
+  const handlePriorityFilterChange = useCallback(
+    (val: string) => setParams({ priority: val || null, page: null }),
+    [setParams],
+  );
   const handlePageChange = useCallback((page: number) => setParams({ page: page > 1 ? page : null }), [setParams]);
 
   const openLeadSheet = useCallback(
@@ -210,6 +208,15 @@ export function CRMPage() {
       subtitle={t("crm.subtitle")}
       actions={
         <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => setParams({ openModal: "new-lead" })}
+            className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span>{t("crm.newLead")}</span>
+          </Button>
           <div className="flex items-center bg-zinc-100 p-0.5 rounded-lg border border-zinc-200 dark:bg-zinc-900 dark:border-zinc-800">
             <Button
               type="button"
@@ -232,16 +239,6 @@ export function CRMPage() {
               <span>{t("crm.views.kanban")}</span>
             </Button>
           </div>
-
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => setParams({ openModal: "new-lead" })}
-            className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span>{t("crm.newLead")}</span>
-          </Button>
         </div>
       }
     >
@@ -261,7 +258,11 @@ export function CRMPage() {
               </div>
               <div className="mt-2.5 flex items-baseline justify-between">
                 <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-                  ${(stats?.pipelineValue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  $
+                  {(stats?.pipelineValue || 0).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </h2>
               </div>
               <p className="mt-1 text-[9px] text-zinc-400 dark:text-zinc-500 font-mono">
@@ -281,7 +282,11 @@ export function CRMPage() {
               </div>
               <div className="mt-2.5 flex items-baseline justify-between">
                 <h2 className="text-xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
-                  ${(stats?.wonRevenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  $
+                  {(stats?.wonRevenue || 0).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </h2>
               </div>
               <p className="mt-1 text-[9px] text-zinc-400 dark:text-zinc-500 font-mono">
@@ -337,9 +342,7 @@ export function CRMPage() {
             <div className="rounded-lg border border-zinc-200 bg-white p-3.5 shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
               <div className="flex items-center gap-1.5 mb-3">
                 <CalendarClock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-50">
-                  {t("crm.followUps.title")}
-                </h3>
+                <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-50">{t("crm.followUps.title")}</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
                 {upcomingActivities.slice(0, 6).map((act) => {
