@@ -213,4 +213,33 @@ export const equipmentService = {
     const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : '';
     return `${cleanBaseUrl}/equipment/subscriptions/${subId}/slots/${slotIndex}/deploy-script${tokenQuery}`;
   },
+
+  /**
+   * Constructs the URL for downloading the automated MSP Agent deployment script with a short-lived token.
+   *
+   * @param subId - Subscription UUID.
+   * @param slotIndex - Slot index number.
+   * @returns Promise resolving to script download URL.
+   */
+  async getAgentDeployScriptUrl(subId: string, slotIndex: number): Promise<string> {
+    const baseUrl = api.defaults.baseURL || '/api/v1';
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const cleanBaseUrl = baseUrl.startsWith('http')
+      ? baseUrl
+      : `${origin}${baseUrl.startsWith('/') ? '' : '/'}${baseUrl}`;
+
+    try {
+      const response = await api.get(`/equipment/subscriptions/${subId}/slots/${slotIndex}/deploy-token`);
+      const deployToken = response.data?.data?.token;
+      if (deployToken) {
+        return `${cleanBaseUrl}/equipment/subscriptions/${subId}/slots/${slotIndex}/agent-deploy-script?token=${encodeURIComponent(deployToken)}`;
+      }
+    } catch {
+      // Fallback to accessToken from storage if offline or during degraded state
+    }
+
+    const token = getAuthItem('accessToken');
+    const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : '';
+    return `${cleanBaseUrl}/equipment/subscriptions/${subId}/slots/${slotIndex}/agent-deploy-script${tokenQuery}`;
+  },
 };

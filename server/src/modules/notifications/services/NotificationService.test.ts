@@ -212,7 +212,8 @@ describe('NotificationService', () => {
       expect(emailMocks.sendTicketCreatedEmail).toHaveBeenCalledWith(
         mockClient.email,
         mockClient.name,
-        mockTicket
+        mockTicket,
+        'en_US'
       );
 
       // Verification of In-App to Client
@@ -274,7 +275,8 @@ describe('NotificationService', () => {
         mockClient.email,
         mockClient.name,
         updatedTicket,
-        expect.stringContaining('Diagnostics completed')
+        expect.stringContaining('Diagnostics completed'),
+        'en_US'
       );
 
       expect(whatsappMocks.sendTicketStatusWhatsApp).toHaveBeenCalledTimes(1);
@@ -322,7 +324,8 @@ describe('NotificationService', () => {
       expect(emailMocks.sendTicketAssignedEmail).toHaveBeenCalledWith(
         mockTech.email,
         mockTech.name,
-        mockTicket
+        mockTicket,
+        'en_US'
       );
 
       expect(repoMocks.create).toHaveBeenCalledWith(
@@ -346,7 +349,8 @@ describe('NotificationService', () => {
         mockClient.name,
         'Tom Tech',
         mockTicket,
-        'This is my response.'
+        'This is my response.',
+        'en_US'
       );
 
       expect(repoMocks.create).toHaveBeenCalledWith(

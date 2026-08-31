@@ -334,26 +334,35 @@ jobs:
           retention-days: 30
 
   # ------------------------------------------------------------------
-  # 5a. Build Cross-Platform Agent Binaries (Windows & Linux)
+  # 5a. Build Cross-Platform Agent Binaries (Windows & macOS)
+  #     Targets: Windows x64, Windows x32, macOS Apple Silicon, macOS Intel
   # ------------------------------------------------------------------
   build-agent-binaries:
-    name: Build Agent Binary (${{ matrix.os }})
+    name: Build Agent (${{ matrix.platform }})
     if: needs.prepare.outputs.is_release == 'true'
     needs: [prepare, quality-gates]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: windows-latest
+            platform: windows-x64
             target: x86_64-pc-windows-msvc
             binary_name: msp-agent.exe
-            asset_name: msp-agent-windows-x86_64.exe
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
+          - os: windows-latest
+            platform: windows-x86
+            target: i686-pc-windows-msvc
+            binary_name: msp-agent.exe
+          - os: macos-latest
+            platform: macos-aarch64
+            target: aarch64-apple-darwin
             binary_name: msp-agent
-            asset_name: msp-agent-linux-x86_64
+          - os: macos-latest
+            platform: macos-x86_64
+            target: x86_64-apple-darwin
+            binary_name: msp-agent
     steps:
       - name: Checkout Code
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.1
@@ -365,23 +374,60 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      - name: Install Linux Dependencies
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y pkg-config libssl-dev
-
       - name: Build Release Binary
         run: cargo build --release --manifest-path packages/msp-agent/Cargo.toml --target ${{ matrix.target }}
 
-      - name: Package Release Binary
+      - name: Package Release Assets & Signatures
         shell: bash
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          PLATFORM: ${{ matrix.platform }}
+          TARGET: ${{ matrix.target }}
+          BINARY_NAME: ${{ matrix.binary_name }}
         run: |
           mkdir -p dist-bin
-          cp "packages/msp-agent/target/${{ matrix.target }}/release/${{ matrix.binary_name }}" "dist-bin/${{ matrix.asset_name }}"
+          SRC_BIN="packages/msp-agent/target/${TARGET}/release/${BINARY_NAME}"
+
+          if [ "${PLATFORM}" = "windows-x64" ]; then
+            cp "${SRC_BIN}" "dist-bin/msp-agent-windows-x86_64.exe"
+            cp "${SRC_BIN}" "dist-bin/msp-agent-${VERSION}-x86_64.exe"
+            sha256sum "dist-bin/msp-agent-windows-x86_64.exe" | awk '{print $1}' > "dist-bin/msp-agent-windows-x86_64.exe.sig"
+            sha256sum "dist-bin/msp-agent-${VERSION}-x86_64.exe" | awk '{print $1}' > "dist-bin/msp-agent-${VERSION}-x86_64.exe.sig"
+          elif [ "${PLATFORM}" = "windows-x86" ]; then
+            cp "${SRC_BIN}" "dist-bin/msp-agent-windows-i686.exe"
+            cp "${SRC_BIN}" "dist-bin/msp-agent-${VERSION}-i686.exe"
+            sha256sum "dist-bin/msp-agent-windows-i686.exe" | awk '{print $1}' > "dist-bin/msp-agent-windows-i686.exe.sig"
+            sha256sum "dist-bin/msp-agent-${VERSION}-i686.exe" | awk '{print $1}' > "dist-bin/msp-agent-${VERSION}-i686.exe.sig"
+          elif [ "${PLATFORM}" = "macos-aarch64" ]; then
+            ARCH_TAG="aarch64"
+            cp "${SRC_BIN}" "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}"
+            chmod +x "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}"
+            shasum -a 256 "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}" | awk '{print $1}' > "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}.sig"
+
+            DMG_DIR="dmg_staging_${ARCH_TAG}"
+            mkdir -p "${DMG_DIR}"
+            cp "${SRC_BIN}" "${DMG_DIR}/msp-agent"
+            chmod +x "${DMG_DIR}/msp-agent"
+            hdiutil create -volname "MSPEndpointAgent" -srcfolder "${DMG_DIR}" -ov -format UDZO "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}.dmg"
+            shasum -a 256 "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}.dmg" | awk '{print $1}' > "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}.dmg.sig"
+          elif [ "${PLATFORM}" = "macos-x86_64" ]; then
+            ARCH_TAG="x64"
+            cp "${SRC_BIN}" "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}"
+            chmod +x "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}"
+            shasum -a 256 "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}" | awk '{print $1}' > "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}.sig"
+
+            DMG_DIR="dmg_staging_${ARCH_TAG}"
+            mkdir -p "${DMG_DIR}"
+            cp "${SRC_BIN}" "${DMG_DIR}/msp-agent"
+            chmod +x "${DMG_DIR}/msp-agent"
+            hdiutil create -volname "MSPEndpointAgent" -srcfolder "${DMG_DIR}" -ov -format UDZO "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}.dmg"
+            shasum -a 256 "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}.dmg" | awk '{print $1}' > "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}.dmg.sig"
+          fi
 
       - name: Upload Binary Artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: agent-bin-${{ matrix.os }}
+          name: agent-bin-${{ matrix.platform }}
           path: dist-bin/*
           retention-days: 5
 
@@ -402,23 +448,38 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Download Windows Agent Binary
+      - name: Download All Agent Artifacts
         uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
         with:
-          name: agent-bin-windows-latest
-          path: release-assets/
+          path: downloaded-artifacts/
 
-      - name: Download Linux Agent Binary
-        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
-        with:
-          name: agent-bin-ubuntu-latest
-          path: release-assets/
+      - name: Consolidate Artifacts & Compute Checksums
+        id: checksums
+        run: |
+          mkdir -p release-assets
+          find downloaded-artifacts/ -type f -exec cp {} release-assets/ \;
+
+          cd release-assets
+          sha256sum * > SHA256SUMS.txt
+
+          echo "### 📦 Release Assets & SHA256 Checksums" > ../release-notes-table.md
+          echo "" >> ../release-notes-table.md
+          echo "| Artifact | SHA256 Checksum |" >> ../release-notes-table.md
+          echo "| :--- | :--- |" >> ../release-notes-table.md
+
+          for f in *; do
+            if [ "$f" != "SHA256SUMS.txt" ]; then
+              HASH=$(sha256sum "$f" | awk '{print $1}')
+              echo "| \`$f\` | \`sha256:$HASH\` |" >> ../release-notes-table.md
+            fi
+          done
 
       - name: Create Release with Agent Binaries
         uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           tag_name: ${{ needs.prepare.outputs.tag_name }}
           name: Release ${{ needs.prepare.outputs.tag_name }}
+          body_path: release-notes-table.md
           generate_release_notes: true
           make_latest: true
           files: release-assets/*

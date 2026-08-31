@@ -544,7 +544,7 @@ dependencies = [
 
 [[package]]
 name = "msp-agent"
-version = "1.7.3"
+version = "1.8.4"
 dependencies = [
  "chrono",
  "env_logger",

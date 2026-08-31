@@ -528,6 +528,57 @@ pub fn system_model() -> String {
     }
 }
 
+/// Inspects exhaustive physical hardware components (Motherboard, CPU, RAM DIMM modules,
+/// Storage drives, GPU, Network adapters, Battery) with serial numbers directly from SMBIOS / WMI.
+pub fn inspect_hardware_components() -> Value {
+    if cfg!(windows) {
+        let baseboard = run_ps_json(
+            "Get-CimInstance Win32_BaseBoard -ErrorAction SilentlyContinue | Select-Object Manufacturer, Product, SerialNumber, Version | ConvertTo-Json -Compress"
+        );
+        let processor = run_ps_json(
+            "Get-CimInstance Win32_Processor -ErrorAction SilentlyContinue | Select-Object Name, Manufacturer, NumberOfCores, NumberOfLogicalProcessors, MaxClockSpeed, ProcessorId | ConvertTo-Json -Compress"
+        );
+        let physical_memory = run_ps_json(
+            "Get-CimInstance Win32_PhysicalMemory -ErrorAction SilentlyContinue | Select-Object Manufacturer, PartNumber, SerialNumber, Capacity, Speed, DeviceLocator, BankLabel | ConvertTo-Json -Compress"
+        );
+        let disk_drives = run_ps_json(
+            "Get-CimInstance Win32_DiskDrive -ErrorAction SilentlyContinue | Select-Object Model, InterfaceType, MediaType, Size, SerialNumber, Status, Partitions | ConvertTo-Json -Compress"
+        );
+        let video_controllers = run_ps_json(
+            "Get-CimInstance Win32_VideoController -ErrorAction SilentlyContinue | Select-Object Name, DriverVersion, AdapterRAM, VideoProcessor | ConvertTo-Json -Compress"
+        );
+        let network_adapters = run_ps_json(
+            "Get-CimInstance Win32_NetworkAdapter -ErrorAction SilentlyContinue | Where-Object { $_.PhysicalAdapter -eq $true -and $_.MACAddress } | Select-Object Name, MACAddress, Manufacturer, AdapterType | ConvertTo-Json -Compress"
+        );
+        let battery = run_ps_json(
+            "Get-CimInstance Win32_Battery -ErrorAction SilentlyContinue | Select-Object Name, EstimatedChargeRemaining, DeviceID | ConvertTo-Json -Compress"
+        );
+
+        serde_json::json!({
+            "platform": "windows",
+            "system_serial": bios_serial(),
+            "manufacturer": manufacturer(),
+            "system_model": system_model(),
+            "baseboard": baseboard,
+            "processor": processor,
+            "physical_memory": physical_memory,
+            "disk_drives": disk_drives,
+            "video_controllers": video_controllers,
+            "network_adapters": network_adapters,
+            "battery": battery,
+            "collected_at": chrono::Utc::now().to_rfc3339()
+        })
+    } else {
+        serde_json::json!({
+            "platform": std::env::consts::OS,
+            "system_serial": bios_serial(),
+            "manufacturer": manufacturer(),
+            "system_model": system_model(),
+            "collected_at": chrono::Utc::now().to_rfc3339()
+        })
+    }
+}
+
 /// Filters out vendor placeholder serials (e.g. "To be filled by O.E.M.").
 fn normalize_serial(raw: &str) -> Option<String> {
     let value = raw.trim_matches(['\r', '\n', ' ']).trim().to_string();
@@ -709,5 +760,13 @@ mod tests {
         assert_eq!(restored.memory.total_bytes, 8_000);
         assert!(restored.disks.is_empty());
         assert!(restored.network.is_empty());
+    }
+
+    #[test]
+    fn inspect_hardware_components_returns_valid_payload() {
+        let result = inspect_hardware_components();
+        assert!(result.get("platform").is_some());
+        assert!(result.get("collected_at").is_some());
+        assert!(result.get("system_serial").is_some());
     }
 }

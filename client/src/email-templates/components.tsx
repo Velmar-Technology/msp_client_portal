@@ -24,7 +24,7 @@ export const Greeting: React.FC<GreetingProps> = ({ name, isSpanish }) => (
       fontWeight: font.weight.bold,
       fontFamily: font.family,
       marginTop: 0,
-      marginBottom: space['5'],
+      marginBottom: space['3'],
       lineHeight: font.lineHeight.tight,
     }}
   >
@@ -42,11 +42,11 @@ export interface BodyTextProps {
 export const BodyText: React.FC<BodyTextProps> = ({ children, muted, small }) => (
   <p
     style={{
-      fontSize: small ? font.size.base : font.size.md,
+      fontSize: small ? font.size.sm : font.size.md,
       color: muted ? palette.secondary : palette.body,
       fontFamily: font.family,
       marginTop: 0,
-      marginBottom: space['8'],
+      marginBottom: space['5'],
       lineHeight: font.lineHeight.normal,
     }}
   >
@@ -70,9 +70,9 @@ export const InfoCard: React.FC<InfoCardProps> = ({
     style={{
       backgroundColor: palette.surface,
       border: `1px solid ${palette.border}`,
-      borderRadius: radius.lg,
+      borderRadius: radius.md,
       overflow: 'hidden',
-      marginBottom: space['8'],
+      marginBottom: space['5'],
     }}
   >
     {/* Colored top accent bar */}
@@ -81,14 +81,14 @@ export const InfoCard: React.FC<InfoCardProps> = ({
     {/* Card header */}
     <div
       style={{
-        padding: `${space['6']} ${space['7']} ${space['4']} ${space['7']}`,
+        padding: `${space['4']} ${space['6']} ${space['3']} ${space['6']}`,
         borderBottom: `1px solid ${palette.border}`,
       }}
     >
       <h3
         style={{
           color: palette.headingAlt,
-          fontSize: font.size.lg,
+          fontSize: font.size.md,
           fontWeight: font.weight.bold,
           fontFamily: font.family,
           margin: 0,
@@ -100,7 +100,7 @@ export const InfoCard: React.FC<InfoCardProps> = ({
     </div>
 
     {/* Card body */}
-    <div style={{ padding: space['7'] }}>{children}</div>
+    <div style={{ padding: `${space['4']} ${space['6']}` }}>{children}</div>
   </div>
 );
 
@@ -115,7 +115,7 @@ export const DetailRow: React.FC<DetailRowProps> = ({ label, children, isLast })
   <div
     style={{
       display: 'flex',
-      padding: `${space['3']} 0`,
+      padding: `${space['2']} 0`,
       borderBottom: isLast ? 'none' : `1px solid ${palette.border}`,
       fontSize: font.size.base,
       fontFamily: font.family,
@@ -126,7 +126,7 @@ export const DetailRow: React.FC<DetailRowProps> = ({ label, children, isLast })
       style={{
         color: palette.secondary,
         fontWeight: font.weight.medium,
-        minWidth: '130px',
+        minWidth: '120px',
         flexShrink: 0,
       }}
     >
@@ -149,16 +149,16 @@ export const Badge: React.FC<BadgeProps> = ({ children, bg, color }) => (
   <span
     style={{
       display: 'inline-block',
-      padding: '2px 10px',
+      padding: '1px 8px',
       borderRadius: radius.sm,
-      fontSize: font.size.sm,
+      fontSize: font.size.xs,
       fontWeight: font.weight.semibold,
       fontFamily: font.family,
       backgroundColor: bg,
       color,
       textTransform: 'uppercase',
       letterSpacing: '0.03em',
-      lineHeight: '1.6',
+      lineHeight: '1.5',
     }}
   >
     {children}
@@ -172,7 +172,7 @@ export interface CalloutProps {
 }
 
 const calloutConfig = {
-  warning: { bg: palette.warningBg, border: '#FDE68A', icon: '⚠️', textColor: palette.warning },
+  warning: { bg: palette.warningBg, border: '#FED7AA', icon: '⚠️', textColor: palette.warning },
   danger:  { bg: palette.dangerBg,  border: '#FECACA', icon: '🔒', textColor: palette.danger },
   info:    { bg: palette.infoBgAlt, border: '#BFDBFE', icon: 'ℹ️', textColor: palette.info },
   muted:   { bg: palette.surface,   border: palette.border, icon: '',   textColor: palette.secondary },
@@ -186,15 +186,15 @@ export const Callout: React.FC<CalloutProps> = ({ children, variant = 'muted' })
         backgroundColor: cfg.bg,
         border: `1px solid ${cfg.border}`,
         borderRadius: radius.md,
-        padding: `${space['5']} ${space['6']}`,
-        marginBottom: space['8'],
+        padding: `${space['4']} ${space['5']}`,
+        marginBottom: space['5'],
         fontSize: font.size.sm,
         fontFamily: font.family,
         color: cfg.textColor,
         lineHeight: font.lineHeight.normal,
       }}
     >
-      {cfg.icon && <span style={{ marginRight: space['3'] }}>{cfg.icon}</span>}
+      {cfg.icon && <span style={{ marginRight: space['2'] }}>{cfg.icon}</span>}
       {children}
     </div>
   );
@@ -208,10 +208,10 @@ export interface DisclaimerProps {
 export const Disclaimer: React.FC<DisclaimerProps> = ({ children }) => (
   <p
     style={{
-      fontSize: font.size.sm,
+      fontSize: font.size.xs,
       color: palette.muted,
       fontFamily: font.family,
-      marginTop: space['8'],
+      marginTop: space['5'],
       marginBottom: 0,
       lineHeight: font.lineHeight.normal,
     }}
@@ -230,17 +230,17 @@ export const HighlightCode: React.FC<HighlightCodeProps> = ({ children }) => (
     style={{
       backgroundColor: palette.surface,
       border: `1px solid ${palette.border}`,
-      borderRadius: radius.lg,
-      padding: space['8'],
+      borderRadius: radius.md,
+      padding: `${space['5']} ${space['6']}`,
       textAlign: 'center',
-      marginBottom: space['8'],
+      marginBottom: space['5'],
     }}
   >
     <span
       style={{
         fontSize: font.size.code,
         fontWeight: font.weight.black,
-        letterSpacing: '0.25em',
+        letterSpacing: '0.2em',
         color: palette.cta,
         fontFamily: font.mono,
       }}

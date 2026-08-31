@@ -1,4 +1,5 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import fs from 'fs';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { EquipmentController } from './EquipmentController';
 import { UserRole } from '@shared/types';
 
@@ -24,6 +25,10 @@ describe('EquipmentController', () => {
     req = {
       params: {},
       body: {},
+      get: vi.fn().mockImplementation((header: string) => {
+        if (header.toLowerCase() === 'host') return 'localhost:3001';
+        return null;
+      }),
       user: {
         userId: 'user-123',
         role: UserRole.CLIENT,
@@ -33,6 +38,10 @@ describe('EquipmentController', () => {
     };
     res = {
       json: vi.fn(),
+      setHeader: vi.fn(),
+      send: vi.fn(),
+      download: vi.fn(),
+      status: vi.fn().mockReturnThis(),
     };
   });
 
@@ -259,6 +268,60 @@ describe('EquipmentController', () => {
       expect(mockEquipmentSvc.getNextcloudInfo).toHaveBeenCalledWith('sub-1', 0, 'tenant-123', false);
       expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'text/plain');
       expect(res.send).toHaveBeenCalledWith(expect.stringContaining('client_user'));
+    });
+  });
+
+  describe('getAgentDeployScript', () => {
+    it('should throw ForbiddenError if user has unauthorized role', async () => {
+      req.user!.role = UserRole.TECHNICIAN;
+      req.params = { subId: 'sub-1', slotIndex: '0' };
+
+      await expect(controller.getAgentDeployScript(req, res)).rejects.toThrow(
+        'Only administrators and clients can generate deployment scripts'
+      );
+    });
+
+    it('should generate PowerShell agent deploy script for CLIENT', async () => {
+      req.user!.role = UserRole.CLIENT;
+      req.params = { subId: 'sub-1', slotIndex: '0' };
+      mockEquipmentSvc.getEquipmentSlots.mockResolvedValue([
+        { slot_index: 0, otp: '123456' },
+      ]);
+      res.setHeader = vi.fn();
+      res.send = vi.fn();
+
+      await controller.getAgentDeployScript(req, res);
+
+      expect(mockEquipmentSvc.getEquipmentSlots).toHaveBeenCalledWith('sub-1', 'tenant-123', false);
+      expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'text/plain');
+      expect(res.setHeader).toHaveBeenCalledWith('Content-Disposition', 'attachment; filename="deploy-msp-agent.ps1"');
+      expect(res.send).toHaveBeenCalledWith(expect.stringContaining('MSP ENDPOINT AGENT SEAMLESS INSTALLER'));
+      expect(res.send).toHaveBeenCalledWith(expect.stringContaining('123456'));
+    });
+  });
+
+  describe('downloadAgentBinary', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('should return 404 if binary file is not found on disk', async () => {
+      vi.spyOn(fs, 'existsSync').mockReturnValue(false);
+
+      await controller.downloadAgentBinary(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+        success: false,
+      }));
+    });
+
+    it('should download binary if file is found on disk', async () => {
+      vi.spyOn(fs, 'existsSync').mockReturnValue(true);
+
+      await controller.downloadAgentBinary(req, res);
+
+      expect(res.download).toHaveBeenCalledWith(expect.any(String), 'msp-agent.exe');
     });
   });
 });

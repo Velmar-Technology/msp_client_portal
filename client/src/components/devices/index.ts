@@ -10,3 +10,4 @@ export { RmmDashboardHeader } from './RmmDashboardHeader';
 export { RmmDeviceTable } from './RmmDeviceTable';
 export { RmmDeviceTableRow } from './RmmDeviceTableRow';
 export { RmmKpiGrid } from './RmmKpiGrid';
+export { DeployAgentModal } from './DeployAgentModal';

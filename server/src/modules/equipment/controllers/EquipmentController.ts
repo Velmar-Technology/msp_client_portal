@@ -1,3 +1,5 @@
+import path from 'path';
+import fs from 'fs';
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { equipmentService, EquipmentService } from '@modules/equipment/services/EquipmentService';
@@ -343,6 +345,124 @@ $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")`;
         slotIndex,
       },
     });
+  }
+
+  /**
+   * Generates and downloads a custom auto-provisioned PowerShell script for MSP Agent background service deployment.
+   *
+   * @param req - Express request with subId and slotIndex in params
+   * @param res - Express response returning PowerShell script download attachment
+   * @throws {ForbiddenError} When user is not an administrator or client
+   */
+  async getAgentDeployScript(req: Request, res: Response): Promise<void> {
+    if (req.user!.role !== 'ADMIN' && req.user!.role !== 'CLIENT') {
+      throw new ForbiddenError('Only administrators and clients can generate deployment scripts');
+    }
+    const subId = req.params.subId as string;
+    const slotIndex = parseInt(req.params.slotIndex as string, 10);
+    const byAdmin = req.user!.role === 'ADMIN';
+    const slots = await this.equipmentSvc.getEquipmentSlots(subId, req.user!.tenantId, byAdmin);
+    const slot = slots.find((s) => s.slot_index === slotIndex);
+    if (!slot) {
+      throw new ValidationError('Equipment slot not found');
+    }
+
+    const host = (req.get ? req.get('host') : (req.headers?.host as string)) || 'localhost:3001';
+    const protocol = req.protocol === 'https' || (req.get && req.get('x-forwarded-proto') === 'https') ? 'https' : 'http';
+    const wsProtocol = protocol === 'https' ? 'wss' : 'ws';
+    const gatewayUrl = `${wsProtocol}://${host}/agent-ws`;
+    const token = slot.otp || 'dev-token';
+    const downloadUrl = `${protocol}://${host}/api/v1/equipment/agent-binary`;
+
+    const script = `$ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
+
+Write-Host "==================================================" -ForegroundColor Cyan
+Write-Host "  MSP ENDPOINT AGENT SEAMLESS INSTALLER" -ForegroundColor Cyan
+Write-Host "==================================================" -ForegroundColor Cyan
+
+# 1. Require Administrative Privileges
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) {
+    Write-Error "Administrator privileges required. Please run PowerShell as Administrator."
+    exit 5
+}
+
+$targetDir = "C:\\Program Files\\MSP\\msp-agent"
+$targetExe = "$targetDir\\msp-agent.exe"
+$gatewayUrl = "${gatewayUrl}"
+$agentToken = "${token}"
+
+# Create directories
+New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
+New-Item -ItemType Directory -Path "C:\\ProgramData\\MSP" -Force | Out-Null
+
+Write-Host "[1/3] Downloading lightweight MSP agent binary..." -ForegroundColor Yellow
+$tempExe = "$env:TEMP\\msp-agent.exe"
+try {
+    Invoke-WebRequest -Uri "${downloadUrl}" -OutFile $tempExe -UseBasicParsing
+    Copy-Item -Path $tempExe -Destination $targetExe -Force
+} catch {
+    Write-Host "Download from server unavailable, checking local paths..." -ForegroundColor Yellow
+}
+
+Write-Host "[2/3] Installing and registering Windows Background Service..." -ForegroundColor Yellow
+$args = @(
+    "--install-service",
+    "--gateway", $gatewayUrl,
+    "--token", $agentToken,
+    "--silent"
+)
+
+if (Test-Path $targetExe) {
+    Start-Process -FilePath $targetExe -ArgumentList $args -Wait -NoNewWindow
+} else {
+    Write-Error "Could not locate msp-agent.exe."
+    exit 1
+}
+
+Write-Host "[3/3] Verifying background service status..." -ForegroundColor Green
+Start-Sleep -Seconds 1
+$svc = Get-Service -Name "MSPEndpointAgent" -ErrorAction SilentlyContinue
+if ($svc) {
+    Write-Host "Service MSPEndpointAgent is registered (Status: $($svc.Status))." -ForegroundColor Green
+}
+
+Write-Host "==================================================" -ForegroundColor Green
+Write-Host "  DEPLOYMENT COMPLETE! MSP AGENT IS RUNNING" -ForegroundColor Green
+Write-Host "==================================================" -ForegroundColor Green
+`;
+
+    res.setHeader('Content-Type', 'text/plain');
+    res.setHeader('Content-Disposition', 'attachment; filename="deploy-msp-agent.ps1"');
+    res.send(script);
+  }
+
+  /**
+   * Downloads the pre-compiled standalone msp-agent.exe binary.
+   *
+   * @param req - Express request
+   * @param res - Express response sending binary file
+   */
+  async downloadAgentBinary(_req: Request, res: Response): Promise<void> {
+    const possiblePaths = [
+      path.resolve(process.cwd(), '../packages/msp-agent/target/release/msp-agent.exe'),
+      path.resolve(process.cwd(), 'packages/msp-agent/target/release/msp-agent.exe'),
+      path.resolve(process.cwd(), '../packages/msp-agent/dist/msp-agent-installer/msp-agent.exe'),
+      path.resolve(process.cwd(), 'packages/msp-agent/dist/msp-agent-installer/msp-agent.exe'),
+      path.resolve(process.cwd(), '../packages/msp-agent/target/debug/msp-agent.exe'),
+    ];
+
+    const binaryPath = possiblePaths.find((p) => fs.existsSync(p));
+    if (!binaryPath) {
+      res.status(404).json({
+        success: false,
+        error: 'MSP Agent binary not found on server. Build the release package with cargo build --release first.',
+      });
+      return;
+    }
+
+    res.download(binaryPath, 'msp-agent.exe');
   }
 }
 

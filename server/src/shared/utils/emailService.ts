@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import nodemailer from 'nodemailer';
 import { env } from '@shared/config/env';
 import { logger } from './logger';
@@ -10,15 +12,18 @@ import { NotificationPayload, Ticket, Plan, Invoice } from '@shared/types';
  * ─────────────────────────────────────────────────────────────
  *
  *  Homogeneous, responsive, cross-client HTML email rendering
- *  aligned with the client design tokens in @/email-templates/tokens.ts.
+ *  aligned with the client design tokens and the official Velmar logo aesthetic.
  */
 
-/* ── Brand Palette & Tokens ───────────────────────────────── */
+/* ── Brand Palette & Tokens (Aligned with Velmar Logo) ─────── */
 const palette = {
-  brand:          '#0C4A6E',   // Deep ocean-blue
-  brandLight:     '#0369A1',   // Mid-tone accent
+  brandDark:      '#080C16',   // Deep obsidian / charcoal
+  brand:          '#0A0F1D',   // Obsidian header container
+  brandBlue:      '#0084FF',   // Electric Cerulean Blue (left checkmark wings & banner)
+  brandOrange:    '#FF6600',   // Vibrant Flame Orange (right checkmark wings & top trim)
+  brandLight:     '#0091FF',   // Electric blue accent
   brandAccent:    '#38BDF8',   // Sky highlight
-  cta:            '#2563EB',   // Action-blue (buttons, links)
+  cta:            '#0084FF',   // Electric action-blue
   white:          '#FFFFFF',
   surface:        '#F8FAFC',   // Email body background
   cardBg:         '#FFFFFF',   // Content card
@@ -31,15 +36,38 @@ const palette = {
   headingAlt:     '#1E293B',   // Card headers
   success:        '#16A34A',
   successBg:      '#F0FDF4',
-  warning:        '#D97706',
-  warningBg:      '#FFFBEB',
+  warning:        '#FF6600',   // Flame Orange for warnings
+  warningBg:      '#FFF7ED',
   danger:         '#DC2626',
   dangerBg:       '#FEF2F2',
   priorityLow:      { bg: '#F1F5F9', text: '#475569' },
-  priorityMedium:   { bg: '#FEF3C7', text: '#92400E' },
+  priorityMedium:   { bg: '#FFEDD5', text: '#C2410C' },
   priorityHigh:     { bg: '#FEE2E2', text: '#991B1B' },
   priorityCritical: { bg: '#FCA5A5', text: '#7F1D1D' },
 };
+
+/**
+ * Resolves the absolute path to the client portal logo asset.
+ *
+ * @returns Absolute filepath if found, otherwise null
+ */
+function resolveLogoPath(): string | null {
+  const candidates = [
+    path.resolve(__dirname, '../../../client/src/assets/logo.png'),
+    path.resolve(__dirname, '../../../../client/src/assets/logo.png'),
+    path.resolve(process.cwd(), 'client/src/assets/logo.png'),
+    path.resolve(process.cwd(), '../client/src/assets/logo.png'),
+    path.resolve(process.cwd(), 'src/assets/logo.png'),
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
 
 function getPriorityColor(priority: string): { bg: string; text: string } {
   const key = (priority || '').toUpperCase();
@@ -51,21 +79,65 @@ function getPriorityColor(priority: string): { bg: string; text: string } {
 }
 
 /* ── SMTP Transporter Initialization ──────────────────────── */
-const isSMTPConfigured =
-  !!env.SMTP_USER &&
-  !!env.SMTP_PASSWORD &&
-  env.SMTP_USER !== 'your_email@gmail.com' &&
-  env.SMTP_PASSWORD !== 'your_app_password';
 
+/**
+ * Evaluates whether all required SMTP parameters (HOST, PORT, USER, PASSWORD)
+ * are present, non-empty, valid, and not set to default placeholder credentials.
+ * If any parameter is blank or incomplete, the email service skips SMTP transmission
+ * and runs safely in STUB mode without error.
+ *
+ * @param config - Optional configuration object to validate. Defaults to parsed environment variables.
+ * @returns True if SMTP credentials and connection endpoints are complete and valid.
+ */
+export function isSMTPConfigured(config: {
+  host?: string;
+  port?: number | string;
+  user?: string;
+  password?: string;
+} = {
+  host: env.SMTP_HOST,
+  port: env.SMTP_PORT,
+  user: env.SMTP_USER,
+  password: env.SMTP_PASSWORD,
+}): boolean {
+  const host = typeof config.host === 'string' ? config.host.trim() : '';
+  const port = Number(config.port);
+  const user = typeof config.user === 'string' ? config.user.trim() : '';
+  const pass = typeof config.password === 'string' ? config.password.trim() : '';
+
+  // Host validation (must be non-empty and not dummy placeholder)
+  if (!host || host === 'smtp.example.com') {
+    return false;
+  }
+
+  // Port validation (must be valid positive port number)
+  if (!port || Number.isNaN(port) || port <= 0) {
+    return false;
+  }
+
+  // User / Sender credentials validation
+  if (!user || user === 'your_email@gmail.com' || user === 'user@example.com') {
+    return false;
+  }
+
+  // Password validation
+  if (!pass || pass === 'your_app_password' || pass === 'password') {
+    return false;
+  }
+
+  return true;
+}
+
+const smtpAvailable = isSMTPConfigured();
 let transporter: nodemailer.Transporter;
-let useStubTransporter = !isSMTPConfigured;
+let useStubTransporter = !smtpAvailable;
 
-if (isSMTPConfigured) {
+if (smtpAvailable) {
   try {
     transporter = nodemailer.createTransport({
       host: env.SMTP_HOST,
-      port: env.SMTP_PORT,
-      secure: env.SMTP_PORT === 465,
+      port: Number(env.SMTP_PORT),
+      secure: Number(env.SMTP_PORT) === 465,
       auth: {
         user: env.SMTP_USER,
         pass: env.SMTP_PASSWORD,
@@ -87,7 +159,7 @@ if (isSMTPConfigured) {
     useStubTransporter = true;
   }
 } else {
-  logger.warn('📧 Email service running in STUB mode — emails will be logged, not sent (SMTP not configured or using placeholders)');
+  logger.warn('📧 Email service skipped/running in STUB mode — SMTP_HOST, SMTP_PORT, SMTP_USER, or SMTP_PASSWORD is blank or incomplete. Emails will be logged, not sent.');
 }
 
 function getTransporter(): nodemailer.Transporter {
@@ -108,12 +180,23 @@ export async function sendEmail(payload: NotificationPayload): Promise<void> {
   const transport = getTransporter();
   const usingSMTP = !useStubTransporter;
 
+  const attachments: Array<{ filename: string; path: string; cid?: string }> = [];
+  const logoPath = resolveLogoPath();
+  if (logoPath) {
+    attachments.push({
+      filename: 'logo.png',
+      path: logoPath,
+      cid: 'velmar-logo',
+    });
+  }
+
   try {
     const info = await transport.sendMail({
       from: `"Velmar Technology SRL" <${usingSMTP ? env.SMTP_USER : 'noreply@velmartech.com.do'}>`,
       to: payload.to,
       subject: payload.subject,
       html: payload.body,
+      attachments,
     });
 
     if (usingSMTP) {
@@ -156,6 +239,7 @@ interface EmailLayoutOptions {
   actionText?: string;
   headerIcon?: string;
   accentColor?: string;
+  accentGradient?: string;
   language?: string;
 }
 
@@ -188,19 +272,21 @@ function getEmailLayout(
   }
 
   const isSpanish = (opts.language || 'en_US').startsWith('es');
-  const accentColor = opts.accentColor || palette.brandAccent;
+  const accentGradient =
+    opts.accentGradient ||
+    (opts.accentColor ? opts.accentColor : 'linear-gradient(90deg, #0084FF 0%, #00C6FF 35%, #FF8A00 70%, #FF6600 100%)');
   const headerIconSpan = opts.headerIcon ? `<span style="margin-right: 8px;">${opts.headerIcon}</span>` : '';
 
   const actionButton = opts.actionUrl && opts.actionText ? `
-    <div style="margin: 32px 0 16px 0; text-align: center;">
+    <div style="margin: 20px 0 8px 0; text-align: center;">
       <!--[if mso]>
-      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${opts.actionUrl}" style="height:44px;v-text-anchor:middle;width:240px;" arcsize="18%" stroke="f" fillcolor="${palette.cta}">
+      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${opts.actionUrl}" style="height:38px;v-text-anchor:middle;width:200px;" arcsize="16%" stroke="f" fillcolor="${palette.cta}">
         <w:anchorlock/>
-        <center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:bold;">${opts.actionText}</center>
+        <center style="color:#ffffff;font-family:sans-serif;font-size:13.5px;font-weight:bold;">${opts.actionText}</center>
       </v:roundrect>
       <![endif]-->
       <!--[if !mso]><!-->
-      <a href="${opts.actionUrl}" style="background-color: ${palette.cta}; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: 600; font-size: 15px; display: inline-block; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.20); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      <a href="${opts.actionUrl}" style="background-color: ${palette.cta}; color: #ffffff; text-decoration: none; padding: 9px 22px; border-radius: 6px; font-weight: 600; font-size: 13.5px; display: inline-block; box-shadow: 0 3px 10px rgba(0, 132, 255, 0.22); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
         ${opts.actionText}
       </a>
       <!--<![endif]-->
@@ -220,38 +306,44 @@ function getEmailLayout(
         ${opts.preheader}
         ${'&zwnj;&nbsp;'.repeat(40)}
       </div>
-      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F8FAFC; padding: 32px 16px;">
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F8FAFC; padding: 16px 8px;">
         <tr>
           <td align="center">
-            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; border: 1px solid #E2E8F0; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);">
-              <!-- Header Banner -->
+            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 540px; background-color: #ffffff; border-radius: 10px; border: 1px solid #E2E8F0; overflow: hidden; box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.06), 0 2px 4px -1px rgba(0, 0, 0, 0.03);">
+              <!-- Header Banner (Compact Obsidian Dark with Logo) -->
               <tr>
-                <td style="background: linear-gradient(135deg, #0C4A6E 0%, #064E73 50%, #0C4A6E 100%); padding: 36px 32px; text-align: center;">
-                  <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.025em; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">Velmar Technology</h1>
-                  <p style="color: #38BDF8; margin: 8px 0 0 0; font-size: 14px; font-weight: 500; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">${headerIconSpan}${opts.title}</p>
+                <td style="background-color: #080C16; background-image: linear-gradient(135deg, #050811 0%, #0A0F1D 50%, #0F172A 100%); padding: 14px 16px 10px 16px; text-align: center;">
+                  <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                    <tr>
+                      <td align="center">
+                        <img src="cid:velmar-logo" alt="Velmar Technology SRL" width="95" style="display: block; max-width: 95px; height: auto; margin: 0 auto 6px auto; border: 0;" />
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="color: #38BDF8; margin: 0; font-size: 13px; font-weight: 600; letter-spacing: 0.015em; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">${headerIconSpan}${opts.title}</p>
                 </td>
               </tr>
-              <!-- Accent Bar -->
+              <!-- Signature Dual-Tone Accent Bar (Electric Blue to Flame Orange) -->
               <tr>
-                <td style="height: 3px; background-color: ${accentColor}; font-size: 0; line-height: 0;">&nbsp;</td>
+                <td style="height: 3px; background-color: #0084FF; background-image: ${accentGradient}; font-size: 0; line-height: 0;">&nbsp;</td>
               </tr>
               <!-- Content Body -->
               <tr>
-                <td style="padding: 40px 32px; line-height: 1.6; font-size: 15px; color: #334155; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                <td style="padding: 20px 18px; line-height: 1.5; font-size: 13.5px; color: #334155; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                   ${opts.contentHtml}
                   ${actionButton}
                 </td>
               </tr>
               <!-- Footer Section -->
               <tr>
-                <td style="background-color: #F1F5F9; padding: 24px 32px; text-align: center; border-top: 1px solid #E2E8F0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-                  <p style="margin: 0; color: #64748B; font-size: 12px; font-weight: 500;">
+                <td style="background-color: #F1F5F9; padding: 12px 18px; text-align: center; border-top: 1px solid #E2E8F0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                  <p style="margin: 0; color: #64748B; font-size: 11px; font-weight: 500;">
                     ${isSpanish ? 'Esta es una notificación automática del Portal MSP de Velmar.' : 'This is an automated notification from the Velmar MSP Portal.'}
                   </p>
-                  <p style="margin: 4px 0 0 0; color: #94A3B8; font-size: 11px;">
+                  <p style="margin: 2px 0 0 0; color: #94A3B8; font-size: 10px;">
                     ${isSpanish ? 'No responda directamente a este correo electrónico.' : 'Do not reply directly to this email.'}
                   </p>
-                  <p style="margin: 12px 0 0 0; color: #64748B; font-size: 12px; font-weight: 500;">
+                  <p style="margin: 6px 0 0 0; color: #64748B; font-size: 11px; font-weight: 500;">
                     © ${new Date().getFullYear()} Velmar Technology SRL. ${isSpanish ? 'Todos los derechos reservados.' : 'All rights reserved.'}
                   </p>
                 </td>
@@ -268,14 +360,14 @@ function getEmailLayout(
 /* ── HTML Helper Primitives ───────────────────────────────── */
 function renderInfoCard(title: string, innerHtml: string, accentColor: string = palette.cta): string {
   return `
-    <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; margin-bottom: 24px;">
+    <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden; margin-bottom: 12px;">
       <div style="height: 3px; background-color: ${accentColor}; font-size: 0; line-height: 0;">&nbsp;</div>
-      <div style="padding: 16px 20px 10px 20px; border-bottom: 1px solid #E2E8F0;">
-        <h3 style="color: #1E293B; font-size: 16px; font-weight: 700; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      <div style="padding: 8px 12px; border-bottom: 1px solid #E2E8F0;">
+        <h3 style="color: #1E293B; font-size: 13.5px; font-weight: 700; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
           ${title}
         </h3>
       </div>
-      <div style="padding: 20px;">
+      <div style="padding: 10px 12px;">
         ${innerHtml}
       </div>
     </div>
@@ -284,7 +376,7 @@ function renderInfoCard(title: string, innerHtml: string, accentColor: string = 
 
 function renderBadge(text: string, bg: string, color: string): string {
   return `
-    <span style="display: inline-block; padding: 2px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; background-color: ${bg}; color: ${color}; text-transform: uppercase; letter-spacing: 0.03em;">
+    <span style="display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background-color: ${bg}; color: ${color}; text-transform: uppercase; letter-spacing: 0.03em; line-height: 1.5;">
       ${text}
     </span>
   `;
@@ -292,21 +384,21 @@ function renderBadge(text: string, bg: string, color: string): string {
 
 function renderCallout(text: string, variant: 'warning' | 'danger' | 'info' = 'warning'): string {
   const configs = {
-    warning: { bg: '#FFFBEB', border: '#FDE68A', color: '#D97706', icon: '⚠️' },
+    warning: { bg: '#FFF7ED', border: '#FED7AA', color: '#EA580C', icon: '⚠️' },
     danger:  { bg: '#FEF2F2', border: '#FECACA', color: '#DC2626', icon: '🔒' },
-    info:    { bg: '#EFF6FF', border: '#BFDBFE', color: '#2563EB', icon: 'ℹ️' },
+    info:    { bg: '#EFF6FF', border: '#BFDBFE', color: '#0084FF', icon: 'ℹ️' },
   };
   const cfg = configs[variant];
   return `
-    <div style="background-color: ${cfg.bg}; border: 1px solid ${cfg.border}; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; font-size: 13px; color: ${cfg.color}; line-height: 1.5;">
-      <span style="margin-right: 8px;">${cfg.icon}</span> ${text}
+    <div style="background-color: ${cfg.bg}; border: 1px solid ${cfg.border}; border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; font-size: 12px; color: ${cfg.color}; line-height: 1.45;">
+      <span style="margin-right: 6px;">${cfg.icon}</span> ${text}
     </div>
   `;
 }
 
 function renderDisclaimer(text: string): string {
   return `
-    <p style="font-size: 12px; color: #94A3B8; margin-top: 24px; margin-bottom: 0; line-height: 1.5;">
+    <p style="font-size: 11px; color: #94A3B8; margin-top: 12px; margin-bottom: 0; line-height: 1.45;">
       ${text}
     </p>
   `;
@@ -320,38 +412,51 @@ function renderDisclaimer(text: string): string {
  * @param clientEmail - Recipient email address
  * @param clientName - Recipient display name
  * @param ticket - Created Ticket entity
+ * @param language - Optional recipient language code ('es_DO', 'en_US')
  */
 export async function sendTicketCreatedEmail(
   clientEmail: string,
   clientName: string,
   ticket: Ticket,
+  language = 'en_US',
 ): Promise<void> {
+  const isSpanish = (language || 'en_US').startsWith('es');
   const portalUrl = `${env.CORS_ORIGIN || 'http://localhost:5173'}/tickets/${ticket.id}`;
-  const preheader = `Your ticket "${ticket.title}" has been successfully created.`;
+  const preheader = isSpanish
+    ? `Su ticket "${ticket.title}" ha sido creado exitosamente.`
+    : `Your ticket "${ticket.title}" has been successfully created.`;
   const priColor = getPriorityColor(ticket.priority);
 
+  const priorityLabels: Record<string, string> = {
+    LOW: isSpanish ? 'Baja' : 'Low',
+    MEDIUM: isSpanish ? 'Media' : 'Medium',
+    HIGH: isSpanish ? 'Alta' : 'High',
+    CRITICAL: isSpanish ? 'Crítica' : 'Critical',
+  };
+  const localizedPriority = priorityLabels[ticket.priority.toUpperCase()] || ticket.priority;
+
   const cardHtml = `
-    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+    <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
       <tr>
-        <td style="padding: 6px 0; color: #64748B; width: 130px; font-weight: 500;">Ticket ID:</td>
-        <td style="padding: 6px 0; color: #0F172A; font-family: monospace;">${ticket.id}</td>
+        <td style="padding: 4px 0; color: #64748B; width: 140px; font-weight: 500;">${isSpanish ? 'ID del Ticket:' : 'Ticket ID:'}</td>
+        <td style="padding: 4px 0; color: #0F172A; font-family: monospace;">${ticket.id}</td>
       </tr>
       <tr>
-        <td style="padding: 6px 0; color: #64748B; font-weight: 500;">Title:</td>
-        <td style="padding: 6px 0; color: #0F172A; font-weight: 600;">${ticket.title}</td>
+        <td style="padding: 4px 0; color: #64748B; font-weight: 500;">${isSpanish ? 'Título:' : 'Title:'}</td>
+        <td style="padding: 4px 0; color: #0F172A; font-weight: 600;">${ticket.title}</td>
       </tr>
       <tr>
-        <td style="padding: 6px 0; color: #64748B; font-weight: 500;">Category:</td>
-        <td style="padding: 6px 0;">${renderBadge(ticket.category, '#E2E8F0', '#334155')}</td>
+        <td style="padding: 4px 0; color: #64748B; font-weight: 500;">${isSpanish ? 'Categoría:' : 'Category:'}</td>
+        <td style="padding: 4px 0;">${renderBadge(ticket.category, '#E2E8F0', '#334155')}</td>
       </tr>
       <tr>
-        <td style="padding: 6px 0; color: #64748B; font-weight: 500;">Priority:</td>
-        <td style="padding: 6px 0;">${renderBadge(ticket.priority, priColor.bg, priColor.text)}</td>
+        <td style="padding: 4px 0; color: #64748B; font-weight: 500;">${isSpanish ? 'Prioridad:' : 'Priority:'}</td>
+        <td style="padding: 4px 0;">${renderBadge(localizedPriority, priColor.bg, priColor.text)}</td>
       </tr>
     </table>
-    <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #E2E8F0;">
-      <p style="margin: 0; color: #64748B; font-weight: 600; font-size: 13px;">Problem Description:</p>
-      <p style="margin: 6px 0 0 0; color: #334155; font-size: 14px; white-space: pre-line; line-height: 1.5;">${ticket.description}</p>
+    <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #E2E8F0;">
+      <p style="margin: 0; color: #64748B; font-weight: 600; font-size: 12px;">${isSpanish ? 'Descripción del Problema:' : 'Problem Description:'}</p>
+      <p style="margin: 4px 0 0 0; color: #334155; font-size: 13px; white-space: pre-line; line-height: 1.45;">${ticket.description}</p>
     </div>
   `;
 
@@ -359,7 +464,7 @@ export async function sendTicketCreatedEmail(
   const isAfterHours = effectiveStart.getTime() !== new Date(ticket.created_at).getTime();
   let afterHoursCallout = '';
   if (isAfterHours) {
-    const formattedDate = effectiveStart.toLocaleString('en-US', {
+    const formattedDate = effectiveStart.toLocaleString(isSpanish ? 'es-DO' : 'en-US', {
       timeZone: 'America/Santo_Domingo',
       weekday: 'short',
       month: 'short',
@@ -369,34 +474,43 @@ export async function sendTicketCreatedEmail(
       hour12: true,
     });
     afterHoursCallout = renderCallout(
-      `<strong>Support Hours & SLA Notice:</strong> This request was received outside our technical support hours (Mon–Fri 9:00 AM – 4:00 PM AST). Your ticket has been registered in our queue, and response time (SLA) evaluation will begin on <strong>${formattedDate} AST</strong> (Section 3.2).`,
+      isSpanish
+        ? `<strong>Horario de Soporte y Aviso de SLA:</strong> Esta solicitud fue recibida fuera de nuestro horario de soporte técnico (Lun–Vie 9:00 AM – 4:00 PM AST). Su ticket ha sido registrado en nuestra cola y la evaluación del tiempo de respuesta (SLA) comenzará el <strong>${formattedDate} AST</strong> (Sección 3.2).`
+        : `<strong>Support Hours & SLA Notice:</strong> This request was received outside our technical support hours (Mon–Fri 9:00 AM – 4:00 PM AST). Your ticket has been registered in our queue, and response time (SLA) evaluation will begin on <strong>${formattedDate} AST</strong> (Section 3.2).`,
       'warning'
     );
   }
 
   const contentHtml = `
-    <h2 style="color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 12px;">Hello ${clientName},</h2>
+    <h2 style="color: #0F172A; font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 8px;">
+      ${isSpanish ? `Hola ${clientName},` : `Hello ${clientName},`}
+    </h2>
     ${afterHoursCallout}
-    <p style="font-size: 15px; color: #475569; margin-top: 0; margin-bottom: 24px;">
-      We have received your support request and successfully opened a ticket. Our engineering team has been notified, and a technician will begin diagnosing your request shortly.
+    <p style="font-size: 13.5px; color: #475569; margin-top: 0; margin-bottom: 14px;">
+      ${isSpanish
+        ? 'Hemos recibido su solicitud de soporte y abrimos un ticket exitosamente. Nuestro equipo de ingeniería ha sido notificado y un técnico comenzará a diagnosticar su solicitud a la brevedad.'
+        : 'We have received your support request and successfully opened a ticket. Our engineering team has been notified, and a technician will begin diagnosing your request shortly.'}
     </p>
-    ${renderInfoCard('Ticket Details', cardHtml, palette.brandLight)}
-    ${renderDisclaimer('You will receive automatic notifications as your ticket progresses.')}
+    ${renderInfoCard(isSpanish ? 'Detalles del Ticket' : 'Ticket Details', cardHtml, palette.brandLight)}
+    ${renderDisclaimer(isSpanish ? 'Recibirá notificaciones automáticas conforme avance su ticket.' : 'You will receive automatic notifications as your ticket progresses.')}
   `;
 
   const body = getEmailLayout({
     preheader,
-    title: 'Ticket Successfully Opened',
+    title: isSpanish ? 'Ticket Abierto Exitosamente' : 'Ticket Successfully Opened',
     headerIcon: '🎫',
     accentColor: palette.brandLight,
+    language,
     contentHtml,
     actionUrl: portalUrl,
-    actionText: 'Track Ticket in Portal',
+    actionText: isSpanish ? 'Seguir Ticket en el Portal' : 'Track Ticket in Portal',
   });
 
   await sendEmail({
     to: clientEmail,
-    subject: `Ticket Opened: ${ticket.title} (Ref: ${ticket.id.substring(0, 8)})`,
+    subject: isSpanish
+      ? `Ticket Abierto: ${ticket.title} (Ref: ${ticket.id.substring(0, 8)})`
+      : `Ticket Opened: ${ticket.title} (Ref: ${ticket.id.substring(0, 8)})`,
     body,
     ticketId: ticket.id,
     type: 'EMAIL',
@@ -410,47 +524,52 @@ export async function sendTicketCreatedEmail(
  * @param clientName - Recipient display name
  * @param ticket - Updated Ticket entity
  * @param notes - Optional status transition notes from technician
+ * @param language - Optional recipient language code ('es_DO', 'en_US')
  */
 export async function sendTicketStatusChangedEmail(
   clientEmail: string,
   clientName: string,
   ticket: Ticket,
   notes?: string,
+  language = 'en_US',
 ): Promise<void> {
+  const isSpanish = (language || 'en_US').startsWith('es');
   const portalUrl = `${env.CORS_ORIGIN || 'http://localhost:5173'}/tickets/${ticket.id}`;
-  const preheader = `Your ticket "${ticket.title}" status has been updated to ${ticket.status}.`;
 
   const statusColors: Record<string, { bg: string; text: string; label: string }> = {
-    OPEN: { bg: '#DBEAFE', text: '#1E40AF', label: 'Open' },
-    IN_PROGRESS: { bg: '#E0E7FF', text: '#3730A3', label: 'In Progress' },
-    AWAITING_PAYMENT: { bg: '#FEF3C7', text: '#92400E', label: 'Awaiting Payment' },
-    RESOLVED: { bg: '#D1FAE5', text: '#065F46', label: 'Resolved' },
-    RESOLVED_AUTOMATED: { bg: '#D1FAE5', text: '#065F46', label: 'Resolved Automatically' },
-    CLOSED: { bg: '#F1F5F9', text: '#475569', label: 'Closed' },
-    CANCELLED: { bg: '#FEE2E2', text: '#991B1B', label: 'Cancelled' },
+    OPEN: { bg: '#DBEAFE', text: '#1E40AF', label: isSpanish ? 'Abierto' : 'Open' },
+    IN_PROGRESS: { bg: '#E0E7FF', text: '#3730A3', label: isSpanish ? 'En Progreso' : 'In Progress' },
+    AWAITING_PAYMENT: { bg: '#FEF3C7', text: '#92400E', label: isSpanish ? 'Esperando Pago' : 'Awaiting Payment' },
+    RESOLVED: { bg: '#D1FAE5', text: '#065F46', label: isSpanish ? 'Resuelto' : 'Resolved' },
+    RESOLVED_AUTOMATED: { bg: '#D1FAE5', text: '#065F46', label: isSpanish ? 'Resuelto Automáticamente' : 'Resolved Automatically' },
+    CLOSED: { bg: '#F1F5F9', text: '#475569', label: isSpanish ? 'Cerrado' : 'Closed' },
+    CANCELLED: { bg: '#FEE2E2', text: '#991B1B', label: isSpanish ? 'Cancelado' : 'Cancelled' },
   };
   const stColor = statusColors[ticket.status] || { bg: '#E2E8F0', text: '#334155', label: ticket.status };
+  const preheader = isSpanish
+    ? `El estado de su ticket "${ticket.title}" ha sido actualizado a ${stColor.label}.`
+    : `Your ticket "${ticket.title}" status has been updated to ${ticket.status}.`;
 
   let cardHtml = `
-    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+    <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
       <tr>
-        <td style="padding: 6px 0; color: #64748B; width: 130px; font-weight: 500;">Ticket Title:</td>
-        <td style="padding: 6px 0; color: #0F172A; font-weight: 600;">${ticket.title}</td>
+        <td style="padding: 4px 0; color: #64748B; width: 140px; font-weight: 500;">${isSpanish ? 'Título del Ticket:' : 'Ticket Title:'}</td>
+        <td style="padding: 4px 0; color: #0F172A; font-weight: 600;">${ticket.title}</td>
       </tr>
       <tr>
-        <td style="padding: 6px 0; color: #64748B; font-weight: 500;">Current Status:</td>
-        <td style="padding: 6px 0;">${renderBadge(stColor.label, stColor.bg, stColor.text)}</td>
+        <td style="padding: 4px 0; color: #64748B; font-weight: 500;">${isSpanish ? 'Estado Actual:' : 'Current Status:'}</td>
+        <td style="padding: 4px 0;">${renderBadge(stColor.label, stColor.bg, stColor.text)}</td>
       </tr>
     </table>
   `;
 
   if (notes) {
     cardHtml += `
-      <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #E2E8F0;">
-        <p style="margin: 0 0 8px 0; color: #475569; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">
-          Technician Remarks:
+      <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #E2E8F0;">
+        <p style="margin: 0 0 4px 0; color: #475569; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em;">
+          ${isSpanish ? 'Observaciones del Técnico:' : 'Technician Remarks:'}
         </p>
-        <div style="background-color: #ffffff; border-left: 4px solid #0369A1; padding: 14px 18px; border-radius: 0 8px 8px 0; color: #334155; font-size: 14px; font-style: italic; border-top: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; border-bottom: 1px solid #F1F5F9;">
+        <div style="background-color: #ffffff; border-left: 3px solid #0084FF; padding: 10px 14px; border-radius: 0 6px 6px 0; color: #334155; font-size: 13px; font-style: italic; border-top: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; border-bottom: 1px solid #F1F5F9;">
           ${notes.replace(/\n/g, '<br />')}
         </div>
       </div>
@@ -458,27 +577,32 @@ export async function sendTicketStatusChangedEmail(
   }
 
   const contentHtml = `
-    <h2 style="color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 12px;">Hello ${clientName},</h2>
-    <p style="font-size: 15px; color: #475569; margin-top: 0; margin-bottom: 24px;">
-      The status of your support ticket has been updated.
+    <h2 style="color: #0F172A; font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 8px;">
+      ${isSpanish ? `Hola ${clientName},` : `Hello ${clientName},`}
+    </h2>
+    <p style="font-size: 13.5px; color: #475569; margin-top: 0; margin-bottom: 14px;">
+      ${isSpanish ? 'El estado de su ticket de soporte ha sido actualizado.' : 'The status of your support ticket has been updated.'}
     </p>
-    ${renderInfoCard('Status Details', cardHtml, palette.brandLight)}
-    ${renderDisclaimer('You can reply to this ticket directly from the client portal.')}
+    ${renderInfoCard(isSpanish ? 'Detalles del Estado' : 'Status Details', cardHtml, palette.brandLight)}
+    ${renderDisclaimer(isSpanish ? 'Puede responder a este ticket directamente desde el portal de clientes.' : 'You can reply to this ticket directly from the client portal.')}
   `;
 
   const body = getEmailLayout({
     preheader,
-    title: `Status Update: ${stColor.label}`,
+    title: isSpanish ? `Actualización de Estado: ${stColor.label}` : `Status Update: ${stColor.label}`,
     headerIcon: '🔄',
     accentColor: palette.brandLight,
+    language,
     contentHtml,
     actionUrl: portalUrl,
-    actionText: 'Review Ticket & History',
+    actionText: isSpanish ? 'Revisar Ticket e Historial' : 'Review Ticket & History',
   });
 
   await sendEmail({
     to: clientEmail,
-    subject: `Ticket Status Update [${stColor.label}]: ${ticket.title} (Ref: ${ticket.id.substring(0, 8)})`,
+    subject: isSpanish
+      ? `Actualización de Ticket [${stColor.label}]: ${ticket.title} (Ref: ${ticket.id.substring(0, 8)})`
+      : `Ticket Status Update [${stColor.label}]: ${ticket.title} (Ref: ${ticket.id.substring(0, 8)})`,
     body,
     ticketId: ticket.id,
     type: 'EMAIL',
@@ -491,66 +615,86 @@ export async function sendTicketStatusChangedEmail(
  * @param technicianEmail - Technician email address
  * @param technicianName - Technician display name
  * @param ticket - Assigned Ticket entity
+ * @param language - Optional technician language code ('es_DO', 'en_US')
  */
 export async function sendTicketAssignedEmail(
   technicianEmail: string,
   technicianName: string,
   ticket: Ticket,
+  language = 'en_US',
 ): Promise<void> {
+  const isSpanish = (language || 'en_US').startsWith('es');
   const portalUrl = `${env.CORS_ORIGIN || 'http://localhost:5173'}/tickets/${ticket.id}`;
-  const preheader = `A new ticket "${ticket.title}" has been assigned to you.`;
+  const preheader = isSpanish
+    ? `Se le ha asignado un nuevo ticket "${ticket.title}".`
+    : `A new ticket "${ticket.title}" has been assigned to you.`;
   const priColor = getPriorityColor(ticket.priority);
 
+  const priorityLabels: Record<string, string> = {
+    LOW: isSpanish ? 'Baja' : 'Low',
+    MEDIUM: isSpanish ? 'Media' : 'Medium',
+    HIGH: isSpanish ? 'Alta' : 'High',
+    CRITICAL: isSpanish ? 'Crítica' : 'Critical',
+  };
+  const localizedPriority = priorityLabels[ticket.priority.toUpperCase()] || ticket.priority;
+
   const cardHtml = `
-    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+    <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
       <tr>
-        <td style="padding: 6px 0; color: #64748B; width: 130px; font-weight: 500;">Ticket ID:</td>
-        <td style="padding: 6px 0; color: #0F172A; font-family: monospace;">${ticket.id}</td>
+        <td style="padding: 4px 0; color: #64748B; width: 140px; font-weight: 500;">${isSpanish ? 'ID del Ticket:' : 'Ticket ID:'}</td>
+        <td style="padding: 4px 0; color: #0F172A; font-family: monospace;">${ticket.id}</td>
       </tr>
       <tr>
-        <td style="padding: 6px 0; color: #64748B; font-weight: 500;">Title:</td>
-        <td style="padding: 6px 0; color: #0F172A; font-weight: 600;">${ticket.title}</td>
+        <td style="padding: 4px 0; color: #64748B; font-weight: 500;">${isSpanish ? 'Título:' : 'Title:'}</td>
+        <td style="padding: 4px 0; color: #0F172A; font-weight: 600;">${ticket.title}</td>
       </tr>
       <tr>
-        <td style="padding: 6px 0; color: #64748B; font-weight: 500;">Client:</td>
-        <td style="padding: 6px 0; color: #0F172A; font-weight: 600;">${ticket.client_name || 'Client'}${ticket.client_email ? ` (${ticket.client_email})` : ''}</td>
+        <td style="padding: 4px 0; color: #64748B; font-weight: 500;">${isSpanish ? 'Cliente:' : 'Client:'}</td>
+        <td style="padding: 4px 0; color: #0F172A; font-weight: 600;">${ticket.client_name || (isSpanish ? 'Cliente' : 'Client')}${ticket.client_email ? ` (${ticket.client_email})` : ''}</td>
       </tr>
       <tr>
-        <td style="padding: 6px 0; color: #64748B; font-weight: 500;">Category:</td>
-        <td style="padding: 6px 0;">${renderBadge(ticket.category, '#E2E8F0', '#334155')}</td>
+        <td style="padding: 4px 0; color: #64748B; font-weight: 500;">${isSpanish ? 'Categoría:' : 'Category:'}</td>
+        <td style="padding: 4px 0;">${renderBadge(ticket.category, '#E2E8F0', '#334155')}</td>
       </tr>
       <tr>
-        <td style="padding: 6px 0; color: #64748B; font-weight: 500;">Priority:</td>
-        <td style="padding: 6px 0;">${renderBadge(ticket.priority, priColor.bg, priColor.text)}</td>
+        <td style="padding: 4px 0; color: #64748B; font-weight: 500;">${isSpanish ? 'Prioridad:' : 'Priority:'}</td>
+        <td style="padding: 4px 0;">${renderBadge(localizedPriority, priColor.bg, priColor.text)}</td>
       </tr>
     </table>
-    <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #E2E8F0;">
-      <p style="margin: 0; color: #64748B; font-weight: 600; font-size: 13px;">Customer Description:</p>
-      <p style="margin: 6px 0 0 0; color: #334155; font-size: 14px; white-space: pre-line; line-height: 1.5;">${ticket.description}</p>
+    <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #E2E8F0;">
+      <p style="margin: 0; color: #64748B; font-weight: 600; font-size: 12px;">${isSpanish ? 'Descripción del Cliente:' : 'Customer Description:'}</p>
+      <p style="margin: 4px 0 0 0; color: #334155; font-size: 13px; white-space: pre-line; line-height: 1.45;">${ticket.description}</p>
     </div>
   `;
 
   const contentHtml = `
-    <h2 style="color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 12px;">Hello ${technicianName},</h2>
-    <p style="font-size: 15px; color: #475569; margin-top: 0; margin-bottom: 24px;">
-      You have been assigned to the following support ticket. Please review the customer requirements and SLA windows before starting work.
+    <h2 style="color: #0F172A; font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 8px;">
+      ${isSpanish ? `Hola ${technicianName},` : `Hello ${technicianName},`}
+    </h2>
+    <p style="font-size: 13.5px; color: #475569; margin-top: 0; margin-bottom: 14px;">
+      ${isSpanish
+        ? 'Se le ha asignado el siguiente ticket de soporte. Por favor revise los requerimientos del cliente y las ventanas de SLA antes de comenzar a trabajar.'
+        : 'You have been assigned to the following support ticket. Please review the customer requirements and SLA windows before starting work.'}
     </p>
-    ${renderInfoCard('Work Specifications', cardHtml, palette.brandLight)}
+    ${renderInfoCard(isSpanish ? 'Especificaciones del Trabajo' : 'Work Specifications', cardHtml, palette.brandLight)}
   `;
 
   const body = getEmailLayout({
     preheader,
-    title: 'New Ticket Assignment',
+    title: isSpanish ? 'Nueva Asignación de Ticket' : 'New Ticket Assignment',
     headerIcon: '👤',
     accentColor: palette.brandLight,
+    language,
     contentHtml,
     actionUrl: portalUrl,
-    actionText: 'Access Technician Dashboard',
+    actionText: isSpanish ? 'Acceder al Panel de Técnico' : 'Access Technician Dashboard',
   });
 
   await sendEmail({
     to: technicianEmail,
-    subject: `[New Assignment] ${ticket.title} (Priority: ${ticket.priority})`,
+    subject: isSpanish
+      ? `[Nueva Asignación] ${ticket.title} (Prioridad: ${localizedPriority})`
+      : `[New Assignment] ${ticket.title} (Priority: ${ticket.priority})`,
     body,
     ticketId: ticket.id,
     type: 'EMAIL',
@@ -564,42 +708,48 @@ export async function sendTicketAssignedEmail(
  * @param ticketId - Ticket UUID
  * @param newStatus - New ticket status string
  * @param notes - Optional status transition notes
+ * @param language - Optional recipient language code ('es_DO', 'en_US')
  */
 export async function sendTicketStatusEmail(
   clientEmail: string,
   ticketId: string,
   newStatus: string,
   notes?: string,
+  language = 'en_US',
 ): Promise<void> {
+  const isSpanish = (language || 'en_US').startsWith('es');
   const portalUrl = `${env.CORS_ORIGIN || 'http://localhost:5173'}/tickets/${ticketId}`;
-  const preheader = `Your ticket update for ${ticketId}`;
+  const preheader = isSpanish ? `Actualización de su ticket ${ticketId}` : `Your ticket update for ${ticketId}`;
 
   const cardHtml = `
-    <p style="margin: 0; font-size: 14px; color: #334155;"><strong>New Status:</strong> ${newStatus}</p>
-    ${notes ? `<p style="margin: 12px 0 0 0; font-size: 14px; color: #334155; font-style: italic; border-left: 3px solid #E2E8F0; padding-left: 12px;">${notes}</p>` : ''}
+    <p style="margin: 0; font-size: 13.5px; color: #334155;"><strong>${isSpanish ? 'Nuevo Estado:' : 'New Status:'}</strong> ${newStatus}</p>
+    ${notes ? `<p style="margin: 8px 0 0 0; font-size: 13px; color: #334155; font-style: italic; border-left: 3px solid #E2E8F0; padding-left: 10px;">${notes}</p>` : ''}
   `;
 
   const contentHtml = `
-    <h2 style="color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 12px;">Ticket Status Updated</h2>
-    <p style="font-size: 15px; color: #475569; margin-top: 0; margin-bottom: 24px;">
-      Your ticket <strong>${ticketId}</strong> has been updated.
+    <h2 style="color: #0F172A; font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 8px;">
+      ${isSpanish ? 'Estado del Ticket Actualizado' : 'Ticket Status Updated'}
+    </h2>
+    <p style="font-size: 13.5px; color: #475569; margin-top: 0; margin-bottom: 14px;">
+      ${isSpanish ? `Su ticket <strong>${ticketId}</strong> ha sido actualizado.` : `Your ticket <strong>${ticketId}</strong> has been updated.`}
     </p>
-    ${renderInfoCard('Ticket Update', cardHtml, palette.brandLight)}
+    ${renderInfoCard(isSpanish ? 'Actualización de Ticket' : 'Ticket Update', cardHtml, palette.brandLight)}
   `;
 
   const body = getEmailLayout({
     preheader,
-    title: 'Ticket Update',
+    title: isSpanish ? 'Actualización de Ticket' : 'Ticket Update',
     headerIcon: '🔄',
     accentColor: palette.brandLight,
+    language,
     contentHtml,
     actionUrl: portalUrl,
-    actionText: 'View Ticket',
+    actionText: isSpanish ? 'Ver Ticket' : 'View Ticket',
   });
 
   await sendEmail({
     to: clientEmail,
-    subject: `Ticket Update — ${ticketId}`,
+    subject: isSpanish ? `Actualización de Ticket — ${ticketId}` : `Ticket Update — ${ticketId}`,
     body,
     ticketId,
     type: 'EMAIL',
@@ -614,6 +764,7 @@ export async function sendTicketStatusEmail(
  * @param senderName - Sender display name
  * @param ticket - Ticket entity
  * @param message - New reply message body
+ * @param language - Optional recipient language code ('es_DO', 'en_US')
  */
 export async function sendTicketResponseEmail(
   recipientEmail: string,
@@ -621,48 +772,59 @@ export async function sendTicketResponseEmail(
   senderName: string,
   ticket: Ticket,
   message: string,
+  language = 'en_US',
 ): Promise<void> {
+  const isSpanish = (language || 'en_US').startsWith('es');
   const portalUrl = `${env.CORS_ORIGIN || 'http://localhost:5173'}/tickets/${ticket.id}`;
-  const preheader = `${senderName} replied to ticket "${ticket.title}".`;
+  const preheader = isSpanish
+    ? `${senderName} respondió al ticket "${ticket.title}".`
+    : `${senderName} replied to ticket "${ticket.title}".`;
 
   const cardHtml = `
-    <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 16px;">
+    <table style="width: 100%; border-collapse: collapse; font-size: 13.5px; margin-bottom: 10px;">
       <tr>
-        <td style="padding: 6px 0; color: #64748B; width: 130px; font-weight: 500;">Ticket Title:</td>
-        <td style="padding: 6px 0; color: #0F172A; font-weight: 600;">${ticket.title}</td>
+        <td style="padding: 4px 0; color: #64748B; width: 140px; font-weight: 500;">${isSpanish ? 'Título del Ticket:' : 'Ticket Title:'}</td>
+        <td style="padding: 4px 0; color: #0F172A; font-weight: 600;">${ticket.title}</td>
       </tr>
     </table>
-    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #E2E8F0;">
-      <p style="margin: 0 0 8px 0; color: #475569; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">
-        New Message:
+    <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #E2E8F0;">
+      <p style="margin: 0 0 4px 0; color: #475569; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em;">
+        ${isSpanish ? 'Nuevo Mensaje:' : 'New Message:'}
       </p>
-      <div style="background-color: #ffffff; border-left: 4px solid #0369A1; padding: 14px 18px; border-radius: 0 8px 8px 0; color: #334155; font-size: 14px; border-top: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; border-bottom: 1px solid #F1F5F9;">
+      <div style="background-color: #ffffff; border-left: 3px solid #0084FF; padding: 10px 14px; border-radius: 0 6px 6px 0; color: #334155; font-size: 13px; border-top: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; border-bottom: 1px solid #F1F5F9;">
         ${message.replace(/\n/g, '<br />')}
       </div>
     </div>
   `;
 
   const contentHtml = `
-    <h2 style="color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 12px;">Hello ${recipientName},</h2>
-    <p style="font-size: 15px; color: #475569; margin-top: 0; margin-bottom: 24px;">
-      A new response has been added to your support ticket by <strong>${senderName}</strong>.
+    <h2 style="color: #0F172A; font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 8px;">
+      ${isSpanish ? `Hola ${recipientName},` : `Hello ${recipientName},`}
+    </h2>
+    <p style="font-size: 13.5px; color: #475569; margin-top: 0; margin-bottom: 14px;">
+      ${isSpanish
+        ? `Se ha agregado una nueva respuesta a su ticket de soporte por parte de <strong>${senderName}</strong>.`
+        : `A new response has been added to your support ticket by <strong>${senderName}</strong>.`}
     </p>
-    ${renderInfoCard('Ticket Reply', cardHtml, palette.brandLight)}
+    ${renderInfoCard(isSpanish ? 'Respuesta del Ticket' : 'Ticket Reply', cardHtml, palette.brandLight)}
   `;
 
   const body = getEmailLayout({
     preheader,
-    title: 'New Reply on Ticket',
+    title: isSpanish ? 'Nueva Respuesta en Ticket' : 'New Reply on Ticket',
     headerIcon: '💬',
     accentColor: palette.brandLight,
+    language,
     contentHtml,
     actionUrl: portalUrl,
-    actionText: 'View Ticket & Reply',
+    actionText: isSpanish ? 'Ver Ticket y Responder' : 'View Ticket & Reply',
   });
 
   await sendEmail({
     to: recipientEmail,
-    subject: `[New Reply] ${ticket.title} (Ref: ${ticket.id.substring(0, 8)})`,
+    subject: isSpanish
+      ? `[Nueva Respuesta] ${ticket.title} (Ref: ${ticket.id.substring(0, 8)})`
+      : `[New Reply] ${ticket.title} (Ref: ${ticket.id.substring(0, 8)})`,
     body,
     ticketId: ticket.id,
     type: 'EMAIL',

@@ -1,6 +1,17 @@
 # MSP Support MCP Server (`@msp/mcp-server`)
 
-Model Context Protocol (MCP) server providing LLMs (Antigravity, Claude Desktop, Cursor, Custom Agents) with real-time access to ticket diagnostics, live device RMM telemetry, hardware inventory, security posture auditing, automated remediation tools, and pre-packaged AI prompts.
+Model Context Protocol (MCP) server engineered according to the **MCP 2026-07-28 Specification Revision**, providing LLMs (Antigravity, Claude Desktop, Cursor, and autonomous AI agents) with real-time access to ticket diagnostics, live device RMM telemetry, hardware inventory, security posture auditing, automated remediation tools, and pre-packaged AI prompts.
+
+---
+
+## 🏛️ Architecture & 2026-07-28 SOTA Compliance
+
+| Paradigm | Spec Requirement | `@msp/mcp-server` Implementation |
+| :--- | :--- | :--- |
+| **Stateless Request-Response** | Pure stateless execution; zero in-memory session persistence between calls; serverless/edge compatibility. | Fully decoupled stateless architecture. Computes tenant/user context per request; deployable on AWS Lambda, Cloudflare Workers, or Node.js. |
+| **Streamable HTTP** | Deprecates legacy HTTP+SSE multi-request handshakes in favor of standardized, single-roundtrip Streamable HTTP. | Native `StreamableHTTPServerTransport({ sessionIdGenerator: undefined })` supporting `POST /mcp` streaming and health probes. |
+| **Enterprise Security & PDP** | Native OAuth 2.0 / OIDC / API Key authentication with runtime RBAC & Zero Standing Privileges. | Strict `MSP_API_KEY` / JWT validation, forwarding through `Authorization: Bearer <token>` and `X-API-Key` to the Unified PDP (BL-302). |
+| **Extension Primitives** | Full support for MCP Tools, dynamic Resources, workflow Prompts, background Tasks, and UI Apps. | 18 specialized diagnostic/remediation tools, real-time dynamic URI resources, multi-step prompts, and interactive visual schemas. |
 
 ---
 
@@ -10,7 +21,7 @@ Model Context Protocol (MCP) server providing LLMs (Antigravity, Claude Desktop,
 - **`msp_get_ticket`**: Fetches complete ticket details, conversation history, client info, SLA timers, and linked hardware asset.
 - **`msp_list_tickets`**: Queries open/pending tickets filtered by tenant, status (`OPEN`, `IN_PROGRESS`, etc.), priority (`CRITICAL`, `HIGH`, etc.), or assigned technician.
 - **`msp_add_ticket_reply`**: Posts internal triage notes (`isInternal: true`) or client-facing updates (`isInternal: false`).
-- **`msp_update_ticket_status`**: Transitions ticket lifecycle status following SLA cancellation and transition matrix rules.
+- **`msp_update_ticket_status`**: Transitions ticket lifecycle status following SLA cancellation (`BL-101`) and state transition matrix rules.
 
 ### 2. 💻 RMM Cloud Device Telemetry & Health
 - **`msp_get_device_telemetry`**: Retrieves real-time CPU, RAM, Disk utilization, agent online status, and pending patch counts.
@@ -45,6 +56,14 @@ Model Context Protocol (MCP) server providing LLMs (Antigravity, Claude Desktop,
 
 ---
 
+## 🌐 Dynamic MCP Resources
+
+- `msp://tickets/{ticketId}`: Real-time ticket entity snapshot and SLA state.
+- `msp://devices/{deviceId}/telemetry`: Live hardware metrics, memory pressure, and patch delta.
+- `msp://tenants/{tenantId}/health`: Aggregated infrastructure health scoring and QBR readiness flags.
+
+---
+
 ## 📜 Built-In MCP Prompts
 
 - **`triage_ticket`**: End-to-end guided ticket diagnosis workflow (ticket fetch $\rightarrow$ telemetry $\rightarrow$ event log inspection $\rightarrow$ root cause + response draft).
@@ -52,20 +71,51 @@ Model Context Protocol (MCP) server providing LLMs (Antigravity, Claude Desktop,
 
 ---
 
-## ⚙️ Configuration
+## 🚀 Dual-Mode Execution
 
-Registered in `C:\Users\PC\.gemini\config\mcp_config.json`:
+### 1. Local Stdio Transport (IDE & Desktop Subagents)
+Runs standard input/output JSON-RPC stream for Antigravity, Claude Desktop, Cursor, etc.
 
+Configured in `C:\Users\PC\.gemini\config\mcp_config.json`:
 ```json
 {
   "mcpServers": {
-    "msp-support": {
+    "msp-server": {
       "command": "node",
-      "args": ["c:/Users/Public/Workspace/msp_client_portal/packages/mcp-server/dist/index.js"],
+      "args": ["c:/Users/PC/Workspace/msp_client_portal/packages/mcp-server/dist/index.js"],
       "env": {
-        "MSP_API_URL": "http://localhost:3000/api/v1"
+        "MSP_API_URL": "http://localhost:3001/api/v1",
+        "MSP_SERVER_URL": "http://localhost:3001",
+        "MSP_API_KEY": "msp_live_api_key_secure_session"
       }
     }
   }
 }
+```
+
+### 2. Stateless Streamable HTTP Transport (Serverless, Cloud & Edge)
+Runs a standalone HTTP server handling single-roundtrip `POST /mcp` JSON-RPC streams:
+
+```bash
+# Start in Streamable HTTP Mode (default port 3005)
+npm -w packages/mcp-server run start:http
+
+# Development Mode with live watch
+npm -w packages/mcp-server run dev:http
+```
+
+**Endpoints:**
+- `POST http://localhost:3005/mcp`: Streamable HTTP MCP JSON-RPC endpoint.
+- `GET  http://localhost:3005/health`: Health and spec compliance diagnostics.
+
+---
+
+## 📦 Build & Test
+
+```bash
+# Build TypeScript bundle
+npm -w packages/mcp-server run build
+
+# Run unit and integration tests
+npm -w packages/mcp-server run test
 ```
