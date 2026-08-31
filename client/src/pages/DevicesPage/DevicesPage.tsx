@@ -10,9 +10,9 @@ import {
   RefreshCw,
   Trash2,
   CheckCircle2,
-  Plus,
   Terminal,
   ToolCase,
+  Plus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -685,20 +685,18 @@ export function DevicesPage() {
     <Page
       title={t("nav.devices")}
       subtitle={t("devices.subtitle")}
-      isLoading={loading}
       actions={
         isAdmin ? (
           <Button
-            type="button"
-            size="sm"
             onClick={handleOpenAddDevice}
             className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="w-3.5 h-3.5" />
             <span>{t("devices.addDevice", "Add Device")}</span>
           </Button>
         ) : undefined
       }
+      isLoading={loading}
     >
       <div className="space-y-6">
         {/* Navigation Section Switcher: Device Inventory vs RMM Monitoring & Patches */}

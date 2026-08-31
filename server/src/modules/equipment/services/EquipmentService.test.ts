@@ -690,6 +690,16 @@ describe('EquipmentService', () => {
       });
       mocks.equipFindBySubscription.mockResolvedValue([]);
       mocks.ncProvisionUser.mockResolvedValue('nc_password_123');
+      mocks.gatewayGetPairingByCode.mockReturnValue({
+        code: '121196',
+        agentId: 'agent-uuid-001',
+        hello: {
+          hostname: 'Core Server',
+          serial_number: 'SN-ADM-001',
+          timestamp: Date.now(),
+        },
+      });
+      mocks.gatewayBindAgent.mockReturnValue(true);
       mocks.equipCreate.mockResolvedValue({
         id: 'slot-admin-1',
         subscription_id: 'sub-new-admin',
@@ -707,6 +717,7 @@ describe('EquipmentService', () => {
         deviceSerial: 'SN-ADM-001',
         tenantId,
         adminUserId: 'admin-1',
+        otp: '121196',
       });
 
       expect(mocks.subCreate).toHaveBeenCalledWith(
@@ -729,12 +740,100 @@ describe('EquipmentService', () => {
       expect(result.device_name).toBe('Core Server');
     });
 
-    it('should throw ValidationError if deviceName is empty', async () => {
+    it('should provision admin device with live OTP pairing and WebSocket agent binding', async () => {
+      mocks.subFindByTenant.mockResolvedValue([
+        {
+          id: 'sub-active-admin',
+          tenant_id: tenantId,
+          service_name: 'Admin Infrastructure',
+          plan: 'PL-003',
+          equipment_count: 50,
+          status: 'ACTIVE',
+        },
+      ]);
+      mocks.equipFindBySubscription.mockResolvedValue([]);
+      mocks.ncProvisionUser.mockResolvedValue('nc_password_otp');
+      mocks.gatewayGetPairingByCode.mockReturnValue({
+        code: '123456',
+        agentId: 'agent-uuid-999',
+        hello: {
+          hostname: 'Live-Host-01',
+          serial_number: 'SN-REAL-777',
+          timestamp: Date.now(),
+        },
+      });
+      mocks.gatewayBindAgent.mockReturnValue(true);
+      mocks.equipCreate.mockResolvedValue({
+        id: 'slot-admin-otp',
+        subscription_id: 'sub-active-admin',
+        slot_index: 0,
+        status: 'ACTIVE',
+        device_name: 'Live-Host-01',
+        device_serial: 'SN-REAL-777',
+        agent_instance_id: 'agent-uuid-999',
+        agent_hostname: 'Live-Host-01',
+        agent_serial: 'SN-REAL-777',
+        tenant_id: tenantId,
+      });
+
+      const result = await equipmentService.addAdminDevice({
+        deviceName: '',
+        tenantId,
+        adminUserId: 'admin-1',
+        otp: '123456',
+      });
+
+      expect(mocks.gatewayGetPairingByCode).toHaveBeenCalledWith('123456');
+      expect(mocks.gatewayBindAgent).toHaveBeenCalledWith(
+        'agent-uuid-999',
+        'slot-admin-otp',
+        expect.any(String)
+      );
+      expect(result.device_name).toBe('Live-Host-01');
+      expect(result.agent_instance_id).toBe('agent-uuid-999');
+    });
+
+    it('should throw NotFoundError if OTP pairing code is invalid or expired', async () => {
+      mocks.gatewayGetPairingByCode.mockReturnValue(null);
+
+      await expect(
+        equipmentService.addAdminDevice({
+          deviceName: 'Admin Box',
+          tenantId,
+          adminUserId: 'admin-1',
+          otp: '999999',
+        })
+      ).rejects.toThrow('Activation code (OTP) not found or invalid');
+    });
+
+    it('should throw ValidationError if OTP is missing or invalid format', async () => {
+      await expect(
+        equipmentService.addAdminDevice({
+          deviceName: 'Admin Box',
+          tenantId,
+          adminUserId: 'admin-1',
+          otp: '',
+        })
+      ).rejects.toThrow('A valid 6-digit activation code (OTP) is required');
+    });
+
+    it('should throw ValidationError if deviceName is empty and OTP returns no hostname', async () => {
+      mocks.gatewayGetPairingByCode.mockReturnValue({
+        code: '121196',
+        agentId: 'agent-uuid-001',
+        hello: {
+          hostname: '',
+          serial_number: '',
+          timestamp: Date.now(),
+        },
+      });
+
       await expect(
         equipmentService.addAdminDevice({
           deviceName: '   ',
           tenantId,
           adminUserId: 'admin-1',
+          otp: '121196',
         })
       ).rejects.toThrow('Device name is required');
     });

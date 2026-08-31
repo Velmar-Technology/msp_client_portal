@@ -710,19 +710,36 @@ export class EquipmentService {
   }
 
   /**
-   * Directly provisions/adds a device for an ADMIN without requiring an upfront paid subscription.
+   * Directly provisions/adds a device for an ADMIN by binding a live physical agent via pairing OTP code.
+   * Auto-detects hardware identity (hostname, serial), provisions Nextcloud storage, and establishes live WebSocket connection.
    *
-   * @param options - Admin device provisioning parameters
+   * @param options - Admin device provisioning parameters including required pairing OTP
    * @returns Provisioned SubscriptionEquipment slot
-   * @throws {ValidationError} When device name is empty
+   * @throws {ValidationError} When device name or OTP is empty, or agent disconnects during binding
+   * @throws {NotFoundError} When provided pairing OTP code is invalid or expired
    */
   async addAdminDevice(options: {
     deviceName: string;
     deviceSerial?: string;
     tenantId: string;
     adminUserId: string;
+    otp: string;
   }): Promise<SubscriptionEquipment> {
-    if (!options.deviceName || options.deviceName.trim().length === 0) {
+    const rawOtp = options.otp?.trim();
+    if (!rawOtp || !/^\d{6}$/.test(rawOtp)) {
+      throw new ValidationError('A valid 6-digit activation code (OTP) is required');
+    }
+
+    const pairingEntry = agentGateway.getPairingByCode(rawOtp);
+    if (!pairingEntry) {
+      throw new NotFoundError('Activation code (OTP) not found or invalid');
+    }
+
+    const detectedHostname = (pairingEntry.hello.hostname || '').trim();
+    const detectedSerial = (pairingEntry.hello.serial_number || '').trim();
+
+    const effectiveDeviceName = options.deviceName?.trim() || detectedHostname;
+    if (!effectiveDeviceName) {
       throw new ValidationError('Device name is required');
     }
 
@@ -749,17 +766,24 @@ export class EquipmentService {
       await this.subRepo.updatePlan(sub.id, sub.plan, slotIndex + 10);
     }
 
-    const serial = options.deviceSerial?.trim() || `SN-ADM-${Math.floor(100000 + Math.random() * 900000)}`;
+    const serial = options.deviceSerial?.trim() || detectedSerial || `SN-ADM-${Math.floor(100000 + Math.random() * 900000)}`;
     const username = `admin_${options.tenantId.slice(0, 8)}_slot_${slotIndex + 1}`;
-    const displayName = `${options.deviceName.trim()} (${serial})`;
+    const displayName = `${effectiveDeviceName} (${serial})`;
     const password = await this.provisionNextcloudUser(username, '100 GB', displayName);
+
+    const agentToken = pairingEntry ? this.generateAgentToken() : undefined;
 
     let slot: SubscriptionEquipment;
     if (targetSlot) {
       slot = (await this.equipmentRepository.update(targetSlot.id, {
         status: 'ACTIVE',
-        device_name: options.deviceName.trim(),
+        device_name: effectiveDeviceName,
         device_serial: serial,
+        agent_instance_id: pairingEntry ? pairingEntry.agentId : targetSlot.agent_instance_id,
+        agent_hostname: pairingEntry ? (detectedHostname || effectiveDeviceName) : targetSlot.agent_hostname,
+        agent_serial: pairingEntry ? (detectedSerial || serial) : targetSlot.agent_serial,
+        agent_last_seen_at: pairingEntry ? new Date() : targetSlot.agent_last_seen_at,
+        agent_token: agentToken ?? targetSlot.agent_token,
         otp: null,
         otp_expires_at: null,
         nextcloud_username: username,
@@ -770,8 +794,13 @@ export class EquipmentService {
         subscription_id: sub.id,
         slot_index: slotIndex,
         status: 'ACTIVE',
-        device_name: options.deviceName.trim(),
+        device_name: effectiveDeviceName,
         device_serial: serial,
+        agent_instance_id: pairingEntry ? pairingEntry.agentId : null,
+        agent_hostname: pairingEntry ? (detectedHostname || effectiveDeviceName) : null,
+        agent_serial: pairingEntry ? (detectedSerial || serial) : null,
+        agent_last_seen_at: pairingEntry ? new Date() : null,
+        agent_token: agentToken ?? null,
         nextcloud_username: username,
         nextcloud_password: password,
         tenant_id: options.tenantId,
@@ -781,9 +810,25 @@ export class EquipmentService {
     // Auto-provision equipment into Zabbix RMM
     try {
       await this.rmmPatchService.triggerPatchScan(slot.id, slot.tenant_id);
-      logger.info('Auto-provisioned admin equipment to RMM/Zabbix', { equipmentId: slot.id, deviceName: options.deviceName });
+      logger.info('Auto-provisioned admin equipment to RMM/Zabbix', { equipmentId: slot.id, deviceName: effectiveDeviceName });
     } catch (err) {
       logger.warn('Deferred RMM auto-provisioning on admin device creation', { equipmentId: slot.id, err });
+    }
+
+    // If paired with an agent, bind WebSocket connection
+    if (pairingEntry && agentToken) {
+      const bound = agentGateway.bindAgent(pairingEntry.agentId, slot.id, agentToken);
+      if (!bound) {
+        await this.equipmentRepository.update(slot.id, {
+          status: 'PENDING_ACTIVATION',
+          agent_instance_id: null,
+          agent_hostname: null,
+          agent_serial: null,
+          agent_token: null,
+        });
+        await this.cleanupNextcloudUser(username);
+        throw new ValidationError('Agent went offline; please retry pairing while the device is connected');
+      }
     }
 
     return slot;

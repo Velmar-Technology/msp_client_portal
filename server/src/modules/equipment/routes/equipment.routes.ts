@@ -3,7 +3,7 @@ import { equipmentController } from '@modules/equipment/controllers/EquipmentCon
 import { authMiddleware } from '@shared/middleware/authMiddleware';
 import { rbacMiddleware } from '@shared/middleware/rbacMiddleware';
 import { validate } from '@shared/middleware/validationMiddleware';
-import { ActivateWithOtpDTO } from '@shared/dtos/equipment.dto';
+import { ActivateWithOtpDTO, AddAdminDeviceDTO } from '@shared/dtos/equipment.dto';
 import { UserRole } from '@shared/types';
 
 const router = Router();
@@ -21,9 +21,10 @@ router.get('/admin/devices', rbacMiddleware(UserRole.ADMIN), (req, res) =>
 );
 
 /** POST /api/v1/equipment/admin/devices — Add a device directly for admin/tenant without needing a subscription */
-router.post('/admin/devices', rbacMiddleware(UserRole.ADMIN), (req, res) =>
+router.post('/admin/devices', rbacMiddleware(UserRole.ADMIN), validate(AddAdminDeviceDTO, 'body'), (req, res) =>
   equipmentController.addAdminDevice(req, res)
 );
+
 
 /** DELETE /api/v1/equipment/admin/devices/:id — Delete an admin-owned equipment record */
 router.delete('/admin/devices/:id', rbacMiddleware(UserRole.ADMIN), (req, res) =>
