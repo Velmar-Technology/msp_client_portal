@@ -95,6 +95,21 @@ export class TechnicianEarningsController {
       message: 'Compensation rates updated successfully.',
     });
   }
+
+  /**
+   * POST /api/v1/system/technicians/earnings/recalculate
+   * Recalculates and synchronizes technician commissions and OpEx expenses for closed tickets (Admin only).
+   */
+  async recalculateCommissions(req: Request, res: Response): Promise<void> {
+    const ctx = this.getContext(req);
+    const result = await this.service.recalculateTenantCommissions(ctx.tenantId, ctx);
+
+    res.json({
+      success: true,
+      data: result,
+      message: `Successfully processed ${result.processedTickets} tickets (${result.createdEarnings} created, ${result.updatedEarnings} updated).`,
+    });
+  }
 }
 
 export const technicianEarningsController = new TechnicianEarningsController();

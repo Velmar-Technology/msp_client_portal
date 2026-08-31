@@ -9,13 +9,7 @@ import { TransactionsTable } from "@/components/financial/TransactionsTable";
 import { TechnicianPayrollTable } from "@/components/financial/TechnicianPayrollTable";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { LogExpenseDialog } from "@/components/financial/LogExpenseDialog";
 import { Page } from "@/components/Page";
@@ -24,18 +18,19 @@ import { ChunkErrorBoundary } from "@/components/shared/ChunkErrorBoundary";
 import { useDeferredLoading } from "@/hooks/useDeferredLoading";
 import { SKELETON_DISPLAY_DELAY_MS } from "@/constants/ui";
 
-
 // ---- Lazily loaded heavy chart components ----
 const RevenueChart = lazyWithRetry(() =>
-  import("@/components/financial/RevenueChart").then((m) => ({ default: m.RevenueChart }))
+  import("@/components/financial/RevenueChart").then((m) => ({ default: m.RevenueChart })),
 );
 const ExpenseDoughnut = lazyWithRetry(() =>
-  import("@/components/financial/ExpenseDoughnut").then((m) => ({ default: m.ExpenseDoughnut }))
+  import("@/components/financial/ExpenseDoughnut").then((m) => ({ default: m.ExpenseDoughnut })),
 );
 
 function ChartSkeletonPlaceholder({ className }: { className?: string }) {
   return (
-    <div className={`bg-card border border-border rounded-xl p-5 shadow-xs flex flex-col justify-between ${className || "h-72"}`}>
+    <div
+      className={`bg-card border border-border rounded-xl p-5 shadow-xs flex flex-col justify-between ${className || "h-72"}`}
+    >
       <div className="flex justify-between items-center mb-4">
         <Skeleton className="h-5 w-36" />
         <Skeleton className="h-6 w-20" />
@@ -90,37 +85,10 @@ export function FinancialPage() {
       subtitle={t("financial.subtitle")}
       actions={
         <>
-          {/* Sub-tab Switcher */}
-          <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border mr-1">
-            <Button
-              type="button"
-              variant={activeTab === "overview" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setParam("tab", "overview")}
-              className="h-6.5 text-xs font-semibold gap-1 px-2.5 cursor-pointer"
-            >
-              <BarChart3 className="h-3 w-3" />
-              <span>Overview & Charts</span>
-            </Button>
-            <Button
-              type="button"
-              variant={activeTab === "payroll" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setParam("tab", "payroll")}
-              className="h-6.5 text-xs font-semibold gap-1 px-2.5 cursor-pointer text-emerald-600 dark:text-emerald-400"
-            >
-              <Users className="h-3 w-3" />
-              <span>Technician Commissions</span>
-            </Button>
-          </div>
-
           {activeTab === "overview" && (
             <>
               {/* Date Selector */}
-              <Select
-                value={dateRange}
-                onValueChange={(val) => setDateRange(val as DateRange)}
-              >
+              <Select value={dateRange} onValueChange={(val) => setDateRange(val as DateRange)}>
                 <SelectTrigger size="default" className="h-7 w-36 text-xs font-medium bg-background">
                   <SelectValue />
                 </SelectTrigger>
@@ -147,6 +115,30 @@ export function FinancialPage() {
               {isAdmin && <LogExpenseDialog onExpenseLogged={refresh} />}
             </>
           )}
+
+          {/* Sub-tab Switcher */}
+          <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border mr-1">
+            <Button
+              type="button"
+              variant={activeTab === "overview" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setParam("tab", "overview")}
+              className="h-6.5 text-xs font-semibold gap-1 px-2.5 cursor-pointer"
+            >
+              <BarChart3 className="h-3 w-3" />
+              <span>Overview & Charts</span>
+            </Button>
+            <Button
+              type="button"
+              variant={activeTab === "payroll" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setParam("tab", "payroll")}
+              className="h-6.5 text-xs font-semibold gap-1 px-2.5 cursor-pointer text-emerald-600 dark:text-emerald-400"
+            >
+              <Users className="h-3 w-3" />
+              <span>Technician Commissions</span>
+            </Button>
+          </div>
         </>
       }
     >
@@ -200,4 +192,3 @@ export function FinancialPage() {
 }
 
 export default FinancialPage;
-

@@ -94,6 +94,25 @@ export class ExpenseRepository extends BaseRepository<Expense> {
       .returning();
     return results[0] as Expense;
   }
+
+  /**
+   * Updates an existing operational expense entry.
+   *
+   * @param id - Expense UUID
+   * @param data - Expense data to update
+   * @returns Updated Expense entity or null
+   */
+  async update(
+    id: string,
+    data: Partial<{ amount: number; description: string; category: string; expense_date: Date }>
+  ): Promise<Expense | null> {
+    const results = await db
+      .update(expenses)
+      .set(data)
+      .where(eq(expenses.id, id))
+      .returning();
+    return (results[0] as Expense) || null;
+  }
 }
 
 export const expenseRepository = new ExpenseRepository();

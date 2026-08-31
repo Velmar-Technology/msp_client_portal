@@ -1,6 +1,7 @@
 import { technicianEarningsRepository, TechnicianEarningsRepository } from '../repositories/TechnicianEarningsRepository';
 import { expenseRepository, ExpenseRepository } from '@modules/billing';
 import { userRepository, UserRepository } from '@modules/auth';
+import { ticketRepository, TicketRepository } from '@modules/tickets';
 import { calculateElapsedBusinessMs } from '@shared/utils/businessHours';
 import { logger } from '@shared/utils/logger';
 import {
@@ -33,11 +34,13 @@ export class TechnicianEarningsService {
    * @param earningsRepo - Technician earnings repository
    * @param expenseRepo - Expense repository for OpEx auto-posting
    * @param userRepo - User repository for technician lookups
+   * @param ticketRepo - Ticket repository for ticket querying
    */
   constructor(
     private earningsRepo: TechnicianEarningsRepository = technicianEarningsRepository,
     private expenseRepo: ExpenseRepository = expenseRepository,
-    private userRepo: UserRepository = userRepository
+    private userRepo: UserRepository = userRepository,
+    private ticketRepo: TicketRepository = ticketRepository
   ) {}
 
   /**
@@ -290,6 +293,151 @@ export class TechnicianEarningsService {
       ...data,
       tenant_id: ctx.tenantId,
     });
+  }
+
+  /**
+   * Recalculates and synchronizes technician commissions and OpEx expenses for all eligible closed/resolved tickets.
+   *
+   * @param tenantId - Tenant UUID
+   * @param ctx - Authenticated user context (must be ADMIN)
+   * @returns Breakdown of processed tickets, created earnings, and updated earnings
+   * @throws {ForbiddenError} When user is not an administrator
+   * @see BL-801
+   */
+  async recalculateTenantCommissions(
+    tenantId: string,
+    ctx: UserContext
+  ): Promise<{ processedTickets: number; createdEarnings: number; updatedEarnings: number }> {
+    if (ctx.role !== 'ADMIN') {
+      throw new ForbiddenError('Only administrators can recalculate technician commissions');
+    }
+
+    const closedTickets = await this.ticketRepo.findClosedTicketsForTenant();
+    let createdCount = 0;
+    let updatedCount = 0;
+
+    for (const ticket of closedTickets) {
+      if (!ticket.assigned_tech_id) continue;
+
+      const techId = ticket.assigned_tech_id;
+      const ticketTenantId = ticket.tenant_id || tenantId;
+      const existing = await this.earningsRepo.findByTicketId(ticket.id);
+
+      // Retrieve rate profile
+      const rateProfile = await this.earningsRepo.getRateForTechnician(techId, ticketTenantId);
+      const baseRate = rateProfile ? Number(rateProfile.base_closed_rate) : 8.0;
+      const slaBonusRate = rateProfile ? Number(rateProfile.sla_bonus_rate) : 4.0;
+      const currency = rateProfile?.currency || 'USD';
+
+      // Priority Multiplier
+      const priority = (ticket.priority || TicketPriority.LOW).toUpperCase();
+      let priorityMultiplier = 1.0;
+      if (priority === TicketPriority.CRITICAL) {
+        priorityMultiplier = rateProfile ? Number(rateProfile.multiplier_critical) : 2.5;
+      } else if (priority === TicketPriority.HIGH) {
+        priorityMultiplier = rateProfile ? Number(rateProfile.multiplier_high) : 1.75;
+      } else if (priority === TicketPriority.MEDIUM) {
+        priorityMultiplier = rateProfile ? Number(rateProfile.multiplier_medium) : 1.25;
+      } else {
+        priorityMultiplier = rateProfile ? Number(rateProfile.multiplier_low) : 1.0;
+      }
+
+      // Evaluate SLA Adherence (using ticket.updated_at or current time as resolution timestamp)
+      const targetSlaHours = RESOLUTION_SLA_HOURS[priority] || 8;
+      const targetSlaMs = targetSlaHours * 60 * 60 * 1000;
+      const resolutionDate = ticket.updated_at ? new Date(ticket.updated_at) : new Date();
+      const elapsedBusinessMs = calculateElapsedBusinessMs(new Date(ticket.created_at), resolutionDate);
+      const slaMet = elapsedBusinessMs <= targetSlaMs;
+      const elapsedMinutes = Math.round(elapsedBusinessMs / (60 * 1000));
+
+      const baseAmount = Number((baseRate * priorityMultiplier).toFixed(2));
+      const slaBonusAmount = slaMet ? Number(slaBonusRate.toFixed(2)) : 0;
+      const finalAmount = Number((baseAmount + slaBonusAmount).toFixed(2));
+
+      const techUser = await this.userRepo.findById(techId);
+      const techName = techUser?.name || 'Technician';
+
+      if (!existing) {
+        // Create new earning entry + OpEx expense
+        let expenseId: string | null = null;
+        try {
+          const createdExpense = await this.expenseRepo.create({
+            amount: finalAmount,
+            description: `Commission for closed ticket: "${ticket.title}" (Ref: ${ticket.id.substring(0, 8)}) — Tech: ${techName}`,
+            category: 'Labor & Technician Commissions',
+            expense_date: resolutionDate,
+            tenant_id: ticketTenantId,
+            expense_identifier: `EARN-${ticket.id.substring(0, 8)}`,
+          });
+          expenseId = createdExpense.id;
+        } catch (err) {
+          logger.error('Failed to auto-post technician commission to expenses table during recalculation', { error: err, ticketId: ticket.id });
+        }
+
+        await this.earningsRepo.createEarning({
+          ticket_id: ticket.id,
+          technician_id: techId,
+          base_amount: baseAmount,
+          sla_bonus_amount: slaBonusAmount,
+          final_amount: finalAmount,
+          currency,
+          status: EarningStatus.PENDING,
+          breakdown: {
+            priority,
+            category: ticket.category,
+            priorityMultiplier,
+            slaMet,
+            resolutionTimeMinutes: elapsedMinutes,
+            targetSlaMinutes: targetSlaHours * 60,
+          },
+          expense_id: expenseId,
+          tenant_id: ticketTenantId,
+        });
+        createdCount++;
+      } else if (existing.status === EarningStatus.PENDING || existing.status === EarningStatus.APPROVED) {
+        // Update existing earning and update OpEx if final amount or SLA changed
+        if (existing.expense_id) {
+          try {
+            await this.expenseRepo.update(existing.expense_id, {
+              amount: finalAmount,
+              description: `Commission for closed ticket: "${ticket.title}" (Ref: ${ticket.id.substring(0, 8)}) — Tech: ${techName}`,
+            });
+          } catch (err) {
+            logger.error('Failed to update expense during commission recalculation', { error: err, expenseId: existing.expense_id });
+          }
+        }
+
+        await this.earningsRepo.updateEarning(existing.id, {
+          base_amount: baseAmount,
+          sla_bonus_amount: slaBonusAmount,
+          final_amount: finalAmount,
+          currency,
+          breakdown: {
+            priority,
+            category: ticket.category,
+            priorityMultiplier,
+            slaMet,
+            resolutionTimeMinutes: elapsedMinutes,
+            targetSlaMinutes: targetSlaHours * 60,
+          },
+        });
+        updatedCount++;
+      }
+    }
+
+    logger.info('Completed recalculation of technician commissions', {
+      tenantId,
+      processedTickets: closedTickets.length,
+      createdCount,
+      updatedCount,
+      adminId: ctx.userId,
+    });
+
+    return {
+      processedTickets: closedTickets.length,
+      createdEarnings: createdCount,
+      updatedEarnings: updatedCount,
+    };
   }
 }
 
