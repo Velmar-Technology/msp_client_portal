@@ -53,7 +53,7 @@ export const EmailWrapper: React.FC<EmailWrapperProps> = ({
     <div
       style={{
         backgroundColor: palette.surface,
-        padding: `${space['10']} ${space['6']}`,
+        padding: `${space['6']} ${space['3']}`,
         fontFamily: font.family,
         color: palette.heading,
         minHeight: '100%',
@@ -93,7 +93,7 @@ export const EmailWrapper: React.FC<EmailWrapperProps> = ({
                   width: '100%',
                   maxWidth: layout.maxWidth,
                   backgroundColor: palette.cardBg,
-                  borderRadius: radius.xl,
+                  borderRadius: radius.lg,
                   border: `1px solid ${palette.border}`,
                   overflow: 'hidden',
                   boxShadow: shadow.card,
@@ -104,21 +104,21 @@ export const EmailWrapper: React.FC<EmailWrapperProps> = ({
                 <div
                   style={{
                     background: palette.headerGradient,
-                    padding: `${space['8']} ${space['8']} ${space['6']} ${space['8']}`,
+                    padding: `${space['6']} ${space['6']} ${space['4']} ${space['6']}`,
                     textAlign: 'center',
                   }}
                 >
-                  {/* Official Velmar Logo Image */}
-                  <div style={{ textAlign: 'center', marginBottom: space['3'] }}>
+                  {/* Official Velmar Logo Image (Compact 95px) */}
+                  <div style={{ textAlign: 'center', marginBottom: space['2'] }}>
                     <img
                       src={logo}
                       alt="Velmar Technology SRL"
                       style={{
-                        width: '135px',
+                        width: '95px',
                         maxWidth: '100%',
                         height: 'auto',
                         display: 'inline-block',
-                        filter: 'drop-shadow(0 4px 12px rgba(0, 132, 255, 0.20))',
+                        filter: 'drop-shadow(0 3px 8px rgba(0, 132, 255, 0.20))',
                       }}
                     />
                   </div>
@@ -131,7 +131,7 @@ export const EmailWrapper: React.FC<EmailWrapperProps> = ({
                       fontSize: font.size.base,
                       fontWeight: font.weight.semibold,
                       fontFamily: font.family,
-                      letterSpacing: '0.02em',
+                      letterSpacing: '0.015em',
                     }}
                   >
                     {headerIcon && (
@@ -144,7 +144,7 @@ export const EmailWrapper: React.FC<EmailWrapperProps> = ({
                 {/* Signature Dual-Tone Accent Bar (Electric Blue to Flame Orange) */}
                 <div
                   style={{
-                    height: '4px',
+                    height: '3px',
                     background: accentGradient,
                   }}
                 />
@@ -161,11 +161,11 @@ export const EmailWrapper: React.FC<EmailWrapperProps> = ({
                 >
                   {children}
 
-                  {/* ── CTA Button ── */}
+                  {/* ── CTA Button (Compact) ── */}
                   {actionUrl && actionText && (
                     <div
                       style={{
-                        margin: `${space['10']} 0 ${space['6']} 0`,
+                        margin: `${space['6']} 0 ${space['3']} 0`,
                         textAlign: 'center',
                       }}
                     >
@@ -177,10 +177,10 @@ export const EmailWrapper: React.FC<EmailWrapperProps> = ({
                           backgroundColor: palette.cta,
                           color: palette.white,
                           textDecoration: 'none',
-                          padding: `${space['5']} ${space['10']}`,
+                          padding: `${space['4']} ${space['8']}`,
                           borderRadius: radius.md,
                           fontWeight: font.weight.semibold,
-                          fontSize: font.size.md,
+                          fontSize: font.size.base,
                           fontFamily: font.family,
                           display: 'inline-block',
                           boxShadow: shadow.cta,

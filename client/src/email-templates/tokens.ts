@@ -66,14 +66,14 @@ export const font = {
   mono:   "'Courier New', Courier, monospace",
 
   size: {
-    xs:   '11px',
-    sm:   '12px',
-    base: '14px',
-    md:   '15px',
-    lg:   '16px',
-    xl:   '20px',
-    xxl:  '24px',
-    code: '32px',   // OTP digits
+    xs:   '10px',
+    sm:   '11px',
+    base: '13px',
+    md:   '14px',
+    lg:   '15px',
+    xl:   '17px',
+    xxl:  '20px',
+    code: '24px',   // OTP digits (compact)
   },
 
   weight: {
@@ -85,52 +85,52 @@ export const font = {
   },
 
   lineHeight: {
-    tight: 1.3,
-    normal: 1.6,
-    relaxed: 1.8,
+    tight: 1.25,
+    normal: 1.5,
+    relaxed: 1.65,
   },
 } as const;
 
 /* ── Spacing ──────────────────────────────────────────────── */
 export const space = {
   '0':  '0',
-  '1':  '4px',
-  '2':  '6px',
-  '3':  '8px',
-  '4':  '10px',
-  '5':  '12px',
-  '6':  '16px',
-  '7':  '20px',
-  '8':  '24px',
-  '9':  '28px',
-  '10': '32px',
-  '12': '36px',
-  '14': '40px',
-  '16': '48px',
+  '1':  '2px',
+  '2':  '4px',
+  '3':  '6px',
+  '4':  '8px',
+  '5':  '10px',
+  '6':  '12px',
+  '7':  '14px',
+  '8':  '16px',
+  '9':  '20px',
+  '10': '24px',
+  '12': '28px',
+  '14': '32px',
+  '16': '40px',
 } as const;
 
 /* ── Radii ────────────────────────────────────────────────── */
 export const radius = {
-  sm:  '6px',
-  md:  '8px',
-  lg:  '12px',
-  xl:  '16px',
+  sm:   '4px',
+  md:   '6px',
+  lg:   '8px',
+  xl:   '12px',
   pill: '9999px',
 } as const;
 
 /* ── Shadows ──────────────────────────────────────────────── */
 export const shadow = {
-  card: '0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02)',
-  cta:  '0 4px 12px rgba(37, 99, 235, 0.20)',
+  card: '0 4px 12px -2px rgba(0,0,0,0.06), 0 2px 4px -1px rgba(0,0,0,0.03)',
+  cta:  '0 3px 10px rgba(0, 132, 255, 0.22)',
 } as const;
 
 /* ── Layout constants ─────────────────────────────────────── */
 export const layout = {
-  maxWidth: '600px',
-  headerPadding: `${space['12']} ${space['10']}`,    // 36px 32px
-  bodyPadding:   `${space['14']} ${space['10']}`,    // 40px 32px
-  footerPadding: `${space['8']} ${space['10']}`,     // 24px 32px
-  cardPadding:   space['7'],                          // 20px
+  maxWidth:      '540px',                             // Compact email card width
+  headerPadding: `${space['7']} ${space['8']}`,       // 14px 16px
+  bodyPadding:   `${space['9']} ${space['8']}`,       // 20px 16px
+  footerPadding: `${space['6']} ${space['8']}`,       // 12px 16px
+  cardPadding:   space['6'],                          // 12px
 } as const;
 
 /* ── Priority helpers ─────────────────────────────────────── */

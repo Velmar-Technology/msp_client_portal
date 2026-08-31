@@ -234,15 +234,15 @@ function getEmailLayout(
   const headerIconSpan = opts.headerIcon ? `<span style="margin-right: 8px;">${opts.headerIcon}</span>` : '';
 
   const actionButton = opts.actionUrl && opts.actionText ? `
-    <div style="margin: 32px 0 16px 0; text-align: center;">
+    <div style="margin: 20px 0 8px 0; text-align: center;">
       <!--[if mso]>
-      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${opts.actionUrl}" style="height:44px;v-text-anchor:middle;width:240px;" arcsize="18%" stroke="f" fillcolor="${palette.cta}">
+      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${opts.actionUrl}" style="height:38px;v-text-anchor:middle;width:200px;" arcsize="16%" stroke="f" fillcolor="${palette.cta}">
         <w:anchorlock/>
-        <center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:bold;">${opts.actionText}</center>
+        <center style="color:#ffffff;font-family:sans-serif;font-size:13.5px;font-weight:bold;">${opts.actionText}</center>
       </v:roundrect>
       <![endif]-->
       <!--[if !mso]><!-->
-      <a href="${opts.actionUrl}" style="background-color: ${palette.cta}; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: 600; font-size: 15px; display: inline-block; box-shadow: 0 4px 14px rgba(0, 132, 255, 0.25); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      <a href="${opts.actionUrl}" style="background-color: ${palette.cta}; color: #ffffff; text-decoration: none; padding: 9px 22px; border-radius: 6px; font-weight: 600; font-size: 13.5px; display: inline-block; box-shadow: 0 3px 10px rgba(0, 132, 255, 0.22); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
         ${opts.actionText}
       </a>
       <!--<![endif]-->
@@ -262,44 +262,44 @@ function getEmailLayout(
         ${opts.preheader}
         ${'&zwnj;&nbsp;'.repeat(40)}
       </div>
-      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F8FAFC; padding: 32px 16px;">
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F8FAFC; padding: 16px 8px;">
         <tr>
           <td align="center">
-            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; border: 1px solid #E2E8F0; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);">
-              <!-- Header Banner (Obsidian Dark with Official Logo) -->
+            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 540px; background-color: #ffffff; border-radius: 10px; border: 1px solid #E2E8F0; overflow: hidden; box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.06), 0 2px 4px -1px rgba(0, 0, 0, 0.03);">
+              <!-- Header Banner (Compact Obsidian Dark with Logo) -->
               <tr>
-                <td style="background-color: #080C16; background-image: linear-gradient(135deg, #050811 0%, #0A0F1D 50%, #0F172A 100%); padding: 32px 24px; text-align: center;">
+                <td style="background-color: #080C16; background-image: linear-gradient(135deg, #050811 0%, #0A0F1D 50%, #0F172A 100%); padding: 14px 16px 10px 16px; text-align: center;">
                   <table border="0" cellpadding="0" cellspacing="0" width="100%">
                     <tr>
                       <td align="center">
-                        <img src="cid:velmar-logo" alt="Velmar Technology SRL" width="140" style="display: block; max-width: 140px; height: auto; margin: 0 auto 10px auto; border: 0;" />
+                        <img src="cid:velmar-logo" alt="Velmar Technology SRL" width="95" style="display: block; max-width: 95px; height: auto; margin: 0 auto 6px auto; border: 0;" />
                       </td>
                     </tr>
                   </table>
-                  <p style="color: #38BDF8; margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">${headerIconSpan}${opts.title}</p>
+                  <p style="color: #38BDF8; margin: 0; font-size: 13px; font-weight: 600; letter-spacing: 0.015em; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">${headerIconSpan}${opts.title}</p>
                 </td>
               </tr>
               <!-- Signature Dual-Tone Accent Bar (Electric Blue to Flame Orange) -->
               <tr>
-                <td style="height: 4px; background-color: #0084FF; background-image: ${accentGradient}; font-size: 0; line-height: 0;">&nbsp;</td>
+                <td style="height: 3px; background-color: #0084FF; background-image: ${accentGradient}; font-size: 0; line-height: 0;">&nbsp;</td>
               </tr>
               <!-- Content Body -->
               <tr>
-                <td style="padding: 40px 32px; line-height: 1.6; font-size: 15px; color: #334155; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                <td style="padding: 20px 18px; line-height: 1.5; font-size: 13.5px; color: #334155; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                   ${opts.contentHtml}
                   ${actionButton}
                 </td>
               </tr>
               <!-- Footer Section -->
               <tr>
-                <td style="background-color: #F1F5F9; padding: 24px 32px; text-align: center; border-top: 1px solid #E2E8F0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-                  <p style="margin: 0; color: #64748B; font-size: 12px; font-weight: 500;">
+                <td style="background-color: #F1F5F9; padding: 12px 18px; text-align: center; border-top: 1px solid #E2E8F0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                  <p style="margin: 0; color: #64748B; font-size: 11px; font-weight: 500;">
                     ${isSpanish ? 'Esta es una notificación automática del Portal MSP de Velmar.' : 'This is an automated notification from the Velmar MSP Portal.'}
                   </p>
-                  <p style="margin: 4px 0 0 0; color: #94A3B8; font-size: 11px;">
+                  <p style="margin: 2px 0 0 0; color: #94A3B8; font-size: 10px;">
                     ${isSpanish ? 'No responda directamente a este correo electrónico.' : 'Do not reply directly to this email.'}
                   </p>
-                  <p style="margin: 12px 0 0 0; color: #64748B; font-size: 12px; font-weight: 500;">
+                  <p style="margin: 6px 0 0 0; color: #64748B; font-size: 11px; font-weight: 500;">
                     © ${new Date().getFullYear()} Velmar Technology SRL. ${isSpanish ? 'Todos los derechos reservados.' : 'All rights reserved.'}
                   </p>
                 </td>
@@ -316,14 +316,14 @@ function getEmailLayout(
 /* ── HTML Helper Primitives ───────────────────────────────── */
 function renderInfoCard(title: string, innerHtml: string, accentColor: string = palette.cta): string {
   return `
-    <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; margin-bottom: 24px;">
+    <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden; margin-bottom: 12px;">
       <div style="height: 3px; background-color: ${accentColor}; font-size: 0; line-height: 0;">&nbsp;</div>
-      <div style="padding: 16px 20px 10px 20px; border-bottom: 1px solid #E2E8F0;">
-        <h3 style="color: #1E293B; font-size: 16px; font-weight: 700; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      <div style="padding: 8px 12px; border-bottom: 1px solid #E2E8F0;">
+        <h3 style="color: #1E293B; font-size: 13.5px; font-weight: 700; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
           ${title}
         </h3>
       </div>
-      <div style="padding: 20px;">
+      <div style="padding: 10px 12px;">
         ${innerHtml}
       </div>
     </div>
@@ -332,7 +332,7 @@ function renderInfoCard(title: string, innerHtml: string, accentColor: string = 
 
 function renderBadge(text: string, bg: string, color: string): string {
   return `
-    <span style="display: inline-block; padding: 2px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; background-color: ${bg}; color: ${color}; text-transform: uppercase; letter-spacing: 0.03em;">
+    <span style="display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background-color: ${bg}; color: ${color}; text-transform: uppercase; letter-spacing: 0.03em; line-height: 1.5;">
       ${text}
     </span>
   `;
@@ -340,21 +340,21 @@ function renderBadge(text: string, bg: string, color: string): string {
 
 function renderCallout(text: string, variant: 'warning' | 'danger' | 'info' = 'warning'): string {
   const configs = {
-    warning: { bg: '#FFFBEB', border: '#FDE68A', color: '#D97706', icon: '⚠️' },
+    warning: { bg: '#FFF7ED', border: '#FED7AA', color: '#EA580C', icon: '⚠️' },
     danger:  { bg: '#FEF2F2', border: '#FECACA', color: '#DC2626', icon: '🔒' },
-    info:    { bg: '#EFF6FF', border: '#BFDBFE', color: '#2563EB', icon: 'ℹ️' },
+    info:    { bg: '#EFF6FF', border: '#BFDBFE', color: '#0084FF', icon: 'ℹ️' },
   };
   const cfg = configs[variant];
   return `
-    <div style="background-color: ${cfg.bg}; border: 1px solid ${cfg.border}; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; font-size: 13px; color: ${cfg.color}; line-height: 1.5;">
-      <span style="margin-right: 8px;">${cfg.icon}</span> ${text}
+    <div style="background-color: ${cfg.bg}; border: 1px solid ${cfg.border}; border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; font-size: 12px; color: ${cfg.color}; line-height: 1.45;">
+      <span style="margin-right: 6px;">${cfg.icon}</span> ${text}
     </div>
   `;
 }
 
 function renderDisclaimer(text: string): string {
   return `
-    <p style="font-size: 12px; color: #94A3B8; margin-top: 24px; margin-bottom: 0; line-height: 1.5;">
+    <p style="font-size: 11px; color: #94A3B8; margin-top: 12px; margin-bottom: 0; line-height: 1.45;">
       ${text}
     </p>
   `;
