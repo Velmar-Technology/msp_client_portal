@@ -8,17 +8,26 @@
  *  hard-code hex values or spacing numbers.
  */
 
-/* ── Brand Palette ────────────────────────────────────────── */
+/* ── Brand Palette (Aligned with Velmar Technology Logo) ──── */
 export const palette = {
-  /* Primary surface / CTA */
-  brand:          '#0C4A6E',   // Deep ocean-blue (header background)
-  brandLight:     '#0369A1',   // Mid-tone for secondary accents
-  brandAccent:    '#38BDF8',   // Sky highlight — used sparingly
+  /* Obsidian Tech Backgrounds & Brand Cores */
+  brandDark:      '#080C16',   // Deep obsidian / charcoal tech background
+  brand:          '#0A0F1D',   // Header banner obsidian container
+  brandBlue:      '#0084FF',   // Electric Cerulean Blue (left checkmark wings & banner)
+  brandOrange:    '#FF6600',   // Vibrant Flame Orange (right checkmark wings & top trim)
+  brandLight:     '#0091FF',   // Electric blue highlight
+  brandAccent:    '#38BDF8',   // Sky accent
 
-  /* CTA Button */
-  cta:            '#2563EB',   // Action-blue (buttons, links)
-  ctaHover:       '#1D4ED8',   // Hover shade (for alt-text only)
-  ctaShadow:      'rgba(37, 99, 235, 0.18)',
+  /* CTA Buttons & Links */
+  cta:            '#0084FF',   // Electric action-blue
+  ctaHover:       '#0070D8',   // Hover shade (for alt-text only)
+  ctaShadow:      'rgba(0, 132, 255, 0.25)',
+  ctaOrange:      '#FF6600',   // Orange action for billing / warnings
+  ctaOrangeShadow:'rgba(255, 102, 0, 0.25)',
+
+  /* Gradients */
+  headerGradient: 'linear-gradient(135deg, #050811 0%, #0A0F1D 50%, #0F172A 100%)',
+  accentGradient: 'linear-gradient(90deg, #0084FF 0%, #00C6FF 35%, #FF8A00 70%, #FF6600 100%)',
 
   /* Neutrals — lightest → darkest */
   white:          '#FFFFFF',
@@ -26,6 +35,7 @@ export const palette = {
   cardBg:         '#FFFFFF',   // Content card
   infoBg:         '#F1F5F9',   // Info-box / callout background
   border:         '#E2E8F0',   // Universal divider / card border
+  borderDark:     '#1E293B',
   muted:          '#94A3B8',   // Timestamps, disclaimers
   secondary:      '#64748B',   // Labels, helper text
   body:           '#334155',   // Main paragraph text
@@ -35,17 +45,17 @@ export const palette = {
   /* Semantic — status / priority */
   success:        '#16A34A',
   successBg:      '#F0FDF4',
-  warning:        '#D97706',
-  warningBg:      '#FFFBEB',
+  warning:        '#FF6600',   // Flame Orange for warnings
+  warningBg:      '#FFF7ED',
   danger:         '#DC2626',
   dangerBg:       '#FEF2F2',
   dangerLight:    '#EF4444',
-  info:           '#2563EB',
+  info:           '#0084FF',
   infoBgAlt:      '#EFF6FF',
 
   /* Priority badge colors */
   priorityLow:      { bg: '#F1F5F9', text: '#475569' },
-  priorityMedium:   { bg: '#FEF3C7', text: '#92400E' },
+  priorityMedium:   { bg: '#FFEDD5', text: '#C2410C' },
   priorityHigh:     { bg: '#FEE2E2', text: '#991B1B' },
   priorityCritical: { bg: '#FCA5A5', text: '#7F1D1D' },
 } as const;

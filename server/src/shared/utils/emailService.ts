@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import nodemailer from 'nodemailer';
 import { env } from '@shared/config/env';
 import { logger } from './logger';
@@ -10,15 +12,18 @@ import { NotificationPayload, Ticket, Plan, Invoice } from '@shared/types';
  * ─────────────────────────────────────────────────────────────
  *
  *  Homogeneous, responsive, cross-client HTML email rendering
- *  aligned with the client design tokens in @/email-templates/tokens.ts.
+ *  aligned with the client design tokens and the official Velmar logo aesthetic.
  */
 
-/* ── Brand Palette & Tokens ───────────────────────────────── */
+/* ── Brand Palette & Tokens (Aligned with Velmar Logo) ─────── */
 const palette = {
-  brand:          '#0C4A6E',   // Deep ocean-blue
-  brandLight:     '#0369A1',   // Mid-tone accent
+  brandDark:      '#080C16',   // Deep obsidian / charcoal
+  brand:          '#0A0F1D',   // Obsidian header container
+  brandBlue:      '#0084FF',   // Electric Cerulean Blue (left checkmark wings & banner)
+  brandOrange:    '#FF6600',   // Vibrant Flame Orange (right checkmark wings & top trim)
+  brandLight:     '#0091FF',   // Electric blue accent
   brandAccent:    '#38BDF8',   // Sky highlight
-  cta:            '#2563EB',   // Action-blue (buttons, links)
+  cta:            '#0084FF',   // Electric action-blue
   white:          '#FFFFFF',
   surface:        '#F8FAFC',   // Email body background
   cardBg:         '#FFFFFF',   // Content card
@@ -31,15 +36,38 @@ const palette = {
   headingAlt:     '#1E293B',   // Card headers
   success:        '#16A34A',
   successBg:      '#F0FDF4',
-  warning:        '#D97706',
-  warningBg:      '#FFFBEB',
+  warning:        '#FF6600',   // Flame Orange for warnings
+  warningBg:      '#FFF7ED',
   danger:         '#DC2626',
   dangerBg:       '#FEF2F2',
   priorityLow:      { bg: '#F1F5F9', text: '#475569' },
-  priorityMedium:   { bg: '#FEF3C7', text: '#92400E' },
+  priorityMedium:   { bg: '#FFEDD5', text: '#C2410C' },
   priorityHigh:     { bg: '#FEE2E2', text: '#991B1B' },
   priorityCritical: { bg: '#FCA5A5', text: '#7F1D1D' },
 };
+
+/**
+ * Resolves the absolute path to the client portal logo asset.
+ *
+ * @returns Absolute filepath if found, otherwise null
+ */
+function resolveLogoPath(): string | null {
+  const candidates = [
+    path.resolve(__dirname, '../../../client/src/assets/logo.png'),
+    path.resolve(__dirname, '../../../../client/src/assets/logo.png'),
+    path.resolve(process.cwd(), 'client/src/assets/logo.png'),
+    path.resolve(process.cwd(), '../client/src/assets/logo.png'),
+    path.resolve(process.cwd(), 'src/assets/logo.png'),
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
 
 function getPriorityColor(priority: string): { bg: string; text: string } {
   const key = (priority || '').toUpperCase();
@@ -108,12 +136,23 @@ export async function sendEmail(payload: NotificationPayload): Promise<void> {
   const transport = getTransporter();
   const usingSMTP = !useStubTransporter;
 
+  const attachments: Array<{ filename: string; path: string; cid?: string }> = [];
+  const logoPath = resolveLogoPath();
+  if (logoPath) {
+    attachments.push({
+      filename: 'logo.png',
+      path: logoPath,
+      cid: 'velmar-logo',
+    });
+  }
+
   try {
     const info = await transport.sendMail({
       from: `"Velmar Technology SRL" <${usingSMTP ? env.SMTP_USER : 'noreply@velmartech.com.do'}>`,
       to: payload.to,
       subject: payload.subject,
       html: payload.body,
+      attachments,
     });
 
     if (usingSMTP) {
@@ -156,6 +195,7 @@ interface EmailLayoutOptions {
   actionText?: string;
   headerIcon?: string;
   accentColor?: string;
+  accentGradient?: string;
   language?: string;
 }
 
@@ -188,7 +228,9 @@ function getEmailLayout(
   }
 
   const isSpanish = (opts.language || 'en_US').startsWith('es');
-  const accentColor = opts.accentColor || palette.brandAccent;
+  const accentGradient =
+    opts.accentGradient ||
+    (opts.accentColor ? opts.accentColor : 'linear-gradient(90deg, #0084FF 0%, #00C6FF 35%, #FF8A00 70%, #FF6600 100%)');
   const headerIconSpan = opts.headerIcon ? `<span style="margin-right: 8px;">${opts.headerIcon}</span>` : '';
 
   const actionButton = opts.actionUrl && opts.actionText ? `
@@ -200,7 +242,7 @@ function getEmailLayout(
       </v:roundrect>
       <![endif]-->
       <!--[if !mso]><!-->
-      <a href="${opts.actionUrl}" style="background-color: ${palette.cta}; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: 600; font-size: 15px; display: inline-block; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.20); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      <a href="${opts.actionUrl}" style="background-color: ${palette.cta}; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: 600; font-size: 15px; display: inline-block; box-shadow: 0 4px 14px rgba(0, 132, 255, 0.25); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
         ${opts.actionText}
       </a>
       <!--<![endif]-->
@@ -224,16 +266,22 @@ function getEmailLayout(
         <tr>
           <td align="center">
             <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; border: 1px solid #E2E8F0; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);">
-              <!-- Header Banner -->
+              <!-- Header Banner (Obsidian Dark with Official Logo) -->
               <tr>
-                <td style="background: linear-gradient(135deg, #0C4A6E 0%, #064E73 50%, #0C4A6E 100%); padding: 36px 32px; text-align: center;">
-                  <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.025em; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">Velmar Technology</h1>
-                  <p style="color: #38BDF8; margin: 8px 0 0 0; font-size: 14px; font-weight: 500; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">${headerIconSpan}${opts.title}</p>
+                <td style="background-color: #080C16; background-image: linear-gradient(135deg, #050811 0%, #0A0F1D 50%, #0F172A 100%); padding: 32px 24px; text-align: center;">
+                  <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                    <tr>
+                      <td align="center">
+                        <img src="cid:velmar-logo" alt="Velmar Technology SRL" width="140" style="display: block; max-width: 140px; height: auto; margin: 0 auto 10px auto; border: 0;" />
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="color: #38BDF8; margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">${headerIconSpan}${opts.title}</p>
                 </td>
               </tr>
-              <!-- Accent Bar -->
+              <!-- Signature Dual-Tone Accent Bar (Electric Blue to Flame Orange) -->
               <tr>
-                <td style="height: 3px; background-color: ${accentColor}; font-size: 0; line-height: 0;">&nbsp;</td>
+                <td style="height: 4px; background-color: #0084FF; background-image: ${accentGradient}; font-size: 0; line-height: 0;">&nbsp;</td>
               </tr>
               <!-- Content Body -->
               <tr>

@@ -13,6 +13,7 @@
  *  All styling is driven exclusively by ./tokens.ts
  */
 import React from 'react';
+import logo from '@/assets/logo.png';
 import { palette, font, space, radius, shadow, layout } from './tokens';
 
 export interface EmailWrapperProps {
@@ -27,8 +28,10 @@ export interface EmailWrapperProps {
   actionText?: string;
   /** Icon emoji displayed in the header beside the title */
   headerIcon?: string;
-  /** Override the header accent bar color */
+  /** Override the header accent bar background color */
   accentColor?: string;
+  /** Override the header accent bar background / gradient */
+  accentGradient?: string;
   /** Language override for footer text */
   language?: string;
 }
@@ -40,7 +43,8 @@ export const EmailWrapper: React.FC<EmailWrapperProps> = ({
   actionUrl,
   actionText,
   headerIcon,
-  accentColor = palette.brandAccent,
+  accentColor,
+  accentGradient = accentColor || palette.accentGradient,
   language = 'en_US',
 }) => {
   const isSpanish = language.startsWith('es');
@@ -96,47 +100,54 @@ export const EmailWrapper: React.FC<EmailWrapperProps> = ({
                   textAlign: 'left',
                 }}
               >
-                {/* ──── Header ──── */}
+                {/* ──── Header (Obsidian Dark with Logo) ──── */}
                 <div
                   style={{
-                    background: `linear-gradient(135deg, ${palette.brand} 0%, #064E73 50%, #0C4A6E 100%)`,
-                    padding: layout.headerPadding,
+                    background: palette.headerGradient,
+                    padding: `${space['8']} ${space['8']} ${space['6']} ${space['8']}`,
                     textAlign: 'center',
                   }}
                 >
-                  {/* Brand name */}
-                  <h1
-                    style={{
-                      color: palette.white,
-                      margin: 0,
-                      fontSize: font.size.xxl,
-                      fontWeight: font.weight.black,
-                      letterSpacing: '-0.025em',
-                      fontFamily: font.family,
-                    }}
-                  >
-                    Velmar Technology
-                  </h1>
+                  {/* Official Velmar Logo Image */}
+                  <div style={{ textAlign: 'center', marginBottom: space['3'] }}>
+                    <img
+                      src={logo}
+                      alt="Velmar Technology SRL"
+                      style={{
+                        width: '135px',
+                        maxWidth: '100%',
+                        height: 'auto',
+                        display: 'inline-block',
+                        filter: 'drop-shadow(0 4px 12px rgba(0, 132, 255, 0.20))',
+                      }}
+                    />
+                  </div>
+
                   {/* Sub-title with optional icon */}
                   <p
                     style={{
                       color: palette.brandAccent,
-                      margin: `${space['3']} 0 0 0`,
+                      margin: 0,
                       fontSize: font.size.base,
-                      fontWeight: font.weight.medium,
+                      fontWeight: font.weight.semibold,
                       fontFamily: font.family,
                       letterSpacing: '0.02em',
                     }}
                   >
                     {headerIcon && (
-                      <span style={{ marginRight: space['3'] }}>{headerIcon}</span>
+                      <span style={{ marginRight: space['2'] }}>{headerIcon}</span>
                     )}
                     {title}
                   </p>
                 </div>
 
-                {/* Accent bar */}
-                <div style={{ height: '3px', backgroundColor: accentColor }} />
+                {/* Signature Dual-Tone Accent Bar (Electric Blue to Flame Orange) */}
+                <div
+                  style={{
+                    height: '4px',
+                    background: accentGradient,
+                  }}
+                />
 
                 {/* ──── Body ──── */}
                 <div
