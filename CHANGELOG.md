@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.8.5](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.8.4...v1.8.5) (2026-08-31)
+
+
+### Features
+
+* **agent:** add SMBIOS hardware component serial discovery to msp-agent ([5486567](https://github.com/Velmar-Technology/msp_client_portal/commit/54865676316aaec1250adbc977afc7ff91392017))
+* **agent:** package standalone Windows Service installer and silent deployment scripts ([f707877](https://github.com/Velmar-Technology/msp_client_portal/commit/f707877774b57adb48e6623c639ae76b2aa92067))
+* **deploy:** support msp-agent for windows x64/x32 and mac apple silicon/intel with signatures and sha256 manifests ([2028830](https://github.com/Velmar-Technology/msp_client_portal/commit/2028830debc4cced2231328e51c150ff5c0f59ba))
+* **emails:** align email templates and tokens with logo aesthetic and embed logo ([eaf4a16](https://github.com/Velmar-Technology/msp_client_portal/commit/eaf4a160d96de389cb0b38ed552bbf761fab2398))
+* **emails:** dynamically adapt all email notifications to recipient preferred language (i18n) ([4c5775a](https://github.com/Velmar-Technology/msp_client_portal/commit/4c5775a4a6ada6904ff54c0a33f0337eb407279c))
+* **equipment:** add MSP agent deployment modal and script provisioning ([fdc92d6](https://github.com/Velmar-Technology/msp_client_portal/commit/fdc92d6529e220044f8ba373cd89248ab67e5227))
+* **mcp-server:** implement MCP 2026-07-28 stateless Streamable HTTP transport and dual-mode architecture ([17cfb37](https://github.com/Velmar-Technology/msp_client_portal/commit/17cfb37cc204b2a789466e7f7b50a73ca2df4e40))
+* **mcp-server:** require MSP_API_KEY for MCP server authentication ([c347555](https://github.com/Velmar-Technology/msp_client_portal/commit/c347555170ecac67a0a513fde326aaadb41181e9))
+* **mcp:** add client list and hardware component serial tracking with chain-of-custody fingerprint ([8039ac0](https://github.com/Velmar-Technology/msp_client_portal/commit/8039ac093a1ac36e03c9fd75ba07e178e07fb81b))
+* **mcp:** add msp_get_device_maintenance_report 1-shot unified maintenance dossier tool ([57b7e00](https://github.com/Velmar-Technology/msp_client_portal/commit/57b7e002d57b5d98d64045bd10e7621ea15db241))
+* **server:** distribute cron schedulers with distributed locking and graceful shutdown ([4871b0e](https://github.com/Velmar-Technology/msp_client_portal/commit/4871b0e955e86cb30c5a11bc9abc8ad300fec2c6))
+
+
+### Bug Fixes
+
+* **api-keys:** add migration for description and expiry columns ([0badff9](https://github.com/Velmar-Technology/msp_client_portal/commit/0badff9ece139dacd0a91652a128373e69dde758))
+* **server:** skip email service if SMTP settings are blank or incomplete ([cee5869](https://github.com/Velmar-Technology/msp_client_portal/commit/cee5869fc75ceb6b2f98254548c1a222c5373cae))
+
 ## [1.8.4](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.8.3...v1.8.4) (2026-08-31)
 
 
