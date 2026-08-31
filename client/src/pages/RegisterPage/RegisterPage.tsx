@@ -600,7 +600,7 @@ return (
                               <Field data-invalid={fieldState.invalid}>
                                 <FieldLabel
                                   htmlFor="reg-confirm"
-                                  className="block text-[10px] font-bold text-foreground uppercase tracking-wider mb-1 mt-3 items-center justify-between"
+                                  className="block text-[10px] font-bold text-foreground uppercase tracking-wider mb-1 mt-2.5 items-center justify-between"
                                 >
                                   <span>{t("register.confirmPassword")}</span>
                                   <span className="text-destructive ml-0.5" aria-hidden="true">
