@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.8.2](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.8.1...v1.8.2) (2026-08-31)
+
+
+### Features
+
+* **client/profile:** manage API keys with DataTable and ADMIN-only access ([203ddf6](https://github.com/Velmar-Technology/msp_client_portal/commit/203ddf638a50c992b4e37410f66b6ebc21095ed3))
+* **register:** add language picker to RegisterPage matching LoginPage design ([ec81409](https://github.com/Velmar-Technology/msp_client_portal/commit/ec81409deb613fee1bdd7a1bdd785b582eb8c705))
+
+
+### Bug Fixes
+
+* **client/register:** adjust fieldset layout for proper spacing ([263c172](https://github.com/Velmar-Technology/msp_client_portal/commit/263c172941aa3a3dea4dee7a82d680db406ea4ee))
+* **client/register:** fix select trigger padding and height to match inputs ([232add5](https://github.com/Velmar-Technology/msp_client_portal/commit/232add51f700455414f181bdb9e373034ec89f56))
+* **locales:** remove WhatsApp reference from phone number label ([4cd0035](https://github.com/Velmar-Technology/msp_client_portal/commit/4cd00357e0392eb06f04fc536fa5c084deef4a6c))
+* **register:** rename student client type label and adjust confirm spacing ([37c60e2](https://github.com/Velmar-Technology/msp_client_portal/commit/37c60e230fd06888b1020db10b8fdffdb5328d37))
+
 ## [1.8.1](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.8.0...v1.8.1) (2026-08-31)
 
 
