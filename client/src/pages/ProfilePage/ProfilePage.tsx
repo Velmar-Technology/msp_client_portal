@@ -10,12 +10,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/hooks/useProfile";
 import type { User as UserType } from "@/services/authService";
+import type { ApiKeyExpiry } from "@/services/userService";
 import { DataTable } from "@/components/ui/data-table";
 import {
   AlertDialog,
   AlertDialogContent,
+  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -308,7 +311,7 @@ const ChangePasswordForm = ({ hook }: { hook: ReturnType<typeof useProfile> }) =
 
 export function ProfilePage() {
   const profileHook = useProfile();
-  const { t, user, lastLoginText, uploadingAvatar, fileInputRef, handleAvatarClick, handleAvatarChange, apiKeys, generatingApiKey, loadingApiKeys, viewingApiKeyId, fullApiKey, handleGenerateApiKey, handleDeleteApiKey, handleCloseApiKeyView } = profileHook;
+  const { t, user, lastLoginText, uploadingAvatar, fileInputRef, handleAvatarClick, handleAvatarChange, apiKeys, generatingApiKey, loadingApiKeys, viewingApiKeyId, fullApiKey, generateDialogOpen, apiKeyName, setApiKeyName, apiKeyDescription, setApiKeyDescription, apiKeyExpiresIn, setApiKeyExpiresIn, handleOpenGenerateDialog, handleCloseGenerateDialog, handleGenerateApiKey, handleDeleteApiKey, handleCloseApiKeyView } = profileHook;
 
   // Only show API key management for ADMIN users
   const isAdmin = user?.role === 'ADMIN';
@@ -342,16 +345,11 @@ export function ProfilePage() {
                 </div>
                 <Button
                   type="button"
-                  onClick={handleGenerateApiKey}
-                  disabled={generatingApiKey}
+                  onClick={handleOpenGenerateDialog}
                   className="flex items-center gap-2 cursor-pointer"
                 >
-                  {generatingApiKey ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Key className="h-3.5 w-3.5" />
-                  )}
-                  {generatingApiKey ? t("profile.generatingApiKey") : t("profile.generateApiKey")}
+                  <Key className="h-3.5 w-3.5" />
+                  {t("profile.generateApiKey")}
                 </Button>
               </div>
 
@@ -361,9 +359,29 @@ export function ProfilePage() {
                   columns={[
                     {
                       accessorKey: "name",
-                      header: "Key Name",
+                      header: t("profile.apiKeyName", "Key Name"),
                       cell: ({ row }) => (
                         <span className="font-mono">{row.original.name}</span>
+                      ),
+                    },
+                    {
+                      accessorKey: "description",
+                      header: t("profile.apiKeyDescriptionCol", "Description"),
+                      cell: ({ row }) => (
+                        <span className="max-w-[220px] truncate text-xs text-muted-foreground">
+                          {row.original.description ?? "—"}
+                        </span>
+                      ),
+                    },
+                    {
+                      accessorKey: "expiresIn",
+                      header: t("profile.apiKeyExpiresCol", "Expires"),
+                      cell: ({ row }) => (
+                        <span className="text-[10px]">
+                          {row.original.expiresIn === "forever"
+                            ? t("profile.apiKeyDurationForever", "Forever (never expires)")
+                            : t("profile.apiKeyDuration30d", "30 days")}
+                        </span>
                       ),
                     },
                     {
@@ -412,6 +430,87 @@ export function ProfilePage() {
                 </div>
               )}
             </div>
+
+            {/* Generate API Key Dialog */}
+            <AlertDialog
+              open={generateDialogOpen}
+              onOpenChange={(open) => { if (!open) handleCloseGenerateDialog(); }}
+            >
+              <AlertDialogContent className="sm:max-w-md">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t("profile.apiKeyGenerateDialogTitle")}</AlertDialogTitle>
+                  <AlertDialogDescription>{t("profile.apiKeyGenerateDialogDesc")}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleGenerateApiKey();
+                  }}
+                  className="space-y-4"
+                >
+                  <div>
+                    <Label htmlFor="api-key-name" className="mb-1.5 text-xs font-medium text-foreground">
+                      {t("profile.apiKeyName")}
+                    </Label>
+                    <Input
+                      id="api-key-name"
+                      type="text"
+                      value={apiKeyName}
+                      onChange={(e) => setApiKeyName(e.target.value)}
+                      placeholder={t("profile.apiKeyNamePlaceholder")}
+                      maxLength={100}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="api-key-description" className="mb-1.5 text-xs font-medium text-foreground">
+                      {t("profile.apiKeyDescription")}
+                    </Label>
+                    <Textarea
+                      id="api-key-description"
+                      value={apiKeyDescription}
+                      onChange={(e) => setApiKeyDescription(e.target.value)}
+                      placeholder={t("profile.apiKeyDescriptionPlaceholder")}
+                      maxLength={255}
+                      rows={2}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="api-key-expires" className="mb-1.5 text-xs font-medium text-foreground">
+                      {t("profile.apiKeyExpires")}
+                    </Label>
+                    <Select value={apiKeyExpiresIn} onValueChange={(val) => setApiKeyExpiresIn(val as ApiKeyExpiry)}>
+                      <SelectTrigger id="api-key-expires" size="lg" className="w-full text-xs">
+                        <SelectValue placeholder={t("profile.apiKeyExpires")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="30d">{t("profile.apiKeyDuration30d")}</SelectItem>
+                        <SelectItem value="forever">{t("profile.apiKeyDurationForever")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {apiKeyExpiresIn === "forever" && (
+                    <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Info className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+                      {t("profile.apiKeyForeverWarning")}
+                    </p>
+                  )}
+                  <AlertDialogFooter>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleCloseGenerateDialog}
+                      disabled={generatingApiKey}
+                    >
+                      {t("profile.apiKeyCancel")}
+                    </Button>
+                    <Button type="submit" disabled={generatingApiKey} className="flex items-center gap-2">
+                      {generatingApiKey ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Key className="h-3.5 w-3.5" />}
+                      {generatingApiKey ? t("profile.generatingApiKey") : t("profile.generateApiKey")}
+                    </Button>
+                  </AlertDialogFooter>
+                </form>
+              </AlertDialogContent>
+            </AlertDialog>
           </>
         )}
       </div>

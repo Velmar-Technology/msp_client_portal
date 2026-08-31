@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS api_keys (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
+    description VARCHAR(255),
+    expires_in VARCHAR(10) NOT NULL DEFAULT '30d', -- '30d' or 'forever'
     token_hash VARCHAR(255) NOT NULL,
     last_used_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW()

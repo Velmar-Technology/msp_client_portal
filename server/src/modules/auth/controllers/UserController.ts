@@ -255,6 +255,7 @@ export class UserController {
   /**
    * Generates an API key (JWT token) for programmatic API access for the authenticated user.
    * The plaintext token is returned exactly once at creation; only a hashed digest is persisted.
+   * Supports an optional name, description, and expiration policy ("30d" default or "forever").
    *
    * @param req - Express request with authenticated UserContext
    * @param res - Express response returning generated API key metadata
@@ -270,7 +271,8 @@ export class UserController {
       throw new ValidationError('Validation failed', { fields });
     }
 
-    const apiKey = await userService.generateApiKey(req.user!.userId, parsed.data.name);
+    const { name, description, expiresIn } = parsed.data;
+    const apiKey = await userService.generateApiKey(req.user!.userId, { name, description, expiresIn });
     res.json({ success: true, data: apiKey });
   }
 

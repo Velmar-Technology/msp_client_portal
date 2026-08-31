@@ -41,13 +41,15 @@ export class ApiKeyRepository {
   /**
    * Persists a newly generated API key record.
    *
-   * @param data - API key creation attributes (owner, tenant, label, hashed token)
+   * @param data - API key creation attributes (owner, tenant, label, description, expiry, hashed token)
    * @returns Created API key record
    */
   async create(data: {
     userId: string;
     tenantId: string;
     name: string;
+    description?: string | null;
+    expiresIn: '30d' | 'forever';
     tokenHash: string;
   }): Promise<ApiKey> {
     const results = await db
@@ -56,6 +58,8 @@ export class ApiKeyRepository {
         user_id: data.userId,
         tenant_id: data.tenantId,
         name: data.name,
+        description: data.description ?? null,
+        expires_in: data.expiresIn,
         token_hash: data.tokenHash,
       })
       .returning();

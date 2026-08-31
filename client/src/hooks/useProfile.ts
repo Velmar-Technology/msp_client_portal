@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { userService, type ApiKeySummary } from "@/services/userService";
+import { userService, type ApiKeySummary, type ApiKeyExpiry } from "@/services/userService";
 import { useUrlState } from "@/hooks/useUrlState";
 
 export function useProfile() {
@@ -159,6 +159,10 @@ export function useProfile() {
   const [loadingApiKeys, setLoadingApiKeys] = useState(false);
   const [viewingApiKeyId, setViewingApiKeyId] = useState<string | null>(null);
   const [fullApiKey, setFullApiKey] = useState<string | null>(null);
+  const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
+  const [apiKeyName, setApiKeyName] = useState("");
+  const [apiKeyDescription, setApiKeyDescription] = useState("");
+  const [apiKeyExpiresIn, setApiKeyExpiresIn] = useState<ApiKeyExpiry>("30d");
 
   const loadApiKeys = useCallback(async () => {
     if (!user?.id) return;
@@ -178,13 +182,29 @@ export function useProfile() {
     loadApiKeys();
   }, [loadApiKeys]);
 
+  const handleOpenGenerateDialog = useCallback(() => {
+    setApiKeyName("");
+    setApiKeyDescription("");
+    setApiKeyExpiresIn("30d");
+    setGenerateDialogOpen(true);
+  }, []);
+
+  const handleCloseGenerateDialog = useCallback(() => {
+    setGenerateDialogOpen(false);
+  }, []);
+
   const handleGenerateApiKey = useCallback(async () => {
     setGeneratingApiKey(true);
     try {
-      const generated = await userService.generateApiKey();
+      const generated = await userService.generateApiKey({
+        name: apiKeyName.trim() || undefined,
+        description: apiKeyDescription.trim() || undefined,
+        expiresIn: apiKeyExpiresIn,
+      });
       // The full key is only shown once at creation time; it cannot be retrieved later
       setViewingApiKeyId(generated.id);
       setFullApiKey(generated.fullKey);
+      setGenerateDialogOpen(false);
       // Fetch updated list to include the new key
       await loadApiKeys();
       toast.success(t("profile.apiKeySuccess", "API key generated successfully"));
@@ -193,7 +213,7 @@ export function useProfile() {
     } finally {
       setGeneratingApiKey(false);
     }
-  }, [t, loadApiKeys]);
+  }, [apiKeyName, apiKeyDescription, apiKeyExpiresIn, t, loadApiKeys]);
 
   const handleDeleteApiKey = useCallback(async (keyId: string) => {
     if (!window.confirm(t("profile.deleteApiKeyConfirm", "Are you sure you want to delete this API key? This action cannot be undone."))) {
@@ -240,10 +260,16 @@ return {
      loadingApiKeys,
      viewingApiKeyId,
      fullApiKey,
+     generateDialogOpen,
+     apiKeyName, setApiKeyName,
+     apiKeyDescription, setApiKeyDescription,
+     apiKeyExpiresIn, setApiKeyExpiresIn,
      handleAvatarClick,
      handleAvatarChange,
      handlePasswordChange,
      handleSave,
+     handleOpenGenerateDialog,
+     handleCloseGenerateDialog,
      handleGenerateApiKey,
      handleDeleteApiKey,
      handleCloseApiKeyView,

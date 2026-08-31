@@ -1,7 +1,7 @@
 import { userRepository, UserRepository, type UserListFilters } from '../repositories/UserRepository';
 import { apiKeyRepository, ApiKeyRepository } from '../repositories/ApiKeyRepository';
 import { NotFoundError, ConflictError, UnauthorizedError, ForbiddenError, InternalServerError } from '@shared/errors';
-import { User, UserRole, JwtPayload, ApiKeySummary, GeneratedApiKey } from '@shared/types';
+import { User, UserRole, JwtPayload, ApiKeySummary, GeneratedApiKey, ApiKeyExpiry } from '@shared/types';
 import { UpdateProfileInput, ChangePasswordInput } from '@shared/dtos/user.dto';
 import { hashPassword, comparePassword } from '@shared/utils/passwordUtils';
 import jwt from 'jsonwebtoken';
@@ -387,15 +387,18 @@ export class UserService {
   /**
    * Generates an API key (JWT token) for the authenticated user, persists a hashed record,
    * and returns the plaintext key exactly once for secure display at creation time.
-   * API keys have a longer expiration time (30 days) than regular session tokens.
+   * Keys default to 30 days, but a non-expiring ("forever") token can be requested.
    *
    * @param userId - Unique user identifier
-   * @param name - Optional human-readable label for the key (defaults to "Default Key")
+   * @param options - Key configuration: optional name, description, and expiration policy
    * @returns Generated API key metadata including the one-time plaintext token
    * @throws {NotFoundError} When user does not exist
    * @throws {InternalServerError} When token generation fails
    */
-  async generateApiKey(userId: string, name?: string): Promise<GeneratedApiKey> {
+  async generateApiKey(
+    userId: string,
+    options?: { name?: string; description?: string | null; expiresIn?: ApiKeyExpiry }
+  ): Promise<GeneratedApiKey> {
     const user = await this.userRepo.findById(userId);
     if (!user) throw new NotFoundError('User not found');
 
@@ -407,25 +410,32 @@ export class UserService {
       tenantId: user.tenant_id,
     };
 
-    // Generate token with 30-day expiration (longer than regular session tokens)
-    const token = jwt.sign(payload, env.JWT_SECRET, {
-      expiresIn: '30d', // API keys valid for 30 days
-    });
+    const expiresIn: ApiKeyExpiry = options?.expiresIn ?? '30d';
+    // Standard keys expire after 30 days; "forever" keys carry no exp claim and never expire
+    const token =
+      expiresIn === 'forever'
+        ? jwt.sign(payload, env.JWT_SECRET)
+        : jwt.sign(payload, env.JWT_SECRET, { expiresIn: '30d' });
 
     // Persist only a SHA-256 digest so the plaintext key is never stored or recoverable
     const tokenHash = createHash('sha256').update(token).digest('hex');
-    const keyName = name?.trim() || 'Default Key';
+    const keyName = options?.name?.trim() || 'Default Key';
+    const keyDescription = options?.description?.trim() || null;
 
     const created = await this.apiKeyRepo.create({
       userId: user.id,
       tenantId: user.tenant_id,
       name: keyName,
+      description: keyDescription,
+      expiresIn,
       tokenHash,
     });
 
     return {
       id: created.id,
       name: created.name,
+      description: created.description,
+      expiresIn: created.expires_in,
       fullKey: token,
       createdAt: created.created_at,
       lastUsedAt: created.last_used_at,
@@ -443,6 +453,8 @@ export class UserService {
     return keys.map((key) => ({
       id: key.id,
       name: key.name,
+      description: key.description,
+      expiresIn: key.expires_in,
       createdAt: key.created_at,
       lastUsedAt: key.last_used_at,
     }));

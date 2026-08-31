@@ -63,6 +63,7 @@ vi.mock('@modules/auth/repositories/ApiKeyRepository', () => {
 
 import { userService } from './UserService';
 import { UserRole } from '@shared/types';
+import jwt from 'jsonwebtoken';
 
 describe('UserService', () => {
   beforeEach(() => {
@@ -417,6 +418,8 @@ describe('UserService', () => {
       const mockCreated = {
         id: 'key-1',
         name: 'CI Key',
+        description: null,
+        expires_in: '30d',
         created_at: new Date('2026-08-30T00:00:00Z'),
         last_used_at: null,
         token_hash: 'abc123',
@@ -424,25 +427,27 @@ describe('UserService', () => {
       mocks.findById.mockResolvedValue(mockUser);
       mocks.createApiKey.mockResolvedValue(mockCreated);
 
-      const result = await userService.generateApiKey('user-1', 'CI Key');
+      const result = await userService.generateApiKey('user-1', { name: 'CI Key' });
 
       expect(mocks.findById).toHaveBeenCalledWith('user-1');
-      expect(mocks.createApiKey).toHaveBeenCalledWith(
-        expect.objectContaining({
-          userId: 'user-1',
-          tenantId: 'tenant-123',
-          name: 'CI Key',
-        })
-      );
+      expect(mocks.createApiKey).toHaveBeenCalledWith({
+        userId: 'user-1',
+        tenantId: 'tenant-123',
+        name: 'CI Key',
+        description: null,
+        expiresIn: '30d',
+        tokenHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+      });
       // Only a SHA-256 digest should be persisted, never the raw token
       const tokenHashArg = mocks.createApiKey.mock.calls[0][0].tokenHash as string;
-      expect(tokenHashArg).toMatch(/^[a-f0-9]{64}$/);
       const token = result.fullKey;
       expect(token.split('.').length).toBe(3); // Valid JWT structure
       expect(tokenHashArg).not.toBe(token);
       expect(result).toMatchObject({
         id: 'key-1',
         name: 'CI Key',
+        description: null,
+        expiresIn: '30d',
         fullKey: expect.any(String),
         createdAt: mockCreated.created_at,
         lastUsedAt: null,
@@ -460,6 +465,8 @@ describe('UserService', () => {
       mocks.createApiKey.mockResolvedValue({
         id: 'key-1',
         name: 'Default Key',
+        description: null,
+        expires_in: '30d',
         token_hash: 'abc',
         created_at: new Date(),
         last_used_at: null,
@@ -470,6 +477,44 @@ describe('UserService', () => {
       expect(mocks.createApiKey).toHaveBeenCalledWith(
         expect.objectContaining({ name: 'Default Key' })
       );
+    });
+
+    it('should persist description and mint a non-expiring token when expiresIn is forever', async () => {
+      const mockUser = {
+        id: 'user-1',
+        email: 'admin@example.com',
+        role: UserRole.ADMIN,
+        tenant_id: 'tenant-123',
+      };
+      mocks.findById.mockResolvedValue(mockUser);
+      mocks.createApiKey.mockResolvedValue({
+        id: 'key-1',
+        name: 'CI Key',
+        description: 'Runs in nightly CI',
+        expires_in: 'forever',
+        token_hash: 'abc',
+        created_at: new Date(),
+        last_used_at: null,
+      });
+
+      const result = await userService.generateApiKey('user-1', {
+        name: 'CI Key',
+        description: 'Runs in nightly CI',
+        expiresIn: 'forever',
+      });
+
+      expect(mocks.createApiKey).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: 'Runs in nightly CI',
+          expiresIn: 'forever',
+        })
+      );
+      const decoded = jwt.decode(result.fullKey) as { exp?: number };
+      expect(decoded.exp).toBeUndefined(); // No expiry claim => never expires
+      expect(result).toMatchObject({
+        description: 'Runs in nightly CI',
+        expiresIn: 'forever',
+      });
     });
 
     it('should throw NotFoundError if user does not exist', async () => {
@@ -490,6 +535,8 @@ describe('UserService', () => {
         {
           id: 'key-1',
           name: 'CI Key',
+          description: 'Nightly build',
+          expires_in: 'forever',
           token_hash: 'secret-hash',
           created_at: new Date('2026-08-30T00:00:00Z'),
           last_used_at: null,
@@ -503,6 +550,8 @@ describe('UserService', () => {
         {
           id: 'key-1',
           name: 'CI Key',
+          description: 'Nightly build',
+          expiresIn: 'forever',
           createdAt: expect.any(Date),
           lastUsedAt: null,
         },

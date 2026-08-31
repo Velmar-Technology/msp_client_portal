@@ -85,6 +85,8 @@ export type BulkDeleteUsersInput = z.infer<typeof BulkDeleteUsersDTO>;
 
 // ---- API Key DTOs ----
 
+export const ApiKeyExpiresInEnum = z.enum(['30d', 'forever']);
+
 export const GenerateApiKeyDTO = z.object({
   name: z
     .string()
@@ -92,6 +94,13 @@ export const GenerateApiKeyDTO = z.object({
     .min(1, 'API key name cannot be empty')
     .max(100, 'API key name cannot exceed 100 characters')
     .optional(),
+  description: z
+    .string()
+    .trim()
+    .min(1, 'API key description cannot be empty')
+    .max(255, 'API key description cannot exceed 255 characters')
+    .optional(),
+  expiresIn: ApiKeyExpiresInEnum.optional(),
 });
 export type GenerateApiKeyInput = z.infer<typeof GenerateApiKeyDTO>;
 

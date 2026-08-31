@@ -234,7 +234,7 @@ describe('UserController', () => {
     it('should call userService.generateApiKey and return generated key metadata in response', async () => {
       const req = {
         user: { userId: 'user-1' },
-        body: { name: 'CI Key' },
+        body: { name: 'CI Key', description: 'Nightly build', expiresIn: 'forever' },
       } as unknown as Request;
 
       const res = {
@@ -244,6 +244,8 @@ describe('UserController', () => {
       const mockKey = {
         id: 'key-1',
         name: 'CI Key',
+        description: 'Nightly build',
+        expiresIn: 'forever',
         fullKey: 'jwt-mock-api-key-token',
         createdAt: new Date(),
         lastUsedAt: null,
@@ -252,7 +254,10 @@ describe('UserController', () => {
 
       await userController.generateApiKey(req, res);
 
-      expect(mocks.generateApiKey).toHaveBeenCalledWith('user-1', 'CI Key');
+      expect(mocks.generateApiKey).toHaveBeenCalledWith(
+        'user-1',
+        expect.objectContaining({ name: 'CI Key', description: 'Nightly build', expiresIn: 'forever' })
+      );
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: mockKey,
