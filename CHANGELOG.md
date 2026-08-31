@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.8.3](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.8.2...v1.8.3) (2026-08-31)
+
+
+### Features
+
+* **api-keys:** persist API keys with hashed one-time display ([b162f9d](https://github.com/Velmar-Technology/msp_client_portal/commit/b162f9d03318758eae340f6bdf0163611018e974))
+
+
+### Bug Fixes
+
+* **docker:** build only errors package to fix image builds ([a4a57d5](https://github.com/Velmar-Technology/msp_client_portal/commit/a4a57d53b06dfc01cf935a4e4a14f7f458ea2b94))
+
 ## [1.8.2](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.8.1...v1.8.2) (2026-08-31)
 
 
