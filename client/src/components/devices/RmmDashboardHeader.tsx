@@ -1,12 +1,20 @@
 import React, { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { Radio, RefreshCw, Download } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Radio, RefreshCw, Download, ChevronDown, Monitor, Laptop } from 'lucide-react';
 
 export interface RmmDashboardHeaderProps {
   loading: boolean;
   onRefresh: () => void;
 }
+
+const GITHUB_RELEASE_BASE = 'https://github.com/Velmar-Technology/msp_client_portal/releases/latest/download';
 
 export const RmmDashboardHeader: React.FC<RmmDashboardHeaderProps> = memo(({ loading, onRefresh }) => {
   const { t } = useTranslation();
@@ -28,16 +36,65 @@ export const RmmDashboardHeader: React.FC<RmmDashboardHeaderProps> = memo(({ loa
         </p>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <a
-          href="https://github.com/Velmar-Technology/msp_client_portal/releases/latest/download/msp-agent-windows-x86_64.exe"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 rounded-md transition-colors"
-          title="Download MSP Endpoint Agent for Windows (.exe)"
-        >
-          <Download className="h-3.5 w-3.5 text-zinc-500" />
-          <span>Download Agent</span>
-        </a>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              className="h-8 px-3 text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 rounded-md transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <Download className="h-3.5 w-3.5 text-zinc-500" />
+              <span>{t("rmm.downloadAgent")}</span>
+              <ChevronDown className="h-3 w-3 text-zinc-400" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem asChild>
+              <a
+                href={`${GITHUB_RELEASE_BASE}/msp-agent-windows-x86_64.exe`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 cursor-pointer w-full text-xs font-medium"
+              >
+                <Monitor className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                <span>{t("rmm.downloadWin64")}</span>
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a
+                href={`${GITHUB_RELEASE_BASE}/msp-agent-windows-i686.exe`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 cursor-pointer w-full text-xs font-medium"
+              >
+                <Monitor className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                <span>{t("rmm.downloadWin32")}</span>
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a
+                href={`${GITHUB_RELEASE_BASE}/msp-agent_aarch64.dmg`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 cursor-pointer w-full text-xs font-medium"
+              >
+                <Laptop className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+                <span>{t("rmm.downloadMacArm")}</span>
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a
+                href={`${GITHUB_RELEASE_BASE}/msp-agent_x64.dmg`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 cursor-pointer w-full text-xs font-medium"
+              >
+                <Laptop className="h-3.5 w-3.5 text-purple-400 shrink-0" />
+                <span>{t("rmm.downloadMacIntel")}</span>
+              </a>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <Button
           onClick={onRefresh}
           disabled={loading}
