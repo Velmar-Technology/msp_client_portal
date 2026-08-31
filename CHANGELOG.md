@@ -2,6 +2,61 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.8.4](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.8.3...v1.8.4) (2026-08-31)
+
+
+### Features
+
+* **api-keys:** add key description and forever expiry option ([6e6fd85](https://github.com/Velmar-Technology/msp_client_portal/commit/6e6fd8586d5e88f3e74e0aa61a74d99bda69c1f1))
+
+## [1.8.3](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.8.2...v1.8.3) (2026-08-31)
+
+
+### Features
+
+* **api-keys:** persist API keys with hashed one-time display ([b162f9d](https://github.com/Velmar-Technology/msp_client_portal/commit/b162f9d03318758eae340f6bdf0163611018e974))
+
+
+### Bug Fixes
+
+* **docker:** build only errors package to fix image builds ([a4a57d5](https://github.com/Velmar-Technology/msp_client_portal/commit/a4a57d53b06dfc01cf935a4e4a14f7f458ea2b94))
+
+## [1.8.2](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.8.1...v1.8.2) (2026-08-31)
+
+
+### Features
+
+* **client/profile:** manage API keys with DataTable and ADMIN-only access ([203ddf6](https://github.com/Velmar-Technology/msp_client_portal/commit/203ddf638a50c992b4e37410f66b6ebc21095ed3))
+* **register:** add language picker to RegisterPage matching LoginPage design ([ec81409](https://github.com/Velmar-Technology/msp_client_portal/commit/ec81409deb613fee1bdd7a1bdd785b582eb8c705))
+
+
+### Bug Fixes
+
+* **client/register:** adjust fieldset layout for proper spacing ([263c172](https://github.com/Velmar-Technology/msp_client_portal/commit/263c172941aa3a3dea4dee7a82d680db406ea4ee))
+* **client/register:** fix select trigger padding and height to match inputs ([232add5](https://github.com/Velmar-Technology/msp_client_portal/commit/232add51f700455414f181bdb9e373034ec89f56))
+* **locales:** remove WhatsApp reference from phone number label ([4cd0035](https://github.com/Velmar-Technology/msp_client_portal/commit/4cd00357e0392eb06f04fc536fa5c084deef4a6c))
+* **register:** rename student client type label and adjust confirm spacing ([37c60e2](https://github.com/Velmar-Technology/msp_client_portal/commit/37c60e230fd06888b1020db10b8fdffdb5328d37))
+
+## [1.8.1](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.8.0...v1.8.1) (2026-08-31)
+
+
+### Features
+
+* **auth:** implement SOTA hybrid authorization engine (BL-302) ([a729984](https://github.com/Velmar-Technology/msp_client_portal/commit/a729984636f725de1f500a97753c0e004c8da9e6))
+* **auth:** implement SOTA PoLP, JIT ephemeral access, and workload identity ([a05bcb0](https://github.com/Velmar-Technology/msp_client_portal/commit/a05bcb099e25b3ce405ad87f01e5baa3ae715271))
+* **billing:** add technician commissions and 70/30 profit split (BL-801, BL-802) ([09e39f0](https://github.com/Velmar-Technology/msp_client_portal/commit/09e39f052ca7cd9a4d4cb0d4226483770871027d))
+* **mcp:** add ZSP ephemeral access, authz decision, and host remediation tools ([93caeda](https://github.com/Velmar-Technology/msp_client_portal/commit/93caeda1b0d3f6e9e5ac8f3e15780298803cb694))
+* **server:** add database migration 034 for Section 9 Rates, NCF, and account status ([95b9982](https://github.com/Velmar-Technology/msp_client_portal/commit/95b998298c2e310a31b31f5bea75e2c62ee8ebb3))
+* **tickets:** enforce mandatory device slot linking and display remaining plan quota ([f6f1bd3](https://github.com/Velmar-Technology/msp_client_portal/commit/f6f1bd38aaab91af2bf858bcec02afed1a51c460))
+* **tickets:** implement business hours and SLA calculation per Section 3.1 & 3.2 ([4fdd1c4](https://github.com/Velmar-Technology/msp_client_portal/commit/4fdd1c4308473dc99805842a00ce1d8a2d921dfb))
+
+
+### Bug Fixes
+
+* **client:** localize BlockedPortalAlert in AppLayout and add Button primitive ([8a6ac66](https://github.com/Velmar-Technology/msp_client_portal/commit/8a6ac66c1a5ae48a45e5755fb64e3aeed4a19d31))
+* **system:** correct billing repository import to comply with module gateway rule ([24a20a7](https://github.com/Velmar-Technology/msp_client_portal/commit/24a20a7266f5e1ea8b7b4ff112639a9a506cf11a))
+* **test:** add missing expenseRepository mock in SubscriptionScheduler.test.ts ([c5a1be5](https://github.com/Velmar-Technology/msp_client_portal/commit/c5a1be536e0b58df47cc21c01a6bd91454a57f45))
+
 ## [1.8.0] (2026-08-30)
 
 ### Features
