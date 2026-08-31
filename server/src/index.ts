@@ -153,6 +153,36 @@ async function startServer(): Promise<void> {
       const { escalationScheduler } = require('@modules/tickets/services/EscalationScheduler');
       escalationScheduler.start();
     });
+
+    // Graceful shutdown listener
+    const shutdown = async (signal: string) => {
+      logger.info(`Received ${signal}. Gracefully shutting down MSP API Server...`);
+      try {
+        const { subscriptionScheduler } = require('@modules/subscriptions/services/SubscriptionScheduler');
+        subscriptionScheduler.stop();
+
+        const { escalationScheduler } = require('@modules/tickets/services/EscalationScheduler');
+        escalationScheduler.stop();
+
+        wss.close();
+        server.close(() => {
+          logger.info('HTTP/WebSocket server closed.');
+          process.exit(0);
+        });
+
+        // Force shutdown after 10s if connections linger
+        setTimeout(() => {
+          logger.warn('Forced shutdown after timeout.');
+          process.exit(1);
+        }, 10_000).unref();
+      } catch (err) {
+        logger.error('Error during graceful shutdown', { err });
+        process.exit(1);
+      }
+    };
+
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT', () => shutdown('SIGINT'));
   } catch (error) {
     logger.error('Failed to start server', { error });
     process.exit(1);
@@ -162,5 +192,4 @@ async function startServer(): Promise<void> {
 startServer();
 
 export default app;
-// Server restarted to register CRM domain router endpoints
 

@@ -366,6 +366,24 @@ npm -w server exec vitest run src/shared/authz/ src/shared/middleware/authzMiddl
 
 ---
 
+## ⏱️ Distributed Background Tasks, Schedulers & Concurrency Controls
+
+The platform implements a distributed background job orchestration pattern designed for horizontally scalable Node.js clusters (e.g. Docker, PM2 cluster mode, Kubernetes):
+
+- **Distributed Mutex Locking ([`DistributedLock.ts`](server/src/shared/utils/cache/DistributedLock.ts)):**
+  - Uses Redis `SET ... NX PX` with UUID verification and atomic Lua scripts (`EVAL`) for lock release.
+  - Automatically falls back to local in-memory mutexes if Redis is unreachable, ensuring single-node concurrency is always protected.
+- **Subscription & Invoicing Sweep Daemon ([`SubscriptionScheduler.ts`](server/src/modules/subscriptions/services/SubscriptionScheduler.ts)):**
+  - Guarded by distributed lock key `cron:subscriptions:sweep` (TTL: 60s).
+  - Sweeps expiring subscriptions (**BL-402**), calculates hardware multipliers, dispatches advance 7-day expiration warnings, generates automated renewal invoices, and enforces **Section 9.3 Non-Payment Suspension Scale** without duplicate charges or duplicate notification emails across cluster replicas.
+- **Ticket Tier Escalation Daemon ([`EscalationScheduler.ts`](server/src/modules/tickets/services/EscalationScheduler.ts)):**
+  - Guarded by distributed lock key `cron:tickets:escalation_sweep` (TTL: 50s).
+  - Sweeps open unworked tickets and escalates them to Tier 2 based on priority thresholds (**BL-104**), preventing race conditions or conflicting technician assignments across concurrent workers.
+- **Graceful Lifecycle & Signal Handling ([`server/src/index.ts`](server/src/index.ts)):**
+  - Intercepts `SIGTERM` and `SIGINT` to cleanly halt schedulers, clear active timers, close WebSocket client connections, and flush server resources before process exit.
+
+---
+
 ## 📖 API Documentation
 
 Interactive Swagger API documentation is available when the server is running:

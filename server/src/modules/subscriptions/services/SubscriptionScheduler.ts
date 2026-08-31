@@ -3,13 +3,18 @@ import { InvoiceNotificationService, invoiceNotificationService, NonPaymentSuspe
 import { SubscriptionRenewalService, subscriptionRenewalService } from '@modules/subscriptions/services/SubscriptionRenewalService';
 import { NotificationService, notificationService } from '@modules/notifications';
 import { UserRepository, userRepository } from '@modules/auth';
+import { DistributedLock, distributedLock } from '@shared/utils/cache/DistributedLock';
 import { logger } from '@shared/utils/logger';
 
 const EXPIRY_WARNING_DAYS = 7;
+const SUBSCRIPTION_SWEEP_LOCK_KEY = 'cron:subscriptions:sweep';
+const SUBSCRIPTION_SWEEP_LOCK_TTL_MS = 60_000;
 
 /**
  * Periodic background daemon sweeping expiring subscriptions, triggering automated renewals,
  * enforcing Section 9.3 Non-Payment Suspension Scale, and dispatching advance expiration notices and due billing emails.
+ *
+ * Employs distributed locking to prevent duplicate concurrent runs across scaled server instances.
  *
  * @see BL-402 (Renewal Scheduler & Hardware Multiplier)
  * @see Section 9.3 (Non-Payment Suspension Scale)
@@ -19,7 +24,7 @@ export class SubscriptionScheduler {
   private isProcessing = false;
 
   /**
-   * Initializes SubscriptionScheduler with subscription, billing, notification, and user repositories.
+   * Initializes SubscriptionScheduler with subscription, billing, notification, user repositories, and distributed lock.
    *
    * @param subscriptionRepo - Subscription repository
    * @param notifSvc - Invoice notification service
@@ -27,6 +32,7 @@ export class SubscriptionScheduler {
    * @param notificationSvc - In-app and event notification service
    * @param userRepo - User repository
    * @param nonPaymentSvc - Non-payment suspension service
+   * @param lock - Distributed concurrency lock manager
    */
   constructor(
     private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
@@ -35,6 +41,7 @@ export class SubscriptionScheduler {
     private notificationSvc: NotificationService = notificationService,
     private userRepo: UserRepository = userRepository,
     private nonPaymentSvc: NonPaymentSuspensionService = nonPaymentSuspensionService,
+    private lock: DistributedLock = distributedLock,
   ) {}
 
   /**
@@ -86,41 +93,53 @@ export class SubscriptionScheduler {
    * Main evaluation loop: sends overdue email reminders, sends 7-day expiration notices,
    * and triggers renewal for contracts reaching expiration (BL-402).
    *
+   * Coordinates execution across distributed instances via Redis distributed lock.
+   *
    * @see BL-402
    */
   async checkAndRenewSubscriptions(): Promise<void> {
-    const now = new Date();
-
-    try {
-      await this.notifSvc.checkAndSendDueInvoiceNotifications(now);
-    } catch (err) {
-      logger.error('Error checking and sending due invoice email notifications', { err });
-    }
-
-    try {
-      await this.nonPaymentSvc.evaluateOverdueAccounts(now);
-    } catch (err) {
-      logger.error('Error evaluating Section 9.3 overdue non-payment scale', { err });
-    }
-
-    try {
-      await this.checkAndSendExpiryWarnings(now);
-    } catch (err) {
-      logger.error('Error checking and sending subscription expiry warnings', { err });
-    }
-
-    const subsToRenew = await this.subscriptionRepo.findPendingRenewal(now);
-    if (subsToRenew.length === 0) {
+    const token = await this.lock.acquireLock(SUBSCRIPTION_SWEEP_LOCK_KEY, SUBSCRIPTION_SWEEP_LOCK_TTL_MS);
+    if (!token) {
+      logger.debug('Subscription sweep skipped: lock held by another cluster instance');
       return;
     }
 
-    logger.info(`Found ${subsToRenew.length} subscription(s) pending renewal check.`);
-    for (const sub of subsToRenew) {
+    try {
+      const now = new Date();
+
       try {
-        await this.renewalSvc.renewSubscription(sub);
+        await this.notifSvc.checkAndSendDueInvoiceNotifications(now);
       } catch (err) {
-        logger.error(`Failed to renew subscription ${sub.id}`, { err, sub });
+        logger.error('Error checking and sending due invoice email notifications', { err });
       }
+
+      try {
+        await this.nonPaymentSvc.evaluateOverdueAccounts(now);
+      } catch (err) {
+        logger.error('Error evaluating Section 9.3 overdue non-payment scale', { err });
+      }
+
+      try {
+        await this.checkAndSendExpiryWarnings(now);
+      } catch (err) {
+        logger.error('Error checking and sending subscription expiry warnings', { err });
+      }
+
+      const subsToRenew = await this.subscriptionRepo.findPendingRenewal(now);
+      if (subsToRenew.length === 0) {
+        return;
+      }
+
+      logger.info(`Found ${subsToRenew.length} subscription(s) pending renewal check.`);
+      for (const sub of subsToRenew) {
+        try {
+          await this.renewalSvc.renewSubscription(sub);
+        } catch (err) {
+          logger.error(`Failed to renew subscription ${sub.id}`, { err, sub });
+        }
+      }
+    } finally {
+      await this.lock.releaseLock(SUBSCRIPTION_SWEEP_LOCK_KEY, token);
     }
   }
 

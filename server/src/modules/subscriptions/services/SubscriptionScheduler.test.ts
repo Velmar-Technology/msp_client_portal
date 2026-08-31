@@ -102,7 +102,7 @@ vi.mock('@modules/notifications', () => {
   };
 });
 
-import { subscriptionScheduler } from './SubscriptionScheduler';
+import { SubscriptionScheduler, subscriptionScheduler } from './SubscriptionScheduler';
 import { SubscriptionStatus, InvoiceStatus } from '@shared/types';
 
 describe('SubscriptionScheduler', () => {
@@ -283,5 +283,58 @@ describe('SubscriptionScheduler', () => {
         title: 'Subscription Cancelled',
       })
     );
+  });
+
+  it('skips subscription sweep if distributed lock cannot be acquired', async () => {
+    const mockLock = {
+      acquireLock: vi.fn().mockResolvedValue(null),
+      releaseLock: vi.fn(),
+    };
+
+    const scheduler = new SubscriptionScheduler(
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      mockLock as any
+    );
+
+    await scheduler.checkAndRenewSubscriptions();
+
+    expect(mockLock.acquireLock).toHaveBeenCalledWith('cron:subscriptions:sweep', 60000);
+    expect(mocks.subFindPendingRenewal).not.toHaveBeenCalled();
+    expect(mockLock.releaseLock).not.toHaveBeenCalled();
+  });
+
+  it('releases distributed lock even when an uncaught error occurs during evaluation', async () => {
+    const mockLock = {
+      acquireLock: vi.fn().mockResolvedValue('test-lock-token-123'),
+      releaseLock: vi.fn().mockResolvedValue(true),
+    };
+
+    const mockRenewalSvc = {
+      renewSubscription: vi.fn().mockRejectedValue(new Error('Fatal DB crash')),
+    };
+
+    mocks.subFindPendingRenewal.mockResolvedValue([
+      { id: 'sub-failing', client_id: 'client-999', plan: 'PL-004', status: 'ACTIVE', renewal_date: new Date() },
+    ]);
+
+    const scheduler = new SubscriptionScheduler(
+      undefined,
+      undefined,
+      mockRenewalSvc as any,
+      undefined,
+      undefined,
+      undefined,
+      mockLock as any
+    );
+
+    await scheduler.checkAndRenewSubscriptions();
+
+    expect(mockLock.acquireLock).toHaveBeenCalled();
+    expect(mockLock.releaseLock).toHaveBeenCalledWith('cron:subscriptions:sweep', 'test-lock-token-123');
   });
 });

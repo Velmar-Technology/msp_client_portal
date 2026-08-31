@@ -42,6 +42,11 @@ graph TD
    - **ABAC / Policy-as-Code (`PolicyAsCodeEngine`):** Predicados contextuales dinámicos versionados (ventana SLA de 1 hora `BL-101`, aislamiento multi-inquilino estricto, y escala de impagos `BL-702`).
    - **Seguridad Vectorial para IA/RAG (`VectorAclService`):** Autorización de doble fase con pre-filtrado SQL/pgvector y sanitización post-recuperación de chunks de conocimiento.
    - **Constantes Centralizadas (`constants.ts`):** Definición única y tipada de pesos de riesgo, umbrales de telemetría, tiempos de vida de tokens de workload y duraciones de elevación JIT.
+9. **Orquestación de Tareas en Segundo Plano y Bloqueo Distribuido (`shared/utils/cache/DistributedLock.ts`, `SubscriptionScheduler`, `EscalationScheduler`):**
+   - **Bloqueos Distribuidos Mutex (`DistributedLock`):** Utiliza primitivas atómicas de Redis (`SET ... NX PX` con validación de token UUID y liberación vía scripts Lua). Si Redis no está disponible, conmuta limpiamente a mutexes locales en memoria.
+   - **Daemon de Renovación y Facturación (`SubscriptionScheduler`):** Protegido por el lock `cron:subscriptions:sweep` (TTL 60s). Ejecuta la renovación automática de contratos (**BL-402**), emisión de advertencias de vencimiento a 7 días y la evaluación de la escala de impagos de la Sección 9.3 sin duplicidad de cobros ni correos en despliegues con múltiples réplicas de Node.js.
+   - **Daemon de Escalado de SLAs (`EscalationScheduler`):** Protegido por el lock `cron:tickets:escalation_sweep` (TTL 50s). Evalúa tickets sin atender y los escala a Nivel 2 (**BL-104**) previniendo colisiones de reasignación entre instancias simultáneas.
+   - **Cierre Limpio del Proceso (*Graceful Shutdown*):** Captura `SIGTERM` y `SIGINT` en `server/src/index.ts` deteniendo los temporizadores y liberando los recursos de red y base de datos.
 
 ---
 
