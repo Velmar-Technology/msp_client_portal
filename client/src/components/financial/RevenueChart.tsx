@@ -8,6 +8,42 @@ interface RevenueChartProps {
   setHoveredIndex: (index: number | null) => void;
 }
 
+// Calculate a clean "nice" scale maximum and step for Y-axis
+function calculateNiceScale(maxVal: number, targetTicks = 4): { yMax: number; step: number } {
+  if (maxVal <= 0) return { yMax: 1000, step: 250 };
+
+  const rawMax = maxVal * 1.15; // 15% head-room
+  const rawStep = rawMax / (targetTicks - 1);
+
+  // Magnitude power of 10
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const normalized = rawStep / magnitude;
+
+  let niceStep = magnitude;
+  if (normalized <= 1) niceStep = 1 * magnitude;
+  else if (normalized <= 2) niceStep = 2 * magnitude;
+  else if (normalized <= 2.5) niceStep = 2.5 * magnitude;
+  else if (normalized <= 5) niceStep = 5 * magnitude;
+  else niceStep = 10 * magnitude;
+
+  const yMax = niceStep * (targetTicks - 1);
+  return { yMax, step: niceStep };
+}
+
+function formatScaleLabel(val: number): string {
+  const rounded = Math.round(val);
+  if (rounded === 0) return "0";
+  if (rounded >= 1_000_000) {
+    const inM = rounded / 1_000_000;
+    return Number.isInteger(inM) ? `${inM}M` : `${inM.toFixed(1)}M`;
+  }
+  if (rounded >= 1_000) {
+    const inK = rounded / 1_000;
+    return Number.isInteger(inK) ? `${inK}k` : `${inK.toFixed(1)}k`;
+  }
+  return `${rounded}`;
+}
+
 export function RevenueChart({ data, hoveredIndex, setHoveredIndex }: RevenueChartProps) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -45,9 +81,10 @@ export function RevenueChart({ data, hoveredIndex, setHoveredIndex }: RevenueCha
   const chartWidth = Math.max(0, width - paddingLeft - paddingRight);
   const chartHeight = Math.max(0, height - paddingTop - paddingBottom);
 
-  // Maximum value for scaling (e.g. max revenue plus a buffer)
-  const maxVal = Math.max(...data.map((d) => Math.max(d.revenue, d.expenses)));
-  const yMax = Math.ceil((maxVal * 1.15) / 1000) * 1000 || 1000;
+  // Maximum value for scaling with nice integer steps
+  const maxVal = Math.max(0, ...data.map((d) => Math.max(d.revenue, d.expenses)));
+  const gridCount = 4;
+  const { yMax, step } = calculateNiceScale(maxVal, gridCount);
 
   // Coordinate helpers
   const getX = (index: number) => {
@@ -91,14 +128,13 @@ export function RevenueChart({ data, hoveredIndex, setHoveredIndex }: RevenueCha
     setHoveredIndex(null);
   };
 
-  // Generate grid values (4 intervals)
-  const gridCount = 4;
+  // Generate grid values (always cleanly rounded intervals)
   const gridLines = Array.from({ length: gridCount }).map((_, i) => {
-    const val = (yMax / (gridCount - 1)) * i;
+    const val = step * i;
     return {
       value: val,
       y: getY(val),
-      label: val >= 1000 ? `${(val / 1000).toFixed(0)}k` : `${val}`,
+      label: formatScaleLabel(val),
     };
   });
 
@@ -106,7 +142,7 @@ export function RevenueChart({ data, hoveredIndex, setHoveredIndex }: RevenueCha
   const tooltipX = hoveredIndex !== null ? getX(hoveredIndex) : 0;
 
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white p-3.5 shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
+    <div className="h-full flex flex-col justify-between rounded-lg border border-zinc-200 bg-white p-3.5 shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
       <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5 dark:border-zinc-900">
         <div>
           <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-50">{t("financial.revenueVsExpenses")}</h3>
@@ -124,7 +160,7 @@ export function RevenueChart({ data, hoveredIndex, setHoveredIndex }: RevenueCha
         </div>
       </div>
 
-      <div ref={containerRef} className="relative mt-3 h-65 w-full select-none">
+      <div ref={containerRef} className="relative mt-3 flex-1 min-h-[260px] w-full select-none flex items-center">
         <svg
           width={width}
           height={height}

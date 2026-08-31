@@ -152,11 +152,11 @@ export function FinancialPage() {
           </section>
 
           {/* Interactive Charts Section (Middle Grid) */}
-          <section className="grid grid-cols-1 gap-4 lg:grid-cols-3" aria-label="Financial Trends">
+          <section className="grid grid-cols-1 gap-4 lg:grid-cols-3 items-stretch" aria-label="Financial Trends">
             {/* Left: Revenue vs Expenses (Col-span 2) */}
-            <div className="lg:col-span-2">
-              <ChunkErrorBoundary fallback={<ChartSkeletonPlaceholder className="h-72" />}>
-                <Suspense fallback={<ChartSkeletonPlaceholder className="h-72" />}>
+            <div className="lg:col-span-2 h-full flex flex-col">
+              <ChunkErrorBoundary fallback={<ChartSkeletonPlaceholder className="h-full min-h-[320px]" />}>
+                <Suspense fallback={<ChartSkeletonPlaceholder className="h-full min-h-[320px]" />}>
                   <RevenueChart
                     data={monthlyData}
                     hoveredIndex={hoveredMonthIndex}
@@ -167,9 +167,9 @@ export function FinancialPage() {
             </div>
 
             {/* Right: Expense Breakdown (Col-span 1) */}
-            <div className="lg:col-span-1">
-              <ChunkErrorBoundary fallback={<ChartSkeletonPlaceholder className="h-72" />}>
-                <Suspense fallback={<ChartSkeletonPlaceholder className="h-72" />}>
+            <div className="lg:col-span-1 h-full flex flex-col">
+              <ChunkErrorBoundary fallback={<ChartSkeletonPlaceholder className="h-full min-h-[320px]" />}>
+                <Suspense fallback={<ChartSkeletonPlaceholder className="h-full min-h-[320px]" />}>
                   <ExpenseDoughnut
                     categories={expenseCategories}
                     hoveredIndex={hoveredCategoryIndex}
