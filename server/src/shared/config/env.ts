@@ -34,7 +34,10 @@ const envSchema = z.object({
 
   // Email
   SMTP_HOST: z.string().default('smtp.gmail.com'),
-  SMTP_PORT: z.coerce.number().default(587),
+  SMTP_PORT: z.preprocess(
+    (val) => (val === '' || val === undefined || val === null ? 587 : val),
+    z.coerce.number().default(587)
+  ),
   SMTP_USER: z.string().default(''),
   SMTP_PASSWORD: z.string().default(''),
 

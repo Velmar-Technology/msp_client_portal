@@ -21,6 +21,7 @@ vi.mock('nodemailer', () => {
 
 // Import the email service after the mock has been configured
 import {
+  isSMTPConfigured,
   sendEmail,
   sendTicketCreatedEmail,
   sendTicketStatusChangedEmail,
@@ -198,6 +199,46 @@ describe('emailService', () => {
     expect(callArgs.html).toContain('En Progreso');
     expect(callArgs.html).toContain('Observaciones del Técnico:');
     expect(callArgs.html).toContain('Revisar Ticket e Historial');
+  });
+
+  describe('isSMTPConfigured', () => {
+    const validConfig = {
+      host: 'smtp.mailgun.org',
+      port: 587,
+      user: 'admin@velmartech.com.do',
+      password: 'super-secret-password-123',
+    };
+
+    it('should return true for fully configured SMTP credentials', () => {
+      expect(isSMTPConfigured(validConfig)).toBe(true);
+    });
+
+    it('should return false if SMTP_HOST is blank, whitespace, or placeholder', () => {
+      expect(isSMTPConfigured({ ...validConfig, host: '' })).toBe(false);
+      expect(isSMTPConfigured({ ...validConfig, host: '   ' })).toBe(false);
+      expect(isSMTPConfigured({ ...validConfig, host: 'smtp.example.com' })).toBe(false);
+    });
+
+    it('should return false if SMTP_PORT is blank, 0, or invalid', () => {
+      expect(isSMTPConfigured({ ...validConfig, port: '' as any })).toBe(false);
+      expect(isSMTPConfigured({ ...validConfig, port: 0 })).toBe(false);
+      expect(isSMTPConfigured({ ...validConfig, port: -1 })).toBe(false);
+      expect(isSMTPConfigured({ ...validConfig, port: NaN })).toBe(false);
+    });
+
+    it('should return false if SMTP_USER is blank, whitespace, or placeholder', () => {
+      expect(isSMTPConfigured({ ...validConfig, user: '' })).toBe(false);
+      expect(isSMTPConfigured({ ...validConfig, user: '   ' })).toBe(false);
+      expect(isSMTPConfigured({ ...validConfig, user: 'your_email@gmail.com' })).toBe(false);
+      expect(isSMTPConfigured({ ...validConfig, user: 'user@example.com' })).toBe(false);
+    });
+
+    it('should return false if SMTP_PASSWORD is blank, whitespace, or placeholder', () => {
+      expect(isSMTPConfigured({ ...validConfig, password: '' })).toBe(false);
+      expect(isSMTPConfigured({ ...validConfig, password: '   ' })).toBe(false);
+      expect(isSMTPConfigured({ ...validConfig, password: 'your_app_password' })).toBe(false);
+      expect(isSMTPConfigured({ ...validConfig, password: 'password' })).toBe(false);
+    });
   });
 });
 

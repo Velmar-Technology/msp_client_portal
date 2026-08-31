@@ -79,21 +79,65 @@ function getPriorityColor(priority: string): { bg: string; text: string } {
 }
 
 /* ── SMTP Transporter Initialization ──────────────────────── */
-const isSMTPConfigured =
-  !!env.SMTP_USER &&
-  !!env.SMTP_PASSWORD &&
-  env.SMTP_USER !== 'your_email@gmail.com' &&
-  env.SMTP_PASSWORD !== 'your_app_password';
 
+/**
+ * Evaluates whether all required SMTP parameters (HOST, PORT, USER, PASSWORD)
+ * are present, non-empty, valid, and not set to default placeholder credentials.
+ * If any parameter is blank or incomplete, the email service skips SMTP transmission
+ * and runs safely in STUB mode without error.
+ *
+ * @param config - Optional configuration object to validate. Defaults to parsed environment variables.
+ * @returns True if SMTP credentials and connection endpoints are complete and valid.
+ */
+export function isSMTPConfigured(config: {
+  host?: string;
+  port?: number | string;
+  user?: string;
+  password?: string;
+} = {
+  host: env.SMTP_HOST,
+  port: env.SMTP_PORT,
+  user: env.SMTP_USER,
+  password: env.SMTP_PASSWORD,
+}): boolean {
+  const host = typeof config.host === 'string' ? config.host.trim() : '';
+  const port = Number(config.port);
+  const user = typeof config.user === 'string' ? config.user.trim() : '';
+  const pass = typeof config.password === 'string' ? config.password.trim() : '';
+
+  // Host validation (must be non-empty and not dummy placeholder)
+  if (!host || host === 'smtp.example.com') {
+    return false;
+  }
+
+  // Port validation (must be valid positive port number)
+  if (!port || Number.isNaN(port) || port <= 0) {
+    return false;
+  }
+
+  // User / Sender credentials validation
+  if (!user || user === 'your_email@gmail.com' || user === 'user@example.com') {
+    return false;
+  }
+
+  // Password validation
+  if (!pass || pass === 'your_app_password' || pass === 'password') {
+    return false;
+  }
+
+  return true;
+}
+
+const smtpAvailable = isSMTPConfigured();
 let transporter: nodemailer.Transporter;
-let useStubTransporter = !isSMTPConfigured;
+let useStubTransporter = !smtpAvailable;
 
-if (isSMTPConfigured) {
+if (smtpAvailable) {
   try {
     transporter = nodemailer.createTransport({
       host: env.SMTP_HOST,
-      port: env.SMTP_PORT,
-      secure: env.SMTP_PORT === 465,
+      port: Number(env.SMTP_PORT),
+      secure: Number(env.SMTP_PORT) === 465,
       auth: {
         user: env.SMTP_USER,
         pass: env.SMTP_PASSWORD,
@@ -115,7 +159,7 @@ if (isSMTPConfigured) {
     useStubTransporter = true;
   }
 } else {
-  logger.warn('📧 Email service running in STUB mode — emails will be logged, not sent (SMTP not configured or using placeholders)');
+  logger.warn('📧 Email service skipped/running in STUB mode — SMTP_HOST, SMTP_PORT, SMTP_USER, or SMTP_PASSWORD is blank or incomplete. Emails will be logged, not sent.');
 }
 
 function getTransporter(): nodemailer.Transporter {
