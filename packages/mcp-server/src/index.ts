@@ -31,8 +31,13 @@ function resolveApiUrl(): string {
 }
 
 const apiUrl = resolveApiUrl();
-const apiToken = process.env.MSP_API_TOKEN || '';
+const apiToken = (process.env.MSP_API_KEY || process.env.MSP_API_TOKEN || '').trim();
 const tenantId = process.env.MSP_TENANT_ID;
+
+if (!apiToken) {
+  console.error('[MSP MCP Server Configuration Error]: MSP_API_KEY is required to authenticate requests. Please configure MSP_API_KEY in mcp_config.json or your environment.');
+  process.exit(1);
+}
 
 // Create the MCP Server
 const server = new McpServer({

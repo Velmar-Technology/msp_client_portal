@@ -24,7 +24,7 @@ export class MspApiClient {
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
-        ...(config.apiToken ? { Authorization: `Bearer ${config.apiToken}` } : {}),
+        ...(config.apiToken ? { Authorization: `Bearer ${config.apiToken}`, 'X-API-Key': config.apiToken } : {}),
         ...(config.tenantId ? { 'X-Tenant-Id': config.tenantId } : {}),
       },
     });
