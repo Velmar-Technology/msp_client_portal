@@ -451,7 +451,9 @@ jobs:
       - name: Download All Agent Artifacts
         uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
         with:
+          pattern: agent-bin-*
           path: downloaded-artifacts/
+          merge-multiple: true
 
       - name: Consolidate Artifacts & Compute Checksums
         id: checksums
