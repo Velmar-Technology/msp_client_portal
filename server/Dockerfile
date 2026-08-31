@@ -19,7 +19,7 @@ RUN npm ci --legacy-peer-deps
 
 # Copy packages and build shared errors module
 COPY packages/errors ./packages/errors
-RUN npm run build:packages
+RUN npm -w packages/errors run build
 
 # Copy and build server code
 COPY server ./server
