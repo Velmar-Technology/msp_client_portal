@@ -60,6 +60,19 @@ fn extract_gateway_arg(args: &[String]) -> Option<String> {
     None
 }
 
+/// Helper to parse `--token <TOKEN>`, `-t <TOKEN>`, or `--token=<TOKEN>` from CLI arguments.
+fn extract_token_arg(args: &[String]) -> Option<String> {
+    for (i, arg) in args.iter().enumerate() {
+        if (arg == "--token" || arg == "-t") && i + 1 < args.len() {
+            return Some(args[i + 1].clone());
+        }
+        if let Some(stripped) = arg.strip_prefix("--token=") {
+            return Some(stripped.to_string());
+        }
+    }
+    None
+}
+
 /// Resolves the secret the agent presents on the WebSocket: an explicit env
 /// override wins, then the persisted binding secret, then the dev fallback.
 fn resolve_token(config: &AgentConfig, state: &AgentState) -> String {
@@ -388,22 +401,25 @@ fn print_help() {
     println!("");
     println!("Usage:");
     println!("  msp-agent.exe [COMMAND] [OPTIONS]");
+    println!("  msp-agent.exe --install-service [OPTIONS]");
     println!("");
-    println!("Commands:");
-    println!("  install          Relocate binary to 'C:\\Program Files\\MSP\\msp-agent\\' and register");
-    println!("                   as an automatic Windows Background Service (Run as Admin)");
-    println!("  uninstall        Stop and remove the Windows Background Service (Run as Admin)");
-    println!("  start            Start the installed Windows Background Service");
-    println!("  stop             Stop the running Windows Background Service");
-    println!("  status           Display current service status (RUNNING / STOPPED) and PID");
-    println!("  log, logs        Print recent service execution logs from 'C:\\ProgramData\\MSP\\msp-agent.log'");
-    println!("  console          Run interactively in foreground console mode (default if no command provided)");
+    println!("Commands & Service Flags:");
+    println!("  install, --install-service     Register and configure as an automatic Windows Service (Run as Admin)");
+    println!("  uninstall, --uninstall-service Stop and delete the Windows Background Service (Run as Admin)");
+    println!("  start, --start-service         Start the installed Windows Background Service");
+    println!("  stop, --stop-service           Stop the running Windows Background Service");
+    println!("  status, --status-service       Display current service status (RUNNING / STOPPED) and PID");
+    println!("  log, logs                      Print recent service execution logs from 'C:\\ProgramData\\MSP\\msp-agent.log'");
+    println!("  console                        Run interactively in foreground console mode (default)");
     println!("");
-    println!("Options:");
-    println!("  -g, --gateway <URL>  Override WebSocket gateway URL (e.g. ws://localhost:3001/agent-ws)");
-    println!("  -h, --help           Print this help documentation");
-    println!("  -V, --version        Print version information");
-    println!("  --service            Internal flag invoked by Windows Service Control Manager (SCM)");
+    println!("Options for Silent Deployment & Configuration:");
+    println!("  -g, --gateway <URL>            Override WebSocket gateway URL (e.g. wss://api.yourmsp.com/agent-ws)");
+    println!("  -t, --token <TOKEN>            Pre-configure pre-shared agent authentication secret on install");
+    println!("  -s, --silent, --unattended     Silent unattended installation without interactive prompts");
+    println!("  --no-autostart                 Do not automatically start the service immediately after install");
+    println!("  -h, --help                     Print this help documentation");
+    println!("  -V, --version                  Print version information");
+    println!("  --service                      Internal flag invoked by Windows Service Control Manager (SCM)");
     println!("");
     println!("Protected Paths:");
     println!("  Binary:          C:\\Program Files\\MSP\\msp-agent\\msp-agent.exe");
@@ -419,16 +435,13 @@ fn print_help() {
     println!("  MSP_RECONNECT_DELAY      Initial reconnection delay in seconds (default: 5)");
     println!("  MSP_MAX_RECONNECT_DELAY  Maximum reconnection delay ceiling in seconds (default: 120)");
     println!("");
-    println!("Quick Start Examples:");
-    println!("  1. Install as Windows Service:   .\\msp-agent.exe install");
-    println!("     (with local gateway):         .\\msp-agent.exe install --gateway ws://localhost:3001/agent-ws");
-    println!("  2. Start the Service:            .\\msp-agent.exe start");
-    println!("  3. Check Service Status:         .\\msp-agent.exe status");
-    println!("  4. View Live Service Logs:       .\\msp-agent.exe log");
-    println!("  5. Run in Console Mode:          .\\msp-agent.exe --gateway ws://localhost:3001/agent-ws");
+    println!("Silent Mass Deployment Examples (GPO / Intune / RMM):");
+    println!("  1. Silent Install & Start:     .\\msp-agent.exe --install-service --gateway wss://api.yourmsp.com/agent-ws --token <TOKEN> --silent");
+    println!("  2. Standard Admin Install:     .\\msp-agent.exe install --gateway ws://localhost:3001/agent-ws");
+    println!("  3. Uninstall Silently:         .\\msp-agent.exe --uninstall-service --silent");
+    println!("  4. Query Status:               .\\msp-agent.exe status");
     println!("");
-    println!("The agent makes an outbound TLS WebSocket connection, so it operates behind NAT,");
-    println!("corporate firewalls, and VPNs without any inbound port-forwarding configuration.");
+    println!("The agent makes an outbound TLS WebSocket connection, operating behind NAT and firewalls.");
 }
 
 /// Main async agent connection and command execution loop.
@@ -503,21 +516,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let gateway_override = extract_gateway_arg(&args);
+    let token_override = extract_token_arg(&args);
+    let silent = args.iter().any(|a| a == "--silent" || a == "-s" || a == "--unattended");
+    let autostart = !args.iter().any(|a| a == "--no-autostart" || a == "--autostart=false");
 
-    // Windows Service Management CLI Subcommands
-    if args.iter().any(|a| a == "install") {
-        return service::windows_service_impl::install(gateway_override);
+    // Windows Service Management CLI Subcommands & Flags
+    if args.iter().any(|a| a == "install" || a == "--install-service" || a == "-i") {
+        return service::windows_service_impl::install(gateway_override, token_override, silent, autostart);
     }
-    if args.iter().any(|a| a == "uninstall" || a == "remove") {
+    if args.iter().any(|a| a == "uninstall" || a == "--uninstall-service" || a == "remove" || a == "-u") {
         return service::windows_service_impl::uninstall();
     }
-    if args.iter().any(|a| a == "start") {
+    if args.iter().any(|a| a == "start" || a == "--start-service") {
         return service::windows_service_impl::start();
     }
-    if args.iter().any(|a| a == "stop") {
+    if args.iter().any(|a| a == "stop" || a == "--stop-service") {
         return service::windows_service_impl::stop();
     }
-    if args.iter().any(|a| a == "status") {
+    if args.iter().any(|a| a == "status" || a == "--status-service") {
         return service::windows_service_impl::status();
     }
     if args.iter().any(|a| a == "log" || a == "logs") {

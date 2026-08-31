@@ -95,7 +95,12 @@ pub mod windows_service_impl {
     /// Installs this binary as an automatic background Windows service.
     /// If executed from a temporary location (e.g. Downloads / Desktop), it
     /// automatically relocates itself to a protected system folder (`C:\Program Files\MSP\msp-agent\`).
-    pub fn install(gateway_override: Option<String>) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn install(
+        gateway_override: Option<String>,
+        token_override: Option<String>,
+        silent: bool,
+        autostart: bool,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let current_exe: PathBuf = std::env::current_exe()?;
         let program_files = std::env::var("ProgramFiles").unwrap_or_else(|_| r"C:\Program Files".into());
         let target_dir = PathBuf::from(program_files).join("MSP").join("msp-agent");
@@ -114,7 +119,9 @@ pub mod windows_service_impl {
             ) {
                 if let Ok(status) = service.query_status() {
                     if status.current_state == ServiceState::Running {
-                        println!("Stopping active background service before reinstalling...");
+                        if !silent {
+                            println!("Stopping active background service before reinstalling...");
+                        }
                         let _ = service.stop();
                         for _ in 0..10 {
                             std::thread::sleep(Duration::from_millis(500));
@@ -130,7 +137,9 @@ pub mod windows_service_impl {
         }
 
         let final_exe = if !is_in_target {
-            println!("Relocating agent binary to protected system folder...");
+            if !silent {
+                println!("Relocating agent binary to protected system folder...");
+            }
             if let Err(err) = std::fs::create_dir_all(&target_dir) {
                 if err.raw_os_error() == Some(5) {
                     return Err("Access denied. Please run as Administrator.".into());
@@ -147,7 +156,9 @@ pub mod windows_service_impl {
                 }
                 return Err(err.into());
             }
-            println!("Protected Binary: {:?}", target_exe);
+            if !silent {
+                println!("Protected Binary: {:?}", target_exe);
+            }
 
             // Copy any existing config to ProgramData
             if let Ok(prog_data) = std::env::var("ProgramData") {
@@ -158,7 +169,9 @@ pub mod windows_service_impl {
                     if local_config.exists() {
                         let target_config = prog_data_dir.join("msp-agent.json");
                         let _ = std::fs::copy(&local_config, &target_config);
-                        println!("Protected Config: {:?}", target_config);
+                        if !silent {
+                            println!("Protected Config: {:?}", target_config);
+                        }
                     }
                 }
             }
@@ -167,6 +180,17 @@ pub mod windows_service_impl {
         } else {
             current_exe
         };
+
+        // Provision token if provided during silent or command-line installation
+        if let Some(ref tok) = token_override {
+            let mut state = crate::pairing::AgentState::load();
+            state.agent_token = Some(tok.clone());
+            if let Err(e) = state.save() {
+                log::warn!("Failed to persist pre-shared token on install: {}", e);
+            } else if !silent {
+                println!("Pre-shared token successfully configured.");
+            }
+        }
 
         let manager_access = ServiceManagerAccess::CONNECT | ServiceManagerAccess::CREATE_SERVICE;
         let service_manager = ServiceManager::local_computer(None::<&str>, manager_access)?;
@@ -204,18 +228,32 @@ pub mod windows_service_impl {
             }
         }
 
-        println!("\n==================================================");
-        println!("  MSP ENDPOINT AGENT INSTALLED SUCCESSFULLY");
-        println!("==================================================");
-        println!("Service Name:   {}", SERVICE_NAME);
-        println!("Protected Path: {:?}", final_exe);
-        println!("Config Path:    C:\\ProgramData\\MSP\\msp-agent.json");
-        if let Some(ref gw) = gateway_override {
-            println!("Gateway URL:    {}", gw);
+        if !silent {
+            println!("\n==================================================");
+            println!("  MSP ENDPOINT AGENT INSTALLED SUCCESSFULLY");
+            println!("==================================================");
+            println!("Service Name:   {}", SERVICE_NAME);
+            println!("Protected Path: {:?}", final_exe);
+            println!("Config Path:    C:\\ProgramData\\MSP\\msp-agent.json");
+            if let Some(ref gw) = gateway_override {
+                println!("Gateway URL:    {}", gw);
+            }
+            println!("Start Type:     Automatic (starts on Windows boot)");
+            println!("==================================================");
         }
-        println!("Start Type:     Automatic (starts on Windows boot)");
-        println!("==================================================");
-        println!("Run 'msp-agent.exe start' to start the service immediately.");
+
+        if autostart {
+            if let Err(e) = start() {
+                if !silent {
+                    println!("Service installed, but automatic start returned: {}", e);
+                }
+            } else if !silent {
+                println!("Service started successfully in background.");
+            }
+        } else if !silent {
+            println!("Run 'msp-agent.exe start' to start the service.");
+        }
+
         Ok(())
     }
 
@@ -322,7 +360,12 @@ pub mod windows_service_impl {
     pub fn dispatch() -> Result<(), String> {
         Err("Windows services are only supported on Windows".into())
     }
-    pub fn install(_gateway_override: Option<String>) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn install(
+        _gateway_override: Option<String>,
+        _token_override: Option<String>,
+        _silent: bool,
+        _autostart: bool,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         println!("Service management is only supported on Windows.");
         Ok(())
     }
