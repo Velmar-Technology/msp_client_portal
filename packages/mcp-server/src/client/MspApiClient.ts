@@ -14,6 +14,9 @@ import type {
   EphemeralGrant,
   AccessDecisionResult,
   TrustScoreResult,
+  UserSummary,
+  UserListResult,
+  UserStatsSummary,
 } from '../types.js';
 
 export class MspApiClient {
@@ -717,6 +720,58 @@ ${recommendationList}
       method: 'GET',
       url: '/authz/trust-score',
       params: userId ? { userId } : undefined,
+    });
+    return res.data || res;
+  }
+
+  // --- User & Identity Endpoints ---
+  /**
+   * List platform users with optional filters (role, status, search) and pagination.
+   */
+  async listUsers(params?: {
+    page?: number;
+    limit?: number;
+    role?: 'ADMIN' | 'TECHNICIAN' | 'CLIENT';
+    isActive?: boolean;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }): Promise<UserListResult> {
+    const queryParams: Record<string, any> = {};
+    if (params?.page) queryParams.page = params.page;
+    if (params?.limit) queryParams.limit = params.limit;
+    if (params?.role) queryParams.role = params.role;
+    if (params?.isActive !== undefined) queryParams.isActive = String(params.isActive);
+    if (params?.search) queryParams.search = params.search;
+    if (params?.sortBy) queryParams.sortBy = params.sortBy;
+    if (params?.sortOrder) queryParams.sortOrder = params.sortOrder;
+
+    const res = await this.request<any>({
+      method: 'GET',
+      url: '/users',
+      params: queryParams,
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Retrieve the authenticated user's profile.
+   */
+  async getUserProfile(): Promise<UserSummary> {
+    const res = await this.request<any>({
+      method: 'GET',
+      url: '/users/me',
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Retrieve platform user statistics and role counts.
+   */
+  async getUserStats(): Promise<UserStatsSummary> {
+    const res = await this.request<any>({
+      method: 'GET',
+      url: '/users/stats',
     });
     return res.data || res;
   }

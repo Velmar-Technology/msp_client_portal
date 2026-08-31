@@ -217,3 +217,29 @@ export interface TrustScoreResult {
   factors: string[];
 }
 
+export interface UserSummary {
+  id: string;
+  email: string;
+  name: string;
+  role: 'ADMIN' | 'TECHNICIAN' | 'CLIENT';
+  tenantId?: string | null;
+  clientType?: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserListResult {
+  users: UserSummary[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface UserStatsSummary {
+  total: number;
+  byRole: Record<string, number>;
+  active: number;
+  inactive: number;
+}
+
