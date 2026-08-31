@@ -19,7 +19,7 @@ function calculateNiceScale(maxVal: number, targetTicks = 4): { yMax: number; st
   const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
   const normalized = rawStep / magnitude;
 
-  let niceStep = magnitude;
+  let niceStep: number;
   if (normalized <= 1) niceStep = 1 * magnitude;
   else if (normalized <= 2) niceStep = 2 * magnitude;
   else if (normalized <= 2.5) niceStep = 2.5 * magnitude;
@@ -160,7 +160,7 @@ export function RevenueChart({ data, hoveredIndex, setHoveredIndex }: RevenueCha
         </div>
       </div>
 
-      <div ref={containerRef} className="relative mt-3 flex-1 min-h-[260px] w-full select-none flex items-center">
+      <div ref={containerRef} className="relative mt-3 flex-1 min-h-65 w-full select-none flex items-center">
         <svg
           width={width}
           height={height}
