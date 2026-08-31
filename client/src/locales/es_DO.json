@@ -215,7 +215,7 @@
     "avatarInput": "Entrada de carga de avatar",
     "avatarSuccess": "Foto de perfil actualizada exitosamente",
     "avatarError": "Error al subir la foto de perfil",
-    "phoneNumber": "Número de Teléfono (WhatsApp)",
+    "phoneNumber": "Número de Teléfono",
     "apiKeyTitle": "Gestión de Claves API",
     "apiKeySubtitle": "Token de Acceso Programático",
     "apiKeyDesc": "Genere una clave API JWT válida por 30 días para acceso programático y automatizaciones.",
