@@ -38,6 +38,99 @@ vi.mock('@/hooks/useAuth', () => ({
   }),
 }));
 
+vi.mock('@/components/maintenance/ScheduleMaintenanceModal', () => ({
+  ScheduleMaintenanceModal: () => null,
+}));
+vi.mock('@/components/devices/RmmDashboard', () => ({
+  RmmDashboard: () => null,
+}));
+vi.mock('@/components/devices/DeployAgentModal', () => ({
+  DeployAgentModal: () => null,
+}));
+vi.mock('@/components/devices/AddAdminDeviceModal', () => ({
+  AddAdminDeviceModal: () => null,
+}));
+vi.mock('@/components/devices/ActivateWithOtpModal', () => ({
+  ActivateWithOtpModal: ({ isOpen, onClose, onActivate, slotIndex }: any) => {
+    if (!isOpen) return null;
+    return (
+      <div role="dialog">
+        <h2>Activate Device</h2>
+        {slotIndex !== null && slotIndex !== undefined && (
+          <div>Pairing to slot #{slotIndex + 1}</div>
+        )}
+        <label htmlFor="otp-input">Pairing Code</label>
+        <input
+          id="otp-input"
+          aria-label="Pairing Code"
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val === '123456') {
+              const nameInput = document.getElementById('name-input') as HTMLInputElement;
+              const serialInput = document.getElementById('serial-input') as HTMLInputElement;
+              if (nameInput) {
+                nameInput.value = 'AGENT-SRV-77';
+                nameInput.dispatchEvent(new Event('input', { bubbles: true }));
+              }
+              if (serialInput) {
+                serialInput.value = 'CN-AGENT-XYZ';
+                serialInput.dispatchEvent(new Event('input', { bubbles: true }));
+              }
+              const hint = document.getElementById('identity-hint');
+              if (hint) hint.style.display = 'block';
+            }
+          }}
+        />
+        <label htmlFor="name-input">Device Name / Label</label>
+        <input id="name-input" aria-label="Device Name / Label" defaultValue="" />
+        <label htmlFor="serial-input">Device Serial Number</label>
+        <input id="serial-input" aria-label="Device Serial Number" defaultValue="" />
+        <div id="identity-hint" style={{ display: 'none' }}>
+          Device details detected via MSP Agent — confirm below.
+        </div>
+        <button
+          onClick={() => {
+            const otpInput = document.getElementById('otp-input') as HTMLInputElement;
+            const nameInput = document.getElementById('name-input') as HTMLInputElement;
+            const serialInput = document.getElementById('serial-input') as HTMLInputElement;
+            onActivate(otpInput?.value || '123456', nameInput?.value || '', serialInput?.value || '');
+            onClose();
+          }}
+        >
+          Pair Device
+        </button>
+        <button onClick={onClose}>Cancel</button>
+      </div>
+    );
+  },
+}));
+vi.mock('@/components/devices/NextcloudInfoModal', () => ({
+  NextcloudInfoModal: ({ isOpen, onClose, subId, slotIndex }: any) => {
+    const [infoData, setInfoData] = React.useState<any>(null);
+    React.useEffect(() => {
+      if (isOpen && subId !== null && slotIndex !== null && slotIndex !== undefined) {
+        equipmentService.getNextcloudInfo(subId, slotIndex).then((res) => {
+          setInfoData(res);
+        });
+      }
+    }, [isOpen, subId, slotIndex]);
+
+    if (!isOpen) return null;
+    return (
+      <div role="dialog">
+        <h2>Cloud Backup Details</h2>
+        {infoData && (
+          <>
+            <div>{infoData.nextcloud_username}</div>
+            <div>{infoData.nextcloud_password}</div>
+          </>
+        )}
+        <button onClick={onClose}>Close</button>
+      </div>
+    );
+  },
+}));
+
 const { mockToast } = vi.hoisted(() => ({
   mockToast: {
     success: vi.fn(),
@@ -106,6 +199,56 @@ vi.mock('@/components/ui/dropdown-menu', () => {
       <button onClick={onClick} className={className} role="menuitem">
         {children}
       </button>
+    ),
+  };
+});
+
+vi.mock('@/components/ui/select', () => {
+  let selectCallbacks: Record<string, (val: string) => void> = {};
+  return {
+    Select: ({ children, value, onValueChange, id }: any) => {
+      const selectId = id || 'mock-select';
+      if (onValueChange) selectCallbacks[selectId] = onValueChange;
+      return (
+        <div data-testid="mock-select" data-value={value}>
+          {React.Children.map(children, (child) =>
+            React.isValidElement(child)
+              ? React.cloneElement(child as any, { value, onValueChange, selectId })
+              : child
+          )}
+        </div>
+      );
+    },
+    SelectTrigger: ({ children, id, 'aria-label': ariaLabel, 'data-testid': testId, className }: any) => (
+      <button id={id} aria-label={ariaLabel} data-testid={testId} className={className} type="button">
+        {children}
+      </button>
+    ),
+    SelectValue: ({ placeholder, value }: any) => <span>{value || placeholder}</span>,
+    SelectContent: ({ children, onValueChange, selectId }: any) => (
+      <div>
+        {React.Children.map(children, (child) =>
+          React.isValidElement(child)
+            ? React.cloneElement(child as any, { onValueChange, selectId })
+            : child
+        )}
+      </div>
+    ),
+    SelectItem: ({ children, value, onValueChange, selectId, className }: any) => (
+      <div
+        role="option"
+        className={className}
+        onClick={() => {
+          onValueChange?.(value);
+          if (selectId && selectCallbacks[selectId]) selectCallbacks[selectId](value);
+        }}
+        onPointerDown={() => {
+          onValueChange?.(value);
+          if (selectId && selectCallbacks[selectId]) selectCallbacks[selectId](value);
+        }}
+      >
+        {children}
+      </div>
     ),
   };
 });
@@ -1017,11 +1160,11 @@ describe('DevicesPage', () => {
     vi.mocked(subscriptionService.getAll).mockResolvedValue([activeSub as any]);
     vi.mocked(equipmentService.getMyDevices).mockResolvedValue([mockSlot]);
 
-    const { rerender } = render(
+    const { unmount } = render(
       <QueryClientProvider client={testQueryClient}>
         <MemoryRouter>
           <DevicesPage />
-      </MemoryRouter>
+        </MemoryRouter>
       </QueryClientProvider>
     );
 
@@ -1040,6 +1183,8 @@ describe('DevicesPage', () => {
       expect(screen.getByRole('menuitem', { name: 'Activate Device' })).toBeInTheDocument();
     });
 
+    unmount();
+
     mockUser.role = 'ADMIN';
     vi.mocked(equipmentService.getAllDevicesForAdmin).mockResolvedValue([
       {
@@ -1052,11 +1197,15 @@ describe('DevicesPage', () => {
       },
     ]);
 
-    rerender(
-      <QueryClientProvider client={testQueryClient}>
+    const adminClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, staleTime: 0, gcTime: 0 } },
+    });
+
+    render(
+      <QueryClientProvider client={adminClient}>
         <MemoryRouter>
           <DevicesPage />
-      </MemoryRouter>
+        </MemoryRouter>
       </QueryClientProvider>
     );
 
