@@ -144,6 +144,9 @@ export function TechDashboardPage() {
       REPAIR: t('tickets.categories.REPAIR'),
       WARRANTY: t('tickets.categories.WARRANTY'),
       SERVICE_OUTAGE: t('tickets.categories.SERVICE_OUTAGE'),
+      PREVENTATIVE_MAINTENANCE: t('tickets.categories.PREVENTATIVE_MAINTENANCE'),
+      HELPDESK: t('tickets.categories.HELPDESK'),
+      AI: t('tickets.categories.AI'),
     };
     return map[cat] || cat;
   }, [t]);

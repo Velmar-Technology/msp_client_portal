@@ -49,7 +49,7 @@ export function registerTicketTools(server: McpServer, apiClient: MspApiClient) 
         .describe('Filter by ticket status'),
       priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional().describe('Filter by ticket priority'),
       category: z
-        .enum(['REPAIR', 'WARRANTY', 'SERVICE_OUTAGE', 'PREVENTATIVE_MAINTENANCE'])
+        .enum(['REPAIR', 'WARRANTY', 'SERVICE_OUTAGE', 'PREVENTATIVE_MAINTENANCE', 'HELPDESK', 'AI'])
         .optional()
         .describe('Filter by ticket category'),
       assignedTechId: z.string().uuid().optional().describe('Filter by assigned technician UUID'),

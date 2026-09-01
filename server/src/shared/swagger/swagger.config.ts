@@ -45,7 +45,7 @@ const options: swaggerJsdoc.Options = {
             id: { type: 'string', format: 'uuid' },
             title: { type: 'string' },
             description: { type: 'string' },
-            category: { type: 'string', enum: ['REPAIR', 'WARRANTY', 'SERVICE_OUTAGE'] },
+            category: { type: 'string', enum: ['REPAIR', 'WARRANTY', 'SERVICE_OUTAGE', 'PREVENTATIVE_MAINTENANCE', 'HELPDESK', 'AI'] },
             status: { type: 'string', enum: ['OPEN', 'IN_PROGRESS', 'AWAITING_PAYMENT', 'RESOLVED', 'CLOSED', 'CANCELLED'] },
             priority: { type: 'string', enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] },
             client_id: { type: 'string', format: 'uuid' },
@@ -194,7 +194,7 @@ const options: swaggerJsdoc.Options = {
                   properties: {
                     title: { type: 'string' },
                     description: { type: 'string' },
-                    category: { type: 'string', enum: ['REPAIR', 'WARRANTY', 'SERVICE_OUTAGE'] },
+                    category: { type: 'string', enum: ['REPAIR', 'WARRANTY', 'SERVICE_OUTAGE', 'PREVENTATIVE_MAINTENANCE', 'HELPDESK', 'AI'] },
                     priority: { type: 'string', enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] },
                   },
                 },

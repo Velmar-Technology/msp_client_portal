@@ -82,7 +82,7 @@ Definidas centralmente en [types/index.ts](file:///c:/Users/DELL/Desktop/wordspa
   - `AccountStatus`: ACTIVE, READ_ONLY, SUSPENDED, PURGED
   - `Currency`: USD, DOP
   - `TicketStatus`: OPEN, IN_PROGRESS, AWAITING_PAYMENT, RESOLVED, CLOSED, CANCELLED
-  - `TicketCategory`: REPAIR, WARRANTY, SERVICE_OUTAGE
+  - `TicketCategory`: REPAIR, WARRANTY, SERVICE_OUTAGE, PREVENTATIVE_MAINTENANCE, HELPDESK, AI
   - `TicketPriority`: LOW, MEDIUM, HIGH, CRITICAL
   - `SubscriptionPlan`: BASIC, STANDARD, PREMIUM, PL-001...PL-007
   - `SubscriptionStatus`: ACTIVE, EXPIRING, EXPIRED, CANCELLED

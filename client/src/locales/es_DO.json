@@ -486,7 +486,9 @@
       "REPAIR": "Reparación",
       "WARRANTY": "Garantía",
       "SERVICE_OUTAGE": "Caída de Servicio",
-      "PREVENTATIVE_MAINTENANCE": "Mantenimiento Preventivo"
+      "PREVENTATIVE_MAINTENANCE": "Mantenimiento Preventivo",
+      "HELPDESK": "Mesa de Ayuda",
+      "AI": "Inteligencia Artificial"
     },
     "priorities": {
       "LOW": "Baja",

@@ -384,6 +384,8 @@ export function TicketsPage() {
                 value: "PREVENTATIVE_MAINTENANCE",
                 label: t("tickets.categories.PREVENTATIVE_MAINTENANCE") || "Maintenance",
               },
+              { value: "HELPDESK", label: t("tickets.categories.HELPDESK") },
+              { value: "AI", label: t("tickets.categories.AI") },
             ],
             placeholder: t("tickets.filterAllCategories"),
           },

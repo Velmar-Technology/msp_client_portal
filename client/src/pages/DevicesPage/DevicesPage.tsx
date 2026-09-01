@@ -1018,7 +1018,19 @@ export function DevicesPage() {
 
                     {/* View Mode Toggle & Primary Actions */}
                     <div className="flex items-center gap-2">
-                      {firstAvailableSlot && (
+                      
+
+                      {isAdmin ? (
+                        <Button
+                          type="button"
+                          size="default"
+                          onClick={handleOpenAddDevice}
+                          className="h-8 px-3 text-xs font-semibold gap-1 cursor-pointer shadow-xs"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                          <span>{t("devices.addDevice", "Add Device")}</span>
+                        </Button>
+                      ) : (firstAvailableSlot && (
                         <Button
                           type="button"
                           size="default"
@@ -1031,19 +1043,7 @@ export function DevicesPage() {
                           <Laptop className="h-3.5 w-3.5" />
                           <span>{t("devices.activateDevice", "Activate Device")}</span>
                         </Button>
-                      )}
-
-                      {isAdmin && (
-                        <Button
-                          type="button"
-                          size="default"
-                          onClick={handleOpenAddDevice}
-                          className="h-8 px-3 text-xs font-semibold gap-1 cursor-pointer shadow-xs"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                          <span>{t("devices.addDevice", "Add Device")}</span>
-                        </Button>
-                      )}
+                      ))}
                     </div>
                   </div>
                 </div>
