@@ -29,20 +29,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Page } from "@/components/Page";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -200,7 +188,8 @@ export function CRMCustomPlanPage() {
         lowMins,
       },
       manualPriceOverride: isPriceOverridden && manualBasePrice !== null ? manualBasePrice : undefined,
-      manualPerDevicePriceOverride: isPerDevicePriceOverridden && manualPerDevicePrice !== null ? manualPerDevicePrice : undefined,
+      manualPerDevicePriceOverride:
+        isPerDevicePriceOverridden && manualPerDevicePrice !== null ? manualPerDevicePrice : undefined,
     });
   }, [
     editFeatures,
@@ -220,13 +209,13 @@ export function CRMCustomPlanPage() {
   ]);
 
   // Derived Effective Pricing without cascading useEffect state updates
-  const effectiveBasePrice = isPriceOverridden && manualBasePrice !== null
-    ? manualBasePrice
-    : calculatedCostSummary.suggestedBasePrice;
+  const effectiveBasePrice =
+    isPriceOverridden && manualBasePrice !== null ? manualBasePrice : calculatedCostSummary.suggestedBasePrice;
 
-  const effectivePerDevicePrice = isPerDevicePriceOverridden && manualPerDevicePrice !== null
-    ? manualPerDevicePrice
-    : calculatedCostSummary.suggestedPerDevicePrice;
+  const effectivePerDevicePrice =
+    isPerDevicePriceOverridden && manualPerDevicePrice !== null
+      ? manualPerDevicePrice
+      : calculatedCostSummary.suggestedPerDevicePrice;
 
   const handleSyncWithCatalog = useCallback(() => {
     setIsPriceOverridden(false);
@@ -471,7 +460,10 @@ export function CRMCustomPlanPage() {
     <TooltipProvider>
       <Page
         title={t("crm.customPlan.modalTitle", "Bespoke Custom Plan Studio")}
-        subtitle={t("crm.customPlan.modalSubtitle", "Design private negotiated pricing, custom SLAs, and device quotas.")}
+        subtitle={t(
+          "crm.customPlan.modalSubtitle",
+          "Design private negotiated pricing, custom SLAs, and device quotas.",
+        )}
         actions={
           <div className="flex items-center gap-2">
             <Button
@@ -517,7 +509,8 @@ export function CRMCustomPlanPage() {
                   <SelectContent>
                     {leads.map((l) => (
                       <SelectItem key={l.id} value={l.id} className="text-xs">
-                        {l.company_name ? `${l.company_name} (${l.contact_name})` : l.contact_name} ({l.equipment_count || 1} Devices)
+                        {l.company_name ? `${l.company_name} (${l.contact_name})` : l.contact_name} (
+                        {l.equipment_count || 1} Devices)
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -549,7 +542,10 @@ export function CRMCustomPlanPage() {
           </section>
 
           {/* 2-Column Responsive Layout */}
-          <section aria-label="Plan Configuration and Financial Projection" className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <section
+            aria-label="Plan Configuration and Financial Projection"
+            className="grid grid-cols-1 lg:grid-cols-3 gap-4"
+          >
             {/* Main Configuration Column (2 cols) */}
             <div className="lg:col-span-2 flex flex-col gap-4">
               {/* 1. Plan Overview */}
@@ -565,7 +561,9 @@ export function CRMCustomPlanPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{t("crm.customPlan.planName", "Custom Plan Title")}</Label>
+                    <Label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                      {t("crm.customPlan.planName", "Custom Plan Title")}
+                    </Label>
                     <Input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
@@ -576,12 +574,14 @@ export function CRMCustomPlanPage() {
                   </div>
 
                   <div>
-                    <Label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{t("crm.customPlan.description", "Scope / Internal Notes")}</Label>
+                    <Label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                      {t("crm.customPlan.description", "Scope / Internal Notes")}
+                    </Label>
                     <Textarea
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="Negotiated conditions, contract term exclusions, or special clauses..."
-                      className="text-xs min-h-[70px] resize-none mt-1 bg-background border-zinc-200 dark:border-zinc-800"
+                      className="text-xs min-h-17.5 resize-none mt-1 bg-background border-zinc-200 dark:border-zinc-800"
                     />
                   </div>
                 </CardContent>
@@ -600,7 +600,7 @@ export function CRMCustomPlanPage() {
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    {(isPriceOverridden || isPerDevicePriceOverridden) ? (
+                    {isPriceOverridden || isPerDevicePriceOverridden ? (
                       <Button
                         type="button"
                         variant="outline"
@@ -612,7 +612,10 @@ export function CRMCustomPlanPage() {
                         <span>{t("crm.customPlan.syncCatalog", "Sync with Features")}</span>
                       </Button>
                     ) : (
-                      <Badge variant="secondary" className="text-[10px] h-5 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 gap-1 border border-emerald-500/20">
+                      <Badge
+                        variant="secondary"
+                        className="text-[10px] h-5 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 gap-1 border border-emerald-500/20"
+                      >
                         <Calculator className="h-3 w-3" />
                         <span>{t("crm.customPlan.autoCalculated", "Auto-Calculated")}</span>
                       </Badge>
@@ -623,10 +626,14 @@ export function CRMCustomPlanPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div>
                       <div className="flex items-center justify-between">
-                        <Label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{t("crm.customPlan.basePrice", "Base Rate ($/mo)")}</Label>
+                        <Label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                          {t("crm.customPlan.basePrice", "Base Rate ($/mo)")}
+                        </Label>
                         {isPriceOverridden && (
                           <span className="text-[10px] text-muted-foreground font-mono">
-                            {t("crm.customPlan.suggested", { val: calculatedCostSummary.suggestedBasePrice.toFixed(0) })}
+                            {t("crm.customPlan.suggested", {
+                              val: calculatedCostSummary.suggestedBasePrice.toFixed(0),
+                            })}
                           </span>
                         )}
                       </div>
@@ -646,10 +653,14 @@ export function CRMCustomPlanPage() {
 
                     <div>
                       <div className="flex items-center justify-between">
-                        <Label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{t("crm.customPlan.perDevice", "Per-Device ($/pc)")}</Label>
+                        <Label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                          {t("crm.customPlan.perDevice", "Per-Device ($/pc)")}
+                        </Label>
                         {isPerDevicePriceOverridden && (
                           <span className="text-[10px] text-muted-foreground font-mono">
-                            {t("crm.customPlan.suggested", { val: calculatedCostSummary.suggestedPerDevicePrice.toFixed(0) })}
+                            {t("crm.customPlan.suggested", {
+                              val: calculatedCostSummary.suggestedPerDevicePrice.toFixed(0),
+                            })}
                           </span>
                         )}
                       </div>
@@ -668,27 +679,39 @@ export function CRMCustomPlanPage() {
                     </div>
 
                     <div>
-                      <Label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{t("crm.customPlan.currency", "Currency")}</Label>
+                      <Label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                        {t("crm.customPlan.currency", "Currency")}
+                      </Label>
                       <Select value={currency} onValueChange={(val: any) => setCurrency(val)}>
                         <SelectTrigger className="h-7 text-xs mt-1 bg-background border-zinc-200 dark:border-zinc-800">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="USD" className="text-xs">USD ($)</SelectItem>
-                          <SelectItem value="DOP" className="text-xs">DOP (RD$)</SelectItem>
+                          <SelectItem value="USD" className="text-xs">
+                            USD ($)
+                          </SelectItem>
+                          <SelectItem value="DOP" className="text-xs">
+                            DOP (RD$)
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
                     <div>
-                      <Label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{t("crm.customPlan.billingCycle", "Billing Cycle")}</Label>
+                      <Label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                        {t("crm.customPlan.billingCycle", "Billing Cycle")}
+                      </Label>
                       <Select value={billingCycle} onValueChange={(val: any) => setBillingCycle(val)}>
                         <SelectTrigger className="h-7 text-xs mt-1 bg-background border-zinc-200 dark:border-zinc-800">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="monthly" className="text-xs">{t("crm.customPlan.monthly", "Monthly")}</SelectItem>
-                          <SelectItem value="annual" className="text-xs">{t("crm.customPlan.annual", "Annual (-10%)")}</SelectItem>
+                          <SelectItem value="monthly" className="text-xs">
+                            {t("crm.customPlan.monthly", "Monthly")}
+                          </SelectItem>
+                          <SelectItem value="annual" className="text-xs">
+                            {t("crm.customPlan.annual", "Annual (-10%)")}
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -702,10 +725,17 @@ export function CRMCustomPlanPage() {
                         {t("crm.customPlan.taxExemptLabel", "DGII ITBIS 18% Tax Exemption")}
                       </Label>
                       <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                        {t("crm.customPlan.taxExemptHint", "Exempt free zones or diplomatic accounts from standard Dominican 18% ITBIS.")}
+                        {t(
+                          "crm.customPlan.taxExemptHint",
+                          "Exempt free zones or diplomatic accounts from standard Dominican 18% ITBIS.",
+                        )}
                       </p>
                     </div>
-                    <Checkbox checked={taxExempt} onCheckedChange={(val) => setTaxExempt(Boolean(val))} className="cursor-pointer" />
+                    <Checkbox
+                      checked={taxExempt}
+                      onCheckedChange={(val) => setTaxExempt(Boolean(val))}
+                      className="cursor-pointer"
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -718,7 +748,10 @@ export function CRMCustomPlanPage() {
                     {t("crm.customPlan.sectionSla", "SLA Guarantees & Ticket Quota (BL-101 / BL-201)")}
                   </CardTitle>
                   <CardDescription className="text-xs text-zinc-500 dark:text-zinc-400">
-                    {t("crm.customPlan.sectionSlaDesc", "Configure contractual response targets and monthly ticket limits.")}
+                    {t(
+                      "crm.customPlan.sectionSlaDesc",
+                      "Configure contractual response targets and monthly ticket limits.",
+                    )}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -730,9 +763,15 @@ export function CRMCustomPlanPage() {
                       </Label>
                       <div className="flex items-center gap-2">
                         <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                          {isUnlimitedQuota ? t("crm.customPlan.unlimited", "Unlimited Quota") : `${ticketQuota} Tickets/mo`}
+                          {isUnlimitedQuota
+                            ? t("crm.customPlan.unlimited", "Unlimited Quota")
+                            : `${ticketQuota} Tickets/mo`}
                         </span>
-                        <Checkbox checked={isUnlimitedQuota} onCheckedChange={(val) => setIsUnlimitedQuota(Boolean(val))} className="cursor-pointer" />
+                        <Checkbox
+                          checked={isUnlimitedQuota}
+                          onCheckedChange={(val) => setIsUnlimitedQuota(Boolean(val))}
+                          className="cursor-pointer"
+                        />
                       </div>
                     </div>
                     {!isUnlimitedQuota && (
@@ -830,10 +869,7 @@ export function CRMCustomPlanPage() {
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Tabs
-                      value={featureLangTab}
-                      onValueChange={(val) => setFeatureLangTab(val as "en_US" | "es_DO")}
-                    >
+                    <Tabs value={featureLangTab} onValueChange={(val) => setFeatureLangTab(val as "en_US" | "es_DO")}>
                       <TabsList className="h-6 p-0.5 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
                         <TabsTrigger value="en_US" className="text-[11px] h-5 px-2 gap-1 cursor-pointer">
                           <Globe className="h-3 w-3" />
@@ -863,8 +899,12 @@ export function CRMCustomPlanPage() {
                       <div className="p-2 rounded-full bg-zinc-100 dark:bg-zinc-800 mb-2 text-zinc-500">
                         <Layers className="size-4" />
                       </div>
-                      <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 mb-0.5">{t("plans.noFeatures", "No Features Configured")}</p>
-                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 max-w-xs mb-3">{t("plans.noFeaturesHint", "Add capabilities from the catalog or write custom deliverables.")}</p>
+                      <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 mb-0.5">
+                        {t("plans.noFeatures", "No Features Configured")}
+                      </p>
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 max-w-xs mb-3">
+                        {t("plans.noFeaturesHint", "Add capabilities from the catalog or write custom deliverables.")}
+                      </p>
                       <Button
                         type="button"
                         variant="default"
@@ -918,7 +958,11 @@ export function CRMCustomPlanPage() {
 
                               {/* Included Checkbox */}
                               <HintTooltip
-                                label={feat.included ? t("plans.featureIncluded", "Included") : t("plans.featureExcluded", "Excluded")}
+                                label={
+                                  feat.included
+                                    ? t("plans.featureIncluded", "Included")
+                                    : t("plans.featureExcluded", "Excluded")
+                                }
                               >
                                 <div>
                                   <Checkbox
@@ -944,7 +988,10 @@ export function CRMCustomPlanPage() {
                                       }
                                       className="h-7 text-xs bg-background border-zinc-200 dark:border-zinc-800"
                                     />
-                                    <Badge variant="outline" className="text-[10px] h-5 shrink-0 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700">
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[10px] h-5 shrink-0 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700"
+                                    >
                                       Custom
                                     </Badge>
                                   </div>
@@ -1020,9 +1067,7 @@ export function CRMCustomPlanPage() {
                                   const schemaItem = catalogItem?.paramSchema?.find((p) => p.key === schemaParamKey);
                                   const isPredefinedSchema = schemaKeys.has(schemaParamKey);
                                   const currentVal = feat.params?.[schemaParamKey] ?? schemaItem?.defaultValue ?? "";
-                                  const label = schemaItem
-                                    ? schemaItem.label
-                                    : schemaParamKey;
+                                  const label = schemaItem ? schemaItem.label : schemaParamKey;
 
                                   return (
                                     <div
@@ -1037,7 +1082,10 @@ export function CRMCustomPlanPage() {
                                           value={String(currentVal)}
                                           onValueChange={(val) => handleUpdateFeatureParam(index, schemaParamKey, val)}
                                         >
-                                          <SelectTrigger aria-label={label} className="h-5 text-[11px] px-1.5 bg-background border-zinc-200 dark:border-zinc-700">
+                                          <SelectTrigger
+                                            aria-label={label}
+                                            className="h-5 text-[11px] px-1.5 bg-background border-zinc-200 dark:border-zinc-700"
+                                          >
                                             <SelectValue />
                                           </SelectTrigger>
                                           <SelectContent>
@@ -1101,8 +1149,13 @@ export function CRMCustomPlanPage() {
                                       <span>Add Parameter</span>
                                     </Button>
                                   </PopoverTrigger>
-                                  <PopoverContent className="w-56 p-3 space-y-2 border-zinc-200 dark:border-zinc-800" align="start">
-                                    <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">Add Parameter</p>
+                                  <PopoverContent
+                                    className="w-56 p-3 space-y-2 border-zinc-200 dark:border-zinc-800"
+                                    align="start"
+                                  >
+                                    <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                                      Add Parameter
+                                    </p>
                                     <Input
                                       placeholder="Key (e.g. seats, target)"
                                       value={paramKey}
@@ -1157,42 +1210,55 @@ export function CRMCustomPlanPage() {
                       <Cpu className="h-4 w-4" />
                       {t("crm.customPlan.mrrBreakdown", "Live Contract & Revenue Projection")}
                     </CardTitle>
-                    <Badge className="bg-primary text-primary-foreground text-[10px] font-mono">
-                      {currency}
-                    </Badge>
+                    <Badge className="bg-primary text-primary-foreground text-[10px] font-mono">{currency}</Badge>
                   </div>
                   <CardDescription className="text-xs text-zinc-500 dark:text-zinc-400">
-                    {billingCycle === "annual" ? t("crm.customPlan.annualDiscount", "Annual Contract (-10% Discount)") : t("crm.customPlan.monthly", "Monthly Recurring Contract")}
+                    {billingCycle === "annual"
+                      ? t("crm.customPlan.annualDiscount", "Annual Contract (-10% Discount)")
+                      : t("crm.customPlan.monthly", "Monthly Recurring Contract")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2 text-xs divide-y divide-zinc-200/80 dark:divide-zinc-800/80">
                     <div className="flex items-center justify-between pt-1">
-                      <span className="text-zinc-500 dark:text-zinc-400">{t("crm.customPlan.baseSubtotal", "Base Monthly Rate")}</span>
-                      <span className="font-mono font-bold text-zinc-900 dark:text-zinc-50">${effectiveBasePrice.toFixed(2)}</span>
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        {t("crm.customPlan.baseSubtotal", "Base Monthly Rate")}
+                      </span>
+                      <span className="font-mono font-bold text-zinc-900 dark:text-zinc-50">
+                        ${effectiveBasePrice.toFixed(2)}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between pt-2">
                       <span className="text-zinc-500 dark:text-zinc-400">
-                        {t("crm.customPlan.perDeviceSubtotal", "Hardware Multiplier")} ({equipmentCount} PCs @ ${effectivePerDevicePrice.toFixed(2)}/pc)
+                        {t("crm.customPlan.perDeviceSubtotal", "Hardware Multiplier")} ({equipmentCount} PCs @ $
+                        {effectivePerDevicePrice.toFixed(2)}/pc)
                       </span>
-                      <span className="font-mono font-bold text-zinc-900 dark:text-zinc-50">${calculatedCostSummary.hardwareSubtotal.toFixed(2)}</span>
+                      <span className="font-mono font-bold text-zinc-900 dark:text-zinc-50">
+                        ${calculatedCostSummary.hardwareSubtotal.toFixed(2)}
+                      </span>
                     </div>
                     {calculatedCostSummary.slaPremiumMonthly > 0 && (
                       <div className="flex items-center justify-between pt-2 text-indigo-600 dark:text-indigo-400">
                         <span>{t("crm.customPlan.slaPremium", "SLA Rapid-Response Premium")}</span>
-                        <span className="font-mono font-bold">+${calculatedCostSummary.slaPremiumMonthly.toFixed(2)}</span>
+                        <span className="font-mono font-bold">
+                          +${calculatedCostSummary.slaPremiumMonthly.toFixed(2)}
+                        </span>
                       </div>
                     )}
                     {calculatedCostSummary.quotaAdjustmentMonthly > 0 && (
                       <div className="flex items-center justify-between pt-2 text-blue-600 dark:text-blue-400">
                         <span>{t("crm.customPlan.quotaReserve", "Unlimited Quota Contingency")}</span>
-                        <span className="font-mono font-bold">+${calculatedCostSummary.quotaAdjustmentMonthly.toFixed(2)}</span>
+                        <span className="font-mono font-bold">
+                          +${calculatedCostSummary.quotaAdjustmentMonthly.toFixed(2)}
+                        </span>
                       </div>
                     )}
                     {billingCycle === "annual" && (
                       <div className="flex items-center justify-between pt-2 text-emerald-600 dark:text-emerald-400">
                         <span>{t("crm.customPlan.annualDiscount", "Annual 10% Discount")}</span>
-                        <span className="font-mono font-bold">-${calculatedCostSummary.annualDiscountAmount.toFixed(2)}</span>
+                        <span className="font-mono font-bold">
+                          -${calculatedCostSummary.annualDiscountAmount.toFixed(2)}
+                        </span>
                       </div>
                     )}
                     <div className="flex items-center justify-between pt-2">
@@ -1202,7 +1268,9 @@ export function CRMCustomPlanPage() {
                       </span>
                     </div>
                     <div className="flex items-center justify-between pt-3 text-sm">
-                      <span className="font-bold text-primary">{t("crm.customPlan.monthlyGrandTotal", "Monthly Total")}</span>
+                      <span className="font-bold text-primary">
+                        {t("crm.customPlan.monthlyGrandTotal", "Monthly Total")}
+                      </span>
                       <span className="font-mono font-extrabold text-primary text-lg">
                         ${calculatedCostSummary.monthlyGrandTotal.toFixed(2)}
                       </span>
@@ -1225,7 +1293,9 @@ export function CRMCustomPlanPage() {
                       className="w-full h-7 px-1 flex items-center justify-between mb-2 text-left cursor-pointer hover:bg-transparent"
                     >
                       <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1 group-hover:text-foreground">
-                        <ChevronRight className={`h-3.5 w-3.5 transition-transform duration-150 ${showItemizedBreakdown ? "rotate-90 text-primary" : "text-zinc-400"}`} />
+                        <ChevronRight
+                          className={`h-3.5 w-3.5 transition-transform duration-150 ${showItemizedBreakdown ? "rotate-90 text-primary" : "text-zinc-400"}`}
+                        />
                         {t("crm.customPlan.itemizedLineItems", "Itemized Feature Pricing")}
                       </span>
                       <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">
@@ -1240,7 +1310,10 @@ export function CRMCustomPlanPage() {
                             key={i}
                             className="p-1.5 rounded-md bg-white/70 dark:bg-zinc-900/60 border border-zinc-200/70 dark:border-zinc-800/70 text-[11px] flex items-center justify-between"
                           >
-                            <span className="text-zinc-600 dark:text-zinc-300 truncate max-w-[140px] font-medium" title={item.name}>
+                            <span
+                              className="text-zinc-600 dark:text-zinc-300 truncate max-w-35 font-medium"
+                              title={item.name}
+                            >
                               {t(item.name, item.name)}
                             </span>
                             <div className="flex items-center gap-1.5 font-mono text-[10px] shrink-0">
@@ -1290,14 +1363,17 @@ export function CRMCustomPlanPage() {
                             <Badge
                               key={i}
                               variant="secondary"
-                              className="text-[10px] py-0 px-1.5 font-normal truncate max-w-[200px] bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                              className="text-[10px] py-0 px-1.5 font-normal truncate max-w-50 bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
                             >
                               {label}
                             </Badge>
                           );
                         })}
                       {editFeatures.filter((f) => f.included).length > 6 && (
-                        <Badge variant="outline" className="text-[10px] py-0 px-1.5 font-mono border-zinc-300 dark:border-zinc-700">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] py-0 px-1.5 font-mono border-zinc-300 dark:border-zinc-700"
+                        >
                           +{editFeatures.filter((f) => f.included).length - 6} more
                         </Badge>
                       )}

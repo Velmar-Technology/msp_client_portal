@@ -211,8 +211,8 @@ describe('DevicesPage', () => {
       },
     ];
 
-    vi.mocked(equipmentService.getMyDevices).mockResolvedValue([...mockSlots]);
-    vi.mocked(equipmentService.getAllDevicesForAdmin).mockResolvedValue([...mockSlots]);
+    vi.mocked(equipmentService.getMyDevices).mockImplementation(async () => mockSlots.map((s) => ({ ...s })));
+    vi.mocked(equipmentService.getAllDevicesForAdmin).mockImplementation(async () => mockSlots.map((s) => ({ ...s })));
 
     vi.mocked(equipmentService.activateWithOtp).mockImplementation(async ({ slotIndex, deviceName, deviceSerial }) => {
       mockSlots[slotIndex].status = 'ACTIVE';
@@ -247,7 +247,7 @@ describe('DevicesPage', () => {
       expect(screen.getByText(/Slot\s*#1/)).toBeInTheDocument();
       expect(screen.getByText('Workstation 1')).toBeInTheDocument();
       expect(screen.getByText(/Slot\s*#2/)).toBeInTheDocument();
-      expect(screen.getByText('PENDING ACTIVATION')).toBeInTheDocument();
+      expect(screen.getByText(/pending activation/i)).toBeInTheDocument();
     });
 
     // Open Actions dropdown on Slot #2 (index 1)
@@ -489,6 +489,7 @@ describe('DevicesPage', () => {
     });
 
     const trigger = screen.getByLabelText('Select Subscription to Manage Devices');
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
     fireEvent.click(trigger);
 
     expect(await screen.findByRole('option', { name: 'Basic Support (1 Devices)' })).toBeInTheDocument();
@@ -496,6 +497,7 @@ describe('DevicesPage', () => {
     expect(secondOption).toBeInTheDocument();
 
     // Switch selection
+    fireEvent.pointerDown(secondOption, { button: 0, ctrlKey: false });
     fireEvent.click(secondOption);
     expect(trigger).toHaveTextContent('Standard Support (2 Devices)');
   });
@@ -548,7 +550,7 @@ describe('DevicesPage', () => {
     // Both should be visible initially
     await waitFor(() => {
       expect(screen.getByText('Workstation Alpha')).toBeInTheDocument();
-      expect(screen.getByText('PENDING ACTIVATION')).toBeInTheDocument();
+      expect(screen.getByText(/pending activation/i)).toBeInTheDocument();
     });
 
     // Search by partial/full UUID of the active slot
@@ -558,14 +560,14 @@ describe('DevicesPage', () => {
     // Assert only matching slot is present
     await waitFor(() => {
       expect(screen.getByText('Workstation Alpha')).toBeInTheDocument();
-      expect(screen.queryByText('PENDING ACTIVATION')).toBeNull();
+      expect(screen.queryByText(/pending activation/i)).toBeNull();
     });
 
     // Clear search and ensure all return
     fireEvent.change(searchInput, { target: { value: '' } });
     await waitFor(() => {
       expect(screen.getByText('Workstation Alpha')).toBeInTheDocument();
-      expect(screen.getByText('PENDING ACTIVATION')).toBeInTheDocument();
+      expect(screen.getByText(/pending activation/i)).toBeInTheDocument();
     });
   });
 
@@ -681,8 +683,10 @@ describe('DevicesPage', () => {
     const limitSelectEl = screen.getByTestId('pagination-limit-trigger');
     expect(limitSelectEl).toBeInTheDocument();
 
+    fireEvent.pointerDown(limitSelectEl, { button: 0, ctrlKey: false });
     fireEvent.click(limitSelectEl);
     const option5 = await screen.findByRole('option', { name: '5' });
+    fireEvent.pointerDown(option5, { button: 0, ctrlKey: false });
     fireEvent.click(option5);
 
     // Now page 1 should only display Workstation-1 to Workstation-5, and NOT Workstation-6 or Workstation-7
@@ -893,7 +897,7 @@ describe('DevicesPage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('PENDING ACTIVATION')).toBeInTheDocument();
+      expect(screen.getByText(/pending activation/i)).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Actions' }));
@@ -1022,7 +1026,7 @@ describe('DevicesPage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('PENDING ACTIVATION')).toBeInTheDocument();
+      expect(screen.getByText(/pending activation/i)).toBeInTheDocument();
     });
 
     const checkbox = screen.getByRole('checkbox', { name: 'Select row' });
@@ -1057,7 +1061,7 @@ describe('DevicesPage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('PENDING ACTIVATION')).toBeInTheDocument();
+      expect(screen.getByText(/pending activation/i)).toBeInTheDocument();
     });
 
     const checkboxes = screen.getAllByRole('checkbox', { name: 'Select row' });

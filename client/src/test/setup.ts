@@ -22,19 +22,25 @@ const createStorageMock = () => {
   };
 };
 
-if (typeof globalThis.localStorage === 'undefined' || typeof globalThis.localStorage?.setItem !== 'function') {
-  const localStorageMock = createStorageMock();
+const localStorageMock = createStorageMock();
+try {
   Object.defineProperty(globalThis, 'localStorage', {
     value: localStorageMock,
     writable: true,
     configurable: true,
   });
-  if (typeof window !== 'undefined') {
+} catch {
+  // ignore
+}
+if (typeof window !== 'undefined') {
+  try {
     Object.defineProperty(window, 'localStorage', {
       value: localStorageMock,
       writable: true,
       configurable: true,
     });
+  } catch {
+    // ignore
   }
 }
 

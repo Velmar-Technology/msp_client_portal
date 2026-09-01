@@ -23,7 +23,7 @@ export interface ZabbixHealthCheck {
 
 const TOKEN_TTL_MS = 55 * 60 * 1000;
 const MAX_RETRIES = 2;
-const BASE_RETRY_DELAY_MS = 1_000;
+const BASE_RETRY_DELAY_MS = process.env.NODE_ENV === 'test' || process.env.VITEST ? 0 : 1_000;
 
 /**
  * Integration service communicating with Zabbix monitoring server via JSON-RPC,

@@ -79,7 +79,6 @@ export default defineConfig({
     setupFiles: './src/test/setup.ts',
     pool: 'forks',
     isolate: true,
-    maxWorkers: 1,
-    testTimeout: 15000,
+    testTimeout: 5000,
   },
 });

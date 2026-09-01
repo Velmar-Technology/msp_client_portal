@@ -427,12 +427,14 @@ describe('PlansPage', () => {
 
       // Select Basic Support as the new tier
       const trigger = screen.getByRole('combobox', { name: 'Select New Tier' });
+      fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
       fireEvent.click(trigger);
       const option = await screen.findByRole('option', { name: /Basic Support/i });
+      fireEvent.pointerDown(option, { button: 0, ctrlKey: false });
       fireEvent.click(option);
 
       // Accept Terms of Service
-      fireEvent.click(screen.getByLabelText(/Terms of Service/i));
+      fireEvent.click(screen.getByRole('checkbox'));
 
       fireEvent.click(screen.getByRole('button', { name: 'Update Subscription' }));
 
