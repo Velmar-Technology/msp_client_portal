@@ -25,6 +25,8 @@ export enum TicketCategory {
   WARRANTY = 'WARRANTY',
   SERVICE_OUTAGE = 'SERVICE_OUTAGE',
   PREVENTATIVE_MAINTENANCE = 'PREVENTATIVE_MAINTENANCE',
+  HELPDESK = 'HELPDESK',
+  AI = 'AI',
 }
 
 export enum TicketPriority {

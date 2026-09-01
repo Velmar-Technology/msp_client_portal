@@ -206,6 +206,8 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
                   <SelectItem value="REPAIR">{t("tickets.categories.REPAIR")}</SelectItem>
                   <SelectItem value="WARRANTY">{t("tickets.categories.WARRANTY")}</SelectItem>
                   <SelectItem value="SERVICE_OUTAGE">{t("tickets.categories.SERVICE_OUTAGE")}</SelectItem>
+                  <SelectItem value="HELPDESK">{t("tickets.categories.HELPDESK")}</SelectItem>
+                  <SelectItem value="AI">{t("tickets.categories.AI")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -6,7 +6,7 @@ export const CreateTicketDTO = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters').max(500),
   description: z.string().min(10, 'Description must be at least 10 characters'),
   category: z.nativeEnum(TicketCategory, {
-    errorMap: () => ({ message: 'Category must be REPAIR, WARRANTY, or SERVICE_OUTAGE' }),
+    errorMap: () => ({ message: 'Category must be REPAIR, WARRANTY, SERVICE_OUTAGE, PREVENTATIVE_MAINTENANCE, HELPDESK, or AI' }),
   }),
   priority: z.nativeEnum(TicketPriority).optional().default(TicketPriority.MEDIUM),
   equipmentId: z.string().uuid('Invalid equipment ID').optional(),

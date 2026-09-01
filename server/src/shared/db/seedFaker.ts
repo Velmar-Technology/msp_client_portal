@@ -365,7 +365,7 @@ export async function seedWithFaker(): Promise<void> {
     await insertChunked('device_maintenances', schema.deviceMaintenances, newMaintenances);
 
     // 11. Generate Bulk Tickets (1,000 tickets matched to client user + tenant)
-    const ticketCategories = ['REPAIR', 'WARRANTY', 'SERVICE_OUTAGE', 'PREVENTATIVE_MAINTENANCE'] as const;
+    const ticketCategories = ['REPAIR', 'WARRANTY', 'SERVICE_OUTAGE', 'PREVENTATIVE_MAINTENANCE', 'HELPDESK', 'AI'] as const;
     const ticketStatuses = ['OPEN', 'IN_PROGRESS', 'AWAITING_PAYMENT', 'RESOLVED', 'RESOLVED_AUTOMATED', 'CLOSED', 'CANCELLED'] as const;
     const ticketPriorities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as const;
 

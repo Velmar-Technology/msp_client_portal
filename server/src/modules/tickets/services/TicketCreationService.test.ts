@@ -189,6 +189,58 @@ describe('TicketCreationService', () => {
       );
     });
 
+    it('creates and dispatches tickets with HELPDESK category correctly', async () => {
+      mocks.ticketCreate.mockResolvedValue(createdTicket({ category: TicketCategory.HELPDESK }));
+      mocks.assignNext.mockResolvedValue({ id: 'tech-helpdesk', name: 'Helpdesk Tech' });
+
+      const helpdeskInput: CreateTicketInput = {
+        title: 'Need software access assistance',
+        description: 'User cannot login to billing software portal',
+        category: TicketCategory.HELPDESK,
+        priority: TicketPriority.LOW,
+      };
+
+      const result = await ticketCreationService.createTicket(helpdeskInput, ctx);
+
+      expect(mocks.ticketCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: TicketCategory.HELPDESK,
+        })
+      );
+      expect(mocks.assignNext).toHaveBeenCalledWith(
+        TicketCategory.HELPDESK,
+        undefined,
+        TicketPriority.LOW
+      );
+      expect(result.category).toBe(TicketCategory.HELPDESK);
+    });
+
+    it('creates and dispatches tickets with AI category correctly', async () => {
+      mocks.ticketCreate.mockResolvedValue(createdTicket({ category: TicketCategory.AI }));
+      mocks.assignNext.mockResolvedValue({ id: 'tech-ai', name: 'AI Tech' });
+
+      const aiInput: CreateTicketInput = {
+        title: 'Assistance with automated workflow configuration',
+        description: 'Need help connecting AI agent webhook pipeline',
+        category: TicketCategory.AI,
+        priority: TicketPriority.MEDIUM,
+      };
+
+      const result = await ticketCreationService.createTicket(aiInput, ctx);
+
+      expect(mocks.ticketCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: TicketCategory.AI,
+        })
+      );
+      expect(mocks.assignNext).toHaveBeenCalledWith(
+        TicketCategory.AI,
+        undefined,
+        TicketPriority.MEDIUM
+      );
+      expect(result.category).toBe(TicketCategory.AI);
+    });
+
     it('rejects creation when the client quota is exceeded', async () => {
       mocks.enforceTicketLimit.mockRejectedValue(
         Object.assign(new Error('Monthly ticket limit reached'), { statusCode: 403, code: 'TICKET_LIMIT_EXCEEDED' })

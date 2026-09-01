@@ -26,7 +26,7 @@ export const ticketStatusEnum = pgEnum('ticket_status', [
   'CLOSED',
   'CANCELLED',
 ]);
-export const ticketCategoryEnum = pgEnum('ticket_category', ['REPAIR', 'WARRANTY', 'SERVICE_OUTAGE', 'PREVENTATIVE_MAINTENANCE']);
+export const ticketCategoryEnum = pgEnum('ticket_category', ['REPAIR', 'WARRANTY', 'SERVICE_OUTAGE', 'PREVENTATIVE_MAINTENANCE', 'HELPDESK', 'AI']);
 export const ticketPriorityEnum = pgEnum('ticket_priority', ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']);
 export const subscriptionStatusEnum = pgEnum('subscription_status', ['ACTIVE', 'EXPIRING', 'EXPIRED', 'CANCELLED']);
 export const invoiceStatusEnum = pgEnum('invoice_status', ['PENDING', 'PAID', 'OVERDUE', 'CANCELLED']);
