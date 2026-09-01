@@ -10,6 +10,7 @@ permissions:
 # AGENTS.md - Repository Rules, Clean Architecture & Master Context
 
 Canonical instructions for AI agents operating on `msp_client_portal`. Follow strictly on every turn.
+Read `CONSTRAINTS.md` before writing code. Do not weaken it to make a change pass.
 
 ## 1. Project Context & Stack
 * **Architecture:** Modular Monolith in npm workspace monorepo (`client`, `server`, `packages/*`).
