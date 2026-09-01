@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ticketService } from "@/services/ticketService";
@@ -143,9 +143,8 @@ export function useClientDashboard() {
     };
   }, []);
 
-  const openTickets = useMemo(() => {
-    return (statusSummary.OPEN || 0) + (statusSummary.IN_PROGRESS || 0);
-  }, [statusSummary]);
+  // Derive computed values during render (React 19 compiler-friendly)
+  const openTickets = (statusSummary.OPEN || 0) + (statusSummary.IN_PROGRESS || 0);
 
   const handleNewTicket = useCallback(() => {
     navigate('/tickets?action=new');

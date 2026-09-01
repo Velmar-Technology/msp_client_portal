@@ -62,4 +62,20 @@ describe("ChunkErrorBoundary", () => {
 
     spy.mockRestore();
   });
+
+  it("calls onError callback when a child throws", () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const onError = vi.fn();
+
+    render(
+      <ChunkErrorBoundary onError={onError}>
+        <ThrowingComponent shouldThrow={true} />
+      </ChunkErrorBoundary>
+    );
+
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onError).toHaveBeenCalledWith(expect.any(Error), expect.objectContaining({ componentStack: expect.any(String) }));
+
+    spy.mockRestore();
+  });
 });

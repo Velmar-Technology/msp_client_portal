@@ -1,561 +1,179 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { useTranslation } from "react-i18next";
+import { useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
-import { useUrlState } from "@/hooks/useUrlState";
 import { toast } from "sonner";
-import { subscriptionService } from "@/services/subscriptionService";
-import type { Subscription } from "@/services/subscriptionService";
-import { equipmentService } from "@/services/equipmentService";
 import type { SubscriptionEquipment } from "@/services/equipmentService";
-import type { SortingState } from "@tanstack/react-table";
+
+import { useDeviceQueries } from "./devices/useDeviceQueries";
+import { useDeviceFilters, deriveAdminFilterOptions, deriveUniqueClients, filterEquipment, sortEquipment } from "./devices/useDeviceFilters";
+import { useDeviceModals } from "./devices/useDeviceModals";
 
 /**
- * Custom hook managing the Devices & Inventory page.
- * Coordinates equipment slot allocations, OTP activations, Nextcloud credential inspection, RMM diagnostics, and script downloads.
+ * Thin orchestrator composing device queries, URL-synced filters, and modal state.
+ * All server state is managed by TanStack Query; URL is the single source of truth for filters.
  *
- * @returns State and event handlers for device lists, slot actions, modals, and telemetry.
+ * @returns Flat interface consumed by DevicesPage — identical surface area, zero manual fetch logic.
  */
 export function useDevicesPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { getParam, setParam } = useUrlState();
-
-  const [loading, setLoading] = useState(true);
-  const [activeSubscriptions, setActiveSubscriptions] = useState<Subscription[]>([]);
-  const [selectedSubscriptionId, setSelectedSubscriptionId] = useState<string>("");
-  const [subscriptionEquipment, setSubscriptionEquipment] = useState<Record<string, Partial<SubscriptionEquipment>[]>>({});
-  const [searchTerm, setSearchTerm] = useState("");
-
-  // Active Tab state ("devices" | "rmm")
-  const urlTab = getParam("tab", "devices");
-  const [activeTab, setActiveTabInternal] = useState<"devices" | "rmm">(() =>
-    urlTab === "rmm" ? "rmm" : "devices"
-  );
-
-  useEffect(() => {
-    const currentTabParam = getParam("tab", "devices");
-    const resolvedTab = currentTabParam === "rmm" ? "rmm" : "devices";
-    setActiveTabInternal(resolvedTab);
-  }, [getParam]);
-
-  const setActiveTab = useCallback(
-    (tab: "devices" | "rmm") => {
-      setActiveTabInternal(tab);
-      setParam("tab", tab === "devices" ? null : tab);
-    },
-    [setParam]
-  );
-
-  // Admin specific states
-  const [adminDevices, setAdminDevices] = useState<SubscriptionEquipment[]>([]);
-  const [selectedClient, setSelectedClient] = useState<string>("");
-  const [selectedPlan, setSelectedPlan] = useState<string>("");
-  const [selectedStatus, setSelectedStatus] = useState<string>("");
-  
-  // Revoke confirmation state
-  const [revokeTarget, setRevokeTarget] = useState<Partial<SubscriptionEquipment> | null>(null);
-  const [revokeLoading, setRevokeLoading] = useState(false);
-
-  // Pagination states
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-
-  // Activation (slot binding) State
-  const [activateTargetSubId, setActivateTargetSubId] = useState<string | null>(null);
-  const [activateTargetSlotIdx, setActivateTargetSlotIdx] = useState<number | null>(null);
-
   const isAdmin = user?.role === "ADMIN";
 
-  // Reset page to 1 when filters or search change
-  useEffect(() => {
-      
-    setPage(1);
-  }, [searchTerm, selectedClient, selectedStatus, selectedSubscriptionId]);
+  // ─── Composed hooks ─────────────────────────────────────────
+  const queries = useDeviceQueries(isAdmin);
+  const filters = useDeviceFilters();
+  const modals = useDeviceModals();
 
-  const fetchActiveSubscriptions = useCallback(async () => {
-    if (user?.role !== "CLIENT" && !isAdmin) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    try {
-      if (isAdmin) {
-        const rawDevices = (await equipmentService.getAllDevicesForAdmin()) || [];
-        const devices = rawDevices.filter(
-          (d) =>
-            (!d.subscription_status || d.subscription_status === "ACTIVE" || d.subscription_status === "EXPIRING") &&
-            (!d.client_role || d.client_role === "CLIENT" || d.client_role === "ADMIN")
-        );
-        setAdminDevices(devices);
+  // ─── Boolean open/close passthroughs (compat with old API) ──
+  const setActivateOtpModalOpen = useCallback(
+    (open: boolean) => {
+      if (open) modals.activateOtp.open({ subId: "", slotIndex: 0 });
+      else modals.activateOtp.close();
+    },
+    [modals.activateOtp],
+  );
+  const setAddDeviceModalOpen = useCallback(
+    (open: boolean) => {
+      if (open) modals.addDevice.open();
+      else modals.addDevice.close();
+    },
+    [modals.addDevice],
+  );
+  const setDeviceToDelete = useCallback(
+    (equip: Partial<SubscriptionEquipment> | null) => {
+      if (equip) modals.deleteDevice.open(equip);
+      else modals.deleteDevice.close();
+    },
+    [modals.deleteDevice],
+  );
 
-        // Group by subscription_id for compatibility with activation wizard / other operations
-        const grouped: Record<string, Partial<SubscriptionEquipment>[]> = {};
-        devices.forEach((d) => {
-          if (!grouped[d.subscription_id]) {
-            grouped[d.subscription_id] = [];
-          }
-          grouped[d.subscription_id][d.slot_index] = d;
-        });
+  // ─── Derived values ─────────────────────────────────────────
+  const activeSub = useMemo(
+    () => queries.activeSubscriptions.find((s) => s.id === filters.selectedSubscriptionId) || queries.activeSubscriptions[0],
+    [queries.activeSubscriptions, filters.selectedSubscriptionId],
+  );
 
-        // Ensure array has no empty holes (in case a slot was not loaded/missing)
-        Object.keys(grouped).forEach((subId) => {
-          const arr = grouped[subId];
-          for (let i = 0; i < arr.length; i++) {
-            if (!arr[i]) {
-              arr[i] = {
-                id: `device-slot-${i}`,
-                subscription_id: subId,
-                slot_index: i,
-                status: "PENDING_ACTIVATION",
-              };
-            }
-          }
-        });
+  const { clientFilterOptions, planFilterOptions, statusFilterOptions } = useMemo(
+    () => deriveAdminFilterOptions(queries.adminDevices, t),
+    [queries.adminDevices, t],
+  );
 
-        setSubscriptionEquipment(grouped);
-      } else {
-        // Fetch subscriptions and all devices in parallel (2 calls instead of 1+N)
-        const [subs, allDevices] = await Promise.all([
-          subscriptionService.getAll(),
-          equipmentService.getMyDevices(),
-        ]);
-        const active = subs.filter((sub) => sub.status === "ACTIVE" || sub.status === "EXPIRING");
-        setActiveSubscriptions(active);
+  const uniqueClients = useMemo(() => deriveUniqueClients(queries.adminDevices), [queries.adminDevices]);
 
-        if (active.length > 0) {
-          setSelectedSubscriptionId((prev) => prev || active[0].id);
+  const filteredEquipment = useMemo(() => {
+    const raw = isAdmin
+      ? queries.adminDevices
+      : activeSub
+        ? (queries.subscriptionEquipment[activeSub.id] || [])
+        : [];
 
-          // Group devices by subscription_id in-memory
-          const activeSubIds = new Set(active.map((s) => s.id));
-          const grouped: Record<string, Partial<SubscriptionEquipment>[]> = {};
-
-          for (const device of allDevices) {
-            if (!activeSubIds.has(device.subscription_id)) continue;
-            if (!grouped[device.subscription_id]) {
-              grouped[device.subscription_id] = [];
-            }
-            grouped[device.subscription_id][device.slot_index] = device;
-          }
-
-          // Fill empty slots for subscriptions with no devices or gaps
-          for (const sub of active) {
-            if (!grouped[sub.id]) {
-              grouped[sub.id] = [];
-            }
-            const arr = grouped[sub.id];
-            for (let i = 0; i < sub.equipment_count; i++) {
-              if (!arr[i]) {
-                arr[i] = {
-                  id: `device-slot-${i}`,
-                  subscription_id: sub.id,
-                  slot_index: i,
-                  status: "PENDING_ACTIVATION" as const,
-                };
-              }
-            }
-          }
-
-          setSubscriptionEquipment(grouped);
-        }
-      }
-    } catch (err) {
-      console.error("Failed to load active subscriptions", err);
-      toast.error(t("common.error"), {
-        description: t("devices.fetchFailed") || "Failed to retrieve active subscriptions for device management.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.role, isAdmin, t]);
-
-  useEffect(() => {
-      
-    fetchActiveSubscriptions();
-  }, [fetchActiveSubscriptions]);
-
-  // Update helper for admin and client
-  const updateDeviceList = useCallback((subId: string, slotIndex: number, updatedSlot: SubscriptionEquipment) => {
-    setSubscriptionEquipment((prev) => {
-      const current = [...(prev[subId] || [])];
-      current[slotIndex] = updatedSlot;
-      return { ...prev, [subId]: current };
+    return filterEquipment(raw as SubscriptionEquipment[], {
+      search: filters.searchTerm,
+      selectedStatus: filters.selectedStatus,
+      selectedClient: filters.selectedClient,
+      isAdmin,
     });
+  }, [queries.adminDevices, queries.subscriptionEquipment, activeSub, filters.searchTerm, filters.selectedStatus, filters.selectedClient, isAdmin]);
 
-    setAdminDevices((prev) =>
-      prev.map((d) =>
-        d.subscription_id === subId && d.slot_index === slotIndex ? { ...d, ...updatedSlot } : d
-      )
-    );
-  }, []);
+  const sortedEquipment = useMemo(() => sortEquipment(filteredEquipment, filters.sorting), [filteredEquipment, filters.sorting]);
 
-  const handleRevokeEquipment = useCallback(async (subId: string, slotIndex: number) => {
-    try {
-      const updatedSlot = await equipmentService.deactivateSlot(subId, slotIndex);
-      updateDeviceList(subId, slotIndex, updatedSlot);
-      toast.info(t("devices.slotRevokedTitle"), {
-        description: t("devices.slotRevokedDesc") || "Device slot revoked. Cloud storage account deleted.",
-      });
-    } catch (err) {
-      console.error("Failed to revoke device:", err);
-      const error = err as { response?: { data?: { message?: string } }; message?: string };
-      toast.error(t("common.error"), {
-        description: error.response?.data?.message || error.message || t("devices.revokeFailed") || "Failed to deactivate slot.",
-      });
+  const totalPages = Math.max(1, Math.ceil(sortedEquipment.length / filters.limit));
+  const paginatedEquipment = useMemo(() => {
+    const start = (filters.page - 1) * filters.limit;
+    return sortedEquipment.slice(start, start + filters.limit);
+  }, [sortedEquipment, filters.page, filters.limit]);
+
+  // ─── Confirmation handlers (revoke) ─────────────────────────
+  const handleRequestRevoke = useCallback((equip: Partial<SubscriptionEquipment>) => modals.revoke.open(equip), [modals.revoke]);
+
+  const confirmRevoke = useCallback(async () => {
+    const target = modals.revoke.payload;
+    if (!target) return;
+    const subId = target.subscription_id || activeSub?.id;
+    const slotIndex = target.slot_index;
+    if (subId !== undefined && slotIndex !== undefined) {
+      await queries.mutations.deactivate.mutateAsync({ subId, slotIndex });
     }
-  }, [updateDeviceList, t]);
+    modals.revoke.close();
+  }, [modals.revoke, activeSub, queries.mutations.deactivate]);
 
-  // Slot-binding "Activate with Code" (pairing code) flow state
-  const [activateOtpModalOpen, setActivateOtpModalOpen] = useState(false);
-  const [activateOtpLoading, setActivateOtpLoading] = useState(false);
+  const cancelRevoke = useCallback(() => modals.revoke.close(), [modals.revoke]);
 
-  const handleOpenActivateWithOtp = useCallback((subId: string, slotIndex: number) => {
-    setActivateTargetSubId(subId);
-    setActivateTargetSlotIdx(slotIndex);
-    setActivateOtpModalOpen(true);
-  }, []);
+  // ─── Confirmation handlers (repair → opens OTP modal) ───────
+  const handleRequestRepair = useCallback((equip: Partial<SubscriptionEquipment>) => modals.repair.open(equip), [modals.repair]);
 
-  const handleRepairEquipment = useCallback(async (subId: string, slotIndex: number) => {
-    try {
-      const updatedSlot = await equipmentService.repairSlot(subId, slotIndex);
-      updateDeviceList(subId, slotIndex, updatedSlot);
-      toast.success(t("devices.repairSuccessTitle") || "Device re-paired", {
-        description:
-          t("devices.repairSuccessDesc") ||
-          "Device unbound. Cloud account preserved with a rotated password. Enter the new agent's code to re-link.",
-      });
-      handleOpenActivateWithOtp(subId, slotIndex);
-    } catch (err) {
-      console.error("Failed to re-pair device:", err);
-      const error = err as { response?: { data?: { message?: string } }; message?: string };
-      toast.error(t("common.error"), {
-        description: error.response?.data?.message || error.message || t("devices.repairFailed") || "Failed to re-pair device.",
-      });
+  const confirmRepair = useCallback(async () => {
+    const target = modals.repair.payload;
+    if (!target) return;
+    const subId = target.subscription_id || activeSub?.id;
+    const slotIndex = target.slot_index;
+    if (subId !== undefined && slotIndex !== undefined) {
+      await queries.mutations.repair.mutateAsync({ subId, slotIndex });
+      modals.repair.close();
+      modals.activateOtp.open({ subId, slotIndex });
     }
-  }, [updateDeviceList, t, handleOpenActivateWithOtp]);
+  }, [modals.repair, modals.activateOtp, activeSub, queries.mutations.repair]);
+
+  const cancelRepair = useCallback(() => modals.repair.close(), [modals.repair]);
+
+  // ─── OTP Activation ─────────────────────────────────────────
+  const handleOpenActivateWithOtp = useCallback(
+    (subId: string, slotIndex: number) => modals.activateOtp.open({ subId, slotIndex }),
+    [modals.activateOtp],
+  );
 
   const handleCloseActivateWithOtp = useCallback(() => {
-    if (activateOtpLoading) return;
-    setActivateOtpModalOpen(false);
-  }, [activateOtpLoading]);
+    if (queries.mutations.activate.isPending) return;
+    modals.activateOtp.close();
+  }, [modals.activateOtp, queries.mutations.activate.isPending]);
 
   const handleActivateWithOtp = useCallback(
     async (otp: string, deviceName: string, deviceSerial: string) => {
-      if (!activateTargetSubId || activateTargetSlotIdx === null) return;
-      setActivateOtpLoading(true);
-      try {
-        const updatedSlot = await equipmentService.activateWithOtp({
-          otp,
-          subscriptionId: activateTargetSubId,
-          slotIndex: activateTargetSlotIdx,
-          deviceName,
-          deviceSerial,
-        });
-        updateDeviceList(activateTargetSubId, activateTargetSlotIdx, updatedSlot);
-        setActivateOtpModalOpen(false);
-        toast.success(t("devices.activateWithCodeSuccessTitle"), {
-          description:
-            t("devices.activateWithCodeSuccessDesc", { name: deviceName }) ||
-            `Device ${deviceName} successfully activated with activation code.`,
-        });
-      } catch (err) {
-        console.error("Failed to activate device with code:", err);
-        const error = err as { response?: { data?: { message?: string } }; message?: string };
-        toast.error(t("common.error"), {
-          description: error.response?.data?.message || error.message || t("devices.activateWithCodeFailed") || "Failed to activate device with the provided code.",
-        });
-      } finally {
-        setActivateOtpLoading(false);
-      }
+      const payload = modals.activateOtp.payload;
+      if (!payload) return;
+      await queries.mutations.activate.mutateAsync({
+        otp,
+        subscriptionId: payload.subId,
+        slotIndex: payload.slotIndex,
+        deviceName,
+        deviceSerial,
+      });
+      modals.activateOtp.close();
     },
-    [activateTargetSubId, activateTargetSlotIdx, updateDeviceList, t]
+    [modals.activateOtp, queries.mutations.activate],
   );
 
-  // Standalone "Add Admin Device" flow state
-  const [addDeviceModalOpen, setAddDeviceModalOpen] = useState(false);
-  const [addDeviceLoading, setAddDeviceLoading] = useState(false);
-
-  const handleOpenAddDevice = useCallback(() => {
-    setAddDeviceModalOpen(true);
-  }, []);
-
+  // ─── Add Admin Device ───────────────────────────────────────
+  const handleOpenAddDevice = useCallback(() => modals.addDevice.open(), [modals.addDevice]);
   const handleCloseAddDevice = useCallback(() => {
-    if (addDeviceLoading) return;
-    setAddDeviceModalOpen(false);
-  }, [addDeviceLoading]);
+    if (queries.mutations.addDevice.isPending) return;
+    modals.addDevice.close();
+  }, [modals.addDevice, queries.mutations.addDevice.isPending]);
 
   const handleAddAdminDevice = useCallback(
     async (data: { deviceName: string; deviceSerial?: string; tenantId?: string; otp: string }) => {
-      setAddDeviceLoading(true);
-      try {
-        await equipmentService.addAdminDevice(data);
-        await fetchActiveSubscriptions();
-        setAddDeviceModalOpen(false);
-        toast.success(t("devices.addAdminDeviceSuccess", { name: data.deviceName }) || "Device added successfully", {
-          description: t("devices.addAdminDeviceSuccessDesc") || `Device ${data.deviceName} has been registered and provisioned.`,
-        });
-      } catch (err) {
-        console.error("Failed to add admin device:", err);
-        const error = err as { response?: { data?: { message?: string } }; message?: string };
-        toast.error(t("common.error"), {
-          description: error.response?.data?.message || error.message || "Failed to add device.",
-        });
-      } finally {
-        setAddDeviceLoading(false);
-      }
+      await queries.mutations.addDevice.mutateAsync(data);
+      modals.addDevice.close();
     },
-    [fetchActiveSubscriptions, t]
+    [queries.mutations.addDevice, modals.addDevice],
   );
 
-  const [deviceToDelete, setDeviceToDelete] = useState<Partial<SubscriptionEquipment> | null>(null);
-  const [deleteDeviceLoading, setDeleteDeviceLoading] = useState(false);
-
+  // ─── Delete Admin Device ────────────────────────────────────
   const handleDeleteAdminDevice = useCallback(
     async (equipmentId: string) => {
-      setDeleteDeviceLoading(true);
-      try {
-        await equipmentService.deleteAdminDevice(equipmentId);
-        await fetchActiveSubscriptions();
-        setDeviceToDelete(null);
-        toast.success(t("devices.deleteSuccess") || "Device deleted successfully");
-      } catch (err) {
-        console.error("Failed to delete admin device:", err);
-        const error = err as { response?: { data?: { message?: string } }; message?: string };
-        toast.error(t("common.error"), {
-          description: error.response?.data?.message || error.message || "Failed to delete device.",
-        });
-      } finally {
-        setDeleteDeviceLoading(false);
-      }
+      await queries.mutations.deleteDevice.mutateAsync(equipmentId);
+      modals.deleteDevice.close();
     },
-    [fetchActiveSubscriptions, t]
+    [queries.mutations.deleteDevice, modals.deleteDevice],
   );
 
-  const activeSub = useMemo(() => {
-    return activeSubscriptions.find((sub) => sub.id === selectedSubscriptionId) || activeSubscriptions[0];
-  }, [activeSubscriptions, selectedSubscriptionId]);
-
-  // Revoke confirmation handlers
-  const handleRequestRevoke = useCallback((equip: Partial<SubscriptionEquipment>) => {
-    setRevokeTarget(equip);
-  }, []);
-
-  const confirmRevoke = useCallback(async () => {
-    if (!revokeTarget) return;
-    setRevokeLoading(true);
-    try {
-      const subId = revokeTarget.subscription_id || activeSub?.id;
-      const slotIndex = revokeTarget.slot_index;
-      if (subId !== undefined && slotIndex !== undefined) {
-        await handleRevokeEquipment(subId, slotIndex);
-      }
-    } finally {
-      setRevokeLoading(false);
-      setRevokeTarget(null);
-    }
-  }, [revokeTarget, activeSub, handleRevokeEquipment]);
-
-  const cancelRevoke = useCallback(() => {
-    setRevokeTarget(null);
-  }, []);
-
-  // Re-pair confirmation handlers (non-destructive unbind for replacement agent)
-  const [repairTarget, setRepairTarget] = useState<Partial<SubscriptionEquipment> | null>(null);
-  const [repairLoading, setRepairLoading] = useState(false);
-
-  const handleRequestRepair = useCallback((equip: Partial<SubscriptionEquipment>) => {
-    setRepairTarget(equip);
-  }, []);
-
-  const confirmRepair = useCallback(async () => {
-    if (!repairTarget) return;
-    setRepairLoading(true);
-    try {
-      const subId = repairTarget.subscription_id || activeSub?.id;
-      const slotIndex = repairTarget.slot_index;
-      if (subId !== undefined && slotIndex !== undefined) {
-        await handleRepairEquipment(subId, slotIndex);
-      }
-    } finally {
-      setRepairLoading(false);
-      setRepairTarget(null);
-    }
-  }, [repairTarget, activeSub, handleRepairEquipment]);
-
-  const cancelRepair = useCallback(() => {
-    setRepairTarget(null);
-  }, []);
-
-  const uniqueClients = useMemo(() => {
-    const clients = new Map<string, string>();
-    (adminDevices || []).forEach((d) => {
-      if (d.tenant_id && d.tenant_name) {
-        clients.set(d.tenant_id, d.tenant_name);
-      }
-    });
-    return Array.from(clients.entries()).map(([id, name]) => ({ id, name }));
-  }, [adminDevices]);
-
-  const uniquePlans = useMemo(() => {
-    const plans = new Set<string>();
-    (adminDevices || []).forEach((d) => {
-      if (d.plan) plans.add(d.plan);
-    });
-    return Array.from(plans);
-  }, [adminDevices]);
-
-  const clientFilterOptions = useMemo(() => {
-    return uniqueClients.map((c) => ({ value: c.id, label: c.name }));
-  }, [uniqueClients]);
-
-  const planFilterOptions = useMemo(() => {
-    return uniquePlans.map((p) => ({ value: p, label: p }));
-  }, [uniquePlans]);
-
-  const statusFilterOptions = useMemo(() => {
-    return [
-      { value: "ACTIVE", label: t("devices.statusActive") },
-      { value: "PENDING_ACTIVATION", label: t("devices.statusPending") },
-    ];
-  }, [t]);
-
-  const filteredEquipment = useMemo(() => {
-    const search = searchTerm.toLowerCase().trim();
-    const hasStatusFilter = Boolean(selectedStatus && selectedStatus !== "all");
-
-    if (isAdmin) {
-      const hasSearch = search.length > 0;
-      const hasClientFilter = Boolean(selectedClient && selectedClient !== "all");
-
-      if (!hasSearch && !hasClientFilter && !hasStatusFilter) {
-        return adminDevices || [];
-      }
-
-      return (adminDevices || []).filter((device) => {
-        if (hasClientFilter && device.tenant_id !== selectedClient) return false;
-        if (hasStatusFilter) {
-          const isPending = device.status === "PENDING_ACTIVATION" || !device.status || device.status !== "ACTIVE";
-          if (selectedStatus === "ACTIVE" && device.status !== "ACTIVE") return false;
-          if (selectedStatus === "PENDING_ACTIVATION" && !isPending) return false;
-          if (selectedStatus !== "ACTIVE" && selectedStatus !== "PENDING_ACTIVATION" && device.status !== selectedStatus) return false;
-        }
-
-        if (hasSearch) {
-          const matchSearch =
-            (device.id && device.id.toLowerCase().includes(search)) ||
-            (device.device_name && device.device_name.toLowerCase().includes(search)) ||
-            (device.device_serial && device.device_serial.toLowerCase().includes(search)) ||
-            (device.nextcloud_username && device.nextcloud_username.toLowerCase().includes(search)) ||
-            (device.client_name && device.client_name.toLowerCase().includes(search)) ||
-            (device.client_email && device.client_email.toLowerCase().includes(search));
-
-          if (!matchSearch) return false;
-        }
-
-        return true;
-      });
-    } else {
-      if (!activeSub) return [];
-      const equipList = subscriptionEquipment[activeSub.id] || [];
-
-      return equipList.filter((device) => {
-        if (hasStatusFilter) {
-          const isPending = device.status === "PENDING_ACTIVATION" || !device.status || device.status !== "ACTIVE";
-          if (selectedStatus === "ACTIVE" && device.status !== "ACTIVE") return false;
-          if (selectedStatus === "PENDING_ACTIVATION" && !isPending) return false;
-          if (selectedStatus !== "ACTIVE" && selectedStatus !== "PENDING_ACTIVATION" && device.status !== selectedStatus) return false;
-        }
-
-        if (search) {
-          const matchSearch =
-            (device.id && device.id.toLowerCase().includes(search)) ||
-            (device.device_name && device.device_name.toLowerCase().includes(search)) ||
-            (device.device_serial && device.device_serial.toLowerCase().includes(search));
-          if (!matchSearch) return false;
-        }
-
-        return true;
-      });
-    }
-  }, [adminDevices, subscriptionEquipment, activeSub, searchTerm, isAdmin, selectedClient, selectedStatus]);
-
-  // Datatable Sorting State
-  const [sorting, setSorting] = useState<SortingState>([]);
-
-  const sortedEquipment = useMemo(() => {
-    if (sorting.length === 0) {
-      // Default order: show ACTIVE first, followed by PENDING, ordered by slot index
-      return [...filteredEquipment].sort((a, b) => {
-        const aActive = a.status === "ACTIVE" ? 1 : 0;
-        const bActive = b.status === "ACTIVE" ? 1 : 0;
-        if (aActive !== bActive) {
-          return bActive - aActive;
-        }
-        const slotA = a.slot_index !== undefined ? a.slot_index : 9999;
-        const slotB = b.slot_index !== undefined ? b.slot_index : 9999;
-        return slotA - slotB;
-      });
-    }
-    const result = [...filteredEquipment];
-    const sort = sorting[0];
-    const { id, desc } = sort;
-
-    result.sort((a, b) => {
-      let valA: string | number = "";
-      let valB: string | number = "";
-
-      if (id === "clientInfo") {
-        valA = a.client_name || a.tenant_name || "";
-        valB = b.client_name || b.tenant_name || "";
-      } else if (id === "slotNumber") {
-        valA = a.slot_index !== undefined ? a.slot_index + 1 : 0;
-        valB = b.slot_index !== undefined ? b.slot_index + 1 : 0;
-      } else if (id === "planInfo") {
-        valA = a.plan || "";
-        valB = b.plan || "";
-      } else if (id === "status") {
-        const aActive = a.status === "ACTIVE" ? 1 : 0;
-        const bActive = b.status === "ACTIVE" ? 1 : 0;
-        return desc ? aActive - bActive : bActive - aActive;
-      } else if (id === "deviceDetails") {
-        valA = a.device_name || a.otp || "";
-        valB = b.device_name || b.otp || "";
-      } else if (id === "backupAccount") {
-        valA = a.status === "ACTIVE" && a.nextcloud_username ? 1 : 0;
-        valB = b.status === "ACTIVE" && b.nextcloud_username ? 1 : 0;
-      }
-
-      if (typeof valA === "number" && typeof valB === "number") {
-        return desc ? valB - valA : valA - valB;
-      }
-
-      const comp = String(valA).localeCompare(String(valB));
-      return desc ? -comp : comp;
-    });
-
-    return result;
-  }, [filteredEquipment, sorting]);
-
-  // Bulk Operations State
-  const [selectedDevices, setSelectedDevices] = useState<Partial<SubscriptionEquipment>[]>([]);
-  const [showBulkDeactivateAlert, setShowBulkDeactivateAlert] = useState(false);
-  const [bulkDeactivateTargets, setBulkDeactivateTargets] = useState<Partial<SubscriptionEquipment>[]>([]);
-  const [bulkProcessing, setBulkProcessing] = useState(false);
-
-  const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil(sortedEquipment.length / limit));
-  }, [sortedEquipment.length, limit]);
-
-  const paginatedEquipment = useMemo(() => {
-    const startIndex = (page - 1) * limit;
-    return sortedEquipment.slice(startIndex, startIndex + limit);
-  }, [sortedEquipment, page, limit]);
-
+  // ─── Bulk Operations ────────────────────────────────────────
   const handleBulkDeactivateClick = useCallback(
     (selected: Partial<SubscriptionEquipment>[]) => {
       const activeSlots = selected.filter(
-        (equip) => equip.status === "ACTIVE" && (equip.subscription_id || activeSub?.id) && equip.slot_index !== undefined
+        (e) => e.status === "ACTIVE" && (e.subscription_id || activeSub?.id) && e.slot_index !== undefined,
       );
       if (activeSlots.length === 0) {
         toast.info(t("common.info") || "Info", {
@@ -563,52 +181,43 @@ export function useDevicesPage() {
         });
         return;
       }
-      setBulkDeactivateTargets(activeSlots);
-      setShowBulkDeactivateAlert(true);
+      filters.setBulkDeactivateTargets(activeSlots);
+      filters.setShowBulkDeactivateAlert(true);
     },
-    [activeSub, t]
+    [activeSub, t, filters],
   );
 
   const confirmBulkDeactivate = useCallback(async () => {
-    if (bulkDeactivateTargets.length === 0) return;
-    setBulkProcessing(true);
+    const targets = filters.bulkDeactivateTargets;
+    if (targets.length === 0) return;
     let successCount = 0;
-    try {
-      await Promise.allSettled(
-        bulkDeactivateTargets.map(async (slot) => {
-          const subId = slot.subscription_id || activeSub?.id;
-          if (subId !== undefined && slot.slot_index !== undefined) {
-            const updatedSlot = await equipmentService.deactivateSlot(subId, slot.slot_index);
-            updateDeviceList(subId, slot.slot_index, updatedSlot);
-            successCount++;
-          }
-        })
-      );
-      if (successCount > 0) {
-        toast.info(t("devices.slotRevokedTitle") || "Slot Revoked", {
-          description:
-            t("devices.bulkDeactivateSuccess", { count: successCount }) ||
-            `Deactivated ${successCount} active device(s).`,
-        });
-      }
-    } catch (err) {
-      console.error("Bulk deactivation failed:", err);
-    } finally {
-      setBulkProcessing(false);
-      setShowBulkDeactivateAlert(false);
-      setBulkDeactivateTargets([]);
+    await Promise.allSettled(
+      targets.map(async (slot) => {
+        const subId = slot.subscription_id || activeSub?.id;
+        if (subId !== undefined && slot.slot_index !== undefined) {
+          await queries.mutations.deactivate.mutateAsync({ subId, slotIndex: slot.slot_index });
+          successCount++;
+        }
+      }),
+    );
+    if (successCount > 0) {
+      toast.info(t("devices.slotRevokedTitle") || "Slot Revoked", {
+        description: t("devices.bulkDeactivateSuccess", { count: successCount }) || `Deactivated ${successCount} active device(s).`,
+      });
     }
-  }, [bulkDeactivateTargets, activeSub, updateDeviceList, t]);
+    filters.setShowBulkDeactivateAlert(false);
+    filters.setBulkDeactivateTargets([]);
+  }, [filters.bulkDeactivateTargets, activeSub, queries.mutations.deactivate, t, filters]);
 
   const handleBulkExportCSV = useCallback(
     (selected: Partial<SubscriptionEquipment>[]) => {
-      const rowsToExport = selected.length > 0 ? selected : filteredEquipment;
-      if (rowsToExport.length === 0) return;
+      const rows = selected.length > 0 ? selected : filteredEquipment;
+      if (rows.length === 0) return;
 
       const headers = ["Slot", "Status", "Device Name", "Serial Number", "Nextcloud User", "Client", "Plan", "ID"];
       const csvLines = [headers.join(",")];
 
-      rowsToExport.forEach((item) => {
+      for (const item of rows) {
         const slot = item.slot_index !== undefined ? item.slot_index + 1 : "";
         const status = item.status || "";
         const deviceName = item.device_name ? `"${item.device_name.replace(/"/g, '""')}"` : "";
@@ -617,9 +226,8 @@ export function useDevicesPage() {
         const client = item.client_name ? `"${item.client_name.replace(/"/g, '""')}"` : item.tenant_name || "";
         const plan = item.plan || "";
         const id = item.id || "";
-
         csvLines.push([slot, status, deviceName, serial, ncUser, client, plan, id].join(","));
-      });
+      }
 
       const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(csvLines.join("\n"));
       const link = document.createElement("a");
@@ -630,97 +238,106 @@ export function useDevicesPage() {
       document.body.removeChild(link);
 
       toast.success(t("common.success") || "Success", {
-        description: t("devices.bulkExportSuccess") || `Exported ${rowsToExport.length} device(s) to CSV.`,
+        description: t("devices.bulkExportSuccess") || `Exported ${rows.length} device(s) to CSV.`,
       });
     },
-    [filteredEquipment, t]
+    [filteredEquipment, t],
   );
 
+  // ─── Refetch helper (kept for backwards compat) ─────────────
+  const fetchActiveSubscriptions = useCallback(() => {
+    queries.queries.adminQuery.refetch();
+    queries.queries.subscriptionsQuery.refetch();
+    queries.queries.devicesQuery.refetch();
+  }, [queries.queries]);
+
+  // ─── Flat return (same surface as original) ─────────────────
   return {
     t,
     navigate,
     user,
-    loading,
-    activeTab,
-    setActiveTab,
-    activeSubscriptions,
-    selectedSubscriptionId,
-    setSelectedSubscriptionId,
-    subscriptionEquipment,
-    searchTerm,
-    setSearchTerm,
-    activateTargetSubId,
-    activateTargetSlotIdx,
+    loading: queries.loading,
+    activeTab: filters.activeTab,
+    setActiveTab: filters.setActiveTab,
+    activeSubscriptions: queries.activeSubscriptions,
+    selectedSubscriptionId: filters.selectedSubscriptionId,
+    setSelectedSubscriptionId: filters.setSelectedSubscriptionId,
+    subscriptionEquipment: queries.subscriptionEquipment,
+    searchTerm: filters.searchTerm,
+    setSearchTerm: filters.setSearchTerm,
+    activateTargetSubId: modals.activateOtp.payload?.subId ?? null,
+    activateTargetSlotIdx: modals.activateOtp.payload?.slotIndex ?? null,
     activeSub,
     filteredEquipment,
     paginatedEquipment,
     fetchActiveSubscriptions,
-    handleRevokeEquipment,
-    handleRepairEquipment,
-    activateOtpModalOpen,
+    handleRevokeEquipment: queries.mutations.deactivate.mutateAsync,
+    handleRepairEquipment: queries.mutations.repair.mutateAsync,
+    activateOtpModalOpen: modals.activateOtp.isOpen,
     setActivateOtpModalOpen,
-    activateOtpLoading,
-    setActivateOtpLoading,
+
+    activateOtpLoading: queries.mutations.activate.isPending,
+    setActivateOtpLoading: () => {},
     handleOpenActivateWithOtp,
     handleCloseActivateWithOtp,
     handleActivateWithOtp,
-    addDeviceModalOpen,
+    addDeviceModalOpen: modals.addDevice.isOpen,
     setAddDeviceModalOpen,
-    addDeviceLoading,
-    setAddDeviceLoading,
+
+    addDeviceLoading: queries.mutations.addDevice.isPending,
+    setAddDeviceLoading: () => {},
     handleOpenAddDevice,
     handleCloseAddDevice,
     handleAddAdminDevice,
-    deviceToDelete,
+    deviceToDelete: modals.deleteDevice.payload,
     setDeviceToDelete,
-    deleteDeviceLoading,
-    setDeleteDeviceLoading,
+    deleteDeviceLoading: queries.mutations.deleteDevice.isPending,
+    setDeleteDeviceLoading: () => {},
     handleDeleteAdminDevice,
     isAdmin,
-    adminDevices,
-    selectedClient,
-    setSelectedClient,
-    selectedPlan,
-    setSelectedPlan,
-    selectedStatus,
-    setSelectedStatus,
+    adminDevices: queries.adminDevices,
+    selectedClient: filters.selectedClient,
+    setSelectedClient: filters.setSelectedClient,
+    selectedPlan: filters.selectedPlan,
+    setSelectedPlan: filters.setSelectedPlan,
+    selectedStatus: filters.selectedStatus,
+    setSelectedStatus: filters.setSelectedStatus,
     uniqueClients,
-    uniquePlans,
     clientFilterOptions,
     planFilterOptions,
     statusFilterOptions,
-    page,
-    setPage,
-    limit,
-    setLimit,
+    page: filters.page,
+    setPage: filters.setPage,
+    limit: filters.limit,
+    setLimit: filters.setLimit,
     totalPages,
-    selectedDevices,
-    setSelectedDevices,
-    showBulkDeactivateAlert,
-    setShowBulkDeactivateAlert,
-    bulkDeactivateTargets,
-    setBulkDeactivateTargets,
-    bulkProcessing,
-    setBulkProcessing,
+    selectedDevices: filters.selectedDevices,
+    setSelectedDevices: filters.setSelectedDevices,
+    showBulkDeactivateAlert: filters.showBulkDeactivateAlert,
+    setShowBulkDeactivateAlert: filters.setShowBulkDeactivateAlert,
+    bulkDeactivateTargets: filters.bulkDeactivateTargets,
+    setBulkDeactivateTargets: filters.setBulkDeactivateTargets,
+    bulkProcessing: queries.mutations.deactivate.isPending,
+    setBulkProcessing: () => {},
     handleBulkDeactivateClick,
     confirmBulkDeactivate,
     handleBulkExportCSV,
     // Revoke confirmation
-    revokeTarget,
-    setRevokeTarget,
-    revokeLoading,
-    setRevokeLoading,
+    revokeTarget: modals.revoke.payload,
+    setRevokeTarget: modals.revoke.payload ? modals.revoke.close : modals.revoke.open,
+    revokeLoading: queries.mutations.deactivate.isPending,
+    setRevokeLoading: () => {},
     handleRequestRevoke,
     confirmRevoke,
     cancelRevoke,
-    repairTarget,
-    setRepairTarget,
-    repairLoading,
-    setRepairLoading,
+    repairTarget: modals.repair.payload,
+    setRepairTarget: modals.repair.payload ? modals.repair.close : modals.repair.open,
+    repairLoading: queries.mutations.repair.isPending,
+    setRepairLoading: () => {},
     handleRequestRepair,
     confirmRepair,
     cancelRepair,
-    sorting,
-    setSorting,
+    sorting: filters.sorting,
+    setSorting: filters.setSorting,
   };
 }

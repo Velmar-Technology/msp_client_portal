@@ -236,8 +236,8 @@ export function CRMPage() {
             value={paramView}
             onChange={handleViewChange}
             options={[
-              { value: "table", icon: LayoutList, label: t("crm.views.table") },
-              { value: "kanban", icon: Kanban, label: t("crm.views.kanban") },
+              { value: "table", icon: LayoutList },
+              { value: "kanban", icon: Kanban },
             ]}
           />
         </div>

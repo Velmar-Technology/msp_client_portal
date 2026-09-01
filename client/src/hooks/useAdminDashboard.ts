@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { invoiceService } from "@/services/invoiceService";
 import type { Invoice } from "@/services/invoiceService";
@@ -26,10 +26,12 @@ export function useAdminDashboard() {
   const [maintenanceLoading, setMaintenanceLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     async function loadInvoices() {
       try {
         const invData = await invoiceService.getAll(1, 5);
-        setInvoices(invData.data || []);
+        if (isMounted) setInvoices(invData.data || []);
       } catch (err) {
         console.error("Failed to load recent invoices:", err);
       }
@@ -38,18 +40,18 @@ export function useAdminDashboard() {
     async function loadStorage() {
       try {
         const data = await systemService.getStorageUsage();
-        setStorage(data);
+        if (isMounted) setStorage(data);
       } catch (err) {
         console.error("Failed to load storage quota:", err);
       } finally {
-        setStorageLoading(false);
+        if (isMounted) setStorageLoading(false);
       }
     }
 
     async function loadTickets() {
       try {
         const summary = await ticketService.getStatusSummary();
-        setTicketSummary(summary);
+        if (isMounted) setTicketSummary(summary);
       } catch (err) {
         console.error("Failed to load ticket summary/DB connection:", err);
       }
@@ -58,39 +60,41 @@ export function useAdminDashboard() {
     async function loadMaintenances() {
       try {
         const data = await maintenanceService.getMaintenances();
-        setMaintenances(data || []);
+        if (isMounted) setMaintenances(data || []);
       } catch (err) {
         console.error("Failed to load maintenances:", err);
       } finally {
-        setMaintenanceLoading(false);
+        if (isMounted) setMaintenanceLoading(false);
       }
     }
 
     Promise.all([
       loadInvoices(),
       loadTickets(),
-      loadMaintenances()
+      loadMaintenances(),
     ]).finally(() => {
-      setLoading(false);
+      if (isMounted) setLoading(false);
     });
 
     loadStorage();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const openTickets = useMemo(() => {
-    return (ticketSummary.OPEN || 0) + (ticketSummary.IN_PROGRESS || 0);
-  }, [ticketSummary]);
+  // Derive values directly during render (React 19 compiler-friendly)
+  const openTickets = (ticketSummary.OPEN || 0) + (ticketSummary.IN_PROGRESS || 0);
 
-  const nextMaintenance = useMemo(() => {
-    const active = maintenances.filter(
-      (m) => m.status === "SCHEDULED" || m.status === "IN_PROGRESS" || m.status === "OVERDUE"
-    );
-    if (active.length === 0) return null;
-    // Sort ascending by scheduled_date to get the earliest one
-    return [...active].sort(
-      (a, b) => new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime()
-    )[0];
-  }, [maintenances]);
+  const activeMaintenances = maintenances.filter(
+    (m) => m.status === "SCHEDULED" || m.status === "IN_PROGRESS" || m.status === "OVERDUE"
+  );
+  const nextMaintenance =
+    activeMaintenances.length > 0
+      ? [...activeMaintenances].sort(
+          (a, b) => new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime()
+        )[0]
+      : null;
 
   const getStatusLabel = useCallback((status: string) => {
     const map: Record<string, string> = {

@@ -46,7 +46,7 @@ function SelectValue({
 }) {
   return (
     <SelectPrimitive.Value data-slot="select-value" {...props}>
-      {(value) => value ?? placeholder ?? children}
+      {(value: React.ReactNode) => value ?? placeholder ?? children}
     </SelectPrimitive.Value>
   )
 }

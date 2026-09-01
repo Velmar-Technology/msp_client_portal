@@ -68,10 +68,11 @@ export function useNotificationPreferences() {
     });
   }, []);
 
-  const hasChanges = useCallback((): boolean => {
-    if (!preferences || !originalPreferences) return false;
-    return JSON.stringify(preferences) !== JSON.stringify(originalPreferences);
-  }, [preferences, originalPreferences]);
+  const hasChanges = Boolean(
+    preferences &&
+    originalPreferences &&
+    JSON.stringify(preferences) !== JSON.stringify(originalPreferences)
+  );
 
   const handleSave = useCallback(async () => {
     if (!preferences) return;
@@ -103,7 +104,7 @@ export function useNotificationPreferences() {
     isSaving,
     message,
     messageType,
-    hasChanges: hasChanges(),
+    hasChanges,
     handleToggle,
     handleSave,
     isLocked,

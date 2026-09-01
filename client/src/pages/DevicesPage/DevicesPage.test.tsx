@@ -1,6 +1,7 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import { DevicesPage } from "@/pages/DevicesPage/DevicesPage";
 import { subscriptionService } from '@/services/subscriptionService';
@@ -55,6 +56,7 @@ vi.mock('@/store/useNotificationStore', () => ({
 }));
 
 let mockLanguage = 'en_US';
+let testQueryClient: QueryClient;
 const mockT = (key: string, options?: string | Record<string, string | number>) => {
   const parts = key.split('.');
   let current: unknown = enTranslations;
@@ -121,6 +123,12 @@ if (typeof window !== 'undefined' && !window.ResizeObserver) {
 describe('DevicesPage', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    testQueryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, staleTime: 0, gcTime: 0 },
+        mutations: { retry: false },
+      },
+    });
     mockUser.role = 'CLIENT';
     vi.mocked(equipmentService.getAgentIdentityByOtp).mockResolvedValue({
       hostname: null,
@@ -139,9 +147,11 @@ describe('DevicesPage', () => {
     vi.mocked(equipmentService.getMyDevices).mockResolvedValue([]);
 
     render(
-      <MemoryRouter>
-        <DevicesPage />
+      <QueryClientProvider client={testQueryClient}>
+        <MemoryRouter>
+          <DevicesPage />
       </MemoryRouter>
+      </QueryClientProvider>
     );
 
     await waitFor(() => {
@@ -225,9 +235,11 @@ describe('DevicesPage', () => {
     });
 
     render(
-      <MemoryRouter>
-        <DevicesPage />
+      <QueryClientProvider client={testQueryClient}>
+        <MemoryRouter>
+          <DevicesPage />
       </MemoryRouter>
+      </QueryClientProvider>
     );
 
     // Expect table and headers
@@ -335,9 +347,11 @@ describe('DevicesPage', () => {
     vi.mocked(equipmentService.getMyDevices).mockResolvedValue([...mockSlots]);
 
     render(
-      <MemoryRouter>
-        <DevicesPage />
+      <QueryClientProvider client={testQueryClient}>
+        <MemoryRouter>
+          <DevicesPage />
       </MemoryRouter>
+      </QueryClientProvider>
     );
 
     await waitFor(() => {
@@ -400,9 +414,11 @@ describe('DevicesPage', () => {
     } as any);
 
     render(
-      <MemoryRouter>
-        <DevicesPage />
+      <QueryClientProvider client={testQueryClient}>
+        <MemoryRouter>
+          <DevicesPage />
       </MemoryRouter>
+      </QueryClientProvider>
     );
 
     await waitFor(() => {
@@ -460,9 +476,11 @@ describe('DevicesPage', () => {
     vi.mocked(equipmentService.getMyDevices).mockResolvedValue([]);
 
     render(
-      <MemoryRouter>
-        <DevicesPage />
+      <QueryClientProvider client={testQueryClient}>
+        <MemoryRouter>
+          <DevicesPage />
       </MemoryRouter>
+      </QueryClientProvider>
     );
 
     // Verify select dropdown is displayed
@@ -520,9 +538,11 @@ describe('DevicesPage', () => {
     vi.mocked(equipmentService.getMyDevices).mockResolvedValue(mockSlots);
 
     render(
-      <MemoryRouter>
-        <DevicesPage />
+      <QueryClientProvider client={testQueryClient}>
+        <MemoryRouter>
+          <DevicesPage />
       </MemoryRouter>
+      </QueryClientProvider>
     );
 
     // Both should be visible initially
@@ -593,9 +613,11 @@ describe('DevicesPage', () => {
     vi.mocked(equipmentService.getAllDevicesForAdmin).mockResolvedValue(mockAdminDevices as any);
 
     render(
-      <MemoryRouter>
-        <DevicesPage />
+      <QueryClientProvider client={testQueryClient}>
+        <MemoryRouter>
+          <DevicesPage />
       </MemoryRouter>
+      </QueryClientProvider>
     );
 
     // Verify page loads devices with client/tenant info
@@ -641,9 +663,11 @@ describe('DevicesPage', () => {
     vi.mocked(equipmentService.getAllDevicesForAdmin).mockResolvedValue(mockAdminDevices as any);
 
     render(
-      <MemoryRouter>
-        <DevicesPage />
+      <QueryClientProvider client={testQueryClient}>
+        <MemoryRouter>
+          <DevicesPage />
       </MemoryRouter>
+      </QueryClientProvider>
     );
 
     // Initial limit is 10, so all 7 items should be displayed on page 1
@@ -728,9 +752,11 @@ describe('DevicesPage', () => {
     });
 
     render(
-      <MemoryRouter>
-        <DevicesPage />
+      <QueryClientProvider client={testQueryClient}>
+        <MemoryRouter>
+          <DevicesPage />
       </MemoryRouter>
+      </QueryClientProvider>
     );
 
     await waitFor(() => {
@@ -785,9 +811,11 @@ describe('DevicesPage', () => {
     } as any);
 
     render(
-      <MemoryRouter>
-        <DevicesPage />
+      <QueryClientProvider client={testQueryClient}>
+        <MemoryRouter>
+          <DevicesPage />
       </MemoryRouter>
+      </QueryClientProvider>
     );
 
     await waitFor(() => {
@@ -857,9 +885,11 @@ describe('DevicesPage', () => {
     });
 
     render(
-      <MemoryRouter>
-        <DevicesPage />
+      <QueryClientProvider client={testQueryClient}>
+        <MemoryRouter>
+          <DevicesPage />
       </MemoryRouter>
+      </QueryClientProvider>
     );
 
     await waitFor(() => {
@@ -919,9 +949,11 @@ describe('DevicesPage', () => {
     });
 
     render(
-      <MemoryRouter>
-        <DevicesPage />
+      <QueryClientProvider client={testQueryClient}>
+        <MemoryRouter>
+          <DevicesPage />
       </MemoryRouter>
+      </QueryClientProvider>
     );
 
     await waitFor(() => {
@@ -982,9 +1014,11 @@ describe('DevicesPage', () => {
     vi.mocked(equipmentService.getMyDevices).mockResolvedValue([mockSlot]);
 
     const { rerender } = render(
-      <MemoryRouter>
-        <DevicesPage />
+      <QueryClientProvider client={testQueryClient}>
+        <MemoryRouter>
+          <DevicesPage />
       </MemoryRouter>
+      </QueryClientProvider>
     );
 
     await waitFor(() => {
@@ -1015,9 +1049,11 @@ describe('DevicesPage', () => {
     ]);
 
     rerender(
-      <MemoryRouter>
-        <DevicesPage />
+      <QueryClientProvider client={testQueryClient}>
+        <MemoryRouter>
+          <DevicesPage />
       </MemoryRouter>
+      </QueryClientProvider>
     );
 
     await waitFor(() => {
