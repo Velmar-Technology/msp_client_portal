@@ -31,6 +31,24 @@ export default defineConfig([
       'react-hooks/set-state-in-effect': 'off',
       'react-hooks/purity': 'off',
       'react-hooks/incompatible-library': 'off',
+      'no-restricted-syntax': [
+        'warn',
+        {
+          selector: 'JSXOpeningElement[name.name="button"]',
+          message:
+            'Avoid using raw <button> elements in feature/page code. Use Button from "@/components/ui/button" instead.',
+        },
+        {
+          selector: 'JSXOpeningElement[name.name="input"]',
+          message:
+            'Avoid using raw <input> elements in feature/page code. Use Input from "@/components/ui/input" instead.',
+        },
+        {
+          selector: 'JSXAttribute[name.name="className"] Literal[value=/\\b(bg|text|border)-(zinc-\\d+|white|black)\\b/]',
+          message:
+            'Avoid hardcoded zinc/white/black color classes. Prefer semantic tokens (bg-card, text-card-foreground, bg-background, border-border, etc.).',
+        },
+      ],
     },
   },
   {

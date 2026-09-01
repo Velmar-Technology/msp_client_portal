@@ -8,3 +8,9 @@ export { useTheme, type Theme, type ThemeProviderProps, type ThemeProviderState 
 export { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 export { ThemeToggle } from '@/components/layout/ThemeToggle';
 export { NotificationBell } from '@/components/layout/NotificationBell';
+
+export { PageHeader, type PageHeaderProps } from './PageHeader';
+export { StatCard, type StatCardProps } from './StatCard';
+export { EmptyState, type EmptyStateProps } from './EmptyState';
+export { ModalFooter, type ModalFooterProps } from './ModalFooter';
+export { TableToolbar, type TableToolbarProps } from './TableToolbar';

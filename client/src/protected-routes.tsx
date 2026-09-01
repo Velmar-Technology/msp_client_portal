@@ -70,6 +70,9 @@ export const DevicesPage = lazyWithRetry(() =>
 export const ApiStatusPage = lazyWithRetry(() =>
   import("@/routes/_app/admin/api-status").then((m) => ({ default: m.ApiStatusPage || m.default }))
 );
+export const StyleGuidePage = lazyWithRetry(() =>
+  import("@/components/shared/StyleGuidePage").then((m) => ({ default: m.StyleGuidePage }))
+);
 export const TermsPage = lazyWithRetry(() =>
   import("@/routes/_public/terms").then((m) => ({ default: m.TermsPage || m.default }))
 );
@@ -273,11 +276,20 @@ const RAW_PROTECTED_ROUTES: Omit<AppRouteConfig, "handle">[] = [
   {
     path: "/admin/api-status",
     element: (
-      <RouteSuspenseWrapper fallback={<DashboardSkeleton />}>
+      <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
         <ApiStatusPage />
       </RouteSuspenseWrapper>
     ),
     allowedRoles: ["ADMIN"],
+  },
+  {
+    path: "/dev/style-guide",
+    element: (
+      <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+        <StyleGuidePage />
+      </RouteSuspenseWrapper>
+    ),
+    isPublic: true,
   },
 
   // Shared Routes
