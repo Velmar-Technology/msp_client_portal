@@ -32,7 +32,9 @@ import {
   CreateLeadActivityInput,
   UpdateLeadActivityInput,
   GetLeadsQueryInput,
+  CreateCustomPlanInput,
 } from '@shared/dtos/crm.dto';
+import { Plan } from '@shared/types';
 import { TAX_RATE } from '@shared/config/constants';
 
 const STAGE_PROBABILITIES: Record<LeadStage, number> = {
@@ -802,6 +804,124 @@ export class CRMService {
 
     return updatedSub;
   }
+
+  /**
+   * Creates a private custom subscription plan tailored for a specific lead or client,
+   * configures SLA targets and equipment pricing multipliers, and associates it with the lead.
+   *
+   * @param tenantId - Tenant UUID
+   * @param userId - Admin user UUID creating the plan
+   * @param data - Custom plan specifications
+   * @returns Newly created custom Plan entity
+   * @throws {NotFoundError} If the specified lead or client is not found in the tenant
+   * @see BL-501 CRM Lead Pipeline Progression & Conversion
+   */
+  async createCustomPlan(
+    tenantId: string,
+    userId: string,
+    data: CreateCustomPlanInput,
+  ): Promise<Plan> {
+    let targetLead: Lead | null = null;
+    if (data.leadId) {
+      targetLead = await this.leadRepo.findLeadById(data.leadId, tenantId);
+      if (!targetLead) {
+        throw new NotFoundError(`Lead with ID ${data.leadId} not found in this tenant`);
+      }
+    }
+
+    if (data.clientId) {
+      const client = await this.userRepo.findById(data.clientId);
+      if (!client || client.tenant_id !== tenantId) {
+        throw new NotFoundError(`Client with ID ${data.clientId} not found in this tenant`);
+      }
+    }
+
+    // Generate unique custom plan ID
+    const planSlug = data.name.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 20);
+    const planId = `custom_${planSlug}_${Date.now().toString(36)}`;
+
+    // Build features list
+    const featuresList = (data.features || []).map((feat: any) => {
+      if (typeof feat === 'object' && feat !== null) {
+        return {
+          code: feat.code || 'CUSTOM_FEATURE',
+          included: feat.included !== false,
+          text: feat.text || undefined,
+          params: feat.params || {},
+        };
+      }
+      return {
+        code: 'CUSTOM_FEATURE',
+        included: true,
+        text: typeof feat === 'string' ? feat : String(feat),
+      };
+    });
+
+    const planData: Omit<Plan, 'created_at' | 'updated_at'> = {
+      id: planId,
+      name: { en: data.name, es: data.name },
+      description: data.description ? { en: data.description, es: data.description } : null,
+      price: Math.round(data.price),
+      features: featuresList,
+      recommended: false,
+      client_type: 'CLIENT' as any,
+      active: true,
+      is_custom: true,
+      tenant_id: tenantId,
+      lead_id: data.leadId || null,
+      target_client_id: data.clientId || null,
+      per_device_price: data.perDevicePrice ? Math.round(data.perDevicePrice) : 0,
+      ticket_quota: data.ticketQuota || null,
+      sla_tier: data.slaTier || {
+        criticalMins: 15,
+        highMins: 60,
+        medMins: 240,
+        lowMins: 720,
+      },
+      tax_exempt: !!data.taxExempt,
+    };
+
+    const createdPlan = await this.planRepo.create(planData);
+
+    // If lead is specified, bind the plan to the lead and update expected revenue
+    if (targetLead) {
+      const equipCount = targetLead.equipment_count || 1;
+      const calculatedRevenue = data.price + (data.perDevicePrice || 0) * equipCount;
+
+      await this.leadRepo.updateLead(
+        targetLead.id,
+        {
+          planId,
+          expectedRevenue: calculatedRevenue,
+          billingCycle: (data.billingCycle || targetLead.billing_cycle) as any,
+        },
+        tenantId,
+      );
+
+      // Log activity
+      await this.activityRepo.createActivity(
+        {
+          leadId: targetLead.id,
+          activityType: 'PLAN_ASSIGNED',
+          title: `Custom Plan Assigned: ${data.name}`,
+          summary: `Configured custom plan with base price $${data.price}, per-device rate $${data.perDevicePrice || 0}, and SLA tier.`,
+          status: 'COMPLETED',
+        },
+        tenantId,
+        userId,
+      );
+    }
+
+    logger.info('Custom plan created successfully in CRM', {
+      tenantId,
+      userId,
+      planId,
+      leadId: data.leadId,
+    });
+
+    return createdPlan;
+  }
 }
 
 export const crmService = new CRMService();
+

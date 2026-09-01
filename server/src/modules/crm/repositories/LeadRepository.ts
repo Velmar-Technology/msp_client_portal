@@ -226,7 +226,7 @@ export class LeadRepository extends BaseRepository<Lead> {
       })
       .returning();
 
-    const created = result[0];
+    const created = (result as any[])[0];
     const fullLead = await this.findLeadById(created.id, tenantId);
     return fullLead || (created as unknown as Lead);
   }

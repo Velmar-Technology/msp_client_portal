@@ -33,6 +33,7 @@ const mocks = vi.hoisted(() => {
     },
     planRepo: {
       findById: vi.fn(),
+      create: vi.fn(),
     },
     subService: {
       createSubscription: vi.fn(),
@@ -271,10 +272,10 @@ describe('CRMService', () => {
         (call) => call[0].activityType === 'QUOTE_REMINDER',
       );
       expect(reminderCall).toBeDefined();
-      expect(reminderCall[0].status).toBe('PENDING');
-      expect(reminderCall[0].leadId).toBe('lead-1');
+      expect(reminderCall![0].status).toBe('PENDING');
+      expect(reminderCall![0].leadId).toBe('lead-1');
 
-      const dueDate = new Date(reminderCall[0].dueDate).getTime();
+      const dueDate = new Date(reminderCall![0].dueDate).getTime();
       const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
       expect(dueDate).toBeGreaterThanOrEqual(before + threeDaysMs - 1000);
       expect(dueDate).toBeLessThanOrEqual(Date.now() + threeDaysMs + 1000);
@@ -628,6 +629,85 @@ describe('CRMService', () => {
       mocks.activityRepo.deleteActivity.mockResolvedValue(false);
 
       await expect(service.deleteActivity('act-999', 'tenant-1')).rejects.toThrow(NotFoundError);
+    });
+  });
+
+  describe('createCustomPlan', () => {
+    it('creates a bespoke custom plan and binds it to the specified lead with updated expected revenue', async () => {
+      const mockLead = {
+        id: 'lead-1',
+        tenant_id: 'tenant-1',
+        company_name: 'Acme Corp',
+        contact_name: 'John Smith',
+        equipment_count: 5,
+        billing_cycle: 'monthly',
+      };
+      mocks.leadRepo.findLeadById.mockResolvedValue(mockLead);
+      mocks.leadRepo.updateLead.mockResolvedValue(mockLead);
+      mocks.planRepo.create.mockImplementation((data: any) => Promise.resolve({ ...data, created_at: new Date(), updated_at: new Date() }));
+      mocks.activityRepo.createActivity.mockResolvedValue({ id: 'act-1' });
+
+      const customPlanData = {
+        name: 'Acme Dedicated VIP Plan',
+        description: 'Includes 24/7 dedicated response',
+        price: 300,
+        perDevicePrice: 25,
+        currency: 'USD' as const,
+        billingCycle: 'monthly' as const,
+        ticketQuota: 20,
+        taxExempt: false,
+        slaTier: {
+          criticalMins: 15,
+          highMins: 45,
+          medMins: 180,
+          lowMins: 360,
+        },
+        features: ['24/7 VIP SLA', 'Patch Auto-Remediation'],
+        leadId: 'lead-1',
+      };
+
+      const result = await service.createCustomPlan('tenant-1', 'admin-1', customPlanData);
+
+      expect(result.is_custom).toBe(true);
+      expect(result.price).toBe(300);
+      expect(result.per_device_price).toBe(25);
+      expect(result.sla_tier).toEqual(customPlanData.slaTier);
+      expect(result.ticket_quota).toBe(20);
+      expect(result.tenant_id).toBe('tenant-1');
+      expect(result.lead_id).toBe('lead-1');
+
+      // Expected revenue: 300 base + (25 * 5 devices) = 425
+      expect(mocks.leadRepo.updateLead).toHaveBeenCalledWith(
+        'lead-1',
+        expect.objectContaining({
+          planId: result.id,
+          expectedRevenue: 425,
+          billingCycle: 'monthly',
+        }),
+        'tenant-1',
+      );
+
+      expect(mocks.activityRepo.createActivity).toHaveBeenCalledWith(
+        expect.objectContaining({
+          leadId: 'lead-1',
+          activityType: 'PLAN_ASSIGNED',
+          title: expect.stringContaining('Custom Plan Assigned: Acme Dedicated VIP Plan'),
+        }),
+        'tenant-1',
+        'admin-1',
+      );
+    });
+
+    it('throws NotFoundError if target lead does not exist', async () => {
+      mocks.leadRepo.findLeadById.mockResolvedValue(null);
+
+      await expect(
+        service.createCustomPlan('tenant-1', 'admin-1', {
+          name: 'Nonexistent Lead Plan',
+          price: 100,
+          leadId: 'lead-999',
+        }),
+      ).rejects.toThrow(NotFoundError);
     });
   });
 });

@@ -16,6 +16,7 @@ import {
   UpdateQuotationStatusDTO,
   ModifySubscriptionDTO,
   CancelSubscriptionDTO,
+  CreateCustomPlanDTO,
 } from '@shared/dtos/crm.dto';
 
 const router = Router();
@@ -80,5 +81,8 @@ router.post('/subscriptions/modify', validate(ModifySubscriptionDTO), (req, res)
 
 /** POST /api/v1/crm/subscriptions/cancel — Cancel customer subscription */
 router.post('/subscriptions/cancel', validate(CancelSubscriptionDTO), (req, res) => crmController.cancelSubscription(req, res));
+
+/** POST /api/v1/crm/custom-plans — Create a bespoke private subscription plan for a lead/client */
+router.post('/custom-plans', validate(CreateCustomPlanDTO), (req, res) => crmController.createCustomPlan(req, res));
 
 export default router;
