@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Page } from "@/components/Page";
@@ -23,7 +24,7 @@ import { CRMLeadDetailSheet } from "@/pages/CRMPage/components/CRMLeadDetailShee
 import { CRMNewLeadModal } from "@/pages/CRMPage/components/CRMNewLeadModal";
 import { ViewToggle } from "@/components/ui/view-toggle";
 import type { Lead, LeadStage, QuotationStatus } from "@/services/crmService";
-import { LayoutList, Kanban, Plus, TrendingUp, DollarSign, Briefcase, Target, CalendarClock } from "lucide-react";
+import { LayoutList, Kanban, Plus, Sparkles, TrendingUp, DollarSign, Briefcase, Target, CalendarClock } from "lucide-react";
 
 import { CRM_VALID_STAGES as VALID_STAGES, CRM_VALID_PRIORITIES as VALID_PRIORITIES } from "@/constants/crm";
 
@@ -35,6 +36,7 @@ function getErrorMessage(err: unknown): string | undefined {
 
 export function CRMPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [now] = useState(() => Date.now());
 
   const {
@@ -209,6 +211,16 @@ export function CRMPage() {
       subtitle={t("crm.subtitle")}
       actions={
         <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(selectedLead ? `/crm/custom-plans?lead=${selectedLead.id}` : "/crm/custom-plans")}
+            className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer border-primary/30 text-primary hover:bg-primary/5 shadow-xs"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>{t("crm.customPlan.btnTitle", "Custom Plan Studio")}</span>
+          </Button>
           <Button
             type="button"
             size="sm"

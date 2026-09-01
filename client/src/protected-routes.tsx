@@ -44,6 +44,9 @@ export const TechDashboardPage = lazyWithRetry(() =>
 export const CRMPage = lazyWithRetry(() =>
   import("@/routes/_app/crm").then((m) => ({ default: m.CRMPage || m.default }))
 );
+export const CRMCustomPlanPage = lazyWithRetry(() =>
+  import("@/routes/_app/crm/custom-plans").then((m) => ({ default: m.CRMCustomPlanPage || m.default }))
+);
 export const HelpPage = lazyWithRetry(() =>
   import("@/routes/_app/help").then((m) => ({ default: m.HelpPage || m.default }))
 );
@@ -231,6 +234,15 @@ const RAW_PROTECTED_ROUTES: Omit<AppRouteConfig, "handle">[] = [
     element: (
       <RouteSuspenseWrapper fallback={<TablePageSkeleton />}>
         <CRMPage />
+      </RouteSuspenseWrapper>
+    ),
+    allowedRoles: ["ADMIN"],
+  },
+  {
+    path: "/crm/custom-plans",
+    element: (
+      <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+        <CRMCustomPlanPage />
       </RouteSuspenseWrapper>
     ),
     allowedRoles: ["ADMIN"],

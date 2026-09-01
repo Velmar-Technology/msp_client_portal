@@ -16,7 +16,9 @@ import {
   type CreateActivityPayload,
   type UpdateActivityPayload,
   type GetLeadsParams,
+  type CreateCustomPlanPayload,
 } from "@/services/crmService";
+import type { Plan } from "@/services/planService";
 
 export interface CRMState {
   leads: Lead[];
@@ -56,6 +58,7 @@ export interface CRMState {
   deleteActivity: (activityId: string) => Promise<void>;
   modifySubscription: (data: { subId: string; planId: string; equipmentCount: number; leadId?: string }) => Promise<void>;
   cancelSubscription: (data: { subId: string; leadId?: string }) => Promise<void>;
+  createCustomPlan: (data: CreateCustomPlanPayload) => Promise<Plan>;
 }
 
 /**
@@ -390,6 +393,24 @@ export const useCRMStore = create<CRMState>()(
             await get().fetchLeadDetail(data.leadId);
           }
           set({ actionLoading: false });
+        } catch (err) {
+          set({ actionLoading: false });
+          throw err;
+        }
+      },
+
+      createCustomPlan: async (data: CreateCustomPlanPayload) => {
+        set({ actionLoading: true });
+        try {
+          const plan = await crmService.createCustomPlan(data);
+          if (data.leadId) {
+            await get().fetchLeads();
+            if (get().selectedLead?.id === data.leadId) {
+              await get().fetchLeadDetail(data.leadId);
+            }
+          }
+          set({ actionLoading: false });
+          return plan;
         } catch (err) {
           set({ actionLoading: false });
           throw err;
