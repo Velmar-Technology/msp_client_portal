@@ -13,6 +13,8 @@ import {
   Terminal,
   ToolCase,
   Plus,
+  Search,
+  BadgeCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -21,9 +23,10 @@ import type { Subscription } from "@/services/subscriptionService";
 import type { SubscriptionEquipment } from "@/services/equipmentService";
 import { equipmentService } from "@/services/equipmentService";
 import { Page } from "@/components/Page";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BadgeCheck } from "lucide-react";
+import { Card, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -31,6 +34,8 @@ import { Suspense } from "react";
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { ChunkErrorBoundary } from "@/components/shared/ChunkErrorBoundary";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ViewToggle } from "@/components/ui/view-toggle";
+import { cn } from "@/lib/utils";
 
 // ---- Lazily loaded heavy sub-features and modals ----
 const ScheduleMaintenanceModal = lazyWithRetry(() =>
@@ -94,18 +99,23 @@ export const EmptySubscriptionsCard = memo(function EmptySubscriptionsCard({
 }: EmptySubscriptionsCardProps) {
   const { t } = useTranslation();
   return (
-    <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 shadow-sm flex flex-col items-center justify-center text-center space-y-3 max-w-md mx-auto">
-      <div className="p-3 bg-zinc-100 dark:bg-zinc-900 rounded-full border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400">
+    <Card className="p-8 shadow-xs border-border flex flex-col items-center justify-center text-center space-y-3 max-w-md mx-auto">
+      <span className="p-3 bg-muted text-muted-foreground rounded-full border border-border inline-flex">
         <Laptop className="h-6 w-6" />
-      </div>
+      </span>
       <div>
-        <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{t("devices.noActiveSubscriptions")}</h3>
-        <p className="text-xs text-zinc-500 mt-1 leading-relaxed">{t("devices.noActiveSubscriptionsDesc")}</p>
+        <h3 className="text-sm font-bold text-foreground font-heading">{t("devices.noActiveSubscriptions")}</h3>
+        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{t("devices.noActiveSubscriptionsDesc")}</p>
       </div>
-      <Button type="button" size="sm" onClick={onBrowsePlans} className="h-7 px-3 text-xs font-semibold cursor-pointer">
+      <Button
+        type="button"
+        size="default"
+        onClick={onBrowsePlans}
+        className="h-8 px-4 text-xs font-semibold cursor-pointer"
+      >
         {t("devices.browseSupportPlans")}
       </Button>
-    </div>
+    </Card>
   );
 });
 
@@ -123,21 +133,24 @@ export const SubscriptionSelector = memo(function SubscriptionSelector({
 }: SubscriptionSelectorProps) {
   const { t } = useTranslation();
   return (
-    <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 shadow-sm max-w-sm">
-      <label htmlFor="active-sub-select-devices" className="block text-[10px] uppercase font-bold text-zinc-400 mb-1.5">
-        {t("devices.selectSubscription")}
+    <div className="flex items-center gap-2">
+      <label
+        htmlFor="active-sub-select-devices"
+        className="text-[10px] uppercase font-bold text-muted-foreground select-none shrink-0"
+      >
+        {t("nav.subscriptions", "Subscription")}
       </label>
-      <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-800">
+      <div className="flex items-center bg-muted p-0.5 rounded-md border border-border">
         <Select value={selectedId} onValueChange={onChange}>
           <SelectTrigger
             id="active-sub-select-devices"
             aria-label={t("devices.selectSubscription")}
-            size="lg"
-            className="w-full px-2.5 rounded text-xs font-semibold bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5 justify-between"
+            size="default"
+            className="h-8 px-2.5 rounded text-xs font-semibold bg-card text-foreground shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5 w-48 sm:w-56"
           >
             <SelectValue placeholder={t("devices.selectSubscription")} />
           </SelectTrigger>
-          <SelectContent className="bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800">
+          <SelectContent className="bg-card border-border">
             {subscriptions.map((sub) => (
               <SelectItem key={sub.id} value={sub.id} className="text-xs font-medium cursor-pointer">
                 {t("devices.subOptionLabel", {
@@ -291,9 +304,136 @@ const DeviceActionsCell = memo(function DeviceActionsCell({
   );
 });
 
-// 6. Parent Dashboard Page
+// 4. High-End Tiled Card Component (Matching ResourcesPage design pattern)
+interface DeviceCardProps {
+  equip: Partial<SubscriptionEquipment>;
+  onOpenNcModal: (equip: Partial<SubscriptionEquipment>) => void;
+  onOpenScheduleMaint: (equip: Partial<SubscriptionEquipment>) => void;
+  onRequestRevoke: (equip: Partial<SubscriptionEquipment>) => void;
+  onRequestRepair: (equip: Partial<SubscriptionEquipment>) => void;
+  onOpenActivateWithOtp: (subId: string, slotIndex: number) => void;
+  onDeployClient?: (equip: Partial<SubscriptionEquipment>) => void;
+  onDeployAgent?: (equip: Partial<SubscriptionEquipment>) => void;
+}
+
+function DeviceCard({
+  equip,
+  onOpenNcModal,
+  onOpenScheduleMaint,
+  onRequestRevoke,
+  onRequestRepair,
+  onOpenActivateWithOtp,
+  onDeployClient,
+  onDeployAgent,
+}: DeviceCardProps) {
+  const { t } = useTranslation();
+  const isActive = equip.status === "ACTIVE";
+  const slotNum = equip.slot_index !== undefined ? equip.slot_index + 1 : 1;
+
+  return (
+    <Card className="p-4 shadow-xs hover:shadow-sm transition-shadow flex flex-col gap-3 h-full">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="p-2 bg-muted text-muted-foreground rounded-md border border-border shrink-0">
+            <Laptop className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <h3 className="text-sm font-bold text-foreground truncate font-heading">
+                {isActive ? equip.device_name || t("devices.unnamedDevice") : t("devices.pendingUnboundSlot")}
+              </h3>
+              {isActive && equip.agent_last_seen_at && (
+                <span
+                  title={t("devices.agentVerifiedTooltip")}
+                  className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0"
+                >
+                  <BadgeCheck className="w-3.5 h-3.5" />
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+              <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                {t("devices.slotNumber", { num: slotNum })}
+              </p>
+              {equip.plan && (
+                <span className="text-[9px] font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border uppercase font-mono">
+                  {equip.plan}
+                </span>
+              )}
+              {equip.tenant_name && (
+                <span className="text-[9px] font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border truncate max-w-28">
+                  {equip.tenant_name}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <span
+          className={cn(
+            "shrink-0 text-[10px] font-mono font-semibold uppercase px-1.5 py-0.5 rounded border",
+            isActive
+              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+              : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+          )}
+        >
+          {isActive ? "ACTIVE" : t("devices.statusPendingActivation")}
+        </span>
+      </div>
+
+      <div className="text-xs text-muted-foreground space-y-1.5 flex-1">
+        {isActive ? (
+          <>
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-muted-foreground font-medium">{t("devices.tableDeviceDetails")}:</span>
+              <span className="font-mono text-foreground font-semibold">
+                {equip.device_serial || t("devices.noSerial")}
+              </span>
+            </div>
+            {equip.nextcloud_username && (
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-muted-foreground font-medium">{t("devices.tableCloudBackup")}:</span>
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                  <Cloud className="h-3 w-3" />
+                  {t("devices.configured")}
+                </span>
+              </div>
+            )}
+            {equip.client_name && (
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-muted-foreground font-medium">{t("devices.tableClientTenant")}:</span>
+                <span className="text-foreground truncate max-w-35 font-medium">{equip.client_name}</span>
+              </div>
+            )}
+          </>
+        ) : (
+          <p className="text-xs text-muted-foreground italic leading-relaxed">{t("devices.pendingUnboundSlot")}</p>
+        )}
+      </div>
+
+      <CardFooter className="p-0 border-none flex items-center justify-between gap-2 pt-2 border-t border-border text-[10px] text-muted-foreground mt-auto">
+        <span className="font-mono truncate max-w-28 text-muted-foreground">
+          {equip.id ? `${t("devices.idLabel")} ${equip.id.slice(0, 8)}...` : ""}
+        </span>
+        <DeviceActionsCell
+          equip={equip}
+          onOpenNcModal={onOpenNcModal}
+          onOpenScheduleMaint={onOpenScheduleMaint}
+          onRequestRevoke={onRequestRevoke}
+          onRequestRepair={onRequestRepair}
+          onOpenActivateWithOtp={onOpenActivateWithOtp}
+          onDeployClient={onDeployClient}
+          onDeployAgent={onDeployAgent}
+        />
+      </CardFooter>
+    </Card>
+  );
+}
+
+// 5. Parent Dashboard Page
 export function DevicesPage() {
   const { t } = useTranslation();
+  const [viewMode, setViewMode] = useState<"list" | "tiled">("list");
   const {
     navigate,
     loading,
@@ -337,6 +477,12 @@ export function DevicesPage() {
     uniqueClients,
     isAdmin,
     adminDevices,
+    selectedClient,
+    setSelectedClient,
+    selectedPlan,
+    setSelectedPlan,
+    clientFilterOptions,
+    planFilterOptions,
     selectedStatus,
     setSelectedStatus,
     statusFilterOptions,
@@ -472,10 +618,12 @@ export function DevicesPage() {
           const equip = row.original;
           return (
             <div className="space-y-0.5">
-              <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+              <p className="text-xs font-bold text-foreground font-heading">
                 {equip.client_name || t("devices.unknownClient")}
               </p>
-              <p className="text-[10px] text-zinc-400 font-mono">{equip.tenant_name || t("devices.unknownTenant")}</p>
+              <p className="text-[10px] text-muted-foreground font-mono">
+                {equip.tenant_name || t("devices.unknownTenant")}
+              </p>
               {equip.client_email && (
                 <p className="text-[9px] text-muted-foreground truncate max-w-35" title={equip.client_email}>
                   {equip.client_email}
@@ -496,13 +644,13 @@ export function DevicesPage() {
         const equip = row.original;
         return (
           <div className="space-y-0.5">
-            <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+            <span className="text-xs font-bold text-foreground">
               {t("devices.slotNumber", {
                 num: equip.slot_index !== undefined ? equip.slot_index + 1 : row.index + 1,
               })}
             </span>
             {equip.id && (
-              <p className="text-[9px] text-zinc-400 font-mono truncate max-w-25" title={equip.id}>
+              <p className="text-[9px] text-muted-foreground font-mono truncate max-w-25" title={equip.id}>
                 {t("devices.idLabel")} {equip.id}
               </p>
             )}
@@ -521,7 +669,7 @@ export function DevicesPage() {
           const equip = row.original;
           return (
             <div className="space-y-0.5">
-              <span className="inline-block bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 px-1 rounded text-[9px] font-mono font-bold uppercase">
+              <span className="inline-block bg-muted text-foreground border border-border px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase">
                 {equip.plan || t("devices.notAvailable")}
               </span>
             </div>
@@ -537,11 +685,11 @@ export function DevicesPage() {
       cell: ({ row }) => {
         const status = row.getValue("status") as string;
         return status === "ACTIVE" ? (
-          <span className="bg-emerald-55 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 px-1.5 py-0.5 text-[10px] font-mono uppercase">
+          <span className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded px-1.5 py-0.5 text-[10px] font-mono uppercase font-semibold">
             ACTIVE
           </span>
         ) : (
-          <span className="bg-amber-55 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 px-1.5 py-0.5 text-[10px] font-mono uppercase">
+          <span className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded px-1.5 py-0.5 text-[10px] font-mono uppercase font-semibold">
             {t("devices.statusPendingActivation")}
           </span>
         );
@@ -559,7 +707,7 @@ export function DevicesPage() {
           return (
             <div className="space-y-0.5">
               <div className="flex items-center gap-1.5">
-                <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
+                <p className="text-xs font-medium text-foreground font-heading">
                   {equip.device_name || t("devices.unnamedDevice")}
                 </p>
                 {equip.agent_last_seen_at && (
@@ -572,11 +720,13 @@ export function DevicesPage() {
                   </span>
                 )}
               </div>
-              <p className="text-[10px] text-zinc-400 font-mono">{equip.device_serial || t("devices.noSerial")}</p>
+              <p className="text-[10px] text-muted-foreground font-mono">
+                {equip.device_serial || t("devices.noSerial")}
+              </p>
             </div>
           );
         }
-        return <p className="text-xs text-zinc-455 italic">{t("devices.pendingUnboundSlot")}</p>;
+        return <p className="text-xs text-muted-foreground italic">{t("devices.pendingUnboundSlot")}</p>;
       },
     });
 
@@ -590,14 +740,14 @@ export function DevicesPage() {
         if (equip.status === "ACTIVE" && equip.nextcloud_username) {
           return (
             <div className="flex items-center gap-1.5">
-              <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50 px-2 py-0.5 rounded text-[10px] font-medium">
+              <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-semibold">
                 <Cloud className="h-3 w-3" />
                 {t("devices.configured")}
               </span>
             </div>
           );
         }
-        return <span className="text-xs text-zinc-400">—</span>;
+        return <span className="text-xs text-muted-foreground">—</span>;
       },
     });
 
@@ -607,7 +757,7 @@ export function DevicesPage() {
       enableSorting: false,
       header: () => (
         <div className="text-right">
-          <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
+          <span className="uppercase text-[10px] text-muted-foreground font-bold tracking-wider">
             {t("devices.tableActions")}
           </span>
         </div>
@@ -643,27 +793,6 @@ export function DevicesPage() {
     setDeviceToDelete,
   ]);
 
-  const searchConfig = useMemo(
-    () => ({
-      value: searchTerm,
-      onChange: setSearchTerm,
-      placeholder: isAdmin ? t("devices.adminSearchPlaceholder") : t("devices.searchPlaceholder"),
-    }),
-    [searchTerm, setSearchTerm, isAdmin, t],
-  );
-
-  const filtersConfig = useMemo(() => {
-    return [
-      {
-        id: "status",
-        value: selectedStatus,
-        onChange: setSelectedStatus,
-        options: statusFilterOptions,
-        placeholder: t("devices.filterAllStatuses"),
-      },
-    ];
-  }, [selectedStatus, setSelectedStatus, statusFilterOptions, t]);
-
   const paginationConfig = useMemo(
     () => ({
       page,
@@ -681,31 +810,44 @@ export function DevicesPage() {
     [page, totalPages, filteredEquipment.length, limit, setPage, setLimit, t],
   );
 
-  return (
-    <Page
-      title={t("nav.devices")}
-      subtitle={t("devices.subtitle")}
-      actions={
-        isAdmin ? (
-          <Button
-            onClick={handleOpenAddDevice}
-            className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>{t("devices.addDevice", "Add Device")}</span>
-          </Button>
-        ) : undefined
-      }
-      isLoading={loading}
-    >
+  // Main Page Body with Skeletons matching ResourcesPage design pattern
+  const body = useMemo(() => {
+    if (loading) {
+      return (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row justify-between gap-3">
+            <Skeleton className="w-full sm:w-72 h-8" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="w-28 h-8" />
+              <Skeleton className="w-24 h-8" />
+            </div>
+          </div>
+          {viewMode === "tiled" ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="w-full h-44 rounded-lg" />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="w-full h-14 rounded-lg" />
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
       <div className="space-y-6">
         {/* Navigation Section Switcher: Device Inventory vs RMM Monitoring & Patches */}
-        <div className="border-b border-zinc-200 dark:border-zinc-800 pb-2">
+        <div className="border-b border-border pb-2">
           <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as "devices" | "rmm")} className="w-full">
-            <TabsList className="bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg">
+            <TabsList className="bg-muted p-0.5 rounded-md border border-border">
               <TabsTrigger
                 value="devices"
-                className="gap-2 text-xs font-medium px-4 py-1.5 cursor-pointer data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-xs"
+                className="gap-2 text-xs font-semibold px-3 py-1 cursor-pointer data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs"
               >
                 <Laptop className="h-3.5 w-3.5" />
                 <span>{t("rmm.tabInventory")}</span>
@@ -713,13 +855,13 @@ export function DevicesPage() {
                   variant="secondary"
                   className="ml-1 text-[10px] font-mono px-1.5 py-0 min-w-5 inline-flex justify-center"
                 >
-                  {loading ? <Skeleton className="h-3 w-4" /> : totalInventoryCount}
+                  {totalInventoryCount}
                 </Badge>
               </TabsTrigger>
 
               <TabsTrigger
                 value="rmm"
-                className="gap-2 text-xs font-medium px-4 py-1.5 cursor-pointer data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-xs"
+                className="gap-2 text-xs font-semibold px-3 py-1 cursor-pointer data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs"
               >
                 <Activity className="h-3.5 w-3.5 text-blue-500" />
                 <span>{t("rmm.tabRmm")}</span>
@@ -731,57 +873,266 @@ export function DevicesPage() {
         {/* SECTION 1: DEVICE INVENTORY */}
         {activeTab === "devices" && (
           <div className="space-y-4">
-            {activeSubscriptions.length === 0 && !loading && !isAdmin ? (
+            {activeSubscriptions.length === 0 && !isAdmin ? (
               <div className="flex items-center justify-center min-h-[60vh]">
                 <EmptySubscriptionsCard onBrowsePlans={handleBrowsePlans} />
               </div>
             ) : (
               <div className="space-y-4 text-foreground animate-fade-in">
-                {activeSubscriptions.length > 1 && !isAdmin && (
-                  <SubscriptionSelector
-                    subscriptions={activeSubscriptions}
-                    selectedId={selectedSubscriptionId}
-                    onChange={setSelectedSubscriptionId}
-                  />
-                )}
+                {/* Unified Toolbar (ResourcesPage pattern) */}
+                <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3">
+                  <InputGroup className="w-full sm:w-72 h-8">
+                    <InputGroupInput
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder={isAdmin ? t("devices.adminSearchPlaceholder") : t("devices.searchPlaceholder")}
+                    />
+                    <InputGroupAddon>
+                      <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                    </InputGroupAddon>
+                  </InputGroup>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-                  <div className="lg:col-span-3 space-y-4">
-                    {/* Toolbar: Actions */}
-                    <div className="flex items-center justify-end gap-2">
+                  <div className="flex flex-wrap items-center justify-between lg:justify-end gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                      {/* Subscription Selector for Multi-Subscription Clients */}
+                      {activeSubscriptions.length > 1 && !isAdmin && (
+                        <SubscriptionSelector
+                          subscriptions={activeSubscriptions}
+                          selectedId={selectedSubscriptionId}
+                          onChange={setSelectedSubscriptionId}
+                        />
+                      )}
+
+                      {/* Client Filter for Admins */}
+                      {isAdmin && uniqueClients.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <label
+                            htmlFor="devices-client-filter"
+                            className="text-[10px] uppercase font-bold text-muted-foreground select-none"
+                          >
+                            {t("devices.tableClientTenant")}
+                          </label>
+                          <div className="flex items-center bg-muted p-0.5 rounded-md border border-border">
+                            <Select value={selectedClient || "all"} onValueChange={setSelectedClient}>
+                              <SelectTrigger
+                                id="devices-client-filter"
+                                aria-label={t("devices.filterAllClients")}
+                                size="default"
+                                className="h-8 px-2.5 rounded text-xs font-semibold bg-card text-foreground shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5"
+                              >
+                                <SelectValue placeholder={t("devices.filterAllClients")} />
+                              </SelectTrigger>
+                              <SelectContent className="bg-card border-border">
+                                <SelectItem value="all" className="text-xs font-medium cursor-pointer">
+                                  {t("devices.filterAllClients")}
+                                </SelectItem>
+                                {clientFilterOptions.map((opt) => (
+                                  <SelectItem
+                                    key={opt.value}
+                                    value={opt.value}
+                                    className="text-xs font-medium cursor-pointer"
+                                  >
+                                    {opt.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Plan Filter for Admins */}
+                      {isAdmin && planFilterOptions.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <label
+                            htmlFor="devices-plan-filter"
+                            className="text-[10px] uppercase font-bold text-muted-foreground select-none"
+                          >
+                            {t("devices.tablePlanService")}
+                          </label>
+                          <div className="flex items-center bg-muted p-0.5 rounded-md border border-border">
+                            <Select value={selectedPlan || "all"} onValueChange={setSelectedPlan}>
+                              <SelectTrigger
+                                id="devices-plan-filter"
+                                aria-label={t("devices.filterAllPlans")}
+                                size="default"
+                                className="h-8 px-2.5 rounded text-xs font-semibold bg-card text-foreground shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5"
+                              >
+                                <SelectValue placeholder={t("devices.filterAllPlans")} />
+                              </SelectTrigger>
+                              <SelectContent className="bg-card border-border">
+                                <SelectItem value="all" className="text-xs font-medium cursor-pointer">
+                                  {t("devices.filterAllPlans")}
+                                </SelectItem>
+                                {planFilterOptions.map((opt) => (
+                                  <SelectItem
+                                    key={opt.value}
+                                    value={opt.value}
+                                    className="text-xs font-medium cursor-pointer"
+                                  >
+                                    {opt.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Status Filter */}
+                      <div className="flex items-center gap-2">
+                        <label
+                          htmlFor="devices-status-filter"
+                          className="text-[10px] uppercase font-bold text-muted-foreground select-none"
+                        >
+                          {t("devices.tableStatus")}
+                        </label>
+                        <div className="flex items-center bg-muted p-0.5 rounded-md border border-border">
+                          <Select value={selectedStatus || "all"} onValueChange={setSelectedStatus}>
+                            <SelectTrigger
+                              id="devices-status-filter"
+                              aria-label={t("devices.tableStatus")}
+                              size="default"
+                              className="h-8 px-2.5 rounded text-xs font-semibold bg-card text-foreground shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5"
+                            >
+                              <SelectValue placeholder={t("devices.filterAllStatuses")} />
+                            </SelectTrigger>
+                            <SelectContent className="bg-card border-border">
+                              <SelectItem value="all" className="text-xs font-medium cursor-pointer">
+                                {t("devices.filterAllStatuses")}
+                              </SelectItem>
+                              {statusFilterOptions.map((opt) => (
+                                <SelectItem
+                                  key={opt.value}
+                                  value={opt.value}
+                                  className="text-xs font-medium cursor-pointer"
+                                >
+                                  {opt.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* View Mode Toggle & Primary Actions */}
+                    <div className="flex items-center gap-2">
                       {firstAvailableSlot && (
                         <Button
                           type="button"
-                          size="sm"
+                          size="default"
+                          variant="outline"
                           onClick={() =>
                             handleOpenActivateWithOtp(firstAvailableSlot.subscription_id, firstAvailableSlot.slot_index)
                           }
-                          className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
+                          className="h-8 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
                         >
                           <Laptop className="h-3.5 w-3.5" />
                           <span>{t("devices.activateDevice", "Activate Device")}</span>
                         </Button>
                       )}
-                    </div>
 
-                    {/* Device List Data Table */}
-                    <DataTable
-                      columns={equipmentColumns}
-                      data={paginatedEquipment}
-                      noDataMessage={t("devices.noSlotsFound")}
-                      loading={loading}
-                      className="border-none rounded-none"
-                      search={searchConfig}
-                      filters={filtersConfig}
-                      pagination={paginationConfig}
-                      enableRowSelection={true}
-                      onSelectedRowsChange={setSelectedDevices}
-                      bulkActions={bulkActions}
-                      sorting={sorting}
-                      onSortingChange={setSorting}
-                    />
+                      {isAdmin && (
+                        <Button
+                          type="button"
+                          size="default"
+                          onClick={handleOpenAddDevice}
+                          className="h-8 px-3 text-xs font-semibold gap-1 cursor-pointer shadow-xs"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                          <span>{t("devices.addDevice", "Add Device")}</span>
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
+
+                {/* Device Content: Empty / Grid Cards / DataTable List */}
+                {filteredEquipment.length === 0 ? (
+                  <Card className="p-8 text-center space-y-2">
+                    <Laptop className="h-6 w-6 text-muted-foreground mx-auto" />
+                    <p className="text-sm font-semibold text-foreground">{t("devices.noSlotsFound")}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("devices.noSlotsFoundDesc", "No devices or slots match your search criteria.")}
+                    </p>
+                  </Card>
+                ) : viewMode === "tiled" ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                      {paginatedEquipment.map((equip, idx) => (
+                        <DeviceCard
+                          key={equip.id || `slot-card-${equip.subscription_id}-${equip.slot_index ?? idx}`}
+                          equip={equip}
+                          onOpenNcModal={handleOpenNcModal}
+                          onOpenScheduleMaint={handleOpenScheduleMaint}
+                          onRequestRevoke={equip.client_role === "ADMIN" ? setDeviceToDelete : handleRequestRevoke}
+                          onRequestRepair={handleRequestRepair}
+                          onOpenActivateWithOtp={handleOpenActivateWithOtp}
+                          onDeployClient={handleDeployClient}
+                          onDeployAgent={handleOpenDeployAgent}
+                        />
+                      ))}
+                    </div>
+
+                    {/* Pagination Bar for Tiled Grid Mode */}
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-between pt-2 border-t border-border text-xs text-muted-foreground">
+                        <span>
+                          {t("devices.paginationShowing", {
+                            start: filteredEquipment.length === 0 ? 0 : (page - 1) * limit + 1,
+                            end: Math.min(page * limit, filteredEquipment.length),
+                            total: filteredEquipment.length,
+                          })}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={page <= 1}
+                            onClick={() => setPage(page - 1)}
+                            className="h-8 px-3 text-xs font-semibold cursor-pointer"
+                          >
+                            {t("devices.paginationPrev", "Previous")}
+                          </Button>
+                          <span className="text-xs font-medium">
+                            {page} / {totalPages}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={page >= totalPages}
+                            onClick={() => setPage(page + 1)}
+                            className="h-8 px-3 text-xs font-semibold cursor-pointer"
+                          >
+                            {t("devices.paginationNext", "Next")}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+                    <div className="lg:col-span-3 space-y-4">
+                      {/* Device List Data Table */}
+                      <DataTable
+                        columns={equipmentColumns}
+                        data={paginatedEquipment}
+                        noDataMessage={t("devices.noSlotsFound")}
+                        loading={loading}
+                        className="border-none rounded-none"
+                        pagination={paginationConfig}
+                        enableRowSelection={true}
+                        onSelectedRowsChange={setSelectedDevices}
+                        bulkActions={bulkActions}
+                        sorting={sorting}
+                        onSortingChange={setSorting}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -804,6 +1155,64 @@ export function DevicesPage() {
           </div>
         )}
       </div>
+    );
+  }, [
+    loading,
+    viewMode,
+    activeTab,
+    setActiveTab,
+    totalInventoryCount,
+    activeSubscriptions,
+    isAdmin,
+    handleBrowsePlans,
+    searchTerm,
+    setSearchTerm,
+    selectedSubscriptionId,
+    setSelectedSubscriptionId,
+    uniqueClients,
+    selectedClient,
+    setSelectedClient,
+    clientFilterOptions,
+    planFilterOptions,
+    selectedPlan,
+    setSelectedPlan,
+    selectedStatus,
+    setSelectedStatus,
+    statusFilterOptions,
+    firstAvailableSlot,
+    handleOpenActivateWithOtp,
+    handleOpenAddDevice,
+    filteredEquipment,
+    paginatedEquipment,
+    handleOpenNcModal,
+    handleOpenScheduleMaint,
+    setDeviceToDelete,
+    handleRequestRevoke,
+    handleRequestRepair,
+    handleDeployClient,
+    handleOpenDeployAgent,
+    totalPages,
+    page,
+    limit,
+    setPage,
+    setLimit,
+    equipmentColumns,
+    paginationConfig,
+    setSelectedDevices,
+    bulkActions,
+    sorting,
+    setSorting,
+    t,
+  ]);
+
+  return (
+    <Page
+      title={t("nav.devices")}
+      subtitle={t("devices.subtitle")}
+      isLoading={false}
+      actions={<ViewToggle value={viewMode} onChange={setViewMode} />}
+    >
+      {body}
 
       {/* Schedule Maintenance Modal */}
       {isMaintModalOpen && (
@@ -878,12 +1287,12 @@ export function DevicesPage() {
 
       {/* Bulk Deactivation Confirmation Modal */}
       <AlertDialog open={showBulkDeactivateAlert} onOpenChange={setShowBulkDeactivateAlert}>
-        <AlertDialogContent className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 max-w-sm rounded-lg p-5">
+        <AlertDialogContent className="bg-card border-border text-foreground max-w-sm rounded-lg p-5">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-sm font-bold">
               {t("devices.bulkDeactivateConfirmTitle") || "Deactivate Selected Devices"}
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-xs text-zinc-500 leading-relaxed mt-1">
+            <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed mt-1">
               {t("devices.bulkDeactivateConfirmDesc", { count: bulkDeactivateTargets.length }) ||
                 `Are you sure you want to deactivate ${bulkDeactivateTargets.length} active device(s)? This action will revoke cloud backup accounts.`}
             </AlertDialogDescription>
@@ -891,13 +1300,13 @@ export function DevicesPage() {
           <AlertDialogFooter className="mt-4 gap-2 flex justify-end">
             <AlertDialogCancel
               disabled={bulkProcessing}
-              className="h-8 px-3 rounded-md text-xs font-semibold cursor-pointer border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+              className="h-8 px-3 rounded-md text-xs font-semibold cursor-pointer border-border hover:bg-muted"
             >
               {t("devices.cancel") || "Cancel"}
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={bulkProcessing}
-              className="h-8 px-3 rounded-md text-xs font-semibold cursor-pointer bg-red-600 hover:bg-red-700 text-white border-0"
+              className="h-8 px-3 rounded-md text-xs font-semibold cursor-pointer bg-destructive hover:bg-destructive/90 text-destructive-foreground border-0"
               onClick={confirmBulkDeactivate}
             >
               {t("devices.bulkDeactivate") || "Deactivate Devices"}
@@ -913,12 +1322,12 @@ export function DevicesPage() {
           if (!open && !revokeLoading) cancelRevoke();
         }}
       >
-        <AlertDialogContent className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 max-w-sm rounded-lg p-5">
+        <AlertDialogContent className="bg-card border-border text-foreground max-w-sm rounded-lg p-5">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-sm font-bold">
               {t("devices.revokeConfirmTitle") || "Deactivate Device"}
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-xs text-zinc-500 leading-relaxed mt-1">
+            <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed mt-1">
               {t("devices.revokeConfirmDesc", {
                 name: revokeTarget?.device_name || revokeTarget?.nextcloud_username || t("devices.unnamedDevice"),
               }) || "This will revoke the cloud backup account and disconnect the device."}
@@ -927,14 +1336,14 @@ export function DevicesPage() {
           <AlertDialogFooter className="mt-4 gap-2 flex justify-end">
             <AlertDialogCancel
               disabled={revokeLoading}
-              className="h-8 px-3 rounded-md text-xs font-semibold cursor-pointer border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+              className="h-8 px-3 rounded-md text-xs font-semibold cursor-pointer border-border hover:bg-muted"
             >
               {t("devices.cancel") || "Cancel"}
             </AlertDialogCancel>
             <AlertDialogAction
               type="button"
               disabled={revokeLoading}
-              className="h-8 px-3 rounded-md text-xs font-semibold cursor-pointer bg-red-600 hover:bg-red-700 text-white border-0"
+              className="h-8 px-3 rounded-md text-xs font-semibold cursor-pointer bg-destructive hover:bg-destructive/90 text-destructive-foreground border-0"
               onClick={confirmRevoke}
             >
               {revokeLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
@@ -951,12 +1360,12 @@ export function DevicesPage() {
           if (!open && !repairLoading) cancelRepair();
         }}
       >
-        <AlertDialogContent className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 max-w-sm rounded-lg p-5">
+        <AlertDialogContent className="bg-card border-border text-foreground max-w-sm rounded-lg p-5">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-sm font-bold">
               {t("devices.repairConfirmTitle") || "Re-pair Device"}
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-xs text-zinc-500 leading-relaxed mt-1">
+            <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed mt-1">
               {t("devices.repairConfirmDesc", {
                 name: repairTarget?.device_name || repairTarget?.nextcloud_username || t("devices.unnamedDevice"),
               }) ||
@@ -966,14 +1375,14 @@ export function DevicesPage() {
           <AlertDialogFooter className="mt-4 gap-2 flex justify-end">
             <AlertDialogCancel
               disabled={repairLoading}
-              className="h-8 px-3 rounded-md text-xs font-semibold cursor-pointer border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+              className="h-8 px-3 rounded-md text-xs font-semibold cursor-pointer border-border hover:bg-muted"
             >
               {t("devices.cancel") || "Cancel"}
             </AlertDialogCancel>
             <AlertDialogAction
               type="button"
               disabled={repairLoading}
-              className="h-8 px-3 rounded-md text-xs font-semibold cursor-pointer bg-blue-600 hover:bg-blue-700 text-white border-0"
+              className="h-8 px-3 rounded-md text-xs font-semibold cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground border-0"
               onClick={confirmRepair}
             >
               {repairLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
@@ -990,12 +1399,12 @@ export function DevicesPage() {
           if (!open && !deleteDeviceLoading) setDeviceToDelete(null);
         }}
       >
-        <AlertDialogContent className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 max-w-sm rounded-lg p-5">
+        <AlertDialogContent className="bg-card border-border text-foreground max-w-sm rounded-lg p-5">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-sm font-bold">
               {t("devices.deleteDeviceConfirmTitle", "Delete Managed Device")}
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-xs text-zinc-500 mt-2">
+            <AlertDialogDescription className="text-xs text-muted-foreground mt-2">
               {t(
                 "devices.deleteDeviceConfirmDesc",
                 "Are you sure you want to permanently delete this device? Associated cloud backup storage and telemetry monitoring will be removed.",
@@ -1007,7 +1416,7 @@ export function DevicesPage() {
               type="button"
               onClick={() => setDeviceToDelete(null)}
               disabled={deleteDeviceLoading}
-              className="h-8 px-3 text-xs"
+              className="h-8 px-3 text-xs border-border hover:bg-muted"
             >
               {t("devices.cancel", "Cancel")}
             </AlertDialogCancel>
@@ -1015,7 +1424,7 @@ export function DevicesPage() {
               type="button"
               onClick={() => deviceToDelete?.id && handleDeleteAdminDevice(deviceToDelete.id)}
               disabled={deleteDeviceLoading}
-              className="h-8 px-3 text-xs bg-red-600 hover:bg-red-700 text-white gap-1.5"
+              className="h-8 px-3 text-xs bg-destructive hover:bg-destructive/90 text-destructive-foreground gap-1.5"
             >
               {deleteDeviceLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               <span>{t("devices.actionDelete", "Delete Device")}</span>
@@ -1026,4 +1435,5 @@ export function DevicesPage() {
     </Page>
   );
 }
+
 export default DevicesPage;

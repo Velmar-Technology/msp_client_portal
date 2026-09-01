@@ -8,6 +8,8 @@ import { registerSecurityTools } from './securityTools.js';
 import { registerRemediationTools } from './remediationTools.js';
 import { registerLocalHostTools } from './localHostTools.js';
 import { registerAuthzTools } from './authzTools.js';
+import { registerUserTools } from './userTools.js';
+import { registerBillingTools } from './billingTools.js';
 
 describe('MSP MCP Server Tools Registration and Execution', () => {
   let server: McpServer;
@@ -34,6 +36,8 @@ describe('MSP MCP Server Tools Registration and Execution', () => {
       registerRemediationTools(server);
       registerLocalHostTools(server);
       registerAuthzTools(server, mockApiClient);
+      registerUserTools(server, mockApiClient);
+      registerBillingTools(server, mockApiClient);
     }).not.toThrow();
   });
 
@@ -248,6 +252,73 @@ describe('MSP MCP Server Tools Registration and Execution', () => {
     expect(report.formattedMarkdownReport).toContain('MSP Device Maintenance & Component Custody Dossier');
     expect(report.formattedMarkdownReport).toContain('Beta Industries');
     expect(report.formattedMarkdownReport).toContain('Quarterly Server Preventative Maintenance');
+  });
+
+  it('should handle listUsers and user queries properly', async () => {
+    const mockUsersResult = {
+      users: [
+        {
+          id: 'u-1',
+          email: 'admin@msp.local',
+          name: 'Super Admin',
+          role: 'ADMIN' as const,
+          tenantId: 'tenant-1',
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ],
+      total: 1,
+      page: 1,
+      totalPages: 1,
+    };
+
+    vi.spyOn(mockApiClient, 'listUsers').mockResolvedValue(mockUsersResult);
+    const result = await mockApiClient.listUsers({ role: 'ADMIN', page: 1, limit: 10 });
+    expect(result.total).toBe(1);
+    expect(result.users[0].name).toBe('Super Admin');
+    expect(result.users[0].role).toBe('ADMIN');
+  });
+
+  it('should handle invoice and financial queries properly', async () => {
+    const mockInvoicesResult = {
+      invoices: [
+        {
+          id: 'inv-uuid-1',
+          invoice_number: 'INV-2026-0001',
+          client_id: 'client-uuid-1',
+          amount: 1500,
+          tax_amount: 270,
+          total: 1770,
+          status: 'PAID' as const,
+          invoice_date: new Date().toISOString(),
+          due_date: new Date().toISOString(),
+          tenant_id: 'tenant-1',
+          created_at: new Date().toISOString(),
+        },
+      ],
+      total: 1,
+      page: 1,
+      totalPages: 1,
+    };
+
+    vi.spyOn(mockApiClient, 'listInvoices').mockResolvedValue(mockInvoicesResult);
+    const result = await mockApiClient.listInvoices({ page: 1, limit: 10 });
+    expect(result.total).toBe(1);
+    expect(result.invoices[0].invoice_number).toBe('INV-2026-0001');
+    expect(result.invoices[0].total).toBe(1770);
+
+    const mockStats = {
+      totalRevenue: 25000,
+      pendingRevenue: 3000,
+      paidInvoicesCount: 15,
+      pendingInvoicesCount: 2,
+    };
+
+    vi.spyOn(mockApiClient, 'getFinancialStats').mockResolvedValue(mockStats);
+    const stats = await mockApiClient.getFinancialStats('30_days');
+    expect(stats.totalRevenue).toBe(25000);
+    expect(stats.paidInvoicesCount).toBe(15);
   });
 });
 

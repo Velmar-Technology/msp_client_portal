@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Download, FileText, Search, LayoutGrid, List } from "lucide-react";
+import { Download, FileText, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Page } from "@/components/Page";
 import {
@@ -11,9 +11,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ViewToggle } from "@/components/ui/view-toggle";
 import { useResourcesPage } from "@/hooks/useResourcesPage";
 import type { ResourceItem } from "@/lib/resourceCatalog";
-import { cn } from "@/lib/utils";
 
 import { RESOURCE_CATEGORY_ICONS as CATEGORY_ICONS } from "@/constants/resources";
 
@@ -231,36 +231,11 @@ export function ResourcesPage() {
             </div>
 
             {/* View Mode Toggle */}
-            <div className="flex items-center bg-muted p-0.5 rounded-md border border-border">
-              <Button
-                type="button"
-                variant={viewMode === "tiled" ? "secondary" : "ghost"}
-                size="icon-xs"
-                onClick={() => setViewMode("tiled")}
-                title={t("resources.viewTiled")}
-                aria-label={t("resources.viewTiled")}
-                className={cn(
-                  "h-7 w-7 rounded cursor-pointer",
-                  viewMode === "tiled" && "bg-card text-foreground shadow-xs"
-                )}
-              >
-                <LayoutGrid className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                type="button"
-                variant={viewMode === "list" ? "secondary" : "ghost"}
-                size="icon-xs"
-                onClick={() => setViewMode("list")}
-                title={t("resources.viewList")}
-                aria-label={t("resources.viewList")}
-                className={cn(
-                  "h-7 w-7 rounded cursor-pointer",
-                  viewMode === "list" && "bg-card text-foreground shadow-xs"
-                )}
-              >
-                <List className="h-3.5 w-3.5" />
-              </Button>
-            </div>
+            <ViewToggle
+              size="sm"
+              value={viewMode}
+              onChange={setViewMode}
+            />
           </div>
         </div>
 

@@ -33,7 +33,7 @@ describe('whatsappService', () => {
 
     expect(logger.info).toHaveBeenCalledTimes(1);
     expect(logger.info).toHaveBeenCalledWith(
-      '📱 [STUB] WhatsApp message queued',
+      '[STUB] WhatsApp message queued',
       expect.objectContaining({
         to: payload.to,
         subject: payload.subject,

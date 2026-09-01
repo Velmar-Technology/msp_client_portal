@@ -92,6 +92,31 @@ export class TicketRepository extends BaseRepository<Ticket> {
   }
 
   /**
+   * Retrieves all resolved or closed tickets for a tenant (or all tenants if tenantId not specified) with an assigned technician.
+   *
+   * @param tenantId - Optional Tenant UUID
+   * @returns Array of eligible closed/resolved tickets
+   */
+  async findClosedTicketsForTenant(tenantId?: string): Promise<Ticket[]> {
+    const conditions = [
+      or(eq(tickets.status, TicketStatus.RESOLVED), eq(tickets.status, TicketStatus.CLOSED)),
+      ne(tickets.status, 'RESOLVED_AUTOMATED' as any),
+      isNotNull(tickets.assigned_tech_id),
+    ];
+
+    if (tenantId) {
+      conditions.push(eq(tickets.tenant_id, tenantId));
+    }
+
+    const results = await db
+      .select()
+      .from(tickets)
+      .where(and(...conditions))
+      .orderBy(asc(tickets.created_at));
+    return results as Ticket[];
+  }
+
+  /**
    * Retrieves paginated tickets filed by a specific client.
    *
    * @param clientId - Client user UUID

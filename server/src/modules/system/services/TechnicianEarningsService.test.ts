@@ -7,6 +7,7 @@ describe('TechnicianEarningsService', () => {
   let mockEarningsRepo: any;
   let mockExpenseRepo: any;
   let mockUserRepo: any;
+  let mockTicketRepo: any;
   let service: TechnicianEarningsService;
 
   const mockTicket: Ticket = {
@@ -83,13 +84,20 @@ describe('TechnicianEarningsService', () => {
         expense_date: new Date(),
         tenant_id: 'tenant-1',
       }),
+      update: vi.fn().mockResolvedValue({ id: 'expense-1' }),
     };
+
+    mockEarningsRepo.updateEarning = vi.fn().mockResolvedValue({ id: 'earning-1' });
 
     mockUserRepo = {
       findById: vi.fn().mockResolvedValue(mockTechUser),
     };
 
-    service = new TechnicianEarningsService(mockEarningsRepo, mockExpenseRepo, mockUserRepo);
+    mockTicketRepo = {
+      findClosedTicketsForTenant: vi.fn().mockResolvedValue([mockTicket]),
+    };
+
+    service = new TechnicianEarningsService(mockEarningsRepo, mockExpenseRepo, mockUserRepo, mockTicketRepo);
   });
 
   describe('calculateAndRecordEarnings', () => {
@@ -226,6 +234,44 @@ describe('TechnicianEarningsService', () => {
           adminCtx
         )
       ).rejects.toThrow(ValidationError);
+    });
+  });
+
+  describe('recalculateTenantCommissions', () => {
+    it('should recalculate and create new earnings for closed tickets without earnings', async () => {
+      const adminCtx = { userId: 'admin-1', role: UserRole.ADMIN, tenantId: 'tenant-1' };
+      mockEarningsRepo.findByTicketId.mockResolvedValueOnce(null);
+
+      const result = await service.recalculateTenantCommissions('tenant-1', adminCtx);
+
+      expect(result.processedTickets).toBe(1);
+      expect(result.createdEarnings).toBe(1);
+      expect(result.updatedEarnings).toBe(0);
+      expect(mockEarningsRepo.createEarning).toHaveBeenCalled();
+      expect(mockExpenseRepo.create).toHaveBeenCalled();
+    });
+
+    it('should recalculate and update existing pending earnings', async () => {
+      const adminCtx = { userId: 'admin-1', role: UserRole.ADMIN, tenantId: 'tenant-1' };
+      mockEarningsRepo.findByTicketId.mockResolvedValueOnce({
+        id: 'earning-existing',
+        ticket_id: 'ticket-123',
+        status: EarningStatus.PENDING,
+        expense_id: 'expense-1',
+      });
+
+      const result = await service.recalculateTenantCommissions('tenant-1', adminCtx);
+
+      expect(result.processedTickets).toBe(1);
+      expect(result.createdEarnings).toBe(0);
+      expect(result.updatedEarnings).toBe(1);
+      expect(mockEarningsRepo.updateEarning).toHaveBeenCalledWith('earning-existing', expect.any(Object));
+      expect(mockExpenseRepo.update).toHaveBeenCalledWith('expense-1', expect.any(Object));
+    });
+
+    it('should throw ForbiddenError when non-admin attempts recalculation', async () => {
+      const techCtx = { userId: 'tech-1', role: UserRole.TECHNICIAN, tenantId: 'tenant-1' };
+      await expect(service.recalculateTenantCommissions('tenant-1', techCtx)).rejects.toThrow(ForbiddenError);
     });
   });
 });

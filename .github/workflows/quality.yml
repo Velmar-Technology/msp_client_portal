@@ -20,16 +20,16 @@ jobs:
       - name: Check Protected Paths Violation
         run: |
           if [ "${{ github.head_ref }}" = "stage" ]; then
-            echo "ℹ️ Bypassing protected paths guard for stage branch promotion PR."
+            echo "Bypassing protected paths guard for stage branch promotion PR."
             exit 0
           fi
           CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }} HEAD)
           echo "Inspecting changed files against AGENTS.md protected paths..."
           if echo "$CHANGED_FILES" | grep -E '^(\.github/workflows/|\.husky/|\.env|\.env\.|server/src/shared/db/migrations/)'; then
-            echo "❌ ERROR: PR modifies protected path(s) prohibited by AGENTS.md Section 9!"
+            echo "ERROR: PR modifies protected path(s) prohibited by AGENTS.md Section 9!"
             exit 1
           fi
-          echo "✅ No protected paths modified."
+          echo "No protected paths modified."
 
   gates:
     name: Gates (${{ matrix.workspace }})

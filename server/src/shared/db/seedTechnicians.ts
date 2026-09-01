@@ -91,7 +91,7 @@ export async function seedTechniciansWithFaker(
   await db.insert(schema.users).values(newTechnicians);
   await db.insert(schema.notificationPreferences).values(newPreferences);
 
-  logger.info(`✅ Successfully seeded ${count} technicians with Faker.js!`);
+  logger.info(`Successfully seeded ${count} technicians with Faker.js!`);
   return createdSummary;
 }
 
@@ -110,7 +110,7 @@ if (require.main === module || process.argv[1]?.includes('seedTechnicians')) {
       process.exit(0);
     })
     .catch((err) => {
-      console.error('❌ Failed to seed technicians:', err);
+      console.error('[Seed] Failed to seed technicians:', err);
       process.exit(1);
     })
     .finally(async () => {

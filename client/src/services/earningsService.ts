@@ -88,6 +88,14 @@ export const earningsService = {
   },
 
   /**
+   * Recalculates and synchronizes technician commissions and OpEx expenses for closed tickets (Admin only).
+   */
+  async recalculateCommissions(): Promise<{ processedTickets: number; createdEarnings: number; updatedEarnings: number }> {
+    const res = await api.post('/system/technicians/earnings/recalculate');
+    return res.data.data;
+  },
+
+  /**
    * Configures base closed ticket compensation rate, SLA bonus rate, and priority multipliers (Admin only).
    */
   async updateRates(data: Partial<TechnicianRate>): Promise<TechnicianRate> {

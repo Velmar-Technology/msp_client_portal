@@ -7,8 +7,8 @@ const serverPath = path.resolve(__dirname, '../dist/index.js');
 
 async function runMcpTest() {
   console.log('====================================================');
-  console.log('🤖 RUNNING ADVANCED MCP TEST SUITE ON THIS PC');
-  console.log(`📁 Target: ${serverPath}`);
+  console.log('[TEST] RUNNING ADVANCED MCP TEST SUITE ON THIS PC');
+  console.log(`Target: ${serverPath}`);
   console.log('====================================================\n');
 
   const serverProc = spawn('node', [serverPath], {
@@ -58,7 +58,7 @@ async function runMcpTest() {
   }
 
   // 1. Handshake
-  console.log('➡️  Step 1: Protocol Handshake...');
+  console.log('Step 1: Protocol Handshake...');
   await sendRpc('initialize', {
     protocolVersion: '2024-11-05',
     capabilities: {},
@@ -68,48 +68,48 @@ async function runMcpTest() {
   console.log('✅ Handshake complete.');
 
   // 2. List Tools
-  console.log('\n➡️  Step 2: Listing Tools...');
+  console.log('\nStep 2: Listing Tools...');
   const toolsRes = await sendRpc('tools/list', {});
   const tools = toolsRes.result?.tools || [];
   console.log(`✅ ${tools.length} Tools registered:`);
   tools.forEach((t: any) => console.log(`   - 🛠️  ${t.name.padEnd(30)} : ${t.description.slice(0, 70)}...`));
 
   // 3. List Prompts
-  console.log('\n➡️  Step 3: Listing Prompts...');
+  console.log('\nStep 3: Listing Prompts...');
   const promptsRes = await sendRpc('prompts/list', {});
   const prompts = promptsRes.result?.prompts || [];
   console.log(`✅ ${prompts.length} Prompts registered:`);
   prompts.forEach((p: any) => console.log(`   - 📜 ${p.name.padEnd(28)} : ${p.description}`));
 
   // 4. Test: Security Posture Audit on THIS PC
-  console.log('\n➡️  Step 4: Executing "msp_audit_security_posture"...');
+  console.log('\nStep 4: Executing "msp_audit_security_posture"...');
   const secRes = await sendRpc('tools/call', {
     name: 'msp_audit_security_posture',
     arguments: {},
   });
-  console.log('🛡️  SECURITY POSTURE RESULT:');
+  console.log('SECURITY POSTURE RESULT:');
   console.log(secRes.result?.content?.[0]?.text);
 
   // 5. Test: Network Troubleshoot
-  console.log('\n➡️  Step 5: Executing "msp_network_troubleshoot"...');
+  console.log('\nStep 5: Executing "msp_network_troubleshoot"...');
   const netRes = await sendRpc('tools/call', {
     name: 'msp_network_troubleshoot',
     arguments: { targetHost: '1.1.1.1', domainToResolve: 'cloudflare.com' },
   });
-  console.log('🌐 NETWORK DIAGNOSTICS RESULT:');
+  console.log('NETWORK DIAGNOSTICS RESULT:');
   console.log(netRes.result?.content?.[0]?.text);
 
   // 6. Test: Clean Temp Storage (Dry Run)
-  console.log('\n➡️  Step 6: Executing "msp_clean_temp_storage" (Dry Run)...');
+  console.log('\nStep 6: Executing "msp_clean_temp_storage" (Dry Run)...');
   const cleanRes = await sendRpc('tools/call', {
     name: 'msp_clean_temp_storage',
     arguments: { dryRun: true },
   });
-  console.log('🧹 RECOVERABLE DISK SPACE (SIMULATION):');
+  console.log('RECOVERABLE DISK SPACE (SIMULATION):');
   console.log(cleanRes.result?.content?.[0]?.text);
 
   console.log('\n====================================================');
-  console.log('🎉 ALL ADVANCED MCP TOOLS & PROMPTS VERIFIED!');
+  console.log('ALL ADVANCED MCP TOOLS & PROMPTS VERIFIED!');
   console.log('====================================================');
 
   serverProc.kill();

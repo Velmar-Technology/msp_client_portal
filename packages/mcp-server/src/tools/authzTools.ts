@@ -45,7 +45,7 @@ export function registerAuthzTools(server: McpServer, apiClient: MspApiClient) {
           content: [
             {
               type: 'text',
-              text: `✅ Ephemeral access granted successfully:\n${JSON.stringify(grant, null, 2)}`,
+              text: `Ephemeral access granted successfully:\n${JSON.stringify(grant, null, 2)}`,
             },
           ],
         };

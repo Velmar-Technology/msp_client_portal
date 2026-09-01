@@ -125,7 +125,7 @@ jobs:
           } >> "${GITHUB_OUTPUT}"
 
           {
-            echo "### 🚀 Release ${TAG_NAME}"
+            echo "### Release ${TAG_NAME}"
             echo ""
             echo "| Field | Value |"
             echo "| ----- | ----- |"
@@ -320,7 +320,7 @@ jobs:
         run: |
           if [ "${SECURITY_GATE_BYPASSED}" = "true" ]; then
             echo "::warning::Security gate BYPASSED for this run — findings are report-only."
-            echo "> ⚠️ Security gate bypassed — HIGH/CRITICAL findings did not block this release." >> "${GITHUB_STEP_SUMMARY}"
+            echo "> Security gate bypassed — HIGH/CRITICAL findings did not block this release." >> "${GITHUB_STEP_SUMMARY}"
           else
             echo "Security gate enforced (HIGH/CRITICAL blocking)."
           fi
@@ -464,7 +464,7 @@ jobs:
           cd release-assets
           sha256sum * > SHA256SUMS.txt
 
-          echo "### 📦 Release Assets & SHA256 Checksums" > ../release-notes-table.md
+          echo "### Release Assets & SHA256 Checksums" > ../release-notes-table.md
           echo "" >> ../release-notes-table.md
           echo "| Artifact | SHA256 Checksum |" >> ../release-notes-table.md
           echo "| :--- | :--- |" >> ../release-notes-table.md

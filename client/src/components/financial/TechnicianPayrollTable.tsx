@@ -10,6 +10,7 @@ import {
   Zap,
   Users,
   AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import {
   earningsService,
@@ -26,7 +27,14 @@ export function TechnicianPayrollTable() {
   const [search, setSearch] = useState<string>('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [processing, setProcessing] = useState(false);
+  const [isRecalculating, setIsRecalculating] = useState(false);
   const [actionAlert, setActionAlert] = useState<{ text: string; isError: boolean } | null>(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, search]);
 
   const loadData = useCallback(async () => {
     try {
@@ -83,6 +91,28 @@ export function TechnicianPayrollTable() {
     } finally {
       setProcessing(false);
       setTimeout(() => setActionAlert(null), 5000);
+    }
+  };
+
+  const handleRecalculateCommissions = async () => {
+    setIsRecalculating(true);
+    setActionAlert(null);
+    try {
+      const res = await earningsService.recalculateCommissions();
+      setActionAlert({
+        text: `Commissions recalculation completed: evaluated ${res.processedTickets} closed tickets (${res.createdEarnings} created, ${res.updatedEarnings} updated).`,
+        isError: false,
+      });
+      await loadData();
+    } catch (err) {
+      console.error('Commission recalculation failed', err);
+      setActionAlert({
+        text: 'Failed to recalculate technician commissions. Please try again.',
+        isError: true,
+      });
+    } finally {
+      setIsRecalculating(false);
+      setTimeout(() => setActionAlert(null), 6000);
     }
   };
 
@@ -143,6 +173,13 @@ export function TechnicianPayrollTable() {
       return matchSearch;
     });
   }, [earnings, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredEarnings.length / limit));
+
+  const paginatedEarnings = useMemo(() => {
+    const start = (page - 1) * limit;
+    return filteredEarnings.slice(start, start + limit);
+  }, [filteredEarnings, page, limit]);
 
   const columns = useMemo<ColumnDef<TechnicianEarning>[]>(() => [
     {
@@ -339,6 +376,18 @@ export function TechnicianPayrollTable() {
               type="button"
               variant="outline"
               size="sm"
+              onClick={handleRecalculateCommissions}
+              disabled={isRecalculating || loading}
+              className="h-7 text-xs font-medium gap-1.5 cursor-pointer text-foreground hover:bg-muted"
+            >
+              <RefreshCw className={`h-3 w-3 ${isRecalculating ? 'animate-spin text-primary' : 'text-muted-foreground'}`} />
+              <span>{isRecalculating ? 'Recalculating...' : 'Recalculate Financials'}</span>
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
               onClick={handleExportCsv}
               disabled={earnings.length === 0}
               className="h-7 text-xs font-medium gap-1 cursor-pointer"
@@ -365,7 +414,7 @@ export function TechnicianPayrollTable() {
 
         <DataTable
           columns={columns}
-          data={filteredEarnings}
+          data={paginatedEarnings}
           loading={loading}
           noDataMessage="No technician commission entries found."
           className="border-none rounded-none"
@@ -390,12 +439,15 @@ export function TechnicianPayrollTable() {
             },
           ]}
           pagination={{
-            page: 1,
-            totalPages: 1,
+            page,
+            totalPages,
             totalItems: filteredEarnings.length,
-            limit: 50,
-            onPageChange: () => {},
-            onLimitChange: () => {},
+            limit,
+            onPageChange: (p) => setPage(p),
+            onLimitChange: (l) => {
+              setLimit(l);
+              setPage(1);
+            },
           }}
         />
       </div>

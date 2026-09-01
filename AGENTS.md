@@ -164,6 +164,10 @@ Dependencies point strictly **INWARD**: `Frameworks/Drivers` $\rightarrow$ `Inte
   - `.github/workflows/`
   - `server/src/shared/db/migrations/` (unless generating new migration)
   - `.husky/`
+* **MCP Tool Guardrails & Workaround Prohibition:**
+  - When invoked with `@mcp:<server>`, call tools that directly match the user's requested domain and intent.
+  - If a dedicated MCP tool does NOT exist for the requested query (e.g. querying users when only equipment/tickets tools exist), do NOT execute intermediate ad-hoc scripts, parse unrelated payloads (like `/equipment/slots`), or synthesize data through roundabout methods.
+  - Immediately inform the user of the available tools, report the missing capability, or offer to register a first-class MCP tool.
 * **Conventional Commits:** `<type>(<scope>): <imperative summary>` (`feat`, `fix`, `refactor`, `test`, `chore` with scopes `tickets`, `billing`, `auth`, `client`, `server`, etc.).
 
 ---

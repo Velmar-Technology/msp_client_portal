@@ -1015,7 +1015,7 @@
     "unnamedDevice": "Dispositivo Sin Nombre",
     "noSerial": "Sin Serie",
     "pendingUnboundSlot": "Esperando vinculación",
-    "nextcloudBackupTitle": "☁️ Respaldo Nextcloud:",
+    "nextcloudBackupTitle": "Respaldo Nextcloud:",
     "usedLabel": "Usado: {{size}}",
     "totalLabel": "Total: {{size}} ({{percentage}}%)",
     "actionDeactivate": "Desactivar Dispositivo",

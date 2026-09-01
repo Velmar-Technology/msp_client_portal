@@ -105,7 +105,7 @@ async function main(): Promise<void> {
     });
 
     httpServer.listen(port, () => {
-      console.log(`[MSP MCP Server] 🚀 Stateless Streamable HTTP Server (2026-07-28 Spec) listening on http://0.0.0.0:${port}/mcp`);
+      console.log(`[MSP MCP Server] Stateless Streamable HTTP Server (2026-07-28 Spec) listening on http://0.0.0.0:${port}/mcp`);
       console.log(`[MSP MCP Server] Connected to Backend API: ${apiUrl}`);
     });
   } else {

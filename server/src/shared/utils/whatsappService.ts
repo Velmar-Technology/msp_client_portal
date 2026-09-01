@@ -19,7 +19,7 @@ import { NotificationPayload } from '@shared/types';
  */
 export async function sendWhatsApp(payload: NotificationPayload): Promise<void> {
   // STUB: Log the message instead of sending in development/stub environment.
-  logger.info('📱 [STUB] WhatsApp message queued', {
+  logger.info('[STUB] WhatsApp message queued', {
     to: payload.to,
     subject: payload.subject,
     body: payload.body.substring(0, 100) + '...',
@@ -42,7 +42,7 @@ export async function sendTicketStatusWhatsApp(
   notes?: string,
 ): Promise<void> {
   const message = [
-    `🔔 *Velmar Technology SRL — Ticket Update*`,
+    `*Velmar Technology SRL — Ticket Update*`,
     ``,
     `Ticket: *${ticketId}*`,
     `New Status: *${newStatus}*`,
@@ -73,7 +73,7 @@ export async function sendOTPWhatsApp(
   otp: string
 ): Promise<void> {
   const message = [
-    `🔐 *Velmar Technology SRL — Account Verification*`,
+    `*Velmar Technology SRL — Account Verification*`,
     ``,
     `Your verification code is: *${otp}*`,
     ``,

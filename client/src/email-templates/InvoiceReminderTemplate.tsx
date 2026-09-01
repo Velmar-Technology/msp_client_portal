@@ -26,7 +26,6 @@ export const InvoiceReminderTemplate: React.FC<InvoiceEmailProps> = ({
       preheader={preheader}
       actionUrl={paymentUrl}
       actionText={actionText}
-      headerIcon="💰"
       accentColor={palette.warning}
       language={language}
     >

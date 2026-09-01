@@ -172,10 +172,10 @@ export interface CalloutProps {
 }
 
 const calloutConfig = {
-  warning: { bg: palette.warningBg, border: '#FED7AA', icon: '⚠️', textColor: palette.warning },
-  danger:  { bg: palette.dangerBg,  border: '#FECACA', icon: '🔒', textColor: palette.danger },
-  info:    { bg: palette.infoBgAlt, border: '#BFDBFE', icon: 'ℹ️', textColor: palette.info },
-  muted:   { bg: palette.surface,   border: palette.border, icon: '',   textColor: palette.secondary },
+  warning: { bg: palette.warningBg, border: '#FED7AA', icon: '', textColor: palette.warning },
+  danger:  { bg: palette.dangerBg,  border: '#FECACA', icon: '', textColor: palette.danger },
+  info:    { bg: palette.infoBgAlt, border: '#BFDBFE', icon: '', textColor: palette.info },
+  muted:   { bg: palette.surface,   border: palette.border, icon: '', textColor: palette.secondary },
 };
 
 export const Callout: React.FC<CalloutProps> = ({ children, variant = 'muted' }) => {
@@ -303,7 +303,7 @@ export const FallbackLink: React.FC<FallbackLinkProps> = ({ url, isSpanish, expi
           marginBottom: 0,
         }}
       >
-        ⏱️ {expiresLabel}
+        {expiresLabel}
       </p>
     )}
   </div>

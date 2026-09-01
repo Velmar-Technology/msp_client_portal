@@ -30,7 +30,7 @@ export function registerRemediationTools(server: McpServer) {
           content: [
             {
               type: 'text',
-              text: `✅ Service successfully restarted:\n${JSON.stringify(result, null, 2)}`,
+              text: `Service successfully restarted:\n${JSON.stringify(result, null, 2)}`,
             },
           ],
         };
@@ -94,7 +94,7 @@ export function registerRemediationTools(server: McpServer) {
           content: [
             {
               type: 'text',
-              text: `✅ DNS Resolver Cache Flushed:\n${stdout.trim()}`,
+              text: `DNS Resolver Cache Flushed:\n${stdout.trim()}`,
             },
           ],
         };

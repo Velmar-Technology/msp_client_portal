@@ -30,18 +30,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Page } from "@/components/Page";
 import { Button } from "@/components/ui/button";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ViewToggle } from "@/components/ui/view-toggle";
 import { DataTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
@@ -224,9 +215,7 @@ export function MaintenancePage() {
         const item = row.original;
         return (
           <div className="space-y-0.5">
-            <p className="text-xs font-semibold text-foreground">
-              {item.device_name || t("devices.unnamedDevice")}
-            </p>
+            <p className="text-xs font-semibold text-foreground">{item.device_name || t("devices.unnamedDevice")}</p>
             {item.device_serial && <p className="text-[10px] text-muted-foreground font-mono">{item.device_serial}</p>}
             {item.service_name && <p className="text-[9px] text-muted-foreground italic">{item.service_name}</p>}
           </div>
@@ -319,17 +308,11 @@ export function MaintenancePage() {
                   <MoreHorizontal className="h-3.5 w-3.5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-48 bg-card text-foreground border border-border"
-              >
+              <DropdownMenuContent align="end" className="w-48 bg-card text-foreground border border-border">
                 <DropdownMenuLabel className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
                   {t("maintenance.actionsLabel")}
                 </DropdownMenuLabel>
-                <DropdownMenuItem
-                  onClick={() => setSelectedEventDetails(item)}
-                  className="text-xs cursor-pointer"
-                >
+                <DropdownMenuItem onClick={() => setSelectedEventDetails(item)} className="text-xs cursor-pointer">
                   <Eye className="h-3.5 w-3.5 mr-1" />
                   {t("maintenance.viewDetails")}
                 </DropdownMenuItem>
@@ -406,37 +389,13 @@ export function MaintenancePage() {
                 <ChevronRight className="h-3.5 w-3.5" />
               </Button>
             </div>
-            <h2 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-zinc-100 capitalize font-heading">{monthYearTitle}</h2>
+            <h2 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-zinc-100 capitalize font-heading">
+              {monthYearTitle}
+            </h2>
           </div>
 
           {/* Action & View Controls */}
           <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end">
-            {/* View Mode Toggle */}
-            <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-800">
-              <Button
-                type="button"
-                size="icon"
-                variant={viewMode === "CALENDAR" ? "secondary" : "ghost"}
-                onClick={() => setViewMode("CALENDAR")}
-                title={t("maintenance.viewCalendar")}
-                aria-label={t("maintenance.viewCalendar")}
-                className="h-7 w-7 p-0 cursor-pointer"
-              >
-                <LayoutGrid className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                type="button"
-                size="icon"
-                variant={viewMode === "LIST" ? "secondary" : "ghost"}
-                onClick={() => setViewMode("LIST")}
-                title={t("maintenance.viewList")}
-                aria-label={t("maintenance.viewList")}
-                className="h-7 w-7 p-0 cursor-pointer"
-              >
-                <ListIcon className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-
             {/* Schedule Maintenance Button */}
             <Button
               type="button"
@@ -447,6 +406,26 @@ export function MaintenancePage() {
               <Plus className="h-3.5 w-3.5" />
               <span>{t("maintenance.scheduleBtn")}</span>
             </Button>
+            {/* View Mode Toggle */}
+            <ViewToggle
+              size="sm"
+              value={viewMode}
+              onChange={setViewMode}
+              options={[
+                {
+                  value: "CALENDAR",
+                  icon: LayoutGrid,
+                  title: t("maintenance.viewCalendar"),
+                  ariaLabel: t("maintenance.viewCalendar"),
+                },
+                {
+                  value: "LIST",
+                  icon: ListIcon,
+                  title: t("maintenance.viewList"),
+                  ariaLabel: t("maintenance.viewList"),
+                },
+              ]}
+            />
           </div>
         </div>
 
@@ -468,10 +447,7 @@ export function MaintenancePage() {
               {/* Status Filter */}
               <div className="flex items-center gap-1.5">
                 <ListFilter className="h-3.5 w-3.5 text-muted-foreground" />
-                <Select
-                  value={statusFilter}
-                  onValueChange={(val) => setStatusFilter(val)}
-                >
+                <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val)}>
                   <SelectTrigger size="default" className="w-36 text-xs font-medium bg-background">
                     <SelectValue />
                   </SelectTrigger>
@@ -488,10 +464,7 @@ export function MaintenancePage() {
 
               {/* Tech Filter (Admin/Tech) */}
               {isAdminOrTech && uniqueTechnicians.length > 0 && (
-                <Select
-                  value={selectedTechFilter}
-                  onValueChange={(val) => setSelectedTechFilter(val)}
-                >
+                <Select value={selectedTechFilter} onValueChange={(val) => setSelectedTechFilter(val)}>
                   <SelectTrigger size="default" className="w-36 text-xs font-medium bg-background">
                     <SelectValue />
                   </SelectTrigger>
@@ -513,7 +486,7 @@ export function MaintenancePage() {
         {viewMode === "CALENDAR" && (
           <div className="bg-card border border-border rounded-xl shadow-xs overflow-hidden">
             {/* Day of Week Headers */}
-            <div className="grid grid-cols-7 border-b border-border bg-muted/30 text-center font-bold text-[11px] text-muted-foreground py-2 font-heading">
+            <div className="grid grid-cols-7 border-b border-border bg-muted/30 text-center font-bold text-[10px] text-muted-foreground py-1 font-heading">
               <div>{t("calendar.sun")}</div>
               <div>{t("calendar.mon")}</div>
               <div>{t("calendar.tue")}</div>
@@ -534,15 +507,13 @@ export function MaintenancePage() {
                 return (
                   <div
                     key={idx}
-                    className={`min-h-27.5 p-1.5 flex flex-col justify-start transition-colors ${
-                      !dayItem.isCurrentMonth
-                        ? "bg-muted/10 text-muted-foreground/40"
-                        : "bg-card text-foreground"
+                    className={`group min-h-18 p-1 flex flex-col justify-start transition-colors ${
+                      !dayItem.isCurrentMonth ? "bg-muted/10 text-muted-foreground/40" : "bg-card text-foreground"
                     }`}
                   >
-                    <div className="flex justify-between items-center mb-1 px-1">
+                    <div className="flex justify-between items-center mb-0.5 px-0.5">
                       <span
-                        className={`text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center ${
+                        className={`text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center ${
                           isToday
                             ? "bg-primary text-primary-foreground font-heading"
                             : dayItem.isCurrentMonth
@@ -557,21 +528,21 @@ export function MaintenancePage() {
                           variant="ghost"
                           size="icon-xs"
                           onClick={() => openScheduleModal()}
-                          className="h-5 w-5 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground p-0 cursor-pointer transition-opacity"
+                          className="h-4 w-4 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground p-0 cursor-pointer transition-opacity"
                           title={t("maintenance.scheduleBtn")}
                         >
-                          <Plus className="h-3 w-3" />
+                          <Plus className="h-2.5 w-2.5" />
                         </Button>
                       )}
                     </div>
 
                     {/* Events List for Day */}
-                    <div className="space-y-1 overflow-y-auto max-h-21.25 pr-0.5">
+                    <div className="space-y-0.5 overflow-y-auto max-h-13.5 pr-0.5">
                       {dayMaintenances.map((m) => (
                         <div
                           key={m.id}
                           onClick={() => setSelectedEventDetails(m)}
-                          className={`p-1 rounded border text-[10px] cursor-pointer font-medium leading-tight truncate transition-all hover:scale-[1.02] shadow-xs ${
+                          className={`px-1 py-0.5 rounded border text-[9px] cursor-pointer font-medium leading-tight truncate transition-all hover:scale-[1.01] shadow-xs ${
                             m.status === "COMPLETED"
                               ? "bg-primary/10 text-primary border-primary/20"
                               : m.status === "IN_PROGRESS"
@@ -583,10 +554,12 @@ export function MaintenancePage() {
                           title={`${m.title} - ${m.device_name || ""}`}
                         >
                           <div className="flex items-center gap-1 font-bold">
-                            <Laptop className="h-2.5 w-2.5 shrink-0" />
+                            <Laptop className="h-2 w-2 shrink-0" />
                             <span className="truncate">{m.device_name || t("devices.unnamedDevice")}</span>
                           </div>
-                          {m.client_name && <p className="text-[9px] opacity-75 truncate mt-0.5">{m.client_name}</p>}
+                          {m.client_name && (
+                            <p className="text-[8px] opacity-75 truncate leading-none mt-0.5">{m.client_name}</p>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -661,12 +634,19 @@ export function MaintenancePage() {
       />
 
       {/* Event Details Drawer/Modal */}
-      <AlertDialog open={!!selectedEventDetails} onOpenChange={(open) => { if (!open) setSelectedEventDetails(null); }}>
+      <AlertDialog
+        open={!!selectedEventDetails}
+        onOpenChange={(open) => {
+          if (!open) setSelectedEventDetails(null);
+        }}
+      >
         {selectedEventDetails && (
           <AlertDialogContent className="bg-card border border-border rounded-sm max-w-md w-full p-5 shadow-2xl space-y-4">
             <AlertDialogHeader className="flex flex-row justify-between items-start border-b border-border pb-3 space-y-0 text-left">
               <div>
-                <AlertDialogTitle className="text-sm font-bold text-foreground font-heading">{selectedEventDetails.title}</AlertDialogTitle>
+                <AlertDialogTitle className="text-sm font-bold text-foreground font-heading">
+                  {selectedEventDetails.title}
+                </AlertDialogTitle>
                 <AlertDialogDescription className="text-xs text-muted-foreground font-mono mt-0.5">
                   {new Date(selectedEventDetails.scheduled_date).toLocaleString()}
                 </AlertDialogDescription>
@@ -693,7 +673,9 @@ export function MaintenancePage() {
               </div>
               {selectedEventDetails.notes && (
                 <div className="border-t border-border pt-2 mt-2">
-                  <span className="text-muted-foreground font-semibold block mb-0.5">{t("maintenance.labelNotes")}:</span>
+                  <span className="text-muted-foreground font-semibold block mb-0.5">
+                    {t("maintenance.labelNotes")}:
+                  </span>
                   <p className="text-foreground italic bg-card p-2 rounded border border-border">
                     {selectedEventDetails.notes}
                   </p>

@@ -149,17 +149,17 @@ if (smtpAvailable) {
         logger.info('SMTP connection verified successfully!');
       })
       .catch((error) => {
-        logger.error('📧 SMTP connection verification failed. Falling back to STUB mode for emails.', {
+        logger.error('SMTP connection verification failed. Falling back to STUB mode for emails.', {
           error: error.message || error,
         });
         useStubTransporter = true;
       });
   } catch (error) {
-    logger.error('📧 Failed to initialize SMTP transporter. Falling back to STUB mode.', error);
+    logger.error('Failed to initialize SMTP transporter. Falling back to STUB mode.', error);
     useStubTransporter = true;
   }
 } else {
-  logger.warn('📧 Email service skipped/running in STUB mode — SMTP_HOST, SMTP_PORT, SMTP_USER, or SMTP_PASSWORD is blank or incomplete. Emails will be logged, not sent.');
+  logger.warn('Email service skipped/running in STUB mode — SMTP_HOST, SMTP_PORT, SMTP_USER, or SMTP_PASSWORD is blank or incomplete. Emails will be logged, not sent.');
 }
 
 function getTransporter(): nodemailer.Transporter {
@@ -384,14 +384,15 @@ function renderBadge(text: string, bg: string, color: string): string {
 
 function renderCallout(text: string, variant: 'warning' | 'danger' | 'info' = 'warning'): string {
   const configs = {
-    warning: { bg: '#FFF7ED', border: '#FED7AA', color: '#EA580C', icon: '⚠️' },
-    danger:  { bg: '#FEF2F2', border: '#FECACA', color: '#DC2626', icon: '🔒' },
-    info:    { bg: '#EFF6FF', border: '#BFDBFE', color: '#0084FF', icon: 'ℹ️' },
+    warning: { bg: '#FFF7ED', border: '#FED7AA', color: '#EA580C', icon: '' },
+    danger:  { bg: '#FEF2F2', border: '#FECACA', color: '#DC2626', icon: '' },
+    info:    { bg: '#EFF6FF', border: '#BFDBFE', color: '#0084FF', icon: '' },
   };
   const cfg = configs[variant];
+  const iconSpan = cfg.icon ? `<span style="margin-right: 6px;">${cfg.icon}</span> ` : '';
   return `
     <div style="background-color: ${cfg.bg}; border: 1px solid ${cfg.border}; border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; font-size: 12px; color: ${cfg.color}; line-height: 1.45;">
-      <span style="margin-right: 6px;">${cfg.icon}</span> ${text}
+      ${iconSpan}${text}
     </div>
   `;
 }
@@ -498,7 +499,7 @@ export async function sendTicketCreatedEmail(
   const body = getEmailLayout({
     preheader,
     title: isSpanish ? 'Ticket Abierto Exitosamente' : 'Ticket Successfully Opened',
-    headerIcon: '🎫',
+    headerIcon: '',
     accentColor: palette.brandLight,
     language,
     contentHtml,
@@ -590,7 +591,7 @@ export async function sendTicketStatusChangedEmail(
   const body = getEmailLayout({
     preheader,
     title: isSpanish ? `Actualización de Estado: ${stColor.label}` : `Status Update: ${stColor.label}`,
-    headerIcon: '🔄',
+    headerIcon: '',
     accentColor: palette.brandLight,
     language,
     contentHtml,
@@ -682,7 +683,7 @@ export async function sendTicketAssignedEmail(
   const body = getEmailLayout({
     preheader,
     title: isSpanish ? 'Nueva Asignación de Ticket' : 'New Ticket Assignment',
-    headerIcon: '👤',
+    headerIcon: '',
     accentColor: palette.brandLight,
     language,
     contentHtml,
@@ -739,7 +740,7 @@ export async function sendTicketStatusEmail(
   const body = getEmailLayout({
     preheader,
     title: isSpanish ? 'Actualización de Ticket' : 'Ticket Update',
-    headerIcon: '🔄',
+    headerIcon: '',
     accentColor: palette.brandLight,
     language,
     contentHtml,
@@ -812,7 +813,7 @@ export async function sendTicketResponseEmail(
   const body = getEmailLayout({
     preheader,
     title: isSpanish ? 'Nueva Respuesta en Ticket' : 'New Reply on Ticket',
-    headerIcon: '💬',
+    headerIcon: '',
     accentColor: palette.brandLight,
     language,
     contentHtml,
@@ -884,7 +885,7 @@ export async function sendQuotationEmail(
   const featuresHtml = plan.features
     .map((f) => {
       const text = getLocalizedValue(f.text);
-      const mark = f.included ? '✔️' : '❌';
+      const mark = f.included ? '✓' : '✗';
       const color = f.included ? '#16A34A' : '#94A3B8';
       const textDecoration = f.included ? '' : 'text-decoration: line-through; opacity: 0.6;';
       return `
@@ -951,7 +952,7 @@ export async function sendQuotationEmail(
   const body = getEmailLayout({
     preheader,
     title,
-    headerIcon: '📋',
+    headerIcon: '',
     accentColor: palette.brand,
     language,
     contentHtml,
@@ -1035,7 +1036,7 @@ export async function sendInvoiceDueEmail(
   const body = getEmailLayout({
     preheader,
     title,
-    headerIcon: '💰',
+    headerIcon: '',
     accentColor: palette.warning,
     language,
     contentHtml,
@@ -1120,7 +1121,7 @@ export async function sendInvoiceOverdueNoticeEmail(
   const body = getEmailLayout({
     preheader,
     title,
-    headerIcon: '⚠️',
+    headerIcon: '',
     accentColor: palette.danger,
     language,
     contentHtml,
@@ -1176,15 +1177,15 @@ export async function sendAccountReadOnlyNoticeEmail(
     )}
     <p style="font-size: 14px; color: #DC2626; margin-top: 20px;">
       ${isSpanish
-        ? '⚠️ <em>Próxima etapa:</em> Al Día 15 de mora, se suspenderá totalmente el acceso a la plataforma y servicios de soporte.'
-        : '⚠️ <em>Next stage:</em> On Day 15 overdue, platform access and support services will be fully suspended.'}
+        ? '<em>Próxima etapa:</em> Al Día 15 de mora, se suspenderá totalmente el acceso a la plataforma y servicios de soporte.'
+        : '<em>Next stage:</em> On Day 15 overdue, platform access and support services will be fully suspended.'}
     </p>
   `;
 
   const body = getEmailLayout({
     preheader,
     title,
-    headerIcon: '🔒',
+    headerIcon: '',
     accentColor: palette.warning,
     language,
     contentHtml,
@@ -1243,7 +1244,7 @@ export async function sendAccountSuspendedNoticeEmail(
   const body = getEmailLayout({
     preheader,
     title,
-    headerIcon: '🚫',
+    headerIcon: '',
     accentColor: palette.danger,
     language,
     contentHtml,
@@ -1295,7 +1296,7 @@ export async function sendAccountPurgedNoticeEmail(
   const body = getEmailLayout({
     preheader,
     title,
-    headerIcon: '🗑️',
+    headerIcon: '',
     accentColor: palette.heading,
     language,
     contentHtml,
@@ -1352,7 +1353,7 @@ export async function sendAccountRestoredEmail(
   const body = getEmailLayout({
     preheader,
     title,
-    headerIcon: '✅',
+    headerIcon: '',
     accentColor: palette.success,
     language,
     contentHtml,
@@ -1435,7 +1436,7 @@ export async function sendSubscriptionExpiringEmail(
   const body = getEmailLayout({
     preheader,
     title,
-    headerIcon: '⏰',
+    headerIcon: '',
     accentColor: palette.warning,
     language,
     contentHtml,
@@ -1490,7 +1491,7 @@ export async function sendOTPEmail(
   const body = getEmailLayout({
     preheader,
     title,
-    headerIcon: '✉️',
+    headerIcon: '',
     accentColor: palette.brandAccent,
     language,
     contentHtml,
@@ -1546,7 +1547,7 @@ export async function sendPasswordResetEmail(
         <a href="${portalUrl}" style="color: #2563EB; text-decoration: underline;">${portalUrl}</a>
       </p>
       <p style="font-size: 12px; color: #DC2626; margin-top: 10px; margin-bottom: 0; font-weight: 500;">
-        ⚠️ ${isSpanish ? 'Este enlace es válido únicamente durante 1 hora.' : 'This link is valid for 1 hour only.'}
+        ${isSpanish ? 'Este enlace es válido únicamente durante 1 hora.' : 'This link is valid for 1 hour only.'}
       </p>
     </div>
 
@@ -1556,7 +1557,7 @@ export async function sendPasswordResetEmail(
   const body = getEmailLayout({
     preheader,
     title,
-    headerIcon: '🔐',
+    headerIcon: '',
     accentColor: palette.cta,
     language,
     contentHtml,

@@ -1015,7 +1015,7 @@
     "unnamedDevice": "Unnamed Device",
     "noSerial": "No Serial",
     "pendingUnboundSlot": "Awaiting agent pairing",
-    "nextcloudBackupTitle": "☁️ Nextcloud Backup:",
+    "nextcloudBackupTitle": "Nextcloud Backup:",
     "usedLabel": "Used: {{size}}",
     "totalLabel": "Total: {{size}} ({{percentage}}%)",
     "actionDeactivate": "Deactivate Device",

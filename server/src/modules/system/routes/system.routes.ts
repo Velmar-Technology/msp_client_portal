@@ -44,6 +44,13 @@ router.post(
   (req, res) => technicianEarningsController.processBatchPayout(req, res),
 );
 
+/** POST /api/v1/system/technicians/earnings/recalculate — Recalculate and sync closed ticket commissions (Admin only) */
+router.post(
+  '/technicians/earnings/recalculate',
+  rbacMiddleware(UserRole.ADMIN),
+  (req, res) => technicianEarningsController.recalculateCommissions(req, res),
+);
+
 /** PUT /api/v1/system/technicians/rates — Update technician closed rate and priority multipliers (Admin only) */
 router.put(
   '/technicians/rates',

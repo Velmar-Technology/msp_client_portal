@@ -4,7 +4,7 @@ This directory contains Node.js automation and diagnostic scripts for managing t
 
 ---
 
-## 🔒 Security Requirements
+## Security Requirements
 
 These scripts require environment variables to operate. **Never hardcode API keys or credentials directly in files.**
 
@@ -17,7 +17,7 @@ $env:PORTAINER_API_KEY = "<YOUR_PORTAINER_API_KEY>"
 
 ---
 
-## 🛠️ Included Tools
+## Included Tools
 
 | Script | Purpose | Usage |
 |---|---|---|
@@ -30,7 +30,7 @@ $env:PORTAINER_API_KEY = "<YOUR_PORTAINER_API_KEY>"
 
 ---
 
-## 📖 Complete Documentation
+## Complete Documentation
 
 For the full architectural specification, network topologies, and operational runbooks, see:
 [`docs/infrastructure/WIREGUARD_NEXTCLOUD_INTEGRATION.md`](../../docs/infrastructure/WIREGUARD_NEXTCLOUD_INTEGRATION.md).

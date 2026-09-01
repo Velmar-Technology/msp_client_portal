@@ -14,33 +14,59 @@ export class TechnicianEarningsRepository {
   constructor(private dbInstance = db) {}
 
   /**
-   * Retrieves the compensation rate profile for a specific technician, falling back to the tenant-wide default.
+   * Retrieves the compensation rate profile for a specific technician, falling back to the tenant-wide or global default.
    *
    * @param technicianId - Technician UUID
-   * @param tenantId - Tenant UUID
+   * @param tenantId - Optional Tenant UUID
    * @returns TechnicianRate record or null
    */
-  async getRateForTechnician(technicianId: string, tenantId: string): Promise<TechnicianRate | null> {
-    // 1. Check for technician-specific rate
-    const specific = await this.dbInstance
-      .select()
-      .from(technicianRates)
-      .where(and(eq(technicianRates.technician_id, technicianId), eq(technicianRates.tenant_id, tenantId)))
-      .limit(1);
+  async getRateForTechnician(technicianId: string, tenantId?: string): Promise<TechnicianRate | null> {
+    // 1. Check for technician-specific rate in this tenant
+    if (tenantId) {
+      const specific = await this.dbInstance
+        .select()
+        .from(technicianRates)
+        .where(and(eq(technicianRates.technician_id, technicianId), eq(technicianRates.tenant_id, tenantId)))
+        .limit(1);
 
-    if (specific.length > 0) {
-      return specific[0] as unknown as TechnicianRate;
+      if (specific.length > 0) {
+        return specific[0] as unknown as TechnicianRate;
+      }
     }
 
-    // 2. Fall back to tenant global default (technician_id is NULL)
-    const globalDefault = await this.dbInstance
+    // 2. Check for technician-specific rate anywhere
+    const techAny = await this.dbInstance
       .select()
       .from(technicianRates)
-      .where(and(isNull(technicianRates.technician_id), eq(technicianRates.tenant_id, tenantId)))
+      .where(eq(technicianRates.technician_id, technicianId))
       .limit(1);
 
-    if (globalDefault.length > 0) {
-      return globalDefault[0] as unknown as TechnicianRate;
+    if (techAny.length > 0) {
+      return techAny[0] as unknown as TechnicianRate;
+    }
+
+    // 3. Fall back to tenant global default (technician_id is NULL)
+    if (tenantId) {
+      const globalDefault = await this.dbInstance
+        .select()
+        .from(technicianRates)
+        .where(and(isNull(technicianRates.technician_id), eq(technicianRates.tenant_id, tenantId)))
+        .limit(1);
+
+      if (globalDefault.length > 0) {
+        return globalDefault[0] as unknown as TechnicianRate;
+      }
+    }
+
+    // 4. Fall back to any global default rate
+    const systemDefault = await this.dbInstance
+      .select()
+      .from(technicianRates)
+      .where(isNull(technicianRates.technician_id))
+      .limit(1);
+
+    if (systemDefault.length > 0) {
+      return systemDefault[0] as unknown as TechnicianRate;
     }
 
     return null;
@@ -381,6 +407,35 @@ export class TechnicianEarningsRepository {
       .returning();
 
     return res.length;
+  }
+
+  /**
+   * Updates an existing earning calculation (amount, breakdown, etc.).
+   *
+   * @param id - Earning UUID
+   * @param data - Earning data to update
+   * @returns Updated TechnicianEarning or null
+   */
+  async updateEarning(
+    id: string,
+    data: {
+      base_amount?: number;
+      sla_bonus_amount?: number;
+      final_amount?: number;
+      currency?: string;
+      breakdown?: any;
+      expense_id?: string | null;
+    }
+  ): Promise<TechnicianEarning | null> {
+    const [updated] = await this.dbInstance
+      .update(technicianEarnings)
+      .set({
+        ...data,
+        updated_at: new Date(),
+      })
+      .where(eq(technicianEarnings.id, id))
+      .returning();
+    return (updated as unknown as TechnicianEarning) || null;
   }
 }
 

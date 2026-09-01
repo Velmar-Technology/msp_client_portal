@@ -11,7 +11,7 @@ async function run() {
   const recipient = process.argv[2] || 'mike.tech@msp-services.com';
   
   console.log('--------------------------------------------------');
-  console.log('📧 MSP Help Desk — Email Connection Diagnostic');
+  console.log('MSP Help Desk — Email Connection Diagnostic');
   console.log('--------------------------------------------------');
   
   const host = process.env.SMTP_HOST || 'smtp.gmail.com';
@@ -26,7 +26,7 @@ async function run() {
   console.log('--------------------------------------------------');
 
   if (!user || !pass) {
-    console.error('❌ Error: SMTP_USER and SMTP_PASSWORD must be configured.');
+    console.error('Error: SMTP_USER and SMTP_PASSWORD must be configured.');
     process.exit(1);
   }
 
@@ -48,17 +48,17 @@ async function run() {
   try {
     console.log(`Sending styled test email to: ${recipient}...`);
     await sendTicketCreatedEmail(recipient, 'John Doe', mockTicket);
-    console.log('✅ Styled test email sent successfully!');
+    console.log('Styled test email sent successfully!');
   } catch (error: any) {
-    console.error('\n❌ Connection or Send failed!');
+    console.error('\nConnection or Send failed!');
     console.error('Error Details:', error);
     
     if (error.code === 'EDNS' || error.syscall === 'queryA') {
-      console.error('\n💡 Troubleshooting Tip:');
+      console.error('\nTroubleshooting Tip:');
       console.error('This is a DNS lookup timeout/error. It means the application cannot resolve');
       console.error('the hostname (e.g. smtp.gmail.com). Check your internet connection or network DNS config.');
     } else if (error.code === 'EAUTH') {
-      console.error('\n💡 Troubleshooting Tip:');
+      console.error('\nTroubleshooting Tip:');
       console.error('This is an authentication error. For Gmail, make sure you are using an');
       console.error('"App Password" rather than your normal Google password.');
     }

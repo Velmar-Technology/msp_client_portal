@@ -25,11 +25,11 @@ function generateAdminJwt(): string {
 
 async function runFullTest() {
   console.log('================================================================');
-  console.log('🧪 TESTING EVERY SINGLE MCP TOOL (18 TOOLS & 2 PROMPTS)');
+  console.log('[TEST] TESTING EVERY SINGLE MCP TOOL (18 TOOLS & 2 PROMPTS)');
   console.log('================================================================\n');
 
   // Step 0: Generate Admin JWT token
-  console.log('🔐 Step 0: Generating valid Admin JWT Token...');
+  console.log('Step 0: Generating valid Admin JWT Token...');
   const token = generateAdminJwt();
   console.log('✅ Token generated successfully!\n');
 
@@ -86,18 +86,18 @@ async function runFullTest() {
   serverProc.stdin.write(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }) + '\n');
 
   async function testTool(toolName: string, args: Record<string, any>) {
-    process.stdout.write(`🔹 Testing tool: ${toolName.padEnd(30)} ... `);
+    process.stdout.write(`Testing tool: ${toolName.padEnd(30)} ... `);
     try {
       const res = await sendRpc('tools/call', { name: toolName, arguments: args });
       if (res.result?.isError) {
-        console.log(`⚠️  Returned Managed Notice: ${res.result.content?.[0]?.text?.slice(0, 70)}...`);
+        console.log(`[NOTICE] Returned Managed Notice: ${res.result.content?.[0]?.text?.slice(0, 70)}...`);
       } else {
         const snippet = res.result?.content?.[0]?.text?.slice(0, 60)?.replace(/\n/g, ' ') || 'OK';
         console.log(`✅ SUCCESS (${snippet}...)`);
       }
       return res.result;
     } catch (err: any) {
-      console.log(`❌ ERROR: ${err.message}`);
+      console.log(`ERROR: ${err.message}`);
     }
   }
 
@@ -146,7 +146,7 @@ async function runFullTest() {
   promptsRes.result?.prompts?.forEach((p: any) => console.log(`   - 📜 ${p.name}: ${p.description}`));
 
   console.log('\n================================================================');
-  console.log('🎉 ALL 18 TOOLS AND PROMPTS COMPLETED THEIR TEST RUNS!');
+  console.log('ALL 18 TOOLS AND PROMPTS COMPLETED THEIR TEST RUNS!');
   console.log('================================================================');
 
   serverProc.kill();

@@ -47,7 +47,7 @@ export async function seedWithFaker(): Promise<void> {
   const client = await pool.connect();
 
   try {
-    logger.info('🚀 Starting high-volume Faker.js database seeding with Drizzle ORM...');
+    logger.info('Starting high-volume Faker.js database seeding with Drizzle ORM...');
 
     // 1. First run foundational seed.sql for baseline schema integrity & catalog
     const seedSqlPath = path.join(__dirname, 'seed.sql');
@@ -55,7 +55,7 @@ export async function seedWithFaker(): Promise<void> {
       logger.info('Applying baseline schema seed (seed.sql)...');
       const baseSql = fs.readFileSync(seedSqlPath, 'utf-8');
       await client.query(baseSql);
-      logger.info('✅ Baseline seed applied successfully');
+      logger.info('Baseline seed applied successfully');
     }
 
     // 2. Query existing baseline IDs to preserve integrity
@@ -560,10 +560,10 @@ export async function seedWithFaker(): Promise<void> {
     }
     await insertChunked('lead_activities', schema.leadActivities, newActivities);
 
-    logger.info('🎉 High-volume Faker.js database seeding finished successfully!');
+    logger.info('High-volume Faker.js database seeding finished successfully!');
   } catch (error) {
-    console.error('❌ Faker seeding failed:', error);
-    logger.error('❌ Faker seeding failed', { error });
+    console.error('[Faker] Seeding failed:', error);
+    logger.error('Faker seeding failed', { error });
     throw error;
   } finally {
     client.release();

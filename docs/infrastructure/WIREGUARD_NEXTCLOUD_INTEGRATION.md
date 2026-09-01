@@ -120,7 +120,7 @@ graph LR
 
 ### 3.4 Credentials Reference
 
-> ⚠️ **SENSITIVE** — Rotate after engagement. Never commit to version control.
+> **SENSITIVE** — Rotate after engagement. Never commit to version control.
 
 | System | Credential | Value |
 |---|---|---|
@@ -185,7 +185,7 @@ traefik.http.middlewares.nas-auth.basicauth.users=velmar-admin:$$apr1$$0aefa95e$
 traefik.http.routers.nas-panel.middlewares=nas-auth
 ```
 
-> ⚠️ **Known Traefik Gotcha**: When a single container defines multiple routers/services, every router MUST have an explicit `.service=` binding label. Without it, Traefik cannot auto-link and disables all routers on that container.
+> **Known Traefik Gotcha**: When a single container defines multiple routers/services, every router MUST have an explicit `.service=` binding label. Without it, Traefik cannot auto-link and disables all routers on that container.
 
 ### 4.4 Stack 17 — msp_portal (Deep Dive Pointer)
 
