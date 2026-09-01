@@ -280,11 +280,13 @@ export function CheckoutSheet(props: CheckoutSheetProps) {
         {t("plans.readyToActivate", { name: getPlanName(currentPlan.name) })}
       </p>
       <Sheet>
-        <SheetTrigger asChild>
-          <button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2 rounded text-xs font-semibold transition-opacity flex items-center justify-center gap-2 cursor-pointer shadow-xs">
-            {t("plans.proceedToCheckout", { total: total.toFixed(2) })}
-          </button>
-        </SheetTrigger>
+        <SheetTrigger
+          render={
+            <button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2 rounded text-xs font-semibold transition-opacity flex items-center justify-center gap-2 cursor-pointer shadow-xs">
+              {t("plans.proceedToCheckout", { total: total.toFixed(2) })}
+            </button>
+          }
+        />
         {sheetContent}
       </Sheet>
     </div>

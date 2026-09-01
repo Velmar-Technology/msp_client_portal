@@ -463,7 +463,7 @@ describe('PlansPage', () => {
       fireEvent.click(addDeviceBtn);
 
       // Accept Terms of Service
-      fireEvent.click(screen.getByLabelText(/Terms of Service/i));
+      fireEvent.click(screen.getByRole('checkbox'));
 
       // Increase requires PayPal payment. The SDK effect re-renders the upgrade
       // buttons through a 100ms debounce timer — wait for the fresh instance
@@ -534,7 +534,7 @@ describe('PlansPage', () => {
       fireEvent.click(checkoutBtn);
 
       // Click Terms of Service checkbox
-      fireEvent.click(screen.getByLabelText(/Terms of Service/i));
+      fireEvent.click(screen.getByRole('checkbox'));
 
       await waitFor(() => {
         expect(paypalButtonsOptions).not.toBeNull();

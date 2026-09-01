@@ -101,7 +101,7 @@ export function PlanCard({
                   type="button"
                   variant="outline"
                   size="xs"
-                  onClick={(e) => {
+                  onClick={(e: React.MouseEvent) => {
                     e.stopPropagation();
                     onEdit(plan);
                   }}
@@ -115,7 +115,7 @@ export function PlanCard({
                     type="button"
                     variant="ghost"
                     size="xs"
-                    onClick={(e) => {
+                    onClick={(e: React.MouseEvent) => {
                       e.stopPropagation();
                       onDelete(plan.id);
                     }}
@@ -189,7 +189,7 @@ export function PlanCard({
               type="button"
               variant="ghost"
               size="icon-xs"
-              onClick={(e) => {
+              onClick={(e: React.MouseEvent) => {
                 e.stopPropagation();
                 onAdjustEquipmentCount(plan.id, -1);
               }}
@@ -202,7 +202,7 @@ export function PlanCard({
               type="button"
               variant="ghost"
               size="icon-xs"
-              onClick={(e) => {
+              onClick={(e: React.MouseEvent) => {
                 e.stopPropagation();
                 onAdjustEquipmentCount(plan.id, 1);
               }}
