@@ -20,7 +20,23 @@ export const routeCrumbs: RouteCrumbConfig[] = [
     path: "/plans",
     crumb: (t, _params, user) => [
       { label: user?.role === "ADMIN" ? t("nav.settings") : t("nav.account") },
-      { label: t("nav.plans") },
+      { label: t("nav.plans"), to: "/plans" },
+    ],
+  },
+  {
+    path: "/plans/new",
+    crumb: (t, _params, user) => [
+      { label: user?.role === "ADMIN" ? t("nav.settings") : t("nav.account") },
+      { label: t("nav.plans"), to: "/plans" },
+      { label: t("plans.addNewPlan") },
+    ],
+  },
+  {
+    path: "/plans/:id/edit",
+    crumb: (t, params, user) => [
+      { label: user?.role === "ADMIN" ? t("nav.settings") : t("nav.account") },
+      { label: t("nav.plans"), to: "/plans" },
+      { label: t("plans.editPlanTitle", { id: params?.id || "" }) },
     ],
   },
   {

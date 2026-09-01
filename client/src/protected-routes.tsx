@@ -26,6 +26,9 @@ export const TicketDetailPage = lazyWithRetry(() =>
 export const PlansPage = lazyWithRetry(() =>
   import("@/routes/_app/plans").then((m) => ({ default: m.PlansPage || m.default }))
 );
+export const PlanEditorPage = lazyWithRetry(() =>
+  import("@/routes/_app/plans/edit").then((m) => ({ default: m.PlanEditorPage || m.default }))
+);
 export const BillingPage = lazyWithRetry(() =>
   import("@/routes/_app/billing").then((m) => ({ default: m.BillingPage || m.default }))
 );
@@ -157,6 +160,24 @@ const RAW_PROTECTED_ROUTES: Omit<AppRouteConfig, "handle">[] = [
       </RouteSuspenseWrapper>
     ),
     allowedRoles: ["CLIENT", "ADMIN"],
+  },
+  {
+    path: "/plans/new",
+    element: (
+      <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+        <PlanEditorPage />
+      </RouteSuspenseWrapper>
+    ),
+    allowedRoles: ["ADMIN"],
+  },
+  {
+    path: "/plans/:id/edit",
+    element: (
+      <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+        <PlanEditorPage />
+      </RouteSuspenseWrapper>
+    ),
+    allowedRoles: ["ADMIN"],
   },
   {
     path: "/billing",
@@ -318,6 +339,8 @@ export const routePreloaders: Record<string, () => Promise<unknown>> = {
   "/financial": () => FinancialPage.preload(),
   "/crm": () => CRMPage.preload(),
   "/plans": () => PlansPage.preload(),
+  "/plans/new": () => PlanEditorPage.preload(),
+  "/plans/:id/edit": () => PlanEditorPage.preload(),
   "/billing": () => BillingPage.preload(),
   "/devices": () => DevicesPage.preload(),
   "/rmm": () => DevicesPage.preload(),
