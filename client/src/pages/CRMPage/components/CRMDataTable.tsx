@@ -107,13 +107,13 @@ export function CRMDataTable({
       case "LOST":
         return {
           badgeClass:
-            "bg-zinc-100 text-zinc-600 dark:bg-zinc-800/80 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700",
-          dotClass: "bg-zinc-400",
+            "bg-muted text-muted-foreground border border-border",
+          dotClass: "bg-muted-foreground",
         };
       default:
         return {
-          badgeClass: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border border-border",
-          dotClass: "bg-zinc-400",
+          badgeClass: "bg-muted text-muted-foreground border border-border",
+          dotClass: "bg-muted-foreground",
         };
     }
   };
@@ -121,11 +121,11 @@ export function CRMDataTable({
   const getPriorityBadge = (priority: LeadPriority) => {
     switch (priority) {
       case "HIGH":
-        return "text-red-600 dark:text-red-400 font-bold";
+        return "text-destructive font-bold";
       case "MEDIUM":
         return "text-amber-600 dark:text-amber-400 font-semibold";
       case "LOW":
-        return "text-zinc-500 dark:text-zinc-400";
+        return "text-muted-foreground";
       default:
         return "text-muted-foreground";
     }

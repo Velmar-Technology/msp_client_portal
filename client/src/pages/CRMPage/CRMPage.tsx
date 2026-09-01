@@ -8,6 +8,7 @@ import { usePlanStore } from "@/store/usePlanStore";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 import { useUrlState } from "@/hooks/useUrlState";
 import { Button } from "@/components/ui/button";
+import { StatCard } from "@/components/shared";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -243,96 +244,41 @@ export function CRMPage() {
       }
     >
       <div className="flex flex-col gap-4">
-        {/* 1. Top KPI Summary Metric Cards (Styled to match FinancialPage KpiCards) */}
         <section aria-label="CRM Metrics">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Pipeline Value */}
-            <div className="group rounded-lg border border-zinc-200 bg-white p-3.5 shadow-xs transition-all duration-200 hover:border-zinc-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  {t("crm.stats.pipelineValue")}
-                </span>
-                <div className="rounded-md bg-zinc-50 p-1.5 text-zinc-600 transition-colors group-hover:bg-zinc-100 dark:bg-zinc-900/50 dark:text-zinc-400 dark:group-hover:bg-zinc-900">
-                  <DollarSign className="h-3.5 w-3.5" />
-                </div>
-              </div>
-              <div className="mt-2.5 flex items-baseline justify-between">
-                <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-                  $
-                  {(stats?.pipelineValue || 0).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </h2>
-              </div>
-              <p className="mt-1 text-[9px] text-zinc-400 dark:text-zinc-500 font-mono">
-                {stats?.totalLeads || 0} {t("crm.totalLeads")}
-              </p>
-            </div>
+            <StatCard
+              title={t("crm.stats.pipelineValue")}
+              value={`$${(stats?.pipelineValue || 0).toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}`}
+              description={`${stats?.totalLeads || 0} ${t("crm.totalLeads")}`}
+              icon={<DollarSign className="h-4 w-4" />}
+            />
 
-            {/* Won Revenue */}
-            <div className="group rounded-lg border border-zinc-200 bg-white p-3.5 shadow-xs transition-all duration-200 hover:border-zinc-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  {t("crm.stats.wonRevenue")}
-                </span>
-                <div className="rounded-md bg-zinc-50 p-1.5 text-zinc-600 transition-colors group-hover:bg-zinc-100 dark:bg-zinc-900/50 dark:text-zinc-400 dark:group-hover:bg-zinc-900">
-                  <TrendingUp className="h-3.5 w-3.5" />
-                </div>
-              </div>
-              <div className="mt-2.5 flex items-baseline justify-between">
-                <h2 className="text-xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
-                  $
-                  {(stats?.wonRevenue || 0).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </h2>
-              </div>
-              <p className="mt-1 text-[9px] text-zinc-400 dark:text-zinc-500 font-mono">
-                {stats?.stageBreakdown?.WON?.count || 0} {t("crm.stages.won")}
-              </p>
-            </div>
+            <StatCard
+              title={t("crm.stats.wonRevenue")}
+              value={`$${(stats?.wonRevenue || 0).toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}`}
+              description={`${stats?.stageBreakdown?.WON?.count || 0} ${t("crm.stages.won")}`}
+              icon={<TrendingUp className="h-4 w-4" />}
+            />
 
-            {/* Proposals In Flight */}
-            <div className="group rounded-lg border border-zinc-200 bg-white p-3.5 shadow-xs transition-all duration-200 hover:border-zinc-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  {t("crm.stats.proposals")}
-                </span>
-                <div className="rounded-md bg-zinc-50 p-1.5 text-zinc-600 transition-colors group-hover:bg-zinc-100 dark:bg-zinc-900/50 dark:text-zinc-400 dark:group-hover:bg-zinc-900">
-                  <Briefcase className="h-3.5 w-3.5" />
-                </div>
-              </div>
-              <div className="mt-2.5 flex items-baseline justify-between">
-                <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-                  {stats?.leadsInProposition || 0}
-                </h2>
-              </div>
-              <p className="mt-1 text-[9px] text-zinc-400 dark:text-zinc-500 font-mono">
-                ${Number(stats?.stageBreakdown?.PROPOSITION?.value || 0).toFixed(2)} {t("crm.inQuotes")}
-              </p>
-            </div>
+            <StatCard
+              title={t("crm.stats.proposals")}
+              value={stats?.leadsInProposition || 0}
+              description={`$${Number(stats?.stageBreakdown?.PROPOSITION?.value || 0).toFixed(2)} ${t("crm.inQuotes")}`}
+              icon={<Briefcase className="h-4 w-4" />}
+            />
 
-            {/* Win Rate */}
-            <div className="group rounded-lg border border-zinc-200 bg-white p-3.5 shadow-xs transition-all duration-200 hover:border-zinc-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  {t("crm.stats.winRate")}
-                </span>
-                <div className="rounded-md bg-zinc-50 p-1.5 text-zinc-600 transition-colors group-hover:bg-zinc-100 dark:bg-zinc-900/50 dark:text-zinc-400 dark:group-hover:bg-zinc-900">
-                  <Target className="h-3.5 w-3.5" />
-                </div>
-              </div>
-              <div className="mt-2.5 flex items-baseline justify-between">
-                <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-                  {stats?.conversionRate || 0}%
-                </h2>
-              </div>
-              <p className="mt-1 text-[9px] text-zinc-400 dark:text-zinc-500 font-mono">
-                {t("crm.stats.conversionDesc")}
-              </p>
-            </div>
+            <StatCard
+              title={t("crm.stats.winRate")}
+              value={`${(stats?.conversionRate || 0).toFixed(1)}%`}
+              description={t("crm.stats.conversionDesc")}
+              icon={<Target className="h-4 w-4" />}
+            />
           </div>
         </section>
 

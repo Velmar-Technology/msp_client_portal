@@ -479,7 +479,7 @@ export function CRMCustomPlanPage() {
               variant="outline"
               size="sm"
               onClick={() => navigate("/crm")}
-              className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer bg-white hover:bg-zinc-50 text-zinc-700 border-zinc-200 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/80"
+              className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               <span>{t("common.back", "Back to CRM")}</span>
@@ -504,14 +504,14 @@ export function CRMCustomPlanPage() {
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {/* Top Control Bar: Target Lead & Clone Template */}
           <section aria-label="Lead Selection and Template Quick-Fill">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 rounded-lg border border-zinc-200 bg-white p-3.5 shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 rounded-lg border border-border bg-card text-card-foreground p-3.5 shadow-xs">
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
+                <Label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                   <Users className="h-3.5 w-3.5 text-primary" />
                   {t("crm.customPlan.targetLead", "Target Lead / Opportunity")}
                 </Label>
                 <Select value={selectedLeadId} onValueChange={setSelectedLeadId}>
-                  <SelectTrigger className="h-7 text-xs bg-background border-zinc-200 dark:border-zinc-800">
+                  <SelectTrigger className="h-7 text-xs bg-background border-border">
                     <SelectValue placeholder={t("crm.customPlan.selectLead", "Select lead...")} />
                   </SelectTrigger>
                   <SelectContent>
