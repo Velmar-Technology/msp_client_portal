@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.8.7](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.8.6...v1.8.7) (2026-09-01)
+
+
+### Features
+
+* **billing:** register MCP billing tools and isolate admin tenant from MRR and renewals ([7371a67](https://github.com/Velmar-Technology/msp_client_portal/commit/7371a671cc42e0c6956b7332235a060b73b12533))
+* **client:** extract ViewToggle primitive, standardize across pages, and center ChunkErrorBoundary ([1388201](https://github.com/Velmar-Technology/msp_client_portal/commit/1388201632be317b91adefc201550f16772ad3c8))
+* **client:** streamline toolbars and compact views across maintenance, devices, and crm ([635868f](https://github.com/Velmar-Technology/msp_client_portal/commit/635868ff9cc916477638077f063bee1d9407bb55))
+* **financial:** add technician commission recalculation and table pagination ([2f82132](https://github.com/Velmar-Technology/msp_client_portal/commit/2f821326f654a620df397e94ad046e464a5b4da5))
+* **financial:** convert expense breakdown to pie chart and synchronize analytical chart heights ([7a28e4a](https://github.com/Velmar-Technology/msp_client_portal/commit/7a28e4a29f85a22a78f82e493ce9d0ede74f623d))
+* **mcp:** add user management tools and agent mcp guardrails ([fdbc2ca](https://github.com/Velmar-Technology/msp_client_portal/commit/fdbc2ca963df17d57c02c738daadc92aab804662))
+
+
+### Bug Fixes
+
+* **client:** resolve unassigned variable in RevenueChart and normalize height ([1b0a4d1](https://github.com/Velmar-Technology/msp_client_portal/commit/1b0a4d152442974f4d2802f83e5bc1685e70ac04))
+
 ## [1.8.6](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.8.5...v1.8.6) (2026-08-31)
 
 
