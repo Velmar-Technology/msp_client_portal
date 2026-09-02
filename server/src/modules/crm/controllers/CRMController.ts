@@ -13,6 +13,7 @@ import {
   UpdateQuotationStatusDTO,
   ModifySubscriptionDTO,
   CancelSubscriptionDTO,
+  CreateCustomPlanDTO,
 } from '@shared/dtos/crm.dto';
 
 /**
@@ -265,6 +266,18 @@ export class CRMController {
     const { subId, leadId } = CancelSubscriptionDTO.parse(req.body);
     const result = await this.service.cancelCustomerSubscription(subId, req.user!.tenantId, leadId, req.user!.userId);
     res.json({ success: true, data: result, message: 'Subscription cancelled successfully' });
+  }
+
+  /**
+   * Handles creating a custom bespoke subscription plan for a lead/client.
+   *
+   * @param req - Express request with CreateCustomPlanDTO body
+   * @param res - Express response returning created plan (HTTP 201)
+   */
+  async createCustomPlan(req: Request, res: Response): Promise<void> {
+    const data = CreateCustomPlanDTO.parse(req.body);
+    const plan = await this.service.createCustomPlan(req.user!.tenantId, req.user!.userId, data);
+    res.status(201).json({ success: true, data: plan, message: 'Custom plan created successfully' });
   }
 }
 

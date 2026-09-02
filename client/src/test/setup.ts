@@ -22,19 +22,25 @@ const createStorageMock = () => {
   };
 };
 
-if (typeof globalThis.localStorage === 'undefined' || typeof globalThis.localStorage?.setItem !== 'function') {
-  const localStorageMock = createStorageMock();
+const localStorageMock = createStorageMock();
+try {
   Object.defineProperty(globalThis, 'localStorage', {
     value: localStorageMock,
     writable: true,
     configurable: true,
   });
-  if (typeof window !== 'undefined') {
+} catch {
+  // ignore
+}
+if (typeof window !== 'undefined') {
+  try {
     Object.defineProperty(window, 'localStorage', {
       value: localStorageMock,
       writable: true,
       configurable: true,
     });
+  } catch {
+    // ignore
   }
 }
 
@@ -86,3 +92,8 @@ global.IntersectionObserver = class IntersectionObserver {
 
 window.scrollTo = vi.fn();
 Element.prototype.scrollIntoView = vi.fn();
+if (typeof Element !== 'undefined') {
+  Element.prototype.hasPointerCapture = Element.prototype.hasPointerCapture || vi.fn(() => false);
+  Element.prototype.setPointerCapture = Element.prototype.setPointerCapture || vi.fn();
+  Element.prototype.releasePointerCapture = Element.prototype.releasePointerCapture || vi.fn();
+}

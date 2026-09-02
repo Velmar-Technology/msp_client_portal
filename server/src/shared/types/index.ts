@@ -415,6 +415,14 @@ export interface Plan {
   recommended: boolean;
   client_type: PlanClientType;
   active: boolean;
+  is_custom?: boolean;
+  tenant_id?: string | null;
+  lead_id?: string | null;
+  target_client_id?: string | null;
+  per_device_price?: number;
+  ticket_quota?: number | null;
+  sla_tier?: { criticalMins: number; highMins: number; medMins: number; lowMins: number } | null;
+  tax_exempt?: boolean;
   paypal_plan_id_monthly?: string | null;
   paypal_plan_id_annual?: string | null;
   created_at: Date;
@@ -425,6 +433,9 @@ export interface PlanFilters {
   search?: string;
   clientType?: PlanClientType;
   includeInactive?: boolean;
+  includeCustom?: boolean;
+  tenantId?: string;
+  leadId?: string;
   page?: number;
   limit?: number;
 }

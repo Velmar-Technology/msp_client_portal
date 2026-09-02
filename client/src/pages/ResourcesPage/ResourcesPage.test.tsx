@@ -205,9 +205,11 @@ describe("ResourcesPage", () => {
     expect(screen.getByText("Rustdesk Desktop Client")).toBeInTheDocument();
 
     const osSelect = screen.getByLabelText("OS");
+    fireEvent.pointerDown(osSelect, { button: 0, ctrlKey: false });
     fireEvent.click(osSelect);
 
     const option = await screen.findByRole("option", { name: "Linux" });
+    fireEvent.pointerDown(option, { button: 0, ctrlKey: false });
     fireEvent.click(option);
 
     await waitFor(() => {

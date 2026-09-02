@@ -1,0 +1,6 @@
+# Protect Google Service Account and backup keys
+*.json
+*.key
+*.pem
+!package.json
+!tsconfig.json

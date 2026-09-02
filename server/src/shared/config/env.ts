@@ -59,6 +59,11 @@ const envSchema = z.object({
   NEXTCLOUD_TOTAL_CAPACITY: z.coerce.number().default(5000000000000), // Default 5.0 TB
   NEXTCLOUD_EXTERNAL_URL: z.string().default('https://atlas.velmartech.com.do'),
 
+  // Vaultwarden Password Manager
+  VAULTWARDEN_URL: z.string().default('http://vaultwarden:80'),
+  VAULTWARDEN_ADMIN_TOKEN: z.string().default(''),
+  VAULTWARDEN_EXTERNAL_URL: z.string().default('https://helpdesk.velmartech.com.do/vault'),
+
   // PayPal
   PAYPAL_CLIENT_ID: z.string().default(''),
   PAYPAL_CLIENT_SECRET: z.string().default(''),

@@ -1,7 +1,7 @@
 import { InvoiceRepository, invoiceRepository } from '@modules/billing/repositories/InvoiceRepository';
 import { TenantRepository, tenantRepository, UserRepository, userRepository } from '@modules/auth';
 import { NotificationService, notificationService } from '@modules/notifications';
-import { NextcloudService, nextcloudService } from '@modules/system';
+import { NextcloudService, nextcloudService, VaultwardenService, vaultwardenService } from '@modules/system';
 import { EquipmentRepository, equipmentRepository } from '@modules/equipment';
 import { Invoice, InvoiceStatus, AccountStatus } from '@shared/types';
 import { NON_PAYMENT_SCALE_DAYS } from '@shared/config/constants';
@@ -36,6 +36,7 @@ export class NonPaymentSuspensionService {
    * @param notifService - In-app notification service
    * @param nextcloudSvc - Nextcloud storage service
    * @param equipmentRepo - Equipment inventory repository
+   * @param vaultwardenSvc - Vaultwarden password manager service
    */
   constructor(
     private invoiceRepo: InvoiceRepository = invoiceRepository,
@@ -44,6 +45,7 @@ export class NonPaymentSuspensionService {
     private notifService: NotificationService = notificationService,
     private nextcloudSvc: NextcloudService = nextcloudService,
     private equipmentRepo: EquipmentRepository = equipmentRepository,
+    private vaultwardenSvc: VaultwardenService = vaultwardenService
   ) {}
 
   /**
@@ -174,6 +176,13 @@ export class NonPaymentSuspensionService {
           });
           await this.userRepo.updateAccountStatusByTenant(tenantId, AccountStatus.SUSPENDED, false);
 
+          // Suspend/lockout Vaultwarden organization member logins
+          try {
+            await this.vaultwardenSvc.deactivateOrganizationUsers(tenantId);
+          } catch (vwErr) {
+            logger.warn(`Failed deactivating Vaultwarden users for tenant ${tenantId}`, { vwErr });
+          }
+
           if (client && client.email) {
             await sendAccountSuspendedNoticeEmail(client.email, client.name, lang);
           }
@@ -262,6 +271,14 @@ export class NonPaymentSuspensionService {
           status: 'PENDING_ACTIVATION',
         });
       }
+
+      // Purge Vaultwarden tenant Organization and vault data (Day 30 BL-702)
+      try {
+        await this.vaultwardenSvc.deleteOrganization(tenantId);
+        logger.info(`Purged Vaultwarden organization data for tenant ${tenantId}`);
+      } catch (vwErr) {
+        logger.warn(`Could not purge Vaultwarden organization for tenant ${tenantId}`, { vwErr });
+      }
     } catch (err) {
       logger.error(`Failed purging tenant equipment and storage data for ${tenantId}`, { err });
     }
@@ -297,6 +314,13 @@ export class NonPaymentSuspensionService {
         suspended_at: null,
       });
       await this.userRepo.updateAccountStatusByTenant(tenantId, AccountStatus.ACTIVE, true);
+
+      // Reactivate Vaultwarden organization member logins
+      try {
+        await this.vaultwardenSvc.reactivateOrganizationUsers(tenantId);
+      } catch (vwErr) {
+        logger.warn(`Failed reactivating Vaultwarden users for tenant ${tenantId}`, { vwErr });
+      }
 
       const client = await this.userRepo.findById(clientId);
       const lang = client?.language || 'en_US';

@@ -143,3 +143,27 @@ export const GetLeadsQueryDTO = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20).optional(),
 });
 export type GetLeadsQueryInput = z.infer<typeof GetLeadsQueryDTO>;
+
+export const SlaTierSchema = z.object({
+  criticalMins: z.coerce.number().int().min(1).default(15),
+  highMins: z.coerce.number().int().min(1).default(60),
+  medMins: z.coerce.number().int().min(1).default(240),
+  lowMins: z.coerce.number().int().min(1).default(720),
+});
+
+export const CreateCustomPlanDTO = z.object({
+  name: z.string().min(2, 'Plan name is required').max(100),
+  description: z.string().max(500).optional().nullable(),
+  price: z.coerce.number().min(0, 'Price must be non-negative'),
+  perDevicePrice: z.coerce.number().min(0, 'Per device price must be non-negative').default(0).optional(),
+  billingCycle: z.enum(['monthly', 'annual']).default('monthly').optional(),
+  currency: z.enum(['USD', 'DOP']).default('USD').optional(),
+  ticketQuota: z.coerce.number().int().min(1).optional().nullable(),
+  taxExempt: z.boolean().default(false).optional(),
+  slaTier: SlaTierSchema.optional().nullable(),
+  features: z.array(z.union([z.string(), z.record(z.string(), z.any())])).default([]).optional(),
+  leadId: z.string().uuid('Invalid lead ID').optional().nullable(),
+  clientId: z.string().uuid('Invalid client ID').optional().nullable(),
+});
+export type CreateCustomPlanInput = z.infer<typeof CreateCustomPlanDTO>;
+

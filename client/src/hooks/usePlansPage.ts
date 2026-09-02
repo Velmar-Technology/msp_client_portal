@@ -52,7 +52,12 @@ export function usePlansPage() {
         }
         if (feature.code) {
           const key = `plans.features.${feature.code}`;
-          const translated = t(key, feature.params || {});
+          const catalogItem = FEATURE_CATALOG.find((cat) => cat.code === feature.code);
+          const params = {
+            ...(catalogItem?.defaultParams || {}),
+            ...(feature.params || {}),
+          };
+          const translated = t(key, params);
           if (translated !== key) {
             return translated;
           }
@@ -65,7 +70,8 @@ export function usePlansPage() {
         return getLocalizedValue(val);
       }
       if (/^[a-zA-Z0-9_]+$/.test(val)) {
-        const translated = t(`plans.features.${val}`);
+        const catalogItem = FEATURE_CATALOG.find((cat) => cat.code === val);
+        const translated = t(`plans.features.${val}`, catalogItem?.defaultParams || {});
         if (translated !== `plans.features.${val}`) {
           return translated;
         }
@@ -914,16 +920,16 @@ export function usePlansPage() {
     }
   }, [checkoutSubscription, checkoutAction, checkoutDeviceDelta, currentPlan, acceptedTos, addToast, fetchActiveSubscriptions, closeCheckout, setSubscribeLoading, t]);
 
-  // Open Edit Modal (deep-linked: ?openModal=edit-plan&planId=<id>; fields hydrate via effect)
+  // Open Edit Page (/plans/:id/edit)
   const handleEditClick = useCallback(
-    (plan: Plan) => setParams({ openModal: "edit-plan", planId: plan.id }),
-    [setParams],
+    (plan: Plan) => navigate(`/plans/${plan.id}/edit`),
+    [navigate],
   );
 
-  // Open Create Modal (deep-linked: ?openModal=new-plan; fields reset via effect)
+  // Open Create Page (/plans/new)
   const handleCreateClick = useCallback(() => {
-    setParams({ openModal: "new-plan", planId: null });
-  }, [setParams]);
+    navigate('/plans/new');
+  }, [navigate]);
 
   const handleAddFeature = useCallback(() => {
     setEditFeatures((prev) => [...prev, { text: { en_US: "", es_DO: "" }, included: true }]);

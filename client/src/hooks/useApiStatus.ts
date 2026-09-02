@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   systemService,
   type SystemApiStatusResponse,
@@ -33,9 +33,10 @@ export function useApiStatus() {
     try {
       const res = await systemService.getApiStatus();
       setData(res);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to fetch API status", err);
-      toast.error(err?.message || "Failed to load API system status");
+      const message = err instanceof Error ? err.message : "Failed to load API system status";
+      toast.error(message);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -64,53 +65,43 @@ export function useApiStatus() {
     setEnvVarsPage(1);
   }, [envSearchQuery, envStatusTab]);
 
-  const filteredServices = useMemo(() => {
-    if (!data) return [];
-    return data.services.filter((item: ApiStatusItem) => {
-      const matchesSearch =
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.endpoint.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.category.toLowerCase().includes(searchQuery.toLowerCase());
+  // Derive filtered services during render (React 19 compiler-friendly)
+  const filteredServices = data
+    ? data.services.filter((item: ApiStatusItem) => {
+        const matchesSearch =
+          item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.endpoint.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.category.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesTab = statusTab === "ALL" || item.status === statusTab;
+        const matchesTab = statusTab === "ALL" || item.status === statusTab;
 
-      return matchesSearch && matchesTab;
-    });
-  }, [data, searchQuery, statusTab]);
+        return matchesSearch && matchesTab;
+      })
+    : [];
 
-  const servicesTotalPages = useMemo(() => {
-    return Math.ceil(filteredServices.length / servicesLimit) || 1;
-  }, [filteredServices.length, servicesLimit]);
+  const servicesTotalPages = Math.ceil(filteredServices.length / servicesLimit) || 1;
+  const startServices = (servicesPage - 1) * servicesLimit;
+  const paginatedServices = filteredServices.slice(startServices, startServices + servicesLimit);
 
-  const paginatedServices = useMemo(() => {
-    const start = (servicesPage - 1) * servicesLimit;
-    return filteredServices.slice(start, start + servicesLimit);
-  }, [filteredServices, servicesPage, servicesLimit]);
+  // Derive filtered environment variables during render
+  const filteredEnvVariables = data?.envVariables
+    ? data.envVariables.filter((item: EnvVarStatusItem) => {
+        const q = envSearchQuery.toLowerCase();
+        const matchesSearch =
+          item.key.toLowerCase().includes(q) ||
+          item.category.toLowerCase().includes(q) ||
+          item.description.toLowerCase().includes(q) ||
+          item.valueDisplay.toLowerCase().includes(q);
 
-  const filteredEnvVariables = useMemo(() => {
-    if (!data?.envVariables) return [];
-    return data.envVariables.filter((item: EnvVarStatusItem) => {
-      const q = envSearchQuery.toLowerCase();
-      const matchesSearch =
-        item.key.toLowerCase().includes(q) ||
-        item.category.toLowerCase().includes(q) ||
-        item.description.toLowerCase().includes(q) ||
-        item.valueDisplay.toLowerCase().includes(q);
+        const matchesTab = envStatusTab === "ALL" || item.status === envStatusTab;
 
-      const matchesTab = envStatusTab === "ALL" || item.status === envStatusTab;
+        return matchesSearch && matchesTab;
+      })
+    : [];
 
-      return matchesSearch && matchesTab;
-    });
-  }, [data, envSearchQuery, envStatusTab]);
-
-  const envVarsTotalPages = useMemo(() => {
-    return Math.ceil(filteredEnvVariables.length / envVarsLimit) || 1;
-  }, [filteredEnvVariables.length, envVarsLimit]);
-
-  const paginatedEnvVariables = useMemo(() => {
-    const start = (envVarsPage - 1) * envVarsLimit;
-    return filteredEnvVariables.slice(start, start + envVarsLimit);
-  }, [filteredEnvVariables, envVarsPage, envVarsLimit]);
+  const envVarsTotalPages = Math.ceil(filteredEnvVariables.length / envVarsLimit) || 1;
+  const startEnv = (envVarsPage - 1) * envVarsLimit;
+  const paginatedEnvVariables = filteredEnvVariables.slice(startEnv, startEnv + envVarsLimit);
 
   // Adjust page if filter/data change causes out-of-bounds page number
   useEffect(() => {

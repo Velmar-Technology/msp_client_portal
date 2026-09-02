@@ -22,7 +22,7 @@ export function DashboardSummaryStats() {
         footer={
           <Link
             to="/tickets"
-            className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium"
+            className="flex items-center gap-1 text-muted-foreground hover:text-foreground font-medium"
           >
             {t("dashboard.viewDetails")}
             <ArrowRight className="h-3.5 w-3.5" />
@@ -38,7 +38,7 @@ export function DashboardSummaryStats() {
         footer={
           <Link
             to="/maintenance"
-            className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium"
+            className="flex items-center gap-1 text-muted-foreground hover:text-foreground font-medium"
           >
             {t("dashboard.viewDetails")}
             <ArrowRight className="h-3.5 w-3.5" />
@@ -54,7 +54,7 @@ export function DashboardSummaryStats() {
         footer={
           <Link
             to="/backups"
-            className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium"
+            className="flex items-center gap-1 text-muted-foreground hover:text-foreground font-medium"
           >
             {t("dashboard.viewDetails")}
             <ArrowRight className="h-3.5 w-3.5" />

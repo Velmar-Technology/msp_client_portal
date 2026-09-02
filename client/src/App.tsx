@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PublicLayout } from "@/components/layout/PublicLayout";
@@ -10,6 +11,7 @@ import { useSessionMonitor } from "@/hooks/useSessionMonitor";
 import { protectedRoutes, ProtectedRoute } from "@/protected-routes";
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { RouteSuspenseWrapper, ContentPageSkeleton } from "@/components/skeletons";
+import { queryClient } from "@/lib/queryClient";
 
 // ---- Lazy-loaded Public & Auth Pages ----
 const HomePage = lazyWithRetry(() =>
@@ -57,6 +59,7 @@ export function App() {
 
   return (
     <ReactErrorBoundary>
+      <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="system" storageKey="msp-portal-theme">
         <BrowserRouter>
           <ScrollToTop />
@@ -150,6 +153,7 @@ export function App() {
           <Toaster />
         </BrowserRouter>
       </ThemeProvider>
+      </QueryClientProvider>
     </ReactErrorBoundary>
   );
 }

@@ -1,5 +1,6 @@
 import api from "@/services/api";
 import type { Invoice } from "@/services/invoiceService";
+import type { Plan, PlanFeature } from "@/services/planService";
 
 export type LeadStage = "NEW" | "QUALIFIED" | "PROPOSITION" | "WON" | "LOST";
 export type LeadPriority = "LOW" | "MEDIUM" | "HIGH";
@@ -180,6 +181,26 @@ export interface UpdateActivityPayload {
   summary?: string | null;
   dueDate?: string | null;
   status?: "PENDING" | "COMPLETED" | "CANCELLED";
+}
+
+export interface CreateCustomPlanPayload {
+  name: string;
+  description?: string | null;
+  price: number;
+  perDevicePrice?: number;
+  billingCycle?: "monthly" | "annual";
+  currency?: "USD" | "DOP";
+  ticketQuota?: number | null;
+  taxExempt?: boolean;
+  slaTier?: {
+    criticalMins: number;
+    highMins: number;
+    medMins: number;
+    lowMins: number;
+  } | null;
+  features?: (string | PlanFeature)[];
+  leadId?: string | null;
+  clientId?: string | null;
 }
 
 export interface GetLeadsParams {
@@ -419,6 +440,17 @@ export const crmService = {
    */
   async cancelSubscription(data: { subId: string; leadId?: string }): Promise<unknown> {
     const response = await api.post("/crm/subscriptions/cancel", data);
+    return response.data.data;
+  },
+
+  /**
+   * Creates a bespoke custom subscription plan and binds it to a lead or client.
+   *
+   * @param data - Custom plan specifications
+   * @returns Promise resolving to created Plan entity
+   */
+  async createCustomPlan(data: CreateCustomPlanPayload): Promise<Plan> {
+    const response = await api.post("/crm/custom-plans", data);
     return response.data.data;
   },
 };

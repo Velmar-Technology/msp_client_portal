@@ -8,8 +8,16 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePlanStore } from '@/store/usePlanStore';
 import { useSubscriptionStore } from '@/store/useSubscriptionStore';
 import { useCheckoutStore } from '@/store/useCheckoutStore';
-
 import enTranslations from "@/locales/en_US.json";
+
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
 let mockLanguage = 'en_US';
 
@@ -419,12 +427,14 @@ describe('PlansPage', () => {
 
       // Select Basic Support as the new tier
       const trigger = screen.getByRole('combobox', { name: 'Select New Tier' });
+      fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
       fireEvent.click(trigger);
       const option = await screen.findByRole('option', { name: /Basic Support/i });
+      fireEvent.pointerDown(option, { button: 0, ctrlKey: false });
       fireEvent.click(option);
 
       // Accept Terms of Service
-      fireEvent.click(screen.getByLabelText(/Terms of Service/i));
+      fireEvent.click(screen.getByRole('checkbox'));
 
       fireEvent.click(screen.getByRole('button', { name: 'Update Subscription' }));
 
@@ -455,7 +465,7 @@ describe('PlansPage', () => {
       fireEvent.click(addDeviceBtn);
 
       // Accept Terms of Service
-      fireEvent.click(screen.getByLabelText(/Terms of Service/i));
+      fireEvent.click(screen.getByRole('checkbox'));
 
       // Increase requires PayPal payment. The SDK effect re-renders the upgrade
       // buttons through a 100ms debounce timer — wait for the fresh instance
@@ -516,7 +526,7 @@ describe('PlansPage', () => {
 
       // Verify that Basic Support is currently active and selected
       await waitFor(() => {
-        expect(screen.getByText('Active')).toBeInTheDocument();
+        expect(screen.getAllByText('Active').length).toBeGreaterThanOrEqual(1);
       });
 
       // Select Standard Support card (which is not active) and checkout as an additional plan
@@ -526,7 +536,7 @@ describe('PlansPage', () => {
       fireEvent.click(checkoutBtn);
 
       // Click Terms of Service checkbox
-      fireEvent.click(screen.getByLabelText(/Terms of Service/i));
+      fireEvent.click(screen.getByRole('checkbox'));
 
       await waitFor(() => {
         expect(paypalButtonsOptions).not.toBeNull();
@@ -562,14 +572,13 @@ describe('PlansPage', () => {
       vi.mocked(subscriptionService.getAll).mockResolvedValue([]);
     });
 
-    test('renders "+ Add Plan" button, opens create modal, and submits new plan', async () => {
-      const mockCreatePlan = vi.fn().mockResolvedValue(undefined);
+    test('renders "+ Add Plan" button and navigates to /plans/new', async () => {
       vi.mocked(usePlanStore).mockReturnValue({
         plans: mockPlans,
         loading: false,
         error: null,
         fetchPlans: vi.fn().mockResolvedValue(undefined),
-        createPlan: mockCreatePlan,
+        createPlan: vi.fn(),
         updatePlan: vi.fn(),
       } as unknown as ReturnType<typeof usePlanStore>);
 
@@ -580,36 +589,7 @@ describe('PlansPage', () => {
 
       fireEvent.click(addPlanButton);
 
-      // Verify modal is open
-      expect(screen.getAllByText('Add New Plan').length).toBeGreaterThan(0);
-
-      // Fill in details
-      fireEvent.change(screen.getByPlaceholderText('e.g. PL-008'), { target: { value: 'PL-TEST' } });
-      fireEvent.change(screen.getByPlaceholderText(/Plan name in English/i), { target: { value: 'Test Add Plan' } });
-      fireEvent.change(screen.getByPlaceholderText(/Description in English/i), { target: { value: 'Test description' } });
-
-      // Switch to Spanish tab for ES fields
-      const esTab = screen.getByText('ES (Español)');
-      fireEvent.click(esTab);
-      fireEvent.change(screen.getByPlaceholderText(/Nombre del plan en Español/i), { target: { value: 'Plan de Prueba' } });
-      fireEvent.change(screen.getByPlaceholderText(/Descripción en Español/i), { target: { value: 'Descripción de prueba' } });
-
-      fireEvent.change(screen.getByLabelText(/Price/i), { target: { value: '99' } });
-      fireEvent.change(screen.getByLabelText(/Client Type/i), { target: { value: 'CLIENT' } });
-
-      const saveButton = screen.getByText('Create Plan');
-      fireEvent.click(saveButton);
-
-      await waitFor(() => {
-        expect(mockCreatePlan).toHaveBeenCalledWith(expect.objectContaining({
-          id: 'PL-TEST',
-          name: { en_US: 'Test Add Plan', es_DO: 'Plan de Prueba' },
-          description: { en_US: 'Test description', es_DO: 'Descripción de prueba' },
-          price: 99,
-          client_type: 'CLIENT',
-          active: true,
-        }));
-      });
+      expect(mockNavigate).toHaveBeenCalledWith('/plans/new');
     });
 
     test('hides inactive plans for standard client but shows them for admin', async () => {
@@ -667,95 +647,22 @@ describe('PlansPage', () => {
       });
     });
 
-    test('supports reordering features via drag and drop and accessible buttons', async () => {
-      const mockUpdatePlan = vi.fn().mockResolvedValue(undefined);
-      const mockPlansWithMultipleFeatures = [
-        {
-          id: 'BASIC',
-          name: { en_US: 'Basic Support', es_DO: 'Soporte Básico' },
-          description: { en_US: 'Basic plan description', es_DO: 'Descripción del plan básico' },
-          price: 199,
-          features: [
-            { text: { en_US: 'Feature A', es_DO: 'Feature A' }, included: true },
-            { text: { en_US: 'Feature B', es_DO: 'Feature B' }, included: true },
-          ],
-          recommended: false,
-          active: true,
-          created_at: '2026-06-22',
-          updated_at: '2026-06-22',
-        },
-      ];
-
+    test('clicking Edit on a plan card navigates to /plans/:id/edit', async () => {
       vi.mocked(usePlanStore).mockReturnValue({
-        plans: mockPlansWithMultipleFeatures,
+        plans: mockPlans,
         loading: false,
         error: null,
         fetchPlans: vi.fn().mockResolvedValue(undefined),
         createPlan: vi.fn(),
-        updatePlan: mockUpdatePlan,
+        updatePlan: vi.fn(),
       } as unknown as ReturnType<typeof usePlanStore>);
 
       renderPage();
 
-      // Open Edit Modal
-      const editButton = screen.getByRole('button', { name: /Edit/i });
-      fireEvent.click(editButton);
+      const editButtons = screen.getAllByRole('button', { name: /Edit/i });
+      fireEvent.click(editButtons[0]);
 
-      await waitFor(() => {
-        expect(screen.getByRole('heading', { name: 'Edit Plan: BASIC' })).toBeInTheDocument();
-      });
-
-      // Find inputs containing the English features
-      const enInputs = screen.getAllByPlaceholderText('Feature in English...');
-      expect(enInputs).toHaveLength(2);
-      expect((enInputs[0] as HTMLInputElement).value).toBe('Feature A');
-      expect((enInputs[1] as HTMLInputElement).value).toBe('Feature B');
-
-      // 1. Test Keyboard Accessible Move Down
-      const moveDownButtons = screen.getAllByRole('button', { name: 'Move down' });
-      fireEvent.click(moveDownButtons[0]);
-
-      // Verify they swapped
-      expect((enInputs[0] as HTMLInputElement).value).toBe('Feature B');
-      expect((enInputs[1] as HTMLInputElement).value).toBe('Feature A');
-
-      // Swap them back to original with Move Up
-      const moveUpButtons = screen.getAllByRole('button', { name: 'Move up' });
-      fireEvent.click(moveUpButtons[1]);
-      expect((enInputs[0] as HTMLInputElement).value).toBe('Feature A');
-      expect((enInputs[1] as HTMLInputElement).value).toBe('Feature B');
-
-      // 2. Test Drag and Drop reordering
-      const dragRows = screen.getAllByLabelText('Drag to reorder');
-      expect(dragRows).toHaveLength(2);
-
-      const sourceContainer = dragRows[0].closest('[draggable="true"]');
-      const targetContainer = dragRows[1].closest('[draggable="true"]');
-      expect(sourceContainer).not.toBeNull();
-      expect(targetContainer).not.toBeNull();
-
-      // Trigger HTML5 Drag & Drop events
-      fireEvent.dragStart(sourceContainer!);
-      fireEvent.dragOver(targetContainer!);
-      fireEvent.drop(targetContainer!);
-      fireEvent.dragEnd(sourceContainer!);
-
-      // Verify they swapped after drop
-      expect((enInputs[0] as HTMLInputElement).value).toBe('Feature B');
-      expect((enInputs[1] as HTMLInputElement).value).toBe('Feature A');
-
-      // Click save and verify updatePlan payload
-      const saveButton = screen.getByText('Save Changes');
-      fireEvent.click(saveButton);
-
-      await waitFor(() => {
-        expect(mockUpdatePlan).toHaveBeenCalledWith('BASIC', expect.objectContaining({
-          features: [
-            { text: { en_US: 'Feature B', es_DO: 'Feature B' }, included: true },
-            { text: { en_US: 'Feature A', es_DO: 'Feature A' }, included: true },
-          ],
-        }));
-      });
+      expect(mockNavigate).toHaveBeenCalledWith('/plans/BASIC/edit');
     });
 
     test('renders plans in Spanish when language is es_DO', async () => {

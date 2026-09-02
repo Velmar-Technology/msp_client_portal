@@ -26,6 +26,9 @@ export const TicketDetailPage = lazyWithRetry(() =>
 export const PlansPage = lazyWithRetry(() =>
   import("@/routes/_app/plans").then((m) => ({ default: m.PlansPage || m.default }))
 );
+export const PlanEditorPage = lazyWithRetry(() =>
+  import("@/routes/_app/plans/edit").then((m) => ({ default: m.PlanEditorPage || m.default }))
+);
 export const BillingPage = lazyWithRetry(() =>
   import("@/routes/_app/billing").then((m) => ({ default: m.BillingPage || m.default }))
 );
@@ -40,6 +43,9 @@ export const TechDashboardPage = lazyWithRetry(() =>
 );
 export const CRMPage = lazyWithRetry(() =>
   import("@/routes/_app/crm").then((m) => ({ default: m.CRMPage || m.default }))
+);
+export const CRMCustomPlanPage = lazyWithRetry(() =>
+  import("@/routes/_app/crm/custom-plans").then((m) => ({ default: m.CRMCustomPlanPage || m.default }))
 );
 export const HelpPage = lazyWithRetry(() =>
   import("@/routes/_app/help").then((m) => ({ default: m.HelpPage || m.default }))
@@ -61,8 +67,14 @@ export const ResourcesPage = lazyWithRetry(() =>
 export const DevicesPage = lazyWithRetry(() =>
   import("@/routes/_app/devices").then((m) => ({ default: m.DevicesPage || m.default }))
 );
+export const PasswordManagerPage = lazyWithRetry(() =>
+  import("@/routes/_app/password-manager").then((m) => ({ default: m.PasswordManagerPage || m.default }))
+);
 export const ApiStatusPage = lazyWithRetry(() =>
   import("@/routes/_app/admin/api-status").then((m) => ({ default: m.ApiStatusPage || m.default }))
+);
+export const StyleGuidePage = lazyWithRetry(() =>
+  import("@/components/shared/StyleGuidePage").then((m) => ({ default: m.StyleGuidePage }))
 );
 export const TermsPage = lazyWithRetry(() =>
   import("@/routes/_public/terms").then((m) => ({ default: m.TermsPage || m.default }))
@@ -159,6 +171,24 @@ const RAW_PROTECTED_ROUTES: Omit<AppRouteConfig, "handle">[] = [
     allowedRoles: ["CLIENT", "ADMIN"],
   },
   {
+    path: "/plans/new",
+    element: (
+      <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+        <PlanEditorPage />
+      </RouteSuspenseWrapper>
+    ),
+    allowedRoles: ["ADMIN"],
+  },
+  {
+    path: "/plans/:id/edit",
+    element: (
+      <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+        <PlanEditorPage />
+      </RouteSuspenseWrapper>
+    ),
+    allowedRoles: ["ADMIN"],
+  },
+  {
     path: "/billing",
     element: (
       <RouteSuspenseWrapper fallback={<TablePageSkeleton />}>
@@ -195,6 +225,15 @@ const RAW_PROTECTED_ROUTES: Omit<AppRouteConfig, "handle">[] = [
     allowedRoles: ["CLIENT", "ADMIN"],
   },
   {
+    path: "/password-manager",
+    element: (
+      <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+        <PasswordManagerPage />
+      </RouteSuspenseWrapper>
+    ),
+    allowedRoles: ["CLIENT", "ADMIN"],
+  },
+  {
     path: "/maintenance",
     element: (
       <RouteSuspenseWrapper fallback={<TablePageSkeleton />}>
@@ -210,6 +249,15 @@ const RAW_PROTECTED_ROUTES: Omit<AppRouteConfig, "handle">[] = [
     element: (
       <RouteSuspenseWrapper fallback={<TablePageSkeleton />}>
         <CRMPage />
+      </RouteSuspenseWrapper>
+    ),
+    allowedRoles: ["ADMIN"],
+  },
+  {
+    path: "/crm/custom-plans",
+    element: (
+      <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+        <CRMCustomPlanPage />
       </RouteSuspenseWrapper>
     ),
     allowedRoles: ["ADMIN"],
@@ -240,11 +288,20 @@ const RAW_PROTECTED_ROUTES: Omit<AppRouteConfig, "handle">[] = [
   {
     path: "/admin/api-status",
     element: (
-      <RouteSuspenseWrapper fallback={<DashboardSkeleton />}>
+      <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
         <ApiStatusPage />
       </RouteSuspenseWrapper>
     ),
     allowedRoles: ["ADMIN"],
+  },
+  {
+    path: "/dev/style-guide",
+    element: (
+      <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+        <StyleGuidePage />
+      </RouteSuspenseWrapper>
+    ),
+    isPublic: true,
   },
 
   // Shared Routes
@@ -318,6 +375,8 @@ export const routePreloaders: Record<string, () => Promise<unknown>> = {
   "/financial": () => FinancialPage.preload(),
   "/crm": () => CRMPage.preload(),
   "/plans": () => PlansPage.preload(),
+  "/plans/new": () => PlanEditorPage.preload(),
+  "/plans/:id/edit": () => PlanEditorPage.preload(),
   "/billing": () => BillingPage.preload(),
   "/devices": () => DevicesPage.preload(),
   "/rmm": () => DevicesPage.preload(),

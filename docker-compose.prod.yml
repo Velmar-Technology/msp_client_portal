@@ -99,6 +99,9 @@ services:
       - NEXTCLOUD_APP_PASS=${NEXTCLOUD_APP_PASS}
       - NEXTCLOUD_TOTAL_CAPACITY=${NEXTCLOUD_TOTAL_CAPACITY}
       - NEXTCLOUD_EXTERNAL_URL=${NEXTCLOUD_EXTERNAL_URL:-https://atlas.velmartech.com.do}
+      - VAULTWARDEN_URL=${VAULTWARDEN_URL:-http://vaultwarden:80}
+      - VAULTWARDEN_ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN:-}
+      - VAULTWARDEN_EXTERNAL_URL=${VAULTWARDEN_EXTERNAL_URL:-https://helpdesk.velmartech.com.do/vault}
       - ZABBIX_URL=${ZABBIX_URL}
       - ZABBIX_USER=${ZABBIX_USER}
       - ZABBIX_PASSWORD=${ZABBIX_PASSWORD}
@@ -454,6 +457,45 @@ services:
       - "traefik.http.routers.msp-grafana.priority=100"
       - "traefik.http.services.msp-grafana-svc.loadbalancer.server.port=3000"
 
+  vaultwarden:
+    image: vaultwarden/server:alpine
+    container_name: msp_vaultwarden
+    restart: always
+    environment:
+      - DOMAIN=https://helpdesk.velmartech.com.do/vault
+      - SIGNUPS_ALLOWED=false
+      - INVITATIONS_ALLOWED=true
+      - SHOW_PASSWORD_HINT=false
+      - ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN}
+      - WEBSOCKET_ENABLED=true
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_FROM=${SMTP_USER}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_SECURITY=starttls
+      - SMTP_USERNAME=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+    volumes:
+      - vaultwarden_data:/data
+    networks:
+      - default
+      - reverse-proxy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.20'
+          memory: 120M
+        reservations:
+          cpus: '0.02'
+          memory: 30M
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.msp-vault.rule=Host(`helpdesk.velmartech.com.do`) && PathPrefix(`/vault`)"
+      - "traefik.http.routers.msp-vault.entrypoints=websecure"
+      - "traefik.http.routers.msp-vault.tls=true"
+      - "traefik.http.routers.msp-vault.tls.certresolver=myresolver"
+      - "traefik.http.routers.msp-vault.priority=100"
+      - "traefik.http.services.msp-vault-svc.loadbalancer.server.port=80"
+
 volumes:
   pgdata:
     driver: local
@@ -468,6 +510,8 @@ volumes:
   grafana_data:
     driver: local
   alloy_data:
+    driver: local
+  vaultwarden_data:
     driver: local
 
 networks:

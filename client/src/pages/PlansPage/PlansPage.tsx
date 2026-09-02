@@ -24,7 +24,6 @@ import { BillingCycleSwitcher } from "@/pages/PlansPage/components/BillingCycleS
 import { PlanCard } from "@/pages/PlansPage/components/PlanCard";
 import { PaymentSection } from "@/pages/PlansPage/components/PaymentSection";
 import { ActiveSubscriptionsDashboard } from "@/pages/PlansPage/components/ActiveSubscriptionsDashboard";
-import { EditPlanModal } from "@/pages/PlansPage/components/EditPlanModal";
 import { DeletePlanAlertDialog } from "@/pages/PlansPage/components/DeletePlanAlertDialog";
 import { ChangeTierPanel } from "@/pages/PlansPage/components/ChangeTierPanel";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -59,26 +58,6 @@ export function PlansPage() {
     setBillingCycle,
     activeTab,
     setActiveTab,
-    editingPlan,
-    editId,
-    setEditId,
-    editName,
-    setEditName,
-    editDescription,
-    setEditDescription,
-    editPrice,
-    setEditPrice,
-    editRecommended,
-    setEditRecommended,
-    editClientType,
-    setEditClientType,
-    editActive,
-    setEditActive,
-    editFeatures,
-    saveLoading,
-    isCreateMode,
-    draggedIndex,
-    dragOverIndex,
     subscribeLoading,
     paymentMessage,
     activeSubscriptions,
@@ -105,20 +84,6 @@ export function PlansPage() {
     openCheckout,
     handleEditClick,
     handleCreateClick,
-    handleAddFeature,
-    handleDeleteFeature,
-    handleToggleFeatureIncluded,
-    handleEditFeatureText,
-    handleUpdateFeatureCode,
-    handleUpdateFeatureParam,
-    handleDeleteFeatureParam,
-    handleMoveFeature,
-    handleDragStart,
-    handleDragOver,
-    handleDrop,
-    handleDragEnd,
-    handleSavePlan,
-    closePlanEditor,
     pendingDeletePlanId,
     requestDeletePlan,
     confirmDeletePlan,
@@ -234,7 +199,7 @@ export function PlansPage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={(e) => {
+                onClick={(e: React.MouseEvent) => {
                   e.stopPropagation();
                   if (isAdmin) {
                     handleUpdateSubscriptionDirect(sub.id, sub.plan, sub.equipment_count + 1);
@@ -249,17 +214,19 @@ export function PlansPage() {
               </Button>
 
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={(e) => e.stopPropagation()}
-                    className="h-7 w-7 cursor-pointer"
-                    aria-label={t("plans.manageTab") || "Manage Subscription"}
-                  >
-                    <MoreHorizontal className="h-3.5 w-3.5" />
-                  </Button>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                      className="h-7 w-7 cursor-pointer"
+                      aria-label={t("plans.manageTab") || "Manage Subscription"}
+                    />
+                  }
+                >
+                  <MoreHorizontal className="h-3.5 w-3.5" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
@@ -581,47 +548,6 @@ export function PlansPage() {
             "Velmar Technology SRL presta servicios de soporte en horario corporativo de Lunes a Viernes de 9:00 AM a 4:00 PM (hora de la República Dominicana). Los tiempos de respuesta (SLA) representan el compromiso de evaluación inicial de la solicitud dentro del horario hábil establecido y no constituyen una garantía de solución inmediata o de disponibilidad de soporte fuera de jornada. Precios no incluyen ITBIS."}
         </p>
       </div>
-
-      {/* Plan Edit Modal */}
-      {editingPlan && (
-        <EditPlanModal
-          editingPlan={editingPlan}
-          isCreateMode={isCreateMode}
-          editId={editId}
-          setEditId={setEditId}
-          editClientType={editClientType}
-          setEditClientType={setEditClientType}
-          editName={editName}
-          setEditName={setEditName}
-          editDescription={editDescription}
-          setEditDescription={setEditDescription}
-          editPrice={editPrice}
-          setEditPrice={setEditPrice}
-          editRecommended={editRecommended}
-          setEditRecommended={setEditRecommended}
-          editActive={editActive}
-          setEditActive={setEditActive}
-          editFeatures={editFeatures}
-          saveLoading={saveLoading}
-          draggedIndex={draggedIndex}
-          dragOverIndex={dragOverIndex}
-          onClose={closePlanEditor}
-          onSave={handleSavePlan}
-          onAddFeature={handleAddFeature}
-          onDeleteFeature={handleDeleteFeature}
-          onToggleFeatureIncluded={handleToggleFeatureIncluded}
-          onEditFeatureText={handleEditFeatureText}
-          onUpdateFeatureCode={handleUpdateFeatureCode}
-          onUpdateFeatureParam={handleUpdateFeatureParam}
-          onDeleteFeatureParam={handleDeleteFeatureParam}
-          onMoveFeature={handleMoveFeature}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-          onDragEnd={handleDragEnd}
-          onDeletePlan={requestDeletePlan}
-        />
-      )}
 
       {/* Delete Plan Confirmation Dialog */}
       <DeletePlanAlertDialog

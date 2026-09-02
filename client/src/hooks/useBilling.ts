@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import { invoiceService } from "@/services/invoiceService";
@@ -22,8 +22,8 @@ export function useBilling() {
   const [limit, setLimitInternal] = useState(() => getNumberParam("limit", 10));
   const [loading, setLoading] = useState(true);
 
-  // Active tab state ("invoices" | "plans")
-  const activeTab = useMemo(() => getParam("tab", "invoices"), [getParam]);
+  // Active tab state ("invoices" | "plans") derived directly during render (React 19 compiler-friendly)
+  const activeTab = getParam("tab", "invoices");
 
   const setActiveTab = useCallback(
     (tab: string) => {
@@ -36,15 +36,7 @@ export function useBilling() {
   const [search, setSearchInternal] = useState(() => getParam("search", ""));
   const [statusFilter, setStatusFilterInternal] = useState(() => getParam("status", ""));
 
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
-  const [showPayModal, setShowPayModalInternal] = useState(false);
-  const [selectedInvoiceToMarkPaid, setSelectedInvoiceToMarkPaid] = useState<Invoice | null>(null);
-  const [showMarkPaidModal, setShowMarkPaidModalInternal] = useState(false);
-  const [selectedInvoiceDetails, setSelectedInvoiceDetails] = useState<Invoice | null>(null);
-  const [showDetailsModal, setShowDetailsModalInternal] = useState(false);
   const [markingPaid, setMarkingPaid] = useState(false);
-  const [selectedInvoiceToCancel, setSelectedInvoiceToCancel] = useState<Invoice | null>(null);
-  const [showCancelModal, setShowCancelModalInternal] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
@@ -61,126 +53,79 @@ export function useBilling() {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchInvoices();
+    let isMounted = true;
+    const timer = setTimeout(async () => {
+      if (isMounted) {
+        await fetchInvoices();
+      }
     }, 0);
-    return () => clearTimeout(timer);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
   }, [fetchInvoices]);
+
+  // Derive active modal & selected invoice directly from URL parameters (Single Source of Truth)
+  const openModalParam = getParam("openModal");
+  const invoiceIdParam = getParam("invoiceId") || (location.state as { invoiceId?: string })?.invoiceId;
+
+  const selectedInvoiceFromUrl = invoiceIdParam
+    ? allInvoices.find((i) => i.id === invoiceIdParam) || null
+    : null;
+
+  const showPayModal = openModalParam === "pay-invoice" && !!selectedInvoiceFromUrl;
+  const showMarkPaidModal = openModalParam === "mark-paid" && !!selectedInvoiceFromUrl;
+  const showCancelModal = openModalParam === "cancel-invoice" && !!selectedInvoiceFromUrl;
+  const showDetailsModal = (openModalParam === "invoice-details" || (!openModalParam && !!invoiceIdParam)) && !!selectedInvoiceFromUrl;
+
+  const selectedInvoice = showPayModal ? selectedInvoiceFromUrl : null;
+  const selectedInvoiceToMarkPaid = showMarkPaidModal ? selectedInvoiceFromUrl : null;
+  const selectedInvoiceToCancel = showCancelModal ? selectedInvoiceFromUrl : null;
+  const selectedInvoiceDetails = showDetailsModal ? selectedInvoiceFromUrl : null;
 
   const openPayModal = useCallback(
     (inv: Invoice) => {
-      setSelectedInvoice(inv);
-      setShowPayModalInternal(true);
-      setShowDetailsModalInternal(false);
-      setShowMarkPaidModalInternal(false);
-      setShowCancelModalInternal(false);
       setParams({ openModal: "pay-invoice", invoiceId: inv.id });
     },
     [setParams]
   );
 
   const closePayModal = useCallback(() => {
-    setShowPayModalInternal(false);
-    setSelectedInvoice(null);
     removeParams(["openModal", "invoiceId"]);
   }, [removeParams]);
 
   const openMarkPaidModal = useCallback(
     (inv: Invoice) => {
-      setSelectedInvoiceToMarkPaid(inv);
-      setShowMarkPaidModalInternal(true);
-      setShowDetailsModalInternal(false);
-      setShowPayModalInternal(false);
-      setShowCancelModalInternal(false);
       setParams({ openModal: "mark-paid", invoiceId: inv.id });
     },
     [setParams]
   );
 
   const closeMarkPaidModal = useCallback(() => {
-    setShowMarkPaidModalInternal(false);
-    setSelectedInvoiceToMarkPaid(null);
     removeParams(["openModal", "invoiceId"]);
   }, [removeParams]);
 
   const openDetailsModal = useCallback(
     (inv: Invoice) => {
-      setSelectedInvoiceDetails(inv);
-      setShowDetailsModalInternal(true);
-      setShowPayModalInternal(false);
-      setShowMarkPaidModalInternal(false);
-      setShowCancelModalInternal(false);
       setParams({ openModal: "invoice-details", invoiceId: inv.id });
     },
     [setParams]
   );
 
   const closeDetailsModal = useCallback(() => {
-    setShowDetailsModalInternal(false);
-    setSelectedInvoiceDetails(null);
     removeParams(["openModal", "invoiceId"]);
   }, [removeParams]);
 
   const openCancelModal = useCallback(
     (inv: Invoice) => {
-      setSelectedInvoiceToCancel(inv);
-      setShowCancelModalInternal(true);
-      setShowDetailsModalInternal(false);
-      setShowPayModalInternal(false);
-      setShowMarkPaidModalInternal(false);
       setParams({ openModal: "cancel-invoice", invoiceId: inv.id });
     },
     [setParams]
   );
 
   const closeCancelModal = useCallback(() => {
-    setShowCancelModalInternal(false);
-    setSelectedInvoiceToCancel(null);
     removeParams(["openModal", "invoiceId"]);
   }, [removeParams]);
-
-  // Sync deep link params when allInvoices are available
-  useEffect(() => {
-    if (allInvoices.length === 0) return;
-    const openModalParam = getParam("openModal");
-    const invoiceIdParam = getParam("invoiceId") || (location.state as { invoiceId?: string })?.invoiceId;
-
-    if (invoiceIdParam) {
-      const inv = allInvoices.find((i) => i.id === invoiceIdParam);
-      if (inv) {
-        if (openModalParam === "pay-invoice") {
-          setSelectedInvoice(inv);
-          setShowPayModalInternal(true);
-          setShowDetailsModalInternal(false);
-          setShowMarkPaidModalInternal(false);
-          setShowCancelModalInternal(false);
-        } else if (openModalParam === "mark-paid") {
-          setSelectedInvoiceToMarkPaid(inv);
-          setShowMarkPaidModalInternal(true);
-          setShowDetailsModalInternal(false);
-          setShowPayModalInternal(false);
-          setShowCancelModalInternal(false);
-        } else if (openModalParam === "cancel-invoice") {
-          setSelectedInvoiceToCancel(inv);
-          setShowCancelModalInternal(true);
-          setShowDetailsModalInternal(false);
-          setShowPayModalInternal(false);
-          setShowMarkPaidModalInternal(false);
-        } else if (openModalParam === "invoice-details" || !openModalParam) {
-          setSelectedInvoiceDetails(inv);
-          setShowDetailsModalInternal(true);
-          setShowPayModalInternal(false);
-          setShowMarkPaidModalInternal(false);
-          setShowCancelModalInternal(false);
-        }
-      }
-    } else if (!openModalParam) {
-      setShowPayModalInternal(false);
-      setShowMarkPaidModalInternal(false);
-      setShowCancelModalInternal(false);
-      setShowDetailsModalInternal(false);
-    }
-  }, [allInvoices, getParam, location.state]);
 
   const handleDownload = useCallback(async (inv: Invoice) => {
     setDownloadingId(inv.id);
@@ -229,14 +174,12 @@ export function useBilling() {
     }
   }, [selectedInvoiceToCancel, fetchInvoices, closeCancelModal]);
 
-  // Client-side sorted and filtered list
-  const sortedInvoices = useMemo(() => {
-    return [...allInvoices].sort((a, b) => {
-      const dateA = new Date(a.created_at || a.invoice_date).getTime();
-      const dateB = new Date(b.created_at || b.invoice_date).getTime();
-      return dateB - dateA;
-    });
-  }, [allInvoices]);
+  // Client-side sorted and filtered list (derived directly during render for React 19 compiler)
+  const sortedInvoices = [...allInvoices].sort((a, b) => {
+    const dateA = new Date(a.created_at || a.invoice_date).getTime();
+    const dateB = new Date(b.created_at || b.invoice_date).getTime();
+    return dateB - dateA;
+  });
 
   const filteredInvoices = sortedInvoices.filter((inv) => {
     if (statusFilter && inv.status !== statusFilter) return false;

@@ -53,7 +53,7 @@ export class PlanRepository extends BaseRepository<Plan> {
     // Atomic generation invalidation
     await this.cache.invalidateScope('plans', 'global');
 
-    return results[0] as Plan;
+    return (results as any[])[0] as Plan;
   }
 
   /**
@@ -79,7 +79,7 @@ export class PlanRepository extends BaseRepository<Plan> {
     // Atomic generation invalidation across all nodes
     await this.cache.invalidateScope('plans', 'global');
 
-    return (results[0] as Plan) || null;
+    return ((results as any[])[0] as Plan) || null;
   }
 
   /**
@@ -101,6 +101,14 @@ export class PlanRepository extends BaseRepository<Plan> {
 
         if (filters.includeInactive === false) {
           conditions.push(eq(plans.active, true));
+        }
+        if (filters.includeCustom !== true) {
+          conditions.push(eq(plans.is_custom, false));
+        } else if (filters.tenantId) {
+          conditions.push(eq(plans.tenant_id, filters.tenantId));
+        }
+        if (filters.leadId) {
+          conditions.push(eq(plans.lead_id, filters.leadId));
         }
         if (filters.clientType) {
           conditions.push(eq(plans.client_type, filters.clientType));

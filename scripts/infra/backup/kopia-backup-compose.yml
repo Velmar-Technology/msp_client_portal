@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  kopia-backup:
+    image: kopia/kopia:latest
+    container_name: msp_kopia_backup
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["sleep infinity"]
+    environment:
+      - TZ=${TZ:-America/Santo_Domingo}
+      - KOPIA_PASSWORD=${KOPIA_REPOSITORY_PASSWORD:-}
+      - KOPIA_CACHE_DIRECTORY=/app/cache
+      - KOPIA_CONFIG_PATH=/app/config/repository.config
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/config/gdrive-service-account.json
+    volumes:
+      # Nextcloud read-only mounts
+      - /mnt/.ix-apps/app_mounts/nextcloud/data:/nextcloud_data:ro
+      - /mnt/.ix-apps/app_mounts/nextcloud/html/config:/nextcloud_config:ro
+      # Persistent Kopia internal state
+      - /mnt/.ix-apps/app_mounts/kopia_cache:/app/cache
+      - /mnt/.ix-apps/app_mounts/kopia_config:/app/config
+      - /mnt/.ix-apps/app_mounts/kopia_staging:/staging
+      # Host Docker socket for atomic occ and pg_dump orchestration
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Backup runner script mount
+      - ./backup-nextcloud-runner.sh:/scripts/backup-nextcloud-runner.sh:ro
+    ports:
+      # Optional local Kopia Web UI / API inside WireGuard network (or localhost)
+      - "127.0.0.1:51515:51515"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.10'
+          memory: 64M

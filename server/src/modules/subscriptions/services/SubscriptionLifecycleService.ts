@@ -3,7 +3,7 @@ import { UserRepository, userRepository, TenantRepository, tenantRepository } fr
 import { PlanRepository, planRepository } from '../repositories/PlanRepository';
 import { InvoiceRepository, invoiceRepository, NcfService, ncfService } from '@modules/billing';
 import { EquipmentRepository, equipmentRepository } from '@modules/equipment';
-import { NextcloudService, nextcloudService } from '@modules/system';
+import { NextcloudService, nextcloudService, VaultwardenService, vaultwardenService } from '@modules/system';
 import { PaypalService, paypalService } from '@modules/billing';
 import { NotificationService, notificationService } from '@modules/notifications';
 import { BillingPricingService, billingPricingService } from '@modules/billing';
@@ -33,6 +33,7 @@ export class SubscriptionLifecycleService {
    * @param subPaymentSvc - Subscription payment verification service
    * @param ncfSvc - Dominican NCF generation service
    * @param tenantRepo - Tenant repository
+   * @param vaultwardenSvc - Vaultwarden password manager service
    */
   constructor(
     private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
@@ -46,7 +47,8 @@ export class SubscriptionLifecycleService {
     private pricingSvc: BillingPricingService = billingPricingService,
     private subPaymentSvc: SubscriptionPaymentService = subscriptionPaymentService,
     private ncfSvc: NcfService = ncfService,
-    private tenantRepo: TenantRepository = tenantRepository
+    private tenantRepo: TenantRepository = tenantRepository,
+    private vaultwardenSvc: VaultwardenService = vaultwardenService
   ) {}
 
   /**
@@ -295,6 +297,30 @@ export class SubscriptionLifecycleService {
     await this.initializeEquipmentSlots(subscription.id, data.equipmentCount, tenantId);
     await this.createInitialInvoice(data.plan, data.equipmentCount, billingCycle, clientId, tenantId, isBankTransfer, byAdmin);
     await this.notifySubscriptionCreation(clientId, tenantId, formattedServiceName, isBankTransfer, byAdmin);
+
+    // Auto-provision Vaultwarden Password Manager organization & dispatch invite if included in plan
+    try {
+      const planDetails = await this.planRepo.findById(data.plan);
+      const planFeatures = Array.isArray(planDetails?.features) ? planDetails.features : [];
+      const hasPasswordManager = planFeatures.some(
+        (f: any) => (typeof f === 'string' && f === 'PASSWORD_MANAGER') || (typeof f === 'object' && f?.code === 'PASSWORD_MANAGER')
+      );
+
+      if (hasPasswordManager) {
+        const tenant = await this.tenantRepo.findById(tenantId);
+        const clientUser = await this.userRepo.findById(clientId);
+        const orgName = tenant?.name || `${formattedServiceName} Vault`;
+        const ownerEmail = clientUser?.email;
+
+        if (ownerEmail) {
+          const org = await this.vaultwardenSvc.createOrganization(orgName, ownerEmail);
+          await this.vaultwardenSvc.inviteUserToOrganization(org.id, ownerEmail, 'Admin');
+          logger.info(`Auto-provisioned Vaultwarden password manager for subscription ${subscription.id} (Tenant: ${tenantId})`);
+        }
+      }
+    } catch (vwErr) {
+      logger.error(`Non-blocking failure provisioning Vaultwarden password manager for sub ${subscription.id}:`, vwErr);
+    }
 
     return subscription;
   }

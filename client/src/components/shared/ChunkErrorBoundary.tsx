@@ -6,6 +6,7 @@ export interface ChunkErrorBoundaryProps {
   children: ReactNode;
   fallback?: ReactNode | ((props: { error: Error; resetErrorBoundary: () => void }) => ReactNode);
   onReset?: () => void;
+  onError?: (error: Error, info: ErrorInfo) => void;
 }
 
 interface State {
@@ -13,6 +14,11 @@ interface State {
   error: Error | null;
 }
 
+/**
+ * React 19 Error Boundary for isolating lazy chunk loading failures and subfeature crashes.
+ *
+ * @see react-patterns (Error Boundaries)
+ */
 export class ChunkErrorBoundary extends Component<ChunkErrorBoundaryProps, State> {
   public override state: State = {
     hasError: false,
@@ -24,6 +30,9 @@ export class ChunkErrorBoundary extends Component<ChunkErrorBoundaryProps, State
   }
 
   public override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    if (this.props.onError) {
+      this.props.onError(error, errorInfo);
+    }
     if (process.env.NODE_ENV === "development") {
       console.error("[ChunkErrorBoundary] Dynamic chunk rendering failed:", error, errorInfo);
     }

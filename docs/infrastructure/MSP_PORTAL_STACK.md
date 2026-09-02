@@ -33,6 +33,7 @@ All services restart automatically (`restart: always` unless noted) and share th
 | `prometheus` | `msp_prometheus` | `prom/prometheus:v2.54.0` | Metrics scrape: `prometheus`, `traefik:8080`, `msp-server /api/v1/metrics`, `alloy:12345`; retention 15d; `--web.route-prefix=/prometheus`, external URL `/prometheus`; runs as `user 0:0` | 0.20 / 150M | — |
 | `alloy` | `msp_alloy` | `grafana/alloy:v1.2.0` | Faro frontend-telemetry receiver: `faro.receiver` on **12347** (payload limit 10MiB, CORS origin `https://helpdesk.velmartech.com.do`), HTTP metrics on **12345**; ingress `/collect` | 0.15 / 100M | — |
 | `grafana` | `msp_grafana` | `grafana/grafana-oss:latest` | Dashboards; `GF_SERVER_ROOT_URL=https://helpdesk.velmartech.com.do/grafana/`, `SERVE_FROM_SUB_PATH=true`; preinstalls `alexanderzobnin-zabbix-app`; SMTP from shared SMTP vars | 0.25 / 180M | — |
+| `vaultwarden` | `msp_vaultwarden` | `vaultwarden/server:alpine` | Multi-tenant Bitwarden password manager; zero-knowledge encryption; subpath `/vault`; attached to `reverse-proxy` | 0.20 / 120M | — |
 | _(traefik)_ | — | `traefik:v3.6.4` | **External stack 3** — TLS termination + routing (not part of this stack) | — | — |
 
 > Note: `db` and `zabbix-db` use the same `postgres:16-alpine` image but separate encrypted volumes (see §3) — no data overlap.
@@ -77,6 +78,7 @@ All services restart automatically (`restart: always` unless noted) and share th
 | `prometheus_data` | local | `prometheus` → `/prometheus` |
 | `grafana_data` | local | `grafana` → `/var/lib/grafana` |
 | `alloy_data` | local | `alloy` → `/var/lib/alloy/data` |
+| `vaultwarden_data` | local | `vaultwarden` → `/data` |
 
 ---
 
@@ -93,6 +95,7 @@ All routers use `entrypoints=websecure`, `tls=true`, `certresolver=myresolver` (
 | `msp-prometheus` | `` Host(`helpdesk.velmartech.com.do`) && PathPrefix(`/prometheus`) `` | 100 | `prom-auth` | 9090 |
 | `msp-faro` | `` Host(`helpdesk.velmartech.com.do`) && PathPrefix(`/collect`) `` | 100 | — | 12347 |
 | `msp-grafana` | `` Host(`helpdesk.velmartech.com.do`) && PathPrefix(`/grafana`) `` | 100 | — | 3000 |
+| `msp-vault` | `` Host(`helpdesk.velmartech.com.do`) && PathPrefix(`/vault`) `` | 100 | — | 80 |
 
 ### Middlewares
 

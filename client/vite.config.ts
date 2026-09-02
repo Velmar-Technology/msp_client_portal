@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), !process.env.VITEST ? tailwindcss() : null].filter(Boolean),
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -77,9 +77,6 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
-    pool: 'forks',
-    isolate: true,
-    maxWorkers: 1,
-    testTimeout: 15000,
+    testTimeout: 5000,
   },
 });

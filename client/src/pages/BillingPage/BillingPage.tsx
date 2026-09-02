@@ -187,12 +187,12 @@ const PayModal = ({
 
   return (
     <AlertDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <AlertDialogContent className="sm:max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl p-5 text-zinc-900 dark:text-zinc-100 max-h-[90vh] overflow-y-auto">
-        <AlertDialogHeader className="pb-3 border-b border-zinc-200 dark:border-zinc-800">
-          <AlertDialogTitle className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
+      <AlertDialogContent className="sm:max-w-md bg-card text-card-foreground border border-border rounded-xl shadow-xl p-5 max-h-[90vh] overflow-y-auto">
+        <AlertDialogHeader className="pb-3 border-b border-border">
+          <AlertDialogTitle className="text-sm font-bold text-foreground">
             {isSuccess ? t("billing.paymentSuccessTitle") || "Payment Approved" : t("billing.payNow") || "Pay Invoice"}
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 leading-normal">
+          <AlertDialogDescription className="text-xs text-muted-foreground mt-0.5 leading-normal">
             {isSuccess
               ? t("billing.paymentSuccessDesc", { amount: Number(invoice.total).toFixed(2) })
               : t("billing.modalPayDesc", { amount: Number(invoice.total).toFixed(2), number: invoice.invoice_number })}
@@ -658,7 +658,7 @@ const InvoiceDetailsModal = ({
           </div>
         </div>
 
-        <DialogFooter className="pt-3 border-t border-zinc-200 dark:border-zinc-800 sm:justify-between items-center gap-2 flex-col-reverse sm:flex-row">
+        <DialogFooter className="pt-3 border-t border-border sm:justify-between items-center gap-2 flex-col-reverse sm:flex-row">
           <Button
             variant="outline"
             size="sm"
@@ -919,7 +919,7 @@ export function BillingPage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={(e) => {
+                onClick={(e: React.MouseEvent) => {
                   e.stopPropagation();
                   openDetailsModal(inv);
                 }}
@@ -930,16 +930,18 @@ export function BillingPage() {
               </Button>
 
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={(e) => e.stopPropagation()}
-                    className="h-7 w-7 cursor-pointer"
-                  >
-                    <MoreHorizontal className="h-3.5 w-3.5" />
-                  </Button>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                      className="h-7 w-7 cursor-pointer"
+                    />
+                  }
+                >
+                  <MoreHorizontal className="h-3.5 w-3.5" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48 bg-card text-foreground border border-border">
                   <DropdownMenuItem

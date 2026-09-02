@@ -11,11 +11,33 @@ function AlertDialog({
 }
 
 function AlertDialogTrigger({
+  render,
+  children,
+  asChild,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Trigger>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Trigger> & {
+  render?: React.ReactElement;
+}) {
+  if (render) {
+    return (
+      <AlertDialogPrimitive.Trigger
+        data-slot="alert-dialog-trigger"
+        asChild
+        {...props}
+      >
+        {render}
+      </AlertDialogPrimitive.Trigger>
+    );
+  }
   return (
-    <AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...props} />
-  )
+    <AlertDialogPrimitive.Trigger
+      data-slot="alert-dialog-trigger"
+      asChild={asChild}
+      {...props}
+    >
+      {children}
+    </AlertDialogPrimitive.Trigger>
+  );
 }
 
 function AlertDialogPortal({

@@ -50,21 +50,14 @@ export function useSLATimer(
     return Math.max(0, deadline - Date.now());
   });
 
-  const [isExpired, setIsExpired] = useState(() => {
-    if (!isApplicable || !createdAtStr) return true;
-    return Date.now() > deadline;
-  });
-
   useEffect(() => {
     if (!isApplicable || !createdAtStr) {
       setRemaining(0);
-      setIsExpired(true);
       return;
     }
 
     const currentRemaining = Math.max(0, deadline - Date.now());
     setRemaining(currentRemaining);
-    setIsExpired(currentRemaining <= 0);
 
     if (currentRemaining <= 0) return;
 
@@ -72,7 +65,6 @@ export function useSLATimer(
       const timeLeft = Math.max(0, deadline - Date.now());
       setRemaining(timeLeft);
       if (timeLeft <= 0) {
-        setIsExpired(true);
         clearInterval(interval);
       }
     }, 1000);
@@ -80,6 +72,7 @@ export function useSLATimer(
     return () => clearInterval(interval);
   }, [deadline, isApplicable, createdAtStr]);
 
+  const isExpired = !isApplicable || !createdAtStr || remaining <= 0;
   const minutes = Math.floor(remaining / 60000);
   const seconds = Math.floor((remaining % 60000) / 1000);
 

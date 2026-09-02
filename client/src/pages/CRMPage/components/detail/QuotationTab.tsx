@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -6,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Send, RefreshCw, Plus, Minus, Check, X } from "lucide-react";
+import { FileText, Send, RefreshCw, Plus, Minus, Check, X, Sparkles } from "lucide-react";
 import type { Lead, Quotation, QuotationStatus } from "@/services/crmService";
 import type { Plan } from "@/services/planService";
 import { TAX_RATE as CRM_TAX_RATE } from "@/constants/billing";
@@ -44,6 +45,7 @@ export function QuotationTab({
   const { t, i18n } = useTranslation();
   const isSpanish = i18n.language.startsWith("es");
 
+  const navigate = useNavigate();
   const [selectedPlanId, setSelectedPlanId] = useState<string>(() => lead.plan_id || plans[0]?.id || "");
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">(
     () => (lead.billing_cycle as "monthly" | "annual") || "monthly",
@@ -107,9 +109,21 @@ export function QuotationTab({
 
         {/* Plan Selection */}
         <div>
-          <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-            {t("plans.selectPlan")}
-          </label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              {t("plans.selectPlan")}
+            </label>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`/crm/custom-plans?lead=${lead.id}`)}
+              className="h-5 px-1.5 text-[11px] text-primary gap-1 font-semibold hover:bg-primary/10 cursor-pointer"
+            >
+              <Sparkles className="h-3 w-3" />
+              <span>{t("crm.customPlan.btnTitle", "Custom Plan Studio")}</span>
+            </Button>
+          </div>
           <Select value={effectivePlanId} onValueChange={setSelectedPlanId}>
             <SelectTrigger size="lg" className="w-full text-xs bg-background text-foreground">
               <SelectValue placeholder={t("plans.selectPlan")} />

@@ -202,7 +202,7 @@ export function DataTable<TData, TValue>({
 
   // Clear selection if data changes (e.g. after paginating or reloading)
   useEffect(() => {
-    setRowSelection({});
+    setRowSelection((prev) => (Object.keys(prev).length === 0 ? prev : {}));
   }, [data]);
 
   useEffect(() => {
@@ -210,7 +210,7 @@ export function DataTable<TData, TValue>({
       const selectedRows = table.getSelectedRowModel().rows.map((row) => row.original);
       onSelectedRowsChange(selectedRows);
     }
-  }, [rowSelection, table, onSelectedRowsChange]);
+  }, [rowSelection, onSelectedRowsChange]);
 
   const hasSelectedRows = Object.keys(rowSelection).length > 0;
 
