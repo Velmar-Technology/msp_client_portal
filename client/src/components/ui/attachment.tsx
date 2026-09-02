@@ -1,6 +1,6 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
-import { Button as ButtonPrimitive } from "@base-ui/react/button"
+import { Slot } from "radix-ui"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -160,15 +160,18 @@ function AttachmentAction({
 
 function AttachmentTrigger({
   className,
-  render,
+  asChild = false,
   type,
   ...props
-}: ButtonPrimitive.Props) {
+}: React.ComponentProps<"button"> & {
+  asChild?: boolean
+}) {
+  const Comp = asChild ? Slot.Root : "button"
+
   return (
-    <ButtonPrimitive
+    <Comp
       data-slot="attachment-trigger"
-      type={type ?? "button"}
-      render={render}
+      type={asChild ? undefined : (type ?? "button")}
       className={cn("absolute inset-0 z-10 outline-none", className)}
       {...props}
     />
@@ -199,4 +202,3 @@ export {
   AttachmentAction,
   AttachmentTrigger,
 }
-

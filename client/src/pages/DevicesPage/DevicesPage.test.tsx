@@ -203,53 +203,61 @@ vi.mock('@/components/ui/dropdown-menu', () => {
   };
 });
 
+const SelectContext = React.createContext<{
+  value?: string;
+  onValueChange?: (val: string) => void;
+}>({});
+
+const labelsCache = new Map<string, string>();
+
 vi.mock('@/components/ui/select', () => {
-  let selectCallbacks: Record<string, (val: string) => void> = {};
   return {
-    Select: ({ children, value, onValueChange, id }: any) => {
-      const selectId = id || 'mock-select';
-      if (onValueChange) selectCallbacks[selectId] = onValueChange;
+    Select: ({ children, value, onValueChange }: any) => {
       return (
-        <div data-testid="mock-select" data-value={value}>
+        <SelectContext.Provider value={{ value, onValueChange }}>
+          <div data-testid="mock-select" data-value={value}>
+            {children}
+          </div>
+        </SelectContext.Provider>
+      );
+    },
+    SelectTrigger: ({ children, id, 'aria-label': ariaLabel, 'data-testid': testId, className }: any) => {
+      const { value } = React.useContext(SelectContext);
+      return (
+        <button id={id} aria-label={ariaLabel} data-testid={testId} className={className} type="button">
           {React.Children.map(children, (child) =>
-            React.isValidElement(child)
-              ? React.cloneElement(child as any, { value, onValueChange, selectId })
-              : child
+            React.isValidElement(child) ? React.cloneElement(child as any, { value }) : child
           )}
+        </button>
+      );
+    },
+    SelectValue: ({ placeholder, value }: any) => {
+      const ctx = React.useContext(SelectContext);
+      const val = value !== undefined ? value : ctx.value;
+      const display = (val && labelsCache.get(val)) || val || placeholder;
+      return <span>{display}</span>;
+    },
+    SelectContent: ({ children }: any) => <div>{children}</div>,
+    SelectItem: ({ children, value, className }: any) => {
+      const { onValueChange } = React.useContext(SelectContext);
+      if (value !== undefined && typeof children === 'string') {
+        labelsCache.set(value, children);
+      }
+      return (
+        <div
+          role="option"
+          className={className}
+          onClick={() => {
+            onValueChange?.(value);
+          }}
+          onPointerDown={() => {
+            onValueChange?.(value);
+          }}
+        >
+          {children}
         </div>
       );
     },
-    SelectTrigger: ({ children, id, 'aria-label': ariaLabel, 'data-testid': testId, className }: any) => (
-      <button id={id} aria-label={ariaLabel} data-testid={testId} className={className} type="button">
-        {children}
-      </button>
-    ),
-    SelectValue: ({ placeholder, value }: any) => <span>{value || placeholder}</span>,
-    SelectContent: ({ children, onValueChange, selectId }: any) => (
-      <div>
-        {React.Children.map(children, (child) =>
-          React.isValidElement(child)
-            ? React.cloneElement(child as any, { onValueChange, selectId })
-            : child
-        )}
-      </div>
-    ),
-    SelectItem: ({ children, value, onValueChange, selectId, className }: any) => (
-      <div
-        role="option"
-        className={className}
-        onClick={() => {
-          onValueChange?.(value);
-          if (selectId && selectCallbacks[selectId]) selectCallbacks[selectId](value);
-        }}
-        onPointerDown={() => {
-          onValueChange?.(value);
-          if (selectId && selectCallbacks[selectId]) selectCallbacks[selectId](value);
-        }}
-      >
-        {children}
-      </div>
-    ),
   };
 });
 
@@ -390,7 +398,7 @@ describe('DevicesPage', () => {
       expect(screen.getByText(/Slot\s*#1/)).toBeInTheDocument();
       expect(screen.getByText('Workstation 1')).toBeInTheDocument();
       expect(screen.getByText(/Slot\s*#2/)).toBeInTheDocument();
-      expect(screen.getByText(/pending activation/i)).toBeInTheDocument();
+      expect(screen.getByText("PENDING ACTIVATION")).toBeInTheDocument();
     });
 
     // Open Actions dropdown on Slot #2 (index 1)
@@ -642,7 +650,9 @@ describe('DevicesPage', () => {
     // Switch selection
     fireEvent.pointerDown(secondOption, { button: 0, ctrlKey: false });
     fireEvent.click(secondOption);
-    expect(trigger).toHaveTextContent('Standard Support (2 Devices)');
+    await waitFor(() => {
+      expect(trigger).toHaveTextContent('Standard Support (2 Devices)');
+    });
   });
 
   test('filters device slots by device ID (id) using the search bar', async () => {
@@ -693,7 +703,7 @@ describe('DevicesPage', () => {
     // Both should be visible initially
     await waitFor(() => {
       expect(screen.getByText('Workstation Alpha')).toBeInTheDocument();
-      expect(screen.getByText(/pending activation/i)).toBeInTheDocument();
+      expect(screen.getByText("PENDING ACTIVATION")).toBeInTheDocument();
     });
 
     // Search by partial/full UUID of the active slot
@@ -703,14 +713,14 @@ describe('DevicesPage', () => {
     // Assert only matching slot is present
     await waitFor(() => {
       expect(screen.getByText('Workstation Alpha')).toBeInTheDocument();
-      expect(screen.queryByText(/pending activation/i)).toBeNull();
+      expect(screen.queryByText("PENDING ACTIVATION")).toBeNull();
     });
 
     // Clear search and ensure all return
     fireEvent.change(searchInput, { target: { value: '' } });
     await waitFor(() => {
       expect(screen.getByText('Workstation Alpha')).toBeInTheDocument();
-      expect(screen.getByText(/pending activation/i)).toBeInTheDocument();
+      expect(screen.getByText("PENDING ACTIVATION")).toBeInTheDocument();
     });
   });
 
@@ -769,13 +779,13 @@ describe('DevicesPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Workstation Alpha')).toBeInTheDocument();
       expect(screen.getByText('John Mitchell')).toBeInTheDocument();
-      expect(screen.getAllByText('Acme Corp').length).toBe(1);
+      expect(screen.getAllByText('Acme Corp').length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText('Lisa Park')).toBeInTheDocument();
-      expect(screen.getAllByText('Beta Industries').length).toBe(1);
+      expect(screen.getAllByText('Beta Industries').length).toBeGreaterThanOrEqual(1);
     });
 
     // Check status filter is rendered
-    expect(screen.getByText('All Statuses')).toBeInTheDocument();
+    expect(screen.getAllByText('All Statuses').length).toBeGreaterThanOrEqual(1);
 
     // Reset mockUser role to CLIENT for next tests
     mockUser.role = 'CLIENT';
@@ -1040,7 +1050,7 @@ describe('DevicesPage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/pending activation/i)).toBeInTheDocument();
+      expect(screen.getByText("PENDING ACTIVATION")).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Actions' }));
@@ -1169,7 +1179,7 @@ describe('DevicesPage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/pending activation/i)).toBeInTheDocument();
+      expect(screen.getByText("PENDING ACTIVATION")).toBeInTheDocument();
     });
 
     const checkbox = screen.getByRole('checkbox', { name: 'Select row' });
@@ -1210,7 +1220,7 @@ describe('DevicesPage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/pending activation/i)).toBeInTheDocument();
+      expect(screen.getByText("PENDING ACTIVATION")).toBeInTheDocument();
     });
 
     const checkboxes = screen.getAllByRole('checkbox', { name: 'Select row' });

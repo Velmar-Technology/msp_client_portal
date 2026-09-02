@@ -49,7 +49,8 @@
     "userManagement": "Users",
     "financial": "Financials",
     "apiStatus": "API Status",
-    "crm": "CRM Pipeline"
+    "crm": "CRM Pipeline",
+    "passwordManager": "Password Manager"
   },
   "sidebar": {
     "groups": {
@@ -1023,6 +1024,7 @@
     "noActiveSubscriptionsDesc": "You currently do not have any active subscriptions. A managed support service plan is required to activate and manage devices.",
     "browseSupportPlans": "Browse Support Plans",
     "selectSubscription": "Select Subscription to Manage Devices",
+    "devicesCount": "{{count}} Devices",
     "subOptionLabel": "{{name}} ({{devicesStr}})",
     "filterAllClients": "All Clients",
     "searchTenantPlaceholder": "Search client...",
@@ -1031,6 +1033,7 @@
     "filterAllStatuses": "All Statuses",
     "statusActive": "Active",
     "statusPending": "Pending Activation",
+    "statusPendingActivation": "PENDING ACTIVATION",
     "cancel": "Cancel",
     "back": "Back",
     "paginationShowing": "Showing {{start}}–{{end}} of {{total}} devices",
@@ -1044,7 +1047,6 @@
     "notAvailable": "N/A",
     "slotNumber": "Slot #{{num}}",
     "idLabel": "ID:",
-    "statusPendingActivation": "PENDING ACTIVATION",
     "unnamedDevice": "Unnamed Device",
     "noSerial": "No Serial",
     "pendingUnboundSlot": "Awaiting agent pairing",
@@ -1934,5 +1936,26 @@
         "pricePositive": "Base price must be a non-negative number"
       }
     }
+  },
+  "passwordManager": {
+    "pageTitle": "Password Manager",
+    "pageDescription": "Enterprise zero-knowledge password vault for your team.",
+    "vaultTitle": "Hosted Vaultwarden Enterprise",
+    "activeStatus": "Active & Zero-Knowledge",
+    "vaultSubtitle": "Your organization's encrypted vault is active. Master passwords are never shared or stored on our servers.",
+    "launchVault": "Open Web Vault",
+    "serverUrlLabel": "Custom Server URL:",
+    "copyUrl": "Copy Server URL",
+    "copied": "Copied!",
+    "setupGuideTitle": "How to Connect Your Apps",
+    "setupGuideDesc": "Configure official Bitwarden browser extensions and mobile apps in 3 steps.",
+    "step1Title": "Install Extension or App:",
+    "step1Text": "Download the official Bitwarden extension or app for your devices.",
+    "step2Title": "Set Custom Server:",
+    "step2Text": "On the login screen, click the Settings Gear icon and set Server URL to:",
+    "step3Title": "Accept Invite & Login:",
+    "step3Text": "Click the invitation link sent to your email to create your Master Password and join your company vault.",
+    "clientsTitle": "Official Bitwarden Clients",
+    "clientsDesc": "Compatible with all official Bitwarden extensions, mobile, and desktop apps."
   }
 }

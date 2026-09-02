@@ -49,7 +49,8 @@
     "userManagement": "Usuarios",
     "financial": "Finanzas",
     "apiStatus": "Estado de API",
-    "crm": "Pipeline CRM"
+    "crm": "Pipeline CRM",
+    "passwordManager": "Gestor de Contraseñas"
   },
   "sidebar": {
     "groups": {
@@ -1023,6 +1024,7 @@
     "noActiveSubscriptionsDesc": "Actualmente no tiene ninguna suscripción activa. Se requiere un plan de servicio de soporte gestionado para activar y gestionar dispositivos.",
     "browseSupportPlans": "Explorar Planes de Soporte",
     "selectSubscription": "Seleccione una Suscripción para Gestionar Dispositivos",
+    "devicesCount": "{{count}} Dispositivos",
     "subOptionLabel": "{{name}} ({{devicesStr}})",
     "filterAllClients": "Todos los Clientes",
     "searchTenantPlaceholder": "Buscar cliente...",
@@ -1030,7 +1032,7 @@
     "filterAllPlans": "Todos los Planes",
     "filterAllStatuses": "Todos los Estados",
     "statusActive": "Activo",
-    "statusPending": "Pendiente de Activación",
+    "statusPending": "Activación Pendiente",
     "cancel": "Cancelar",
     "back": "Atrás",
     "paginationShowing": "Mostrando {{start}}–{{end}} de {{total}} dispositivos",
@@ -1928,5 +1930,26 @@
         "pricePositive": "El precio base debe ser un número no negativo"
       }
     }
+  },
+  "passwordManager": {
+    "pageTitle": "Gestor de Contraseñas",
+    "pageDescription": "Bóveda empresarial de contraseñas con cifrado de conocimiento cero para su equipo.",
+    "vaultTitle": "Vaultwarden Enterprise Alojado",
+    "activeStatus": "Activo y Conocimiento Cero",
+    "vaultSubtitle": "La bóveda cifrada de su organización está activa. Las contraseñas maestras nunca se comparten ni se almacenan en nuestros servidores.",
+    "launchVault": "Abrir Bóveda Web",
+    "serverUrlLabel": "URL de Servidor Personalizado:",
+    "copyUrl": "Copiar URL del Servidor",
+    "copied": "¡Copiado!",
+    "setupGuideTitle": "Cómo Conectar sus Aplicaciones",
+    "setupGuideDesc": "Configure las extensiones de navegador y aplicaciones móviles oficiales de Bitwarden en 3 pasos.",
+    "step1Title": "Instale la Extensión o App:",
+    "step1Text": "Descargue la extensión o aplicación oficial de Bitwarden para sus dispositivos.",
+    "step2Title": "Configure Servidor Personalizado:",
+    "step2Text": "En la pantalla de inicio de sesión, haga clic en el engranaje de Configuración e introduzca la URL del servidor:",
+    "step3Title": "Acepte la Invitación e Inicie Sesión:",
+    "step3Text": "Haga clic en el enlace de invitación recibido por correo para crear su Contraseña Maestra y unirse a la bóveda de la empresa.",
+    "clientsTitle": "Clientes Oficiales de Bitwarden",
+    "clientsDesc": "Compatible con todas las extensiones oficiales de Bitwarden, aplicaciones móviles y de escritorio."
   }
 }

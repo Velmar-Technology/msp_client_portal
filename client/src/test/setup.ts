@@ -92,3 +92,8 @@ global.IntersectionObserver = class IntersectionObserver {
 
 window.scrollTo = vi.fn();
 Element.prototype.scrollIntoView = vi.fn();
+if (typeof Element !== 'undefined') {
+  Element.prototype.hasPointerCapture = Element.prototype.hasPointerCapture || vi.fn(() => false);
+  Element.prototype.setPointerCapture = Element.prototype.setPointerCapture || vi.fn();
+  Element.prototype.releasePointerCapture = Element.prototype.releasePointerCapture || vi.fn();
+}

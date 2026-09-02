@@ -155,7 +155,7 @@ export const SubscriptionSelector = memo(function SubscriptionSelector({
               <SelectItem key={sub.id} value={sub.id} className="text-xs font-medium cursor-pointer">
                 {t("devices.subOptionLabel", {
                   name: sub.service_name,
-                  devicesStr: t("plans.devicesCount", { count: sub.equipment_count }),
+                  devicesStr: t("devices.devicesCount", { count: sub.equipment_count }),
                 })}
               </SelectItem>
             ))}
@@ -898,7 +898,7 @@ export function DevicesPage() {
                       {activeSubscriptions.length > 1 && !isAdmin && (
                         <SubscriptionSelector
                           subscriptions={activeSubscriptions}
-                          selectedId={selectedSubscriptionId}
+                          selectedId={selectedSubscriptionId || activeSub?.id}
                           onChange={setSelectedSubscriptionId}
                         />
                       )}

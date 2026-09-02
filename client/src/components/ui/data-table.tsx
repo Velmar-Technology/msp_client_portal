@@ -157,11 +157,16 @@ export function DataTable<TData, TValue>({
       id: "select",
       header: ({ table }) => (
         <Checkbox
-          checked={table.getIsAllPageRowsSelected()}
-          indeterminate={table.getIsSomePageRowsSelected()}
+          checked={
+            table.getIsAllPageRowsSelected()
+              ? true
+              : table.getIsSomePageRowsSelected()
+              ? "indeterminate"
+              : false
+          }
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label={t("common.table.selectAll", "Select all")}
-          onClick={(e: React.MouseEvent) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
         />
       ),
       cell: ({ row }) => (
@@ -169,7 +174,7 @@ export function DataTable<TData, TValue>({
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
           aria-label={t("common.table.selectRow", "Select row")}
-          onClick={(e: React.MouseEvent) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
         />
       ),
       enableSorting: false,
@@ -197,7 +202,7 @@ export function DataTable<TData, TValue>({
 
   // Clear selection if data changes (e.g. after paginating or reloading)
   useEffect(() => {
-    setRowSelection({});
+    setRowSelection((prev) => (Object.keys(prev).length === 0 ? prev : {}));
   }, [data]);
 
   useEffect(() => {
@@ -205,7 +210,7 @@ export function DataTable<TData, TValue>({
       const selectedRows = table.getSelectedRowModel().rows.map((row) => row.original);
       onSelectedRowsChange(selectedRows);
     }
-  }, [rowSelection, table, onSelectedRowsChange]);
+  }, [rowSelection, onSelectedRowsChange]);
 
   const hasSelectedRows = Object.keys(rowSelection).length > 0;
 
