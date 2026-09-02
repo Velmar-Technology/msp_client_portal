@@ -155,6 +155,7 @@ graph LR
 | **17** | `msp_portal` | 3 | 12-service Compose stack | MSP backend + client, PostgreSQL, Zabbix observability, Dozzle, Prometheus/Grafana, Faro/Alloy (`NEXTCLOUD_URL=10.13.13.3:30027`) → see §4.4 |
 | **18** | `cloud-gateway` | 3 | `nginx:alpine` | Dual nginx proxy (Nextcloud + TrueNAS panel) |
 | **19** | `cloud-wg` | 4 | `linuxserver/wireguard:latest` | WireGuard client on TrueNAS (host netns) |
+| **26** | `kopia-backup` | 4 | `kopia/kopia:latest` | Automated Nextcloud offsite backup to Google Drive (AES-256 encrypted, FastCDC deduplication, nightly 02:00 AM AST) |
 
 ### 4.3 Stack 18 — cloud-gateway (Detailed)
 
@@ -196,6 +197,17 @@ The **`msp_portal`** stack hosts the entire MSP Client Portal plus its observabi
 - **Telemetry / hygiene:** `logs` (Dozzle, `/logs`), `prometheus` (`v2.54.0`, `/prometheus`, scrapes `traefik:8080`, `alloy:12345`, `server:3001/api/v1/metrics`), `alloy` (Faro receiver, `/collect`), `grafana` (`/grafana/`, Zabbix app plugin preinstalled).
 - **2026-08-27 zabbix fix:** `/zabbix` route previously 404'd because the Zabbix nginx serves only at `/`. Traefik now redirects `/zabbix` → `/zabbix/` and strips the prefix via `msp-zabbix-redirect` + `msp-zabbix-strip` (labels on `zabbix-web`). Detail in §5 of `MSP_PORTAL_STACK.md`.
 - **Deployment:** CI pipeline (`deploy.yml`)/redeploy scripts push the repo-owned `docker-compose.prod.yml` to Portainer with a pinned `VERSION`; rollback = re-pin previous tag.
+
+### 4.5 Stack 26 — kopia-backup (Automated Offsite Backup & DR)
+
+The **`kopia-backup`** stack runs directly on TrueNAS (Endpoint 4) to provide automated, encrypted, and deduplicated offsite backups to Google Drive:
+
+- **Image & Container:** `kopia/kopia:latest` (`msp_kopia_backup`), running headless with persistent internal state in `/mnt/.ix-apps/app_mounts/kopia_config` and `/mnt/.ix-apps/app_mounts/kopia_cache`.
+- **Target Remote:** Google Drive Folder `0AEn8pZDyL8bSUk9PVA` via Service Account (`kopia-backup-agent@msp-portal-501615.iam.gserviceaccount.com`).
+- **Encryption:** Client-side zero-knowledge encryption with `AES256-GCM-HMAC-SHA256` (repository password stored in company vault).
+- **Atomic 5-Stage Orchestration:** `/usr/local/bin/backup-nextcloud.sh` orchestrates `occ maintenance:mode --on` $\rightarrow$ compressed PostgreSQL `pg_dump` $\rightarrow$ `occ maintenance:mode --off` (downtime < 1.2s) $\rightarrow$ FastCDC snapshot creation $\rightarrow$ staging purge.
+- **Automated Schedule:** Background daemon `/usr/local/bin/backup-scheduler.sh` executes daily at **02:00 AM AST**.
+- **Disaster Recovery:** Runbook detailed in [`NEXTCLOUD_DISASTER_RECOVERY_RUNBOOK.md`](NEXTCLOUD_DISASTER_RECOVERY_RUNBOOK.md) (< 60 minutes RTO on 300 Mbps pipe).
 
 ---
 
