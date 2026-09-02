@@ -206,7 +206,7 @@ The **`kopia-backup`** stack runs directly on TrueNAS (Endpoint 4) to provide au
 - **Target Remote:** Google Drive Folder `0AEn8pZDyL8bSUk9PVA` via Service Account (`kopia-backup-agent@msp-portal-501615.iam.gserviceaccount.com`).
 - **Encryption:** Client-side zero-knowledge encryption with `AES256-GCM-HMAC-SHA256` (repository password stored in company vault).
 - **Atomic 5-Stage Orchestration:** `/usr/local/bin/backup-nextcloud.sh` orchestrates `occ maintenance:mode --on` $\rightarrow$ compressed PostgreSQL `pg_dump` $\rightarrow$ `occ maintenance:mode --off` (downtime < 1.2s) $\rightarrow$ FastCDC snapshot creation $\rightarrow$ staging purge.
-- **Automated Schedule:** Background daemon `/usr/local/bin/backup-scheduler.sh` executes daily at **02:00 AM AST**.
+- **Automated Schedule:** Background daemon `/usr/local/bin/backup-scheduler.sh` executes daily at **01:00 PM AST (13:00 GMT-4)**.
 - **Disaster Recovery:** Runbook detailed in [`NEXTCLOUD_DISASTER_RECOVERY_RUNBOOK.md`](NEXTCLOUD_DISASTER_RECOVERY_RUNBOOK.md) (< 60 minutes RTO on 300 Mbps pipe).
 
 ---
