@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.9.0](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.8.7...v1.9.0) (2026-09-02)
+
+
+### Features
+
+* **client:** add composed design primitives, lint guardrails and style guide ([a73f36c](https://github.com/Velmar-Technology/msp_client_portal/commit/a73f36c69151e82095a0f4cbf6aaf7d33d29b3e7))
+* **client:** add custom plan studio with CRM integration ([3af91af](https://github.com/Velmar-Technology/msp_client_portal/commit/3af91af9fd35211f8e2de3942af0deba7834ec94))
+* **client:** add dedicated PlanEditorPage and enhance feature catalog parameters ([687304c](https://github.com/Velmar-Technology/msp_client_portal/commit/687304c8f4521a04897d6a72acb75e4ab4a2ab71))
+* **client:** add feature pricing rules and plan cost calculator ([16d202d](https://github.com/Velmar-Technology/msp_client_portal/commit/16d202def275e92b4649d24a325e9ed2f6cf73d6))
+* **crm:** add backend for bespoke custom plans with lead binding ([7c3d9a3](https://github.com/Velmar-Technology/msp_client_portal/commit/7c3d9a3ebc494c146c4fc40051e542607691b7d0))
+* **infra:** add automated Nextcloud Kopia backup to Google Drive with fast DR ([bfe2cf4](https://github.com/Velmar-Technology/msp_client_portal/commit/bfe2cf47be9eb03b367556bd9452ddc687d82961))
+* **tickets:** add HELPDESK and AI ticket categories across schema, types, mcp, and client ([c740707](https://github.com/Velmar-Technology/msp_client_portal/commit/c740707b851eb92fcbac1306e8c1d856bb593f27))
+* **vaultwarden:** add hosted multi-tenant password manager integration and BL-702 lifecycle hooks ([f5ac891](https://github.com/Velmar-Technology/msp_client_portal/commit/f5ac891545d35316343691ae9481c0ea72f2063b))
+
 ## [1.8.7](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.8.6...v1.8.7) (2026-09-01)
 
 
