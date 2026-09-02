@@ -67,6 +67,9 @@ export const ResourcesPage = lazyWithRetry(() =>
 export const DevicesPage = lazyWithRetry(() =>
   import("@/routes/_app/devices").then((m) => ({ default: m.DevicesPage || m.default }))
 );
+export const PasswordManagerPage = lazyWithRetry(() =>
+  import("@/routes/_app/password-manager").then((m) => ({ default: m.PasswordManagerPage || m.default }))
+);
 export const ApiStatusPage = lazyWithRetry(() =>
   import("@/routes/_app/admin/api-status").then((m) => ({ default: m.ApiStatusPage || m.default }))
 );
@@ -217,6 +220,15 @@ const RAW_PROTECTED_ROUTES: Omit<AppRouteConfig, "handle">[] = [
     element: (
       <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
         <ResourcesPage />
+      </RouteSuspenseWrapper>
+    ),
+    allowedRoles: ["CLIENT", "ADMIN"],
+  },
+  {
+    path: "/password-manager",
+    element: (
+      <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+        <PasswordManagerPage />
       </RouteSuspenseWrapper>
     ),
     allowedRoles: ["CLIENT", "ADMIN"],

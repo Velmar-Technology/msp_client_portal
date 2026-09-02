@@ -14,6 +14,7 @@ import {
   Download,
   Activity,
   Target,
+  KeyRound,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -38,6 +39,7 @@ const clientNavItems: NavItem[] = [
   { to: "/dashboard", icon: LayoutDashboard, labelKey: "dashboard", groupLabelKey: "sidebar.groups.operations" },
   { to: "/devices", icon: Laptop, labelKey: "devices" },
   { to: "/resources", icon: Download, labelKey: "resources" },
+  { to: "/password-manager", icon: KeyRound, labelKey: "passwordManager" },
   { to: "/maintenance", icon: Calendar, labelKey: "maintenance" },
   { to: "/tickets", icon: Ticket, labelKey: "myTickets" },
   {
@@ -78,6 +80,7 @@ const adminNavItems: NavItem[] = [
   { to: "/admin/api-status", icon: Activity, labelKey: "apiStatus" },
   { to: "/devices", icon: Laptop, labelKey: "devices", groupLabelKey: "sidebar.groups.operations" },
   { to: "/resources", icon: Download, labelKey: "resources" },
+  { to: "/password-manager", icon: KeyRound, labelKey: "passwordManager" },
   { to: "/maintenance", icon: Calendar, labelKey: "maintenance" },
   { to: "/tickets", icon: Ticket, labelKey: "allTickets" },
   {
