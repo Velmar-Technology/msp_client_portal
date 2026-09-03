@@ -82,6 +82,13 @@ Detailed tasks with full acceptance criteria and file lists are recorded in [`ta
 - [x] Task 12: Configure Automated axe-core Accessibility Suite in CI
 - [x] Checkpoint 4: SOTA Definition of Done Cleared
 
+### Milestone 5: ADR-002 Feature Architecture Enforcement & Scaffolding Engine
+- [x] Task 13: Fortify ESLint Flat Config AST Rules for ADR-002 Invariants (`client/eslint.config.js`)
+- [x] Task 14: Automated Architecture Test Suite in Vitest (`client/tests/arch/feature-architecture.test.ts`)
+- [x] Task 15: Canonical Feature Scaffolding Engine (`client/scripts/gen-feature.mjs`)
+- [x] Task 16: Canonical Feature Slice Recipe & Documentation Update (`docs/architecture/feature-slice-recipe.md`)
+- [x] Checkpoint 5: ADR-002 Enforcement & Scaffolding Engine Cleared
+
 ---
 
 ## Risks and Mitigations

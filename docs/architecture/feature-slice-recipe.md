@@ -81,25 +81,39 @@ export default router;
 
 ### Step 3: Frontend Colocated Feature Module (`client/src/features/<feature>/`)
 
-Per [ADR-002](../decisions/ADR-002-frontend-colocated-feature-architecture.md), colocate your query hooks, services, tables, dialogs, and route pages inside `client/src/features/<feature>/`:
+Per [ADR-002](../decisions/ADR-002-frontend-colocated-feature-architecture.md), colocate your query hooks, services, tables, dialogs, and route pages inside `client/src/features/<feature>/`.
 
+#### Automated Feature Scaffolding:
+You can instantly stamp out the canonical vertical slice anatomy using the built-in generator:
+```bash
+npm -w client run gen:feature <domain-name>
+# Example: npm -w client run gen:feature devices
+```
+
+This generates the compliant 7-part anatomy with zero manual boilerplate:
 ```
 client/src/features/devices/
 ├── api/
-│   ├── useDevices.ts          # TanStack Query hooks, query keys & mutations
+│   ├── useDeviceQueries.ts    # TanStack Query hooks, query keys & mutations
 │   └── deviceService.ts       # Axios client service
 ├── components/
 │   ├── DeviceTable.tsx        # Domain-specific data table
-│   └── RegisterDeviceModal.tsx# Domain-specific form dialog
+│   └── DeviceModal.tsx        # Domain-specific form dialog
 ├── hooks/
-│   └── useDeviceFilters.ts    # URL sync (useUrlState)
+│   ├── useDeviceFilters.ts    # URL sync (useUrlState / useSearchParams)
+│   └── useDeviceModals.ts     # Ephemeral modal open/close state
 ├── pages/
 │   └── DevicesPage.tsx        # Top-level route component
 ├── types.ts                   # ONLY local ephemeral UI state types (no duplicate entity types!)
-└── index.ts                   # Public API gateway
+└── index.ts                   # Public API gateway (exports ONLY public pages, components, & hooks)
 ```
 
-#### Query Hook Implementation (`features/devices/api/useDevices.ts`):
+#### The ADR-002 Invariant Rules Enforced by CI:
+1. **Single Contract Truth:** `types.ts` is strictly prohibited from declaring or duplicating backend entities or schemas (`*Input`, `*Response`, `*Contract`, `*Payload`, `*Filter`, `*DTO`). Import directly from `@shared/contracts`.
+2. **Public Gateway Invariant:** Cross-feature imports must target the feature root (`@/features/<domain>`). Deep imports into feature internals (`@/features/<domain>/components/...` or relative cross-feature paths) are blocked by ESLint and `npm -w client run test:arch`.
+3. **Query Invalidation Invariant:** Mutations must invalidate their domain query keys on success to eliminate manual state synchronizations.
+
+#### Query Hook Implementation (`features/devices/api/useDeviceQueries.ts`):
 ```typescript
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { deviceService } from './deviceService';
@@ -169,3 +183,5 @@ export function DevicesPage() {
 4. **Keep Zustand for client UI only:** Modals, drawers, and theme preferences live in Zustand. Server cache data lives in TanStack Query.
 5. **URL is the single source of truth for navigation:** Filters, pagination, tabs, and drawer inspection IDs sync via `useUrlState`.
 6. **Avoid 1-line pass-through repositories:** Keep domain logic and straightforward queries together in domain services.
+7. **Verify boundaries mechanically:** Run `npm -w client run test:arch` and `npm -w client run lint` to assert zero deep imports and zero contract drift.
+

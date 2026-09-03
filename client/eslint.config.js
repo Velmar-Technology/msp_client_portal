@@ -464,9 +464,16 @@ export default defineConfig([
   // ADR-002 ARCHITECTURAL BOUNDARY & ENTITY INVARIANT RULES
   // =========================================================================
 
-  // 1. Forbid deep imports into colocated feature internals from pages or peer modules
+  // 1. Forbid deep imports into colocated feature internals across the entire client codebase
   {
-    files: ['src/pages/**/*.{ts,tsx}', 'src/components/**/*.{ts,tsx}', 'src/routes/**/*.{ts,tsx}'],
+    files: [
+      'src/pages/**/*.{ts,tsx}',
+      'src/components/**/*.{ts,tsx}',
+      'src/routes/**/*.{ts,tsx}',
+      'src/features/**/*.{ts,tsx}',
+      'src/hooks/**/*.{ts,tsx}',
+      'src/services/**/*.{ts,tsx}',
+    ],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -474,10 +481,14 @@ export default defineConfig([
           patterns: [
             {
               group: [
-                '@/features/*/*',
-                '../features/*/*',
-                '../../features/*/*',
-                '../../../features/*/*',
+                '@/features/*/**',
+                '../features/*/**',
+                '../../features/*/**',
+                '../../../features/*/**',
+                '../../*/components/**',
+                '../../*/api/**',
+                '../../*/hooks/**',
+                '../../*/pages/**',
               ],
               message:
                 'ADR-002 Violation: Deep imports into feature internals are prohibited. Import exclusively through the feature public gateway "@/features/<domain>".',
@@ -488,19 +499,21 @@ export default defineConfig([
     },
   },
 
-  // 2. Strictly ban declaring local backend entity interfaces in feature types.ts
+  // 2. Strictly ban declaring local backend entity interfaces or contract types in feature types.ts
   {
     files: ['src/features/**/types.ts', 'src/features/**/*.types.ts'],
     rules: {
       'no-restricted-syntax': [
         'error',
         {
-          selector: 'TSInterfaceDeclaration[id.name=/^(Ticket|Invoice|User|Plan|Subscription|Equipment|Expense)$/]',
+          selector:
+            'TSInterfaceDeclaration[id.name=/^(Ticket|Invoice|User|Plan|Subscription|Equipment|Expense|Device|Lead|AuditLog|Telemetry|Warranty|Component|Maintenance|Notification|Client|Tenant)(Detail|Item|Summary|Data|Row|Model|Schema)?$|.*(Input|Response|Contract|Payload|Filter|Filters|DTO|Record|Entity)$/]',
           message:
             'ADR-002 Invariant: Do not declare backend entity interfaces in feature types.ts. Import entity types and contracts directly from "@shared/contracts".',
         },
         {
-          selector: 'TSTypeAliasDeclaration[id.name=/^(Ticket|Invoice|User|Plan|Subscription|Equipment|Expense)$/]',
+          selector:
+            'TSTypeAliasDeclaration[id.name=/^(Ticket|Invoice|User|Plan|Subscription|Equipment|Expense|Device|Lead|AuditLog|Telemetry|Warranty|Component|Maintenance|Notification|Client|Tenant)(Detail|Item|Summary|Data|Row|Model|Schema)?$|.*(Input|Response|Contract|Payload|Filter|Filters|DTO|Record|Entity)$/]',
           message:
             'ADR-002 Invariant: Do not declare backend entity types in feature types.ts. Import entity types and contracts directly from "@shared/contracts".',
         },

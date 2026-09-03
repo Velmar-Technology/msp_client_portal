@@ -1,0 +1,137 @@
+import { describe, it, expect } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
+
+/**
+ * ADR-002: Frontend Colocated Feature Architecture Invariant Test Suite
+ *
+ * Enforces structural invariants defined in ADR-002:
+ * 1. Public API Gateway (Every domain in client/src/features/ MUST have an index.ts).
+ * 2. Ban on Deep Imports (Nobody may import feature internals from outside the domain).
+ * 3. Single Contract Truth (types.ts is restricted exclusively to ephemeral UI state).
+ */
+
+const FEATURES_DIR = path.resolve(__dirname, '../../src/features');
+const SRC_DIR = path.resolve(__dirname, '../../src');
+
+function getAllFiles(dir: string, extensionRegex: RegExp = /\.(ts|tsx)$/): string[] {
+  if (!fs.existsSync(dir)) return [];
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const files: string[] = [];
+
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...getAllFiles(fullPath, extensionRegex));
+    } else if (extensionRegex.test(entry.name)) {
+      files.push(fullPath);
+    }
+  }
+
+  return files;
+}
+
+function getFeatureDirectories(): string[] {
+  if (!fs.existsSync(FEATURES_DIR)) return [];
+  return fs
+    .readdirSync(FEATURES_DIR, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name);
+}
+
+describe('ADR-002: Frontend Colocated Feature Architecture Invariants', () => {
+  const featureDirs = getFeatureDirectories();
+
+  it('verifies features directory exists and contains recognized domain slices', () => {
+    expect(featureDirs.length).toBeGreaterThan(0);
+  });
+
+  describe('Invariant Rule 1: Public Gateway Requirement (index.ts)', () => {
+    it.each(featureDirs)('feature "%s" must expose an index.ts public gateway', (featureName) => {
+      const indexPath = path.join(FEATURES_DIR, featureName, 'index.ts');
+      expect(
+        fs.existsSync(indexPath),
+        `Feature "${featureName}" is missing a public gateway file at features/${featureName}/index.ts`,
+      ).toBe(true);
+
+      const content = fs.readFileSync(indexPath, 'utf-8');
+      expect(
+        content.trim().length,
+        `Feature "${featureName}/index.ts" must not be empty; it should export public components and hooks`,
+      ).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Invariant Rule 2: Ban on Cross-Feature Deep Imports', () => {
+    const allSourceFiles = getAllFiles(SRC_DIR);
+
+    it('prohibits deep imports like "@/features/<name>/..." or relative cross-feature deep paths', () => {
+      const violations: string[] = [];
+      const deepImportAliasRegex = /from\s+['"]@\/features\/([^/'"]+)\/([^'"]+)['"]/g;
+      const relativeCrossFeatureRegex =
+        /from\s+['"](?:\.\.\/)+([a-zA-Z0-9_-]+)\/(components|api|hooks|pages)\/([^'"]+)['"]/g;
+
+      for (const file of allSourceFiles) {
+        // Skip test files from checking internal imports
+        if (file.includes('.test.') || file.includes('.spec.')) continue;
+
+        const content = fs.readFileSync(file, 'utf-8');
+        const relativeFilePath = path.relative(SRC_DIR, file).replace(/\\/g, '/');
+
+        // Check 1: Alias deep imports '@/features/domain/subpath'
+        let match: RegExpExecArray | null;
+        while ((match = deepImportAliasRegex.exec(content)) !== null) {
+          violations.push(
+            `${relativeFilePath} imports deep path "${match[0]}". Use public gateway "@/features/${match[1]}" instead.`,
+          );
+        }
+
+        // Check 2: Relative cross-feature deep imports
+        if (relativeFilePath.startsWith('features/')) {
+          const currentFeature = relativeFilePath.split('/')[1];
+          let relMatch: RegExpExecArray | null;
+          while ((relMatch = relativeCrossFeatureRegex.exec(content)) !== null) {
+            const targetDomain = relMatch[1];
+            if (targetDomain !== currentFeature && targetDomain !== '..' && targetDomain !== '.') {
+              violations.push(
+                `${relativeFilePath} imports cross-feature relative path "${relMatch[0]}". Import through "@/features/${targetDomain}".`,
+              );
+            }
+          }
+        }
+      }
+
+      expect(
+        violations,
+        `Found ${violations.length} ADR-002 deep import violations:\n${violations.join('\n')}`,
+      ).toEqual([]);
+    });
+  });
+
+  describe('Invariant Rule 3: Single Contract Truth in types.ts', () => {
+    const allTypeFiles = getAllFiles(FEATURES_DIR, /types\.ts$/);
+
+    it('forbids declaring backend entity or contract schemas in feature types.ts', () => {
+      const violations: string[] = [];
+      const forbiddenDeclarationRegex =
+        /(?:interface|type)\s+([A-Za-z0-9_]+(?:Input|Response|Contract|Payload|Filter|Filters|DTO|Record|Entity)|(?:Ticket|Invoice|User|Plan|Subscription|Equipment|Expense|Device|Lead|AuditLog|Telemetry|Warranty|Component|Maintenance|Notification|Client|Tenant)(?:Detail|Item|Summary|Data|Row|Model|Schema)?)\b/g;
+
+      for (const file of allTypeFiles) {
+        const content = fs.readFileSync(file, 'utf-8');
+        const relativeFilePath = path.relative(FEATURES_DIR, file).replace(/\\/g, '/');
+
+        let match: RegExpExecArray | null;
+        while ((match = forbiddenDeclarationRegex.exec(content)) !== null) {
+          violations.push(
+            `features/${relativeFilePath} declares forbidden contract type "${match[1]}". Import contract schemas directly from "@shared/contracts".`,
+          );
+        }
+      }
+
+      expect(
+        violations,
+        `Found ${violations.length} ADR-002 duplicate contract violations:\n${violations.join('\n')}`,
+      ).toEqual([]);
+    });
+  });
+});

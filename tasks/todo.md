@@ -253,3 +253,80 @@
 - [x] PWA offline app shell operational with TanStack Query persistence.
 - [x] Automated accessibility audit passing WCAG 2.1 AA (`vitest-axe`).
 - [x] All 12 SOTA roadmap items resolved and verified.
+
+---
+
+## Milestone 5: ADR-002 Feature Architecture Enforcement & Scaffolding Engine
+
+### Task 13: Fortify ESLint Flat Config AST Rules for ADR-002 Invariants
+**Description:** Update `client/eslint.config.js` to strictly enforce ADR-002 boundary rules. Close the cross-feature deep import loophole by ensuring `src/**/*.{ts,tsx}` cannot deep import from `@/features/*/*` or relative paths into peer feature subdirectories, while allowing intra-feature relative imports. Expand AST selectors to forbid any interface/type declarations matching `*Input`, `*Response`, `*Contract`, `*Payload`, `*Filter`, `*DTO`, or domain entity names in `src/features/**/types.ts`.
+**Acceptance criteria:**
+- [x] Deep imports into `@/features/*/*` from pages, components, routes, and peer features are flagged as errors.
+- [x] Intra-feature relative imports (e.g. `../components/`, `./useQueries`) remain allowed for files within the same feature.
+- [x] Any interface or type alias resembling a server contract in `src/features/**/types.ts` is flagged with a clear guidance error message.
+- [x] Existing grandfathered code in `client/src/components/` and `client/src/pages/` continues to pass linting without regression.
+**Verification:**
+- [x] `npm -w client run lint` passes on clean feature code.
+- [x] Verified via AST rules in `client/eslint.config.js`.
+**Dependencies:** None  
+**Files touched:**
+- `client/eslint.config.js`
+**Estimated scope:** Small (1 file)
+
+---
+
+### Task 14: Automated Architecture Test Suite in Vitest
+**Description:** Create an automated architectural test suite (`client/tests/arch/feature-architecture.test.ts`) that verifies structural conformance across `client/src/features/`. Asserts that every feature directory contains an `index.ts` public gateway, that only public gateways are exported, and that zero duplicate contracts exist. Add `"test:arch"` to `client/package.json`.
+**Acceptance criteria:**
+- [x] Test scans `client/src/features/` and asserts every domain has an `index.ts`.
+- [x] Test scans imports across `client/src/` and asserts 0 deep imports into feature internals.
+- [x] Test verifies that feature `types.ts` only exports ephemeral UI types.
+- [x] `"test:arch"` npm script configured in `client/package.json`.
+**Verification:**
+- [x] `npm -w client run test:arch` passes 100% green (4/4 tests passed).
+**Dependencies:** Task 13  
+**Files touched:**
+- `client/tests/arch/feature-architecture.test.ts`
+- `client/package.json`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Task 15: Canonical Feature Scaffolding Engine
+**Description:** Implement `client/scripts/gen-feature.mjs` and wire it to `"gen:feature": "node scripts/gen-feature.mjs"` in `client/package.json`. Stubs out the canonical 7-item vertical slice anatomy (`api/`, `components/`, `hooks/`, `pages/`, `types.ts`, `index.ts`) pre-configured with `@shared/contracts` imports, TanStack Query hooks, query keys, and `zodResolver` forms.
+**Acceptance criteria:**
+- [x] Running `npm -w client run gen:feature <domain>` generates all 7 files with valid TypeScript syntax.
+- [x] Generated feature passes `npm -w client run lint` and `npm -w client run test:arch` with 0 errors immediately out of the box.
+- [x] Script gracefully aborts if the feature directory already exists (prevents accidental overwrites).
+**Verification:**
+- [x] Generated test feature (`sample-demo`), verified green via `test:arch` and `eslint`, cleaned up cleanly.
+**Dependencies:** Task 13, Task 14  
+**Files touched:**
+- `client/scripts/gen-feature.mjs`
+- `client/package.json`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Task 16: Canonical Feature Slice Recipe & Documentation Update
+**Description:** Update `docs/architecture/feature-slice-recipe.md` with the complete feature creation guide, command usage (`npm -w client run gen:feature`), directory anatomy rules, and the ADR-002 invariant matrix.
+**Acceptance criteria:**
+- [x] Document explains the 4-step vertical slice with the automated generator.
+- [x] Directory layout diagram matches the 7-part standard.
+- [x] Clear guidelines provided on the single contract truth and public gateway boundaries.
+**Verification:**
+- [x] Documentation links and code snippets verified for correctness.
+**Dependencies:** Task 15  
+**Files touched:**
+- `docs/architecture/feature-slice-recipe.md`
+**Estimated scope:** Small (1 file)
+
+---
+
+## Checkpoint 5: ADR-002 Enforcement & Scaffolding Engine Cleared
+- [x] `client/eslint.config.js` blocks cross-feature deep imports and duplicate contracts.
+- [x] `npm -w client run test:arch` runs and passes in Vitest.
+- [x] `npm -w client run gen:feature` operational and tested.
+- [x] `docs/architecture/feature-slice-recipe.md` updated with the canonical recipe.
+- [x] Full client build and tests green (`npm -w client run build`, `npm -w client run test:run`).
+

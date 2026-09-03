@@ -12,7 +12,9 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:a11y": "vitest run tests/a11y",
-    "test:ui": "vitest --ui"
+    "test:arch": "vitest run tests/arch",
+    "test:ui": "vitest --ui",
+    "gen:feature": "node scripts/gen-feature.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
