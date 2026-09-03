@@ -47,6 +47,11 @@ graph TD
    - **Daemon de Renovación y Facturación (`SubscriptionScheduler`):** Protegido por el lock `cron:subscriptions:sweep` (TTL 60s). Ejecuta la renovación automática de contratos (**BL-402**), emisión de advertencias de vencimiento a 7 días y la evaluación de la escala de impagos de la Sección 9.3 sin duplicidad de cobros ni correos en despliegues con múltiples réplicas de Node.js.
    - **Daemon de Escalado de SLAs (`EscalationScheduler`):** Protegido por el lock `cron:tickets:escalation_sweep` (TTL 50s). Evalúa tickets sin atender y los escala a Nivel 2 (**BL-104**) previniendo colisiones de reasignación entre instancias simultáneas.
    - **Cierre Limpio del Proceso (*Graceful Shutdown*):** Captura `SIGTERM` y `SIGINT` en `server/src/index.ts` deteniendo los temporizadores y liberando los recursos de red y base de datos.
+10. **Arquitectura Contract-First y Delegación de Estado (`@shared/contracts` & TanStack Query):**
+    - **Fuente Única de Contratos (`packages/contracts`):** Los esquemas Zod de entrada (`CreateTicketInputSchema`, `UpdateTicketStatusInputSchema`, `TicketQuerySchema`) y de salida se mantienen en el paquete compartido `@shared/contracts`. Express valida las peticiones directamente con estos esquemas, erradicando la duplicación y deriva de DTOs.
+    - **Delegación de Estado de Servidor (TanStack Query):** El cliente React delega el ciclo de vida asíncrono (caché, paginación, reintentos e invalidación automática tras mutaciones) a `@tanstack/react-query` (`client/src/hooks/queries/`). `Zustand` se reserva exclusivamente para estado local de UI.
+    - **Slices Verticales y Servicios Pragmáticos:** Nuevas características siguen la guía [`docs/architecture/feature-slice-recipe.md`](docs/architecture/feature-slice-recipe.md) (Contrato $\rightarrow$ Ruta/Servicio $\rightarrow$ Hook Query $\rightarrow$ Componente UI), eliminando clases de repositorio innecesarias para consultas CRUD estándar.
+    - **Registro de Decisión Arquitectónica:** Documentado canónicamente en [`docs/decisions/ADR-001-contract-first-monolith-and-tanstack-query.md`](docs/decisions/ADR-001-contract-first-monolith-and-tanstack-query.md).
 
 ---
 

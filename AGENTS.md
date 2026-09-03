@@ -16,8 +16,7 @@ Read `CONSTRAINTS.md` before writing code. Do not weaken it to make a change pas
 * **Architecture:** Modular Monolith in npm workspace monorepo (`client`, `server`, `packages/*`).
 * **Runtime & Language:** Node.js v22+ (Strict TypeScript), ESM.
 * **Backend:** Express 5.x, Drizzle ORM 0.45.x, PostgreSQL 16+, Redis (`ioredis`), Winston Logger, Vitest.
-* **Frontend:** React 19.x, Vite 8.x, Tailwind CSS v4, shadcn/ui (`radix-ui`), Zustand, React Hook Form + Zod, TanStack Table, i18next.
-* **Packages:** `@shared/errors` (Standardized domain error primitives), MCP server (`packages/mcp-server`).
+* **Packages:** `@shared/errors` (Standardized domain error primitives), `@shared/contracts` (Unified API contracts, Zod schemas & types), MCP server (`packages/mcp-server`).
 
 ## 2. Core Workflows & Tool Execution
 Use ONLY the exact workspace commands below:
@@ -58,6 +57,8 @@ Dependencies point strictly **INWARD**: `Frameworks/Drivers` $\rightarrow$ `Inte
 5. **API Gateway (`server/src/shared/middleware/gateway*.ts`)**: Injects `X-User-Id` / `X-Tenant-Id` headers and enforces sliding-window multi-tenant rate limits (`1000 req/15m`).
 6. **Module Gateway (`server/src/modules/<domain>/index.ts`)**: Every domain module (`auth`, `tickets`, `billing`, `subscriptions`, `rmm`, `equipment`, `crm`, `notifications`, `system`) exposes its public API strictly via `index.ts`. Cross-module imports of internal repositories, controllers, or ORM schemas are **FORBIDDEN**.
 7. **Redis Caching & Concurrency (`server/src/shared/utils/cache/`)**: Consumed via `CachePort` abstraction. Implements Redis (`ioredis`) with in-memory LRU fallback, generation-based cache invalidation, and `DistributedLock` for race-condition mitigation in critical mutations.
+8. **Contract-First API Architecture (`@shared/contracts`)**: All request bodies, query params, path params, and entity responses MUST be defined in `@shared/contracts` using Zod (@see ADR-001). Express routes validate requests with shared contracts directly (`validate(CreateTicketInputSchema)`). New features follow the 4-step vertical slice standard: `@see docs/architecture/feature-slice-recipe.md`.
+9. **Pragmatic Repository Rule**: For standard CRUD, relations (`with: { ... }`), and basic filters, Domain Services are authorized to query Drizzle directly (`db.query.*`). Do NOT create 1-line pass-through repositories. Dedicated Repository classes are strictly reserved for non-trivial SQL (complex CTEs, window functions, raw analytical aggregations).
 
 ---
 
@@ -106,12 +107,14 @@ Dependencies point strictly **INWARD**: `Frameworks/Drivers` $\rightarrow$ `Inte
    $$\text{L1: Primitives (/components/ui)} \leftarrow \text{L2: Shared Blocks (/components/shared, layout)} \leftarrow \text{L3: Feature Components (/components/[domain])} \leftarrow \text{L4: Pages (/pages, /routes)}$$
    - Lower layers NEVER import higher layers. Feature modules never cross-import directly.
    - **`shadcn/ui` (`radix-ui`) Primitives**: ALL UI elements (Button, Dialog, Input, Select, Badge, Card, Table) MUST use `client/src/components/ui/`. Never write raw `<button>`, `<input>`, or `<select>`.
-2. **`Zod` Schema & DTO Validation**:
-   - **Dual-Boundary Validation**: Backend DTO schemas in `@shared/dtos/` and Frontend form schemas in `client/src/components/` paired with `@hookform/resolvers/zod`.
+2. **`Zod` Schema & Contract Validation**:
+   - **Single Contract Truth**: All request payloads, queries, and entity responses are imported directly from `@shared/contracts` (@see ADR-001).
+   - Frontend form schemas pair `@shared/contracts` with `@hookform/resolvers/zod`.
    - All input mutations MUST execute `schema.safeParse(...)` before processing. Password fields require complexity validation (min 8 chars, uppercase, lowercase, number, match confirmation).
-3. **`Zustand` Client State Management (`client/src/store/`)**:
-   - Confined strictly to global UI/session state (auth session, active tenant, theme, sidebar state).
-   - Use atomic selector patterns (`useStore(state => state.property)`) to prevent unnecessary re-renders. Never store ephemeral server cache data in Zustand.
+3. **State Management Separation (TanStack Query vs Zustand)**:
+   - **Server State (`client/src/hooks/queries/`)**: ALL asynchronous server data (fetching, caching, pagination, optimistic updates, and cache invalidation) MUST be managed via TanStack Query (`@tanstack/react-query`). Never store server cache data in Zustand.
+   - **Client UI State (`client/src/store/`)**: Zustand is confined strictly to ephemeral client UI state (auth session, active tenant, theme, sidebar state, active modal).
+   - Mutations MUST execute `queryClient.invalidateQueries(...)` upon success to keep table and detail views fresh without manual re-fetch loops. New features follow `@see docs/architecture/feature-slice-recipe.md`.
 4. **i18n Localization**: Zero hardcoded UI text. All strings use `useTranslation()` (`t("namespace.key")`) and must exist in `en_US.json` and `es_DO.json`. No inspecting `t()` return values to guess language.
 5. **URL State Synchronization**: Page sub-views (`?tab=...`), table filters (`?status=...`, `?search=...`), and modals (`?openModal=...`) must sync via `useUrlState`.
 6. **Control Heights**: Uniform compact standard `h-7` (28px) for buttons, inputs, and select triggers (`xs: h-5`, `sm: h-6`, `default: h-7`, `lg: h-8`). No ad-hoc heights.

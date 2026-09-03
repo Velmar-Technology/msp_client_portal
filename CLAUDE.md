@@ -4,7 +4,7 @@
 - **Architecture:** Modular Monolith in npm workspace monorepo (`client`, `server`, `packages/*`).
 - **Backend:** Node.js v22+ (Strict TypeScript), ESM, Express 5.x, Drizzle ORM 0.45.x, PostgreSQL 16+, Redis (`ioredis`), Winston Logger, Vitest.
 - **Frontend:** React 19.x, Vite 8.x, Tailwind CSS v4, shadcn/ui (`radix-ui`), Zustand, React Hook Form + Zod, TanStack Table, i18next.
-- **Packages:** `@shared/errors`, `@msp/mcp-server`.
+- **Packages:** `@shared/errors`, `@shared/contracts`, `@msp/mcp-server`.
 
 ## Workspace Commands
 - **Install Dependencies:** `npm install`
@@ -17,7 +17,11 @@
 
 ## Architecture & Quality Standards
 - Read `CONSTRAINTS.md` before writing code. Do not weaken it to make a change pass.
-- Master specifications and business logic rules are documented in `AGENTS.md`.
+- Master specifications and business logic rules are documented in `AGENTS.md` and `docs/decisions/ADR-001-contract-first-monolith-and-tanstack-query.md`.
+- **Contract-First Monolith:** All API request/response schemas live in `@shared/contracts`. Validate routes with Zod contracts directly.
+- **Vertical Slice Recipe:** Build features vertically (Contract → Express Route & Service → TanStack Query Hook → UI) per `docs/architecture/feature-slice-recipe.md`.
+- **State Separation:** Server state belongs in TanStack Query (`@tanstack/react-query`). Zustand is strictly for client-only UI state.
+- **Pragmatic Services:** For standard CRUD and relations, services query Drizzle directly (`db.query.*`). Do NOT write 1-line pass-through repositories.
 - Dependencies point strictly **INWARD**: Frameworks/Drivers → Interface Adapters → Use Cases → Entities.
 - Expose domain public APIs exclusively via `server/src/modules/<domain>/index.ts`. No cross-module internal imports.
 - Frontend primitives MUST use `client/src/components/ui/` (`shadcn/ui`).

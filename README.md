@@ -48,11 +48,24 @@ client/src/
 ├── components/ui/  # MANDATORY UI Primitives: Base shadcn/ui components
 ├── components/     # Feature Components: Must use shadcn/ui primitives
 ├── email-templates/# Master Email Design System & transactional email templates
+├── hooks/queries/  # Type-Safe TanStack Query hooks consuming @shared/contracts
 ├── routes/         # Layout Routes: File-based layout route hierarchy (_public/, _auth/, _app/)
 ├── pages/          # Top-Level Page Views
 ├── services/       # API Adapters: Axios HTTP client services
-└── store/          # Application State: Zustand stores
+└── store/          # Client UI State: Zustand stores (modals, drawers, theme)
+
+packages/
+├── contracts/      # @shared/contracts: Single source of truth API contracts & Zod schemas
+├── errors/         # @shared/errors: Standardized domain error primitives
+├── mcp-server/     # @msp/mcp-server: Model Context Protocol tooling server
+└── msp-agent/      # Local device telemetry & management agent
 ```
+
+### Contract-First Monolith & Vertical Slices
+To eliminate cross-workspace rework and pass-through boilerplate, new implementations follow our **Contract-First Monolith** standard:
+- **Single Source of Truth:** API contracts, query parameters, and Zod validation schemas are maintained in `@shared/contracts` ([ADR-001](docs/decisions/ADR-001-contract-first-monolith-and-tanstack-query.md)).
+- **Server State Delegation:** Asynchronous server state and cache invalidation are handled by **TanStack Query** (`@tanstack/react-query`). Zustand is restricted strictly to client UI state.
+- **Vertical Slice Development:** Standardized in [`docs/architecture/feature-slice-recipe.md`](docs/architecture/feature-slice-recipe.md) (Contract → Express Route & Service → Query Hook → UI Component).
 
 ---
 
