@@ -2,8 +2,7 @@ import { useMemo, useState, useCallback, type SyntheticEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Shield, AlertTriangle, Minus, Plus } from "lucide-react";
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import type { Plan } from "@/services/planService";
-import type { Subscription } from "@/services/subscriptionService";
+import type { Plan, Subscription } from "@/features/subscriptions";
 import { OrderSummary } from "@/components/checkout/OrderSummary";
 import { PaymentFields } from "@/components/checkout/PaymentFields";
 

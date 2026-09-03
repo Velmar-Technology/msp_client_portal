@@ -86,6 +86,20 @@ export class SubscriptionController {
     const subscription = await subscriptionService.updateSubscription(req.params.id as string, data, req.user!.tenantId, byAdmin);
     res.json({ success: true, data: subscription });
   }
+
+  /**
+   * Retrieves all enabled feature codes for the authenticated tenant.
+   *
+   * @param req - Express request
+   * @param res - Express response returning array of active feature strings
+   */
+  async getActiveFeatures(req: Request, res: Response): Promise<void> {
+    const tenantId = req.user!.tenantId || (req.user as any)!.tenant_id;
+    const features = tenantId
+      ? await subscriptionService.getClientActiveFeatures(tenantId)
+      : [];
+    res.json({ success: true, data: features });
+  }
 }
 
 export const subscriptionController = new SubscriptionController();

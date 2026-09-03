@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import type { SubscriptionEquipment } from '@/services/equipmentService';
+import type { SubscriptionEquipment } from '@shared/contracts';
 import { Activity, CheckCircle2, Cpu, HardDrive, Power, RefreshCw, ShieldCheck, MoreHorizontal } from 'lucide-react';
 import {
   DropdownMenu,

@@ -1,13 +1,18 @@
 import { Router } from 'express';
 import { NotFoundError } from '@shared/errors';
+import { requestIdMiddleware } from '@shared/middleware/requestIdMiddleware';
 import { gatewayAuthMiddleware } from '@shared/middleware/gatewayAuthMiddleware';
 import { gatewayRateLimiterMiddleware } from '@shared/middleware/gatewayRateLimiterMiddleware';
 import { gatewayHeaderPropagatorMiddleware, gatewayClusterRouter } from '@shared/middleware/gatewayRouterMiddleware';
+import { gatewayTenantContextMiddleware } from '@shared/middleware/gatewayTenantContextMiddleware';
 import { metricsService } from '@shared/metrics/metricsService';
 
 const router = Router();
 
 // ---- Ingress API Gateway Layer ----
+// 0. Request-ID & W3C Distributed Trace Context
+router.use(requestIdMiddleware);
+
 // 1. Ingress Auth & Header Injection (X-User-Id, X-Tenant-Id)
 router.use(gatewayAuthMiddleware);
 
@@ -17,7 +22,10 @@ router.use(gatewayRateLimiterMiddleware);
 // 3. Gateway Standard Header Propagator
 router.use(gatewayHeaderPropagatorMiddleware);
 
-// 4. Cluster & Route Dispatcher
+// 4. Zero-Trust Tenant Context Scoping (AsyncLocalStorage fail-closed boundary)
+router.use(gatewayTenantContextMiddleware);
+
+// 5. Cluster & Route Dispatcher
 router.use(gatewayClusterRouter);
 
 // Health check endpoint

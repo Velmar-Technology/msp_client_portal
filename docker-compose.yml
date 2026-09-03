@@ -50,30 +50,30 @@ services:
     ports:
       - "3001:3001"
     environment:
-      - TZ=America/Santo_Domingo
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_NAME=msp_helpdesk
-      - DB_USER=postgres
-      - DB_PASSWORD=msp_password
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_ENABLED=true
-      - PORT=3001
-      - NODE_ENV=development
-      - JWT_SECRET=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
-      - JWT_EXPIRES_IN=24h
-      - JWT_REFRESH_SECRET=u9B+8K3WmxR7YJ2D5PqZ9Xv5C7N2bK9T4mJ8qR1WvY4=
-      - JWT_REFRESH_EXPIRES_IN=7d
-      - CORS_ORIGIN=http://localhost:80,http://localhost:5173,http://localhost
-      - GOOGLE_CLIENT_ID=934502830032-cf8naqt4d2hfi2sf9lmpph1k4ctbm4i2.apps.googleusercontent.com
-      - PAYPAL_CLIENT_ID=AW62-DrjJDEz6Mb-_VdAud9ZNI7zntWQN5RbL_peKzMer_eWWLKOnVEiHZpzpoKN4qtxqimlMZzp9-L0
-      - PAYPAL_CLIENT_SECRET=EE9sb385hAMSwBHpZpafVZMbcQ8BQ3wVXIGRxx1SiyhFSqYOhRa9Iu3IYAVDRdOhOWo2mBIlW1WFruOH
+      - TZ=${TZ:-America/Santo_Domingo}
+      - DB_HOST=${DB_HOST:-db}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-msp_helpdesk}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-msp_dev_password}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_ENABLED=${REDIS_ENABLED:-true}
+      - PORT=${PORT:-3001}
+      - NODE_ENV=${NODE_ENV:-development}
+      - JWT_SECRET=${JWT_SECRET:-dev-insecure-jwt-secret-do-not-use-in-prod}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-24h}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-dev-insecure-jwt-refresh-secret-do-not-use-in-prod}
+      - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-7d}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:80,http://localhost:5173,http://localhost}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID:-}
+      - PAYPAL_CLIENT_SECRET=${PAYPAL_CLIENT_SECRET:-}
       - UPLOAD_DIR=/app/server/uploads
-      - ZABBIX_URL=http://zabbix-web:8080/api_jsonrpc.php
-      - ZABBIX_USER=Admin
-      - ZABBIX_PASSWORD=zabbix
-      - ZABBIX_WEBHOOK_SECRET=secret_key
+      - ZABBIX_URL=${ZABBIX_URL:-http://zabbix-web:8080/api_jsonrpc.php}
+      - ZABBIX_USER=${ZABBIX_USER:-Admin}
+      - ZABBIX_PASSWORD=${ZABBIX_PASSWORD:-zabbix}
+      - ZABBIX_WEBHOOK_SECRET=${ZABBIX_WEBHOOK_SECRET:-dev_webhook_secret}
     volumes:
       - uploads_data:/app/server/uploads
 
@@ -163,9 +163,9 @@ services:
       context: .
       dockerfile: client/Dockerfile
       args:
-        VITE_GOOGLE_CLIENT_ID: "934502830032-cf8naqt4d2hfi2sf9lmpph1k4ctbm4i2.apps.googleusercontent.com"
-        VITE_PAYPAL_CLIENT_ID: "AW62-DrjJDEz6Mb-_VdAud9ZNI7zntWQN5RbL_peKzMer_eWWLKOnVEiHZpzpoKN4qtxqimlMZzp9-L0"
-        VITE_APP_VERSION: "1.3.5"
+        VITE_GOOGLE_CLIENT_ID: "${VITE_GOOGLE_CLIENT_ID:-}"
+        VITE_PAYPAL_CLIENT_ID: "${VITE_PAYPAL_CLIENT_ID:-}"
+        VITE_APP_VERSION: "${VITE_APP_VERSION:-1.3.5}"
     container_name: msp_client
     restart: always
     environment:

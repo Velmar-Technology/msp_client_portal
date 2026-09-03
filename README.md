@@ -45,14 +45,38 @@ server/src/
     └── system/                     # Controllers, Repositories, Routes, Services & Co-located Tests
 
 client/src/
-├── components/ui/  # MANDATORY UI Primitives: Base shadcn/ui components
-├── components/     # Feature Components: Must use shadcn/ui primitives
-├── email-templates/# Master Email Design System & transactional email templates
+├── components/ui/  # MANDATORY UI Primitives: Base shadcn/ui components (L1)
+├── components/shared/# Cross-cutting shared blocks (Page, ErrorBoundary, skeletons) (L2)
+├── features/       # Colocated Feature Modules (api, components, hooks, pages) (L3 & L4)
+│   ├── auth/          # Authentication, registration, OTP verification, password reset
+│   ├── billing/       # Invoicing, taxes, PayPal captures, PDF generation & expenses
+│   ├── crm/           # Lead pipeline, quotation workflow & activities
+│   ├── dashboard/     # Role-aware executive, tech & client dashboard metrics
+│   ├── equipment/     # Hardware devices, OTP pairing & Nextcloud slots
+│   ├── financial/     # Financial stats, OpEx tracking, 70/30 profit split & payroll
+│   ├── rmm/           # RMM monitoring, automated remediation & maintenance scheduler
+│   ├── settings/      # User profile, notifications matrix & password manager
+│   ├── subscriptions/ # Plans, entitlements, tier changes & renewal scheduler
+│   ├── system/        # Microservice health, API status & diagnostics
+│   ├── tickets/       # Self-contained ticket lifecycle, SLA & assignment domain
+│   └── users/         # User management, JIT access & technician roster
 ├── routes/         # Layout Routes: File-based layout route hierarchy (_public/, _auth/, _app/)
-├── pages/          # Top-Level Page Views
-├── services/       # API Adapters: Axios HTTP client services
-└── store/          # Application State: Zustand stores
+├── lib/            # Shared utilities (api Axios instance, auth storage, cn)
+└── store/          # Client UI State: Zustand stores (session, modals, theme)
+
+packages/
+├── contracts/      # @shared/contracts: Single source of truth API contracts & Zod schemas
+├── errors/         # @shared/errors: Standardized domain error primitives
+├── mcp-server/     # @msp/mcp-server: Model Context Protocol tooling server
+└── msp-agent/      # Local device telemetry & management agent
 ```
+
+### Contract-First Monolith & Colocated Features
+To eliminate cross-workspace rework and pass-through boilerplate, new implementations follow our modern architecture standards:
+- **Single Source of Truth:** API contracts, query parameters, and Zod validation schemas are maintained in `@shared/contracts` ([ADR-001](docs/decisions/ADR-001-contract-first-monolith-and-tanstack-query.md)).
+- **Colocated Feature Architecture:** Frontend domains are grouped in self-contained vertical feature modules (`client/src/features/<domain>/`) with colocated query hooks, UI blocks, and route pages ([ADR-002](docs/decisions/ADR-002-frontend-colocated-feature-architecture.md)).
+- **Server State Delegation:** Asynchronous server state and cache invalidation are handled by **TanStack Query** (`@tanstack/react-query`). Zustand is restricted strictly to client UI state.
+- **Vertical Slice Development:** Standardized in [`docs/architecture/feature-slice-recipe.md`](docs/architecture/feature-slice-recipe.md) (Contract → Express Route & Service → Query Hook → UI Component).
 
 ---
 
@@ -103,6 +127,11 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
   - Reconciles cloud user seats (e.g. M365) and RMM agents against contracts to automatically update billable quantity ($Q_{\text{billed}}$).
 - **BL-203: Out-of-Scope Project Guardrails** (`TicketService.enforceScope`)
   - Shifts out-of-scope requests (hardware moves, site setups) to `PENDING_ESTIMATE` pending client authorization.
+- **BL-204: Subscription Feature Gating & Bundle Entitlements** (`requireSubscriptionFeature`, `SubscriptionService.getClientActiveFeatures`, `useEntitlements`, `FeatureRouteGuard`, `FeatureLockedPreview`)
+  - **Canonical Feature Catalog:** 24 enterprise feature codes (`FEATURE_CODES`) centrally declared and aligned across frontend and backend.
+  - **Bidirectional Bundle Decomposition:** Composite tiers (e.g. `PASSWORD_DARK_WEB` $\rightarrow$ `PASSWORD_MANAGER` + `DARK_WEB_MONITORING`, `EDR_M365_BACKUP` $\rightarrow$ `EDR_SECURITY` + `M365_BACKUP`) automatically expand into constituent capabilities via `expandFeatureBundles`.
+  - **Backend API Protection:** `requireSubscriptionFeature(code)` middleware blocks unentitled client requests with a typed `ForbiddenError` (403), while granting unconditional operational bypass to `ADMIN` and `TECHNICIAN` roles.
+  - **Frontend Route & Navigation Gating:** Protected client routes (`/password-manager`, `/devices`, `/rmm`, `/resources`, `/maintenance`) are wrapped in `FeatureRouteGuard`. Unentitled users see a high-conversion upsell preview (`FeatureLockedPreview`) and sidebar items display compact upgrade badges (`UpgradeBadge`).
 
 ### Module 3: Access Control, SOTA Hybrid Authorization & State Machine
 

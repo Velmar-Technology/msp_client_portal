@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { planService } from "@/services/planService";
-import type { Plan, PlanFilters } from "@/services/planService";
+import { planService } from "@/features/subscriptions";
+import type { Plan, PlanFilters } from "@/features/subscriptions";
 
 export interface PlanState {
   plans: Plan[];

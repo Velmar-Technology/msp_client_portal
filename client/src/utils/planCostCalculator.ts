@@ -1,5 +1,5 @@
 import { FEATURE_CATALOG, type FeatureCatalogItem } from "@/constants/featureCatalog";
-import type { PlanFeature } from "@/services/planService";
+import type { PlanFeature } from "@/features/subscriptions";
 
 export interface PlanCostInput {
   features: PlanFeature[];

@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { ShieldCheck, RefreshCw } from 'lucide-react';
-import { usePatchManagementModal } from '@/hooks/usePatchManagementModal';
+import { usePatchManagementModal } from '@/features/rmm';
 import { PatchTable } from './PatchTable';
 
 export interface PatchManagementModalProps {

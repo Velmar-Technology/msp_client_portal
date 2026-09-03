@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build:packages": "npm -w packages/errors run build && npm -w packages/mcp-server run build",
+    "build:packages": "npm -w packages/errors run build && npm -w packages/contracts run build && npm -w packages/mcp-server run build",
     "release": "commit-and-tag-version",
     "prepare": "node -e \"if (process.env.NODE_ENV !== 'production') { try { require('child_process').execSync('npx --no husky', { stdio: 'inherit' }); } catch (e) {} }\""
   },

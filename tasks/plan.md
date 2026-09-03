@@ -1,204 +1,93 @@
-# Implementation Plan: Hosted Multi-Tenant Vaultwarden Integration
+# Implementation Plan: SOTA React Router v7 Data Mode & Colocated Feature Route Manifests (ADR-003)
 
 ## Overview
-Implement an end-to-end hosted, multi-tenant Vaultwarden password manager for MSP client tenants. This provisions a lightweight Vaultwarden service (`vaultwarden/server:alpine`) in `docker-compose.prod.yml` behind Traefik on subpath `/vault`, programmatically provisions Bitwarden Organizations and sends email invitations upon subscription activation (`PASSWORD_MANAGER` feature), and enforces account lifecycle state transitions per Dominican commercial terms (`BL-702` non-payment scale: Day 5 Read-Only, Day 15 Suspended, Day 30 Purged).
+Elevate `msp_client_portal` frontend routing architecture to State-of-the-Art (SOTA) by transitioning from legacy declarative JSX `<Routes>` to **React Router v7 Data Router (`createBrowserRouter`)** integrated with **ADR-001 (Contract-First + TanStack Query v5 Cache Preloading)** and **ADR-002 (Colocated Feature Route Manifests)**.
 
-## Architecture Decisions
-- **Container Topology & Routing:** Run one single `msp_vaultwarden` container in the existing Docker Compose stack attached to `default` and `reverse-proxy` networks. Traefik routes path prefix `/vault` to port 80, with `DOMAIN=https://helpdesk.velmartech.com.do/vault`.
-- **Tenant Data Isolation:** Cryptographically zero-knowledge via Bitwarden Organizations and Collections. Each MSP client tenant maps to a dedicated Bitwarden Organization (`org_<tenant_id>`).
-- **Domain Service Pattern:** Follow Clean Architecture: create `VaultwardenService` inside `server/src/modules/system/services/` (alongside `NextcloudService`), injected into `SubscriptionLifecycleService` and `NonPaymentSuspensionService`.
-- **BL-702 Non-Payment Scale:**
-  - Day 5 (`READ_ONLY`): Lock organization settings and block new user additions.
-  - Day 15 (`SUSPENDED`): Deactivate users in the organization via Vaultwarden API to block access.
-  - Day 30 (`PURGED`): Delete the tenant Organization and purge vault collections to liberate storage with zero liability.
-  - Re-activation: Reactivate users upon settling invoice payment.
-- **Client Portal UX:** Add Password Manager portal view / launch button linking to `/vault/#/login`, with extension setup instructions.
+Work is structured into 4 sequential milestones:
+1. **Milestone 1 — Core Router Infrastructure & ADR-003 Foundation (P0):** Formalize ADR-003, implement typed route utilities, route handles, and root `createBrowserRouter` assembly in `App.tsx`.
+2. **Milestone 2 — Feature Route Manifests (Phase A: Auth, Tickets, Billing & Subscriptions) (P0):** Colocate route definitions and TanStack Query `ensureQueryData` / `prefetchQuery` loaders in high-traffic business domains.
+3. **Milestone 3 — Feature Route Manifests (Phase B: Equipment, RMM, CRM, Financial, Users, Dashboard & Settings) (P1):** Complete decentralized route manifests across all remaining 8 feature domains.
+4. **Milestone 4 — Architecture Gates, Preloading & Legacy Purge (P1):** Add AST test rules for route manifests, optimize hover/intent chunk & query prefetching, and purge legacy `protected-routes.tsx`.
+
+---
+
+## Architecture Decisions & Constraints
+
+- **Decentralized Colocated Manifests (ADR-002):** Every business module in `client/src/features/<domain>/` exports a `routes.tsx` containing its typed `RouteObject[]` slice. Deep imports remain forbidden.
+- **Contract-Coupled Loaders (ADR-001):** Route loaders execute `queryClient.ensureQueryData` or `queryClient.prefetchQuery` using `queryOptions()` derived directly from `@shared/contracts` schemas.
+- **Zero-Flicker Layout Transitions:** Component chunks (`lazy: () => import(...)`) and server query caches load in parallel before navigation finishes, accompanied by localized Suspense skeletons (`DashboardSkeleton`, `TablePageSkeleton`, `DetailSkeleton`).
+- **Unified Role & Feature Guards:** Authentication, RBAC (`allowedRoles`), subscription feature entitlement (`requiredFeature`), and breadcrumb resolution (`handle.crumb`) are declared natively on route `handle` metadata.
+- **Backward Compatibility & Zero Regressions:** Existing test suites (127+ server tests, client vitest, arch tests, a11y) must remain 100% green at every checkpoint.
 
 ---
 
 ## Dependency Graph
+
 ```
-docker-compose.prod.yml (Vaultwarden Service & Traefik router)
-    │
-    ▼
-server/src/shared/config/env.ts (VAULTWARDEN_* env vars)
-    │
-    ▼
-server/src/modules/system/services/VaultwardenService.ts (API wrapper: orgs, invites, status, purge)
-    │
-    ├──► SubscriptionLifecycleService.ts (On subscription activation: auto-provision Org & invite users)
-    │
-    └──► NonPaymentSuspensionService.ts (On Day 15 SUSPENDED / Day 30 PURGED: deactivate & delete)
-    │
-    ▼
-client/src/ (Navigation link, Password Manager dashboard view & extension onboarding)
+Milestone 1: Core Router Infrastructure & ADR-003 (P0)
+   ├── Task 1: Formalize ADR-003 Decision Record
+   ├── Task 2: Shared Route Types, Handles & Loader Helpers
+   └── Task 3: Root createBrowserRouter & App.tsx RouterProvider
+   └── Checkpoint 1: Core Router Infrastructure Active
+          │
+          ▼
+Milestone 2: Feature Route Manifests - Phase A (P0)
+   ├── Task 4: Auth & Public Route Manifests (auth, public)
+   ├── Task 5: Tickets Domain Route Manifest with Query Loaders
+   └── Task 6: Billing & Subscriptions Route Manifests
+   └── Checkpoint 2: Core Business Route Slices Verified
+          │
+          ▼
+Milestone 3: Feature Route Manifests - Phase B (P1)
+   ├── Task 7: Equipment & RMM Maintenance Route Manifests
+   ├── Task 8: CRM & Financial Route Manifests
+   └── Task 9: Users, Settings, Dashboard & System Route Manifests
+   └── Checkpoint 3: All 12 Domains Colocated & Assembled
+          │
+          ▼
+Milestone 4: Architecture Gates, Preloading & Purge (P1)
+   ├── Task 10: AST Boundary & Architecture Tests for Route Manifests
+   ├── Task 11: Intent Preloading & Cache Warm-Up on Link Hover
+   └── Task 12: Purge Legacy protected-routes.tsx & Run Verification Gates
+   └── Checkpoint 4: SOTA DoD Cleared
 ```
 
 ---
 
-## Task List
+## Task List Index
 
-### Phase 1: Infrastructure & Environment Configuration
-- [x] **Task 1: Add Vaultwarden Service to `docker-compose.prod.yml` & `MSP_PORTAL_STACK.md`**
-- [x] **Task 2: Extend Server Environment Schema with Vaultwarden Configuration**
+Detailed tasks with full acceptance criteria and file lists are recorded in [`tasks/todo.md`](./todo.md).
 
-### Checkpoint 1: Infrastructure & Configuration Verification
-- [x] Verify `docker-compose.prod.yml` syntax and Traefik routing rules
-- [x] Server environment validation schema passes tests without regressions
+### Milestone 1: Core Router Infrastructure & ADR-003 Foundation
+- [x] Task 1: Formalize ADR-003 Decision Record (`docs/decisions/ADR-003-sota-react-router-data-mode-and-feature-manifests.md`)
+- [x] Task 2: Implement Shared Route Types, Route Handles & Loader Utilities (`client/src/routes/types.ts`, `routeUtils.tsx`)
+- [x] Task 3: Build Root `createBrowserRouter` Assembly & Wire `App.tsx` `<RouterProvider />`
+- [x] Checkpoint 1: Core Router Infrastructure Active
 
-### Phase 2: Core Domain Service & Lifecycle Integration
-- [x] **Task 3: Implement `VaultwardenService` with Unit Tests**
-- [x] **Task 4: Integrate Organization Auto-Provisioning into `SubscriptionLifecycleService`**
-- [x] **Task 5: Integrate Non-Payment Suspension & Purge Lifecycle (`BL-702`) into `NonPaymentSuspensionService`**
+### Milestone 2: Feature Route Manifests (Phase A: Auth, Tickets, Billing & Subscriptions)
+- [x] Task 4: Colocate Auth & Public Route Manifests (`features/auth/routes.tsx`, `features/auth/index.ts`)
+- [x] Task 5: Colocate Tickets Domain Route Manifest with TanStack Query Loaders (`features/tickets/routes.tsx`)
+- [x] Task 6: Colocate Billing & Subscriptions Domain Route Manifests (`features/billing/routes.tsx`, `features/subscriptions/routes.tsx`)
+- [x] Checkpoint 2: Core Business Route Slices Verified
 
-### Checkpoint 2: Backend Services & Business Logic Verification
-- [x] Vitest unit tests pass for `VaultwardenService.test.ts`
-- [x] `SubscriptionLifecycleService.test.ts` passes with mocked Vaultwarden calls
-- [x] `NonPaymentSuspensionService.test.ts` passes verifying suspension (deactivation) and purge (org deletion)
-- [x] Backend compiles clean (`npm -w server run build`)
+### Milestone 3: Feature Route Manifests (Phase B: Equipment, RMM, CRM, Financial, Users, Dashboard & Settings)
+- [x] Task 7: Colocate Equipment & RMM Maintenance Route Manifests (`features/equipment/routes.tsx`, `features/rmm/routes.tsx`)
+- [x] Task 8: Colocate CRM & Financial Domain Route Manifests (`features/crm/routes.tsx`, `features/financial/routes.tsx`)
+- [x] Task 9: Colocate Users, Settings, Dashboard & System Route Manifests (`features/users/routes.tsx`, `features/settings/routes.tsx`, `features/dashboard/routes.tsx`, `features/system/routes.tsx`)
+- [x] Checkpoint 3: All 12 Domains Colocated & Assembled
 
-### Phase 3: Client Portal UX & Extension Guidance
-- [x] **Task 6: Add Password Manager Client Navigation & Hub Page**
-- [x] **Task 7: Add i18n Localization Keys (`en_US.json` & `es_DO.json`)**
-
-### Checkpoint 3: Complete Definition of Done
-- [x] Clean compilation on both frontend and backend (`npm -w server run build` & `npm -w client run build`)
-- [x] All frontend and backend tests pass (`npm -w server run test` & `npm -w client run test:run`)
-- [x] Zero lint/typecheck errors
+### Milestone 4: Architecture Gates, Preloading & Legacy Purge
+- [x] Task 10: Fortify AST Architecture & Boundary Tests for Route Manifests (`client/tests/arch/feature-architecture.test.ts`)
+- [x] Task 11: Implement SOTA Route Preloading & Hover Prefetching Hooks (`client/src/lib/preloadRoute.ts`)
+- [x] Task 12: Purge Legacy `protected-routes.tsx` & Run Monorepo Quality Gates
+- [x] Checkpoint 4: SOTA Definition of Done Cleared
 
 ---
 
-## Detailed Task Breakdown
+## Risks and Mitigations
 
-### Task 1: Add Vaultwarden Service to `docker-compose.prod.yml` & `MSP_PORTAL_STACK.md`
-**Description:** Add `msp_vaultwarden` container using `vaultwarden/server:alpine`, configured for subpath `/vault` with Traefik v3 routing labels, WebSocket hub support, and persistent volume `vaultwarden_data`. Update infrastructure documentation in `MSP_PORTAL_STACK.md`.
-
-**Acceptance criteria:**
-- [ ] `vaultwarden` service defined in `docker-compose.prod.yml` with memory limit (120M) and CPU limit (0.20).
-- [ ] `DOMAIN=https://helpdesk.velmartech.com.do/vault` and `SIGNUPS_ALLOWED=false` configured.
-- [ ] Traefik router `msp-vault` correctly configured with `reverse-proxy` network, Let's Encrypt TLS, and load balancer port 80.
-- [ ] `MSP_PORTAL_STACK.md` updated with Vaultwarden service details and routing matrix.
-
-**Files likely touched:**
-- `docker-compose.prod.yml`
-- `docs/infrastructure/MSP_PORTAL_STACK.md`
-**Estimated scope:** Small (2 files)
-
----
-
-### Task 2: Extend Server Environment Schema with Vaultwarden Configuration
-**Description:** Add `VAULTWARDEN_URL`, `VAULTWARDEN_ADMIN_TOKEN`, and `VAULTWARDEN_EXTERNAL_URL` to Zod schema in `server/src/shared/config/env.ts` with safe defaults for development and testing.
-
-**Acceptance criteria:**
-- [ ] `VAULTWARDEN_URL` defaults to `http://vaultwarden:80` (or `http://localhost:8080/vault`).
-- [ ] `VAULTWARDEN_ADMIN_TOKEN` defined as optional/defaulted string.
-- [ ] `VAULTWARDEN_EXTERNAL_URL` defaults to `https://helpdesk.velmartech.com.do/vault`.
-
-**Files likely touched:**
-- `server/src/shared/config/env.ts`
-**Estimated scope:** XS (1 file)
-
----
-
-### Task 3: Implement `VaultwardenService` with Unit Tests
-**Description:** Create `server/src/modules/system/services/VaultwardenService.ts` providing methods:
-- `createOrganization(orgName: string, billingEmail: string)`
-- `inviteUserToOrganization(orgId: string, email: string, role: 'User' | 'Manager' | 'Admin')`
-- `setOrganizationStatus(orgId: string, active: boolean)` (for Day 15 suspension)
-- `deactivateOrganizationUsers(orgId: string)`
-- `reactivateOrganizationUsers(orgId: string)`
-- `deleteOrganization(orgId: string)` (for Day 30 purge)
-Export from `server/src/modules/system/index.ts`. Co-locate `VaultwardenService.test.ts`.
-
-**Acceptance criteria:**
-- [ ] Typed domain errors thrown using `@shared/errors` (`ExternalServiceError`, `InternalServerError`).
-- [ ] Standard TSDoc annotations on all exported methods (`@param`, `@returns`, `@throws`).
-- [ ] 100% Vitest unit test coverage for success, failure, and network edge cases.
-
-**Files likely touched:**
-- `server/src/modules/system/services/VaultwardenService.ts`
-- `server/src/modules/system/services/VaultwardenService.test.ts`
-- `server/src/modules/system/index.ts`
-**Estimated scope:** Medium (3 files)
-
----
-
-### Task 4: Integrate Organization Auto-Provisioning into `SubscriptionLifecycleService`
-**Description:** Update `SubscriptionLifecycleService.ts` so that when a subscription is created or activated and its plan features include `PASSWORD_MANAGER`, it calls `vaultwardenService.createOrganization` and dispatches invitation emails to the tenant's primary users.
-
-**Acceptance criteria:**
-- [ ] Detects `PASSWORD_MANAGER` feature code in plan definition.
-- [ ] Provisions organization named after client company / tenant.
-- [ ] Sends Bitwarden invite to the subscription owner's email address.
-- [ ] Logs error without blocking checkout if external service is temporarily unreachable (fault-tolerant).
-
-**Files likely touched:**
-- `server/src/modules/subscriptions/services/SubscriptionLifecycleService.ts`
-- `server/src/modules/subscriptions/services/SubscriptionLifecycleService.test.ts`
-**Estimated scope:** Small (2 files)
-
----
-
-### Task 5: Integrate Non-Payment Suspension & Purge Lifecycle (`BL-702`) into `NonPaymentSuspensionService`
-**Description:** Update `NonPaymentSuspensionService.ts`:
-- When applying `SUSPENDED` (Day 15), invoke `vaultwardenService.deactivateOrganizationUsers`.
-- When applying `PURGED` (Day 30 in `purgeTenantData`), invoke `vaultwardenService.deleteOrganization`.
-- When an overdue invoice is settled, re-activate organization users.
-
-**Acceptance criteria:**
-- [ ] Day 15 deactivates Vaultwarden user accounts.
-- [ ] Day 30 cleanly purges tenant organization and data from Vaultwarden.
-- [ ] Co-located unit tests in `NonPaymentSuspensionService.test.ts` verify all lifecycle calls.
-
-**Files likely touched:**
-- `server/src/modules/billing/services/NonPaymentSuspensionService.ts`
-- `server/src/modules/billing/services/NonPaymentSuspensionService.test.ts`
-**Estimated scope:** Small-Medium (2 files)
-
----
-
-### Task 6: Add Password Manager Client Navigation & Hub Page
-**Description:** Add a "Password Manager" section to client navigation (under operations or security) visible when the client has an active subscription with `PASSWORD_MANAGER`. Create `PasswordManagerPage` with:
-- One-click launch button to `/vault/`
-- Status badge (Active / Provisioned)
-- Quick links / guide to install Bitwarden Chrome, Edge, Firefox, iOS, and Android extensions
-- Server URL copy helper (`https://helpdesk.velmartech.com.do/vault`)
-
-**Acceptance criteria:**
-- [ ] Uses shadcn/ui components (`Button`, `Card`, `Badge`).
-- [ ] Compact heights (`h-7`) and design system compliance.
-- [ ] Responsive layout with copy-to-clipboard for the custom server URL.
-
-**Files likely touched:**
-- `client/src/hooks/useSidebar.ts`
-- `client/src/pages/PasswordManagerPage/PasswordManagerPage.tsx`
-- `client/src/routes/index.tsx`
-**Estimated scope:** Medium (3 files)
-
----
-
-### Task 7: Add i18n Localization Keys (`en_US.json` & `es_DO.json`)
-**Description:** Provide full bilingual support for all new Password Manager navigation labels, cards, setup instructions, and status descriptions.
-
-**Acceptance criteria:**
-- [ ] Zero hardcoded UI text.
-- [ ] Full parity between `en_US.json` and `es_DO.json`.
-
-**Files likely touched:**
-- `client/src/locales/en_US.json`
-- `client/src/locales/es_DO.json`
-**Estimated scope:** Small (2 files)
-
----
-
-## Verification Plan
-
-### Automated Tests
-- Backend tests: `npm -w server run test`
-- Frontend tests: `npm -w client run test:run`
-- Build check: `npm -w server run build` and `npm -w client run build`
-
-### Manual Verification
-- Verify `docker-compose.prod.yml` syntax using `docker compose config`
-- Verify navigation item and Password Manager hub page in local development environment
-- Verify invitation trigger and suspension lifecycle mocks in Vitest
+| Risk | Impact | Mitigation |
+| :--- | :---: | :--- |
+| **Blocking Route Loaders Delaying Transitions:** Heavy queries in `loader` could make page transitions feel sluggish on slow 3G. | High | Use `queryClient.prefetchQuery` for non-critical secondary data and only `ensureQueryData` for critical entity headers; pair with top-level navigation progress bar (`useNavigation().state === "loading"`). |
+| **Circular Dependencies during Feature Manifest Assembly:** Aggregating all feature manifests into `appRouter.tsx` could trigger circular dependencies if features import each other. | Medium | Enforce that route manifests only import from their own feature directory and export pure `RouteObject[]` arrays via public gateways. |
+| **Auth Session State Hydration Timing:** If `createBrowserRouter` runs before auth token is validated, false redirect to `/login` could occur. | High | Encapsulate auth guard inside layout routes / `<RouteGuard>` element components that reactively read `useAuth()` state rather than executing one-time loader redirects for session validation. |

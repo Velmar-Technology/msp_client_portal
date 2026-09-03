@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { AppLayout } from "@/components/layout/AppLayout";
 import { expect, test, vi, beforeEach, describe } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import { subscriptionService } from "@/services/subscriptionService";
+import { subscriptionService } from "@/features/subscriptions";
 import React from 'react';
 
 const mockT = (key: string) => key;
@@ -18,7 +18,7 @@ vi.mock('../../hooks/useAuth', () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-vi.mock('../../services/subscriptionService', () => ({
+vi.mock('@/features/subscriptions', () => ({
   subscriptionService: {
     getAll: vi.fn(),
   },

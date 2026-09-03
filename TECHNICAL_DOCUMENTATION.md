@@ -47,6 +47,11 @@ graph TD
    - **Daemon de Renovación y Facturación (`SubscriptionScheduler`):** Protegido por el lock `cron:subscriptions:sweep` (TTL 60s). Ejecuta la renovación automática de contratos (**BL-402**), emisión de advertencias de vencimiento a 7 días y la evaluación de la escala de impagos de la Sección 9.3 sin duplicidad de cobros ni correos en despliegues con múltiples réplicas de Node.js.
    - **Daemon de Escalado de SLAs (`EscalationScheduler`):** Protegido por el lock `cron:tickets:escalation_sweep` (TTL 50s). Evalúa tickets sin atender y los escala a Nivel 2 (**BL-104**) previniendo colisiones de reasignación entre instancias simultáneas.
    - **Cierre Limpio del Proceso (*Graceful Shutdown*):** Captura `SIGTERM` y `SIGINT` en `server/src/index.ts` deteniendo los temporizadores y liberando los recursos de red y base de datos.
+10. **Arquitectura Contract-First y Delegación de Estado (`@shared/contracts` & TanStack Query):**
+    - **Fuente Única de Contratos (`packages/contracts`):** Los esquemas Zod de entrada (`CreateTicketInputSchema`, `UpdateTicketStatusInputSchema`, `TicketQuerySchema`) y de salida se mantienen en el paquete compartido `@shared/contracts`. Express valida las peticiones directamente con estos esquemas, erradicando la duplicación y deriva de DTOs.
+    - **Delegación de Estado de Servidor (TanStack Query):** El cliente React delega el ciclo de vida asíncrono (caché, paginación, reintentos e invalidación automática tras mutaciones) a `@tanstack/react-query` (`client/src/hooks/queries/`). `Zustand` se reserva exclusivamente para estado local de UI.
+    - **Slices Verticales y Servicios Pragmáticos:** Nuevas características siguen la guía [`docs/architecture/feature-slice-recipe.md`](docs/architecture/feature-slice-recipe.md) (Contrato $\rightarrow$ Ruta/Servicio $\rightarrow$ Hook Query $\rightarrow$ Componente UI), eliminando clases de repositorio innecesarias para consultas CRUD estándar.
+    - **Registro de Decisión Arquitectónica:** Documentado canónicamente en [`docs/decisions/ADR-001-contract-first-monolith-and-tanstack-query.md`](docs/decisions/ADR-001-contract-first-monolith-and-tanstack-query.md).
 
 ---
 
@@ -77,7 +82,7 @@ La base de datos está modelada para soportar **Multi-tenancy (Multi-inquilino)*
 
 Definidas centralmente en [types/index.ts](file:///c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/shared/types/index.ts), representan los contratos de tipos en el servidor y ayudan a mantener la integridad de datos:
 
-- **Enums de Dominio:**
+- **Enums y Constantes de Dominio:**
   - `UserRole`: CLIENT, TECHNICIAN, ADMIN
   - `AccountStatus`: ACTIVE, READ_ONLY, SUSPENDED, PURGED
   - `Currency`: USD, DOP
@@ -87,6 +92,8 @@ Definidas centralmente en [types/index.ts](file:///c:/Users/DELL/Desktop/wordspa
   - `SubscriptionPlan`: BASIC, STANDARD, PREMIUM, PL-001...PL-007
   - `SubscriptionStatus`: ACTIVE, EXPIRING, EXPIRED, CANCELLED
   - `InvoiceStatus`: PENDING, PAID, OVERDUE
+  - `FEATURE_CODES` (24 capacidades empresariales canónicas): `HELPDESK_SUPPORT`, `SECURITY_MONITORING`, `CLOUD_STORAGE`, `BACKUP_INCLUDED`, `SLA_LEVEL`, `RMM_PATCH_MANAGEMENT`, `ONSITE_SUPPORT`, `CONTENT_FILTERING`, `PREMIUM_CONTENT_FILTERING`, `EDR_SECURITY`, `M365_BACKUP`, `EDR_M365_BACKUP`, `VULNERABILITY_SCANNING`, `IDENTITY_MFA_MANAGEMENT`, `ASSET_LIFECYCLE`, `VCIO_REVIEW`, `COMPLIANCE_AUDIT`, `REPORTING_LEVEL`, `PASSWORD_MANAGER`, `DARK_WEB_MONITORING`, `PASSWORD_DARK_WEB`, `PHISHING_TRAINING`, `STORE_DISCOUNT`, `CUSTOM_FEATURE`.
+  - `FEATURE_BUNDLE_EXPANSIONS` & `expandFeatureBundles`: Motor de descomposición bidireccional de paquetes (ej. `PASSWORD_DARK_WEB` $\rightarrow$ `PASSWORD_MANAGER` + `DARK_WEB_MONITORING`, `EDR_M365_BACKUP` $\rightarrow$ `EDR_SECURITY` + `M365_BACKUP`).
 - **Interfaces de Entidad:** Mapean directamente los tipos devueltos por Drizzle ORM (`Tenant`, `User`, `Ticket`, `TicketAttachment`, `TicketEvent`, `TicketResponse`, `Subscription`, `Invoice`, `RoundRobinState`, `Notification`, `NotificationPreference`, `SubscriptionEquipment`, `Expense`).
 - **Interfaces Auxiliares/API:**
   - `ApiResponse<T>`: Formato estándar de respuesta HTTP.
@@ -500,6 +507,7 @@ Esta capa orquesta las transacciones, valida reglas complejas (como SLAs y lími
 | `createSubscription` | `data: CreateSubscriptionInput, clientId: string, tenantId: string, byAdmin = false` | Mapeo o funcionalidad interna |
 | `updateSubscription` | `id: string, data: UpdateSubscriptionInput, tenantId: string, byAdmin = false` | Mapeo o funcionalidad interna |
 | `sendQuotation` | `data: SendQuoteInput, senderUserId: string, senderTenantId: string, role: string` | Mapeo o funcionalidad interna |
+| `getClientActiveFeatures` | `tenantId: string` | Resuelve la unión de todas las características activas de los planes asociados a suscripciones en estado ACTIVE o EXPIRING del tenant, aplicando descomposición de bundles vía expandFeatureBundles. |
 
 
 #### [TicketService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/<domain>/services/TicketService.ts)
@@ -661,6 +669,7 @@ Reciben peticiones HTTP de Express, extraen parámetros y llaman a la capa de Se
 | `createPaypalSubscription` | `req: Request, res: Response, next: NextFunction` | Mapeo o funcionalidad interna |
 | `update` | `req: Request, res: Response` | Mapeo o funcionalidad interna |
 | `sendQuote` | `req: Request, res: Response` | Mapeo o funcionalidad interna |
+| `getActiveFeatures` | `req: Request, res: Response, next: NextFunction` | Retorna la lista de características y servicios activos para el tenant autenticado mediante el endpoint GET /api/v1/subscriptions/features/active. |
 
 
 #### [SystemController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/system/controllers/SystemController.ts)
@@ -745,6 +754,15 @@ Controles de acceso (RBAC), subida de archivos (Multer), autenticación por JWT 
 | Función | Parámetros | Descripción |
 | :--- | :--- | :--- |
 | `validate` | `schema: ZodSchema, source: 'body' | 'query' | 'params' = 'body'` | Operación lógica directa |
+
+
+#### [requireSubscriptionFeature.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/shared/middleware/requireSubscriptionFeature.ts)
+*Ruta: `server/src/shared/middleware/requireSubscriptionFeature.ts`*
+
+##### Funciones auxiliares / Standalone:
+| Función | Parámetros | Descripción |
+| :--- | :--- | :--- |
+| `requireSubscriptionFeature` | `featureCode: string, subService?: SubscriptionService` | Middleware de compuerta (feature gating) que restringe el acceso al endpoint según las características del plan de suscripción activo. Los roles `ADMIN` y `TECHNICIAN` eluden la validación incondicionalmente. Para clientes (`CLIENT`), verifica que el tenant posea la característica activa o heredada por un bundle; de lo contrario arroja `ForbiddenError` (403). |
 
 
 
@@ -1051,6 +1069,18 @@ El frontend cuenta con un sistema de diseño de correos electrónicos homogéneo
 | Función | Parámetros | Descripción |
 | :--- | :--- | :--- |
 | `useClientDashboard` | `Ninguno` | Operación lógica directa |
+
+
+#### [useEntitlements.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/client/src/hooks/useEntitlements.ts)
+*Ruta: `client/src/hooks/useEntitlements.ts`*
+
+##### Interfaces definidas:
+- `UseEntitlementsReturn` (`hasFeature`, `isFeatureLocked`, `activeFeatures`, `getRequiredTierForFeature`, `isLoading`, `hasActiveSubscription`, `activeSubscriptions`)
+
+##### Funciones auxiliares / Standalone:
+| Función | Parámetros | Descripción |
+| :--- | :--- | :--- |
+| `useEntitlements` | `Ninguno` | Hook que evalúa las suscripciones activas del tenant autenticado frente al catálogo de planes (`planService`), descomponiendo paquetes compuestos y exponiendo métodos de validación de permisos de características (`hasFeature`, `isFeatureLocked`) y nivel de plan requerido (`getRequiredTierForFeature`). Otorga acceso total automático a administradores y técnicos. |
 
 
 #### [useDevicesPage.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/client/src/hooks/useDevicesPage.ts)
@@ -1517,6 +1547,30 @@ client/src/routes/
 | `GoogleLoginButton` | `{ onSuccess, onError, text = "signin_with" }: GoogleLoginButtonProps` | Operación lógica directa |
 
 
+#### [FeatureLockedPreview.tsx](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/client/src/components/shared/FeatureLockedPreview.tsx)
+*Ruta: `client/src/components/shared/FeatureLockedPreview.tsx`*
+
+##### Interfaces definidas:
+- `FeatureLockedPreviewProps` (`requiredFeature: FeatureCode, className?: string`)
+
+##### Funciones auxiliares / Standalone:
+| Función | Parámetros | Descripción |
+| :--- | :--- | :--- |
+| `FeatureLockedPreview` | `{ requiredFeature, className }: FeatureLockedPreviewProps` | Componente de vista previa y upsell de alta conversión que se muestra cuando un cliente intenta acceder a una funcionalidad no incluida en su plan. Muestra beneficios clave, plan mínimo requerido y botones de acción ("Volver al Panel", "Ver Planes y Mejorar"). |
+
+
+#### [FeatureRouteGuard.tsx](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/client/src/components/shared/FeatureRouteGuard.tsx)
+*Ruta: `client/src/components/shared/FeatureRouteGuard.tsx`*
+
+##### Interfaces definidas:
+- `FeatureRouteGuardProps` (`requiredFeature: FeatureCode, children: ReactNode`)
+
+##### Funciones auxiliares / Standalone:
+| Función | Parámetros | Descripción |
+| :--- | :--- | :--- |
+| `FeatureRouteGuard` | `{ requiredFeature, children }: FeatureRouteGuardProps` | Envoltorio de rutas protegidas que comprueba si la característica requerida está bloqueada para el cliente (`isFeatureLocked`). Si está bloqueada, renderiza `<FeatureLockedPreview>`; si está permitida (o si el usuario es técnico/administrador), renderiza la vista destino. |
+
+
 #### [CheckoutSheet.tsx](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/client/src/components/CheckoutSheet.tsx)
 *Ruta: `client/src/components/CheckoutSheet.tsx`*
 
@@ -1581,7 +1635,7 @@ client/src/routes/
 | :--- | :--- | :--- |
 | `SidebarBrand` | `{ logo, portalTitle, infraTitle }: SidebarBrandProps` | Operación lógica directa |
 | `ActiveSubCard` | `{ sub, renewalLabel, isSpanish }: ActiveSubCardProps` | Operación lógica directa |
-| `SidebarNavList` | `{ navItems, checkIsActive, checkIsGroupActive }: SidebarNavListProps` | Operación lógica directa |
+| `SidebarNavList` | `{ navItems, checkIsActive, checkIsGroupActive, isFeatureLocked }: SidebarNavListProps` | Renderiza la lista de navegación lateral; evalúa `isFeatureLocked` para cada ítem que requiere una suscripción (`requiredFeature`) y despliega la insignia interactiva `UpgradeBadge` si el cliente no posee la característica. |
 | `AppSidebar` | `Ninguno` | Operación lógica directa |
 
 

@@ -5,6 +5,8 @@ import {
   getInitialLanguage,
 } from './i18n';
 import * as authStorage from '@/lib/authStorage';
+import enUS from '@/locales/en_US.json';
+import esDO from '@/locales/es_DO.json';
 
 describe('i18n Language Resolution & Browser Detection', () => {
   const originalNavigator = window.navigator;
@@ -175,6 +177,20 @@ describe('i18n Language Resolution & Browser Detection', () => {
       });
 
       expect(getInitialLanguage()).toBe('en_US');
+    });
+  });
+
+  describe('Feature Locked Translations Parity', () => {
+    it('ensures en_US and es_DO featureLocked sections have full key parity', () => {
+      expect(enUS.featureLocked).toBeDefined();
+      expect(esDO.featureLocked).toBeDefined();
+
+      const enKeys = Object.keys(enUS.featureLocked).sort();
+      const esKeys = Object.keys(esDO.featureLocked).sort();
+
+      expect(enKeys).toEqual(esKeys);
+      expect((enUS.nav as any).upgradeBadge).toBeDefined();
+      expect((esDO.nav as any).upgradeBadge).toBeDefined();
     });
   });
 });

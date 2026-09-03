@@ -3,8 +3,11 @@ export interface RouteCrumb {
   to?: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type CrumbResolver = (t: any, params: any, user: any) => RouteCrumb | RouteCrumb[];
+export type CrumbResolver = (
+  t: (key: string, options?: Record<string, unknown>) => string,
+  params: Record<string, string | undefined>,
+  user: { role?: string } | null
+) => RouteCrumb | RouteCrumb[];
 
 export interface RouteCrumbConfig {
   path: string;

@@ -304,6 +304,96 @@ export class VaultwardenService {
       });
     }
   }
+
+  /**
+   * Resets a user's vault access by purging their stale/locked account record in Vaultwarden
+   * and issuing a fresh organization invitation so they can configure a new Master Password (zero-knowledge).
+   *
+   * @param tenantId - Tenant UUID identifying the Bitwarden Organization
+   * @param userEmail - Target user email address
+   * @returns Object indicating success status and informative message
+   * @throws {ExternalServiceError} When communication with upstream Vaultwarden fails
+   */
+  async resetUserVaultAccess(
+    tenantId: string,
+    userEmail: string
+  ): Promise<{ success: boolean; message: string }> {
+    const token = env.VAULTWARDEN_ADMIN_TOKEN;
+    const baseUrl = this.getBaseUrl();
+
+    if (!token) {
+      logger.warn(`VAULTWARDEN_ADMIN_TOKEN not set; simulating vault reset for ${userEmail}`);
+      return {
+        success: true,
+        message: 'Simulated reset invitation sent successfully.',
+      };
+    }
+
+    try {
+      // 1. Locate user in tenant organization if already enrolled
+      const orgUsersResp = await fetch(`${baseUrl}/api/organizations/${tenantId}/users`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+
+      if (orgUsersResp.ok) {
+        const orgUsers = (await orgUsersResp.json()) as { Data?: Array<{ Id: string; Email?: string }> };
+        const matchingMember = (orgUsers.Data || []).find(
+          (u) => u.Email?.toLowerCase() === userEmail.toLowerCase()
+        );
+
+        if (matchingMember) {
+          // Remove from organization
+          await fetch(`${baseUrl}/api/organizations/${tenantId}/users/${matchingMember.Id}`, {
+            method: 'DELETE',
+            headers: this.getHeaders(),
+          });
+        }
+      }
+
+      // 2. Locate user in global admin users list to delete the account record
+      try {
+        const adminUsersResp = await fetch(`${baseUrl}/admin/users`, {
+          method: 'GET',
+          headers: this.getHeaders(),
+        });
+
+        if (adminUsersResp.ok) {
+          const adminUsers = (await adminUsersResp.json()) as Array<{ Id: string; Email: string }>;
+          if (Array.isArray(adminUsers)) {
+            const userRecord = adminUsers.find(
+              (u) => u.Email?.toLowerCase() === userEmail.toLowerCase()
+            );
+            if (userRecord) {
+              await fetch(`${baseUrl}/admin/users/${userRecord.Id}/delete`, {
+                method: 'POST',
+                headers: this.getHeaders(),
+              });
+              logger.info(`Purged user account ${userEmail} (${userRecord.Id}) via Vaultwarden Admin API`);
+            }
+          }
+        }
+      } catch (adminErr) {
+        logger.warn(`Could not delete global Vaultwarden user record for ${userEmail}; proceeding to invite`, { adminErr });
+      }
+
+      // 3. Re-issue fresh organization invitation
+      await this.inviteUserToOrganization(tenantId, userEmail, 'User');
+
+      logger.info(`Successfully reset vault access and re-invited ${userEmail} to org ${tenantId}`);
+      return {
+        success: true,
+        message: 'A fresh invitation has been dispatched. Please check your email to set a new Master Password.',
+      };
+    } catch (err: unknown) {
+      if (err instanceof ExternalServiceError) throw err;
+      logger.error(`Error resetting vault access for ${userEmail} in org ${tenantId}`, { err });
+      throw new ExternalServiceError('Vault access reset failed', {
+        service: 'vaultwarden',
+        cause: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
 }
 
 export const vaultwardenService = new VaultwardenService();

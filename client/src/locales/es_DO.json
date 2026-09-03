@@ -50,7 +50,8 @@
     "financial": "Finanzas",
     "apiStatus": "Estado de API",
     "crm": "Pipeline CRM",
-    "passwordManager": "Gestor de Contraseñas"
+    "passwordManager": "Gestor de Contraseñas",
+    "upgradeBadge": "Mejorar"
   },
   "sidebar": {
     "groups": {
@@ -65,6 +66,44 @@
     "expiresToday": "Vence hoy",
     "daysRemaining_one": "Queda {{count}} día",
     "daysRemaining_other": "Quedan {{count}} días"
+  },
+  "featureLocked": {
+    "badge": "Requiere Plan Superior",
+    "whatsIncluded": "Lo que desbloqueas con esta función:",
+    "availableOn": "Disponible en:",
+    "backToDashboard": "Volver al Panel",
+    "viewPlans": "Ver Planes y Mejorar",
+    "passwordManager": {
+      "title": "Administrador de Contraseñas Corporativo",
+      "desc": "Bóveda cifrada de contraseñas con arquitectura de conocimiento cero impulsada por Bitwarden/Vaultwarden. Almacena, genera y comparte credenciales de forma segura con tu equipo.",
+      "tier": "Plan Avanzado (PL-003) o Corporate (PL-004)",
+      "perk1": "Cifrado de extremo a extremo de conocimiento cero AES-256",
+      "perk2": "Colecciones personales y compartidas de la organización",
+      "perk3": "Restablecimiento y recuperación de acceso a la bóveda en autoservicio"
+    },
+    "rmm": {
+      "title": "Monitoreo Remoto y Gestión de Parches",
+      "desc": "Seguimiento automatizado de telemetría, aplicación de parches de Windows y ejecución remota en todos los equipos.",
+      "tier": "Plan Básico (PL-001) o superior",
+      "perk1": "Rendimiento de hardware y telemetría de agentes en tiempo real",
+      "perk2": "Actualizaciones automáticas de seguridad y programación de parches",
+      "perk3": "Registros de mantenimiento proactivo y telemetría de diagnóstico"
+    },
+    "storage": {
+      "title": "Almacenamiento en la Nube y Sincronización",
+      "desc": "Almacenamiento empresarial en la nube Nextcloud con sincronización colaborativa y copias de seguridad automatizadas.",
+      "tier": "Plan Básico (PL-001) o superior",
+      "perk1": "De 25 GB a 100 GB de almacenamiento dedicado en Nextcloud",
+      "perk2": "Sincronización cifrada para escritorio y móviles",
+      "perk3": "Descargas directas del catálogo de recursos de software"
+    },
+    "default": {
+      "title": "Función de Servicio Premium",
+      "desc": "Esta función está disponible en planes de suscripción MSP calificados.",
+      "tier": "Plan de Servicio Calificado",
+      "perk1": "Resolución prioritaria y respuesta garantizada por SLA",
+      "perk2": "Seguridad empresarial y monitoreo continuo"
+    }
   },
   "topNav": {
     "search": "Buscar tickets, facturas, FAQs...",
@@ -1950,6 +1989,18 @@
     "step3Title": "Acepte la Invitación e Inicie Sesión:",
     "step3Text": "Haga clic en el enlace de invitación recibido por correo para crear su Contraseña Maestra y unirse a la bóveda de la empresa.",
     "clientsTitle": "Clientes Oficiales de Bitwarden",
-    "clientsDesc": "Compatible con todas las extensiones oficiales de Bitwarden, aplicaciones móviles y de escritorio."
+    "clientsDesc": "Compatible con todas las extensiones oficiales de Bitwarden, aplicaciones móviles y de escritorio.",
+    "troubleTitle": "¿Problemas para Iniciar Sesión?",
+    "troubleDesc": "¿Olvidó su Contraseña Maestra? Conozca cómo funciona la recuperación en una arquitectura de conocimiento cero.",
+    "zeroKnowledgeNoticeTitle": "Política de Seguridad de Conocimiento Cero",
+    "zeroKnowledgeNoticeDesc": "Debido a que su bóveda está cifrada de extremo a extremo, los administradores no pueden ver ni recuperar su Contraseña Maestra. Si no puede acceder, restablecer el acceso eliminará permanentemente sus contraseñas personales no compartidas.",
+    "resetButton": "Restablecer Acceso a Bóveda",
+    "resetDialogTitle": "Restablecer Acceso y Re-invitar",
+    "resetDialogDesc": "¿Está seguro de que desea restablecer su acceso a la bóveda? Su cuenta bloqueada actual será eliminada y se enviará un nuevo correo de invitación inmediatamente.",
+    "resetDialogWarning": "Advertencia: Cualquier contraseña personal no compartida en su bóveda bloqueada se perderá permanentemente.",
+    "resetDialogConfirm": "Sí, Restablecer y Enviar Invitación",
+    "resetDialogCancel": "Cancelar",
+    "resetSuccessTitle": "Invitación Enviada",
+    "resetSuccessDesc": "Se ha enviado una nueva invitación de Bitwarden a su correo electrónico. Revise su bandeja de entrada para definir una nueva Contraseña Maestra."
   }
 }

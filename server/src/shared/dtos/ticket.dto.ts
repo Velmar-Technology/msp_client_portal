@@ -1,55 +1,20 @@
 import { z } from 'zod';
-import { TicketCategory, TicketPriority, TicketStatus } from '@shared/types';
-import { DEFAULT_LIMIT } from '@shared/config/constants';
+export {
+  CreateTicketInputSchema as CreateTicketDTO,
+  UpdateTicketStatusInputSchema as UpdateTicketStatusDTO,
+  TicketQuerySchema as TicketQueryDTO,
+  AssignTicketInputSchema as AssignTicketDTO,
+  TicketIdParamSchema as TicketIdParamDTO,
+  CreateTicketInput,
+  UpdateTicketStatusInput,
+  TicketQueryInput,
+  AssignTicketInput,
+  TicketIdParam as TicketIdParamInput,
+} from '@shared/contracts';
 
-export const CreateTicketDTO = z.object({
-  title: z.string().min(5, 'Title must be at least 5 characters').max(500),
-  description: z.string().min(10, 'Description must be at least 10 characters'),
-  category: z.nativeEnum(TicketCategory, {
-    errorMap: () => ({ message: 'Category must be REPAIR, WARRANTY, SERVICE_OUTAGE, PREVENTATIVE_MAINTENANCE, HELPDESK, or AI' }),
-  }),
-  priority: z.nativeEnum(TicketPriority).optional().default(TicketPriority.MEDIUM),
-  equipmentId: z.string().uuid('Invalid equipment ID').optional(),
-});
-export type CreateTicketInput = z.input<typeof CreateTicketDTO>;
-export type CreateTicketOutput = z.output<typeof CreateTicketDTO>;
-
-export const UpdateTicketStatusDTO = z.object({
-  status: z.nativeEnum(TicketStatus, {
-    errorMap: () => ({
-      message: 'Invalid status. Must be: OPEN, IN_PROGRESS, AWAITING_PAYMENT, RESOLVED, CLOSED, or CANCELLED',
-    }),
-  }),
-  notes: z.string().max(2000).optional(),
-});
-export type UpdateTicketStatusInput = z.infer<typeof UpdateTicketStatusDTO>;
-
-export const TicketQueryDTO = z.object({
-  status: z.nativeEnum(TicketStatus).optional(),
-  category: z.nativeEnum(TicketCategory).optional(),
-  priority: z.nativeEnum(TicketPriority).optional(),
-  equipmentId: z.string().uuid().optional(),
-  search: z.string().optional(),
-  dateRange: z.string().optional(),
-  sortBy: z.string().optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional(),
-  page: z.coerce.number().int().positive().optional().default(1),
-  limit: z.coerce.number().int().positive().max(100).optional().default(DEFAULT_LIMIT),
-});
-export type TicketQueryInput = z.infer<typeof TicketQueryDTO>;
-
-export const AssignTicketDTO = z.object({
-  technicianId: z.string().uuid('Invalid technician ID'),
-});
-export type AssignTicketInput = z.infer<typeof AssignTicketDTO>;
+export type CreateTicketOutput = z.output<typeof import('@shared/contracts').CreateTicketInputSchema>;
 
 export const CreateTicketResponseDTO = z.object({
   message: z.string().min(1, 'Message cannot be empty').max(5000),
 });
 export type CreateTicketResponseInput = z.infer<typeof CreateTicketResponseDTO>;
-
-export const TicketIdParamDTO = z.object({
-  id: z.string().uuid('Ticket ID Invalid'),
-});
-export type TicketIdParamInput = z.infer<typeof TicketIdParamDTO>;
-

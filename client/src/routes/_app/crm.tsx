@@ -1,1 +1,1 @@
-export { CRMPage as default, CRMPage } from "@/pages/CRMPage";
+export { CRMPage as default, CRMPage } from "@/features/crm";

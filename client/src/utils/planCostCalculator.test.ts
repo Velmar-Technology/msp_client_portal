@@ -4,7 +4,7 @@ import {
   calculateSlaPremium,
   calculateQuotaAdjustment,
 } from "./planCostCalculator";
-import type { PlanFeature } from "@/services/planService";
+import type { PlanFeature } from "@/features/subscriptions";
 
 describe("planCostCalculator", () => {
   it("calculates SLA premiums correctly for rapid vs standard SLA", () => {

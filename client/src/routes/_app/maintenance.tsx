@@ -1,1 +1,1 @@
-export { MaintenancePage as default, MaintenancePage } from "@/pages/MaintenancePage";
+export { MaintenancePage as default, MaintenancePage } from "@/features/rmm";

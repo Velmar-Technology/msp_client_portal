@@ -1,4 +1,20 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["node_modules", "dist", "src/**/*.test.ts"]
+  "compilerOptions": {
+    "declaration": false,
+    "declarationMap": false,
+    "incremental": true,
+    "tsBuildInfoFile": "./node_modules/.cache/tsconfig.build.tsbuildinfo",
+    "types": ["node"]
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/**/*.test.ts",
+    "src/**/*.spec.ts",
+    "tests/**/*",
+    "src/shared/db/seed*.ts",
+    "src/shared/scripts/**/*",
+    "src/scripts/**/*"
+  ]
 }

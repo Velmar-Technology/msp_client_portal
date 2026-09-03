@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { X, KeyRound, Loader2, Laptop, BadgeCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
-import { equipmentService } from "@/services/equipmentService";
+import { equipmentService } from "@/features/equipment";
 import {
   InputOTP,
   InputOTPGroup,

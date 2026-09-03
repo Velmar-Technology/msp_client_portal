@@ -16,8 +16,7 @@ Read `CONSTRAINTS.md` before writing code. Do not weaken it to make a change pas
 * **Architecture:** Modular Monolith in npm workspace monorepo (`client`, `server`, `packages/*`).
 * **Runtime & Language:** Node.js v22+ (Strict TypeScript), ESM.
 * **Backend:** Express 5.x, Drizzle ORM 0.45.x, PostgreSQL 16+, Redis (`ioredis`), Winston Logger, Vitest.
-* **Frontend:** React 19.x, Vite 8.x, Tailwind CSS v4, shadcn/ui (`radix-ui`), Zustand, React Hook Form + Zod, TanStack Table, i18next.
-* **Packages:** `@shared/errors` (Standardized domain error primitives), MCP server (`packages/mcp-server`).
+* **Packages:** `@shared/errors` (Standardized domain error primitives), `@shared/contracts` (Unified API contracts, Zod schemas & types), MCP server (`packages/mcp-server`).
 
 ## 2. Core Workflows & Tool Execution
 Use ONLY the exact workspace commands below:
@@ -58,6 +57,8 @@ Dependencies point strictly **INWARD**: `Frameworks/Drivers` $\rightarrow$ `Inte
 5. **API Gateway (`server/src/shared/middleware/gateway*.ts`)**: Injects `X-User-Id` / `X-Tenant-Id` headers and enforces sliding-window multi-tenant rate limits (`1000 req/15m`).
 6. **Module Gateway (`server/src/modules/<domain>/index.ts`)**: Every domain module (`auth`, `tickets`, `billing`, `subscriptions`, `rmm`, `equipment`, `crm`, `notifications`, `system`) exposes its public API strictly via `index.ts`. Cross-module imports of internal repositories, controllers, or ORM schemas are **FORBIDDEN**.
 7. **Redis Caching & Concurrency (`server/src/shared/utils/cache/`)**: Consumed via `CachePort` abstraction. Implements Redis (`ioredis`) with in-memory LRU fallback, generation-based cache invalidation, and `DistributedLock` for race-condition mitigation in critical mutations.
+8. **Contract-First API Architecture (`@shared/contracts`)**: All request bodies, query params, path params, and entity responses MUST be defined in `@shared/contracts` using Zod (@see ADR-001). Express routes validate requests with shared contracts directly (`validate(CreateTicketInputSchema)`). New features follow the 4-step vertical slice standard: `@see docs/architecture/feature-slice-recipe.md`.
+9. **Pragmatic Repository Rule**: For standard CRUD, relations (`with: { ... }`), and basic filters, Domain Services are authorized to query Drizzle directly (`db.query.*`). Do NOT create 1-line pass-through repositories. Dedicated Repository classes are strictly reserved for non-trivial SQL (complex CTEs, window functions, raw analytical aggregations).
 
 ---
 
@@ -71,6 +72,7 @@ Dependencies point strictly **INWARD**: `Frameworks/Drivers` $\rightarrow$ `Inte
 | **BL-104** | Tier Escalation | Unworked OPEN tickets escalate to Tier 2: CRITICAL (10m), HIGH (20m), MEDIUM (45m), LOW (120m). Assigned by capacity-weighted load ($\text{P1}=4, \text{P2}=2, \text{P3}=1, \text{P4}=0.5$). |
 | **BL-201** | Feature Quota | Enforces plan ticket limits (e.g. 5 tickets/device/mo). Blocks creation with `TicketLimitExceededError`. |
 | **BL-202** | License True-Up | Nightly reconciliation of cloud seats/RMM agents against baseline contracts for next billing cycle. |
+| **BL-204** | Feature Gating & Entitlements | Enforces subscription feature codes (`FEATURE_CODES`) on backend endpoints via `requireSubscriptionFeature` and client routes via `FeatureRouteGuard` & `useEntitlements`. Decomposes bundled tiers (`expandFeatureBundles`). Non-entitled clients receive 403 or interactive `<FeatureLockedPreview>` upsell view. |
 | **BL-301** | RBAC & State Machine | Transitions must satisfy `STATUS_TRANSITIONS` matrix. Clients: tenant isolation, cancel only. Techs: assigned tickets. Admins: global. |
 | **BL-302** | SOTA Hybrid Authorization & ZSP | Unified PDP (`server/src/shared/authz/`) orchestrating RBAC (roles), Zanzibar ReBAC (`<subject>#<relation>@<object>`), Policy-as-Code ABAC (SLA/Non-payment), Vector AI ACL pre-filtering, Zero Standing Privileges with JIT Ephemeral Access (`EphemeralAccessService`), SPIFFE Workload Identity (`WorkloadIdentityService`), AI Role Mining Pruning (`ContinuousAdaptiveTrustService.mineRoles`), and Contextual Step-Up MFA. |
 | **BL-401** | Subscription Reactivation | PayPal capture or admin `markAsPaid` transitions linked `EXPIRED` client subscriptions to `ACTIVE` and broadcasts alerts. |
@@ -101,16 +103,20 @@ Dependencies point strictly **INWARD**: `Frameworks/Drivers` $\rightarrow$ `Inte
 
 ## 6. Frontend Architectural Standards & State Management (React 19 / Vite / Tailwind v4)
 
-1. **4-Level Component Hierarchy**:
-   $$\text{L1: Primitives (/components/ui)} \leftarrow \text{L2: Shared Blocks (/components/shared, layout)} \leftarrow \text{L3: Feature Components (/components/[domain])} \leftarrow \text{L4: Pages (/pages, /routes)}$$
-   - Lower layers NEVER import higher layers. Feature modules never cross-import directly.
-   - **`shadcn/ui` (`radix-ui`) Primitives**: ALL UI elements (Button, Dialog, Input, Select, Badge, Card, Table) MUST use `client/src/components/ui/`. Never write raw `<button>`, `<input>`, or `<select>`.
-2. **`Zod` Schema & DTO Validation**:
-   - **Dual-Boundary Validation**: Backend DTO schemas in `@shared/dtos/` and Frontend form schemas in `client/src/components/` paired with `@hookform/resolvers/zod`.
+1. **Colocated Feature Architecture (`client/src/features/<domain>/`) & Component Hierarchy**:
+   $$\text{L1: Primitives (/components/ui)} \leftarrow \text{L2: Shared Blocks (/components/shared, layout)} \leftarrow \text{L3: Features (/features/<domain>)} \leftarrow \text{L4: Routes (/routes, /pages)}$$
+   - **Feature Colocation (@see ADR-002):** Features live in `client/src/features/<domain>/` with colocated `api/` (TanStack Query hooks & service), `components/`, `hooks/` (URL sync & modal state), `pages/`, `types.ts` (ephemeral UI state only), and an `index.ts` public gateway.
+   - **No Duplicate Types:** Backend entities, input payloads, and responses MUST be imported directly from `@shared/contracts`. Feature `types.ts` is strictly prohibited from re-declaring backend entities.
+   - **Public Gateways:** Cross-feature imports MUST pass through the target feature's `index.ts`. Deep imports into another feature's internal directories are forbidden.
+   - **`shadcn/ui` (`radix-ui`) Primitives:** ALL UI elements (Button, Dialog, Input, Select, Badge, Card, Table) MUST use `client/src/components/ui/`. Never write raw `<button>`, `<input>`, or `<select>`.
+2. **`Zod` Schema & Contract Validation**:
+   - **Single Contract Truth**: All request payloads, queries, and entity responses are imported directly from `@shared/contracts` (@see ADR-001).
+   - Frontend form schemas pair `@shared/contracts` with `@hookform/resolvers/zod`.
    - All input mutations MUST execute `schema.safeParse(...)` before processing. Password fields require complexity validation (min 8 chars, uppercase, lowercase, number, match confirmation).
-3. **`Zustand` Client State Management (`client/src/store/`)**:
-   - Confined strictly to global UI/session state (auth session, active tenant, theme, sidebar state).
-   - Use atomic selector patterns (`useStore(state => state.property)`) to prevent unnecessary re-renders. Never store ephemeral server cache data in Zustand.
+3. **State Management Separation (TanStack Query vs Zustand)**:
+   - **Server State (`client/src/hooks/queries/`)**: ALL asynchronous server data (fetching, caching, pagination, optimistic updates, and cache invalidation) MUST be managed via TanStack Query (`@tanstack/react-query`). Never store server cache data in Zustand.
+   - **Client UI State (`client/src/store/`)**: Zustand is confined strictly to ephemeral client UI state (auth session, active tenant, theme, sidebar state, active modal).
+   - Mutations MUST execute `queryClient.invalidateQueries(...)` upon success to keep table and detail views fresh without manual re-fetch loops. New features follow `@see docs/architecture/feature-slice-recipe.md`.
 4. **i18n Localization**: Zero hardcoded UI text. All strings use `useTranslation()` (`t("namespace.key")`) and must exist in `en_US.json` and `es_DO.json`. No inspecting `t()` return values to guess language.
 5. **URL State Synchronization**: Page sub-views (`?tab=...`), table filters (`?status=...`, `?search=...`), and modals (`?openModal=...`) must sync via `useUrlState`.
 6. **Control Heights**: Uniform compact standard `h-7` (28px) for buttons, inputs, and select triggers (`xs: h-5`, `sm: h-6`, `default: h-7`, `lg: h-8`). No ad-hoc heights.

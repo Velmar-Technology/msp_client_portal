@@ -2,8 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { expect, test, vi, beforeEach, describe } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import { subscriptionService } from "@/services/subscriptionService";
-import { planService, type Plan } from "@/services/planService";
+import { subscriptionService, planService, type Plan } from "@/features/subscriptions";
 import React from 'react';
 
 const mockT = (key: string) => key;
@@ -20,15 +19,32 @@ vi.mock('../../hooks/useAuth', () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-vi.mock('../../services/subscriptionService', () => ({
+vi.mock('../../hooks/useEntitlements', () => ({
+  useEntitlements: () => ({
+    isFeatureLocked: (code?: string) => code === 'PASSWORD_MANAGER',
+    hasFeature: (code?: string) => code !== 'PASSWORD_MANAGER',
+    activeFeatures: ['RMM_PATCH_MANAGEMENT', 'CLOUD_STORAGE'],
+    isLoading: false,
+    hasActiveSubscription: true,
+  }),
+}));
+
+vi.mock('@/features/subscriptions', () => ({
   subscriptionService: {
     getAll: vi.fn(),
   },
-}));
-
-vi.mock('../../services/planService', () => ({
   planService: {
     getAll: vi.fn(),
+  },
+  SUBSCRIPTION_QUERY_KEYS: {
+    all: ['subscriptions'] as const,
+    lists: () => ['subscriptions', 'list'] as const,
+    features: () => ['subscriptions', 'features'] as const,
+    plans: () => ['plans'] as const,
+  },
+  subscriptionQueryOptions: {
+    all: () => ({ queryKey: ['subscriptions', 'list'], queryFn: vi.fn() }),
+    plans: () => ({ queryKey: ['plans'], queryFn: vi.fn() }),
   },
 }));
 
@@ -207,5 +223,28 @@ describe('AppSidebar', () => {
     expect(screen.getByText('sidebar.groups.management')).toBeInTheDocument();
     expect(screen.getByText('sidebar.groups.operations')).toBeInTheDocument();
     expect(screen.queryByText(/Plan/)).not.toBeInTheDocument();
+  });
+
+  test('renders upgrade badge for locked features for CLIENT role', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'client-1', role: 'CLIENT', name: 'John Doe', email: 'john@example.com', tenantId: 'tenant-1' },
+      isAuthenticated: true,
+    });
+    vi.mocked(subscriptionService.getAll).mockResolvedValue([
+      { id: '1', plan: 'basic', status: 'ACTIVE', expires_at: new Date(Date.now() + 86400000 * 30).toISOString() } as any,
+    ]);
+    vi.mocked(planService.getAll).mockResolvedValue([
+      { id: 'basic', name: 'Basic Plan' } as any,
+    ]);
+
+    render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <AppSidebar />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('sidebar-item-lock')).toBeInTheDocument();
+    });
   });
 });

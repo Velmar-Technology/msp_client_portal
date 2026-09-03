@@ -1,1 +1,1 @@
-export { TechDashboardPage as default, TechDashboardPage } from "@/pages/TechDashboardPage";
+export { TechDashboardPage as default, TechDashboardPage } from "@/features/dashboard";

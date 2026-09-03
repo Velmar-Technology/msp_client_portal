@@ -50,7 +50,8 @@
     "financial": "Financials",
     "apiStatus": "API Status",
     "crm": "CRM Pipeline",
-    "passwordManager": "Password Manager"
+    "passwordManager": "Password Manager",
+    "upgradeBadge": "Upgrade"
   },
   "sidebar": {
     "groups": {
@@ -65,6 +66,44 @@
     "expiresToday": "Expires today",
     "daysRemaining_one": "{{count}} day remaining",
     "daysRemaining_other": "{{count}} days remaining"
+  },
+  "featureLocked": {
+    "badge": "Plan Upgrade Required",
+    "whatsIncluded": "What you unlock with this feature:",
+    "availableOn": "Available on:",
+    "backToDashboard": "Return to Dashboard",
+    "viewPlans": "View Plans & Upgrade",
+    "passwordManager": {
+      "title": "Enterprise Password Manager",
+      "desc": "Zero-knowledge encrypted password and secret vault powered by Bitwarden/Vaultwarden. Store, generate, and securely share credentials across your team.",
+      "tier": "Advanced Plan (PL-003) or Corporate (PL-004)",
+      "perk1": "AES-256 zero-knowledge end-to-end encryption",
+      "perk2": "Personal and shared organizational collections",
+      "perk3": "Self-service vault access recovery and reset"
+    },
+    "rmm": {
+      "title": "Remote Monitoring & Patch Management",
+      "desc": "Automated telemetry tracking, Windows update patching, and remote execution across all corporate assets.",
+      "tier": "Basic Plan (PL-001) or higher",
+      "perk1": "Real-time hardware performance and agent telemetry",
+      "perk2": "Automated security updates and patch scheduling",
+      "perk3": "Proactive maintenance logs and diagnostic telemetry"
+    },
+    "storage": {
+      "title": "Cloud Storage & Resource Sync",
+      "desc": "Dedicated Nextcloud enterprise cloud storage with collaborative synchronization and automated backup storage.",
+      "tier": "Basic Plan (PL-001) or higher",
+      "perk1": "25 GB to 100 GB dedicated Nextcloud storage",
+      "perk2": "Encrypted desktop and mobile sync",
+      "perk3": "Direct software resource catalog downloads"
+    },
+    "default": {
+      "title": "Premium Service Feature",
+      "desc": "This feature is available on qualifying MSP subscription tiers.",
+      "tier": "Qualifying Service Plan",
+      "perk1": "Priority resolution and guaranteed SLA response",
+      "perk2": "Enterprise security and continuous monitoring"
+    }
   },
   "topNav": {
     "search": "Search tickets, invoices, FAQs...",
@@ -1956,6 +1995,18 @@
     "step3Title": "Accept Invite & Login:",
     "step3Text": "Click the invitation link sent to your email to create your Master Password and join your company vault.",
     "clientsTitle": "Official Bitwarden Clients",
-    "clientsDesc": "Compatible with all official Bitwarden extensions, mobile, and desktop apps."
+    "clientsDesc": "Compatible with all official Bitwarden extensions, mobile, and desktop apps.",
+    "troubleTitle": "Trouble Logging In?",
+    "troubleDesc": "Lost your Master Password? Learn how recovery works in a zero-knowledge architecture.",
+    "zeroKnowledgeNoticeTitle": "Zero-Knowledge Security Policy",
+    "zeroKnowledgeNoticeDesc": "Because your vault is end-to-end encrypted, administrators cannot view or recover your Master Password. If you are locked out, resetting your vault will permanently delete your unshared private items.",
+    "resetButton": "Reset Vault Access",
+    "resetDialogTitle": "Reset Vault Access & Re-Invite",
+    "resetDialogDesc": "Are you sure you want to reset your vault access? Your current locked account will be purged and a fresh invitation email will be dispatched immediately.",
+    "resetDialogWarning": "Warning: Any personal, unshared passwords stored in your locked vault will be permanently lost.",
+    "resetDialogConfirm": "Yes, Reset & Send Invite",
+    "resetDialogCancel": "Cancel",
+    "resetSuccessTitle": "Invitation Dispatched",
+    "resetSuccessDesc": "A fresh Bitwarden invitation email has been sent. Please check your inbox to set a new Master Password."
   }
 }

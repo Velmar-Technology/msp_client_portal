@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { X, Cloud, Loader2, Copy, Check, HardDrive, MonitorDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { equipmentService } from "@/services/equipmentService";
+import { equipmentService } from "@/features/equipment";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

@@ -1,2 +1,1 @@
-import DevicesPage from "@/pages/DevicesPage";
-export { DevicesPage as default, DevicesPage };
+export { DevicesPage as default, DevicesPage } from '@/features/equipment';

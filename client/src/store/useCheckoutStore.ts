@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import type { Subscription } from "@/services/subscriptionService";
+import type { Subscription } from "@/features/subscriptions";
 
 export type CheckoutAction = 'add_device' | 'remove_device' | 'cancel' | 'pay';
 

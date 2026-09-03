@@ -1,4 +1,4 @@
-import type { LeadStage, LeadActivity, QuotationStatus } from "@/services/crmService";
+import type { LeadStage, LeadActivity, QuotationStatus } from "@/features/crm";
 
 export type ActivityType = LeadActivity["activity_type"];
 

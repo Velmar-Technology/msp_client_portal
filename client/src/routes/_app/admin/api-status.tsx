@@ -1,2 +1,1 @@
-import ApiStatusPage from "@/pages/ApiStatusPage";
-export { ApiStatusPage as default, ApiStatusPage };
+export { ApiStatusPage as default, ApiStatusPage } from "@/features/system";

@@ -1,1 +1,1 @@
-export { UserManagementPage as default, UserManagementPage } from "@/pages/UserManagementPage";
+export { UserManagementPage as default, UserManagementPage } from "@/features/users";

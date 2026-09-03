@@ -3,7 +3,7 @@ import { X, Laptop, Loader2, Plus, Building2, Check, ChevronsUpDown, KeyRound, B
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { equipmentService } from "@/services/equipmentService";
+import { equipmentService } from "@/features/equipment";
 import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";

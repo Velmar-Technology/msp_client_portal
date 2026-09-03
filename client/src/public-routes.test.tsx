@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { expect, test, vi, beforeEach, describe } from "vitest";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
-import { ProtectedRoute } from "@/protected-routes";
+import { ProtectedRoute } from "@/routes/routeUtils";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { PrivacyPage } from "@/routes/_public/privacy";
 import { TermsPage } from "@/routes/_public/terms";
@@ -26,25 +26,22 @@ vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-vi.mock("@/services/subscriptionService", () => ({
+vi.mock("@/features/subscriptions", () => ({
   subscriptionService: {
     getAll: vi.fn().mockResolvedValue([]),
   },
-}));
-
-vi.mock("@/services/planService", () => ({
   planService: {
     getAll: vi.fn().mockResolvedValue([]),
   },
 }));
 
-vi.mock("@/services/ticketService", () => ({
+vi.mock("@/features/tickets", () => ({
   ticketService: {
     getAll: vi.fn().mockResolvedValue({ data: [] }),
   },
 }));
 
-vi.mock("@/services/invoiceService", () => ({
+vi.mock("@/features/billing", () => ({
   invoiceService: {
     getAll: vi.fn().mockResolvedValue({ data: [] }),
   },

@@ -8,7 +8,7 @@ import {
   type DataTableFilter,
   type DataTableBulkAction,
 } from "@/components/ui/data-table";
-import type { SubscriptionEquipment } from "@/services/equipmentService";
+import type { SubscriptionEquipment } from "@shared/contracts";
 import { Activity, CheckCircle2, Cpu, HardDrive, RefreshCw, ShieldCheck, Clock, Power, MoreHorizontal } from "lucide-react";
 import { formatRelativeTime } from "@/lib/formatRelativeTime";
 import {

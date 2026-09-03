@@ -1,1 +1,1 @@
-export { BillingPage as default, BillingPage } from "@/pages/BillingPage";
+export { BillingPage as default, BillingPage } from "@/features/billing";

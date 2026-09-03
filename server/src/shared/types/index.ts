@@ -399,6 +399,13 @@ export enum PlanClientType {
   OTHER = 'OTHER',
 }
 
+export {
+  FEATURE_CODES,
+  type FeatureCode,
+  FEATURE_BUNDLE_EXPANSIONS,
+  expandFeatureBundles,
+} from '../constants/featureCodes';
+
 export interface PlanFeature {
   code?: string;
   params?: Record<string, any>;
