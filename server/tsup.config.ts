@@ -1,7 +1,10 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/index.ts'],
+  entry: {
+    index: 'src/index.ts',
+    'shared/db/migrate': 'src/shared/db/migrate.ts',
+  },
   outDir: 'dist',
   format: ['cjs'],
   target: 'node22',
