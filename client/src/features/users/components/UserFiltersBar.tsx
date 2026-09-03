@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { RoleFilter, StatusFilter } from "@/hooks/useUserManagement";
+import type { RoleFilter, StatusFilter } from "../hooks/useUserManagement";
 
 interface UserFiltersBarProps {
   searchQuery: string;

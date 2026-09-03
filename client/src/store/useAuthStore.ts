@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { authService } from "@/services/authService";
+import { authService } from "@/features/auth";
 import { setAuthItem } from "@/lib/authStorage";
 import { setFaroUser, resetFaroUser } from "@/telemetry/faro";
 import { setDatadogUser, resetDatadogUser } from "@/telemetry/datadog";

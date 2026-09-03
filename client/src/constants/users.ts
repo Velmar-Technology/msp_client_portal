@@ -1,6 +1,6 @@
 import type React from "react";
 import { ShieldCheck, Wrench, User, Building2, GraduationCap, Tag } from "lucide-react";
-import type { UserRole, ClientType } from "@/services/userService";
+import type { UserRole, ClientType } from "@/features/users";
 
 export const USER_ROLE_CONFIG: Record<UserRole, { badge: string; dot: string }> = {
   ADMIN: {

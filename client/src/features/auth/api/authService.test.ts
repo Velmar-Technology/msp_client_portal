@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import api from "@/services/api";
-import { authService } from "@/services/authService";
+import { authService } from "./authService";
 
-vi.mock('./api');
+vi.mock("@/services/api");
 
 describe('authService', () => {
   describe('verifyEmail', () => {

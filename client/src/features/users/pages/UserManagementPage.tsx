@@ -24,14 +24,14 @@ import {
 
 import type { ColumnDef } from "@tanstack/react-table";
 
-import { useUserManagement } from "@/hooks/useUserManagement";
-import type { RoleFilter, StatusFilter } from "@/hooks/useUserManagement";
+import { useUserManagement } from "../hooks/useUserManagement";
+import type { RoleFilter, StatusFilter } from "../hooks/useUserManagement";
 import { useAuth } from "@/hooks/useAuth";
-import { UserStatsBar } from "@/components/users/UserStatsBar";
+import { UserStatsBar } from "../components/UserStatsBar";
 
-import { UserRoleBadge } from "@/components/users/UserRoleBadge";
-import { UserActionsMenu } from "@/components/users/UserActionsMenu";
-import type { ManagedUser, ClientType, UserRole } from "@/services/userService";
+import { UserRoleBadge } from "../components/UserRoleBadge";
+import { UserActionsMenu } from "../components/UserActionsMenu";
+import type { ManagedUser, ClientType, UserRole } from "../api/userService";
 
 // ---- Status Dot ----
 

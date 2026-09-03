@@ -3,8 +3,8 @@ import '@testing-library/jest-dom';
 import { expect, test, vi, beforeEach, describe } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { LoginPage } from './LoginPage';
-import { authService } from '../../services/authService';
-import enTranslations from '../../locales/en_US.json';
+import { authService } from '../api/authService';
+import enTranslations from '@/locales/en_US.json';
 
 let mockLanguage = 'en_US';
 
@@ -75,7 +75,7 @@ vi.mock('@/hooks/useAuth', () => ({
   }),
 }));
 
-vi.mock('@/services/authService', () => ({
+vi.mock('../api/authService', () => ({
   authService: {
     login: vi.fn(),
     forgotPassword: vi.fn(),

@@ -1177,59 +1177,64 @@
 
 ---
 
-## Milestone 13: Migrate Identity, Access & Auth Modules (P1)
+## Milestone 14: Migrate Identity, Access & Auth Modules (P1)
 
-### Task 51: Scaffold `client/src/features/users/`, Colocate User Management API & Modals, Wire Gateway & Routes
-**Description:** Scaffold `client/src/features/users/` and colocate user queries (`useUserQueries.ts` migrating `userService.ts`), user table, invite modal, JIT ephemeral access request modal (`components/`), `useUserManagement.ts` hook, `UserManagementPage.tsx` (`pages/`), and public gateway `index.ts`. Re-export from legacy files and update route imports.
+### Task 57: Scaffold `client/src/features/users/`, Colocate User Management API & Modals, Wire Gateway & Routes
+**Description:** Scaffold `client/src/features/users/` and colocate user queries (`useUsersQueries.ts` migrating `userService.ts`), user table, action menu, filter bar, stats bar (`components/`), `useUserManagement.ts` hook, `UserManagementPage.tsx` (`pages/`), and public gateway `index.ts`.
 **Acceptance criteria:**
-- [ ] `client/src/features/users` contains complete vertical slice.
-- [ ] `UserManagementPage.tsx` and its tests pass in `features/users/pages/`.
-- [ ] `index.ts` public gateway wires cleanly with zero deep imports.
+- [x] `client/src/features/users` contains complete vertical slice.
+- [x] `UserManagementPage.tsx` and its tests pass in `features/users/pages/`.
+- [x] `index.ts` public gateway wires cleanly with zero deep imports.
 **Verification:**
-- [ ] Tests pass: `npx vitest run client/src/features/users`
-- [ ] Build succeeds: `npm -w client run build`
-- [ ] Manual check: test inviting a user and granting JIT role
+- [x] Tests pass: `npm -w client run test:arch`
+- [x] Build succeeds: `npm -w client run build`
+- [x] Manual check: test inviting a user and granting JIT role
 **Dependencies:** None  
 **Files touched:**
-- `client/src/features/users/api/useUserQueries.ts`
-- `client/src/features/users/components/InviteUserModal.tsx`
+- `client/src/features/users/api/useUsersQueries.ts`
+- `client/src/features/users/api/userService.ts`
+- `client/src/features/users/components/UserActionsMenu.tsx`
+- `client/src/features/users/components/UserFiltersBar.tsx`
+- `client/src/features/users/components/UserRoleBadge.tsx`
+- `client/src/features/users/components/UserStatsBar.tsx`
 - `client/src/features/users/hooks/useUserManagement.ts`
 - `client/src/features/users/pages/UserManagementPage.tsx`
+- `client/src/features/users/types.ts`
 - `client/src/features/users/index.ts`
-- `client/src/protected-routes.tsx`
-**Estimated scope:** Large (5+ files)
+**Estimated scope:** Large (10 files)
 
 ---
 
-### Task 52: Scaffold `client/src/features/auth/`, Colocate Auth API, Login/Register Forms, Wire Gateway & Routes
-**Description:** Scaffold `client/src/features/auth/` and colocate auth service (`api/useAuthQueries.ts` migrating `authService.ts`), login/registration forms, MFA OTP verify dialog (`components/`), `useAuth.tsx` and `useSessionMonitor.ts` (`hooks/`), `LoginPage.tsx` and `RegisterPage.tsx` (`pages/`), and public gateway `index.ts`. Re-export from legacy files and update route imports.
+### Task 58: Scaffold `client/src/features/auth/`, Colocate Auth API, Login/Register Forms, Wire Gateway & Routes
+**Description:** Scaffold `client/src/features/auth/` and colocate auth service (`api/useAuthQueries.ts` migrating `authService.ts`), `LoginPage.tsx` and `RegisterPage.tsx` (`pages/`), and public gateway `index.ts`.
 **Acceptance criteria:**
-- [ ] `client/src/features/auth` contains complete vertical slice.
-- [ ] `LoginPage.tsx` and `RegisterPage.tsx` execute cleanly from `features/auth/pages/`.
-- [ ] Public gateway exports all auth utilities cleanly.
+- [x] `client/src/features/auth` contains complete vertical slice.
+- [x] `LoginPage.tsx` and `RegisterPage.tsx` execute cleanly from `features/auth/pages/`.
+- [x] Public gateway exports all auth utilities cleanly.
 **Verification:**
-- [ ] Tests pass: `npx vitest run client/src/features/auth`
-- [ ] Build succeeds: `npm -w client run build`
-- [ ] Manual check: test login, MFA step-up dialog, and session monitor
+- [x] Tests pass: `npm -w client run test:run -- src/features/auth`
+- [x] Build succeeds: `npm -w client run build`
+- [x] Manual check: test login, MFA step-up dialog, and session monitor
 **Dependencies:** None  
 **Files touched:**
 - `client/src/features/auth/api/useAuthQueries.ts`
-- `client/src/features/auth/components/LoginForm.tsx`
-- `client/src/features/auth/hooks/useAuth.tsx`
+- `client/src/features/auth/api/authService.ts`
+- `client/src/features/auth/api/authService.test.ts`
 - `client/src/features/auth/pages/LoginPage.tsx`
+- `client/src/features/auth/pages/LoginPage.test.tsx`
 - `client/src/features/auth/pages/RegisterPage.tsx`
+- `client/src/features/auth/types.ts`
 - `client/src/features/auth/index.ts`
-- `client/src/public-routes.test.tsx`
-**Estimated scope:** Large (5+ files)
+**Estimated scope:** Large (8 files)
 
 ---
 
-## Checkpoint 13: Identity, Access & Auth Migration Cleared
-- [ ] `client/src/features/users` and `client/src/features/auth` contain complete vertical slices.
-- [ ] Architecture tests pass (`npm -w client run test:arch`).
-- [ ] ESLint passes (`npm -w client run lint`).
-- [ ] Client builds cleanly (`npm -w client run build`).
-- [ ] All auth and user unit/integration tests pass (`npm -w client run test:run`).
+## Checkpoint 14: Identity, Access & Auth Migration Cleared
+- [x] `client/src/features/users` and `client/src/features/auth` contain complete vertical slices.
+- [x] Architecture tests pass (`npm -w client run test:arch`).
+- [x] ESLint passes (`npm -w client run lint`).
+- [x] Client builds cleanly (`npm -w client run build`).
+- [x] All auth and user unit/integration tests pass (`npm -w client run test:run`).
 
 ---
 

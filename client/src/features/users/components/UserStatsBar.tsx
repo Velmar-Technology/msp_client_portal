@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import type { UserStats } from "@/services/userService";
+import type { UserStats } from "../api/userService";
 import { Users, Shield, Wrench, User } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/shared";

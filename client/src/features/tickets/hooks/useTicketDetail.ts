@@ -4,8 +4,7 @@ import { ticketService } from "../api/ticketService";
 import type { TicketItem as Ticket, TicketTimelineItem as TicketEvent, TicketResponseItem as TicketResponse, TicketAttachmentItem as TicketAttachment } from "../api/ticketService";
 import type { PreviewFileState } from "../components/FilePreviewModal";
 import { useAuth } from "@/hooks/useAuth";
-import { userService } from "@/services/userService";
-import type { TechnicianUser } from "@/services/userService";
+import { userService, type TechnicianUser } from "@/features/users";
 import { useTicketReadStore } from "@/store/useTicketReadStore";
 
 /**

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { subscriptionService } from "@/features/subscriptions";
 import type { Subscription } from "@/features/subscriptions";
-import { userService } from "@/services/userService";
+import { userService } from "@/features/users";
 import type { AuthUser } from "@/store/useAuthStore";
 
 export interface SubscriptionState {

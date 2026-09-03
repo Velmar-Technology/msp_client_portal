@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { userService, type ApiKeySummary, type ApiKeyExpiry } from "@/services/userService";
+import { userService, type ApiKeySummary, type ApiKeyExpiry } from "@/features/users";
 import { useUrlState } from "@/hooks/useUrlState";
 
 export function useProfile() {

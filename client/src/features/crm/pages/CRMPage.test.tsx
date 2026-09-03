@@ -8,7 +8,7 @@ import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 import { crmService, type Lead, type CrmPipelineStats, type Quotation, type LeadActivity } from "../api/crmService";
 import type { Invoice } from "@/services/invoiceService";
 import { planService, subscriptionService, type Plan, type Subscription } from "@/features/subscriptions";
-import { userService } from "@/services/userService";
+import { userService } from "@/features/users";
 import type { AuthUser } from "@/store/useAuthStore";
 import enTranslations from "@/locales/en_US.json";
 

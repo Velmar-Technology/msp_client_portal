@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/hooks/useProfile";
-import type { User as UserType } from "@/services/authService";
-import type { ApiKeyExpiry } from "@/services/userService";
+import type { User as UserType } from "@/features/auth";
+import type { ApiKeyExpiry } from "@/features/users";
 import { DataTable } from "@/components/ui/data-table";
 import {
   AlertDialog,

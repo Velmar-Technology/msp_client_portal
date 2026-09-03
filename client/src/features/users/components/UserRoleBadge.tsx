@@ -1,4 +1,4 @@
-import type { UserRole } from "@/services/userService";
+import type { UserRole } from "../api/userService";
 
 interface UserRoleBadgeProps {
   role: UserRole;

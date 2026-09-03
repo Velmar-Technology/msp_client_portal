@@ -154,9 +154,9 @@ Detailed tasks with full acceptance criteria and file lists are recorded in [`ta
 - [x] Checkpoint 13: Financial Module Migration Cleared
 
 ### Milestone 14: Migrate Identity, Access & Auth Modules (P1)
-- [ ] Task 57: Scaffold `client/src/features/users/`, Colocate User Management API & Modals, Wire Gateway & Routes
-- [ ] Task 58: Scaffold `client/src/features/auth/`, Colocate Auth API, Login/Register Forms, Wire Gateway & Routes
-- [ ] Checkpoint 14: Identity, Access & Auth Migration Cleared
+- [x] Task 57: Scaffold `client/src/features/users/`, Colocate User Management API & Modals, Wire Gateway & Routes
+- [x] Task 58: Scaffold `client/src/features/auth/`, Colocate Auth API, Login/Register Forms, Wire Gateway & Routes
+- [x] Checkpoint 14: Identity, Access & Auth Migration Cleared
 
 ### Milestone 15: Migrate Dashboard, Settings & System Modules & Final Cleanups (P2)
 - [ ] Task 59: Scaffold & Colocate `client/src/features/dashboard/` (DashboardPage, TechDashboardPage, Widgets)

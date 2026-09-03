@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { SortingState } from "@tanstack/react-table";
-import { userService } from "@/services/userService";
-import type {
-  ManagedUser,
-  UserRole,
-  ClientType,
-  UserStats,
-} from "../services/userService";
+import {
+  userService,
+  type ManagedUser,
+  type UserRole,
+  type ClientType,
+  type UserStats,
+} from "../api/userService";
 import { useUrlState } from "@/hooks/useUrlState";
 
 // ---- Types ----

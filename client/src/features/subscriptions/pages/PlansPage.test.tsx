@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor, within, act } from '@testing-librar
 import { PlansPage } from "./PlansPage";
 import { expect, test, vi, beforeEach, describe } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import { userService } from '@/services/userService';
+import { userService } from '@/features/users';
 import { subscriptionService } from '../api/subscriptionService';
 import { useAuth } from '@/hooks/useAuth';
 import { usePlanStore } from '@/store/usePlanStore';
