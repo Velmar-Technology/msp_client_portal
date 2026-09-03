@@ -91,7 +91,7 @@ vi.mock('@/store/usePlanStore', () => ({
   usePlanStore: vi.fn(),
 }));
 
-vi.mock('@/services/userService', () => ({
+vi.mock('@/features/users', () => ({
   userService: {
     getClients: vi.fn(),
   },

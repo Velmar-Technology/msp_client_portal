@@ -6,7 +6,7 @@ import { useCRMStore } from "@/store/useCRMStore";
 import { usePlanStore } from "@/store/usePlanStore";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 import { crmService, type Lead, type CrmPipelineStats, type Quotation, type LeadActivity } from "../api/crmService";
-import type { Invoice } from "@/services/invoiceService";
+import type { Invoice } from "@/features/billing";
 import { planService, subscriptionService, type Plan, type Subscription } from "@/features/subscriptions";
 import { userService } from "@/features/users";
 import type { AuthUser } from "@/store/useAuthStore";
@@ -56,7 +56,7 @@ vi.mock("@/features/subscriptions", () => ({
   },
 }));
 
-vi.mock("@/services/userService", () => ({
+vi.mock("@/features/users", () => ({
   userService: {
     getClients: vi.fn(),
   },

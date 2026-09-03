@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { invoiceService } from "@/services/invoiceService";
+import { invoiceService } from "@/features/billing";
 
 export type DateRange = "30_days" | "quarter" | "year";
 
