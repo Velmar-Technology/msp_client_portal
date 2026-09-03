@@ -31,6 +31,7 @@ export function useDeviceModals() {
   const nextcloud = useModalState<Partial<SubscriptionEquipment>>();
   const maintenance = useModalState<Partial<SubscriptionEquipment>>();
   const deployAgent = useModalState<Partial<SubscriptionEquipment>>();
+  const vault = useModalState<Partial<SubscriptionEquipment>>();
 
-  return { revoke, repair, activateOtp, addDevice, deleteDevice, nextcloud, maintenance, deployAgent };
+  return { revoke, repair, activateOtp, addDevice, deleteDevice, nextcloud, maintenance, deployAgent, vault };
 }

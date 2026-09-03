@@ -70,6 +70,8 @@ export interface Tenant {
   read_only_at?: Date | null;
   suspended_at?: Date | null;
   purged_at?: Date | null;
+  vault_grace_extension_until?: Date | null;
+  vault_grace_extensions_count?: number;
   created_at: Date;
   updated_at: Date;
 }
@@ -463,6 +465,11 @@ export interface SubscriptionEquipment {
   otp_expires_at: Date | null;
   nextcloud_username: string | null;
   nextcloud_password: string | null;
+  vaultwarden_org_id?: string | null;
+  vaultwarden_collection_id?: string | null;
+  vaultwarden_device_user_id?: string | null;
+  vaultwarden_status?: 'UNPROVISIONED' | 'ACTIVE' | 'LOCKED' | 'PURGED' | string | null;
+  vaultwarden_last_synced_at?: Date | null;
   tenant_id: string;
   nextcloud_used_bytes?: number;
   nextcloud_total_bytes?: number;

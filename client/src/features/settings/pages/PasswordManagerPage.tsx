@@ -30,9 +30,14 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import { systemService } from "@/features/system";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 export function PasswordManagerPage() {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const isReadOnly = user?.accountStatus === 'READ_ONLY' || user?.accountStatus === 'SUSPENDED';
   const [copied, setCopied] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -107,6 +112,39 @@ export function PasswordManagerPage() {
       subtitle={t("passwordManager.pageDescription", "Enterprise zero-knowledge password vault for your team.")}
     >
       <div className="space-y-6 max-w-5xl">
+        {/* BL-702 Read-Only Non-Payment Banner */}
+        {isReadOnly && (
+          <div
+            data-testid="vault-readonly-banner"
+            className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl border border-amber-500/30 bg-linear-to-r from-amber-500/10 via-amber-500/5 to-transparent text-amber-950 dark:text-amber-200 shadow-xs"
+          >
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="p-2 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div className="space-y-0.5">
+                <h3 className="text-xs font-bold font-heading uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                  {t("passwordManager.readOnlyAlertTitle", "Vault in Read-Only Mode (BL-702)")}
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {t(
+                    "passwordManager.readOnlyAlertDesc",
+                    "Existing passwords can be autofilled and searched, but new credential creation and editing are locked due to pending invoices."
+                  )}
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs font-semibold border-amber-500/40 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 shrink-0 cursor-pointer"
+              onClick={() => navigate("/billing")}
+            >
+              {t("passwordManager.resolveBillingCta", "View Invoices & Settle Balance")}
+            </Button>
+          </div>
+        )}
+
         {/* Hero Vault Access Card */}
         <Card className="border-primary/20 bg-linear-to-r from-primary/5 via-card to-card p-6 shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

@@ -4,7 +4,12 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { PasswordManagerPage } from "./PasswordManagerPage";
 import { systemService } from "@/features/system";
+import { useAuth } from "@/hooks/useAuth";
 import enTranslations from "@/locales/en_US.json";
+
+vi.mock("@/hooks/useAuth", () => ({
+  useAuth: vi.fn(() => ({ user: null })),
+}));
 
 vi.mock("@/features/system", () => ({
   systemService: {
@@ -109,5 +114,28 @@ describe("PasswordManagerPage", () => {
         })
       );
     });
+  });
+
+  test("displays BL-702 read-only warning banner when account status is READ_ONLY", () => {
+    vi.mocked(useAuth).mockReturnValue({
+      user: {
+        id: "usr-1",
+        name: "Test Client",
+        role: "CLIENT",
+        tenantId: "ten-1",
+        accountStatus: "READ_ONLY",
+      },
+    } as any);
+
+    render(
+      <MemoryRouter>
+        <PasswordManagerPage />
+      </MemoryRouter>
+    );
+
+    const banner = screen.getByTestId("vault-readonly-banner");
+    expect(banner).toBeInTheDocument();
+    expect(screen.getByText(/Vault in Read-Only Mode \(BL-702\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/View Invoices & Settle Balance/i)).toBeInTheDocument();
   });
 });

@@ -5,6 +5,7 @@ import { rbacMiddleware } from '@shared/middleware/rbacMiddleware';
 import { validate } from '@shared/middleware/validationMiddleware';
 import { UserRole } from '@shared/types';
 import { CapturePaypalOrderDTO, CancelInvoiceDTO, InvoiceIdParamDTO } from '@shared/dtos/billing.dto';
+import { RequestVaultGraceInputSchema } from '@shared/contracts';
 
 const router = Router();
 
@@ -15,6 +16,9 @@ router.get('/', (req, res) => invoiceController.getAll(req, res));
 
 /** GET /api/v1/invoices/financial-stats — Get financial dashboard stats */
 router.get('/financial-stats', (req, res) => invoiceController.getFinancialStats(req, res));
+
+/** POST /api/v1/invoices/request-vault-grace — Request 24h emergency vault grace extension (BL-702) */
+router.post('/request-vault-grace', validate(RequestVaultGraceInputSchema, 'body'), (req, res) => invoiceController.requestVaultGrace(req, res));
 
 /** GET /api/v1/invoices/:id — Get invoice details */
 router.get('/:id', validate(InvoiceIdParamDTO, 'params'), (req, res) => invoiceController.getById(req, res));

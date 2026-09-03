@@ -1,6 +1,6 @@
 import api from '@/services/api';
 import { getAuthItem } from '@/lib/authStorage';
-import type { SubscriptionEquipment } from '@shared/contracts';
+import type { SubscriptionEquipment, DeviceVaultDetails } from '@shared/contracts';
 
 /**
  * Hardware equipment and device inventory service.
@@ -203,5 +203,39 @@ export const equipmentService = {
     const token = getAuthItem('accessToken');
     const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : '';
     return `${cleanBaseUrl}/equipment/subscriptions/${subId}/slots/${slotIndex}/agent-deploy-script${tokenQuery}`;
+  },
+
+  /**
+   * Retrieves the Vaultwarden password management status and connection details for an equipment slot.
+   *
+   * @param equipmentId - Equipment slot UUID.
+   * @returns Promise resolving to DeviceVaultDetails.
+   */
+  async getDeviceVault(equipmentId: string): Promise<DeviceVaultDetails> {
+    const response = await api.get(`/equipment/${equipmentId}/vault`);
+    return response.data.data;
+  },
+
+  /**
+   * Provisions a dedicated Vaultwarden collection and device identity for an equipment slot.
+   *
+   * @param equipmentId - Equipment slot UUID.
+   * @returns Promise resolving to provisioned DeviceVaultDetails.
+   */
+  async provisionDeviceVault(equipmentId: string): Promise<DeviceVaultDetails> {
+    const response = await api.post(`/equipment/${equipmentId}/vault/provision`);
+    return response.data.data;
+  },
+
+  /**
+   * Revokes active Vaultwarden credentials and locks session for an equipment slot.
+   *
+   * @param equipmentId - Equipment slot UUID.
+   * @param reason - Optional revocation reason.
+   * @returns Promise resolving to locked DeviceVaultDetails.
+   */
+  async revokeDeviceVault(equipmentId: string, reason?: string): Promise<DeviceVaultDetails> {
+    const response = await api.post(`/equipment/${equipmentId}/vault/revoke`, { reason });
+    return response.data.data;
   },
 };

@@ -37,6 +37,9 @@ async function checkColumnExists(client: PoolClient, tableName: string, columnNa
  * @param client - PostgreSQL PoolClient connection
  */
 export async function ensureAdminExists(client: PoolClient): Promise<void> {
+  // Elevate session to system admin so RLS does not fail-close against users/tenants bootstrap queries
+  await client.query("SELECT set_config('app.is_system_admin', 'true', false)");
+
   logger.info('Checking if an administrator user exists...');
   
   // Check if any admin exists
@@ -134,6 +137,9 @@ export async function migrate(): Promise<void> {
   const client = await pool.connect();
 
   try {
+    // Elevate database migration session to system admin to bypass RLS policies during schema updates
+    await client.query("SELECT set_config('app.is_system_admin', 'true', false)");
+
     // 1. Create tracking table if it doesn't exist
     await client.query(`
       CREATE TABLE IF NOT EXISTS _migrations (
@@ -239,6 +245,9 @@ export async function migrate(): Promise<void> {
     logger.error('Migration failed', { error });
     throw error;
   } finally {
+    try {
+      await client.query("SELECT set_config('app.is_system_admin', 'false', false)");
+    } catch {}
     client.release();
     if (require.main === module) {
       await pool.end();

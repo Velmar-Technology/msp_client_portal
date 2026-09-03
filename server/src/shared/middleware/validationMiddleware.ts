@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { ZodSchema, ZodError } from 'zod';
+import { ZodTypeAny, ZodError } from 'zod';
 import { ValidationError } from '@shared/errors';
 
 /**
@@ -16,7 +16,7 @@ import { ValidationError } from '@shared/errors';
  * @returns Express middleware function
  * @throws {ValidationError} When schema validation fails
  */
-export function validate(schema: ZodSchema, source: 'body' | 'query' | 'params' = 'body') {
+export function validate(schema: ZodTypeAny, source: 'body' | 'query' | 'params' = 'body') {
   return (req: Request, _res: Response, next: NextFunction): void => {
     try {
       const data = schema.parse(req[source]);

@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import type { SubscriptionEquipment, ActivateWithOtpInput } from '@shared/contracts';
+import type { SubscriptionEquipment, ActivateWithOtpInput, DeviceVaultDetails } from '@shared/contracts';
+export type { DeviceVaultDetails };
 import { subscriptionService, SUBSCRIPTION_QUERY_KEYS } from '@/features/subscriptions';
 import type { Subscription } from '@/features/subscriptions';
 import { equipmentService } from './equipmentService';
@@ -17,6 +18,7 @@ export const EQUIPMENT_QUERY_KEYS = {
   slots: (subId: string) => [...EQUIPMENT_QUERY_KEYS.all, 'slots', subId] as const,
   nextcloud: (subId: string, slotIndex: number) =>
     [...EQUIPMENT_QUERY_KEYS.all, 'nextcloud', subId, slotIndex] as const,
+  vault: (equipmentId: string) => [...EQUIPMENT_QUERY_KEYS.all, 'vault', equipmentId] as const,
 };
 
 const DEVICES_KEY = EQUIPMENT_QUERY_KEYS.all[0];
@@ -361,4 +363,69 @@ export function useDeviceQueries(isAdmin: boolean) {
       deleteDevice: deleteDeviceMutation,
     },
   };
+}
+
+/**
+ * Fetches Vaultwarden password management details and status for a specific equipment slot.
+ *
+ * @param equipmentId - Equipment slot UUID
+ */
+export function useDeviceVault(equipmentId?: string) {
+  return useQuery({
+    queryKey: equipmentId ? EQUIPMENT_QUERY_KEYS.vault(equipmentId) : ['equipment', 'vault', 'none'],
+    queryFn: () => equipmentService.getDeviceVault(equipmentId!),
+    enabled: Boolean(equipmentId),
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Mutation hook to provision a Vaultwarden collection and device identity for an equipment slot.
+ */
+export function useProvisionDeviceVault() {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (equipmentId: string) => equipmentService.provisionDeviceVault(equipmentId),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: EQUIPMENT_QUERY_KEYS.vault(data.equipmentId) });
+      queryClient.invalidateQueries({ queryKey: EQUIPMENT_QUERY_KEYS.all });
+      toast.success(t('equipment.vault.provisionSuccessTitle', 'Vault Provisioned'), {
+        description: t('equipment.vault.provisionSuccessDesc', 'Device vault has been configured and connected.'),
+      });
+    },
+    onError: (err: Error) => {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(t('common.error', 'Error'), {
+        description: error.response?.data?.message || error.message || t('equipment.vault.provisionError', 'Failed to provision device vault.'),
+      });
+    },
+  });
+}
+
+/**
+ * Mutation hook to revoke and lock active Vaultwarden credentials for an equipment slot.
+ */
+export function useRevokeDeviceVault() {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: ({ equipmentId, reason }: { equipmentId: string; reason?: string }) =>
+      equipmentService.revokeDeviceVault(equipmentId, reason),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: EQUIPMENT_QUERY_KEYS.vault(data.equipmentId) });
+      queryClient.invalidateQueries({ queryKey: EQUIPMENT_QUERY_KEYS.all });
+      toast.warning(t('equipment.vault.revokeSuccessTitle', 'Vault Session Revoked'), {
+        description: t('equipment.vault.revokeSuccessDesc', 'Device credentials locked and active session terminated.'),
+      });
+    },
+    onError: (err: Error) => {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(t('common.error', 'Error'), {
+        description: error.response?.data?.message || error.message || t('equipment.vault.revokeError', 'Failed to revoke device vault.'),
+      });
+    },
+  });
 }

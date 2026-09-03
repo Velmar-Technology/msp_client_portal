@@ -63,6 +63,7 @@ vi.mock('../api/invoiceService', () => ({
     capturePaypalOrder: vi.fn(),
     createPaypalOrder: vi.fn(),
     getFinancialStats: vi.fn(),
+    requestVaultGrace: vi.fn(),
   },
 }));
 
@@ -188,5 +189,45 @@ describe('BillingPage & InvoiceDetailsModal', () => {
     renderPage(['/billing?invoiceId=inv-001']);
 
     expect(await screen.findByText('Monthly Managed IT Service')).toBeInTheDocument();
+  });
+
+  test('displays BL-702 non-payment alert card and allows activating 24h emergency grace', async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      user: {
+        id: 'usr-1',
+        name: 'John Client',
+        role: 'CLIENT',
+        tenantId: 'ten-1',
+        accountStatus: 'READ_ONLY',
+      },
+    } as any);
+
+    vi.mocked(invoiceService.requestVaultGrace).mockResolvedValue({
+      message: 'Emergency 24h grace extension granted.',
+      granted: true,
+      graceUntil: new Date(Date.now() + 86400000).toISOString(),
+      extensionsCount: 1,
+      maxExtensions: 1,
+    });
+
+    renderPage(['/billing']);
+
+    const alertCard = await screen.findByTestId('billing-non-payment-alert');
+    expect(alertCard).toBeInTheDocument();
+    expect(screen.getByText(/Account Delinquent — Action Required/i)).toBeInTheDocument();
+
+    const graceBtn = screen.getByTestId('request-grace-btn');
+    expect(graceBtn).toBeInTheDocument();
+    fireEvent.click(graceBtn);
+
+    // Confirmation dialog appears
+    const activateBtn = await screen.findByTestId('confirm-grace-activation-btn');
+    fireEvent.click(activateBtn);
+
+    await waitFor(() => {
+      expect(invoiceService.requestVaultGrace).toHaveBeenCalledTimes(1);
+    });
+
+    expect(await screen.findByTestId('emergency-grace-active-badge')).toBeInTheDocument();
   });
 });

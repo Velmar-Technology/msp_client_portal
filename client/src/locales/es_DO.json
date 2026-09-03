@@ -75,8 +75,8 @@
     "viewPlans": "Ver Planes y Mejorar",
     "passwordManager": {
       "title": "Administrador de Contraseñas Corporativo",
-      "desc": "Bóveda cifrada de contraseñas con arquitectura de conocimiento cero impulsada por Bitwarden/Vaultwarden. Almacena, genera y comparte credenciales de forma segura con tu equipo.",
-      "tier": "Plan Avanzado (PL-003) o Corporate (PL-004)",
+      "desc": "Bóveda cifrada de contraseñas con arquitectura de conocimiento cero impulsada por Bitwarden. Almacena, genera y comparte credenciales de forma segura con tu equipo.",
+      "tier": "Plan Avanzado o Corporate",
       "perk1": "Cifrado de extremo a extremo de conocimiento cero AES-256",
       "perk2": "Colecciones personales y compartidas de la organización",
       "perk3": "Restablecimiento y recuperación de acceso a la bóveda en autoservicio"
@@ -84,7 +84,7 @@
     "rmm": {
       "title": "Monitoreo Remoto y Gestión de Parches",
       "desc": "Seguimiento automatizado de telemetría, aplicación de parches de Windows y ejecución remota en todos los equipos.",
-      "tier": "Plan Básico (PL-001) o superior",
+      "tier": "Plan Básico o superior",
       "perk1": "Rendimiento de hardware y telemetría de agentes en tiempo real",
       "perk2": "Actualizaciones automáticas de seguridad y programación de parches",
       "perk3": "Registros de mantenimiento proactivo y telemetría de diagnóstico"
@@ -92,14 +92,14 @@
     "storage": {
       "title": "Almacenamiento en la Nube y Sincronización",
       "desc": "Almacenamiento empresarial en la nube Nextcloud con sincronización colaborativa y copias de seguridad automatizadas.",
-      "tier": "Plan Básico (PL-001) o superior",
+      "tier": "Plan Básico o superior",
       "perk1": "De 25 GB a 100 GB de almacenamiento dedicado en Nextcloud",
       "perk2": "Sincronización cifrada para escritorio y móviles",
       "perk3": "Descargas directas del catálogo de recursos de software"
     },
     "default": {
       "title": "Función de Servicio Premium",
-      "desc": "Esta función está disponible en planes de suscripción MSP calificados.",
+      "desc": "Esta función está disponible en planes de suscripción calificados.",
       "tier": "Plan de Servicio Calificado",
       "perk1": "Resolución prioritaria y respuesta garantizada por SLA",
       "perk2": "Seguridad empresarial y monitoreo continuo"
@@ -257,8 +257,8 @@
     "avatarError": "Error al subir la foto de perfil",
     "phoneNumber": "Número de Teléfono",
     "apiKeyTitle": "Gestión de Claves API",
-    "apiKeySubtitle": "Token de Acceso Programático",
-    "apiKeyDesc": "Genere una clave API JWT para acceso programático. Opcionalmente agregue un nombre y descripción, y elija cuánto tiempo sigue válida.",
+    "apiKeySubtitle": "Token de Acceso",
+    "apiKeyDesc": "Genere una clave API JWT para acceso. Opcionalmente agregue un nombre y descripción, y elija cuánto tiempo sigue válida.",
     "generateApiKey": "Generar Clave API",
     "generatingApiKey": "Generando...",
     "apiKeyLabel": "Su Clave API (Válida por 30 días)",
@@ -266,9 +266,9 @@
     "apiKeyCopied": "¡Clave API copiada al portapapeles!",
     "apiKeySuccess": "Clave API generada exitosamente",
     "apiKeyError": "Error al generar la clave API",
-    "apiKeyWarning": "Mantenga esta clave API segura. Otorga acceso programático con los permisos de su cuenta.",
+    "apiKeyWarning": "Mantenga esta clave API segura. Otorga acceso con los permisos de su cuenta.",
     "apiKeyGenerateDialogTitle": "Generar Clave API",
-    "apiKeyGenerateDialogDesc": "Cree un token de acceso programático. La clave completa solo se muestra una vez al crearla.",
+    "apiKeyGenerateDialogDesc": "Cree un token de acceso. La clave completa solo se muestra una vez al crearla.",
     "apiKeyName": "Nombre de la Clave",
     "apiKeyNamePlaceholder": "p. ej. CI pipeline",
     "apiKeyDescription": "Descripción",
@@ -338,16 +338,16 @@
     "goToDashboard": "Ir al Panel de Control",
     "purposeBadge": "Propósito de la Aplicación y Capacidades",
     "purposeTitle": "¿Qué es Velmar Technology MSP Services?",
-    "purposeDescription": "Velmar Technology MSP Services es una plataforma de software para Proveedores de Servicios Administrados (MSP) de nivel empresarial diseñada para ofrecer soporte técnico helpdesk integral, seguimiento automatizado de escalación de SLA de 1 hora, monitoreo de infraestructura RMM, telemetría de dispositivos, gestión de suscripciones, facturación recurrente y analítica de salud de cuenta para directores virtuales de TI (vCIO).",
+    "purposeDescription": "Velmar Technology MSP Services es una plataforma de software para Proveedores de Servicios Administrados de nivel empresarial diseñada para ofrecer soporte técnico helpdesk integral, seguimiento automatizado de escalación de SLA de 1 hora, monitoreo de infraestructura RMM, telemetría de dispositivos, gestión de suscripciones, facturación recurrente y analítica de salud de cuenta para directores de TI.",
     "featuresTitle": "Arquitectura y Módulos Principales de la Plataforma",
     "featuresSubtitle": "Flujos de trabajo empresariales integrados diseñados para operaciones proactivas de TI y transparencia con los clientes",
     "feature1Title": "Módulo de Soporte Helpdesk y Escalación de SLA",
     "feature1Desc": "Enrutamiento de tickets multinivel, cumplimiento automatizado de SLA de 1 hora para eventos de garantía e interrupción de servicio, despacho de técnicos sopesado por capacidad e historial de respuestas.",
     "feature2Title": "Telemetría RMM y Auto-Recuperación",
-    "feature2Desc": "Monitoreo en tiempo real de estaciones de trabajo y servidores, desduplicación de alertas en ventanas de 15 minutos, auto-resolución automatizada mediante scripts (<300s) y gestión de avisos de parches de seguridad.",
+    "feature2Desc": "Monitoreo en tiempo real de estaciones de trabajo y servidores, desduplicación de alertas en ventanas de 15 minutos, auto-resolución automatizada mediante scripts y gestión de avisos de parches de seguridad.",
     "feature3Title": "Ciclo de Vida de Suscripciones y Facturación Automatizada",
     "feature3Desc": "Niveles de servicios administrados flexibles, generación automatizada de facturas recurrentes, captura de órdenes PayPal REST, conciliación de transferencias bancarias y ajuste de licencias de usuarios.",
-    "feature4Title": "Analítica vCIO y Salud del Cliente",
+    "feature4Title": "Analítica de TI y Salud del Cliente",
     "feature4Desc": "Puntuación de salud compuesta combinando rendimiento de tickets, antigüedad de hardware y postura de seguridad con disparadores automatizados para Revisiones Trimestrales de Negocio (QBR).",
     "ctaTitle": "¿Listo para Optimizar su Infraestructura de TI?",
     "ctaSubtitle": "Acceda a su portal para enviar solicitudes de soporte, monitorear sus dispositivos activos o administrar sus planes de suscripción.",
@@ -358,7 +358,7 @@
   },
   "login": {
     "welcome": "Bienvenido de nuevo",
-    "signInToPortal": "Inicie sesión en Velmar Technology MSP Services",
+    "signInToPortal": "Inicie sesión en Velmar Technology Gestión de Servicios",
     "emailAddress": "Correo Electrónico",
     "password": "Contraseña",
     "rememberMe": "Recordarme",
@@ -1176,6 +1176,18 @@
       "addAdminDeviceSuccessDesc": "El dispositivo {{name}} ha sido registrado y aprovisionado.",
       "fetchFailed": "No se pudieron recuperar las suscripciones activas para la gestión de dispositivos."
   },
+  "equipment": {
+    "vault": {
+      "actionMenu": "Bóveda de Contraseñas del Dispositivo",
+      "title": "Bóveda de Contraseñas del Dispositivo",
+      "status": "Estado de la Bóveda",
+      "active": "Activa y Sincronizada",
+      "unprovisioned": "No Aprovisionada",
+      "locked": "Sesión Bloqueada / Revocada",
+      "provision": "Aprovisionar Bóveda de Dispositivo",
+      "revoke": "Revocar / Bloquear Sesión"
+    }
+  },
   "resources": {
     "title": "Recursos",
     "subtitle": "Descargue software, manuales y documentación según su plan de soporte.",
@@ -1307,7 +1319,19 @@
     "readOnlyBannerTitle": "Cuenta en Modo Solo Lectura (Balance Vencido)",
     "readOnlyBannerDesc": "Su cuenta se encuentra en modo de solo lectura por facturas vencidas (Sección 9.3). La creación de tickets y subida de archivos están restringidas hasta regularizar el pago.",
     "viewInvoices": "Ver Facturas",
-    "rncPlaceholder": "ej. 1-32-12345-6"
+    "rncPlaceholder": "ej. 1-32-12345-6",
+    "nonPaymentAlertTitle": "Cuenta en Mora — Acción Requerida",
+    "nonPaymentAlertDesc": "Su cuenta posee facturas vencidas. Las bóvedas de contraseñas y las modificaciones de la plataforma están congeladas en Modo Solo Lectura para proteger la continuidad operativa. Por favor regularice su balance antes de la purga técnica del Día 30.",
+    "requestEmergencyGraceBtn": "Solicitar Acceso de Emergencia 24h",
+    "requestingEmergencyGrace": "Activando Gracia 24h...",
+    "emergencyGraceActiveBadge": "Gracia de Emergencia 24h Activa",
+    "emergencyGraceActiveDesc": "Acceso temporal de emergencia a la bóveda concedido hasta {{time}}. Por favor complete el pago para evitar suspensión.",
+    "emergencyGraceConfirmTitle": "Solicitar Acceso de Emergencia 24h a la Bóveda",
+    "emergencyGraceConfirmDesc": "Dispone de 1 extensión de emergencia de 24 horas por ciclo de mora. Esto reactiva temporalmente el acceso a la bóveda de contraseñas mientras se procesa su transferencia bancaria o pago contable.",
+    "emergencyGraceActivatedToast": "Gracia de emergencia de 24 horas activada exitosamente.",
+    "emergencyGraceExhausted": "La extensión de emergencia de 24 horas ya ha sido utilizada en este ciclo de facturación.",
+    "payOverdueBalanceBtn": "Pagar Facturas Vencidas",
+    "activate24hAccess": "Activar Acceso 24h"
   },
   "help": {
     "title": "Ayuda y Documentación",
@@ -1976,6 +2000,9 @@
     "vaultTitle": "Vaultwarden Enterprise Alojado",
     "activeStatus": "Activo y Conocimiento Cero",
     "vaultSubtitle": "La bóveda cifrada de su organización está activa. Las contraseñas maestras nunca se comparten ni se almacenan en nuestros servidores.",
+    "readOnlyAlertTitle": "Bóveda en Modo Solo Lectura (BL-702)",
+    "readOnlyAlertDesc": "Las contraseñas existentes pueden autocompletarse y consultarse, pero la creación y edición de credenciales están bloqueadas por facturas pendientes.",
+    "resolveBillingCta": "Ver Facturas y Regularizar",
     "launchVault": "Abrir Bóveda Web",
     "serverUrlLabel": "URL de Servidor Personalizado:",
     "copyUrl": "Copiar URL del Servidor",
@@ -2002,5 +2029,38 @@
     "resetDialogCancel": "Cancelar",
     "resetSuccessTitle": "Invitación Enviada",
     "resetSuccessDesc": "Se ha enviado una nueva invitación de Bitwarden a su correo electrónico. Revise su bandeja de entrada para definir una nueva Contraseña Maestra."
+  },
+  "equipment": {
+    "vault": {
+      "modalTitle": "Bóveda de Contraseñas del Dispositivo",
+      "deviceGeneric": "Terminal Administrado",
+      "actionMenu": "Bóveda de Contraseñas del Dispositivo",
+      "loading": "Cargando estado de la bóveda del dispositivo...",
+      "guidanceTitle": "Bóveda de Credenciales Scoped al Dispositivo",
+      "guidanceDesc": "Las contraseñas asignadas a esta estación de trabajo pueden ser autocompletadas por los colaboradores sin exponer las credenciales en texto plano. Los administradores del cliente mantienen el botón de revocación remota en 1 clic.",
+      "identityHeader": "Identidad de Bóveda del Dispositivo",
+      "fieldAccount": "Usuario de Máquina",
+      "fieldCollection": "Colección Bitwarden",
+      "fieldLastSync": "Última Sincronización",
+      "notAssigned": "No Asignado",
+      "confirmRevokeTitle": "Confirmar Revocación de Emergencia",
+      "confirmRevokeDesc": "Esto invalidará instantáneamente todas las sesiones activas de Bitwarden en este equipo. Las contraseñas dejarán de autocompletarse hasta que se vuelva a aprovisionar.",
+      "btnConfirmRevoke": "Revocar Acceso Ahora",
+      "btnRevoke": "Revocar Bóveda del Dispositivo",
+      "btnProvision": "Aprovisionar Bóveda",
+      "btnReEnroll": "Re-enrolar Bóveda",
+      "statusActive": "Activo y Protegido",
+      "statusLocked": "Bloqueado / Revocado",
+      "statusUnprovisioned": "No Configurado",
+      "provisionSuccessTitle": "Bóveda Aprovisionada",
+      "provisionSuccessDesc": "La bóveda del dispositivo ha sido configurada y conectada.",
+      "provisionError": "Error al aprovisionar la bóveda del dispositivo.",
+      "revokeSuccessTitle": "Sesión de Bóveda Revocada",
+      "revokeSuccessDesc": "Las credenciales del equipo han sido bloqueadas y la sesión activa terminada.",
+      "revokeError": "Error al revocar la bóveda del dispositivo.",
+      "perk1": "Autocompletado de credenciales en estaciones de trabajo sin exposición de texto plano",
+      "perk2": "Colecciones de Bitwarden vinculadas al equipo y custodia de identidad de máquina",
+      "perk3": "Bloqueo remoto de emergencia y revocación de sesión en 1 clic"
+    }
   }
 }

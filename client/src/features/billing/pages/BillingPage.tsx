@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Download,
   CreditCard,
@@ -7,7 +7,10 @@ import {
   XCircle,
   MoreHorizontal,
   ChevronRight,
+  Clock,
+  ShieldAlert,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Page } from '@/components/Page';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,12 +20,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from '@/components/ui/alert-dialog';
 import { DataTable, DataTableColumnHeader } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useAuth } from '@/hooks/useAuth';
 import type { InvoiceContract } from '@shared/contracts';
 import { useBilling } from '../hooks/useBilling';
+import { useRequestVaultGrace } from '../api/useBillingQueries';
 import { PayModal } from '../components/PayModal';
 import { MarkPaidConfirmModal } from '../components/MarkPaidConfirmModal';
 import { CancelInvoiceConfirmModal } from '../components/CancelInvoiceConfirmModal';
@@ -32,6 +46,9 @@ export function BillingPage() {
   const { user } = useAuth();
   const isClient = user?.role === 'CLIENT';
   const isAdmin = user?.role === 'ADMIN';
+  const requestGraceMutation = useRequestVaultGrace();
+  const [isGraceConfirmOpen, setIsGraceConfirmOpen] = useState(false);
+  const [graceActiveUntil, setGraceActiveUntil] = useState<string | null>(null);
 
   const {
     t,
@@ -72,6 +89,33 @@ export function BillingPage() {
     closeDetailsModal,
     fetchInvoices,
   } = useBilling();
+
+  const isDelinquent =
+    user?.accountStatus === 'READ_ONLY' ||
+    user?.accountStatus === 'SUSPENDED' ||
+    invoices.some((i) => i.status === 'OVERDUE');
+
+  const overdueInvoice = invoices.find(
+    (i) => i.status === 'OVERDUE' || (i.status === 'PENDING' && new Date(i.due_date) < new Date())
+  );
+
+  const handleConfirmGrace = async () => {
+    try {
+      const res = await requestGraceMutation.mutateAsync();
+      toast.success(
+        t('billing.emergencyGraceActivatedToast', 'Emergency 24-hour grace activated successfully.')
+      );
+      setGraceActiveUntil(res.graceUntil);
+      setIsGraceConfirmOpen(false);
+    } catch (err: any) {
+      const msg =
+        err.response?.data?.message ||
+        err.message ||
+        t('billing.emergencyGraceExhausted', 'Emergency 24-hour grace extension has already been used for this billing cycle.');
+      toast.error(msg);
+      setIsGraceConfirmOpen(false);
+    }
+  };
 
   const getStatusLabel = useCallback(
     (status: string) => {
@@ -318,6 +362,88 @@ export function BillingPage() {
 
   return (
     <Page title={t('billing.title')} subtitle={t('billing.subtitle')}>
+      {/* BL-702 Non-Payment Scale & Emergency Grace Alert Card */}
+      {isDelinquent && (
+        <div
+          data-testid="billing-non-payment-alert"
+          className="mb-6 rounded-xl border border-destructive/30 bg-linear-to-r from-destructive/10 via-destructive/5 to-transparent p-4 sm:p-5 shadow-xs"
+        >
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="p-2.5 rounded-xl bg-destructive/15 text-destructive shrink-0 mt-0.5">
+                <ShieldAlert className="h-5 w-5" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-sm font-bold font-heading text-destructive">
+                    {t('billing.nonPaymentAlertTitle', 'Account Delinquent — Action Required')}
+                  </h3>
+                  <Badge
+                    variant="outline"
+                    className="bg-destructive/10 text-destructive border-destructive/20 text-[10px] uppercase font-bold"
+                  >
+                    {user?.accountStatus || 'OVERDUE'}
+                  </Badge>
+                  {graceActiveUntil && (
+                    <Badge
+                      variant="outline"
+                      data-testid="emergency-grace-active-badge"
+                      className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px] font-semibold"
+                    >
+                      <Clock className="h-2.5 w-2.5 mr-1" />
+                      {t('billing.emergencyGraceActiveBadge', 'Emergency 24h Grace Active')}
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground max-w-2xl leading-relaxed">
+                  {graceActiveUntil
+                    ? t('billing.emergencyGraceActiveDesc', {
+                        time: new Date(graceActiveUntil).toLocaleString(),
+                      })
+                    : t('billing.nonPaymentAlertDesc')}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+              {isClient && !graceActiveUntil && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  data-testid="request-grace-btn"
+                  className="h-7 text-xs font-semibold gap-1.5 border-amber-500/40 hover:bg-amber-500/15 text-amber-800 dark:text-amber-200 cursor-pointer"
+                  onClick={() => setIsGraceConfirmOpen(true)}
+                  disabled={requestGraceMutation.isPending}
+                >
+                  {requestGraceMutation.isPending ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Clock className="h-3 w-3 text-amber-500" />
+                  )}
+                  {requestGraceMutation.isPending
+                    ? t('billing.requestingEmergencyGrace', 'Activating 24h Grace...')
+                    : t('billing.requestEmergencyGraceBtn', 'Request 24h Emergency Access')}
+                </Button>
+              )}
+
+              {isClient && overdueInvoice && (
+                <Button
+                  type="button"
+                  size="sm"
+                  data-testid="pay-overdue-balance-btn"
+                  className="h-7 text-xs font-semibold gap-1.5 bg-destructive hover:bg-destructive/90 text-white cursor-pointer"
+                  onClick={() => openPayModal(overdueInvoice)}
+                >
+                  <CreditCard className="h-3 w-3" />
+                  {t('billing.payOverdueBalanceBtn', 'Pay Overdue Invoices')}
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <DataTable
         columns={columns}
         data={invoices}
@@ -393,6 +519,34 @@ export function BillingPage() {
         loading={cancelling}
         t={t}
       />
+      <AlertDialog open={isGraceConfirmOpen} onOpenChange={setIsGraceConfirmOpen}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-sm font-bold">
+              <Clock className="h-4 w-4 text-amber-500" />
+              {t('billing.emergencyGraceConfirmTitle', 'Request 24-Hour Emergency Vault Access')}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed">
+              {t(
+                'billing.emergencyGraceConfirmDesc',
+                'You are granted a 1-time emergency 24-hour bypass per overdue billing cycle. This immediately reactivates temporary password vault access while your accounting payment or bank wire clears.'
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="h-7 text-xs cursor-pointer">
+              {t('common.cancel', 'Cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              data-testid="confirm-grace-activation-btn"
+              className="h-7 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white cursor-pointer"
+              onClick={handleConfirmGrace}
+            >
+              {t('billing.activate24hAccess', 'Activate 24h Access')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Page>
   );
 }

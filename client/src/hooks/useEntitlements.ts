@@ -11,6 +11,8 @@ export interface UseEntitlementsReturn {
   isFeatureLocked: (featureCode?: string) => boolean;
   /** Deduplicated array of active feature codes across all active subscriptions */
   activeFeatures: string[];
+  /** Checks if a specific plan (e.g. assigned to an equipment slot) includes a required feature code */
+  hasPlanFeature: (planId?: string | null, featureCode?: string) => boolean;
   /** Returns the minimum recommended upgrade plan ID for a feature */
   getRequiredTierForFeature: (featureCode?: string) => string;
   /** True if subscription entitlements are resolving */
@@ -107,10 +109,38 @@ export function useEntitlements(): UseEntitlementsReturn {
     return FEATURE_UPGRADE_TIER_MAP[featureCode] || "PL-003";
   }, []);
 
+  const hasPlanFeature = useCallback(
+    (planId?: string | null, featureCode?: string): boolean => {
+      if (!featureCode) return true;
+      if (!isClient) return true; // Admin & Tech bypass
+      if (!planId) return false;
+
+      const plan = plans.find((p) => p.id === planId);
+      if (!plan || !Array.isArray(plan.features)) return false;
+
+      const featureSet = new Set<string>();
+      for (const feat of plan.features) {
+        if (typeof feat === "string") {
+          featureSet.add(feat);
+        } else if (typeof feat === "object" && feat !== null) {
+          const item = feat as { code?: string; included?: boolean };
+          if (item.included !== false && item.code) {
+            featureSet.add(item.code);
+          }
+        }
+      }
+
+      const expanded = expandFeatureBundles(featureSet);
+      return expanded.includes(featureCode);
+    },
+    [isClient, plans]
+  );
+
   return {
     hasFeature,
     isFeatureLocked,
     activeFeatures,
+    hasPlanFeature,
     getRequiredTierForFeature,
     isLoading: isClient ? (isLoadingSubs || isLoadingPlans) : false,
     hasActiveSubscription: activeSubscriptions.length > 0,

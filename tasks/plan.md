@@ -1,93 +1,82 @@
-# Implementation Plan: SOTA React Router v7 Data Mode & Colocated Feature Route Manifests (ADR-003)
+# Implementation Plan: BL-702 Graceful Password Vault Non-Payment Handling
 
 ## Overview
-Elevate `msp_client_portal` frontend routing architecture to State-of-the-Art (SOTA) by transitioning from legacy declarative JSX `<Routes>` to **React Router v7 Data Router (`createBrowserRouter`)** integrated with **ADR-001 (Contract-First + TanStack Query v5 Cache Preloading)** and **ADR-002 (Colocated Feature Route Manifests)**.
-
-Work is structured into 4 sequential milestones:
-1. **Milestone 1 — Core Router Infrastructure & ADR-003 Foundation (P0):** Formalize ADR-003, implement typed route utilities, route handles, and root `createBrowserRouter` assembly in `App.tsx`.
-2. **Milestone 2 — Feature Route Manifests (Phase A: Auth, Tickets, Billing & Subscriptions) (P0):** Colocate route definitions and TanStack Query `ensureQueryData` / `prefetchQuery` loaders in high-traffic business domains.
-3. **Milestone 3 — Feature Route Manifests (Phase B: Equipment, RMM, CRM, Financial, Users, Dashboard & Settings) (P1):** Complete decentralized route manifests across all remaining 8 feature domains.
-4. **Milestone 4 — Architecture Gates, Preloading & Legacy Purge (P1):** Add AST test rules for route manifests, optimize hover/intent chunk & query prefetching, and purge legacy `protected-routes.tsx`.
+Implement progressive, non-adversarial enforcement for password manager services under the canonical 4-tier non-payment scale (`BL-702`).
+Prevents operational paralysis and the "Hostage Catch-22" by maintaining credential retrieval and workstation autofill in Read-Only mode on Day 5, offering an emergency 24-hour self-service grace extension on Day 15, and securely dispatching a password-encrypted export archive to the verified Client Admin prior to permanent technical deletion on Day 30.
 
 ---
 
-## Architecture Decisions & Constraints
+## Architecture Decisions
 
-- **Decentralized Colocated Manifests (ADR-002):** Every business module in `client/src/features/<domain>/` exports a `routes.tsx` containing its typed `RouteObject[]` slice. Deep imports remain forbidden.
-- **Contract-Coupled Loaders (ADR-001):** Route loaders execute `queryClient.ensureQueryData` or `queryClient.prefetchQuery` using `queryOptions()` derived directly from `@shared/contracts` schemas.
-- **Zero-Flicker Layout Transitions:** Component chunks (`lazy: () => import(...)`) and server query caches load in parallel before navigation finishes, accompanied by localized Suspense skeletons (`DashboardSkeleton`, `TablePageSkeleton`, `DetailSkeleton`).
-- **Unified Role & Feature Guards:** Authentication, RBAC (`allowedRoles`), subscription feature entitlement (`requiredFeature`), and breadcrumb resolution (`handle.crumb`) are declared natively on route `handle` metadata.
-- **Backward Compatibility & Zero Regressions:** Existing test suites (127+ server tests, client vitest, arch tests, a11y) must remain 100% green at every checkpoint.
+1. **Vault Frozen in Time (Day 5 READ_ONLY):**
+   - Collections in Vaultwarden set to `readOnly: true`.
+   - Existing credentials remain readable and autofillable; creation of new credentials, member invitations, and secret modifications are rejected.
+2. **Captive Gateway & Emergency 24h Grace Extension (Day 15 SUSPENDED):**
+   - Web Vault access is intercepted by a billing paywall modal.
+   - Client Admins can activate a 1-time "Emergency 24-Hour Grace Extension" in `/billing` to unblock access while payments or wire transfers clear.
+   - `tenants.vault_grace_extension_until` and `vault_grace_extensions_count` enforce anti-abuse limits (max 1 self-service extension per overdue cycle).
+3. **Encrypted Escrow Archive Before Deletion (Day 30 PURGED):**
+   - Automatically generates a password-encrypted JSON export of the tenant's Vaultwarden organization.
+   - Sends the encrypted backup directly to the Client Admin's verified email address.
+   - Deletes live organization collections from the Vaultwarden instance, satisfying storage liberation with zero liability.
+4. **Automated Account Restoration:**
+   - When overdue invoices are marked `PAID` or captured via PayPal, `NonPaymentSuspensionService.restoreAccountIfPaid` unlocks Vaultwarden collections (`setOrganizationReadOnly(tenantId, false)`), resets grace counters, and restores live access.
 
 ---
 
 ## Dependency Graph
 
 ```
-Milestone 1: Core Router Infrastructure & ADR-003 (P0)
-   ├── Task 1: Formalize ADR-003 Decision Record
-   ├── Task 2: Shared Route Types, Handles & Loader Helpers
-   └── Task 3: Root createBrowserRouter & App.tsx RouterProvider
-   └── Checkpoint 1: Core Router Infrastructure Active
+Phase 1: Database Schema & Contracts
+   ├── 1.1 Add tenant vault grace columns (migration 041)
+   ├── 1.2 Update Drizzle tenant schema & shared types
+   ├── 1.3 Add RequestVaultGrace contracts in @shared/contracts
+   └── Checkpoint 1: Database schema & contracts compile clean
           │
           ▼
-Milestone 2: Feature Route Manifests - Phase A (P0)
-   ├── Task 4: Auth & Public Route Manifests (auth, public)
-   ├── Task 5: Tickets Domain Route Manifest with Query Loaders
-   └── Task 6: Billing & Subscriptions Route Manifests
-   └── Checkpoint 2: Core Business Route Slices Verified
+Phase 2: Backend Vaultwarden & Non-Payment Scale Services
+   ├── 2.1 VaultwardenService read-only toggle & encrypted export methods
+   ├── 2.2 NonPaymentSuspensionService Day 5, Day 15 grace & Day 30 export
+   ├── 2.3 NonPaymentSuspensionService restoration loop
+   ├── 2.4 Billing controller & POST /api/v1/billing/request-vault-grace
+   └── Checkpoint 2: Backend unit tests green (NonPayment + Vaultwarden)
           │
           ▼
-Milestone 3: Feature Route Manifests - Phase B (P1)
-   ├── Task 7: Equipment & RMM Maintenance Route Manifests
-   ├── Task 8: CRM & Financial Route Manifests
-   └── Task 9: Users, Settings, Dashboard & System Route Manifests
-   └── Checkpoint 3: All 12 Domains Colocated & Assembled
+Phase 3: Frontend Client Portal Integration
+   ├── 3.1 TanStack Query hook useRequestVaultGrace in features/billing
+   ├── 3.2 Emergency Grace & Non-Payment Alert Card in BillingPage
+   ├── 3.3 Vault Read-Only notice banner in PasswordManagerPage
+   ├── 3.4 Bilingual localization in en_US.json and es_DO.json
+   └── Checkpoint 3: Frontend build passes & UI renders cleanly
           │
           ▼
-Milestone 4: Architecture Gates, Preloading & Purge (P1)
-   ├── Task 10: AST Boundary & Architecture Tests for Route Manifests
-   ├── Task 11: Intent Preloading & Cache Warm-Up on Link Hover
-   └── Task 12: Purge Legacy protected-routes.tsx & Run Verification Gates
-   └── Checkpoint 4: SOTA DoD Cleared
+Phase 4: Verification & Quality Gates
+   ├── 4.1 Vitest unit tests for backend and frontend
+   ├── 4.2 Monorepo typecheck & build gate (npm run build)
+   └── Checkpoint 4: Definition of Done verified
 ```
 
 ---
 
-## Task List Index
+## Phase Breakdown
 
-Detailed tasks with full acceptance criteria and file lists are recorded in [`tasks/todo.md`](./todo.md).
+### Phase 1: Database Schema & Contracts
+- **Task 1.1:** Create SQL migration `041_add_tenant_vault_grace_columns.sql` adding `vault_grace_extension_until` and `vault_grace_extensions_count` to `tenants`.
+- **Task 1.2:** Update `server/src/shared/db/schema.ts` and `server/src/shared/types/index.ts`.
+- **Task 1.3:** Define Zod contracts in `packages/contracts/src/billing/` for requesting vault grace. Rebuild `@shared/contracts`.
 
-### Milestone 1: Core Router Infrastructure & ADR-003 Foundation
-- [x] Task 1: Formalize ADR-003 Decision Record (`docs/decisions/ADR-003-sota-react-router-data-mode-and-feature-manifests.md`)
-- [x] Task 2: Implement Shared Route Types, Route Handles & Loader Utilities (`client/src/routes/types.ts`, `routeUtils.tsx`)
-- [x] Task 3: Build Root `createBrowserRouter` Assembly & Wire `App.tsx` `<RouterProvider />`
-- [x] Checkpoint 1: Core Router Infrastructure Active
+### Phase 2: Backend Vaultwarden & Non-Payment Scale Services
+- **Task 2.1:** Enhance `VaultwardenService` with `setOrganizationReadOnly(orgId: string, readOnly: boolean)` and `exportOrganizationEncrypted(orgId: string)`.
+- **Task 2.2:** Update `NonPaymentSuspensionService.evaluateOverdueAccounts` to enforce Day 5 read-only, check Day 15 grace extension bypass, and execute Day 30 export-before-purge.
+- **Task 2.3:** Update `restoreAccountIfPaid` to re-enable write access on Vaultwarden and reset grace counters.
+- **Task 2.4:** Add `POST /api/v1/billing/request-vault-grace` endpoint in `billing.routes.ts` and `BillingController`.
 
-### Milestone 2: Feature Route Manifests (Phase A: Auth, Tickets, Billing & Subscriptions)
-- [x] Task 4: Colocate Auth & Public Route Manifests (`features/auth/routes.tsx`, `features/auth/index.ts`)
-- [x] Task 5: Colocate Tickets Domain Route Manifest with TanStack Query Loaders (`features/tickets/routes.tsx`)
-- [x] Task 6: Colocate Billing & Subscriptions Domain Route Manifests (`features/billing/routes.tsx`, `features/subscriptions/routes.tsx`)
-- [x] Checkpoint 2: Core Business Route Slices Verified
+### Phase 3: Frontend Client Portal Integration
+- **Task 3.1:** Implement `useRequestVaultGrace` mutation hook in `client/src/features/billing/api/`.
+- **Task 3.2:** Implement Non-Payment Status Card & "Request 24h Emergency Access" button in `BillingPage.tsx`.
+- **Task 3.3:** Add Read-Only warning banner in `PasswordManagerPage.tsx`.
+- **Task 3.4:** Add i18n translation strings across `en_US.json` and `es_DO.json`.
 
-### Milestone 3: Feature Route Manifests (Phase B: Equipment, RMM, CRM, Financial, Users, Dashboard & Settings)
-- [x] Task 7: Colocate Equipment & RMM Maintenance Route Manifests (`features/equipment/routes.tsx`, `features/rmm/routes.tsx`)
-- [x] Task 8: Colocate CRM & Financial Domain Route Manifests (`features/crm/routes.tsx`, `features/financial/routes.tsx`)
-- [x] Task 9: Colocate Users, Settings, Dashboard & System Route Manifests (`features/users/routes.tsx`, `features/settings/routes.tsx`, `features/dashboard/routes.tsx`, `features/system/routes.tsx`)
-- [x] Checkpoint 3: All 12 Domains Colocated & Assembled
-
-### Milestone 4: Architecture Gates, Preloading & Legacy Purge
-- [x] Task 10: Fortify AST Architecture & Boundary Tests for Route Manifests (`client/tests/arch/feature-architecture.test.ts`)
-- [x] Task 11: Implement SOTA Route Preloading & Hover Prefetching Hooks (`client/src/lib/preloadRoute.ts`)
-- [x] Task 12: Purge Legacy `protected-routes.tsx` & Run Monorepo Quality Gates
-- [x] Checkpoint 4: SOTA Definition of Done Cleared
-
----
-
-## Risks and Mitigations
-
-| Risk | Impact | Mitigation |
-| :--- | :---: | :--- |
-| **Blocking Route Loaders Delaying Transitions:** Heavy queries in `loader` could make page transitions feel sluggish on slow 3G. | High | Use `queryClient.prefetchQuery` for non-critical secondary data and only `ensureQueryData` for critical entity headers; pair with top-level navigation progress bar (`useNavigation().state === "loading"`). |
-| **Circular Dependencies during Feature Manifest Assembly:** Aggregating all feature manifests into `appRouter.tsx` could trigger circular dependencies if features import each other. | Medium | Enforce that route manifests only import from their own feature directory and export pure `RouteObject[]` arrays via public gateways. |
-| **Auth Session State Hydration Timing:** If `createBrowserRouter` runs before auth token is validated, false redirect to `/login` could occur. | High | Encapsulate auth guard inside layout routes / `<RouteGuard>` element components that reactively read `useAuth()` state rather than executing one-time loader redirects for session validation. |
+### Phase 4: Verification & Quality Gates
+- **Task 4.1:** Write unit tests in `NonPaymentSuspensionService.test.ts` and `VaultwardenService.test.ts`.
+- **Task 4.2:** Run full workspace quality gates (`build:packages`, `server build`, `client build`, test suites).

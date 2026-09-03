@@ -1,266 +1,172 @@
-# Implementation Tasks: SOTA React Router v7 Data Mode & Colocated Feature Route Manifests (ADR-003)
+# Task Breakdown: BL-702 Graceful Password Vault Non-Payment Handling
 
-## Milestone 1: Core Router Infrastructure & ADR-003 Foundation (P0)
+## Phase 1: Database Schema & Contracts
 
-### Task 1: Formalize ADR-003 Decision Record
-**Description:** Create `docs/decisions/ADR-003-sota-react-router-data-mode-and-feature-manifests.md` documenting the transition from declarative JSX `<Routes>` to React Router v7 Data Router (`createBrowserRouter`), TanStack Query cache loaders, colocated feature manifests (`features/<domain>/routes.tsx`), and route handle guard patterns.
+### Task 1.1: Add Tenant Vault Grace Columns to PostgreSQL & Drizzle
+**Description:** Add `vault_grace_extension_until` (timestamp) and `vault_grace_extensions_count` (integer default 0) to `tenants` table schema via migration `041_add_tenant_vault_grace_columns.sql` and update Drizzle schema definitions.
 **Acceptance criteria:**
-- [x] ADR-003 document created following the standard format (Status, Context, Decision, Alternatives Considered, Consequences).
-- [x] References ADR-001 (TanStack Query delegation) and ADR-002 (Colocated feature architecture).
-- [x] Explains route `loader` integration with `queryClient.ensureQueryData` and route `handle` metadata.
+- [x] Migration `041_add_tenant_vault_grace_columns.sql` created in `server/src/shared/db/migrations/`.
+- [x] `tenants` Drizzle table in `server/src/shared/db/schema.ts` includes the two new columns with default values.
+- [x] Domain types in `server/src/shared/types/index.ts` updated.
 **Verification:**
-- [x] File exists and renders valid markdown.
-- [x] Cross-references in `tasks/plan.md` resolve correctly.
-**Dependencies:** None  
+- [x] `npm -w server run build` compiles cleanly.
+**Dependencies:** None
 **Files touched:**
-- `docs/decisions/ADR-003-sota-react-router-data-mode-and-feature-manifests.md`
-**Estimated scope:** Small (1 file)
+- `server/src/shared/db/migrations/041_add_tenant_vault_grace_columns.sql`
+- `server/src/shared/db/schema.ts`
+- `server/src/shared/types/index.ts`
+**Estimated scope:** Small (3 files)
 
 ---
 
-### Task 2: Implement Shared Route Types, Route Handles & Loader Utilities
-**Description:** Implement `client/src/routes/types.ts` and `client/src/routes/routeUtils.tsx` providing standard route `handle` interfaces (`AppRouteHandle` for breadcrumbs, `allowedRoles`, and `requiredFeature`), error boundary wrappers (`ChunkErrorBoundary`), and a generic loader helper function (`createRouteLoader`) that binds TanStack Query `queryClient`.
+### Task 1.2: Define Vault Grace API Contracts in `@shared/contracts`
+**Description:** Define request and response schemas for requesting a 24-hour vault grace extension in `@shared/contracts`.
 **Acceptance criteria:**
-- [x] `AppRouteHandle` typed with `crumb?: CrumbResolver`, `allowedRoles?: string[]`, `requiredFeature?: FeatureCode`, and `title?: string`.
-- [x] `createRouteLoader` helper wraps query options safely, handling prefetch without breaking on network failure.
-- [x] `RouteGuardWrapper` provides declarative role and feature gating inside router layouts.
+- [x] `RequestVaultGraceInputSchema` created (optional notes/reason).
+- [x] `VaultGraceStatusResponseSchema` created (fields: `granted: boolean`, `graceUntil: string`, `extensionsCount: number`, `message: string`).
+- [x] Schemas and types re-exported from `@shared/contracts`.
 **Verification:**
-- [x] TypeScript compilation succeeds: `npx tsc --noEmit -p client/tsconfig.app.json`
-- [x] Unit tests for route helper utilities pass in Vitest.
-**Dependencies:** Task 1  
+- [x] `npm run build:packages` succeeds with exit code 0.
+**Dependencies:** None
 **Files touched:**
-- `client/src/routes/types.ts`
-- `client/src/routes/routeUtils.tsx`
-- `client/src/routes/routeUtils.test.tsx`
+- `packages/contracts/src/billing/billing.contract.ts`
+- `packages/contracts/src/index.ts`
+**Estimated scope:** Small (2 files)
+
+---
+
+## Checkpoint 1: Database Schema & Contracts Active
+- [x] `npm run build:packages` succeeds.
+- [x] `npm -w server run build` passes.
+
+---
+
+## Phase 2: Backend Vaultwarden & Non-Payment Scale Services
+
+### Task 2.1: Implement Read-Only and Encrypted Export in `VaultwardenService`
+**Description:** Add methods to `VaultwardenService` to toggle organization read-only permissions and generate encrypted organization vault exports, with graceful mock simulation for test/dev environments.
+**Acceptance criteria:**
+- [x] `setOrganizationReadOnly(orgId: string, readOnly: boolean)` updates collection access policies to read-only.
+- [x] `exportOrganizationEncrypted(orgId: string)` retrieves an encrypted backup of the tenant organization's vault.
+- [x] Offline simulation mode supported when `VAULTWARDEN_ADMIN_TOKEN` is not present.
+**Verification:**
+- [x] `VaultwardenService.test.ts` passes with new test cases (19/19 tests passing).
+**Dependencies:** Checkpoint 1
+**Files touched:**
+- `server/src/modules/system/services/VaultwardenService.ts`
+- `server/src/modules/system/services/VaultwardenService.test.ts`
+**Estimated scope:** Medium (2 files)
+
+---
+
+### Task 2.2: Integrate Graceful Vault Lifecycle into `NonPaymentSuspensionService`
+**Description:** Enhance `NonPaymentSuspensionService.evaluateOverdueAccounts` to freeze Vaultwarden collections to read-only on Day 5, check active grace periods on Day 15 before suspending access, and dispatch an encrypted export before purging on Day 30.
+**Acceptance criteria:**
+- [x] Day 5 (`READ_ONLY`): Calls `vaultwardenSvc.setOrganizationReadOnly(tenantId, true)`.
+- [x] Day 15 (`SUSPENDED`): If `tenant.vault_grace_extension_until > now`, skips user lockout and logs grace active; otherwise locks out users.
+- [x] Day 30 (`PURGED`): Generates encrypted export, dispatches email to Client Admin, then executes deletion.
+- [x] `restoreAccountIfPaid`: When all invoices settled, unfreezes collections (`setOrganizationReadOnly(tenantId, false)`) and resets grace counters.
+**Verification:**
+- [x] `npx vitest run src/modules/billing/services/NonPaymentSuspensionService.test.ts` passes 100% (12/12 tests passing).
+**Dependencies:** Task 2.1
+**Files touched:**
+- `server/src/modules/billing/services/NonPaymentSuspensionService.ts`
+- `server/src/modules/billing/services/NonPaymentSuspensionService.test.ts`
+- `server/src/shared/utils/emailService.ts`
 **Estimated scope:** Medium (3 files)
 
 ---
 
-### Task 3: Build Root `createBrowserRouter` Assembly & Wire `App.tsx` `<RouterProvider />`
-**Description:** Create `client/src/routes/appRouter.tsx` using `createBrowserRouter` that defines the top-level route tree (Public layout routes, Authenticated AppLayout shell, and 404 catch-all). Refactor `client/src/App.tsx` to replace `<BrowserRouter><Routes>...</Routes></BrowserRouter>` with `<RouterProvider router={router} />`.
+### Task 2.3: Implement Grace Extension Endpoint in Billing Domain
+**Description:** Add service method, controller action, and Express route `POST /api/v1/invoices/request-vault-grace` allowing Client Admins to request a 24-hour grace extension.
 **Acceptance criteria:**
-- [x] `client/src/routes/appRouter.tsx` exports `router = createBrowserRouter(...)`.
-- [x] Top-level layout handles auth check (`ProtectedRoute`) and global Suspense fallback.
-- [x] `client/src/App.tsx` renders `<RouterProvider router={router} />` cleanly under `QueryClientProvider` and `ThemeProvider`.
-- [x] Application compiles and renders without browser errors.
+- [x] Validates caller is client admin or admin for the tenant.
+- [x] Rejects with `ConflictError` if grace extension was already used during the current overdue cycle (`extensionsCount >= 1`).
+- [x] Sets `vault_grace_extension_until = now + 24h` and increments counter.
+- [x] Temporarily restores Vaultwarden access during active grace period.
 **Verification:**
-- [x] Build succeeds: `npm -w client run build`
-- [x] Tests pass: `npm -w client run test:run`
-**Dependencies:** Task 2  
+- [x] Unit/integration tests pass for billing grace endpoint.
+**Dependencies:** Task 2.2
 **Files touched:**
-- `client/src/routes/appRouter.tsx`
-- `client/src/App.tsx`
+- `server/src/modules/billing/services/NonPaymentSuspensionService.ts`
+- `server/src/modules/billing/controllers/InvoiceController.ts`
+- `server/src/modules/billing/routes/invoice.routes.ts`
+**Estimated scope:** Medium (3 files)
+
+---
+
+## Checkpoint 2: Backend Logic Verified
+- [x] `npm -w server run test` passes with zero regressions (79/79 suites, 772/772 tests passing).
+- [x] `npm -w server run build` compiles cleanly.
+
+---
+
+## Phase 3: Frontend Client Portal Integration
+
+### Task 3.1: Add Billing Grace Mutation Hook & Service
+**Description:** Add `requestVaultGrace` to `invoiceService.ts` and `useRequestVaultGrace` mutation hook in `client/src/features/billing/`.
+**Acceptance criteria:**
+- [x] Service method calls `POST /api/v1/invoices/request-vault-grace`.
+- [x] React Query mutation invalidates billing and tenant queries on success.
+**Verification:**
+- [x] `npm -w client run build` compiles without type errors.
+**Dependencies:** Checkpoint 2
+**Files touched:**
+- `client/src/features/billing/api/invoiceService.ts`
+- `client/src/features/billing/api/useBillingQueries.ts`
 **Estimated scope:** Small (2 files)
 
 ---
 
-## Checkpoint 1: Core Router Infrastructure Active
-- [x] ADR-003 documented and committed.
-- [x] Typed route handles and loader utilities tested in Vitest.
-- [x] `App.tsx` running on `createBrowserRouter` with `<RouterProvider />`.
-- [x] Zero TypeScript compilation or lint errors.
-
----
-
-## Milestone 2: Feature Route Manifests (Phase A: Auth, Tickets, Billing & Subscriptions) (P0)
-
-### Task 4: Colocate Auth & Public Route Manifests
-**Description:** Create `client/src/features/auth/routes.tsx` exporting `authRoutes: RouteObject[]` (`/login`, `/register`, `/forgot-password`, `/reset-password`). Colocate public routes in `client/src/routes/publicRoutes.tsx` (`/`, `/terms`, `/privacy`). Wire `authRoutes` to `client/src/features/auth/index.ts` and `appRouter.tsx`.
+### Task 3.2: Implement Non-Payment Status Card & Grace Button in `BillingPage.tsx`
+**Description:** Display a non-payment notification banner/card in `BillingPage.tsx` when account is in `READ_ONLY` or `SUSPENDED` state, including a 1-click "Request 24h Emergency Access" button with confirmation modal.
 **Acceptance criteria:**
-- [x] `client/src/features/auth/routes.tsx` defines lazy-loaded routes with `PublicRoute` guard.
-- [x] `client/src/features/auth/index.ts` re-exports `authRoutes`.
-- [x] Public routes (`/`, `/terms`, `/privacy`) mount under `PublicLayout` in `appRouter.tsx`.
+- [x] Shows countdown/warning of non-payment scale and current account status badge.
+- [x] "Request 24h Emergency Access" button visible if grace period has not been used.
+- [x] Confirmation dialog explaining that this is a 1-time 24h extension per cycle.
+- [x] Success toast and instant query cache refresh upon activation.
 **Verification:**
-- [x] Tests pass: `npx vitest run client/src/features/auth/`
-- [x] Build succeeds: `npm -w client run build`
-**Dependencies:** Task 3  
+- [x] `BillingPage.test.tsx` passes with assertions verifying grace button interaction (6/6 tests passing).
+**Dependencies:** Task 3.1
 **Files touched:**
-- `client/src/features/auth/routes.tsx`
-- `client/src/features/auth/index.ts`
-- `client/src/routes/publicRoutes.tsx`
-- `client/src/routes/appRouter.tsx`
-**Estimated scope:** Medium (4 files)
+- `client/src/features/billing/pages/BillingPage.tsx`
+- `client/src/features/billing/pages/BillingPage.test.tsx`
+**Estimated scope:** Medium (2 files)
 
 ---
 
-### Task 5: Colocate Tickets Domain Route Manifest with TanStack Query Loaders
-**Description:** Create `client/src/features/tickets/routes.tsx` exporting `ticketRoutes: RouteObject[]` for `/tickets` and `/tickets/:id`. Add route `loader` functions that prefetch ticket lists (`queryClient.prefetchQuery(ticketQueries.list(filters))`) and ensure ticket details (`queryClient.ensureQueryData(ticketQueries.detail(params.id))`). Attach breadcrumb handles. Export from `features/tickets/index.ts`.
+### Task 3.3: Add Read-Only Notice in `PasswordManagerPage.tsx`
+**Description:** When tenant account status is `READ_ONLY`, display an amber notice on `PasswordManagerPage.tsx` informing users that the vault is in Read-Only mode and credential creation/edits are locked until invoice settlement.
 **Acceptance criteria:**
-- [x] `ticketRoutes` defines `/tickets` and `/tickets/:id` with lazy component chunk resolution.
-- [x] Ticket list loader prewarms query cache on navigation.
-- [x] Ticket detail loader ensures single-ticket contract data before render.
-- [x] `handle.crumb` resolves localized ticket crumbs dynamically.
-- [x] `client/src/features/tickets/index.ts` exports `ticketRoutes`.
+- [x] Displays non-intrusive amber alert banner explaining Read-Only mode.
+- [x] Button linking directly to `/billing`.
 **Verification:**
-- [x] Tests pass: `npx vitest run client/src/features/tickets/`
-- [x] Architecture tests pass: `npm -w client run test:arch`
-**Dependencies:** Task 3  
+- [x] Component test in `PasswordManagerPage.test.tsx` passes (4/4 tests passing).
+**Dependencies:** Task 3.2
 **Files touched:**
-- `client/src/features/tickets/routes.tsx`
-- `client/src/features/tickets/index.ts`
-- `client/src/routes/appRouter.tsx`
-**Estimated scope:** Small (3 files)
-
----
-
-### Task 6: Colocate Billing & Subscriptions Domain Route Manifests
-**Description:** Create `client/src/features/billing/routes.tsx` (`/billing`) and `client/src/features/subscriptions/routes.tsx` (`/plans`, `/plans/new`, `/plans/:id/edit`). Add loaders prefetching invoice and subscription plans cache. Attach `allowedRoles: ["CLIENT", "ADMIN"]` to route handles. Export via respective `index.ts` gateways.
-**Acceptance criteria:**
-- [x] `billingRoutes` and `subscriptionRoutes` defined with lazy chunks and query loaders.
-- [x] Admin-only plan editor routes enforce `allowedRoles: ["ADMIN"]` via route handle.
-- [x] Both feature gateways (`billing/index.ts`, `subscriptions/index.ts`) export their route manifests.
-- [x] Mounted in `appRouter.tsx`.
-**Verification:**
-- [x] Tests pass: `npx vitest run client/src/features/billing/ client/src/features/subscriptions/`
-- [x] Build succeeds: `npm -w client run build`
-**Dependencies:** Task 3  
-**Files touched:**
-- `client/src/features/billing/routes.tsx`
-- `client/src/features/billing/index.ts`
-- `client/src/features/subscriptions/routes.tsx`
-- `client/src/features/subscriptions/index.ts`
-- `client/src/routes/appRouter.tsx`
-**Estimated scope:** Medium (5 files)
-
----
-
-## Checkpoint 2: Core Business Route Slices Verified
-- [x] Auth, Tickets, Billing, and Subscriptions route manifests operational.
-- [x] Loaders correctly prewarm TanStack Query caches.
-- [x] All Vitest tests for migrated domains pass 100% green.
-
----
-
-## Milestone 3: Feature Route Manifests (Phase B: Equipment, RMM, CRM, Financial, Users, Dashboard & Settings) (P1)
-
-### Task 7: Colocate Equipment & RMM Maintenance Route Manifests
-**Description:** Create `client/src/features/equipment/routes.tsx` (`/devices`, `/rmm`, `/resources`) and `client/src/features/rmm/routes.tsx` (`/maintenance`). Attach `requiredFeature: FEATURE_CODES.RMM_PATCH_MANAGEMENT` or `FEATURE_CODES.CLOUD_STORAGE` to route handle metadata. Wire query loaders for device inventory and maintenance schedules. Export via `index.ts` gateways.
-**Acceptance criteria:**
-- [x] `equipmentRoutes` and `rmmRoutes` define lazy-loaded routes with feature entitlement metadata.
-- [x] Feature gateways re-export their route arrays.
-- [x] Mounted into `appRouter.tsx`.
-**Verification:**
-- [x] Tests pass: `npx vitest run client/src/features/equipment/ client/src/features/rmm/`
-- [x] Build succeeds: `npm -w client run build`
-**Dependencies:** Task 3  
-**Files touched:**
-- `client/src/features/equipment/routes.tsx`
-- `client/src/features/equipment/index.ts`
-- `client/src/features/rmm/routes.tsx`
-- `client/src/features/rmm/index.ts`
-- `client/src/routes/appRouter.tsx`
-**Estimated scope:** Medium (5 files)
-
----
-
-### Task 8: Colocate CRM & Financial Domain Route Manifests
-**Description:** Create `client/src/features/crm/routes.tsx` (`/crm`, `/crm/custom-plans`) and `client/src/features/financial/routes.tsx` (`/financial`). Set `allowedRoles: ["ADMIN"]` in route handles. Add loaders prefetching CRM lead pipeline and financial stats. Export via `index.ts` gateways.
-**Acceptance criteria:**
-- [x] `crmRoutes` and `financialRoutes` defined with `allowedRoles: ["ADMIN"]`.
-- [x] Query prefetch loaders wired for CRM pipeline and financial statistics.
-- [x] Gateways export route manifests cleanly.
-- [x] Mounted in `appRouter.tsx`.
-**Verification:**
-- [x] Tests pass: `npx vitest run client/src/features/crm/ client/src/features/financial/`
-- [x] Build succeeds: `npm -w client run build`
-**Dependencies:** Task 3  
-**Files touched:**
-- `client/src/features/crm/routes.tsx`
-- `client/src/features/crm/index.ts`
-- `client/src/features/financial/routes.tsx`
-- `client/src/features/financial/index.ts`
-- `client/src/routes/appRouter.tsx`
-**Estimated scope:** Medium (5 files)
-
----
-
-### Task 9: Colocate Users, Settings, Dashboard & System Route Manifests
-**Description:** Create route manifests for the remaining 4 feature domains: `users` (`/admin/users`), `settings` (`/profile`, `/notifications/preferences`, `/password-manager`, `/help`), `dashboard` (`/dashboard`, `/tech/dashboard`), and `system` (`/admin/api-status`, `/dev/style-guide`). Export via feature gateways and integrate into `appRouter.tsx`.
-**Acceptance criteria:**
-- [x] `usersRoutes`, `settingsRoutes`, `dashboardRoutes`, and `systemRoutes` defined with respective guards and skeletons.
-- [x] All 12 feature domains in `client/src/features/` now have a standard `routes.tsx` file.
-- [x] `appRouter.tsx` cleanly aggregates all feature route slices without monolithic configuration.
-**Verification:**
-- [x] Tests pass: `npx vitest run client/src/features/users/ client/src/features/settings/ client/src/features/dashboard/ client/src/features/system/`
-- [x] Build succeeds: `npm -w client run build`
-**Dependencies:** Task 3  
-**Files touched:**
-- `client/src/features/users/routes.tsx`
-- `client/src/features/users/index.ts`
-- `client/src/features/settings/routes.tsx`
-- `client/src/features/settings/index.ts`
-- `client/src/features/dashboard/routes.tsx`
-- `client/src/features/dashboard/index.ts`
-- `client/src/features/system/routes.tsx`
-- `client/src/features/system/index.ts`
-- `client/src/routes/appRouter.tsx`
-**Estimated scope:** Large (9 files)
-
----
-
-## Checkpoint 3: All 12 Feature Domains Route Manifests Colocated & Active
-- [x] All 12 feature domains export typed `RouteObject[]` manifests.
-- [x] `appRouter.tsx` composes the full application route tree modularly.
-- [x] Full client test suite passes (`npm -w client run test:run`).
-
----
-
-## Milestone 4: Architecture Gates, Preloading & Legacy Purge (P1)
-
-### Task 10: Fortify AST Architecture & Boundary Tests for Route Manifests
-**Description:** Update `client/tests/arch/feature-architecture.test.ts` to assert that: (1) every feature in `client/src/features/` contains a `routes.tsx` file, (2) each feature's `index.ts` exports its route manifest, and (3) zero deep imports into `features/*/routes` exist outside `index.ts`.
-**Acceptance criteria:**
-- [x] Vitest architecture test suite includes route manifest compliance assertions.
-- [x] Fails if a new feature is created without a `routes.tsx` or without exporting it from `index.ts`.
-- [x] `npm -w client run test:arch` passes 100% green.
-**Verification:**
-- [x] `npm -w client run test:arch` passes.
-**Dependencies:** Task 9  
-**Files touched:**
-- `client/tests/arch/feature-architecture.test.ts`
-- `client/scripts/gen-feature.mjs`
+- `client/src/features/settings/pages/PasswordManagerPage.tsx`
+- `client/src/features/settings/pages/PasswordManagerPage.test.tsx`
 **Estimated scope:** Small (2 files)
 
 ---
 
-### Task 11: Implement SOTA Route Preloading & Hover Prefetching Hooks
-**Description:** Refactor `client/src/lib/preloadRoute.ts` to inspect the router's route tree on hover/focus, dynamically invoking both lazy chunk preloading (`route.lazy()`) and data cache preloading (`loader()`). Connect to AppLayout navigation items.
+### Task 3.4: Bilingual Localization Strings (English & Spanish)
+**Description:** Add all new translation strings for non-payment notices, grace requests, and read-only status in `en_US.json` and `es_DO.json`.
 **Acceptance criteria:**
-- [x] `preloadRoute(path)` triggers both chunk and query cache prefetching on intent (hover/focus).
-- [x] Sidebar and top navigation links invoke `preloadRoute` on hover.
-- [x] Perceived page transition delay reduced to zero for preloaded routes.
+- [x] Zero hardcoded user-facing strings.
+- [x] English strings in `en_US.json` and Dominican Spanish in `es_DO.json`.
 **Verification:**
-- [x] Unit tests in `preloadRoute.test.ts` pass.
-- [x] Build succeeds: `npm -w client run build`
-**Dependencies:** Task 9, Task 10  
+- [x] Translation key checks pass.
+**Dependencies:** Tasks 3.2 & 3.3
 **Files touched:**
-- `client/src/lib/preloadRoute.ts`
-- `client/src/lib/preloadRoute.test.ts`
-- `client/src/components/layout/AppLayout.tsx`
-**Estimated scope:** Small (3 files)
-
----
-
-### Task 12: Purge Legacy `protected-routes.tsx` & Run Monorepo Quality Gates
-**Description:** Remove obsolete `client/src/protected-routes.tsx` and legacy route glue code. Update `feature-slice-recipe.md` with route manifest colocation guidelines. Run the full monorepo test and typecheck suite.
-**Acceptance criteria:**
-- [x] `client/src/protected-routes.tsx` safely deleted.
-- [x] Zero dangling imports across the monorepo.
-- [x] All test suites pass: `npm -w server run test`, `npm -w client run test:run`, `npm -w client run test:arch`, `npm -w client run test:a11y`.
-- [x] TypeScript compilation succeeds with 0 errors (`npm -w server run build`, `npm -w client run build`).
-**Verification:**
-- [x] `npm -w client run test:run` passes.
-- [x] `npm -w client run build` passes.
-- [x] `npm -w server run build` passes.
-**Dependencies:** Task 10, Task 11  
-**Files touched:**
-- `client/src/protected-routes.tsx` (Deleted)
-- `docs/architecture/feature-slice-recipe.md`
+- `client/src/locales/en_US.json`
+- `client/src/locales/es_DO.json`
 **Estimated scope:** Small (2 files)
 
 ---
 
-## Checkpoint 4: SOTA Definition of Done Cleared
-- [x] Zero legacy declarative `<Routes>` or `protected-routes.tsx` remaining.
-- [x] 100% of routes managed via colocated manifests and `createBrowserRouter`.
-- [x] Full automated test suite and typechecks passing green across monorepo.
+## Checkpoint 3: Full Feature Verification
+- [x] `npm run build:packages` succeeds with exit code 0.
+- [x] `npm -w server run test` passes with zero regressions (79/79 suites, 772/772 tests).
+- [x] `npm -w client run test:run` passes (45/45 suites, 286/286 tests).
+- [x] `npm -w server run build` & `npm -w client run build` succeed with exit code 0.

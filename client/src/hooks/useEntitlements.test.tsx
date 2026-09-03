@@ -136,4 +136,38 @@ describe("useEntitlements hook", () => {
     expect(result.current.hasFeature(FEATURE_CODES.DARK_WEB_MONITORING)).toBe(true);
     expect(result.current.isFeatureLocked(FEATURE_CODES.DARK_WEB_MONITORING)).toBe(false);
   });
+
+  describe("hasPlanFeature method", () => {
+    it("should allow any feature for ADMIN unconditionally", () => {
+      currentRole = "ADMIN";
+      const { result } = renderHook(() => useEntitlements(), { wrapper: createWrapper() });
+
+      expect(result.current.hasPlanFeature("PL-001", FEATURE_CODES.PASSWORD_MANAGER)).toBe(true);
+      expect(result.current.hasPlanFeature(null, FEATURE_CODES.PASSWORD_MANAGER)).toBe(true);
+    });
+
+    it("should return false for CLIENT if plan lacks the feature and true if it contains the feature", async () => {
+      currentRole = "CLIENT";
+      mockSubscriptions = [{ id: "sub-1", plan: "PL-001", status: "ACTIVE" }];
+      mockPlans = [
+        {
+          id: "PL-001",
+          features: [{ code: FEATURE_CODES.RMM_PATCH_MANAGEMENT, included: true }],
+        },
+        {
+          id: "PL-003",
+          features: [{ code: FEATURE_CODES.PASSWORD_MANAGER, included: true }],
+        },
+      ];
+
+      const { result } = renderHook(() => useEntitlements(), { wrapper: createWrapper() });
+
+      await waitFor(() => {
+        expect(result.current.hasPlanFeature("PL-003", FEATURE_CODES.PASSWORD_MANAGER)).toBe(true);
+      });
+
+      expect(result.current.hasPlanFeature("PL-001", FEATURE_CODES.PASSWORD_MANAGER)).toBe(false);
+      expect(result.current.hasPlanFeature("NON_EXISTENT_PLAN", FEATURE_CODES.PASSWORD_MANAGER)).toBe(false);
+    });
+  });
 });

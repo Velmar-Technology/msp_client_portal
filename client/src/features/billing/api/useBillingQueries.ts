@@ -190,3 +190,24 @@ export function useCreateExpense() {
     },
   });
 }
+
+/**
+ * Mutation hook to request a 24-hour emergency grace extension for the tenant's password vault (BL-702).
+ * Automatically refreshes billing and tenant cache upon success.
+ *
+ * @returns Mutation for requesting vault grace.
+ */
+export function useRequestVaultGrace() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (reason?: string) => {
+      return await invoiceService.requestVaultGrace(reason);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: BILLING_QUERY_KEYS.all });
+      queryClient.invalidateQueries({ queryKey: ["tenant"] });
+      queryClient.invalidateQueries({ queryKey: ["auth"] });
+    },
+  });
+}

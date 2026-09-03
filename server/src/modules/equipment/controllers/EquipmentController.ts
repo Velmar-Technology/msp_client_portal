@@ -465,6 +465,55 @@ Write-Host "==================================================" -ForegroundColor
 
     res.download(binaryPath, 'msp-agent.exe');
   }
+
+  /**
+   * Handles querying Vaultwarden device password vault status for an equipment slot.
+   *
+   * @param req - Express request with equipment ID in params
+   * @param res - Express response returning DeviceVaultDetails
+   */
+  async getDeviceVault(req: Request, res: Response): Promise<void> {
+    const equipmentId = req.params.id as string;
+    const byAdmin = req.user!.role === 'ADMIN';
+    const vault = await this.equipmentSvc.getDeviceVault(equipmentId, req.user!.tenantId, byAdmin);
+    res.json({
+      success: true,
+      data: vault,
+    });
+  }
+
+  /**
+   * Handles provisioning a dedicated Vaultwarden collection & identity for an equipment slot.
+   *
+   * @param req - Express request with equipment ID in params
+   * @param res - Express response returning provisioned DeviceVaultDetails
+   */
+  async provisionDeviceVault(req: Request, res: Response): Promise<void> {
+    const equipmentId = req.params.id as string;
+    const byAdmin = req.user!.role === 'ADMIN';
+    const vault = await this.equipmentSvc.provisionDeviceVault(equipmentId, req.user!.tenantId, byAdmin);
+    res.status(201).json({
+      success: true,
+      data: vault,
+    });
+  }
+
+  /**
+   * Handles revoking/locking active Vaultwarden sessions for an equipment slot.
+   *
+   * @param req - Express request with equipment ID in params and optional reason in body
+   * @param res - Express response returning updated DeviceVaultDetails
+   */
+  async revokeDeviceVault(req: Request, res: Response): Promise<void> {
+    const equipmentId = req.params.id as string;
+    const byAdmin = req.user!.role === 'ADMIN';
+    const reason = req.body?.reason as string | undefined;
+    const vault = await this.equipmentSvc.revokeDeviceVault(equipmentId, req.user!.tenantId, reason, byAdmin);
+    res.json({
+      success: true,
+      data: vault,
+    });
+  }
 }
 
 export const equipmentController = new EquipmentController();

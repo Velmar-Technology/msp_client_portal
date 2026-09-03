@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { ValidationError } from '@shared/errors';
 import { invoiceService } from '@modules/billing/services/InvoiceService';
+import { nonPaymentSuspensionService } from '@modules/billing/services/NonPaymentSuspensionService';
 import { UserRole } from '@shared/types';
 
 /**
@@ -149,6 +150,22 @@ export class InvoiceController {
       range
     );
     res.json({ success: true, data: stats });
+  }
+
+  /**
+   * Handles requesting a 24-hour emergency grace extension for the tenant's password vault (BL-702).
+   *
+   * @param req - Express request with optional reason in body
+   * @param res - Express response returning grace extension status
+   */
+  async requestVaultGrace(req: Request, res: Response): Promise<void> {
+    const reason = req.body?.reason;
+    const result = await nonPaymentSuspensionService.requestVaultGraceExtension(
+      req.user!.userId,
+      req.user!.tenantId,
+      reason
+    );
+    res.json({ success: true, data: result });
   }
 }
 

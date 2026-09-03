@@ -75,8 +75,8 @@
     "viewPlans": "View Plans & Upgrade",
     "passwordManager": {
       "title": "Enterprise Password Manager",
-      "desc": "Zero-knowledge encrypted password and secret vault powered by Bitwarden/Vaultwarden. Store, generate, and securely share credentials across your team.",
-      "tier": "Advanced Plan (PL-003) or Corporate (PL-004)",
+      "desc": "Zero-knowledge encrypted password and secret vault powered by Bitwarden. Store, generate, and securely share credentials across your team.",
+      "tier": "Advanced Plan or Corporate",
       "perk1": "AES-256 zero-knowledge end-to-end encryption",
       "perk2": "Personal and shared organizational collections",
       "perk3": "Self-service vault access recovery and reset"
@@ -92,7 +92,7 @@
     "storage": {
       "title": "Cloud Storage & Resource Sync",
       "desc": "Dedicated Nextcloud enterprise cloud storage with collaborative synchronization and automated backup storage.",
-      "tier": "Basic Plan (PL-001) or higher",
+      "tier": "Basic Plan or higher",
       "perk1": "25 GB to 100 GB dedicated Nextcloud storage",
       "perk2": "Encrypted desktop and mobile sync",
       "perk3": "Direct software resource catalog downloads"
@@ -1311,7 +1311,19 @@
     "readOnlyBannerTitle": "Account in Read-Only Mode (Overdue Balance)",
     "readOnlyBannerDesc": "Your account is in Read-Only mode due to an overdue balance (Section 9.3). Support ticket creation and file uploads are disabled until pending invoices are settled.",
     "viewInvoices": "View Invoices",
-    "rncPlaceholder": "e.g. 1-32-12345-6"
+    "rncPlaceholder": "e.g. 1-32-12345-6",
+    "nonPaymentAlertTitle": "Account Delinquent — Action Required",
+    "nonPaymentAlertDesc": "Your account has overdue invoices. Password vaults and platform modifications are frozen in Read-Only mode to protect operational continuity. Please settle pending balances before the Day 30 data purge.",
+    "requestEmergencyGraceBtn": "Request 24h Emergency Access",
+    "requestingEmergencyGrace": "Activating 24h Grace...",
+    "emergencyGraceActiveBadge": "Emergency 24h Grace Active",
+    "emergencyGraceActiveDesc": "Temporary emergency vault access granted until {{time}}. Please complete payment to avoid suspension.",
+    "emergencyGraceConfirmTitle": "Request 24-Hour Emergency Vault Access",
+    "emergencyGraceConfirmDesc": "You are granted a 1-time emergency 24-hour bypass per overdue billing cycle. This immediately reactivates temporary password vault access while your accounting payment or bank wire clears.",
+    "emergencyGraceActivatedToast": "Emergency 24-hour grace activated successfully.",
+    "emergencyGraceExhausted": "Emergency 24-hour grace extension has already been used for this billing cycle.",
+    "payOverdueBalanceBtn": "Pay Overdue Invoices",
+    "activate24hAccess": "Activate 24h Access"
   },
   "help": {
     "title": "Help & Documentation",
@@ -1982,6 +1994,9 @@
     "vaultTitle": "Hosted Vaultwarden Enterprise",
     "activeStatus": "Active & Zero-Knowledge",
     "vaultSubtitle": "Your organization's encrypted vault is active. Master passwords are never shared or stored on our servers.",
+    "readOnlyAlertTitle": "Vault in Read-Only Mode (BL-702)",
+    "readOnlyAlertDesc": "Existing passwords can be autofilled and searched, but new credential creation and editing are locked due to pending invoices.",
+    "resolveBillingCta": "View Invoices & Settle Balance",
     "launchVault": "Open Web Vault",
     "serverUrlLabel": "Custom Server URL:",
     "copyUrl": "Copy Server URL",
@@ -2008,5 +2023,38 @@
     "resetDialogCancel": "Cancel",
     "resetSuccessTitle": "Invitation Dispatched",
     "resetSuccessDesc": "A fresh Bitwarden invitation email has been sent. Please check your inbox to set a new Master Password."
+  },
+  "equipment": {
+    "vault": {
+      "modalTitle": "Device Password Vault",
+      "deviceGeneric": "Managed Endpoint",
+      "actionMenu": "Device Password Vault",
+      "loading": "Loading device vault status...",
+      "guidanceTitle": "Endpoint-Scoped Credential Vault",
+      "guidanceDesc": "Passwords assigned to this workstation can be automatically autofilled by workers without exposing raw credentials. Client admins retain 1-click remote killswitch rights.",
+      "identityHeader": "Device Vault Identity",
+      "fieldAccount": "Machine User",
+      "fieldCollection": "Bitwarden Collection",
+      "fieldLastSync": "Last Synced",
+      "notAssigned": "Not Assigned",
+      "confirmRevokeTitle": "Confirm Emergency Revocation",
+      "confirmRevokeDesc": "This will instantly invalidate all active Bitwarden sessions on this PC. Passwords will no longer autofill until re-provisioned.",
+      "btnConfirmRevoke": "Revoke Access Now",
+      "btnRevoke": "Revoke Device Vault",
+      "btnProvision": "Provision Vault",
+      "btnReEnroll": "Re-enroll Vault",
+      "statusActive": "Active & Protected",
+      "statusLocked": "Locked / Revoked",
+      "statusUnprovisioned": "Not Configured",
+      "provisionSuccessTitle": "Vault Provisioned",
+      "provisionSuccessDesc": "Device vault has been configured and connected.",
+      "provisionError": "Failed to provision device vault.",
+      "revokeSuccessTitle": "Vault Session Revoked",
+      "revokeSuccessDesc": "Device credentials locked and active session terminated.",
+      "revokeError": "Failed to revoke device vault.",
+      "perk1": "Workstation credential autofill with zero plaintext exposure",
+      "perk2": "Device-scoped Bitwarden collections & machine identity escrow",
+      "perk3": "1-click remote emergency session revocation killswitch"
+    }
   }
 }
