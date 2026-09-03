@@ -89,6 +89,13 @@ Detailed tasks with full acceptance criteria and file lists are recorded in [`ta
 - [x] Task 16: Canonical Feature Slice Recipe & Documentation Update (`docs/architecture/feature-slice-recipe.md`)
 - [x] Checkpoint 5: ADR-002 Enforcement & Scaffolding Engine Cleared
 
+### Milestone 6: Migrate Billing Module to ADR-002 Colocated Architecture (Slice 2)
+- [x] Task 17: Extract Billing Modals & Presentation Components into `client/src/features/billing/components/`
+- [x] Task 18: Colocate `useBilling` Hook & Ephemeral Types into `client/src/features/billing/`
+- [x] Task 19: Colocate `BillingPage` and Vitest Test into `client/src/features/billing/pages/`
+- [x] Task 20: Wire `client/src/features/billing/index.ts` Public Gateway & Update Route Imports
+- [x] Checkpoint 6: Billing Module Migration Cleared
+
 ---
 
 ## Risks and Mitigations

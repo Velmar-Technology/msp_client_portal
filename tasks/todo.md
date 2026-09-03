@@ -330,3 +330,85 @@
 - [x] `docs/architecture/feature-slice-recipe.md` updated with the canonical recipe.
 - [x] Full client build and tests green (`npm -w client run build`, `npm -w client run test:run`).
 
+---
+
+## Milestone 6: Migrate Billing Module to ADR-002 Colocated Architecture (Slice 2)
+
+### Task 17: Extract Billing Modals & Presentation Components into `client/src/features/billing/components/`
+**Description:** Extract `PayModal`, `MarkPaidConfirmModal`, `CancelInvoiceConfirmModal`, and `InvoiceDetailsModal` from `BillingPage.tsx` into standalone, reusable feature components in `client/src/features/billing/components/`. All component props must import entity contracts directly from `@shared/contracts`.
+**Acceptance criteria:**
+- [x] `PayModal.tsx` handles PayPal and bank transfer flows with strict typing.
+- [x] `MarkPaidConfirmModal.tsx` and `CancelInvoiceConfirmModal.tsx` handle administrative actions.
+- [x] `InvoiceDetailsModal.tsx` displays full invoice lines with download triggers.
+- [x] Components import entity types (`InvoiceContract`) directly from `@shared/contracts`.
+**Verification:**
+- [x] TypeScript compilation succeeds (`npm -w client run build` passed in 2.19s).
+**Dependencies:** None  
+**Files touched:**
+- `client/src/features/billing/components/PayModal.tsx`
+- `client/src/features/billing/components/MarkPaidConfirmModal.tsx`
+- `client/src/features/billing/components/CancelInvoiceConfirmModal.tsx`
+- `client/src/features/billing/components/InvoiceDetailsModal.tsx`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 18: Colocate `useBilling` Hook & Ephemeral Types into `client/src/features/billing/`
+**Description:** Move `useBilling.ts` into `client/src/features/billing/hooks/useBilling.ts`. Create `client/src/features/billing/types.ts` strictly for ephemeral UI state (`BillingTab`, `PaymentMethod`, `BillingModalType`). Re-export from `client/src/hooks/useBilling.ts` for backward compatibility.
+**Acceptance criteria:**
+- [x] `client/src/features/billing/types.ts` contains only ephemeral UI state.
+- [x] `useBilling.ts` orchestrates invoice filtering, pagination, and modal state inside the feature.
+- [x] `client/src/hooks/useBilling.ts` re-exports from `@/features/billing`.
+**Verification:**
+- [x] `npm -w client run test:arch` passes.
+**Dependencies:** Task 17  
+**Files touched:**
+- `client/src/features/billing/types.ts`
+- `client/src/features/billing/hooks/useBilling.ts`
+- `client/src/hooks/useBilling.ts`
+**Estimated scope:** Small (3 files)
+
+---
+
+### Task 19: Colocate `BillingPage` and Vitest Test into `client/src/features/billing/pages/`
+**Description:** Colocate `BillingPage.tsx` and `BillingPage.test.tsx` inside `client/src/features/billing/pages/`. Clean up the page component by delegating to the extracted modal components and colocated hooks. Re-export from `client/src/pages/BillingPage/index.ts`.
+**Acceptance criteria:**
+- [x] `BillingPage.tsx` consumes colocated modals and `useBilling` cleanly.
+- [x] `BillingPage.test.tsx` runs inside the feature and tests modal interactions and payments.
+- [x] `client/src/pages/BillingPage/index.ts` re-exports from `@/features/billing`.
+**Verification:**
+- [x] `npx vitest run client/src/features/billing` passes 100% green (13/13 tests).
+**Dependencies:** Task 17, Task 18  
+**Files touched:**
+- `client/src/features/billing/pages/BillingPage.tsx`
+- `client/src/features/billing/pages/BillingPage.test.tsx`
+- `client/src/pages/BillingPage/index.ts`
+**Estimated scope:** Small (3 files)
+
+---
+
+### Task 20: Wire `client/src/features/billing/index.ts` Public Gateway & Update Route Imports
+**Description:** Update `client/src/features/billing/index.ts` to export all public capabilities (`BillingPage`, `useBilling`, query hooks, and UI types). Update `client/src/routes/_app/billing.tsx` to import `BillingPage` directly from `@/features/billing`.
+**Acceptance criteria:**
+- [x] `client/src/features/billing/index.ts` exposes the feature's public API.
+- [x] `client/src/routes/_app/billing.tsx` imports from `@/features/billing`.
+- [x] Zero deep imports into `@/features/billing/*` exist across the codebase.
+**Verification:**
+- [x] `npm -w client run test:arch` passes.
+- [x] `npm -w client run lint` passes with 0 errors.
+- [x] `npm -w client run build` succeeds.
+**Dependencies:** Task 19  
+**Files touched:**
+- `client/src/features/billing/index.ts`
+- `client/src/routes/_app/billing.tsx`
+**Estimated scope:** Small (2 files)
+
+---
+
+## Checkpoint 6: Billing Module Migration Cleared
+- [x] `client/src/features/billing` contains complete 7-part vertical slice.
+- [x] Architecture tests pass (`npm -w client run test:arch`).
+- [x] ESLint passes (`npm -w client run lint`).
+- [x] Client builds cleanly (`npm -w client run build`).
+- [x] All unit and integration tests pass (`npm -w client run test:run`).
+
