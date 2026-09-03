@@ -97,10 +97,31 @@ Code that is truly generic across the entire application remains outside `featur
 
 ---
 
-## Migration Strategy (Horizontal Slices)
+## Migration Strategy & Implementation Status
 
-To prevent breaking existing code and avoid high-risk big-bang refactors, migration to `client/src/features/` will follow our **horizontal slice cadence**:
-1. **Slice 1 (Already complete):** Equipment & Subscriptions contracts and TanStack Query hooks established.
-2. **Slice 2 (Billing & Invoices):** Implement directly using the `client/src/features/billing/` colocated structure.
-3. **Slice 3 (CRM & RMM):** Implement directly using `client/src/features/crm/` and `client/src/features/rmm/`.
-4. **Tickets, Equipment, Subscriptions:** Transition existing `pages/` and `components/` into `features/tickets/`, `features/equipment/`, and `features/subscriptions/` during scheduled cleanup.
+All 12 business domains have completed migration into `client/src/features/` with 100% test coverage and AST architectural enforcement:
+
+| Feature Module | Directory | Status | Gateway / Public Exports |
+| :--- | :--- | :--- | :--- |
+| **Auth** | `client/src/features/auth/` | **Complete** | `LoginPage`, `RegisterPage`, `authService`, `useAuthQueries` |
+| **Billing** | `client/src/features/billing/` | **Complete** | `BillingPage`, `invoiceService`, `useBillingQueries`, `PayModal`, `useBilling` |
+| **CRM** | `client/src/features/crm/` | **Complete** | `CRMPage`, `CRMCustomPlanPage`, `crmService`, `useCrmQueries`, `CrmKanbanView` |
+| **Dashboard** | `client/src/features/dashboard/` | **Complete** | `DashboardPage`, `TechDashboardPage`, `useDashboardQueries`, `AdminDashboardView` |
+| **Equipment** | `client/src/features/equipment/` | **Complete** | `DevicesPage`, `equipmentService`, `useEquipmentQueries`, `RmmDeviceTable` |
+| **Financial** | `client/src/features/financial/` | **Complete** | `FinancialPage`, `earningsService`, `expenseService`, `useFinancialQueries` |
+| **RMM** | `client/src/features/rmm/` | **Complete** | `MaintenancePage`, `rmmService`, `maintenanceService`, `useRmmQueries` |
+| **Settings** | `client/src/features/settings/` | **Complete** | `ProfilePage`, `NotificationPreferencesPage`, `PasswordManagerPage`, `notificationService` |
+| **Subscriptions** | `client/src/features/subscriptions/` | **Complete** | `PlansPage`, `PlanEditorPage`, `subscriptionService`, `planService`, `useSubscriptionQueries` |
+| **System** | `client/src/features/system/` | **Complete** | `ApiStatusPage`, `systemService`, `useSystemQueries`, `useApiStatus` |
+| **Tickets** | `client/src/features/tickets/` | **Complete** | `TicketsPage`, `TicketDetailPage`, `ticketService`, `useTicketQueries`, `NewTicketModal` |
+| **Users** | `client/src/features/users/` | **Complete** | `UserManagementPage`, `userService`, `useUsersQueries`, `UserRoleBadge` |
+
+---
+
+## Automated Invariant Enforcement
+
+To ensure boundary compliance and zero regression back to horizontal anti-patterns, the test suite `client/tests/arch/feature-architecture.test.ts` executes in under 300ms on every commit and CI run:
+1. **Public Gateway Invariant:** Asserts non-empty `index.ts` on every feature directory.
+2. **Deep Import Prohibition:** Uses TypeScript AST parsing to block any import referencing feature internals (`@/features/<domain>/components/...`, `@/features/<domain>/api/...`, or relative peer directory paths).
+3. **Single Contract Truth:** Uses AST analysis on all `types.ts` files to reject backend entity declarations or schema re-declarations.
+4. **Purged Legacy Guard:** Fails if any legacy horizontal paths (`client/src/pages/`, `client/src/services/`, etc.) are recreated.

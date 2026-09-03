@@ -48,10 +48,18 @@ client/src/
 ├── components/ui/  # MANDATORY UI Primitives: Base shadcn/ui components (L1)
 ├── components/shared/# Cross-cutting shared blocks (Page, ErrorBoundary, skeletons) (L2)
 ├── features/       # Colocated Feature Modules (api, components, hooks, pages) (L3 & L4)
-│   ├── tickets/    # Self-contained ticket lifecycle & support domain
-│   ├── equipment/  # Hardware devices, OTP pairing & Nextcloud slots
-│   ├── billing/    # Invoicing, taxes, PayPal captures & expenses
-│   └── subscriptions/# Plans, entitlements & renewal scheduler
+│   ├── auth/          # Authentication, registration, OTP verification, password reset
+│   ├── billing/       # Invoicing, taxes, PayPal captures, PDF generation & expenses
+│   ├── crm/           # Lead pipeline, quotation workflow & activities
+│   ├── dashboard/     # Role-aware executive, tech & client dashboard metrics
+│   ├── equipment/     # Hardware devices, OTP pairing & Nextcloud slots
+│   ├── financial/     # Financial stats, OpEx tracking, 70/30 profit split & payroll
+│   ├── rmm/           # RMM monitoring, automated remediation & maintenance scheduler
+│   ├── settings/      # User profile, notifications matrix & password manager
+│   ├── subscriptions/ # Plans, entitlements, tier changes & renewal scheduler
+│   ├── system/        # Microservice health, API status & diagnostics
+│   ├── tickets/       # Self-contained ticket lifecycle, SLA & assignment domain
+│   └── users/         # User management, JIT access & technician roster
 ├── routes/         # Layout Routes: File-based layout route hierarchy (_public/, _auth/, _app/)
 ├── lib/            # Shared utilities (api Axios instance, auth storage, cn)
 └── store/          # Client UI State: Zustand stores (session, modals, theme)
