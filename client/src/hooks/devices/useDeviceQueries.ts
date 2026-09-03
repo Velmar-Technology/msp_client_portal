@@ -7,8 +7,11 @@ import type { SubscriptionEquipment } from "@/services/equipmentService";
 import { subscriptionService } from "@/services/subscriptionService";
 import type { Subscription } from "@/services/subscriptionService";
 
-const DEVICES_KEY = "devices";
-const SUBSCRIPTIONS_KEY = "subscriptions";
+import { EQUIPMENT_QUERY_KEYS } from "@/hooks/queries/useEquipment";
+import { SUBSCRIPTION_QUERY_KEYS } from "@/hooks/queries/useSubscriptions";
+
+const DEVICES_KEY = EQUIPMENT_QUERY_KEYS.all[0];
+const SUBSCRIPTIONS_KEY = SUBSCRIPTION_QUERY_KEYS.all[0];
 
 function groupDevicesBySub(devices: SubscriptionEquipment[], activeSubIds?: Set<string>): Record<string, Partial<SubscriptionEquipment>[]> {
   const grouped: Record<string, Partial<SubscriptionEquipment>[]> = {};

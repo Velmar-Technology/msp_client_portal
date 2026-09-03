@@ -1,76 +1,44 @@
-# Implementation Plan: Enterprise PERN SaaS Best Practices Blueprint
+# Implementation Plan: Systematic Horizontal Migration — Slice 1: Equipment & Subscriptions
 
 ## Overview
-Deconstruct the architectural ceremony and cross-layer rework in the PERN stack by piloting a **Contract-First Monolith** with **TanStack Query** on the `tickets` module. This establishes a single source of truth for API contracts (`@shared/contracts`), delegates asynchronous server caching to TanStack Query (retiring manual Axios/Zustand data sync), and introduces a pragmatic, repeatable vertical slice pattern.
-
-## Architecture Decisions
-1. **Shared Workspace Contract Package (`@shared/contracts`):** 
-   - Define type-safe request/response schemas in a monorepo package consumed by both `server` and `client`.
-   - Single contract change simultaneously validates the server route and provides autocompletion in React.
-2. **Server State Delegation (TanStack Query):**
-   - Use `@tanstack/react-query` (already present in `client/package.json`) with standardized query keys and mutation cache invalidation.
-   - Keep `Zustand` exclusively for local client UI state (modals, active drawer, sidebar, theme).
-3. **Pragmatic Service Layer:**
-   - Eliminate 1-line pass-through repositories for straightforward CRUD; allow domain services to query Drizzle directly while retaining testability in TypeScript.
-4. **Canonical Reference Slice:**
-   - Establish a documented reference pattern (`docs/architecture/feature-slice-recipe.md`) so all future feature development adheres to the same low-boilerplate standard.
+Migrate the `equipment` (device slots, OTP pairing, Nextcloud credentials, admin inventory) and `subscriptions` (plans, feature entitlements, PayPal checkout orders) domains to the **Contract-First Monolith** architecture:
+1. Canonical Zod schemas and TypeScript types in `@shared/contracts`.
+2. Direct Express route validation using `@shared/contracts`.
+3. Type-safe TanStack Query hooks in `client/src/hooks/queries/` with automated cache invalidation.
+4. Refactor `DevicesPage` and `PlansPage` to eliminate manual `useState`/`useEffect` loading boilerplate.
 
 ---
 
-## Dependency Graph
-```
-packages/contracts (Zod contracts & DTO schemas)
-   │
-   ├── server/src/modules/tickets/routes/ticketRoutes.ts (contract validation)
-   │       │
-   │       └── server/src/modules/tickets/services/TicketService.ts (pragmatic Drizzle queries)
-   │
-   └── client/src/hooks/queries/useTickets.ts (TanStack Query hooks)
-           │
-           └── client/src/pages/TicketsPage.tsx (UI consuming typed query hooks)
-```
+## Architecture Decisions & Constraints
+- **Canonical Contracts in `@shared/contracts`:** All request inputs, query filters, and entity payloads for equipment and subscriptions live in `packages/contracts/src/equipment/` and `packages/contracts/src/subscriptions/`.
+- **Backward Compatibility:** `server/src/shared/dtos/equipment.dto.ts` and `subscription.dto.ts` will re-export from `@shared/contracts` to prevent breaking existing controller references.
+- **Server State Delegation:** `client/src/hooks/queries/useEquipment.ts` and `useSubscriptions.ts` will handle all asynchronous fetching, caching, and cache invalidation. Zustand stores remain strictly for client UI state.
+- **Zero Regressions:** Existing server and client unit test suites must remain green with zero regressions.
 
 ---
 
-## Task List
+## Task Breakdown
 
-### Phase 1: Shared Contract Foundation (`packages/contracts`)
-- [ ] Task 1: Scaffold `@shared/contracts` Package in Monorepo
-- [ ] Task 2: Define Canonical Ticket API Contract & Zod Schemas
+### Phase 1: Shared Contracts Foundation (`packages/contracts`)
+- **Task 8:** Define Equipment API Contracts & Zod Schemas (`packages/contracts/src/equipment/`)
+- **Task 9:** Define Subscription & Plan API Contracts & Zod Schemas (`packages/contracts/src/subscriptions/`)
+- **Checkpoint 1:** Contracts package builds cleanly (`npm run build:packages`) and tests pass (`npm -w packages/contracts run test`).
 
-### Checkpoint: Contract Foundation
-- [ ] Package builds cleanly via `npm run build:packages`
-- [ ] Contract types importable in both `server` and `client`
+### Phase 2: Server Route Validation Integration (`server`)
+- **Task 10:** Wire `@shared/contracts` validation on Equipment and Subscription Express routes.
+- **Checkpoint 2:** Server compiles cleanly (`npm -w server run build`) and all equipment/subscription backend tests pass (`npx vitest run src/modules/equipment/ src/modules/subscriptions/`).
 
-### Phase 2: Client TanStack Query Infrastructure & Ticket Hooks
-- [ ] Task 3: Configure Global TanStack `QueryClient` in Client
-- [ ] Task 4: Implement Type-Safe Ticket Query & Mutation Hooks
-- [ ] Task 5: Refactor Ticket List View & Creation to use Query Hooks
-
-### Checkpoint: Client Query Migration
-- [ ] Client unit tests pass (`npm -w client run test:run`)
-- [ ] Ticket table and create modal operate with automatic caching, loading, and error states
-- [ ] No regression in UI or localization
-
-### Phase 3: Server Route Integration & Standardized Recipe
-- [ ] Task 6: Implement Contract-Driven Route Validation on Server Ticket Endpoints
-- [ ] Task 7: Document Canonical Feature Slice Recipe for Future Modules
-
-### Checkpoint: Complete Vertical Slice Validation
-- [ ] Backend test suites pass (`npm -w server run test`)
-- [ ] Client test suites pass (`npm -w client run test:run`)
-- [ ] Clean typecheck & build across workspaces (`npm -w server run build` & `npm -w client run build`)
+### Phase 3: Client Query Hooks & Page Refactoring (`client`)
+- **Task 11:** Implement `useEquipment` and `useSubscriptions` TanStack Query hooks.
+- **Task 12:** Refactor `DevicesPage` and `PlansPage` to consume query hooks with automatic cache invalidation.
+- **Checkpoint 3:** Client compiles cleanly (`npm -w client run build`) and isolated client tests pass (`npx vitest run src/pages/DevicesPage/DevicesPage.test.tsx src/pages/PlansPage/PlansPage.test.tsx`).
 
 ---
 
 ## Risks and Mitigations
+
 | Risk | Impact | Mitigation |
 | :--- | :---: | :--- |
-| **Breaking existing Express routes** | High | Apply the contract-driven validation incrementally to `/api/v1/tickets` without changing existing endpoint URLs or HTTP status semantics. |
-| **Package build / linking issues in monorepo** | Medium | Follow the established ESM/CJS dual-build pattern used by `@shared/errors` (`packages/errors`). |
-| **TanStack Query cache stale data** | Medium | Implement explicit `queryClient.invalidateQueries({ queryKey: ['tickets'] })` on all ticket mutations (create, status update, assignment). |
-
----
-
-## Open Questions
-- Should `@shared/contracts` adopt `@ts-rest/core` for full OpenAPI auto-generation, or start as a pure Zod contract definition package? *(Defaulting to pure Zod contract definitions with zero heavy external runtime overhead for the pilot).*
+| **Complex Equipment Model:** `SubscriptionEquipment` contains 30+ optional telemetry fields. | High | Define strict core fields in Zod and make telemetry metrics optional nullable fields, fully reflecting database schema and agent capabilities. |
+| **PayPal Order Flow:** Paypal checkout requires redirect/approval URLs. | Medium | Contract specifies explicit response schemas for `{ orderId }` and `{ subscriptionId, approveUrl }`. |
+| **Test Timing in Heavy Client Suite:** Vitest tests can timeout on Windows when running 40 suites simultaneously. | Low | Run targeted test commands for touched suites (`DevicesPage.test.tsx`, `useEquipment.test.tsx`) as established in DoD. |

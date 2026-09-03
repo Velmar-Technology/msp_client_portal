@@ -60,7 +60,7 @@ export interface CreateTicketPayload {
   description: string;
   category: string;
   priority?: string;
-  equipmentId?: string;
+  equipmentId?: string | null;
 }
 
 /**

@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { SortingState } from "@tanstack/react-table";
-import { ticketService } from "@/services/ticketService";
 import type { Ticket } from "@/services/ticketService";
 import { equipmentService } from "@/services/equipmentService";
 import type { SubscriptionEquipment } from "@/services/equipmentService";

@@ -8,6 +8,8 @@
     "rootDir": "./src",
     "baseUrl": "./src",
     "paths": {
+      "@shared/contracts": ["../../packages/contracts/dist/cjs/index.d.ts"],
+      "@shared/errors": ["../../packages/errors/dist/cjs/index.d.ts"],
       "@/*": ["./*"],
       "@shared/*": ["shared/*"],
       "@modules/*": ["modules/*"]

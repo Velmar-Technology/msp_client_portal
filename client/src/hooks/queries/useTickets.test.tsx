@@ -60,7 +60,7 @@ describe("useTickets query hooks", () => {
       },
     });
 
-    const { result } = renderHook(() => useTickets({ page: 1, limit: 10 }), {
+    const { result } = renderHook(() => useTickets({ page: 1, limit: 10, sortOrder: 'desc' as const }), {
       wrapper: createWrapper(),
     });
 
@@ -68,7 +68,7 @@ describe("useTickets query hooks", () => {
 
     expect(result.current.data?.tickets).toHaveLength(1);
     expect(result.current.data?.total).toBe(1);
-    expect(ticketService.getAll).toHaveBeenCalledWith({ page: 1, limit: 10 });
+    expect(ticketService.getAll).toHaveBeenCalledWith({ page: 1, limit: 10, sortOrder: 'desc' });
   });
 
   it("executes create ticket mutation", async () => {
@@ -94,6 +94,7 @@ describe("useTickets query hooks", () => {
       title: "New ticket",
       description: "Description of new ticket",
       category: TicketCategory.HELPDESK,
+      priority: TicketPriority.LOW,
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));

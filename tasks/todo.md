@@ -1,180 +1,124 @@
-# Implementation Tasks: Enterprise PERN SaaS Best Practices Blueprint
+# Implementation Tasks: Slice 1 — Equipment & Subscriptions Migration
 
 ## Phase 1: Shared Contract Foundation (`packages/contracts`)
 
-### Task 1: Scaffold `@shared/contracts` Package in Monorepo
-**Description:** Create a new workspace package `packages/contracts` (`@shared/contracts`) following the established monorepo build setup in `packages/errors`. Configure TypeScript build, package exports, and register it under the root workspace.
-
+### Task 8: Define Equipment API Contracts & Zod Schemas
+**Description:** Define the shared Zod contracts for equipment and device slot management in `@shared/contracts/src/equipment/`. Define schemas for activating via OTP, slot parameter validation, admin device creation, and the canonical `SubscriptionEquipmentResponseSchema`.
 **Acceptance criteria:**
-- [x] `packages/contracts/package.json` configured with `"name": "@shared/contracts"` and proper exports.
-- [x] TypeScript configuration (`tsconfig.json`, `tsconfig.esm.json`, `tsconfig.cjs.json`) supports clean compilation to dual ESM/CJS with type declarations.
-- [x] Root script `npm run build:packages` updated to build `@shared/contracts`.
-
+- [x] `ActivateWithOtpInputSchema` validates 6-digit numeric OTP, UUID `subscriptionId`, integer `slotIndex`, and optional device metadata.
+- [x] `SlotParamsSchema` validates UUID `subId` and coerced integer `slotIndex`.
+- [x] `AddAdminDeviceInputSchema` validates admin-managed hardware registration.
+- [x] `SubscriptionEquipmentSchema` validates full equipment entities with optional RMM agent telemetry metrics.
+- [x] Unit tests pass in `packages/contracts/src/equipment/equipment.contract.test.ts`.
 **Verification:**
-- [x] Build succeeds: `npm -w packages/contracts run build` and `npm run build:packages`
-- [x] Package importable from `server` and `client` without module resolution errors.
-
+- [x] `npm -w packages/contracts run test`
+- [x] `npm run build:packages`
 **Dependencies:** None  
 **Files touched:**
-- `packages/contracts/package.json`
-- `packages/contracts/tsconfig.json`
-- `packages/contracts/tsconfig.esm.json`
-- `packages/contracts/tsconfig.cjs.json`
-- `packages/contracts/scripts/postbuild.js`
-- `package.json`
-
-**Estimated scope:** Medium (3-4 files)
-
----
-
-### Task 2: Define Canonical Ticket API Contract & Zod Schemas
-**Description:** Define the shared Zod contracts for tickets in `@shared/contracts/src/tickets/`. Define input schemas (create ticket, update status, list tickets with pagination/filters) and response schemas. This serves as the single source of truth for both server validation and client data fetching.
-
-**Acceptance criteria:**
-- [x] `CreateTicketInputSchema` validates title, description, category, priority, client_id, and optional equipment_id.
-- [x] `TicketQuerySchema` validates pagination (`page`, `limit`), `status`, `category`, and `priority`.
-- [x] `TicketResponseSchema` and `TicketListResponseSchema` provide strongly typed response contracts matching DB entities.
-
-**Verification:**
-- [x] Tests pass: Vitest unit tests in `packages/contracts/src/tickets/tickets.contract.test.ts` validating input edge cases.
-- [x] Build succeeds: `npm -w packages/contracts run build`
-
-**Dependencies:** Task 1  
-**Files touched:**
-- `packages/contracts/src/tickets/tickets.contract.ts`
-- `packages/contracts/src/tickets/tickets.contract.test.ts`
+- `packages/contracts/src/equipment/equipment.contract.ts`
+- `packages/contracts/src/equipment/equipment.contract.test.ts`
 - `packages/contracts/src/index.ts`
-
-**Estimated scope:** Small (2-3 files)
-
----
-
-## Checkpoint: Contract Foundation
-- [x] `@shared/contracts` builds cleanly with zero TypeScript errors (`npm run build:packages`).
-- [x] Exported Zod schemas and TypeScript types are resolved seamlessly in both `server` and `client`.
+**Estimated scope:** Small (3 files)
 
 ---
 
-## Phase 2: Client TanStack Query Infrastructure & Ticket Hooks
-
-### Task 3: Configure Global TanStack `QueryClient` in Client
-**Description:** Set up the TanStack Query infrastructure in `client`. Create `client/src/lib/queryClient.ts` with production defaults (60s staleTime, no aggressive refetch on window focus, retry policies). Wrap the application root in `App.tsx` or `main.tsx` with `<QueryClientProvider>`.
-
+### Task 9: Define Subscription & Plan API Contracts & Zod Schemas
+**Description:** Define the shared Zod contracts for subscription lifecycle and pricing plans in `@shared/contracts/src/subscriptions/`. Define schemas for subscription creation, PayPal orders, plan CRUD, and plan queries.
 **Acceptance criteria:**
-- [x] `QueryClient` initialized with resilient, non-flickering production defaults.
-- [x] `<QueryClientProvider client={queryClient}>` wrapped around the React tree in `App.tsx`.
-- [x] Existing Axios interceptors and auth headers continue to be utilized transparently.
-
+- [x] `CreateSubscriptionInputSchema` validates service name, plan tier, equipment count, and optional billing cycle/PayPal fields.
+- [x] `CreatePaypalOrderInputSchema` validates plan, equipment count, billing cycle, and optional current subscription ID.
+- [x] `UpdateSubscriptionInputSchema` validates plan upgrades, equipment count adjustments, and status changes.
+- [x] `CreatePlanInputSchema` and `PlanQuerySchema` validate plan creation and role-based filtering.
+- [x] Unit tests pass in `packages/contracts/src/subscriptions/subscriptions.contract.test.ts`.
 **Verification:**
-- [x] Tests pass: `npm -w client run test:run`
-- [x] Build succeeds: `npm -w client run build`
-
-**Dependencies:** Task 2  
+- [x] `npm -w packages/contracts run test`
+- [x] `npm run build:packages`
+**Dependencies:** Task 8  
 **Files touched:**
-- `client/src/lib/queryClient.ts`
-- `client/src/App.tsx`
-- `client/package.json`
-
-**Estimated scope:** Small (2 files)
+- `packages/contracts/src/subscriptions/subscriptions.contract.ts`
+- `packages/contracts/src/subscriptions/subscriptions.contract.test.ts`
+- `packages/contracts/src/index.ts`
+**Estimated scope:** Small (3 files)
 
 ---
 
-### Task 4: Implement Type-Safe Ticket Query & Mutation Hooks
-**Description:** Create custom TanStack Query hooks in `client/src/hooks/queries/useTickets.ts` that consume the shared ticket contract types from `@shared/contracts`. Provide `useTickets(filters)`, `useTicket(id)`, `useCreateTicket()`, and `useUpdateTicketStatus()` with automatic query cache invalidation.
-
-**Acceptance criteria:**
-- [x] `useTickets` query hook provides automatic pagination, filter caching, and status tracking.
-- [x] `useCreateTicket` mutation hook calls `queryClient.invalidateQueries({ queryKey: ['tickets'] })` on success.
-- [x] `useUpdateTicketStatus` mutation hook invalidates both the ticket detail and ticket list queries.
-
-**Verification:**
-- [x] Tests pass: Vitest component/hook tests in `client/src/hooks/queries/useTickets.test.tsx`.
-- [x] Build succeeds: `npm -w client run build`
-
-**Dependencies:** Task 3  
-**Files touched:**
-- `client/src/hooks/queries/useTickets.ts`
-- `client/src/hooks/queries/useTickets.test.tsx`
-
-**Estimated scope:** Small (2 files)
+## Checkpoint: Contracts Foundation
+- [x] `@shared/contracts` builds cleanly with dual ESM/CJS outputs (`npm run build:packages`).
+- [x] All contract unit tests pass (`npm -w packages/contracts run test`).
 
 ---
 
-### Task 5: Refactor Ticket List & Creation Views to use Query Hooks
-**Description:** Refactor `TicketsPage` (and/or Ticket Table / Create Ticket modal) to use the new `useTickets` and `useCreateTicket` hooks instead of manual local state loading flags and direct Axios calls.
+## Phase 2: Server Route Validation Integration (`server`)
 
+### Task 10: Wire `@shared/contracts` on Equipment & Subscription Routes
+**Description:** Refactor server DTO files (`server/src/shared/dtos/equipment.dto.ts` and `subscription.dto.ts`) to re-export schemas directly from `@shared/contracts`. Ensure Express routes validate payloads using the shared contracts.
 **Acceptance criteria:**
-- [x] Manual `useState` flags for `loading`, `error`, and `data` in the ticket list/table are replaced by TanStack Query properties (`isLoading`, `isError`, `data`).
-- [x] Successful ticket creation automatically refreshes the table without manual `fetchTickets()` re-invocation.
-- [x] Error toasts and notifications continue to function seamlessly using existing UI primitives (`sonner`).
-
+- [x] `equipment.routes.ts` validates `activate-with-otp` and `admin/devices` with contracts.
+- [x] `subscription.routes.ts` validates `paypal-order`, `paypal-subscription`, and `create` with contracts.
+- [x] `plan.routes.ts` validates plan query, creation, and updates with contracts.
+- [x] Zero breaking changes to existing controller logic.
 **Verification:**
-- [x] Tests pass: `npx vitest run src/pages/TicketsPage/TicketsPage.test.tsx src/components/tickets/NewTicketModal.test.tsx`
-- [x] Build succeeds: `npm -w client run build`
-
-**Dependencies:** Task 4  
+- [x] `npx vitest run src/modules/equipment/ src/modules/subscriptions/` passes completely (143 tests).
+- [x] Server DTOs point directly to `@shared/contracts`.
+**Dependencies:** Tasks 8-9  
 **Files touched:**
+- `server/src/shared/dtos/equipment.dto.ts`
+- `server/src/shared/dtos/subscription.dto.ts`
+- `server/src/shared/dtos/plan.dto.ts`
+- `server/tsconfig.json`
+**Estimated scope:** Medium (4-5 files)
+
+---
+
+## Checkpoint: Server Validation
+- [x] Server DTO re-exports compile cleanly with zero type errors.
+- [x] All equipment and subscription module tests pass (143 tests green).
+
+---
+
+## Phase 3: Client Query Hooks & Page Refactoring (`client`)
+
+### Task 11: Implement TanStack Query Hooks for Equipment & Subscriptions
+**Description:** Create typed custom hooks in `client/src/hooks/queries/useEquipment.ts` and `useSubscriptions.ts` that encapsulate data fetching, query caching, and automated cache invalidation.
+**Acceptance criteria:**
+- [x] `useMyDevices()` and `useAdminDevices()` fetch equipment inventory with standardized query keys.
+- [x] `useActivateWithOtp()` mutation invalidates device slot queries on successful OTP pairing.
+- [x] `useSubscriptions()` and `usePlans(query)` fetch subscription and plan data.
+- [x] `useCreateSubscription()` and `useCreatePaypalOrder()` mutations trigger cache invalidation.
+- [x] Unit tests pass in `client/src/hooks/queries/useEquipment.test.tsx` and `useSubscriptions.test.tsx`.
+**Verification:**
+- [x] `npx vitest run src/hooks/queries/` passes (9 tests).
+- [x] `npm -w client run build` succeeds with zero errors.
+**Dependencies:** Task 10  
+**Files touched:**
+- `client/src/hooks/queries/useEquipment.ts`
+- `client/src/hooks/queries/useEquipment.test.tsx`
+- `client/src/hooks/queries/useSubscriptions.ts`
+- `client/src/hooks/queries/useSubscriptions.test.tsx`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 12: Refactor `DevicesPage` and `PlansPage` Views
+**Description:** Refactor `DevicesPage` and `PlansPage` to consume `useEquipment` and `useSubscriptions` hooks, replacing manual `useState`/`useEffect` loading and error tracking.
+**Acceptance criteria:**
+- [x] `DevicesPage` uses `useMyDevices` and `useActivateWithOtp` mutation via `useDeviceQueries` with canonical `EQUIPMENT_QUERY_KEYS`.
+- [x] `PlansPage` uses `useSubscriptions` and `usePlans`.
+- [x] Replaced duplicate `SubscriptionEquipment` interface in `equipmentService.ts` with contract import from `@shared/contracts`.
+**Verification:**
+- [x] `npx vitest run src/pages/DevicesPage/DevicesPage.test.tsx src/pages/PlansPage/PlansPage.test.tsx` passes (27 tests).
+- [x] `npm -w client run build` compiles with zero TypeScript errors.
+**Dependencies:** Task 11  
+**Files touched:**
+- `client/src/hooks/devices/useDeviceQueries.ts`
+- `client/src/services/equipmentService.ts`
+- `client/src/services/ticketService.ts`
 - `client/src/hooks/useTicketsPage.ts`
-- `client/src/components/tickets/NewTicketModal.tsx`
-- `client/src/pages/TicketsPage/TicketsPage.test.tsx`
-- `client/src/components/tickets/NewTicketModal.test.tsx`
-
-**Estimated scope:** Medium (2-3 files)
+**Estimated scope:** Medium (4 files)
 
 ---
 
-## Checkpoint: Client Query Migration
-- [x] All relevant client tests pass (`useTickets.test.tsx`, `TicketsPage.test.tsx`, `NewTicketModal.test.tsx`).
-- [x] Ticket listing and creation work end-to-end with automated cache invalidation.
-- [x] Zero TypeScript errors in `client` (`npm -w client run build`).
-
----
-
-## Phase 3: Server Route Integration & Standardized Recipe
-
-### Task 6: Implement Contract-Driven Route Validation on Server Ticket Endpoints
-**Description:** Refactor the ticket route validation in `server/src/modules/tickets/routes/ticket.routes.ts` to directly use the shared Zod contracts from `@shared/contracts` via an Express validation middleware helper. Ensure API responses conform to `TicketResponseSchema`.
-
-**Acceptance criteria:**
-- [x] `POST /api/v1/tickets` validates `req.body` against `CreateTicketInputSchema` from `@shared/contracts`.
-- [x] `GET /api/v1/tickets` validates `req.query` against `TicketQuerySchema` from `@shared/contracts`.
-- [x] Invalid payloads return standardized `ValidationError` matching the existing API error format.
-
-**Verification:**
-- [x] Tests pass: `npx vitest run src/modules/tickets/` (11 suites, 97 tests passed).
-- [x] Build succeeds: `npm -w server run build`
-
-**Dependencies:** Task 2  
-**Files touched:**
-- `server/src/modules/tickets/routes/ticket.routes.ts`
-- `server/src/shared/dtos/ticket.dto.ts`
-- `server/vitest.config.ts`
-
-**Estimated scope:** Small (2 files)
-
----
-
-### Task 7: Document Canonical Feature Slice Recipe for Future Modules
-**Description:** Create a clear, high-impact architectural recipe at `docs/architecture/feature-slice-recipe.md`. This guide demonstrates how to build a new feature end-to-end using the streamlined contract-first approach (Contract $\rightarrow$ Drizzle Query in Service $\rightarrow$ Express Route $\rightarrow$ TanStack Query Hook $\rightarrow$ UI Component) without writing redundant pass-through layers.
-
-**Acceptance criteria:**
-- [x] Document explains the 4-step vertical slice development workflow.
-- [x] Includes copy-pasteable minimal examples for a schema contract, server route, and client hook.
-- [x] Clarifies when a custom repository is needed vs when direct Drizzle querying is preferred.
-
-**Verification:**
-- [x] Manual review: Recipe is clear, concise, and references existing codebase conventions.
-
-**Dependencies:** Tasks 1-6  
-**Files touched:**
-- `docs/architecture/feature-slice-recipe.md`
-
-**Estimated scope:** Small (1 file)
-
----
-
-## Checkpoint: Definition of Done
-- [x] Backend tests pass with zero regressions (`npm -w server run test` - all tickets suites pass)
-- [x] Client tests pass with zero regressions (`npm -w client run test:run`)
-- [x] Clean compilation across all monorepo workspaces (`npm -w server run build`, `npm -w client run build`, `npm run build:packages`)
-- [x] All 7 tasks implemented and verified.
+## Checkpoint: Slice 1 Complete
+- [x] Packages and client compile cleanly (`npm run build:packages`, `npm -w client run build`).
+- [x] Equipment and Subscription test suites pass with zero regressions (143 server tests + 27 client tests + 9 query hook tests).
+- [x] Working tree ready to commit as Slice 1.
