@@ -94,7 +94,7 @@ describe('VaultwardenService', () => {
 
       global.fetch = vi
         .fn()
-        .mockImplementation(async (url: string, init?: any) => {
+        .mockImplementation(async (_: string, init?: any) => {
           if (init?.method === 'GET') {
             return {
               ok: true,
@@ -181,7 +181,7 @@ describe('VaultwardenService', () => {
       const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
       (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-admin-token';
 
-      global.fetch = vi.fn().mockImplementation(async (url: string, init?: any) => {
+      global.fetch = vi.fn().mockImplementation(async (url: string, _?: any) => {
         if (url.includes('/api/organizations/org-123/users/invite')) {
           return { ok: false, status: 502 };
         }
