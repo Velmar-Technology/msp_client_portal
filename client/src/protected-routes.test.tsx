@@ -66,6 +66,16 @@ describe("Protected Routes Authorization Helpers", () => {
 
       const privacyRoute = protectedRoutes.find((r) => r.path === "/privacy");
       expect(privacyRoute?.isPublic).toBe(true);
+
+      const passwordManagerRoute = protectedRoutes.find((r) => r.path === "/password-manager");
+      expect(passwordManagerRoute).toBeDefined();
+      expect(passwordManagerRoute?.allowedRoles).toContain("CLIENT");
+
+      const devicesRoute = protectedRoutes.find((r) => r.path === "/devices");
+      expect(devicesRoute).toBeDefined();
+
+      const resourcesRoute = protectedRoutes.find((r) => r.path === "/resources");
+      expect(resourcesRoute).toBeDefined();
     });
   });
 });

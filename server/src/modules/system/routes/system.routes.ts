@@ -3,8 +3,9 @@ import { systemController } from '@modules/system/controllers/SystemController';
 import { technicianEarningsController } from '@modules/system/controllers/TechnicianEarningsController';
 import { authMiddleware } from '@shared/middleware/authMiddleware';
 import { rbacMiddleware } from '@shared/middleware/rbacMiddleware';
+import { requireSubscriptionFeature } from '@shared/middleware/requireSubscriptionFeature';
 import { createGatewayRateLimiter } from '@shared/middleware/gatewayRateLimiterMiddleware';
-import { UserRole } from '@shared/types';
+import { UserRole, FEATURE_CODES } from '@shared/types';
 
 const router = Router();
 
@@ -19,6 +20,7 @@ const vaultResetLimiter = createGatewayRateLimiter({
 router.post(
   '/vault/reset-user-access',
   vaultResetLimiter,
+  requireSubscriptionFeature(FEATURE_CODES.PASSWORD_MANAGER),
   (req, res) => systemController.resetVaultAccess(req, res),
 );
 

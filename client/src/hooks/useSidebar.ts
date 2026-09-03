@@ -18,9 +18,11 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useEntitlements } from "@/hooks/useEntitlements";
 import { subscriptionService } from "@/services/subscriptionService";
 import { planService, type Plan } from "@/services/planService";
 import type { Subscription } from "@/services/subscriptionService";
+import { FEATURE_CODES } from "@/constants/subscriptions";
 
 export interface NavSubItem {
   to: string;
@@ -33,14 +35,15 @@ export interface NavItem {
   labelKey: string;
   groupLabelKey?: string;
   items?: NavSubItem[];
+  requiredFeature?: string;
 }
 
 const clientNavItems: NavItem[] = [
   { to: "/dashboard", icon: LayoutDashboard, labelKey: "dashboard", groupLabelKey: "sidebar.groups.operations" },
-  { to: "/devices", icon: Laptop, labelKey: "devices" },
-  { to: "/resources", icon: Download, labelKey: "resources" },
-  { to: "/password-manager", icon: KeyRound, labelKey: "passwordManager" },
-  { to: "/maintenance", icon: Calendar, labelKey: "maintenance" },
+  { to: "/devices", icon: Laptop, labelKey: "devices", requiredFeature: FEATURE_CODES.RMM_PATCH_MANAGEMENT },
+  { to: "/resources", icon: Download, labelKey: "resources", requiredFeature: FEATURE_CODES.CLOUD_STORAGE },
+  { to: "/password-manager", icon: KeyRound, labelKey: "passwordManager", requiredFeature: FEATURE_CODES.PASSWORD_MANAGER },
+  { to: "/maintenance", icon: Calendar, labelKey: "maintenance", requiredFeature: FEATURE_CODES.RMM_PATCH_MANAGEMENT },
   { to: "/tickets", icon: Ticket, labelKey: "myTickets" },
   {
     to: "/account-group",
@@ -184,6 +187,8 @@ export function useSidebar() {
     [location.pathname]
   );
 
+  const { isFeatureLocked } = useEntitlements();
+
   return {
     user,
     location,
@@ -194,5 +199,6 @@ export function useSidebar() {
     navItems,
     checkIsActive,
     checkIsGroupActive,
+    isFeatureLocked,
   };
 }

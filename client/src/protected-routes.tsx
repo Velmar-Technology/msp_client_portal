@@ -12,6 +12,8 @@ import {
   ContentPageSkeleton,
   RouteSuspenseWrapper,
 } from "@/components/skeletons";
+import { FeatureRouteGuard } from "@/components/shared/FeatureRouteGuard";
+import { FEATURE_CODES } from "@/constants/subscriptions";
 
 // ---- Dynamic Route Definitions using lazyWithRetry ----
 export const DashboardPage = lazyWithRetry(() =>
@@ -201,7 +203,9 @@ const RAW_PROTECTED_ROUTES: Omit<AppRouteConfig, "handle">[] = [
     path: "/devices",
     element: (
       <RouteSuspenseWrapper fallback={<TablePageSkeleton />}>
-        <DevicesPage />
+        <FeatureRouteGuard requiredFeature={FEATURE_CODES.RMM_PATCH_MANAGEMENT}>
+          <DevicesPage />
+        </FeatureRouteGuard>
       </RouteSuspenseWrapper>
     ),
     allowedRoles: ["CLIENT", "ADMIN", "TECHNICIAN"],
@@ -210,7 +214,9 @@ const RAW_PROTECTED_ROUTES: Omit<AppRouteConfig, "handle">[] = [
     path: "/rmm",
     element: (
       <RouteSuspenseWrapper fallback={<TablePageSkeleton />}>
-        <DevicesPage />
+        <FeatureRouteGuard requiredFeature={FEATURE_CODES.RMM_PATCH_MANAGEMENT}>
+          <DevicesPage />
+        </FeatureRouteGuard>
       </RouteSuspenseWrapper>
     ),
     allowedRoles: ["CLIENT", "ADMIN", "TECHNICIAN"],
@@ -219,7 +225,9 @@ const RAW_PROTECTED_ROUTES: Omit<AppRouteConfig, "handle">[] = [
     path: "/resources",
     element: (
       <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
-        <ResourcesPage />
+        <FeatureRouteGuard requiredFeature={FEATURE_CODES.CLOUD_STORAGE}>
+          <ResourcesPage />
+        </FeatureRouteGuard>
       </RouteSuspenseWrapper>
     ),
     allowedRoles: ["CLIENT", "ADMIN"],
@@ -228,7 +236,9 @@ const RAW_PROTECTED_ROUTES: Omit<AppRouteConfig, "handle">[] = [
     path: "/password-manager",
     element: (
       <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
-        <PasswordManagerPage />
+        <FeatureRouteGuard requiredFeature={FEATURE_CODES.PASSWORD_MANAGER}>
+          <PasswordManagerPage />
+        </FeatureRouteGuard>
       </RouteSuspenseWrapper>
     ),
     allowedRoles: ["CLIENT", "ADMIN"],
@@ -237,7 +247,9 @@ const RAW_PROTECTED_ROUTES: Omit<AppRouteConfig, "handle">[] = [
     path: "/maintenance",
     element: (
       <RouteSuspenseWrapper fallback={<TablePageSkeleton />}>
-        <MaintenancePage />
+        <FeatureRouteGuard requiredFeature={FEATURE_CODES.RMM_PATCH_MANAGEMENT}>
+          <MaintenancePage />
+        </FeatureRouteGuard>
       </RouteSuspenseWrapper>
     ),
     allowedRoles: ["CLIENT", "ADMIN", "TECHNICIAN"],

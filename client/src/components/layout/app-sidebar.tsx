@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { Fragment } from "react";
-import { ChevronDown, ChevronRight, HelpCircle } from "lucide-react";
+import { ChevronDown, ChevronRight, HelpCircle, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import logoUrl from "@/assets/logo.png";
 import { useSidebar, type NavItem, type NavSubItem } from "@/hooks/useSidebar";
@@ -187,9 +187,10 @@ interface SidebarNavListProps {
   navItems: NavItem[];
   checkIsActive: (to: string) => boolean;
   checkIsGroupActive: (items?: NavSubItem[]) => boolean;
+  isFeatureLocked?: (featureCode?: string) => boolean;
 }
 
-export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive }: SidebarNavListProps) {
+export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive, isFeatureLocked }: SidebarNavListProps) {
   const { t } = useTranslation();
 
   return (
@@ -259,6 +260,7 @@ export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive }: 
         }
 
         const isActive = checkIsActive(item.to);
+        const isLocked = item.requiredFeature && isFeatureLocked ? isFeatureLocked(item.requiredFeature) : false;
 
         return (
           <Fragment key={item.to}>
@@ -276,14 +278,23 @@ export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive }: 
               >
                 <NavLink
                   to={item.to}
-                  className="flex items-center gap-2.5"
+                  className="flex items-center gap-2.5 w-full"
                   onMouseEnter={() => preloadRoute(item.to)}
                   onFocus={() => preloadRoute(item.to)}
                 >
                   <item.icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
-                  <span className="truncate group-data-[collapsible=icon]:hidden">
+                  <span className="truncate group-data-[collapsible=icon]:hidden flex-1">
                     {translatedLabel}
                   </span>
+                  {isLocked && (
+                    <span
+                      data-testid="sidebar-item-lock"
+                      className="ml-auto inline-flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400 border border-amber-500/20 group-data-[collapsible=icon]:hidden shrink-0"
+                    >
+                      <Lock className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
+                      <span>{t("nav.upgradeBadge", "Upgrade")}</span>
+                    </span>
+                  )}
                 </NavLink>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -296,7 +307,7 @@ export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive }: 
 
 export function AppSidebar() {
   const { t } = useTranslation();
-  const { user, location, activeSubscriptions, planNameMap, navItems, checkIsActive, checkIsGroupActive } = useSidebar();
+  const { user, location, activeSubscriptions, planNameMap, navItems, checkIsActive, checkIsGroupActive, isFeatureLocked } = useSidebar();
 
   const isPublicLegalPage = location.pathname === "/" || location.pathname === "/terms" || location.pathname === "/privacy";
 
@@ -334,7 +345,12 @@ export function AppSidebar() {
       <SidebarContent className="py-1 bg-sidebar">
         <SidebarGroup className="p-0">
           <SidebarGroupContent>
-            <SidebarNavList navItems={navItems} checkIsActive={checkIsActive} checkIsGroupActive={checkIsGroupActive} />
+            <SidebarNavList
+              navItems={navItems}
+              checkIsActive={checkIsActive}
+              checkIsGroupActive={checkIsGroupActive}
+              isFeatureLocked={isFeatureLocked}
+            />
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

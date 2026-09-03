@@ -11,6 +11,9 @@ router.use(authMiddleware);
 /** GET /api/v1/subscriptions — List client subscriptions */
 router.get('/', (req, res) => subscriptionController.getAll(req, res));
 
+/** GET /api/v1/subscriptions/features — List enabled feature codes for tenant */
+router.get('/features', (req, res) => subscriptionController.getActiveFeatures(req, res));
+
 /** GET /api/v1/subscriptions/:id — Get subscription details */
 router.get('/:id', (req, res) => subscriptionController.getById(req, res));
 

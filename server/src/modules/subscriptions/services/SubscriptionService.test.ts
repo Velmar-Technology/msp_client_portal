@@ -148,6 +148,104 @@ describe('SubscriptionService', () => {
     });
   });
 
+  describe('getClientActiveFeatures', () => {
+    it('should return empty array if tenant has no subscriptions', async () => {
+      mocks.subFindByTenant.mockResolvedValue([]);
+
+      const result = await subscriptionService.getClientActiveFeatures('tenant-123');
+      expect(result).toEqual([]);
+      expect(mocks.planFindById).not.toHaveBeenCalled();
+    });
+
+    it('should return empty array if subscriptions are EXPIRED or CANCELLED', async () => {
+      mocks.subFindByTenant.mockResolvedValue([
+        { id: 'sub-1', plan: 'PL-001', status: 'EXPIRED' },
+        { id: 'sub-2', plan: 'PL-002', status: 'CANCELLED' },
+      ]);
+
+      const result = await subscriptionService.getClientActiveFeatures('tenant-123');
+      expect(result).toEqual([]);
+      expect(mocks.planFindById).not.toHaveBeenCalled();
+    });
+
+    it('should return deduplicated active feature codes for active plans', async () => {
+      mocks.subFindByTenant.mockResolvedValue([
+        { id: 'sub-1', plan: 'PL-001', status: 'ACTIVE' },
+      ]);
+      mocks.planFindById.mockResolvedValue({
+        id: 'PL-001',
+        features: [
+          { code: 'HELPDESK_SUPPORT', included: true },
+          { code: 'CLOUD_STORAGE', included: true },
+          { code: 'PASSWORD_MANAGER', included: false },
+          'BACKUP_INCLUDED',
+        ],
+      });
+
+      const result = await subscriptionService.getClientActiveFeatures('tenant-123');
+      expect(mocks.planFindById).toHaveBeenCalledWith('PL-001');
+      expect(result).toContain('HELPDESK_SUPPORT');
+      expect(result).toContain('CLOUD_STORAGE');
+      expect(result).toContain('BACKUP_INCLUDED');
+      expect(result).not.toContain('PASSWORD_MANAGER');
+    });
+
+    it('should return union of features across multiple active and expiring subscriptions', async () => {
+      mocks.subFindByTenant.mockResolvedValue([
+        { id: 'sub-1', plan: 'PL-001', status: 'ACTIVE' },
+        { id: 'sub-2', plan: 'PL-003', status: 'EXPIRING' },
+      ]);
+      mocks.planFindById.mockImplementation(async (id: string) => {
+        if (id === 'PL-001') {
+          return {
+            id: 'PL-001',
+            features: [
+              { code: 'HELPDESK_SUPPORT', included: true },
+              { code: 'RMM_PATCH_MANAGEMENT', included: true },
+            ],
+          };
+        }
+        if (id === 'PL-003') {
+          return {
+            id: 'PL-003',
+            features: [
+              { code: 'PASSWORD_MANAGER', included: true },
+              { code: 'RMM_PATCH_MANAGEMENT', included: true },
+            ],
+          };
+        }
+        return null;
+      });
+
+      const result = await subscriptionService.getClientActiveFeatures('tenant-123');
+      expect(result).toHaveLength(3);
+      expect(result).toContain('HELPDESK_SUPPORT');
+      expect(result).toContain('RMM_PATCH_MANAGEMENT');
+      expect(result).toContain('PASSWORD_MANAGER');
+    });
+
+    it('should automatically decompose bundle features like PASSWORD_DARK_WEB into constituent services', async () => {
+      mocks.subFindByTenant.mockResolvedValue([
+        { id: 'sub-1', plan: 'PL-BUNDLE', status: 'ACTIVE' },
+      ]);
+      mocks.planFindById.mockResolvedValue({
+        id: 'PL-BUNDLE',
+        features: [
+          { code: 'PASSWORD_DARK_WEB', included: true },
+          { code: 'EDR_M365_BACKUP', included: true },
+        ],
+      });
+
+      const result = await subscriptionService.getClientActiveFeatures('tenant-123');
+      expect(result).toContain('PASSWORD_DARK_WEB');
+      expect(result).toContain('PASSWORD_MANAGER');
+      expect(result).toContain('DARK_WEB_MONITORING');
+      expect(result).toContain('EDR_M365_BACKUP');
+      expect(result).toContain('EDR_SECURITY');
+      expect(result).toContain('M365_BACKUP');
+    });
+  });
+
   describe('getSubscriptionById', () => {
     it('should return subscription if found and tenant matches', async () => {
       const mockSub = { id: 'sub-1', tenant_id: 'tenant-123' };

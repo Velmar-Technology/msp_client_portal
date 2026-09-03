@@ -1,9 +1,10 @@
 import { SubscriptionRepository, subscriptionRepository } from '@modules/subscriptions/repositories/SubscriptionRepository';
+import { PlanRepository, planRepository } from '@modules/subscriptions/repositories/PlanRepository';
 import { UserRepository, userRepository } from '@modules/auth';
 import { SubscriptionLifecycleService, subscriptionLifecycleService } from '@modules/subscriptions/services/SubscriptionLifecycleService';
 import { SubscriptionPaymentService, subscriptionPaymentService } from '@modules/subscriptions/services/SubscriptionPaymentService';
 import { NotFoundError, ForbiddenError } from '@shared/errors';
-import { Subscription } from '@shared/types';
+import { Subscription, expandFeatureBundles } from '@shared/types';
 import { CreateSubscriptionInput, UpdateSubscriptionInput } from '@shared/dtos/subscription.dto';
 
 /**
@@ -18,13 +19,58 @@ export class SubscriptionService {
    * @param userRepo - User repository
    * @param lifecycleService - Subscription lifecycle service
    * @param paymentService - Subscription payment service
+   * @param planRepo - Plan repository
    */
   constructor(
     private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
     private userRepo: UserRepository = userRepository,
     private lifecycleService: SubscriptionLifecycleService = subscriptionLifecycleService,
-    private paymentService: SubscriptionPaymentService = subscriptionPaymentService
+    private paymentService: SubscriptionPaymentService = subscriptionPaymentService,
+    private planRepo: PlanRepository = planRepository
   ) {}
+
+  /**
+   * Resolves the union of all active subscription features for a tenant.
+   *
+   * Evaluates all subscriptions in ACTIVE or EXPIRING status and maps their
+   * plan feature definitions into a deduplicated list of active feature codes.
+   *
+   * @param tenantId - Tenant UUID
+   * @returns Promise resolving to an array of unique feature code strings
+   */
+  async getClientActiveFeatures(tenantId: string): Promise<string[]> {
+    const subscriptions = await this.subscriptionRepo.findByTenant(tenantId);
+    const activeSubs = subscriptions.filter(
+      (sub) => sub.status === 'ACTIVE' || sub.status === 'EXPIRING'
+    );
+
+    if (activeSubs.length === 0) {
+      return [];
+    }
+
+    const featureSet = new Set<string>();
+
+    for (const sub of activeSubs) {
+      const planId = sub.plan;
+      if (!planId) continue;
+
+      const plan = await this.planRepo.findById(planId);
+      if (!plan || !Array.isArray(plan.features)) continue;
+
+      for (const feat of plan.features) {
+        if (typeof feat === 'string') {
+          featureSet.add(feat);
+        } else if (typeof feat === 'object' && feat !== null) {
+          const item = feat as { code?: string; included?: boolean };
+          if (item.included !== false && item.code) {
+            featureSet.add(item.code);
+          }
+        }
+      }
+    }
+
+    return expandFeatureBundles(featureSet);
+  }
 
   /**
    * Retrieves the tenant UUID for a specific client user.
