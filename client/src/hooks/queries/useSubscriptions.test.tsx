@@ -2,26 +2,7 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useSubscriptions, usePlans, useCreateSubscription } from "./useSubscriptions";
-import { subscriptionService } from "@/services/subscriptionService";
-import { planService } from "@/services/planService";
-
-vi.mock("@/services/subscriptionService", () => ({
-  subscriptionService: {
-    getAll: vi.fn(),
-    getActiveFeatures: vi.fn(),
-    create: vi.fn(),
-    createPaypalOrder: vi.fn(),
-    createPaypalSubscription: vi.fn(),
-  },
-}));
-
-vi.mock("@/services/planService", () => ({
-  planService: {
-    getAll: vi.fn(),
-    getById: vi.fn(),
-  },
-}));
+import { useSubscriptions, usePlans, useCreateSubscription, subscriptionService, planService } from "@/features/subscriptions";
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -36,9 +17,9 @@ function createWrapper() {
   );
 }
 
-describe("useSubscriptions query hooks", () => {
+describe("useSubscriptions query hooks (Legacy Re-export)", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   it("fetches subscriptions via useSubscriptions", async () => {
@@ -55,7 +36,7 @@ describe("useSubscriptions query hooks", () => {
       },
     ];
 
-    vi.mocked(subscriptionService.getAll).mockResolvedValueOnce(mockSubs as any);
+    const getAllSpy = vi.spyOn(subscriptionService, 'getAll').mockResolvedValueOnce(mockSubs as any);
 
     const { result } = renderHook(() => useSubscriptions(), {
       wrapper: createWrapper(),
@@ -65,7 +46,7 @@ describe("useSubscriptions query hooks", () => {
 
     expect(result.current.data).toHaveLength(1);
     expect(result.current.data?.[0].service_name).toBe("Gold Support");
-    expect(subscriptionService.getAll).toHaveBeenCalledTimes(1);
+    expect(getAllSpy).toHaveBeenCalledTimes(1);
   });
 
   it("fetches plans via usePlans", async () => {
@@ -83,7 +64,7 @@ describe("useSubscriptions query hooks", () => {
       },
     ];
 
-    vi.mocked(planService.getAll).mockResolvedValueOnce(mockPlans as any);
+    const getAllSpy = vi.spyOn(planService, 'getAll').mockResolvedValueOnce(mockPlans as any);
 
     const { result } = renderHook(() => usePlans({ page: 1, limit: 10 }), {
       wrapper: createWrapper(),
@@ -92,13 +73,18 @@ describe("useSubscriptions query hooks", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(result.current.data).toHaveLength(1);
-    expect(planService.getAll).toHaveBeenCalledWith({ page: 1, limit: 10 });
+    expect(getAllSpy).toHaveBeenCalledWith({ page: 1, limit: 10 });
   });
 
   it("executes createSubscription mutation", async () => {
-    vi.mocked(subscriptionService.create).mockResolvedValueOnce({
+    const createSpy = vi.spyOn(subscriptionService, 'create').mockResolvedValueOnce({
       id: "sub-new",
-      service_name: "New Sub",
+      service_name: "Custom Tier",
+      plan: "STANDARD",
+      equipment_count: 3,
+      status: "ACTIVE",
+      renewal_date: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     } as any);
 
     const { result } = renderHook(() => useCreateSubscription(), {
@@ -106,14 +92,14 @@ describe("useSubscriptions query hooks", () => {
     });
 
     result.current.mutate({
-      serviceName: "New Sub",
+      serviceName: "Custom Tier",
       plan: "STANDARD",
       equipmentCount: 3,
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(subscriptionService.create).toHaveBeenCalledWith({
-      serviceName: "New Sub",
+    expect(createSpy).toHaveBeenCalledWith({
+      serviceName: "Custom Tier",
       plan: "STANDARD",
       equipmentCount: 3,
     });

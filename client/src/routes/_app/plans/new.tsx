@@ -1,1 +1,1 @@
-export { PlanEditorPage as default, PlanEditorPage } from "@/pages/PlanEditorPage";
+export { PlanEditorPage as default, PlanEditorPage } from "@/features/subscriptions";

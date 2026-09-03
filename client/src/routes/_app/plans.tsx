@@ -1,1 +1,1 @@
-export { PlansPage as default, PlansPage } from "@/pages/PlansPage";
+export { PlansPage as default, PlansPage } from "@/features/subscriptions";
