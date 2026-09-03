@@ -1,17 +1,24 @@
 import { Request, Response } from 'express';
 import { nextcloudService } from '@modules/system/services/NextcloudService';
 import { systemService as defaultSystemService, SystemService } from '@modules/system/services/SystemService';
+import { vaultwardenService as defaultVaultwardenService, VaultwardenService } from '@modules/system/services/VaultwardenService';
+import { UnauthorizedError, ValidationError } from '@shared/errors';
 
 /**
- * Controller handling HTTP requests for system storage capacity and global API health diagnostics.
+ * Controller handling HTTP requests for system storage capacity, global API health diagnostics,
+ * and hosted password manager user lifecycle actions.
  */
 export class SystemController {
   /**
-   * Initializes SystemController with SystemService dependency.
+   * Initializes SystemController with SystemService and VaultwardenService dependencies.
    *
    * @param service - System domain service
+   * @param vaultwardenSvc - Vaultwarden domain service
    */
-  constructor(private service: SystemService = defaultSystemService) {}
+  constructor(
+    private service: SystemService = defaultSystemService,
+    private vaultwardenSvc: VaultwardenService = defaultVaultwardenService
+  ) {}
 
   /**
    * Handles querying global Nextcloud storage usage metrics and server status.
@@ -40,6 +47,33 @@ export class SystemController {
       data: status,
     });
   }
+
+  /**
+   * Resets the authenticated client user's Vaultwarden access and dispatches a fresh organization invitation.
+   *
+   * @param req - Authenticated Express request
+   * @param res - Express response
+   * @throws {UnauthorizedError} When user is unauthenticated
+   * @throws {ValidationError} When tenant ID is missing
+   */
+  async resetVaultAccess(req: Request, res: Response): Promise<void> {
+    const user = (req as any).user;
+    if (!user || !user.email) {
+      throw new UnauthorizedError('User authentication required');
+    }
+
+    const tenantId = user.tenant_id || user.tenantId;
+    if (!tenantId) {
+      throw new ValidationError('Tenant ID missing from user profile');
+    }
+
+    const result = await this.vaultwardenSvc.resetUserVaultAccess(tenantId, user.email);
+    res.json({
+      success: true,
+      data: result,
+    });
+  }
 }
 
 export const systemController = new SystemController();
+

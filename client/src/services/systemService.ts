@@ -71,13 +71,19 @@ export const systemService = {
     return response.data.data;
   },
 
-  /**
-   * Retrieves operational health check, latency benchmarks, and environment variable configuration audit.
-   *
-   * @returns Promise resolving to SystemApiStatusResponse health report.
-   */
   async getApiStatus(): Promise<SystemApiStatusResponse> {
     const response = await api.get('/system/api-status');
     return response.data.data;
   },
+
+  /**
+   * Resets the authenticated user's Vaultwarden access and dispatches a fresh organization invitation.
+   *
+   * @returns Promise resolving to ResetVaultAccessResponse.
+   */
+  async resetVaultAccess(): Promise<{ success: boolean; message: string }> {
+    const response = await api.post('/system/vault/reset-user-access');
+    return response.data.data;
+  },
 };
+

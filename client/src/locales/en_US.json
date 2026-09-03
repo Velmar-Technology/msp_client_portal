@@ -1956,6 +1956,18 @@
     "step3Title": "Accept Invite & Login:",
     "step3Text": "Click the invitation link sent to your email to create your Master Password and join your company vault.",
     "clientsTitle": "Official Bitwarden Clients",
-    "clientsDesc": "Compatible with all official Bitwarden extensions, mobile, and desktop apps."
+    "clientsDesc": "Compatible with all official Bitwarden extensions, mobile, and desktop apps.",
+    "troubleTitle": "Trouble Logging In?",
+    "troubleDesc": "Lost your Master Password? Learn how recovery works in a zero-knowledge architecture.",
+    "zeroKnowledgeNoticeTitle": "Zero-Knowledge Security Policy",
+    "zeroKnowledgeNoticeDesc": "Because your vault is end-to-end encrypted, administrators cannot view or recover your Master Password. If you are locked out, resetting your vault will permanently delete your unshared private items, but all shared company collections (IT, Finance, Operations) will remain safe.",
+    "resetButton": "Reset Vault Access",
+    "resetDialogTitle": "Reset Vault Access & Re-Invite",
+    "resetDialogDesc": "Are you sure you want to reset your vault access? Your current locked account will be purged and a fresh invitation email will be dispatched immediately.",
+    "resetDialogWarning": "Warning: Any personal, unshared passwords stored in your locked vault will be permanently lost. All company organization collections will remain unaffected.",
+    "resetDialogConfirm": "Yes, Reset & Send Invite",
+    "resetDialogCancel": "Cancel",
+    "resetSuccessTitle": "Invitation Dispatched",
+    "resetSuccessDesc": "A fresh Bitwarden invitation email has been sent. Please check your inbox to set a new Master Password."
   }
 }

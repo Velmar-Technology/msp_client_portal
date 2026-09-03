@@ -128,4 +128,71 @@ describe('VaultwardenService', () => {
       (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
     });
   });
+
+  describe('resetUserVaultAccess', () => {
+    it('returns simulated success when token is not configured', async () => {
+      const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = '';
+
+      const res = await service.resetUserVaultAccess('org-123', 'jane@acme.com');
+      expect(res.success).toBe(true);
+      expect(res.message).toContain('Simulated reset invitation');
+
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
+    });
+
+    it('removes stale user, deletes global user, and issues fresh invite', async () => {
+      const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-admin-token';
+
+      const fetchCalls: Array<{ url: string; method: string }> = [];
+      global.fetch = vi.fn().mockImplementation(async (url: string, init?: any) => {
+        const method = init?.method || 'GET';
+        fetchCalls.push({ url, method });
+
+        if (url.includes('/api/organizations/org-123/users') && method === 'GET') {
+          return {
+            ok: true,
+            json: async () => ({ Data: [{ Id: 'user-member-1', Email: 'jane@acme.com' }] }),
+          };
+        }
+        if (url.includes('/admin/users') && method === 'GET') {
+          return {
+            ok: true,
+            json: async () => [{ Id: 'user-global-1', Email: 'jane@acme.com' }],
+          };
+        }
+        return { ok: true, json: async () => ({}) };
+      });
+
+      const res = await service.resetUserVaultAccess('org-123', 'jane@acme.com');
+      expect(res.success).toBe(true);
+      expect(res.message).toContain('fresh invitation has been dispatched');
+
+      // Verify sequence
+      expect(fetchCalls.some((c) => c.url.includes('/api/organizations/org-123/users/user-member-1') && c.method === 'DELETE')).toBe(true);
+      expect(fetchCalls.some((c) => c.url.includes('/admin/users/user-global-1/delete') && c.method === 'POST')).toBe(true);
+      expect(fetchCalls.some((c) => c.url.includes('/api/organizations/org-123/users/invite') && c.method === 'POST')).toBe(true);
+
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
+    });
+
+    it('throws ExternalServiceError if re-invite fails', async () => {
+      const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-admin-token';
+
+      global.fetch = vi.fn().mockImplementation(async (url: string, init?: any) => {
+        if (url.includes('/api/organizations/org-123/users/invite')) {
+          return { ok: false, status: 502 };
+        }
+        return { ok: true, json: async () => [] };
+      });
+
+      await expect(service.resetUserVaultAccess('org-123', 'jane@acme.com')).rejects.toThrow(
+        ExternalServiceError
+      );
+
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
+    });
+  });
 });

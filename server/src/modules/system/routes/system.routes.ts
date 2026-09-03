@@ -3,11 +3,24 @@ import { systemController } from '@modules/system/controllers/SystemController';
 import { technicianEarningsController } from '@modules/system/controllers/TechnicianEarningsController';
 import { authMiddleware } from '@shared/middleware/authMiddleware';
 import { rbacMiddleware } from '@shared/middleware/rbacMiddleware';
+import { createGatewayRateLimiter } from '@shared/middleware/gatewayRateLimiterMiddleware';
 import { UserRole } from '@shared/types';
 
 const router = Router();
 
 router.use(authMiddleware);
+
+const vaultResetLimiter = createGatewayRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  maxRequests: 5,
+});
+
+/** POST /api/v1/system/vault/reset-user-access — Self-service vault reset and re-invitation */
+router.post(
+  '/vault/reset-user-access',
+  vaultResetLimiter,
+  (req, res) => systemController.resetVaultAccess(req, res),
+);
 
 /** GET /api/v1/system/storage — Get Nextcloud storage status (Admin only) */
 router.get(

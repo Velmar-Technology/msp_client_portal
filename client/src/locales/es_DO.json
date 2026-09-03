@@ -1950,6 +1950,18 @@
     "step3Title": "Acepte la Invitación e Inicie Sesión:",
     "step3Text": "Haga clic en el enlace de invitación recibido por correo para crear su Contraseña Maestra y unirse a la bóveda de la empresa.",
     "clientsTitle": "Clientes Oficiales de Bitwarden",
-    "clientsDesc": "Compatible con todas las extensiones oficiales de Bitwarden, aplicaciones móviles y de escritorio."
+    "clientsDesc": "Compatible con todas las extensiones oficiales de Bitwarden, aplicaciones móviles y de escritorio.",
+    "troubleTitle": "¿Problemas para Iniciar Sesión?",
+    "troubleDesc": "¿Olvidó su Contraseña Maestra? Conozca cómo funciona la recuperación en una arquitectura de conocimiento cero.",
+    "zeroKnowledgeNoticeTitle": "Política de Seguridad de Conocimiento Cero",
+    "zeroKnowledgeNoticeDesc": "Debido a que su bóveda está cifrada de extremo a extremo, los administradores no pueden ver ni recuperar su Contraseña Maestra. Si no puede acceder, restablecer el acceso eliminará permanentemente sus contraseñas personales no compartidas, pero todas las colecciones compartidas de la empresa (TI, Finanzas, Operaciones) permanecerán seguras.",
+    "resetButton": "Restablecer Acceso a Bóveda",
+    "resetDialogTitle": "Restablecer Acceso y Re-invitar",
+    "resetDialogDesc": "¿Está seguro de que desea restablecer su acceso a la bóveda? Su cuenta bloqueada actual será eliminada y se enviará un nuevo correo de invitación inmediatamente.",
+    "resetDialogWarning": "Advertencia: Cualquier contraseña personal no compartida en su bóveda bloqueada se perderá permanentemente. Todas las colecciones de la empresa permanecerán intactas.",
+    "resetDialogConfirm": "Sí, Restablecer y Enviar Invitación",
+    "resetDialogCancel": "Cancelar",
+    "resetSuccessTitle": "Invitación Enviada",
+    "resetSuccessDesc": "Se ha enviado una nueva invitación de Bitwarden a su correo electrónico. Revise su bandeja de entrada para definir una nueva Contraseña Maestra."
   }
 }

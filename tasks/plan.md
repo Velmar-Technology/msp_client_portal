@@ -1,204 +1,170 @@
-# Implementation Plan: Hosted Multi-Tenant Vaultwarden Integration
+# Implementation Plan: Vaultwarden Self-Service Password Reset & Re-Invite
 
 ## Overview
-Implement an end-to-end hosted, multi-tenant Vaultwarden password manager for MSP client tenants. This provisions a lightweight Vaultwarden service (`vaultwarden/server:alpine`) in `docker-compose.prod.yml` behind Traefik on subpath `/vault`, programmatically provisions Bitwarden Organizations and sends email invitations upon subscription activation (`PASSWORD_MANAGER` feature), and enforces account lifecycle state transitions per Dominican commercial terms (`BL-702` non-payment scale: Day 5 Read-Only, Day 15 Suspended, Day 30 Purged).
+Implement an automated, self-service password reset and organization re-invitation workflow for the hosted Vaultwarden password manager. In accordance with zero-knowledge cryptographic principles, forgotten Master Passwords cannot be recovered. This feature allows authenticated team members locked out of their personal vaults to securely de-provision their orphaned vault record and instantly receive a fresh Bitwarden invitation email to create a new Master Password and reconnect with their tenant organization collections.
 
 ## Architecture Decisions
-- **Container Topology & Routing:** Run one single `msp_vaultwarden` container in the existing Docker Compose stack attached to `default` and `reverse-proxy` networks. Traefik routes path prefix `/vault` to port 80, with `DOMAIN=https://helpdesk.velmartech.com.do/vault`.
-- **Tenant Data Isolation:** Cryptographically zero-knowledge via Bitwarden Organizations and Collections. Each MSP client tenant maps to a dedicated Bitwarden Organization (`org_<tenant_id>`).
-- **Domain Service Pattern:** Follow Clean Architecture: create `VaultwardenService` inside `server/src/modules/system/services/` (alongside `NextcloudService`), injected into `SubscriptionLifecycleService` and `NonPaymentSuspensionService`.
-- **BL-702 Non-Payment Scale:**
-  - Day 5 (`READ_ONLY`): Lock organization settings and block new user additions.
-  - Day 15 (`SUSPENDED`): Deactivate users in the organization via Vaultwarden API to block access.
-  - Day 30 (`PURGED`): Delete the tenant Organization and purge vault collections to liberate storage with zero liability.
-  - Re-activation: Reactivate users upon settling invoice payment.
-- **Client Portal UX:** Add Password Manager portal view / launch button linking to `/vault/#/login`, with extension setup instructions.
+- **Zero-Knowledge Realignment:** We do not attempt to escrow or recover Master Passwords. Instead, the backend purges the orphaned user via the Vaultwarden Admin API (`/api/admin/users/{userId}/delete`) and triggers an automated re-invitation (`/api/organizations/{orgId}/users/invite`).
+- **Identity & Tenant Anchoring:** The reset operation is strictly scoped to the authenticated user's verified session (`req.user.email` and `req.user.tenant_id`). Users cannot reset or de-provision credentials belonging to other members or tenants.
+- **Data Loss Safeguards:** The frontend enforces a double-confirmation modal (`AlertDialog`) that explicitly informs the user that personal, unshared vault credentials will be wiped, while all shared organizational collections remain safe and intact.
+- **Abuse Prevention:** Protected by a strict rate limiter (maximum 3 reset attempts per hour per user).
 
 ---
 
 ## Dependency Graph
 ```
-docker-compose.prod.yml (Vaultwarden Service & Traefik router)
+Vaultwarden Admin & Org API (User delete & org re-invite)
     │
     ▼
-server/src/shared/config/env.ts (VAULTWARDEN_* env vars)
+server/src/modules/system/services/VaultwardenService.ts (resetUserVaultAccess method)
     │
     ▼
-server/src/modules/system/services/VaultwardenService.ts (API wrapper: orgs, invites, status, purge)
-    │
-    ├──► SubscriptionLifecycleService.ts (On subscription activation: auto-provision Org & invite users)
-    │
-    └──► NonPaymentSuspensionService.ts (On Day 15 SUSPENDED / Day 30 PURGED: deactivate & delete)
+server/src/modules/system/controllers/SystemController.ts (resetVaultAccess handler)
     │
     ▼
-client/src/ (Navigation link, Password Manager dashboard view & extension onboarding)
+server/src/modules/system/routes/system.routes.ts (POST /api/v1/system/vault/reset-user-access)
+    │
+    ▼
+client/src/services/systemService.ts (resetVaultAccess API client call)
+    │
+    ▼
+client/src/pages/PasswordManagerPage/PasswordManagerPage.tsx (UI reset card, AlertDialog confirmation)
+    │
+    ▼
+client/src/locales/{en_US,es_DO}.json (Localization strings)
 ```
 
 ---
 
 ## Task List
 
-### Phase 1: Infrastructure & Environment Configuration
-- [x] **Task 1: Add Vaultwarden Service to `docker-compose.prod.yml` & `MSP_PORTAL_STACK.md`**
-- [x] **Task 2: Extend Server Environment Schema with Vaultwarden Configuration**
+### Phase 1: Backend Domain Service & Endpoint
+- [ ] **Task 1: Extend `VaultwardenService` with `resetUserVaultAccess` and Unit Tests**
+- [ ] **Task 2: Add `POST /api/v1/system/vault/reset-user-access` Route with Rate Limiting & Controller Handler**
 
-### Checkpoint 1: Infrastructure & Configuration Verification
-- [x] Verify `docker-compose.prod.yml` syntax and Traefik routing rules
-- [x] Server environment validation schema passes tests without regressions
+### Checkpoint 1: Backend Verification
+- [ ] `VaultwardenService.test.ts` passes all test cases including mock mode, user lookup, deletion, and re-invitation
+- [ ] Route and controller tests pass with 200 OK and 429 rate limit checks
+- [ ] Server compiles clean (`npm -w server run build`)
 
-### Phase 2: Core Domain Service & Lifecycle Integration
-- [x] **Task 3: Implement `VaultwardenService` with Unit Tests**
-- [x] **Task 4: Integrate Organization Auto-Provisioning into `SubscriptionLifecycleService`**
-- [x] **Task 5: Integrate Non-Payment Suspension & Purge Lifecycle (`BL-702`) into `NonPaymentSuspensionService`**
+### Phase 2: Frontend Client Service, Modal UI & Localization
+- [ ] **Task 3: Add `resetVaultAccess` method to Frontend `systemService`**
+- [ ] **Task 4: Add "Trouble Logging In?" Card and `AlertDialog` Confirmation to `PasswordManagerPage`**
+- [ ] **Task 5: Add English (`en_US.json`) and Spanish (`es_DO.json`) Translations**
 
-### Checkpoint 2: Backend Services & Business Logic Verification
-- [x] Vitest unit tests pass for `VaultwardenService.test.ts`
-- [x] `SubscriptionLifecycleService.test.ts` passes with mocked Vaultwarden calls
-- [x] `NonPaymentSuspensionService.test.ts` passes verifying suspension (deactivation) and purge (org deletion)
-- [x] Backend compiles clean (`npm -w server run build`)
-
-### Phase 3: Client Portal UX & Extension Guidance
-- [x] **Task 6: Add Password Manager Client Navigation & Hub Page**
-- [x] **Task 7: Add i18n Localization Keys (`en_US.json` & `es_DO.json`)**
-
-### Checkpoint 3: Complete Definition of Done
-- [x] Clean compilation on both frontend and backend (`npm -w server run build` & `npm -w client run build`)
-- [x] All frontend and backend tests pass (`npm -w server run test` & `npm -w client run test:run`)
-- [x] Zero lint/typecheck errors
+### Checkpoint 2: Frontend & End-to-End Verification
+- [ ] Frontend builds cleanly with zero TypeScript errors (`npm -w client run build`)
+- [ ] Frontend tests pass (`npm -w client run test:run`)
+- [ ] Double-confirmation dialog properly prevents accidental execution
+- [ ] Toast notification appears with clear user instructions upon successful email dispatch
 
 ---
 
 ## Detailed Task Breakdown
 
-### Task 1: Add Vaultwarden Service to `docker-compose.prod.yml` & `MSP_PORTAL_STACK.md`
-**Description:** Add `msp_vaultwarden` container using `vaultwarden/server:alpine`, configured for subpath `/vault` with Traefik v3 routing labels, WebSocket hub support, and persistent volume `vaultwarden_data`. Update infrastructure documentation in `MSP_PORTAL_STACK.md`.
+### Task 1: Extend `VaultwardenService` with `resetUserVaultAccess` and Unit Tests
+**Description:** Add method `resetUserVaultAccess(tenantId: string, userEmail: string): Promise<{ success: boolean; message: string }>` to `VaultwardenService.ts`. In live mode, it lists users via `/api/admin/users`, deletes the matching user by email via `/api/admin/users/{id}/delete`, resolves the tenant organization, and calls `inviteUserToOrganization`. In mock mode, it returns simulated success. Co-locate comprehensive unit tests.
 
 **Acceptance criteria:**
-- [ ] `vaultwarden` service defined in `docker-compose.prod.yml` with memory limit (120M) and CPU limit (0.20).
-- [ ] `DOMAIN=https://helpdesk.velmartech.com.do/vault` and `SIGNUPS_ALLOWED=false` configured.
-- [ ] Traefik router `msp-vault` correctly configured with `reverse-proxy` network, Let's Encrypt TLS, and load balancer port 80.
-- [ ] `MSP_PORTAL_STACK.md` updated with Vaultwarden service details and routing matrix.
+- [ ] Throws domain error `NotFoundError` if the user is not found or organization cannot be resolved.
+- [ ] Calls Vaultwarden Admin API to delete stale user account.
+- [ ] Re-invites user with role `'User'` into the tenant's Bitwarden organization.
+- [ ] 100% unit test coverage in `VaultwardenService.test.ts`.
 
+**Verification:**
+- Focused test: `npm -w server run test -- src/modules/system/services/VaultwardenService.test.ts`
+
+**Dependencies:** None
 **Files likely touched:**
-- `docker-compose.prod.yml`
-- `docs/infrastructure/MSP_PORTAL_STACK.md`
-**Estimated scope:** Small (2 files)
+- `server/src/modules/system/services/VaultwardenService.ts`
+- `server/src/modules/system/services/VaultwardenService.test.ts`
+**Estimated scope:** S (2 files)
 
 ---
 
-### Task 2: Extend Server Environment Schema with Vaultwarden Configuration
-**Description:** Add `VAULTWARDEN_URL`, `VAULTWARDEN_ADMIN_TOKEN`, and `VAULTWARDEN_EXTERNAL_URL` to Zod schema in `server/src/shared/config/env.ts` with safe defaults for development and testing.
+### Task 2: Add `POST /api/v1/system/vault/reset-user-access` Route with Rate Limiting & Controller Handler
+**Description:** Implement `resetVaultAccess` method in `SystemController` and register route `POST /api/v1/system/vault/reset-user-access` in `system.routes.ts`. Enforce JWT authentication and strict sliding-window rate limiting (3 requests / 60 min).
 
 **Acceptance criteria:**
-- [ ] `VAULTWARDEN_URL` defaults to `http://vaultwarden:80` (or `http://localhost:8080/vault`).
-- [ ] `VAULTWARDEN_ADMIN_TOKEN` defined as optional/defaulted string.
-- [ ] `VAULTWARDEN_EXTERNAL_URL` defaults to `https://helpdesk.velmartech.com.do/vault`.
+- [ ] Protected by `authenticate` middleware; extracts verified `user.email` and `user.tenant_id`.
+- [ ] Calls `vaultwardenService.resetUserVaultAccess(tenant_id, email)`.
+- [ ] Returns HTTP 200 with `{ success: true, message: '...' }`.
+- [ ] Throws `RateLimitError` when request threshold is exceeded.
 
+**Verification:**
+- Focused test: `npm -w server run test -- src/modules/system/controllers/SystemController.test.ts`
+- Server build: `npm -w server run build`
+
+**Dependencies:** Task 1
 **Files likely touched:**
-- `server/src/shared/config/env.ts`
+- `server/src/modules/system/controllers/SystemController.ts`
+- `server/src/modules/system/routes/system.routes.ts`
+**Estimated scope:** S (2 files)
+
+---
+
+### Task 3: Add `resetVaultAccess` Method to Frontend `systemService`
+**Description:** Extend `client/src/services/systemService.ts` (or equivalent API client module) with `resetVaultAccess(): Promise<{ success: boolean; message: string }>`.
+
+**Acceptance criteria:**
+- [ ] Sends authenticated `POST` request to `/api/v1/system/vault/reset-user-access`.
+- [ ] Handles errors cleanly and throws formatted error messages.
+
+**Verification:**
+- TypeScript check: `npm -w client run build`
+
+**Dependencies:** Task 2
+**Files likely touched:**
+- `client/src/services/systemService.ts`
 **Estimated scope:** XS (1 file)
 
 ---
 
-### Task 3: Implement `VaultwardenService` with Unit Tests
-**Description:** Create `server/src/modules/system/services/VaultwardenService.ts` providing methods:
-- `createOrganization(orgName: string, billingEmail: string)`
-- `inviteUserToOrganization(orgId: string, email: string, role: 'User' | 'Manager' | 'Admin')`
-- `setOrganizationStatus(orgId: string, active: boolean)` (for Day 15 suspension)
-- `deactivateOrganizationUsers(orgId: string)`
-- `reactivateOrganizationUsers(orgId: string)`
-- `deleteOrganization(orgId: string)` (for Day 30 purge)
-Export from `server/src/modules/system/index.ts`. Co-locate `VaultwardenService.test.ts`.
+### Task 4: Add "Trouble Logging In?" Card and `AlertDialog` Confirmation to `PasswordManagerPage`
+**Description:** Update `client/src/pages/PasswordManagerPage/PasswordManagerPage.tsx` to include an accessible, high-visibility card:
+1. Explains the zero-knowledge security model and why Master Passwords cannot be decrypted by admins.
+2. Provides a **"Reset Vault Access"** button triggering an `AlertDialog`.
+3. Modal displays critical warning: personal unshared passwords will be lost, but company collections remain intact.
+4. Shows loading state and triggers toast notification upon completion.
 
 **Acceptance criteria:**
-- [ ] Typed domain errors thrown using `@shared/errors` (`ExternalServiceError`, `InternalServerError`).
-- [ ] Standard TSDoc annotations on all exported methods (`@param`, `@returns`, `@throws`).
-- [ ] 100% Vitest unit test coverage for success, failure, and network edge cases.
+- [ ] Clear educational distinction between MSP Portal password and Bitwarden Master Password.
+- [ ] `AlertDialog` prevents accidental clicks with double-confirmation.
+- [ ] Compact design standard (`h-7` button height).
+- [ ] Toast notification informs user to check their email inbox.
 
+**Verification:**
+- Frontend build: `npm -w client run build`
+- Manual visual inspection on `http://localhost:5173/password-manager`
+
+**Dependencies:** Task 3
 **Files likely touched:**
-- `server/src/modules/system/services/VaultwardenService.ts`
-- `server/src/modules/system/services/VaultwardenService.test.ts`
-- `server/src/modules/system/index.ts`
-**Estimated scope:** Medium (3 files)
-
----
-
-### Task 4: Integrate Organization Auto-Provisioning into `SubscriptionLifecycleService`
-**Description:** Update `SubscriptionLifecycleService.ts` so that when a subscription is created or activated and its plan features include `PASSWORD_MANAGER`, it calls `vaultwardenService.createOrganization` and dispatches invitation emails to the tenant's primary users.
-
-**Acceptance criteria:**
-- [ ] Detects `PASSWORD_MANAGER` feature code in plan definition.
-- [ ] Provisions organization named after client company / tenant.
-- [ ] Sends Bitwarden invite to the subscription owner's email address.
-- [ ] Logs error without blocking checkout if external service is temporarily unreachable (fault-tolerant).
-
-**Files likely touched:**
-- `server/src/modules/subscriptions/services/SubscriptionLifecycleService.ts`
-- `server/src/modules/subscriptions/services/SubscriptionLifecycleService.test.ts`
-**Estimated scope:** Small (2 files)
-
----
-
-### Task 5: Integrate Non-Payment Suspension & Purge Lifecycle (`BL-702`) into `NonPaymentSuspensionService`
-**Description:** Update `NonPaymentSuspensionService.ts`:
-- When applying `SUSPENDED` (Day 15), invoke `vaultwardenService.deactivateOrganizationUsers`.
-- When applying `PURGED` (Day 30 in `purgeTenantData`), invoke `vaultwardenService.deleteOrganization`.
-- When an overdue invoice is settled, re-activate organization users.
-
-**Acceptance criteria:**
-- [ ] Day 15 deactivates Vaultwarden user accounts.
-- [ ] Day 30 cleanly purges tenant organization and data from Vaultwarden.
-- [ ] Co-located unit tests in `NonPaymentSuspensionService.test.ts` verify all lifecycle calls.
-
-**Files likely touched:**
-- `server/src/modules/billing/services/NonPaymentSuspensionService.ts`
-- `server/src/modules/billing/services/NonPaymentSuspensionService.test.ts`
-**Estimated scope:** Small-Medium (2 files)
-
----
-
-### Task 6: Add Password Manager Client Navigation & Hub Page
-**Description:** Add a "Password Manager" section to client navigation (under operations or security) visible when the client has an active subscription with `PASSWORD_MANAGER`. Create `PasswordManagerPage` with:
-- One-click launch button to `/vault/`
-- Status badge (Active / Provisioned)
-- Quick links / guide to install Bitwarden Chrome, Edge, Firefox, iOS, and Android extensions
-- Server URL copy helper (`https://helpdesk.velmartech.com.do/vault`)
-
-**Acceptance criteria:**
-- [ ] Uses shadcn/ui components (`Button`, `Card`, `Badge`).
-- [ ] Compact heights (`h-7`) and design system compliance.
-- [ ] Responsive layout with copy-to-clipboard for the custom server URL.
-
-**Files likely touched:**
-- `client/src/hooks/useSidebar.ts`
 - `client/src/pages/PasswordManagerPage/PasswordManagerPage.tsx`
-- `client/src/routes/index.tsx`
-**Estimated scope:** Medium (3 files)
+**Estimated scope:** S (1 file)
 
 ---
 
-### Task 7: Add i18n Localization Keys (`en_US.json` & `es_DO.json`)
-**Description:** Provide full bilingual support for all new Password Manager navigation labels, cards, setup instructions, and status descriptions.
+### Task 5: Add English (`en_US.json`) and Spanish (`es_DO.json`) Translations
+**Description:** Add all new localization strings across `en_US.json` and `es_DO.json` for all modal titles, warnings, button labels, and toasts under the `passwordManager.*` namespace.
 
 **Acceptance criteria:**
-- [ ] Zero hardcoded UI text.
-- [ ] Full parity between `en_US.json` and `es_DO.json`.
+- [ ] Zero hardcoded UI strings.
+- [ ] 100% key parity between `en_US.json` and `es_DO.json`.
 
+**Verification:**
+- i18n parity check: verify keys exist in both locale files.
+
+**Dependencies:** Task 4
 **Files likely touched:**
 - `client/src/locales/en_US.json`
 - `client/src/locales/es_DO.json`
-**Estimated scope:** Small (2 files)
+**Estimated scope:** S (2 files)
 
 ---
 
-## Verification Plan
-
-### Automated Tests
-- Backend tests: `npm -w server run test`
-- Frontend tests: `npm -w client run test:run`
-- Build check: `npm -w server run build` and `npm -w client run build`
-
-### Manual Verification
-- Verify `docker-compose.prod.yml` syntax using `docker compose config`
-- Verify navigation item and Password Manager hub page in local development environment
-- Verify invitation trigger and suspension lifecycle mocks in Vitest
+## Risks and Mitigations
+| Risk | Impact | Mitigation |
+| :--- | :---: | :--- |
+| User resets vault accidentally and loses unshared personal passwords | High | Require double-confirmation modal with explicit warning before dispatching request |
+| Malicious user resets another team member's vault | Critical | Strictly tie API request to the authenticated user's verified session email and tenant ID (`req.user.email`) |
+| Repeated reset requests trigger email spam | Medium | Apply sliding-window rate limit (3 requests per hour per user) on the endpoint |
