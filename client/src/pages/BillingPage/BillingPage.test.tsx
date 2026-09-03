@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BillingPage } from "@/pages/BillingPage/BillingPage";
 import { expect, test, vi, beforeEach, describe } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { invoiceService } from '@/services/invoiceService';
 import type { Invoice } from '@/services/invoiceService';
 import { useAuth } from '@/hooks/useAuth';
@@ -59,6 +60,9 @@ vi.mock('@/services/invoiceService', () => ({
     downloadInvoice: vi.fn(),
     markAsPaid: vi.fn(),
     cancelInvoice: vi.fn(),
+    capturePaypalOrder: vi.fn(),
+    createPaypalOrder: vi.fn(),
+    getFinancialStats: vi.fn(),
   },
 }));
 
@@ -97,6 +101,26 @@ const mockInvoices: Invoice[] = [
   },
 ];
 
+function createTestQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, gcTime: 0 },
+      mutations: { retry: false },
+    },
+  });
+}
+
+function renderPage(initialEntries: string[]) {
+  const queryClient = createTestQueryClient();
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={initialEntries}>
+        <BillingPage />
+      </MemoryRouter>
+    </QueryClientProvider>
+  );
+}
+
 describe("BillingPage & InvoiceDetailsModal", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -117,22 +141,14 @@ describe("BillingPage & InvoiceDetailsModal", () => {
   });
 
   test("renders invoices table with records", async () => {
-    render(
-      <MemoryRouter initialEntries={["/billing"]}>
-        <BillingPage />
-      </MemoryRouter>
-    );
+    renderPage(["/billing"]);
 
     expect(await screen.findByText("INV-2026-001")).toBeInTheDocument();
     expect(screen.getByText("INV-2026-002")).toBeInTheDocument();
   });
 
   test("opens InvoiceDetailsModal when clicking invoice number", async () => {
-    render(
-      <MemoryRouter initialEntries={["/billing"]}>
-        <BillingPage />
-      </MemoryRouter>
-    );
+    renderPage(["/billing"]);
 
     const invBtn = await screen.findByText("INV-2026-001");
     fireEvent.click(invBtn);
@@ -142,11 +158,7 @@ describe("BillingPage & InvoiceDetailsModal", () => {
   });
 
   test("clicking Pay Now inside InvoiceDetailsModal opens PayModal without collision", async () => {
-    render(
-      <MemoryRouter initialEntries={["/billing"]}>
-        <BillingPage />
-      </MemoryRouter>
-    );
+    renderPage(["/billing"]);
 
     const invBtn = await screen.findByText("INV-2026-001");
     fireEvent.click(invBtn);
@@ -164,11 +176,7 @@ describe("BillingPage & InvoiceDetailsModal", () => {
   });
 
   test("deep link with ?openModal=pay-invoice&invoiceId=inv-001 directly opens PayModal without opening InvoiceDetailsModal", async () => {
-    render(
-      <MemoryRouter initialEntries={["/billing?openModal=pay-invoice&invoiceId=inv-001"]}>
-        <BillingPage />
-      </MemoryRouter>
-    );
+    renderPage(["/billing?openModal=pay-invoice&invoiceId=inv-001"]);
 
     await waitFor(() => {
       expect(screen.getByText(/SSL security/i)).toBeInTheDocument();
@@ -177,11 +185,7 @@ describe("BillingPage & InvoiceDetailsModal", () => {
   });
 
   test("deep link with ?invoiceId=inv-001 directly opens InvoiceDetailsModal", async () => {
-    render(
-      <MemoryRouter initialEntries={["/billing?invoiceId=inv-001"]}>
-        <BillingPage />
-      </MemoryRouter>
-    );
+    renderPage(["/billing?invoiceId=inv-001"]);
 
     expect(await screen.findByText("Monthly Managed IT Service")).toBeInTheDocument();
   });

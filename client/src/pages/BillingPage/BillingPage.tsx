@@ -48,6 +48,7 @@ import { useBilling } from "@/hooks/useBilling";
 import { useAuth } from "@/hooks/useAuth";
 import type { Invoice } from "@/services/invoiceService";
 import { invoiceService } from "@/services/invoiceService";
+import { useCapturePaypalOrder } from "@/features/billing";
 import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -71,6 +72,8 @@ const PayModal = ({
   const [isSuccess, setIsSuccess] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"card" | "transfer">("card");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const { mutateAsync: captureAsync } = useCapturePaypalOrder();
 
   const handleCopy = (text: string, id: string) => {
     if (navigator.clipboard) {
@@ -142,7 +145,7 @@ const PayModal = ({
             onApprove: async (data: any) => {
               setPaymentMessage(t("billing.paymentProcessing") || "Processing payment...");
               try {
-                const response = await invoiceService.capturePaypalOrder(invoice!.id, data.orderID);
+                const response = await captureAsync({ id: invoice!.id, orderId: data.orderID });
                 if (response.success) {
                   setIsSuccess(true);
                   setPaymentMessage(t("billing.paymentSuccess") || "Payment approved!");
@@ -181,7 +184,7 @@ const PayModal = ({
         }
       }
     };
-  }, [isOpen, invoice, paymentMethod, t, onSuccess]);
+  }, [isOpen, invoice, paymentMethod, t, onSuccess, captureAsync]);
 
   if (!invoice) return null;
 

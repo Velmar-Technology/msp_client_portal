@@ -1,27 +1,14 @@
 import api from "@/services/api";
+import type {
+  InvoiceContract,
+  InvoiceLineItemContract,
+  FinancialStatsResponseContract as FinancialStats,
+} from "@shared/contracts";
 
-export interface InvoiceLineItem {
-  description: string;
-  quantity: number;
-  unit_price: number;
-}
-
-export interface Invoice {
-  id: string;
-  invoice_number: string;
-  client_id: string;
-  amount: number;
-  tax_amount: number;
-  total: number;
-  currency?: 'USD' | 'DOP';
-  ncf?: string | null;
-  rnc?: string | null;
-  status: 'PENDING' | 'PAID' | 'OVERDUE' | 'CANCELLED';
-  invoice_date: string;
-  due_date: string;
-  created_at: string;
-  line_items?: InvoiceLineItem[];
-}
+export type { InvoiceLineItemContract };
+export type Invoice = InvoiceContract;
+export type InvoiceLineItemType = InvoiceLineItemContract;
+export type FinancialStatsResponse = FinancialStats;
 
 /**
  * Billing and invoice service.
@@ -110,12 +97,7 @@ export const invoiceService = {
    * @param range - Timeframe ('30_days' | 'quarter' | 'year').
    * @returns Promise resolving to KPIs, monthly revenue/expenses, and transaction breakdowns.
    */
-  async getFinancialStats(range: '30_days' | 'quarter' | 'year'): Promise<{
-    kpis: Array<{ key: string; titleKey: string; value: string; trend: string; isPositiveTrend: boolean }>;
-    monthlyData: Array<{ month: string; revenue: number; expenses: number }>;
-    expenseCategories: Array<{ nameKey: string; value: number; percentage: number; color: string }>;
-    transactions: Array<{ id: string; date: string; description: string; categoryKey: string; status: 'PAID' | 'PENDING' | 'FAILED'; amount: number }>;
-  }> {
+  async getFinancialStats(range: "30_days" | "quarter" | "year" = "30_days"): Promise<FinancialStats> {
     const response = await api.get('/invoices/financial-stats', { params: { range } });
     return response.data.data;
   },
@@ -132,4 +114,3 @@ export const invoiceService = {
     return response.data;
   },
 };
-

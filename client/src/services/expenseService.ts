@@ -1,15 +1,14 @@
 import api from "@/services/api";
+import type {
+  ExpenseContract as Expense,
+  CreateExpenseInput,
+} from "@shared/contracts";
 
-export interface Expense {
-  id: string;
-  amount: number;
-  description: string;
-  category: 'cloudInfra' | 'salaries' | 'marketing' | 'officeSpace' | 'other';
-  expense_date: string;
-  tenant_id: string;
-  expense_identifier?: string | null;
-  created_at: string;
-}
+export type { Expense };
+export type CreateExpensePayload = Omit<CreateExpenseInput, "category"> & {
+  category: string;
+};
+export type CreateExpenseResult = Expense;
 
 /**
  * Operating expense management service for financial tracking.
@@ -33,14 +32,7 @@ export const expenseService = {
    * @param data - Expense details (amount, description, category, expense_date, tenantId, expense_identifier).
    * @returns Promise resolving to created Expense entity.
    */
-  async create(data: {
-    amount: number;
-    description: string;
-    category: string;
-    expense_date?: string;
-    tenantId?: string;
-    expense_identifier?: string | null;
-  }): Promise<Expense> {
+  async create(data: CreateExpensePayload): Promise<Expense> {
     const response = await api.post('/expenses', data);
     return response.data.data;
   },

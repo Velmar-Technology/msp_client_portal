@@ -1,13 +1,18 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
-import { invoiceService } from "@/services/invoiceService";
 import type { Invoice } from "@/services/invoiceService";
 import { useUrlState } from "@/hooks/useUrlState";
+import {
+  useInvoices,
+  useMarkInvoicePaid,
+  useCancelInvoice,
+} from "@/features/billing";
 
 /**
  * Custom hook orchestrating the Billing & Invoices page.
- * Handles invoice pagination, URL synchronization, payment modal flows, PayPal capture, and PDF downloads.
+ * Handles invoice pagination, URL synchronization, payment modal flows, and PDF downloads.
+ * Uses TanStack Query hooks from @/features/billing for server state with automatic cache invalidation.
  *
  * @see BL-401 (Subscription Reactivation)
  * @returns Object providing invoices data, filter state, pagination handlers, and modal action controllers.
@@ -17,12 +22,14 @@ export function useBilling() {
   const location = useLocation();
   const { getParam, getNumberParam, setParam, setParams, removeParams } = useUrlState();
 
-  const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
   const [page, setPageInternal] = useState(() => getNumberParam("page", 1));
   const [limit, setLimitInternal] = useState(() => getNumberParam("limit", 10));
-  const [loading, setLoading] = useState(true);
 
-  // Active tab state ("invoices" | "plans") derived directly during render (React 19 compiler-friendly)
+  // Fetch up to 200 invoices once (client-side filtering/pagination preserved for the table view)
+  const { data: invoicesData, isLoading: invoicesLoading } = useInvoices({ page: 1, limit: 200 });
+  const allInvoices = useMemo(() => invoicesData?.invoices ?? [], [invoicesData]);
+
+  // Active tab state ("invoices" | "plans") derived directly during render
   const activeTab = getParam("tab", "invoices");
 
   const setActiveTab = useCallback(
@@ -36,36 +43,14 @@ export function useBilling() {
   const [search, setSearchInternal] = useState(() => getParam("search", ""));
   const [statusFilter, setStatusFilterInternal] = useState(() => getParam("status", ""));
 
-  const [markingPaid, setMarkingPaid] = useState(false);
-  const [cancelling, setCancelling] = useState(false);
+  const markPaidMutation = useMarkInvoicePaid();
+  const cancelMutation = useCancelInvoice();
+
+  const markingPaid = markPaidMutation.isPending;
+  const cancelling = cancelMutation.isPending;
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  const fetchInvoices = useCallback(async () => {
-    setLoading(true);
-    try {
-      const result = await invoiceService.getAll(1, 200);
-      setAllInvoices(result.data);
-    } catch (err) {
-      console.error('Failed to load invoices', err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-    const timer = setTimeout(async () => {
-      if (isMounted) {
-        await fetchInvoices();
-      }
-    }, 0);
-    return () => {
-      isMounted = false;
-      clearTimeout(timer);
-    };
-  }, [fetchInvoices]);
-
-  // Derive active modal & selected invoice directly from URL parameters (Single Source of Truth)
+  // Derive active modal & selected invoice directly from URL parameters
   const openModalParam = getParam("openModal");
   const invoiceIdParam = getParam("invoiceId") || (location.state as { invoiceId?: string })?.invoiceId;
 
@@ -130,6 +115,7 @@ export function useBilling() {
   const handleDownload = useCallback(async (inv: Invoice) => {
     setDownloadingId(inv.id);
     try {
+      const { invoiceService } = await import("@/services/invoiceService");
       const blob = await invoiceService.downloadInvoice(inv.id, i18n.language);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -148,33 +134,25 @@ export function useBilling() {
 
   const handleMarkAsPaid = useCallback(async () => {
     if (!selectedInvoiceToMarkPaid) return;
-    setMarkingPaid(true);
     try {
-      await invoiceService.markAsPaid(selectedInvoiceToMarkPaid.id);
-      await fetchInvoices();
+      await markPaidMutation.mutateAsync(selectedInvoiceToMarkPaid.id);
       closeMarkPaidModal();
     } catch (err) {
       console.error('Failed to mark invoice as paid', err);
-    } finally {
-      setMarkingPaid(false);
     }
-  }, [selectedInvoiceToMarkPaid, fetchInvoices, closeMarkPaidModal]);
+  }, [selectedInvoiceToMarkPaid, markPaidMutation, closeMarkPaidModal]);
 
   const handleCancelInvoice = useCallback(async (reason?: string) => {
     if (!selectedInvoiceToCancel) return;
-    setCancelling(true);
     try {
-      await invoiceService.cancelInvoice(selectedInvoiceToCancel.id, reason);
-      await fetchInvoices();
+      await cancelMutation.mutateAsync({ id: selectedInvoiceToCancel.id, reason });
       closeCancelModal();
     } catch (err) {
       console.error('Failed to cancel invoice', err);
-    } finally {
-      setCancelling(false);
     }
-  }, [selectedInvoiceToCancel, fetchInvoices, closeCancelModal]);
+  }, [selectedInvoiceToCancel, cancelMutation, closeCancelModal]);
 
-  // Client-side sorted and filtered list (derived directly during render for React 19 compiler)
+  // Client-side sorted and filtered list (derived directly during render)
   const sortedInvoices = [...allInvoices].sort((a, b) => {
     const dateA = new Date(a.created_at || a.invoice_date).getTime();
     const dateB = new Date(b.created_at || b.invoice_date).getTime();
@@ -244,7 +222,7 @@ export function useBilling() {
     page,
     totalPages,
     limit,
-    loading,
+    loading: invoicesLoading,
     selectedInvoice,
     showPayModal,
     downloadingId,
@@ -274,7 +252,6 @@ export function useBilling() {
     showDetailsModal,
     openDetailsModal,
     closeDetailsModal,
-    fetchInvoices,
+    fetchInvoices: () => {},
   };
 }
-
