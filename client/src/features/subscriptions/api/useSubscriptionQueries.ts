@@ -14,13 +14,24 @@ export const SUBSCRIPTION_QUERY_KEYS = {
 };
 
 /**
+ * SOTA / ADR-003 Query Options for Subscriptions & Plans
+ */
+export const subscriptionQueryOptions = {
+  all: () => ({
+    queryKey: SUBSCRIPTION_QUERY_KEYS.lists(),
+    queryFn: () => subscriptionService.getAll(),
+  }),
+  plans: (filters?: PlanFilters) => ({
+    queryKey: SUBSCRIPTION_QUERY_KEYS.plans(filters),
+    queryFn: () => planService.getAll(filters),
+  }),
+};
+
+/**
  * Fetches all subscriptions for the active tenant.
  */
 export function useSubscriptions() {
-  return useQuery({
-    queryKey: SUBSCRIPTION_QUERY_KEYS.lists(),
-    queryFn: () => subscriptionService.getAll(),
-  });
+  return useQuery(subscriptionQueryOptions.all());
 }
 
 /**
@@ -42,10 +53,7 @@ export function useActiveSubscriptions() {
  * @param filters - Optional search, pagination, and clientType criteria.
  */
 export function usePlans(filters?: PlanFilters) {
-  return useQuery({
-    queryKey: SUBSCRIPTION_QUERY_KEYS.plans(filters),
-    queryFn: () => planService.getAll(filters),
-  });
+  return useQuery(subscriptionQueryOptions.plans(filters));
 }
 
 /**

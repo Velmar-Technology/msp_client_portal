@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "node --max-old-space-size=4096 ./node_modules/typescript/bin/tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+    "build": "node --max-old-space-size=8192 ./node_modules/typescript/bin/tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "start": "node dist/index.js",
     "lint": "eslint src/",
     "test": "vitest run --passWithNoTests",

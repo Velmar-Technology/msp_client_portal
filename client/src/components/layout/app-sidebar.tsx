@@ -5,7 +5,7 @@ import { ChevronDown, ChevronRight, HelpCircle, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import logoUrl from "@/assets/logo.png";
 import { useSidebar, type NavItem, type NavSubItem } from "@/hooks/useSidebar";
-import { preloadRoute, routePreloaders } from "@/protected-routes";
+import { preloadRoute, routePreloaders } from "@/lib/preloadRoute";
 import { preloadOnIdle } from "@/lib/lazyWithRetry";
 import {
   Sidebar as ShadcnSidebar,

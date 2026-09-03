@@ -15,14 +15,10 @@ export const BILLING_QUERY_KEYS = {
 };
 
 /**
- * Query hook for the paginated list of billing invoices.
- * Maps the raw API response into normalized list data for consistent table rendering.
- *
- * @param params - Pagination parameters (page, limit).
- * @returns Query result with invoices, total, page, limit, and totalPages.
+ * SOTA / ADR-003 Query Options for Billing loaders and hooks
  */
-export function useInvoices(params: InvoiceQueryInput) {
-  return useQuery({
+export const billingQueryOptions = {
+  invoiceList: (params: InvoiceQueryInput) => ({
     queryKey: BILLING_QUERY_KEYS.invoiceList(params),
     queryFn: async () => {
       const response = await invoiceService.getAll(params.page, params.limit);
@@ -34,6 +30,26 @@ export function useInvoices(params: InvoiceQueryInput) {
         totalPages: response.pagination?.totalPages ?? 1,
       };
     },
+  }),
+  invoiceDetail: (id: string) => ({
+    queryKey: BILLING_QUERY_KEYS.invoiceDetail(id),
+    queryFn: async () => {
+      if (!id) throw new Error("Invoice ID required");
+      return await invoiceService.getById(id);
+    },
+  }),
+};
+
+/**
+ * Query hook for the paginated list of billing invoices.
+ * Maps the raw API response into normalized list data for consistent table rendering.
+ *
+ * @param params - Pagination parameters (page, limit).
+ * @returns Query result with invoices, total, page, limit, and totalPages.
+ */
+export function useInvoices(params: InvoiceQueryInput) {
+  return useQuery({
+    ...billingQueryOptions.invoiceList(params),
     placeholderData: (previousData) => previousData,
   });
 }
@@ -46,11 +62,7 @@ export function useInvoices(params: InvoiceQueryInput) {
  */
 export function useInvoice(id?: string) {
   return useQuery({
-    queryKey: BILLING_QUERY_KEYS.invoiceDetail(id || ""),
-    queryFn: async () => {
-      if (!id) throw new Error("Invoice ID required");
-      return await invoiceService.getById(id);
-    },
+    ...billingQueryOptions.invoiceDetail(id ?? ""),
     enabled: Boolean(id),
   });
 }

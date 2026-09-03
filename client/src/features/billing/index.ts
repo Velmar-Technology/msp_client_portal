@@ -1,7 +1,10 @@
 /**
  * ADR-002: Public API Gateway for Billing feature module.
- * Only public hooks, pages, components, and ephemeral UI types should be exported here.
+ * Only public hooks, pages, components, routes, and ephemeral UI types should be exported here.
  */
+
+// Routes
+export * from './routes';
 
 // Pages
 export * from './pages/BillingPage';

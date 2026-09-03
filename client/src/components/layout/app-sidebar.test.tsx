@@ -36,6 +36,16 @@ vi.mock('@/features/subscriptions', () => ({
   planService: {
     getAll: vi.fn(),
   },
+  SUBSCRIPTION_QUERY_KEYS: {
+    all: ['subscriptions'] as const,
+    lists: () => ['subscriptions', 'list'] as const,
+    features: () => ['subscriptions', 'features'] as const,
+    plans: () => ['plans'] as const,
+  },
+  subscriptionQueryOptions: {
+    all: () => ({ queryKey: ['subscriptions', 'list'], queryFn: vi.fn() }),
+    plans: () => ({ queryKey: ['plans'], queryFn: vi.fn() }),
+  },
 }));
 
 vi.mock('../ui/sidebar', () => ({

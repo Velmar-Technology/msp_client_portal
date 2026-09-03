@@ -214,4 +214,27 @@ describe('ADR-002: Frontend Colocated Feature Architecture Invariants', () => {
       ).toEqual([]);
     });
   });
+
+  describe('Invariant Rule 5: Route Manifest Colocation (ADR-003)', () => {
+    it.each(featureDirs)('feature "%s" must contain a routes.tsx manifest and export it via index.ts', (featureName) => {
+      const routesPath = path.join(FEATURES_DIR, featureName, 'routes.tsx');
+      expect(
+        fs.existsSync(routesPath),
+        `Feature "${featureName}" is missing a route manifest at features/${featureName}/routes.tsx`,
+      ).toBe(true);
+
+      const routesContent = fs.readFileSync(routesPath, 'utf-8');
+      expect(
+        routesContent.includes('Routes') || routesContent.includes('routes'),
+        `Feature "${featureName}/routes.tsx" must define a route manifest array`,
+      ).toBe(true);
+
+      const indexPath = path.join(FEATURES_DIR, featureName, 'index.ts');
+      const indexContent = fs.readFileSync(indexPath, 'utf-8');
+      expect(
+        indexContent.includes("from './routes'") || indexContent.includes('from "./routes"'),
+        `Feature "${featureName}/index.ts" must re-export routes from "./routes"`,
+      ).toBe(true);
+    });
+  });
 });

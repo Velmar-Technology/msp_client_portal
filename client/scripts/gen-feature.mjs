@@ -34,7 +34,7 @@ if (fs.existsSync(targetDir)) {
   process.exit(1);
 }
 
-console.log(`\x1b[36mScaffolding canonical ADR-002 feature slice:\x1b[0m ${kebabName} (${pascalName})\n`);
+console.log(`\x1b[36mScaffolding canonical ADR-002 / ADR-003 feature slice:\x1b[0m ${kebabName} (${pascalName})\n`);
 
 // 1. Create directory tree
 const dirsToCreate = [
@@ -52,6 +52,36 @@ for (const dir of dirsToCreate) {
 // 2. Define canonical template files
 
 const files = [
+  // routes.tsx
+  {
+    path: path.join(targetDir, 'routes.tsx'),
+    content: `import type { RouteObject } from 'react-router-dom';
+import { lazyWithRetry } from '@/lib/lazyWithRetry';
+import { RouteSuspenseWrapper, TablePageSkeleton } from '@/components/skeletons';
+
+const ${pascalName}Page = lazyWithRetry(() =>
+  import('./pages/${pascalName}Page').then((m) => ({ default: m.${pascalName}Page }))
+);
+
+/**
+ * ${pascalName} Domain Route Manifest (ADR-002 / ADR-003)
+ */
+export const ${camelName}Routes: RouteObject[] = [
+  {
+    path: '/${kebabName}',
+    element: (
+      <RouteSuspenseWrapper fallback={<TablePageSkeleton />}>
+        <${pascalName}Page />
+      </RouteSuspenseWrapper>
+    ),
+    handle: {
+      crumb: (t) => ({ label: t('nav.${camelName}', '${pascalName}'), to: '/${kebabName}' }),
+    },
+  },
+];
+`,
+  },
+
   // api/use<Pascal>Queries.ts
   {
     path: path.join(targetDir, 'api', `use${pascalName}Queries.ts`),
@@ -67,11 +97,19 @@ export const ${upperName}_QUERY_KEYS = {
   detail: (id: string) => [...${upperName}_QUERY_KEYS.all, 'detail', id] as const,
 };
 
-export function use${pascalName}List() {
-  return useQuery({
+export const ${camelName}QueryOptions = {
+  list: () => ({
     queryKey: ${upperName}_QUERY_KEYS.lists(),
     queryFn: () => ${camelName}Service.getAll(),
-  });
+  }),
+  detail: (id: string) => ({
+    queryKey: ${upperName}_QUERY_KEYS.detail(id),
+    queryFn: () => ${camelName}Service.getById(id),
+  }),
+};
+
+export function use${pascalName}List() {
+  return useQuery(${camelName}QueryOptions.list());
 }
 
 export function useCreate${pascalName}() {
@@ -265,7 +303,7 @@ export function use${pascalName}Modals() {
 import { ${pascalName}Table } from '../components/${pascalName}Table';
 import { ${pascalName}Modal } from '../components/${pascalName}Modal';
 import { use${pascalName}Modals } from '../hooks/use${pascalName}Modals';
-import { TablePageSkeleton } from '@/components/shared/TablePageSkeleton';
+import { TablePageSkeleton } from '@/components/skeletons';
 
 export function ${pascalName}Page() {
   const { data: items = [], isLoading } = use${pascalName}List();
@@ -277,7 +315,7 @@ export function ${pascalName}Page() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <${pascalName}Table items={items} onCreateClick={openCreate} />
+      <${pascalName}Table items={items as unknown[]} onCreateClick={openCreate} />
       <${pascalName}Modal isOpen={isCreateOpen} onClose={closeCreate} />
     </div>
   );
@@ -305,9 +343,12 @@ export type ${pascalName}ViewTab = 'overview' | 'activity';
   {
     path: path.join(targetDir, 'index.ts'),
     content: `/**
- * ADR-002: Public API Gateway for ${pascalName} feature module.
- * Only public hooks, pages, components, and ephemeral UI types should be exported here.
+ * ADR-002 / ADR-003: Public API Gateway for ${pascalName} feature module.
+ * Only public hooks, pages, components, routes, and ephemeral UI types should be exported here.
  */
+
+// Routes
+export * from './routes';
 
 // Pages
 export * from './pages/${pascalName}Page';
@@ -332,5 +373,5 @@ for (const file of files) {
   console.log(`  \x1b[32m+\x1b[0m ${path.relative(path.resolve(__dirname, '..'), file.path)}`);
 }
 
-console.log(`\n\x1b[32mSuccess!\x1b[0m Feature "${kebabName}" created cleanly per ADR-002 specifications.`);
-console.log(`Ready to import in routes via: import { ${pascalName}Page } from '@/features/${kebabName}';\n`);
+console.log(`\n\x1b[32mSuccess!\x1b[0m Feature "${kebabName}" created cleanly per ADR-002/ADR-003 specifications.`);
+console.log(`Ready to import in router via: import { ${camelName}Routes } from '@/features/${kebabName}';\n`);

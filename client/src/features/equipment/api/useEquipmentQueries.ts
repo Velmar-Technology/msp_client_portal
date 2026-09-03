@@ -20,26 +20,34 @@ export const EQUIPMENT_QUERY_KEYS = {
 };
 
 const DEVICES_KEY = EQUIPMENT_QUERY_KEYS.all[0];
-const SUBSCRIPTIONS_KEY = SUBSCRIPTION_QUERY_KEYS.all[0];
+const SUBSCRIPTIONS_KEY = SUBSCRIPTION_QUERY_KEYS?.all?.[0] ?? 'subscriptions';
+
+/**
+ * SOTA / ADR-003 Query Options for Equipment & Devices
+ */
+export const equipmentQueryOptions = {
+  myDevices: () => ({
+    queryKey: EQUIPMENT_QUERY_KEYS.myDevices(),
+    queryFn: () => equipmentService.getMyDevices(),
+  }),
+  adminDevices: () => ({
+    queryKey: EQUIPMENT_QUERY_KEYS.adminDevices(),
+    queryFn: () => equipmentService.getAllDevicesForAdmin(),
+  }),
+};
 
 /**
  * Fetches active devices and provisioned slots for the current client.
  */
 export function useMyDevices() {
-  return useQuery({
-    queryKey: EQUIPMENT_QUERY_KEYS.myDevices(),
-    queryFn: () => equipmentService.getMyDevices(),
-  });
+  return useQuery(equipmentQueryOptions.myDevices());
 }
 
 /**
  * Fetches all hardware devices across all clients (Admin role only).
  */
 export function useAdminDevices() {
-  return useQuery({
-    queryKey: EQUIPMENT_QUERY_KEYS.adminDevices(),
-    queryFn: () => equipmentService.getAllDevicesForAdmin(),
-  });
+  return useQuery(equipmentQueryOptions.adminDevices());
 }
 
 /**

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useEntitlements } from "@/hooks/useEntitlements";
 import { FeatureLockedPreview } from "./FeatureLockedPreview";
-import { RouteLoadingSpinner } from "@/protected-routes";
+import { RouteLoadingSpinner } from "@/routes/routeUtils";
 import type { FeatureCode } from "@/constants/subscriptions";
 
 export interface FeatureRouteGuardProps {

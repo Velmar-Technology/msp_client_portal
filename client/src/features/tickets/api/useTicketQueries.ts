@@ -24,10 +24,10 @@ export const TICKET_QUERY_KEYS = {
 };
 
 /**
- * Query hook for paginated and filtered ticket list.
+ * SOTA / ADR-003 Query Options for Ticket loaders and hooks
  */
-export function useTickets(filters: TicketQueryInput | Record<string, unknown> = {}) {
-  return useQuery({
+export const ticketQueryOptions = {
+  list: (filters: TicketQueryInput | Record<string, unknown> = {}) => ({
     queryKey: TICKET_QUERY_KEYS.list(filters),
     queryFn: async () => {
       const response = await ticketService.getAll(filters as Record<string, string | number>);
@@ -39,6 +39,22 @@ export function useTickets(filters: TicketQueryInput | Record<string, unknown> =
         totalPages: response.pagination?.totalPages ?? 1,
       };
     },
+  }),
+  detail: (id: string) => ({
+    queryKey: TICKET_QUERY_KEYS.detail(id),
+    queryFn: async () => {
+      if (!id) throw new Error('Ticket ID required');
+      return await ticketService.getById(id);
+    },
+  }),
+};
+
+/**
+ * Query hook for paginated and filtered ticket list.
+ */
+export function useTickets(filters: TicketQueryInput | Record<string, unknown> = {}) {
+  return useQuery({
+    ...ticketQueryOptions.list(filters),
     placeholderData: (previousData) => previousData,
   });
 }
@@ -48,11 +64,7 @@ export function useTickets(filters: TicketQueryInput | Record<string, unknown> =
  */
 export function useTicket(id?: string) {
   return useQuery({
-    queryKey: TICKET_QUERY_KEYS.detail(id || ''),
-    queryFn: async () => {
-      if (!id) throw new Error('Ticket ID required');
-      return await ticketService.getById(id);
-    },
+    ...ticketQueryOptions.detail(id || ''),
     enabled: Boolean(id),
   });
 }

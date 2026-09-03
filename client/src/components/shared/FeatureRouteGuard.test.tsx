@@ -20,7 +20,7 @@ vi.mock("./FeatureLockedPreview", () => ({
   ),
 }));
 
-vi.mock("@/protected-routes", () => ({
+vi.mock("@/routes/routeUtils", () => ({
   RouteLoadingSpinner: () => <div data-testid="mock-loading-spinner">Loading...</div>,
 }));
 

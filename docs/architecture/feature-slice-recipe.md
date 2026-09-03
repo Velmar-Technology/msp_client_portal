@@ -176,12 +176,50 @@ export function DevicesPage() {
 
 ---
 
+### Step 5: Colocate Feature Route Manifest (`routes.tsx`) per ADR-003
+
+Every feature defines its route tree in `client/src/features/<feature>/routes.tsx` wired with TanStack Query loaders (`createPrefetchLoader` / `createEnsureDataLoader`) and metadata handles:
+
+```tsx
+// client/src/features/devices/routes.tsx
+import type { RouteObject } from 'react-router-dom';
+import { lazyWithRetry } from '@/lib/lazyWithRetry';
+import { RouteSuspenseWrapper, TablePageSkeleton } from '@/components/skeletons';
+import { createPrefetchLoader } from '@/routes/routeUtils';
+import { deviceQueryOptions } from './api/useDevices';
+
+const DevicesPage = lazyWithRetry(() =>
+  import('./pages/DevicesPage').then((m) => ({ default: m.DevicesPage }))
+);
+
+export const deviceRoutes: RouteObject[] = [
+  {
+    path: '/devices',
+    element: (
+      <RouteSuspenseWrapper fallback={<TablePageSkeleton />}>
+        <DevicesPage />
+      </RouteSuspenseWrapper>
+    ),
+    loader: createPrefetchLoader(() => deviceQueryOptions.list()),
+    handle: {
+      crumb: (t) => ({ label: t('nav.devices'), to: '/devices' }),
+      allowedRoles: ['CLIENT', 'ADMIN', 'TECHNICIAN'],
+    },
+  },
+];
+```
+
+Re-export `deviceRoutes` in `client/src/features/devices/index.ts` and attach to `client/src/routes/appRouter.tsx`.
+
+---
+
 ## Summary of Golden Rules
 1. **Never write manual response types in frontend:** Import entity contracts directly from `@shared/contracts`.
 2. **Never duplicate Zod schemas:** Define once in `@shared/contracts` and consume in both Express route validators and React Hook Form `zodResolver`.
-3. **Colocate feature files (`client/src/features/<feature>/`):** Keep api hooks, tables, modals, and pages together for a given business domain.
-4. **Keep Zustand for client UI only:** Modals, drawers, and theme preferences live in Zustand. Server cache data lives in TanStack Query.
-5. **URL is the single source of truth for navigation:** Filters, pagination, tabs, and drawer inspection IDs sync via `useUrlState`.
-6. **Avoid 1-line pass-through repositories:** Keep domain logic and straightforward queries together in domain services.
-7. **Verify boundaries mechanically:** Run `npm -w client run test:arch` and `npm -w client run lint` to assert zero deep imports and zero contract drift.
+3. **Colocate feature files (`client/src/features/<feature>/`):** Keep api hooks, tables, modals, routes, and pages together for a given business domain.
+4. **Colocate Route Manifests (ADR-003):** Every domain exports a `routes.tsx` manifest and re-exports it from `index.ts`.
+5. **Keep Zustand for client UI only:** Modals, drawers, and theme preferences live in Zustand. Server cache data lives in TanStack Query.
+6. **URL is the single source of truth for navigation:** Filters, pagination, tabs, and drawer inspection IDs sync via `useUrlState`.
+7. **Avoid 1-line pass-through repositories:** Keep domain logic and straightforward queries together in domain services.
+8. **Verify boundaries mechanically:** Run `npm -w client run test:arch` and `npm -w client run lint` to assert zero deep imports and zero contract drift.
 

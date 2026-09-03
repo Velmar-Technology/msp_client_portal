@@ -1,7 +1,10 @@
 /**
  * ADR-002: Public API Gateway for Equipment & Devices feature module.
- * Only public pages, components, hooks, queries, and ephemeral types should be exported here.
+ * Only public pages, components, hooks, queries, routes, and ephemeral types should be exported here.
  */
+
+// Routes
+export * from './routes';
 
 // Pages
 export * from './pages/DevicesPage';

@@ -1,7 +1,10 @@
 /**
  * ADR-002: Public API Gateway for Subscriptions & Plans feature module.
- * Only public pages, components, hooks, queries, and ephemeral types are exported here.
+ * Only public pages, components, hooks, queries, routes, and ephemeral types are exported here.
  */
+
+// Routes
+export * from './routes';
 
 // Pages
 export * from './pages';

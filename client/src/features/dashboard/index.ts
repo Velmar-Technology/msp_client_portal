@@ -1,7 +1,10 @@
 /**
  * ADR-002: Public API Gateway for Dashboard feature module.
- * Only public hooks, pages, components, services, and ephemeral UI types should be exported here.
+ * Only public hooks, pages, components, services, routes, and ephemeral UI types should be exported here.
  */
+
+// Routes
+export * from './routes';
 
 // Pages
 export * from './pages/DashboardPage';
