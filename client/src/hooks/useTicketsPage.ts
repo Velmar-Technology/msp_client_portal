@@ -8,6 +8,7 @@ import { equipmentService } from "@/services/equipmentService";
 import type { SubscriptionEquipment } from "@/services/equipmentService";
 import { useUrlState } from "@/hooks/useUrlState";
 import { useAuth } from "@/hooks/useAuth";
+import { useTickets as useTicketsQuery, useUpdateTicketStatus } from "@/hooks/queries/useTickets";
 
 /**
  * Custom hook managing the Tickets listing page.
@@ -24,8 +25,6 @@ export function useTicketsPage() {
   const location = useLocation();
   const { searchParams, getParam, getNumberParam, setParam, setParams, removeParam } = useUrlState();
 
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [total, setTotal] = useState(0);
   const [page, setPageInternal] = useState(() => getNumberParam("page", 1));
   const [search, setSearchInternal] = useState(() => getParam("search", ""));
   const [statusFilter, setStatusFilterInternal] = useState(() => getParam("status", ""));
@@ -33,7 +32,7 @@ export function useTicketsPage() {
   const [priorityFilter, setPriorityFilterInternal] = useState(() => getParam("priority", ""));
   const [deviceFilter, setDeviceFilterInternal] = useState(() => getParam("device", ""));
   const [dateRangeFilter, setDateRangeFilterInternal] = useState(() => getParam("dateRange", "all"));
-  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
 
   // Sorting
   const initialSortBy = getParam("sortBy", "");
@@ -193,40 +192,34 @@ export function useTicketsPage() {
     loadDevices();
   }, []);
 
-  // Fetch tickets callback
-  const loadTickets = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params: Record<string, string | number> = { page, limit };
-      if (statusFilter) params.status = statusFilter;
-      if (categoryFilter) params.category = categoryFilter;
-      if (priorityFilter) params.priority = priorityFilter;
-      if (search) params.search = search;
-      if (deviceFilter) params.equipmentId = deviceFilter;
-      if (dateRangeFilter && dateRangeFilter !== "all") params.dateRange = dateRangeFilter;
+  const updateStatusMutation = useUpdateTicketStatus();
 
-      const activeSort = sorting[0];
-      if (activeSort) {
-        params.sortBy = activeSort.id;
-        params.sortOrder = activeSort.desc ? "desc" : "asc";
-      }
-
-      const result = await ticketService.getAll(params);
-      setTickets(result.data || []);
-      setTotal(result.pagination?.total ?? 0);
-    } catch (err) {
-      console.error("Failed to load tickets", err);
-    } finally {
-      setLoading(false);
+  // Query filters derived for TanStack Query
+  const activeSort = sorting[0];
+  const queryFilters = useMemo(() => {
+    const params: Record<string, string | number> = { page, limit };
+    if (statusFilter) params.status = statusFilter;
+    if (categoryFilter) params.category = categoryFilter;
+    if (priorityFilter) params.priority = priorityFilter;
+    if (search) params.search = search;
+    if (deviceFilter) params.equipmentId = deviceFilter;
+    if (dateRangeFilter && dateRangeFilter !== "all") params.dateRange = dateRangeFilter;
+    if (activeSort) {
+      params.sortBy = activeSort.id;
+      params.sortOrder = activeSort.desc ? "desc" : "asc";
     }
-  }, [page, limit, statusFilter, categoryFilter, priorityFilter, search, deviceFilter, dateRangeFilter, sorting]);
+    return params;
+  }, [page, limit, statusFilter, categoryFilter, priorityFilter, search, deviceFilter, dateRangeFilter, activeSort]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      loadTickets();
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [loadTickets]);
+  const {
+    data: ticketData,
+    isLoading: queryLoading,
+    refetch: loadTickets,
+  } = useTicketsQuery(queryFilters as any);
+
+  const tickets = (ticketData?.tickets as Ticket[]) || [];
+  const total = ticketData?.total ?? 0;
+  const loading = queryLoading || actionLoading;
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit]);
 
@@ -254,37 +247,41 @@ export function useTicketsPage() {
       ["OPEN", "IN_PROGRESS", "AWAITING_PAYMENT"].includes(tick.status)
     );
     setShowBulkCancelAlert(false);
-    setLoading(true);
+    setActionLoading(true);
     try {
       await Promise.all(
         cancelableTickets.map((tick) =>
-          ticketService.updateStatus(tick.id, "CANCELLED", "Cancelled by client via bulk action.")
+          updateStatusMutation.mutateAsync({
+            id: tick.id,
+            data: { status: "CANCELLED" as any, notes: "Cancelled by client via bulk action." },
+          })
         )
       );
       setSelectedTickets([]);
-      loadTickets();
     } catch (err) {
       console.error("Failed bulk cancel", err);
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
-  }, [selectedTickets, loadTickets]);
+  }, [selectedTickets, updateStatusMutation]);
 
   // Individual cancel logic
   const confirmCancelIndividual = useCallback(async () => {
     if (!ticketToCancel) return;
     const ticketId = ticketToCancel.id;
     setTicketToCancel(null);
-    setLoading(true);
+    setActionLoading(true);
     try {
-      await ticketService.updateStatus(ticketId, "CANCELLED", "Cancelled by client.");
-      loadTickets();
+      await updateStatusMutation.mutateAsync({
+        id: ticketId,
+        data: { status: "CANCELLED" as any, notes: "Cancelled by client." },
+      });
     } catch (err) {
       console.error("Failed to cancel ticket", err);
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
-  }, [ticketToCancel, loadTickets]);
+  }, [ticketToCancel, updateStatusMutation]);
 
   const handleTicketCreated = useCallback(() => {
     setShowNewTicket(false);

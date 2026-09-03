@@ -1,8 +1,19 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { expect, test, vi, beforeEach, describe } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NewTicketModal } from './NewTicketModal';
 import { equipmentService } from '@/services/equipmentService';
 import { ticketService } from '@/services/ticketService';
+
+function renderWithClient(ui: React.ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, gcTime: 0 },
+      mutations: { retry: false },
+    },
+  });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -59,7 +70,7 @@ describe('NewTicketModal', () => {
 
     vi.mocked(equipmentService.getMyDevices).mockResolvedValue(mockDevices as any);
 
-    render(<NewTicketModal onClose={vi.fn()} onCreated={vi.fn()} />);
+    renderWithClient(<NewTicketModal onClose={vi.fn()} onCreated={vi.fn()} />);
 
     await waitFor(() => {
       expect(equipmentService.getMyDevices).toHaveBeenCalledTimes(1);
@@ -84,7 +95,7 @@ describe('NewTicketModal', () => {
 
     vi.mocked(equipmentService.getMyDevices).mockResolvedValue(mockDevices as any);
 
-    render(<NewTicketModal onClose={vi.fn()} onCreated={vi.fn()} />);
+    renderWithClient(<NewTicketModal onClose={vi.fn()} onCreated={vi.fn()} />);
 
     await waitFor(() => {
       expect(equipmentService.getMyDevices).toHaveBeenCalledTimes(1);

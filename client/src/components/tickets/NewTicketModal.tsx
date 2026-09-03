@@ -1,6 +1,7 @@
 import { useState, useEffect, memo } from "react";
 import { X, Clock } from "lucide-react";
 import { ticketService } from "@/services/ticketService";
+import { useCreateTicket } from "@/hooks/queries/useTickets";
 import { equipmentService } from "@/services/equipmentService";
 import type { SubscriptionEquipment } from "@/services/equipmentService";
 import { useTranslation } from "react-i18next";
@@ -46,6 +47,7 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
   const [devicesFailed, setDevicesFailed] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const createTicketMutation = useCreateTicket();
 
   useEffect(() => {
     let cancelled = false;
@@ -97,11 +99,11 @@ export const NewTicketModal = memo(function NewTicketModal({ onClose, onCreated 
     }
     setSubmitting(true);
     try {
-      const ticket = await ticketService.create({
+      const ticket = await createTicketMutation.mutateAsync({
         title: newTitle,
         description: newDesc,
-        category: newCategory,
-        priority: newPriority,
+        category: newCategory as any,
+        priority: newPriority as any,
         equipmentId: selectedEquipmentId || undefined,
       });
 

@@ -8,6 +8,7 @@ export default defineConfig({
   },
   resolve: {
     alias: [
+      { find: '@shared/contracts', replacement: require.resolve('@shared/contracts') },
       { find: '@shared/errors', replacement: require.resolve('@shared/errors') },
       { find: '@shared', replacement: path.resolve(__dirname, './src/shared') },
       { find: '@modules', replacement: path.resolve(__dirname, './src/modules') },

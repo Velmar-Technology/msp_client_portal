@@ -2,12 +2,22 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TicketsPage } from './TicketsPage';
 import { expect, test, vi, beforeEach, describe } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ticketService } from '@/services/ticketService';
 import type { Ticket } from '@/services/ticketService';
 import { equipmentService } from '@/services/equipmentService';
 import { useAuth } from '@/hooks/useAuth';
 
 import enTranslations from "@/locales/en_US.json";
+
+function createTestQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, gcTime: 0 },
+      mutations: { retry: false },
+    },
+  });
+}
 
 let mockLanguage = 'en_US';
 
@@ -132,12 +142,19 @@ describe('TicketsPage Pagination & Filter Synchronization', () => {
     });
   });
 
-  test('renders paginated tickets and displays correct page showing text', async () => {
-    render(
-      <MemoryRouter initialEntries={['/tickets']}>
-        <TicketsPage />
-      </MemoryRouter>
+  const renderWithProviders = (ui: React.ReactElement, initialEntries = ['/tickets']) => {
+    const queryClient = createTestQueryClient();
+    return render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={initialEntries}>
+          {ui}
+        </MemoryRouter>
+      </QueryClientProvider>
     );
+  };
+
+  test('renders paginated tickets and displays correct page showing text', async () => {
+    renderWithProviders(<TicketsPage />);
 
     await waitFor(() => {
       expect(ticketService.getAll).toHaveBeenCalled();
@@ -149,11 +166,7 @@ describe('TicketsPage Pagination & Filter Synchronization', () => {
   });
 
   test('handles page navigation to next and previous page', async () => {
-    render(
-      <MemoryRouter initialEntries={['/tickets?page=1&limit=10']}>
-        <TicketsPage />
-      </MemoryRouter>
-    );
+    renderWithProviders(<TicketsPage />, ['/tickets?page=1&limit=10']);
 
     await waitFor(() => {
       expect(screen.getByText('Support Ticket #1 - Network issue')).toBeInTheDocument();
@@ -172,11 +185,7 @@ describe('TicketsPage Pagination & Filter Synchronization', () => {
   });
 
   test('resets page to 1 when search or filters change', async () => {
-    render(
-      <MemoryRouter initialEntries={['/tickets?page=3&limit=10']}>
-        <TicketsPage />
-      </MemoryRouter>
-    );
+    renderWithProviders(<TicketsPage />, ['/tickets?page=3&limit=10']);
 
     await waitFor(() => {
       expect(ticketService.getAll).toHaveBeenCalledWith(
