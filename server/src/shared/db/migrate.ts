@@ -98,10 +98,35 @@ export async function ensureAdminExists(client: PoolClient): Promise<void> {
 }
 
 /**
+ * Resolves the directory containing SQL migration files across diverse runtime environments
+ * (direct tsx execution, standalone compiled migrate script, or bundled index application).
+ *
+ * @returns {string} Absolute path to the migrations directory
+ */
+export function resolveMigrationsDir(): string {
+  const candidates = [
+    path.join(__dirname, 'migrations'),
+    path.join(__dirname, 'shared/db/migrations'),
+    path.resolve(process.cwd(), 'server/dist/shared/db/migrations'),
+    path.resolve(process.cwd(), 'dist/shared/db/migrations'),
+    path.resolve(process.cwd(), 'server/src/shared/db/migrations'),
+    path.resolve(process.cwd(), 'src/shared/db/migrations'),
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return path.join(__dirname, 'migrations');
+}
+
+/**
  * Runs pending SQL migrations sequentially inside transactional blocks and ensures initial admin bootstrap.
  */
 export async function migrate(): Promise<void> {
-  const migrationsDir = path.join(__dirname, 'migrations');
+  const migrationsDir = resolveMigrationsDir();
   const files = fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql')).sort();
 
   logger.info(`Found ${files.length} migration file(s)`);

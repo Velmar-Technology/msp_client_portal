@@ -59,7 +59,9 @@ COPY --from=builder /app/server/dist ./server/dist
 
 # Copy migrations and seed.sql from server
 COPY --from=builder /app/server/src/shared/db/migrations ./server/dist/shared/db/migrations
+COPY --from=builder /app/server/src/shared/db/migrations ./server/dist/migrations
 COPY --from=builder /app/server/src/shared/db/seed.sql ./server/dist/shared/db/seed.sql
+COPY --from=builder /app/server/src/shared/db/seed.sql ./server/dist/seed.sql
 
 EXPOSE 3001
 
