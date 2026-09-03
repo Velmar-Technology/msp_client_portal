@@ -103,6 +103,11 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
   - Reconciles cloud user seats (e.g. M365) and RMM agents against contracts to automatically update billable quantity ($Q_{\text{billed}}$).
 - **BL-203: Out-of-Scope Project Guardrails** (`TicketService.enforceScope`)
   - Shifts out-of-scope requests (hardware moves, site setups) to `PENDING_ESTIMATE` pending client authorization.
+- **BL-204: Subscription Feature Gating & Bundle Entitlements** (`requireSubscriptionFeature`, `SubscriptionService.getClientActiveFeatures`, `useEntitlements`, `FeatureRouteGuard`, `FeatureLockedPreview`)
+  - **Canonical Feature Catalog:** 24 enterprise feature codes (`FEATURE_CODES`) centrally declared and aligned across frontend and backend.
+  - **Bidirectional Bundle Decomposition:** Composite tiers (e.g. `PASSWORD_DARK_WEB` $\rightarrow$ `PASSWORD_MANAGER` + `DARK_WEB_MONITORING`, `EDR_M365_BACKUP` $\rightarrow$ `EDR_SECURITY` + `M365_BACKUP`) automatically expand into constituent capabilities via `expandFeatureBundles`.
+  - **Backend API Protection:** `requireSubscriptionFeature(code)` middleware blocks unentitled client requests with a typed `ForbiddenError` (403), while granting unconditional operational bypass to `ADMIN` and `TECHNICIAN` roles.
+  - **Frontend Route & Navigation Gating:** Protected client routes (`/password-manager`, `/devices`, `/rmm`, `/resources`, `/maintenance`) are wrapped in `FeatureRouteGuard`. Unentitled users see a high-conversion upsell preview (`FeatureLockedPreview`) and sidebar items display compact upgrade badges (`UpgradeBadge`).
 
 ### Module 3: Access Control, SOTA Hybrid Authorization & State Machine
 
