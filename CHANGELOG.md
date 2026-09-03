@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.10.1](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.10.0...v1.10.1) (2026-09-03)
+
+
+### Bug Fixes
+
+* **docker:** copy and build packages/contracts in client and server Dockerfiles ([220635c](https://github.com/Velmar-Technology/msp_client_portal/commit/220635c5310ef483cea0f3264e4f9753d5922df3))
+
 ## [1.10.0](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.9.0...v1.10.0) (2026-09-03)
 
 
