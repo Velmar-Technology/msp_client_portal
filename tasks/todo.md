@@ -514,3 +514,690 @@
 - [x] Client builds cleanly (`npm -w client run build`).
 - [x] All unit and integration tests pass (`npm -w client run test:run`).
 
+---
+
+## Milestone 8: Migrate Tickets Module to ADR-002 Colocated Architecture (P0)
+
+### Task 26: Scaffold `client/src/features/tickets/` & Colocate Ticket API Queries
+**Description:** Scaffold `client/src/features/tickets/` using the scaffolding template and colocate `useTicketQueries.ts` and `ticketService.ts` inside `client/src/features/tickets/api/`. Consolidate query keys (`TICKET_QUERY_KEYS`), query hooks (`useTickets`, `useTicketDetail`, `useTicketEvents`), and mutation hooks (`useCreateTicket`, `useUpdateTicketStatus`, `useAssignTechnician`, `useAddTicketComment`). Restrict `types.ts` strictly to ephemeral UI state. Re-export from legacy `client/src/hooks/queries/useTickets.ts` and `client/src/services/ticketService.ts`.
+**Acceptance criteria:**
+- [ ] `client/src/features/tickets/api/useTicketQueries.ts` exports all ticket TanStack Query and mutation hooks.
+- [ ] `client/src/features/tickets/types.ts` contains ephemeral UI types with zero duplicate backend entity types.
+- [ ] Legacy `client/src/hooks/queries/useTickets.ts` re-exports from `@/features/tickets`.
+**Verification:**
+- [ ] Tests pass: `npx vitest run client/src/hooks/queries/useTickets.test.tsx`
+- [ ] Build succeeds: `npm -w client run build`
+- [ ] Manual check: verify query cache keys match contract definitions
+**Dependencies:** None  
+**Files touched:**
+- `client/src/features/tickets/api/useTicketQueries.ts`
+- `client/src/features/tickets/api/ticketService.ts`
+- `client/src/features/tickets/types.ts`
+- `client/src/hooks/queries/useTickets.ts`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 27: Colocate Ticket Presentation Components, Drawer & Modals
+**Description:** Move ticket UI components from `client/src/components/tickets/` and `client/src/components/new-ticket-modal.tsx` into `client/src/features/tickets/components/` (`TicketTable.tsx`, `TicketFilters.tsx`, `TicketDrawer.tsx`, `TicketCommentFeed.tsx`, `NewTicketModal.tsx`, `AssignTechnicianModal.tsx`, `TicketStatusBadge.tsx`). Ensure all props import entity contracts directly from `@shared/contracts`. Update `client/src/components/tickets/index.ts` to re-export.
+**Acceptance criteria:**
+- [ ] Ticket UI components and modals colocated in `client/src/features/tickets/components/`.
+- [ ] All component prop types use `@shared/contracts` directly.
+- [ ] `client/src/components/tickets/index.ts` re-exports moved components for backward compatibility.
+**Verification:**
+- [ ] Tests pass: `npm -w client run test:arch`
+- [ ] Build succeeds: `npx tsc --noEmit -p client/tsconfig.app.json`
+- [ ] Manual check: ensure no visual regression in ticket drawer or modals
+**Dependencies:** Task 26  
+**Files touched:**
+- `client/src/features/tickets/components/TicketTable.tsx`
+- `client/src/features/tickets/components/TicketDrawer.tsx`
+- `client/src/features/tickets/components/NewTicketModal.tsx`
+- `client/src/features/tickets/components/AssignTechnicianModal.tsx`
+- `client/src/components/tickets/index.ts`
+**Estimated scope:** Large (5+ files)
+
+---
+
+### Task 28: Colocate Ticket Filters, SLA Timers & Modal Hooks
+**Description:** Colocate `useTicketsPage.ts`, `useTicketDetail.ts`, `useSLATimer.ts`, and modal state hooks into `client/src/features/tickets/hooks/`. Synchronize table filters (`?status=...`, `?priority=...`, `?search=...`, `?page=...`) and drawer inspection (`?inspectId=...`) using `useUrlState`. Re-export from legacy `client/src/hooks/`.
+**Acceptance criteria:**
+- [ ] `useTicketsPage.ts`, `useTicketDetail.ts`, and `useSLATimer.ts` reside in `client/src/features/tickets/hooks/`.
+- [ ] URL state synchronization functions without state loss.
+- [ ] Legacy hook paths in `client/src/hooks/` re-export from `@/features/tickets`.
+**Verification:**
+- [ ] Tests pass: `npx vitest run client/src/hooks/useTicketsPage.test.ts` (if exists) or unit tests
+- [ ] Build succeeds: `npm -w client run build`
+- [ ] Manual check: test SLA countdown timer rendering
+**Dependencies:** Task 26, Task 27  
+**Files touched:**
+- `client/src/features/tickets/hooks/useTicketsPage.ts`
+- `client/src/features/tickets/hooks/useTicketDetail.ts`
+- `client/src/features/tickets/hooks/useSLATimer.ts`
+- `client/src/hooks/useTicketsPage.ts`
+**Estimated scope:** Small (4 files)
+
+---
+
+### Task 29: Colocate `TicketsPage` & `TicketDetailPage` with Vitest Tests into `client/src/features/tickets/pages/`
+**Description:** Move `TicketsPage.tsx` and `TicketDetailPage.tsx` along with their Vitest test files into `client/src/features/tickets/pages/`. Update imports to consume colocated components, hooks, and queries. Re-export from `client/src/pages/TicketsPage/index.ts` and `client/src/pages/TicketDetailPage/index.ts`.
+**Acceptance criteria:**
+- [ ] `TicketsPage.tsx` and `TicketDetailPage.tsx` cleanly consume colocated components and hooks.
+- [ ] Vitest test suites execute and pass from inside `client/src/features/tickets/pages/`.
+- [ ] Legacy page folders re-export from `@/features/tickets`.
+**Verification:**
+- [ ] Tests pass: `npx vitest run client/src/features/tickets`
+- [ ] Build succeeds: `npm -w client run build`
+- [ ] Manual check: verify ticket detail timeline and comment posting
+**Dependencies:** Task 27, Task 28  
+**Files touched:**
+- `client/src/features/tickets/pages/TicketsPage.tsx`
+- `client/src/features/tickets/pages/TicketsPage.test.tsx`
+- `client/src/features/tickets/pages/TicketDetailPage.tsx`
+- `client/src/pages/TicketsPage/index.ts`
+- `client/src/pages/TicketDetailPage/index.ts`
+**Estimated scope:** Medium (5 files)
+
+---
+
+### Task 30: Wire `client/src/features/tickets/index.ts` Public Gateway & Update Route Imports
+**Description:** Expose all authorized public exports in `client/src/features/tickets/index.ts` (`TicketsPage`, `TicketDetailPage`, `useTicketQueries`, modals, UI types). Update route definitions in `client/src/protected-routes.tsx` and `client/src/routes/` to import directly from `@/features/tickets`.
+**Acceptance criteria:**
+- [ ] `client/src/features/tickets/index.ts` is the sole entry point for ticket domain capabilities.
+- [ ] Routes import `TicketsPage` and `TicketDetailPage` from `@/features/tickets`.
+- [ ] Zero deep imports into `@/features/tickets/*` across the monorepo.
+**Verification:**
+- [ ] Tests pass: `npm -w client run test:arch`
+- [ ] Build succeeds: `npm -w client run lint && npm -w client run build`
+- [ ] Manual check: route navigation to `/tickets` and `/tickets/:id` functions seamlessly
+**Dependencies:** Task 29  
+**Files touched:**
+- `client/src/features/tickets/index.ts`
+- `client/src/protected-routes.tsx`
+- `client/src/routes/_app/tickets.tsx`
+**Estimated scope:** Small (3 files)
+
+---
+
+## Checkpoint 8: Tickets Module Migration Cleared
+- [ ] `client/src/features/tickets` contains complete 7-part vertical slice.
+- [ ] Architecture tests pass (`npm -w client run test:arch`).
+- [ ] ESLint passes (`npm -w client run lint`).
+- [ ] Client builds cleanly (`npm -w client run build`).
+- [ ] All ticket unit and integration tests pass (`npm -w client run test:run`).
+
+---
+
+## Milestone 9: Migrate Subscriptions & Plans Module to ADR-002 Colocated Architecture (P0)
+
+### Task 31: Scaffold `client/src/features/subscriptions/` & Colocate Subscription/Plan API Queries
+**Description:** Scaffold `client/src/features/subscriptions/` and create `api/useSubscriptionQueries.ts` consolidating `planService.ts`, `subscriptionService.ts`, and `useSubscriptions.ts`. Export query hooks (`usePlans`, `useMySubscription`, `useActivePlans`) and mutation hooks (`useCreatePayPalOrder`, `useCaptureSubscription`, `useUpdatePlan`). Re-export from legacy query files.
+**Acceptance criteria:**
+- [x] `client/src/features/subscriptions/api/useSubscriptionQueries.ts` exports all subscription/plan queries and mutations.
+- [x] `types.ts` contains ephemeral UI state with zero duplicate contract entities.
+- [x] Legacy `client/src/hooks/queries/useSubscriptions.ts` re-exports from `@/features/subscriptions`.
+**Verification:**
+- [x] Tests pass: `npx vitest run client/src/hooks/queries/useSubscriptions.test.tsx`
+- [x] Build succeeds: `npm -w client run build`
+- [x] Manual check: verify PayPal capture endpoint integration
+**Dependencies:** None  
+**Files touched:**
+- `client/src/features/subscriptions/api/useSubscriptionQueries.ts`
+- `client/src/features/subscriptions/api/subscriptionService.ts`
+- `client/src/features/subscriptions/types.ts`
+- `client/src/hooks/queries/useSubscriptions.ts`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 32: Colocate Checkout Sheet, Plan Cards & Plan Editor Components
+**Description:** Move subscription and plan components from `client/src/components/checkout/` and `client/src/components/checkout-sheet.tsx` into `client/src/features/subscriptions/components/` (`PlanCard.tsx`, `PlanComparisonTable.tsx`, `CheckoutSheet.tsx`, `PayPalButtonContainer.tsx`, `PlanEditorModal.tsx`).
+**Acceptance criteria:**
+- [x] Checkout and plan components colocated in `client/src/features/subscriptions/components/`.
+- [x] All props use `@shared/contracts` schemas.
+- [x] `client/src/components/checkout/index.ts` re-exports moved components.
+**Verification:**
+- [x] Tests pass: `npm -w client run test:arch`
+- [x] Build succeeds: `npx tsc --noEmit -p client/tsconfig.app.json`
+- [x] Manual check: test checkout sheet opening and plan tier selection
+**Dependencies:** Task 31  
+**Files touched:**
+- `client/src/features/subscriptions/components/PlanCard.tsx`
+- `client/src/features/subscriptions/components/CheckoutSheet.tsx`
+- `client/src/features/subscriptions/components/PlanComparisonTable.tsx`
+- `client/src/components/checkout/index.ts`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 33: Colocate Plans & Checkout Hooks
+**Description:** Colocate `usePlansPage.ts`, `useCheckout.ts`, and billing cycle toggle hooks into `client/src/features/subscriptions/hooks/`. Synchronize plan tab selection and checkout modal query parameters via `useUrlState`. Re-export from legacy `client/src/hooks/`.
+**Acceptance criteria:**
+- [x] `usePlansPage.ts` and `useCheckout.ts` colocated in `client/src/features/subscriptions/hooks/`.
+- [x] URL parameters (`?plan=...`, `?cycle=annual`) sync correctly.
+- [x] Legacy `client/src/hooks/usePlansPage.ts` re-exports from `@/features/subscriptions`.
+**Verification:**
+- [x] Tests pass: `npm -w client run test:arch`
+- [x] Build succeeds: `npm -w client run build`
+- [x] Manual check: test billing cycle toggle (Monthly vs Annual discount calculation)
+**Dependencies:** Task 31, Task 32  
+**Files touched:**
+- `client/src/features/subscriptions/hooks/usePlansPage.ts`
+- `client/src/features/subscriptions/hooks/useCheckout.ts`
+- `client/src/hooks/usePlansPage.ts`
+- `client/src/hooks/useCheckout.ts`
+**Estimated scope:** Small (4 files)
+
+---
+
+### Task 34: Colocate `PlansPage` & `PlanEditorPage` with Vitest Tests into `client/src/features/subscriptions/pages/`
+**Description:** Colocate `PlansPage.tsx` and `PlanEditorPage.tsx` into `client/src/features/subscriptions/pages/` along with test suites. Re-export from `client/src/pages/PlansPage/index.ts` and `client/src/pages/PlanEditorPage/index.ts`.
+**Acceptance criteria:**
+- [x] `PlansPage.tsx` and `PlanEditorPage.tsx` consume colocated components and hooks cleanly.
+- [x] Vitest test suites pass in `client/src/features/subscriptions/pages/`.
+- [x] Legacy page entry points re-export from `@/features/subscriptions`.
+**Verification:**
+- [x] Tests pass: `npx vitest run client/src/features/subscriptions`
+- [x] Build succeeds: `npm -w client run build`
+- [x] Manual check: verify admin plan editing and client plan selection views
+**Dependencies:** Task 32, Task 33  
+**Files touched:**
+- `client/src/features/subscriptions/pages/PlansPage.tsx`
+- `client/src/features/subscriptions/pages/PlanEditorPage.tsx`
+- `client/src/features/subscriptions/pages/PlansPage.test.tsx`
+- `client/src/pages/PlansPage/index.ts`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 35: Wire `client/src/features/subscriptions/index.ts` Public Gateway & Update Route Imports
+**Description:** Expose authorized public exports in `client/src/features/subscriptions/index.ts` (`PlansPage`, `PlanEditorPage`, `CheckoutSheet`, hooks, types). Update route imports in `client/src/protected-routes.tsx` and `client/src/routes/`.
+**Acceptance criteria:**
+- [x] Public gateway exposes feature capabilities cleanly.
+- [x] Route files import from `@/features/subscriptions`.
+- [x] Zero deep imports into `@/features/subscriptions/*`.
+**Verification:**
+- [x] Tests pass: `npm -w client run test:arch`
+- [x] Build succeeds: `npm -w client run lint && npm -w client run build`
+- [x] Manual check: route to `/plans` renders cleanly
+**Dependencies:** Task 34  
+**Files touched:**
+- `client/src/features/subscriptions/index.ts`
+- `client/src/protected-routes.tsx`
+**Estimated scope:** Small (2 files)
+
+---
+
+## Checkpoint 9: Subscriptions Module Migration Cleared
+- [x] `client/src/features/subscriptions` contains complete 7-part vertical slice.
+- [x] Architecture tests pass (`npm -w client run test:arch`).
+- [x] ESLint passes (`npm -w client run lint`).
+- [x] Client builds cleanly (`npm -w client run build`).
+- [x] All subscription unit and integration tests pass (`npm -w client run test:run`).
+
+---
+
+## Milestone 10: Migrate CRM & Lead Pipeline Module to ADR-002 Colocated Architecture (P1)
+
+### Task 36: Scaffold `client/src/features/crm/` & Colocate CRM API Queries
+**Description:** Scaffold `client/src/features/crm/` and create `api/useCrmQueries.ts` migrating `client/src/services/crmService.ts`. Define query hooks (`useLeads`, `useDeals`, `useQuotes`) and mutation hooks (`useCreateLead`, `useUpdateDealStage`, `useGenerateQuote`). Define ephemeral UI types in `types.ts`. Re-export from `client/src/services/crmService.ts`.
+**Acceptance criteria:**
+- [ ] `client/src/features/crm/api/useCrmQueries.ts` exports all CRM query and mutation hooks.
+- [ ] `types.ts` contains ephemeral UI types (Kanban column drag state, filter modes).
+- [ ] Legacy `client/src/services/crmService.ts` re-exports from `@/features/crm`.
+**Verification:**
+- [ ] Tests pass: `npm -w client run test:arch`
+- [ ] Build succeeds: `npm -w client run build`
+- [ ] Manual check: verify CRM deal stage transitions match BL-501
+**Dependencies:** None  
+**Files touched:**
+- `client/src/features/crm/api/useCrmQueries.ts`
+- `client/src/features/crm/api/crmService.ts`
+- `client/src/features/crm/types.ts`
+- `client/src/services/crmService.ts`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 37: Colocate CRM Kanban Board, Lead Cards & Custom Plan Modals
+**Description:** Colocate CRM presentation components into `client/src/features/crm/components/` (`CrmKanbanBoard.tsx`, `LeadCard.tsx`, `CreateLeadModal.tsx`, `ConvertLeadModal.tsx`, `CustomPlanQuoteModal.tsx`).
+**Acceptance criteria:**
+- [ ] CRM components colocated in `client/src/features/crm/components/`.
+- [ ] All props use direct contracts from `@shared/contracts`.
+**Verification:**
+- [ ] Tests pass: `npm -w client run test:arch`
+- [ ] Build succeeds: `npx tsc --noEmit -p client/tsconfig.app.json`
+- [ ] Manual check: test lead drag-and-drop between pipeline stages
+**Dependencies:** Task 36  
+**Files touched:**
+- `client/src/features/crm/components/CrmKanbanBoard.tsx`
+- `client/src/features/crm/components/LeadCard.tsx`
+- `client/src/features/crm/components/CreateLeadModal.tsx`
+- `client/src/features/crm/components/ConvertLeadModal.tsx`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 38: Colocate CRM Filter & Pipeline Hooks
+**Description:** Colocate `useCrmFilters.ts` and `useCrmModals.ts` into `client/src/features/crm/hooks/`. Synchronize pipeline stage filter, search query, and deal view mode (`?view=kanban|table`) via `useUrlState`.
+**Acceptance criteria:**
+- [ ] CRM hooks live in `client/src/features/crm/hooks/`.
+- [ ] URL state preserves active view and filters across browser reloads.
+**Verification:**
+- [ ] Tests pass: `npm -w client run test:arch`
+- [ ] Build succeeds: `npm -w client run build`
+- [ ] Manual check: test switching between table and kanban view
+**Dependencies:** Task 36, Task 37  
+**Files touched:**
+- `client/src/features/crm/hooks/useCrmFilters.ts`
+- `client/src/features/crm/hooks/useCrmModals.ts`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Task 39: Colocate `CRMPage` & `CRMCustomPlanPage` with Vitest Tests into `client/src/features/crm/pages/`
+**Description:** Colocate `CRMPage.tsx` and `CRMCustomPlanPage.tsx` into `client/src/features/crm/pages/` along with test suites. Re-export from `client/src/pages/CRMPage/index.ts` and `client/src/pages/CRMCustomPlanPage/index.ts`.
+**Acceptance criteria:**
+- [ ] Pages consume colocated components and hooks cleanly.
+- [ ] Vitest test suites execute and pass.
+- [ ] Legacy page entry points re-export from `@/features/crm`.
+**Verification:**
+- [ ] Tests pass: `npx vitest run client/src/features/crm`
+- [ ] Build succeeds: `npm -w client run build`
+- [ ] Manual check: test custom plan quote provisioning flow
+**Dependencies:** Task 37, Task 38  
+**Files touched:**
+- `client/src/features/crm/pages/CRMPage.tsx`
+- `client/src/features/crm/pages/CRMCustomPlanPage.tsx`
+- `client/src/features/crm/pages/CRMPage.test.tsx`
+- `client/src/pages/CRMPage/index.ts`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 40: Wire `client/src/features/crm/index.ts` Public Gateway & Update Route Imports
+**Description:** Expose authorized public exports in `client/src/features/crm/index.ts` (`CRMPage`, `CRMCustomPlanPage`, query hooks, types). Update route definitions in `client/src/protected-routes.tsx` and `client/src/routes/`.
+**Acceptance criteria:**
+- [ ] Public gateway exports all public capabilities cleanly.
+- [ ] Route files import from `@/features/crm`.
+- [ ] Zero deep imports into `@/features/crm/*`.
+**Verification:**
+- [ ] Tests pass: `npm -w client run test:arch`
+- [ ] Build succeeds: `npm -w client run lint && npm -w client run build`
+- [ ] Manual check: navigation to `/crm` works
+**Dependencies:** Task 39  
+**Files touched:**
+- `client/src/features/crm/index.ts`
+- `client/src/protected-routes.tsx`
+**Estimated scope:** Small (2 files)
+
+---
+
+## Checkpoint 10: CRM Module Migration Cleared
+- [ ] `client/src/features/crm` contains complete 7-part vertical slice.
+- [ ] Architecture tests pass (`npm -w client run test:arch`).
+- [ ] ESLint passes (`npm -w client run lint`).
+- [ ] Client builds cleanly (`npm -w client run build`).
+- [ ] All CRM unit and integration tests pass (`npm -w client run test:run`).
+
+---
+
+## Milestone 11: Migrate RMM & Maintenance Module to ADR-002 Colocated Architecture (P1)
+
+### Task 41: Scaffold `client/src/features/rmm/` & Colocate RMM/Maintenance API Queries
+**Description:** Scaffold `client/src/features/rmm/` and create `api/useRmmQueries.ts` consolidating `maintenanceService.ts` and `rmmService.ts`. Provide query hooks (`useTelemetry`, `usePatchStatus`, `useMaintenanceSchedules`) and mutation hooks (`useTriggerPatch`, `useRestartService`, `useExecuteScript`). Re-export from legacy services.
+**Acceptance criteria:**
+- [ ] `client/src/features/rmm/api/useRmmQueries.ts` exports all RMM query and mutation hooks.
+- [ ] `types.ts` contains ephemeral UI state (active tab, chart time window).
+- [ ] Legacy services re-export from `@/features/rmm`.
+**Verification:**
+- [ ] Tests pass: `npm -w client run test:arch`
+- [ ] Build succeeds: `npm -w client run build`
+- [ ] Manual check: verify telemetry metrics fetching
+**Dependencies:** None  
+**Files touched:**
+- `client/src/features/rmm/api/useRmmQueries.ts`
+- `client/src/features/rmm/api/rmmService.ts`
+- `client/src/features/rmm/types.ts`
+- `client/src/services/rmmService.ts`
+- `client/src/services/maintenanceService.ts`
+**Estimated scope:** Medium (5 files)
+
+---
+
+### Task 42: Colocate Patch Management, Telemetry & Service Modals
+**Description:** Move RMM components from `client/src/components/maintenance/` into `client/src/features/rmm/components/` (`PatchManagementModal.tsx`, `TelemetryChart.tsx`, `RestartServiceModal.tsx`, `MaintenanceScheduleModal.tsx`, `AgentCommandModal.tsx`).
+**Acceptance criteria:**
+- [ ] Components colocated in `client/src/features/rmm/components/`.
+- [ ] All props use `@shared/contracts` schemas directly.
+- [ ] `client/src/components/maintenance/index.ts` re-exports moved components.
+**Verification:**
+- [ ] Tests pass: `npm -w client run test:arch`
+- [ ] Build succeeds: `npx tsc --noEmit -p client/tsconfig.app.json`
+- [ ] Manual check: test opening patch modal and restarting a service
+**Dependencies:** Task 41  
+**Files touched:**
+- `client/src/features/rmm/components/PatchManagementModal.tsx`
+- `client/src/features/rmm/components/TelemetryChart.tsx`
+- `client/src/features/rmm/components/RestartServiceModal.tsx`
+- `client/src/components/maintenance/index.ts`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 43: Colocate Maintenance & RMM Dashboard Hooks
+**Description:** Colocate `useMaintenance.ts`, `useRmmDashboard.ts`, and `usePatchManagementModal.ts` into `client/src/features/rmm/hooks/`. Synchronize tabs (`?tab=telemetry|patches|schedules`) via `useUrlState`. Re-export from legacy `client/src/hooks/`.
+**Acceptance criteria:**
+- [ ] RMM hooks colocated in `client/src/features/rmm/hooks/`.
+- [ ] URL state preserves tab and device filter parameters.
+- [ ] Legacy hook files re-export from `@/features/rmm`.
+**Verification:**
+- [ ] Tests pass: `npm -w client run test:arch`
+- [ ] Build succeeds: `npm -w client run build`
+- [ ] Manual check: test live telemetry refresh interval
+**Dependencies:** Task 41, Task 42  
+**Files touched:**
+- `client/src/features/rmm/hooks/useMaintenance.ts`
+- `client/src/features/rmm/hooks/useRmmDashboard.ts`
+- `client/src/features/rmm/hooks/usePatchManagementModal.ts`
+- `client/src/hooks/useMaintenance.ts`
+**Estimated scope:** Small (4 files)
+
+---
+
+### Task 44: Colocate `MaintenancePage` with Vitest Tests into `client/src/features/rmm/pages/`
+**Description:** Colocate `MaintenancePage.tsx` and its test suites into `client/src/features/rmm/pages/`. Re-export from `client/src/pages/MaintenancePage/index.ts`.
+**Acceptance criteria:**
+- [ ] `MaintenancePage.tsx` consumes colocated components and hooks cleanly.
+- [ ] Vitest test suites execute and pass.
+- [ ] Legacy page entry point re-exports from `@/features/rmm`.
+**Verification:**
+- [ ] Tests pass: `npx vitest run client/src/features/rmm`
+- [ ] Build succeeds: `npm -w client run build`
+- [ ] Manual check: test maintenance overview rendering
+**Dependencies:** Task 42, Task 43  
+**Files touched:**
+- `client/src/features/rmm/pages/MaintenancePage.tsx`
+- `client/src/features/rmm/pages/MaintenancePage.test.tsx`
+- `client/src/pages/MaintenancePage/index.ts`
+**Estimated scope:** Small (3 files)
+
+---
+
+### Task 45: Wire `client/src/features/rmm/index.ts` Public Gateway & Update Route Imports
+**Description:** Expose authorized public exports in `client/src/features/rmm/index.ts` (`MaintenancePage`, query hooks, modals, types). Update route definitions in `client/src/protected-routes.tsx` and `client/src/routes/`.
+**Acceptance criteria:**
+- [ ] Public gateway exports all public capabilities cleanly.
+- [ ] Route files import from `@/features/rmm`.
+- [ ] Zero deep imports into `@/features/rmm/*`.
+**Verification:**
+- [ ] Tests pass: `npm -w client run test:arch`
+- [ ] Build succeeds: `npm -w client run lint && npm -w client run build`
+- [ ] Manual check: navigation to `/maintenance` and `/rmm` works
+**Dependencies:** Task 44  
+**Files touched:**
+- `client/src/features/rmm/index.ts`
+- `client/src/protected-routes.tsx`
+**Estimated scope:** Small (2 files)
+
+---
+
+## Checkpoint 11: RMM & Maintenance Module Migration Cleared
+- [ ] `client/src/features/rmm` contains complete 7-part vertical slice.
+- [ ] Architecture tests pass (`npm -w client run test:arch`).
+- [ ] ESLint passes (`npm -w client run lint`).
+- [ ] Client builds cleanly (`npm -w client run build`).
+- [ ] All RMM unit and integration tests pass (`npm -w client run test:run`).
+
+---
+
+## Milestone 12: Migrate Financial & OpEx Module to ADR-002 Colocated Architecture (P1)
+
+### Task 46: Scaffold `client/src/features/financial/` & Colocate Financial API Queries
+**Description:** Scaffold `client/src/features/financial/` and create `api/useFinancialQueries.ts` consolidating `earningsService.ts` and `expenseService.ts`. Provide query hooks (`useEarningsStats`, `useTechnicianBounties`, `useExpenses`) and mutation hooks (`useLogExpense`, `useApproveCommissionPayout`). Re-export from legacy services.
+**Acceptance criteria:**
+- [ ] `client/src/features/financial/api/useFinancialQueries.ts` exports all financial queries and mutations.
+- [ ] `types.ts` contains ephemeral UI state (date range selector, split tab).
+- [ ] Legacy services re-export from `@/features/financial`.
+**Verification:**
+- [ ] Tests pass: `npm -w client run test:arch`
+- [ ] Build succeeds: `npm -w client run build`
+- [ ] Manual check: verify 70/30 net profit calculation matches BL-802
+**Dependencies:** None  
+**Files touched:**
+- `client/src/features/financial/api/useFinancialQueries.ts`
+- `client/src/features/financial/api/earningsService.ts`
+- `client/src/features/financial/types.ts`
+- `client/src/services/earningsService.ts`
+- `client/src/services/expenseService.ts`
+**Estimated scope:** Medium (5 files)
+
+---
+
+### Task 47: Colocate Profit Split, Commission & Expense Modals
+**Description:** Move financial components from `client/src/components/financial/` into `client/src/features/financial/components/` (`ProfitSplitChart.tsx`, `CommissionPayoutTable.tsx`, `ExpenseLogModal.tsx`, `FinancialSummaryGrid.tsx`).
+**Acceptance criteria:**
+- [ ] Components colocated in `client/src/features/financial/components/`.
+- [ ] All props use direct contracts from `@shared/contracts`.
+- [ ] `client/src/components/financial/index.ts` re-exports moved components.
+**Verification:**
+- [ ] Tests pass: `npm -w client run test:arch`
+- [ ] Build succeeds: `npx tsc --noEmit -p client/tsconfig.app.json`
+- [ ] Manual check: test logging a pre-split OpEx expense
+**Dependencies:** Task 46  
+**Files touched:**
+- `client/src/features/financial/components/ProfitSplitChart.tsx`
+- `client/src/features/financial/components/CommissionPayoutTable.tsx`
+- `client/src/features/financial/components/ExpenseLogModal.tsx`
+- `client/src/components/financial/index.ts`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 48: Colocate Financial Dashboard Hooks
+**Description:** Colocate `useFinancialDashboard.ts` and date filter hooks into `client/src/features/financial/hooks/`. Synchronize period filters (`?from=...&to=...`) via `useUrlState`. Re-export from legacy `client/src/hooks/useFinancialDashboard.ts`.
+**Acceptance criteria:**
+- [ ] `useFinancialDashboard.ts` lives in `client/src/features/financial/hooks/`.
+- [ ] URL state preserves date range selections.
+- [ ] Legacy hook re-exports from `@/features/financial`.
+**Verification:**
+- [ ] Tests pass: `npm -w client run test:arch`
+- [ ] Build succeeds: `npm -w client run build`
+- [ ] Manual check: test date filter changes updating metric summaries
+**Dependencies:** Task 46, Task 47  
+**Files touched:**
+- `client/src/features/financial/hooks/useFinancialDashboard.ts`
+- `client/src/hooks/useFinancialDashboard.ts`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Task 49: Colocate `FinancialPage` with Vitest Tests into `client/src/features/financial/pages/`
+**Description:** Colocate `FinancialPage.tsx` and its test suites into `client/src/features/financial/pages/`. Re-export from `client/src/pages/FinancialPage/index.ts`.
+**Acceptance criteria:**
+- [ ] `FinancialPage.tsx` consumes colocated components and hooks cleanly.
+- [ ] Vitest test suites execute and pass.
+- [ ] Legacy page entry point re-exports from `@/features/financial`.
+**Verification:**
+- [ ] Tests pass: `npx vitest run client/src/features/financial`
+- [ ] Build succeeds: `npm -w client run build`
+- [ ] Manual check: verify revenue chart rendering
+**Dependencies:** Task 47, Task 48  
+**Files touched:**
+- `client/src/features/financial/pages/FinancialPage.tsx`
+- `client/src/features/financial/pages/FinancialPage.test.tsx`
+- `client/src/pages/FinancialPage/index.ts`
+**Estimated scope:** Small (3 files)
+
+---
+
+### Task 50: Wire `client/src/features/financial/index.ts` Public Gateway & Update Route Imports
+**Description:** Expose authorized public exports in `client/src/features/financial/index.ts` (`FinancialPage`, query hooks, modals, types). Update route definitions in `client/src/protected-routes.tsx` and `client/src/routes/`.
+**Acceptance criteria:**
+- [ ] Public gateway exports all public capabilities cleanly.
+- [ ] Route files import from `@/features/financial`.
+- [ ] Zero deep imports into `@/features/financial/*`.
+**Verification:**
+- [ ] Tests pass: `npm -w client run test:arch`
+- [ ] Build succeeds: `npm -w client run lint && npm -w client run build`
+- [ ] Manual check: navigation to `/financial` works
+**Dependencies:** Task 49  
+**Files touched:**
+- `client/src/features/financial/index.ts`
+- `client/src/protected-routes.tsx`
+**Estimated scope:** Small (2 files)
+
+---
+
+## Checkpoint 12: Financial Module Migration Cleared
+- [ ] `client/src/features/financial` contains complete 7-part vertical slice.
+- [ ] Architecture tests pass (`npm -w client run test:arch`).
+- [ ] ESLint passes (`npm -w client run lint`).
+- [ ] Client builds cleanly (`npm -w client run build`).
+- [ ] All financial unit and integration tests pass (`npm -w client run test:run`).
+
+---
+
+## Milestone 13: Migrate Identity, Access & Auth Modules (P1)
+
+### Task 51: Scaffold `client/src/features/users/`, Colocate User Management API & Modals, Wire Gateway & Routes
+**Description:** Scaffold `client/src/features/users/` and colocate user queries (`useUserQueries.ts` migrating `userService.ts`), user table, invite modal, JIT ephemeral access request modal (`components/`), `useUserManagement.ts` hook, `UserManagementPage.tsx` (`pages/`), and public gateway `index.ts`. Re-export from legacy files and update route imports.
+**Acceptance criteria:**
+- [ ] `client/src/features/users` contains complete vertical slice.
+- [ ] `UserManagementPage.tsx` and its tests pass in `features/users/pages/`.
+- [ ] `index.ts` public gateway wires cleanly with zero deep imports.
+**Verification:**
+- [ ] Tests pass: `npx vitest run client/src/features/users`
+- [ ] Build succeeds: `npm -w client run build`
+- [ ] Manual check: test inviting a user and granting JIT role
+**Dependencies:** None  
+**Files touched:**
+- `client/src/features/users/api/useUserQueries.ts`
+- `client/src/features/users/components/InviteUserModal.tsx`
+- `client/src/features/users/hooks/useUserManagement.ts`
+- `client/src/features/users/pages/UserManagementPage.tsx`
+- `client/src/features/users/index.ts`
+- `client/src/protected-routes.tsx`
+**Estimated scope:** Large (5+ files)
+
+---
+
+### Task 52: Scaffold `client/src/features/auth/`, Colocate Auth API, Login/Register Forms, Wire Gateway & Routes
+**Description:** Scaffold `client/src/features/auth/` and colocate auth service (`api/useAuthQueries.ts` migrating `authService.ts`), login/registration forms, MFA OTP verify dialog (`components/`), `useAuth.tsx` and `useSessionMonitor.ts` (`hooks/`), `LoginPage.tsx` and `RegisterPage.tsx` (`pages/`), and public gateway `index.ts`. Re-export from legacy files and update route imports.
+**Acceptance criteria:**
+- [ ] `client/src/features/auth` contains complete vertical slice.
+- [ ] `LoginPage.tsx` and `RegisterPage.tsx` execute cleanly from `features/auth/pages/`.
+- [ ] Public gateway exports all auth utilities cleanly.
+**Verification:**
+- [ ] Tests pass: `npx vitest run client/src/features/auth`
+- [ ] Build succeeds: `npm -w client run build`
+- [ ] Manual check: test login, MFA step-up dialog, and session monitor
+**Dependencies:** None  
+**Files touched:**
+- `client/src/features/auth/api/useAuthQueries.ts`
+- `client/src/features/auth/components/LoginForm.tsx`
+- `client/src/features/auth/hooks/useAuth.tsx`
+- `client/src/features/auth/pages/LoginPage.tsx`
+- `client/src/features/auth/pages/RegisterPage.tsx`
+- `client/src/features/auth/index.ts`
+- `client/src/public-routes.test.tsx`
+**Estimated scope:** Large (5+ files)
+
+---
+
+## Checkpoint 13: Identity, Access & Auth Migration Cleared
+- [ ] `client/src/features/users` and `client/src/features/auth` contain complete vertical slices.
+- [ ] Architecture tests pass (`npm -w client run test:arch`).
+- [ ] ESLint passes (`npm -w client run lint`).
+- [ ] Client builds cleanly (`npm -w client run build`).
+- [ ] All auth and user unit/integration tests pass (`npm -w client run test:run`).
+
+---
+
+## Milestone 14: Migrate Dashboard, Settings & System Modules & Final Cleanups (P2)
+
+### Task 53: Scaffold & Colocate `client/src/features/dashboard/` (DashboardPage, TechDashboardPage, Widgets)
+**Description:** Scaffold `client/src/features/dashboard/` and colocate client & admin dashboard widgets (`StatsGrid.tsx`, `SlaOverviewCard.tsx`, `RecentTicketsWidget.tsx`), hooks (`useClientDashboard.ts`, `useAdminDashboard.ts`), pages (`DashboardPage.tsx`, `TechDashboardPage.tsx`), and public gateway `index.ts`.
+**Acceptance criteria:**
+- [ ] `client/src/features/dashboard` contains complete vertical slice.
+- [ ] `DashboardPage.tsx` and `TechDashboardPage.tsx` run with tests.
+- [ ] Public gateway wires cleanly.
+**Verification:**
+- [ ] Tests pass: `npx vitest run client/src/features/dashboard`
+- [ ] Build succeeds: `npm -w client run build`
+- [ ] Manual check: test client vs tech dashboard views
+**Dependencies:** Milestone 8, Milestone 9, Milestone 12  
+**Files touched:**
+- `client/src/features/dashboard/components/StatsGrid.tsx`
+- `client/src/features/dashboard/hooks/useClientDashboard.ts`
+- `client/src/features/dashboard/pages/DashboardPage.tsx`
+- `client/src/features/dashboard/pages/TechDashboardPage.tsx`
+- `client/src/features/dashboard/index.ts`
+**Estimated scope:** Medium (5 files)
+
+---
+
+### Task 54: Scaffold & Colocate `client/src/features/settings/` (ProfilePage, NotificationPreferencesPage, PasswordManagerPage)
+**Description:** Scaffold `client/src/features/settings/` and colocate profile editing, notification matrix preferences (`useNotificationPreferences.ts`, `notificationService.ts`), password manager page, and public gateway `index.ts`.
+**Acceptance criteria:**
+- [ ] `client/src/features/settings` contains complete vertical slice.
+- [ ] Profile, notification preferences, and password manager pages run cleanly.
+- [ ] Public gateway wires cleanly.
+**Verification:**
+- [ ] Tests pass: `npx vitest run client/src/features/settings`
+- [ ] Build succeeds: `npm -w client run build`
+- [ ] Manual check: test saving notification channel toggles
+**Dependencies:** None  
+**Files touched:**
+- `client/src/features/settings/api/useSettingsQueries.ts`
+- `client/src/features/settings/pages/ProfilePage.tsx`
+- `client/src/features/settings/pages/NotificationPreferencesPage.tsx`
+- `client/src/features/settings/pages/PasswordManagerPage.tsx`
+- `client/src/features/settings/index.ts`
+**Estimated scope:** Medium (5 files)
+
+---
+
+### Task 55: Scaffold & Colocate `client/src/features/system/` (ApiStatusPage, System Health)
+**Description:** Scaffold `client/src/features/system/` and colocate `useApiStatus.ts`, `systemService.ts`, `ApiStatusPage.tsx`, and public gateway `index.ts`.
+**Acceptance criteria:**
+- [ ] `client/src/features/system` contains complete vertical slice.
+- [ ] `ApiStatusPage.tsx` runs with tests.
+- [ ] Public gateway wires cleanly.
+**Verification:**
+- [ ] Tests pass: `npx vitest run client/src/features/system`
+- [ ] Build succeeds: `npm -w client run build`
+- [ ] Manual check: test API latency and service health checks
+**Dependencies:** None  
+**Files touched:**
+- `client/src/features/system/api/useSystemQueries.ts`
+- `client/src/features/system/pages/ApiStatusPage.tsx`
+- `client/src/features/system/index.ts`
+**Estimated scope:** Small (3 files)
+
+---
+
+### Task 56: Deprecate Legacy Horizontal Folders & Run Full Architecture & Monorepo Test Gates
+**Description:** Verify all route files and pages import strictly through feature public gateways (`@/features/*`). Remove obsolete pass-through re-exports where safe or mark with `@deprecated`. Run full monorepo verification (`test:arch`, `lint`, `build`, `test:run`).
+**Acceptance criteria:**
+- [ ] Architecture tests pass 100% across all feature modules.
+- [ ] Zero ESLint errors or forbidden AST contract declarations.
+- [ ] Full monorepo build and test suites execute 100% green.
+**Verification:**
+- [ ] Tests pass: `npm -w client run test:arch && npm -w client run test:run && npm -w server run test`
+- [ ] Build succeeds: `npm -w client run build && npm -w server run build`
+- [ ] Manual check: full portal smoke test across all routes
+**Dependencies:** Task 53, Task 54, Task 55  
+**Files touched:**
+- `client/src/protected-routes.tsx`
+- `client/tests/arch/feature-architecture.test.ts`
+**Estimated scope:** Small (2 files)
+
+---
+
+## Checkpoint 14: Monorepo Full ADR-002 Colocated Feature Migration Cleared
+- [ ] All business domains (`billing`, `equipment`, `tickets`, `subscriptions`, `crm`, `rmm`, `financial`, `users`, `auth`, `dashboard`, `settings`, `system`) migrated to `client/src/features/`.
+- [ ] `npm -w client run test:arch` passes 100% green.
+- [ ] `npm -w client run lint` passes with 0 errors.
+- [ ] `npm -w client run build` and `npm -w server run build` succeed.
+- [ ] Full monorepo test suite passes with zero regressions.

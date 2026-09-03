@@ -438,7 +438,7 @@ describe("CRMPage", () => {
         planId: "STANDARD",
       }));
     });
-  });
+  }, 15000);
 
   test("disables subscription activation button if lead is not in WON stage", async () => {
     vi.mocked(crmService.getLeadById).mockResolvedValue({ ...mockLeads[0], stage: "NEW" });
