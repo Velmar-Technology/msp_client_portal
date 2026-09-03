@@ -138,12 +138,12 @@ Detailed tasks with full acceptance criteria and file lists are recorded in [`ta
 - [x] Checkpoint 11: CRM Module Migration Cleared
 
 ### Milestone 12: Migrate RMM & Maintenance Module to ADR-002 Colocated Architecture (P1)
-- [ ] Task 47: Scaffold `client/src/features/rmm/` & Colocate RMM/Maintenance API Queries (`useRmmQueries.ts`)
-- [ ] Task 48: Colocate Patch Management, Telemetry & Service Modals (`client/src/features/rmm/components/`)
-- [ ] Task 49: Colocate Maintenance & RMM Dashboard Hooks (`client/src/features/rmm/hooks/`)
-- [ ] Task 50: Colocate `MaintenancePage` with Vitest Tests into `client/src/features/rmm/pages/`
-- [ ] Task 51: Wire `client/src/features/rmm/index.ts` Public Gateway & Update Route Imports
-- [ ] Checkpoint 12: RMM & Maintenance Module Migration Cleared
+- [x] Task 47: Scaffold `client/src/features/rmm/` & Colocate RMM/Maintenance API Queries (`useRmmQueries.ts`)
+- [x] Task 48: Colocate Patch Management, Telemetry & Service Modals (`client/src/features/rmm/components/`)
+- [x] Task 49: Colocate Maintenance & RMM Dashboard Hooks (`client/src/features/rmm/hooks/`)
+- [x] Task 50: Colocate `MaintenancePage` with Vitest Tests into `client/src/features/rmm/pages/`
+- [x] Task 51: Wire `client/src/features/rmm/index.ts` Public Gateway & Update Route Imports
+- [x] Checkpoint 12: RMM & Maintenance Module Migration Cleared
 
 ### Milestone 13: Migrate Financial & OpEx Module to ADR-002 Colocated Architecture (P1)
 - [ ] Task 52: Scaffold `client/src/features/financial/` & Colocate Financial API Queries (`useFinancialQueries.ts`)

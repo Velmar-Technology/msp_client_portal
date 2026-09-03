@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RefreshCw } from 'lucide-react';
-import type { RmmPatchItem } from '@/services/rmmService';
+import type { RmmPatchItem } from '@/features/rmm';
 import { PatchSeverityBadge } from './PatchSeverityBadge';
 import { PatchStatusBadge } from './PatchStatusBadge';
 

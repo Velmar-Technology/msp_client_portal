@@ -43,9 +43,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useMaintenance } from "@/hooks/useMaintenance";
-import { ScheduleMaintenanceModal } from "@/components/maintenance/ScheduleMaintenanceModal";
-import type { DeviceMaintenance, MaintenanceStatus } from "@/services/maintenanceService";
+import { useMaintenance } from "../hooks/useMaintenance";
+import { ScheduleMaintenanceModal } from "../components/ScheduleMaintenanceModal";
+import type { DeviceMaintenance, MaintenanceStatus } from "../api/maintenanceService";
 
 export function MaintenancePage() {
   const { i18n } = useTranslation();

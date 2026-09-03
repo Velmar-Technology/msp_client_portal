@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { rmmService, type RmmOverviewStats } from '@/services/rmmService';
+import { rmmService, type RmmOverviewStats } from '../api/rmmService';
 import { equipmentService } from '@/features/equipment';
 import type { SubscriptionEquipment } from '@shared/contracts';
 import type { SortingState } from '@tanstack/react-table';

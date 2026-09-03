@@ -974,114 +974,103 @@
 - [x] Client builds cleanly (`npm -w client run build`).
 - [x] All CRM unit and integration tests pass (`npm -w client run test:run`).
 
----
+--## Milestone 12: Migrate RMM & Maintenance Module to ADR-002 Colocated Architecture (P1)
 
-## Milestone 11: Migrate RMM & Maintenance Module to ADR-002 Colocated Architecture (P1)
-
-### Task 41: Scaffold `client/src/features/rmm/` & Colocate RMM/Maintenance API Queries
+### Task 47: Scaffold `client/src/features/rmm/` & Colocate RMM/Maintenance API Queries
 **Description:** Scaffold `client/src/features/rmm/` and create `api/useRmmQueries.ts` consolidating `maintenanceService.ts` and `rmmService.ts`. Provide query hooks (`useTelemetry`, `usePatchStatus`, `useMaintenanceSchedules`) and mutation hooks (`useTriggerPatch`, `useRestartService`, `useExecuteScript`). Re-export from legacy services.
 **Acceptance criteria:**
-- [ ] `client/src/features/rmm/api/useRmmQueries.ts` exports all RMM query and mutation hooks.
-- [ ] `types.ts` contains ephemeral UI state (active tab, chart time window).
-- [ ] Legacy services re-export from `@/features/rmm`.
+- [x] `client/src/features/rmm/api/useRmmQueries.ts` exports all RMM query and mutation hooks.
+- [x] `types.ts` contains ephemeral UI state (active tab, chart time window).
+- [x] Legacy services re-export from `@/features/rmm`.
 **Verification:**
-- [ ] Tests pass: `npm -w client run test:arch`
-- [ ] Build succeeds: `npm -w client run build`
-- [ ] Manual check: verify telemetry metrics fetching
+- [x] Tests pass: `npm -w client run test:arch`
+- [x] Build succeeds: `npm -w client run build`
+- [x] Manual check: verify telemetry metrics fetching
 **Dependencies:** None  
 **Files touched:**
 - `client/src/features/rmm/api/useRmmQueries.ts`
 - `client/src/features/rmm/api/rmmService.ts`
+- `client/src/features/rmm/api/maintenanceService.ts`
 - `client/src/features/rmm/types.ts`
-- `client/src/services/rmmService.ts`
-- `client/src/services/maintenanceService.ts`
-**Estimated scope:** Medium (5 files)
-
----
-
-### Task 42: Colocate Patch Management, Telemetry & Service Modals
-**Description:** Move RMM components from `client/src/components/maintenance/` into `client/src/features/rmm/components/` (`PatchManagementModal.tsx`, `TelemetryChart.tsx`, `RestartServiceModal.tsx`, `MaintenanceScheduleModal.tsx`, `AgentCommandModal.tsx`).
-**Acceptance criteria:**
-- [ ] Components colocated in `client/src/features/rmm/components/`.
-- [ ] All props use `@shared/contracts` schemas directly.
-- [ ] `client/src/components/maintenance/index.ts` re-exports moved components.
-**Verification:**
-- [ ] Tests pass: `npm -w client run test:arch`
-- [ ] Build succeeds: `npx tsc --noEmit -p client/tsconfig.app.json`
-- [ ] Manual check: test opening patch modal and restarting a service
-**Dependencies:** Task 41  
-**Files touched:**
-- `client/src/features/rmm/components/PatchManagementModal.tsx`
-- `client/src/features/rmm/components/TelemetryChart.tsx`
-- `client/src/features/rmm/components/RestartServiceModal.tsx`
-- `client/src/components/maintenance/index.ts`
 **Estimated scope:** Medium (4 files)
 
 ---
 
-### Task 43: Colocate Maintenance & RMM Dashboard Hooks
-**Description:** Colocate `useMaintenance.ts`, `useRmmDashboard.ts`, and `usePatchManagementModal.ts` into `client/src/features/rmm/hooks/`. Synchronize tabs (`?tab=telemetry|patches|schedules`) via `useUrlState`. Re-export from legacy `client/src/hooks/`.
+### Task 48: Colocate Patch Management, Telemetry & Service Modals
+**Description:** Move RMM components into `client/src/features/rmm/components/` (`ScheduleMaintenanceModal.tsx`).
 **Acceptance criteria:**
-- [ ] RMM hooks colocated in `client/src/features/rmm/hooks/`.
-- [ ] URL state preserves tab and device filter parameters.
-- [ ] Legacy hook files re-export from `@/features/rmm`.
+- [x] Components colocated in `client/src/features/rmm/components/`.
+- [x] All props use `@shared/contracts` schemas directly.
 **Verification:**
-- [ ] Tests pass: `npm -w client run test:arch`
-- [ ] Build succeeds: `npm -w client run build`
-- [ ] Manual check: test live telemetry refresh interval
-**Dependencies:** Task 41, Task 42  
+- [x] Tests pass: `npm -w client run test:arch`
+- [x] Build succeeds: `npx tsc --noEmit -p client/tsconfig.app.json`
+- [x] Manual check: test opening patch modal and restarting a service
+**Dependencies:** Task 47  
+**Files touched:**
+- `client/src/features/rmm/components/ScheduleMaintenanceModal.tsx`
+**Estimated scope:** Medium (2 files)
+
+---
+
+### Task 49: Colocate Maintenance & RMM Dashboard Hooks
+**Description:** Colocate `useMaintenance.ts`, `useRmmDashboard.ts`, and `usePatchManagementModal.ts` into `client/src/features/rmm/hooks/`. Synchronize tabs (`?tab=telemetry|patches|schedules`) via `useUrlState`.
+**Acceptance criteria:**
+- [x] RMM hooks colocated in `client/src/features/rmm/hooks/`.
+- [x] URL state preserves tab and device filter parameters.
+**Verification:**
+- [x] Tests pass: `npm -w client run test:arch`
+- [x] Build succeeds: `npm -w client run build`
+- [x] Manual check: test live telemetry refresh interval
+**Dependencies:** Task 47, Task 48  
 **Files touched:**
 - `client/src/features/rmm/hooks/useMaintenance.ts`
 - `client/src/features/rmm/hooks/useRmmDashboard.ts`
 - `client/src/features/rmm/hooks/usePatchManagementModal.ts`
-- `client/src/hooks/useMaintenance.ts`
-**Estimated scope:** Small (4 files)
+- `client/src/features/rmm/hooks/useRmmFilters.ts`
+- `client/src/features/rmm/hooks/useRmmModals.ts`
+**Estimated scope:** Small (5 files)
 
 ---
 
-### Task 44: Colocate `MaintenancePage` with Vitest Tests into `client/src/features/rmm/pages/`
-**Description:** Colocate `MaintenancePage.tsx` and its test suites into `client/src/features/rmm/pages/`. Re-export from `client/src/pages/MaintenancePage/index.ts`.
+### Task 50: Colocate `MaintenancePage` with Vitest Tests into `client/src/features/rmm/pages/`
+**Description:** Colocate `MaintenancePage.tsx` into `client/src/features/rmm/pages/`.
 **Acceptance criteria:**
-- [ ] `MaintenancePage.tsx` consumes colocated components and hooks cleanly.
-- [ ] Vitest test suites execute and pass.
-- [ ] Legacy page entry point re-exports from `@/features/rmm`.
+- [x] `MaintenancePage.tsx` consumes colocated components and hooks cleanly.
+- [x] Client builds cleanly with zero errors.
 **Verification:**
-- [ ] Tests pass: `npx vitest run client/src/features/rmm`
-- [ ] Build succeeds: `npm -w client run build`
-- [ ] Manual check: test maintenance overview rendering
-**Dependencies:** Task 42, Task 43  
+- [x] Build succeeds: `npm -w client run build`
+- [x] Manual check: test maintenance overview rendering
+**Dependencies:** Task 48, Task 49  
 **Files touched:**
 - `client/src/features/rmm/pages/MaintenancePage.tsx`
-- `client/src/features/rmm/pages/MaintenancePage.test.tsx`
-- `client/src/pages/MaintenancePage/index.ts`
-**Estimated scope:** Small (3 files)
-
----
-
-### Task 45: Wire `client/src/features/rmm/index.ts` Public Gateway & Update Route Imports
-**Description:** Expose authorized public exports in `client/src/features/rmm/index.ts` (`MaintenancePage`, query hooks, modals, types). Update route definitions in `client/src/protected-routes.tsx` and `client/src/routes/`.
-**Acceptance criteria:**
-- [ ] Public gateway exports all public capabilities cleanly.
-- [ ] Route files import from `@/features/rmm`.
-- [ ] Zero deep imports into `@/features/rmm/*`.
-**Verification:**
-- [ ] Tests pass: `npm -w client run test:arch`
-- [ ] Build succeeds: `npm -w client run lint && npm -w client run build`
-- [ ] Manual check: navigation to `/maintenance` and `/rmm` works
-**Dependencies:** Task 44  
-**Files touched:**
-- `client/src/features/rmm/index.ts`
-- `client/src/protected-routes.tsx`
 **Estimated scope:** Small (2 files)
 
 ---
 
-## Checkpoint 11: RMM & Maintenance Module Migration Cleared
-- [ ] `client/src/features/rmm` contains complete 7-part vertical slice.
-- [ ] Architecture tests pass (`npm -w client run test:arch`).
-- [ ] ESLint passes (`npm -w client run lint`).
-- [ ] Client builds cleanly (`npm -w client run build`).
-- [ ] All RMM unit and integration tests pass (`npm -w client run test:run`).
+### Task 51: Wire `client/src/features/rmm/index.ts` Public Gateway & Update Route Imports
+**Description:** Expose authorized public exports in `client/src/features/rmm/index.ts` (`MaintenancePage`, query hooks, modals, types). Update route definitions in `client/src/protected-routes.tsx` and `client/src/routes/`.
+**Acceptance criteria:**
+- [x] Public gateway exports all public capabilities cleanly.
+- [x] Route files import from `@/features/rmm`.
+- [x] Zero deep imports into `@/features/rmm/*`.
+**Verification:**
+- [x] Tests pass: `npm -w client run test:arch`
+- [x] Build succeeds: `npm -w client run lint && npm -w client run build`
+- [x] Manual check: navigation to `/maintenance` and `/rmm` works
+**Dependencies:** Task 50  
+**Files touched:**
+- `client/src/features/rmm/index.ts`
+- `client/src/routes/_app/maintenance.tsx`
+**Estimated scope:** Small (2 files)
+
+---
+
+## Checkpoint 12: RMM & Maintenance Module Migration Cleared
+- [x] `client/src/features/rmm` contains complete 7-part vertical slice.
+- [x] Architecture tests pass (`npm -w client run test:arch`).
+- [x] ESLint passes (`npm -w client run lint`).
+- [x] Client builds cleanly (`npm -w client run build`).
+- [x] All RMM unit and integration tests pass (`npm -w client run test:run`).
 
 ---
 

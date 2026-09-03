@@ -145,6 +145,12 @@ describe('ADR-002: Frontend Colocated Feature Architecture Invariants', () => {
         path.join(SRC_DIR, 'services/equipmentService.ts'),
         path.join(SRC_DIR, 'services/ticketService.ts'),
         path.join(SRC_DIR, 'services/crmService.ts'),
+        path.join(SRC_DIR, 'services/rmmService.ts'),
+        path.join(SRC_DIR, 'services/maintenanceService.ts'),
+        path.join(SRC_DIR, 'components/maintenance'),
+        path.join(SRC_DIR, 'hooks/useMaintenance.ts'),
+        path.join(SRC_DIR, 'hooks/useRmmDashboard.ts'),
+        path.join(SRC_DIR, 'hooks/usePatchManagementModal.ts'),
         path.join(SRC_DIR, 'pages/BillingPage'),
         path.join(SRC_DIR, 'pages/DevicesPage'),
         path.join(SRC_DIR, 'pages/PlanEditorPage'),
@@ -153,6 +159,7 @@ describe('ADR-002: Frontend Colocated Feature Architecture Invariants', () => {
         path.join(SRC_DIR, 'pages/TicketsPage'),
         path.join(SRC_DIR, 'pages/CRMPage'),
         path.join(SRC_DIR, 'pages/CRMCustomPlanPage'),
+        path.join(SRC_DIR, 'pages/MaintenancePage'),
       ];
 
       const existingForbidden = forbiddenPaths.filter((p) => fs.existsSync(p));

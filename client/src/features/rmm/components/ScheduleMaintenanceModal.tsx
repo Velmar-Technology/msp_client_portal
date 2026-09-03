@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { X, Calendar as CalendarIcon, Clock, Loader2, AlertCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { maintenanceService, type DeviceMaintenance, type MaintenanceType } from "@/services/maintenanceService";
+import { maintenanceService, type DeviceMaintenance, type MaintenanceType } from "../api/maintenanceService";
 import type { SubscriptionEquipment } from "@shared/contracts";
 import { DatePicker } from "@/components/shared";
 import { Button } from "@/components/ui/button";

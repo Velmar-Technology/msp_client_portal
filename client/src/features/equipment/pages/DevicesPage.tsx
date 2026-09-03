@@ -39,7 +39,7 @@ import { cn } from "@/lib/utils";
 
 // ---- Lazily loaded heavy sub-features and modals ----
 const ScheduleMaintenanceModal = lazyWithRetry(() =>
-  import("@/components/maintenance/ScheduleMaintenanceModal").then((m) => ({
+  import("@/features/rmm").then((m) => ({
     default: m.ScheduleMaintenanceModal,
   })),
 );

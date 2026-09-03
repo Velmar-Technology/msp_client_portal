@@ -43,7 +43,7 @@ vi.mock('@/hooks/useAuth', () => ({
   }),
 }));
 
-vi.mock('@/components/maintenance/ScheduleMaintenanceModal', () => ({
+vi.mock('@/features/rmm', () => ({
   ScheduleMaintenanceModal: () => null,
 }));
 vi.mock('@/components/devices/RmmDashboard', () => ({

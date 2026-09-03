@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { rmmService, type RmmPatchItem } from '@/services/rmmService';
+import { rmmService, type RmmPatchItem } from '../api/rmmService';
 import { toast } from 'sonner';
 import axios from 'axios';
 

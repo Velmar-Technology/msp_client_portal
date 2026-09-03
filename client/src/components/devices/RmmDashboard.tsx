@@ -1,5 +1,5 @@
 import React from "react";
-import { useRmmDashboard } from "@/hooks/useRmmDashboard";
+import { useRmmDashboard } from "@/features/rmm";
 import { RmmDashboardHeader } from "./RmmDashboardHeader";
 import { RmmKpiGrid } from "./RmmKpiGrid";
 import { RmmDeviceTable } from "./RmmDeviceTable";

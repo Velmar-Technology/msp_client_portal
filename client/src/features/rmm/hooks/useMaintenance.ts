@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
-import { maintenanceService, type DeviceMaintenance, type MaintenanceStatus } from "@/services/maintenanceService";
+import { maintenanceService, type DeviceMaintenance, type MaintenanceStatus } from "../api/maintenanceService";
 import { equipmentService } from "@/features/equipment";
 import type { SubscriptionEquipment } from "@shared/contracts";
 

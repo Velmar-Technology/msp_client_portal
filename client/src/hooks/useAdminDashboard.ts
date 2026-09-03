@@ -5,8 +5,7 @@ import type { Invoice } from "@/services/invoiceService";
 import { systemService } from "@/services/systemService";
 import type { StorageStatus } from "@/services/systemService";
 import { ticketService } from "@/features/tickets";
-import { maintenanceService } from "@/services/maintenanceService";
-import type { DeviceMaintenance } from "@/services/maintenanceService";
+import { maintenanceService, type DeviceMaintenance } from "@/features/rmm";
 
 /**
  * Custom hook providing overview metrics and aggregate data for the Admin Dashboard.
