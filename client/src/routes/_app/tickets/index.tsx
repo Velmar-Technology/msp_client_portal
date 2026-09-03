@@ -1,1 +1,1 @@
-export { TicketsPage as default, TicketsPage } from "@/pages/TicketsPage";
+export { TicketsPage as default, TicketsPage } from "@/features/tickets";

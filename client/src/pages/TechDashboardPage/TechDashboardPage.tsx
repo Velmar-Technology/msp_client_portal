@@ -33,10 +33,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from "@/hooks/useAuth";
 import { useSLATimer } from "@/hooks/useSLATimer";
-import { ticketService } from "@/services/ticketService";
+import { ticketService, type TicketItem as Ticket } from "@/features/tickets";
 import { userService } from "@/services/userService";
 import { earningsService, type TechnicianEarning, type TechnicianEarningsSummary } from "@/services/earningsService";
-import type { Ticket } from "@/services/ticketService";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useDeferredLoading } from "@/hooks/useDeferredLoading";
 import { statusColor, priorityColor } from "@/constants/tickets";

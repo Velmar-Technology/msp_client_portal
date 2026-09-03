@@ -1,8 +1,21 @@
-export { NewTicketModal, type NewTicketModalProps } from './NewTicketModal';
-export { TicketDetailHeader, type TicketDetailHeaderProps } from './TicketDetailHeader';
-export { TicketDescriptionCard, type TicketDescriptionCardProps } from './TicketDescriptionCard';
-export { TicketResponses, type TicketResponsesProps } from './TicketResponses';
-export { TicketTimeline, type TicketTimelineProps } from './TicketTimeline';
-export { TicketSidebar, type TicketSidebarProps } from './TicketSidebar';
-export { FilePreviewModal, type FilePreviewModalProps, type PreviewFileState } from './FilePreviewModal';
-export * from './ticketUtils';
+/**
+ * Legacy compatibility entry point.
+ * Re-exports ticket components from the canonical feature module per ADR-002.
+ */
+export {
+  NewTicketModal,
+  type NewTicketModalProps,
+  TicketDetailHeader,
+  type TicketDetailHeaderProps,
+  TicketDescriptionCard,
+  type TicketDescriptionCardProps,
+  TicketResponses,
+  type TicketResponsesProps,
+  TicketTimeline,
+  type TicketTimelineProps,
+  TicketSidebar,
+  type TicketSidebarProps,
+  FilePreviewModal,
+  type FilePreviewModalProps,
+  type PreviewFileState,
+} from '@/features/tickets';

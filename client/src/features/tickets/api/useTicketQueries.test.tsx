@@ -1,10 +1,19 @@
-import { renderHook, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import React from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useTickets, useCreateTicket, useUpdateTicketStatus } from "./useTickets";
-import { ticketService } from "@/features/tickets";
-import { TicketCategory, TicketPriority, TicketStatus } from "@shared/contracts";
+import { renderHook, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useTickets, useCreateTicket, useUpdateTicketStatus } from './useTicketQueries';
+import { ticketService } from './ticketService';
+import { TicketCategory, TicketPriority, TicketStatus } from '@shared/contracts';
+
+vi.mock('./ticketService', () => ({
+  ticketService: {
+    getAll: vi.fn(),
+    getById: vi.fn(),
+    create: vi.fn(),
+    updateStatus: vi.fn(),
+  },
+}));
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -19,21 +28,21 @@ function createWrapper() {
   );
 }
 
-describe("useTickets query hooks", () => {
+describe('useTicketQueries hooks', () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
-  it("fetches ticket list and maps pagination", async () => {
+  it('fetches ticket list and maps pagination', async () => {
     const mockTickets = [
       {
-        id: "ticket-1",
-        title: "Printer down",
-        description: "LaserJet error 50.4",
+        id: 'ticket-1',
+        title: 'Printer down',
+        description: 'LaserJet error 50.4',
         category: TicketCategory.REPAIR,
         status: TicketStatus.OPEN,
         priority: TicketPriority.HIGH,
-        client_id: "client-1",
+        client_id: 'client-1',
         assigned_tech_id: null,
         equipment_id: null,
         created_at: new Date().toISOString(),
@@ -41,7 +50,7 @@ describe("useTickets query hooks", () => {
       },
     ];
 
-    const getAllSpy = vi.spyOn(ticketService, 'getAll').mockResolvedValueOnce({
+    vi.mocked(ticketService.getAll).mockResolvedValueOnce({
       data: mockTickets,
       pagination: {
         page: 1,
@@ -59,23 +68,23 @@ describe("useTickets query hooks", () => {
 
     expect(result.current.data?.tickets).toHaveLength(1);
     expect(result.current.data?.total).toBe(1);
-    expect(result.current.data?.tickets[0].title).toBe("Printer down");
-    expect(getAllSpy).toHaveBeenCalledWith({ page: 1, limit: 10 });
+    expect(result.current.data?.tickets[0].title).toBe('Printer down');
+    expect(ticketService.getAll).toHaveBeenCalledWith({ page: 1, limit: 10 });
   });
 
-  it("executes create ticket mutation", async () => {
+  it('executes create ticket mutation', async () => {
     const payload = {
-      title: "New WiFi Issue",
-      description: "Cannot connect to 5GHz AP in floor 3",
+      title: 'New WiFi Issue',
+      description: 'Cannot connect to 5GHz AP in floor 3',
       category: TicketCategory.HELPDESK,
       priority: TicketPriority.MEDIUM,
     };
 
-    const createSpy = vi.spyOn(ticketService, 'create').mockResolvedValueOnce({
-      id: "ticket-2",
+    vi.mocked(ticketService.create).mockResolvedValueOnce({
+      id: 'ticket-2',
       ...payload,
       status: TicketStatus.OPEN,
-      client_id: "client-1",
+      client_id: 'client-1',
       assigned_tech_id: null,
       equipment_id: null,
       created_at: new Date().toISOString(),
@@ -89,18 +98,18 @@ describe("useTickets query hooks", () => {
     result.current.mutate(payload);
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(createSpy).toHaveBeenCalledWith(payload);
+    expect(ticketService.create).toHaveBeenCalledWith(payload);
   });
 
-  it("executes status update mutation", async () => {
-    const updateSpy = vi.spyOn(ticketService, 'updateStatus').mockResolvedValueOnce({
-      id: "ticket-1",
+  it('executes status update mutation', async () => {
+    vi.mocked(ticketService.updateStatus).mockResolvedValueOnce({
+      id: 'ticket-1',
       status: TicketStatus.RESOLVED,
-      title: "Printer down",
-      description: "Fixed paper jam",
+      title: 'Printer down',
+      description: 'Fixed paper jam',
       category: TicketCategory.REPAIR,
       priority: TicketPriority.HIGH,
-      client_id: "client-1",
+      client_id: 'client-1',
       assigned_tech_id: null,
       equipment_id: null,
       created_at: new Date().toISOString(),
@@ -112,11 +121,11 @@ describe("useTickets query hooks", () => {
     });
 
     result.current.mutate({
-      id: "ticket-1",
-      data: { status: TicketStatus.RESOLVED, notes: "Fixed" },
+      id: 'ticket-1',
+      data: { status: TicketStatus.RESOLVED, notes: 'Fixed' },
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(updateSpy).toHaveBeenCalledWith("ticket-1", TicketStatus.RESOLVED, "Fixed");
+    expect(ticketService.updateStatus).toHaveBeenCalledWith('ticket-1', TicketStatus.RESOLVED, 'Fixed');
   });
 });
