@@ -1,1 +1,1 @@
-export { PasswordManagerPage as default, PasswordManagerPage } from "@/pages/PasswordManagerPage";
+export { PasswordManagerPage as default, PasswordManagerPage } from "@/features/settings";

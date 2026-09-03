@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TopNav } from "@/components/layout/TopNav";
 import { expect, test, vi, beforeEach } from 'vitest';
 import { ticketService } from "@/features/tickets";
-import { invoiceService } from "@/services/invoiceService";
+import { invoiceService } from "@/features/billing";
 
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', () => ({
@@ -49,7 +49,7 @@ vi.mock('@/features/tickets', () => ({
   },
 }));
 
-vi.mock('../../services/invoiceService', () => ({
+vi.mock('@/features/billing', () => ({
   invoiceService: {
     getAll: vi.fn(),
   },

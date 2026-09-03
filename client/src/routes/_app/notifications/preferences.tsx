@@ -1,1 +1,1 @@
-export { NotificationPreferencesPage as default, NotificationPreferencesPage } from "@/pages/NotificationPreferencesPage";
+export { NotificationPreferencesPage as default, NotificationPreferencesPage } from "@/features/settings";

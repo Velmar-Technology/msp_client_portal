@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { expect, test, vi, beforeEach, describe } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { invoiceService } from '@/services/invoiceService';
+import { invoiceService } from '../api/invoiceService';
 import type { InvoiceContract } from '@shared/contracts';
 import { useAuth } from '@/hooks/useAuth';
 import { BillingPage } from './BillingPage';
@@ -53,7 +53,7 @@ vi.mock('@/hooks/useAuth', () => ({
   useAuth: vi.fn(),
 }));
 
-vi.mock('@/services/invoiceService', () => ({
+vi.mock('../api/invoiceService', () => ({
   invoiceService: {
     getAll: vi.fn(),
     getById: vi.fn(),

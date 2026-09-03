@@ -11,11 +11,11 @@ import {
   useMarkInvoicePaid,
   useCancelInvoice,
 } from "./useBillingQueries";
-import { invoiceService } from "@/services/invoiceService";
+import { invoiceService } from "./invoiceService";
 import { expenseService } from "@/features/financial";
 import { InvoiceStatus } from "@shared/contracts";
 
-vi.mock("@/services/invoiceService", () => ({
+vi.mock("./invoiceService", () => ({
   invoiceService: {
     getAll: vi.fn(),
     getById: vi.fn(),

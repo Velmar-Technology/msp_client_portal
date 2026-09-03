@@ -118,7 +118,7 @@ export function useBilling() {
     async (inv: InvoiceContract) => {
       setDownloadingId(inv.id);
       try {
-        const { invoiceService } = await import('@/services/invoiceService');
+        const { invoiceService } = await import('../api/invoiceService');
         const blob = await invoiceService.downloadInvoice(inv.id, i18n.language);
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');

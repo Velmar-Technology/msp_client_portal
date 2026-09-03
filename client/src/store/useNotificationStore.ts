@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { notificationService } from "@/services/notificationService";
-import type { Notification } from "@/services/notificationService";
+import { notificationService } from "@/features/settings";
+import type { Notification } from "@/features/settings";
 import { toast } from 'sonner';
 import { getAuthItem } from '@/lib/authStorage';
 

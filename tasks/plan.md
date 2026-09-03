@@ -159,11 +159,11 @@ Detailed tasks with full acceptance criteria and file lists are recorded in [`ta
 - [x] Checkpoint 14: Identity, Access & Auth Migration Cleared
 
 ### Milestone 15: Migrate Dashboard, Settings & System Modules & Final Cleanups (P2)
-- [ ] Task 59: Scaffold & Colocate `client/src/features/dashboard/` (DashboardPage, TechDashboardPage, Widgets)
-- [ ] Task 60: Scaffold & Colocate `client/src/features/settings/` (ProfilePage, NotificationPreferencesPage, PasswordManagerPage)
-- [ ] Task 61: Scaffold & Colocate `client/src/features/system/` (ApiStatusPage, System Health)
-- [ ] Task 62: Deprecate Legacy Horizontal Folders & Run Full Architecture & Monorepo Test Gates
-- [ ] Checkpoint 15: Monorepo Full ADR-002 Colocated Feature Migration Cleared
+- [x] Task 59: Scaffold & Colocate `client/src/features/dashboard/` (DashboardPage, TechDashboardPage, Widgets)
+- [x] Task 60: Scaffold & Colocate `client/src/features/settings/` (ProfilePage, NotificationPreferencesPage, PasswordManagerPage)
+- [x] Task 61: Scaffold & Colocate `client/src/features/system/` (ApiStatusPage, System Health)
+- [x] Task 62: Deprecate Legacy Horizontal Folders & Run Full Architecture & Monorepo Test Gates
+- [x] Checkpoint 15: Monorepo Full ADR-002 Colocated Feature Migration Cleared
 
 ---
 

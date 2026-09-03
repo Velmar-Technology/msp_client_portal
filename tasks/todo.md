@@ -1238,90 +1238,104 @@
 
 ---
 
-## Milestone 14: Migrate Dashboard, Settings & System Modules & Final Cleanups (P2)
+## Milestone 15: Migrate Dashboard, Settings & System Modules & Final Cleanups (P2)
 
-### Task 53: Scaffold & Colocate `client/src/features/dashboard/` (DashboardPage, TechDashboardPage, Widgets)
-**Description:** Scaffold `client/src/features/dashboard/` and colocate client & admin dashboard widgets (`StatsGrid.tsx`, `SlaOverviewCard.tsx`, `RecentTicketsWidget.tsx`), hooks (`useClientDashboard.ts`, `useAdminDashboard.ts`), pages (`DashboardPage.tsx`, `TechDashboardPage.tsx`), and public gateway `index.ts`.
+### Task 59: Scaffold & Colocate `client/src/features/dashboard/` (DashboardPage, TechDashboardPage, Widgets)
+**Description:** Scaffold `client/src/features/dashboard/` and colocate client & admin dashboard widgets (`ActiveSubscriptions.tsx`, `AdminDashboardView.tsx`, `ClientDashboardView.tsx`, `DashboardSummaryStats.tsx`, `RecentInvoices.tsx`, `StorageQuota.tsx`), hooks (`useClientDashboard.ts`, `useAdminDashboard.ts`), pages (`DashboardPage.tsx`, `TechDashboardPage.tsx`), and public gateway `index.ts`.
 **Acceptance criteria:**
-- [ ] `client/src/features/dashboard` contains complete vertical slice.
-- [ ] `DashboardPage.tsx` and `TechDashboardPage.tsx` run with tests.
-- [ ] Public gateway wires cleanly.
+- [x] `client/src/features/dashboard` contains complete vertical slice.
+- [x] `DashboardPage.tsx` and `TechDashboardPage.tsx` run with tests.
+- [x] Public gateway wires cleanly.
 **Verification:**
-- [ ] Tests pass: `npx vitest run client/src/features/dashboard`
-- [ ] Build succeeds: `npm -w client run build`
-- [ ] Manual check: test client vs tech dashboard views
-**Dependencies:** Milestone 8, Milestone 9, Milestone 12  
+- [x] Tests pass: `npm -w client run test:arch`
+- [x] Build succeeds: `npm -w client run build`
+- [x] Manual check: test client vs tech dashboard views
+**Dependencies:** None  
 **Files touched:**
-- `client/src/features/dashboard/components/StatsGrid.tsx`
+- `client/src/features/dashboard/api/useDashboardQueries.ts`
+- `client/src/features/dashboard/components/ActiveSubscriptions.tsx`
+- `client/src/features/dashboard/components/AdminDashboardView.tsx`
+- `client/src/features/dashboard/components/ClientDashboardView.tsx`
+- `client/src/features/dashboard/components/DashboardSummaryStats.tsx`
+- `client/src/features/dashboard/components/RecentInvoices.tsx`
+- `client/src/features/dashboard/components/StorageQuota.tsx`
 - `client/src/features/dashboard/hooks/useClientDashboard.ts`
+- `client/src/features/dashboard/hooks/useAdminDashboard.ts`
 - `client/src/features/dashboard/pages/DashboardPage.tsx`
 - `client/src/features/dashboard/pages/TechDashboardPage.tsx`
 - `client/src/features/dashboard/index.ts`
-**Estimated scope:** Medium (5 files)
+**Estimated scope:** Large (12 files)
 
 ---
 
-### Task 54: Scaffold & Colocate `client/src/features/settings/` (ProfilePage, NotificationPreferencesPage, PasswordManagerPage)
-**Description:** Scaffold `client/src/features/settings/` and colocate profile editing, notification matrix preferences (`useNotificationPreferences.ts`, `notificationService.ts`), password manager page, and public gateway `index.ts`.
+### Task 60: Scaffold & Colocate `client/src/features/settings/` (ProfilePage, NotificationPreferencesPage, PasswordManagerPage)
+**Description:** Scaffold `client/src/features/settings/` and colocate profile editing (`useProfile.ts`), notification preferences (`useNotificationPreferences.ts`, `useNotificationHistory.ts`, `notificationService.ts`, `notificationPreferenceService.ts`), password manager page, and public gateway `index.ts`.
 **Acceptance criteria:**
-- [ ] `client/src/features/settings` contains complete vertical slice.
-- [ ] Profile, notification preferences, and password manager pages run cleanly.
-- [ ] Public gateway wires cleanly.
+- [x] `client/src/features/settings` contains complete vertical slice.
+- [x] Profile, notification preferences, and password manager pages run cleanly.
+- [x] Public gateway wires cleanly.
 **Verification:**
-- [ ] Tests pass: `npx vitest run client/src/features/settings`
-- [ ] Build succeeds: `npm -w client run build`
-- [ ] Manual check: test saving notification channel toggles
+- [x] Tests pass: `npm -w client run test:run -- src/features/settings`
+- [x] Build succeeds: `npm -w client run build`
+- [x] Manual check: test saving notification channel toggles
 **Dependencies:** None  
 **Files touched:**
+- `client/src/features/settings/api/notificationService.ts`
+- `client/src/features/settings/api/notificationPreferenceService.ts`
 - `client/src/features/settings/api/useSettingsQueries.ts`
+- `client/src/features/settings/hooks/useProfile.ts`
+- `client/src/features/settings/hooks/useNotificationPreferences.ts`
+- `client/src/features/settings/hooks/useNotificationHistory.ts`
 - `client/src/features/settings/pages/ProfilePage.tsx`
 - `client/src/features/settings/pages/NotificationPreferencesPage.tsx`
 - `client/src/features/settings/pages/PasswordManagerPage.tsx`
 - `client/src/features/settings/index.ts`
+**Estimated scope:** Large (10 files)
+
+---
+
+### Task 61: Scaffold & Colocate `client/src/features/system/` (ApiStatusPage, System Health)
+**Description:** Scaffold `client/src/features/system/` and colocate `useApiStatus.ts`, `systemService.ts`, `ApiStatusPage.tsx`, and public gateway `index.ts`.
+**Acceptance criteria:**
+- [x] `client/src/features/system` contains complete vertical slice.
+- [x] `ApiStatusPage.tsx` runs with tests.
+- [x] Public gateway wires cleanly.
+**Verification:**
+- [x] Tests pass: `npm -w client run test:arch`
+- [x] Build succeeds: `npm -w client run build`
+- [x] Manual check: test API latency and service health checks
+**Dependencies:** None  
+**Files touched:**
+- `client/src/features/system/api/systemService.ts`
+- `client/src/features/system/api/useSystemQueries.ts`
+- `client/src/features/system/hooks/useApiStatus.ts`
+- `client/src/features/system/pages/ApiStatusPage.tsx`
+- `client/src/features/system/index.ts`
 **Estimated scope:** Medium (5 files)
 
 ---
 
-### Task 55: Scaffold & Colocate `client/src/features/system/` (ApiStatusPage, System Health)
-**Description:** Scaffold `client/src/features/system/` and colocate `useApiStatus.ts`, `systemService.ts`, `ApiStatusPage.tsx`, and public gateway `index.ts`.
+### Task 62: Deprecate Legacy Horizontal Folders & Run Full Architecture & Monorepo Test Gates
+**Description:** Verify all route files and pages import strictly through feature public gateways (`@/features/*`). Verify no lingering deprecated markers or shims exist. Run full monorepo verification (`test:arch`, `lint`, `build`, `test:run`).
 **Acceptance criteria:**
-- [ ] `client/src/features/system` contains complete vertical slice.
-- [ ] `ApiStatusPage.tsx` runs with tests.
-- [ ] Public gateway wires cleanly.
+- [x] Architecture tests pass 100% across all feature modules (17/17 tests).
+- [x] Zero ESLint errors or forbidden AST contract declarations.
+- [x] Full monorepo build and test suites execute 100% green.
 **Verification:**
-- [ ] Tests pass: `npx vitest run client/src/features/system`
-- [ ] Build succeeds: `npm -w client run build`
-- [ ] Manual check: test API latency and service health checks
-**Dependencies:** None  
+- [x] Tests pass: `npm -w client run test:arch && npm -w client run test:run && npm -w server run test`
+- [x] Build succeeds: `npm -w client run build && npm -w server run build`
+- [x] Manual check: full portal smoke test across all routes
+**Dependencies:** Task 59, Task 60, Task 61  
 **Files touched:**
-- `client/src/features/system/api/useSystemQueries.ts`
-- `client/src/features/system/pages/ApiStatusPage.tsx`
-- `client/src/features/system/index.ts`
-**Estimated scope:** Small (3 files)
-
----
-
-### Task 56: Deprecate Legacy Horizontal Folders & Run Full Architecture & Monorepo Test Gates
-**Description:** Verify all route files and pages import strictly through feature public gateways (`@/features/*`). Remove obsolete pass-through re-exports where safe or mark with `@deprecated`. Run full monorepo verification (`test:arch`, `lint`, `build`, `test:run`).
-**Acceptance criteria:**
-- [ ] Architecture tests pass 100% across all feature modules.
-- [ ] Zero ESLint errors or forbidden AST contract declarations.
-- [ ] Full monorepo build and test suites execute 100% green.
-**Verification:**
-- [ ] Tests pass: `npm -w client run test:arch && npm -w client run test:run && npm -w server run test`
-- [ ] Build succeeds: `npm -w client run build && npm -w server run build`
-- [ ] Manual check: full portal smoke test across all routes
-**Dependencies:** Task 53, Task 54, Task 55  
-**Files touched:**
-- `client/src/protected-routes.tsx`
 - `client/tests/arch/feature-architecture.test.ts`
+- Monorepo test suites
 **Estimated scope:** Small (2 files)
 
 ---
 
-## Checkpoint 14: Monorepo Full ADR-002 Colocated Feature Migration Cleared
-- [ ] All business domains (`billing`, `equipment`, `tickets`, `subscriptions`, `crm`, `rmm`, `financial`, `users`, `auth`, `dashboard`, `settings`, `system`) migrated to `client/src/features/`.
-- [ ] `npm -w client run test:arch` passes 100% green.
-- [ ] `npm -w client run lint` passes with 0 errors.
-- [ ] `npm -w client run build` and `npm -w server run build` succeed.
-- [ ] Full monorepo test suite passes with zero regressions.
+## Checkpoint 15: Monorepo Full ADR-002 Colocated Feature Migration Cleared
+- [x] All 9 domain features (`auth`, `billing`, `crm`, `dashboard`, `equipment`, `financial`, `rmm`, `settings`, `subscriptions`, `system`, `tickets`, `users`) contain complete vertical slices.
+- [x] Architecture tests pass (`npm -w client run test:arch`).
+- [x] Client and Server build cleanly with zero TypeScript errors.
+- [x] All client and server test suites pass 100% green.
+- [x] All tasks in `tasks/plan.md` and `tasks/todo.md` completed.

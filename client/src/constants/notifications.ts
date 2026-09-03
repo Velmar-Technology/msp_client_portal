@@ -1,6 +1,6 @@
 import type React from "react";
 import { Bell, Mail, Smartphone, Ticket, UserCheck, RefreshCw, XCircle, MessageCircle } from "lucide-react";
-import type { NotificationEventType, ChannelPreference } from "@/services/notificationPreferenceService";
+import type { NotificationEventType, ChannelPreference } from "@/features/settings";
 
 export interface NotificationEventDefinition {
   key: NotificationEventType;

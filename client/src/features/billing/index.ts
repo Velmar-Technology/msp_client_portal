@@ -13,6 +13,7 @@ export * from './components/CancelInvoiceConfirmModal';
 export * from './components/InvoiceDetailsModal';
 
 // Hooks & Queries
+export * from './api/invoiceService';
 export * from './api/useBillingQueries';
 export * from './hooks/useBilling';
 

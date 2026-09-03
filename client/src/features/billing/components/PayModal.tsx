@@ -12,7 +12,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { BANK_ACCOUNTS } from '@/constants/bankAccounts';
 import { useCapturePaypalOrder } from '../api/useBillingQueries';
-import { invoiceService } from '@/services/invoiceService';
+import { invoiceService } from '../api/invoiceService';
 import type { InvoiceContract } from '@shared/contracts';
 
 interface PayModalProps {
