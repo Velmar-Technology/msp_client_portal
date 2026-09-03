@@ -10,6 +10,7 @@ COPY package*.json tsconfig.base.json ./
 COPY client/package.json ./client/
 COPY server/package.json ./server/
 COPY packages/errors/package.json ./packages/errors/
+COPY packages/contracts/package.json ./packages/contracts/
 
 # Install strict dependencies using lockfile (resolves Typescript types correctly)
 RUN npm ci --legacy-peer-deps
@@ -17,9 +18,10 @@ RUN npm ci --legacy-peer-deps
 # Explicitly install the missing Linux optional binary modules for Tailwind v4 and Vite compiling
 RUN npm install --legacy-peer-deps --no-audit --no-fund lightningcss-linux-x64-gnu @tailwindcss/oxide-linux-x64-gnu
 
-# Copy packages and build shared errors module
+# Copy packages and build shared errors and contracts modules
 COPY packages/errors ./packages/errors
-RUN npm -w packages/errors run build
+COPY packages/contracts ./packages/contracts
+RUN npm -w packages/errors run build && npm -w packages/contracts run build
 
 # Copy client and build production bundle (invalidates cache for VITE_GOOGLE_CLIENT_ID)
 ARG VITE_GOOGLE_CLIENT_ID

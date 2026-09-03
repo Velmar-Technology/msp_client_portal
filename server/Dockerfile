@@ -13,13 +13,15 @@ COPY package*.json tsconfig.base.json ./
 COPY client/package.json ./client/
 COPY server/package.json ./server/
 COPY packages/errors/package.json ./packages/errors/
+COPY packages/contracts/package.json ./packages/contracts/
 
 # Install dependencies (npm workspaces) strictly using lockfile
 RUN npm ci --legacy-peer-deps
 
-# Copy packages and build shared errors module
+# Copy packages and build shared errors and contracts modules
 COPY packages/errors ./packages/errors
-RUN npm -w packages/errors run build
+COPY packages/contracts ./packages/contracts
+RUN npm -w packages/errors run build && npm -w packages/contracts run build
 
 # Copy and build server code
 COPY server ./server
@@ -41,6 +43,7 @@ COPY package*.json tsconfig.base.json ./
 COPY client/package.json ./client/
 COPY server/package.json ./server/
 COPY packages/errors/package.json ./packages/errors/
+COPY packages/contracts/package.json ./packages/contracts/
 
 # Install only production dependencies and explicitly force zod installation to resolve hoisting conflicts
 # (cache cleanup must run in the SAME layer so /root/.npm/_cacache never lands in the image)
@@ -51,6 +54,7 @@ RUN npm install --omit=dev --legacy-peer-deps --no-audit --no-fund \
 
 # Copy compiled code from build stage
 COPY --from=builder /app/packages/errors/dist ./packages/errors/dist
+COPY --from=builder /app/packages/contracts/dist ./packages/contracts/dist
 COPY --from=builder /app/server/dist ./server/dist
 
 # Copy migrations and seed.sql from server
