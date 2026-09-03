@@ -16,7 +16,7 @@ import {
   earningsService,
   type TechnicianEarning,
   type TechnicianEarningsSummary,
-} from '@/services/earningsService';
+} from '../api/earningsService';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export function TechnicianPayrollTable() {

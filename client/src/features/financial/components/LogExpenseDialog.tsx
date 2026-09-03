@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { expenseService } from "@/services/expenseService";
+import { expenseService } from "../api/expenseService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/shared";

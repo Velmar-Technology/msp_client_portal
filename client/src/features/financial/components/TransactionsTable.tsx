@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { Transaction } from "@/hooks/useFinancialDashboard";
+import type { Transaction } from "../hooks/useFinancialDashboard";
 
 interface TransactionsTableProps {
   transactions: Transaction[];

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import type { ExpenseCategory } from "@/hooks/useFinancialDashboard";
+import type { ExpenseCategory } from "../hooks/useFinancialDashboard";
 
 interface ExpenseDoughnutProps {
   categories: ExpenseCategory[];

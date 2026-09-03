@@ -1,4 +1,4 @@
-import type { KpiCardData } from "@/hooks/useFinancialDashboard";
+import type { KpiCardData } from "../hooks/useFinancialDashboard";
 import { useTranslation } from "react-i18next";
 import { DollarSign, TrendingUp, CreditCard, Percent } from "lucide-react";
 import { SummaryCard } from "@/components/shared";

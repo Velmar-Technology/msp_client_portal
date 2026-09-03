@@ -1,1 +1,1 @@
-export { FinancialPage as default, FinancialPage } from "@/pages/FinancialPage";
+export { FinancialPage as default, FinancialPage } from "@/features/financial";

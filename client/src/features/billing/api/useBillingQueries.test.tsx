@@ -12,7 +12,7 @@ import {
   useCancelInvoice,
 } from "./useBillingQueries";
 import { invoiceService } from "@/services/invoiceService";
-import { expenseService } from "@/services/expenseService";
+import { expenseService } from "@/features/financial";
 import { InvoiceStatus } from "@shared/contracts";
 
 vi.mock("@/services/invoiceService", () => ({
@@ -26,7 +26,7 @@ vi.mock("@/services/invoiceService", () => ({
   },
 }));
 
-vi.mock("@/services/expenseService", () => ({
+vi.mock("@/features/financial", () => ({
   expenseService: {
     getAll: vi.fn(),
     create: vi.fn(),

@@ -146,12 +146,12 @@ Detailed tasks with full acceptance criteria and file lists are recorded in [`ta
 - [x] Checkpoint 12: RMM & Maintenance Module Migration Cleared
 
 ### Milestone 13: Migrate Financial & OpEx Module to ADR-002 Colocated Architecture (P1)
-- [ ] Task 52: Scaffold `client/src/features/financial/` & Colocate Financial API Queries (`useFinancialQueries.ts`)
-- [ ] Task 53: Colocate Profit Split, Commission & Expense Modals (`client/src/features/financial/components/`)
-- [ ] Task 54: Colocate Financial Dashboard Hooks (`client/src/features/financial/hooks/`)
-- [ ] Task 55: Colocate `FinancialPage` with Vitest Tests into `client/src/features/financial/pages/`
-- [ ] Task 56: Wire `client/src/features/financial/index.ts` Public Gateway & Update Route Imports
-- [ ] Checkpoint 13: Financial Module Migration Cleared
+- [x] Task 52: Scaffold `client/src/features/financial/` & Colocate Financial API Queries (`useFinancialQueries.ts`)
+- [x] Task 53: Colocate Profit Split, Commission & Expense Modals (`client/src/features/financial/components/`)
+- [x] Task 54: Colocate Financial Dashboard Hooks (`client/src/features/financial/hooks/`)
+- [x] Task 55: Colocate `FinancialPage` with Vitest Tests into `client/src/features/financial/pages/`
+- [x] Task 56: Wire `client/src/features/financial/index.ts` Public Gateway & Update Route Imports
+- [x] Checkpoint 13: Financial Module Migration Cleared
 
 ### Milestone 14: Migrate Identity, Access & Auth Modules (P1)
 - [ ] Task 57: Scaffold `client/src/features/users/`, Colocate User Management API & Modals, Wire Gateway & Routes

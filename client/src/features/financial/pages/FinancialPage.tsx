@@ -1,17 +1,17 @@
 import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { Download, BarChart3, Users } from "lucide-react";
-import { useFinancialDashboard } from "@/hooks/useFinancialDashboard";
-import type { DateRange } from "@/hooks/useFinancialDashboard";
+import { useFinancialDashboard } from "../hooks/useFinancialDashboard";
+import type { DateRange } from "../hooks/useFinancialDashboard";
 import { useUrlState } from "@/hooks/useUrlState";
-import { KpiCards } from "@/components/financial/KpiCards";
-import { TransactionsTable } from "@/components/financial/TransactionsTable";
-import { TechnicianPayrollTable } from "@/components/financial/TechnicianPayrollTable";
+import { KpiCards } from "../components/KpiCards";
+import { TransactionsTable } from "../components/TransactionsTable";
+import { TechnicianPayrollTable } from "../components/TechnicianPayrollTable";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
-import { LogExpenseDialog } from "@/components/financial/LogExpenseDialog";
+import { LogExpenseDialog } from "../components/LogExpenseDialog";
 import { Page } from "@/components/Page";
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { ChunkErrorBoundary } from "@/components/shared/ChunkErrorBoundary";
@@ -20,10 +20,10 @@ import { SKELETON_DISPLAY_DELAY_MS } from "@/constants/ui";
 
 // ---- Lazily loaded heavy chart components ----
 const RevenueChart = lazyWithRetry(() =>
-  import("@/components/financial/RevenueChart").then((m) => ({ default: m.RevenueChart })),
+  import("../components/RevenueChart").then((m) => ({ default: m.RevenueChart })),
 );
 const ExpenseDoughnut = lazyWithRetry(() =>
-  import("@/components/financial/ExpenseDoughnut").then((m) => ({ default: m.ExpenseDoughnut })),
+  import("../components/ExpenseDoughnut").then((m) => ({ default: m.ExpenseDoughnut })),
 );
 
 function ChartSkeletonPlaceholder({ className }: { className?: string }) {

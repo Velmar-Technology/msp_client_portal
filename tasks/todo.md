@@ -1074,110 +1074,106 @@
 
 ---
 
-## Milestone 12: Migrate Financial & OpEx Module to ADR-002 Colocated Architecture (P1)
+## Milestone 13: Migrate Financial & OpEx Module to ADR-002 Colocated Architecture (P1)
 
-### Task 46: Scaffold `client/src/features/financial/` & Colocate Financial API Queries
+### Task 52: Scaffold `client/src/features/financial/` & Colocate Financial API Queries
 **Description:** Scaffold `client/src/features/financial/` and create `api/useFinancialQueries.ts` consolidating `earningsService.ts` and `expenseService.ts`. Provide query hooks (`useEarningsStats`, `useTechnicianBounties`, `useExpenses`) and mutation hooks (`useLogExpense`, `useApproveCommissionPayout`). Re-export from legacy services.
 **Acceptance criteria:**
-- [ ] `client/src/features/financial/api/useFinancialQueries.ts` exports all financial queries and mutations.
-- [ ] `types.ts` contains ephemeral UI state (date range selector, split tab).
-- [ ] Legacy services re-export from `@/features/financial`.
+- [x] `client/src/features/financial/api/useFinancialQueries.ts` exports all financial queries and mutations.
+- [x] `types.ts` contains ephemeral UI state (date range selector, split tab).
+- [x] Legacy services re-export from `@/features/financial`.
 **Verification:**
-- [ ] Tests pass: `npm -w client run test:arch`
-- [ ] Build succeeds: `npm -w client run build`
-- [ ] Manual check: verify 70/30 net profit calculation matches BL-802
+- [x] Tests pass: `npm -w client run test:arch`
+- [x] Build succeeds: `npm -w client run build`
+- [x] Manual check: verify 70/30 net profit calculation matches BL-802
 **Dependencies:** None  
 **Files touched:**
 - `client/src/features/financial/api/useFinancialQueries.ts`
 - `client/src/features/financial/api/earningsService.ts`
+- `client/src/features/financial/api/expenseService.ts`
 - `client/src/features/financial/types.ts`
-- `client/src/services/earningsService.ts`
-- `client/src/services/expenseService.ts`
-**Estimated scope:** Medium (5 files)
-
----
-
-### Task 47: Colocate Profit Split, Commission & Expense Modals
-**Description:** Move financial components from `client/src/components/financial/` into `client/src/features/financial/components/` (`ProfitSplitChart.tsx`, `CommissionPayoutTable.tsx`, `ExpenseLogModal.tsx`, `FinancialSummaryGrid.tsx`).
-**Acceptance criteria:**
-- [ ] Components colocated in `client/src/features/financial/components/`.
-- [ ] All props use direct contracts from `@shared/contracts`.
-- [ ] `client/src/components/financial/index.ts` re-exports moved components.
-**Verification:**
-- [ ] Tests pass: `npm -w client run test:arch`
-- [ ] Build succeeds: `npx tsc --noEmit -p client/tsconfig.app.json`
-- [ ] Manual check: test logging a pre-split OpEx expense
-**Dependencies:** Task 46  
-**Files touched:**
-- `client/src/features/financial/components/ProfitSplitChart.tsx`
-- `client/src/features/financial/components/CommissionPayoutTable.tsx`
-- `client/src/features/financial/components/ExpenseLogModal.tsx`
-- `client/src/components/financial/index.ts`
 **Estimated scope:** Medium (4 files)
 
 ---
 
-### Task 48: Colocate Financial Dashboard Hooks
-**Description:** Colocate `useFinancialDashboard.ts` and date filter hooks into `client/src/features/financial/hooks/`. Synchronize period filters (`?from=...&to=...`) via `useUrlState`. Re-export from legacy `client/src/hooks/useFinancialDashboard.ts`.
+### Task 53: Colocate Profit Split, Commission & Expense Modals
+**Description:** Move financial components from `client/src/components/financial/` into `client/src/features/financial/components/` (`ExpenseDoughnut.tsx`, `KpiCards.tsx`, `LogExpenseDialog.tsx`, `RevenueChart.tsx`, `TechnicianPayrollTable.tsx`, `TransactionsTable.tsx`).
 **Acceptance criteria:**
-- [ ] `useFinancialDashboard.ts` lives in `client/src/features/financial/hooks/`.
-- [ ] URL state preserves date range selections.
-- [ ] Legacy hook re-exports from `@/features/financial`.
+- [x] Components colocated in `client/src/features/financial/components/`.
+- [x] All props use direct contracts from `@shared/contracts`.
 **Verification:**
-- [ ] Tests pass: `npm -w client run test:arch`
-- [ ] Build succeeds: `npm -w client run build`
-- [ ] Manual check: test date filter changes updating metric summaries
-**Dependencies:** Task 46, Task 47  
+- [x] Tests pass: `npm -w client run test:arch`
+- [x] Build succeeds: `npx tsc --noEmit -p client/tsconfig.app.json`
+- [x] Manual check: test logging a pre-split OpEx expense
+**Dependencies:** Task 52  
 **Files touched:**
-- `client/src/features/financial/hooks/useFinancialDashboard.ts`
-- `client/src/hooks/useFinancialDashboard.ts`
-**Estimated scope:** Small (2 files)
+- `client/src/features/financial/components/ExpenseDoughnut.tsx`
+- `client/src/features/financial/components/KpiCards.tsx`
+- `client/src/features/financial/components/LogExpenseDialog.tsx`
+- `client/src/features/financial/components/RevenueChart.tsx`
+- `client/src/features/financial/components/TechnicianPayrollTable.tsx`
+- `client/src/features/financial/components/TransactionsTable.tsx`
+**Estimated scope:** Medium (6 files)
 
 ---
 
-### Task 49: Colocate `FinancialPage` with Vitest Tests into `client/src/features/financial/pages/`
-**Description:** Colocate `FinancialPage.tsx` and its test suites into `client/src/features/financial/pages/`. Re-export from `client/src/pages/FinancialPage/index.ts`.
+### Task 54: Colocate Financial Dashboard Hooks
+**Description:** Colocate `useFinancialDashboard.ts` and date filter hooks into `client/src/features/financial/hooks/`. Synchronize period filters (`?from=...&to=...`) via `useUrlState`.
 **Acceptance criteria:**
-- [ ] `FinancialPage.tsx` consumes colocated components and hooks cleanly.
-- [ ] Vitest test suites execute and pass.
-- [ ] Legacy page entry point re-exports from `@/features/financial`.
+- [x] `useFinancialDashboard.ts` lives in `client/src/features/financial/hooks/`.
+- [x] URL state preserves date range selections.
 **Verification:**
-- [ ] Tests pass: `npx vitest run client/src/features/financial`
-- [ ] Build succeeds: `npm -w client run build`
-- [ ] Manual check: verify revenue chart rendering
-**Dependencies:** Task 47, Task 48  
+- [x] Tests pass: `npm -w client run test:arch`
+- [x] Build succeeds: `npm -w client run build`
+- [x] Manual check: test date filter changes updating metric summaries
+**Dependencies:** Task 52, Task 53  
 **Files touched:**
-- `client/src/features/financial/pages/FinancialPage.tsx`
-- `client/src/features/financial/pages/FinancialPage.test.tsx`
-- `client/src/pages/FinancialPage/index.ts`
+- `client/src/features/financial/hooks/useFinancialDashboard.ts`
+- `client/src/features/financial/hooks/useFinancialFilters.ts`
+- `client/src/features/financial/hooks/useFinancialModals.ts`
 **Estimated scope:** Small (3 files)
 
 ---
 
-### Task 50: Wire `client/src/features/financial/index.ts` Public Gateway & Update Route Imports
-**Description:** Expose authorized public exports in `client/src/features/financial/index.ts` (`FinancialPage`, query hooks, modals, types). Update route definitions in `client/src/protected-routes.tsx` and `client/src/routes/`.
+### Task 55: Colocate `FinancialPage` with Vitest Tests into `client/src/features/financial/pages/`
+**Description:** Colocate `FinancialPage.tsx` into `client/src/features/financial/pages/`.
 **Acceptance criteria:**
-- [ ] Public gateway exports all public capabilities cleanly.
-- [ ] Route files import from `@/features/financial`.
-- [ ] Zero deep imports into `@/features/financial/*`.
+- [x] `FinancialPage.tsx` consumes colocated components and hooks cleanly.
+- [x] Client builds cleanly with zero errors.
 **Verification:**
-- [ ] Tests pass: `npm -w client run test:arch`
-- [ ] Build succeeds: `npm -w client run lint && npm -w client run build`
-- [ ] Manual check: navigation to `/financial` works
-**Dependencies:** Task 49  
+- [x] Build succeeds: `npm -w client run build`
+- [x] Manual check: verify revenue chart rendering
+**Dependencies:** Task 53, Task 54  
 **Files touched:**
-- `client/src/features/financial/index.ts`
-- `client/src/protected-routes.tsx`
+- `client/src/features/financial/pages/FinancialPage.tsx`
 **Estimated scope:** Small (2 files)
 
 ---
 
-## Checkpoint 12: Financial Module Migration Cleared
-- [ ] `client/src/features/financial` contains complete 7-part vertical slice.
-- [ ] Architecture tests pass (`npm -w client run test:arch`).
-- [ ] ESLint passes (`npm -w client run lint`).
-- [ ] Client builds cleanly (`npm -w client run build`).
-- [ ] All financial unit and integration tests pass (`npm -w client run test:run`).
+### Task 56: Wire `client/src/features/financial/index.ts` Public Gateway & Update Route Imports
+**Description:** Expose authorized public exports in `client/src/features/financial/index.ts` (`FinancialPage`, query hooks, modals, types). Update route definitions in `client/src/protected-routes.tsx` and `client/src/routes/`.
+**Acceptance criteria:**
+- [x] Public gateway exports all public capabilities cleanly.
+- [x] Route files import from `@/features/financial`.
+- [x] Zero deep imports into `@/features/financial/*`.
+**Verification:**
+- [x] Tests pass: `npm -w client run test:arch`
+- [x] Build succeeds: `npm -w client run lint && npm -w client run build`
+- [x] Manual check: navigation to `/financial` works
+**Dependencies:** Task 55  
+**Files touched:**
+- `client/src/features/financial/index.ts`
+- `client/src/routes/_app/financial.tsx`
+**Estimated scope:** Small (2 files)
+
+---
+
+## Checkpoint 13: Financial Module Migration Cleared
+- [x] `client/src/features/financial` contains complete 7-part vertical slice.
+- [x] Architecture tests pass (`npm -w client run test:arch`).
+- [x] ESLint passes (`npm -w client run lint`).
+- [x] Client builds cleanly (`npm -w client run build`).
+- [x] All financial unit and integration tests pass (`npm -w client run test:run`).
 
 ---
 

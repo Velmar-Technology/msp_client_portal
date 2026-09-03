@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoiceService } from "@/services/invoiceService";
-import { expenseService } from "@/services/expenseService";
+import { expenseService } from "@/features/financial";
 import type { CreateExpenseInput, InvoiceQueryInput } from "@shared/contracts";
 
 export const BILLING_QUERY_KEYS = {

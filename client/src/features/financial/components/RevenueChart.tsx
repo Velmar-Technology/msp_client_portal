@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import type { MonthlyData } from "@/hooks/useFinancialDashboard";
+import type { MonthlyData } from "../hooks/useFinancialDashboard";
 
 interface RevenueChartProps {
   data: MonthlyData[];

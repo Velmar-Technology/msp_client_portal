@@ -34,7 +34,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { ticketService, useSLATimer, type TicketItem as Ticket } from "@/features/tickets";
 import { userService } from "@/services/userService";
-import { earningsService, type TechnicianEarning, type TechnicianEarningsSummary } from "@/services/earningsService";
+import { earningsService, type TechnicianEarning, type TechnicianEarningsSummary } from "@/features/financial";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useDeferredLoading } from "@/hooks/useDeferredLoading";
 import { statusColor, priorityColor } from "@/constants/tickets";
