@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { ExpenseCategory } from "@shared/contracts";
 import { expenseService } from "../api/expenseService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,12 +29,18 @@ interface LogExpenseDialogProps {
   onExpenseLogged: () => void;
 }
 
+/**
+ * Modal dialog for creating and logging operational business expenses.
+ *
+ * @param props - Component properties containing onExpenseLogged callback.
+ * @returns React dialog element with localized expense submission form.
+ */
 export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("other");
+  const [category, setCategory] = useState<ExpenseCategory>(ExpenseCategory.OTHER);
   const [expenseDate, setExpenseDate] = useState(() => {
     return new Date().toISOString().split("T")[0];
   });
@@ -45,10 +52,10 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
     const newErrors: typeof errors = {};
     const amtNum = parseFloat(amount);
     if (!amount || isNaN(amtNum) || amtNum <= 0) {
-      newErrors.amount = t("financial.positiveAmount") || "Amount must be greater than 0";
+      newErrors.amount = t("financial.positiveAmount");
     }
     if (!description.trim()) {
-      newErrors.description = t("financial.requiredField") || "This field is required";
+      newErrors.description = t("financial.requiredField");
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -67,12 +74,12 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
         expense_date: new Date(expenseDate).toISOString(),
         expense_identifier: expenseIdentifier.trim() || null,
       });
-      toast.success(t("financial.addExpenseSuccess") || "Expense logged successfully");
+      toast.success(t("financial.addExpenseSuccess"));
 
       // Reset form
       setAmount("");
       setDescription("");
-      setCategory("other");
+      setCategory(ExpenseCategory.OTHER);
       setExpenseDate(new Date().toISOString().split("T")[0]);
       setExpenseIdentifier("");
       setErrors({});
@@ -84,7 +91,7 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
       onExpenseLogged();
     } catch (err: unknown) {
       const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
-      const errMsg = errorObj.response?.data?.message || errorObj.message || "Failed to log expense";
+      const errMsg = errorObj.response?.data?.message || errorObj.message || t("financial.addExpenseError");
       toast.error(errMsg);
     } finally {
       setIsSaving(false);
@@ -117,7 +124,7 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
           {/* Description */}
           <div className="flex flex-col gap-1.5">
             <label htmlFor="expense-description" className="text-[10px] uppercase font-bold text-muted-foreground">
-              {t("financial.expenseDescription")} *
+              {t("financial.descriptionLabel")} *
             </label>
             <Input
               id="expense-description"
@@ -138,7 +145,7 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
           {/* Amount */}
           <div className="flex flex-col gap-1.5">
             <label htmlFor="expense-amount" className="text-[10px] uppercase font-bold text-muted-foreground">
-              {t("financial.expenseAmount")} ($) *
+              {t("financial.amountLabel")} *
             </label>
             <Input
               id="expense-amount"
@@ -161,19 +168,18 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
           {/* Category */}
           <div className="flex flex-col gap-1.5">
             <label htmlFor="expense-category" className="text-[10px] uppercase font-bold text-muted-foreground">
-              {t("financial.expenseCategory")}
+              {t("financial.categoryLabel")}
             </label>
-            <Select value={category} onValueChange={setCategory}>
+            <Select value={category} onValueChange={(val) => setCategory(val as ExpenseCategory)}>
               <SelectTrigger id="expense-category" size="lg" className="w-full text-xs">
-                <SelectValue placeholder={t("financial.expenseCategory")} />
+                <SelectValue placeholder={t("financial.categoryLabel")} />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border">
-                <SelectItem value="software" className="text-xs">{t("financial.categorySoftware")}</SelectItem>
-                <SelectItem value="hardware" className="text-xs">{t("financial.categoryHardware")}</SelectItem>
-                <SelectItem value="contractor" className="text-xs">{t("financial.categoryContractor")}</SelectItem>
-                <SelectItem value="office" className="text-xs">{t("financial.categoryOffice")}</SelectItem>
-                <SelectItem value="utilities" className="text-xs">{t("financial.categoryUtilities")}</SelectItem>
-                <SelectItem value="other" className="text-xs">{t("financial.categoryOther")}</SelectItem>
+                <SelectItem value={ExpenseCategory.CLOUD_INFRA} className="text-xs">{t("financial.cloudInfra")}</SelectItem>
+                <SelectItem value={ExpenseCategory.SALARIES} className="text-xs">{t("financial.salaries")}</SelectItem>
+                <SelectItem value={ExpenseCategory.MARKETING} className="text-xs">{t("financial.marketing")}</SelectItem>
+                <SelectItem value={ExpenseCategory.OFFICE_SPACE} className="text-xs">{t("financial.officeSpace")}</SelectItem>
+                <SelectItem value={ExpenseCategory.OTHER} className="text-xs">{t("financial.other")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -196,7 +202,7 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
           {/* Expense Date */}
           <div className="flex flex-col gap-1.5">
             <label htmlFor="expense-date" className="text-[10px] uppercase font-bold text-muted-foreground">
-              {t("financial.expenseDate")}
+              {t("financial.dateLabel")}
             </label>
             <DatePicker
               id="expense-date"
