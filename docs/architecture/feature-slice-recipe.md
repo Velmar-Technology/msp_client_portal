@@ -79,14 +79,30 @@ export default router;
 
 ---
 
-### Step 3: Client Query & Mutation Hook
+### Step 3: Frontend Colocated Feature Module (`client/src/features/<feature>/`)
 
-Create type-safe hooks in `client/src/hooks/queries/use<Module>.ts`:
+Per [ADR-002](../decisions/ADR-002-frontend-colocated-feature-architecture.md), colocate your query hooks, services, tables, dialogs, and route pages inside `client/src/features/<feature>/`:
 
+```
+client/src/features/devices/
+├── api/
+│   ├── useDevices.ts          # TanStack Query hooks, query keys & mutations
+│   └── deviceService.ts       # Axios client service
+├── components/
+│   ├── DeviceTable.tsx        # Domain-specific data table
+│   └── RegisterDeviceModal.tsx# Domain-specific form dialog
+├── hooks/
+│   └── useDeviceFilters.ts    # URL sync (useUrlState)
+├── pages/
+│   └── DevicesPage.tsx        # Top-level route component
+├── types.ts                   # ONLY local ephemeral UI state types (no duplicate entity types!)
+└── index.ts                   # Public API gateway
+```
+
+#### Query Hook Implementation (`features/devices/api/useDevices.ts`):
 ```typescript
-// client/src/hooks/queries/useDevices.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { deviceService } from '@/services/deviceService';
+import { deviceService } from './deviceService';
 import type { RegisterDeviceInput } from '@shared/contracts';
 
 export const DEVICE_QUERY_KEYS = {
@@ -108,7 +124,7 @@ export function useRegisterDevice() {
   return useMutation({
     mutationFn: (data: RegisterDeviceInput) => deviceService.register(data),
     onSuccess: () => {
-      // Automatically invalidates cache; UI updates without manual re-fetch
+      // Automatically invalidates cache; UI updates without manual re-fetch loops
       queryClient.invalidateQueries({ queryKey: DEVICE_QUERY_KEYS.lists() });
     },
   });
@@ -117,13 +133,16 @@ export function useRegisterDevice() {
 
 ---
 
-### Step 4: React UI Component
+### Step 4: React UI Component & Route Page
 
-In your component, consume the query hook directly. TanStack Query automatically manages caching, loading skeletons, and background refetching:
+In your component, consume the query hook directly. Form mutations validate using `zodResolver` with schemas imported straight from `@shared/contracts`:
 
 ```tsx
-// client/src/pages/DevicesPage/DevicesPage.tsx
-import { useDevices, useRegisterDevice } from '@/hooks/queries/useDevices';
+// client/src/features/devices/pages/DevicesPage.tsx
+import { useDevices, useRegisterDevice } from '../api/useDevices';
+import { DeviceTable } from '../components/DeviceTable';
+import { TablePageSkeleton } from '@/components/shared/TablePageSkeleton';
+import type { RegisterDeviceInput } from '@shared/contracts';
 
 export function DevicesPage() {
   const { data: devices, isLoading, error } = useDevices();
@@ -144,7 +163,9 @@ export function DevicesPage() {
 ---
 
 ## Summary of Golden Rules
-1. **Never write manual response types in `client/src/services`:** Import them from `@shared/contracts`.
-2. **Never duplicate Zod schemas:** Define once in `@shared/contracts` and consume in both Express route validators and React Hook Form resolvers.
-3. **Keep Zustand for client UI only:** Modals, drawers, and theme preferences live in Zustand. Server cache data lives in TanStack Query.
-4. **Avoid 1-line pass-through repositories:** Keep domain logic and straightforward queries together in domain services.
+1. **Never write manual response types in frontend:** Import entity contracts directly from `@shared/contracts`.
+2. **Never duplicate Zod schemas:** Define once in `@shared/contracts` and consume in both Express route validators and React Hook Form `zodResolver`.
+3. **Colocate feature files (`client/src/features/<feature>/`):** Keep api hooks, tables, modals, and pages together for a given business domain.
+4. **Keep Zustand for client UI only:** Modals, drawers, and theme preferences live in Zustand. Server cache data lives in TanStack Query.
+5. **URL is the single source of truth for navigation:** Filters, pagination, tabs, and drawer inspection IDs sync via `useUrlState`.
+6. **Avoid 1-line pass-through repositories:** Keep domain logic and straightforward queries together in domain services.

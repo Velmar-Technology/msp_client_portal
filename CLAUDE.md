@@ -17,9 +17,10 @@
 
 ## Architecture & Quality Standards
 - Read `CONSTRAINTS.md` before writing code. Do not weaken it to make a change pass.
-- Master specifications and business logic rules are documented in `AGENTS.md` and `docs/decisions/ADR-001-contract-first-monolith-and-tanstack-query.md`.
+- Master specifications and business logic rules are documented in `AGENTS.md`, `docs/decisions/ADR-001-contract-first-monolith-and-tanstack-query.md`, and `docs/decisions/ADR-002-frontend-colocated-feature-architecture.md`.
 - **Contract-First Monolith:** All API request/response schemas live in `@shared/contracts`. Validate routes with Zod contracts directly.
 - **Vertical Slice Recipe:** Build features vertically (Contract → Express Route & Service → TanStack Query Hook → UI) per `docs/architecture/feature-slice-recipe.md`.
+- **Frontend Colocated Features (`client/src/features/<domain>/`):** Colocate `api/`, `components/`, `hooks/`, `pages/`, and `index.ts` per domain (@see ADR-002). Backend entities MUST be imported from `@shared/contracts`; local `types.ts` is strictly for ephemeral UI state.
 - **State Separation:** Server state belongs in TanStack Query (`@tanstack/react-query`). Zustand is strictly for client-only UI state.
 - **Pragmatic Services:** For standard CRUD and relations, services query Drizzle directly (`db.query.*`). Do NOT write 1-line pass-through repositories.
 - Dependencies point strictly **INWARD**: Frameworks/Drivers → Interface Adapters → Use Cases → Entities.

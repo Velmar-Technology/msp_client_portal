@@ -45,14 +45,16 @@ server/src/
     └── system/                     # Controllers, Repositories, Routes, Services & Co-located Tests
 
 client/src/
-├── components/ui/  # MANDATORY UI Primitives: Base shadcn/ui components
-├── components/     # Feature Components: Must use shadcn/ui primitives
-├── email-templates/# Master Email Design System & transactional email templates
-├── hooks/queries/  # Type-Safe TanStack Query hooks consuming @shared/contracts
+├── components/ui/  # MANDATORY UI Primitives: Base shadcn/ui components (L1)
+├── components/shared/# Cross-cutting shared blocks (Page, ErrorBoundary, skeletons) (L2)
+├── features/       # Colocated Feature Modules (api, components, hooks, pages) (L3 & L4)
+│   ├── tickets/    # Self-contained ticket lifecycle & support domain
+│   ├── equipment/  # Hardware devices, OTP pairing & Nextcloud slots
+│   ├── billing/    # Invoicing, taxes, PayPal captures & expenses
+│   └── subscriptions/# Plans, entitlements & renewal scheduler
 ├── routes/         # Layout Routes: File-based layout route hierarchy (_public/, _auth/, _app/)
-├── pages/          # Top-Level Page Views
-├── services/       # API Adapters: Axios HTTP client services
-└── store/          # Client UI State: Zustand stores (modals, drawers, theme)
+├── lib/            # Shared utilities (api Axios instance, auth storage, cn)
+└── store/          # Client UI State: Zustand stores (session, modals, theme)
 
 packages/
 ├── contracts/      # @shared/contracts: Single source of truth API contracts & Zod schemas
@@ -61,9 +63,10 @@ packages/
 └── msp-agent/      # Local device telemetry & management agent
 ```
 
-### Contract-First Monolith & Vertical Slices
-To eliminate cross-workspace rework and pass-through boilerplate, new implementations follow our **Contract-First Monolith** standard:
+### Contract-First Monolith & Colocated Features
+To eliminate cross-workspace rework and pass-through boilerplate, new implementations follow our modern architecture standards:
 - **Single Source of Truth:** API contracts, query parameters, and Zod validation schemas are maintained in `@shared/contracts` ([ADR-001](docs/decisions/ADR-001-contract-first-monolith-and-tanstack-query.md)).
+- **Colocated Feature Architecture:** Frontend domains are grouped in self-contained vertical feature modules (`client/src/features/<domain>/`) with colocated query hooks, UI blocks, and route pages ([ADR-002](docs/decisions/ADR-002-frontend-colocated-feature-architecture.md)).
 - **Server State Delegation:** Asynchronous server state and cache invalidation are handled by **TanStack Query** (`@tanstack/react-query`). Zustand is restricted strictly to client UI state.
 - **Vertical Slice Development:** Standardized in [`docs/architecture/feature-slice-recipe.md`](docs/architecture/feature-slice-recipe.md) (Contract → Express Route & Service → Query Hook → UI Component).
 

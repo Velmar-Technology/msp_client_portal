@@ -103,10 +103,12 @@ Dependencies point strictly **INWARD**: `Frameworks/Drivers` $\rightarrow$ `Inte
 
 ## 6. Frontend Architectural Standards & State Management (React 19 / Vite / Tailwind v4)
 
-1. **4-Level Component Hierarchy**:
-   $$\text{L1: Primitives (/components/ui)} \leftarrow \text{L2: Shared Blocks (/components/shared, layout)} \leftarrow \text{L3: Feature Components (/components/[domain])} \leftarrow \text{L4: Pages (/pages, /routes)}$$
-   - Lower layers NEVER import higher layers. Feature modules never cross-import directly.
-   - **`shadcn/ui` (`radix-ui`) Primitives**: ALL UI elements (Button, Dialog, Input, Select, Badge, Card, Table) MUST use `client/src/components/ui/`. Never write raw `<button>`, `<input>`, or `<select>`.
+1. **Colocated Feature Architecture (`client/src/features/<domain>/`) & Component Hierarchy**:
+   $$\text{L1: Primitives (/components/ui)} \leftarrow \text{L2: Shared Blocks (/components/shared, layout)} \leftarrow \text{L3: Features (/features/<domain>)} \leftarrow \text{L4: Routes (/routes, /pages)}$$
+   - **Feature Colocation (@see ADR-002):** Features live in `client/src/features/<domain>/` with colocated `api/` (TanStack Query hooks & service), `components/`, `hooks/` (URL sync & modal state), `pages/`, `types.ts` (ephemeral UI state only), and an `index.ts` public gateway.
+   - **No Duplicate Types:** Backend entities, input payloads, and responses MUST be imported directly from `@shared/contracts`. Feature `types.ts` is strictly prohibited from re-declaring backend entities.
+   - **Public Gateways:** Cross-feature imports MUST pass through the target feature's `index.ts`. Deep imports into another feature's internal directories are forbidden.
+   - **`shadcn/ui` (`radix-ui`) Primitives:** ALL UI elements (Button, Dialog, Input, Select, Badge, Card, Table) MUST use `client/src/components/ui/`. Never write raw `<button>`, `<input>`, or `<select>`.
 2. **`Zod` Schema & Contract Validation**:
    - **Single Contract Truth**: All request payloads, queries, and entity responses are imported directly from `@shared/contracts` (@see ADR-001).
    - Frontend form schemas pair `@shared/contracts` with `@hookform/resolvers/zod`.
