@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.10.0](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.9.0...v1.10.0) (2026-09-03)
+
+
+### Features
+
+* **billing:** migrate billing and expenses to @shared/contracts and TanStack Query ([4ac5469](https://github.com/Velmar-Technology/msp_client_portal/commit/4ac5469ff656b07cfedbd0ce9659f275e9088b35))
+* **billing:** migrate billing module to ADR-002 colocated architecture ([5d2fe5d](https://github.com/Velmar-Technology/msp_client_portal/commit/5d2fe5d08edd577d6a5ef2884535f6cc0231a90f))
+* **client:** enforce ADR-002 feature architecture and add scaffolding engine ([6944b87](https://github.com/Velmar-Technology/msp_client_portal/commit/6944b87eff3ec5ae28101f43fb1e75fcda887f3b))
+* **client:** migrate to SOTA React Router v7 Data Mode with colocated feature manifests (ADR-003) ([fa15bb3](https://github.com/Velmar-Technology/msp_client_portal/commit/fa15bb352c1713e5561ada2cf88dba2e16ec211d))
+* **contracts:** implement @shared/contracts and TanStack Query tickets pilot ([dd90f2f](https://github.com/Velmar-Technology/msp_client_portal/commit/dd90f2f7f227528246d599e1587b05f1d5ae7c69))
+* **contracts:** migrate equipment and subscriptions to @shared/contracts and TanStack Query ([0361add](https://github.com/Velmar-Technology/msp_client_portal/commit/0361add4915ad42ce83d09560c390bbd4017afb8))
+* **equipment:** migrate equipment module to ADR-002 colocated architecture ([ebae1b7](https://github.com/Velmar-Technology/msp_client_portal/commit/ebae1b771fa1bfae0c729e80634b632cf463071f))
+* **infra:** sota infrastructure overhaul and architectural conformance ([dc960a0](https://github.com/Velmar-Technology/msp_client_portal/commit/dc960a0a193b329bdcd5b7e980324df89b631e30))
+* **subscriptions:** add subscription conditional page and feature gating ([77ad50c](https://github.com/Velmar-Technology/msp_client_portal/commit/77ad50c51b2f2819617bcf09b82b4604ebcd82ab))
+* **system:** implement self-service vaultwarden password reset and re-invitation ([470aacf](https://github.com/Velmar-Technology/msp_client_portal/commit/470aacf688ffb96fa89f00285892ff178e40a5d5))
+
+
+### Bug Fixes
+
+* **crm:** add migration 038 for custom plan columns on plans table ([7c00b76](https://github.com/Velmar-Technology/msp_client_portal/commit/7c00b76b76f7861227d92e1966e5d61f1ffc6b09))
+* **financial:** correct i18n keys and contract category mapping in LogExpenseDialog ([d97f9a5](https://github.com/Velmar-Technology/msp_client_portal/commit/d97f9a54a2b7e4d05460422b1b27c981aa7b5962))
+
 ## [1.9.0](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.8.7...v1.9.0) (2026-09-02)
 
 
