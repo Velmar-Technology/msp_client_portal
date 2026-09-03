@@ -3,7 +3,7 @@ import { X, KeyRound, Loader2, Laptop, BadgeCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { equipmentService } from '@/services/equipmentService';
+import { equipmentService } from '../api/equipmentService';
 import {
   InputOTP,
   InputOTPGroup,

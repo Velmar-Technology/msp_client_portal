@@ -3,7 +3,7 @@ import { Terminal, Loader2, Copy, Check, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { SubscriptionEquipment } from '@shared/contracts';
-import { equipmentService } from '@/services/equipmentService';
+import { equipmentService } from '../api/equipmentService';
 import { getAuthItem } from '@/lib/authStorage';
 import { Button } from '@/components/ui/button';
 import {

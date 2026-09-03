@@ -19,9 +19,9 @@ import {
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { useDevicesPage } from "../hooks/useDevicesPage";
-import type { Subscription } from "@/services/subscriptionService";
+import type { Subscription } from "@/features/subscriptions";
 import type { SubscriptionEquipment } from "@shared/contracts";
-import { equipmentService } from '@/services/equipmentService';
+import { equipmentService } from '../api/equipmentService';
 import { Page } from "@/components/Page";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Button } from "@/components/ui/button";

@@ -2,8 +2,8 @@ import { useEffect, useState, useMemo } from "react";
 import { Terminal, Loader2, Copy, Check, Download } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { equipmentService } from "@/services/equipmentService";
-import type { SubscriptionEquipment } from "@/services/equipmentService";
+import { equipmentService } from "@/features/equipment";
+import type { SubscriptionEquipment } from "@shared/contracts";
 import { getAuthItem } from "@/lib/authStorage";
 import { Button } from "@/components/ui/button";
 import {

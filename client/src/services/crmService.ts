@@ -1,6 +1,6 @@
 import api from "@/services/api";
 import type { Invoice } from "@/services/invoiceService";
-import type { Plan, PlanFeature } from "@/services/planService";
+import type { Plan, PlanFeature } from "@/features/subscriptions";
 
 export type LeadStage = "NEW" | "QUALIFIED" | "PROPOSITION" | "WON" | "LOST";
 export type LeadPriority = "LOW" | "MEDIUM" | "HIGH";

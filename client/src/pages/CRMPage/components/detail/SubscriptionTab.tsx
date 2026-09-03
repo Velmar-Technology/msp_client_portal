@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, CheckCircle2, Minus, Plus, Ban } from "lucide-react";
 import type { Lead } from "@/services/crmService";
-import type { Subscription } from "@/services/subscriptionService";
+import type { Subscription } from "@/features/subscriptions";
 
 interface SubscriptionTabProps {
   lead: Lead;

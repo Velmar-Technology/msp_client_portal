@@ -4,7 +4,7 @@ import { invoiceService } from "@/services/invoiceService";
 import type { Invoice } from "@/services/invoiceService";
 import { systemService } from "@/services/systemService";
 import type { StorageStatus } from "@/services/systemService";
-import { ticketService } from "@/services/ticketService";
+import { ticketService } from "@/features/tickets";
 import { maintenanceService } from "@/services/maintenanceService";
 import type { DeviceMaintenance } from "@/services/maintenanceService";
 

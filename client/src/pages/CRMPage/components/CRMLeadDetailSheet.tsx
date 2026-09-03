@@ -20,8 +20,7 @@ import type {
   ConvertLeadResult,
   UpdateActivityPayload,
 } from "@/services/crmService";
-import type { Plan } from "@/services/planService";
-import type { Subscription } from "@/services/subscriptionService";
+import type { Plan, Subscription } from "@/features/subscriptions";
 import { toast } from "sonner";
 import {
   FileText,

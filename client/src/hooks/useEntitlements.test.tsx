@@ -25,13 +25,10 @@ vi.mock("@/hooks/useAuth", () => ({
 let mockSubscriptions: any[] = [];
 let mockPlans: any[] = [];
 
-vi.mock("@/services/subscriptionService", () => ({
+vi.mock("@/features/subscriptions", () => ({
   subscriptionService: {
     getAll: vi.fn(async () => mockSubscriptions),
   },
-}));
-
-vi.mock("@/services/planService", () => ({
   planService: {
     getAll: vi.fn(async () => mockPlans),
   },

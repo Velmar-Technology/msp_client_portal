@@ -28,7 +28,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import type { Subscription } from "@/services/subscriptionService";
+import type { Subscription } from "@/features/subscriptions";
 
 const navItemButtonClass =
   "h-8 gap-2.5 px-2.5 py-1 text-[13px] text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-foreground transition-colors";

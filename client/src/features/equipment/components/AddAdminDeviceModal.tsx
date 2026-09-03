@@ -16,7 +16,7 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { equipmentService } from '@/services/equipmentService';
+import { equipmentService } from '../api/equipmentService';
 
 export interface AddAdminDeviceModalProps {
   isOpen: boolean;

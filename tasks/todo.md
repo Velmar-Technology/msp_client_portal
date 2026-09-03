@@ -737,9 +737,143 @@
 
 ---
 
-## Milestone 10: Migrate CRM & Lead Pipeline Module to ADR-002 Colocated Architecture (P1)
+## Milestone 10: Deprecate & Remove Legacy ADR-002 Shims
 
-### Task 36: Scaffold `client/src/features/crm/` & Colocate CRM API Queries
+### Task 36: Rewire Feature Internals & Remove Circular Dependencies
+**Description:** Fix circular and deprecated legacy imports within feature directories (`features/equipment` and `features/subscriptions`). Replace `@/hooks/queries/useSubscriptions` with `@/features/subscriptions` in `useEquipmentQueries.ts` and ensure all feature components/pages import `equipmentService` relatively (`../api/equipmentService`).
+**Acceptance criteria:**
+- [x] `useEquipmentQueries.ts` imports `SUBSCRIPTION_QUERY_KEYS` from `@/features/subscriptions` and `equipmentService` from `./equipmentService`.
+- [x] Equipment components (`DeployAgentModal`, `NextcloudInfoModal`, `AddAdminDeviceModal`, `ActivateWithOtpModal`, `DevicesPage.tsx`) import `equipmentService` relatively.
+- [x] Zero circular imports between `features/equipment` and `services/equipmentService`.
+**Verification:**
+- [x] Tests pass: `npm -w client run test:run -- src/features/equipment src/features/subscriptions`
+- [x] Build succeeds: `npm -w client run build`
+**Dependencies:** None  
+**Files touched:**
+- `client/src/features/equipment/api/useEquipmentQueries.ts`
+- `client/src/features/equipment/components/DeployAgentModal.tsx`
+- `client/src/features/equipment/components/NextcloudInfoModal.tsx`
+- `client/src/features/equipment/components/AddAdminDeviceModal.tsx`
+- `client/src/features/equipment/components/ActivateWithOtpModal.tsx`
+- `client/src/features/equipment/pages/DevicesPage.tsx`
+**Estimated scope:** Medium (6 files)
+
+---
+
+### Task 37: Rewire Stores, Utils & Cross-Domain Services
+**Description:** Update Zustand stores, utilities, and services importing from deprecated shims (`@/services/planService`, `@/services/subscriptionService`) to import from canonical feature gateways (`@/features/subscriptions`) or `@shared/contracts`.
+**Acceptance criteria:**
+- [x] `useSubscriptionStore.ts`, `usePlanStore.ts`, `useCheckoutStore.ts`, and `useCRMStore.ts` import from `@/features/subscriptions` or `@shared/contracts`.
+- [x] `planCostCalculator.ts` and its test import `PlanFeature` from `@shared/contracts` or `@/features/subscriptions`.
+- [x] `crmService.ts` imports `Plan` / `PlanFeature` from `@shared/contracts`.
+**Verification:**
+- [x] Tests pass: `npm -w client run test:run -- src/utils/ src/store/`
+- [x] Build succeeds: `npm -w client run build`
+**Dependencies:** Task 36  
+**Files touched:**
+- `client/src/store/useSubscriptionStore.ts`
+- `client/src/store/usePlanStore.ts`
+- `client/src/store/useCheckoutStore.ts`
+- `client/src/store/useCRMStore.ts`
+- `client/src/utils/planCostCalculator.ts`
+- `client/src/utils/planCostCalculator.test.ts`
+- `client/src/services/crmService.ts`
+**Estimated scope:** Medium (7 files)
+
+---
+
+### Task 38: Rewire Page Components & Shared UI Call Sites
+**Description:** Update legacy page components, hooks, and shared components importing from `@/services/equipmentService`, `@/services/planService`, or `@/hooks/useSLATimer` to import from `@/features/equipment`, `@/features/subscriptions`, or `@/features/tickets`.
+**Acceptance criteria:**
+- [x] `TechDashboardPage.tsx` imports `useSLATimer` from `@/features/tickets`.
+- [x] `components/devices/*`, `components/maintenance/*`, `hooks/useMaintenance.ts`, `hooks/useRmmDashboard.ts`, and `hooks/useClientDashboard.ts` import from `@/features/equipment` or `@shared/contracts`.
+- [x] `CRMNewLeadModal.tsx` imports from `@/features/subscriptions` or `@shared/contracts`.
+**Verification:**
+- [x] Tests pass: `npm -w client run test:run -- src/components/ src/pages/`
+- [x] Build succeeds: `npm -w client run build`
+**Dependencies:** Task 36, Task 37  
+**Files touched:**
+- `client/src/pages/TechDashboardPage/TechDashboardPage.tsx`
+- `client/src/pages/CRMPage/components/CRMNewLeadModal.tsx`
+- `client/src/hooks/useClientDashboard.ts`
+- `client/src/hooks/useMaintenance.ts`
+- `client/src/hooks/useRmmDashboard.ts`
+- `client/src/components/devices/RmmDeviceTable.tsx`
+- `client/src/components/devices/DeployAgentModal.tsx`
+- `client/src/components/devices/AddAdminDeviceModal.tsx`
+- `client/src/components/devices/ActivateWithOtpModal.tsx`
+- `client/src/components/maintenance/ScheduleMaintenanceModal.tsx`
+**Estimated scope:** Medium (10 files)
+
+---
+
+### Task 39: Rewire Integration Test Suites & Mocks
+**Description:** Update test mocks and imports in `public-routes.test.tsx`, `ResourcesPage.test.tsx`, `DevicesPage.test.tsx`, and `PlansPage.test.tsx` to reference `@/features/*` instead of deprecated `@/services/*` or `@/hooks/queries/*`.
+**Acceptance criteria:**
+- [x] `public-routes.test.tsx` mocks `@/features/subscriptions` and `@/features/tickets`.
+- [x] `ResourcesPage.test.tsx` imports and mocks `@/features/subscriptions`.
+- [x] `DevicesPage.test.tsx` and `PlansPage.test.tsx` mock feature gateways cleanly.
+**Verification:**
+- [x] Tests pass: `npm -w client run test:run`
+**Dependencies:** Task 38  
+**Files touched:**
+- `client/src/public-routes.test.tsx`
+- `client/src/pages/ResourcesPage/ResourcesPage.test.tsx`
+- `client/src/features/equipment/pages/DevicesPage.test.tsx`
+- `client/src/features/subscriptions/pages/PlansPage.test.tsx`
+**Estimated scope:** Small (4 files)
+
+---
+
+### Task 40: Delete All 29 Deprecated Compatibility Shims & Legacy Tests
+**Description:** Permanently delete all legacy shim files in `hooks/queries/`, `services/`, `hooks/`, and `pages/` that were retained during previous migrations.
+**Acceptance criteria:**
+- [x] All 6 files in `client/src/hooks/queries/` deleted (`useSubscriptions.ts`, `useSubscriptions.test.tsx`, `useEquipment.ts`, `useEquipment.test.tsx`, `useTickets.ts`, `useTickets.test.tsx`).
+- [x] 4 deprecated service files deleted (`planService.ts`, `subscriptionService.ts`, `equipmentService.ts`, `ticketService.ts`).
+- [x] 10 deprecated hook files deleted (`useBilling.ts`, `useDevicesPage.ts`, `useDeviceFilters.ts`, `useDeviceModals.ts`, `useDeviceQueries.ts`, `usePlansPage.ts`, `useCheckout.ts`, `useSLATimer.ts`, `useTicketDetail.ts`, `useTicketsPage.ts`).
+- [x] 23 deprecated page files/components deleted under `client/src/pages/` (`BillingPage/*`, `DevicesPage/*`, `PlanEditorPage/*`, `PlansPage/*`, `TicketDetailPage/*`, `TicketsPage/*`).
+- [x] Zero files remain with `* Deprecated per ADR-002` comments.
+**Verification:**
+- [x] `npm -w client run test:run` passes 100% green.
+- [x] `npm -w client run build` compiles with zero errors.
+**Dependencies:** Task 36, Task 37, Task 38, Task 39  
+**Files touched:**
+- 29+ legacy shim and stub files deleted across `client/src/`
+**Estimated scope:** Large (29+ files deleted)
+
+---
+
+### Task 41: Fortify ESLint AST Rules & Vitest Architecture Invariants
+**Description:** Add ESLint restricted-imports rule banning `@/hooks/queries/**` across the entire codebase. Update `client/tests/arch/feature-architecture.test.ts` to assert that no deprecated compatibility shims exist and that all legacy entry points remain absent.
+**Acceptance criteria:**
+- [x] `client/eslint.config.js` restricts `@/hooks/queries/**` with an explicit error.
+- [x] `client/tests/arch/feature-architecture.test.ts` includes an invariant test for zero legacy shims.
+- [x] `npm -w client run lint` and `npm -w client run test:arch` pass 100% green.
+**Verification:**
+- [x] Tests pass: `npm -w client run test:arch`
+- [x] Lint succeeds: `npm -w client run lint`
+- [x] Build succeeds: `npm -w client run build`
+**Dependencies:** Task 40  
+**Files touched:**
+- `client/eslint.config.js`
+- `client/tests/arch/feature-architecture.test.ts`
+**Estimated scope:** Small (2 files)
+
+---
+
+## Checkpoint 10: ADR-002 Deprecated Shims Completely Purged & Verified
+- [x] All 29+ deprecated shims and legacy test stubs permanently deleted.
+- [x] Zero circular imports or deep import violations.
+- [x] Architecture tests pass (`npm -w client run test:arch`).
+- [x] ESLint passes with 0 errors (`npm -w client run lint`).
+- [x] Full client test suite passes 100% (`npm -w client run test:run`).
+- [x] Client builds cleanly (`npm -w client run build`).
+
+---
+
+## Milestone 11: Migrate CRM & Lead Pipeline Module to ADR-002 Colocated Architecture (P1)
+
+### Task 42: Scaffold `client/src/features/crm/` & Colocate CRM API Queries
 **Description:** Scaffold `client/src/features/crm/` and create `api/useCrmQueries.ts` migrating `client/src/services/crmService.ts`. Define query hooks (`useLeads`, `useDeals`, `useQuotes`) and mutation hooks (`useCreateLead`, `useUpdateDealStage`, `useGenerateQuote`). Define ephemeral UI types in `types.ts`. Re-export from `client/src/services/crmService.ts`.
 **Acceptance criteria:**
 - [ ] `client/src/features/crm/api/useCrmQueries.ts` exports all CRM query and mutation hooks.

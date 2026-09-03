@@ -26,19 +26,16 @@ vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-vi.mock("@/services/subscriptionService", () => ({
+vi.mock("@/features/subscriptions", () => ({
   subscriptionService: {
     getAll: vi.fn().mockResolvedValue([]),
   },
-}));
-
-vi.mock("@/services/planService", () => ({
   planService: {
     getAll: vi.fn().mockResolvedValue([]),
   },
 }));
 
-vi.mock("@/services/ticketService", () => ({
+vi.mock("@/features/tickets", () => ({
   ticketService: {
     getAll: vi.fn().mockResolvedValue({ data: [] }),
   },

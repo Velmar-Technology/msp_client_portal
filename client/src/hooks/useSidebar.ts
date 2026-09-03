@@ -19,9 +19,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useEntitlements } from "@/hooks/useEntitlements";
-import { subscriptionService } from "@/services/subscriptionService";
-import { planService, type Plan } from "@/services/planService";
-import type { Subscription } from "@/services/subscriptionService";
+import { subscriptionService, planService, type Plan, type Subscription } from "@/features/subscriptions";
 import { FEATURE_CODES } from "@/constants/subscriptions";
 
 export interface NavSubItem {

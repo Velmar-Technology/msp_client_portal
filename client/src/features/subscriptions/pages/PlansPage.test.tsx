@@ -101,11 +101,7 @@ vi.mock('../api/subscriptionService', () => ({
   subscriptionService: mockSubscriptionService,
 }));
 
-vi.mock('@/services/subscriptionService', () => ({
-  subscriptionService: mockSubscriptionService,
-}));
-
-vi.mock('@/services/equipmentService', () => ({
+vi.mock('@/features/equipment', () => ({
   equipmentService: {
     getSlots: vi.fn().mockRejectedValue(new Error('Mock API error')),
     deactivateSlot: vi.fn(),

@@ -134,4 +134,46 @@ describe('ADR-002: Frontend Colocated Feature Architecture Invariants', () => {
       ).toEqual([]);
     });
   });
+
+  describe('Invariant Rule 4: Zero Deprecated Compatibility Shims (Purged State)', () => {
+    it('ensures deprecated horizontal directories and compatibility shims do not exist', () => {
+      const forbiddenPaths = [
+        path.join(SRC_DIR, 'hooks/queries'),
+        path.join(SRC_DIR, 'hooks/devices'),
+        path.join(SRC_DIR, 'services/subscriptionService.ts'),
+        path.join(SRC_DIR, 'services/planService.ts'),
+        path.join(SRC_DIR, 'services/equipmentService.ts'),
+        path.join(SRC_DIR, 'services/ticketService.ts'),
+        path.join(SRC_DIR, 'pages/BillingPage'),
+        path.join(SRC_DIR, 'pages/DevicesPage'),
+        path.join(SRC_DIR, 'pages/PlanEditorPage'),
+        path.join(SRC_DIR, 'pages/PlansPage'),
+        path.join(SRC_DIR, 'pages/TicketDetailPage'),
+        path.join(SRC_DIR, 'pages/TicketsPage'),
+      ];
+
+      const existingForbidden = forbiddenPaths.filter((p) => fs.existsSync(p));
+      expect(
+        existingForbidden,
+        `Found purged deprecated shims still existing in filesystem:\n${existingForbidden.join('\n')}`,
+      ).toEqual([]);
+    });
+
+    it('ensures no source file contains legacy ADR-002 deprecation markers', () => {
+      const allFiles = getAllFiles(SRC_DIR);
+      const lingeringMarkers: string[] = [];
+
+      for (const file of allFiles) {
+        const content = fs.readFileSync(file, 'utf-8');
+        if (content.includes('Deprecated per ADR-002')) {
+          lingeringMarkers.push(path.relative(SRC_DIR, file).replace(/\\/g, '/'));
+        }
+      }
+
+      expect(
+        lingeringMarkers,
+        `Found lingering "Deprecated per ADR-002" markers in:\n${lingeringMarkers.join('\n')}`,
+      ).toEqual([]);
+    });
+  });
 });

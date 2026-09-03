@@ -7,8 +7,7 @@ import { usePlanStore } from "@/store/usePlanStore";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 import { crmService, type Lead, type CrmPipelineStats, type Quotation, type LeadActivity } from "@/services/crmService";
 import type { Invoice } from "@/services/invoiceService";
-import { planService, type Plan } from "@/services/planService";
-import { subscriptionService, type Subscription } from "@/services/subscriptionService";
+import { planService, subscriptionService, type Plan, type Subscription } from "@/features/subscriptions";
 import { userService } from "@/services/userService";
 import type { AuthUser } from "@/store/useAuthStore";
 import enTranslations from "@/locales/en_US.json";
@@ -46,13 +45,10 @@ vi.mock("react-i18next", () => ({
   }),
 }));
 
-vi.mock("@/services/planService", () => ({
+vi.mock("@/features/subscriptions", () => ({
   planService: {
     getAll: vi.fn(),
   },
-}));
-
-vi.mock("@/services/subscriptionService", () => ({
   subscriptionService: {
     getAll: vi.fn(),
     create: vi.fn(),

@@ -1,8 +1,7 @@
 import { useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { subscriptionService, type Subscription } from "@/services/subscriptionService";
-import { planService, type Plan } from "@/services/planService";
+import { subscriptionService, planService, type Subscription, type Plan } from "@/features/subscriptions";
 import { FEATURE_CODES, FEATURE_UPGRADE_TIER_MAP, expandFeatureBundles } from "@/constants/subscriptions";
 
 export interface UseEntitlementsReturn {

@@ -45,7 +45,7 @@ import { calculatePlanCosts } from "@/utils/planCostCalculator";
 import { toast } from "sonner";
 import { useCRMStore } from "@/store/useCRMStore";
 import { usePlanStore } from "@/store/usePlanStore";
-import type { PlanFeature } from "@/services/planService";
+import type { PlanFeature } from "@/features/subscriptions";
 
 const customPlanSchema = z.object({
   name: z.string().min(2, "crm.customPlan.validation.nameRequired").max(100),

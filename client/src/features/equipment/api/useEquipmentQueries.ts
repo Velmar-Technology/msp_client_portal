@@ -3,10 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import type { SubscriptionEquipment, ActivateWithOtpInput } from '@shared/contracts';
-import { subscriptionService } from '@/services/subscriptionService';
-import type { Subscription } from '@/services/subscriptionService';
-import { SUBSCRIPTION_QUERY_KEYS } from '@/hooks/queries/useSubscriptions';
-import { equipmentService } from '@/services/equipmentService';
+import { subscriptionService, SUBSCRIPTION_QUERY_KEYS } from '@/features/subscriptions';
+import type { Subscription } from '@/features/subscriptions';
+import { equipmentService } from './equipmentService';
 
 /**
  * Standardized query keys for equipment and device slot queries.

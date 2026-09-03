@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { maintenanceService, type DeviceMaintenance, type MaintenanceStatus } from "@/services/maintenanceService";
-import { equipmentService, type SubscriptionEquipment } from "@/services/equipmentService";
+import { equipmentService } from "@/features/equipment";
+import type { SubscriptionEquipment } from "@shared/contracts";
 
 export function useMaintenance() {
   const { t } = useTranslation();

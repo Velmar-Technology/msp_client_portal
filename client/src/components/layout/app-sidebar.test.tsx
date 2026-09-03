@@ -2,8 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { expect, test, vi, beforeEach, describe } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import { subscriptionService } from "@/services/subscriptionService";
-import { planService, type Plan } from "@/services/planService";
+import { subscriptionService, planService, type Plan } from "@/features/subscriptions";
 import React from 'react';
 
 const mockT = (key: string) => key;
@@ -30,13 +29,10 @@ vi.mock('../../hooks/useEntitlements', () => ({
   }),
 }));
 
-vi.mock('../../services/subscriptionService', () => ({
+vi.mock('@/features/subscriptions', () => ({
   subscriptionService: {
     getAll: vi.fn(),
   },
-}));
-
-vi.mock('../../services/planService', () => ({
   planService: {
     getAll: vi.fn(),
   },

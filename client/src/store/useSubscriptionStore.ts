@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { subscriptionService } from "@/services/subscriptionService";
-import type { Subscription } from "@/services/subscriptionService";
+import { subscriptionService } from "@/features/subscriptions";
+import type { Subscription } from "@/features/subscriptions";
 import { userService } from "@/services/userService";
 import type { AuthUser } from "@/store/useAuthStore";
 

@@ -11,7 +11,7 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { equipmentService } from '@/services/equipmentService';
+import { equipmentService } from '../api/equipmentService';
 
 export interface NextcloudInfoData {
   nextcloud_username: string | null;

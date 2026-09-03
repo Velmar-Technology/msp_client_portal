@@ -3,7 +3,7 @@ import { X, Calendar as CalendarIcon, Clock, Loader2, AlertCircle } from "lucide
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { maintenanceService, type DeviceMaintenance, type MaintenanceType } from "@/services/maintenanceService";
-import type { SubscriptionEquipment } from "@/services/equipmentService";
+import type { SubscriptionEquipment } from "@shared/contracts";
 import { DatePicker } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import {

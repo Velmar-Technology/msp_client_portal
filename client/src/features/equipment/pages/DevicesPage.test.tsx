@@ -4,19 +4,23 @@ import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import { DevicesPage } from "./DevicesPage";
-import { subscriptionService } from '@/services/subscriptionService';
-import { equipmentService } from '@/services/equipmentService';
+import { subscriptionService } from '@/features/subscriptions';
+import { equipmentService } from '../api/equipmentService';
 import type { SubscriptionEquipment } from '@shared/contracts';
 import enTranslations from "@/locales/en_US.json";
 
 // Mock Services
-vi.mock('@/services/subscriptionService', () => ({
-  subscriptionService: {
-    getAll: vi.fn(),
-  },
-}));
+vi.mock('@/features/subscriptions', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/features/subscriptions')>();
+  return {
+    ...actual,
+    subscriptionService: {
+      getAll: vi.fn(),
+    },
+  };
+});
 
-vi.mock('@/services/equipmentService', () => ({
+vi.mock('../api/equipmentService', () => ({
   equipmentService: {
     getSlots: vi.fn(),
     getMyDevices: vi.fn(),

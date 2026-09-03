@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ticketService } from "@/services/ticketService";
-import { subscriptionService } from "@/services/subscriptionService";
-import type { Subscription } from "@/services/subscriptionService";
+import { ticketService } from "@/features/tickets";
+import { subscriptionService } from "@/features/subscriptions";
+import type { Subscription } from "@/features/subscriptions";
 import { invoiceService } from "@/services/invoiceService";
 import type { Invoice } from "@/services/invoiceService";
-import { equipmentService } from "@/services/equipmentService";
+import { equipmentService } from "@/features/equipment";
 
 /**
  * Calculates Nextcloud storage quota in Gigabytes (GB) allocated for a given subscription plan ID.

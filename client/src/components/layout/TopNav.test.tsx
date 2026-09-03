@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TopNav } from "@/components/layout/TopNav";
 import { expect, test, vi, beforeEach } from 'vitest';
-import { ticketService } from "@/services/ticketService";
+import { ticketService } from "@/features/tickets";
 import { invoiceService } from "@/services/invoiceService";
 
 const mockNavigate = vi.fn();
@@ -43,7 +43,7 @@ vi.mock('./NotificationBell', () => ({
   NotificationBell: () => <div data-testid="notification-bell">Bell</div>,
 }));
 
-vi.mock('../../services/ticketService', () => ({
+vi.mock('@/features/tickets', () => ({
   ticketService: {
     getAll: vi.fn(),
   },

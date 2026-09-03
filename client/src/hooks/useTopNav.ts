@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Ticket as TicketIcon, CreditCard, HelpCircle, LayoutDashboard, Plus, BookOpen, Bell, User, Download } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { ticketService, type Ticket } from "@/services/ticketService";
+import { ticketService, type TicketItem as Ticket } from "@/features/tickets";
 import { invoiceService, type Invoice } from "@/services/invoiceService";
 import { faqsEn, faqsEs, type FAQ } from "@/lib/faqs";
 

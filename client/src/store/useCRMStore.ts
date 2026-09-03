@@ -18,7 +18,7 @@ import {
   type GetLeadsParams,
   type CreateCustomPlanPayload,
 } from "@/services/crmService";
-import type { Plan } from "@/services/planService";
+import type { Plan } from "@/features/subscriptions";
 
 export interface CRMState {
   leads: Lead[];

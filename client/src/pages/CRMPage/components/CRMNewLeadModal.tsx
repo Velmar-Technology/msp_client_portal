@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import type { Plan } from "@/services/planService";
+import type { Plan } from "@/features/subscriptions";
 import type { AuthUser } from "@/store/useAuthStore";
 import type { LeadPriority } from "@/services/crmService";
 

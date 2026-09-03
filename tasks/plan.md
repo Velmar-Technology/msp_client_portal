@@ -120,41 +120,50 @@ Detailed tasks with full acceptance criteria and file lists are recorded in [`ta
 - [x] Task 35: Wire `client/src/features/subscriptions/index.ts` Public Gateway & Update Route Imports
 - [x] Checkpoint 9: Subscriptions Module Migration Cleared
 
-### Milestone 10: Migrate CRM & Lead Pipeline Module to ADR-002 Colocated Architecture (P1)
-- [ ] Task 36: Scaffold `client/src/features/crm/` & Colocate CRM API Queries (`useCrmQueries.ts`)
-- [ ] Task 37: Colocate CRM Kanban Board, Lead Cards & Custom Plan Modals (`client/src/features/crm/components/`)
-- [ ] Task 38: Colocate CRM Filter & Pipeline Hooks (`client/src/features/crm/hooks/`)
-- [ ] Task 39: Colocate `CRMPage` & `CRMCustomPlanPage` with Vitest Tests into `client/src/features/crm/pages/`
-- [ ] Task 40: Wire `client/src/features/crm/index.ts` Public Gateway & Update Route Imports
-- [ ] Checkpoint 10: CRM Module Migration Cleared
+### Milestone 10: Deprecate & Remove Legacy ADR-002 Shims
+- [x] Task 36: Rewire Feature Internals & Remove Circular Dependencies (`features/equipment`, `features/subscriptions`)
+- [x] Task 37: Rewire Stores, Utils & Cross-Domain Services (`store/*`, `utils/*`, `services/crmService.ts`)
+- [x] Task 38: Rewire Page Components & Shared UI Call Sites (`TechDashboardPage`, `devices/*`, `maintenance/*`)
+- [x] Task 39: Rewire Integration Test Suites & Mocks (`public-routes.test.tsx`, `ResourcesPage.test.tsx`)
+- [x] Task 40: Delete All 29 Deprecated Compatibility Shims & Legacy Tests (`hooks/queries/*`, `services/*`, `hooks/*`, `pages/*`)
+- [x] Task 41: Fortify ESLint AST Rules & Vitest Architecture Invariants (`eslint.config.js`, `feature-architecture.test.ts`)
+- [x] Checkpoint 10: ADR-002 Deprecated Shims Completely Purged & Verified
 
-### Milestone 11: Migrate RMM & Maintenance Module to ADR-002 Colocated Architecture (P1)
-- [ ] Task 41: Scaffold `client/src/features/rmm/` & Colocate RMM/Maintenance API Queries (`useRmmQueries.ts`)
-- [ ] Task 42: Colocate Patch Management, Telemetry & Service Modals (`client/src/features/rmm/components/`)
-- [ ] Task 43: Colocate Maintenance & RMM Dashboard Hooks (`client/src/features/rmm/hooks/`)
-- [ ] Task 44: Colocate `MaintenancePage` with Vitest Tests into `client/src/features/rmm/pages/`
-- [ ] Task 45: Wire `client/src/features/rmm/index.ts` Public Gateway & Update Route Imports
-- [ ] Checkpoint 11: RMM & Maintenance Module Migration Cleared
+### Milestone 11: Migrate CRM & Lead Pipeline Module to ADR-002 Colocated Architecture (P1)
+- [ ] Task 42: Scaffold `client/src/features/crm/` & Colocate CRM API Queries (`useCrmQueries.ts`)
+- [ ] Task 43: Colocate CRM Kanban Board, Lead Cards & Custom Plan Modals (`client/src/features/crm/components/`)
+- [ ] Task 44: Colocate CRM Filter & Pipeline Hooks (`client/src/features/crm/hooks/`)
+- [ ] Task 45: Colocate `CRMPage` & `CRMCustomPlanPage` with Vitest Tests into `client/src/features/crm/pages/`
+- [ ] Task 46: Wire `client/src/features/crm/index.ts` Public Gateway & Update Route Imports
+- [ ] Checkpoint 11: CRM Module Migration Cleared
 
-### Milestone 12: Migrate Financial & OpEx Module to ADR-002 Colocated Architecture (P1)
-- [ ] Task 46: Scaffold `client/src/features/financial/` & Colocate Financial API Queries (`useFinancialQueries.ts`)
-- [ ] Task 47: Colocate Profit Split, Commission & Expense Modals (`client/src/features/financial/components/`)
-- [ ] Task 48: Colocate Financial Dashboard Hooks (`client/src/features/financial/hooks/`)
-- [ ] Task 49: Colocate `FinancialPage` with Vitest Tests into `client/src/features/financial/pages/`
-- [ ] Task 50: Wire `client/src/features/financial/index.ts` Public Gateway & Update Route Imports
-- [ ] Checkpoint 12: Financial Module Migration Cleared
+### Milestone 12: Migrate RMM & Maintenance Module to ADR-002 Colocated Architecture (P1)
+- [ ] Task 47: Scaffold `client/src/features/rmm/` & Colocate RMM/Maintenance API Queries (`useRmmQueries.ts`)
+- [ ] Task 48: Colocate Patch Management, Telemetry & Service Modals (`client/src/features/rmm/components/`)
+- [ ] Task 49: Colocate Maintenance & RMM Dashboard Hooks (`client/src/features/rmm/hooks/`)
+- [ ] Task 50: Colocate `MaintenancePage` with Vitest Tests into `client/src/features/rmm/pages/`
+- [ ] Task 51: Wire `client/src/features/rmm/index.ts` Public Gateway & Update Route Imports
+- [ ] Checkpoint 12: RMM & Maintenance Module Migration Cleared
 
-### Milestone 13: Migrate Identity, Access & Auth Modules (P1)
-- [ ] Task 51: Scaffold `client/src/features/users/`, Colocate User Management API & Modals, Wire Gateway & Routes
-- [ ] Task 52: Scaffold `client/src/features/auth/`, Colocate Auth API, Login/Register Forms, Wire Gateway & Routes
-- [ ] Checkpoint 13: Identity, Access & Auth Migration Cleared
+### Milestone 13: Migrate Financial & OpEx Module to ADR-002 Colocated Architecture (P1)
+- [ ] Task 52: Scaffold `client/src/features/financial/` & Colocate Financial API Queries (`useFinancialQueries.ts`)
+- [ ] Task 53: Colocate Profit Split, Commission & Expense Modals (`client/src/features/financial/components/`)
+- [ ] Task 54: Colocate Financial Dashboard Hooks (`client/src/features/financial/hooks/`)
+- [ ] Task 55: Colocate `FinancialPage` with Vitest Tests into `client/src/features/financial/pages/`
+- [ ] Task 56: Wire `client/src/features/financial/index.ts` Public Gateway & Update Route Imports
+- [ ] Checkpoint 13: Financial Module Migration Cleared
 
-### Milestone 14: Migrate Dashboard, Settings & System Modules & Final Cleanups (P2)
-- [ ] Task 53: Scaffold & Colocate `client/src/features/dashboard/` (DashboardPage, TechDashboardPage, Widgets)
-- [ ] Task 54: Scaffold & Colocate `client/src/features/settings/` (ProfilePage, NotificationPreferencesPage, PasswordManagerPage)
-- [ ] Task 55: Scaffold & Colocate `client/src/features/system/` (ApiStatusPage, System Health)
-- [ ] Task 56: Deprecate Legacy Horizontal Folders & Run Full Architecture & Monorepo Test Gates
-- [ ] Checkpoint 14: Monorepo Full ADR-002 Colocated Feature Migration Cleared
+### Milestone 14: Migrate Identity, Access & Auth Modules (P1)
+- [ ] Task 57: Scaffold `client/src/features/users/`, Colocate User Management API & Modals, Wire Gateway & Routes
+- [ ] Task 58: Scaffold `client/src/features/auth/`, Colocate Auth API, Login/Register Forms, Wire Gateway & Routes
+- [ ] Checkpoint 14: Identity, Access & Auth Migration Cleared
+
+### Milestone 15: Migrate Dashboard, Settings & System Modules & Final Cleanups (P2)
+- [ ] Task 59: Scaffold & Colocate `client/src/features/dashboard/` (DashboardPage, TechDashboardPage, Widgets)
+- [ ] Task 60: Scaffold & Colocate `client/src/features/settings/` (ProfilePage, NotificationPreferencesPage, PasswordManagerPage)
+- [ ] Task 61: Scaffold & Colocate `client/src/features/system/` (ApiStatusPage, System Health)
+- [ ] Task 62: Deprecate Legacy Horizontal Folders & Run Full Architecture & Monorepo Test Gates
+- [ ] Checkpoint 15: Monorepo Full ADR-002 Colocated Feature Migration Cleared
 
 ---
 

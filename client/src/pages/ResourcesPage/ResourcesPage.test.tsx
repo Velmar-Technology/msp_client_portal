@@ -3,10 +3,10 @@ import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { ResourcesPage } from "./ResourcesPage";
-import { subscriptionService, type Subscription } from "@/services/subscriptionService";
+import { subscriptionService, type Subscription } from "@/features/subscriptions";
 import enTranslations from "@/locales/en_US.json";
 
-vi.mock("@/services/subscriptionService", () => ({
+vi.mock("@/features/subscriptions", () => ({
   subscriptionService: {
     getAll: vi.fn(),
   },
