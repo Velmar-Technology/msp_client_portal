@@ -1,2 +1,5 @@
-export { DevicesPage } from "./DevicesPage";
-export { DevicesPage as default } from "./DevicesPage";
+/**
+ * Legacy compatibility entry point.
+ * Re-exports DevicesPage from the canonical feature module per ADR-002.
+ */
+export { DevicesPage as default, DevicesPage } from '@/features/equipment';

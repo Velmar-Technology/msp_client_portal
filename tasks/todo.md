@@ -412,3 +412,105 @@
 - [x] Client builds cleanly (`npm -w client run build`).
 - [x] All unit and integration tests pass (`npm -w client run test:run`).
 
+---
+
+## Milestone 7: Migrate Equipment & Devices Module to ADR-002 Colocated Architecture (Slice 4)
+
+### Task 21: Scaffold `client/src/features/equipment/` & Colocate API Queries
+**Description:** Scaffold `client/src/features/equipment/` and create `api/useEquipmentQueries.ts` consolidating `useEquipment.ts` and `useDeviceQueries.ts`. Provide query keys (`EQUIPMENT_QUERY_KEYS`) and mutation hooks (`useActivateWithOtp`, `useDeactivateSlot`, `useBulkDeactivate`). Define ephemeral UI types in `types.ts`. Re-export from legacy query files.
+**Acceptance criteria:**
+- [x] `client/src/features/equipment/api/useEquipmentQueries.ts` exports all equipment query and mutation hooks.
+- [x] `client/src/features/equipment/types.ts` contains ephemeral UI state with zero duplicate backend entity types.
+- [x] Legacy hook `client/src/hooks/queries/useEquipment.ts` re-exports from `@/features/equipment`.
+**Verification:**
+- [x] `npx vitest run client/src/hooks/queries/useEquipment.test.tsx` passes (3/3 tests).
+**Dependencies:** None  
+**Files touched:**
+- `client/src/features/equipment/api/useEquipmentQueries.ts`
+- `client/src/features/equipment/types.ts`
+- `client/src/hooks/queries/useEquipment.ts`
+**Estimated scope:** Small (3 files)
+
+---
+
+### Task 22: Colocate Equipment & Device Modal Components
+**Description:** Move `ActivateWithOtpModal.tsx`, `AddAdminDeviceModal.tsx`, `DeployAgentModal.tsx`, and `NextcloudInfoModal.tsx` into `client/src/features/equipment/components/`. All component props must import entity contracts directly from `@shared/contracts`. Update `client/src/components/devices/index.ts` to re-export from `@/features/equipment`.
+**Acceptance criteria:**
+- [x] Device modals colocated inside `client/src/features/equipment/components/`.
+- [x] All props use direct contracts (`SubscriptionEquipment` from `@shared/contracts`).
+- [x] `client/src/components/devices/index.ts` re-exports the moved modals.
+**Verification:**
+- [x] TypeScript compilation succeeds: `npx tsc --noEmit -p client/tsconfig.app.json`.
+**Dependencies:** Task 21  
+**Files touched:**
+- `client/src/features/equipment/components/ActivateWithOtpModal.tsx`
+- `client/src/features/equipment/components/AddAdminDeviceModal.tsx`
+- `client/src/features/equipment/components/DeployAgentModal.tsx`
+- `client/src/features/equipment/components/NextcloudInfoModal.tsx`
+- `client/src/components/devices/index.ts`
+**Estimated scope:** Medium (5 files)
+
+---
+
+### Task 23: Colocate Device Filter & Modal Hooks
+**Description:** Colocate `useDeviceFilters.ts`, `useDeviceModals.ts`, and the page orchestrator `useDevicesPage.ts` into `client/src/features/equipment/hooks/`. Re-export from `client/src/hooks/useDevicesPage.ts` and `client/src/hooks/devices/` for backward compatibility.
+**Acceptance criteria:**
+- [x] `useDeviceFilters.ts`, `useDeviceModals.ts`, and `useDevicesPage.ts` live in `client/src/features/equipment/hooks/`.
+- [x] Legacy `client/src/hooks/useDevicesPage.ts` re-exports from `@/features/equipment`.
+- [x] URL state synchronization preserves `search`, `status`, `client`, `plan`, `page`, and `limit`.
+**Verification:**
+- [x] `npm -w client run test:arch` passes (5/5 tests).
+**Dependencies:** Task 21, Task 22  
+**Files touched:**
+- `client/src/features/equipment/hooks/useDeviceFilters.ts`
+- `client/src/features/equipment/hooks/useDeviceModals.ts`
+- `client/src/features/equipment/hooks/useDevicesPage.ts`
+- `client/src/hooks/useDevicesPage.ts`
+**Estimated scope:** Small (4 files)
+
+---
+
+### Task 24: Colocate `DevicesPage` and Vitest Test into `client/src/features/equipment/pages/`
+**Description:** Colocate `DevicesPage.tsx` and `DevicesPage.test.tsx` into `client/src/features/equipment/pages/`. Update imports to use colocated components, hooks, and contracts. Re-export from `client/src/pages/DevicesPage/index.ts`.
+**Acceptance criteria:**
+- [x] `DevicesPage.tsx` consumes colocated modals and hooks cleanly.
+- [x] `DevicesPage.test.tsx` passes 13/13 tests from its colocated directory.
+- [x] `client/src/pages/DevicesPage/index.ts` and `DevicesPage.tsx` re-export from `@/features/equipment`.
+**Verification:**
+- [x] `npx vitest run client/src/features/equipment/pages/DevicesPage.test.tsx` passes 100% green.
+**Dependencies:** Task 22, Task 23  
+**Files touched:**
+- `client/src/features/equipment/pages/DevicesPage.tsx`
+- `client/src/features/equipment/pages/DevicesPage.test.tsx`
+- `client/src/pages/DevicesPage/index.ts`
+- `client/src/pages/DevicesPage/DevicesPage.tsx`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 25: Wire Public Gateway (`client/src/features/equipment/index.ts`) & Update Routes
+**Description:** Expose authorized public exports in `client/src/features/equipment/index.ts` (`DevicesPage`, `useDevicesPage`, queries, modals, and ephemeral types). Update `client/src/routes/_app/devices.tsx` and `client/src/routes/_app/rmm.tsx` to import `DevicesPage` directly from `@/features/equipment`.
+**Acceptance criteria:**
+- [x] `client/src/features/equipment/index.ts` exposes the feature's public API.
+- [x] Routes `_app/devices.tsx` and `_app/rmm.tsx` import directly from `@/features/equipment`.
+- [x] Zero deep imports into `@/features/equipment/*` exist across the codebase.
+**Verification:**
+- [x] `npm -w client run test:arch` passes.
+- [x] `npm -w client run lint` passes with 0 errors.
+- [x] `npm -w client run build` succeeds (2.23s).
+**Dependencies:** Task 24  
+**Files touched:**
+- `client/src/features/equipment/index.ts`
+- `client/src/routes/_app/devices.tsx`
+- `client/src/routes/_app/rmm.tsx`
+**Estimated scope:** Small (3 files)
+
+---
+
+## Checkpoint 7: Equipment Module Migration Cleared
+- [x] `client/src/features/equipment` contains complete 7-part vertical slice.
+- [x] Architecture tests pass (`npm -w client run test:arch`).
+- [x] ESLint passes (`npm -w client run lint`).
+- [x] Client builds cleanly (`npm -w client run build`).
+- [x] All unit and integration tests pass (`npm -w client run test:run`).
+

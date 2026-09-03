@@ -3,9 +3,10 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
-import { DevicesPage } from "@/pages/DevicesPage/DevicesPage";
+import { DevicesPage } from "./DevicesPage";
 import { subscriptionService } from '@/services/subscriptionService';
-import { equipmentService, type SubscriptionEquipment } from '@/services/equipmentService';
+import { equipmentService } from '@/services/equipmentService';
+import type { SubscriptionEquipment } from '@shared/contracts';
 import enTranslations from "@/locales/en_US.json";
 
 // Mock Services

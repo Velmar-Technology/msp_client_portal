@@ -96,6 +96,14 @@ Detailed tasks with full acceptance criteria and file lists are recorded in [`ta
 - [x] Task 20: Wire `client/src/features/billing/index.ts` Public Gateway & Update Route Imports
 - [x] Checkpoint 6: Billing Module Migration Cleared
 
+### Milestone 7: Migrate Equipment & Devices Module to ADR-002 Colocated Architecture (Slice 4)
+- [x] Task 21: Scaffold `client/src/features/equipment/` & Colocate API Queries (`useEquipmentQueries.ts`)
+- [x] Task 22: Colocate Equipment & Device Modal Components (`client/src/features/equipment/components/`)
+- [x] Task 23: Colocate Device Filter & Modal Hooks (`client/src/features/equipment/hooks/`)
+- [x] Task 24: Colocate `DevicesPage` and Vitest Test into `client/src/features/equipment/pages/`
+- [x] Task 25: Wire Public Gateway (`client/src/features/equipment/index.ts`) & Update Routes
+- [x] Checkpoint 7: Equipment Module Migration Cleared
+
 ---
 
 ## Risks and Mitigations

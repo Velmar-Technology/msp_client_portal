@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Request, Response, NextFunction } from 'express';
+import { db } from './index';
 import { withTenantContext, getTenantContext, runInTenantContext } from './tenantContext';
 import { gatewayTenantContextMiddleware } from '@shared/middleware/gatewayTenantContextMiddleware';
 import { ForbiddenError } from '@shared/errors';
@@ -14,6 +15,7 @@ describe('Tenant Isolation & Cross-Tenant Leak Prevention Suite (BL-301 / ADR-00
         execute: vi.fn().mockResolvedValue([]),
         select: vi.fn(),
       };
+      vi.spyOn(db, 'transaction').mockImplementation(async (cb: any) => cb(mockTx as any));
 
       const result = await withTenantContext(TENANT_A, async (_tx) => {
         const activeContext = getTenantContext();
