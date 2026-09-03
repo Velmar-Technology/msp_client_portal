@@ -153,6 +153,7 @@ Values are supplied by the **Portainer stack environment** (persisted in the Por
 | Deployment | `VERSION` (pinned image tag), `REPOSITORY_OWNER` (default `velmar-technology`) |
 | Database | `DB_USER` (default `postgres`), `DB_PASSWORD`, `DB_NAME` (default `msp_helpdesk`), `DB_HOST=db`, `DB_PORT=5432` |
 | Auth / CORS | `JWT_SECRET`, `JWT_REFRESH_SECRET`, `CORS_ORIGIN=https://helpdesk.velmartech.com.do` |
+| Traefik Basic-Auth | `ZABBIX_BASIC_AUTH_USERS`, `LOGS_BASIC_AUTH_USERS`, `PROM_BASIC_AUTH_USERS` (Distinct per-service `user:hash` strings; no shared hashes) |
 | SMTP | `SMTP_HOST` (Gmail), `SMTP_PORT` (587), `SMTP_USER`, `SMTP_PASSWORD` |
 | WhatsApp (opt-in) | `WHATSAPP_API_URL`, `WHATSAPP_API_KEY` (empty unless configured) |
 | Google OAuth | `GOOGLE_CLIENT_ID` (server) / `VITE_GOOGLE_CLIENT_ID` (client build arg) |
@@ -160,7 +161,7 @@ Values are supplied by the **Portainer stack environment** (persisted in the Por
 | Nextcloud | `NEXTCLOUD_URL=10.13.13.3:30027`, `NEXTCLOUD_APP_USER`, `NEXTCLOUD_APP_PASS`, `NEXTCLOUD_TOTAL_CAPACITY`, `NEXTCLOUD_EXTERNAL_URL=https://atlas.velmartech.com.do` |
 | Zabbix | `ZABBIX_URL=http://zabbix-web:8080/api_jsonrpc.php`, `ZABBIX_USER=Admin`, `ZABBIX_PASSWORD`, `ZABBIX_WEBHOOK_SECRET`, `ZABBIX_DB_USER/PASSWORD/NAME` (defaults `zabbix` / `zabbix_password` / `zabbix`) |
 | Datadog (opt-in) | Server APM: `DD_API_KEY`, `DD_SITE`, `DD_SERVICE`, `DD_ENV`, `DD_VERSION`, `DD_TRACE_ENABLED`, `DD_AGENT_HOST` / Client RUM (build args): `VITE_DD_*` |
-| Grafana | `GRAFANA_ADMIN_PASSWORD` — overrides the fallback in compose; **ensure it is overridden** in the Portainer env |
+| Grafana | `GRAFANA_ADMIN_USER` (default `admin`), `GRAFANA_ADMIN_EMAIL` (default `admin@velmartech.com.do`), `GRAFANA_ADMIN_PASSWORD` (required from environment, zero inline fallback) |
 | Faro / Telemetry (client build) | `VITE_FARO_URL`, `VITE_FARO_APP_NAME`, `VITE_FARO_APP_ENV` (baked at build time) |
 | Timezones | `TZ` (OS/Server/Postgres) and `PHP_TZ` (Zabbix Web) (`America/Santo_Domingo`) |
 
@@ -272,9 +273,9 @@ node run-in.mjs 3 msp_alloy sh -c "tail -n 50 /var/log/* 2>/dev/null | tail -n 5
 
 ### Security notes
 
-- **Shared basic-auth hash:** `zabbix-auth`, `logs-auth` and `prom-auth` reuse the **same** `admin` bcrypt hash from the compose labels. Rotate to distinct per-app hashes (`htpasswd -bnBC 10 admin '<pw>'`; mind `$$` escaping in Compose).
+- **Distinct basic-auth credentials:** `zabbix-auth`, `logs-auth` and `prom-auth` now strictly require dedicated, distinct `user:hash` strings via `${ZABBIX_BASIC_AUTH_USERS}`, `${LOGS_BASIC_AUTH_USERS}`, and `${PROM_BASIC_AUTH_USERS}` in the Portainer stack environment. Shared hashes and committed credentials in compose are strictly banned.
 - **Portainer TLS:** self-signed cert currently trusted blindly (`PORTAINER_TLS_INSECURE=true`) in CI — disable once Portainer is fronted by Traefik with a CA-signed cert.
-- **Grafana fallback:** `GF_SECURITY_ADMIN_PASSWORD` has an inline default fallback in compose — verify the per-app value in the Portainer stack env overrides it.
+- **Grafana security:** `GF_SECURITY_ADMIN_PASSWORD` has zero inline default fallback in compose — it MUST be supplied securely via `GRAFANA_ADMIN_PASSWORD` in the Portainer stack env.
 - **Zabbix defaults:** Zabbix API user/password and DB credentials are stack env vars (`zabbix` defaults in compose); keep overridden in Portainer. Zabbix UI admin account is the `admin` basic-auth realm only at the proxy; the Zabbix app itself uses its own (`Admin`) login.
 - **Live credentials** (Portainer key, TruNAS, Nextcloud app, WireGuard keys) are the responsibility of [`WIREGUARD_NEXTCLOUD_INTEGRATION.md`](WIREGUARD_NEXTCLOUD_INTEGRATION.md) §3.4 and the Portainer env — never paste them into issue/discussion channels.
 

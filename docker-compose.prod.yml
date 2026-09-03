@@ -221,7 +221,7 @@ services:
       - "traefik.http.routers.msp-zabbix.tls=true"
       - "traefik.http.routers.msp-zabbix.tls.certresolver=myresolver"
       - "traefik.http.routers.msp-zabbix.priority=100"
-      - "traefik.http.middlewares.zabbix-auth.basicauth.users=admin:$$2y$$10$$DmHxqQNulxwaAz6MOYPx9.wDHaBDCIK4ctEDo2gyc3KIWTp77NGLW"
+      - "traefik.http.middlewares.zabbix-auth.basicauth.users=${ZABBIX_BASIC_AUTH_USERS}"
       - "traefik.http.middlewares.msp-zabbix-redirect.redirectregex.regex=^(https?://[^/]+)/zabbix([?#].*)?$$"
       - "traefik.http.middlewares.msp-zabbix-redirect.redirectregex.replacement=$${1}/zabbix/$${2}"
       - "traefik.http.middlewares.msp-zabbix-strip.stripprefix.prefixes=/zabbix"
@@ -310,7 +310,7 @@ services:
       - "traefik.http.routers.msp-logs.tls=true"
       - "traefik.http.routers.msp-logs.tls.certresolver=myresolver"
       - "traefik.http.routers.msp-logs.priority=100"
-      - "traefik.http.middlewares.logs-auth.basicauth.users=admin:$$2y$$10$$DmHxqQNulxwaAz6MOYPx9.wDHaBDCIK4ctEDo2gyc3KIWTp77NGLW"
+      - "traefik.http.middlewares.logs-auth.basicauth.users=${LOGS_BASIC_AUTH_USERS}"
       - "traefik.http.routers.msp-logs.middlewares=logs-auth"
       - "traefik.http.services.msp-logs-svc.loadbalancer.server.port=8080"
     restart: unless-stopped
@@ -368,7 +368,7 @@ services:
       - "traefik.http.routers.msp-prometheus.tls=true"
       - "traefik.http.routers.msp-prometheus.tls.certresolver=myresolver"
       - "traefik.http.routers.msp-prometheus.priority=100"
-      - "traefik.http.middlewares.prom-auth.basicauth.users=admin:$$2y$$10$$DmHxqQNulxwaAz6MOYPx9.wDHaBDCIK4ctEDo2gyc3KIWTp77NGLW"
+      - "traefik.http.middlewares.prom-auth.basicauth.users=${PROM_BASIC_AUTH_USERS}"
       - "traefik.http.routers.msp-prometheus.middlewares=prom-auth"
       - "traefik.http.services.msp-prometheus-svc.loadbalancer.server.port=9090"
 
@@ -422,9 +422,9 @@ services:
     restart: always
     environment:
       - TZ=${TZ:-America/Santo_Domingo}
-      - GF_SECURITY_ADMIN_USER=epolanco@velmartech.com.do
-      - GF_SECURITY_ADMIN_EMAIL=epolanco@velmartech.com.do
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-Epolanco36}
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_EMAIL=${GRAFANA_ADMIN_EMAIL:-admin@velmartech.com.do}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_AUTH_DISABLE_PASSWORD_RESET=false
       - GF_INSTALL_PLUGINS=alexanderzobnin-zabbix-app

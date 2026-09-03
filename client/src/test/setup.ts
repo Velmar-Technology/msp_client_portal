@@ -1,6 +1,10 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
-import { afterEach, vi } from 'vitest';
+import { afterEach, vi, expect } from 'vitest';
+import * as matchers from 'vitest-axe/matchers';
+
+expect.extend(matchers);
+
 
 const createStorageMock = () => {
   let store: Record<string, string> = {};

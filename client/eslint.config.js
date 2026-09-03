@@ -459,4 +459,52 @@ export default defineConfig([
       ],
     },
   },
+
+  // =========================================================================
+  // ADR-002 ARCHITECTURAL BOUNDARY & ENTITY INVARIANT RULES
+  // =========================================================================
+
+  // 1. Forbid deep imports into colocated feature internals from pages or peer modules
+  {
+    files: ['src/pages/**/*.{ts,tsx}', 'src/components/**/*.{ts,tsx}', 'src/routes/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '@/features/*/*',
+                '../features/*/*',
+                '../../features/*/*',
+                '../../../features/*/*',
+              ],
+              message:
+                'ADR-002 Violation: Deep imports into feature internals are prohibited. Import exclusively through the feature public gateway "@/features/<domain>".',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // 2. Strictly ban declaring local backend entity interfaces in feature types.ts
+  {
+    files: ['src/features/**/types.ts', 'src/features/**/*.types.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'TSInterfaceDeclaration[id.name=/^(Ticket|Invoice|User|Plan|Subscription|Equipment|Expense)$/]',
+          message:
+            'ADR-002 Invariant: Do not declare backend entity interfaces in feature types.ts. Import entity types and contracts directly from "@shared/contracts".',
+        },
+        {
+          selector: 'TSTypeAliasDeclaration[id.name=/^(Ticket|Invoice|User|Plan|Subscription|Equipment|Expense)$/]',
+          message:
+            'ADR-002 Invariant: Do not declare backend entity types in feature types.ts. Import entity types and contracts directly from "@shared/contracts".',
+        },
+      ],
+    },
+  },
 ])

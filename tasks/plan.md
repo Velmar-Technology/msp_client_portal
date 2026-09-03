@@ -1,37 +1,86 @@
-# Implementation Plan: Systematic Horizontal Migration — Slice 1: Equipment & Subscriptions
+# Implementation Plan: SOTA Infrastructure Overhaul & Contract Conformance Engine
 
 ## Overview
-Migrate the `equipment` (device slots, OTP pairing, Nextcloud credentials, admin inventory) and `subscriptions` (plans, feature entitlements, PayPal checkout orders) domains to the **Contract-First Monolith** architecture:
-1. Canonical Zod schemas and TypeScript types in `@shared/contracts`.
-2. Direct Express route validation using `@shared/contracts`.
-3. Type-safe TanStack Query hooks in `client/src/hooks/queries/` with automated cache invalidation.
-4. Refactor `DevicesPage` and `PlansPage` to eliminate manual `useState`/`useEffect` loading boilerplate.
+Decompose and execute the 7-phase SOTA roadmap from [`docs/infrastructure/SOTA_ROADMAP.md`](../docs/infrastructure/SOTA_ROADMAP.md), unifying it with [ADR-001](../docs/decisions/ADR-001-contract-first-monolith-and-tanstack-query.md) (Contract-First Monolith & Pragmatic Services) and [ADR-002](../docs/decisions/ADR-002-frontend-colocated-feature-architecture.md) (Colocated Feature Boundaries). 
+
+Work is ordered **largest-security/integrity-risk first** into 4 sequential milestones:
+1. **Milestone 1 — Security & Blast Radius (P0):** Secrets purge and Redis sliding-window brute-force rate limiting.
+2. **Milestone 2 — Zero-Trust Tenant Isolation (P0):** Fail-closed PostgreSQL RLS enforced via Gateway `AsyncLocalStorage` with zero-leakage tests.
+3. **Milestone 3 — Contract Conformance & Developer Rigor (P1):** Supertest API contract testing against `@shared/contracts`, ADR-002 boundary linting, Drizzle reconciliation, and Vitest coverage floors.
+4. **Milestone 4 — Observability & Client Experience (P1/P2):** W3C request correlation to Winston/Datadog, TanStack Query PWA offline persistence, and automated axe-core a11y.
 
 ---
 
 ## Architecture Decisions & Constraints
-- **Canonical Contracts in `@shared/contracts`:** All request inputs, query filters, and entity payloads for equipment and subscriptions live in `packages/contracts/src/equipment/` and `packages/contracts/src/subscriptions/`.
-- **Backward Compatibility:** `server/src/shared/dtos/equipment.dto.ts` and `subscription.dto.ts` will re-export from `@shared/contracts` to prevent breaking existing controller references.
-- **Server State Delegation:** `client/src/hooks/queries/useEquipment.ts` and `useSubscriptions.ts` will handle all asynchronous fetching, caching, and cache invalidation. Zustand stores remain strictly for client UI state.
-- **Zero Regressions:** Existing server and client unit test suites must remain green with zero regressions.
+
+- **Balanced Zero-Trust:** RLS fails closed when `app.current_tenant_id` is unset or invalid, but rate limiting gracefully falls back to an in-memory LRU cache if Redis is temporarily unreachable.
+- **Gateway ALS Isolation (No Pass-Through Repositories):** Consistent with ADR-001, services query Drizzle directly (`db.query.*`). Tenant session context is set at the Express Gateway via Node `AsyncLocalStorage` and applied to scoped DB transactions (`SET LOCAL app.current_tenant_id`), avoiding invasive repository wrapper refactoring.
+- **Contract Conformance as Test Truth:** All Supertest HTTP integration assertions must validate payloads directly against `@shared/contracts` Zod schemas.
+- **Automated Invariant Gates:** ADR-002 rules (no cross-feature deep imports, zero duplicate entity declarations) are enforced mechanically by ESLint/CI.
+- **Zero Regressions:** Existing server and client unit test suites (127+ files) must remain green throughout all milestones.
 
 ---
 
-## Task Breakdown
+## Dependency Graph
 
-### Phase 1: Shared Contracts Foundation (`packages/contracts`)
-- **Task 8:** Define Equipment API Contracts & Zod Schemas (`packages/contracts/src/equipment/`)
-- **Task 9:** Define Subscription & Plan API Contracts & Zod Schemas (`packages/contracts/src/subscriptions/`)
-- **Checkpoint 1:** Contracts package builds cleanly (`npm run build:packages`) and tests pass (`npm -w packages/contracts run test`).
+```
+Milestone 1: Security & Blast Radius (P0)
+   ├── Task 1: Purge Hardcoded Secrets & Split Compose Basic-Auth Hashes (G-01, G-02)
+   └── Task 2: Redis Sliding-Window Rate Limiter & Auth Brute-Force Throttling (G-03, G-06)
+   └── Checkpoint 1: Security Hardening & Throttling
+          │
+          ▼
+Milestone 2: Tenant Isolation & Zero-Trust RLS (P0)
+   ├── Task 3: Fail-Closed PostgreSQL RLS Policies & Table Coverage (G-04, G-05)
+   ├── Task 4: Gateway AsyncLocalStorage (ALS) Tenant Context Middleware (G-04)
+   └── Task 5: Automated Cross-Tenant Leak Test Suite (G-04, G-05)
+   └── Checkpoint 2: Tenant Isolation & Leak Immunity
+          │
+          ▼
+Milestone 3: Contract Conformance & Developer Tooling (P1)
+   ├── Task 6: Reconcile Drizzle ORM Config & Migration Drift Check in CI (G-09)
+   ├── Task 7: Contract-Driven Supertest API Conformance Suite (G-08 / ADR-001)
+   ├── Task 8: Architecture Boundary Invariant CI Lint Rules (ADR-002)
+   └── Task 9: Vitest Coverage Gates & Server Build Memory Tuning (G-08, G-11)
+   └── Checkpoint 3: Contract Conformance & CI Quality Gates
+          │
+          ▼
+Milestone 4: Observability & Client Experience (P1/P2)
+   ├── Task 10: Request-ID & W3C Trace Propagation to Winston & Datadog (G-07)
+   ├── Task 11: PWA Offline Shell via TanStack Query `persistQueryClient` (G-10 / ADR-001)
+   └── Task 12: Automated axe-core Accessibility Suite in CI (G-10)
+   └── Checkpoint 4: SOTA Definition of Done Cleared
+```
 
-### Phase 2: Server Route Validation Integration (`server`)
-- **Task 10:** Wire `@shared/contracts` validation on Equipment and Subscription Express routes.
-- **Checkpoint 2:** Server compiles cleanly (`npm -w server run build`) and all equipment/subscription backend tests pass (`npx vitest run src/modules/equipment/ src/modules/subscriptions/`).
+---
 
-### Phase 3: Client Query Hooks & Page Refactoring (`client`)
-- **Task 11:** Implement `useEquipment` and `useSubscriptions` TanStack Query hooks.
-- **Task 12:** Refactor `DevicesPage` and `PlansPage` to consume query hooks with automatic cache invalidation.
-- **Checkpoint 3:** Client compiles cleanly (`npm -w client run build`) and isolated client tests pass (`npx vitest run src/pages/DevicesPage/DevicesPage.test.tsx src/pages/PlansPage/PlansPage.test.tsx`).
+## Task List Index
+
+Detailed tasks with full acceptance criteria and file lists are recorded in [`tasks/todo.md`](./todo.md).
+
+### Milestone 1: Security & Blast Radius
+- [x] Task 1: Purge Hardcoded Secrets & Split Compose Basic-Auth Hashes
+- [x] Task 2: Implement Redis Sliding-Window & Auth Brute-Force Rate Limiter
+- [x] Checkpoint 1: Security Hardening & Throttling
+
+### Milestone 2: Zero-Trust Tenant Isolation
+- [x] Task 3: Update SQL RLS Policies to Fail Closed & Cover Missing Tables
+- [x] Task 4: Wire Gateway `AsyncLocalStorage` Tenant Context Middleware
+- [x] Task 5: Implement Automated Cross-Tenant Leak Test Suite
+- [x] Checkpoint 2: Tenant Isolation & Leak Immunity
+
+### Milestone 3: Contract Conformance & Developer Tooling
+- [x] Task 6: Reconcile Drizzle Config & Add CI Migration Drift Check
+- [x] Task 7: Build Supertest API Integration Suite Using `@shared/contracts`
+- [x] Task 8: Implement ADR-002 Boundary & Entity Invariant Lint Rules
+- [x] Task 9: Configure Vitest Coverage Gates & Optimize Server Build Memory
+- [x] Checkpoint 3: Contract Conformance & CI Quality Gates
+
+### Milestone 4: Observability & Client Experience
+- [x] Task 10: Propagate Request-ID & W3C Trace Context to Winston & Datadog
+- [x] Task 11: Implement PWA Offline Shell with TanStack Query Cache Persistence
+- [x] Task 12: Configure Automated axe-core Accessibility Suite in CI
+- [x] Checkpoint 4: SOTA Definition of Done Cleared
 
 ---
 
@@ -39,6 +88,7 @@ Migrate the `equipment` (device slots, OTP pairing, Nextcloud credentials, admin
 
 | Risk | Impact | Mitigation |
 | :--- | :---: | :--- |
-| **Complex Equipment Model:** `SubscriptionEquipment` contains 30+ optional telemetry fields. | High | Define strict core fields in Zod and make telemetry metrics optional nullable fields, fully reflecting database schema and agent capabilities. |
-| **PayPal Order Flow:** Paypal checkout requires redirect/approval URLs. | Medium | Contract specifies explicit response schemas for `{ orderId }` and `{ subscriptionId, approveUrl }`. |
-| **Test Timing in Heavy Client Suite:** Vitest tests can timeout on Windows when running 40 suites simultaneously. | Low | Run targeted test commands for touched suites (`DevicesPage.test.tsx`, `useEquipment.test.tsx`) as established in DoD. |
+| **PostgreSQL Connection Pool Session Leak:** `SET LOCAL app.current_tenant_id` could leak across pooled connections if run outside an explicit transaction block. | High | Scope every tenant query inside a transaction (`db.transaction(async tx => ...)`), or execute an explicit session variable reset on connection release. |
+| **Breaking Existing Public/Admin Routes:** Switching RLS to fail closed could break unauthenticated or system-level endpoints (healthchecks, webhooks, auth login). | High | Mark system/public endpoints explicitly (`skipTenantContext: true`) and configure RLS bypass only for trusted system service roles. |
+| **Client Hydration Drift with PWA:** Offline cached data colliding with server schema changes. | Medium | Use `persistQueryClient` with versioned cache keys matching package semantic version (`buerokratt_v2.2.0`). |
+| **Windows Runner Memory Load:** Running Vitest coverage across full monorepo can cause node heap spikes. | Low | Run separate workspace coverage steps (`npm -w server run test:coverage` then `npm -w client run test:coverage`) with `--max-old-space-size=4096`. |

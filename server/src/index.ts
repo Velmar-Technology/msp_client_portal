@@ -189,7 +189,10 @@ async function startServer(): Promise<void> {
   }
 }
 
-startServer();
+if (process.env.NODE_ENV !== 'test') {
+  startServer();
+}
 
+export { app };
 export default app;
 

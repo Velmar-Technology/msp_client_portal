@@ -19,9 +19,9 @@ describe('API Gateway Layer Middleware', () => {
   let res: Partial<Response>;
   let next: NextFunction;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
-    resetRateLimitStore();
+    await resetRateLimitStore();
     req = {
       headers: {},
       ip: '127.0.0.1',
@@ -74,32 +74,32 @@ describe('API Gateway Layer Middleware', () => {
   });
 
   describe('gatewayRateLimiterMiddleware — Multi-Tenant Rate Limiting', () => {
-    it('allows requests within limit and attaches rate limit headers', () => {
+    it('allows requests within limit and attaches rate limit headers', async () => {
       const limiter = createGatewayRateLimiter({ windowMs: 60000, maxRequests: 2 });
       req.headers = { 'x-tenant-id': 'tenant-alpha' };
 
       // Request 1
-      limiter(req as Request, res as Response, next);
+      await limiter(req as Request, res as Response, next);
       expect(res.setHeader).toHaveBeenCalledWith('X-RateLimit-Limit', '2');
       expect(res.setHeader).toHaveBeenCalledWith('X-RateLimit-Remaining', '1');
       expect(next).toHaveBeenLastCalledWith();
 
       // Request 2
-      limiter(req as Request, res as Response, next);
+      await limiter(req as Request, res as Response, next);
       expect(res.setHeader).toHaveBeenCalledWith('X-RateLimit-Remaining', '0');
       expect(next).toHaveBeenLastCalledWith();
     });
 
-    it('throws RateLimitError 429 when rate limit is exceeded for a tenant', () => {
+    it('throws RateLimitError 429 when rate limit is exceeded for a tenant', async () => {
       const limiter = createGatewayRateLimiter({ windowMs: 60000, maxRequests: 2 });
       req.headers = { 'x-tenant-id': 'tenant-alpha' };
 
       // Request 1 & 2
-      limiter(req as Request, res as Response, next);
-      limiter(req as Request, res as Response, next);
+      await limiter(req as Request, res as Response, next);
+      await limiter(req as Request, res as Response, next);
 
       // Request 3 (Exceeds limit)
-      limiter(req as Request, res as Response, next);
+      await limiter(req as Request, res as Response, next);
       const err = (next as any).mock.calls[2][0];
       expect(err).toBeInstanceOf(RateLimitError);
       expect(err.statusCode).toBe(429);
@@ -107,30 +107,30 @@ describe('API Gateway Layer Middleware', () => {
       expect(res.setHeader).toHaveBeenCalledWith('Retry-After', expect.any(String));
     });
 
-    it('isolates rate limits per tenant ID so noisy neighbors do not affect others', () => {
+    it('isolates rate limits per tenant ID so noisy neighbors do not affect others', async () => {
       const limiter = createGatewayRateLimiter({ windowMs: 60000, maxRequests: 1 });
 
       // Tenant A request 1
       req.headers = { 'x-tenant-id': 'tenant-A' };
-      limiter(req as Request, res as Response, next);
+      await limiter(req as Request, res as Response, next);
       expect(next).toHaveBeenLastCalledWith();
 
       // Tenant A request 2 (blocked)
-      limiter(req as Request, res as Response, next);
+      await limiter(req as Request, res as Response, next);
       const err = (next as any).mock.calls[1][0];
       expect(err.statusCode).toBe(429);
 
       // Tenant B request 1 (allowed)
       req.headers = { 'x-tenant-id': 'tenant-B' };
-      limiter(req as Request, res as Response, next);
+      await limiter(req as Request, res as Response, next);
       expect(next).toHaveBeenLastCalledWith();
     });
 
-    it('defaults to 1000 requests per window when no options are provided', () => {
+    it('defaults to 1000 requests per window when no options are provided', async () => {
       const defaultLimiter = createGatewayRateLimiter();
       req.headers = { 'x-tenant-id': 'tenant-default' };
 
-      defaultLimiter(req as Request, res as Response, next);
+      await defaultLimiter(req as Request, res as Response, next);
       expect(res.setHeader).toHaveBeenCalledWith('X-RateLimit-Limit', '1000');
       expect(res.setHeader).toHaveBeenCalledWith('X-RateLimit-Remaining', '999');
       expect(next).toHaveBeenCalledWith();
