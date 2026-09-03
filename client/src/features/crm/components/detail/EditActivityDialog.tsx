@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
-import type { LeadActivity, UpdateActivityPayload } from "@/services/crmService";
+import type { LeadActivity, UpdateActivityPayload } from "../../api/crmService";
 import { toast } from "sonner";
 
 interface EditActivityDialogProps {

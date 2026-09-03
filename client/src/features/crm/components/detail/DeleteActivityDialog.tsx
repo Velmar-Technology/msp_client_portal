@@ -11,31 +11,37 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import type { Lead } from "@/services/crmService";
+import type { LeadActivity } from "../../api/crmService";
+import { toast } from "sonner";
 
-interface DeleteLeadDialogProps {
-  lead: Lead | null;
+interface DeleteActivityDialogProps {
+  activity: LeadActivity | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirmDelete: (id: string) => Promise<void>;
+  actionLoading: boolean;
+  onConfirmDelete: (activityId: string) => Promise<void>;
 }
 
-export function DeleteLeadDialog({
-  lead,
+export function DeleteActivityDialog({
+  activity,
   open,
   onOpenChange,
+  actionLoading,
   onConfirmDelete,
-}: DeleteLeadDialogProps) {
+}: DeleteActivityDialogProps) {
   const { t } = useTranslation();
   const [isDeleting, setIsDeleting] = useState(false);
 
-  if (!lead) return null;
-
   const handleDelete = async () => {
+    if (!activity) return;
     setIsDeleting(true);
     try {
-      await onConfirmDelete(lead.id);
+      await onConfirmDelete(activity.id);
+      toast.success(t("crm.activityDeletedSuccess") || "Activity deleted successfully!");
       onOpenChange(false);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : t("crm.activityDeleteError") || "Failed to delete activity.";
+      toast.error(message);
     } finally {
       setIsDeleting(false);
     }
@@ -47,20 +53,24 @@ export function DeleteLeadDialog({
         <AlertDialogHeader>
           <AlertDialogTitle className="text-sm font-bold flex items-center gap-2 text-destructive">
             <Trash2 className="h-4 w-4" />
-            {t("crm.deleteLeadConfirmTitle") || "Delete Opportunity?"}
+            {t("crm.deleteActivityConfirmTitle") || "Delete Follow-up Activity?"}
           </AlertDialogTitle>
           <AlertDialogDescription className="text-xs text-muted-foreground leading-normal">
-            {t("crm.deleteLeadConfirmDesc", { name: lead.contact_name }) ||
-              `Are you sure you want to delete the opportunity for ${lead.contact_name}?`}
+            {t("crm.deleteActivityConfirmDesc") ||
+              "Are you sure you want to delete this activity? This action cannot be undone."}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="pt-2 sm:justify-end gap-2">
-          <AlertDialogCancel onClick={() => onOpenChange(false)} className="text-xs cursor-pointer">
+          <AlertDialogCancel
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="text-xs cursor-pointer"
+          >
             {t("common.cancel") || "Cancel"}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
-            disabled={isDeleting}
+            disabled={isDeleting || actionLoading}
             className="text-xs font-semibold bg-destructive hover:bg-destructive/90 text-destructive-foreground cursor-pointer"
           >
             {isDeleting ? (t("common.deleting") || "Deleting...") : (t("common.delete") || "Delete")}

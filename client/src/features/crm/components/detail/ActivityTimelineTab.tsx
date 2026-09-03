@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Calendar } from "lucide-react";
-import type { LeadActivity } from "@/services/crmService";
+import type { LeadActivity } from "../../api/crmService";
 import { getActivityTypeLabel, resolveActivityTitle } from "../../utils/activityTitles";
 
 interface ActivityTimelineTabProps {

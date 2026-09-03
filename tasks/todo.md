@@ -876,13 +876,13 @@
 ### Task 42: Scaffold `client/src/features/crm/` & Colocate CRM API Queries
 **Description:** Scaffold `client/src/features/crm/` and create `api/useCrmQueries.ts` migrating `client/src/services/crmService.ts`. Define query hooks (`useLeads`, `useDeals`, `useQuotes`) and mutation hooks (`useCreateLead`, `useUpdateDealStage`, `useGenerateQuote`). Define ephemeral UI types in `types.ts`. Re-export from `client/src/services/crmService.ts`.
 **Acceptance criteria:**
-- [ ] `client/src/features/crm/api/useCrmQueries.ts` exports all CRM query and mutation hooks.
-- [ ] `types.ts` contains ephemeral UI types (Kanban column drag state, filter modes).
-- [ ] Legacy `client/src/services/crmService.ts` re-exports from `@/features/crm`.
+- [x] `client/src/features/crm/api/useCrmQueries.ts` exports all CRM query and mutation hooks.
+- [x] `types.ts` contains ephemeral UI types (Kanban column drag state, filter modes).
+- [x] Legacy `client/src/services/crmService.ts` re-exports from `@/features/crm`.
 **Verification:**
-- [ ] Tests pass: `npm -w client run test:arch`
-- [ ] Build succeeds: `npm -w client run build`
-- [ ] Manual check: verify CRM deal stage transitions match BL-501
+- [x] Tests pass: `npm -w client run test:arch`
+- [x] Build succeeds: `npm -w client run build`
+- [x] Manual check: verify CRM deal stage transitions match BL-501
 **Dependencies:** None  
 **Files touched:**
 - `client/src/features/crm/api/useCrmQueries.ts`
@@ -893,35 +893,35 @@
 
 ---
 
-### Task 37: Colocate CRM Kanban Board, Lead Cards & Custom Plan Modals
+### Task 43: Colocate CRM Kanban Board, Lead Cards & Custom Plan Modals
 **Description:** Colocate CRM presentation components into `client/src/features/crm/components/` (`CrmKanbanBoard.tsx`, `LeadCard.tsx`, `CreateLeadModal.tsx`, `ConvertLeadModal.tsx`, `CustomPlanQuoteModal.tsx`).
 **Acceptance criteria:**
-- [ ] CRM components colocated in `client/src/features/crm/components/`.
-- [ ] All props use direct contracts from `@shared/contracts`.
+- [x] CRM components colocated in `client/src/features/crm/components/`.
+- [x] All props use direct contracts from `@shared/contracts`.
 **Verification:**
-- [ ] Tests pass: `npm -w client run test:arch`
-- [ ] Build succeeds: `npx tsc --noEmit -p client/tsconfig.app.json`
-- [ ] Manual check: test lead drag-and-drop between pipeline stages
-**Dependencies:** Task 36  
+- [x] Tests pass: `npm -w client run test:arch`
+- [x] Build succeeds: `npx tsc --noEmit -p client/tsconfig.app.json`
+- [x] Manual check: test lead drag-and-drop between pipeline stages
+**Dependencies:** Task 42  
 **Files touched:**
-- `client/src/features/crm/components/CrmKanbanBoard.tsx`
-- `client/src/features/crm/components/LeadCard.tsx`
-- `client/src/features/crm/components/CreateLeadModal.tsx`
-- `client/src/features/crm/components/ConvertLeadModal.tsx`
+- `client/src/features/crm/components/CRMKanbanBoard.tsx`
+- `client/src/features/crm/components/CRMDataTable.tsx`
+- `client/src/features/crm/components/CRMNewLeadModal.tsx`
+- `client/src/features/crm/components/CRMLeadDetailSheet.tsx`
 **Estimated scope:** Medium (4 files)
 
 ---
 
-### Task 38: Colocate CRM Filter & Pipeline Hooks
+### Task 44: Colocate CRM Filter & Pipeline Hooks
 **Description:** Colocate `useCrmFilters.ts` and `useCrmModals.ts` into `client/src/features/crm/hooks/`. Synchronize pipeline stage filter, search query, and deal view mode (`?view=kanban|table`) via `useUrlState`.
 **Acceptance criteria:**
-- [ ] CRM hooks live in `client/src/features/crm/hooks/`.
-- [ ] URL state preserves active view and filters across browser reloads.
+- [x] CRM hooks live in `client/src/features/crm/hooks/`.
+- [x] URL state preserves active view and filters across browser reloads.
 **Verification:**
-- [ ] Tests pass: `npm -w client run test:arch`
-- [ ] Build succeeds: `npm -w client run build`
-- [ ] Manual check: test switching between table and kanban view
-**Dependencies:** Task 36, Task 37  
+- [x] Tests pass: `npm -w client run test:arch`
+- [x] Build succeeds: `npm -w client run build`
+- [x] Manual check: test switching between table and kanban view
+**Dependencies:** Task 42, Task 43  
 **Files touched:**
 - `client/src/features/crm/hooks/useCrmFilters.ts`
 - `client/src/features/crm/hooks/useCrmModals.ts`
@@ -929,50 +929,50 @@
 
 ---
 
-### Task 39: Colocate `CRMPage` & `CRMCustomPlanPage` with Vitest Tests into `client/src/features/crm/pages/`
+### Task 45: Colocate `CRMPage` & `CRMCustomPlanPage` with Vitest Tests into `client/src/features/crm/pages/`
 **Description:** Colocate `CRMPage.tsx` and `CRMCustomPlanPage.tsx` into `client/src/features/crm/pages/` along with test suites. Re-export from `client/src/pages/CRMPage/index.ts` and `client/src/pages/CRMCustomPlanPage/index.ts`.
 **Acceptance criteria:**
-- [ ] Pages consume colocated components and hooks cleanly.
-- [ ] Vitest test suites execute and pass.
-- [ ] Legacy page entry points re-export from `@/features/crm`.
+- [x] Pages consume colocated components and hooks cleanly.
+- [x] Vitest test suites execute and pass.
+- [x] Legacy page entry points re-export from `@/features/crm`.
 **Verification:**
-- [ ] Tests pass: `npx vitest run client/src/features/crm`
-- [ ] Build succeeds: `npm -w client run build`
-- [ ] Manual check: test custom plan quote provisioning flow
-**Dependencies:** Task 37, Task 38  
+- [x] Tests pass: `npx vitest run client/src/features/crm`
+- [x] Build succeeds: `npm -w client run build`
+- [x] Manual check: test custom plan quote provisioning flow
+**Dependencies:** Task 43, Task 44  
 **Files touched:**
 - `client/src/features/crm/pages/CRMPage.tsx`
 - `client/src/features/crm/pages/CRMCustomPlanPage.tsx`
 - `client/src/features/crm/pages/CRMPage.test.tsx`
-- `client/src/pages/CRMPage/index.ts`
 **Estimated scope:** Medium (4 files)
 
 ---
 
-### Task 40: Wire `client/src/features/crm/index.ts` Public Gateway & Update Route Imports
+### Task 46: Wire `client/src/features/crm/index.ts` Public Gateway & Update Route Imports
 **Description:** Expose authorized public exports in `client/src/features/crm/index.ts` (`CRMPage`, `CRMCustomPlanPage`, query hooks, types). Update route definitions in `client/src/protected-routes.tsx` and `client/src/routes/`.
 **Acceptance criteria:**
-- [ ] Public gateway exports all public capabilities cleanly.
-- [ ] Route files import from `@/features/crm`.
-- [ ] Zero deep imports into `@/features/crm/*`.
+- [x] Public gateway exports all public capabilities cleanly.
+- [x] Route files import from `@/features/crm`.
+- [x] Zero deep imports into `@/features/crm/*`.
 **Verification:**
-- [ ] Tests pass: `npm -w client run test:arch`
-- [ ] Build succeeds: `npm -w client run lint && npm -w client run build`
-- [ ] Manual check: navigation to `/crm` works
-**Dependencies:** Task 39  
+- [x] Tests pass: `npm -w client run test:arch`
+- [x] Build succeeds: `npm -w client run lint && npm -w client run build`
+- [x] Manual check: navigation to `/crm` works
+**Dependencies:** Task 45  
 **Files touched:**
 - `client/src/features/crm/index.ts`
-- `client/src/protected-routes.tsx`
+- `client/src/routes/_app/crm.tsx`
+- `client/src/routes/_app/crm/custom-plans.tsx`
 **Estimated scope:** Small (2 files)
 
 ---
 
-## Checkpoint 10: CRM Module Migration Cleared
-- [ ] `client/src/features/crm` contains complete 7-part vertical slice.
-- [ ] Architecture tests pass (`npm -w client run test:arch`).
-- [ ] ESLint passes (`npm -w client run lint`).
-- [ ] Client builds cleanly (`npm -w client run build`).
-- [ ] All CRM unit and integration tests pass (`npm -w client run test:run`).
+## Checkpoint 11: CRM Module Migration Cleared
+- [x] `client/src/features/crm` contains complete 7-part vertical slice.
+- [x] Architecture tests pass (`npm -w client run test:arch`).
+- [x] ESLint passes (`npm -w client run lint`).
+- [x] Client builds cleanly (`npm -w client run build`).
+- [x] All CRM unit and integration tests pass (`npm -w client run test:run`).
 
 ---
 

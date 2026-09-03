@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable, type DataTableFilter, type DataTableBulkAction } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import type { Lead, LeadStage, LeadPriority } from "@/services/crmService";
+import type { Lead, LeadStage, LeadPriority } from "../api/crmService";
 import {
   Calendar,
   Phone,

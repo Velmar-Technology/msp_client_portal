@@ -1,4 +1,4 @@
-import type { LeadActivity } from "@/services/crmService";
+import type { LeadActivity } from "../api/crmService";
 
 export type TranslateFn = (key: string, options?: Record<string, string>) => string;
 

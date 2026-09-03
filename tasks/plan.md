@@ -130,12 +130,12 @@ Detailed tasks with full acceptance criteria and file lists are recorded in [`ta
 - [x] Checkpoint 10: ADR-002 Deprecated Shims Completely Purged & Verified
 
 ### Milestone 11: Migrate CRM & Lead Pipeline Module to ADR-002 Colocated Architecture (P1)
-- [ ] Task 42: Scaffold `client/src/features/crm/` & Colocate CRM API Queries (`useCrmQueries.ts`)
-- [ ] Task 43: Colocate CRM Kanban Board, Lead Cards & Custom Plan Modals (`client/src/features/crm/components/`)
-- [ ] Task 44: Colocate CRM Filter & Pipeline Hooks (`client/src/features/crm/hooks/`)
-- [ ] Task 45: Colocate `CRMPage` & `CRMCustomPlanPage` with Vitest Tests into `client/src/features/crm/pages/`
-- [ ] Task 46: Wire `client/src/features/crm/index.ts` Public Gateway & Update Route Imports
-- [ ] Checkpoint 11: CRM Module Migration Cleared
+- [x] Task 42: Scaffold `client/src/features/crm/` & Colocate CRM API Queries (`useCrmQueries.ts`)
+- [x] Task 43: Colocate CRM Kanban Board, Lead Cards & Custom Plan Modals (`client/src/features/crm/components/`)
+- [x] Task 44: Colocate CRM Filter & Pipeline Hooks (`client/src/features/crm/hooks/`)
+- [x] Task 45: Colocate `CRMPage` & `CRMCustomPlanPage` with Vitest Tests into `client/src/features/crm/pages/`
+- [x] Task 46: Wire `client/src/features/crm/index.ts` Public Gateway & Update Route Imports
+- [x] Checkpoint 11: CRM Module Migration Cleared
 
 ### Milestone 12: Migrate RMM & Maintenance Module to ADR-002 Colocated Architecture (P1)
 - [ ] Task 47: Scaffold `client/src/features/rmm/` & Colocate RMM/Maintenance API Queries (`useRmmQueries.ts`)

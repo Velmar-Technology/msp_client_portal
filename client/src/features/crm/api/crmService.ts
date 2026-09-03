@@ -1,5 +1,5 @@
 import api from "@/services/api";
-import type { Invoice } from "@/services/invoiceService";
+import type { InvoiceContract } from "@shared/contracts";
 import type { Plan, PlanFeature } from "@/features/subscriptions";
 
 export type LeadStage = "NEW" | "QUALIFIED" | "PROPOSITION" | "WON" | "LOST";
@@ -9,7 +9,7 @@ export type QuotationStatus = "DRAFT" | "SENT" | "ACCEPTED" | "DECLINED" | "EXPI
 export interface ConvertLeadResult {
   lead: Lead;
   subscription: { id: string; status: string; plan: string; equipment_count: number };
-  invoice?: Invoice;
+  invoice?: InvoiceContract;
   clientCreated?: boolean;
 }
 

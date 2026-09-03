@@ -30,7 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import type { Plan } from "@/features/subscriptions";
 import type { AuthUser } from "@/store/useAuthStore";
-import type { LeadPriority } from "@/services/crmService";
+import type { LeadPriority } from "../api/crmService";
 
 const createLeadSchema = z.object({
   clientId: z.string().uuid().optional(),

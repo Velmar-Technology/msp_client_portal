@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { LeadActivity } from '@/services/crmService';
+import type { LeadActivity } from '../api/crmService';
 import { resolveActivityTitle, getActivityTypeLabel } from './activityTitles';
 
 const t = (key: string, options?: Record<string, string>) =>

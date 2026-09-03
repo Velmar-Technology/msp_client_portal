@@ -19,12 +19,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { CRMDataTable } from "@/pages/CRMPage/components/CRMDataTable";
-import { CRMKanbanBoard } from "@/pages/CRMPage/components/CRMKanbanBoard";
-import { CRMLeadDetailSheet } from "@/pages/CRMPage/components/CRMLeadDetailSheet";
-import { CRMNewLeadModal } from "@/pages/CRMPage/components/CRMNewLeadModal";
+import { CRMDataTable } from "../components/CRMDataTable";
+import { CRMKanbanBoard } from "../components/CRMKanbanBoard";
+import { CRMLeadDetailSheet } from "../components/CRMLeadDetailSheet";
+import { CRMNewLeadModal } from "../components/CRMNewLeadModal";
 import { ViewToggle } from "@/components/ui/view-toggle";
-import type { Lead, LeadStage, QuotationStatus } from "@/services/crmService";
+import type { Lead, LeadStage, QuotationStatus } from "../api/crmService";
 import { LayoutList, Kanban, Plus, Sparkles, TrendingUp, DollarSign, Briefcase, Target, CalendarClock } from "lucide-react";
 
 import { CRM_VALID_STAGES as VALID_STAGES, CRM_VALID_PRIORITIES as VALID_PRIORITIES } from "@/constants/crm";

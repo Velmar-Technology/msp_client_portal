@@ -1,11 +1,11 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { CRMPage } from "@/pages/CRMPage/CRMPage";
+import { CRMPage } from "./CRMPage";
 import { expect, test, vi, beforeEach, describe } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { useCRMStore } from "@/store/useCRMStore";
 import { usePlanStore } from "@/store/usePlanStore";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
-import { crmService, type Lead, type CrmPipelineStats, type Quotation, type LeadActivity } from "@/services/crmService";
+import { crmService, type Lead, type CrmPipelineStats, type Quotation, type LeadActivity } from "../api/crmService";
 import type { Invoice } from "@/services/invoiceService";
 import { planService, subscriptionService, type Plan, type Subscription } from "@/features/subscriptions";
 import { userService } from "@/services/userService";
@@ -62,7 +62,7 @@ vi.mock("@/services/userService", () => ({
   },
 }));
 
-vi.mock("@/services/crmService", () => ({
+vi.mock("../api/crmService", () => ({
   crmService: {
     getLeads: vi.fn(),
     getStats: vi.fn(),

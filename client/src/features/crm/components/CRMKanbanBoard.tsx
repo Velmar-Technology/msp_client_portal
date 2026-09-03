@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Lead, LeadStage, CrmPipelineStats } from "@/services/crmService";
+import type { Lead, LeadStage, CrmPipelineStats } from "../api/crmService";
 import { Button } from "@/components/ui/button";
 import { Calendar, Mail, Building2, ChevronRight, CheckCircle2, XCircle } from "lucide-react";
 

@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePicker } from "@/components/shared";
 import { Calendar, Clock, Pencil, Trash2, Check } from "lucide-react";
-import type { Lead, LeadActivity, UpdateActivityPayload } from "@/services/crmService";
+import type { Lead, LeadActivity, UpdateActivityPayload } from "../../api/crmService";
 import { getActivityTypeLabel, resolveActivityTitle } from "../../utils/activityTitles";
 import { toast } from "sonner";
 

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Send, RefreshCw, Plus, Minus, Check, X, Sparkles } from "lucide-react";
-import type { Lead, Quotation, QuotationStatus } from "@/services/crmService";
+import type { Lead, Quotation, QuotationStatus } from "../../api/crmService";
 import type { Plan } from "@/features/subscriptions";
 import { TAX_RATE as CRM_TAX_RATE } from "@/constants/billing";
 import { QUOTATION_STATUS_BADGES } from "@/constants/crm";

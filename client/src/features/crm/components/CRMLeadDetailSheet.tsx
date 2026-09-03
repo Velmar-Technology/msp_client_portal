@@ -19,7 +19,7 @@ import type {
   UpdateLeadPayload,
   ConvertLeadResult,
   UpdateActivityPayload,
-} from "@/services/crmService";
+} from "../api/crmService";
 import type { Plan, Subscription } from "@/features/subscriptions";
 import { toast } from "sonner";
 import {
