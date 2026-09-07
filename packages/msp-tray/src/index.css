@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@theme {
+  --color-velmar-blue: #0084ff;
+  --color-velmar-blue-dark: #0060c2;
+  --color-velmar-blue-light: #38bdf8;
+  --color-velmar-orange: #ff5e00;
+  --color-velmar-orange-dark: #cc4b00;
+  --color-velmar-orange-light: #ff8533;
+  --color-velmar-pink: #ff007a;
+  --color-velmar-bg: #070a10;
+  --color-velmar-card: #0d131f;
+  --color-velmar-card-hover: #121a2b;
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+  
+  /* Custom thin scrollbars for compact desktop assistant */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(56, 189, 248, 0.2);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 132, 255, 0.4);
+  }
+}
+

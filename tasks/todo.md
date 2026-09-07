@@ -269,3 +269,124 @@
 - [x] All unit, integration, and AST tests pass.
 - [x] Production builds succeed.
 - [x] Documentation and architectural references complete.
+
+---
+
+## Phase 6: Tauri v2 Desktop Companion (`packages/msp-tray`)
+
+### Task 6.1: Scaffold `packages/msp-tray` Workspace (Tauri v2 + React 19 + Tailwind CSS)
+**Description:** Initialize `packages/msp-tray` containing `package.json`, `vite.config.ts`, `index.html`, Tailwind CSS v4 / Vanilla styling, and `src-tauri` directory with `Cargo.toml` and `tauri.conf.json` configured for tray popover.
+**Acceptance criteria:**
+- [x] `packages/msp-tray/package.json` with `@tauri-apps/api@^2.0.0`, `@tauri-apps/plugin-shell`, `lucide-react`, React 19.
+- [x] `packages/msp-tray/vite.config.ts` configured for port 1420 and React.
+- [x] `packages/msp-tray/src-tauri/Cargo.toml` with `tauri = { version = "2", features = ["tray-icon"] }`, `serde`, `serde_json`, `tokio`, `sysinfo`.
+- [x] `packages/msp-tray/src-tauri/tauri.conf.json` configuring tray icon and frameless popover window.
+**Verification:**
+- [x] `npm install` and workspace detection succeeds.
+- [x] `npm -w packages/msp-tray run build` passes.
+**Dependencies:** None
+**Files touched:**
+- `packages/msp-tray/package.json`
+- `packages/msp-tray/vite.config.ts`
+- `packages/msp-tray/tsconfig.json`
+- `packages/msp-tray/index.html`
+- `packages/msp-tray/src/index.css`
+- `packages/msp-tray/src/main.tsx`
+- `packages/msp-tray/src-tauri/Cargo.toml`
+- `packages/msp-tray/src-tauri/tauri.conf.json`
+- `packages/msp-tray/src-tauri/build.rs`
+- `packages/msp-tray/src-tauri/src/main.rs`
+- `packages/msp-tray/src-tauri/src/lib.rs`
+**Estimated scope:** Medium (10 files)
+
+---
+
+### Task 6.2: Implement Local IPC Transport & Tauri Commands
+**Description:** Implement `src-tauri/src/ipc.rs` handling connection to `\\.\pipe\msp-agent-ipc` (with standalone direct REST/WS fallback mode), and expose Tauri commands: `get_agent_status`, `get_system_vitals`, `create_ticket`, and `send_chat_message`.
+**Acceptance criteria:**
+- [x] Named Pipe transport with 4-byte big-endian framing conforming to IPC specification.
+- [x] Fallback direct API mode using local agent token if daemon pipe is offline.
+- [x] Live vitals sampler using `sysinfo` (CPU, Memory, Disk, Active Window).
+- [x] Tauri invoke handlers registered in `lib.rs`.
+**Verification:**
+- [x] `cargo check --manifest-path packages/msp-tray/src-tauri/Cargo.toml` compiles without errors.
+**Dependencies:** Task 6.1
+**Files touched:**
+- `packages/msp-tray/src-tauri/src/ipc.rs`
+- `packages/msp-tray/src-tauri/src/lib.rs`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Task 6.3: Implement Shift-Worker Attribution & Local Persistence
+**Description:** Create `src/components/AttributionModal.tsx` and persistence store that prompts for Name and Email on first launch, caches in local storage/config, and allows seamless switching between shift workers.
+**Acceptance criteria:**
+- [x] Prompts on first use if attribution is missing.
+- [x] Validates email format and non-empty name.
+- [x] Caches identity locally in localStorage.
+- [x] Allows editing attribution from header/settings button.
+**Verification:**
+- [x] Component renders and handles submit/save cleanly.
+**Dependencies:** Task 6.1
+**Files touched:**
+- `packages/msp-tray/src/components/AttributionModal.tsx`
+- `packages/msp-tray/src/services/attribution.ts`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Task 6.4: Implement Tray Drawer & 1-Click Ticket Creation Modal
+**Description:** Build `QuickTicketModal.tsx` allowing 1-click issue reporting with title, description, category selector, priority, and real-time live flight recorder diagnostics preview badge.
+**Acceptance criteria:**
+- [x] Category selector (`HELPDESK`, `HARDWARE`, `SOFTWARE`, `NETWORK`, `ACCESS`).
+- [x] Live diagnostics status chip showing CPU %, RAM %, and Disk % from `get_system_vitals`.
+- [x] Submits ticket through Tauri IPC `create_ticket` command.
+- [x] Displays success notification with ticket ID and auto-opens chat drawer.
+**Verification:**
+- [x] Form submission triggers command with valid payload.
+**Dependencies:** Tasks 6.2, 6.3
+**Files touched:**
+- `packages/msp-tray/src/components/QuickTicketModal.tsx`
+- `packages/msp-tray/src/components/Header.tsx`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Task 6.5: Implement Live Chat Drawer Mirroring `TicketResponses.tsx`
+**Description:** Build `LiveChatDrawer.tsx` allowing real-time bidirectional conversation between the desk worker and the assigned technician. Supports message threads, role badges (`TECHNICIAN`, `CLIENT`), timestamp formatting, and instant sending.
+**Acceptance criteria:**
+- [x] Renders incoming and outgoing chat bubbles with technician vs client styling.
+- [x] Auto-scrolls to bottom on new messages.
+- [x] Listens to `ticket_chat_push` Tauri events emitted from IPC.
+- [x] Audio/visual alert on new message when window is hidden or blurred.
+- [x] Allows marking ticket as `RESOLVED` directly from header (without CSAT popup per specification).
+**Verification:**
+- [x] Chat UI handles message submission and real-time updates without layout breakage.
+**Dependencies:** Tasks 6.2, 6.4
+**Files touched:**
+- `packages/msp-tray/src/components/LiveChatDrawer.tsx`
+- `packages/msp-tray/src/components/TicketBadge.tsx`
+- `packages/msp-tray/src/App.tsx`
+**Estimated scope:** Medium (3 files)
+
+---
+
+### Task 6.6: Compilation, Build Verification & Integration Testing
+**Description:** Verify frontend compilation, Rust compilation, clean build artifacts, and test connectivity against the running backend server.
+**Acceptance criteria:**
+- [x] `npm -w packages/msp-tray run build` compiles Vite bundle cleanly with 0 TypeScript errors.
+- [x] `cargo check --manifest-path packages/msp-tray/src-tauri/Cargo.toml` passes with 0 errors.
+- [x] Monorepo verification: `npm -w server run test` and `npm -w client run test:run` remain 100% green.
+**Verification:**
+- [x] Clean build and test runs.
+**Dependencies:** Tasks 6.1 - 6.5
+**Files touched:** None (verification task)
+**Estimated scope:** Small
+
+---
+
+## Checkpoint 6: Tauri Desktop Assistant Operational
+- [x] `packages/msp-tray` builds cleanly (TypeScript + Rust).
+- [x] All unit and integration tests across monorepo pass.
+- [x] End-to-end simulated ticket and chat flow verified.
+

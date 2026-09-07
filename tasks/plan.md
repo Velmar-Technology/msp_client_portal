@@ -102,10 +102,20 @@ Phase 5: Quality Gates & Verification
 - [x] Task 4.2: Document Named Pipe IPC Protocol for `msp-tray.exe`
 - [x] Checkpoint 4: Integration Simulation Cleared
 
-### Phase 5: Quality Gates & DoD
+### Phase 5: Quality Gates & DoD (Completed in ec2c876 & ab40b22)
 - [x] Task 5.1: Run Full Test Suites (`npm -w server run test` & `npm -w client run test:run`)
 - [x] Task 5.2: Monorepo Clean Compilation (`npm run build:packages`, `server build`, `client build`)
 - [x] Checkpoint 5: Final DoD Verified
+
+### Phase 6: Tauri v2 Desktop Companion (`packages/msp-tray`)
+- [x] Task 6.1: Scaffold `packages/msp-tray` workspace with Tauri v2 + React 19 + Tailwind CSS
+- [x] Task 6.2: Implement Local IPC Transport & Tauri Commands (`src-tauri/src/ipc.rs`)
+- [x] Task 6.3: Implement Shift-Worker Attribution & Local Persistence
+- [x] Task 6.4: Implement Tray Drawer & 1-Click Ticket Creation Modal
+- [x] Task 6.5: Implement Live Chat Drawer Mirroring `TicketResponses.tsx`
+- [x] Task 6.6: Compilation, Build Verification & Integration Testing
+- [x] Checkpoint 6: Tauri Desktop Assistant Operational
+
 
 ---
 
