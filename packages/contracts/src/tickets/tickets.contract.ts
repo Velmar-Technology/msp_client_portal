@@ -132,6 +132,72 @@ export const TicketEventSchema = z.object({
 
 export type TicketEventContract = z.infer<typeof TicketEventSchema>;
 
+export const AgentFlightRecorderSchema = z.object({
+  os: z.string().optional(),
+  osVersion: z.string().optional(),
+  uptimeSeconds: z.number().optional(),
+  cpuUsagePercent: z.number().optional(),
+  memoryUsagePercent: z.number().optional(),
+  memoryTotalBytes: z.number().optional(),
+  memoryUsedBytes: z.number().optional(),
+  diskUsagePercent: z.number().optional(),
+  activeWindowTitle: z.string().optional(),
+  topProcesses: z.array(z.object({
+    name: z.string(),
+    pid: z.number().optional(),
+    cpuPercent: z.number().optional(),
+    memoryBytes: z.number().optional(),
+  })).optional(),
+  recentEventErrors: z.array(z.object({
+    source: z.string(),
+    eventId: z.number().optional(),
+    message: z.string(),
+    timestamp: z.string().optional(),
+  })).optional(),
+}).passthrough();
+
+export type AgentFlightRecorder = z.infer<typeof AgentFlightRecorderSchema>;
+
+export const CreateAgentTicketInputSchema = z.object({
+  reporterName: z.string().min(2, 'Reporter name must be at least 2 characters').max(255),
+  reporterEmail: z.string().email('Invalid reporter email address'),
+  title: z.string().min(5, 'Title must be at least 5 characters').max(500),
+  description: z.string().min(10, 'Description must be at least 10 characters'),
+  category: TicketCategorySchema.optional().default(TicketCategory.HELPDESK),
+  priority: TicketPrioritySchema.optional().default(TicketPriority.MEDIUM),
+  screenshotBase64: z.string().optional(),
+  deviceSnapshot: AgentFlightRecorderSchema.optional(),
+});
+
+export type CreateAgentTicketInput = z.infer<typeof CreateAgentTicketInputSchema>;
+
+export const CreateAgentTicketResponseSchema = z.object({
+  ticketId: z.string().uuid().optional(),
+  id: z.string().uuid().optional(),
+  title: z.string(),
+  status: TicketStatusSchema,
+  priority: TicketPrioritySchema,
+  category: TicketCategorySchema,
+  assigned_tech_id: z.string().nullable().optional(),
+  assignedTechName: z.string().nullable().optional(),
+  reporterName: z.string().optional(),
+  reporter_name: z.string().nullable().optional(),
+  reporterEmail: z.string().optional(),
+  reporter_email: z.string().nullable().optional(),
+  createdAt: z.string().optional(),
+  created_at: z.union([z.string(), z.date()]).optional(),
+}).passthrough();
+
+export type CreateAgentTicketResponse = z.infer<typeof CreateAgentTicketResponseSchema>;
+
+export const AddAgentTicketResponseInputSchema = z.object({
+  reporterName: z.string().min(2, 'Reporter name must be at least 2 characters').max(255),
+  message: z.string().min(1, 'Message cannot be empty'),
+  screenshotBase64: z.string().optional(),
+});
+
+export type AddAgentTicketResponseInput = z.infer<typeof AddAgentTicketResponseInputSchema>;
+
 export const TicketResponseSchema = z.object({
   id: z.string().uuid(),
   title: z.string(),
@@ -142,6 +208,10 @@ export const TicketResponseSchema = z.object({
   clientId: z.string().uuid(),
   assignedTechId: z.string().uuid().nullable().optional(),
   equipmentId: z.string().uuid().nullable().optional(),
+  reporterName: z.string().nullable().optional(),
+  reporterEmail: z.string().nullable().optional(),
+  source: z.string().optional(),
+  deviceSnapshot: AgentFlightRecorderSchema.nullable().optional(),
   clientName: z.string().optional(),
   clientEmail: z.string().optional(),
   assignedTechName: z.string().nullable().optional(),
@@ -164,3 +234,4 @@ export const TicketListResponseSchema = z.object({
 });
 
 export type TicketListResponseContract = z.infer<typeof TicketListResponseSchema>;
+

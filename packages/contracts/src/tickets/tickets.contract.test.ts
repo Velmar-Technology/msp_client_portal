@@ -7,6 +7,10 @@ import {
   TicketPriority,
   TicketStatus,
   TicketResponseSchema,
+  CreateAgentTicketInputSchema,
+  CreateAgentTicketResponseSchema,
+  AddAgentTicketResponseInputSchema,
+  AgentFlightRecorderSchema,
 } from './tickets.contract';
 
 describe('Ticket Contracts', () => {
@@ -102,4 +106,77 @@ describe('Ticket Contracts', () => {
       expect(result.success).toBe(true);
     });
   });
+
+  describe('Agent Ticket Contracts', () => {
+    it('validates CreateAgentTicketInputSchema with flight recorder telemetry', () => {
+      const input = {
+        reporterName: 'Sarah Jenkins',
+        reporterEmail: 'sarah.jenkins@company.local',
+        title: 'Application freezing on startup',
+        description: 'Accounting software crashes with out of memory error immediately after launch.',
+        category: TicketCategory.HELPDESK,
+        deviceSnapshot: {
+          os: 'Windows 11 Pro',
+          osVersion: '10.0.22631',
+          uptimeSeconds: 86400,
+          cpuUsagePercent: 78.5,
+          memoryUsagePercent: 92.1,
+          topProcesses: [
+            { name: 'chrome.exe', pid: 1420, cpuPercent: 32.1, memoryBytes: 4294967296 },
+            { name: 'acct_app.exe', pid: 5892, cpuPercent: 41.2, memoryBytes: 2147483648 },
+          ],
+          recentEventErrors: [
+            { source: 'Application Error', eventId: 1000, message: 'Faulting application name: acct_app.exe' },
+          ],
+        },
+      };
+
+      const result = CreateAgentTicketInputSchema.safeParse(input);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.priority).toBe(TicketPriority.MEDIUM);
+        expect(result.data.deviceSnapshot?.topProcesses?.length).toBe(2);
+      }
+    });
+
+    it('rejects CreateAgentTicketInputSchema with invalid email', () => {
+      const invalid = {
+        reporterName: 'Sarah',
+        reporterEmail: 'not-an-email',
+        title: 'Application freezing on startup',
+        description: 'Accounting software crashes repeatedly.',
+      };
+
+      const result = CreateAgentTicketInputSchema.safeParse(invalid);
+      expect(result.success).toBe(false);
+    });
+
+    it('validates AddAgentTicketResponseInputSchema', () => {
+      const valid = {
+        reporterName: 'Sarah Jenkins',
+        message: 'I restarted the machine and the issue is still persisting.',
+      };
+
+      const result = AddAgentTicketResponseInputSchema.safeParse(valid);
+      expect(result.success).toBe(true);
+    });
+
+    it('validates CreateAgentTicketResponseSchema', () => {
+      const response = {
+        ticketId: '11111111-1111-1111-1111-111111111111',
+        title: 'Application freezing on startup',
+        status: TicketStatus.OPEN,
+        priority: TicketPriority.MEDIUM,
+        category: TicketCategory.HELPDESK,
+        assignedTechName: 'Lead Tech Alex',
+        reporterName: 'Sarah Jenkins',
+        reporterEmail: 'sarah.jenkins@company.local',
+        createdAt: new Date().toISOString(),
+      };
+
+      const result = CreateAgentTicketResponseSchema.safeParse(response);
+      expect(result.success).toBe(true);
+    });
+  });
 });
+

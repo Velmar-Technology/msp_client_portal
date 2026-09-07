@@ -22,6 +22,8 @@ describe('gatewayTenantContextMiddleware', () => {
   it('allows public health and auth routes without tenant context', () => {
     expect(isPublicOrSystemRoute('/api/v1/health')).toBe(true);
     expect(isPublicOrSystemRoute('/api/v1/auth/login')).toBe(true);
+    expect(isPublicOrSystemRoute('/api/v1/tickets/agent')).toBe(true);
+    expect(isPublicOrSystemRoute('/api/v1/tickets/123e4567-e89b-12d3-a456-426614174000/responses/agent')).toBe(true);
     expect(isPublicOrSystemRoute('/api/v1/tickets')).toBe(false);
 
     req.path = '/api/v1/health';

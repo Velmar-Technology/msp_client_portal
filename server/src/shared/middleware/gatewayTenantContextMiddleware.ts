@@ -21,6 +21,15 @@ export function isPublicOrSystemRoute(path: string, originalUrl?: string): boole
     .map((p) => p.split('?')[0].replace(/^\/api\/v1/, ''))
     .filter(Boolean);
 
+  const isAgentEndpoint = targets.some((target) =>
+    target === '/tickets/agent' ||
+    target.startsWith('/tickets/agent/') ||
+    target.endsWith('/responses/agent')
+  );
+  if (isAgentEndpoint) {
+    return true;
+  }
+
   return targets.some((target) =>
     publicPrefixes.some((prefix) => target === prefix || target.startsWith(`${prefix}/`) || target.startsWith(prefix))
   );

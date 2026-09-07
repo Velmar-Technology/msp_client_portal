@@ -7,6 +7,7 @@ import { ticketAssignmentService } from '@modules/tickets/services/TicketAssignm
 import { ticketResponseService } from '@modules/tickets/services/TicketResponseService';
 import { ticketAttachmentService } from '@modules/tickets/services/TicketAttachmentService';
 import { CreateTicketInput, UpdateTicketStatusInput, TicketQueryInput, CreateTicketResponseInput } from '@shared/dtos/ticket.dto';
+import { CreateAgentTicketInput, AddAgentTicketResponseInput } from '@shared/contracts';
 import { DEFAULT_LIMIT, DEFAULT_PAGE } from '@shared/config/constants';
 import { UserContext, UserRole } from '@shared/types';
 
@@ -201,6 +202,43 @@ export class TicketController {
         mimetype: f.mimetype,
         size: f.size,
       })),
+    );
+    res.status(201).json({ success: true, data: response });
+  }
+
+  /**
+   * Handles ticket creation request from a machine-authenticated endpoint agent.
+   *
+   * @param req - Express request containing CreateAgentTicketInput and req.agent context
+   * @param res - Express response returning HTTP 201 with created ticket
+   */
+  async createFromAgent(req: Request, res: Response): Promise<void> {
+    const data = req.body as CreateAgentTicketInput;
+    const ticket = await ticketCreationService.createTicketFromAgent(data, req.agent!);
+    res.status(201).json({
+      success: true,
+      data: {
+        ...ticket,
+        ticketId: ticket.id,
+        reporterName: ticket.reporter_name,
+        reporterEmail: ticket.reporter_email,
+        createdAt: ticket.created_at ? new Date(ticket.created_at).toISOString() : new Date().toISOString(),
+      },
+    });
+  }
+
+  /**
+   * Handles conversational response message posted from an endpoint workstation agent.
+   *
+   * @param req - Express request with AddAgentTicketResponseInput and req.agent context
+   * @param res - Express response returning HTTP 201 with created response
+   */
+  async addResponseFromAgent(req: Request, res: Response): Promise<void> {
+    const data = req.body as AddAgentTicketResponseInput;
+    const response = await ticketResponseService.addTicketResponseFromAgent(
+      req.params.id as string,
+      data,
+      req.agent!
     );
     res.status(201).json({ success: true, data: response });
   }

@@ -72,6 +72,16 @@ export interface AgentCommandResult {
   durationMs: number;
 }
 
+export interface TicketChatPushPayload {
+  ticketId: string;
+  responseId: string;
+  authorName: string;
+  authorRole: string;
+  message: string;
+  attachments?: Array<{ id: string; filename: string; path: string }>;
+  createdAt: string;
+}
+
 // ── AgentGateway ──────────────────────────────────────────────────────────────
 
 /**
@@ -364,6 +374,37 @@ export class AgentGateway {
       isSecure: agent.isSecure ?? false,
       transport: agent.transport ?? 'ws',
     };
+  }
+
+  /**
+   * Pushes a real-time ticket chat message frame down to a connected endpoint agent over WebSocket.
+   *
+   * @param equipmentId - Target equipment UUID
+   * @param payload - Chat message payload
+   * @returns boolean indicating whether the message was dispatched (true if agent is online)
+   */
+  pushTicketChatMessage(equipmentId: string, payload: TicketChatPushPayload): boolean {
+    const agent = this.activeSockets.get(equipmentId);
+    if (!agent || agent.ws.readyState !== WebSocket.OPEN) {
+      logger.debug(`[AgentGateway] Agent ${equipmentId} is offline. Chat push deferred.`);
+      return false;
+    }
+
+    const frame = JSON.stringify({
+      correlation_id: `chat-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      command: 'TICKET_CHAT_PUSH',
+      payload,
+    });
+
+    agent.ws.send(frame, (err) => {
+      if (err) {
+        logger.error(`[AgentGateway] Failed to push chat message to agent ${equipmentId}:`, err);
+      } else {
+        logger.info(`[AgentGateway] Pushed ticket chat message to agent ${equipmentId} for ticket ${payload.ticketId}`);
+      }
+    });
+
+    return true;
   }
 
   /**

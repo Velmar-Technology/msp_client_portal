@@ -7,6 +7,7 @@ import type {
   TicketCategory,
   TicketPriority,
   TicketStatus,
+  AgentFlightRecorder,
 } from '@shared/contracts';
 
 export interface TicketItem {
@@ -32,6 +33,13 @@ export interface TicketItem {
   assignedTechEmail?: string | null;
   device_name?: string | null;
   deviceName?: string | null;
+  source?: 'PORTAL' | 'AGENT' | 'EMAIL' | 'ALERT';
+  reporter_name?: string | null;
+  reporterName?: string | null;
+  reporter_email?: string | null;
+  reporterEmail?: string | null;
+  device_snapshot?: AgentFlightRecorder | null;
+  deviceSnapshot?: AgentFlightRecorder | null;
   created_at: string;
   createdAt?: string;
   updated_at: string;
@@ -77,6 +85,8 @@ export interface TicketResponseItem {
   created_at: string;
   user_name?: string;
   user_role?: string;
+  author_name?: string | null;
+  authorName?: string | null;
   attachments?: TicketAttachmentItem[];
 }
 

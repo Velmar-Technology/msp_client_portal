@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   TicketDetailHeader,
   TicketDescriptionCard,
+  TicketFlightRecorderCard,
   TicketResponses,
   TicketTimeline,
   TicketSidebar,
@@ -140,6 +141,14 @@ export function TicketDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pb-8">
         <div className="lg:col-span-8 flex flex-col gap-6 w-full">
           <TicketDescriptionCard description={ticket.description} />
+          {(ticket.device_snapshot || ticket.reporter_name) && (
+            <TicketFlightRecorderCard
+              snapshot={ticket.device_snapshot}
+              reporterName={ticket.reporter_name}
+              reporterEmail={ticket.reporter_email}
+              deviceName={ticket.device_name}
+            />
+          )}
           <TicketResponses
             responses={responses}
             user={user}

@@ -1,82 +1,126 @@
-# Implementation Plan: BL-702 Graceful Password Vault Non-Payment Handling
+# Implementation Plan: Endpoint No-Login Ticket Creation & Real-Time Tray Chat
 
 ## Overview
-Implement progressive, non-adversarial enforcement for password manager services under the canonical 4-tier non-payment scale (`BL-702`).
-Prevents operational paralysis and the "Hostage Catch-22" by maintaining credential retrieval and workstation autofill in Read-Only mode on Day 5, offering an emergency 24-hour self-service grace extension on Day 15, and securely dispatching a password-encrypted export archive to the verified Client Admin prior to permanent technical deletion on Day 30.
+Implement machine-authenticated endpoint ticket creation and live WebSocket chat integration for workstation devices. Allows physical endpoints running the MSP agent to create pre-diagnosed tickets without requiring web portal logins, while providing a real-time system tray chat drawer synchronized with technician responses in `TicketDetailPage.tsx` over the existing `AgentGateway` WebSocket connection.
 
 ---
 
 ## Architecture Decisions
 
-1. **Vault Frozen in Time (Day 5 READ_ONLY):**
-   - Collections in Vaultwarden set to `readOnly: true`.
-   - Existing credentials remain readable and autofillable; creation of new credentials, member invitations, and secret modifications are rejected.
-2. **Captive Gateway & Emergency 24h Grace Extension (Day 15 SUSPENDED):**
-   - Web Vault access is intercepted by a billing paywall modal.
-   - Client Admins can activate a 1-time "Emergency 24-Hour Grace Extension" in `/billing` to unblock access while payments or wire transfers clear.
-   - `tenants.vault_grace_extension_until` and `vault_grace_extensions_count` enforce anti-abuse limits (max 1 self-service extension per overdue cycle).
-3. **Encrypted Escrow Archive Before Deletion (Day 30 PURGED):**
-   - Automatically generates a password-encrypted JSON export of the tenant's Vaultwarden organization.
-   - Sends the encrypted backup directly to the Client Admin's verified email address.
-   - Deletes live organization collections from the Vaultwarden instance, satisfying storage liberation with zero liability.
-4. **Automated Account Restoration:**
-   - When overdue invoices are marked `PAID` or captured via PayPal, `NonPaymentSuspensionService.restoreAccountIfPaid` unlocks Vaultwarden collections (`setOrganizationReadOnly(tenantId, false)`), resets grace counters, and restores live access.
+1. **Machine-Level Authentication (`agentToken`):**
+   - The desktop agent authenticates using the hardware token (`subscription_equipment.agent_token`) issued during OTP pairing.
+   - `agentAuthMiddleware` validates the token, joins `subscription_equipment` with `subscriptions`, and extracts `equipment_id`, `tenant_id`, and `client_id` (the client account owner).
+   - Enforces Zero-Standing Privilege (ZSP): endpoints can only create tickets bound to their own `equipment_id` and can only view/reply to active tickets belonging to that device.
+
+2. **Shift-Worker Attribution & Contact Identity:**
+   - Desktop tray prompts for the active desk worker's Name and Email on first issue report.
+   - Stored in `tickets.reporter_name` and `tickets.reporter_email`, enabling shift workers on shared physical workstations to be accurately identified.
+
+3. **Flight Recorder Diagnostics Snapshot:**
+   - At the time of ticket submission, the agent collects OS build, uptime, CPU%, RAM%, disk%, top 5 processes, and recent critical Windows event log entries.
+   - Stored in a structured JSONB column `tickets.device_snapshot` and presented in the portal's `TicketDetailPage.tsx` as a collapsible diagnostic card.
+
+4. **Zero-Latency Push via `AgentGateway` WebSocket:**
+   - When a technician replies to a ticket in `TicketDetailPage.tsx` (`POST /api/v1/tickets/:id/responses`), the backend checks if the ticket has an `equipment_id`.
+   - If the device is connected to `AgentGateway`, the server broadcasts a `TICKET_CHAT_PUSH` JSON frame down to the endpoint WebSocket socket in $< 100\text{ms}$.
+   - The user-mode desktop tray client (`msp-tray` built with Tauri v2) receives the frame over local Named Pipe / UDS IPC and alerts the user with an unread badge and chime.
+
+5. **Two-Process Architecture (`msp-agent` + `msp-tray` Tauri v2):**
+   - Headless Rust daemon (`packages/msp-agent`) runs 24/7 as a system service for background RMM telemetry and network sockets.
+   - Interactive companion (`packages/msp-tray`) runs in user session using Tauri v2, sharing our React / Tailwind design system.
+   - Fully detailed in [`docs/ideas/tauri-cross-platform-endpoint-tray.md`](file:///c:/Users/PC/Workspace/msp_client_portal/docs/ideas/tauri-cross-platform-endpoint-tray.md).
+
+6. **Quota & State Machine Compliance:**
+   - Enforces [`BL-201`](file:///c:/Users/PC/Workspace/msp_client_portal/AGENTS.md#L64) ticket quota check against the tenant's subscription plan.
+   - Enforces [`BL-102`](file:///c:/Users/PC/Workspace/msp_client_portal/AGENTS.md#L61) Round-Robin Dispatch to immediately assign an active technician specialist.
+   - Device users can mark their ticket as `RESOLVED` directly from the tray without CSAT popups (per approved concept).
 
 ---
 
 ## Dependency Graph
 
 ```
-Phase 1: Database Schema & Contracts
-   ├── 1.1 Add tenant vault grace columns (migration 041)
-   ├── 1.2 Update Drizzle tenant schema & shared types
-   ├── 1.3 Add RequestVaultGrace contracts in @shared/contracts
+Phase 1: Database Schema & Shared Contracts
+   ├── 1.1 Migration 042: Add reporter & device_snapshot to tickets
+   ├── 1.2 Update Drizzle schema & shared domain types
+   ├── 1.3 Add Agent Ticket contracts in @shared/contracts
    └── Checkpoint 1: Database schema & contracts compile clean
           │
           ▼
-Phase 2: Backend Vaultwarden & Non-Payment Scale Services
-   ├── 2.1 VaultwardenService read-only toggle & encrypted export methods
-   ├── 2.2 NonPaymentSuspensionService Day 5, Day 15 grace & Day 30 export
-   ├── 2.3 NonPaymentSuspensionService restoration loop
-   ├── 2.4 Billing controller & POST /api/v1/billing/request-vault-grace
-   └── Checkpoint 2: Backend unit tests green (NonPayment + Vaultwarden)
+Phase 2: Backend Ingestion, Security & WebSocket Push
+   ├── 2.1 Implement agentAuthMiddleware & ZSP token validation
+   ├── 2.2 Implement TicketService.createFromAgent (BL-201 & BL-102)
+   ├── 2.3 Implement TicketService.addResponseFromAgent & Chat Routes
+   ├── 2.4 Implement AgentGateway.pushTicketChatMessage WebSocket relay
+   └── Checkpoint 2: Backend unit & integration tests pass (100% green)
           │
           ▼
-Phase 3: Frontend Client Portal Integration
-   ├── 3.1 TanStack Query hook useRequestVaultGrace in features/billing
-   ├── 3.2 Emergency Grace & Non-Payment Alert Card in BillingPage
-   ├── 3.3 Vault Read-Only notice banner in PasswordManagerPage
-   ├── 3.4 Bilingual localization in en_US.json and es_DO.json
-   └── Checkpoint 3: Frontend build passes & UI renders cleanly
+Phase 3: Web Portal UI Enhancements
+   ├── 3.1 Display Endpoint Badge & Flight Recorder in TicketDetailPage
+   ├── 3.2 Display Reporter Attribution in TicketResponses thread
+   ├── 3.3 Bilingual translations in en_US.json and es_DO.json
+   └── Checkpoint 3: Frontend build and Vitest suite pass cleanly
           │
           ▼
-Phase 4: Verification & Quality Gates
-   ├── 4.1 Vitest unit tests for backend and frontend
-   ├── 4.2 Monorepo typecheck & build gate (npm run build)
-   └── Checkpoint 4: Definition of Done verified
+Phase 4: Agent Test Harness & Tray IPC Protocol
+   ├── 4.1 Create test-agent-ticketing harness simulating socket & chat
+   ├── 4.2 Document Named Pipe IPC contract for msp-tray.exe
+   └── Checkpoint 4: End-to-end simulated agent flow verified
+          │
+          ▼
+Phase 5: Quality Gates & Verification
+   ├── 5.1 Full workspace typecheck & build
+   ├── 5.2 Full test suites (server + client)
+   └── Checkpoint 5: Definition of Done verified
 ```
 
 ---
 
-## Phase Breakdown
+## Task List
 
-### Phase 1: Database Schema & Contracts
-- **Task 1.1:** Create SQL migration `041_add_tenant_vault_grace_columns.sql` adding `vault_grace_extension_until` and `vault_grace_extensions_count` to `tenants`.
-- **Task 1.2:** Update `server/src/shared/db/schema.ts` and `server/src/shared/types/index.ts`.
-- **Task 1.3:** Define Zod contracts in `packages/contracts/src/billing/` for requesting vault grace. Rebuild `@shared/contracts`.
+### Phase 1: Database Schema & Shared Contracts
+- [x] Task 1.1: Database Migration `042_add_ticket_reporter_and_agent_metadata.sql`
+- [x] Task 1.2: Update Drizzle Schema & Shared Domain Types
+- [x] Task 1.3: Define Agent Ticket Contracts in `@shared/contracts`
+- [x] Checkpoint 1: Contracts & Database Schema Active
 
-### Phase 2: Backend Vaultwarden & Non-Payment Scale Services
-- **Task 2.1:** Enhance `VaultwardenService` with `setOrganizationReadOnly(orgId: string, readOnly: boolean)` and `exportOrganizationEncrypted(orgId: string)`.
-- **Task 2.2:** Update `NonPaymentSuspensionService.evaluateOverdueAccounts` to enforce Day 5 read-only, check Day 15 grace extension bypass, and execute Day 30 export-before-purge.
-- **Task 2.3:** Update `restoreAccountIfPaid` to re-enable write access on Vaultwarden and reset grace counters.
-- **Task 2.4:** Add `POST /api/v1/billing/request-vault-grace` endpoint in `billing.routes.ts` and `BillingController`.
+### Phase 2: Backend Ingestion, Security & WebSocket Push
+- [x] Task 2.1: Implement `agentAuthMiddleware` for Machine-Bound Token Validation
+- [x] Task 2.2: Implement `TicketService.createFromAgent` with BL-201 & BL-102
+- [x] Task 2.3: Implement `TicketService.addResponseFromAgent` & Express Agent Routes
+- [x] Task 2.4: Implement `AgentGateway.pushTicketChatMessage` WebSocket Relay
+- [x] Checkpoint 2: Backend Ingestion & Push Logic Verified
 
-### Phase 3: Frontend Client Portal Integration
-- **Task 3.1:** Implement `useRequestVaultGrace` mutation hook in `client/src/features/billing/api/`.
-- **Task 3.2:** Implement Non-Payment Status Card & "Request 24h Emergency Access" button in `BillingPage.tsx`.
-- **Task 3.3:** Add Read-Only warning banner in `PasswordManagerPage.tsx`.
-- **Task 3.4:** Add i18n translation strings across `en_US.json` and `es_DO.json`.
+### Phase 3: Web Portal UI Enhancements
+- [x] Task 3.1: Add Endpoint Flight Recorder Telemetry Card to `TicketDetailPage`
+- [x] Task 3.2: Render Reporter Identity in `TicketResponses` Component
+- [x] Task 3.3: Add Bilingual Localization in `en_US.json` and `es_DO.json`
+- [x] Checkpoint 3: Frontend Portal UI Verified
 
-### Phase 4: Verification & Quality Gates
-- **Task 4.1:** Write unit tests in `NonPaymentSuspensionService.test.ts` and `VaultwardenService.test.ts`.
-- **Task 4.2:** Run full workspace quality gates (`build:packages`, `server build`, `client build`, test suites).
+### Phase 4: Agent Test Harness & Tray IPC Protocol
+- [x] Task 4.1: Create Automated Agent Ticketing & Chat Test Harness
+- [x] Task 4.2: Document Named Pipe IPC Protocol for `msp-tray.exe`
+- [x] Checkpoint 4: Integration Simulation Cleared
+
+### Phase 5: Quality Gates & DoD
+- [x] Task 5.1: Run Full Test Suites (`npm -w server run test` & `npm -w client run test:run`)
+- [x] Task 5.2: Monorepo Clean Compilation (`npm run build:packages`, `server build`, `client build`)
+- [x] Checkpoint 5: Final DoD Verified
+
+---
+
+## Risks and Mitigations
+
+| Risk | Impact | Mitigation |
+| :--- | :--- | :--- |
+| **Unpaired Agent Exploits:** Malicious requests attempting to spoof `agentToken`. | High | `agentAuthMiddleware` strictly queries `subscription_equipment` for matching `agent_token` and verified `ACTIVE` status. |
+| **Ticket Quota Exhaustion (`BL-201`):** Rogue device scripts flooding the ticketing API. | Medium | Enforces `ticketQuotaService.enforceTicketLimit` before creation plus IP/token rate-limiting (max 3 tickets/hr/device). |
+| **Session 0 UI Inaccessibility:** Windows service unable to display tray windows. | Medium | Two-process architecture: Session 0 `msp-agent` delegates UI to user-session `msp-tray` via Named Pipe. |
+| **Offline Workstation Socket Disconnects:** Technician responds when workstation is sleeping or disconnected. | Low | Message is stored durably in `ticket_responses`; agent retrieves unread responses upon WebSocket reconnection. |
+
+---
+
+## Open Questions
+All initial open questions have been resolved:
+- CSAT feedback prompt: **Disabled** (distraction-free resolution).
+- Multi-user shift workstation attribution: **Prompts for Name and Email** on first run, cached per user profile.

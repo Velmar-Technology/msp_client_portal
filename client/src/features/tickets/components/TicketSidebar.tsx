@@ -148,6 +148,14 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
               )}
             </span>
           </div>
+          {ticket.source && (
+            <div className="flex justify-between items-center text-xs border-t border-border pt-3">
+              <span className="text-muted-foreground">{t('ticketDetail.sourceLabel')}</span>
+              <span className="font-semibold text-foreground flex items-center gap-1 font-mono text-[11px]">
+                {ticket.source === 'AGENT' ? t('ticketDetail.sourceAgent') : ticket.source}
+              </span>
+            </div>
+          )}
           {!['RESOLVED', 'RESOLVED_AUTOMATED', 'CLOSED', 'CANCELLED'].includes(ticket.status) && slaAwareness?.isAfterHours && (
             <div className="border-t border-border pt-3 flex flex-col gap-1.5">
               <div className="flex justify-between items-center text-xs">

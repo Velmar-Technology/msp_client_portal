@@ -105,6 +105,10 @@ export const tickets = pgTable(
     tenant_id: uuid('tenant_id')
       .references(() => tenants.id, { onDelete: 'cascade' })
       .notNull(),
+    reporter_name: varchar('reporter_name', { length: 255 }),
+    reporter_email: varchar('reporter_email', { length: 255 }),
+    source: varchar('source', { length: 50 }).default('WEB').notNull(),
+    device_snapshot: jsonb('device_snapshot'),
     created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
     updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
   },
@@ -182,6 +186,7 @@ export const ticketResponses = pgTable(
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
     message: text('message').notNull(),
+    author_name: varchar('author_name', { length: 255 }),
     tenant_id: uuid('tenant_id')
       .references(() => tenants.id, { onDelete: 'cascade' })
       .notNull(),
@@ -401,6 +406,7 @@ export const subscriptionEquipment = pgTable(
     index('idx_sub_equip_sub').on(table.subscription_id),
     index('idx_sub_equip_tenant').on(table.tenant_id),
     index('idx_sub_equip_otp').on(table.otp),
+    index('idx_sub_equip_agent_token').on(table.agent_token),
   ]
 );
 

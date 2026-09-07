@@ -111,6 +111,10 @@ export interface Ticket {
   assigned_tech_id: string | null;
   equipment_id: string | null;
   tenant_id: string;
+  reporter_name?: string | null;
+  reporter_email?: string | null;
+  source?: string;
+  device_snapshot?: Record<string, unknown> | null;
   client_name?: string;
   client_email?: string;
   assigned_tech_name?: string | null;
@@ -148,6 +152,7 @@ export interface TicketResponse {
   ticket_id: string;
   user_id: string;
   message: string;
+  author_name?: string | null;
   tenant_id: string;
   created_at: Date;
   user_name?: string;
@@ -795,4 +800,11 @@ export interface TechnicianEarningsSummary {
   sla_met_rate: number;
 }
 
-
+export interface AgentPayload {
+  equipmentId: string;
+  slotId: string;
+  tenantId: string;
+  clientId: string;
+  hostname?: string | null;
+  deviceName?: string | null;
+}

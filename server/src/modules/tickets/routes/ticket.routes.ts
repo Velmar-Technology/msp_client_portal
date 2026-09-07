@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { ticketController } from '@modules/tickets/controllers/TicketController';
 import { authMiddleware } from '@shared/middleware/authMiddleware';
+import { agentAuthMiddleware } from '@shared/middleware/agentAuthMiddleware';
 import { validate } from '@shared/middleware/validationMiddleware';
 import {
   CreateTicketInputSchema,
@@ -8,6 +9,8 @@ import {
   TicketQuerySchema,
   AssignTicketInputSchema,
   TicketIdParamSchema,
+  CreateAgentTicketInputSchema,
+  AddAgentTicketResponseInputSchema,
 } from '@shared/contracts';
 import { CreateTicketResponseDTO } from '@shared/dtos/ticket.dto';
 import { upload } from '@shared/middleware/uploadMiddleware';
@@ -16,7 +19,26 @@ import { UserRole } from '@shared/types';
 
 const router = Router();
 
-// All ticket routes require authentication
+// ── Agent-Authenticated Endpoints (Machine Token) ───────────────────────────
+
+/** POST /api/v1/tickets/agent — Create ticket from machine-authenticated endpoint agent */
+router.post(
+  '/agent',
+  agentAuthMiddleware,
+  validate(CreateAgentTicketInputSchema),
+  (req, res) => ticketController.createFromAgent(req, res)
+);
+
+/** POST /api/v1/tickets/:id/responses/agent — Add response from machine-authenticated endpoint agent */
+router.post(
+  '/:id/responses/agent',
+  agentAuthMiddleware,
+  validate(TicketIdParamSchema, 'params'),
+  validate(AddAgentTicketResponseInputSchema),
+  (req, res) => ticketController.addResponseFromAgent(req, res)
+);
+
+// ── User-Authenticated Endpoints (JWT Session) ──────────────────────────────
 router.use(authMiddleware);
 
 /** GET /api/v1/tickets — List tickets (filtered by role) */

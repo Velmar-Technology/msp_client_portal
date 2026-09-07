@@ -8,8 +8,9 @@ import { ticketQuotaService, TicketQuotaService } from '@modules/tickets/service
 import { accountStatusPolicy, AccountStatusPolicy } from '@shared/policies/AccountStatusPolicy';
 import { NotFoundError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
-import { Ticket, TicketPriority, TicketStatus, UserContext } from '@shared/types';
+import { Ticket, TicketCategory, TicketPriority, TicketStatus, UserContext, AgentPayload } from '@shared/types';
 import { CreateTicketInput } from '@shared/dtos/ticket.dto';
+import { CreateAgentTicketInput } from '@shared/contracts';
 import { RmmAlertInput } from '@shared/types';
 
 export type AlertTicketAssignment = { mode: 'general' } | { mode: 'specialty'; specialty: string };
@@ -136,6 +137,60 @@ export class TicketCreationService {
     await this.assignIfPossible(ticket, data.category, undefined, priority);
 
     const client = await this.usersRepo.findById(ctx.userId);
+    if (client) {
+      await this.notifsSvc.onTicketCreated(ticket, client);
+    }
+
+    return ticket;
+  }
+
+  /**
+   * Creates a new support ticket from an endpoint workstation agent without requiring portal login.
+   * Enforces tenant ticket quota (BL-201), stores reporter contact attribution, attaches hardware
+   * flight recorder diagnostics snapshot, auto-assigns an available technician (BL-102), and dispatches alerts.
+   *
+   * @param data - Agent ticket creation payload (title, description, category, priority, reporterName, reporterEmail, deviceSnapshot)
+   * @param agent - Machine authentication context (equipmentId, tenantId, clientId)
+   * @returns Newly created and assigned Ticket entity
+   * @throws {TicketLimitExceededError} When the tenant has exceeded monthly ticket quotas (BL-201)
+   * @see BL-201
+   * @see BL-102
+   */
+  async createTicketFromAgent(
+    data: CreateAgentTicketInput,
+    agent: AgentPayload
+  ): Promise<Ticket> {
+    await this.quotasSvc.enforceTicketLimit(agent.clientId, agent.tenantId, agent.equipmentId);
+
+    const priority = (data.priority as TicketPriority) ?? TicketPriority.MEDIUM;
+    const category = (data.category as TicketCategory) ?? TicketCategory.HELPDESK;
+
+    const ticket = await this.ticketsRepo.create({
+      title: data.title,
+      description: data.description,
+      category,
+      priority,
+      client_id: agent.clientId,
+      equipment_id: agent.equipmentId,
+      tenant_id: agent.tenantId,
+      reporter_name: data.reporterName,
+      reporter_email: data.reporterEmail,
+      source: 'AGENT',
+      device_snapshot: (data.deviceSnapshot as Record<string, unknown>) ?? null,
+    } as any);
+
+    await this.eventsRepo.create({
+      ticket_id: ticket.id,
+      old_status: null,
+      new_status: TicketStatus.OPEN,
+      changed_by: agent.clientId,
+      notes: `Ticket submitted via Endpoint Agent by ${data.reporterName} (${data.reporterEmail})`,
+      tenant_id: agent.tenantId,
+    });
+
+    await this.assignIfPossible(ticket, category, undefined, priority);
+
+    const client = await this.usersRepo.findById(agent.clientId);
     if (client) {
       await this.notifsSvc.onTicketCreated(ticket, client);
     }

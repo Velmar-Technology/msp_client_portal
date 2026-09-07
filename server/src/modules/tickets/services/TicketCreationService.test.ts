@@ -384,6 +384,57 @@ describe('TicketCreationService', () => {
     });
   });
 
+  describe('createTicketFromAgent', () => {
+    it('creates a ticket with source AGENT and reporter details, then assigns technician', async () => {
+      const baseTicket = createdTicket();
+      mocks.ticketCreate.mockResolvedValue(baseTicket);
+      mocks.assignNext.mockResolvedValue({ id: 'tech-99', name: 'Support Tech Dan' });
+      mocks.userFindById.mockResolvedValue({ id: 'client-1', name: 'Client Account' });
+
+      const agentData = {
+        title: 'App freezing',
+        description: 'App freezes immediately upon boot.',
+        category: TicketCategory.HELPDESK,
+        priority: TicketPriority.HIGH,
+        reporterName: 'John Doe',
+        reporterEmail: 'john@client.com',
+        deviceSnapshot: { os: 'Windows 11', cpuUsagePercent: 88 },
+      };
+
+      const agentPayload = {
+        equipmentId: 'equip-123',
+        slotId: 'equip-123',
+        tenantId: 'tenant-1',
+        clientId: 'client-1',
+        hostname: 'DESKTOP-01',
+      };
+
+      const ticket = await ticketCreationService.createTicketFromAgent(agentData as any, agentPayload);
+
+      expect(mocks.enforceTicketLimit).toHaveBeenCalledWith('client-1', 'tenant-1', 'equip-123');
+      expect(mocks.ticketCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'App freezing',
+          source: 'AGENT',
+          reporter_name: 'John Doe',
+          reporter_email: 'john@client.com',
+          equipment_id: 'equip-123',
+          tenant_id: 'tenant-1',
+          client_id: 'client-1',
+        })
+      );
+      expect(mocks.eventCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          notes: expect.stringContaining('Endpoint Agent by John Doe'),
+        })
+      );
+      expect(mocks.assignNext).toHaveBeenCalledWith(TicketCategory.HELPDESK, undefined, TicketPriority.HIGH);
+      expect(mocks.ticketAssignTech).toHaveBeenCalledWith('ticket-1', 'tech-99');
+      expect(mocks.onTicketCreated).toHaveBeenCalled();
+      expect(ticket.assigned_tech_id).toBe('tech-99');
+    });
+  });
+
   it('exposes a singleton instance', () => {
     expect(ticketCreationService).toBeInstanceOf(TicketCreationService);
   });

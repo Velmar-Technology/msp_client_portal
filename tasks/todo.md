@@ -1,163 +1,187 @@
-# Task Breakdown: BL-702 Graceful Password Vault Non-Payment Handling
+# Task Breakdown: Endpoint No-Login Ticket Creation & Real-Time Tray Chat
 
-## Phase 1: Database Schema & Contracts
+## Phase 1: Database Schema & Shared Contracts
 
-### Task 1.1: Add Tenant Vault Grace Columns to PostgreSQL & Drizzle
-**Description:** Add `vault_grace_extension_until` (timestamp) and `vault_grace_extensions_count` (integer default 0) to `tenants` table schema via migration `041_add_tenant_vault_grace_columns.sql` and update Drizzle schema definitions.
+### Task 1.1: Database Migration `042_add_ticket_reporter_and_agent_metadata.sql`
+**Description:** Create migration adding `reporter_name`, `reporter_email`, `source` (default 'WEB'), and `device_snapshot` (JSONB) to `tickets`, plus `author_name` to `ticket_responses`.
 **Acceptance criteria:**
-- [x] Migration `041_add_tenant_vault_grace_columns.sql` created in `server/src/shared/db/migrations/`.
-- [x] `tenants` Drizzle table in `server/src/shared/db/schema.ts` includes the two new columns with default values.
-- [x] Domain types in `server/src/shared/types/index.ts` updated.
+- [x] Migration file `042_add_ticket_reporter_and_agent_metadata.sql` created in `server/src/shared/db/migrations/`.
+- [x] Safe `ALTER TABLE tickets ADD COLUMN IF NOT EXISTS ...` execution.
+- [x] Safe `ALTER TABLE ticket_responses ADD COLUMN IF NOT EXISTS author_name VARCHAR(255);`.
 **Verification:**
-- [x] `npm -w server run build` compiles cleanly.
+- [x] Migration syntax check and manual verification.
 **Dependencies:** None
 **Files touched:**
-- `server/src/shared/db/migrations/041_add_tenant_vault_grace_columns.sql`
+- `server/src/shared/db/migrations/042_add_ticket_reporter_and_agent_metadata.sql`
+**Estimated scope:** Small (1 file)
+
+---
+
+### Task 1.2: Update Drizzle Schema & Shared Domain Types
+**Description:** Update `tickets` and `ticketResponses` definitions in `server/src/shared/db/schema.ts` and domain types in `server/src/shared/types/index.ts`.
+**Acceptance criteria:**
+- [x] `tickets` table definition includes `reporter_name`, `reporter_email`, `source`, and `device_snapshot`.
+- [x] `ticketResponses` table definition includes `author_name`.
+- [x] `Ticket` and `TicketResponse` domain interfaces in `server/src/shared/types/index.ts` updated to match schema.
+**Verification:**
+- [x] `npm -w server run build` passes without type errors.
+**Dependencies:** Task 1.1
+**Files touched:**
 - `server/src/shared/db/schema.ts`
 - `server/src/shared/types/index.ts`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Task 1.3: Define Agent Ticket Contracts in `@shared/contracts`
+**Description:** Define Zod schemas and TypeScript contracts for agent ticket submission, flight recorder diagnostics, and agent chat responses in `packages/contracts/src/tickets/`.
+**Acceptance criteria:**
+- [x] `CreateAgentTicketInputSchema` created with reporter info, title, description, category, and `device_snapshot` object.
+- [x] `CreateAgentTicketResponseSchema` created returning created ticket summary, assigned tech, and initial response token.
+- [x] `AddAgentTicketResponseInputSchema` created with message and optional base64 attachment or snip.
+- [x] Contracts exported from `packages/contracts/src/index.ts`.
+**Verification:**
+- [x] `npm run build:packages` succeeds with exit code 0.
+- [x] Unit tests pass in `packages/contracts/src/tickets/tickets.contract.test.ts`.
+**Dependencies:** Task 1.2
+**Files touched:**
+- `packages/contracts/src/tickets/tickets.contract.ts`
+- `packages/contracts/src/tickets/tickets.contract.test.ts`
+- `packages/contracts/src/index.ts`
 **Estimated scope:** Small (3 files)
 
 ---
 
-### Task 1.2: Define Vault Grace API Contracts in `@shared/contracts`
-**Description:** Define request and response schemas for requesting a 24-hour vault grace extension in `@shared/contracts`.
-**Acceptance criteria:**
-- [x] `RequestVaultGraceInputSchema` created (optional notes/reason).
-- [x] `VaultGraceStatusResponseSchema` created (fields: `granted: boolean`, `graceUntil: string`, `extensionsCount: number`, `message: string`).
-- [x] Schemas and types re-exported from `@shared/contracts`.
-**Verification:**
+## Checkpoint 1: Contracts & Database Schema Active
 - [x] `npm run build:packages` succeeds with exit code 0.
-**Dependencies:** None
-**Files touched:**
-- `packages/contracts/src/billing/billing.contract.ts`
-- `packages/contracts/src/index.ts`
-**Estimated scope:** Small (2 files)
-
----
-
-## Checkpoint 1: Database Schema & Contracts Active
-- [x] `npm run build:packages` succeeds.
-- [x] `npm -w server run build` passes.
-
----
-
-## Phase 2: Backend Vaultwarden & Non-Payment Scale Services
-
-### Task 2.1: Implement Read-Only and Encrypted Export in `VaultwardenService`
-**Description:** Add methods to `VaultwardenService` to toggle organization read-only permissions and generate encrypted organization vault exports, with graceful mock simulation for test/dev environments.
-**Acceptance criteria:**
-- [x] `setOrganizationReadOnly(orgId: string, readOnly: boolean)` updates collection access policies to read-only.
-- [x] `exportOrganizationEncrypted(orgId: string)` retrieves an encrypted backup of the tenant organization's vault.
-- [x] Offline simulation mode supported when `VAULTWARDEN_ADMIN_TOKEN` is not present.
-**Verification:**
-- [x] `VaultwardenService.test.ts` passes with new test cases (19/19 tests passing).
-**Dependencies:** Checkpoint 1
-**Files touched:**
-- `server/src/modules/system/services/VaultwardenService.ts`
-- `server/src/modules/system/services/VaultwardenService.test.ts`
-**Estimated scope:** Medium (2 files)
-
----
-
-### Task 2.2: Integrate Graceful Vault Lifecycle into `NonPaymentSuspensionService`
-**Description:** Enhance `NonPaymentSuspensionService.evaluateOverdueAccounts` to freeze Vaultwarden collections to read-only on Day 5, check active grace periods on Day 15 before suspending access, and dispatch an encrypted export before purging on Day 30.
-**Acceptance criteria:**
-- [x] Day 5 (`READ_ONLY`): Calls `vaultwardenSvc.setOrganizationReadOnly(tenantId, true)`.
-- [x] Day 15 (`SUSPENDED`): If `tenant.vault_grace_extension_until > now`, skips user lockout and logs grace active; otherwise locks out users.
-- [x] Day 30 (`PURGED`): Generates encrypted export, dispatches email to Client Admin, then executes deletion.
-- [x] `restoreAccountIfPaid`: When all invoices settled, unfreezes collections (`setOrganizationReadOnly(tenantId, false)`) and resets grace counters.
-**Verification:**
-- [x] `npx vitest run src/modules/billing/services/NonPaymentSuspensionService.test.ts` passes 100% (12/12 tests passing).
-**Dependencies:** Task 2.1
-**Files touched:**
-- `server/src/modules/billing/services/NonPaymentSuspensionService.ts`
-- `server/src/modules/billing/services/NonPaymentSuspensionService.test.ts`
-- `server/src/shared/utils/emailService.ts`
-**Estimated scope:** Medium (3 files)
-
----
-
-### Task 2.3: Implement Grace Extension Endpoint in Billing Domain
-**Description:** Add service method, controller action, and Express route `POST /api/v1/invoices/request-vault-grace` allowing Client Admins to request a 24-hour grace extension.
-**Acceptance criteria:**
-- [x] Validates caller is client admin or admin for the tenant.
-- [x] Rejects with `ConflictError` if grace extension was already used during the current overdue cycle (`extensionsCount >= 1`).
-- [x] Sets `vault_grace_extension_until = now + 24h` and increments counter.
-- [x] Temporarily restores Vaultwarden access during active grace period.
-**Verification:**
-- [x] Unit/integration tests pass for billing grace endpoint.
-**Dependencies:** Task 2.2
-**Files touched:**
-- `server/src/modules/billing/services/NonPaymentSuspensionService.ts`
-- `server/src/modules/billing/controllers/InvoiceController.ts`
-- `server/src/modules/billing/routes/invoice.routes.ts`
-**Estimated scope:** Medium (3 files)
-
----
-
-## Checkpoint 2: Backend Logic Verified
-- [x] `npm -w server run test` passes with zero regressions (79/79 suites, 772/772 tests passing).
 - [x] `npm -w server run build` compiles cleanly.
 
 ---
 
-## Phase 3: Frontend Client Portal Integration
+## Phase 2: Backend Ingestion, Security & WebSocket Push
 
-### Task 3.1: Add Billing Grace Mutation Hook & Service
-**Description:** Add `requestVaultGrace` to `invoiceService.ts` and `useRequestVaultGrace` mutation hook in `client/src/features/billing/`.
+### Task 2.1: Implement `agentAuthMiddleware` for Machine-Bound Token Validation
+**Description:** Create middleware that extracts `Bearer <agentToken>` from the `Authorization` header, validates against `subscription_equipment.agent_token`, and verifies that the equipment slot is in `ACTIVE` or `BOUND` status. Attaches `req.agent = { equipmentId, slotId, tenantId, clientId, hostname }` to the request object.
 **Acceptance criteria:**
-- [x] Service method calls `POST /api/v1/invoices/request-vault-grace`.
-- [x] React Query mutation invalidates billing and tenant queries on success.
+- [x] Rejects missing or malformed token with 401 `UnauthorizedError`.
+- [x] Rejects inactive or unprovisioned equipment with 403 `ForbiddenError`.
+- [x] Successfully injects `equipmentId`, `tenantId`, and client owner `clientId` into Express request.
+- [x] Unit tests covering valid, invalid, and revoked agent tokens.
 **Verification:**
-- [x] `npm -w client run build` compiles without type errors.
+- [x] Vitest test suite `server/src/shared/middleware/agentAuthMiddleware.test.ts` passes.
+**Dependencies:** Checkpoint 1
+**Files touched:**
+- `server/src/shared/middleware/agentAuthMiddleware.ts`
+- `server/src/shared/middleware/agentAuthMiddleware.test.ts`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Task 2.2: Implement `TicketService.createFromAgent` with BL-201 & BL-102
+**Description:** Add `createFromAgent` method to `TicketService` that enforces the monthly ticket quota (`BL-201`), validates input via `CreateAgentTicketInputSchema`, creates the ticket in PostgreSQL, applies Round-Robin Dispatch (`BL-102`) to assign an active technician, and records audit events.
+**Acceptance criteria:**
+- [x] Enforces `ticketQuotaService.enforceTicketLimit(tenantId)` before inserting.
+- [x] Creates ticket with `source = 'AGENT'`, linking `equipment_id`, `tenant_id`, and `client_id`.
+- [x] Automatically assigns technician using `assignmentService.getNextTechnician(category)`.
+- [x] Dispatches ticket creation in-app and email notification to assigned technician.
+- [x] Returns HTTP 201 with ticket payload.
+**Verification:**
+- [x] `npx vitest run src/modules/tickets/services/TicketService.test.ts` passes with new test cases.
+**Dependencies:** Task 2.1
+**Files touched:**
+- `server/src/modules/tickets/services/TicketService.ts`
+- `server/src/modules/tickets/services/TicketService.test.ts`
+- `server/src/modules/tickets/controllers/TicketController.ts`
+**Estimated scope:** Medium (3 files)
+
+---
+
+### Task 2.3: Implement `TicketService.addResponseFromAgent` & Express Agent Routes
+**Description:** Implement `addResponseFromAgent` allowing workstation users to post replies and attachments to their active ticket. Add dedicated routes `POST /api/v1/tickets/agent` and `POST /api/v1/tickets/:id/responses/agent` protected by `agentAuthMiddleware`.
+**Acceptance criteria:**
+- [x] Validates ticket belongs to the authenticated `equipmentId` (Zero Standing Privilege).
+- [x] Rejects posting to `CLOSED` or `CANCELLED` tickets with `ValidationError`.
+- [x] Saves message with `author_name = req.body.reporterName` and `user_role = 'CLIENT'`.
+- [x] Updates ticket `updated_at` timestamp.
+- [x] Mounts Express routes in `server/src/modules/tickets/routes/ticket.routes.ts`.
+**Verification:**
+- [x] Controller and service tests pass in `TicketController.test.ts` and `TicketService.test.ts`.
+**Dependencies:** Task 2.2
+**Files touched:**
+- `server/src/modules/tickets/services/TicketService.ts`
+- `server/src/modules/tickets/controllers/TicketController.ts`
+- `server/src/modules/tickets/routes/ticket.routes.ts`
+**Estimated scope:** Medium (3 files)
+
+---
+
+### Task 2.4: Implement `AgentGateway.pushTicketChatMessage` WebSocket Relay
+**Description:** Enhance `AgentGateway` with `pushTicketChatMessage(equipmentId, messageData)`. Connect this relay to `TicketService.addResponse` so that when a technician replies in the portal, the active WebSocket connection for that device immediately receives a `TICKET_CHAT_PUSH` frame.
+**Acceptance criteria:**
+- [x] Sends JSON frame `{ type: 'TICKET_CHAT_PUSH', ticketId, responseId, authorName, authorRole, message, attachments, createdAt }` to the connected agent socket.
+- [x] Gracefully ignores offline agents without throwing unhandled exceptions.
+- [x] Unit tests asserting that `pushTicketChatMessage` emits correct frame to active socket.
+**Verification:**
+- [x] `npx vitest run src/modules/rmm/services/AgentGateway.test.ts` passes with new test cases.
+**Dependencies:** Task 2.3
+**Files touched:**
+- `server/src/modules/rmm/services/AgentGateway.ts`
+- `server/src/modules/rmm/services/AgentGateway.test.ts`
+- `server/src/modules/tickets/services/TicketService.ts`
+**Estimated scope:** Medium (3 files)
+
+---
+
+## Checkpoint 2: Backend Ingestion & Push Logic Verified
+- [x] `npm -w server run test` passes with zero regressions.
+- [x] `npm -w server run build` compiles cleanly.
+
+---
+
+## Phase 3: Web Portal UI Enhancements
+
+### Task 3.1: Add Endpoint Flight Recorder Telemetry Card to `TicketDetailPage`
+**Description:** In `client/src/features/tickets/`, update `TicketDetailPage.tsx` and `TicketDescriptionCard.tsx` (or new `TicketFlightRecorderCard.tsx`) to display an `[Endpoint Agent]` source badge, reporter contact details (*"Reported by [Name] ([Email]) via Workstation [Hostname]"*), and a collapsible diagnostic telemetry card showing CPU/RAM/Disk metrics and error logs.
+**Acceptance criteria:**
+- [x] Displays source badge (`AGENT` vs `WEB`) on the ticket header.
+- [x] Renders reporter name, reporter email, and device name prominently.
+- [x] Collapsible card shows formatted CPU %, RAM %, and top processes when `device_snapshot` is present.
+- [x] Gracefully renders legacy/web tickets without errors.
+**Verification:**
+- [x] Component test in `TicketDetailPage.test.tsx` passes.
 **Dependencies:** Checkpoint 2
 **Files touched:**
-- `client/src/features/billing/api/invoiceService.ts`
-- `client/src/features/billing/api/useBillingQueries.ts`
-**Estimated scope:** Small (2 files)
+- `client/src/features/tickets/pages/TicketDetailPage.tsx`
+- `client/src/features/tickets/components/TicketDescriptionCard.tsx`
+- `client/src/features/tickets/components/TicketFlightRecorderCard.tsx`
+- `client/src/features/tickets/components/index.ts`
+**Estimated scope:** Medium (4 files)
 
 ---
 
-### Task 3.2: Implement Non-Payment Status Card & Grace Button in `BillingPage.tsx`
-**Description:** Display a non-payment notification banner/card in `BillingPage.tsx` when account is in `READ_ONLY` or `SUSPENDED` state, including a 1-click "Request 24h Emergency Access" button with confirmation modal.
+### Task 3.2: Render Reporter Identity in `TicketResponses` Component
+**Description:** Update `TicketResponses.tsx` to display `author_name` when a message originates from a desk worker via the endpoint agent (e.g. *"Sarah Jenkins (Workstation)"* instead of generic tenant name).
 **Acceptance criteria:**
-- [x] Shows countdown/warning of non-payment scale and current account status badge.
-- [x] "Request 24h Emergency Access" button visible if grace period has not been used.
-- [x] Confirmation dialog explaining that this is a 1-time 24h extension per cycle.
-- [x] Success toast and instant query cache refresh upon activation.
+- [x] Shows `resp.author_name` if present; falls back to `resp.user_name`.
+- [x] Displays subtle `[Endpoint]` chip next to role badge for agent-submitted responses.
+- [x] Retains existing bubble styling, attachments, and download functionality.
 **Verification:**
-- [x] `BillingPage.test.tsx` passes with assertions verifying grace button interaction (6/6 tests passing).
+- [x] Component test in `TicketResponses.test.tsx` (or `TicketDetailPage.test.tsx`) passes.
 **Dependencies:** Task 3.1
 **Files touched:**
-- `client/src/features/billing/pages/BillingPage.tsx`
-- `client/src/features/billing/pages/BillingPage.test.tsx`
-**Estimated scope:** Medium (2 files)
+- `client/src/features/tickets/components/TicketResponses.tsx`
+**Estimated scope:** Small (1 file)
 
 ---
 
-### Task 3.3: Add Read-Only Notice in `PasswordManagerPage.tsx`
-**Description:** When tenant account status is `READ_ONLY`, display an amber notice on `PasswordManagerPage.tsx` informing users that the vault is in Read-Only mode and credential creation/edits are locked until invoice settlement.
+### Task 3.3: Add Bilingual Localization in `en_US.json` and `es_DO.json`
+**Description:** Add all new localization strings for agent-submitted tickets, reporter details, flight recorder labels, and telemetry stats in English (`en_US.json`) and Dominican Spanish (`es_DO.json`).
 **Acceptance criteria:**
-- [x] Displays non-intrusive amber alert banner explaining Read-Only mode.
-- [x] Button linking directly to `/billing`.
+- [x] Zero hardcoded English strings in new UI components.
+- [x] Full coverage in both `en_US.json` and `es_DO.json`.
 **Verification:**
-- [x] Component test in `PasswordManagerPage.test.tsx` passes (4/4 tests passing).
-**Dependencies:** Task 3.2
-**Files touched:**
-- `client/src/features/settings/pages/PasswordManagerPage.tsx`
-- `client/src/features/settings/pages/PasswordManagerPage.test.tsx`
-**Estimated scope:** Small (2 files)
-
----
-
-### Task 3.4: Bilingual Localization Strings (English & Spanish)
-**Description:** Add all new translation strings for non-payment notices, grace requests, and read-only status in `en_US.json` and `es_DO.json`.
-**Acceptance criteria:**
-- [x] Zero hardcoded user-facing strings.
-- [x] English strings in `en_US.json` and Dominican Spanish in `es_DO.json`.
-**Verification:**
-- [x] Translation key checks pass.
-**Dependencies:** Tasks 3.2 & 3.3
+- [x] UI string inspection and `npm -w client run build` succeeds.
+**Dependencies:** Tasks 3.1 & 3.2
 **Files touched:**
 - `client/src/locales/en_US.json`
 - `client/src/locales/es_DO.json`
@@ -165,8 +189,83 @@
 
 ---
 
-## Checkpoint 3: Full Feature Verification
-- [x] `npm run build:packages` succeeds with exit code 0.
-- [x] `npm -w server run test` passes with zero regressions (79/79 suites, 772/772 tests).
-- [x] `npm -w client run test:run` passes (45/45 suites, 286/286 tests).
-- [x] `npm -w server run build` & `npm -w client run build` succeed with exit code 0.
+## Checkpoint 3: Frontend Portal UI Verified
+- [x] `npm -w client run test:run` passes.
+- [x] `npm -w client run build` compiles with zero errors.
+- [x] ADR-002 architecture AST tests pass: `npx vitest run tests/arch/feature-architecture.test.ts`.
+
+---
+
+## Phase 4: Agent Test Harness & Tray IPC Protocol
+
+### Task 4.1: Create Automated Agent Ticketing & Chat Test Harness
+**Description:** Create an executable integration script (`server/src/scripts/simulate-agent-ticket-flow.ts`) that boots a mock WebSocket agent client, authenticates with a paired `agentToken`, submits a ticket with flight recorder telemetry, receives a simulated technician reply push frame via WebSocket, and posts a reply.
+**Acceptance criteria:**
+- [x] Verifies end-to-end WebSocket connection and token handshake.
+- [x] Verifies `POST /api/v1/tickets/agent` returns 201 with ticket ID.
+- [x] Verifies simulated technician response triggers `TICKET_CHAT_PUSH` WebSocket frame in $< 100\text{ms}$.
+- [x] Verifies reply via `POST /api/v1/tickets/:id/responses/agent` succeeds.
+**Verification:**
+- [x] Script runs successfully against test database/server.
+**Dependencies:** Checkpoint 3
+**Files touched:**
+- `server/src/scripts/simulate-agent-ticket-flow.ts`
+**Estimated scope:** Small (1 file)
+
+---
+
+### Task 4.2: Document Named Pipe / UDS IPC Protocol for `msp-tray` (Tauri v2)
+**Description:** Document the complete IPC protocol and payload format for the desktop assistant in `docs/architecture/endpoint-tray-ipc-specification.md`, specifying message frames exchanged between `msp-agent` (Session 0 / root daemon) and `msp-tray` (Tauri v2 interactive companion in User Session) over `\\.\pipe\msp-agent-ipc` on Windows and `/var/run/msp-agent.sock` on macOS/Linux.
+**Acceptance criteria:**
+- [x] IPC frame format documented (JSON-RPC / length-prefixed JSON).
+- [x] Cross-platform transport specified (Windows Named Pipes, macOS/Linux Unix Domain Sockets).
+- [x] Messages defined: `TRAY_HELLO`, `AGENT_STATUS`, `TICKET_CREATE_REQUEST`, `TICKET_CREATE_RESPONSE`, `TICKET_CHAT_PUSH`, `TICKET_CHAT_SEND`.
+- [x] Tauri v2 companion integration guidelines and permission boundaries documented.
+**Verification:**
+- [x] Review document for completeness and alignment with `docs/ideas/tauri-cross-platform-endpoint-tray.md`.
+**Dependencies:** Task 4.1
+**Files touched:**
+- `docs/architecture/endpoint-tray-ipc-specification.md`
+**Estimated scope:** Small (1 file)
+
+---
+
+## Checkpoint 4: Integration Simulation Cleared
+- [x] Test harness executes cleanly.
+- [x] IPC specification complete and aligned with server endpoints.
+
+---
+
+## Phase 5: Quality Gates & DoD
+
+### Task 5.1: Run Full Test Suites (Server & Client)
+**Description:** Execute full unit, integration, and architecture test suites across both server and client workspaces.
+**Acceptance criteria:**
+- [x] `npm -w server run test` passes with zero regressions (all 80 suites, 788 tests green).
+- [x] `npm -w client run test:run` passes with zero regressions (all 45 suites, 286 tests green).
+**Verification:**
+- [x] Vitest output confirms 100% passing tests.
+**Dependencies:** Checkpoint 4
+**Files touched:** None (verification task)
+**Estimated scope:** Small
+
+---
+
+### Task 5.2: Monorepo Clean Compilation & Build Gate
+**Description:** Run production builds across shared packages, server, and client.
+**Acceptance criteria:**
+- [x] `npm run build:packages` exits with code 0.
+- [x] `npm -w server run build` exits with code 0.
+- [x] `npm -w client run build` exits with code 0.
+**Verification:**
+- [x] Clean exit codes on all three build commands.
+**Dependencies:** Task 5.1
+**Files touched:** None (verification task)
+**Estimated scope:** Small
+
+---
+
+## Checkpoint 5: Final DoD Verified
+- [x] All unit, integration, and AST tests pass.
+- [x] Production builds succeed.
+- [x] Documentation and architectural references complete.
