@@ -458,7 +458,7 @@ export interface SubscriptionEquipment {
   id: string;
   subscription_id: string;
   slot_index: number;
-  status: 'PENDING_ACTIVATION' | 'ACTIVE';
+  status: 'PENDING_ACTIVATION' | 'ACTIVE' | 'BOUND' | 'ONLINE' | string;
   device_name: string | null;
   device_serial: string | null;
   agent_instance_id?: string | null;
@@ -473,7 +473,7 @@ export interface SubscriptionEquipment {
   vaultwarden_org_id?: string | null;
   vaultwarden_collection_id?: string | null;
   vaultwarden_device_user_id?: string | null;
-  vaultwarden_status?: 'UNPROVISIONED' | 'ACTIVE' | 'LOCKED' | 'PURGED' | string | null;
+  vaultwarden_status?: 'UNPROVISIONED' | 'ACTIVE' | 'LOCKED' | 'PURGED' | string;
   vaultwarden_last_synced_at?: Date | null;
   tenant_id: string;
   nextcloud_used_bytes?: number;

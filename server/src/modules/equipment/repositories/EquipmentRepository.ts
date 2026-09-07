@@ -146,16 +146,16 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
    * @param data - Partial update attributes
    * @returns Updated SubscriptionEquipment entity or null
    */
-  async update(id: string, data: Partial<SubscriptionEquipment>): Promise<SubscriptionEquipment | null> {
+  async update(id: string, data: Partial<SubscriptionEquipment> | Partial<typeof subscriptionEquipment.$inferInsert>): Promise<SubscriptionEquipment | null> {
     const results = await db
       .update(subscriptionEquipment)
       .set({
         ...data,
         updated_at: new Date(),
-      })
+      } as any)
       .where(eq(subscriptionEquipment.id, id))
       .returning();
-    return (results[0] as SubscriptionEquipment) || null;
+    return (results[0] as unknown as SubscriptionEquipment) || null;
   }
 
   /**
@@ -447,7 +447,11 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
       .limit(1);
 
     if (results.length === 0) return null;
-    return results[0];
+    return results[0] as unknown as {
+      equipment: SubscriptionEquipment;
+      clientId: string;
+      tenantId: string;
+    };
   }
 }
 
