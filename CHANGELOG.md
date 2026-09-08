@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.11.1](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.0...v1.11.1) (2026-09-08)
+
+
+### Bug Fixes
+
+* **server:** prevent premature db pool closure and unmask startup errors ([44ad732](https://github.com/Velmar-Technology/msp_client_portal/commit/44ad73236242845a23193d32d21d91dc163a6ac8))
+
 ## [1.11.0](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.10.2...v1.11.0) (2026-09-08)
 
 
