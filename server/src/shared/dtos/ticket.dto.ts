@@ -5,11 +5,11 @@ export {
   TicketQuerySchema as TicketQueryDTO,
   AssignTicketInputSchema as AssignTicketDTO,
   TicketIdParamSchema as TicketIdParamDTO,
-  CreateTicketInput,
-  UpdateTicketStatusInput,
-  TicketQueryInput,
-  AssignTicketInput,
-  TicketIdParam as TicketIdParamInput,
+  type CreateTicketInput,
+  type UpdateTicketStatusInput,
+  type TicketQueryInput,
+  type AssignTicketInput,
+  type TicketIdParam as TicketIdParamInput,
 } from '@shared/contracts';
 
 export type CreateTicketOutput = import('@shared/contracts').CreateTicketInput;
