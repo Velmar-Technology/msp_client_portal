@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.11.2](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.1...v1.11.2) (2026-09-08)
+
+
+### Bug Fixes
+
+* **system:** isolate vault reset rate limiter key and prefix ([46e9a20](https://github.com/Velmar-Technology/msp_client_portal/commit/46e9a2039c2e0a0b8a330e73a9ddd24297421abe))
+
 ## [1.11.1](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.0...v1.11.1) (2026-09-08)
 
 
