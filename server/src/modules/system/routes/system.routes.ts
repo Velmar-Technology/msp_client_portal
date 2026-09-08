@@ -14,6 +14,14 @@ router.use(authMiddleware);
 const vaultResetLimiter = createGatewayRateLimiter({
   windowMs: 15 * 60 * 1000,
   maxRequests: 5,
+  prefix: 'ratelimit:vault:reset',
+  keyGenerator: (req) => {
+    const user = (req as any).user;
+    const userId = user?.userId || user?.id || user?.email || req.ip || '127.0.0.1';
+    const tenantId = user?.tenant_id || user?.tenantId || 'global';
+    return `${tenantId}:${userId}`;
+  },
+  message: 'Too many vault reset attempts. Please wait 15 minutes before trying again.',
 });
 
 /** POST /api/v1/system/vault/reset-user-access — Self-service vault reset and re-invitation */
