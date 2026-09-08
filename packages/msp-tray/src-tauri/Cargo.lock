@@ -1987,7 +1987,7 @@ dependencies = [
 
 [[package]]
 name = "msp-tray"
-version = "1.0.0"
+version = "1.8.4"
 dependencies = [
  "chrono",
  "env_logger",
