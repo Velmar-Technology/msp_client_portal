@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.10.2](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.10.1...v1.10.2) (2026-09-08)
+
+
+### Features
+
+* **release:** add msp-tray desktop companion to automated releases and downloads ([16f5147](https://github.com/Velmar-Technology/msp_client_portal/commit/16f5147b7e0d39a74c6b1a2640f0d3958f2f23a2))
+* **tickets:** add endpoint agent no-login ticket creation and realtime tray chat ([ec2c876](https://github.com/Velmar-Technology/msp_client_portal/commit/ec2c876cce4bd64ce05908ed5c278bde6d5656c7))
+* **tray:** add tauri v2 desktop support assistant and velmar branding ([0bbbf3d](https://github.com/Velmar-Technology/msp_client_portal/commit/0bbbf3dd3cfcef2d4e10b7e5b7baa7bb2c7925f9))
+* **vault:** implement device-bound password vaults and BL-702 graceful non-payment lifecycle ([936a8fd](https://github.com/Velmar-Technology/msp_client_portal/commit/936a8fde326a33a0ffbccbffe5255dabc720bb76))
+
+
+### Bug Fixes
+
+* **equipment:** resolve EquipmentRepository type incompatibilities ([ab40b22](https://github.com/Velmar-Technology/msp_client_portal/commit/ab40b22f61b7351648b8aa63ab1249fcfb07b304))
+* **server:** bundle migrate.js and resolve paths for production container health ([e309c2a](https://github.com/Velmar-Technology/msp_client_portal/commit/e309c2a944852a04c6fd165021bf385168907da6))
+* **tickets:** use explicit type modifier for re-exported types under isolatedModules ([a65e4be](https://github.com/Velmar-Technology/msp_client_portal/commit/a65e4beb18973215ced407d1cd95cb9aefd3e06e))
+
 ## [1.10.1](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.10.0...v1.10.1) (2026-09-03)
 
 
