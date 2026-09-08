@@ -79,6 +79,14 @@ Model Context Protocol (MCP) server engineered according to the **MCP 2026-07-28
 
 - **`msp_analyze_disk_storage`**: Deep storage breakdown: volume capacities, free space percentage, health evaluation, and hotspot directory inspection (Downloads, Docker VHDX, WSL, npm-cache, crash dumps, and temp pools).
 
+### 12. Billing, Invoicing & Pricing Catalog
+
+- **`msp_list_plans`**: Exports full subscription plans pricing catalog, tiers, billing terms, feature codes, and quotas with Markdown table and JSON output.
+- **`msp_list_invoices`**: Queries tenant invoices with NCF statuses, tax breakdowns, and settlement states.
+- **`msp_get_invoice`**: Detailed invoice inspection with line items, ITBIS tax, and payment vouchers.
+- **`msp_get_financial_stats`**: High-level financial KPIs, revenue performance, and collection analytics.
+- **`msp_list_expenses`**: Operational expenses and technician commission bounties (BL-801/BL-802).
+
 ---
 
 ## Dynamic MCP Resources

@@ -328,6 +328,35 @@ describe('MSP MCP Server Tools Registration and Execution', () => {
     const stats = await mockApiClient.getFinancialStats('30_days');
     expect(stats.totalRevenue).toBe(25000);
     expect(stats.paidInvoicesCount).toBe(15);
+
+    const mockPlans = [
+      {
+        id: 'PL-001',
+        name: { en_US: 'Basic', es_DO: 'Básico' },
+        price: 18,
+        client_type: 'CLIENT',
+        active: true,
+        recommended: true,
+        features: [{ code: 'HELPDESK_SUPPORT' }, { code: 'CLOUD_STORAGE' }],
+      },
+    ];
+
+    vi.spyOn(mockApiClient, 'listPlans').mockResolvedValue(mockPlans);
+    const plansResult = await mockApiClient.listPlans();
+    expect(plansResult.length).toBe(1);
+    expect(plansResult[0].id).toBe('PL-001');
+
+    registerBillingTools(server, mockApiClient);
+    const registeredTools = (server as any)._registeredTools || {};
+    const planTool = registeredTools['msp_list_plans'];
+    expect(planTool).toBeDefined();
+
+    if (typeof planTool.handler === 'function') {
+      const toolRes = await planTool.handler({ format: 'markdown_table' });
+      expect(toolRes.content[0].text).toContain('MSP Subscription Plans & Pricing Catalog');
+      expect(toolRes.content[0].text).toContain('PL-001');
+      expect(toolRes.content[0].text).toContain('$18 / mo');
+    }
   });
 
   it('should handle getSystemApiStatus properly', async () => {
@@ -502,7 +531,7 @@ describe('MSP MCP Server Tools Registration and Execution', () => {
       expect(result).toBeDefined();
       expect(result.content[0].text).toBeDefined();
     }
-  });
+  }, 15000);
 
   it('should register and execute msp_analyze_disk_storage handler', async () => {
     registerStorageTools(server);

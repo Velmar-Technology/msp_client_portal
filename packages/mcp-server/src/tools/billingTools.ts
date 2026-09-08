@@ -115,4 +115,70 @@ export function registerBillingTools(server: McpServer, apiClient: MspApiClient)
       }
     }
   );
+
+  // 5. Tool: msp_list_plans (Pricing Catalog Export)
+  server.tool(
+    'msp_list_plans',
+    'Export the full subscription plans pricing catalog, tiers, billing terms, feature codes, and limits',
+    {
+      clientType: z.enum(['CLIENT', 'ENTERPRISE', 'STUDENT', 'OTHER']).optional().describe('Filter by target client segment'),
+      format: z.enum(['markdown_table', 'json']).default('markdown_table').describe('Output format (default: markdown_table)'),
+    },
+    async ({ clientType, format }) => {
+      try {
+        const res = await apiClient.listPlans({ clientType });
+        const plans = Array.isArray(res) ? res : res.data || [];
+
+        if (format === 'json') {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(plans, null, 2),
+              },
+            ],
+          };
+        }
+
+        // Generate rich GitHub-flavored Markdown pricing table
+        let md = '# MSP Subscription Plans & Pricing Catalog\n\n';
+        md += '| Plan ID | Tier / Name | Segment | Price (USD) | Status | Highlights / Features |\n';
+        md += '| :---: | :--- | :---: | :---: | :---: | :--- |\n';
+
+        for (const p of plans) {
+          const name = p.name?.en_US || p.name || 'Unnamed';
+          const segment = p.client_type || 'ALL';
+          const price = `$${p.price || 0} / mo`;
+          const status = p.active ? (p.recommended ? '🟢 **Recommended**' : '🟢 Active') : '⚪ Inactive';
+
+          const featureList = (p.features || [])
+            .map((f: any) => {
+              if (f.code) return `\`${f.code}\``;
+              if (f.text?.en_US) return f.text.en_US;
+              if (f.text?.es_DO) return f.text.es_DO;
+              return null;
+            })
+            .filter(Boolean)
+            .slice(0, 4)
+            .join(', ');
+
+          md += `| **${p.id}** | ${name} | ${segment} | ${price} | ${status} | ${featureList || 'Standard features'} |\n`;
+        }
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: md,
+            },
+          ],
+        };
+      } catch (err: any) {
+        return {
+          isError: true,
+          content: [{ type: 'text', text: `Failed to export pricing table: ${err.message}` }],
+        };
+      }
+    }
+  );
 }

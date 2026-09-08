@@ -850,6 +850,21 @@ ${recommendationList}
   }
 
   /**
+   * List subscription plans and pricing catalog.
+   *
+   * @param params - Optional filter query parameters (clientType, page, limit)
+   * @returns List of subscription plans and pagination metadata
+   */
+  async listPlans(params?: { clientType?: string; page?: number; limit?: number }): Promise<any> {
+    const res = await this.request<any>({
+      method: 'GET',
+      url: '/plans',
+      params,
+    });
+    return res.data || res;
+  }
+
+  /**
    * Queries real-time system diagnostics, database connectivity, and API service statuses.
    *
    * @returns SystemApiStatusResponse detailing service uptime, latencies, and environment configuration
