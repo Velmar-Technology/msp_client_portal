@@ -146,7 +146,34 @@ try {
     # Non-fatal firewall rule exception
 }
 
-# 6. Verify Service Running Status
+# 6. Deploy and Register Desktop Assistant Tray Companion (if bundled)
+try {
+    $traySourceCandidates = @(
+        (Join-Path $scriptDir "msp-tray.exe"),
+        (Join-Path (Split-Path -Parent $resolvedExe) "msp-tray.exe")
+    )
+    $foundTraySource = $traySourceCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+    if ($foundTraySource) {
+        $trayTargetDir = "C:\Program Files\MSP\msp-agent"
+        if (-not (Test-Path $trayTargetDir)) {
+            New-Item -ItemType Directory -Path $trayTargetDir -Force | Out-Null
+        }
+        $trayTargetPath = Join-Path $trayTargetDir "msp-tray.exe"
+        Copy-Item -Path $foundTraySource -Destination $trayTargetPath -Force
+        Log-Message "Deployed Tray Companion: $trayTargetPath" "Green"
+
+        # Register auto-run for all interactive desktop logins
+        $runKeyPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
+        if (Test-Path $runKeyPath) {
+            Set-ItemProperty -Path $runKeyPath -Name "MSPSupportAssistant" -Value "`"$trayTargetPath`"" -ErrorAction SilentlyContinue
+            Log-Message "Configured auto-start Run key for MSP Support Assistant." "Green"
+        }
+    }
+} catch {
+    # Non-fatal tray installation exception
+}
+
+# 7. Verify Service Running Status
 try {
     $service = Get-Service -Name "MSPEndpointAgent" -ErrorAction SilentlyContinue
     if ($service) {

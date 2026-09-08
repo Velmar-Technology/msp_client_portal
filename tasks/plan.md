@@ -116,6 +116,14 @@ Phase 5: Quality Gates & Verification
 - [x] Task 6.6: Compilation, Build Verification & Integration Testing
 - [x] Checkpoint 6: Tauri Desktop Assistant Operational
 
+### Phase 7: Desktop Tray Companion Distribution & Release Automation
+- [x] Task 7.1: Add `build-tray-binaries` Job in `.github/workflows/deploy.yml` for Windows x64 & x86
+- [x] Task 7.2: Update GitHub Release Packaging to Ingest and Publish `msp-tray.exe` Binaries & Checksums
+- [x] Task 7.3: Synchronize `msp-tray` in `.versionrc.json` & `scripts/sync-versions.js`
+- [x] Task 7.4: Update Installer Scripts (`build-installer.ps1` & `Install-MspAgent.ps1`) to Bundle and Register `msp-tray.exe`
+- [x] Task 7.5: Add Server Download Endpoint `GET /api/v1/equipment/tray-binary` with Vitest Unit Tests
+- [x] Checkpoint 7: Tray Assistant Released and Automated
+
 
 ---
 

@@ -467,6 +467,36 @@ Write-Host "==================================================" -ForegroundColor
   }
 
   /**
+   * Downloads the pre-compiled standalone msp-tray.exe desktop assistant binary.
+   *
+   * @param _req - Express request
+   * @param res - Express response sending binary file
+   * @returns Promise resolving to void
+   */
+  async downloadTrayBinary(_req: Request, res: Response): Promise<void> {
+    const possiblePaths = [
+      path.resolve(process.cwd(), '../packages/msp-tray/src-tauri/target/release/msp-tray.exe'),
+      path.resolve(process.cwd(), 'packages/msp-tray/src-tauri/target/release/msp-tray.exe'),
+      path.resolve(process.cwd(), '../packages/msp-tray/src-tauri/target/x86_64-pc-windows-msvc/release/msp-tray.exe'),
+      path.resolve(process.cwd(), 'packages/msp-tray/src-tauri/target/x86_64-pc-windows-msvc/release/msp-tray.exe'),
+      path.resolve(process.cwd(), '../packages/msp-agent/dist/msp-agent-installer/msp-tray.exe'),
+      path.resolve(process.cwd(), 'packages/msp-agent/dist/msp-agent-installer/msp-tray.exe'),
+      path.resolve(process.cwd(), '../packages/msp-tray/src-tauri/target/debug/msp-tray.exe'),
+    ];
+
+    const binaryPath = possiblePaths.find((p) => fs.existsSync(p));
+    if (!binaryPath) {
+      res.status(404).json({
+        success: false,
+        error: 'MSP Tray binary not found on server. Build the release package with cargo build --release first.',
+      });
+      return;
+    }
+
+    res.download(binaryPath, 'msp-tray.exe');
+  }
+
+  /**
    * Handles querying Vaultwarden device password vault status for an equipment slot.
    *
    * @param req - Express request with equipment ID in params

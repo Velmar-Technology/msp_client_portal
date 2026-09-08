@@ -13,6 +13,11 @@ router.get('/agent-binary', (req, res) =>
   equipmentController.downloadAgentBinary(req, res)
 );
 
+/** GET /api/v1/equipment/tray-binary — Download standalone msp-tray.exe binary (Public binary download) */
+router.get('/tray-binary', (req, res) =>
+  equipmentController.downloadTrayBinary(req, res)
+);
+
 router.use(authMiddleware);
 
 /** GET /api/v1/equipment/admin/devices — Get all devices for all clients (Admin only) */

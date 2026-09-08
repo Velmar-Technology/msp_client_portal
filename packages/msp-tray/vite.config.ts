@@ -1,7 +1,13 @@
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
+import fs from 'fs';
+import { pathToFileURL } from 'url';
+
+const clientReactPlugin = path.resolve(__dirname, '../../client/node_modules/@vitejs/plugin-react/dist/index.js');
+const react = fs.existsSync(clientReactPlugin)
+  ? (await import(pathToFileURL(clientReactPlugin).href)).default
+  : (await import('@vitejs/plugin-react')).default;
 
 // https://vitejs.dev/config/
 export default defineConfig({

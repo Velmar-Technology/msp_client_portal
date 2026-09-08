@@ -8,8 +8,13 @@
     "server/package-lock.json",
     "packages/errors/package.json",
     "packages/mcp-server/package.json",
+    "packages/msp-tray/package.json",
     {
       "filename": "packages/msp-agent/Cargo.toml",
+      "updater": "scripts/cargo-updater.js"
+    },
+    {
+      "filename": "packages/msp-tray/src-tauri/Cargo.toml",
       "updater": "scripts/cargo-updater.js"
     }
   ],

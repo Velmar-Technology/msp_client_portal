@@ -327,6 +327,27 @@ describe('EquipmentController', () => {
     });
   });
 
+  describe('downloadTrayBinary', () => {
+    it('should return 404 if tray binary file is not found on disk', async () => {
+      vi.spyOn(fs, 'existsSync').mockReturnValue(false);
+
+      await controller.downloadTrayBinary(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+        success: false,
+      }));
+    });
+
+    it('should download tray binary if file is found on disk', async () => {
+      vi.spyOn(fs, 'existsSync').mockReturnValue(true);
+
+      await controller.downloadTrayBinary(req, res);
+
+      expect(res.download).toHaveBeenCalledWith(expect.any(String), 'msp-tray.exe');
+    });
+  });
+
   describe('addAdminDevice', () => {
     it('should throw ForbiddenError if non-admin attempts to add device', async () => {
       req.user!.role = UserRole.CLIENT;

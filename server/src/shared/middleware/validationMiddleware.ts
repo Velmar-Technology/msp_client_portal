@@ -1,6 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
-import { ZodTypeAny, ZodError } from 'zod';
+import { ZodError } from 'zod';
 import { ValidationError } from '@shared/errors';
+
+export interface ValidatableSchema<T = any> {
+  parse(data: unknown): T;
+}
 
 /**
  * Generic Zod validation middleware factory.
@@ -16,7 +20,7 @@ import { ValidationError } from '@shared/errors';
  * @returns Express middleware function
  * @throws {ValidationError} When schema validation fails
  */
-export function validate(schema: ZodTypeAny, source: 'body' | 'query' | 'params' = 'body') {
+export function validate(schema: ValidatableSchema, source: 'body' | 'query' | 'params' = 'body') {
   return (req: Request, _res: Response, next: NextFunction): void => {
     try {
       const data = schema.parse(req[source]);
@@ -31,10 +35,11 @@ export function validate(schema: ZodTypeAny, source: 'body' | 'query' | 'params'
         Object.assign(target, data);
       }
       next();
-    } catch (error) {
-      if (error instanceof ZodError) {
-        const fields = error.errors.map((e) => ({
-          field: e.path.join('.'),
+    } catch (error: any) {
+      if (error instanceof ZodError || error?.name === 'ZodError') {
+        const rawErrors = Array.isArray(error.errors) ? error.errors : [];
+        const fields = rawErrors.map((e: any) => ({
+          field: Array.isArray(e.path) ? e.path.join('.') : String(e.path ?? ''),
           message: e.message,
         }));
 
