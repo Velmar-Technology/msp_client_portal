@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.11.0](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.10.2...v1.11.0) (2026-09-08)
+
+
+### Bug Fixes
+
+* **deps:** deduplicate tsx and sync lockfile to resolve ci etxtbsy ([e0d01f6](https://github.com/Velmar-Technology/msp_client_portal/commit/e0d01f696a358ac585b66d3e33062b3319ad034d))
+
 ## [1.10.2](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.10.1...v1.10.2) (2026-09-08)
 
 
