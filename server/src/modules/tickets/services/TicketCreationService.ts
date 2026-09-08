@@ -112,7 +112,7 @@ export class TicketCreationService {
       }
     }
 
-    await this.quotasSvc.enforceTicketLimit(ctx.userId, ctx.tenantId, data.equipmentId);
+    await this.quotasSvc.enforceTicketLimit(ctx.userId, ctx.tenantId, data.equipmentId ?? undefined);
 
     const priority = data.priority ?? TicketPriority.MEDIUM;
     const ticket = await this.ticketsRepo.create({

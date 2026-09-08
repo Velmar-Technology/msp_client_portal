@@ -27,12 +27,41 @@ const devFormat = printf(({ level, message, timestamp: ts, stack, ...meta }) => 
   return `${ts} [${level}]: ${stack || message}${metaStr}`;
 });
 
+/**
+ * Winston format that serializes Error objects embedded in metadata,
+ * ensuring non-enumerable properties like message and stack are preserved in JSON output.
+ */
+const serializeErrorsFormat = winston.format((info) => {
+  if (info instanceof Error) {
+    return Object.assign(
+      {
+        message: info.message,
+        stack: info.stack,
+      },
+      info
+    );
+  }
+  for (const key of Object.keys(info)) {
+    const val = info[key];
+    if (val instanceof Error) {
+      info[key] = {
+        name: val.name,
+        message: val.message,
+        stack: val.stack,
+        code: (val as { code?: string }).code,
+      };
+    }
+  }
+  return info;
+});
+
 export const logger = winston.createLogger({
   level: env.NODE_ENV === 'production' ? 'info' : 'debug',
   format: combine(
     requestContextFormat(),
     timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     errors({ stack: true }),
+    serializeErrorsFormat(),
   ),
   defaultMeta: { service: 'msp-services' },
   transports: [

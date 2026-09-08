@@ -249,13 +249,24 @@ export async function migrate(): Promise<void> {
       await client.query("SELECT set_config('app.is_system_admin', 'false', false)");
     } catch {}
     client.release();
-    if (require.main === module) {
+    const isMainScript = Boolean(
+      require.main === module &&
+      ((process.argv[1] && /migrate\.[cm]?[jt]s$/i.test(process.argv[1])) ||
+       (require.main?.filename && /migrate\.[cm]?[jt]s$/i.test(require.main.filename)))
+    );
+
+    if (isMainScript) {
       await pool.end();
     }
   }
 }
 
+const isMainScript = Boolean(
+  require.main === module &&
+  ((process.argv[1] && /migrate\.[cm]?[jt]s$/i.test(process.argv[1])) ||
+   (require.main?.filename && /migrate\.[cm]?[jt]s$/i.test(require.main.filename)))
+);
 
-if (require.main === module) {
+if (isMainScript) {
   migrate().catch(() => process.exit(1));
 }
