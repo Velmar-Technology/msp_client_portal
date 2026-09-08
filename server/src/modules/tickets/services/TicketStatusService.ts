@@ -77,11 +77,11 @@ export class TicketStatusService {
       old_status: ticket.status,
       new_status: data.status,
       changed_by: ctx.userId,
-      notes: data.notes,
+      notes: data.notes ?? undefined,
       tenant_id: ticket.tenant_id,
     });
 
-    await this.notifyClientOfStatusChange(ticketId, updated, data.notes);
+    await this.notifyClientOfStatusChange(ticketId, updated, data.notes ?? undefined);
 
     // Trigger technician closure earnings or void if reopened
     if (data.status === TicketStatus.RESOLVED || data.status === TicketStatus.CLOSED) {

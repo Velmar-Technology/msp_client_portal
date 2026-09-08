@@ -134,24 +134,30 @@ async function startServer(): Promise<void> {
     // Start background database health pinger once DB connection & migrations are complete
     startPinger();
 
-    server.listen(env.PORT, () => {
-      const httpProto = isHttps ? 'https' : 'http';
-      const wsProto = isHttps ? 'wss' : 'ws';
-      logger.info(`Velmar Technology SRL MSP API Server running on port ${env.PORT} (${httpProto.toUpperCase()})`);
-      logger.info(`API Docs available at ${httpProto}://localhost:${env.PORT}/api-docs and ${httpProto}://localhost:${env.PORT}/api/v1/api-docs`);
-      logger.info(`Agent WebSocket Gateway available at ${wsProto}://localhost:${env.PORT}/agent-ws (supports WSS over TLS / Reverse Proxy)`);
-      if (env.EXTERNAL_GATEWAY_URL) {
-        logger.info(`External WSS Gateway URL: ${env.EXTERNAL_GATEWAY_URL}`);
-      }
-      logger.info(`Environment: ${env.NODE_ENV}`);
-      
-      // Start background subscriptions renewal scheduler
-      const { subscriptionScheduler } = require('@modules/subscriptions/services/SubscriptionScheduler');
-      subscriptionScheduler.start();
+    await new Promise<void>((resolve, reject) => {
+      server.once('error', reject);
+      server.listen(env.PORT, () => {
+        server.removeListener('error', reject);
+        const httpProto = isHttps ? 'https' : 'http';
+        const wsProto = isHttps ? 'wss' : 'ws';
+        logger.info(`Velmar Technology SRL MSP API Server running on port ${env.PORT} (${httpProto.toUpperCase()})`);
+        logger.info(`API Docs available at ${httpProto}://localhost:${env.PORT}/api-docs and ${httpProto}://localhost:${env.PORT}/api/v1/api-docs`);
+        logger.info(`Agent WebSocket Gateway available at ${wsProto}://localhost:${env.PORT}/agent-ws (supports WSS over TLS / Reverse Proxy)`);
+        if (env.EXTERNAL_GATEWAY_URL) {
+          logger.info(`External WSS Gateway URL: ${env.EXTERNAL_GATEWAY_URL}`);
+        }
+        logger.info(`Environment: ${env.NODE_ENV}`);
+        
+        // Start background subscriptions renewal scheduler
+        const { subscriptionScheduler } = require('@modules/subscriptions/services/SubscriptionScheduler');
+        subscriptionScheduler.start();
 
-      // Start background SLA escalation scheduler
-      const { escalationScheduler } = require('@modules/tickets/services/EscalationScheduler');
-      escalationScheduler.start();
+        // Start background SLA escalation scheduler
+        const { escalationScheduler } = require('@modules/tickets/services/EscalationScheduler');
+        escalationScheduler.start();
+
+        resolve();
+      });
     });
 
     // Graceful shutdown listener
@@ -184,7 +190,10 @@ async function startServer(): Promise<void> {
     process.on('SIGTERM', () => shutdown('SIGTERM'));
     process.on('SIGINT', () => shutdown('SIGINT'));
   } catch (error) {
-    logger.error('Failed to start server', { error });
+    const errorDetails = error instanceof Error
+      ? { message: error.message, stack: error.stack, name: error.name, ...(error as unknown as Record<string, unknown>) }
+      : error;
+    logger.error('Failed to start server', { error: errorDetails });
     process.exit(1);
   }
 }
