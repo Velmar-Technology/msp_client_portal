@@ -42,7 +42,7 @@ Model Context Protocol (MCP) server engineered according to the **MCP 2026-07-28
 
 ### 5. Security & Endpoint Compliance
 
-- **`msp_audit_security_posture`**: Audits BitLocker encryption, Windows Defender real-time protection, Firewall profiles, and reboot flags.
+- **`msp_audit_security_posture`**: Audits BitLocker encryption, Windows Defender real-time protection, Firewall profiles, TPM 2.0 presence, UEFI Secure Boot, UAC, Remote Desktop (RDP), PowerShell execution policies, and reboot flags.
 - **`msp_inspect_open_ports`**: Scans listening TCP ports and associated processes.
 - **`msp_list_startup_programs`**: Audits autorun / startup registry applications.
 
@@ -70,6 +70,14 @@ Model Context Protocol (MCP) server engineered according to the **MCP 2026-07-28
 
 - **`msp_get_last_email`**: Retrieves the most recent email or dispatched notification, supporting both direct TLS IMAP inspection (`imap.gmail.com:993`) and portal-dispatched transactional email alerts.
 - **`msp_list_notifications`**: Lists recent transactional email notifications, ticket alerts, and system broadcast events for the authenticated account.
+
+### 10. Deep Network Layer & Wi-Fi Telemetry
+
+- **`msp_audit_network_interfaces`**: Comprehensive network interface and connectivity audit: lists all active adapters, IP/gateway/DNS configuration, Wi-Fi RF parameters (SSID, BSSID, Signal %, channel, link rates), multi-point latency benchmarks (Gateway, Public DNS `1.1.1.1`, Helpdesk), and DNS resolution health diagnostics.
+
+### 11. Storage & Disk Space Hotspot Analysis
+
+- **`msp_analyze_disk_storage`**: Deep storage breakdown: volume capacities, free space percentage, health evaluation, and hotspot directory inspection (Downloads, Docker VHDX, WSL, npm-cache, crash dumps, and temp pools).
 
 ---
 

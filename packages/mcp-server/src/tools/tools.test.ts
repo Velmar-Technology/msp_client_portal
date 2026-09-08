@@ -12,6 +12,8 @@ import { registerUserTools } from './userTools.js';
 import { registerBillingTools } from './billingTools.js';
 import { registerDomainTools } from './domainTools.js';
 import { registerEmailTools } from './emailTools.js';
+import { registerNetworkTools } from './networkTools.js';
+import { registerStorageTools } from './storageTools.js';
 import type { SystemApiStatusResponse, NotificationListResult } from '../types.js';
 
 describe('MSP MCP Server Tools Registration and Execution', () => {
@@ -43,6 +45,8 @@ describe('MSP MCP Server Tools Registration and Execution', () => {
       registerBillingTools(server, mockApiClient);
       registerDomainTools(server, mockApiClient);
       registerEmailTools(server, mockApiClient);
+      registerNetworkTools(server);
+      registerStorageTools(server);
     }).not.toThrow();
   });
 
@@ -481,6 +485,35 @@ describe('MSP MCP Server Tools Registration and Execution', () => {
       expect(result.content[0].text).toContain('Latest Portal Email & System Notification');
       expect(result.content[0].text).toContain('Ticket #104 Assigned');
       expect(result.content[0].text).toContain('Technician Estiven assigned');
+    }
+  });
+
+  it('should register and execute msp_audit_network_interfaces handler', async () => {
+    registerNetworkTools(server);
+    const registeredTools = (server as any)._registeredTools || {};
+    const tool = registeredTools['msp_audit_network_interfaces'];
+    expect(tool).toBeDefined();
+
+    if (typeof tool.handler === 'function') {
+      const result = await tool.handler({
+        targetHost: '1.1.1.1',
+        domainToResolve: 'helpdesk.velmartech.com.do',
+      });
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toBeDefined();
+    }
+  });
+
+  it('should register and execute msp_analyze_disk_storage handler', async () => {
+    registerStorageTools(server);
+    const registeredTools = (server as any)._registeredTools || {};
+    const tool = registeredTools['msp_analyze_disk_storage'];
+    expect(tool).toBeDefined();
+
+    if (typeof tool.handler === 'function') {
+      const result = await tool.handler({ includeHotspots: false });
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toBeDefined();
     }
   });
 });
