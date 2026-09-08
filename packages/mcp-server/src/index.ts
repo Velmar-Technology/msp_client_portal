@@ -16,11 +16,21 @@ dotenv.config();
  * kept for backward compatibility) > local default.
  */
 function resolveApiUrl(): string {
-  const serverUrl = process.env.MSP_SERVER_URL?.replace(/\/+$/, '');
+  let serverUrl = process.env.MSP_SERVER_URL?.trim().replace(/\/+$/, '');
   if (serverUrl) {
+    if (!/^https?:\/\//i.test(serverUrl)) {
+      serverUrl = `https://${serverUrl}`;
+    }
     return serverUrl.endsWith('/api/v1') ? serverUrl : `${serverUrl}/api/v1`;
   }
-  return process.env.MSP_API_URL || 'http://localhost:3001/api/v1';
+  let apiUrl = process.env.MSP_API_URL?.trim().replace(/\/+$/, '');
+  if (apiUrl) {
+    if (!/^https?:\/\//i.test(apiUrl)) {
+      apiUrl = `https://${apiUrl}`;
+    }
+    return apiUrl;
+  }
+  return 'http://localhost:3001/api/v1';
 }
 
 const apiUrl = resolveApiUrl();

@@ -61,6 +61,16 @@ Model Context Protocol (MCP) server engineered according to the **MCP 2026-07-28
 - **`msp_check_access_decision`**: Tests permission evaluation against the Unified PDP (RBAC + Zanzibar ReBAC + Policy-as-Code ABAC).
 - **`msp_get_trust_score`**: Queries real-time Continuous Adaptive Trust (CAT) risk anomaly score and risk factors.
 
+### 8. Domain & Vital Service Health Diagnostics
+
+- **`msp_check_domain_services`**: Comprehensive diagnostic audit of a domain (e.g. `helpdesk.velmartech.com.do`), resolving DNS (A/AAAA/MX/TXT), probing mail services (SMTP 25/587/465, IMAP 993, POP3 995), and auditing HTTPS availability and SSL certificate validity.
+- **`msp_get_system_api_status`**: Queries real-time backend platform diagnostics, database latency, Nextcloud storage health, and environment configuration audits.
+
+### 9. Email & Notification Inspection
+
+- **`msp_get_last_email`**: Retrieves the most recent email or dispatched notification, supporting both direct TLS IMAP inspection (`imap.gmail.com:993`) and portal-dispatched transactional email alerts.
+- **`msp_list_notifications`**: Lists recent transactional email notifications, ticket alerts, and system broadcast events for the authenticated account.
+
 ---
 
 ## Dynamic MCP Resources

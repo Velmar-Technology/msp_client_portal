@@ -9,6 +9,8 @@ import { registerLocalHostTools } from './tools/localHostTools.js';
 import { registerAuthzTools } from './tools/authzTools.js';
 import { registerUserTools } from './tools/userTools.js';
 import { registerBillingTools } from './tools/billingTools.js';
+import { registerDomainTools } from './tools/domainTools.js';
+import { registerEmailTools } from './tools/emailTools.js';
 import { registerMspResources } from './resources/mspResources.js';
 import { registerMspPrompts } from './prompts/mspPrompts.js';
 
@@ -34,6 +36,8 @@ export function createMspMcpServer(apiClient: MspApiClient): McpServer {
   registerAuthzTools(server, apiClient);
   registerUserTools(server, apiClient);
   registerBillingTools(server, apiClient);
+  registerDomainTools(server, apiClient);
+  registerEmailTools(server, apiClient);
   registerMspResources(server, apiClient);
   registerMspPrompts(server);
 

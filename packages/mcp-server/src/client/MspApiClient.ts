@@ -21,6 +21,8 @@ import type {
   InvoiceListResult,
   FinancialStatsSummary,
   ExpenseSummary,
+  SystemApiStatusResponse,
+  NotificationListResult,
 } from '../types.js';
 
 export class MspApiClient {
@@ -843,6 +845,34 @@ ${recommendationList}
     const res = await this.request<any>({
       method: 'GET',
       url: '/expenses',
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Queries real-time system diagnostics, database connectivity, and API service statuses.
+   *
+   * @returns SystemApiStatusResponse detailing service uptime, latencies, and environment configuration
+   * @throws {Error} When system status query fails or API endpoint is unreachable
+   */
+  async getSystemApiStatus(): Promise<SystemApiStatusResponse> {
+    const res = await this.request<any>({
+      method: 'GET',
+      url: '/system/api-status',
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Queries in-app notifications and dispatched system email alerts for the authenticated user.
+   *
+   * @returns NotificationListResult with notifications array and unreadCount
+   * @throws {Error} When notifications query fails
+   */
+  async getNotifications(): Promise<NotificationListResult> {
+    const res = await this.request<any>({
+      method: 'GET',
+      url: '/notifications',
     });
     return res.data || res;
   }

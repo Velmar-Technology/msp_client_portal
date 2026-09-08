@@ -1,129 +1,52 @@
-# Implementation Plan: Endpoint No-Login Ticket Creation & Real-Time Tray Chat
+# Implementation Plan: Vital Services Health Diagnostics & System API Status MCP Tools
 
 ## Overview
-Implement machine-authenticated endpoint ticket creation and live WebSocket chat integration for workstation devices. Allows physical endpoints running the MSP agent to create pre-diagnosed tickets without requiring web portal logins, while providing a real-time system tray chat drawer synchronized with technician responses in `TicketDetailPage.tsx` over the existing `AgentGateway` WebSocket connection.
+Breakdown and stabilization of the newly introduced MCP diagnostic tools (`msp_check_domain_services` and `msp_get_system_api_status`) in `packages/mcp-server`. This equips AI agents and MSP technicians with automated diagnostic capabilities for client domains (resolving DNS, inspecting mail server ports SMTP 25/587/465, IMAP 993, POP3 995, and verifying HTTPS availability and SSL certificates) alongside real-time internal platform health diagnostics.
 
 ---
 
 ## Architecture Decisions
 
-1. **Machine-Level Authentication (`agentToken`):**
-   - The desktop agent authenticates using the hardware token (`subscription_equipment.agent_token`) issued during OTP pairing.
-   - `agentAuthMiddleware` validates the token, joins `subscription_equipment` with `subscriptions`, and extracts `equipment_id`, `tenant_id`, and `client_id` (the client account owner).
-   - Enforces Zero-Standing Privilege (ZSP): endpoints can only create tickets bound to their own `equipment_id` and can only view/reply to active tickets belonging to that device.
+1. **Protocol Adherence & Sandboxing (`packages/mcp-server`):**
+   - Implements native Node.js network primitives (`node:dns/promises`, `node:net`, `node:tls`, `node:https`) with explicit socket timeouts (default 4000ms) and automatic socket teardown (`socket.destroy()`) to prevent socket leaks or hanging MCP requests.
+   - Conforms to the Model Context Protocol specification (MCP 2026-07-28).
 
-2. **Shift-Worker Attribution & Contact Identity:**
-   - Desktop tray prompts for the active desk worker's Name and Email on first issue report.
-   - Stored in `tickets.reporter_name` and `tickets.reporter_email`, enabling shift workers on shared physical workstations to be accurately identified.
+2. **Type Safety & TLS Certificate Normalization:**
+   - In Node.js `tls.PeerCertificate`, certificate fields like `issuer.O` and `issuer.CN` can be returned as `string | string[]`.
+   - Provide safe normalization: `formatCertField(val?: string | string[]): string` to ensure strict TypeScript compilation (`tsc`) passes without errors.
 
-3. **Flight Recorder Diagnostics Snapshot:**
-   - At the time of ticket submission, the agent collects OS build, uptime, CPU%, RAM%, disk%, top 5 processes, and recent critical Windows event log entries.
-   - Stored in a structured JSONB column `tickets.device_snapshot` and presented in the portal's `TicketDetailPage.tsx` as a collapsible diagnostic card.
+3. **Domain Service Inspection Strategy:**
+   - Evaluates DNS A, AAAA, MX, and TXT/SPF records.
+   - Probes common mail ports against MX exchanges and target domain.
+   - Evaluates HTTPS certificate expiration, issuer, subject, and reachability.
+   - Produces clean, rich Markdown diagnostic tables readable by LLM agents.
 
-4. **Zero-Latency Push via `AgentGateway` WebSocket:**
-   - When a technician replies to a ticket in `TicketDetailPage.tsx` (`POST /api/v1/tickets/:id/responses`), the backend checks if the ticket has an `equipment_id`.
-   - If the device is connected to `AgentGateway`, the server broadcasts a `TICKET_CHAT_PUSH` JSON frame down to the endpoint WebSocket socket in $< 100\text{ms}$.
-   - The user-mode desktop tray client (`msp-tray` built with Tauri v2) receives the frame over local Named Pipe / UDS IPC and alerts the user with an unread badge and chime.
-
-5. **Two-Process Architecture (`msp-agent` + `msp-tray` Tauri v2):**
-   - Headless Rust daemon (`packages/msp-agent`) runs 24/7 as a system service for background RMM telemetry and network sockets.
-   - Interactive companion (`packages/msp-tray`) runs in user session using Tauri v2, sharing our React / Tailwind design system.
-   - Fully detailed in [`docs/ideas/tauri-cross-platform-endpoint-tray.md`](file:///c:/Users/PC/Workspace/msp_client_portal/docs/ideas/tauri-cross-platform-endpoint-tray.md).
-
-6. **Quota & State Machine Compliance:**
-   - Enforces [`BL-201`](file:///c:/Users/PC/Workspace/msp_client_portal/AGENTS.md#L64) ticket quota check against the tenant's subscription plan.
-   - Enforces [`BL-102`](file:///c:/Users/PC/Workspace/msp_client_portal/AGENTS.md#L61) Round-Robin Dispatch to immediately assign an active technician specialist.
-   - Device users can mark their ticket as `RESOLVED` directly from the tray without CSAT popups (per approved concept).
-
----
-
-## Dependency Graph
-
-```
-Phase 1: Database Schema & Shared Contracts
-   ├── 1.1 Migration 042: Add reporter & device_snapshot to tickets
-   ├── 1.2 Update Drizzle schema & shared domain types
-   ├── 1.3 Add Agent Ticket contracts in @shared/contracts
-   └── Checkpoint 1: Database schema & contracts compile clean
-          │
-          ▼
-Phase 2: Backend Ingestion, Security & WebSocket Push
-   ├── 2.1 Implement agentAuthMiddleware & ZSP token validation
-   ├── 2.2 Implement TicketService.createFromAgent (BL-201 & BL-102)
-   ├── 2.3 Implement TicketService.addResponseFromAgent & Chat Routes
-   ├── 2.4 Implement AgentGateway.pushTicketChatMessage WebSocket relay
-   └── Checkpoint 2: Backend unit & integration tests pass (100% green)
-          │
-          ▼
-Phase 3: Web Portal UI Enhancements
-   ├── 3.1 Display Endpoint Badge & Flight Recorder in TicketDetailPage
-   ├── 3.2 Display Reporter Attribution in TicketResponses thread
-   ├── 3.3 Bilingual translations in en_US.json and es_DO.json
-   └── Checkpoint 3: Frontend build and Vitest suite pass cleanly
-          │
-          ▼
-Phase 4: Agent Test Harness & Tray IPC Protocol
-   ├── 4.1 Create test-agent-ticketing harness simulating socket & chat
-   ├── 4.2 Document Named Pipe IPC contract for msp-tray.exe
-   └── Checkpoint 4: End-to-end simulated agent flow verified
-          │
-          ▼
-Phase 5: Quality Gates & Verification
-   ├── 5.1 Full workspace typecheck & build
-   ├── 5.2 Full test suites (server + client)
-   └── Checkpoint 5: Definition of Done verified
-```
+4. **Internal System Status Ingestion:**
+   - Connects to backend `/system/api-status` (Admin-authenticated) via `MspApiClient`.
+   - Exposes structured JSON metrics covering database latency, Nextcloud health, uptime, and environment configuration status.
 
 ---
 
 ## Task List
 
-### Phase 1: Database Schema & Shared Contracts
-- [x] Task 1.1: Database Migration `042_add_ticket_reporter_and_agent_metadata.sql`
-- [x] Task 1.2: Update Drizzle Schema & Shared Domain Types
-- [x] Task 1.3: Define Agent Ticket Contracts in `@shared/contracts`
-- [x] Checkpoint 1: Contracts & Database Schema Active
+### Phase 1: Fix Type Safety & Build Stabilization
+- [x] Task 1.1: Fix TypeScript Compilation TS2322 in `domainTools.ts`
+- [x] Task 1.2: Add Strongly-Typed Contract for `getSystemApiStatus()` in `MspApiClient.ts`
+- [x] Checkpoint 1: Clean Build Verification (`npm --prefix packages/mcp-server run build`)
 
-### Phase 2: Backend Ingestion, Security & WebSocket Push
-- [x] Task 2.1: Implement `agentAuthMiddleware` for Machine-Bound Token Validation
-- [x] Task 2.2: Implement `TicketService.createFromAgent` with BL-201 & BL-102
-- [x] Task 2.3: Implement `TicketService.addResponseFromAgent` & Express Agent Routes
-- [x] Task 2.4: Implement `AgentGateway.pushTicketChatMessage` WebSocket Relay
-- [x] Checkpoint 2: Backend Ingestion & Push Logic Verified
+### Phase 2: Unit Testing & Diagnostic Validation
+- [x] Task 2.1: Implement Unit Tests for `msp_get_system_api_status` in `tools.test.ts`
+- [x] Task 2.2: Implement Unit Tests for Domain Probing Logic & Error Handling
+- [x] Checkpoint 2: All Vitest Tests Green (`npm --prefix packages/mcp-server run test`)
 
-### Phase 3: Web Portal UI Enhancements
-- [x] Task 3.1: Add Endpoint Flight Recorder Telemetry Card to `TicketDetailPage`
-- [x] Task 3.2: Render Reporter Identity in `TicketResponses` Component
-- [x] Task 3.3: Add Bilingual Localization in `en_US.json` and `es_DO.json`
-- [x] Checkpoint 3: Frontend Portal UI Verified
+### Phase 3: Monorepo Quality Gates & Documentation
+- [x] Task 3.1: Monorepo Full Verification (`npm run build:packages`, `server build`, `client build`)
+- [x] Task 3.2: Verify Documentation in `packages/mcp-server/README.md`
+- [x] Checkpoint 3: Ready for Merge / Commit
 
-### Phase 4: Agent Test Harness & Tray IPC Protocol
-- [x] Task 4.1: Create Automated Agent Ticketing & Chat Test Harness
-- [x] Task 4.2: Document Named Pipe IPC Protocol for `msp-tray.exe`
-- [x] Checkpoint 4: Integration Simulation Cleared
-
-### Phase 5: Quality Gates & DoD (Completed in ec2c876 & ab40b22)
-- [x] Task 5.1: Run Full Test Suites (`npm -w server run test` & `npm -w client run test:run`)
-- [x] Task 5.2: Monorepo Clean Compilation (`npm run build:packages`, `server build`, `client build`)
-- [x] Checkpoint 5: Final DoD Verified
-
-### Phase 6: Tauri v2 Desktop Companion (`packages/msp-tray`)
-- [x] Task 6.1: Scaffold `packages/msp-tray` workspace with Tauri v2 + React 19 + Tailwind CSS
-- [x] Task 6.2: Implement Local IPC Transport & Tauri Commands (`src-tauri/src/ipc.rs`)
-- [x] Task 6.3: Implement Shift-Worker Attribution & Local Persistence
-- [x] Task 6.4: Implement Tray Drawer & 1-Click Ticket Creation Modal
-- [x] Task 6.5: Implement Live Chat Drawer Mirroring `TicketResponses.tsx`
-- [x] Task 6.6: Compilation, Build Verification & Integration Testing
-- [x] Checkpoint 6: Tauri Desktop Assistant Operational
-
-### Phase 7: Desktop Tray Companion Distribution & Release Automation
-- [x] Task 7.1: Add `build-tray-binaries` Job in `.github/workflows/deploy.yml` for Windows x64 & x86
-- [x] Task 7.2: Update GitHub Release Packaging to Ingest and Publish `msp-tray.exe` Binaries & Checksums
-- [x] Task 7.3: Synchronize `msp-tray` in `.versionrc.json` & `scripts/sync-versions.js`
-- [x] Task 7.4: Update Installer Scripts (`build-installer.ps1` & `Install-MspAgent.ps1`) to Bundle and Register `msp-tray.exe`
-- [x] Task 7.5: Add Server Download Endpoint `GET /api/v1/equipment/tray-binary` with Vitest Unit Tests
-- [x] Checkpoint 7: Tray Assistant Released and Automated
-
+### Phase 4: Email & Notification Tools
+- [x] Task 4.1: Implement `msp_get_last_email` and `msp_list_notifications`
+- [x] Checkpoint 4: Ready for Merge / Commit
 
 ---
 
@@ -131,14 +54,11 @@ Phase 5: Quality Gates & Verification
 
 | Risk | Impact | Mitigation |
 | :--- | :--- | :--- |
-| **Unpaired Agent Exploits:** Malicious requests attempting to spoof `agentToken`. | High | `agentAuthMiddleware` strictly queries `subscription_equipment` for matching `agent_token` and verified `ACTIVE` status. |
-| **Ticket Quota Exhaustion (`BL-201`):** Rogue device scripts flooding the ticketing API. | Medium | Enforces `ticketQuotaService.enforceTicketLimit` before creation plus IP/token rate-limiting (max 3 tickets/hr/device). |
-| **Session 0 UI Inaccessibility:** Windows service unable to display tray windows. | Medium | Two-process architecture: Session 0 `msp-agent` delegates UI to user-session `msp-tray` via Named Pipe. |
-| **Offline Workstation Socket Disconnects:** Technician responds when workstation is sleeping or disconnected. | Low | Message is stored durably in `ticket_responses`; agent retrieves unread responses upon WebSocket reconnection. |
+| **Network Socket Hangs:** Target firewalls dropping packets silently causing TCP probe timeouts. | Medium | Enforces strict 4000ms socket timeouts with immediate `socket.destroy()` upon error or timeout event. |
+| **Untrusted / Self-Signed SSL Certs:** Diagnostic probe failing on self-signed certs. | Low | Uses `rejectUnauthorized: false` during probe to inspect and report cert details even if expired or untrusted. |
+| **API Client Authentication:** `GET /system/api-status` requires `ADMIN` role. | Medium | Properly catches and returns structured MCP error message if the API token lacks sufficient permissions. |
 
 ---
 
 ## Open Questions
-All initial open questions have been resolved:
-- CSAT feedback prompt: **Disabled** (distraction-free resolution).
-- Multi-user shift workstation attribution: **Prompts for Name and Email** on first run, cached per user profile.
+- None. Requirements and interfaces align with existing backend API contracts and MCP architecture.
