@@ -2,6 +2,113 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.10.2](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.10.1...v1.10.2) (2026-09-08)
+
+
+### Features
+
+* **release:** add msp-tray desktop companion to automated releases and downloads ([16f5147](https://github.com/Velmar-Technology/msp_client_portal/commit/16f5147b7e0d39a74c6b1a2640f0d3958f2f23a2))
+* **tickets:** add endpoint agent no-login ticket creation and realtime tray chat ([ec2c876](https://github.com/Velmar-Technology/msp_client_portal/commit/ec2c876cce4bd64ce05908ed5c278bde6d5656c7))
+* **tray:** add tauri v2 desktop support assistant and velmar branding ([0bbbf3d](https://github.com/Velmar-Technology/msp_client_portal/commit/0bbbf3dd3cfcef2d4e10b7e5b7baa7bb2c7925f9))
+* **vault:** implement device-bound password vaults and BL-702 graceful non-payment lifecycle ([936a8fd](https://github.com/Velmar-Technology/msp_client_portal/commit/936a8fde326a33a0ffbccbffe5255dabc720bb76))
+
+
+### Bug Fixes
+
+* **equipment:** resolve EquipmentRepository type incompatibilities ([ab40b22](https://github.com/Velmar-Technology/msp_client_portal/commit/ab40b22f61b7351648b8aa63ab1249fcfb07b304))
+* **server:** bundle migrate.js and resolve paths for production container health ([e309c2a](https://github.com/Velmar-Technology/msp_client_portal/commit/e309c2a944852a04c6fd165021bf385168907da6))
+* **tickets:** use explicit type modifier for re-exported types under isolatedModules ([a65e4be](https://github.com/Velmar-Technology/msp_client_portal/commit/a65e4beb18973215ced407d1cd95cb9aefd3e06e))
+
+## [1.10.1](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.10.0...v1.10.1) (2026-09-03)
+
+
+### Bug Fixes
+
+* **docker:** copy and build packages/contracts in client and server Dockerfiles ([220635c](https://github.com/Velmar-Technology/msp_client_portal/commit/220635c5310ef483cea0f3264e4f9753d5922df3))
+
+## [1.10.0](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.9.0...v1.10.0) (2026-09-03)
+
+
+### Features
+
+* **billing:** migrate billing and expenses to @shared/contracts and TanStack Query ([4ac5469](https://github.com/Velmar-Technology/msp_client_portal/commit/4ac5469ff656b07cfedbd0ce9659f275e9088b35))
+* **billing:** migrate billing module to ADR-002 colocated architecture ([5d2fe5d](https://github.com/Velmar-Technology/msp_client_portal/commit/5d2fe5d08edd577d6a5ef2884535f6cc0231a90f))
+* **client:** enforce ADR-002 feature architecture and add scaffolding engine ([6944b87](https://github.com/Velmar-Technology/msp_client_portal/commit/6944b87eff3ec5ae28101f43fb1e75fcda887f3b))
+* **client:** migrate to SOTA React Router v7 Data Mode with colocated feature manifests (ADR-003) ([fa15bb3](https://github.com/Velmar-Technology/msp_client_portal/commit/fa15bb352c1713e5561ada2cf88dba2e16ec211d))
+* **contracts:** implement @shared/contracts and TanStack Query tickets pilot ([dd90f2f](https://github.com/Velmar-Technology/msp_client_portal/commit/dd90f2f7f227528246d599e1587b05f1d5ae7c69))
+* **contracts:** migrate equipment and subscriptions to @shared/contracts and TanStack Query ([0361add](https://github.com/Velmar-Technology/msp_client_portal/commit/0361add4915ad42ce83d09560c390bbd4017afb8))
+* **equipment:** migrate equipment module to ADR-002 colocated architecture ([ebae1b7](https://github.com/Velmar-Technology/msp_client_portal/commit/ebae1b771fa1bfae0c729e80634b632cf463071f))
+* **infra:** sota infrastructure overhaul and architectural conformance ([dc960a0](https://github.com/Velmar-Technology/msp_client_portal/commit/dc960a0a193b329bdcd5b7e980324df89b631e30))
+* **subscriptions:** add subscription conditional page and feature gating ([77ad50c](https://github.com/Velmar-Technology/msp_client_portal/commit/77ad50c51b2f2819617bcf09b82b4604ebcd82ab))
+* **system:** implement self-service vaultwarden password reset and re-invitation ([470aacf](https://github.com/Velmar-Technology/msp_client_portal/commit/470aacf688ffb96fa89f00285892ff178e40a5d5))
+
+
+### Bug Fixes
+
+* **crm:** add migration 038 for custom plan columns on plans table ([7c00b76](https://github.com/Velmar-Technology/msp_client_portal/commit/7c00b76b76f7861227d92e1966e5d61f1ffc6b09))
+* **financial:** correct i18n keys and contract category mapping in LogExpenseDialog ([d97f9a5](https://github.com/Velmar-Technology/msp_client_portal/commit/d97f9a54a2b7e4d05460422b1b27c981aa7b5962))
+
+## [1.9.0](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.8.7...v1.9.0) (2026-09-02)
+
+
+### Features
+
+* **client:** add composed design primitives, lint guardrails and style guide ([a73f36c](https://github.com/Velmar-Technology/msp_client_portal/commit/a73f36c69151e82095a0f4cbf6aaf7d33d29b3e7))
+* **client:** add custom plan studio with CRM integration ([3af91af](https://github.com/Velmar-Technology/msp_client_portal/commit/3af91af9fd35211f8e2de3942af0deba7834ec94))
+* **client:** add dedicated PlanEditorPage and enhance feature catalog parameters ([687304c](https://github.com/Velmar-Technology/msp_client_portal/commit/687304c8f4521a04897d6a72acb75e4ab4a2ab71))
+* **client:** add feature pricing rules and plan cost calculator ([16d202d](https://github.com/Velmar-Technology/msp_client_portal/commit/16d202def275e92b4649d24a325e9ed2f6cf73d6))
+* **crm:** add backend for bespoke custom plans with lead binding ([7c3d9a3](https://github.com/Velmar-Technology/msp_client_portal/commit/7c3d9a3ebc494c146c4fc40051e542607691b7d0))
+* **infra:** add automated Nextcloud Kopia backup to Google Drive with fast DR ([bfe2cf4](https://github.com/Velmar-Technology/msp_client_portal/commit/bfe2cf47be9eb03b367556bd9452ddc687d82961))
+* **tickets:** add HELPDESK and AI ticket categories across schema, types, mcp, and client ([c740707](https://github.com/Velmar-Technology/msp_client_portal/commit/c740707b851eb92fcbac1306e8c1d856bb593f27))
+* **vaultwarden:** add hosted multi-tenant password manager integration and BL-702 lifecycle hooks ([f5ac891](https://github.com/Velmar-Technology/msp_client_portal/commit/f5ac891545d35316343691ae9481c0ea72f2063b))
+
+## [1.8.7](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.8.6...v1.8.7) (2026-09-01)
+
+
+### Features
+
+* **billing:** register MCP billing tools and isolate admin tenant from MRR and renewals ([7371a67](https://github.com/Velmar-Technology/msp_client_portal/commit/7371a671cc42e0c6956b7332235a060b73b12533))
+* **client:** extract ViewToggle primitive, standardize across pages, and center ChunkErrorBoundary ([1388201](https://github.com/Velmar-Technology/msp_client_portal/commit/1388201632be317b91adefc201550f16772ad3c8))
+* **client:** streamline toolbars and compact views across maintenance, devices, and crm ([635868f](https://github.com/Velmar-Technology/msp_client_portal/commit/635868ff9cc916477638077f063bee1d9407bb55))
+* **financial:** add technician commission recalculation and table pagination ([2f82132](https://github.com/Velmar-Technology/msp_client_portal/commit/2f821326f654a620df397e94ad046e464a5b4da5))
+* **financial:** convert expense breakdown to pie chart and synchronize analytical chart heights ([7a28e4a](https://github.com/Velmar-Technology/msp_client_portal/commit/7a28e4a29f85a22a78f82e493ce9d0ede74f623d))
+* **mcp:** add user management tools and agent mcp guardrails ([fdbc2ca](https://github.com/Velmar-Technology/msp_client_portal/commit/fdbc2ca963df17d57c02c738daadc92aab804662))
+
+
+### Bug Fixes
+
+* **client:** resolve unassigned variable in RevenueChart and normalize height ([1b0a4d1](https://github.com/Velmar-Technology/msp_client_portal/commit/1b0a4d152442974f4d2802f83e5bc1685e70ac04))
+
+## [1.8.6](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.8.5...v1.8.6) (2026-08-31)
+
+
+### Features
+
+* **equipment:** require OTP pairing code for admin device provisioning ([8927452](https://github.com/Velmar-Technology/msp_client_portal/commit/892745266c7fdce826e12d6b565e941ef63151c2))
+
+## [1.8.5](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.8.4...v1.8.5) (2026-08-31)
+
+
+### Features
+
+* **agent:** add SMBIOS hardware component serial discovery to msp-agent ([5486567](https://github.com/Velmar-Technology/msp_client_portal/commit/54865676316aaec1250adbc977afc7ff91392017))
+* **agent:** package standalone Windows Service installer and silent deployment scripts ([f707877](https://github.com/Velmar-Technology/msp_client_portal/commit/f707877774b57adb48e6623c639ae76b2aa92067))
+* **deploy:** support msp-agent for windows x64/x32 and mac apple silicon/intel with signatures and sha256 manifests ([2028830](https://github.com/Velmar-Technology/msp_client_portal/commit/2028830debc4cced2231328e51c150ff5c0f59ba))
+* **emails:** align email templates and tokens with logo aesthetic and embed logo ([eaf4a16](https://github.com/Velmar-Technology/msp_client_portal/commit/eaf4a160d96de389cb0b38ed552bbf761fab2398))
+* **emails:** dynamically adapt all email notifications to recipient preferred language (i18n) ([4c5775a](https://github.com/Velmar-Technology/msp_client_portal/commit/4c5775a4a6ada6904ff54c0a33f0337eb407279c))
+* **equipment:** add MSP agent deployment modal and script provisioning ([fdc92d6](https://github.com/Velmar-Technology/msp_client_portal/commit/fdc92d6529e220044f8ba373cd89248ab67e5227))
+* **mcp-server:** implement MCP 2026-07-28 stateless Streamable HTTP transport and dual-mode architecture ([17cfb37](https://github.com/Velmar-Technology/msp_client_portal/commit/17cfb37cc204b2a789466e7f7b50a73ca2df4e40))
+* **mcp-server:** require MSP_API_KEY for MCP server authentication ([c347555](https://github.com/Velmar-Technology/msp_client_portal/commit/c347555170ecac67a0a513fde326aaadb41181e9))
+* **mcp:** add client list and hardware component serial tracking with chain-of-custody fingerprint ([8039ac0](https://github.com/Velmar-Technology/msp_client_portal/commit/8039ac093a1ac36e03c9fd75ba07e178e07fb81b))
+* **mcp:** add msp_get_device_maintenance_report 1-shot unified maintenance dossier tool ([57b7e00](https://github.com/Velmar-Technology/msp_client_portal/commit/57b7e002d57b5d98d64045bd10e7621ea15db241))
+* **server:** distribute cron schedulers with distributed locking and graceful shutdown ([4871b0e](https://github.com/Velmar-Technology/msp_client_portal/commit/4871b0e955e86cb30c5a11bc9abc8ad300fec2c6))
+
+
+### Bug Fixes
+
+* **api-keys:** add migration for description and expiry columns ([0badff9](https://github.com/Velmar-Technology/msp_client_portal/commit/0badff9ece139dacd0a91652a128373e69dde758))
+* **server:** skip email service if SMTP settings are blank or incomplete ([cee5869](https://github.com/Velmar-Technology/msp_client_portal/commit/cee5869fc75ceb6b2f98254548c1a222c5373cae))
+
 ## [1.8.4](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.8.3...v1.8.4) (2026-08-31)
 
 
