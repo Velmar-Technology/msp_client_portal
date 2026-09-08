@@ -6,6 +6,7 @@ import React from 'react';
 import { DevicesPage } from "./DevicesPage";
 import { subscriptionService } from '@/features/subscriptions';
 import { equipmentService } from '../api/equipmentService';
+import { FEATURE_CODES } from '@/constants/subscriptions';
 import type { SubscriptionEquipment } from '@shared/contracts';
 import enTranslations from "@/locales/en_US.json";
 
@@ -40,6 +41,24 @@ vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({
     user: mockUser,
     isAuthenticated: true,
+  }),
+}));
+
+const mockHasPlanFeature = vi.fn((planId?: string | null, featureCode?: string) => {
+  if (mockUser.role === 'ADMIN' || mockUser.role === 'TECHNICIAN') return true;
+  if (!featureCode) return true;
+  if (planId === 'PL-003' && featureCode === FEATURE_CODES.PASSWORD_MANAGER) return true;
+  return false;
+});
+
+vi.mock('@/hooks/useEntitlements', () => ({
+  useEntitlements: () => ({
+    hasFeature: vi.fn(() => true),
+    isFeatureLocked: vi.fn(() => false),
+    activeFeatures: [],
+    activeSubscriptions: [],
+    hasActiveSubscription: true,
+    hasPlanFeature: mockHasPlanFeature,
   }),
 }));
 
@@ -1237,6 +1256,121 @@ describe('DevicesPage', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Actions' })[0]);
     await waitFor(() => {
       expect(screen.getAllByRole('menuitem', { name: 'Activate Device' }).length).toBeGreaterThan(0);
+    });
+  });
+
+  test('gates Device Password Vault action menu item based on plan feature entitlement', async () => {
+    mockUser.role = 'CLIENT';
+    const entitledSubs = [
+      {
+        id: 'sub-entitled',
+        client_id: 'user-client',
+        service_name: 'Advanced Support',
+        plan: 'PL-003' as const,
+        status: 'ACTIVE' as const,
+        renewal_date: '2026-07-22T00:00:00.000Z',
+        equipment_count: 1,
+        tenant_id: 'tenant-1',
+        created_at: '2026-06-22',
+        updated_at: '2026-06-22',
+      },
+    ];
+    vi.mocked(subscriptionService.getAll).mockResolvedValue(entitledSubs);
+
+    const entitledSlots: SubscriptionEquipment[] = [
+      {
+        id: 'slot-entitled',
+        subscription_id: 'sub-entitled',
+        slot_index: 0,
+        status: 'ACTIVE',
+        device_name: 'Workstation-Advanced',
+        device_serial: 'SN-ADV-001',
+        plan: 'PL-003',
+        tenant_id: 'tenant-1',
+        created_at: '2026-06-22',
+        updated_at: '2026-06-22',
+      },
+    ];
+    vi.mocked(equipmentService.getMyDevices).mockResolvedValue([...entitledSlots]);
+
+    const { unmount } = render(
+      <QueryClientProvider client={testQueryClient}>
+        <MemoryRouter>
+          <DevicesPage />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Workstation-Advanced')).toBeInTheDocument();
+    });
+
+    // Allow query cache for plans to settle
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Actions' })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Actions' }));
+    await waitFor(() => {
+      expect(screen.getByText('Device Password Vault')).toBeInTheDocument();
+      expect(screen.queryByTestId('vault-upgrade-lock')).toBeNull();
+    });
+
+    unmount();
+
+    // Now test with non-entitled plan PL-001
+    const basicSubs = [
+      {
+        id: 'sub-basic',
+        client_id: 'user-client',
+        service_name: 'Basic Support',
+        plan: 'PL-001' as const,
+        status: 'ACTIVE' as const,
+        renewal_date: '2026-07-22T00:00:00.000Z',
+        equipment_count: 1,
+        tenant_id: 'tenant-1',
+        created_at: '2026-06-22',
+        updated_at: '2026-06-22',
+      },
+    ];
+    vi.mocked(subscriptionService.getAll).mockResolvedValue(basicSubs);
+
+    const basicSlots: SubscriptionEquipment[] = [
+      {
+        id: 'slot-basic',
+        subscription_id: 'sub-basic',
+        slot_index: 0,
+        status: 'ACTIVE',
+        device_name: 'Workstation-Basic',
+        device_serial: 'SN-BSC-002',
+        plan: 'PL-001',
+        tenant_id: 'tenant-1',
+        created_at: '2026-06-22',
+        updated_at: '2026-06-22',
+      },
+    ];
+    vi.mocked(equipmentService.getMyDevices).mockResolvedValue([...basicSlots]);
+
+    const basicClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, staleTime: 0, gcTime: 0 } },
+    });
+
+    render(
+      <QueryClientProvider client={basicClient}>
+        <MemoryRouter>
+          <DevicesPage />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Workstation-Basic')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Actions' }));
+    await waitFor(() => {
+      expect(screen.getByText('Device Password Vault')).toBeInTheDocument();
+      expect(screen.getByTestId('vault-upgrade-lock')).toBeInTheDocument();
     });
   });
 });

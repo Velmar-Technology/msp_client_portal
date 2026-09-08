@@ -209,7 +209,7 @@ interface UserMenuProps {
   showUserMenu: boolean;
   setShowUserMenu: (show: boolean) => void;
   userMenuRef: React.RefObject<HTMLDivElement | null>;
-  user: { name?: string; email?: string; role?: string; avatarUrl?: string | null } | null;
+  user: { id?: string; name?: string; email?: string; role?: string; avatarUrl?: string | null } | null;
   logout: () => void;
   t: (key: string) => string;
 }
@@ -259,9 +259,14 @@ export function UserMenu({
           <div className="px-3 py-2 border-b border-border mb-1">
             <p className="text-xs font-bold text-foreground truncate">{user?.name}</p>
             <p className="text-[10px] text-muted-foreground truncate mt-0.5">{user?.email}</p>
-            <span className="inline-block mt-1.5 px-1.5 py-0.5 bg-muted text-foreground border border-border text-[8px] font-mono font-bold rounded-sm uppercase">
-              {user?.role}
-            </span>
+            {user?.id && (
+              <span
+                title={user.id}
+                className="inline-block mt-1.5 px-1.5 py-0.5 bg-muted text-foreground border border-border text-[8px] font-mono font-bold rounded-sm truncate max-w-full"
+              >
+                {user.id}
+              </span>
+            )}
           </div>
           <button
             onClick={logout}

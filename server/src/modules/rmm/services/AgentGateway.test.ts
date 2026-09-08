@@ -459,4 +459,44 @@ describe('AgentGateway', () => {
     const result = gateway.unbindAgent('non-existent-agent', 'slot-999');
     expect(result).toBe(false);
   });
+
+  it('should send TICKET_CHAT_PUSH envelope when agent is connected and socket is open', () => {
+    const ws = new MockWebSocket();
+    let sentEnvelope: any = null;
+    ws.send = vi.fn((data: string, cb?: (err?: Error) => void) => {
+      sentEnvelope = JSON.parse(data);
+      if (cb) cb();
+    });
+
+    wss.emit('connection', ws, createMockReq('eq-chat-01'));
+
+    const pushPayload = {
+      ticketId: 'tick-123',
+      responseId: 'resp-456',
+      authorName: 'Senior Tech',
+      authorRole: 'TECHNICIAN' as const,
+      message: 'Hello from helpdesk',
+      attachments: [{ id: 'att-1', filename: 'log.txt', path: '/uploads/log.txt' }],
+      createdAt: '2026-09-07T12:00:00.000Z',
+    };
+
+    const sent = gateway.pushTicketChatMessage('eq-chat-01', pushPayload);
+    expect(sent).toBe(true);
+    expect(sentEnvelope.command).toBe('TICKET_CHAT_PUSH');
+    expect(sentEnvelope.payload).toEqual(pushPayload);
+    expect(sentEnvelope.correlation_id).toMatch(/^chat-/);
+  });
+
+  it('should return false when pushTicketChatMessage is called for offline or non-existent agent', () => {
+    const sent = gateway.pushTicketChatMessage('eq-offline', {
+      ticketId: 'tick-123',
+      responseId: 'resp-456',
+      authorName: 'Tech',
+      authorRole: 'TECHNICIAN' as const,
+      message: 'Hello',
+      attachments: [],
+      createdAt: '2026-09-07T12:00:00.000Z',
+    });
+    expect(sent).toBe(false);
+  });
 });

@@ -1,93 +1,144 @@
-# Implementation Plan: SOTA React Router v7 Data Mode & Colocated Feature Route Manifests (ADR-003)
+# Implementation Plan: Endpoint No-Login Ticket Creation & Real-Time Tray Chat
 
 ## Overview
-Elevate `msp_client_portal` frontend routing architecture to State-of-the-Art (SOTA) by transitioning from legacy declarative JSX `<Routes>` to **React Router v7 Data Router (`createBrowserRouter`)** integrated with **ADR-001 (Contract-First + TanStack Query v5 Cache Preloading)** and **ADR-002 (Colocated Feature Route Manifests)**.
-
-Work is structured into 4 sequential milestones:
-1. **Milestone 1 — Core Router Infrastructure & ADR-003 Foundation (P0):** Formalize ADR-003, implement typed route utilities, route handles, and root `createBrowserRouter` assembly in `App.tsx`.
-2. **Milestone 2 — Feature Route Manifests (Phase A: Auth, Tickets, Billing & Subscriptions) (P0):** Colocate route definitions and TanStack Query `ensureQueryData` / `prefetchQuery` loaders in high-traffic business domains.
-3. **Milestone 3 — Feature Route Manifests (Phase B: Equipment, RMM, CRM, Financial, Users, Dashboard & Settings) (P1):** Complete decentralized route manifests across all remaining 8 feature domains.
-4. **Milestone 4 — Architecture Gates, Preloading & Legacy Purge (P1):** Add AST test rules for route manifests, optimize hover/intent chunk & query prefetching, and purge legacy `protected-routes.tsx`.
+Implement machine-authenticated endpoint ticket creation and live WebSocket chat integration for workstation devices. Allows physical endpoints running the MSP agent to create pre-diagnosed tickets without requiring web portal logins, while providing a real-time system tray chat drawer synchronized with technician responses in `TicketDetailPage.tsx` over the existing `AgentGateway` WebSocket connection.
 
 ---
 
-## Architecture Decisions & Constraints
+## Architecture Decisions
 
-- **Decentralized Colocated Manifests (ADR-002):** Every business module in `client/src/features/<domain>/` exports a `routes.tsx` containing its typed `RouteObject[]` slice. Deep imports remain forbidden.
-- **Contract-Coupled Loaders (ADR-001):** Route loaders execute `queryClient.ensureQueryData` or `queryClient.prefetchQuery` using `queryOptions()` derived directly from `@shared/contracts` schemas.
-- **Zero-Flicker Layout Transitions:** Component chunks (`lazy: () => import(...)`) and server query caches load in parallel before navigation finishes, accompanied by localized Suspense skeletons (`DashboardSkeleton`, `TablePageSkeleton`, `DetailSkeleton`).
-- **Unified Role & Feature Guards:** Authentication, RBAC (`allowedRoles`), subscription feature entitlement (`requiredFeature`), and breadcrumb resolution (`handle.crumb`) are declared natively on route `handle` metadata.
-- **Backward Compatibility & Zero Regressions:** Existing test suites (127+ server tests, client vitest, arch tests, a11y) must remain 100% green at every checkpoint.
+1. **Machine-Level Authentication (`agentToken`):**
+   - The desktop agent authenticates using the hardware token (`subscription_equipment.agent_token`) issued during OTP pairing.
+   - `agentAuthMiddleware` validates the token, joins `subscription_equipment` with `subscriptions`, and extracts `equipment_id`, `tenant_id`, and `client_id` (the client account owner).
+   - Enforces Zero-Standing Privilege (ZSP): endpoints can only create tickets bound to their own `equipment_id` and can only view/reply to active tickets belonging to that device.
+
+2. **Shift-Worker Attribution & Contact Identity:**
+   - Desktop tray prompts for the active desk worker's Name and Email on first issue report.
+   - Stored in `tickets.reporter_name` and `tickets.reporter_email`, enabling shift workers on shared physical workstations to be accurately identified.
+
+3. **Flight Recorder Diagnostics Snapshot:**
+   - At the time of ticket submission, the agent collects OS build, uptime, CPU%, RAM%, disk%, top 5 processes, and recent critical Windows event log entries.
+   - Stored in a structured JSONB column `tickets.device_snapshot` and presented in the portal's `TicketDetailPage.tsx` as a collapsible diagnostic card.
+
+4. **Zero-Latency Push via `AgentGateway` WebSocket:**
+   - When a technician replies to a ticket in `TicketDetailPage.tsx` (`POST /api/v1/tickets/:id/responses`), the backend checks if the ticket has an `equipment_id`.
+   - If the device is connected to `AgentGateway`, the server broadcasts a `TICKET_CHAT_PUSH` JSON frame down to the endpoint WebSocket socket in $< 100\text{ms}$.
+   - The user-mode desktop tray client (`msp-tray` built with Tauri v2) receives the frame over local Named Pipe / UDS IPC and alerts the user with an unread badge and chime.
+
+5. **Two-Process Architecture (`msp-agent` + `msp-tray` Tauri v2):**
+   - Headless Rust daemon (`packages/msp-agent`) runs 24/7 as a system service for background RMM telemetry and network sockets.
+   - Interactive companion (`packages/msp-tray`) runs in user session using Tauri v2, sharing our React / Tailwind design system.
+   - Fully detailed in [`docs/ideas/tauri-cross-platform-endpoint-tray.md`](file:///c:/Users/PC/Workspace/msp_client_portal/docs/ideas/tauri-cross-platform-endpoint-tray.md).
+
+6. **Quota & State Machine Compliance:**
+   - Enforces [`BL-201`](file:///c:/Users/PC/Workspace/msp_client_portal/AGENTS.md#L64) ticket quota check against the tenant's subscription plan.
+   - Enforces [`BL-102`](file:///c:/Users/PC/Workspace/msp_client_portal/AGENTS.md#L61) Round-Robin Dispatch to immediately assign an active technician specialist.
+   - Device users can mark their ticket as `RESOLVED` directly from the tray without CSAT popups (per approved concept).
 
 ---
 
 ## Dependency Graph
 
 ```
-Milestone 1: Core Router Infrastructure & ADR-003 (P0)
-   ├── Task 1: Formalize ADR-003 Decision Record
-   ├── Task 2: Shared Route Types, Handles & Loader Helpers
-   └── Task 3: Root createBrowserRouter & App.tsx RouterProvider
-   └── Checkpoint 1: Core Router Infrastructure Active
+Phase 1: Database Schema & Shared Contracts
+   ├── 1.1 Migration 042: Add reporter & device_snapshot to tickets
+   ├── 1.2 Update Drizzle schema & shared domain types
+   ├── 1.3 Add Agent Ticket contracts in @shared/contracts
+   └── Checkpoint 1: Database schema & contracts compile clean
           │
           ▼
-Milestone 2: Feature Route Manifests - Phase A (P0)
-   ├── Task 4: Auth & Public Route Manifests (auth, public)
-   ├── Task 5: Tickets Domain Route Manifest with Query Loaders
-   └── Task 6: Billing & Subscriptions Route Manifests
-   └── Checkpoint 2: Core Business Route Slices Verified
+Phase 2: Backend Ingestion, Security & WebSocket Push
+   ├── 2.1 Implement agentAuthMiddleware & ZSP token validation
+   ├── 2.2 Implement TicketService.createFromAgent (BL-201 & BL-102)
+   ├── 2.3 Implement TicketService.addResponseFromAgent & Chat Routes
+   ├── 2.4 Implement AgentGateway.pushTicketChatMessage WebSocket relay
+   └── Checkpoint 2: Backend unit & integration tests pass (100% green)
           │
           ▼
-Milestone 3: Feature Route Manifests - Phase B (P1)
-   ├── Task 7: Equipment & RMM Maintenance Route Manifests
-   ├── Task 8: CRM & Financial Route Manifests
-   └── Task 9: Users, Settings, Dashboard & System Route Manifests
-   └── Checkpoint 3: All 12 Domains Colocated & Assembled
+Phase 3: Web Portal UI Enhancements
+   ├── 3.1 Display Endpoint Badge & Flight Recorder in TicketDetailPage
+   ├── 3.2 Display Reporter Attribution in TicketResponses thread
+   ├── 3.3 Bilingual translations in en_US.json and es_DO.json
+   └── Checkpoint 3: Frontend build and Vitest suite pass cleanly
           │
           ▼
-Milestone 4: Architecture Gates, Preloading & Purge (P1)
-   ├── Task 10: AST Boundary & Architecture Tests for Route Manifests
-   ├── Task 11: Intent Preloading & Cache Warm-Up on Link Hover
-   └── Task 12: Purge Legacy protected-routes.tsx & Run Verification Gates
-   └── Checkpoint 4: SOTA DoD Cleared
+Phase 4: Agent Test Harness & Tray IPC Protocol
+   ├── 4.1 Create test-agent-ticketing harness simulating socket & chat
+   ├── 4.2 Document Named Pipe IPC contract for msp-tray.exe
+   └── Checkpoint 4: End-to-end simulated agent flow verified
+          │
+          ▼
+Phase 5: Quality Gates & Verification
+   ├── 5.1 Full workspace typecheck & build
+   ├── 5.2 Full test suites (server + client)
+   └── Checkpoint 5: Definition of Done verified
 ```
 
 ---
 
-## Task List Index
+## Task List
 
-Detailed tasks with full acceptance criteria and file lists are recorded in [`tasks/todo.md`](./todo.md).
+### Phase 1: Database Schema & Shared Contracts
+- [x] Task 1.1: Database Migration `042_add_ticket_reporter_and_agent_metadata.sql`
+- [x] Task 1.2: Update Drizzle Schema & Shared Domain Types
+- [x] Task 1.3: Define Agent Ticket Contracts in `@shared/contracts`
+- [x] Checkpoint 1: Contracts & Database Schema Active
 
-### Milestone 1: Core Router Infrastructure & ADR-003 Foundation
-- [x] Task 1: Formalize ADR-003 Decision Record (`docs/decisions/ADR-003-sota-react-router-data-mode-and-feature-manifests.md`)
-- [x] Task 2: Implement Shared Route Types, Route Handles & Loader Utilities (`client/src/routes/types.ts`, `routeUtils.tsx`)
-- [x] Task 3: Build Root `createBrowserRouter` Assembly & Wire `App.tsx` `<RouterProvider />`
-- [x] Checkpoint 1: Core Router Infrastructure Active
+### Phase 2: Backend Ingestion, Security & WebSocket Push
+- [x] Task 2.1: Implement `agentAuthMiddleware` for Machine-Bound Token Validation
+- [x] Task 2.2: Implement `TicketService.createFromAgent` with BL-201 & BL-102
+- [x] Task 2.3: Implement `TicketService.addResponseFromAgent` & Express Agent Routes
+- [x] Task 2.4: Implement `AgentGateway.pushTicketChatMessage` WebSocket Relay
+- [x] Checkpoint 2: Backend Ingestion & Push Logic Verified
 
-### Milestone 2: Feature Route Manifests (Phase A: Auth, Tickets, Billing & Subscriptions)
-- [x] Task 4: Colocate Auth & Public Route Manifests (`features/auth/routes.tsx`, `features/auth/index.ts`)
-- [x] Task 5: Colocate Tickets Domain Route Manifest with TanStack Query Loaders (`features/tickets/routes.tsx`)
-- [x] Task 6: Colocate Billing & Subscriptions Domain Route Manifests (`features/billing/routes.tsx`, `features/subscriptions/routes.tsx`)
-- [x] Checkpoint 2: Core Business Route Slices Verified
+### Phase 3: Web Portal UI Enhancements
+- [x] Task 3.1: Add Endpoint Flight Recorder Telemetry Card to `TicketDetailPage`
+- [x] Task 3.2: Render Reporter Identity in `TicketResponses` Component
+- [x] Task 3.3: Add Bilingual Localization in `en_US.json` and `es_DO.json`
+- [x] Checkpoint 3: Frontend Portal UI Verified
 
-### Milestone 3: Feature Route Manifests (Phase B: Equipment, RMM, CRM, Financial, Users, Dashboard & Settings)
-- [x] Task 7: Colocate Equipment & RMM Maintenance Route Manifests (`features/equipment/routes.tsx`, `features/rmm/routes.tsx`)
-- [x] Task 8: Colocate CRM & Financial Domain Route Manifests (`features/crm/routes.tsx`, `features/financial/routes.tsx`)
-- [x] Task 9: Colocate Users, Settings, Dashboard & System Route Manifests (`features/users/routes.tsx`, `features/settings/routes.tsx`, `features/dashboard/routes.tsx`, `features/system/routes.tsx`)
-- [x] Checkpoint 3: All 12 Domains Colocated & Assembled
+### Phase 4: Agent Test Harness & Tray IPC Protocol
+- [x] Task 4.1: Create Automated Agent Ticketing & Chat Test Harness
+- [x] Task 4.2: Document Named Pipe IPC Protocol for `msp-tray.exe`
+- [x] Checkpoint 4: Integration Simulation Cleared
 
-### Milestone 4: Architecture Gates, Preloading & Legacy Purge
-- [x] Task 10: Fortify AST Architecture & Boundary Tests for Route Manifests (`client/tests/arch/feature-architecture.test.ts`)
-- [x] Task 11: Implement SOTA Route Preloading & Hover Prefetching Hooks (`client/src/lib/preloadRoute.ts`)
-- [x] Task 12: Purge Legacy `protected-routes.tsx` & Run Monorepo Quality Gates
-- [x] Checkpoint 4: SOTA Definition of Done Cleared
+### Phase 5: Quality Gates & DoD (Completed in ec2c876 & ab40b22)
+- [x] Task 5.1: Run Full Test Suites (`npm -w server run test` & `npm -w client run test:run`)
+- [x] Task 5.2: Monorepo Clean Compilation (`npm run build:packages`, `server build`, `client build`)
+- [x] Checkpoint 5: Final DoD Verified
+
+### Phase 6: Tauri v2 Desktop Companion (`packages/msp-tray`)
+- [x] Task 6.1: Scaffold `packages/msp-tray` workspace with Tauri v2 + React 19 + Tailwind CSS
+- [x] Task 6.2: Implement Local IPC Transport & Tauri Commands (`src-tauri/src/ipc.rs`)
+- [x] Task 6.3: Implement Shift-Worker Attribution & Local Persistence
+- [x] Task 6.4: Implement Tray Drawer & 1-Click Ticket Creation Modal
+- [x] Task 6.5: Implement Live Chat Drawer Mirroring `TicketResponses.tsx`
+- [x] Task 6.6: Compilation, Build Verification & Integration Testing
+- [x] Checkpoint 6: Tauri Desktop Assistant Operational
+
+### Phase 7: Desktop Tray Companion Distribution & Release Automation
+- [x] Task 7.1: Add `build-tray-binaries` Job in `.github/workflows/deploy.yml` for Windows x64 & x86
+- [x] Task 7.2: Update GitHub Release Packaging to Ingest and Publish `msp-tray.exe` Binaries & Checksums
+- [x] Task 7.3: Synchronize `msp-tray` in `.versionrc.json` & `scripts/sync-versions.js`
+- [x] Task 7.4: Update Installer Scripts (`build-installer.ps1` & `Install-MspAgent.ps1`) to Bundle and Register `msp-tray.exe`
+- [x] Task 7.5: Add Server Download Endpoint `GET /api/v1/equipment/tray-binary` with Vitest Unit Tests
+- [x] Checkpoint 7: Tray Assistant Released and Automated
+
 
 ---
 
 ## Risks and Mitigations
 
 | Risk | Impact | Mitigation |
-| :--- | :---: | :--- |
-| **Blocking Route Loaders Delaying Transitions:** Heavy queries in `loader` could make page transitions feel sluggish on slow 3G. | High | Use `queryClient.prefetchQuery` for non-critical secondary data and only `ensureQueryData` for critical entity headers; pair with top-level navigation progress bar (`useNavigation().state === "loading"`). |
-| **Circular Dependencies during Feature Manifest Assembly:** Aggregating all feature manifests into `appRouter.tsx` could trigger circular dependencies if features import each other. | Medium | Enforce that route manifests only import from their own feature directory and export pure `RouteObject[]` arrays via public gateways. |
-| **Auth Session State Hydration Timing:** If `createBrowserRouter` runs before auth token is validated, false redirect to `/login` could occur. | High | Encapsulate auth guard inside layout routes / `<RouteGuard>` element components that reactively read `useAuth()` state rather than executing one-time loader redirects for session validation. |
+| :--- | :--- | :--- |
+| **Unpaired Agent Exploits:** Malicious requests attempting to spoof `agentToken`. | High | `agentAuthMiddleware` strictly queries `subscription_equipment` for matching `agent_token` and verified `ACTIVE` status. |
+| **Ticket Quota Exhaustion (`BL-201`):** Rogue device scripts flooding the ticketing API. | Medium | Enforces `ticketQuotaService.enforceTicketLimit` before creation plus IP/token rate-limiting (max 3 tickets/hr/device). |
+| **Session 0 UI Inaccessibility:** Windows service unable to display tray windows. | Medium | Two-process architecture: Session 0 `msp-agent` delegates UI to user-session `msp-tray` via Named Pipe. |
+| **Offline Workstation Socket Disconnects:** Technician responds when workstation is sleeping or disconnected. | Low | Message is stored durably in `ticket_responses`; agent retrieves unread responses upon WebSocket reconnection. |
+
+---
+
+## Open Questions
+All initial open questions have been resolved:
+- CSAT feedback prompt: **Disabled** (distraction-free resolution).
+- Multi-user shift workstation attribution: **Prompts for Name and Email** on first run, cached per user profile.

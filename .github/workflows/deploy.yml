@@ -432,12 +432,94 @@ jobs:
           retention-days: 5
 
   # ------------------------------------------------------------------
-  # 5b. GitHub Release — generated notes & compiled agent binaries
+  # 5b. Build Cross-Platform Desktop Tray Binaries (Windows x64 / x86)
+  # ------------------------------------------------------------------
+  build-tray-binaries:
+    name: Build Tray (${{ matrix.platform }})
+    if: needs.prepare.outputs.is_release == 'true'
+    needs: [prepare, quality-gates]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows-x64
+            target: x86_64-pc-windows-msvc
+            binary_name: msp-tray.exe
+          - os: windows-latest
+            platform: windows-x86
+            target: i686-pc-windows-msvc
+            binary_name: msp-tray.exe
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build Shared Packages
+        run: npm run build:packages
+
+      - name: Build Tray Frontend Assets
+        run: npm --prefix packages/msp-tray run build
+
+      - name: Set up Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Build Tray Release Binary
+        run: cargo build --release --manifest-path packages/msp-tray/src-tauri/Cargo.toml --target ${{ matrix.target }}
+
+      - name: Package Tray Assets & Signatures
+        shell: bash
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          PLATFORM: ${{ matrix.platform }}
+          TARGET: ${{ matrix.target }}
+          BINARY_NAME: ${{ matrix.binary_name }}
+        run: |
+          mkdir -p dist-bin
+          SRC_BIN="packages/msp-tray/src-tauri/target/${TARGET}/release/${BINARY_NAME}"
+
+          if [ "${PLATFORM}" = "windows-x64" ]; then
+            cp "${SRC_BIN}" "dist-bin/msp-tray-windows-x86_64.exe"
+            cp "${SRC_BIN}" "dist-bin/msp-tray-${VERSION}-x86_64.exe"
+            cp "${SRC_BIN}" "dist-bin/msp-tray.exe"
+            sha256sum "dist-bin/msp-tray-windows-x86_64.exe" | awk '{print $1}' > "dist-bin/msp-tray-windows-x86_64.exe.sig"
+            sha256sum "dist-bin/msp-tray-${VERSION}-x86_64.exe" | awk '{print $1}' > "dist-bin/msp-tray-${VERSION}-x86_64.exe.sig"
+            sha256sum "dist-bin/msp-tray.exe" | awk '{print $1}' > "dist-bin/msp-tray.exe.sig"
+          elif [ "${PLATFORM}" = "windows-x86" ]; then
+            cp "${SRC_BIN}" "dist-bin/msp-tray-windows-i686.exe"
+            cp "${SRC_BIN}" "dist-bin/msp-tray-${VERSION}-i686.exe"
+            sha256sum "dist-bin/msp-tray-windows-i686.exe" | awk '{print $1}' > "dist-bin/msp-tray-windows-i686.exe.sig"
+            sha256sum "dist-bin/msp-tray-${VERSION}-i686.exe" | awk '{print $1}' > "dist-bin/msp-tray-${VERSION}-i686.exe.sig"
+          fi
+
+      - name: Upload Binary Artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: tray-bin-${{ matrix.platform }}
+          path: dist-bin/*
+          retention-days: 5
+
+  # ------------------------------------------------------------------
+  # 5c. GitHub Release — generated notes & compiled agent/tray binaries
   # ------------------------------------------------------------------
   create-release:
     name: Create GitHub Release
     if: needs.prepare.outputs.is_release == 'true'
-    needs: [prepare, build-agent-binaries]
+    needs: [prepare, build-agent-binaries, build-tray-binaries]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -448,10 +530,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Download All Agent Artifacts
+      - name: Download All Binaries
         uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
         with:
-          pattern: agent-bin-*
+          pattern: "*-bin-*"
           path: downloaded-artifacts/
           merge-multiple: true
 
@@ -476,7 +558,7 @@ jobs:
             fi
           done
 
-      - name: Create Release with Agent Binaries
+      - name: Create Release with Agent & Tray Binaries
         uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           tag_name: ${{ needs.prepare.outputs.tag_name }}

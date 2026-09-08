@@ -222,10 +222,17 @@ export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
             <span className={`mr-1 h-1 w-1 rounded-full ${dotClass}`} />
             {getStatusLabel(ticket.status)}
           </span>
+          {ticket.source === 'AGENT' && (
+            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-medium border bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 border-indigo-500/20 font-mono">
+              {t('ticketDetail.sourceAgentBadge')}
+            </span>
+          )}
           <span className="text-xs text-muted-foreground font-medium">
             {t('ticketDetail.openedBy')}{' '}
             <strong className="font-semibold text-foreground">
-              {ticket.client_name || 'Client'}
+              {ticket.reporter_name
+                ? `${ticket.reporter_name}${ticket.client_name ? ` (${ticket.client_name})` : ''}`
+                : ticket.client_name || 'Client'}
             </strong>{' '}
             •{' '}
             {new Date(ticket.created_at).toLocaleString(

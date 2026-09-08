@@ -45,6 +45,19 @@ Copy-Item -Path $releaseExe -Destination (Join-Path $bundleDir "msp-agent.exe")
 Copy-Item -Path (Join-Path $scriptDir "Install-MspAgent.ps1") -Destination (Join-Path $bundleDir "Install-MspAgent.ps1")
 Copy-Item -Path (Join-Path $scriptDir "Uninstall-MspAgent.ps1") -Destination (Join-Path $bundleDir "Uninstall-MspAgent.ps1")
 
+# Also bundle msp-tray.exe companion if available
+$trayCandidatePaths = @(
+    Join-Path $agentRoot "..\msp-tray\src-tauri\target\release\msp-tray.exe",
+    Join-Path $agentRoot "..\msp-tray\src-tauri\target\x86_64-pc-windows-msvc\release\msp-tray.exe",
+    Join-Path $scriptDir "msp-tray.exe"
+)
+$foundTrayExe = $trayCandidatePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+if ($foundTrayExe) {
+    Copy-Item -Path $foundTrayExe -Destination (Join-Path $bundleDir "msp-tray.exe")
+    $traySizeMb = [math]::Round(((Get-Item $foundTrayExe).Length / 1MB), 2)
+    Write-Host "Bundled Tray Assistant: $foundTrayExe ($traySizeMb MB)" -ForegroundColor Green
+}
+
 # Create a sample silent-install.bat for double-click or standard CMD runners
 $batContent = @"
 @echo off

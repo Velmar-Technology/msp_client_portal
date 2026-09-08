@@ -1,10 +1,11 @@
 import { equipmentRepository, EquipmentRepository } from '@modules/equipment/repositories/EquipmentRepository';
 import { subscriptionRepository, SubscriptionRepository } from '@modules/subscriptions';
 import { planRepository, PlanRepository } from '@modules/subscriptions';
-import { nextcloudService, NextcloudService } from '@modules/system';
+import { nextcloudService, NextcloudService, vaultwardenService, VaultwardenService } from '@modules/system';
 import { rmmPatchService, RmmPatchService, AgentHelloPayload, agentGateway } from '@modules/rmm';
 import { ticketRepository, TicketRepository } from '@modules/tickets';
 import { HELPDESK_SUPPORT_FEATURE_CODE } from '@shared/config/constants';
+import { DeviceVaultDetails } from '@shared/contracts';
 import {
   NotFoundError,
   ForbiddenError,
@@ -13,7 +14,7 @@ import {
   ConflictError,
 } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
-import { SubscriptionEquipment, EquipmentWithDetails, SubscriptionStatus } from '@shared/types';
+import { SubscriptionEquipment, EquipmentWithDetails, SubscriptionStatus, FEATURE_CODES, expandFeatureBundles } from '@shared/types';
 import crypto from 'crypto';
 
 export interface BindAndActivateSlotOptions {
@@ -58,7 +59,12 @@ export class EquipmentService {
     private nextcloudSvc: NextcloudService = nextcloudService,
     private rmmPatchSvc: RmmPatchService = rmmPatchService,
     private ticketRepo: TicketRepository = ticketRepository,
+    private vaultwardenSvc: VaultwardenService = vaultwardenService,
   ) {}
+
+  private get vaultwardenService(): VaultwardenService {
+    return this.vaultwardenSvc || vaultwardenService;
+  }
 
   private get equipmentRepository(): EquipmentRepository {
     return this.equipmentRepo || equipmentRepository;
@@ -611,6 +617,7 @@ export class EquipmentService {
     if (devices.length === 0) return devices;
 
     const subPlanLimitMap = new Map<string, number | null>();
+    const subPlanNameMap = new Map<string, string | null>();
 
     for (const device of devices) {
       const count = await this.ticketsRepo.countEquipmentTicketsInCurrentMonth(device.id);
@@ -619,6 +626,7 @@ export class EquipmentService {
       if (device.subscription_id) {
         if (!subPlanLimitMap.has(device.subscription_id)) {
           const sub = await this.subRepo.findById(device.subscription_id);
+          subPlanNameMap.set(device.subscription_id, sub?.plan || null);
           if (sub?.plan) {
             const plan = await this.planRepository.findById(sub.plan);
             let limit: number | null = null;
@@ -642,6 +650,9 @@ export class EquipmentService {
           }
         }
         device.monthly_ticket_limit = subPlanLimitMap.get(device.subscription_id) ?? null;
+        if (!(device as any).plan && subPlanNameMap.get(device.subscription_id)) {
+          (device as any).plan = subPlanNameMap.get(device.subscription_id);
+        }
       }
     }
 
@@ -866,6 +877,203 @@ export class EquipmentService {
     logger.info('Admin deleted equipment record', { equipmentId, deviceName: equip.device_name });
 
     return { success: true, id: equipmentId };
+  }
+
+  /**
+   * Retrieves the current Vaultwarden password management status and connection metadata for a device slot.
+   *
+   * @param equipmentId - Equipment slot UUID
+   * @param tenantId - Tenant UUID requesting access
+   * @param byAdmin - True if caller is system administrator
+   * @returns DeviceVaultDetails record
+   * @throws {NotFoundError} When equipment does not exist
+   * @throws {ForbiddenError} When tenant boundary is violated
+   */
+  async getDeviceVault(
+    equipmentId: string,
+    tenantId: string,
+    byAdmin = false
+  ): Promise<DeviceVaultDetails> {
+    const equipment = await this.equipmentRepository.findById(equipmentId);
+    if (!equipment) {
+      throw new NotFoundError('Equipment slot not found');
+    }
+    if (!byAdmin && equipment.tenant_id !== tenantId) {
+      throw new ForbiddenError('Access denied: Equipment belongs to another tenant');
+    }
+    if (!byAdmin) {
+      await this.enforceDevicePasswordManagerEntitlement(equipment.subscription_id);
+    }
+
+    const deviceName = equipment.device_name || equipment.agent_hostname || `Device-${equipment.slot_index + 1}`;
+    const deviceEmail = `device_${equipment.id.slice(0, 8)}@${tenantId.slice(0, 8)}.local`;
+    const status = (equipment.vaultwarden_status as any) || 'UNPROVISIONED';
+
+    return {
+      equipmentId: equipment.id,
+      deviceName,
+      status,
+      orgId: equipment.vaultwarden_org_id || equipment.tenant_id,
+      collectionId: equipment.vaultwarden_collection_id || null,
+      deviceEmail,
+      lastSyncedAt: equipment.vaultwarden_last_synced_at ? equipment.vaultwarden_last_synced_at.toISOString() : null,
+      itemCount: status === 'ACTIVE' ? 1 : 0,
+    };
+  }
+
+  /**
+   * Provisions a dedicated Vaultwarden collection and device identity for an equipment slot.
+   *
+   * @param equipmentId - Equipment slot UUID
+   * @param tenantId - Tenant UUID
+   * @param byAdmin - True if administrator
+   * @returns Updated DeviceVaultDetails
+   * @throws {NotFoundError} When equipment does not exist
+   * @throws {ForbiddenError} When tenant boundary is violated
+   */
+  async provisionDeviceVault(
+    equipmentId: string,
+    tenantId: string,
+    byAdmin = false
+  ): Promise<DeviceVaultDetails> {
+    const equipment = await this.equipmentRepository.findById(equipmentId);
+    if (!equipment) {
+      throw new NotFoundError('Equipment slot not found');
+    }
+    if (!byAdmin && equipment.tenant_id !== tenantId) {
+      throw new ForbiddenError('Access denied: Equipment belongs to another tenant');
+    }
+    if (!byAdmin) {
+      await this.enforceDevicePasswordManagerEntitlement(equipment.subscription_id);
+    }
+
+    const targetOrgId = equipment.vaultwarden_org_id || equipment.tenant_id;
+    const deviceName = equipment.device_name || equipment.agent_hostname || `Device-${equipment.slot_index + 1}`;
+    const deviceEmail = `device_${equipment.id.slice(0, 8)}@${tenantId.slice(0, 8)}.local`;
+
+    // 1. Create or ensure Bitwarden Collection
+    const collectionId = await this.vaultwardenService.createDeviceCollection(targetOrgId, deviceName);
+
+    // 2. Provision device account scoped to this collection
+    const provisionResult = await this.vaultwardenService.provisionDeviceAccount(targetOrgId, collectionId, deviceEmail);
+
+    // 3. Update database entity
+    const updated = await this.equipmentRepository.update(equipment.id, {
+      vaultwarden_org_id: targetOrgId,
+      vaultwarden_collection_id: collectionId,
+      vaultwarden_device_user_id: provisionResult.userId,
+      vaultwarden_status: 'ACTIVE',
+      vaultwarden_last_synced_at: new Date(),
+    });
+
+    logger.info(`Provisioned Vaultwarden device vault for equipment ${equipment.id} (Tenant: ${tenantId})`);
+
+    return {
+      equipmentId: equipment.id,
+      deviceName,
+      status: 'ACTIVE',
+      orgId: targetOrgId,
+      collectionId,
+      deviceEmail,
+      lastSyncedAt: updated?.vaultwarden_last_synced_at ? updated.vaultwarden_last_synced_at.toISOString() : new Date().toISOString(),
+      itemCount: 1,
+      message: 'Device vault provisioned successfully with Bitwarden collection',
+    };
+  }
+
+  /**
+   * Revokes and locks active Vaultwarden credentials and sessions for an equipment slot.
+   *
+   * @param equipmentId - Equipment slot UUID
+   * @param tenantId - Tenant UUID
+   * @param reason - Optional audit reason
+   * @param byAdmin - True if administrator
+   * @returns Updated DeviceVaultDetails
+   * @throws {NotFoundError} When equipment does not exist
+   * @throws {ForbiddenError} When tenant boundary is violated
+   */
+  async revokeDeviceVault(
+    equipmentId: string,
+    tenantId: string,
+    reason?: string,
+    byAdmin = false
+  ): Promise<DeviceVaultDetails> {
+    const equipment = await this.equipmentRepository.findById(equipmentId);
+    if (!equipment) {
+      throw new NotFoundError('Equipment slot not found');
+    }
+    if (!byAdmin && equipment.tenant_id !== tenantId) {
+      throw new ForbiddenError('Access denied: Equipment belongs to another tenant');
+    }
+    if (!byAdmin) {
+      await this.enforceDevicePasswordManagerEntitlement(equipment.subscription_id);
+    }
+
+    const targetOrgId = equipment.vaultwarden_org_id || equipment.tenant_id;
+    if (equipment.vaultwarden_device_user_id) {
+      await this.vaultwardenService.revokeDeviceSession(targetOrgId, equipment.vaultwarden_device_user_id);
+    }
+
+    const updated = await this.equipmentRepository.update(equipment.id, {
+      vaultwarden_status: 'LOCKED',
+      vaultwarden_last_synced_at: new Date(),
+    });
+
+    logger.warn(`Revoked Vaultwarden device vault session for equipment ${equipment.id} (Reason: ${reason || 'Emergency lock'})`);
+
+    const deviceName = equipment.device_name || equipment.agent_hostname || `Device-${equipment.slot_index + 1}`;
+    const deviceEmail = `device_${equipment.id.slice(0, 8)}@${tenantId.slice(0, 8)}.local`;
+
+    return {
+      equipmentId: equipment.id,
+      deviceName,
+      status: 'LOCKED',
+      orgId: targetOrgId,
+      collectionId: equipment.vaultwarden_collection_id,
+      deviceEmail,
+      lastSyncedAt: updated?.vaultwarden_last_synced_at ? updated.vaultwarden_last_synced_at.toISOString() : new Date().toISOString(),
+      itemCount: 0,
+      message: 'Device vault session revoked successfully',
+    };
+  }
+
+  /**
+   * Enforces that the equipment slot's subscription plan includes the PASSWORD_MANAGER feature.
+   *
+   * @param subscriptionId - Subscription UUID
+   * @throws {ForbiddenError} When slot lacks entitlement
+   */
+  private async enforceDevicePasswordManagerEntitlement(subscriptionId?: string | null): Promise<void> {
+    if (!subscriptionId) {
+      throw new ForbiddenError('Subscription plan does not include Password Manager entitlement');
+    }
+
+    const sub = await this.subRepo.findById(subscriptionId);
+    if (!sub || !sub.plan) {
+      throw new ForbiddenError('Subscription plan does not include Password Manager entitlement');
+    }
+
+    const plan = await this.planRepository.findById(sub.plan);
+    if (!plan || !Array.isArray(plan.features)) {
+      throw new ForbiddenError('Subscription plan does not include Password Manager entitlement');
+    }
+
+    const featureSet = new Set<string>();
+    for (const f of plan.features) {
+      if (typeof f === 'string') {
+        featureSet.add(f);
+      } else if (f && typeof f === 'object') {
+        const item = f as { code?: string; included?: boolean };
+        if (item.included !== false && item.code) {
+          featureSet.add(item.code);
+        }
+      }
+    }
+
+    const expanded = expandFeatureBundles(featureSet);
+    if (!expanded.includes(FEATURE_CODES.PASSWORD_MANAGER)) {
+      throw new ForbiddenError('Subscription plan does not include Password Manager entitlement');
+    }
   }
 }
 

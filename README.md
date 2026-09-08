@@ -52,7 +52,7 @@ client/src/
 │   ├── billing/       # Invoicing, taxes, PayPal captures, PDF generation & expenses
 │   ├── crm/           # Lead pipeline, quotation workflow & activities
 │   ├── dashboard/     # Role-aware executive, tech & client dashboard metrics
-│   ├── equipment/     # Hardware devices, OTP pairing & Nextcloud slots
+│   ├── equipment/     # Hardware devices, OTP pairing, Nextcloud slots & Vaultwarden device vaults
 │   ├── financial/     # Financial stats, OpEx tracking, 70/30 profit split & payroll
 │   ├── rmm/           # RMM monitoring, automated remediation & maintenance scheduler
 │   ├── settings/      # User profile, notifications matrix & password manager
@@ -132,6 +132,10 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
   - **Bidirectional Bundle Decomposition:** Composite tiers (e.g. `PASSWORD_DARK_WEB` $\rightarrow$ `PASSWORD_MANAGER` + `DARK_WEB_MONITORING`, `EDR_M365_BACKUP` $\rightarrow$ `EDR_SECURITY` + `M365_BACKUP`) automatically expand into constituent capabilities via `expandFeatureBundles`.
   - **Backend API Protection:** `requireSubscriptionFeature(code)` middleware blocks unentitled client requests with a typed `ForbiddenError` (403), while granting unconditional operational bypass to `ADMIN` and `TECHNICIAN` roles.
   - **Frontend Route & Navigation Gating:** Protected client routes (`/password-manager`, `/devices`, `/rmm`, `/resources`, `/maintenance`) are wrapped in `FeatureRouteGuard`. Unentitled users see a high-conversion upsell preview (`FeatureLockedPreview`) and sidebar items display compact upgrade badges (`UpgradeBadge`).
+- **BL-205: Device-Bound Password Management & Plan Feature Gating** (`VaultwardenService`, `EquipmentService.getDeviceVault`, `provisionDeviceVault`, `revokeDeviceVault`, `DeviceVaultModal`)
+  - Workstation credentials belong to physical machine slots (`device_<slotId>@tenant.local`) with `hidePasswords: true` policy. Workers autofill credentials on shared workstations without viewing or extracting plaintext secrets.
+  - Client administrators retain 1-click remote killswitch rights (`revokeDeviceVault`) that immediately invalidate all active Bitwarden sessions on that physical endpoint in the event of hardware loss, theft, or suspected compromise.
+  - **Plan Entitlement Gating:** Machine vault capabilities require subscription plans containing `PASSWORD_MANAGER` (or composite bundles). In `DevicesPage`, unentitled devices display the action with an `Upgrade` lock badge, opening an in-modal plan upgrade preview with direct navigation to `/plans`.
 
 ### Module 3: Access Control, SOTA Hybrid Authorization & State Machine
 

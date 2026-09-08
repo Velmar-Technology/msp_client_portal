@@ -204,3 +204,23 @@ export const FinancialStatsResponseSchema = z.object({
 });
 
 export type FinancialStatsResponseContract = z.infer<typeof FinancialStatsResponseSchema>;
+
+// ============================================
+// BL-702 Non-Payment Vault Grace Contracts
+// ============================================
+
+export const RequestVaultGraceInputSchema = z.object({
+  reason: z.string().max(500).optional(),
+});
+
+export type RequestVaultGraceInput = z.infer<typeof RequestVaultGraceInputSchema>;
+
+export const VaultGraceStatusResponseSchema = z.object({
+  granted: z.boolean(),
+  graceUntil: z.string().nullable(),
+  extensionsCount: z.number(),
+  maxExtensions: z.number(),
+  message: z.string(),
+});
+
+export type VaultGraceStatusResponseContract = z.infer<typeof VaultGraceStatusResponseSchema>;

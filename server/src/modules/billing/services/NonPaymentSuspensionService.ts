@@ -12,6 +12,7 @@ import {
   sendAccountPurgedNoticeEmail,
   sendAccountRestoredEmail,
 } from '@shared/utils/emailService';
+import { NotFoundError, ConflictError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
 
 /**
@@ -149,6 +150,13 @@ export class NonPaymentSuspensionService {
           });
           await this.userRepo.updateAccountStatusByTenant(tenantId, AccountStatus.READ_ONLY);
 
+          // BL-702 Day 5: Set Vaultwarden collections to read-only (Vault Frozen in Time)
+          try {
+            await this.vaultwardenSvc.setOrganizationReadOnly(tenantId, true);
+          } catch (vwErr) {
+            logger.warn(`Failed setting Vaultwarden collections to read-only for tenant ${tenantId}`, { vwErr });
+          }
+
           if (client && client.email) {
             await sendAccountReadOnlyNoticeEmail(client.email, client.name, lang);
           }
@@ -171,33 +179,44 @@ export class NonPaymentSuspensionService {
           maxOverdueDays >= NON_PAYMENT_SCALE_DAYS.DAY_15_SUSPENSION &&
           (tenant.account_status === AccountStatus.ACTIVE || tenant.account_status === AccountStatus.READ_ONLY)
         ) {
-          await this.tenantRepo.updateAccountStatus(tenantId, AccountStatus.SUSPENDED, {
-            suspended_at: now,
-          });
-          await this.userRepo.updateAccountStatusByTenant(tenantId, AccountStatus.SUSPENDED, false);
+          // BL-702 Day 15: Respect active emergency 24-hour grace extension
+          const isGraceActive =
+            tenant.vault_grace_extension_until &&
+            new Date(tenant.vault_grace_extension_until).getTime() > now.getTime();
 
-          // Suspend/lockout Vaultwarden organization member logins
-          try {
-            await this.vaultwardenSvc.deactivateOrganizationUsers(tenantId);
-          } catch (vwErr) {
-            logger.warn(`Failed deactivating Vaultwarden users for tenant ${tenantId}`, { vwErr });
+          if (isGraceActive) {
+            logger.info(
+              `Tenant ${tenantId} Day 15 suspension deferred due to active emergency grace until ${tenant.vault_grace_extension_until}`
+            );
+          } else {
+            await this.tenantRepo.updateAccountStatus(tenantId, AccountStatus.SUSPENDED, {
+              suspended_at: now,
+            });
+            await this.userRepo.updateAccountStatusByTenant(tenantId, AccountStatus.SUSPENDED, false);
+
+            // Suspend/lockout Vaultwarden organization member logins
+            try {
+              await this.vaultwardenSvc.deactivateOrganizationUsers(tenantId);
+            } catch (vwErr) {
+              logger.warn(`Failed deactivating Vaultwarden users for tenant ${tenantId}`, { vwErr });
+            }
+
+            if (client && client.email) {
+              await sendAccountSuspendedNoticeEmail(client.email, client.name, lang);
+            }
+
+            await this.notifService.createInAppNotification({
+              userId: primaryInvoice.client_id,
+              title: 'Service Access Suspended',
+              message: 'Platform and support access has been suspended due to 15 days non-payment. Settle your balance before Day 30 data purge.',
+              link: '/billing',
+              type: 'ACCOUNT_SUSPENDED_DAY_15',
+              tenantId,
+            });
+
+            suspensionsApplied++;
+            logger.warn(`Tenant ${tenantId} placed in SUSPENDED mode due to ${maxOverdueDays} days overdue.`);
           }
-
-          if (client && client.email) {
-            await sendAccountSuspendedNoticeEmail(client.email, client.name, lang);
-          }
-
-          await this.notifService.createInAppNotification({
-            userId: primaryInvoice.client_id,
-            title: 'Service Access Suspended',
-            message: 'Platform and support access has been suspended due to 15 days non-payment. Settle your balance before Day 30 data purge.',
-            link: '/billing',
-            type: 'ACCOUNT_SUSPENDED_DAY_15',
-            tenantId,
-          });
-
-          suspensionsApplied++;
-          logger.warn(`Tenant ${tenantId} placed in SUSPENDED mode due to ${maxOverdueDays} days overdue.`);
         }
 
         // 4. Day 30+: Permanent technical purge and deletion of data from servers
@@ -205,6 +224,15 @@ export class NonPaymentSuspensionService {
           maxOverdueDays >= NON_PAYMENT_SCALE_DAYS.DAY_30_PURGE &&
           tenant.account_status !== AccountStatus.PURGED
         ) {
+          // BL-702 Day 30: Export encrypted escrow backup before purging
+          let escrowExport: { data: string; filename: string } | undefined;
+          try {
+            escrowExport = await this.vaultwardenSvc.exportOrganizationEncrypted(tenantId);
+            logger.info(`Generated encrypted vault export for tenant ${tenantId} (${escrowExport.filename})`);
+          } catch (vwExportErr) {
+            logger.warn(`Could not generate encrypted vault export for tenant ${tenantId}`, { vwExportErr });
+          }
+
           await this.purgeTenantData(tenantId);
           await this.tenantRepo.updateAccountStatus(tenantId, AccountStatus.PURGED, {
             purged_at: now,
@@ -212,7 +240,7 @@ export class NonPaymentSuspensionService {
           await this.userRepo.updateAccountStatusByTenant(tenantId, AccountStatus.PURGED, false);
 
           if (client && client.email) {
-            await sendAccountPurgedNoticeEmail(client.email, client.name, lang);
+            await sendAccountPurgedNoticeEmail(client.email, client.name, lang, escrowExport);
           }
 
           await this.notifService.createInAppNotification({
@@ -312,14 +340,17 @@ export class NonPaymentSuspensionService {
       await this.tenantRepo.updateAccountStatus(tenantId, AccountStatus.ACTIVE, {
         read_only_at: null,
         suspended_at: null,
+        vault_grace_extension_until: null,
+        vault_grace_extensions_count: 0,
       });
       await this.userRepo.updateAccountStatusByTenant(tenantId, AccountStatus.ACTIVE, true);
 
-      // Reactivate Vaultwarden organization member logins
+      // BL-702 Restoration: Unfreeze Vaultwarden collections and reactivate organization users
       try {
+        await this.vaultwardenSvc.setOrganizationReadOnly(tenantId, false);
         await this.vaultwardenSvc.reactivateOrganizationUsers(tenantId);
       } catch (vwErr) {
-        logger.warn(`Failed reactivating Vaultwarden users for tenant ${tenantId}`, { vwErr });
+        logger.warn(`Failed restoring Vaultwarden access for tenant ${tenantId}`, { vwErr });
       }
 
       const client = await this.userRepo.findById(clientId);
@@ -343,6 +374,84 @@ export class NonPaymentSuspensionService {
     }
 
     return false;
+  }
+
+  /**
+   * Activates a 1-time 24-hour emergency grace extension for password vault access (BL-702 Day 15).
+   * Allows the client administrator to unblock emergency access while an offline bank transfer or accounting payment clears.
+   *
+   * @param clientId - Authenticated client user UUID
+   * @param tenantId - Target tenant UUID
+   * @param reason - Optional justification reason
+   * @returns Grace extension status object
+   * @throws {NotFoundError} When tenant does not exist
+   * @throws {ConflictError} When grace extension limit reached or account is already active
+   */
+  async requestVaultGraceExtension(
+    clientId: string,
+    tenantId: string,
+    _reason?: string
+  ): Promise<{
+    granted: boolean;
+    graceUntil: string;
+    extensionsCount: number;
+    maxExtensions: number;
+    message: string;
+  }> {
+    const tenant = await this.tenantRepo.findById(tenantId);
+    if (!tenant) {
+      throw new NotFoundError(`Tenant not found: ${tenantId}`);
+    }
+
+    if (tenant.account_status !== AccountStatus.READ_ONLY && tenant.account_status !== AccountStatus.SUSPENDED) {
+      throw new ConflictError('Account is in active status; no emergency grace extension required.');
+    }
+
+    const currentCount = tenant.vault_grace_extensions_count || 0;
+    if (currentCount >= 1) {
+      throw new ConflictError(
+        'Emergency 24-hour grace extension has already been utilized for this billing cycle. Please settle outstanding invoices.'
+      );
+    }
+
+    const now = new Date();
+    const graceUntil = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const newCount = currentCount + 1;
+
+    await this.tenantRepo.updateAccountStatus(tenantId, tenant.account_status, {
+      vault_grace_extension_until: graceUntil,
+      vault_grace_extensions_count: newCount,
+    });
+
+    // Temporarily reactivate Vaultwarden organization member logins during grace period
+    try {
+      await this.vaultwardenSvc.reactivateOrganizationUsers(tenantId);
+    } catch (vwErr) {
+      logger.warn(`Failed temporarily reactivating Vaultwarden users during grace period for tenant ${tenantId}`, {
+        vwErr,
+      });
+    }
+
+    await this.notifService.createInAppNotification({
+      userId: clientId,
+      title: 'Emergency 24h Grace Activated',
+      message: `Emergency access to password vault has been unlocked until ${graceUntil.toLocaleString()}. Please settle outstanding invoices.`,
+      link: '/billing',
+      type: 'ACCOUNT_RESTORED',
+      tenantId,
+    });
+
+    logger.info(
+      `Tenant ${tenantId} activated emergency 24h grace extension until ${graceUntil.toISOString()} (actor: ${clientId})`
+    );
+
+    return {
+      granted: true,
+      graceUntil: graceUntil.toISOString(),
+      extensionsCount: newCount,
+      maxExtensions: 1,
+      message: 'Emergency 24-hour grace extension granted successfully.',
+    };
   }
 }
 

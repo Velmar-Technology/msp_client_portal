@@ -3,12 +3,14 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 const mocks = vi.hoisted(() => {
   return {
     ticketFindById: vi.fn(),
+    ticketUpdate: vi.fn(),
     ticketAddAttachment: vi.fn(),
     ticketGetAttachmentsByResponses: vi.fn(),
     responseCreate: vi.fn(),
     responseFindByTicket: vi.fn(),
     userFindById: vi.fn(),
     onTicketResponseCreated: vi.fn(),
+    agentGatewayPushTicketChatMessage: vi.fn(),
   };
 });
 
@@ -16,6 +18,7 @@ vi.mock('@modules/tickets/repositories/TicketRepository', () => {
   return {
     ticketRepository: {
       findById: mocks.ticketFindById,
+      update: mocks.ticketUpdate,
       addAttachment: mocks.ticketAddAttachment,
       getAttachmentsByResponses: mocks.ticketGetAttachmentsByResponses,
     },
@@ -47,8 +50,16 @@ vi.mock('@modules/notifications/services/NotificationService', () => {
   };
 });
 
+vi.mock('@modules/rmm', () => {
+  return {
+    agentGateway: {
+      pushTicketChatMessage: mocks.agentGatewayPushTicketChatMessage,
+    },
+  };
+});
+
 import { ticketResponseService, TicketResponseService } from './TicketResponseService';
-import { Ticket, TicketCategory, TicketPriority, TicketStatus, UserContext, UserRole } from '@shared/types';
+import { Ticket, TicketCategory, TicketPriority, TicketStatus, UserContext, UserRole, AgentPayload } from '@shared/types';
 
 describe('TicketResponseService', () => {
   const buildTicket = (overrides: Partial<Ticket> = {}): Ticket => ({
@@ -157,6 +168,135 @@ describe('TicketResponseService', () => {
         'Alice',
         'Fixed'
       );
+      expect(mocks.agentGatewayPushTicketChatMessage).not.toHaveBeenCalled();
+    });
+
+    it('pushes message via agentGateway when ticket is bound to an equipment slot', async () => {
+      mocks.ticketFindById.mockResolvedValue(buildTicket({ equipment_id: 'eq-slot-42' }));
+      mocks.responseCreate.mockResolvedValue({ id: 'resp-1', ticket_id: 'ticket-1', user_id: 'tech-1', created_at: new Date() });
+      mocks.userFindById.mockResolvedValue({ id: 'tech-1', name: 'Alice Tech', role: UserRole.TECHNICIAN });
+
+      await ticketResponseService.addTicketResponse('ticket-1', 'We are looking into this', technicianCtx);
+
+      expect(mocks.agentGatewayPushTicketChatMessage).toHaveBeenCalledWith('eq-slot-42', expect.objectContaining({
+        ticketId: 'ticket-1',
+        responseId: 'resp-1',
+        authorName: 'Alice Tech',
+        authorRole: UserRole.TECHNICIAN,
+        message: 'We are looking into this',
+      }));
+    });
+  });
+
+  describe('addTicketResponseFromAgent', () => {
+    const agentCtx: AgentPayload = {
+      equipmentId: 'eq-agent-1',
+      tenantId: 'tenant-456',
+      clientId: 'client-123',
+      hostname: 'DESKTOP-TEST',
+    };
+
+    it('creates a response authored by endpoint user and notifies technician', async () => {
+      mocks.ticketFindById.mockResolvedValue(buildTicket({
+        equipment_id: 'eq-agent-1',
+        tenant_id: 'tenant-456',
+        assigned_tech_id: 'tech-1',
+      }));
+      mocks.responseCreate.mockResolvedValue({
+        id: 'resp-agent-1',
+        ticket_id: 'ticket-1',
+        user_id: 'client-123',
+        author_name: 'John Doe',
+        message: 'Problem still persists',
+        tenant_id: 'tenant-456',
+      });
+      mocks.userFindById.mockResolvedValue({ id: 'tech-1', name: 'Tech Alice' });
+
+      const res = await ticketResponseService.addTicketResponseFromAgent(
+        'ticket-1',
+        { message: 'Problem still persists', reporterName: 'John Doe' },
+        agentCtx
+      );
+
+      expect(mocks.responseCreate).toHaveBeenCalledWith(expect.objectContaining({
+        ticket_id: 'ticket-1',
+        user_id: 'client-123',
+        author_name: 'John Doe',
+        message: 'Problem still persists',
+        tenant_id: 'tenant-456',
+      }));
+      expect(mocks.ticketUpdate).toHaveBeenCalledWith('ticket-1', { updated_at: expect.any(Date) });
+      expect(mocks.onTicketResponseCreated).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'ticket-1' }),
+        expect.objectContaining({ id: 'tech-1' }),
+        'John Doe (Endpoint)',
+        'Problem still persists'
+      );
+      expect(res.id).toBe('resp-agent-1');
+    });
+
+    it('throws NotFoundError when ticket does not exist', async () => {
+      mocks.ticketFindById.mockResolvedValue(null);
+
+      await expect(ticketResponseService.addTicketResponseFromAgent(
+        'non-existent',
+        { message: 'Hi', reporterName: 'John' },
+        agentCtx
+      )).rejects.toMatchObject({ statusCode: 404 });
+    });
+
+    it('throws ForbiddenError when ticket equipment does not match agent', async () => {
+      mocks.ticketFindById.mockResolvedValue(buildTicket({
+        equipment_id: 'different-eq',
+        tenant_id: 'tenant-456',
+      }));
+
+      await expect(ticketResponseService.addTicketResponseFromAgent(
+        'ticket-1',
+        { message: 'Hi', reporterName: 'John' },
+        agentCtx
+      )).rejects.toMatchObject({ statusCode: 403 });
+    });
+
+    it('throws ForbiddenError when ticket tenant does not match agent', async () => {
+      mocks.ticketFindById.mockResolvedValue(buildTicket({
+        equipment_id: 'eq-agent-1',
+        tenant_id: 'different-tenant',
+      }));
+
+      await expect(ticketResponseService.addTicketResponseFromAgent(
+        'ticket-1',
+        { message: 'Hi', reporterName: 'John' },
+        agentCtx
+      )).rejects.toMatchObject({ statusCode: 403 });
+    });
+
+    it('throws ValidationError when ticket is CLOSED', async () => {
+      mocks.ticketFindById.mockResolvedValue(buildTicket({
+        equipment_id: 'eq-agent-1',
+        tenant_id: 'tenant-456',
+        status: TicketStatus.CLOSED,
+      }));
+
+      await expect(ticketResponseService.addTicketResponseFromAgent(
+        'ticket-1',
+        { message: 'Hi', reporterName: 'John' },
+        agentCtx
+      )).rejects.toMatchObject({ statusCode: 400 });
+    });
+
+    it('throws ValidationError when ticket is CANCELLED', async () => {
+      mocks.ticketFindById.mockResolvedValue(buildTicket({
+        equipment_id: 'eq-agent-1',
+        tenant_id: 'tenant-456',
+        status: TicketStatus.CANCELLED,
+      }));
+
+      await expect(ticketResponseService.addTicketResponseFromAgent(
+        'ticket-1',
+        { message: 'Hi', reporterName: 'John' },
+        agentCtx
+      )).rejects.toMatchObject({ statusCode: 400 });
     });
   });
 

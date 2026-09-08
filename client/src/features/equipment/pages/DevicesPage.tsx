@@ -15,10 +15,14 @@ import {
   Plus,
   Search,
   BadgeCheck,
+  KeyRound,
+  Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { useDevicesPage } from "../hooks/useDevicesPage";
+import { useEntitlements } from "@/hooks/useEntitlements";
+import { FEATURE_CODES } from "@/constants/subscriptions";
 import type { Subscription } from "@/features/subscriptions";
 import type { SubscriptionEquipment } from "@shared/contracts";
 import { equipmentService } from '../api/equipmentService';
@@ -44,6 +48,7 @@ const ScheduleMaintenanceModal = lazyWithRetry(() =>
   })),
 );
 import { NextcloudInfoModal } from "../components/NextcloudInfoModal";
+import { DeviceVaultModal } from "../components/DeviceVaultModal";
 import { DeployAgentModal } from "../components/DeployAgentModal";
 import { ActivateWithOtpModal } from "../components/ActivateWithOtpModal";
 import { AddAdminDeviceModal } from "../components/AddAdminDeviceModal";
@@ -154,6 +159,7 @@ export const SubscriptionSelector = memo(function SubscriptionSelector({
 interface DeviceActionsCellProps {
   equip: Partial<SubscriptionEquipment>;
   onOpenNcModal: (equip: Partial<SubscriptionEquipment>) => void;
+  onOpenVaultModal?: (equip: Partial<SubscriptionEquipment>) => void;
   onOpenScheduleMaint: (equip: Partial<SubscriptionEquipment>) => void;
   onRequestRevoke: (equip: Partial<SubscriptionEquipment>) => void;
   onRequestRepair: (equip: Partial<SubscriptionEquipment>) => void;
@@ -166,6 +172,7 @@ interface DeviceActionsCellProps {
 const DeviceActionsCell = memo(function DeviceActionsCell({
   equip,
   onOpenNcModal,
+  onOpenVaultModal,
   onOpenScheduleMaint,
   onRequestRevoke,
   onRequestRepair,
@@ -174,8 +181,10 @@ const DeviceActionsCell = memo(function DeviceActionsCell({
   onDeployAgent,
 }: DeviceActionsCellProps) {
   const { t } = useTranslation();
+  const { hasPlanFeature } = useEntitlements();
 
   const isActive = equip.status === "ACTIVE";
+  const isVaultEntitled = hasPlanFeature(equip.plan, FEATURE_CODES.PASSWORD_MANAGER);
 
   return (
     <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
@@ -241,6 +250,26 @@ const DeviceActionsCell = memo(function DeviceActionsCell({
                   {t("devices.actionNextcloudInfo")}
                 </DropdownMenuItem>
               )}
+              {isActive && onOpenVaultModal && (
+                <DropdownMenuItem
+                  onClick={() => onOpenVaultModal(equip)}
+                  className="text-xs cursor-pointer flex items-center justify-between gap-2"
+                >
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <KeyRound className="h-3.5 w-3.5 mr-1 shrink-0" />
+                    <span className="truncate">{t("equipment.vault.actionMenu", "Device Password Vault")}</span>
+                  </div>
+                  {!isVaultEntitled && (
+                    <span
+                      data-testid="vault-upgrade-lock"
+                      className="ml-auto inline-flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0"
+                    >
+                      <Lock className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
+                      <span>{t("nav.upgradeBadge", "Upgrade")}</span>
+                    </span>
+                  )}
+                </DropdownMenuItem>
+              )}
               {equip.nextcloud_username &&
                 equip.subscription_id &&
                 equip.slot_index !== undefined &&
@@ -292,6 +321,7 @@ const DeviceActionsCell = memo(function DeviceActionsCell({
 interface DeviceCardProps {
   equip: Partial<SubscriptionEquipment>;
   onOpenNcModal: (equip: Partial<SubscriptionEquipment>) => void;
+  onOpenVaultModal?: (equip: Partial<SubscriptionEquipment>) => void;
   onOpenScheduleMaint: (equip: Partial<SubscriptionEquipment>) => void;
   onRequestRevoke: (equip: Partial<SubscriptionEquipment>) => void;
   onRequestRepair: (equip: Partial<SubscriptionEquipment>) => void;
@@ -303,6 +333,7 @@ interface DeviceCardProps {
 function DeviceCard({
   equip,
   onOpenNcModal,
+  onOpenVaultModal,
   onOpenScheduleMaint,
   onRequestRevoke,
   onRequestRepair,
@@ -402,6 +433,7 @@ function DeviceCard({
         <DeviceActionsCell
           equip={equip}
           onOpenNcModal={onOpenNcModal}
+          onOpenVaultModal={onOpenVaultModal}
           onOpenScheduleMaint={onOpenScheduleMaint}
           onRequestRevoke={onRequestRevoke}
           onRequestRepair={onRequestRepair}
@@ -417,6 +449,7 @@ function DeviceCard({
 // 5. Parent Dashboard Page
 export function DevicesPage() {
   const { t } = useTranslation();
+  const { hasPlanFeature } = useEntitlements();
   const [viewMode, setViewMode] = useState<"list" | "tiled">("list");
   const {
     navigate,
@@ -518,6 +551,8 @@ export function DevicesPage() {
   const [isMaintModalOpen, setIsMaintModalOpen] = useState(false);
   const [ncModalEquip, setNcModalEquip] = useState<Partial<SubscriptionEquipment> | null>(null);
   const [isNcModalOpen, setIsNcModalOpen] = useState(false);
+  const [vaultModalEquip, setVaultModalEquip] = useState<Partial<SubscriptionEquipment> | null>(null);
+  const [isVaultModalOpen, setIsVaultModalOpen] = useState(false);
   const [deployAgentEquip, setDeployAgentEquip] = useState<Partial<SubscriptionEquipment> | null>(null);
   const [isDeployAgentOpen, setIsDeployAgentOpen] = useState(false);
 
@@ -547,6 +582,11 @@ export function DevicesPage() {
     setIsNcModalOpen(true);
   }, []);
 
+  const handleOpenVaultModal = useCallback((equip: Partial<SubscriptionEquipment>) => {
+    setVaultModalEquip(equip);
+    setIsVaultModalOpen(true);
+  }, []);
+
   const handleOpenDeployAgent = useCallback((equip: Partial<SubscriptionEquipment>) => {
     setDeployAgentEquip(equip);
     setIsDeployAgentOpen(true);
@@ -569,6 +609,11 @@ export function DevicesPage() {
   const handleCloseNcModal = useCallback(() => {
     setIsNcModalOpen(false);
     setNcModalEquip(null);
+  }, []);
+
+  const handleCloseVaultModal = useCallback(() => {
+    setIsVaultModalOpen(false);
+    setVaultModalEquip(null);
   }, []);
 
   const handleDeployClient = useCallback(
@@ -753,6 +798,7 @@ export function DevicesPage() {
           <DeviceActionsCell
             equip={equip}
             onOpenNcModal={handleOpenNcModal}
+            onOpenVaultModal={handleOpenVaultModal}
             onOpenScheduleMaint={handleOpenScheduleMaint}
             onRequestRevoke={equip.client_role === "ADMIN" ? setDeviceToDelete : handleRequestRevoke}
             onRequestRepair={handleRequestRepair}
@@ -770,6 +816,7 @@ export function DevicesPage() {
     handleOpenDeployAgent,
     handleOpenScheduleMaint,
     handleOpenNcModal,
+    handleOpenVaultModal,
     handleRequestRevoke,
     handleRequestRepair,
     handleOpenActivateWithOtp,
@@ -1049,6 +1096,7 @@ export function DevicesPage() {
                           key={equip.id || `slot-card-${equip.subscription_id}-${equip.slot_index ?? idx}`}
                           equip={equip}
                           onOpenNcModal={handleOpenNcModal}
+                          onOpenVaultModal={handleOpenVaultModal}
                           onOpenScheduleMaint={handleOpenScheduleMaint}
                           onRequestRevoke={equip.client_role === "ADMIN" ? setDeviceToDelete : handleRequestRevoke}
                           onRequestRepair={handleRequestRepair}
@@ -1194,7 +1242,12 @@ export function DevicesPage() {
       title={t("nav.devices")}
       subtitle={t("devices.subtitle")}
       isLoading={false}
-      actions={<ViewToggle value={viewMode} onChange={setViewMode} />}
+      actions={
+        <ViewToggle<"list" | "tiled">
+          value={viewMode}
+          onChange={(mode) => setViewMode(mode)}
+        />
+      }
     >
       {body}
 
@@ -1255,6 +1308,21 @@ export function DevicesPage() {
               slotIndex={ncModalEquip?.slot_index ?? null}
               fallbackUsername={ncModalEquip?.nextcloud_username}
               fallbackDeviceName={ncModalEquip?.device_name}
+            />
+          </Suspense>
+        </ChunkErrorBoundary>
+      )}
+
+      {/* Device Password Vault Modal */}
+      {isVaultModalOpen && (
+        <ChunkErrorBoundary>
+          <Suspense fallback={null}>
+            <DeviceVaultModal
+              isOpen={isVaultModalOpen}
+              onClose={handleCloseVaultModal}
+              equipmentId={vaultModalEquip?.id || null}
+              deviceName={vaultModalEquip?.device_name || vaultModalEquip?.agent_hostname}
+              isLocked={!hasPlanFeature(vaultModalEquip?.plan, FEATURE_CODES.PASSWORD_MANAGER)}
             />
           </Suspense>
         </ChunkErrorBoundary>

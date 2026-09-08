@@ -71,7 +71,13 @@ export class TenantRepository extends BaseRepository<Tenant> {
   async updateAccountStatus(
     tenantId: string,
     status: any,
-    dates?: { read_only_at?: Date | null; suspended_at?: Date | null; purged_at?: Date | null }
+    dates?: {
+      read_only_at?: Date | null;
+      suspended_at?: Date | null;
+      purged_at?: Date | null;
+      vault_grace_extension_until?: Date | null;
+      vault_grace_extensions_count?: number;
+    }
   ): Promise<Tenant | null> {
     const updateData: Record<string, any> = {
       account_status: status,
@@ -80,6 +86,8 @@ export class TenantRepository extends BaseRepository<Tenant> {
     if (dates?.read_only_at !== undefined) updateData.read_only_at = dates.read_only_at;
     if (dates?.suspended_at !== undefined) updateData.suspended_at = dates.suspended_at;
     if (dates?.purged_at !== undefined) updateData.purged_at = dates.purged_at;
+    if (dates?.vault_grace_extension_until !== undefined) updateData.vault_grace_extension_until = dates.vault_grace_extension_until;
+    if (dates?.vault_grace_extensions_count !== undefined) updateData.vault_grace_extensions_count = dates.vault_grace_extensions_count;
 
     const results = await db
       .update(tenants)

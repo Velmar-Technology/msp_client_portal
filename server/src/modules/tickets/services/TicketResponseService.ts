@@ -2,18 +2,20 @@ import { ticketRepository, TicketRepository } from '@modules/tickets/repositorie
 import { ticketResponseRepository, TicketResponseRepository } from '@modules/tickets/repositories/TicketResponseRepository';
 import { userRepository, UserRepository } from '@modules/auth';
 import { notificationService, NotificationService } from '@modules/notifications';
+import { agentGateway, AgentGateway } from '@modules/rmm';
 import { ticketAccessPolicy, TicketAccessPolicy } from '@shared/policies/TicketAccessPolicy';
 import { accountStatusPolicy, AccountStatusPolicy } from '@shared/policies/AccountStatusPolicy';
-import { NotFoundError } from '@shared/errors';
+import { NotFoundError, ForbiddenError, ValidationError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
-import { Ticket, TicketAttachment, TicketResponse, UploadedFile, UserContext, UserRole } from '@shared/types';
+import { Ticket, TicketAttachment, TicketResponse, TicketStatus, UploadedFile, UserContext, UserRole, AgentPayload } from '@shared/types';
+import { AddAgentTicketResponseInput } from '@shared/contracts';
 
 /**
  * Domain service managing conversational message responses and reply attachments on support tickets.
  */
 export class TicketResponseService {
   /**
-   * Initializes TicketResponseService with repository, user, notification, and policy dependencies.
+   * Initializes TicketResponseService with repository, user, notification, policy, and agentGateway dependencies.
    *
    * @param ticketRepo - Ticket data repository
    * @param responseRepo - Ticket conversation response repository
@@ -21,7 +23,10 @@ export class TicketResponseService {
    * @param notifSvc - Notification service for real-time alerts
    * @param accessPol - Ticket access policy
    * @param accountPol - Account status policy for read-only / suspension enforcement
+   * @param agentGw - RMM AgentGateway for live WebSocket chat push
    */
+  private _agentGw?: AgentGateway;
+
   constructor(
     private ticketRepo: TicketRepository = ticketRepository,
     private responseRepo: TicketResponseRepository = ticketResponseRepository,
@@ -29,7 +34,17 @@ export class TicketResponseService {
     private notifSvc: NotificationService = notificationService,
     private accessPol: TicketAccessPolicy = ticketAccessPolicy,
     private accountPol: AccountStatusPolicy = accountStatusPolicy,
-  ) {}
+    agentGw?: AgentGateway,
+  ) {
+    this._agentGw = agentGw;
+  }
+
+  private get agentGw(): AgentGateway {
+    if (!this._agentGw) {
+      this._agentGw = agentGateway;
+    }
+    return this._agentGw;
+  }
 
   /**
    * Retrieves all conversational responses and their associated file attachments for a ticket.
@@ -99,11 +114,93 @@ export class TicketResponseService {
     await this.notifyResponseRecipient(ticket, ctx, message);
 
     const user = await this.userRepo.findById(ctx.userId);
+
+    // Push live WebSocket message to endpoint if ticket is bound to an equipment slot
+    if (ticket.equipment_id) {
+      this.agentGw.pushTicketChatMessage(ticket.equipment_id, {
+        ticketId: ticket.id,
+        responseId: response.id,
+        authorName: user?.name ?? 'MSP Support',
+        authorRole: ctx.role,
+        message,
+        attachments: responseAttachments.map((a) => ({
+          id: a.id,
+          filename: a.filename,
+          path: a.path,
+        })),
+        createdAt: response.created_at ? new Date(response.created_at).toISOString() : new Date().toISOString(),
+      });
+    }
+
     return {
       ...response,
       user_name: user?.name,
       user_role: user?.role,
       attachments: responseAttachments,
+    };
+  }
+
+  /**
+   * Posts a response message from an endpoint workstation agent without requiring portal login.
+   *
+   * @param ticketId - Target ticket UUID
+   * @param data - Message payload containing reporterName and message
+   * @param agent - Machine authentication context
+   * @returns Newly created TicketResponse entity
+   * @throws {NotFoundError} When ticket not found
+   * @throws {ForbiddenError} When ticket does not belong to the calling endpoint (ZSP)
+   * @throws {ValidationError} When ticket is closed or cancelled
+   */
+  async addTicketResponseFromAgent(
+    ticketId: string,
+    data: AddAgentTicketResponseInput,
+    agent: AgentPayload
+  ): Promise<TicketResponse> {
+    const ticket = await this.ticketRepo.findById(ticketId);
+    if (!ticket) {
+      throw new NotFoundError('Ticket not found');
+    }
+
+    if (ticket.equipment_id !== agent.equipmentId || ticket.tenant_id !== agent.tenantId) {
+      throw new ForbiddenError('Endpoint is not authorized to access or reply to this ticket');
+    }
+
+    if (ticket.status === TicketStatus.CLOSED || ticket.status === TicketStatus.CANCELLED) {
+      throw new ValidationError(`Cannot add responses to a ${ticket.status.toLowerCase()} ticket`);
+    }
+
+    const response = await this.responseRepo.create({
+      ticket_id: ticketId,
+      user_id: agent.clientId,
+      author_name: data.reporterName,
+      message: data.message,
+      tenant_id: agent.tenantId,
+    } as any);
+
+    // Update ticket updated_at
+    await this.ticketRepo.update(ticketId, {
+      updated_at: new Date(),
+    });
+
+    // Notify assigned technician if present
+    if (ticket.assigned_tech_id) {
+      const technician = await this.userRepo.findById(ticket.assigned_tech_id);
+      if (technician) {
+        await this.notifSvc.onTicketResponseCreated(
+          ticket,
+          technician,
+          `${data.reporterName} (Endpoint)`,
+          data.message
+        );
+      }
+    }
+
+    return {
+      ...response,
+      author_name: data.reporterName,
+      user_name: data.reporterName,
+      user_role: 'CLIENT',
+      attachments: [],
     };
   }
 

@@ -73,6 +73,7 @@ Dependencies point strictly **INWARD**: `Frameworks/Drivers` $\rightarrow$ `Inte
 | **BL-201** | Feature Quota | Enforces plan ticket limits (e.g. 5 tickets/device/mo). Blocks creation with `TicketLimitExceededError`. |
 | **BL-202** | License True-Up | Nightly reconciliation of cloud seats/RMM agents against baseline contracts for next billing cycle. |
 | **BL-204** | Feature Gating & Entitlements | Enforces subscription feature codes (`FEATURE_CODES`) on backend endpoints via `requireSubscriptionFeature` and client routes via `FeatureRouteGuard` & `useEntitlements`. Decomposes bundled tiers (`expandFeatureBundles`). Non-entitled clients receive 403 or interactive `<FeatureLockedPreview>` upsell view. |
+| **BL-205** | Device-Bound Password Management | Workstation credentials belong to physical machine slots (`device_<slotId>@tenant.local`) with `hidePasswords: true` policy. Admins manage and escrow credentials; workers autofill without viewing plaintext secrets. Emergency lock/revocation immediately de-authorizes Bitwarden sessions on that physical endpoint. |
 | **BL-301** | RBAC & State Machine | Transitions must satisfy `STATUS_TRANSITIONS` matrix. Clients: tenant isolation, cancel only. Techs: assigned tickets. Admins: global. |
 | **BL-302** | SOTA Hybrid Authorization & ZSP | Unified PDP (`server/src/shared/authz/`) orchestrating RBAC (roles), Zanzibar ReBAC (`<subject>#<relation>@<object>`), Policy-as-Code ABAC (SLA/Non-payment), Vector AI ACL pre-filtering, Zero Standing Privileges with JIT Ephemeral Access (`EphemeralAccessService`), SPIFFE Workload Identity (`WorkloadIdentityService`), AI Role Mining Pruning (`ContinuousAdaptiveTrustService.mineRoles`), and Contextual Step-Up MFA. |
 | **BL-401** | Subscription Reactivation | PayPal capture or admin `markAsPaid` transitions linked `EXPIRED` client subscriptions to `ACTIVE` and broadcasts alerts. |
@@ -98,6 +99,10 @@ Dependencies point strictly **INWARD**: `Frameworks/Drivers` $\rightarrow$ `Inte
    - *Side Effects:* Notifies assigned technician. Returns HTTP 200.
 3. **Invoice Payment (`POST /api/v1/invoices/:id/capture-paypal` or `mark-paid`)**:
    - *Commands:* Capture PayPal order / verify wire $\rightarrow$ `invoiceRepository.updateStatus(id, 'PAID')` $\rightarrow$ `subscriptionRepository.updateStatus(subId, 'ACTIVE')` for expired client subscriptions $\rightarrow$ creates in-app notifications for client & admins. Returns HTTP 200.
+4. **Device Vault Provisioning & Session Revocation (`POST /api/v1/equipment/:id/vault/provision`, `POST /api/v1/equipment/:id/vault/revoke`)**:
+   - *Validation:* Checks tenant ownership (`tenantId` matches session or `ADMIN` role) + equipment existence.
+   - *Commands (Provision):* `VaultwardenService.createDeviceCollection` + `provisionDeviceAccount` $\rightarrow$ saves `vaultwarden_org_id`, `vaultwarden_collection_id`, `vaultwarden_device_user_id`, sets `vaultwarden_status = 'ACTIVE'`.
+   - *Commands (Revocation):* `VaultwardenService.revokeDeviceSession` $\rightarrow$ sets `vaultwarden_status = 'LOCKED'`. Immediately terminates all active Bitwarden sessions on endpoint. Returns HTTP 200.
 
 ---
 

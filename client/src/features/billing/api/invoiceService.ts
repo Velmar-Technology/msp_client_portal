@@ -3,9 +3,10 @@ import type {
   InvoiceContract,
   InvoiceLineItemContract,
   FinancialStatsResponseContract as FinancialStats,
+  VaultGraceStatusResponseContract,
 } from "@shared/contracts";
 
-export type { InvoiceLineItemContract };
+export type { InvoiceLineItemContract, VaultGraceStatusResponseContract };
 export type Invoice = InvoiceContract;
 export type InvoiceLineItemType = InvoiceLineItemContract;
 export type FinancialStatsResponse = FinancialStats;
@@ -112,5 +113,16 @@ export const invoiceService = {
   async cancelInvoice(id: string, reason?: string): Promise<{ success: boolean; data: Invoice }> {
     const response = await api.patch(`/invoices/${id}/cancel`, { reason });
     return response.data;
+  },
+
+  /**
+   * Requests a 24-hour emergency grace extension for the tenant's password vault (BL-702).
+   *
+   * @param reason - Optional cancellation or grace note.
+   * @returns Promise resolving to grace extension status.
+   */
+  async requestVaultGrace(reason?: string): Promise<VaultGraceStatusResponseContract> {
+    const response = await api.post('/invoices/request-vault-grace', { reason });
+    return response.data.data;
   },
 };

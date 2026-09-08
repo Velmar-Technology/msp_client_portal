@@ -46,6 +46,8 @@ export const tenants = pgTable('tenants', {
   read_only_at: timestamp('read_only_at', { withTimezone: true }),
   suspended_at: timestamp('suspended_at', { withTimezone: true }),
   purged_at: timestamp('purged_at', { withTimezone: true }),
+  vault_grace_extension_until: timestamp('vault_grace_extension_until', { withTimezone: true }),
+  vault_grace_extensions_count: integer('vault_grace_extensions_count').default(0).notNull(),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
@@ -103,6 +105,10 @@ export const tickets = pgTable(
     tenant_id: uuid('tenant_id')
       .references(() => tenants.id, { onDelete: 'cascade' })
       .notNull(),
+    reporter_name: varchar('reporter_name', { length: 255 }),
+    reporter_email: varchar('reporter_email', { length: 255 }),
+    source: varchar('source', { length: 50 }).default('WEB').notNull(),
+    device_snapshot: jsonb('device_snapshot'),
     created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
     updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
   },
@@ -180,6 +186,7 @@ export const ticketResponses = pgTable(
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
     message: text('message').notNull(),
+    author_name: varchar('author_name', { length: 255 }),
     tenant_id: uuid('tenant_id')
       .references(() => tenants.id, { onDelete: 'cascade' })
       .notNull(),
@@ -384,6 +391,11 @@ export const subscriptionEquipment = pgTable(
     otp_expires_at: timestamp('otp_expires_at', { withTimezone: true }),
     nextcloud_username: varchar('nextcloud_username', { length: 255 }),
     nextcloud_password: varchar('nextcloud_password', { length: 255 }),
+    vaultwarden_org_id: uuid('vaultwarden_org_id'),
+    vaultwarden_collection_id: varchar('vaultwarden_collection_id', { length: 255 }),
+    vaultwarden_device_user_id: varchar('vaultwarden_device_user_id', { length: 255 }),
+    vaultwarden_status: varchar('vaultwarden_status', { length: 50 }).default('UNPROVISIONED').notNull(),
+    vaultwarden_last_synced_at: timestamp('vaultwarden_last_synced_at', { withTimezone: true }),
     tenant_id: uuid('tenant_id')
       .references(() => tenants.id, { onDelete: 'cascade' })
       .notNull(),
@@ -394,6 +406,7 @@ export const subscriptionEquipment = pgTable(
     index('idx_sub_equip_sub').on(table.subscription_id),
     index('idx_sub_equip_tenant').on(table.tenant_id),
     index('idx_sub_equip_otp').on(table.otp),
+    index('idx_sub_equip_agent_token').on(table.agent_token),
   ]
 );
 

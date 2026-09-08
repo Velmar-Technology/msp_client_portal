@@ -34,12 +34,23 @@ export class AlertService {
    * @param eventRepo - Ticket audit event repository
    * @param creationSvc - Ticket creation domain service
    */
+  private _creationSvc?: TicketCreationService;
+
   constructor(
     private rmmAlertRepo: RmmAlertRepository = rmmAlertRepository,
     private ticketRepo: TicketRepository = ticketRepository,
     private eventRepo: TicketEventRepository = ticketEventRepository,
-    private creationSvc: TicketCreationService = ticketCreationService,
-  ) {}
+    creationSvc?: TicketCreationService,
+  ) {
+    this._creationSvc = creationSvc;
+  }
+
+  private get creationSvc(): TicketCreationService {
+    if (!this._creationSvc) {
+      this._creationSvc = ticketCreationService;
+    }
+    return this._creationSvc;
+  }
 
   /**
    * Ingests and transforms external Zabbix webhook payload into normalized RMM alert parameters.

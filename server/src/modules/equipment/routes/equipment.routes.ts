@@ -3,7 +3,7 @@ import { equipmentController } from '@modules/equipment/controllers/EquipmentCon
 import { authMiddleware } from '@shared/middleware/authMiddleware';
 import { rbacMiddleware } from '@shared/middleware/rbacMiddleware';
 import { validate } from '@shared/middleware/validationMiddleware';
-import { ActivateWithOtpDTO, AddAdminDeviceDTO } from '@shared/dtos/equipment.dto';
+import { ActivateWithOtpInputSchema, AddAdminDeviceInputSchema } from '@shared/contracts';
 import { UserRole } from '@shared/types';
 
 const router = Router();
@@ -11,6 +11,11 @@ const router = Router();
 /** GET /api/v1/equipment/agent-binary — Download standalone msp-agent.exe binary (Public binary download) */
 router.get('/agent-binary', (req, res) =>
   equipmentController.downloadAgentBinary(req, res)
+);
+
+/** GET /api/v1/equipment/tray-binary — Download standalone msp-tray.exe binary (Public binary download) */
+router.get('/tray-binary', (req, res) =>
+  equipmentController.downloadTrayBinary(req, res)
 );
 
 router.use(authMiddleware);
@@ -21,7 +26,7 @@ router.get('/admin/devices', rbacMiddleware(UserRole.ADMIN), (req, res) =>
 );
 
 /** POST /api/v1/equipment/admin/devices — Add a device directly for admin/tenant without needing a subscription */
-router.post('/admin/devices', rbacMiddleware(UserRole.ADMIN), validate(AddAdminDeviceDTO, 'body'), (req, res) =>
+router.post('/admin/devices', rbacMiddleware(UserRole.ADMIN), validate(AddAdminDeviceInputSchema, 'body'), (req, res) =>
   equipmentController.addAdminDevice(req, res)
 );
 
@@ -47,7 +52,7 @@ router.get('/agent-identity', (req, res) =>
 );
 
 /** POST /api/v1/equipment/activate-with-otp — Activate a slot by entering a generated OTP code */
-router.post('/activate-with-otp', validate(ActivateWithOtpDTO, 'body'), (req, res) =>
+router.post('/activate-with-otp', validate(ActivateWithOtpInputSchema, 'body'), (req, res) =>
   equipmentController.activateWithOtp(req, res)
 );
 
@@ -84,6 +89,21 @@ router.get('/subscriptions/:subId/slots/:slotIndex/deploy-script', rbacMiddlewar
 /** GET /api/v1/equipment/subscriptions/:subId/slots/:slotIndex/agent-deploy-script — Generate MSP Agent PowerShell deployment script */
 router.get('/subscriptions/:subId/slots/:slotIndex/agent-deploy-script', rbacMiddleware(UserRole.ADMIN, UserRole.CLIENT), (req, res) =>
   equipmentController.getAgentDeployScript(req, res)
+);
+
+/** GET /api/v1/equipment/:id/vault — Get Vaultwarden password vault status for an equipment slot */
+router.get('/:id/vault', (req, res) =>
+  equipmentController.getDeviceVault(req, res)
+);
+
+/** POST /api/v1/equipment/:id/vault/provision — Provision Vaultwarden collection and device identity */
+router.post('/:id/vault/provision', (req, res) =>
+  equipmentController.provisionDeviceVault(req, res)
+);
+
+/** POST /api/v1/equipment/:id/vault/revoke — Revoke and lock Vaultwarden session for equipment slot */
+router.post('/:id/vault/revoke', (req, res) =>
+  equipmentController.revokeDeviceVault(req, res)
 );
 
 export default router;

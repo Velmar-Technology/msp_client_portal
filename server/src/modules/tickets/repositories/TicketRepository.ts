@@ -44,6 +44,10 @@ export class TicketRepository extends BaseRepository<Ticket> {
         assigned_tech_id: tickets.assigned_tech_id,
         equipment_id: tickets.equipment_id,
         tenant_id: tickets.tenant_id,
+        reporter_name: tickets.reporter_name,
+        reporter_email: tickets.reporter_email,
+        source: tickets.source,
+        device_snapshot: tickets.device_snapshot,
         created_at: tickets.created_at,
         updated_at: tickets.updated_at,
         client_name: clientAlias.name,
@@ -75,6 +79,10 @@ export class TicketRepository extends BaseRepository<Ticket> {
     client_id: string;
     equipment_id?: string | null;
     tenant_id: string;
+    reporter_name?: string | null;
+    reporter_email?: string | null;
+    source?: 'PORTAL' | 'AGENT' | 'EMAIL' | 'ALERT';
+    device_snapshot?: Record<string, unknown> | null;
   }): Promise<Ticket> {
     const results = await db
       .insert(tickets)
@@ -86,6 +94,10 @@ export class TicketRepository extends BaseRepository<Ticket> {
         client_id: data.client_id,
         equipment_id: data.equipment_id || null,
         tenant_id: data.tenant_id,
+        reporter_name: data.reporter_name || null,
+        reporter_email: data.reporter_email || null,
+        source: (data.source as any) || 'PORTAL',
+        device_snapshot: data.device_snapshot || null,
       })
       .returning();
     return results[0] as Ticket;
@@ -315,6 +327,10 @@ export class TicketRepository extends BaseRepository<Ticket> {
         assigned_tech_id: tickets.assigned_tech_id,
         equipment_id: tickets.equipment_id,
         tenant_id: tickets.tenant_id,
+        reporter_name: tickets.reporter_name,
+        reporter_email: tickets.reporter_email,
+        source: tickets.source,
+        device_snapshot: tickets.device_snapshot,
         created_at: tickets.created_at,
         updated_at: tickets.updated_at,
         client_name: clientAlias.name,
@@ -333,6 +349,25 @@ export class TicketRepository extends BaseRepository<Ticket> {
       .offset(offset);
 
     return { tickets: results as unknown as Ticket[], total };
+  }
+
+  /**
+   * Updates fields on an existing ticket.
+   *
+   * @param id - Unique ticket UUID
+   * @param data - Partial ticket properties to update
+   * @returns Updated Ticket entity or null
+   */
+  async update(id: string, data: Partial<typeof tickets.$inferInsert>): Promise<Ticket | null> {
+    if (!id || !isUuid(id)) {
+      return null;
+    }
+    const results = await db
+      .update(tickets)
+      .set(data)
+      .where(eq(tickets.id, id))
+      .returning();
+    return (results[0] as Ticket) || null;
   }
 
   /**

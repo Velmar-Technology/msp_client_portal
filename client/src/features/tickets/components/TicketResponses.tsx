@@ -62,13 +62,15 @@ export const TicketResponses: React.FC<TicketResponsesProps> = ({
           responses.map((resp) => {
             const isClient = resp.user_role === 'CLIENT';
             const isTech = resp.user_role === 'TECHNICIAN';
-            const isSelf = resp.user_id === user?.id;
+            const isSelf = resp.user_id === user?.id && !resp.author_name;
+            const displayName = resp.author_name || resp.user_name || 'User';
+            const isAgentAuthored = Boolean(resp.author_name);
 
             if (isSelf) {
               return (
                 <div key={resp.id} className="flex gap-3 ml-auto flex-row-reverse max-w-[85%]">
                   <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground shrink-0 flex items-center justify-center font-bold text-[10px] shadow-xs">
-                    {(resp.user_name || 'U')
+                    {displayName
                       .split(' ')
                       .map((n) => n[0])
                       .join('')
@@ -77,7 +79,7 @@ export const TicketResponses: React.FC<TicketResponsesProps> = ({
                   </div>
                   <div className="flex flex-col gap-1 items-end">
                     <div className="flex items-center gap-1.5 flex-row-reverse">
-                      <span className="text-xs font-bold text-foreground">{resp.user_name}</span>
+                      <span className="text-xs font-bold text-foreground">{displayName}</span>
                       <span className="text-[9px] uppercase font-bold tracking-wider text-muted-foreground bg-muted border border-border px-1 rounded">
                         {resp.user_role}
                       </span>
@@ -149,7 +151,7 @@ export const TicketResponses: React.FC<TicketResponsesProps> = ({
             return (
               <div key={resp.id} className="flex gap-3 max-w-[85%]">
                 <div className="w-7 h-7 rounded-full bg-muted border border-border shrink-0 flex items-center justify-center text-muted-foreground font-bold text-[10px]">
-                  {(resp.user_name || 'U')
+                  {displayName
                     .split(' ')
                     .map((n) => n[0])
                     .join('')
@@ -157,8 +159,13 @@ export const TicketResponses: React.FC<TicketResponsesProps> = ({
                     .toUpperCase()}
                 </div>
                 <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold text-foreground">{resp.user_name}</span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-xs font-bold text-foreground">{displayName}</span>
+                    {isAgentAuthored && (
+                      <span className="text-[9px] font-mono font-medium px-1 rounded border bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 border-indigo-500/20">
+                        {t('ticketDetail.endpointBadge')}
+                      </span>
+                    )}
                     <span
                       className={`text-[9px] uppercase font-bold tracking-wider px-1 rounded border ${
                         isClient

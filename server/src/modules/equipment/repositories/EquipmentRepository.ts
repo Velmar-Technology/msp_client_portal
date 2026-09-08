@@ -146,16 +146,16 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
    * @param data - Partial update attributes
    * @returns Updated SubscriptionEquipment entity or null
    */
-  async update(id: string, data: Partial<SubscriptionEquipment>): Promise<SubscriptionEquipment | null> {
+  async update(id: string, data: Partial<SubscriptionEquipment> | Partial<typeof subscriptionEquipment.$inferInsert>): Promise<SubscriptionEquipment | null> {
     const results = await db
       .update(subscriptionEquipment)
       .set({
         ...data,
         updated_at: new Date(),
-      })
+      } as any)
       .where(eq(subscriptionEquipment.id, id))
       .returning();
-    return (results[0] as SubscriptionEquipment) || null;
+    return (results[0] as unknown as SubscriptionEquipment) || null;
   }
 
   /**
@@ -418,6 +418,40 @@ export class EquipmentRepository extends BaseRepository<SubscriptionEquipment> {
       )
       .orderBy(subscriptionEquipment.device_name);
     return results as SubscriptionEquipment[];
+  }
+
+  /**
+   * Finds an equipment slot by its machine agent token, including subscription owner details.
+   *
+   * @param token - Machine agent secret token
+   * @returns Equipment slot with linked client_id and tenant_id, or null if not found
+   */
+  async findByAgentToken(token: string): Promise<{
+    equipment: SubscriptionEquipment;
+    clientId: string;
+    tenantId: string;
+  } | null> {
+    if (!token || typeof token !== 'string' || token.trim().length === 0) {
+      return null;
+    }
+
+    const results = await db
+      .select({
+        equipment: subscriptionEquipment,
+        clientId: subscriptions.client_id,
+        tenantId: subscriptionEquipment.tenant_id,
+      })
+      .from(subscriptionEquipment)
+      .innerJoin(subscriptions, eq(subscriptionEquipment.subscription_id, subscriptions.id))
+      .where(eq(subscriptionEquipment.agent_token, token))
+      .limit(1);
+
+    if (results.length === 0) return null;
+    return results[0] as unknown as {
+      equipment: SubscriptionEquipment;
+      clientId: string;
+      tenantId: string;
+    };
   }
 }
 

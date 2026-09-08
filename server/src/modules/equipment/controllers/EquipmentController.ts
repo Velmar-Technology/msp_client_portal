@@ -465,6 +465,85 @@ Write-Host "==================================================" -ForegroundColor
 
     res.download(binaryPath, 'msp-agent.exe');
   }
+
+  /**
+   * Downloads the pre-compiled standalone msp-tray.exe desktop assistant binary.
+   *
+   * @param _req - Express request
+   * @param res - Express response sending binary file
+   * @returns Promise resolving to void
+   */
+  async downloadTrayBinary(_req: Request, res: Response): Promise<void> {
+    const possiblePaths = [
+      path.resolve(process.cwd(), '../packages/msp-tray/src-tauri/target/release/msp-tray.exe'),
+      path.resolve(process.cwd(), 'packages/msp-tray/src-tauri/target/release/msp-tray.exe'),
+      path.resolve(process.cwd(), '../packages/msp-tray/src-tauri/target/x86_64-pc-windows-msvc/release/msp-tray.exe'),
+      path.resolve(process.cwd(), 'packages/msp-tray/src-tauri/target/x86_64-pc-windows-msvc/release/msp-tray.exe'),
+      path.resolve(process.cwd(), '../packages/msp-agent/dist/msp-agent-installer/msp-tray.exe'),
+      path.resolve(process.cwd(), 'packages/msp-agent/dist/msp-agent-installer/msp-tray.exe'),
+      path.resolve(process.cwd(), '../packages/msp-tray/src-tauri/target/debug/msp-tray.exe'),
+    ];
+
+    const binaryPath = possiblePaths.find((p) => fs.existsSync(p));
+    if (!binaryPath) {
+      res.status(404).json({
+        success: false,
+        error: 'MSP Tray binary not found on server. Build the release package with cargo build --release first.',
+      });
+      return;
+    }
+
+    res.download(binaryPath, 'msp-tray.exe');
+  }
+
+  /**
+   * Handles querying Vaultwarden device password vault status for an equipment slot.
+   *
+   * @param req - Express request with equipment ID in params
+   * @param res - Express response returning DeviceVaultDetails
+   */
+  async getDeviceVault(req: Request, res: Response): Promise<void> {
+    const equipmentId = req.params.id as string;
+    const byAdmin = req.user!.role === 'ADMIN';
+    const vault = await this.equipmentSvc.getDeviceVault(equipmentId, req.user!.tenantId, byAdmin);
+    res.json({
+      success: true,
+      data: vault,
+    });
+  }
+
+  /**
+   * Handles provisioning a dedicated Vaultwarden collection & identity for an equipment slot.
+   *
+   * @param req - Express request with equipment ID in params
+   * @param res - Express response returning provisioned DeviceVaultDetails
+   */
+  async provisionDeviceVault(req: Request, res: Response): Promise<void> {
+    const equipmentId = req.params.id as string;
+    const byAdmin = req.user!.role === 'ADMIN';
+    const vault = await this.equipmentSvc.provisionDeviceVault(equipmentId, req.user!.tenantId, byAdmin);
+    res.status(201).json({
+      success: true,
+      data: vault,
+    });
+  }
+
+  /**
+   * Handles revoking/locking active Vaultwarden sessions for an equipment slot.
+   *
+   * @param req - Express request with equipment ID in params and optional reason in body
+   * @param res - Express response returning updated DeviceVaultDetails
+   */
+  async revokeDeviceVault(req: Request, res: Response): Promise<void> {
+    const equipmentId = req.params.id as string;
+    const byAdmin = req.user!.role === 'ADMIN';
+    const reason = req.body?.reason as string | undefined;
+    const vault = await this.equipmentSvc.revokeDeviceVault(equipmentId, req.user!.tenantId, reason, byAdmin);
+    res.json({
+      success: true,
+      data: vault,
+    });
+  }
 }
 
 export const equipmentController = new EquipmentController();

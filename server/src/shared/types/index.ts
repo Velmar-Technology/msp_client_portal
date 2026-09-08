@@ -70,6 +70,8 @@ export interface Tenant {
   read_only_at?: Date | null;
   suspended_at?: Date | null;
   purged_at?: Date | null;
+  vault_grace_extension_until?: Date | null;
+  vault_grace_extensions_count?: number;
   created_at: Date;
   updated_at: Date;
 }
@@ -109,6 +111,10 @@ export interface Ticket {
   assigned_tech_id: string | null;
   equipment_id: string | null;
   tenant_id: string;
+  reporter_name?: string | null;
+  reporter_email?: string | null;
+  source?: string;
+  device_snapshot?: Record<string, unknown> | null;
   client_name?: string;
   client_email?: string;
   assigned_tech_name?: string | null;
@@ -146,6 +152,7 @@ export interface TicketResponse {
   ticket_id: string;
   user_id: string;
   message: string;
+  author_name?: string | null;
   tenant_id: string;
   created_at: Date;
   user_name?: string;
@@ -451,7 +458,7 @@ export interface SubscriptionEquipment {
   id: string;
   subscription_id: string;
   slot_index: number;
-  status: 'PENDING_ACTIVATION' | 'ACTIVE';
+  status: 'PENDING_ACTIVATION' | 'ACTIVE' | 'BOUND' | 'ONLINE' | string;
   device_name: string | null;
   device_serial: string | null;
   agent_instance_id?: string | null;
@@ -463,6 +470,11 @@ export interface SubscriptionEquipment {
   otp_expires_at: Date | null;
   nextcloud_username: string | null;
   nextcloud_password: string | null;
+  vaultwarden_org_id?: string | null;
+  vaultwarden_collection_id?: string | null;
+  vaultwarden_device_user_id?: string | null;
+  vaultwarden_status?: 'UNPROVISIONED' | 'ACTIVE' | 'LOCKED' | 'PURGED' | string;
+  vaultwarden_last_synced_at?: Date | null;
   tenant_id: string;
   nextcloud_used_bytes?: number;
   nextcloud_total_bytes?: number;
@@ -788,4 +800,11 @@ export interface TechnicianEarningsSummary {
   sla_met_rate: number;
 }
 
-
+export interface AgentPayload {
+  equipmentId: string;
+  slotId: string;
+  tenantId: string;
+  clientId: string;
+  hostname?: string | null;
+  deviceName?: string | null;
+}

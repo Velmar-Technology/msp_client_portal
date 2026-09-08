@@ -1273,6 +1273,7 @@ export async function sendAccountPurgedNoticeEmail(
   clientEmail: string,
   clientName: string,
   language = 'en_US',
+  vaultEscrowBackup?: { filename: string; data: string },
 ): Promise<void> {
   const isSpanish = language.startsWith('es');
 
@@ -1281,6 +1282,17 @@ export async function sendAccountPurgedNoticeEmail(
     : 'Notice of permanent technical data purge due to 30 days non-payment.';
 
   const title = isSpanish ? 'Purga Técnica Definitiva de Datos (Día 30)' : 'Permanent Technical Data Purge (Day 30)';
+
+  const escrowNotice = vaultEscrowBackup
+    ? `
+      <div style="background-color: #FEF3C7; border: 1px solid #F59E0B; border-radius: 6px; padding: 12px; margin-top: 16px;">
+        <p style="margin: 0; font-size: 13px; color: #92400E;">
+          ${isSpanish
+            ? `<strong>Copia de Seguridad Cifrada en Custodia:</strong> Se ha generado un archivo de respaldo cifrado de su bóveda de contraseñas (<em>${vaultEscrowBackup.filename}</em>).`
+            : `<strong>Encrypted Escrow Vault Backup:</strong> An encrypted backup file of your password vault (<em>${vaultEscrowBackup.filename}</em>) has been generated and retained safely.`}
+        </p>
+      </div>`
+    : '';
 
   const contentHtml = `
     <h2 style="color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 12px;">
@@ -1291,6 +1303,7 @@ export async function sendAccountPurgedNoticeEmail(
         ? `Habiendo transcurrido <strong>30 días de mora</strong> sin regularización de pago, se ha ejecutado la <strong>purga técnica y eliminación permanente de datos</strong> de los servidores para liberación de almacenamiento, conforme a la Sección 9.3 de los Términos de Servicio, con cero responsabilidad para Velmar Technology SRL.`
         : `Having reached <strong>30 days of non-payment</strong> without settlement, permanent technical data purge has been executed across our servers for storage liberation in accordance with Section 9.3, with zero liability to Velmar Technology SRL.`}
     </p>
+    ${escrowNotice}
   `;
 
   const body = getEmailLayout({
