@@ -291,4 +291,73 @@ export interface ExpenseSummary {
   created_at: string;
 }
 
+export interface ApiStatusItem {
+  id: string;
+  name: string;
+  category: 'CORE' | 'SERVICES' | 'BUSINESS' | 'INTEGRATION';
+  endpoint: string;
+  status: 'OPERATIONAL' | 'DEGRADED' | 'DOWN';
+  latencyMs: number;
+  uptimePercentage: number;
+  lastChecked: string;
+  message?: string;
+}
+
+export type EnvVarCategory =
+  | 'DATABASE'
+  | 'SERVER'
+  | 'SECURITY'
+  | 'EMAIL'
+  | 'WHATSAPP'
+  | 'UPLOADS'
+  | 'OAUTH'
+  | 'STORAGE'
+  | 'PAYPAL'
+  | 'RMM';
+
+export interface EnvVarStatusItem {
+  key: string;
+  category: EnvVarCategory;
+  status: 'CONFIGURED' | 'DEFAULT_PLACEHOLDER' | 'MISSING';
+  isSecret: boolean;
+  valueDisplay: string;
+  description: string;
+}
+
+export interface SystemApiStatusResponse {
+  overallStatus: 'OPERATIONAL' | 'DEGRADED' | 'DOWN';
+  averageLatencyMs: number;
+  totalServices: number;
+  operationalCount: number;
+  degradedCount: number;
+  downCount: number;
+  lastChecked: string;
+  services: ApiStatusItem[];
+  envVariables: EnvVarStatusItem[];
+  envTotal: number;
+  envConfiguredCount: number;
+  envDegradedCount: number;
+  envMissingCount: number;
+}
+
+export interface NotificationSummary {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  link?: string | null;
+  ticket_id?: string | null;
+  type: string;
+  read: boolean;
+  tenant_id?: string | null;
+  created_at: string;
+}
+
+export interface NotificationListResult {
+  notifications: NotificationSummary[];
+  unreadCount: number;
+}
+
+
+
 

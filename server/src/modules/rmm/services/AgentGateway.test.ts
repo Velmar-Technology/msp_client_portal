@@ -499,4 +499,51 @@ describe('AgentGateway', () => {
     });
     expect(sent).toBe(false);
   });
+
+  describe('AGENT_UPGRADE dispatch', () => {
+    it('should send AGENT_UPGRADE command and resolve when agent acknowledges', async () => {
+      const ws = new MockWebSocket();
+      let sentEnvelope: any = null;
+      ws.send = vi.fn((data: string, cb?: (err?: Error) => void) => {
+        sentEnvelope = JSON.parse(data);
+        if (cb) cb();
+      });
+
+      wss.emit('connection', ws, createMockReq('eq-upgrade-01'));
+
+      const upgradePayload = {
+        target_version: '1.10.2',
+        download_url: 'https://helpdesk.velmartech.com.do/dl/msp-agent-1.10.2.exe',
+        sha256_checksum: 'bf2b4d87a1cbbc1915899c099a5c7a76321ff752762def9992fd4ed89885419e',
+        rollback_timeout_secs: 45,
+      };
+
+      const sendPromise = gateway.sendCommand('eq-upgrade-01', 'AGENT_UPGRADE', upgradePayload, 5000);
+
+      expect(sentEnvelope.command).toBe('AGENT_UPGRADE');
+      expect(sentEnvelope.payload).toEqual(upgradePayload);
+      expect(sentEnvelope.correlation_id).toBeDefined();
+
+      // Simulate agent responding with UPGRADE_PREPARED
+      ws.emit(
+        'message',
+        JSON.stringify({
+          correlation_id: sentEnvelope.correlation_id,
+          command: 'RESPONSE',
+          payload: { success: true, status: 'UPGRADE_PREPARED' },
+        })
+      );
+
+      const result = await sendPromise;
+      expect(result.data).toEqual({ success: true, status: 'UPGRADE_PREPARED' });
+      expect(result.command).toBe('AGENT_UPGRADE');
+      expect(result.equipmentId).toBe('eq-upgrade-01');
+    });
+
+    it('should reject when attempting to upgrade an offline agent', async () => {
+      await expect(
+        gateway.sendCommand('eq-offline-target', 'AGENT_UPGRADE', { target_version: '1.10.2' })
+      ).rejects.toThrow(/not connected \(OFFLINE\)/);
+    });
+  });
 });

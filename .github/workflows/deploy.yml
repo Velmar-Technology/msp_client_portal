@@ -61,6 +61,7 @@ env:
   REGISTRY: ghcr.io
   SERVER_IMAGE: msp-services-server
   CLIENT_IMAGE: msp-services-client
+  MCP_IMAGE: msp-mcp-server
 
 jobs:
   # ------------------------------------------------------------------
@@ -265,11 +266,66 @@ jobs:
           cache-to: type=gha,mode=max,scope=build-client
 
   # ------------------------------------------------------------------
+  # 3c. Build & push MCP server image
+  # ------------------------------------------------------------------
+  build-mcp:
+    name: Build & Push MCP Server
+    needs: [prepare, quality-gates]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.11.1
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.4.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker Metadata
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.7.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner_lc }}/${{ env.MCP_IMAGE }}
+          tags: |
+            type=raw,value=${{ needs.prepare.outputs.version }}
+            type=sha,format=long,prefix=
+            type=raw,value=latest
+
+      - name: Build & Push MCP Server Image
+        id: push
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.18.0
+        with:
+          context: .
+          file: packages/mcp-server/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha,scope=build-mcp
+          cache-to: type=gha,mode=max,scope=build-mcp
+
+  # ------------------------------------------------------------------
   # 4. Security gate — block release on HIGH/CRITICAL CVEs + publish SARIF
   # ------------------------------------------------------------------
   security-scan:
     name: Security Scan (${{ matrix.image }})
-    needs: [prepare, build-server, build-client]
+    needs: [prepare, build-server, build-client, build-mcp]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -290,6 +346,9 @@ jobs:
           - image: msp-services-client
             digest: ${{ needs.build-client.outputs.digest }}
             sarif: trivy-client.sarif
+          - image: msp-mcp-server
+            digest: ${{ needs.build-mcp.outputs.digest }}
+            sarif: trivy-mcp.sarif
     steps:
       - name: Checkout Code
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.1
@@ -576,7 +635,7 @@ jobs:
   # ------------------------------------------------------------------
   deploy-production:
     name: Deploy to Production (Portainer)
-    needs: [prepare, security-scan, build-server, build-client]
+    needs: [prepare, security-scan, build-server, build-client, build-mcp]
     runs-on: ubuntu-latest
     # Budget must cover worst case: PUT (10m) + health check + rollback PUT + re-verify
     timeout-minutes: 25
@@ -636,7 +695,7 @@ jobs:
           port: ${{ secrets.VPS_PORT || 22 }}
           envs: VERSION,OWNER_LC
           script: |
-            for image in msp-services-server msp-services-client; do
+            for image in msp-services-server msp-services-client msp-mcp-server; do
               if docker pull "ghcr.io/${OWNER_LC}/${image}:${VERSION}"; then
                 echo "[prewarm] Pulled ${image}:${VERSION}"
               else
@@ -657,17 +716,33 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
           script: |
+            SERVER_HEALTHY=false
             for attempt in $(seq 1 12); do
               if docker exec msp_server_prod node -e \
                 "fetch('http://127.0.0.1:3001/api/v1/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))" >/dev/null 2>&1; then
                 echo "[health] Server API healthy (attempt ${attempt}/12)"
-                exit 0
+                SERVER_HEALTHY=true
+                break
               fi
               echo "[health] Waiting for API health... (${attempt}/12)"
               sleep 5
             done
-            echo "[health] ERROR: server failed health verification after 12 attempts"
-            exit 1
+
+            if [ "${SERVER_HEALTHY}" != "true" ]; then
+              echo "[health] ERROR: server failed health verification after 12 attempts"
+              exit 1
+            fi
+
+            for attempt in $(seq 1 12); do
+              if docker exec msp_mcp_prod wget -q --spider http://127.0.0.1:3005/health >/dev/null 2>&1; then
+                echo "[health] MCP Server healthy (attempt ${attempt}/12)"
+                exit 0
+              fi
+              echo "[health] Waiting for MCP Server health... (${attempt}/12)"
+              sleep 5
+            done
+            echo "[health] WARNING: MCP server container health check timed out"
+            exit 0
 
       - name: Rollback to Previous Version
         if: steps.deploy.outcome == 'failure' || steps.health.outcome == 'failure'

@@ -417,6 +417,17 @@ The platform implements a distributed background job orchestration pattern desig
 
 ---
 
+## AI Agents & Model Context Protocol (MCP)
+
+The repository provides a first-class Model Context Protocol server ([`packages/mcp-server/`](packages/mcp-server/)) exposing **44+ real-time diagnostic, telemetry, and remediation tools** to Microsoft Copilot Studio, Antigravity, Claude Desktop, and autonomous agents:
+
+- **Dual-Mode Transport:** Supports local Stdio (CLI/IDE) and Stateless Streamable HTTP over `POST /mcp` (2026-07-28 Spec Revision).
+- **Inbound Security:** Authenticates incoming AI agent requests using timing-safe API key verification via `X-API-Key` or `Authorization: Bearer <token>`.
+- **Production Deployment:** Deployed as container `msp_mcp_prod` on the helpdesk VPS under `https://helpdesk.velmartech.com.do/mcp`.
+- **Documentation & Setup:** Full setup guides, tool catalogs, and Copilot Studio prompt templates are available in [`packages/mcp-server/README.md`](packages/mcp-server/README.md) and [`docs/infrastructure/COPILOT_STUDIO_AGENT_DEPLOYMENT.md`](docs/infrastructure/COPILOT_STUDIO_AGENT_DEPLOYMENT.md).
+
+---
+
 ## API Documentation
 
 Interactive Swagger API documentation is available when the server is running:

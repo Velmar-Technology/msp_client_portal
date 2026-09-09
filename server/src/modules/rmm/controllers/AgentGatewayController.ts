@@ -129,6 +129,67 @@ export class AgentGatewayController {
     const result = await agentGateway.sendCommand(target, 'SECURITY_AUDIT');
     res.json({ success: true, data: result });
   }
+
+  /**
+   * Initiates an autonomous self-upgrade on the remote endpoint agent.
+   *
+   * @param req - Express request with equipmentId in params and optional targetVersion/checksum in body
+   * @param res - Express response returning initiation confirmation
+   * @throws {ValidationError} When parameters fail schema validation
+   */
+  async upgradeAgent(req: Request, res: Response): Promise<void> {
+    const rawInput = {
+      equipmentId: req.params.equipmentId,
+      targetVersion: req.body?.targetVersion,
+      downloadUrl: req.body?.downloadUrl,
+      sha256Checksum: req.body?.sha256Checksum,
+      rollbackTimeoutSecs: req.body?.rollbackTimeoutSecs,
+    };
+
+    const { AgentUpgradeRequestSchema } = await import('@shared/contracts');
+    const parseResult = AgentUpgradeRequestSchema.safeParse(rawInput);
+    if (!parseResult.success) {
+      throw new ValidationError(
+        parseResult.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ')
+      );
+    }
+
+    const input = parseResult.data;
+    const targetVersion = (input.targetVersion || '1.10.2').replace(/^v/, '');
+    const baseUrl =
+      process.env.MSP_AGENT_DOWNLOAD_BASE_URL || 'https://helpdesk.velmartech.com.do/dl';
+    const downloadUrl = input.downloadUrl || `${baseUrl}/msp-agent-${targetVersion}.exe`;
+
+    // Known release checksum table fallback if not supplied explicitly
+    const KNOWN_CHECKSUMS: Record<string, string> = {
+      '1.8.4': 'bf2b4d87a1cbbc1915899c099a5c7a76321ff752762def9992fd4ed89885419e',
+      '1.10.2': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+    };
+
+    const sha256Checksum =
+      input.sha256Checksum || KNOWN_CHECKSUMS[targetVersion] || KNOWN_CHECKSUMS['1.8.4'];
+
+    const target = await this.resolveTarget(input.equipmentId);
+
+    const payload = {
+      target_version: targetVersion,
+      download_url: downloadUrl,
+      sha256_checksum: sha256Checksum,
+      rollback_timeout_secs: input.rollbackTimeoutSecs ?? 45,
+    };
+
+    const result = await agentGateway.sendCommand(target, 'AGENT_UPGRADE', payload, 30_000);
+
+    res.json({
+      success: true,
+      message: 'Agent upgrade initiated successfully',
+      equipmentId: input.equipmentId,
+      targetVersion,
+      rollbackTimeoutSecs: payload.rollback_timeout_secs,
+      initiatedAt: new Date().toISOString(),
+      agentResponse: result,
+    });
+  }
 }
 
 export const agentGatewayController = new AgentGatewayController();

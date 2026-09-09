@@ -10,6 +10,12 @@ import { registerLocalHostTools } from './localHostTools.js';
 import { registerAuthzTools } from './authzTools.js';
 import { registerUserTools } from './userTools.js';
 import { registerBillingTools } from './billingTools.js';
+import { registerDomainTools } from './domainTools.js';
+import { registerEmailTools } from './emailTools.js';
+import { registerNetworkTools } from './networkTools.js';
+import { registerStorageTools } from './storageTools.js';
+import { timingSafeCompare, validateInboundApiKey } from '../authUtils.js';
+import type { SystemApiStatusResponse, NotificationListResult } from '../types.js';
 
 describe('MSP MCP Server Tools Registration and Execution', () => {
   let server: McpServer;
@@ -38,6 +44,10 @@ describe('MSP MCP Server Tools Registration and Execution', () => {
       registerAuthzTools(server, mockApiClient);
       registerUserTools(server, mockApiClient);
       registerBillingTools(server, mockApiClient);
+      registerDomainTools(server, mockApiClient);
+      registerEmailTools(server, mockApiClient);
+      registerNetworkTools(server);
+      registerStorageTools(server);
     }).not.toThrow();
   });
 
@@ -319,6 +329,329 @@ describe('MSP MCP Server Tools Registration and Execution', () => {
     const stats = await mockApiClient.getFinancialStats('30_days');
     expect(stats.totalRevenue).toBe(25000);
     expect(stats.paidInvoicesCount).toBe(15);
+
+    const mockPlans = [
+      {
+        id: 'PL-001',
+        name: { en_US: 'Basic', es_DO: 'Básico' },
+        price: 18,
+        client_type: 'CLIENT',
+        active: true,
+        recommended: true,
+        features: [{ code: 'HELPDESK_SUPPORT' }, { code: 'CLOUD_STORAGE' }],
+      },
+    ];
+
+    vi.spyOn(mockApiClient, 'listPlans').mockResolvedValue(mockPlans);
+    const plansResult = await mockApiClient.listPlans();
+    expect(plansResult.length).toBe(1);
+    expect(plansResult[0].id).toBe('PL-001');
+
+    registerBillingTools(server, mockApiClient);
+    const registeredTools = (server as any)._registeredTools || {};
+    const planTool = registeredTools['msp_list_plans'];
+    expect(planTool).toBeDefined();
+
+    if (typeof planTool.handler === 'function') {
+      const toolRes = await planTool.handler({ format: 'markdown_table' });
+      expect(toolRes.content[0].text).toContain('MSP Subscription Plans & Pricing Catalog');
+      expect(toolRes.content[0].text).toContain('PL-001');
+      expect(toolRes.content[0].text).toContain('$18 / mo');
+    }
+  });
+
+  it('should handle getSystemApiStatus properly', async () => {
+    const mockSystemStatus: SystemApiStatusResponse = {
+      overallStatus: 'OPERATIONAL',
+      averageLatencyMs: 24.5,
+      totalServices: 6,
+      operationalCount: 6,
+      degradedCount: 0,
+      downCount: 0,
+      lastChecked: new Date().toISOString(),
+      services: [
+        {
+          id: 'db-postgres',
+          name: 'PostgreSQL Database',
+          category: 'CORE',
+          endpoint: 'postgresql://localhost:5432/msp_portal',
+          status: 'OPERATIONAL',
+          latencyMs: 4,
+          uptimePercentage: 99.98,
+          lastChecked: new Date().toISOString(),
+        },
+      ],
+      envVariables: [
+        {
+          key: 'DATABASE_URL',
+          category: 'DATABASE',
+          status: 'CONFIGURED',
+          isSecret: true,
+          valueDisplay: 'postgresql://***@localhost:5432/msp_portal',
+          description: 'Primary database connection string',
+        },
+      ],
+      envTotal: 1,
+      envConfiguredCount: 1,
+      envDegradedCount: 0,
+      envMissingCount: 0,
+    };
+
+    vi.spyOn(mockApiClient, 'getSystemApiStatus').mockResolvedValue(mockSystemStatus);
+    const status = await mockApiClient.getSystemApiStatus();
+    expect(status.overallStatus).toBe('OPERATIONAL');
+    expect(status.operationalCount).toBe(6);
+    expect(status.services[0].name).toBe('PostgreSQL Database');
+    expect(status.envVariables[0].status).toBe('CONFIGURED');
+  });
+
+  it('should propagate errors when getSystemApiStatus fails', async () => {
+    vi.spyOn(mockApiClient, 'getSystemApiStatus').mockRejectedValue(new Error('Backend connection refused'));
+    await expect(mockApiClient.getSystemApiStatus()).rejects.toThrow('Backend connection refused');
+  });
+
+  it('should verify domainTools registration on McpServer', () => {
+    registerDomainTools(server, mockApiClient);
+    const registeredTools = (server as any)._registeredTools || {};
+    expect(registeredTools['msp_check_domain_services']).toBeDefined();
+    expect(registeredTools['msp_get_system_api_status']).toBeDefined();
+  });
+
+  it('should execute msp_get_system_api_status tool callback successfully', async () => {
+    registerDomainTools(server, mockApiClient);
+    const registeredTools = (server as any)._registeredTools || {};
+    const tool = registeredTools['msp_get_system_api_status'];
+    expect(tool).toBeDefined();
+
+    const mockResponse: SystemApiStatusResponse = {
+      overallStatus: 'OPERATIONAL',
+      averageLatencyMs: 12,
+      totalServices: 1,
+      operationalCount: 1,
+      degradedCount: 0,
+      downCount: 0,
+      lastChecked: '2026-09-08T00:00:00Z',
+      services: [],
+      envVariables: [],
+      envTotal: 0,
+      envConfiguredCount: 0,
+      envDegradedCount: 0,
+      envMissingCount: 0,
+    };
+
+    vi.spyOn(mockApiClient, 'getSystemApiStatus').mockResolvedValue(mockResponse);
+
+    if (typeof tool.handler === 'function') {
+      const result = await tool.handler({});
+      expect(result.content[0].text).toContain('OPERATIONAL');
+      expect(result.isError).toBeUndefined();
+    }
+  });
+
+  it('should handle errors in msp_get_system_api_status tool callback', async () => {
+    registerDomainTools(server, mockApiClient);
+    const registeredTools = (server as any)._registeredTools || {};
+    const tool = registeredTools['msp_get_system_api_status'];
+    expect(tool).toBeDefined();
+
+    vi.spyOn(mockApiClient, 'getSystemApiStatus').mockRejectedValue(new Error('Backend connection refused'));
+
+    if (typeof tool.handler === 'function') {
+      const result = await tool.handler({});
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Failed to retrieve system API status: Backend connection refused');
+    }
+  });
+
+  it('should execute msp_check_domain_services tool callback with simulated inputs', async () => {
+    registerDomainTools(server, mockApiClient);
+    const registeredTools = (server as any)._registeredTools || {};
+    const tool = registeredTools['msp_check_domain_services'];
+    expect(tool).toBeDefined();
+
+    if (typeof tool.handler === 'function') {
+      const result = await tool.handler({
+        domain: 'example.com',
+        checkEmailServices: false,
+        checkWebServices: false,
+        timeoutMs: 1000,
+      });
+
+      expect(result.content[0].text).toContain('Vital Services Health Audit: `example.com`');
+      expect(result.content[0].text).toContain('Domain & DNS Resolution');
+    }
+  });
+
+  it('should handle getNotifications and msp_get_last_email execution', async () => {
+    registerEmailTools(server, mockApiClient);
+    const registeredTools = (server as any)._registeredTools || {};
+    const tool = registeredTools['msp_get_last_email'];
+    expect(tool).toBeDefined();
+
+    const mockNotifications: NotificationListResult = {
+      notifications: [
+        {
+          id: 'notif-123',
+          user_id: 'user-456',
+          title: 'Ticket #104 Assigned',
+          message: 'Technician Estiven assigned to ticket #104.',
+          link: '/tickets/104',
+          type: 'TICKET_ASSIGNED',
+          read: false,
+          created_at: '2026-09-08T12:00:00.000Z',
+        },
+      ],
+      unreadCount: 1,
+    };
+
+    vi.spyOn(mockApiClient, 'getNotifications').mockResolvedValue(mockNotifications);
+
+    const directResult = await mockApiClient.getNotifications();
+    expect(directResult.notifications.length).toBe(1);
+    expect(directResult.notifications[0].title).toBe('Ticket #104 Assigned');
+
+    if (typeof tool.handler === 'function') {
+      const result = await tool.handler({ source: 'portal_notifications' });
+      expect(result.content[0].text).toContain('Latest Portal Email & System Notification');
+      expect(result.content[0].text).toContain('Ticket #104 Assigned');
+      expect(result.content[0].text).toContain('Technician Estiven assigned');
+    }
+  });
+
+  it('should register and execute msp_audit_network_interfaces handler', async () => {
+    registerNetworkTools(server);
+    const registeredTools = (server as any)._registeredTools || {};
+    const tool = registeredTools['msp_audit_network_interfaces'];
+    expect(tool).toBeDefined();
+
+    if (typeof tool.handler === 'function') {
+      const result = await tool.handler({
+        targetHost: '1.1.1.1',
+        domainToResolve: 'helpdesk.velmartech.com.do',
+      });
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toBeDefined();
+    }
+  }, 15000);
+
+  it('should register and execute msp_analyze_disk_storage handler', async () => {
+    registerStorageTools(server);
+    const registeredTools = (server as any)._registeredTools || {};
+    const tool = registeredTools['msp_analyze_disk_storage'];
+    expect(tool).toBeDefined();
+
+    if (typeof tool.handler === 'function') {
+      const result = await tool.handler({ includeHotspots: false });
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toBeDefined();
+    }
+  });
+
+  describe('Inbound API Key Authentication (Copilot Studio Option B)', () => {
+    const SECRET_KEY = 'msp_live_secret_key_12345';
+
+    it('timingSafeCompare should validate string matches and handle length differences safely', () => {
+      expect(timingSafeCompare('secret', 'secret')).toBe(true);
+      expect(timingSafeCompare('secret', 'wrong')).toBe(false);
+      expect(timingSafeCompare('secret', 'secret_longer')).toBe(false);
+      expect(timingSafeCompare('', '')).toBe(true);
+    });
+
+    it('validateInboundApiKey should accept valid X-API-Key header', () => {
+      const mockReq = {
+        headers: {
+          'x-api-key': SECRET_KEY,
+        },
+      } as any;
+
+      expect(validateInboundApiKey(mockReq, SECRET_KEY)).toBe(true);
+    });
+
+    it('validateInboundApiKey should accept valid Authorization Bearer header', () => {
+      const mockReq = {
+        headers: {
+          authorization: `Bearer ${SECRET_KEY}`,
+        },
+      } as any;
+
+      expect(validateInboundApiKey(mockReq, SECRET_KEY)).toBe(true);
+    });
+
+    it('validateInboundApiKey should accept raw Authorization header without Bearer prefix', () => {
+      const mockReq = {
+        headers: {
+          authorization: SECRET_KEY,
+        },
+      } as any;
+
+      expect(validateInboundApiKey(mockReq, SECRET_KEY)).toBe(true);
+    });
+
+    it('validateInboundApiKey should reject mismatched or missing API keys', () => {
+      const wrongReq = {
+        headers: {
+          'x-api-key': 'wrong_key',
+        },
+      } as any;
+      expect(validateInboundApiKey(wrongReq, SECRET_KEY)).toBe(false);
+
+      const emptyReq = {
+        headers: {},
+      } as any;
+      expect(validateInboundApiKey(emptyReq, SECRET_KEY)).toBe(false);
+    });
+
+    it('validateInboundApiKey should return true if expectedKey is empty/not configured', () => {
+      const emptyReq = {
+        headers: {},
+      } as any;
+      expect(validateInboundApiKey(emptyReq, '')).toBe(true);
+    });
+  });
+
+  describe('RMM Agent Upgrade Tool', () => {
+    it('should handle msp_remote_upgrade_agent properly', async () => {
+      vi.spyOn(mockApiClient, 'upgradeRemoteAgent').mockResolvedValueOnce({
+        success: true,
+        message: 'Agent upgrade initiated successfully',
+        equipmentId: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+        targetVersion: '1.10.2',
+        rollbackTimeoutSecs: 45,
+      });
+
+      registerRmmTools(server, mockApiClient);
+      const tools = (server as any)._registeredTools;
+      const upgradeTool = tools['msp_remote_upgrade_agent'];
+      expect(upgradeTool).toBeDefined();
+
+      const result = await upgradeTool.handler({
+        equipmentId: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+        targetVersion: '1.10.2',
+        rollbackTimeoutSecs: 45,
+      });
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].text).toContain('Agent Self-Upgrade Initiated');
+      expect(result.content[0].text).toContain('v1.10.2');
+    });
+
+    it('should return isError when upgradeRemoteAgent throws', async () => {
+      vi.spyOn(mockApiClient, 'upgradeRemoteAgent').mockRejectedValueOnce(
+        new Error('Agent for equipment is offline')
+      );
+
+      registerRmmTools(server, mockApiClient);
+      const tools = (server as any)._registeredTools;
+      const upgradeTool = tools['msp_remote_upgrade_agent'];
+
+      const result = await upgradeTool.handler({
+        equipmentId: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Agent for equipment is offline');
+    });
   });
 });
+
 
