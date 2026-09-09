@@ -14,19 +14,85 @@ use tauri::{
     Manager, State,
 };
 
+fn resolve_backend_url() -> String {
+    if let Ok(url) = std::env::var("MSP_BACKEND_URL") {
+        let trimmed = url.trim();
+        if !trimmed.is_empty() {
+            return trimmed.trim_end_matches('/').to_string();
+        }
+    }
+    if let Ok(url) = std::env::var("MSP_SERVER_URL") {
+        let trimmed = url.trim();
+        if !trimmed.is_empty() {
+            let prefixed = if !trimmed.starts_with("http://") && !trimmed.starts_with("https://") {
+                format!("https://{}", trimmed)
+            } else {
+                trimmed.to_string()
+            };
+            return prefixed.trim_end_matches('/').to_string();
+        }
+    }
+    #[cfg(dev)]
+    {
+        "http://localhost:3001".to_string()
+    }
+    #[cfg(not(dev))]
+    {
+        "https://helpdesk.velmartech.com.do".to_string()
+    }
+}
+
+fn resolve_agent_identity() -> (Option<String>, Option<String>) {
+    if let Ok(token) = std::env::var("MSP_AGENT_TOKEN") {
+        let trimmed = token.trim();
+        if !trimmed.is_empty() {
+            let slot = std::env::var("MSP_SLOT_ID").ok();
+            return (Some(trimmed.to_string()), slot);
+        }
+    }
+
+    let mut candidate_paths = Vec::new();
+    if let Ok(cfg_dir) = std::env::var("MSP_AGENT_CONFIG") {
+        candidate_paths.push(std::path::PathBuf::from(cfg_dir).join("msp-agent.json"));
+    }
+    if let Ok(prog_data) = std::env::var("ProgramData") {
+        candidate_paths.push(std::path::PathBuf::from(prog_data).join("MSP").join("msp-agent.json"));
+    }
+
+    for path in candidate_paths {
+        if path.exists() {
+            if let Ok(content) = std::fs::read_to_string(&path) {
+                if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
+                    let token = json.get("agent_token").and_then(|v| v.as_str()).map(|s| s.to_string());
+                    let slot = json.get("slot_id").and_then(|v| v.as_str()).map(|s| s.to_string());
+                    if token.is_some() || slot.is_some() {
+                        return (token, slot);
+                    }
+                }
+            }
+        }
+    }
+
+    (None, None)
+}
+
 pub struct AppState {
     pub active_ticket: Mutex<Option<ActiveTicketState>>,
     pub agent_token: Mutex<Option<String>>,
+    pub slot_id: Mutex<Option<String>>,
     pub backend_url: Mutex<String>,
     pub last_blurred: Mutex<Instant>,
 }
 
 impl Default for AppState {
     fn default() -> Self {
+        let (token, slot) = resolve_agent_identity();
+        let backend = resolve_backend_url();
         Self {
             active_ticket: Mutex::new(None),
-            agent_token: Mutex::new(None),
-            backend_url: Mutex::new("http://localhost:3001".to_string()),
+            agent_token: Mutex::new(token),
+            slot_id: Mutex::new(slot),
+            backend_url: Mutex::new(backend),
             last_blurred: Mutex::new(Instant::now() - Duration::from_secs(10)),
         }
     }
@@ -56,13 +122,14 @@ async fn get_agent_status(
     let vitals = sampler.sample_vitals();
     let active_ticket = app_state.active_ticket.lock().unwrap().clone();
     let active_count = if active_ticket.is_some() { 1 } else { 0 };
+    let slot_id = app_state.slot_id.lock().unwrap().clone();
 
     Ok(AgentStatusPayload {
         agent_online: true,
         cloud_connected: true,
-        equipment_id: Some("workstation-slot-01".to_string()),
+        equipment_id: slot_id.or_else(|| Some("workstation-slot-01".to_string())),
         hostname: vitals.hostname,
-        tenant_name: Some("Local Workstation".to_string()),
+        tenant_name: Some("Managed Workstation".to_string()),
         active_ticket_count: active_count,
     })
 }
