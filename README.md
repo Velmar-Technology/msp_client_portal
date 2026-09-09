@@ -292,7 +292,7 @@ Continuous Integration and Deployment is automated via GitHub Actions ([.github/
 - **Server** (`server/Dockerfile`) and **Client** (`client/Dockerfile`) are built with Docker Buildx (SBOM + OCI provenance) and pushed to GHCR with tags `:<version>`, `:<sha>`, `:latest`:
   - `ghcr.io/<owner>/msp-services-server:...`
   - `ghcr.io/<owner>/msp-services-client:...`
-  - Client build args are baked at compile time: `VITE_GOOGLE_CLIENT_ID`, `VITE_APP_VERSION`, `VITE_PAYPAL_CLIENT_ID`, `VITE_DD_*`.
+  - Client build args are baked at compile time: `VITE_GOOGLE_CLIENT_ID`, `VITE_APP_VERSION`, `VITE_PAYPAL_CLIENT_ID`, `VITE_FARO_URL`, `VITE_FARO_APP_NAME`, `VITE_FARO_APP_ENV`.
 - `security-scan` runs Trivy — HIGH/CRITICAL CVEs block release (SARIF uploaded; bypassable per-run or via the `DISABLE_SECURITY_GATE` repo variable).
 
 ### 3. Production Deployment via Portainer (`deploy-production`)

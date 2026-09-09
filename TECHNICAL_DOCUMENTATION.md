@@ -1764,6 +1764,50 @@ client/src/routes/
 | `UserStatsBar` | `{ stats, loading }: UserStatsBarProps` | Operación lógica directa |
 
 
+### 5.6. Rendimiento del Runtime y Telemetría (Faro)
+
+Las mejoras Tier-1 de rendimiento del frontend quedan documentadas de forma formal en
+[`docs/decisions/ADR-006-frontend-runtime-performance-and-faro-telemetry.md`](docs/decisions/ADR-006-frontend-runtime-performance-and-faro-telemetry.md). Resumen operativo:
+
+#### 5.6.1. Code-Splitting por Gateways Livianos
+Los barrels de cada feature (`client/src/features/<domain>/index.ts`) exportan únicamente **routes, services,
+queryOptions, hooks y types** — ya no re-exportan páginas ni componentes de UI. Las páginas se cargan
+exclusivamente mediante el `import()` lazy de cada `routes.tsx` de feature. Toda importación sigue pasando por el
+gateway público `@/features/<domain>` (invariante ADR-002).
+
+Cuando un componente debe seguir siendo público en un gateway pero permanecer lazy, se re-exporta un *wrapper*
+lazy con su propio `<Suspense>` (ejemplo: `client/src/features/rmm/components/ScheduleMaintenanceModal.lazy.tsx`
+exportado desde `@/features/rmm`).
+
+#### 5.6.2. Telemetría: Grafana Faro (única RUM)
+- Datadog RUM fue eliminado del cliente (`@datadog/browser-rum`, `telemetry/datadog.ts`, args `VITE_DD_*`). Datadog
+  queda solo como APM del servidor.
+- Faro se inicializa **de forma diferida** en `client/src/main.tsx` (vía `import('@/telemetry/faro').then(...)` sobre
+  `requestIdleCallback` con timeout de 3 s), de modo que el SDK nunca bloquea el primer render.
+- Los chunks de Faro/OTel se agrupan en un bucket lazy `vendor-rum` (`vite.config.ts`).
+- Construcción: `.github/workflows/deploy.yml` inyecta `VITE_FARO_URL` (secret `VITE_FARO_URL`) más
+  `VITE_FARO_APP_NAME`/`VITE_FARO_APP_ENV` como build args del Dockerfile del cliente.
+
+#### 5.6.3. Entregables de Reducción de Bytes
+| Ítem | Antes | Después |
+|---|---|---|
+| JS+CSS inicial raw | 2,461 KB | ≈ 1,680 KB |
+| JS+CSS inicial gzip | 662 KB | ≈ 478 KB |
+| `modulepreload` en `index.html` | 26 | 22 |
+| SDK Datadog RUM | eager (168-173 KB) | eliminado |
+| Páginas | duplicadas en el entry chunk | chunks lazy independientes |
+
+Además:
+- **Fuentes** auto-alojadas (interrumpido el `@import` de Google Fonts; `JetBrains Mono Variable` vía
+  `@fontsource-variable/jetbrains-mono`).
+- **Assets** optimizados: `logo.png` 864×670 → 512 px (226.8 → 82.3 KB); `favicon.svg` con PNG de 128 px (303 → 17.6 KB).
+- **Entrega**: `gzip_static on;` en `client/nginx.conf` (Brotli por el middleware de compresión de Traefik en el edge);
+  `sw.js` precachea solo `/index.html` (navegación network-first).
+- **Limpieza**: eliminados shims legacy (`components/tickets/*`, `components/new-ticket-modal.tsx`,
+  `components/devices/index.ts`, forwarders muertos de `routes/_app/*` y `routes/_auth/*`).
+- **Preloaders**: `lib/preloadRoute.ts` conserva el prefetch de **cache de consultas** (TanStack Query) en hover/focus;
+  se retiraron los preloaders de chunk inefectivos (el gateway ya está en el grafo estático).
+
 ---
 
 ## 6. Arquitectura de Deep Links y Estado de Recursos por URL

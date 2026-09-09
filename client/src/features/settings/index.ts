@@ -6,11 +6,6 @@
 // Routes
 export * from './routes';
 
-// Pages
-export * from './pages/ProfilePage';
-export * from './pages/NotificationPreferencesPage';
-export * from './pages/PasswordManagerPage';
-
 // Services & API Queries
 export * from './api/notificationService';
 export * from './api/notificationPreferenceService';

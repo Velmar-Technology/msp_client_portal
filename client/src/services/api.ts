@@ -2,13 +2,24 @@ import axios from 'axios';
 import { setupAxiosErrorInterceptor } from '@shared/errors';
 import { toast } from 'sonner';
 import { getAuthItem, setAuthItem } from '@/lib/authStorage';
-import { trackApiError } from '@/telemetry/faro';
-import { trackDatadogError } from '@/telemetry/datadog';
+
+let trackApiErrorFn: typeof import('@/telemetry/faro').trackApiError | null = null;
+
+async function trackFaroApiError(error: unknown): Promise<void> {
+  try {
+    if (!trackApiErrorFn) {
+      trackApiErrorFn = (await import('@/telemetry/faro')).trackApiError;
+    }
+    trackApiErrorFn(error as Parameters<typeof trackApiErrorFn>[0]);
+  } catch {
+    // Telemetry must never break API calls
+  }
+}
 
 /**
  * Pre-configured Axios instance for MSP Client Portal API communications.
  * Includes bearer token injection, automated token refresh on 401 Unauthorized responses,
- * error telemetry logging (Grafana Faro & Datadog RUM), and user-friendly toast notifications.
+ * error telemetry logging (Grafana Faro RUM), and user-friendly toast notifications.
  */
 const api = axios.create({
   baseURL: '/api/v1',
@@ -32,14 +43,9 @@ api.interceptors.request.use(
 // Global response interceptor to show toast notifications for backend errors & telemetry
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // Send API error telemetry to Grafana Faro RUM & Datadog RUM
-    trackApiError(error);
-    trackDatadogError(error, {
-      status: error?.response?.status,
-      url: error?.config?.url,
-      method: error?.config?.method,
-    });
+(error) => {
+    // Send API error telemetry to Grafana Faro RUM
+    trackFaroApiError(error);
 
     // Only toast if we have a response and it's not a 401 (which is handled by refresh/redirect)
     if (error.response && error.response.status !== 401) {

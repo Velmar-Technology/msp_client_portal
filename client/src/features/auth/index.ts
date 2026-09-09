@@ -6,10 +6,6 @@
 // Routes
 export * from './routes';
 
-// Pages
-export * from './pages/LoginPage';
-export * from './pages/RegisterPage';
-
 // Services & API Queries
 export * from './api/authService';
 export * from './api/useAuthQueries';

@@ -6,11 +6,8 @@
 // Routes
 export * from './routes';
 
-// Pages
-export * from './pages/MaintenancePage';
-
-// Components
-export * from './components/ScheduleMaintenanceModal';
+// Components (lazy wrapper: modal chunk loads on demand behind its own Suspense)
+export { ScheduleMaintenanceModal } from './components/ScheduleMaintenanceModal.lazy';
 
 // Services & API Queries
 export * from './api/rmmService';

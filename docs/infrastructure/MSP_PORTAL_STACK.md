@@ -148,7 +148,7 @@ traefik.http.routers.msp-zabbix.middlewares=msp-zabbix-redirect,zabbix-auth,msp-
 
 Values are supplied by the **Portainer stack environment** (persisted in the Portainer stack configuration) and the `${VAR}` placeholders in `docker-compose.prod.yml` fall back to their inline defaults. **Live secrets live in Portainer, not this document.**
 
-> **Note on Frontend (`client`):** The `client` container runs Nginx serving pre-compiled static assets. All `VITE_*` variables (`VITE_GOOGLE_CLIENT_ID`, `VITE_PAYPAL_CLIENT_ID`, `VITE_DD_*`, `VITE_FARO_*`) are baked into the JavaScript bundle at **image build time** via Docker build args (`client/Dockerfile`) and are not required at container runtime in `docker-compose.prod.yml`.
+> **Note on Frontend (`client`):** The `client` container runs Nginx serving pre-compiled static assets. All `VITE_*` variables (`VITE_GOOGLE_CLIENT_ID`, `VITE_PAYPAL_CLIENT_ID`, `VITE_FARO_*`) are baked into the JavaScript bundle at **image build time** via Docker build args (`client/Dockerfile`) and are not required at container runtime in `docker-compose.prod.yml`.
 
 | Group | Variables |
 |---|---|
@@ -162,7 +162,7 @@ Values are supplied by the **Portainer stack environment** (persisted in the Por
 | PayPal | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` (server) / `VITE_PAYPAL_CLIENT_ID` (client build arg) |
 | Nextcloud | `NEXTCLOUD_URL=10.13.13.3:30027`, `NEXTCLOUD_APP_USER`, `NEXTCLOUD_APP_PASS`, `NEXTCLOUD_TOTAL_CAPACITY`, `NEXTCLOUD_EXTERNAL_URL=https://atlas.velmartech.com.do` |
 | Zabbix | `ZABBIX_URL=http://zabbix-web:8080/api_jsonrpc.php`, `ZABBIX_USER=Admin`, `ZABBIX_PASSWORD`, `ZABBIX_WEBHOOK_SECRET`, `ZABBIX_DB_USER/PASSWORD/NAME` (defaults `zabbix` / `zabbix_password` / `zabbix`) |
-| Datadog (opt-in) | Server APM: `DD_API_KEY`, `DD_SITE`, `DD_SERVICE`, `DD_ENV`, `DD_VERSION`, `DD_TRACE_ENABLED`, `DD_AGENT_HOST` / Client RUM (build args): `VITE_DD_*` |
+| Datadog (opt-in) | Server APM only: `DD_API_KEY`, `DD_SITE`, `DD_SERVICE`, `DD_ENV`, `DD_VERSION`, `DD_TRACE_ENABLED`, `DD_AGENT_HOST`. Client RUM is Faro — see the Faro row below. |
 | Grafana | `GRAFANA_ADMIN_USER` (default `admin`), `GRAFANA_ADMIN_EMAIL` (default `admin@velmartech.com.do`), `GRAFANA_ADMIN_PASSWORD` (required from environment, zero inline fallback) |
 | Faro / Telemetry (client build) | `VITE_FARO_URL`, `VITE_FARO_APP_NAME`, `VITE_FARO_APP_ENV` (baked at build time) |
 | MCP Server | `MSP_SERVER_URL=helpdesk.velmartech.com.do`, `MSP_API_KEY` (Outbound backend JWT token), `MCP_SERVER_API_KEY` (Inbound auth key for AI agents / Copilot Studio), `MCP_TRANSPORT=http`, `MCP_HTTP_PORT=3005` |

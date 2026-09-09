@@ -18,6 +18,9 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
+            if (id.includes('@grafana/faro') || id.includes('@opentelemetry')) {
+              return 'vendor-rum';
+            }
             if (
               id.includes('react') ||
               id.includes('react-dom') ||
@@ -54,7 +57,7 @@ export default defineConfig({
         },
       },
     },
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 700,
   },
   server: {
     port: 5173,

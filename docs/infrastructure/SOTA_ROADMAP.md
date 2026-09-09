@@ -16,7 +16,7 @@ The stack is already **~80% SOTA** across architecture, delivery, and observabil
 
 - **Contract-first modular monolith** (`@shared/contracts` + Zod, TanStack Query, strict Clean Architecture, ADR-001 / ADR-002).
 - **Enterprise CI/CD** — GitHub Actions quality gates (lint/typecheck/tests), Trivy `HIGH/CRITICAL` vulnerability gate + SARIF, SBOM/provenance images, GHCR push, and a Portainer deploy with automatic rollback.
-- **Observability** — Winston structured logs, Datadog APM + RUM, Grafana Faro, Prometheus metrics, Zabbix monitoring.
+- **Observability** — Winston structured logs, Datadog APM (server) + Grafana Faro RUM (sole client telemetry), Prometheus metrics, Zabbix monitoring.
 - **Infra** — Traefik TLS, Vaultwarden, resource limits + healthchecks on every container.
 - **Type safety & tests** — Zero-`any` builds, 127+ test files across server/client/packages.
 
@@ -29,10 +29,10 @@ The remaining gaps cluster into **security hardening**, **tenant-isolation integ
 | Dimension | What exists | Evidence |
 | :--- | :--- | :--- |
 | Architecture | Contract-first monolith, Clean Architecture, ADR-001/002, feature colocation | `docs/decisions/ADR-001-*`, `ADR-002-*`; `packages/*` |
-| Frontend data | TanStack Query (server state), Zustand (UI state only), i18n, code-splitting | `client/src/hooks/`, `client/src/features/*` |
+| Frontend data | TanStack Query (server state), Zustand (UI state only), i18n, gateway-lean code-splitting (ADR-006), lazy Faro RUM | `client/src/hooks/`, `client/src/features/*`, `docs/decisions/ADR-006-*` |
 | Security scanning | Trivy `HIGH/CRITICAL` gate + SARIF + SBOM/provenance | `.github/workflows/deploy.yml` |
 | CI/CD | Quality gates → build → scan → Portainer deploy w/ auto-rollback, env approval | `.github/workflows/ci.yml`, `quality.yml`, `deploy.yml` |
-| Observability | Winston JSON logs, dd-trace APM, Faro RUM, Prometheus | `server/src/tracer.ts`, `shared/metrics`, `client/src/telemetry/` |
+| Observability | Winston JSON logs, dd-trace APM, Faro RUM (lazy, sole client telemetry), Prometheus | `server/src/tracer.ts`, `shared/metrics`, `client/src/telemetry/` |
 | Infra | Traefik TLS/LE, Zabbix, Vaultwarden, resource limits, healthchecks | `docs/infrastructure/MSP_PORTAL_STACK.md` |
 | Testing | 127+ unit/component test files (server + client + packages) | server/client/packages `*.test.ts` |
 

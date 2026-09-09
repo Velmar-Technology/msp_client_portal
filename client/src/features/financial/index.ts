@@ -6,12 +6,6 @@
 // Routes
 export * from './routes';
 
-// Pages
-export * from './pages/FinancialPage';
-
-// Components
-export * from './components';
-
 // Services & API Queries
 export * from './api/earningsService';
 export * from './api/expenseService';

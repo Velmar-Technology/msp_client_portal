@@ -6,15 +6,6 @@
 // Routes
 export * from './routes';
 
-// Pages
-export * from './pages/UserManagementPage';
-
-// Components
-export * from './components/UserActionsMenu';
-export * from './components/UserFiltersBar';
-export * from './components/UserRoleBadge';
-export * from './components/UserStatsBar';
-
 // Services & API Queries
 export * from './api/userService';
 export * from './api/useUsersQueries';
