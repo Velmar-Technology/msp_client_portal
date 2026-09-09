@@ -6,20 +6,6 @@
 // Routes
 export * from './routes';
 
-// Pages
-export * from './pages/TicketsPage';
-export * from './pages/TicketDetailPage';
-
-// Components
-export * from './components/NewTicketModal';
-export * from './components/TicketDetailHeader';
-export * from './components/TicketDescriptionCard';
-export * from './components/TicketResponses';
-export * from './components/TicketTimeline';
-export * from './components/TicketSidebar';
-export * from './components/FilePreviewModal';
-export * from './components/ticketUtils';
-
 // Hooks & Queries
 export * from './api/ticketService';
 export * from './api/useTicketQueries';

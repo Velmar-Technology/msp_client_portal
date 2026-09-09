@@ -5,32 +5,10 @@ import { subscriptionQueryOptions } from "@/features/subscriptions";
 import { equipmentQueryOptions } from "@/features/equipment";
 
 /**
- * Route chunk preloader map.
- */
-export const routeChunkPreloaders: Record<string, () => Promise<unknown>> = {
-  "/dashboard": () => import("@/features/dashboard"),
-  "/financial": () => import("@/features/financial"),
-  "/crm": () => import("@/features/crm"),
-  "/plans": () => import("@/features/subscriptions"),
-  "/billing": () => import("@/features/billing"),
-  "/devices": () => import("@/features/equipment"),
-  "/rmm": () => import("@/features/equipment"),
-  "/resources": () => import("@/features/equipment"),
-  "/maintenance": () => import("@/features/rmm"),
-  "/tech/dashboard": () => import("@/features/dashboard"),
-  "/admin/users": () => import("@/features/users"),
-  "/admin/api-status": () => import("@/features/system"),
-  "/tickets": () => import("@/features/tickets"),
-  "/profile": () => import("@/features/settings"),
-  "/notifications/preferences": () => import("@/features/settings"),
-  "/help": () => import("@/features/settings"),
-  "/password-manager": () => import("@/features/settings"),
-};
-
-export const routePreloaders = routeChunkPreloaders;
-
-/**
- * Route query cache preloader map.
+ * Route query cache preloader map. Feature route chunks are code-split via
+ * dynamic import() inside each feature's routes.tsx, so only TanStack Query
+ * caches are prefetched here (they import lightweight, already-bundled
+ * queryOptions from the feature gateways).
  */
 export const routeQueryPreloaders: Record<string, () => Promise<unknown>> = {
   "/tickets": () => queryClient.prefetchQuery(ticketQueryOptions.list({})),
@@ -43,16 +21,16 @@ export const routeQueryPreloaders: Record<string, () => Promise<unknown>> = {
  * SOTA Intent Preloader (ADR-003):
  * Prefetches both JavaScript code chunk and TanStack Query server cache upon user hover/focus intent.
  */
+/**
+ * Route preloader dispatch alias (backend/frontend feature chunk prefetch is
+ * implicit via code-splitting; hover/focus intent triggers dataset prefetch).
+ */
+export const routePreloaders = routeQueryPreloaders;
+
 export function preloadRoute(path: string): void {
   const cleanPath = path.split("?")[0];
 
-  // 1. Prefetch JavaScript chunk
-  const chunkLoader = routeChunkPreloaders[cleanPath];
-  if (chunkLoader) {
-    chunkLoader().catch(() => {});
-  }
-
-  // 2. Prefetch TanStack Query cache
+  // Prefetch TanStack Query cache
   const queryLoader = routeQueryPreloaders[cleanPath];
   if (queryLoader) {
     queryLoader().catch(() => {});

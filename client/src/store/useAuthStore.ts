@@ -2,8 +2,34 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { authService } from "@/features/auth";
 import { setAuthItem } from "@/lib/authStorage";
-import { setFaroUser, resetFaroUser } from "@/telemetry/faro";
-import { setDatadogUser, resetDatadogUser } from "@/telemetry/datadog";
+
+type FaroUser = Parameters<typeof import('@/telemetry/faro').setFaroUser>[0];
+
+let faroHelpers: {
+  setFaroUser: typeof import('@/telemetry/faro').setFaroUser;
+  resetFaroUser: typeof import('@/telemetry/faro').resetFaroUser;
+} | null = null;
+
+async function setFaroUserLazy(user: FaroUser): Promise<void> {
+  try {
+    if (!faroHelpers) {
+      faroHelpers = await import('@/telemetry/faro');
+    }
+    faroHelpers.setFaroUser(user);
+  } catch {
+    // Telemetry must never break auth flows
+  }
+}
+
+function resetFaroUserLazy(): void {
+  if (faroHelpers) {
+    faroHelpers.resetFaroUser();
+    return;
+  }
+  void import('@/telemetry/faro')
+    .then((m) => m.resetFaroUser())
+    .catch(() => {});
+}
 
 export interface AuthUser {
   id: string;
@@ -46,8 +72,7 @@ const getInitialUser = (): AuthUser | null => {
     const stored = authService.getCurrentUser();
     const user = stored && authService.isAuthenticated() ? stored : null;
     if (user) {
-      setFaroUser(user);
-      setDatadogUser(user);
+      void setFaroUserLazy(user);
     }
     return user;
   } catch (err) {
@@ -58,7 +83,7 @@ const getInitialUser = (): AuthUser | null => {
 
 /**
  * Global authentication and user session store powered by Zustand.
- * Synchronizes session identity with telemetry (Grafana Faro & Datadog RUM) and storage abstractions.
+ * Synchronizes session identity with telemetry (Grafana Faro RUM) and storage abstractions.
  */
 export const useAuthStore = create<AuthState>()(
   devtools(
@@ -71,8 +96,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true }, false, 'auth/login_request');
         try {
           const result = await authService.login({ email, password }, rememberMe);
-          setFaroUser(result.user);
-          setDatadogUser(result.user);
+          void setFaroUserLazy(result.user);
           set(
             {
               user: result.user,
@@ -128,8 +152,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true }, false, 'auth/google_login_request');
         try {
           const result = await authService.loginWithGoogle({ idToken, tenantName }, rememberMe);
-          setFaroUser(result.user);
-          setDatadogUser(result.user);
+          void setFaroUserLazy(result.user);
           set(
             {
               user: result.user,
@@ -147,8 +170,7 @@ export const useAuthStore = create<AuthState>()(
 
       logout: () => {
         authService.logout();
-        resetFaroUser();
-        resetDatadogUser();
+        resetFaroUserLazy();
         set(
           {
             user: null,
@@ -165,8 +187,7 @@ export const useAuthStore = create<AuthState>()(
             if (!state.user) return state;
             const updatedUser = { ...state.user, ...updatedFields };
             setAuthItem('user', JSON.stringify(updatedUser));
-            setFaroUser(updatedUser);
-            setDatadogUser(updatedUser);
+            void setFaroUserLazy(updatedUser);
             return { user: updatedUser };
           },
           false,

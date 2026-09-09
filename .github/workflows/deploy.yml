@@ -11,6 +11,9 @@ name: Release & Deploy
 #   PORTAINER_ENDPOINT_ID / PORTAINER_STACK_ID     - Target environment & stack IDs
 #   VITE_GOOGLE_CLIENT_ID or GOOGLE_CLIENT_ID      - Google OAuth client ID (Vite build arg)
 #   VITE_PAYPAL_CLIENT_ID                          - PayPal client ID (Vite build arg)
+#   VITE_FARO_URL                                  - Grafana Faro RUM collector URL (e.g. https://host/collect)
+#   VITE_FARO_APP_NAME                             - Optional Faro app name (defaults to msp-client-portal)
+#   VITE_FARO_APP_ENV                              - Optional Faro environment (defaults to production)
 #   DEPLOY_WEBHOOK_URL                             - Optional Slack/Discord/Teams notification webhook
 #
 # Deployment model: Portainer owns the stack lifecycle. CI pushes images to
@@ -255,11 +258,9 @@ jobs:
             VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID || secrets.GOOGLE_CLIENT_ID }}
             VITE_APP_VERSION=${{ needs.prepare.outputs.version }}
             VITE_PAYPAL_CLIENT_ID=${{ secrets.VITE_PAYPAL_CLIENT_ID }}
-            VITE_DD_APPLICATION_ID=${{ secrets.VITE_DD_APPLICATION_ID }}
-            VITE_DD_CLIENT_TOKEN=${{ secrets.VITE_DD_CLIENT_TOKEN }}
-            VITE_DD_SITE=${{ secrets.VITE_DD_SITE || 'datadoghq.com' }}
-            VITE_DD_SERVICE=${{ secrets.VITE_DD_SERVICE || 'msp-client-portal' }}
-            VITE_DD_ENV=${{ secrets.VITE_DD_ENV || 'production' }}
+            VITE_FARO_URL=${{ secrets.VITE_FARO_URL }}
+            VITE_FARO_APP_NAME=${{ secrets.VITE_FARO_APP_NAME || 'msp-client-portal' }}
+            VITE_FARO_APP_ENV=${{ secrets.VITE_FARO_APP_ENV || 'production' }}
           provenance: mode=max
           sbom: true
           cache-from: type=gha,scope=build-client

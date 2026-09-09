@@ -52,9 +52,7 @@ export function SidebarBrand({ logo, portalTitle, infraTitle }: SidebarBrandProp
           className="h-5.5 w-auto max-w-full shrink-0 object-contain dark:brightness-110"
         />
         <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-          <h1 className="text-xs font-bold text-sidebar-foreground font-heading leading-none">
-            {portalTitle}
-          </h1>
+          <h1 className="text-xs font-bold text-sidebar-foreground font-heading leading-none">{portalTitle}</h1>
           <span className="text-[9px] text-muted-foreground font-medium mt-0.5 uppercase tracking-wider">
             {infraTitle}
           </span>
@@ -83,13 +81,11 @@ function useSubscriptionMeta(subs: Subscription[]) {
 
   const daysRemaining = useMemo(
     () => Math.max(0, Math.ceil((earliestRenewal.getTime() - now) / 86400000)),
-    [earliestRenewal, now]
+    [earliestRenewal, now],
   );
 
   const daysRemainingLabel =
-    daysRemaining === 0
-      ? t("sidebar.expiresToday")
-      : t("sidebar.daysRemaining", { count: daysRemaining });
+    daysRemaining === 0 ? t("sidebar.expiresToday") : t("sidebar.daysRemaining", { count: daysRemaining });
 
   return { t, locale, formatDate, daysRemaining, daysRemainingLabel };
 }
@@ -121,9 +117,7 @@ export function ActiveSubCard({ subs, planNameMap }: ActiveSubCardProps) {
           {displayName.charAt(0).toUpperCase()}
         </div>
         <div className="flex flex-col overflow-hidden">
-          <span className="text-[13px] font-medium leading-none text-sidebar-foreground truncate">
-            {displayName}
-          </span>
+          <span className="text-[13px] font-medium leading-none text-sidebar-foreground truncate">{displayName}</span>
           <span
             className={`mt-1.5 text-[11px] leading-none truncate ${
               isExpiring ? "font-semibold text-amber-600 dark:text-amber-400" : "text-muted-foreground"
@@ -135,9 +129,7 @@ export function ActiveSubCard({ subs, planNameMap }: ActiveSubCardProps) {
       </div>
       <div className="flex shrink-0 items-center gap-1.5">
         <span
-          className={`h-1.5 w-1.5 shrink-0 animate-pulse rounded-full ${
-            isExpiring ? "bg-amber-500" : "bg-primary"
-          }`}
+          className={`h-1.5 w-1.5 shrink-0 animate-pulse rounded-full ${isExpiring ? "bg-amber-500" : "bg-primary"}`}
         />
         <span
           className={`text-[9px] font-semibold uppercase tracking-wider leading-none ${
@@ -168,9 +160,7 @@ export function ActiveSubCard({ subs, planNameMap }: ActiveSubCardProps) {
                     s.status === "EXPIRING" ? "animate-pulse bg-amber-500" : "bg-primary"
                   }`}
                 />
-                <span className="flex-1 truncate font-medium">
-                  {planNameMap.get(s.plan) || s.service_name}
-                </span>
+                <span className="flex-1 truncate font-medium">{planNameMap.get(s.plan) || s.service_name}</span>
                 <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
                   {formatDate(s.renewal_date)}
                 </span>
@@ -197,8 +187,7 @@ export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive, is
     <SidebarMenu className="gap-0.5 px-1">
       {navItems.map((item, idx) => {
         const translatedLabel = t(`nav.${item.labelKey}`);
-        const showHeading =
-          !!item.groupLabelKey && item.groupLabelKey !== navItems[idx - 1]?.groupLabelKey;
+        const showHeading = !!item.groupLabelKey && item.groupLabelKey !== navItems[idx - 1]?.groupLabelKey;
 
         if (item.items) {
           const isGroupActive = checkIsGroupActive(item.items);
@@ -219,9 +208,7 @@ export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive, is
                       className={navItemButtonClass}
                     >
                       <item.icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
-                      <span className="truncate group-data-[collapsible=icon]:hidden">
-                        {translatedLabel}
-                      </span>
+                      <span className="truncate group-data-[collapsible=icon]:hidden">{translatedLabel}</span>
                       <ChevronRight
                         strokeWidth={1.5}
                         className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground/50 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden"
@@ -270,12 +257,7 @@ export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive, is
               </li>
             )}
             <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                isActive={isActive}
-                tooltip={translatedLabel}
-                className={navItemButtonClass}
-              >
+              <SidebarMenuButton asChild isActive={isActive} tooltip={translatedLabel} className={navItemButtonClass}>
                 <NavLink
                   to={item.to}
                   className="flex items-center gap-2.5 w-full"
@@ -283,9 +265,7 @@ export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive, is
                   onFocus={() => preloadRoute(item.to)}
                 >
                   <item.icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
-                  <span className="truncate group-data-[collapsible=icon]:hidden flex-1">
-                    {translatedLabel}
-                  </span>
+                  <span className="truncate group-data-[collapsible=icon]:hidden flex-1">{translatedLabel}</span>
                   {isLocked && (
                     <span
                       data-testid="sidebar-item-lock"
@@ -307,9 +287,19 @@ export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive, is
 
 export function AppSidebar() {
   const { t } = useTranslation();
-  const { user, location, activeSubscriptions, planNameMap, navItems, checkIsActive, checkIsGroupActive, isFeatureLocked } = useSidebar();
+  const {
+    user,
+    location,
+    activeSubscriptions,
+    planNameMap,
+    navItems,
+    checkIsActive,
+    checkIsGroupActive,
+    isFeatureLocked,
+  } = useSidebar();
 
-  const isPublicLegalPage = location.pathname === "/" || location.pathname === "/terms" || location.pathname === "/privacy";
+  const isPublicLegalPage =
+    location.pathname === "/" || location.pathname === "/terms" || location.pathname === "/privacy";
 
   const groupedSubs = useMemo(() => {
     const groups = new Map<string, Subscription[]>();
@@ -356,8 +346,10 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border/50 p-1 bg-sidebar">
-        {user?.role === "CLIENT" && groupedSubs.length > 0 && !isPublicLegalPage && (
-          hasMultipleGroups ? (
+        {user?.role === "CLIENT" &&
+          groupedSubs.length > 0 &&
+          !isPublicLegalPage &&
+          (hasMultipleGroups ? (
             <Collapsible defaultOpen className="group/collapsible-sub">
               <SidebarMenu className="px-0">
                 <SidebarMenuItem>
@@ -385,8 +377,7 @@ export function AppSidebar() {
             </Collapsible>
           ) : (
             <ActiveSubCard subs={groupedSubs[0]} planNameMap={planNameMap} />
-          )
-        )}
+          ))}
         {user && !isPublicLegalPage && (
           <SidebarMenu>
             <SidebarMenuItem>

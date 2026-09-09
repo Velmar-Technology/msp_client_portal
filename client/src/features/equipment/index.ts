@@ -6,17 +6,6 @@
 // Routes
 export * from './routes';
 
-// Pages
-export * from './pages/DevicesPage';
-export { DevicesPage as default } from './pages/DevicesPage';
-
-// Components
-export * from './components/ActivateWithOtpModal';
-export * from './components/AddAdminDeviceModal';
-export * from './components/DeployAgentModal';
-export * from './components/NextcloudInfoModal';
-export * from './components/DeviceVaultModal';
-
 // Hooks
 export * from './hooks/useDeviceFilters';
 export * from './hooks/useDeviceModals';

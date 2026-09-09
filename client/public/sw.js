@@ -1,6 +1,5 @@
 const CACHE_NAME = 'msp-portal-shell-v1';
 const PRECACHE_ASSETS = [
-  '/',
   '/index.html',
   '/site.webmanifest',
   '/manifest.webmanifest',

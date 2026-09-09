@@ -18,9 +18,7 @@ import { settingsRoutes } from "@/features/settings";
 import { systemRoutes } from "@/features/system";
 import type { AppRouteObject } from "./types";
 
-const NotFoundPage = lazyWithRetry(() =>
-  import("@/pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage }))
-);
+const NotFoundPage = lazyWithRetry(() => import("@/pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })));
 
 /**
  * Recursively attaches RouteGuard to protected feature route items.
@@ -33,10 +31,7 @@ function applyGuards(routes: AppRouteObject[]): RouteObject[] {
     let element = route.element;
     if (element && !isPublic) {
       element = (
-        <RouteGuard
-          allowedRoles={handle?.allowedRoles}
-          requiredFeature={handle?.requiredFeature}
-        >
+        <RouteGuard allowedRoles={handle?.allowedRoles} requiredFeature={handle?.requiredFeature}>
           {element}
         </RouteGuard>
       );

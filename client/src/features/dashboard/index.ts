@@ -6,18 +6,6 @@
 // Routes
 export * from './routes';
 
-// Pages
-export * from './pages/DashboardPage';
-export * from './pages/TechDashboardPage';
-
-// Components
-export * from './components/ActiveSubscriptions';
-export * from './components/AdminDashboardView';
-export * from './components/ClientDashboardView';
-export * from './components/DashboardSummaryStats';
-export * from './components/RecentInvoices';
-export * from './components/StorageQuota';
-
 // Hooks & Queries
 export * from './api/useDashboardQueries';
 export * from './hooks/useAdminDashboard';
