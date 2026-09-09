@@ -12,11 +12,16 @@ dotenv.config();
 
 /**
  * Resolves the backend API base URL.
- * Priority: MSP_SERVER_URL (server root, e.g. http://localhost:3001 — the
- * `/api/v1` suffix is appended automatically) > MSP_API_URL (full API base,
- * kept for backward compatibility) > local default.
+ * Priority: MSP_API_URL > MSP_SERVER_URL (the `/api/v1` suffix is appended automatically if omitted).
  */
 function resolveApiUrl(): string {
+  let apiUrl = process.env.MSP_API_URL?.trim().replace(/\/+$/, '');
+  if (apiUrl) {
+    if (!/^https?:\/\//i.test(apiUrl)) {
+      apiUrl = `https://${apiUrl}`;
+    }
+    return apiUrl.endsWith('/api/v1') ? apiUrl : `${apiUrl}/api/v1`;
+  }
   let serverUrl = process.env.MSP_SERVER_URL?.trim().replace(/\/+$/, '');
   if (serverUrl) {
     if (!/^https?:\/\//i.test(serverUrl)) {
@@ -24,19 +29,17 @@ function resolveApiUrl(): string {
     }
     return serverUrl.endsWith('/api/v1') ? serverUrl : `${serverUrl}/api/v1`;
   }
-  let apiUrl = process.env.MSP_API_URL?.trim().replace(/\/+$/, '');
-  if (apiUrl) {
-    if (!/^https?:\/\//i.test(apiUrl)) {
-      apiUrl = `https://${apiUrl}`;
-    }
-    return apiUrl;
-  }
-  return 'http://localhost:3001/api/v1';
+  return '';
 }
 
 const apiUrl = resolveApiUrl();
 const apiToken = (process.env.MSP_API_KEY || process.env.MSP_API_TOKEN || '').trim();
 const tenantId = process.env.MSP_TENANT_ID;
+
+if (!apiUrl) {
+  console.error('[MSP MCP Server Configuration Error]: MSP_API_URL is required. Please configure MSP_API_URL in mcp_config.json or your environment.');
+  process.exit(1);
+}
 
 if (!apiToken) {
   console.error('[MSP MCP Server Configuration Error]: MSP_API_KEY is required to authenticate requests. Please configure MSP_API_KEY in mcp_config.json or your environment.');
