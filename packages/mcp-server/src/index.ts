@@ -28,7 +28,7 @@ function resolveApiUrl(): string {
     if (!/^https?:\/\//i.test(apiUrl)) {
       apiUrl = `https://${apiUrl}`;
     }
-    return apiUrl;
+    return apiUrl.endsWith('/api/v1') ? apiUrl : `${apiUrl}/api/v1`;
   }
   return 'http://localhost:3001/api/v1';
 }
