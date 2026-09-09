@@ -115,13 +115,12 @@ Configured in `C:\Users\PC\.gemini\config\mcp_config.json`:
 ```json
 {
   "mcpServers": {
-    "msp-server": {
+    "msp-support": {
       "command": "node",
-      "args": ["c:/Users/PC/Workspace/msp_client_portal/packages/mcp-server/dist/index.js"],
+      "args": ["c:/Users/eapolanco/Workspace/msp_client_portal/packages/mcp-server/dist/index.js"],
       "env": {
-        "MSP_API_URL": "http://localhost:3001/api/v1",
-        "MSP_SERVER_URL": "http://localhost:3001",
-        "MSP_API_KEY": "msp_live_api_key_secure_session"
+        "MSP_API_URL": "https://helpdesk.velmartech.com.do",
+        "MSP_API_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
       }
     }
   }
