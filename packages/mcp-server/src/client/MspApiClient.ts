@@ -660,6 +660,29 @@ ${recommendationList}
     return res.data || res;
   }
 
+  /**
+   * Triggers an autonomous self-upgrade on the remote endpoint agent.
+   */
+  async upgradeRemoteAgent(
+    equipmentId: string,
+    targetVersion?: string,
+    downloadUrl?: string,
+    sha256Checksum?: string,
+    rollbackTimeoutSecs?: number
+  ): Promise<any> {
+    const res = await this.request<any>({
+      method: 'POST',
+      url: `/rmm/agent/${equipmentId}/upgrade`,
+      data: {
+        targetVersion,
+        downloadUrl,
+        sha256Checksum,
+        rollbackTimeoutSecs,
+      },
+    });
+    return res.data || res;
+  }
+
   // --- AuthZ, JIT Ephemeral Access & Trust Scoring (BL-302) ---
 
   /**

@@ -1,52 +1,48 @@
-# Implementation Plan: Vital Services Health Diagnostics & System API Status MCP Tools
+# Implementation Plan: MSP Agent Autonomous Self-Upgrade Mechanism (OTA Hot-Swap)
 
 ## Overview
-Breakdown and stabilization of the newly introduced MCP diagnostic tools (`msp_check_domain_services` and `msp_get_system_api_status`) in `packages/mcp-server`. This equips AI agents and MSP technicians with automated diagnostic capabilities for client domains (resolving DNS, inspecting mail server ports SMTP 25/587/465, IMAP 993, POP3 995, and verifying HTTPS availability and SSL certificates) alongside real-time internal platform health diagnostics.
+Decomposition and implementation plan for the autonomous self-upgrade (OTA) mechanism in the Rust endpoint agent (`packages/msp-agent`, Windows Service `MSPEndpointAgent`). This equips MSP technicians and AI agents (via MCP and the Web Portal) to trigger secure, in-place binary upgrades over the existing TLS WebSocket connection (`/agent-ws`) using an in-process atomic move swap with automated rollback protection if the post-restart handshake fails.
 
 ---
 
 ## Architecture Decisions
 
-1. **Protocol Adherence & Sandboxing (`packages/mcp-server`):**
-   - Implements native Node.js network primitives (`node:dns/promises`, `node:net`, `node:tls`, `node:https`) with explicit socket timeouts (default 4000ms) and automatic socket teardown (`socket.destroy()`) to prevent socket leaks or hanging MCP requests.
-   - Conforms to the Model Context Protocol specification (MCP 2026-07-28).
+1. **Windows File-Lock Avoidance via Atomic Move (`MoveFileExW` / `std::fs::rename`):**
+   - Windows NTFS forbids deleting or overwriting actively running executables (`ERROR_SHARING_VIOLATION`), but permits renaming them within the same volume.
+   - The running service renames its own executing binary `msp-agent.exe` $\rightarrow$ `msp-agent.exe.bak-v<cur>`, moves the staged replacement into `msp-agent.exe`, and restarts the Windows Service.
 
-2. **Type Safety & TLS Certificate Normalization:**
-   - In Node.js `tls.PeerCertificate`, certificate fields like `issuer.O` and `issuer.CN` can be returned as `string | string[]`.
-   - Provide safe normalization: `formatCertField(val?: string | string[]): string` to ensure strict TypeScript compilation (`tsc`) passes without errors.
+2. **Handshake Sentinel Guard & Automated Rollback (`upgrade_state.json`):**
+   - Before swapping, the agent records an upgrade transaction in `C:\ProgramData\MSP\updates\upgrade_state.json` with a 45-second rollback deadline.
+   - Upon restart, the new binary boots:
+     - **Success:** Once the TLS WebSocket connection to `/agent-ws` is authenticated, the agent commits the upgrade by deleting `upgrade_state.json` and cleaning up the previous `.bak` binary.
+     - **Failure / Crash / Timeout:** If the handshake fails or times out, the service restores `msp-agent.exe.bak-v<cur>` and restarts the stable predecessor.
 
-3. **Domain Service Inspection Strategy:**
-   - Evaluates DNS A, AAAA, MX, and TXT/SPF records.
-   - Probes common mail ports against MX exchanges and target domain.
-   - Evaluates HTTPS certificate expiration, issuer, subject, and reachability.
-   - Produces clean, rich Markdown diagnostic tables readable by LLM agents.
-
-4. **Internal System Status Ingestion:**
-   - Connects to backend `/system/api-status` (Admin-authenticated) via `MspApiClient`.
-   - Exposes structured JSON metrics covering database latency, Nextcloud health, uptime, and environment configuration status.
+3. **Multi-Channel Orchestration (Web Portal & MCP Tool):**
+   - Upgrades can be commanded visually via the Portal Equipment Detail view or conversationally via Copilot Studio / LLMs using the MCP tool `msp_remote_upgrade_agent`.
+   - The backend validates technician/admin permissions, resolves binary download URLs & SHA-256 integrity hashes, and dispatches the payload via `AgentGateway.sendCommand`.
 
 ---
 
 ## Task List
 
-### Phase 1: Fix Type Safety & Build Stabilization
-- [x] Task 1.1: Fix TypeScript Compilation TS2322 in `domainTools.ts`
-- [x] Task 1.2: Add Strongly-Typed Contract for `getSystemApiStatus()` in `MspApiClient.ts`
-- [x] Checkpoint 1: Clean Build Verification (`npm --prefix packages/mcp-server run build`)
+### Phase 1: Shared API Contracts & Backend Gateway Orchestration
+- [ ] Task 1.1: Define Agent Upgrade API Contracts in `@shared/contracts`
+- [ ] Task 1.2: Implement Backend Upgrade Endpoint in `rmm.routes.ts` & `AgentGatewayController.ts`
+- [ ] Task 1.3: Add Backend Unit Tests for Agent Upgrade Dispatch in `AgentGateway.test.ts`
+- [ ] Checkpoint 1: Backend Contracts & Endpoint Green
 
-### Phase 2: Unit Testing & Diagnostic Validation
-- [x] Task 2.1: Implement Unit Tests for `msp_get_system_api_status` in `tools.test.ts`
-- [x] Task 2.2: Implement Unit Tests for Domain Probing Logic & Error Handling
-- [x] Checkpoint 2: All Vitest Tests Green (`npm --prefix packages/mcp-server run test`)
+### Phase 2: Rust Endpoint Hot-Swap Engine & Rollback Guard (`packages/msp-agent`)
+- [ ] Task 2.1: Add Upgrade Module with Streaming HTTPS Download & SHA-256 Verification in Rust
+- [ ] Task 2.2: Implement In-Process Atomic Move Swap & Sentinel State (`upgrade_state.json`)
+- [ ] Task 2.3: Implement Windows SCM Self-Restart & Post-Restart Handshake Rollback Watchdog
+- [ ] Task 2.4: Wire `AGENT_UPGRADE` WebSocket Message Handler in `main.rs`
+- [ ] Checkpoint 2: Agent Compilation & Local Rust Test Validation
 
-### Phase 3: Monorepo Quality Gates & Documentation
-- [x] Task 3.1: Monorepo Full Verification (`npm run build:packages`, `server build`, `client build`)
-- [x] Task 3.2: Verify Documentation in `packages/mcp-server/README.md`
-- [x] Checkpoint 3: Ready for Merge / Commit
-
-### Phase 4: Email & Notification Tools
-- [x] Task 4.1: Implement `msp_get_last_email` and `msp_list_notifications`
-- [x] Checkpoint 4: Ready for Merge / Commit
+### Phase 3: MCP Tooling & Portal Integration
+- [ ] Task 3.1: Add `upgradeAgent` in `MspApiClient.ts` and Register `msp_remote_upgrade_agent` MCP Tool
+- [ ] Task 3.2: Add MCP Tool Unit Tests in `tools.test.ts`
+- [ ] Task 3.3: Web Portal UI Trigger & Version Badging in `client`
+- [ ] Checkpoint 3: Full End-to-End Monorepo Quality Gates (`npm run build:packages`, `server build`, `client build`)
 
 ---
 
@@ -54,11 +50,12 @@ Breakdown and stabilization of the newly introduced MCP diagnostic tools (`msp_c
 
 | Risk | Impact | Mitigation |
 | :--- | :--- | :--- |
-| **Network Socket Hangs:** Target firewalls dropping packets silently causing TCP probe timeouts. | Medium | Enforces strict 4000ms socket timeouts with immediate `socket.destroy()` upon error or timeout event. |
-| **Untrusted / Self-Signed SSL Certs:** Diagnostic probe failing on self-signed certs. | Low | Uses `rejectUnauthorized: false` during probe to inspect and report cert details even if expired or untrusted. |
-| **API Client Authentication:** `GET /system/api-status` requires `ADMIN` role. | Medium | Properly catches and returns structured MCP error message if the API token lacks sufficient permissions. |
+| **Windows NTFS Permission Error:** `SYSTEM` service unable to rename executing binary. | High | Validated: Windows kernel permits renaming open executables on NTFS as long as directory write permissions exist, which Session 0 `NT AUTHORITY\SYSTEM` possesses. |
+| **Post-Upgrade Network Handshake Flapping:** High network latency causing false-positive rollback at 45s. | Medium | Configurable `rollback_timeout_secs` in payload (default 45s, extensible up to 120s for satellite/cellular endpoints). |
+| **Corrupted Binary Download:** Incomplete file download resulting in a non-starting binary. | High | Mandatory SHA-256 checksum verification before initiating any file moves. If hash mismatches, update aborts immediately with an error log. |
+| **Tampered Update URL (MITM):** Insecure download payload injected. | Critical | Download URL must be HTTPS only; binary integrity is verified against expected SHA-256 generated server-side. |
 
 ---
 
 ## Open Questions
-- None. Requirements and interfaces align with existing backend API contracts and MCP architecture.
+- None. Requirements, failure modes, and architectural boundaries are fully resolved in [`docs/ideas/msp-agent-self-upgrade.md`](file:///c:/Users/PC/Workspace/msp_client_portal/docs/ideas/msp-agent-self-upgrade.md).

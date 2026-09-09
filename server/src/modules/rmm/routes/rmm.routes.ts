@@ -39,4 +39,7 @@ router.post('/agent/:equipmentId/event-logs', (req, res) => agentGatewayControll
 /** POST /api/rmm/agent/:equipmentId/security-audit — Security posture audit on remote endpoint */
 router.post('/agent/:equipmentId/security-audit', (req, res) => agentGatewayController.getSecurityAudit(req, res));
 
+/** POST /api/rmm/agent/:equipmentId/upgrade — Trigger autonomous self-upgrade on remote agent */
+router.post('/agent/:equipmentId/upgrade', (req, res) => agentGatewayController.upgradeAgent(req, res));
+
 export default router;

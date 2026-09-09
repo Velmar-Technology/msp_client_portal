@@ -56,6 +56,9 @@ pub mod windows_service_impl {
             process_id: None,
         })?;
 
+        // Inspect sentinel state for any pending rollback check before launching runtime
+        crate::upgrade::check_and_handle_rollback();
+
         // Initialize and run the Tokio runtime for async background agent operations
         let rt = tokio::runtime::Builder::new_multi_thread()
             .enable_all()

@@ -238,4 +238,27 @@ export const equipmentService = {
     const response = await api.post(`/equipment/${equipmentId}/vault/revoke`, { reason });
     return response.data.data;
   },
+
+  /**
+   * Triggers an autonomous self-upgrade on a remote endpoint agent.
+   *
+   * @param equipmentId - Equipment slot UUID.
+   * @param targetVersion - Optional target semver version.
+   * @returns Promise resolving to upgrade status confirmation.
+   */
+  async upgradeAgent(
+    equipmentId: string,
+    targetVersion?: string
+  ): Promise<{
+    success: boolean;
+    message: string;
+    targetVersion: string;
+    equipmentId: string;
+    rollbackTimeoutSecs: number;
+  }> {
+    const response = await api.post(`/rmm/agent/${equipmentId}/upgrade`, {
+      targetVersion,
+    });
+    return response.data;
+  },
 };

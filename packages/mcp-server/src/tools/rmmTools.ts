@@ -319,6 +319,68 @@ export function registerRmmTools(server: McpServer, apiClient: MspApiClient) {
       }
     }
   );
+
+  // 11. Tool: msp_remote_upgrade_agent
+  server.tool(
+    'msp_remote_upgrade_agent',
+    'Trigger an autonomous, in-place Over-The-Air (OTA) self-upgrade on a remote endpoint running msp-agent.exe. Downloads new binary, verifies SHA-256 integrity, hot-swaps using atomic move rename, and restarts service with a 45-second rollback watchdog.',
+    {
+      equipmentId: z.string().uuid().describe('The UUID of the remote client device/slot to upgrade'),
+      targetVersion: z
+        .string()
+        .regex(/^v?\d+\.\d+\.\d+$/)
+        .optional()
+        .describe('Target semver version (e.g. 1.10.2). Defaults to latest production release.'),
+      downloadUrl: z.string().url().optional().describe('Optional custom binary download URL'),
+      sha256Checksum: z
+        .string()
+        .regex(/^[a-fA-F0-9]{64}$/)
+        .optional()
+        .describe('Optional SHA-256 hexadecimal hash to verify download integrity'),
+      rollbackTimeoutSecs: z
+        .number()
+        .int()
+        .min(10)
+        .max(300)
+        .default(45)
+        .describe('Watchdog deadline in seconds to establish TLS handshake before rolling back (default: 45)'),
+    },
+    async ({ equipmentId, targetVersion, downloadUrl, sha256Checksum, rollbackTimeoutSecs }) => {
+      try {
+        const result = await apiClient.upgradeRemoteAgent(
+          equipmentId,
+          targetVersion,
+          downloadUrl,
+          sha256Checksum,
+          rollbackTimeoutSecs
+        );
+        return {
+          content: [
+            {
+              type: 'text',
+              text: [
+                '### 🚀 Agent Self-Upgrade Initiated',
+                '',
+                `* **Equipment ID:** \`${equipmentId}\``,
+                `* **Target Version:** \`v${result.targetVersion || targetVersion || '1.10.2'}\``,
+                `* **Rollback Timeout:** \`${result.rollbackTimeoutSecs || rollbackTimeoutSecs}s\``,
+                `* **Status:** \`${result.message || 'Initiated'}\``,
+                '',
+                '```json',
+                JSON.stringify(result, null, 2),
+                '```',
+              ].join('\n'),
+            },
+          ],
+        };
+      } catch (err: any) {
+        return {
+          isError: true,
+          content: [{ type: 'text', text: `Agent self-upgrade failed: ${err.message}` }],
+        };
+      }
+    }
+  );
 }
 
 

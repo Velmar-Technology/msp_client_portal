@@ -1,6 +1,7 @@
 mod diagnostics;
 mod pairing;
 mod service;
+mod upgrade;
 
 use futures_util::{SinkExt, StreamExt};
 use log::{error, info, warn};
@@ -215,6 +216,9 @@ async fn run_session(config: &AgentConfig) -> Result<SessionOutcome, Box<dyn std
         .send(Message::Text(serde_json::to_string(&hello)?))
         .await?;
 
+    // Commit any active upgrade transaction now that TLS WebSocket handshake is validated
+    upgrade::commit_upgrade_success();
+
     // Main message loop
     while let Some(msg_result) = reader.next().await {
         match msg_result {
@@ -225,6 +229,24 @@ async fn run_session(config: &AgentConfig) -> Result<SessionOutcome, Box<dyn std
                             "Received command: {} (correlation: {})",
                             envelope.command, envelope.correlation_id
                         );
+
+                        // ── AGENT_UPGRADE: server commands autonomous binary upgrade ──
+                        if envelope.command == "AGENT_UPGRADE" {
+                            let (response_payload, upgrade_task) = handle_upgrade(&envelope);
+                            let response = AgentEnvelope {
+                                correlation_id: envelope.correlation_id,
+                                command: "RESPONSE".into(),
+                                payload: Some(response_payload),
+                            };
+                            writer
+                                .send(Message::Text(serde_json::to_string(&response)?))
+                                .await?;
+
+                            if let Some(task) = upgrade_task {
+                                tokio::spawn(task);
+                            }
+                            continue;
+                        }
 
                         // ── BIND: server links this device to a slot ──
                         if envelope.command == "BIND" {
@@ -313,6 +335,101 @@ async fn run_session(config: &AgentConfig) -> Result<SessionOutcome, Box<dyn std
     }
 
     Ok(SessionOutcome::Clean)
+}
+
+/// Executes the server's AGENT_UPGRADE command: schedules binary download,
+/// verifies integrity, atomic move swap, and triggers service restart.
+fn handle_upgrade(
+    envelope: &AgentEnvelope,
+) -> (Value, Option<std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send + 'static>>>) {
+    let Some(payload) = envelope.payload.as_ref() else {
+        warn!("[agent] AGENT_UPGRADE without payload; ignoring.");
+        return (
+            serde_json::json!({ "success": false, "error": "AGENT_UPGRADE requires a payload" }),
+            None,
+        );
+    };
+
+    let target_version = payload
+        .get("target_version")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let download_url = payload
+        .get("download_url")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let sha256_checksum = payload
+        .get("sha256_checksum")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let rollback_timeout_secs = payload
+        .get("rollback_timeout_secs")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(45);
+
+    if target_version.is_empty() || download_url.is_empty() || sha256_checksum.is_empty() {
+        warn!("[agent] Invalid AGENT_UPGRADE payload: target_version, download_url, and sha256_checksum required");
+        return (
+            serde_json::json!({
+                "success": false,
+                "error": "target_version, download_url, and sha256_checksum are required"
+            }),
+            None,
+        );
+    }
+
+    info!(
+        "[agent] Scheduled AGENT_UPGRADE to v{} from {} (rollback deadline: {}s)",
+        target_version, download_url, rollback_timeout_secs
+    );
+
+    let ack = serde_json::json!({
+        "success": true,
+        "status": "UPGRADE_PREPARED",
+        "target_version": target_version,
+        "rollback_timeout_secs": rollback_timeout_secs
+    });
+
+    let current_version = env!("CARGO_PKG_VERSION").to_string();
+    let upgrade_fut = Box::pin(async move {
+        // Yield momentarily to let the WebSocket frame flush
+        tokio::time::sleep(Duration::from_millis(1500)).await;
+
+        let staging_path = std::path::PathBuf::from("C:\\ProgramData\\MSP\\updates")
+            .join(format!("msp-agent-v{}.staged", target_version));
+
+        info!("[agent] Commencing OTA download from {}...", download_url);
+        if let Err(e) =
+            upgrade::download_and_verify(&download_url, &sha256_checksum, &staging_path).await
+        {
+            error!("[agent] Upgrade download/verification failed: {}", e);
+            return;
+        }
+
+        info!("[agent] Checksum verified. Executing atomic move swap...");
+        match upgrade::execute_atomic_swap(
+            &target_version,
+            &current_version,
+            &staging_path,
+            rollback_timeout_secs,
+        ) {
+            Ok(_) => {
+                info!("[agent] Atomic move swap succeeded! Triggering service restart...");
+                upgrade::trigger_service_restart();
+            }
+            Err(e) => {
+                error!("[agent] Atomic move swap failed: {}", e);
+            }
+        }
+    });
+
+    (ack, Some(upgrade_fut))
 }
 
 /// Executes the server's BIND command: persists {slot_id, agent_token} and
@@ -557,6 +674,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     init_logger();
+
+    // Inspect sentinel state for any pending rollback check
+    upgrade::check_and_handle_rollback();
 
     // If spawned by Windows Service Control Manager (SCM) or with --service flag
     if args.iter().any(|a| a == "--service") {

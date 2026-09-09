@@ -429,3 +429,34 @@ export function useRevokeDeviceVault() {
     },
   });
 }
+
+/**
+ * Mutation hook to trigger an autonomous self-upgrade on a remote endpoint agent.
+ */
+export function useUpgradeAgent() {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: ({ equipmentId, targetVersion }: { equipmentId: string; targetVersion?: string }) =>
+      equipmentService.upgradeAgent(equipmentId, targetVersion),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: EQUIPMENT_QUERY_KEYS.all });
+      toast.success(t('equipment.upgrade.successTitle', 'Agent Upgrade Initiated'), {
+        description: t(
+          'equipment.upgrade.successDesc',
+          `OTA upgrade to v${data.targetVersion} has been dispatched. Agent will hot-swap and restart.`
+        ),
+      });
+    },
+    onError: (err: Error) => {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(t('common.error', 'Error'), {
+        description:
+          error.response?.data?.message ||
+          error.message ||
+          t('equipment.upgrade.error', 'Failed to initiate agent upgrade.'),
+      });
+    },
+  });
+}
