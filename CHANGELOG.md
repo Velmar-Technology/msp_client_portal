@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.11.3](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.2...v1.11.3) (2026-09-09)
+
+
+### Features
+
+* **ci:** automate mcp-server build, security scan, and deploy in deploy.yml ([ee69641](https://github.com/Velmar-Technology/msp_client_portal/commit/ee696414bd844c79e0422e925c5110c771161ae0))
+* **mcp-server:** add msp_list_plans tool to export subscription pricing catalog ([2cd7c74](https://github.com/Velmar-Technology/msp_client_portal/commit/2cd7c74990cc83b33dc9b71e1cec71ce190b5785))
+* **mcp-server:** add network audit, storage analysis, and enhanced security tools ([c07a61f](https://github.com/Velmar-Technology/msp_client_portal/commit/c07a61f4f9b20919677290af1b854052ebd226d3))
+* **mcp-server:** enforce MSP_API_URL and MSP_API_KEY as mandatory configuration parameters ([57ffe6a](https://github.com/Velmar-Technology/msp_client_portal/commit/57ffe6accc608d254016944c022f022ff75d060c))
+* **mcp:** add domain diagnostics, system api status, and email inspection tools ([dfc17c4](https://github.com/Velmar-Technology/msp_client_portal/commit/dfc17c4386ffc097211a22e94e69776359f33e6d))
+* **rmm:** add autonomous self-upgrade mechanism for msp-agent ([b3d9be6](https://github.com/Velmar-Technology/msp_client_portal/commit/b3d9be608da04d6b656d381588ab665af02db5c3))
+
+
+### Bug Fixes
+
+* **mcp-server:** ensure resolveApiUrl appends api/v1 prefix to MSP_API_URL ([e52fc7c](https://github.com/Velmar-Technology/msp_client_portal/commit/e52fc7ce45c9279d3ae38af24f2229b35752280e))
+
 ## [1.11.2](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.1...v1.11.2) (2026-09-08)
 
 
