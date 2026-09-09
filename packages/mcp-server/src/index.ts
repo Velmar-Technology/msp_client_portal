@@ -5,6 +5,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { MspApiClient } from './client/MspApiClient.js';
 import { createMspMcpServer } from './serverFactory.js';
+import { validateInboundApiKey } from './authUtils.js';
 
 // Load environment variables (.env)
 dotenv.config();
@@ -59,14 +60,6 @@ const isHttpMode = process.argv.includes('--http') || process.env.MCP_TRANSPORT 
 async function main(): Promise<void> {
   if (isHttpMode) {
     const port = Number(process.env.MCP_HTTP_PORT || process.env.MCP_PORT || 3005);
-    const mcpServer = createMspMcpServer(apiClient);
-
-    // SOTA 2026-07-28 Spec: Stateless Streamable HTTP Transport
-    const transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: undefined, // Stateless request-response mode
-    });
-
-    await mcpServer.connect(transport);
 
     const httpServer = http.createServer(async (req, res) => {
       // CORS & standard headers
@@ -82,13 +75,18 @@ async function main(): Promise<void> {
 
       const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
 
-      if (url.pathname === '/health' || url.pathname === '/') {
+      if (
+        url.pathname === '/health' ||
+        url.pathname === '/' ||
+        url.pathname === '/mcp/health' ||
+        (req.method === 'GET' && (url.pathname === '/mcp' || url.pathname === '/api/v1/mcp'))
+      ) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(
           JSON.stringify({
             status: 'UP',
             server: 'msp-support-server',
-            version: '1.8.4',
+            version: '1.10.2',
             spec: 'MCP 2026-07-28 (Stateless Streamable HTTP)',
             transport: 'streamable-http',
             timestamp: new Date().toISOString(),
@@ -98,7 +96,31 @@ async function main(): Promise<void> {
       }
 
       if (url.pathname === '/mcp' || url.pathname === '/api/v1/mcp') {
+        // Inbound Authentication for Copilot Studio / HTTP Clients (Option B)
+        const expectedInboundKey = (process.env.MCP_SERVER_API_KEY || apiToken).trim();
+        const requireAuth = process.env.MCP_REQUIRE_AUTH !== 'false';
+
+        if (requireAuth && expectedInboundKey && !validateInboundApiKey(req, expectedInboundKey)) {
+          res.writeHead(401, { 'Content-Type': 'application/json' });
+          res.end(
+            JSON.stringify({
+              jsonrpc: '2.0',
+              error: {
+                code: -32000,
+                message:
+                  'Unauthorized: Missing or invalid API key. Provide a valid key via "X-API-Key" or "Authorization: Bearer <key>".',
+              },
+            })
+          );
+          return;
+        }
+
         try {
+          const transport = new StreamableHTTPServerTransport({
+            sessionIdGenerator: undefined,
+          });
+          const mcpServer = createMspMcpServer(apiClient);
+          await mcpServer.connect(transport);
           await transport.handleRequest(req, res);
         } catch (err: any) {
           console.error('[MSP MCP HTTP Transport Error]:', err);
@@ -116,6 +138,7 @@ async function main(): Promise<void> {
 
     httpServer.listen(port, () => {
       console.log(`[MSP MCP Server] Stateless Streamable HTTP Server (2026-07-28 Spec) listening on http://0.0.0.0:${port}/mcp`);
+      console.log(`[MSP MCP Server] Inbound Authentication: ${process.env.MCP_REQUIRE_AUTH !== 'false' ? 'ENABLED (X-API-Key / Authorization)' : 'DISABLED'}`);
       console.log(`[MSP MCP Server] Connected to Backend API: ${apiUrl}`);
     });
   } else {

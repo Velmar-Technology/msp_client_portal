@@ -12,7 +12,7 @@ The **MSP Client Portal** runs as a single Docker Compose stack on the helpdesk 
 - **Public ingress:** Traefik v3.6.4 (Portainer stack **3 `traefik`**) terminates TLS via Let's Encrypt (`myresolver`) for `helpdesk.velmartech.com.do` and reverse-proxies path prefixes to the internal containers over the shared `reverse-proxy` network.
 - **App images:** `ghcr.io/velmar-technology/msp-services-server:<VERSION>` and `ghcr.io/velmar-technology/msp-services-client:<VERSION>` (reference tags are `:latest` + long SHA, built by GitHub Actions).
 - **Stack lifecycle:** Portainer owns the stack. Deploys pin `VERSION` into the stack environment and re-submit the repo compose spec via the Portainer REST API (see §7).
-- **Related infra:** WireGuard hub / TrueNAS / Nextcloud routing and the credentials matrix live in [`WIREGUARD_NEXTCLOUD_INTEGRATION.md`](WIREGUARD_NEXTCLOUD_INTEGRATION.md). Live secrets are **not** duplicated here — see that document's §3.4 credentials reference and Portainer → stack environment.
+- **Related infra:** WireGuard hub / TrueNAS / Nextcloud routing and the credentials matrix live in [`WIREGUARD_NEXTCLOUD_INTEGRATION.md`](WIREGUARD_NEXTCLOUD_INTEGRATION.md). Copilot Studio autonomous AI agent deployment and MCP operations are documented in [`COPILOT_STUDIO_AGENT_DEPLOYMENT.md`](COPILOT_STUDIO_AGENT_DEPLOYMENT.md). Live secrets are **not** duplicated here — see that document's §3.4 credentials reference and Portainer → stack environment.
 
 ---
 
@@ -34,6 +34,7 @@ All services restart automatically (`restart: always` unless noted) and share th
 | `alloy` | `msp_alloy` | `grafana/alloy:v1.2.0` | Faro frontend-telemetry receiver: `faro.receiver` on **12347** (payload limit 10MiB, CORS origin `https://helpdesk.velmartech.com.do`), HTTP metrics on **12345**; ingress `/collect` | 0.15 / 100M | — |
 | `grafana` | `msp_grafana` | `grafana/grafana-oss:latest` | Dashboards; `GF_SERVER_ROOT_URL=https://helpdesk.velmartech.com.do/grafana/`, `SERVE_FROM_SUB_PATH=true`; preinstalls `alexanderzobnin-zabbix-app`; SMTP from shared SMTP vars | 0.25 / 180M | — |
 | `vaultwarden` | `msp_vaultwarden` | `vaultwarden/server:alpine` | Multi-tenant Bitwarden password manager; zero-knowledge encryption; subpath `/vault`; attached to `reverse-proxy` | 0.20 / 120M | — |
+| `mcp-server` | `msp_mcp_prod` | `msp_mcp_prod:latest` | Model Context Protocol (MCP) Streamable HTTP Server (`/mcp`); internal port **3005**; attached to `reverse-proxy` | 0.20 / 120M | `wget --spider http://127.0.0.1:3005/health` |
 | _(traefik)_ | — | `traefik:v3.6.4` | **External stack 3** — TLS termination + routing (not part of this stack) | — | — |
 
 > Note: `db` and `zabbix-db` use the same `postgres:16-alpine` image but separate encrypted volumes (see §3) — no data overlap.
@@ -96,6 +97,7 @@ All routers use `entrypoints=websecure`, `tls=true`, `certresolver=myresolver` (
 | `msp-faro` | `` Host(`helpdesk.velmartech.com.do`) && PathPrefix(`/collect`) `` | 100 | — | 12347 |
 | `msp-grafana` | `` Host(`helpdesk.velmartech.com.do`) && PathPrefix(`/grafana`) `` | 100 | — | 3000 |
 | `msp-vault` | `` Host(`helpdesk.velmartech.com.do`) && PathPrefix(`/vault`) `` | 100 | — | 80 |
+| `msp-mcp` | `` Host(`helpdesk.velmartech.com.do`) && PathPrefix(`/mcp`) `` | 100 | — | 3005 |
 
 ### Middlewares
 
@@ -163,6 +165,7 @@ Values are supplied by the **Portainer stack environment** (persisted in the Por
 | Datadog (opt-in) | Server APM: `DD_API_KEY`, `DD_SITE`, `DD_SERVICE`, `DD_ENV`, `DD_VERSION`, `DD_TRACE_ENABLED`, `DD_AGENT_HOST` / Client RUM (build args): `VITE_DD_*` |
 | Grafana | `GRAFANA_ADMIN_USER` (default `admin`), `GRAFANA_ADMIN_EMAIL` (default `admin@velmartech.com.do`), `GRAFANA_ADMIN_PASSWORD` (required from environment, zero inline fallback) |
 | Faro / Telemetry (client build) | `VITE_FARO_URL`, `VITE_FARO_APP_NAME`, `VITE_FARO_APP_ENV` (baked at build time) |
+| MCP Server | `MSP_SERVER_URL=helpdesk.velmartech.com.do`, `MSP_API_KEY` (Outbound backend JWT token), `MCP_SERVER_API_KEY` (Inbound auth key for AI agents / Copilot Studio), `MCP_TRANSPORT=http`, `MCP_HTTP_PORT=3005` |
 | Timezones | `TZ` (OS/Server/Postgres) and `PHP_TZ` (Zabbix Web) (`America/Santo_Domingo`) |
 
 ---
@@ -238,6 +241,8 @@ Manual rollback mirrors a deploy with the previous `VERSION` tag; the CI pipelin
 | `/prometheus` | basic-auth | Prometheus web UI |
 | `/grafana/` | Grafana login | Grafana dashboards (Zabbix plugin preinstalled) |
 | `/collect` | none | Faro telemetry ingest (POST) — no UI |
+| `/mcp` | API key (`X-API-Key` / `Authorization`) | Model Context Protocol Streamable HTTP JSON-RPC endpoint (Copilot Studio & AI agents) |
+| `/mcp/health` | none | MCP server liveness & spec compliance probe (`GET /mcp` also returns health status) |
 
 ### Quick diagnostics (Portainer-backed exec)
 

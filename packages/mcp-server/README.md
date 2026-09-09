@@ -24,11 +24,15 @@ Model Context Protocol (MCP) server engineered according to the **MCP 2026-07-28
 - **`msp_add_ticket_reply`**: Posts internal triage notes (`isInternal: true`) or client-facing updates (`isInternal: false`).
 - **`msp_update_ticket_status`**: Transitions ticket lifecycle status following SLA cancellation (`BL-101`) and state transition matrix rules.
 
-### 2. RMM Cloud Device Telemetry & Health
+### 2. RMM Cloud Device Telemetry & Remote Agent Management
 
 - **`msp_get_device_telemetry`**: Retrieves real-time CPU, RAM, Disk utilization, agent online status, and pending patch counts.
 - **`msp_list_device_patches`**: Lists pending and installed OS patches with severity ratings.
 - **`msp_get_device_maintenances`**: Inspects scheduled and past maintenance records.
+- **`msp_remote_diagnose_pc`**: Executes live hardware diagnostics on a remote client endpoint via the agent tunnel.
+- **`msp_remote_get_event_logs`**: Queries Windows Event Logs (Application / System) on a remote client endpoint.
+- **`msp_remote_security_audit`**: Audits BitLocker, Defender, and Firewall posture on a remote endpoint.
+- **`msp_remote_upgrade_agent`**: Triggers an autonomous, in-place Over-The-Air (OTA) self-upgrade on a remote endpoint running `msp-agent.exe` with atomic move swap, SHA-256 integrity verification, and automated 45-second rollback protection.
 
 ### 3. Inventory & Client Health
 
@@ -142,8 +146,50 @@ npm -w packages/mcp-server run dev:http
 
 **Endpoints:**
 
-- `POST http://localhost:3005/mcp`: Streamable HTTP MCP JSON-RPC endpoint.
-- `GET  http://localhost:3005/health`: Health and spec compliance diagnostics.
+- `POST https://helpdesk.velmartech.com.do/mcp`: Streamable HTTP MCP JSON-RPC endpoint.
+- `GET  https://helpdesk.velmartech.com.do/mcp` / `GET /health`: Health and spec compliance diagnostics.
+
+---
+
+## Microsoft Copilot Studio Agent Integration
+
+`@msp/mcp-server` is natively compatible with Microsoft Copilot Studio's Model Context Protocol (MCP) tool integration over Streamable HTTP.
+
+### Connection Parameters
+
+| Parameter | Copilot Studio Field | Value |
+| :--- | :--- | :--- |
+| **Server Name** | Server name | `MSPSupportMcp` |
+| **Server Description** | Server description | `Provides access to MSP portal tickets, RMM telemetry, remote endpoint agent commands, client equipment, and security audits.` |
+| **Server URL** | Server URL | `https://helpdesk.velmartech.com.do/mcp` |
+| **Authentication** | Authentication | `API key` |
+| **Parameter Type** | Parameter type | `Header` |
+| **Header Name** | Header name | `X-API-Key` *(or `Authorization`)* |
+| **Key Value** | Key value | Your active `MSP_API_KEY` (JWT token) |
+
+### Inbound Header Authentication (Option B)
+
+Incoming HTTP requests to `POST /mcp` are authenticated via timing-safe comparison (`crypto.timingSafeEqual`):
+- `X-API-Key: <key>` (Direct token)
+- `Authorization: Bearer <key>` (Standard Bearer format)
+- `Authorization: <key>` (Raw header)
+
+Probes (`GET /mcp` and `GET /health`) remain open for orchestrator liveness checks and return `HTTP 200` with server metadata.
+
+---
+
+## Production Docker Deployment
+
+The MCP server runs as container `msp_mcp_prod` within the `msp_portal` Docker Compose stack on the helpdesk VPS:
+
+- **Image:** `msp_mcp_prod:latest` (built from `packages/mcp-server/Dockerfile`, Alpine Node.js 22 runtime).
+- **Networks:** `default` (bridge) + `reverse-proxy` (Traefik ingress).
+- **Ingress:** Traefik v3 terminates TLS for `https://helpdesk.velmartech.com.do/mcp` and load balances to internal port `3005`.
+- **Environment:**
+  - `MSP_SERVER_URL="helpdesk.velmartech.com.do"` (resolves to `https://helpdesk.velmartech.com.do/api/v1`)
+  - `MSP_API_KEY=<JWT Admin Token>`
+  - `MCP_TRANSPORT="http"`
+  - `MCP_HTTP_PORT=3005`
 
 ---
 
@@ -153,6 +199,7 @@ npm -w packages/mcp-server run dev:http
 # Build TypeScript bundle
 npm -w packages/mcp-server run build
 
-# Run unit and integration tests
+# Run unit and integration tests (24 tests)
 npm -w packages/mcp-server run test
 ```
+

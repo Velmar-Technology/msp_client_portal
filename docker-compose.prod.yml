@@ -496,6 +496,47 @@ services:
       - "traefik.http.routers.msp-vault.priority=100"
       - "traefik.http.services.msp-vault-svc.loadbalancer.server.port=80"
 
+  mcp-server:
+    image: ghcr.io/${REPOSITORY_OWNER:-velmar-technology}/msp-mcp-server:${VERSION:-latest}
+    container_name: msp_mcp_prod
+    restart: always
+    networks:
+      - default
+      - reverse-proxy
+    depends_on:
+      server:
+        condition: service_healthy
+    environment:
+      - TZ=${TZ:-America/Santo_Domingo}
+      - NODE_ENV=production
+      - MCP_TRANSPORT=http
+      - MCP_HTTP_PORT=3005
+      - MSP_SERVER_URL=${MSP_SERVER_URL:-helpdesk.velmartech.com.do}
+      - MSP_API_KEY=${MSP_API_KEY}
+      - MCP_SERVER_API_KEY=${MCP_SERVER_API_KEY:-}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3005/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.20'
+          memory: 120M
+        reservations:
+          cpus: '0.01'
+          memory: 32M
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.msp-mcp.rule=Host(`helpdesk.velmartech.com.do`) && (PathPrefix(`/mcp`))"
+      - "traefik.http.routers.msp-mcp.entrypoints=websecure"
+      - "traefik.http.routers.msp-mcp.tls=true"
+      - "traefik.http.routers.msp-mcp.tls.certresolver=myresolver"
+      - "traefik.http.routers.msp-mcp.priority=100"
+      - "traefik.http.services.msp-mcp-svc.loadbalancer.server.port=3005"
+
 volumes:
   pgdata:
     driver: local
