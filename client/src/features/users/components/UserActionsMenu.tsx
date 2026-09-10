@@ -42,19 +42,17 @@ export function UserActionsMenu({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={(e: React.MouseEvent) => e.stopPropagation()}
-            className="h-7 w-7 cursor-pointer"
-          />
-        }
-      >
-        <MoreHorizontal className="h-3.5 w-3.5" />
-        <span className="sr-only">{t("userManagement.actions")}</span>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          onClick={(e: React.MouseEvent) => e.stopPropagation()}
+          className="h-7 w-7 cursor-pointer"
+        >
+          <MoreHorizontal className="h-3.5 w-3.5" />
+          <span className="sr-only">{t("userManagement.actions")}</span>
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52 bg-card text-foreground border border-border">
         <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground tracking-wider font-bold">

@@ -18,13 +18,21 @@ function SheetTrigger({
   render?: React.ReactElement;
 }) {
   if (render) {
+    const renderedElement = React.isValidElement(render)
+      ? React.cloneElement(
+          render as React.ReactElement<{ children?: React.ReactNode }>,
+          undefined,
+          (render.props as { children?: React.ReactNode })?.children ?? children
+        )
+      : render;
+
     return (
       <SheetPrimitive.Trigger
         data-slot="sheet-trigger"
         asChild
         {...props}
       >
-        {render}
+        {renderedElement}
       </SheetPrimitive.Trigger>
     );
   }

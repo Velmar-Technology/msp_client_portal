@@ -246,7 +246,7 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
                 <Button
                   onClick={() => onAssign(selectedTechId)}
                   disabled={!selectedTechId || selectedTechId === ticket.assigned_tech_id || assigning}
-                  size="sm"
+                  size="lg"
                   className="shrink-0 font-semibold"
                 >
                   {assigning ? (
