@@ -157,6 +157,7 @@ export interface TicketResponse {
   created_at: Date;
   user_name?: string;
   user_role?: string;
+  is_internal?: boolean;
   attachments?: TicketAttachment[];
 }
 

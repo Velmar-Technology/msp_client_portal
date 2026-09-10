@@ -66,6 +66,11 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
+      '/portal-ws': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        ws: true,
+      },
       '/api-docs': {
         target: 'http://localhost:3001',
         changeOrigin: true,

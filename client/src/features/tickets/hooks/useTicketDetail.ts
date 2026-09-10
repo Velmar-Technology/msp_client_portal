@@ -16,6 +16,8 @@ import { useTicketReadStore } from "@/store/useTicketReadStore";
  * @param ticketId - Ticket unique identifier string.
  * @returns State and event handlers for ticket lifecycle, comments, attachments, and assignments.
  */
+import { useTicketChatStream } from './useTicketChatStream';
+
 export function useTicketDetail(ticketId: string | undefined) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
@@ -98,6 +100,49 @@ export function useTicketDetail(ticketId: string | undefined) {
     loadTicketData();
   }, [loadTicketData]);
 
+  // Real-time WebSocket listener: immediately appends replies pushed by server
+  const handleIncomingMessage = useCallback((incoming: TicketResponse) => {
+    setResponses((prev) => {
+      if (prev.some((r) => r.id === incoming.id)) {
+        return prev;
+      }
+      return [...prev, incoming];
+    });
+    if (ticketId) {
+      useTicketReadStore.getState().markAsRead(ticketId, user?.id);
+    }
+  }, [ticketId, user?.id]);
+
+  useTicketChatStream({
+    ticketId,
+    onNewMessage: handleIncomingMessage,
+    enabled: Boolean(ticketId),
+  });
+
+  // Background reconciliation fallback (every 8s for active tickets)
+  useEffect(() => {
+    if (!ticketId || (ticket && (ticket.status === 'RESOLVED' || ticket.status === 'CLOSED' || ticket.status === 'CANCELLED'))) {
+      return;
+    }
+
+    const interval = setInterval(async () => {
+      try {
+        const latestResponses = await ticketService.getResponses(ticketId);
+        setResponses((prev) => {
+          // If counts or latest message timestamp differ, update
+          if (latestResponses.length !== prev.length || (latestResponses.length > 0 && latestResponses[latestResponses.length - 1].id !== prev[prev.length - 1]?.id)) {
+            return latestResponses;
+          }
+          return prev;
+        });
+      } catch {
+        // Silently ignore background polling failure
+      }
+    }, 8000);
+
+    return () => clearInterval(interval);
+  }, [ticketId, ticket?.status]);
+
   useEffect(() => {
     if (!canAssign) return;
     async function loadTechs() {
@@ -121,7 +166,7 @@ export function useTicketDetail(ticketId: string | undefined) {
     setResponseFeedback(null);
     try {
       const newResponse = await ticketService.createResponse(ticketId, responseText.trim(), responseFiles);
-      setResponses((prev) => [...prev, newResponse]);
+      setResponses((prev) => (prev.some((r) => r.id === newResponse.id) ? prev : [...prev, newResponse]));
       setResponseText('');
       setResponseFiles([]);
       setResponseFeedback({ text: t('ticketDetail.responseSuccess'), isError: false });
