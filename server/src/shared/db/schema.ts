@@ -187,6 +187,7 @@ export const ticketResponses = pgTable(
       .notNull(),
     message: text('message').notNull(),
     author_name: varchar('author_name', { length: 255 }),
+    is_internal: boolean('is_internal').notNull().default(false),
     tenant_id: uuid('tenant_id')
       .references(() => tenants.id, { onDelete: 'cascade' })
       .notNull(),

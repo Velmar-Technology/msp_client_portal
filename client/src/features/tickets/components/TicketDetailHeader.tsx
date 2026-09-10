@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
+import { MessageSquare } from 'lucide-react';
 import type { TicketItem as Ticket } from '../api/ticketService';
 import type { AuthUser } from '@/store/useAuthStore';
 
@@ -10,6 +11,9 @@ export interface TicketDetailHeaderProps {
   statusUpdating: boolean;
   getStatusLabel: (status: string) => string;
   onStatusChange: (newStatus: string) => void;
+  responseCount?: number;
+  onToggleChat?: () => void;
+  isChatOpen?: boolean;
 }
 
 export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
@@ -18,6 +22,9 @@ export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
   statusUpdating,
   getStatusLabel,
   onStatusChange,
+  responseCount,
+  onToggleChat,
+  isChatOpen,
 }) => {
   const { t, i18n } = useTranslation();
 
@@ -248,7 +255,26 @@ export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
           </span>
         </div>
       </div>
-      {renderActionButtons()}
+      <div className="flex items-center gap-2 flex-wrap self-end md:self-center">
+        {onToggleChat && (
+          <Button
+            type="button"
+            variant={isChatOpen ? 'secondary' : 'outline'}
+            size="sm"
+            onClick={onToggleChat}
+            className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer shadow-2xs"
+          >
+            <MessageSquare className="w-3.5 h-3.5 text-primary" />
+            <span>{t('ticketDetail.toggleChatter')}</span>
+            {typeof responseCount === 'number' && (
+              <span className="ml-0.5 px-1.5 py-0.2 rounded-full bg-primary/10 text-primary text-[10px] font-mono font-bold">
+                {responseCount}
+              </span>
+            )}
+          </Button>
+        )}
+        {renderActionButtons()}
+      </div>
     </div>
   );
 };

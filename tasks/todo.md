@@ -1,295 +1,227 @@
-# Task Breakdown: MSP Tray to MSP Agent Named Pipe IPC Bridge
+# Task List: Odoo-Style Ticket Chatter & Decoupled Drawer
 
-## Phase 1: Backend Machine-Authenticated Endpoints & Contracts
+## Phase 1: Backend Data Model & Internal Notes Protection
 
-### Task 1.1: Define Agent Active Ticket & History Contracts in `@shared/contracts`
-**Description:** Define Zod schemas and TypeScript types in `@shared/contracts` for machine-authenticated active ticket retrieval, message history queries, and ticket status resolution.
+### Task 1.1: Database Schema & Migration for `is_internal`
+**Description:** Add `is_internal` boolean column to `ticket_responses` table in Drizzle schema with default `false` and generate/apply migration.
 **Acceptance criteria:**
-- [x] Create `AgentActiveTicketResponseSchema` (returns active ticket or null, with device identity and assigned technician).
-- [x] Create `AgentTicketResponsesResponseSchema` (returns array of ticket responses/messages for machine context).
-- [x] Create `AgentUpdateTicketStatusInputSchema` (validating status transition to `RESOLVED`).
-- [x] Export all schemas and types from `packages/contracts/src/tickets/`.
+- [x] Add `is_internal: boolean('is_internal').notNull().default(false)` in `server/src/shared/db/schema.ts`.
+- [x] Create migration SQL file in `server/src/shared/db/migrations/` and verify migration applies cleanly.
 **Verification:**
-- [x] `npm run build:packages` succeeds with exit code 0.
+- [x] `npm -w server run build` passes.
+- [x] Database schema compiles without error.
 **Dependencies:** None
 **Files touched:**
-- `packages/contracts/src/tickets/tickets.contract.ts`
-- `packages/contracts/src/tickets/index.ts`
-- `packages/contracts/src/index.ts`
-**Estimated scope:** Small (3 files)
+- `server/src/shared/db/schema.ts`
+- `server/src/shared/db/migrations/043_add_ticket_response_is_internal.sql`
+**Estimated scope:** Small (2 files)
 
 ---
 
-### Task 1.2: Implement Backend Routes & Controller Handlers in `ticket.routes.ts` & `TicketController.ts`
-**Description:** Add endpoints `GET /api/v1/tickets/agent/active`, `GET /api/v1/tickets/:id/responses/agent`, and `PATCH /api/v1/tickets/:id/status/agent` protected by `agentAuthMiddleware`.
+### Task 1.2: `@shared/contracts` Updates for Internal Notes
+**Description:** Update ticket response Zod schemas and TypeScript contracts to include optional `isInternal: boolean`.
 **Acceptance criteria:**
-- [x] Implement `getActiveTicketForAgent(req, res)` in `TicketController.ts` querying latest open ticket linked to `req.agent.equipmentId`.
-- [x] Implement `getResponsesForAgent(req, res)` in `TicketController.ts` returning conversation history.
-- [x] Implement `updateStatusFromAgent(req, res)` in `TicketController.ts` transitioning ticket to `RESOLVED`.
-- [x] Register routes in `server/src/modules/tickets/routes/ticket.routes.ts`.
+- [x] Update `AgentTicketMessageSchema` and `TicketResponseSchema` in `packages/contracts/src/tickets/tickets.contract.ts` with `isInternal: z.boolean().optional()`.
+- [x] Add `isInternal` to `AddTicketResponseInputSchema` or response payload types.
+- [x] Export updated types from `@shared/contracts`.
 **Verification:**
-- [x] `npm -w server run build` succeeds with exit code 0.
+- [x] `npm run build:packages` succeeds with exit code 0.
 **Dependencies:** Task 1.1
 **Files touched:**
-- `server/src/modules/tickets/routes/ticket.routes.ts`
-- `server/src/modules/tickets/controllers/TicketController.ts`
-- `server/src/modules/tickets/services/TicketQueryService.ts`
-- `server/src/modules/tickets/services/TicketResponseService.ts`
-- `server/src/modules/tickets/services/TicketStatusService.ts`
-- `server/src/shared/middleware/gatewayTenantContextMiddleware.ts`
-**Estimated scope:** Medium (6 files)
+- `packages/contracts/src/tickets/tickets.contract.ts`
+**Estimated scope:** Small (1 file)
 
 ---
 
-### Task 1.3: Add Backend Unit Tests for Agent Ticket Endpoints
-**Description:** Implement unit tests verifying machine-authenticated active ticket retrieval, response history, and status update.
+### Task 1.3: `TicketResponseRepository` & `TicketResponseService` RBAC Filtering & Side-Effect Suppression
+**Description:** Enforce tenant/role isolation in queries (clients never see internal notes) and suppress external notifications for internal notes.
 **Acceptance criteria:**
-- [x] Unit test for `GET /api/v1/tickets/agent/active` with open ticket returning 200 and formatted payload.
-- [x] Unit test for `GET /api/v1/tickets/agent/active` with no open ticket returning `{ success: true, data: null }`.
-- [x] Unit test for `GET /api/v1/tickets/:id/responses/agent` returning messages array.
-- [x] Unit test for `PATCH /api/v1/tickets/:id/status/agent` resolving ticket.
+- [x] In `TicketResponseRepository.ts`: update queries to include `is_internal` column and provide role-aware query filtering.
+- [x] In `TicketResponseService.ts`: when `ctx.role === 'CLIENT'`, filter out `is_internal = true` responses.
+- [x] If `isInternal === true`, skip `notifyResponseRecipient` (zero emails sent to client).
+- [x] If `isInternal === true`, skip `agentGw.pushTicketChatMessage` (desktop workstation tray does not receive staff notes).
+- [x] In `streamGw.broadcastToTicket`: include `isInternal` flag so client sockets discard or gateway skips sending to client sessions.
 **Verification:**
-- [x] `npm -w server test -- src/modules/tickets/services` passes 100%.
+- [x] `npm -w server run build` passes.
 **Dependencies:** Task 1.2
 **Files touched:**
-- `server/src/modules/tickets/services/TicketQueryService.test.ts`
-- `server/src/modules/tickets/services/TicketResponseService.test.ts`
-- `server/src/modules/tickets/services/TicketStatusService.test.ts`
-**Estimated scope:** Small (3 files)
-
----
-
-## Checkpoint 1: Backend Contracts & Endpoints Green
-- [x] `npm run build:packages` clean.
-- [x] `npm -w server run build` clean.
-- [x] Server ticket unit tests green (106/106 passed).
-
----
-
-## Phase 2: Rust `msp-agent` Named Pipe IPC Server (`packages/msp-agent`)
-
-### Task 2.1: Implement Named Pipe Server Module (`ipc_server.rs`) with Session 0 Security DACL
-**Description:** Implement the Windows Named Pipe server in `packages/msp-agent` listening on `\\.\pipe\msp-agent-ipc` with a permissive Security Descriptor allowing non-elevated desktop sessions to connect.
-**Acceptance criteria:**
-- [x] Create `packages/msp-agent/src/ipc_server.rs` using `tokio::net::windows::named_pipe::ServerOptions`.
-- [x] Configure Windows security attributes with SDDL string allowing Authenticated Users (`D:(A;;GRGW;;;AU)` or `D:(A;;GA;;;WD)`).
-- [x] Implement framing with 4-byte big-endian length prefix encoding/decoding.
-- [x] Spawn continuous client acceptance loop supporting concurrent pipe instances.
-**Verification:**
-- [x] `cargo check --manifest-path packages/msp-agent/Cargo.toml` succeeds.
-**Dependencies:** Checkpoint 1
-**Files touched:**
-- `packages/msp-agent/src/ipc_server.rs`
-- `packages/msp-agent/src/main.rs`
-- `packages/msp-agent/Cargo.toml`
+- `server/src/modules/tickets/repositories/TicketResponseRepository.ts`
+- `server/src/modules/tickets/services/TicketResponseService.ts`
+- `server/src/modules/tickets/controllers/TicketController.ts`
 **Estimated scope:** Medium (3 files)
 
 ---
 
-### Task 2.2: Implement IPC Request Handlers in `msp-agent`
-**Description:** Handle incoming IPC requests from `msp-tray`: `GET_AGENT_STATUS`, `CREATE_TICKET`, `SEND_CHAT_MESSAGE`, `GET_ACTIVE_TICKET`, and `RESOLVE_TICKET`.
+### Task 1.4: Backend Unit Tests for Internal Notes Isolation
+**Description:** Implement unit tests verifying that clients cannot query internal notes and that external side-effects are suppressed.
 **Acceptance criteria:**
-- [x] Dispatch `GET_AGENT_STATUS` returning current bound machine identity and online state.
-- [x] Dispatch `CREATE_TICKET` collecting live hardware telemetry + top processes and calling backend `POST /api/v1/tickets/agent`.
-- [x] Dispatch `SEND_CHAT_MESSAGE` calling `POST /api/v1/tickets/:id/responses/agent`.
-- [x] Dispatch `GET_ACTIVE_TICKET` calling `GET /api/v1/tickets/agent/active`.
-- [x] Dispatch `RESOLVE_TICKET` calling `PATCH /api/v1/tickets/:id/status/agent`.
+- [x] Test verifying `getTicketResponses` excludes internal notes when invoked with a `CLIENT` role context.
+- [x] Test verifying `getTicketResponses` includes internal notes when invoked with `TECHNICIAN` or `ADMIN` role context.
+- [x] Test verifying `addTicketResponse` with `isInternal: true` does not trigger email notification or agent tray push.
 **Verification:**
-- [x] `cargo check --manifest-path packages/msp-agent/Cargo.toml` succeeds with exit code 0.
-**Dependencies:** Task 2.1
+- [x] `npm -w server test -- src/modules/tickets/services/TicketResponseService.test.ts` passes 100%.
+**Dependencies:** Task 1.3
 **Files touched:**
-- `packages/msp-agent/src/ipc_server.rs`
-**Estimated scope:** Medium (1-2 files)
+- `server/src/modules/tickets/services/TicketResponseService.test.ts`
+**Estimated scope:** Small (1 file)
 
 ---
 
-### Task 2.3: Wire Inbound WebSocket `TICKET_CHAT_PUSH` Broadcast to Connected Pipe Clients
-**Description:** When `msp-agent` receives `TICKET_CHAT_PUSH` over the WebSocket connection from `AgentGateway`, broadcast it to all active named pipe client connections.
+## Checkpoint: Backend Foundation
+- [x] `npm run build:packages` passes clean
+- [x] `npm -w server run build` passes clean
+- [x] `npm -w server test -- src/modules/tickets/services/TicketResponseService.test.ts` passes clean
+
+---
+
+## Phase 2: Client Service & Real-Time Stream Integration
+
+### Task 2.1: `ticketService.ts` Updates for `isInternal` Flag & Multi-Part Upload
+**Description:** Update `TicketResponseItem` interface and `createResponse` method in `ticketService.ts` to support optional `isInternal` boolean parameter.
 **Acceptance criteria:**
-- [x] Create a `tokio::sync::broadcast` channel for outbound push notifications in `msp-agent`.
-- [x] Handle `TICKET_CHAT_PUSH` command in `packages/msp-agent/src/main.rs` WebSocket loop and broadcast.
-- [x] Each active named pipe client loop forwards broadcast frames down the pipe with 4-byte length framing.
+- [x] `TicketResponseItem` includes `is_internal?: boolean` and `isInternal?: boolean`.
+- [x] `ticketService.createResponse(id, message, files, isInternal)` appends `isInternal` to FormData.
 **Verification:**
-- [x] `cargo test --manifest-path packages/msp-agent/Cargo.toml` succeeds.
-**Dependencies:** Task 2.2
+- [x] `npm -w client run build` succeeds without type errors.
+**Dependencies:** Task 1.4
 **Files touched:**
-- `packages/msp-agent/src/main.rs`
-- `packages/msp-agent/src/ipc_server.rs`
+- `client/src/features/tickets/api/ticketService.ts`
+**Estimated scope:** Small (1 file)
+
+---
+
+### Task 2.2: `useTicketDetail.ts` & `useTicketChatStream.ts` Updates for Dual Mode & Real-Time Notes
+**Description:** Update `useTicketDetail` hook to track `isInternalNote` composer mode and integrate with real-time stream.
+**Acceptance criteria:**
+- [x] Add state `isInternalNote` (boolean) to `useTicketDetail`.
+- [x] Update `handleSendResponse` to pass `isInternalNote` to `ticketService.createResponse`.
+- [x] Update `useTicketChatStream` to avoid appending internal notes if the viewer is a `CLIENT`.
+**Verification:**
+- [x] `npm -w client run build` succeeds without type errors.
+**Dependencies:** Task 2.1
+**Files touched:**
+- `client/src/features/tickets/hooks/useTicketDetail.ts`
+- `client/src/features/tickets/hooks/useTicketChatStream.ts`
 **Estimated scope:** Small (2 files)
 
 ---
 
-## Checkpoint 2: `msp-agent` Compiles and Local Tests Pass
-- [x] `cargo check --manifest-path packages/msp-agent/Cargo.toml` clean.
-- [x] All `msp-agent` tests pass.
+## Checkpoint: Client State Ready
+- [x] `npm -w client run build` builds clean
 
 ---
 
-## Phase 3: Rust `msp-tray` Named Pipe IPC Client (`packages/msp-tray`)
+## Phase 3: Odoo-Style Chatter Components & Dual-Mode Composer
 
-### Task 3.1: Implement Resilient Named Pipe Client with Auto-Reconnect in `packages/msp-tray`
-**Description:** Implement async named pipe client in `packages/msp-tray/src-tauri/src/ipc.rs` connecting to `\\.\pipe\msp-agent-ipc` with exponential backoff and background push listener.
+### Task 3.1: Build `TicketChatterComposer` (Message vs Internal Note Tabs)
+**Description:** Create dedicated composer component supporting dual modes ("Send Message" vs "Log Note"), file upload preview, and keyboard submission (`Ctrl+Enter`).
 **Acceptance criteria:**
-- [x] Implement `IpcClient` managing connection to `\\.\pipe\msp-agent-ipc`.
-- [x] Spawn background task reading incoming server frames (handling `TICKET_CHAT_PUSH`).
-- [x] Implement request-response multiplexing over pipe with correlation IDs.
-- [x] Auto-reconnect with backoff if pipe is closed or agent restarts.
+- [x] Create `client/src/features/tickets/components/TicketChatterComposer.tsx`.
+- [x] Include tabs: "Send Message" (Blue action) and "Log Note" (Amber action with Lock icon).
+- [x] "Log Note" tab is conditionally rendered only for technicians and admins (`user.role !== 'CLIENT'`).
+- [x] Dynamic placeholder and button label reflecting mode ("Send response to customer..." vs "Log internal note (staff only)...").
+- [x] Support keyboard submit (`Ctrl+Enter` / `Cmd+Enter`).
 **Verification:**
-- [x] `cargo check --manifest-path packages/msp-tray/src-tauri/Cargo.toml` succeeds.
-**Dependencies:** Checkpoint 2
+- [x] `npm -w client run build` succeeds.
+**Dependencies:** Task 2.2
 **Files touched:**
-- `packages/msp-tray/src-tauri/src/ipc.rs`
-- `packages/msp-tray/src-tauri/Cargo.toml`
+- `client/src/features/tickets/components/TicketChatterComposer.tsx`
+- `client/src/features/tickets/components/index.ts`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Task 3.2: Refactor `TicketResponses` into `TicketChatter` with Internal Note Theming
+**Description:** Update message rendering to support internal note styling (amber border, staff badge, eye-off icon) and auto-scroll.
+**Acceptance criteria:**
+- [x] Internal notes display with amber accent, "Internal Note" badge, and distinct visual treatment.
+- [x] Regular messages maintain clean conversational speech bubbles (Tech on right/left per role, Client on opposite).
+- [x] Component auto-scrolls smoothly to the latest response upon new message receipt.
+**Verification:**
+- [x] `npm -w client run build` succeeds.
+**Dependencies:** Task 3.1
+**Files touched:**
+- `client/src/features/tickets/components/TicketResponses.tsx`
+- `client/src/features/tickets/components/TicketChatter.tsx`
+- `client/src/features/tickets/components/index.ts`
+**Estimated scope:** Medium (3 files)
+
+---
+
+## Checkpoint: Chatter Component Ready
+- [x] Composer and chat list render properly with dual-mode tabs and internal note theming
+
+---
+
+## Phase 4: Layout Decoupling & Sheet Drawer in `TicketDetailPage`
+
+### Task 4.1: Implement `TicketChatterDrawer` with Radix `Sheet` & `useUrlState`
+**Description:** Build drawer wrapper component using `Sheet` that synchronizes open/closed state with URL query parameter `?chat=open`.
+**Acceptance criteria:**
+- [x] Create `client/src/features/tickets/components/TicketChatterDrawer.tsx` wrapping `Sheet`, `SheetContent`, and `SheetHeader`.
+- [x] Integrate with `useUrlState` or `useSearchParams` so `?chat=open` automatically controls the drawer.
+- [x] Provide smooth opening/closing transitions and clean mobile header with ticket ID.
+**Verification:**
+- [x] `npm -w client run build` succeeds.
+**Dependencies:** Task 3.2
+**Files touched:**
+- `client/src/features/tickets/components/TicketChatterDrawer.tsx`
+- `client/src/features/tickets/components/index.ts`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Task 4.2: Refactor `TicketDetailPage.tsx` for Responsive Side-by-Side & Mobile Drawer
+**Description:** Decouple `TicketResponses` from the static left column in `TicketDetailPage.tsx`. On `xl:` viewports, display persistent side-by-side Chatter; on `< xl:`, show slide-over drawer triggered by header button.
+**Acceptance criteria:**
+- [x] On `xl:` (`>= 1280px`), render two-column workspace: left pane (ticket description, telemetry snapshot, timeline) and right pane (`TicketChatter`).
+- [x] On `< xl:`, render single column layout and mount `TicketChatterDrawer`.
+- [x] In `TicketDetailHeader`, add Chatter toggle button with response counter badge (e.g., "💬 5 responses") that opens the drawer or toggles desktop pane.
+- [x] Ensure no duplicate rendering of responses when transitioning breakpoints.
+**Verification:**
+- [x] `npm -w client run build` succeeds.
+- [x] Visual verification of desktop side-by-side and mobile drawer behavior.
+**Dependencies:** Task 4.1
+**Files touched:**
+- `client/src/features/tickets/pages/TicketDetailPage.tsx`
+- `client/src/features/tickets/components/TicketDetailHeader.tsx`
 **Estimated scope:** Medium (2 files)
 
 ---
 
-### Task 3.2: Wire IPC Client to Tauri Commands & Window Push Event Dispatch in `lib.rs`
-**Description:** Update `lib.rs` Tauri commands (`create_ticket`, `send_chat_message`, `get_active_ticket`, `get_agent_status`, `resolve_ticket`) to delegate directly to the IPC client and forward push events to the webview window.
+## Checkpoint: Responsive UX Complete
+- [x] Layout renders side-by-side on wide screens
+- [x] Mobile/tablet view opens drawer cleanly via header toggle button and `?chat=open`
+
+---
+
+## Phase 5: Verification & Full Suite Validation
+
+### Task 5.1: Unit & Component Tests for `TicketChatter` & `TicketDetailPage`
+**Description:** Add/update frontend test coverage for the decoupled chatter and dual-mode composer.
 **Acceptance criteria:**
-- [x] `create_ticket` invokes IPC `CREATE_TICKET` and stores created ticket in `AppState`.
-- [x] `send_chat_message` invokes IPC `SEND_CHAT_MESSAGE`.
-- [x] `get_active_ticket` queries IPC `GET_ACTIVE_TICKET` and syncs `AppState`.
-- [x] `get_agent_status` queries IPC `GET_AGENT_STATUS`.
-- [x] `resolve_ticket` invokes IPC `RESOLVE_TICKET`.
-- [x] When `TICKET_CHAT_PUSH` arrives over pipe, emit `ticket_chat_push` to the webview window using `app_handle.emit`.
+- [x] Test verifying `TicketChatterComposer` hides "Log Note" tab for clients.
+- [x] Test verifying `TicketChatterDrawer` toggles based on open prop / state.
 **Verification:**
-- [x] `cargo check --manifest-path packages/msp-tray/src-tauri/Cargo.toml` succeeds.
-**Dependencies:** Task 3.1
+- [x] `npm -w client run test:run` passes 100%.
+**Dependencies:** Task 4.2
 **Files touched:**
-- `packages/msp-tray/src-tauri/src/lib.rs`
-**Estimated scope:** Medium (1-2 files)
+- `client/src/features/tickets/components/TicketChatter.test.tsx`
+**Estimated scope:** Small (1-2 files)
 
 ---
 
-## Checkpoint 3: `msp-tray` Rust Backend Compiles and Connects to Pipe
-- [x] `cargo check --manifest-path packages/msp-tray/src-tauri/Cargo.toml` clean.
-- [x] All Tauri command bindings compile without errors.
-
----
-
-## Phase 4: Frontend UI Hydration & Real-Time Sync (`packages/msp-tray/src`)
-
-### Task 4.1: Hydrate Past Message History on Ticket Mount in `LiveChatDrawer.tsx`
-**Description:** Update `LiveChatDrawer.tsx` to fetch past message history for the active ticket upon mount, merging with existing local state.
+### Task 5.2: Full Monorepo Typecheck & Test Suite Execution
+**Description:** Verify end-to-end repository health across packages, server, and client.
 **Acceptance criteria:**
-- [x] Add `fetchTicketMessages(ticketId)` to `tauri.ts`.
-- [x] On ticket mount in `LiveChatDrawer.tsx`, fetch past responses and populate `messages` list.
-- [x] Ensure real-time `ticket_chat_push` listener deduplicates messages by `responseId` or timestamp.
+- [x] `npm run build:packages` succeeds with exit code 0.
+- [x] `npm -w server run build` succeeds with exit code 0.
+- [x] `npm -w client run build` succeeds with exit code 0.
+- [x] `npm -w server run test` passes without regressions.
+- [x] `npm -w client run test:run` passes without regressions.
 **Verification:**
-- [x] `npm --prefix packages/msp-tray run build` compiles with 0 errors.
-**Dependencies:** Checkpoint 3
-**Files touched:**
-- `packages/msp-tray/src/services/tauri.ts`
-- `packages/msp-tray/src/components/LiveChatDrawer.tsx`
-**Estimated scope:** Small (2 files)
-
----
-
-### Task 4.2: Auto-Sync Active Ticket and Status Transitions in `App.tsx`
-**Description:** Update polling and lifecycle in `App.tsx` to refresh `activeTicket` state periodically and update connection status indicator based on IPC health.
-**Acceptance criteria:**
-- [x] Periodic timer refreshes both hardware vitals and agent status / active ticket.
-- [x] Header online indicator reflects `ipcConnected` and `cloudConnected`.
-- [x] Ticket resolution updates UI state immediately and re-enables 1-click issue reporting card.
-**Verification:**
-- [x] `npm --prefix packages/msp-tray run build` succeeds with exit code 0.
-**Dependencies:** Task 4.1
-**Files touched:**
-- `packages/msp-tray/src/App.tsx`
-- `packages/msp-tray/src/components/Header.tsx`
-**Estimated scope:** Small (2 files)
-
----
-
-## Checkpoint 4: Full End-to-End Verification & Quality Gates
-- [x] `npm run build:packages` clean.
-- [x] `npm -w server run build` clean.
-- [x] `npm --prefix packages/msp-tray run build` clean.
-- [x] `cargo check --manifest-path packages/msp-agent/Cargo.toml` clean.
-- [x] `cargo check --manifest-path packages/msp-tray/src-tauri/Cargo.toml` clean.
-- [x] All server unit tests pass.
-
----
-
-## Phase 5: Realtime Ticket Chat & Identity Sync Architecture
-
-### Task 5.1: Fix Database Persistence & Selection of `author_name`
-**Description:** Update `TicketResponseRepository.create` to insert `author_name` and `findByTicket` to select `ticketResponses.author_name`.
-**Acceptance criteria:**
-- [x] `author_name` is passed and inserted into `ticket_responses` table in `TicketResponseRepository.create`.
-- [x] `findByTicket` includes `author_name: ticketResponses.author_name` in its select mapping.
-- [x] Unit tests in `TicketResponseRepository.test.ts` verify `author_name` persistence and retrieval.
-**Verification:**
-- [x] `npm -w server run test -- src/modules/tickets/repositories/TicketResponseRepository.test.ts` passes.
-**Dependencies:** None
-**Files touched:**
-- `server/src/modules/tickets/repositories/TicketResponseRepository.ts`
-- `server/src/modules/tickets/repositories/TicketResponseRepository.test.ts`
-
----
-
-### Task 5.2: Role Normalization in `TicketResponseService` & `TicketController`
-**Description:** Normalize author roles so endpoint-authored responses consistently have `authorRole: 'CLIENT'` and `authorName: r.author_name`, while portal responses maintain technician/admin identities.
-**Acceptance criteria:**
-- [x] In `TicketController.getResponsesForAgent`, map `authorRole: r.author_name ? 'CLIENT' : (r.user_role === 'CLIENT' ? 'CLIENT' : 'TECHNICIAN')`.
-- [x] In `TicketController.getResponsesForAgent`, map `authorName: r.author_name || r.user_name || 'Support Technician'`.
-- [x] In `TicketResponseService.addTicketResponseFromAgent`, ensure returned response has `author_name: data.reporterName`.
-**Verification:**
-- [x] `npm -w server run test -- src/modules/tickets/services/TicketResponseService.test.ts` passes.
+- [x] All automated gates pass green.
 **Dependencies:** Task 5.1
 **Files touched:**
-- `server/src/modules/tickets/services/TicketResponseService.ts`
-- `server/src/modules/tickets/controllers/TicketController.ts`
-
----
-
-### Task 5.3: Implement Server `TicketStreamGateway` (WebSocket for Web Portal)
-**Description:** Implement `TicketStreamGateway` mounted on the HTTP server at `/portal-ws` allowing authenticated browser clients to subscribe to ticket chat rooms (`ticket:<id>`).
-**Acceptance criteria:**
-- [x] Create `server/src/modules/tickets/services/TicketStreamGateway.ts` managing client sockets and ticket rooms.
-- [x] Validate client JWT token and tenant isolation upon connection.
-- [x] Broadcast newly created responses from `TicketResponseService` (both web replies and agent replies) to all sockets in the ticket room.
-- [x] Mount `/portal-ws` in `server/src/index.ts`.
-**Verification:**
-- [x] `npm -w server run build` succeeds with exit code 0.
-- [x] Unit tests in `TicketStreamGateway.test.ts` pass.
-**Dependencies:** Task 5.2
-**Files touched:**
-- `server/src/modules/tickets/services/TicketStreamGateway.ts`
-- `server/src/modules/tickets/services/TicketResponseService.ts`
-- `server/src/index.ts`
-- `server/src/modules/tickets/services/TicketStreamGateway.test.ts`
-
----
-
-### Task 5.4: Implement `useTicketChatStream` & Integrate in `TicketDetailPage`
-**Description:** Build a WebSocket subscription hook in `client` that connects to `/portal-ws`, joins `ticket:<id>`, and dynamically appends incoming messages into the ticket responses state without requiring page reload.
-**Acceptance criteria:**
-- [x] Create `client/src/features/tickets/hooks/useTicketChatStream.ts` connecting via WebSocket with JWT auth.
-- [x] On receiving a new message frame, append to `responses` list in `useTicketDetail.ts` (avoiding duplicates by `id`).
-- [x] Integrate auto-scroll and 8s heartbeat fallback in `TicketDetailPage.tsx` and `useTicketDetail.ts`.
-**Verification:**
-- [x] `npm -w client run build` succeeds with exit code 0.
-**Dependencies:** Task 5.3
-**Files touched:**
-- `client/src/features/tickets/hooks/useTicketChatStream.ts`
-- `client/src/features/tickets/hooks/useTicketDetail.ts`
-- `client/src/features/tickets/pages/TicketDetailPage.tsx`
-
----
-
-### Task 5.5: Fix UI Alignment & Attribution in `TicketResponses.tsx` and `LiveChatDrawer.tsx`
-**Description:** Ensure correct, non-inverted conversational message alignments in both views.
-**Acceptance criteria:**
-- [x] In `client/src/features/tickets/components/TicketResponses.tsx`: Desk Worker (`author_name` present) renders on the LEFT with an endpoint badge; logged-in Support Tech (`isSelf`) renders on the RIGHT.
-- [x] In `packages/msp-tray/src/components/LiveChatDrawer.tsx`: Desk Worker (`authorRole === 'CLIENT'`) renders on the RIGHT as "You" (Orange bubble); Support Tech (`authorRole === 'TECHNICIAN'`) renders on the LEFT (Blue bubble).
-- [x] Add 3-4s background polling reconciliation in `LiveChatDrawer.tsx` while drawer is open.
-**Verification:**
-- [x] `npm -w client run build` clean.
-- [x] `npm --prefix packages/msp-tray run build` clean.
-**Dependencies:** Task 5.4
-**Files touched:**
-- `client/src/features/tickets/components/TicketResponses.tsx`
-- `packages/msp-tray/src/components/LiveChatDrawer.tsx`
-
+- Monorepo wide
+**Estimated scope:** Verification (0 files modified)

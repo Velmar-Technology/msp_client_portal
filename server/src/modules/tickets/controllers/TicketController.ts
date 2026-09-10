@@ -190,8 +190,10 @@ export class TicketController {
    * @param res - Express response returning HTTP 201 with created response
    */
   async createResponse(req: Request, res: Response): Promise<void> {
-    const data = req.body as CreateTicketResponseInput;
+    const data = req.body as CreateTicketResponseInput & { isInternal?: boolean | string };
     const files = (req.files as Express.Multer.File[]) || [];
+    const isInternal = data.isInternal === true || data.isInternal === 'true';
+
     const response = await ticketResponseService.addTicketResponse(
       req.params.id as string,
       data.message,
@@ -202,6 +204,7 @@ export class TicketController {
         mimetype: f.mimetype,
         size: f.size,
       })),
+      isInternal,
     );
     res.status(201).json({ success: true, data: response });
   }

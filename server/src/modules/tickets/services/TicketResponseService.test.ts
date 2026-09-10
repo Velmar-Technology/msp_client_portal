@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => {
     userFindById: vi.fn(),
     onTicketResponseCreated: vi.fn(),
     agentGatewayPushTicketChatMessage: vi.fn(),
+    streamGwBroadcastToTicket: vi.fn(),
   };
 });
 
@@ -58,6 +59,14 @@ vi.mock('@modules/rmm', () => {
   };
 });
 
+vi.mock('./TicketStreamGateway', () => {
+  return {
+    ticketStreamGateway: {
+      broadcastToTicket: mocks.streamGwBroadcastToTicket,
+    },
+  };
+});
+
 import { ticketResponseService, TicketResponseService } from './TicketResponseService';
 import { Ticket, TicketCategory, TicketPriority, TicketStatus, UserContext, UserRole, AgentPayload } from '@shared/types';
 
@@ -98,10 +107,21 @@ describe('TicketResponseService', () => {
 
       const responses = await ticketResponseService.getTicketResponses('ticket-1', clientCtx);
 
+      expect(mocks.responseFindByTicket).toHaveBeenCalledWith('ticket-1', false);
       expect(responses[0].attachments).toEqual([
         { id: 'att-1', ticket_id: 'ticket-1', response_id: 'resp-1', filename: 'a.png' },
       ]);
       expect(responses[1].attachments).toEqual([]);
+    });
+
+    it('passes includeInternal=true when called by TECHNICIAN', async () => {
+      mocks.ticketFindById.mockResolvedValue(buildTicket());
+      mocks.responseFindByTicket.mockResolvedValue([]);
+      mocks.ticketGetAttachmentsByResponses.mockResolvedValue([]);
+
+      await ticketResponseService.getTicketResponses('ticket-1', technicianCtx);
+
+      expect(mocks.responseFindByTicket).toHaveBeenCalledWith('ticket-1', true);
     });
 
     it('rejects a client accessing a ticket from another tenant', async () => {
@@ -136,6 +156,7 @@ describe('TicketResponseService', () => {
         user_id: 'client-123',
         message: 'Please fix',
         tenant_id: 'tenant-456',
+        is_internal: false,
       });
       expect(mocks.ticketAddAttachment).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -185,6 +206,60 @@ describe('TicketResponseService', () => {
         authorRole: UserRole.TECHNICIAN,
         message: 'We are looking into this',
       }));
+    });
+
+    it('creates an internal note for technicians that suppresses client email and agent tray push', async () => {
+      mocks.ticketFindById.mockResolvedValue(buildTicket({ equipment_id: 'eq-slot-42' }));
+      mocks.responseCreate.mockResolvedValue({ id: 'resp-int-1', ticket_id: 'ticket-1', user_id: 'tech-1' });
+      mocks.userFindById.mockResolvedValue({ id: 'tech-1', name: 'Alice Tech', role: UserRole.TECHNICIAN });
+
+      const res = await ticketResponseService.addTicketResponse(
+        'ticket-1',
+        'Staff only observation',
+        technicianCtx,
+        [],
+        true // isInternal = true
+      );
+
+      expect(mocks.responseCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ticket_id: 'ticket-1',
+          user_id: 'tech-1',
+          message: 'Staff only observation',
+          is_internal: true,
+        })
+      );
+      expect(mocks.onTicketResponseCreated).not.toHaveBeenCalled();
+      expect(mocks.agentGatewayPushTicketChatMessage).not.toHaveBeenCalled();
+      expect(mocks.streamGwBroadcastToTicket).toHaveBeenCalledWith(
+        'ticket-1',
+        expect.objectContaining({
+          isInternal: true,
+          message: 'Staff only observation',
+        })
+      );
+      expect(res.is_internal).toBe(true);
+    });
+
+    it('forces is_internal to false if a client user tries to post an internal note', async () => {
+      mocks.ticketFindById.mockResolvedValue(buildTicket());
+      mocks.responseCreate.mockResolvedValue({ id: 'resp-cl-1', ticket_id: 'ticket-1', user_id: 'client-123' });
+      mocks.userFindById.mockResolvedValue({ id: 'client-123', name: 'Client User' });
+
+      await ticketResponseService.addTicketResponse(
+        'ticket-1',
+        'Attempted secret note',
+        clientCtx,
+        [],
+        true // client tries to set isInternal
+      );
+
+      expect(mocks.responseCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ticket_id: 'ticket-1',
+          is_internal: false,
+        })
+      );
     });
   });
 
