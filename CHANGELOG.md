@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.11.6](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.5...v1.11.6) (2026-09-10)
+
+
+### Features
+
+* **tickets:** add named pipe IPC bridge linking msp-tray to msp-agent ([ba47aa0](https://github.com/Velmar-Technology/msp_client_portal/commit/ba47aa0067a1e990404d5018e9320e321ac0cfa4))
+* **tickets:** add workstation ticket list and thread navigation to msp-tray ([97577a8](https://github.com/Velmar-Technology/msp_client_portal/commit/97577a8c2350bad739b66d95882ae2111cfc121c))
+
+
+### Bug Fixes
+
+* **tray:** automatically show drawer window on manual launch ([c696f45](https://github.com/Velmar-Technology/msp_client_portal/commit/c696f453d6abcb6ef4d92fb97cbe6c90a55a66b7))
+* **tray:** use tauri async runtime for background named pipe task ([00f0d2e](https://github.com/Velmar-Technology/msp_client_portal/commit/00f0d2e72d350e51793675570cb59839740dc681))
+
 ## [1.11.5](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.4...v1.11.5) (2026-09-10)
 
 
