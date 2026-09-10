@@ -235,3 +235,44 @@ export const TicketListResponseSchema = z.object({
 
 export type TicketListResponseContract = z.infer<typeof TicketListResponseSchema>;
 
+// ============================================
+// Agent Workstation Contracts
+// ============================================
+
+export const AgentActiveTicketResponseSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string(),
+  description: z.string().optional(),
+  status: TicketStatusSchema,
+  priority: TicketPrioritySchema,
+  category: TicketCategorySchema,
+  assignedTechId: z.string().uuid().nullable().optional(),
+  assignedTechName: z.string().nullable().optional(),
+  equipmentId: z.string().uuid().nullable().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export type AgentActiveTicketResponse = z.infer<typeof AgentActiveTicketResponseSchema>;
+
+export const AgentTicketMessageSchema = z.object({
+  id: z.string().uuid(),
+  authorName: z.string(),
+  authorRole: z.string(),
+  message: z.string(),
+  isInternal: z.boolean().optional(),
+  attachments: z.array(z.string()).optional(),
+  createdAt: z.string(),
+});
+
+export type AgentTicketMessage = z.infer<typeof AgentTicketMessageSchema>;
+
+export const AgentTicketMessagesResponseSchema = z.array(AgentTicketMessageSchema);
+export type AgentTicketMessagesResponse = z.infer<typeof AgentTicketMessagesResponseSchema>;
+
+export const AgentUpdateTicketStatusInputSchema = z.object({
+  status: z.enum(['RESOLVED', 'CLOSED']).default('RESOLVED'),
+});
+
+export type AgentUpdateTicketStatusInput = z.infer<typeof AgentUpdateTicketStatusInputSchema>;
+

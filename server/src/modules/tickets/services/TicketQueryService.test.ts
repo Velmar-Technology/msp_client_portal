@@ -5,8 +5,22 @@ const mocks = vi.hoisted(() => {
     ticketFindById: vi.fn(),
     findWithFilters: vi.fn(),
     countByStatus: vi.fn(),
+    dbSelect: vi.fn(),
   };
 });
+
+vi.mock('@shared/db', () => ({
+  db: {
+    select: mocks.dbSelect,
+  },
+  tickets: {
+    id: 'id',
+    equipment_id: 'equipment_id',
+    tenant_id: 'tenant_id',
+    status: 'status',
+    created_at: 'created_at',
+  },
+}));
 
 vi.mock('@modules/tickets/repositories/TicketRepository', () => {
   return {
@@ -133,6 +147,44 @@ describe('TicketQueryService', () => {
       await ticketQueryService.getStatusSummary(adminCtx);
 
       expect(mocks.countByStatus).toHaveBeenCalledWith(undefined, undefined, undefined);
+    });
+  });
+
+  describe('getActiveTicketForAgent', () => {
+    const agentCtx = {
+      equipmentId: 'eq-agent-1',
+      tenantId: 'tenant-456',
+      clientId: 'client-123',
+      hostname: 'WORKSTATION-01',
+    };
+
+    it('returns active ticket when one is open for this equipment', async () => {
+      const mockLimit = vi.fn().mockResolvedValue([{ id: 'ticket-active-1' }]);
+      const mockOrderBy = vi.fn().mockReturnValue({ limit: mockLimit });
+      const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
+      const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+      mocks.dbSelect.mockReturnValue({ from: mockFrom });
+
+      mocks.ticketFindById.mockResolvedValue(buildTicket({ id: 'ticket-active-1', status: TicketStatus.OPEN }));
+
+      const result = await ticketQueryService.getActiveTicketForAgent(agentCtx);
+
+      expect(result).not.toBeNull();
+      expect(result?.id).toBe('ticket-active-1');
+      expect(mocks.ticketFindById).toHaveBeenCalledWith('ticket-active-1');
+    });
+
+    it('returns null when no active ticket exists for this equipment', async () => {
+      const mockLimit = vi.fn().mockResolvedValue([]);
+      const mockOrderBy = vi.fn().mockReturnValue({ limit: mockLimit });
+      const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
+      const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+      mocks.dbSelect.mockReturnValue({ from: mockFrom });
+
+      const result = await ticketQueryService.getActiveTicketForAgent(agentCtx);
+
+      expect(result).toBeNull();
+      expect(mocks.ticketFindById).not.toHaveBeenCalled();
     });
   });
 

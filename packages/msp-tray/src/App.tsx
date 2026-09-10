@@ -64,6 +64,7 @@ export const App: React.FC = () => {
 
     const timer = setInterval(() => {
       loadVitals();
+      loadStatus();
     }, 5000);
 
     return () => clearInterval(timer);

@@ -49,6 +49,15 @@ export interface CreateTicketResult {
   createdAt: string;
 }
 
+export interface TicketMessage {
+  id: string;
+  authorName: string;
+  authorRole: string;
+  message: string;
+  attachments?: string[];
+  createdAt: string;
+}
+
 /**
  * Fetches real-time workstation hardware vitals (CPU%, RAM%, Disk%, Uptime).
  * @returns {Promise<SystemVitals>} Live system hardware vitals
@@ -101,6 +110,19 @@ export async function fetchActiveTicket(): Promise<ActiveTicket | null> {
     return await invoke<ActiveTicket | null>('get_active_ticket');
   } catch {
     return null;
+  }
+}
+
+/**
+ * Retrieves the full message thread history for a ticket.
+ * @param {string} ticketId - ID of the ticket
+ * @returns {Promise<TicketMessage[]>} Array of messages
+ */
+export async function fetchTicketMessages(ticketId: string): Promise<TicketMessage[]> {
+  try {
+    return await invoke<TicketMessage[]>('get_ticket_responses', { ticketId });
+  } catch {
+    return [];
   }
 }
 

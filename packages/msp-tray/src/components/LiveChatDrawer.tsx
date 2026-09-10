@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, CheckCircle, Headphones, UserCheck } from 'lucide-react';
-import { ActiveTicket, sendChatMessage, resolveTicket } from '../services/tauri';
+import { ActiveTicket, sendChatMessage, resolveTicket, fetchTicketMessages } from '../services/tauri';
 import { ShiftWorkerAttribution } from '../services/attribution';
 import { playNotificationChime } from '../services/sound';
 
@@ -38,20 +38,45 @@ export const LiveChatDrawer: React.FC<LiveChatDrawerProps> = ({
   const [isResolving, setIsResolving] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Initial welcome/technician acknowledgment
+  // Hydrate message history or initial technician acknowledgment on mount / ticket switch
   useEffect(() => {
-    const initial: ChatMessage[] = [
-      {
-        id: 'msg-init-1',
-        authorName: 'MSP Dispatcher',
-        authorRole: 'TECHNICIAN',
-        message: `Ticket #${activeTicket.id.slice(0, 8)} opened. Assigned to ${
-          activeTicket.assignedTechName || 'On-Duty Support Engineer'
-        }. Hardware telemetry attached.`,
-        createdAt: activeTicket.createdAt || new Date().toISOString(),
-      },
-    ];
-    setMessages(initial);
+    let isCurrent = true;
+
+    const loadHistory = async () => {
+      const history = await fetchTicketMessages(activeTicket.id);
+      if (!isCurrent) return;
+
+      if (history.length > 0) {
+        setMessages(
+          history.map((m) => ({
+            id: m.id,
+            authorName: m.authorName,
+            authorRole: (m.authorRole === 'TECHNICIAN' || m.authorRole === 'ADMIN') ? 'TECHNICIAN' : 'CLIENT',
+            message: m.message,
+            createdAt: m.createdAt,
+          }))
+        );
+      } else {
+        const initial: ChatMessage[] = [
+          {
+            id: 'msg-init-1',
+            authorName: 'MSP Dispatcher',
+            authorRole: 'TECHNICIAN',
+            message: `Ticket #${activeTicket.id.slice(0, 8)} opened. Assigned to ${
+              activeTicket.assignedTechName || 'On-Duty Support Engineer'
+            }. Hardware telemetry attached.`,
+            createdAt: activeTicket.createdAt || new Date().toISOString(),
+          },
+        ];
+        setMessages(initial);
+      }
+    };
+
+    loadHistory();
+
+    return () => {
+      isCurrent = false;
+    };
   }, [activeTicket.id, activeTicket.assignedTechName, activeTicket.createdAt]);
 
   // Listen for real-time WebSocket push frames forwarded from Tauri
@@ -62,16 +87,20 @@ export const LiveChatDrawer: React.FC<LiveChatDrawerProps> = ({
         const { listen } = await import('@tauri-apps/api/event');
         unlisten = await listen<TicketChatPushPayload>('ticket_chat_push', (event) => {
           if (event.payload.ticketId === activeTicket.id) {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: event.payload.responseId || `resp-${Date.now()}`,
-                authorName: event.payload.authorName || 'Technician',
-                authorRole: 'TECHNICIAN',
-                message: event.payload.message,
-                createdAt: event.payload.createdAt || new Date().toISOString(),
-              },
-            ]);
+            const respId = event.payload.responseId || `resp-${Date.now()}`;
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === respId)) return prev;
+              return [
+                ...prev,
+                {
+                  id: respId,
+                  authorName: event.payload.authorName || 'Technician',
+                  authorRole: (event.payload.authorRole === 'TECHNICIAN' || event.payload.authorRole === 'ADMIN') ? 'TECHNICIAN' : 'CLIENT',
+                  message: event.payload.message,
+                  createdAt: event.payload.createdAt || new Date().toISOString(),
+                },
+              ];
+            });
             playNotificationChime();
           }
         });

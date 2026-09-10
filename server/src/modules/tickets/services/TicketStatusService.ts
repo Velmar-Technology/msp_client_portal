@@ -4,9 +4,9 @@ import { userRepository, UserRepository } from '@modules/auth';
 import { notificationService, NotificationService } from '@modules/notifications';
 import { technicianEarningsService, TechnicianEarningsService } from '@modules/system';
 import { ticketAccessPolicy, TicketAccessPolicy } from '@shared/policies/TicketAccessPolicy';
-import { NotFoundError, InternalServerError } from '@shared/errors';
+import { NotFoundError, InternalServerError, ForbiddenError, ValidationError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
-import { Ticket, TicketCategory, TicketEvent, TicketStatus, UserContext } from '@shared/types';
+import { Ticket, TicketCategory, TicketEvent, TicketStatus, UserContext, AgentPayload } from '@shared/types';
 import { UpdateTicketStatusInput } from '@shared/dtos/ticket.dto';
 
 /**
@@ -101,6 +101,69 @@ export class TicketStatusService {
     }
 
     logger.info('Ticket status updated', { ticketId, from: ticket.status, to: data.status, updatedBy: ctx.userId });
+    return updated;
+  }
+
+  /**
+   * Resolves or closes a ticket directly from the machine-authenticated endpoint workstation agent.
+   *
+   * @param ticketId - Target ticket UUID
+   * @param targetStatus - Status to transition to (RESOLVED or CLOSED)
+   * @param agent - Machine authentication context
+   * @returns Updated Ticket entity
+   * @throws {NotFoundError} When ticket not found
+   * @throws {ForbiddenError} When ticket does not belong to endpoint
+   * @throws {ValidationError} When ticket is already closed or cancelled
+   * @throws {InternalServerError} When database update fails
+   */
+  async updateStatusFromAgent(
+    ticketId: string,
+    targetStatus: TicketStatus.RESOLVED | TicketStatus.CLOSED,
+    agent: AgentPayload
+  ): Promise<Ticket> {
+    const ticket = await this.ticketRepo.findById(ticketId);
+    if (!ticket) {
+      throw new NotFoundError('Ticket not found');
+    }
+
+    if (ticket.equipment_id !== agent.equipmentId || ticket.tenant_id !== agent.tenantId) {
+      throw new ForbiddenError('Endpoint is not authorized to update status for this ticket');
+    }
+
+    if (ticket.status === TicketStatus.CLOSED || ticket.status === TicketStatus.CANCELLED) {
+      throw new ValidationError(`Cannot transition a ${ticket.status.toLowerCase()} ticket`);
+    }
+
+    const updated = await this.ticketRepo.updateStatus(ticketId, targetStatus);
+    if (!updated) {
+      throw new InternalServerError('Failed to update ticket status');
+    }
+
+    await this.eventRepo.create({
+      ticket_id: ticketId,
+      old_status: ticket.status,
+      new_status: targetStatus,
+      changed_by: agent.clientId,
+      notes: `Resolved from desktop workstation (${agent.hostname || agent.equipmentId})`,
+      tenant_id: ticket.tenant_id,
+    });
+
+    await this.notifyClientOfStatusChange(ticketId, updated, 'Resolved by workstation desk user');
+
+    // Trigger technician closure earnings if applicable
+    if (updated.assigned_tech_id) {
+      this.earningsSvc.calculateAndRecordEarnings(updated, updated.assigned_tech_id, ticket.tenant_id).catch((err) => {
+        logger.error('Failed to calculate technician earnings for agent ticket closure', { error: err, ticketId });
+      });
+    }
+
+    logger.info('Ticket status updated from agent', {
+      ticketId,
+      from: ticket.status,
+      to: targetStatus,
+      equipmentId: agent.equipmentId,
+    });
+
     return updated;
   }
 

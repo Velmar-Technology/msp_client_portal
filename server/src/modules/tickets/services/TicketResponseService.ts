@@ -205,6 +205,37 @@ export class TicketResponseService {
   }
 
   /**
+   * Retrieves all conversational responses for a ticket on behalf of a machine-authenticated endpoint agent.
+   *
+   * @param ticketId - Target ticket UUID
+   * @param agent - Machine authentication context
+   * @returns Array of TicketResponse entities enriched with attachments
+   * @throws {NotFoundError} When ticket is not found
+   * @throws {ForbiddenError} When ticket does not belong to the calling endpoint
+   */
+  async getTicketResponsesForAgent(ticketId: string, agent: AgentPayload): Promise<TicketResponse[]> {
+    const ticket = await this.ticketRepo.findById(ticketId);
+    if (!ticket) {
+      throw new NotFoundError('Ticket not found');
+    }
+
+    if (ticket.equipment_id !== agent.equipmentId || ticket.tenant_id !== agent.tenantId) {
+      throw new ForbiddenError('Endpoint is not authorized to access responses for this ticket');
+    }
+
+    const responses = await this.responseRepo.findByTicket(ticketId);
+    const attachments = await this.ticketRepo.getAttachmentsByResponses(ticketId);
+    const attachmentsByResponse = this.groupAttachmentsByResponse(attachments);
+
+    return responses
+      .filter((resp) => !resp.is_internal)
+      .map((resp) => ({
+        ...resp,
+        attachments: attachmentsByResponse.get(resp.id) || [],
+      }));
+  }
+
+  /**
    * Validates ticket existence and read access.
    *
    * @param ticketId - Target ticket UUID

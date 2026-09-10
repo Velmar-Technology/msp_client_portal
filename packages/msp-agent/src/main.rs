@@ -1,4 +1,5 @@
 mod diagnostics;
+mod ipc_server;
 mod pairing;
 mod service;
 mod upgrade;
@@ -294,6 +295,14 @@ async fn run_session(config: &AgentConfig) -> Result<SessionOutcome, Box<dyn std
                             continue;
                         }
 
+                        // ── TICKET_CHAT_PUSH: server forwards real-time reply down to workstation ──
+                        if envelope.command == "TICKET_CHAT_PUSH" {
+                            if let Some(ref payload) = envelope.payload {
+                                ipc_server::broadcast_push_event("TICKET_CHAT_PUSH", payload);
+                            }
+                            continue;
+                        }
+
                         // Execute diagnostic command (blocking work on a spawn_blocking thread)
                         let cmd = envelope.command.clone();
                         let payload = envelope.payload.clone();
@@ -583,6 +592,9 @@ pub async fn run_agent_loop(config: AgentConfig) {
         env!("CARGO_PKG_VERSION"),
         state.instance_id
     );
+
+    // Start local named pipe IPC server for desktop tray companion
+    ipc_server::start_ipc_server(config.clone());
 
     loop {
         let mut relinked = false;

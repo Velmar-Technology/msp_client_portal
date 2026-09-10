@@ -209,6 +209,75 @@ describe('TicketStatusService', () => {
     });
   });
 
+  describe('updateStatusFromAgent', () => {
+    const agentCtx = {
+      equipmentId: 'eq-agent-1',
+      tenantId: 'tenant-456',
+      clientId: 'client-123',
+      hostname: 'WORKSTATION-01',
+    };
+
+    it('resolves ticket directly from agent and creates audit event', async () => {
+      mocks.ticketFindById.mockResolvedValue(buildTicket({
+        equipment_id: 'eq-agent-1',
+        tenant_id: 'tenant-456',
+        status: TicketStatus.IN_PROGRESS,
+      }));
+      mocks.ticketUpdateStatus.mockResolvedValue(buildTicket({
+        equipment_id: 'eq-agent-1',
+        tenant_id: 'tenant-456',
+        status: TicketStatus.RESOLVED,
+      }));
+
+      const result = await ticketStatusService.updateStatusFromAgent(
+        'ticket-1',
+        TicketStatus.RESOLVED,
+        agentCtx
+      );
+
+      expect(result.status).toBe(TicketStatus.RESOLVED);
+      expect(mocks.ticketUpdateStatus).toHaveBeenCalledWith('ticket-1', TicketStatus.RESOLVED);
+      expect(mocks.eventCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ticket_id: 'ticket-1',
+          new_status: TicketStatus.RESOLVED,
+          changed_by: 'client-123',
+        })
+      );
+    });
+
+    it('throws 404 when ticket does not exist', async () => {
+      mocks.ticketFindById.mockResolvedValue(null);
+
+      await expect(
+        ticketStatusService.updateStatusFromAgent('missing-ticket', TicketStatus.RESOLVED, agentCtx)
+      ).rejects.toMatchObject({ statusCode: 404 });
+    });
+
+    it('throws 403 when ticket belongs to another equipment slot', async () => {
+      mocks.ticketFindById.mockResolvedValue(buildTicket({
+        equipment_id: 'other-equipment',
+        tenant_id: 'tenant-456',
+      }));
+
+      await expect(
+        ticketStatusService.updateStatusFromAgent('ticket-1', TicketStatus.RESOLVED, agentCtx)
+      ).rejects.toMatchObject({ statusCode: 403 });
+    });
+
+    it('throws ValidationError when ticket is already CLOSED', async () => {
+      mocks.ticketFindById.mockResolvedValue(buildTicket({
+        equipment_id: 'eq-agent-1',
+        tenant_id: 'tenant-456',
+        status: TicketStatus.CLOSED,
+      }));
+
+      await expect(
+        ticketStatusService.updateStatusFromAgent('ticket-1', TicketStatus.RESOLVED, agentCtx)
+      ).rejects.toMatchObject({ statusCode: 400 });
+    });
+  });
+
   it('exposes a singleton instance', () => {
     expect(ticketStatusService).toBeInstanceOf(TicketStatusService);
   });

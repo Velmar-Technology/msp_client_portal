@@ -300,6 +300,52 @@ describe('TicketResponseService', () => {
     });
   });
 
+  describe('getTicketResponsesForAgent', () => {
+    const agentCtx = {
+      equipmentId: 'eq-agent-1',
+      tenantId: 'tenant-456',
+      clientId: 'client-123',
+      hostname: 'WORKSTATION-01',
+    };
+
+    it('returns filtered non-internal responses for authorized agent', async () => {
+      mocks.ticketFindById.mockResolvedValue(buildTicket({
+        equipment_id: 'eq-agent-1',
+        tenant_id: 'tenant-456',
+      }));
+      mocks.responseFindByTicket.mockResolvedValue([
+        { id: 'resp-1', message: 'Client public message', is_internal: false },
+        { id: 'resp-2', message: 'Internal tech note', is_internal: true },
+        { id: 'resp-3', message: 'Technician public update', is_internal: false },
+      ]);
+      mocks.ticketGetAttachmentsByResponses.mockResolvedValue([]);
+
+      const result = await ticketResponseService.getTicketResponsesForAgent('ticket-1', agentCtx);
+
+      expect(result).toHaveLength(2);
+      expect(result.map((r) => r.id)).toEqual(['resp-1', 'resp-3']);
+    });
+
+    it('throws 404 when ticket does not exist', async () => {
+      mocks.ticketFindById.mockResolvedValue(null);
+
+      await expect(
+        ticketResponseService.getTicketResponsesForAgent('missing-ticket', agentCtx)
+      ).rejects.toMatchObject({ statusCode: 404 });
+    });
+
+    it('throws 403 when ticket belongs to another equipment slot', async () => {
+      mocks.ticketFindById.mockResolvedValue(buildTicket({
+        equipment_id: 'other-equipment',
+        tenant_id: 'tenant-456',
+      }));
+
+      await expect(
+        ticketResponseService.getTicketResponsesForAgent('ticket-1', agentCtx)
+      ).rejects.toMatchObject({ statusCode: 403 });
+    });
+  });
+
   it('exposes a singleton instance', () => {
     expect(ticketResponseService).toBeInstanceOf(TicketResponseService);
   });
