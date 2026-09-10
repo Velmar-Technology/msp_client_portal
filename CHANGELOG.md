@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.11.7](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.6...v1.11.7) (2026-09-10)
+
+
+### Features
+
+* **tickets:** align categories with backend and optimize tray UX ([e245a4c](https://github.com/Velmar-Technology/msp_client_portal/commit/e245a4c673bee0cb3f89af6a523e0e7e69e5575d))
+* **tickets:** implement realtime bidirectional chat streaming and identity sync ([39b287c](https://github.com/Velmar-Technology/msp_client_portal/commit/39b287c036e1300e3b45ece3bcdebbd5212782e9))
+* **tray:** centralize hide-window IPC and add dev mock data ([aad66c0](https://github.com/Velmar-Technology/msp_client_portal/commit/aad66c07bcdff7d8efebd4f7ffa8331c859567c2))
+
 ## [1.11.6](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.5...v1.11.6) (2026-09-10)
 
 
