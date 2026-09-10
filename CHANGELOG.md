@@ -2,22 +2,59 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
-## [1.10.3] (2026-09-10)
+## [1.11.5](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.4...v1.11.5) (2026-09-10)
 
 
 ### Features
 
-* **health:** implement BL-601 composite client health scoring service and GET /system/health/:tenantId endpoint ([75bb1db](https://github.com/Velmar-Technology/msp_client_portal/commit/75bb1dba0ea069b6e3175feb5a8200baeb8f4b48))
-* **authz:** mount Zero Standing Privileges (ZSP) JIT ephemeral elevation and PDP routes under /api/v1/authz ([75bb1db](https://github.com/Velmar-Technology/msp_client_portal/commit/75bb1dba0ea069b6e3175feb5a8200baeb8f4b48))
-* **docs:** add ADR-007 documenting BL-601 health scoring, live telemetry verification, and slot invariants
+* **tray:** default to production helpdesk domain and auto-discover agent identity ([7177cc6](https://github.com/Velmar-Technology/msp_client_portal/commit/7177cc63045fc730149fdec33a2d8023ebd54ef3))
 
 
 ### Bug Fixes
 
-* **rmm:** resolve ghost online device telemetry via live WebSocket connection verification and 15m recency window ([75bb1db](https://github.com/Velmar-Technology/msp_client_portal/commit/75bb1dba0ea069b6e3175feb5a8200baeb8f4b48))
-* **equipment:** auto-reconcile and wipe duplicate serial allocations in PENDING_ACTIVATION slots ([75bb1db](https://github.com/Velmar-Technology/msp_client_portal/commit/75bb1dba0ea069b6e3175feb5a8200baeb8f4b48))
-* **mcp-server:** filter online device count by recency and incorporate registered clients ([75bb1db](https://github.com/Velmar-Technology/msp_client_portal/commit/75bb1dba0ea069b6e3175feb5a8200baeb8f4b48))
-* **client:** resolve font variable peer dependency for production bundling
+* **core:** reconcile telemetry online status and BL-601 health API ([75bb1db](https://github.com/Velmar-Technology/msp_client_portal/commit/75bb1dba0ea069b6e3175feb5a8200baeb8f4b48))
+* **server:** prevent fallback dummy telemetry in prod ([9196689](https://github.com/Velmar-Technology/msp_client_portal/commit/91966899127575a3a960ebb4d8f096c95268d634))
+* **tray:** enable custom-protocol and relative base for production builds ([68b2d74](https://github.com/Velmar-Technology/msp_client_portal/commit/68b2d74269d541243f87679477a795a670fef83a))
+
+## [1.11.4](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.3...v1.11.4) (2026-09-09)
+
+## [1.11.3](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.2...v1.11.3) (2026-09-09)
+
+
+### Features
+
+* **ci:** automate mcp-server build, security scan, and deploy in deploy.yml ([ee69641](https://github.com/Velmar-Technology/msp_client_portal/commit/ee696414bd844c79e0422e925c5110c771161ae0))
+* **mcp-server:** add msp_list_plans tool to export subscription pricing catalog ([2cd7c74](https://github.com/Velmar-Technology/msp_client_portal/commit/2cd7c74990cc83b33dc9b71e1cec71ce190b5785))
+* **mcp-server:** add network audit, storage analysis, and enhanced security tools ([c07a61f](https://github.com/Velmar-Technology/msp_client_portal/commit/c07a61f4f9b20919677290af1b854052ebd226d3))
+* **mcp-server:** enforce MSP_API_URL and MSP_API_KEY as mandatory configuration parameters ([57ffe6a](https://github.com/Velmar-Technology/msp_client_portal/commit/57ffe6accc608d254016944c022f022ff75d060c))
+* **mcp:** add domain diagnostics, system api status, and email inspection tools ([dfc17c4](https://github.com/Velmar-Technology/msp_client_portal/commit/dfc17c4386ffc097211a22e94e69776359f33e6d))
+* **rmm:** add autonomous self-upgrade mechanism for msp-agent ([b3d9be6](https://github.com/Velmar-Technology/msp_client_portal/commit/b3d9be608da04d6b656d381588ab665af02db5c3))
+
+
+### Bug Fixes
+
+* **mcp-server:** ensure resolveApiUrl appends api/v1 prefix to MSP_API_URL ([e52fc7c](https://github.com/Velmar-Technology/msp_client_portal/commit/e52fc7ce45c9279d3ae38af24f2229b35752280e))
+
+## [1.11.2](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.1...v1.11.2) (2026-09-08)
+
+
+### Bug Fixes
+
+* **system:** isolate vault reset rate limiter key and prefix ([46e9a20](https://github.com/Velmar-Technology/msp_client_portal/commit/46e9a2039c2e0a0b8a330e73a9ddd24297421abe))
+
+## [1.11.1](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.0...v1.11.1) (2026-09-08)
+
+
+### Bug Fixes
+
+* **server:** prevent premature db pool closure and unmask startup errors ([44ad732](https://github.com/Velmar-Technology/msp_client_portal/commit/44ad73236242845a23193d32d21d91dc163a6ac8))
+
+## [1.11.0](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.10.2...v1.11.0) (2026-09-08)
+
+
+### Bug Fixes
+
+* **deps:** deduplicate tsx and sync lockfile to resolve ci etxtbsy ([e0d01f6](https://github.com/Velmar-Technology/msp_client_portal/commit/e0d01f696a358ac585b66d3e33062b3319ad034d))
 
 ## [1.10.2](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.10.1...v1.10.2) (2026-09-08)
 
