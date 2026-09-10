@@ -273,6 +273,9 @@ pub fn run() {
                 })
                 .build(app)?;
 
+            // Automatically open drawer window on initial launch
+            toggle_main_window(app.handle());
+
             Ok(())
         })
         .run(tauri::generate_context!())
