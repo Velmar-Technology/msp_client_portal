@@ -449,39 +449,21 @@ jobs:
           SRC_BIN="packages/msp-agent/target/${TARGET}/release/${BINARY_NAME}"
 
           if [ "${PLATFORM}" = "windows-x64" ]; then
-            cp "${SRC_BIN}" "dist-bin/msp-agent-windows-x86_64.exe"
-            cp "${SRC_BIN}" "dist-bin/msp-agent-${VERSION}-x86_64.exe"
-            sha256sum "dist-bin/msp-agent-windows-x86_64.exe" | awk '{print $1}' > "dist-bin/msp-agent-windows-x86_64.exe.sig"
-            sha256sum "dist-bin/msp-agent-${VERSION}-x86_64.exe" | awk '{print $1}' > "dist-bin/msp-agent-${VERSION}-x86_64.exe.sig"
+            cp "${SRC_BIN}" "dist-bin/msp-agent-${VERSION}-windows-x86_64.exe"
           elif [ "${PLATFORM}" = "windows-x86" ]; then
-            cp "${SRC_BIN}" "dist-bin/msp-agent-windows-i686.exe"
-            cp "${SRC_BIN}" "dist-bin/msp-agent-${VERSION}-i686.exe"
-            sha256sum "dist-bin/msp-agent-windows-i686.exe" | awk '{print $1}' > "dist-bin/msp-agent-windows-i686.exe.sig"
-            sha256sum "dist-bin/msp-agent-${VERSION}-i686.exe" | awk '{print $1}' > "dist-bin/msp-agent-${VERSION}-i686.exe.sig"
+            cp "${SRC_BIN}" "dist-bin/msp-agent-${VERSION}-windows-i686.exe"
           elif [ "${PLATFORM}" = "macos-aarch64" ]; then
-            ARCH_TAG="aarch64"
-            cp "${SRC_BIN}" "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}"
-            chmod +x "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}"
-            shasum -a 256 "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}" | awk '{print $1}' > "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}.sig"
-
-            DMG_DIR="dmg_staging_${ARCH_TAG}"
+            DMG_DIR="dmg_staging_aarch64"
             mkdir -p "${DMG_DIR}"
             cp "${SRC_BIN}" "${DMG_DIR}/msp-agent"
             chmod +x "${DMG_DIR}/msp-agent"
-            hdiutil create -volname "MSPEndpointAgent" -srcfolder "${DMG_DIR}" -ov -format UDZO "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}.dmg"
-            shasum -a 256 "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}.dmg" | awk '{print $1}' > "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}.dmg.sig"
+            hdiutil create -volname "MSPEndpointAgent" -srcfolder "${DMG_DIR}" -ov -format UDZO "dist-bin/msp-agent-${VERSION}-macos-aarch64.dmg"
           elif [ "${PLATFORM}" = "macos-x86_64" ]; then
-            ARCH_TAG="x64"
-            cp "${SRC_BIN}" "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}"
-            chmod +x "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}"
-            shasum -a 256 "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}" | awk '{print $1}' > "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}.sig"
-
-            DMG_DIR="dmg_staging_${ARCH_TAG}"
+            DMG_DIR="dmg_staging_x64"
             mkdir -p "${DMG_DIR}"
             cp "${SRC_BIN}" "${DMG_DIR}/msp-agent"
             chmod +x "${DMG_DIR}/msp-agent"
-            hdiutil create -volname "MSPEndpointAgent" -srcfolder "${DMG_DIR}" -ov -format UDZO "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}.dmg"
-            shasum -a 256 "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}.dmg" | awk '{print $1}' > "dist-bin/msp-agent_${VERSION}_${ARCH_TAG}.dmg.sig"
+            hdiutil create -volname "MSPEndpointAgent" -srcfolder "${DMG_DIR}" -ov -format UDZO "dist-bin/msp-agent-${VERSION}-macos-x64.dmg"
           fi
 
       - name: Upload Binary Artifact
@@ -553,17 +535,9 @@ jobs:
           SRC_BIN="packages/msp-tray/src-tauri/target/${TARGET}/release/${BINARY_NAME}"
 
           if [ "${PLATFORM}" = "windows-x64" ]; then
-            cp "${SRC_BIN}" "dist-bin/msp-tray-windows-x86_64.exe"
-            cp "${SRC_BIN}" "dist-bin/msp-tray-${VERSION}-x86_64.exe"
-            cp "${SRC_BIN}" "dist-bin/msp-tray.exe"
-            sha256sum "dist-bin/msp-tray-windows-x86_64.exe" | awk '{print $1}' > "dist-bin/msp-tray-windows-x86_64.exe.sig"
-            sha256sum "dist-bin/msp-tray-${VERSION}-x86_64.exe" | awk '{print $1}' > "dist-bin/msp-tray-${VERSION}-x86_64.exe.sig"
-            sha256sum "dist-bin/msp-tray.exe" | awk '{print $1}' > "dist-bin/msp-tray.exe.sig"
+            cp "${SRC_BIN}" "dist-bin/msp-tray-${VERSION}-windows-x86_64.exe"
           elif [ "${PLATFORM}" = "windows-x86" ]; then
-            cp "${SRC_BIN}" "dist-bin/msp-tray-windows-i686.exe"
-            cp "${SRC_BIN}" "dist-bin/msp-tray-${VERSION}-i686.exe"
-            sha256sum "dist-bin/msp-tray-windows-i686.exe" | awk '{print $1}' > "dist-bin/msp-tray-windows-i686.exe.sig"
-            sha256sum "dist-bin/msp-tray-${VERSION}-i686.exe" | awk '{print $1}' > "dist-bin/msp-tray-${VERSION}-i686.exe.sig"
+            cp "${SRC_BIN}" "dist-bin/msp-tray-${VERSION}-windows-i686.exe"
           fi
 
       - name: Upload Binary Artifact
