@@ -46,6 +46,13 @@ router.get(
   (req, res) => systemController.getApiStatus(req, res),
 );
 
+/** GET /api/v1/system/health/:tenantId — Get composite client health score (BL-601) */
+router.get(
+  '/health/:tenantId',
+  rbacMiddleware(UserRole.ADMIN, UserRole.TECHNICIAN, UserRole.CLIENT),
+  (req, res) => systemController.getClientHealth(req, res),
+);
+
 /** GET /api/v1/system/technicians/me/earnings — Get personal earnings and closed-ticket history (Technician & Admin) */
 router.get(
   '/technicians/me/earnings',

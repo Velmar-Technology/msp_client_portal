@@ -142,6 +142,29 @@ export class SystemService {
     return definitions.map((def) => {
       const rawValue = envMap[def.key];
       if (!rawValue || rawValue.trim() === '') {
+        const fallbackDefault: Record<string, string> = {
+          ADMIN_EMAIL: 'admin@msp-services.com',
+          ADMIN_PASSWORD: 'password123',
+          JWT_EXPIRES_IN: '24h',
+          JWT_REFRESH_EXPIRES_IN: '7d',
+          PAYPAL_API_URL: 'https://api-m.sandbox.paypal.com',
+          MAX_FILE_SIZE_MB: '10',
+          UPLOAD_DIR: '/app/server/uploads',
+        };
+
+        if (fallbackDefault[def.key]) {
+          const fallbackVal = fallbackDefault[def.key];
+          const isPlaceholder = def.key === 'ADMIN_PASSWORD' || def.key === 'ADMIN_EMAIL';
+          return {
+            key: def.key,
+            category: def.category,
+            status: isPlaceholder ? 'DEFAULT_PLACEHOLDER' : 'CONFIGURED',
+            isSecret: def.isSecret,
+            valueDisplay: def.isSecret ? '••••••••' : `${fallbackVal} (default)`,
+            description: def.description,
+          };
+        }
+
         return {
           key: def.key,
           category: def.category,

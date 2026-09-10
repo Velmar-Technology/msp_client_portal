@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { nextcloudService } from '@modules/system/services/NextcloudService';
 import { systemService as defaultSystemService, SystemService } from '@modules/system/services/SystemService';
 import { vaultwardenService as defaultVaultwardenService, VaultwardenService } from '@modules/system/services/VaultwardenService';
+import { clientHealthService, ClientHealthService } from '@modules/system/services/ClientHealthService';
 import { UnauthorizedError, ValidationError } from '@shared/errors';
 
 /**
@@ -14,10 +15,12 @@ export class SystemController {
    *
    * @param service - System domain service
    * @param vaultwardenSvc - Vaultwarden domain service
+   * @param healthSvc - Client health service
    */
   constructor(
     private service: SystemService = defaultSystemService,
-    private vaultwardenSvc: VaultwardenService = defaultVaultwardenService
+    private vaultwardenSvc: VaultwardenService = defaultVaultwardenService,
+    private healthSvc: ClientHealthService = clientHealthService
   ) {}
 
   /**
@@ -45,6 +48,24 @@ export class SystemController {
     res.json({
       success: true,
       data: status,
+    });
+  }
+
+  /**
+   * Handles querying composite client health scoring across tickets, hardware, and security (BL-601).
+   *
+   * @param req - Express request with tenantId in params
+   * @param res - Express response returning ClientHealthReport
+   */
+  async getClientHealth(req: Request, res: Response): Promise<void> {
+    const tenantId = req.params.tenantId as string;
+    if (!tenantId) {
+      throw new ValidationError('tenantId is required');
+    }
+    const report = await this.healthSvc.calculateScore(tenantId);
+    res.json({
+      success: true,
+      data: report,
     });
   }
 

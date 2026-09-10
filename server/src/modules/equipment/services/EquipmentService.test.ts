@@ -38,6 +38,8 @@ vi.mock('@modules/rmm/services/AgentGateway', () => {
       bindAgent: mocks.gatewayBindAgent,
       unbindAgent: mocks.gatewayUnbindAgent,
       setAgentSlotId: mocks.gatewaySetAgentSlotId,
+      isAgentConnected: vi.fn().mockReturnValue(false),
+      getAgentStatus: vi.fn().mockReturnValue({ online: false }),
     },
   };
 });
