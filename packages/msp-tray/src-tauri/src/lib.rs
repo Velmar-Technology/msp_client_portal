@@ -176,6 +176,17 @@ async fn resolve_ticket(
     Ok(true)
 }
 
+#[tauri::command]
+async fn hide_window(app: tauri::AppHandle) -> Result<(), String> {
+    let window = app
+        .get_webview_window("main")
+        .or_else(|| app.webview_windows().values().next().cloned());
+    if let Some(w) = window {
+        let _ = w.hide();
+    }
+    Ok(())
+}
+
 fn toggle_main_window(app: &tauri::AppHandle) {
     let window = app
         .get_webview_window("main")
@@ -237,7 +248,8 @@ pub fn run() {
             get_ticket_responses,
             create_ticket,
             send_chat_message,
-            resolve_ticket
+            resolve_ticket,
+            hide_window
         ])
         .setup(|app| {
             let ipc_client = IpcClient::new(app.handle().clone());
