@@ -255,7 +255,7 @@ impl IpcClient {
         let connected = Arc::new(AtomicBool::new(false));
         let connected_flag = connected.clone();
 
-        tokio::spawn(async move {
+        tauri::async_runtime::spawn(async move {
             loop {
                 log::info!("[MSP-TRAY IPC] Attempting connection to named pipe: {}", PIPE_NAME);
                 let pipe = match ClientOptions::new().open(PIPE_NAME) {
@@ -281,7 +281,7 @@ impl IpcClient {
                 let disconnect_tx_reader = disconnect_tx.clone();
 
                 // Reader loop task
-                let reader_task = tokio::spawn(async move {
+                let reader_task = tauri::async_runtime::spawn(async move {
                     loop {
                         let mut len_buf = [0u8; 4];
                         if reader.read_exact(&mut len_buf).await.is_err() {
