@@ -77,6 +77,7 @@ To eliminate cross-workspace rework and pass-through boilerplate, new implementa
 - **Colocated Feature Architecture:** Frontend domains are grouped in self-contained vertical feature modules (`client/src/features/<domain>/`) with colocated query hooks, UI blocks, and route pages ([ADR-002](docs/decisions/ADR-002-frontend-colocated-feature-architecture.md)).
 - **Server State Delegation:** Asynchronous server state and cache invalidation are handled by **TanStack Query** (`@tanstack/react-query`). Zustand is restricted strictly to client UI state.
 - **Vertical Slice Development:** Standardized in [`docs/architecture/feature-slice-recipe.md`](docs/architecture/feature-slice-recipe.md) (Contract → Express Route & Service → Query Hook → UI Component).
+- **Client Health Scoring & Hardware Telemetry:** Composite health evaluation (BL-601), live socket verification, and ZSP ephemeral access routes ([ADR-007](docs/decisions/ADR-007-client-health-composite-scoring-and-telemetry-reconciliation.md)).
 
 ---
 
@@ -163,14 +164,20 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
 - **BL-403: Manual Wire Transfer & Offline Payment Validation** (`InvoiceService.markAsPaid`)
   - Admins can mark bank/wire transfers as `PAID` without PayPal API dependencies, automatically reactivating expired subscriptions.
 
-### Module 5: Account Health & QBR Logic
+### Module 5: CRM Lead Pipeline & Onboarding
+ 
+- **BL-501: CRM Lead Pipeline Lifecycle** (`CrmService.advanceDealStage`)
+  - Deals progress through standardized stages: `NEW` $\rightarrow$ `QUALIFIED` $\rightarrow$ `PROPOSAL` $\rightarrow$ `NEGOTIATION` $\rightarrow$ `WON`/`LOST`.
+  - Closing as `WON` automatically provisions the client tenant and queues account onboarding.
 
-- **BL-501: Composite Client Health Scoring** (`ClientHealthService.calculateScore`)
+### Module 6: Account Health & QBR Logic
+ 
+- **BL-601: Composite Client Health Scoring** (`ClientHealthService.calculateScore`, `GET /api/v1/system/health/:tenantId`)
   - Health Formula:
     $$H = 0.40 \times S_{\text{ticket}} + 0.30 \times S_{\text{hardware}} + 0.30 \times S_{\text{security}}$$
   - Accounts scoring below $70\%$ flag the vCIO to schedule a Quarterly Business Review (QBR).
 
-### Module 6: Rates, Invoicing (NCF), Taxes (ITBIS) & Non-Payment System (Section 9)
+### Module 7: Rates, Invoicing (NCF), Taxes (ITBIS) & Non-Payment System (Section 9)
 
 - **BL-701: Dominican Tax Compliance & NCF Series B01** (`NcfService.assignNcfIfEligible`, `BillingPricingService.calculatePricing`)
   - Rates in USD or DOP apply eighteen percent (18%) ITBIS tax on invoice subtotal.
@@ -182,7 +189,7 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
   - **Day 30 Overdue:** Permanent technical purge and deletion of data from servers for storage liberation with zero liability to the company (`account_status = 'PURGED'`). Purges Nextcloud storage accounts and hardware bindings.
   - **Restoration:** Payment capture automatically restores tenant and all users to `ACTIVE`.
 
-### Module 7: Technician Commissions, Pre-Split OpEx & Profit Distribution
+### Module 8: Technician Commissions, Pre-Split OpEx & Profit Distribution
 
 - **BL-801: Closed-Ticket Commission & Holdback Subsystem** (`TechnicianEarningsService.calculateAndRecordEarnings`)
   - Closed tickets yield a per-ticket commission: Base rate ($8.00 USD) $\times$ priority multiplier (LOW: 1.0x, MEDIUM: 1.25x, HIGH: 1.75x, CRITICAL: 2.5x) $+$ SLA bonus ($4.00 USD if resolved within target business hours).

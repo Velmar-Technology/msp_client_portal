@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.10.3] (2026-09-10)
+
+
+### Features
+
+* **health:** implement BL-601 composite client health scoring service and GET /system/health/:tenantId endpoint ([75bb1db](https://github.com/Velmar-Technology/msp_client_portal/commit/75bb1dba0ea069b6e3175feb5a8200baeb8f4b48))
+* **authz:** mount Zero Standing Privileges (ZSP) JIT ephemeral elevation and PDP routes under /api/v1/authz ([75bb1db](https://github.com/Velmar-Technology/msp_client_portal/commit/75bb1dba0ea069b6e3175feb5a8200baeb8f4b48))
+* **docs:** add ADR-007 documenting BL-601 health scoring, live telemetry verification, and slot invariants
+
+
+### Bug Fixes
+
+* **rmm:** resolve ghost online device telemetry via live WebSocket connection verification and 15m recency window ([75bb1db](https://github.com/Velmar-Technology/msp_client_portal/commit/75bb1dba0ea069b6e3175feb5a8200baeb8f4b48))
+* **equipment:** auto-reconcile and wipe duplicate serial allocations in PENDING_ACTIVATION slots ([75bb1db](https://github.com/Velmar-Technology/msp_client_portal/commit/75bb1dba0ea069b6e3175feb5a8200baeb8f4b48))
+* **mcp-server:** filter online device count by recency and incorporate registered clients ([75bb1db](https://github.com/Velmar-Technology/msp_client_portal/commit/75bb1dba0ea069b6e3175feb5a8200baeb8f4b48))
+* **client:** resolve font variable peer dependency for production bundling
+
 ## [1.10.2](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.10.1...v1.10.2) (2026-09-08)
 
 
