@@ -58,25 +58,25 @@ pub struct ActiveTicketState {
     pub priority: Option<String>,
     #[serde(default)]
     pub category: Option<String>,
-    #[serde(rename = "assignedTechName", default)]
+    #[serde(rename = "assignedTechName", alias = "assigned_tech_name", default)]
     pub assigned_tech_name: Option<String>,
-    #[serde(rename = "createdAt")]
+    #[serde(rename = "createdAt", alias = "created_at", default)]
     pub created_at: String,
-    #[serde(rename = "updatedAt", default)]
+    #[serde(rename = "updatedAt", alias = "updated_at", default)]
     pub updated_at: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TicketMessageItem {
     pub id: String,
-    #[serde(rename = "authorName")]
+    #[serde(rename = "authorName", alias = "author_name", default)]
     pub author_name: String,
-    #[serde(rename = "authorRole")]
+    #[serde(rename = "authorRole", alias = "author_role", default)]
     pub author_role: String,
     pub message: String,
     #[serde(default)]
     pub attachments: Vec<String>,
-    #[serde(rename = "createdAt")]
+    #[serde(rename = "createdAt", alias = "created_at", default)]
     pub created_at: String,
 }
 

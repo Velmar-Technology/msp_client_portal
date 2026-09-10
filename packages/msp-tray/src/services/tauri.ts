@@ -112,7 +112,8 @@ export async function fetchAgentStatus(): Promise<AgentStatus> {
 export async function fetchActiveTicket(): Promise<ActiveTicket | null> {
   try {
     return await invoke<ActiveTicket | null>('get_active_ticket');
-  } catch {
+  } catch (err) {
+    console.error('[Tauri IPC] fetchActiveTicket error:', err);
     return null;
   }
 }
@@ -124,7 +125,8 @@ export async function fetchActiveTicket(): Promise<ActiveTicket | null> {
 export async function fetchTicketList(): Promise<ActiveTicket[]> {
   try {
     return await invoke<ActiveTicket[]>('get_ticket_list');
-  } catch {
+  } catch (err) {
+    console.error('[Tauri IPC] fetchTicketList error:', err);
     return [];
   }
 }
@@ -137,7 +139,8 @@ export async function fetchTicketList(): Promise<ActiveTicket[]> {
 export async function fetchTicketMessages(ticketId: string): Promise<TicketMessage[]> {
   try {
     return await invoke<TicketMessage[]>('get_ticket_responses', { ticketId });
-  } catch {
+  } catch (err) {
+    console.error('[Tauri IPC] fetchTicketMessages error:', err);
     return [];
   }
 }

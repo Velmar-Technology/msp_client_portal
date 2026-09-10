@@ -12,7 +12,6 @@ import {
 } from "./services/tauri";
 import { ShiftWorkerAttribution, getCachedAttribution } from "./services/attribution";
 import { Header } from "./components/Header";
-import { VitalsWidget } from "./components/VitalsWidget";
 import { AttributionModal } from "./components/AttributionModal";
 import { QuickTicketModal } from "./components/QuickTicketModal";
 import { LiveChatDrawer } from "./components/LiveChatDrawer";
@@ -24,14 +23,24 @@ export const App: React.FC = () => {
   const [agentStatus, setAgentStatus] = useState<AgentStatus | null>(null);
   const [activeTicket, setActiveTicket] = useState<ActiveTicket | null>(null);
   const [ticketList, setTicketList] = useState<ActiveTicket[]>([]);
-  const [selectedTicket, setSelectedTicket] = useState<ActiveTicket | null>(null);
+  const [activeChatTicket, setActiveChatTicket] = useState<ActiveTicket | null>(null);
   const [activeTab, setActiveTab] = useState<'SUPPORT' | 'TICKETS'>('SUPPORT');
   const [isLoadingTickets, setIsLoadingTickets] = useState(false);
   const [attribution, setAttribution] = useState<ShiftWorkerAttribution | null>(null);
 
   const [isAttributionOpen, setIsAttributionOpen] = useState(false);
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
+  const [modalInitialCategory, setModalInitialCategory] = useState('HELPDESK');
+  const [modalInitialTitle, setModalInitialTitle] = useState('');
+  const [modalInitialPriority, setModalInitialPriority] = useState('MEDIUM');
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const openNewTicketModal = (initial?: { title?: string; category?: string; priority?: string }) => {
+    setModalInitialTitle(initial?.title || '');
+    setModalInitialCategory(initial?.category || 'HELPDESK');
+    setModalInitialPriority(initial?.priority || 'MEDIUM');
+    setIsTicketModalOpen(true);
+  };
 
   // Load initial attribution
   useEffect(() => {
@@ -64,27 +73,31 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  const loadTickets = useCallback(async () => {
+  const loadTickets = useCallback(async (silent = false) => {
     try {
-      setIsLoadingTickets(true);
+      if (!silent) {
+        setIsLoadingTickets(true);
+      }
       const list = await fetchTicketList();
       setTicketList(list);
     } catch (e) {
       console.error('Failed to load tickets', e);
     } finally {
-      setIsLoadingTickets(false);
+      if (!silent) {
+        setIsLoadingTickets(false);
+      }
     }
   }, []);
 
   useEffect(() => {
     loadVitals();
     loadStatus();
-    loadTickets();
+    loadTickets(false);
 
     const timer = setInterval(() => {
       loadVitals();
       loadStatus();
-      loadTickets();
+      loadTickets(true);
     }, 6000);
 
     return () => clearInterval(timer);
@@ -92,7 +105,7 @@ export const App: React.FC = () => {
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
-    await Promise.all([loadVitals(), loadStatus(), loadTickets()]);
+    await Promise.all([loadVitals(), loadStatus(), loadTickets(false)]);
     setIsRefreshing(false);
   };
 
@@ -106,26 +119,23 @@ export const App: React.FC = () => {
       createdAt: res.createdAt,
     };
     setActiveTicket(created);
-    setSelectedTicket(created);
+    setActiveChatTicket(created);
     setActiveTab('SUPPORT');
     loadTickets();
   };
 
   const openTicketChat = (ticket: ActiveTicket) => {
-    setSelectedTicket(ticket);
+    setActiveChatTicket(ticket);
   };
 
   const handleTicketResolved = () => {
-    if (selectedTicket?.id === activeTicket?.id) {
+    if (activeChatTicket?.id === activeTicket?.id) {
       setActiveTicket(null);
     }
-    setSelectedTicket(null);
+    setActiveChatTicket(null);
     loadStatus();
     loadTickets();
   };
-
-  // Compute live ticket to display in drawer (either manually selected from list, or machine's active ticket)
-  const currentDrawerTicket = selectedTicket || (activeTab === 'SUPPORT' && activeTicket && activeTicket.status !== 'RESOLVED' ? activeTicket : null);
 
   return (
     <div className="flex flex-col h-screen bg-velmar-bg bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(0,132,255,0.12),rgba(7,10,16,0.98))] text-slate-100 font-sans select-none overflow-hidden">
@@ -142,16 +152,13 @@ export const App: React.FC = () => {
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto p-3.5 space-y-2.5 flex flex-col min-h-0">
-        {/* Hardware Vitals Widget */}
-        <VitalsWidget vitals={vitals} />
-
         {/* Navigation Tabs (Quick Support vs Workstation Tickets) */}
-        {!selectedTicket && (
+        {!activeChatTicket && (
           <div className="flex bg-[#0a101d] p-1 rounded-xl border border-[#1b263b] shrink-0 gap-1">
             <button
               onClick={() => {
                 setActiveTab('SUPPORT');
-                setSelectedTicket(null);
+                setActiveChatTicket(null);
               }}
               className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                 activeTab === 'SUPPORT'
@@ -169,7 +176,7 @@ export const App: React.FC = () => {
             <button
               onClick={() => {
                 setActiveTab('TICKETS');
-                setSelectedTicket(null);
+                setActiveChatTicket(null);
               }}
               className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                 activeTab === 'TICKETS'
@@ -193,13 +200,13 @@ export const App: React.FC = () => {
         )}
 
         {/* View Routing */}
-        {currentDrawerTicket ? (
+        {activeChatTicket ? (
           <div className="flex-1 flex flex-col min-h-0">
             <LiveChatDrawer
-              activeTicket={currentDrawerTicket}
+              activeTicket={activeChatTicket}
               attribution={attribution}
               onTicketResolved={handleTicketResolved}
-              onBack={() => setSelectedTicket(null)}
+              onBack={() => setActiveChatTicket(null)}
             />
           </div>
         ) : activeTab === 'TICKETS' ? (
@@ -208,12 +215,39 @@ export const App: React.FC = () => {
               tickets={ticketList}
               selectedTicketId={undefined}
               onSelectTicket={openTicketChat}
-              onOpenNewTicketModal={() => setIsTicketModalOpen(true)}
+              onOpenNewTicketModal={() => openNewTicketModal()}
               isLoading={isLoadingTickets}
             />
           </div>
         ) : (
           <div className="space-y-3">
+            {/* Active Ticket Banner in Quick Support view */}
+            {activeTicket && activeTicket.status !== 'RESOLVED' && (
+              <div className="bg-[#0b1322] border border-[#0084ff]/40 rounded-xl p-3 shadow-lg shadow-[#0084ff]/10 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5 overflow-hidden">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                  <div className="truncate">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-mono font-semibold text-[#0084ff]">
+                        #{activeTicket.id.slice(0, 8)}
+                      </span>
+                      <span className="text-[9px] px-1 py-0.2 rounded font-bold uppercase bg-[#0084ff]/20 text-[#38bdf8] border border-[#0084ff]/30">
+                        {activeTicket.status}
+                      </span>
+                    </div>
+                    <p className="text-xs font-medium text-slate-200 truncate">
+                      {activeTicket.title}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActiveChatTicket(activeTicket)}
+                  className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-[#0070db] to-[#0084ff] hover:from-[#0060c2] hover:to-[#0070db] text-white text-xs font-semibold shrink-0 flex items-center gap-1 shadow-sm shadow-[#0084ff]/30 transition-all active:scale-95 cursor-pointer"
+                >
+                  Live Chat →
+                </button>
+              </div>
+            )}
             {/* Primary 1-Click Ticket Trigger */}
             <div className="bg-linear-to-br from-[#0c1626] via-[#0d1525] to-[#1a1320] border border-velmar-blue/30 rounded-xl p-3.5 shadow-xl shadow-black/40 relative overflow-hidden">
               {/* Dual-color brand chevron top accent line */}
@@ -230,7 +264,7 @@ export const App: React.FC = () => {
                 </p>
 
                 <button
-                  onClick={() => setIsTicketModalOpen(true)}
+                  onClick={() => openNewTicketModal({ category: 'HELPDESK' })}
                   className="w-full py-2 px-3 rounded-lg bg-linear-to-r from-[#0070db] via-velmar-blue to-[#0094ff] hover:from-velmar-blue-dark hover:to-velmar-blue active:scale-[0.99] text-white font-semibold text-xs shadow-lg shadow-velmar-blue/30 border border-blue-400/30 flex items-center justify-center gap-1.5 transition-all"
                 >
                   <LifeBuoy className="w-4 h-4 text-white" />
@@ -244,7 +278,7 @@ export const App: React.FC = () => {
               <span className="text-[11px] font-medium text-slate-400 block mb-2">Common Workstation Issues</span>
               <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => setIsTicketModalOpen(true)}
+                  onClick={() => openNewTicketModal({ title: 'Printer Offline / Hardware Issue', category: 'REPAIR', priority: 'MEDIUM' })}
                   className="p-2 rounded-lg bg-[#0c1220]/90 hover:bg-[#121b2d] border border-[#1b263b] hover:border-[#0084ff]/40 text-left transition-all flex items-center gap-2 group shadow-sm"
                 >
                   <Printer className="w-3.5 h-3.5 text-[#0084ff] group-hover:scale-110 transition-transform" />
@@ -252,7 +286,7 @@ export const App: React.FC = () => {
                 </button>
 
                 <button
-                  onClick={() => setIsTicketModalOpen(true)}
+                  onClick={() => openNewTicketModal({ title: 'VPN / Network Connection Failure', category: 'SERVICE_OUTAGE', priority: 'HIGH' })}
                   className="p-2 rounded-lg bg-[#0c1220]/90 hover:bg-[#121b2d] border border-[#1b263b] hover:border-[#38bdf8]/40 text-left transition-all flex items-center gap-2 group shadow-sm"
                 >
                   <Wifi className="w-3.5 h-3.5 text-[#38bdf8] group-hover:scale-110 transition-transform" />
@@ -260,7 +294,7 @@ export const App: React.FC = () => {
                 </button>
 
                 <button
-                  onClick={() => setIsTicketModalOpen(true)}
+                  onClick={() => openNewTicketModal({ title: 'ERP / Software Application Crash', category: 'HELPDESK', priority: 'HIGH' })}
                   className="p-2 rounded-lg bg-[#0c1220]/90 hover:bg-[#121b2d] border border-[#1b263b] hover:border-[#ff5e00]/40 text-left transition-all flex items-center gap-2 group shadow-sm"
                 >
                   <FileWarning className="w-3.5 h-3.5 text-[#ff5e00] group-hover:scale-110 transition-transform" />
@@ -268,7 +302,7 @@ export const App: React.FC = () => {
                 </button>
 
                 <button
-                  onClick={() => setIsTicketModalOpen(true)}
+                  onClick={() => openNewTicketModal({ title: 'Workstation Slowness / High Load', category: 'PREVENTATIVE_MAINTENANCE', priority: 'MEDIUM' })}
                   className="p-2 rounded-lg bg-[#0c1220]/90 hover:bg-[#121b2d] border border-[#1b263b] hover:border-[#ff8533]/40 text-left transition-all flex items-center gap-2 group shadow-sm"
                 >
                   <Zap className="w-3.5 h-3.5 text-[#ff8533] group-hover:scale-110 transition-transform" />
@@ -294,6 +328,9 @@ export const App: React.FC = () => {
         attribution={attribution}
         onClose={() => setIsTicketModalOpen(false)}
         onTicketCreated={handleTicketCreated}
+        initialCategory={modalInitialCategory}
+        initialTitle={modalInitialTitle}
+        initialPriority={modalInitialPriority}
       />
     </div>
   );
