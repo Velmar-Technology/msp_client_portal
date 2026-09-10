@@ -1,6 +1,7 @@
 import React from 'react';
 import { User, X, RefreshCw } from 'lucide-react';
 import { ShiftWorkerAttribution } from '../services/attribution';
+import { hideWindow } from '../services/tauri';
 import logoUrl from '../assets/logo.png';
 
 interface HeaderProps {
@@ -23,12 +24,7 @@ export const Header: React.FC<HeaderProps> = ({
   isRefreshing,
 }) => {
   const handleClose = async () => {
-    try {
-      const { getCurrentWindow } = await import('@tauri-apps/api/window');
-      await getCurrentWindow().hide();
-    } catch {
-      // In browser preview, no-op
-    }
+    await hideWindow();
   };
 
   return (

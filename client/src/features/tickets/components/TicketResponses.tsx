@@ -60,11 +60,11 @@ export const TicketResponses: React.FC<TicketResponsesProps> = ({
           </p>
         ) : (
           responses.map((resp) => {
-            const isClient = resp.user_role === 'CLIENT';
-            const isTech = resp.user_role === 'TECHNICIAN';
-            const isSelf = resp.user_id === user?.id && !resp.author_name;
-            const displayName = resp.author_name || resp.user_name || 'User';
-            const isAgentAuthored = Boolean(resp.author_name);
+            const isAgentAuthored = Boolean(resp.author_name || resp.authorName);
+            const isClient = resp.user_role === 'CLIENT' || isAgentAuthored;
+            const isTech = resp.user_role === 'TECHNICIAN' && !isAgentAuthored;
+            const isSelf = resp.user_id === user?.id && !isAgentAuthored;
+            const displayName = resp.author_name || resp.authorName || resp.user_name || 'User';
 
             if (isSelf) {
               return (
@@ -175,7 +175,7 @@ export const TicketResponses: React.FC<TicketResponsesProps> = ({
                           : 'bg-muted text-muted-foreground border-border'
                       }`}
                     >
-                      {resp.user_role}
+                      {isAgentAuthored ? 'CLIENT' : resp.user_role}
                     </span>
                     <span className="text-[10px] text-muted-foreground font-mono">
                       {new Date(resp.created_at).toLocaleTimeString(

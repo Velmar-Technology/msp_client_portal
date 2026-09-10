@@ -209,3 +209,87 @@
 - [x] `cargo check --manifest-path packages/msp-agent/Cargo.toml` clean.
 - [x] `cargo check --manifest-path packages/msp-tray/src-tauri/Cargo.toml` clean.
 - [x] All server unit tests pass.
+
+---
+
+## Phase 5: Realtime Ticket Chat & Identity Sync Architecture
+
+### Task 5.1: Fix Database Persistence & Selection of `author_name`
+**Description:** Update `TicketResponseRepository.create` to insert `author_name` and `findByTicket` to select `ticketResponses.author_name`.
+**Acceptance criteria:**
+- [x] `author_name` is passed and inserted into `ticket_responses` table in `TicketResponseRepository.create`.
+- [x] `findByTicket` includes `author_name: ticketResponses.author_name` in its select mapping.
+- [x] Unit tests in `TicketResponseRepository.test.ts` verify `author_name` persistence and retrieval.
+**Verification:**
+- [x] `npm -w server run test -- src/modules/tickets/repositories/TicketResponseRepository.test.ts` passes.
+**Dependencies:** None
+**Files touched:**
+- `server/src/modules/tickets/repositories/TicketResponseRepository.ts`
+- `server/src/modules/tickets/repositories/TicketResponseRepository.test.ts`
+
+---
+
+### Task 5.2: Role Normalization in `TicketResponseService` & `TicketController`
+**Description:** Normalize author roles so endpoint-authored responses consistently have `authorRole: 'CLIENT'` and `authorName: r.author_name`, while portal responses maintain technician/admin identities.
+**Acceptance criteria:**
+- [x] In `TicketController.getResponsesForAgent`, map `authorRole: r.author_name ? 'CLIENT' : (r.user_role === 'CLIENT' ? 'CLIENT' : 'TECHNICIAN')`.
+- [x] In `TicketController.getResponsesForAgent`, map `authorName: r.author_name || r.user_name || 'Support Technician'`.
+- [x] In `TicketResponseService.addTicketResponseFromAgent`, ensure returned response has `author_name: data.reporterName`.
+**Verification:**
+- [x] `npm -w server run test -- src/modules/tickets/services/TicketResponseService.test.ts` passes.
+**Dependencies:** Task 5.1
+**Files touched:**
+- `server/src/modules/tickets/services/TicketResponseService.ts`
+- `server/src/modules/tickets/controllers/TicketController.ts`
+
+---
+
+### Task 5.3: Implement Server `TicketStreamGateway` (WebSocket for Web Portal)
+**Description:** Implement `TicketStreamGateway` mounted on the HTTP server at `/portal-ws` allowing authenticated browser clients to subscribe to ticket chat rooms (`ticket:<id>`).
+**Acceptance criteria:**
+- [x] Create `server/src/modules/tickets/services/TicketStreamGateway.ts` managing client sockets and ticket rooms.
+- [x] Validate client JWT token and tenant isolation upon connection.
+- [x] Broadcast newly created responses from `TicketResponseService` (both web replies and agent replies) to all sockets in the ticket room.
+- [x] Mount `/portal-ws` in `server/src/index.ts`.
+**Verification:**
+- [x] `npm -w server run build` succeeds with exit code 0.
+- [x] Unit tests in `TicketStreamGateway.test.ts` pass.
+**Dependencies:** Task 5.2
+**Files touched:**
+- `server/src/modules/tickets/services/TicketStreamGateway.ts`
+- `server/src/modules/tickets/services/TicketResponseService.ts`
+- `server/src/index.ts`
+- `server/src/modules/tickets/services/TicketStreamGateway.test.ts`
+
+---
+
+### Task 5.4: Implement `useTicketChatStream` & Integrate in `TicketDetailPage`
+**Description:** Build a WebSocket subscription hook in `client` that connects to `/portal-ws`, joins `ticket:<id>`, and dynamically appends incoming messages into the ticket responses state without requiring page reload.
+**Acceptance criteria:**
+- [x] Create `client/src/features/tickets/hooks/useTicketChatStream.ts` connecting via WebSocket with JWT auth.
+- [x] On receiving a new message frame, append to `responses` list in `useTicketDetail.ts` (avoiding duplicates by `id`).
+- [x] Integrate auto-scroll and 8s heartbeat fallback in `TicketDetailPage.tsx` and `useTicketDetail.ts`.
+**Verification:**
+- [x] `npm -w client run build` succeeds with exit code 0.
+**Dependencies:** Task 5.3
+**Files touched:**
+- `client/src/features/tickets/hooks/useTicketChatStream.ts`
+- `client/src/features/tickets/hooks/useTicketDetail.ts`
+- `client/src/features/tickets/pages/TicketDetailPage.tsx`
+
+---
+
+### Task 5.5: Fix UI Alignment & Attribution in `TicketResponses.tsx` and `LiveChatDrawer.tsx`
+**Description:** Ensure correct, non-inverted conversational message alignments in both views.
+**Acceptance criteria:**
+- [x] In `client/src/features/tickets/components/TicketResponses.tsx`: Desk Worker (`author_name` present) renders on the LEFT with an endpoint badge; logged-in Support Tech (`isSelf`) renders on the RIGHT.
+- [x] In `packages/msp-tray/src/components/LiveChatDrawer.tsx`: Desk Worker (`authorRole === 'CLIENT'`) renders on the RIGHT as "You" (Orange bubble); Support Tech (`authorRole === 'TECHNICIAN'`) renders on the LEFT (Blue bubble).
+- [x] Add 3-4s background polling reconciliation in `LiveChatDrawer.tsx` while drawer is open.
+**Verification:**
+- [x] `npm -w client run build` clean.
+- [x] `npm --prefix packages/msp-tray run build` clean.
+**Dependencies:** Task 5.4
+**Files touched:**
+- `client/src/features/tickets/components/TicketResponses.tsx`
+- `packages/msp-tray/src/components/LiveChatDrawer.tsx`
+

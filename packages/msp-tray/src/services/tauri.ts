@@ -62,11 +62,30 @@ export interface TicketMessage {
   createdAt: string;
 }
 
+export function isTauriEnvironment(): boolean {
+  return typeof window !== 'undefined' && Boolean((window as any).__TAURI_INTERNALS__ || (window as any).__TAURI__);
+}
+
 /**
  * Fetches real-time workstation hardware vitals (CPU%, RAM%, Disk%, Uptime).
  * @returns {Promise<SystemVitals>} Live system hardware vitals
  */
 export async function fetchSystemVitals(): Promise<SystemVitals> {
+  if (!isTauriEnvironment()) {
+    return {
+      cpuPercent: 14.5,
+      memoryUsedMb: 6144,
+      memoryTotalMb: 16384,
+      memoryPercent: 37.5,
+      diskUsedGb: 142.0,
+      diskTotalGb: 512.0,
+      diskPercent: 27.7,
+      uptimeSeconds: 84200,
+      osName: 'Windows 11 Pro',
+      hostname: 'DEV-WORKSTATION-01',
+    };
+  }
+
   try {
     return await invoke<SystemVitals>('get_system_vitals');
   } catch (err) {
@@ -91,6 +110,17 @@ export async function fetchSystemVitals(): Promise<SystemVitals> {
  * @returns {Promise<AgentStatus>} Current agent status and machine identity
  */
 export async function fetchAgentStatus(): Promise<AgentStatus> {
+  if (!isTauriEnvironment()) {
+    return {
+      agentOnline: true,
+      cloudConnected: true,
+      equipmentId: 'workstation-demo',
+      hostname: 'DEV-WORKSTATION-01',
+      tenantName: 'Acme Logistics SRL',
+      activeTicketCount: 0,
+    };
+  }
+
   try {
     return await invoke<AgentStatus>('get_agent_status');
   } catch {
@@ -110,9 +140,11 @@ export async function fetchAgentStatus(): Promise<AgentStatus> {
  * @returns {Promise<ActiveTicket | null>} Active ticket state or null if idle
  */
 export async function fetchActiveTicket(): Promise<ActiveTicket | null> {
+  if (!isTauriEnvironment()) return null;
   try {
     return await invoke<ActiveTicket | null>('get_active_ticket');
-  } catch {
+  } catch (err) {
+    console.error('[Tauri IPC] fetchActiveTicket error:', err);
     return null;
   }
 }
@@ -122,9 +154,11 @@ export async function fetchActiveTicket(): Promise<ActiveTicket | null> {
  * @returns {Promise<ActiveTicket[]>} Array of tickets
  */
 export async function fetchTicketList(): Promise<ActiveTicket[]> {
+  if (!isTauriEnvironment()) return [];
   try {
     return await invoke<ActiveTicket[]>('get_ticket_list');
-  } catch {
+  } catch (err) {
+    console.error('[Tauri IPC] fetchTicketList error:', err);
     return [];
   }
 }
@@ -135,9 +169,11 @@ export async function fetchTicketList(): Promise<ActiveTicket[]> {
  * @returns {Promise<TicketMessage[]>} Array of messages
  */
 export async function fetchTicketMessages(ticketId: string): Promise<TicketMessage[]> {
+  if (!isTauriEnvironment()) return [];
   try {
     return await invoke<TicketMessage[]>('get_ticket_responses', { ticketId });
-  } catch {
+  } catch (err) {
+    console.error('[Tauri IPC] fetchTicketMessages error:', err);
     return [];
   }
 }
@@ -189,5 +225,17 @@ export async function resolveTicket(ticketId: string): Promise<boolean> {
     return await invoke<boolean>('resolve_ticket', { ticketId });
   } catch {
     return true;
+  }
+}
+
+/**
+ * Hides the desktop support drawer to the system tray.
+ */
+export async function hideWindow(): Promise<void> {
+  if (!isTauriEnvironment()) return;
+  try {
+    await invoke('hide_window');
+  } catch (err) {
+    console.error('[Tauri IPC] hideWindow error:', err);
   }
 }

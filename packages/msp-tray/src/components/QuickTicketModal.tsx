@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LifeBuoy, Activity, Send, AlertCircle, X } from 'lucide-react';
 import { CreateTicketInput, CreateTicketResult, submitTicket } from '../services/tauri';
 import { ShiftWorkerAttribution } from '../services/attribution';
@@ -8,6 +8,9 @@ interface QuickTicketModalProps {
   onClose: () => void;
   attribution: ShiftWorkerAttribution | null;
   onTicketCreated: (res: CreateTicketResult) => void;
+  initialCategory?: string;
+  initialTitle?: string;
+  initialPriority?: string;
 }
 
 export const QuickTicketModal: React.FC<QuickTicketModalProps> = ({
@@ -15,13 +18,26 @@ export const QuickTicketModal: React.FC<QuickTicketModalProps> = ({
   onClose,
   attribution,
   onTicketCreated,
+  initialCategory = 'HELPDESK',
+  initialTitle = '',
+  initialPriority = 'MEDIUM',
 }) => {
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('HELPDESK');
-  const [priority, setPriority] = useState('MEDIUM');
+  const [category, setCategory] = useState(initialCategory);
+  const [priority, setPriority] = useState(initialPriority);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTitle(initialTitle);
+      setDescription('');
+      setCategory(initialCategory || 'HELPDESK');
+      setPriority(initialPriority || 'MEDIUM');
+      setError(null);
+    }
+  }, [isOpen, initialCategory, initialTitle, initialPriority]);
 
   if (!isOpen) return null;
 
@@ -110,11 +126,12 @@ export const QuickTicketModal: React.FC<QuickTicketModalProps> = ({
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full bg-[#060912] border border-[#1a263d] focus:border-[#0084ff] rounded-lg px-2 py-1.5 text-xs text-slate-200 outline-none"
               >
-                <option value="HELPDESK">Helpdesk</option>
-                <option value="SOFTWARE">Software / App</option>
-                <option value="HARDWARE">Hardware / Peripheral</option>
-                <option value="NETWORK">Network / VPN</option>
-                <option value="ACCESS">Password / Access</option>
+                <option value="HELPDESK">Helpdesk (General Support)</option>
+                <option value="REPAIR">Repair / Hardware</option>
+                <option value="SERVICE_OUTAGE">Service / Network Outage</option>
+                <option value="PREVENTATIVE_MAINTENANCE">Preventative Maintenance</option>
+                <option value="WARRANTY">Warranty & RMA</option>
+                <option value="AI">AI & Automation</option>
               </select>
             </div>
 

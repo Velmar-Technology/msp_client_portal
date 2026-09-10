@@ -104,6 +104,48 @@ export const TicketList: React.FC<TicketListProps> = ({
     }
   };
 
+  const getCategoryBadge = (category?: string) => {
+    if (!category) return null;
+    const cat = category.toUpperCase();
+    let label = category;
+    let style = 'bg-[#162238] text-slate-300 border-[#243552]';
+
+    switch (cat) {
+      case 'HELPDESK':
+        label = 'Helpdesk';
+        style = 'bg-blue-500/10 text-blue-300 border-blue-500/30';
+        break;
+      case 'REPAIR':
+      case 'HARDWARE':
+        label = 'Repair';
+        style = 'bg-amber-500/10 text-amber-300 border-amber-500/30';
+        break;
+      case 'SERVICE_OUTAGE':
+      case 'NETWORK':
+        label = 'Outage';
+        style = 'bg-rose-500/10 text-rose-300 border-rose-500/30';
+        break;
+      case 'PREVENTATIVE_MAINTENANCE':
+        label = 'Maintenance';
+        style = 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30';
+        break;
+      case 'WARRANTY':
+        label = 'Warranty';
+        style = 'bg-purple-500/10 text-purple-300 border-purple-500/30';
+        break;
+      case 'AI':
+        label = 'AI';
+        style = 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30';
+        break;
+    }
+
+    return (
+      <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium border ${style}`}>
+        {label}
+      </span>
+    );
+  };
+
   const getPriorityDot = (priority?: string) => {
     switch (priority?.toUpperCase()) {
       case 'CRITICAL':
@@ -196,7 +238,7 @@ export const TicketList: React.FC<TicketListProps> = ({
 
       {/* Ticket List Body */}
       <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
-        {isLoading ? (
+        {isLoading && tickets.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 text-slate-400 text-xs">
             <div className="w-5 h-5 border-2 border-[#0084ff] border-t-transparent rounded-full animate-spin mb-2" />
             Loading workstation history...
@@ -244,11 +286,7 @@ export const TicketList: React.FC<TicketListProps> = ({
                     <span className="text-[10px] font-mono text-[#0084ff] font-semibold">
                       #{t.id.slice(0, 8)}
                     </span>
-                    {t.category && (
-                      <span className="text-[9px] px-1 rounded bg-[#162238] text-slate-400 border border-[#243552]">
-                        {t.category}
-                      </span>
-                    )}
+                    {getCategoryBadge(t.category)}
                   </div>
                   {getStatusBadge(t.status)}
                 </div>

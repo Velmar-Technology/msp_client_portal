@@ -17,7 +17,7 @@ export class TicketResponseRepository extends BaseRepository<TicketResponse> {
   /**
    * Inserts a new reply message into a ticket conversation thread.
    *
-   * @param data - Response attributes (ticketId, userId, message, tenantId)
+   * @param data - Response attributes (ticketId, userId, message, tenantId, optional authorName)
    * @returns Created TicketResponse entity
    */
   async create(data: {
@@ -25,6 +25,7 @@ export class TicketResponseRepository extends BaseRepository<TicketResponse> {
     user_id: string;
     message: string;
     tenant_id: string;
+    author_name?: string | null;
   }): Promise<TicketResponse> {
     const results = await db
       .insert(ticketResponses)
@@ -33,6 +34,7 @@ export class TicketResponseRepository extends BaseRepository<TicketResponse> {
         user_id: data.user_id,
         message: data.message,
         tenant_id: data.tenant_id,
+        author_name: data.author_name || null,
       })
       .returning();
     return results[0] as TicketResponse;
@@ -51,6 +53,7 @@ export class TicketResponseRepository extends BaseRepository<TicketResponse> {
         ticket_id: ticketResponses.ticket_id,
         user_id: ticketResponses.user_id,
         message: ticketResponses.message,
+        author_name: ticketResponses.author_name,
         tenant_id: ticketResponses.tenant_id,
         created_at: ticketResponses.created_at,
         user_name: users.name,

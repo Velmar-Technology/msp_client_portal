@@ -76,8 +76,63 @@ export const LiveChatDrawer: React.FC<LiveChatDrawerProps> = ({
 
     loadHistory();
 
+    // 3-second background polling reconciliation
+    const interval = setInterval(async () => {
+      try {
+        if (activeTicket.status === 'RESOLVED' || activeTicket.status === 'CLOSED' || activeTicket.status === 'CANCELLED') {
+          return;
+        }
+        const history = await fetchTicketMessages(activeTicket.id);
+        if (!isCurrent || history.length === 0) return;
+
+        setMessages((prev) => {
+          const updated = [...prev];
+          let hasNewTechMessage = false;
+
+          for (const h of history) {
+            const role = (h.authorRole === 'TECHNICIAN' || h.authorRole === 'ADMIN') ? 'TECHNICIAN' : 'CLIENT';
+            const existingIdx = updated.findIndex((m) => m.id === h.id);
+            if (existingIdx !== -1) continue;
+
+            const optIdx = updated.findIndex((m) => m.id.startsWith('client-') && m.message === h.message);
+            if (optIdx !== -1) {
+              updated[optIdx] = {
+                id: h.id,
+                authorName: h.authorName,
+                authorRole: role,
+                message: h.message,
+                createdAt: h.createdAt,
+              };
+              continue;
+            }
+
+            updated.push({
+              id: h.id,
+              authorName: h.authorName,
+              authorRole: role,
+              message: h.message,
+              createdAt: h.createdAt,
+            });
+
+            if (role === 'TECHNICIAN') {
+              hasNewTechMessage = true;
+            }
+          }
+
+          if (hasNewTechMessage) {
+            playNotificationChime();
+          }
+
+          return updated;
+        });
+      } catch {
+        // Silently continue on poll error
+      }
+    }, 3000);
+
     return () => {
       isCurrent = false;
+      clearInterval(interval);
     };
   }, [activeTicket.id, activeTicket.assignedTechName, activeTicket.createdAt]);
 
@@ -90,20 +145,36 @@ export const LiveChatDrawer: React.FC<LiveChatDrawerProps> = ({
         unlisten = await listen<TicketChatPushPayload>('ticket_chat_push', (event) => {
           if (event.payload.ticketId === activeTicket.id) {
             const respId = event.payload.responseId || `resp-${Date.now()}`;
+            const role = (event.payload.authorRole === 'TECHNICIAN' || event.payload.authorRole === 'ADMIN') ? 'TECHNICIAN' : 'CLIENT';
             setMessages((prev) => {
               if (prev.some((m) => m.id === respId)) return prev;
+              const optIdx = prev.findIndex((m) => m.id.startsWith('client-') && m.message === event.payload.message);
+              if (optIdx !== -1) {
+                const next = [...prev];
+                next[optIdx] = {
+                  id: respId,
+                  authorName: event.payload.authorName || (role === 'TECHNICIAN' ? 'Support Technician' : 'User'),
+                  authorRole: role,
+                  message: event.payload.message,
+                  createdAt: event.payload.createdAt || new Date().toISOString(),
+                };
+                return next;
+              }
               return [
                 ...prev,
                 {
                   id: respId,
-                  authorName: event.payload.authorName || 'Technician',
-                  authorRole: (event.payload.authorRole === 'TECHNICIAN' || event.payload.authorRole === 'ADMIN') ? 'TECHNICIAN' : 'CLIENT',
+                  authorName: event.payload.authorName || (role === 'TECHNICIAN' ? 'Support Technician' : 'User'),
+                  authorRole: role,
                   message: event.payload.message,
                   createdAt: event.payload.createdAt || new Date().toISOString(),
                 },
               ];
             });
-            playNotificationChime();
+
+            if (role === 'TECHNICIAN') {
+              playNotificationChime();
+            }
           }
         });
       } catch {
@@ -237,7 +308,7 @@ export const LiveChatDrawer: React.FC<LiveChatDrawerProps> = ({
                   <UserCheck className="w-3 h-3 text-[#ff5e00]" />
                 )}
                 <span className="text-[10px] text-slate-400 font-medium">
-                  {m.authorName}
+                  {isTech ? m.authorName : (m.authorName ? `${m.authorName} (You)` : 'You')}
                 </span>
                 <span className="text-[9px] text-slate-500 font-mono">
                   {new Date(m.createdAt).toLocaleTimeString([], {
@@ -250,7 +321,7 @@ export const LiveChatDrawer: React.FC<LiveChatDrawerProps> = ({
                 className={`max-w-[85%] rounded-xl px-3 py-1.5 text-xs leading-relaxed ${
                   isTech
                     ? 'bg-[#0d1a30] border border-[#0084ff]/35 text-slate-100 rounded-tl-sm shadow-sm shadow-[#0084ff]/10'
-                    : 'bg-[#151f33] border border-[#243552] text-slate-100 rounded-tr-sm'
+                    : 'bg-[#181d28] border border-[#ff5e00]/25 text-slate-100 rounded-tr-sm shadow-sm shadow-[#ff5e00]/5'
                 }`}
               >
                 {m.message}

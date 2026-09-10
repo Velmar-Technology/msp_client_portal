@@ -18,6 +18,7 @@ import { createExpressErrorMiddleware } from '@shared/errors';
 import routes from './routes';
 import { swaggerSpec } from '@shared/swagger/swagger.config';
 import { agentGateway } from '@modules/rmm/services/AgentGateway';
+import { ticketStreamGateway } from '@modules/tickets';
 import { equipmentService } from '@modules/equipment/services/EquipmentService';
 import { metricsMiddleware } from '@shared/middleware/metricsMiddleware';
 import { metricsService } from '@shared/metrics/metricsService';
@@ -109,12 +110,32 @@ if (
   server = http.createServer(app);
 }
 
-// ---- WebSocket Server for Remote Agent Gateway (supports WS and WSS) ----
-const wss = new WebSocketServer({
-  server,
-  path: '/agent-ws',
+// ---- WebSocket Servers for Remote Agent Gateway & Web Portal Live Chat Stream ----
+const agentWss = new WebSocketServer({ noServer: true });
+agentGateway.init(agentWss);
+
+const portalWss = new WebSocketServer({ noServer: true });
+ticketStreamGateway.init(portalWss);
+
+server.on('upgrade', (request, socket, head) => {
+  try {
+    const host = request.headers.host || 'localhost';
+    const { pathname } = new URL(request.url || '', `http://${host}`);
+    if (pathname === '/agent-ws') {
+      agentWss.handleUpgrade(request, socket, head, (ws) => {
+        agentWss.emit('connection', ws, request);
+      });
+    } else if (pathname === '/portal-ws') {
+      portalWss.handleUpgrade(request, socket, head, (ws) => {
+        portalWss.emit('connection', ws, request);
+      });
+    } else {
+      socket.destroy();
+    }
+  } catch {
+    socket.destroy();
+  }
 });
-agentGateway.init(wss);
 
 // Reconcile agent-discovered identity onto equipment records whenever an agent
 // completes its registration handshake. Errors are contained by the handler.

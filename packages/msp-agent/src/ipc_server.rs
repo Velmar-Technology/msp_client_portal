@@ -307,7 +307,15 @@ async fn handle_pipe_client(
                             "CREATE_TICKET" => {
                                 let title = envelope.payload.get("title").and_then(|v| v.as_str()).unwrap_or_default();
                                 let description = envelope.payload.get("description").and_then(|v| v.as_str()).unwrap_or_default();
-                                let category = envelope.payload.get("category").and_then(|v| v.as_str()).unwrap_or("HELPDESK");
+                                let raw_category = envelope.payload.get("category").and_then(|v| v.as_str()).unwrap_or("HELPDESK");
+                                let category = match raw_category.trim().to_uppercase().as_str() {
+                                    "REPAIR" | "HARDWARE" => "REPAIR",
+                                    "WARRANTY" => "WARRANTY",
+                                    "SERVICE_OUTAGE" | "NETWORK" => "SERVICE_OUTAGE",
+                                    "PREVENTATIVE_MAINTENANCE" => "PREVENTATIVE_MAINTENANCE",
+                                    "AI" => "AI",
+                                    _ => "HELPDESK",
+                                };
                                 let priority = envelope.payload.get("priority").and_then(|v| v.as_str()).unwrap_or("MEDIUM");
                                 let reporter_name = envelope.payload.get("reporterName").and_then(|v| v.as_str()).unwrap_or("Desk User");
                                 let reporter_email = envelope.payload.get("reporterEmail").and_then(|v| v.as_str()).unwrap_or("user@endpoint.local");

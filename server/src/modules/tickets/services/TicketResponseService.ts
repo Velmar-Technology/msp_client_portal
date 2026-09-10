@@ -9,13 +9,14 @@ import { NotFoundError, ForbiddenError, ValidationError } from '@shared/errors';
 import { logger } from '@shared/utils/logger';
 import { Ticket, TicketAttachment, TicketResponse, TicketStatus, UploadedFile, UserContext, UserRole, AgentPayload } from '@shared/types';
 import { AddAgentTicketResponseInput } from '@shared/contracts';
+import { ticketStreamGateway, TicketStreamGateway } from './TicketStreamGateway';
 
 /**
  * Domain service managing conversational message responses and reply attachments on support tickets.
  */
 export class TicketResponseService {
   /**
-   * Initializes TicketResponseService with repository, user, notification, policy, and agentGateway dependencies.
+   * Initializes TicketResponseService with repository, user, notification, policy, agentGateway, and ticketStreamGateway dependencies.
    *
    * @param ticketRepo - Ticket data repository
    * @param responseRepo - Ticket conversation response repository
@@ -24,6 +25,7 @@ export class TicketResponseService {
    * @param accessPol - Ticket access policy
    * @param accountPol - Account status policy for read-only / suspension enforcement
    * @param agentGw - RMM AgentGateway for live WebSocket chat push
+   * @param streamGw - Web portal WebSocket stream gateway
    */
   private _agentGw?: AgentGateway;
 
@@ -35,6 +37,7 @@ export class TicketResponseService {
     private accessPol: TicketAccessPolicy = ticketAccessPolicy,
     private accountPol: AccountStatusPolicy = accountStatusPolicy,
     agentGw?: AgentGateway,
+    private streamGw: TicketStreamGateway = ticketStreamGateway,
   ) {
     this._agentGw = agentGw;
   }
@@ -132,6 +135,23 @@ export class TicketResponseService {
       });
     }
 
+    // Broadcast live message to web portal viewers subscribed to this ticket room
+    this.streamGw.broadcastToTicket(ticket.id, {
+      id: response.id,
+      ticketId: ticket.id,
+      userId: ctx.userId,
+      authorName: user?.name ?? 'MSP Support',
+      authorRole: ctx.role,
+      isAgentAuthored: false,
+      message,
+      attachments: responseAttachments.map((a) => ({
+        id: a.id,
+        filename: a.filename,
+        path: a.path,
+      })),
+      createdAt: response.created_at ? new Date(response.created_at).toISOString() : new Date().toISOString(),
+    });
+
     return {
       ...response,
       user_name: user?.name,
@@ -175,11 +195,24 @@ export class TicketResponseService {
       author_name: data.reporterName,
       message: data.message,
       tenant_id: agent.tenantId,
-    } as any);
+    });
 
     // Update ticket updated_at
     await this.ticketRepo.update(ticketId, {
       updated_at: new Date(),
+    });
+
+    // Broadcast live message to web portal viewers subscribed to this ticket room
+    this.streamGw.broadcastToTicket(ticket.id, {
+      id: response.id,
+      ticketId: ticket.id,
+      userId: agent.clientId,
+      authorName: data.reporterName,
+      authorRole: 'CLIENT',
+      isAgentAuthored: true,
+      message: data.message,
+      attachments: [],
+      createdAt: response.created_at ? new Date(response.created_at).toISOString() : new Date().toISOString(),
     });
 
     // Notify assigned technician if present

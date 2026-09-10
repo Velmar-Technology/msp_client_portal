@@ -40,11 +40,20 @@ export const TicketStatusSchema = z.nativeEnum(TicketStatus, {
   }),
 });
 
-export const TicketCategorySchema = z.nativeEnum(TicketCategory, {
+export const TicketCategorySchema = z.preprocess((val) => {
+  if (typeof val === 'string') {
+    const norm = val.trim().toUpperCase();
+    if (norm === 'HARDWARE') return TicketCategory.REPAIR;
+    if (norm === 'NETWORK') return TicketCategory.SERVICE_OUTAGE;
+    if (norm === 'SOFTWARE' || norm === 'ACCESS') return TicketCategory.HELPDESK;
+    return norm;
+  }
+  return val;
+}, z.nativeEnum(TicketCategory, {
   errorMap: () => ({
     message: 'Category must be REPAIR, WARRANTY, SERVICE_OUTAGE, PREVENTATIVE_MAINTENANCE, HELPDESK, or AI',
   }),
-});
+}));
 
 export const TicketPrioritySchema = z.nativeEnum(TicketPriority, {
   errorMap: () => ({

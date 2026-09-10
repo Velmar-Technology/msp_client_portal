@@ -317,7 +317,7 @@ export class TicketController {
       data: responses.map((r) => ({
         id: r.id,
         authorName: r.author_name || r.user_name || 'Support Technician',
-        authorRole: r.user_role === 'CLIENT' ? 'CLIENT' : 'TECHNICIAN',
+        authorRole: r.author_name ? 'CLIENT' : (r.user_role === 'CLIENT' ? 'CLIENT' : 'TECHNICIAN'),
         message: r.message,
         isInternal: false,
         attachments: (r.attachments || []).map((a) => a.filename),
