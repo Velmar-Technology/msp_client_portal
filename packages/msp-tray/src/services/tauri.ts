@@ -25,9 +25,13 @@ export interface AgentStatus {
 export interface ActiveTicket {
   id: string;
   title: string;
+  description?: string;
   status: string;
+  priority?: string;
+  category?: string;
   assignedTechName?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface CreateTicketInput {
@@ -110,6 +114,18 @@ export async function fetchActiveTicket(): Promise<ActiveTicket | null> {
     return await invoke<ActiveTicket | null>('get_active_ticket');
   } catch {
     return null;
+  }
+}
+
+/**
+ * Retrieves the full list of support tickets for this workstation endpoint.
+ * @returns {Promise<ActiveTicket[]>} Array of tickets
+ */
+export async function fetchTicketList(): Promise<ActiveTicket[]> {
+  try {
+    return await invoke<ActiveTicket[]>('get_ticket_list');
+  } catch {
+    return [];
   }
 }
 

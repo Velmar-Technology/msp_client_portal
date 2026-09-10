@@ -82,6 +82,19 @@ async fn get_active_ticket(
 }
 
 #[tauri::command]
+async fn get_ticket_list(
+    ipc_client: State<'_, IpcClient>,
+) -> Result<Vec<ActiveTicketState>, String> {
+    if ipc_client.is_connected() {
+        ipc_client
+            .send_request("GET_TICKET_LIST", serde_json::json!({ "limit": 30 }))
+            .await
+    } else {
+        Ok(Vec::new())
+    }
+}
+
+#[tauri::command]
 async fn get_ticket_responses(
     ticket_id: String,
     ipc_client: State<'_, IpcClient>,
@@ -109,9 +122,13 @@ async fn create_ticket(
         let active = ActiveTicketState {
             id: resp.ticket_id.clone(),
             title: resp.title.clone(),
+            description: None,
             status: resp.status.clone(),
+            priority: None,
+            category: None,
             assigned_tech_name: resp.assigned_tech_name.clone(),
             created_at: resp.created_at.clone(),
+            updated_at: None,
         };
         *app_state.active_ticket.lock().unwrap() = Some(active);
 
@@ -181,11 +198,18 @@ fn toggle_main_window(app: &tauri::AppHandle) {
             if let Ok(Some(monitor)) = window.primary_monitor() {
                 let screen_size = monitor.size();
                 let scale_factor = monitor.scale_factor();
-                let window_width = (390.0 * scale_factor) as i32;
-                let window_height = (620.0 * scale_factor) as i32;
+
+                // Obtain actual outer size of the window, falling back to 420x700 logical
+                let win_size = window.outer_size().unwrap_or(tauri::PhysicalSize {
+                    width: (420.0 * scale_factor) as u32,
+                    height: (700.0 * scale_factor) as u32,
+                });
+
                 let taskbar_margin = (48.0 * scale_factor) as i32;
-                let x = (screen_size.width as i32) - window_width - (16.0 * scale_factor) as i32;
-                let y = (screen_size.height as i32) - window_height - taskbar_margin;
+                let margin_right = (16.0 * scale_factor) as i32;
+
+                let x = (screen_size.width as i32) - (win_size.width as i32) - margin_right;
+                let y = (screen_size.height as i32) - (win_size.height as i32) - taskbar_margin;
 
                 let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));
             }
@@ -209,6 +233,7 @@ pub fn run() {
             get_system_vitals,
             get_agent_status,
             get_active_ticket,
+            get_ticket_list,
             get_ticket_responses,
             create_ticket,
             send_chat_message,

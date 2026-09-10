@@ -90,6 +90,40 @@ export class TicketQueryService {
 
     return this.ticketRepo.findById(results[0].id);
   }
+
+  /**
+   * Retrieves ticket history for a machine-authenticated workstation agent.
+   *
+   * @param agent - Machine authentication context
+   * @param limit - Maximum number of tickets to retrieve (default 20)
+   * @returns Array of enriched Ticket entities
+   */
+  async getTicketsForAgent(agent: AgentPayload, limit = 20): Promise<Ticket[]> {
+    const results = await db
+      .select({ id: tickets.id })
+      .from(tickets)
+      .where(
+        and(
+          eq(tickets.equipment_id, agent.equipmentId),
+          eq(tickets.tenant_id, agent.tenantId)
+        )
+      )
+      .orderBy(desc(tickets.created_at))
+      .limit(limit);
+
+    if (results.length === 0) {
+      return [];
+    }
+
+    const ticketList: Ticket[] = [];
+    for (const row of results) {
+      const t = await this.ticketRepo.findById(row.id);
+      if (t) {
+        ticketList.push(t);
+      }
+    }
+    return ticketList;
+  }
 }
 
 export const ticketQueryService = new TicketQueryService();

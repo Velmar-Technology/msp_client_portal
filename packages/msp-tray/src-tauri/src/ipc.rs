@@ -51,11 +51,19 @@ pub struct AgentStatusPayload {
 pub struct ActiveTicketState {
     pub id: String,
     pub title: String,
+    #[serde(default)]
+    pub description: Option<String>,
     pub status: String,
-    #[serde(rename = "assignedTechName")]
+    #[serde(default)]
+    pub priority: Option<String>,
+    #[serde(default)]
+    pub category: Option<String>,
+    #[serde(rename = "assignedTechName", default)]
     pub assigned_tech_name: Option<String>,
     #[serde(rename = "createdAt")]
     pub created_at: String,
+    #[serde(rename = "updatedAt", default)]
+    pub updated_at: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

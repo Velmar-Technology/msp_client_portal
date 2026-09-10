@@ -276,3 +276,23 @@ export const AgentUpdateTicketStatusInputSchema = z.object({
 
 export type AgentUpdateTicketStatusInput = z.infer<typeof AgentUpdateTicketStatusInputSchema>;
 
+export const AgentTicketListItemSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string(),
+  description: z.string().optional(),
+  status: TicketStatusSchema,
+  priority: TicketPrioritySchema,
+  category: TicketCategorySchema,
+  assignedTechId: z.string().uuid().nullable().optional(),
+  assignedTechName: z.string().nullable().optional(),
+  equipmentId: z.string().uuid().nullable().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export type AgentTicketListItem = z.infer<typeof AgentTicketListItemSchema>;
+
+export const AgentTicketListResponseSchema = z.array(AgentTicketListItemSchema);
+export type AgentTicketListResponse = z.infer<typeof AgentTicketListResponseSchema>;
+
+

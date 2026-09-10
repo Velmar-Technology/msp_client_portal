@@ -37,6 +37,13 @@ router.get(
   (req, res) => ticketController.getActiveTicketForAgent(req, res)
 );
 
+/** GET /api/v1/tickets/agent/list — Query list of tickets for machine-authenticated endpoint agent */
+router.get(
+  '/agent/list',
+  agentAuthMiddleware,
+  (req, res) => ticketController.getTicketsForAgent(req, res)
+);
+
 /** GET /api/v1/tickets/:id/responses/agent — Get responses for ticket from machine-authenticated endpoint agent */
 router.get(
   '/:id/responses/agent',

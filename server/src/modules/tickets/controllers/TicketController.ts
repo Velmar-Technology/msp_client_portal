@@ -275,6 +275,33 @@ export class TicketController {
   }
 
   /**
+   * Retrieves ticket history for the calling workstation agent.
+   *
+   * @param req - Express request with req.agent context
+   * @param res - Express response returning array of workstation tickets
+   */
+  async getTicketsForAgent(req: Request, res: Response): Promise<void> {
+    const limit = Number(req.query.limit) || 20;
+    const tickets = await ticketQueryService.getTicketsForAgent(req.agent!, limit);
+    res.json({
+      success: true,
+      data: tickets.map((t) => ({
+        id: t.id,
+        title: t.title,
+        description: t.description,
+        status: t.status,
+        priority: t.priority,
+        category: t.category,
+        assignedTechId: t.assigned_tech_id,
+        assignedTechName: t.assigned_tech_name,
+        equipmentId: t.equipment_id,
+        createdAt: t.created_at ? new Date(t.created_at).toISOString() : new Date().toISOString(),
+        updatedAt: t.updated_at ? new Date(t.updated_at).toISOString() : new Date().toISOString(),
+      })),
+    });
+  }
+
+  /**
    * Retrieves conversational responses for a ticket requested by the endpoint machine agent.
    *
    * @param req - Express request with ticket ID in params and req.agent context
@@ -292,7 +319,7 @@ export class TicketController {
         authorName: r.author_name || r.user_name || 'Support Technician',
         authorRole: r.user_role === 'CLIENT' ? 'CLIENT' : 'TECHNICIAN',
         message: r.message,
-        isInternal: r.is_internal,
+        isInternal: false,
         attachments: (r.attachments || []).map((a) => a.filename),
         createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
       })),

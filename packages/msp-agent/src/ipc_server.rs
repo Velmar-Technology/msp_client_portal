@@ -266,6 +266,25 @@ async fn handle_pipe_client(
                                 }
                             }
 
+                            "GET_TICKET_LIST" => {
+                                let limit = envelope.payload.get("limit").and_then(|v| v.as_u64()).unwrap_or(20);
+                                let endpoint = format!("{}/api/v1/tickets/agent/list?limit={}", backend_url, limit);
+                                match client.get(&endpoint).header("Authorization", format!("Bearer {}", token)).send().await {
+                                    Ok(res) => {
+                                        if let Ok(json_res) = res.json::<Value>().await {
+                                            let data = json_res.get("data").cloned().unwrap_or_else(|| json!([]));
+                                            IpcEnvelope::response(&envelope.id, "GET_TICKET_LIST_RESP", data)
+                                        } else {
+                                            IpcEnvelope::response(&envelope.id, "GET_TICKET_LIST_RESP", json!([]))
+                                        }
+                                    }
+                                    Err(err) => {
+                                        warn!("[IPC Server] Failed to fetch ticket list from backend: {}", err);
+                                        IpcEnvelope::response(&envelope.id, "GET_TICKET_LIST_RESP", json!([]))
+                                    }
+                                }
+                            }
+
                             "GET_TICKET_RESPONSES" => {
                                 let ticket_id = envelope.payload.get("ticketId").and_then(|v| v.as_str()).unwrap_or_default();
                                 let endpoint = format!("{}/api/v1/tickets/{}/responses/agent", backend_url, ticket_id);
