@@ -1,6 +1,6 @@
 {
   "name": "@shared/errors",
-  "version": "1.10.2",
+  "version": "1.11.5",
   "private": true,
   "description": "Unified domain exceptions and middleware adapters for the monorepo",
   "main": "./dist/cjs/index.js",
