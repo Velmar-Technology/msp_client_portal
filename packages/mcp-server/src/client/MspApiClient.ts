@@ -136,13 +136,43 @@ export class MspApiClient {
       const client = map.get(key)!;
       client.totalDevices++;
       const agentStatus = (item.agent_status || item.agentStatus || '').toUpperCase();
-      if (agentStatus === 'ONLINE') {
+      const lastSync = item.last_sync_at ? new Date(item.last_sync_at).getTime() : 0;
+      const lastSeen = item.agent_last_seen_at ? new Date(item.agent_last_seen_at).getTime() : 0;
+      const latestActivity = Math.max(lastSync, lastSeen);
+      const isRecentlyActive = latestActivity > 0 && (Date.now() - latestActivity) <= 15 * 60 * 1000;
+
+      if (agentStatus === 'ONLINE' && isRecentlyActive) {
         client.onlineDevices++;
       } else if (agentStatus === 'WARNING' || agentStatus === 'DEGRADED') {
         client.warningDevices++;
       } else {
         client.offlineDevices++;
       }
+    }
+
+    try {
+      const userList = await this.listUsers({ role: 'CLIENT' });
+      for (const u of userList.users || []) {
+        const tenantId = u.tenantId || (u as any).tenant_id;
+        const key = tenantId || u.email;
+        if (key && !map.has(key)) {
+          map.set(key, {
+            tenantId: tenantId || '',
+            tenantName: `${u.name}'s Workspace`,
+            clientName: u.name,
+            clientEmail: u.email,
+            serviceName: 'Client Workspace',
+            plan: 'PENDING_ONBOARDING',
+            subscriptionStatus: u.isActive ? 'ACTIVE' : 'INACTIVE',
+            totalDevices: 0,
+            onlineDevices: 0,
+            offlineDevices: 0,
+            warningDevices: 0,
+          });
+        }
+      }
+    } catch {
+      // Fallback if users endpoint is unavailable
     }
 
     let results = Array.from(map.values());

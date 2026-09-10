@@ -11,6 +11,7 @@ const react = fs.existsSync(clientReactPlugin)
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: './',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

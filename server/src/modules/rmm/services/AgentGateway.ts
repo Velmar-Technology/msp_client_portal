@@ -337,12 +337,12 @@ export class AgentGateway {
   }
 
   /**
-   * Returns the online/offline status and metadata for a specific agent.
+   * Returns live connection status and metadata for a specific agent/equipment ID.
    *
-   * @param equipmentId - Equipment UUID
+   * @param identifier - Equipment UUID, agent instance UUID, or slot ID
    * @returns Agent status metadata
    */
-  getAgentStatus(equipmentId: string): {
+  getAgentStatus(identifier: string): {
     online: boolean;
     hostname?: string;
     serialNumber?: string;
@@ -356,24 +356,45 @@ export class AgentGateway {
     isSecure?: boolean;
     transport?: 'wss' | 'ws';
   } {
-    const agent = this.activeSockets.get(equipmentId);
-    if (!agent || agent.ws.readyState !== WebSocket.OPEN) {
-      return { online: false };
+    const direct = this.activeSockets.get(identifier);
+    if (direct && direct.ws.readyState === WebSocket.OPEN) {
+      return {
+        online: true,
+        hostname: direct.hostname,
+        serialNumber: direct.serialNumber,
+        manufacturer: direct.manufacturer,
+        systemModel: direct.systemModel,
+        agentVersion: direct.agentVersion,
+        os: direct.os,
+        slotId: direct.slotId,
+        connectedAt: direct.connectedAt.toISOString(),
+        lastHeartbeat: direct.lastHeartbeat.toISOString(),
+        isSecure: direct.isSecure ?? false,
+        transport: direct.transport ?? 'ws',
+      };
     }
-    return {
-      online: true,
-      hostname: agent.hostname,
-      serialNumber: agent.serialNumber,
-      manufacturer: agent.manufacturer,
-      systemModel: agent.systemModel,
-      agentVersion: agent.agentVersion,
-      os: agent.os,
-      slotId: agent.slotId,
-      connectedAt: agent.connectedAt.toISOString(),
-      lastHeartbeat: agent.lastHeartbeat.toISOString(),
-      isSecure: agent.isSecure ?? false,
-      transport: agent.transport ?? 'ws',
-    };
+    for (const agent of this.activeSockets.values()) {
+      if (
+        (agent.equipmentId === identifier || agent.slotId === identifier) &&
+        agent.ws.readyState === WebSocket.OPEN
+      ) {
+        return {
+          online: true,
+          hostname: agent.hostname,
+          serialNumber: agent.serialNumber,
+          manufacturer: agent.manufacturer,
+          systemModel: agent.systemModel,
+          agentVersion: agent.agentVersion,
+          os: agent.os,
+          slotId: agent.slotId,
+          connectedAt: agent.connectedAt.toISOString(),
+          lastHeartbeat: agent.lastHeartbeat.toISOString(),
+          isSecure: agent.isSecure ?? false,
+          transport: agent.transport ?? 'ws',
+        };
+      }
+    }
+    return { online: false };
   }
 
   /**
@@ -446,6 +467,28 @@ export class AgentGateway {
       }
     }
     return agents;
+  }
+
+  /**
+   * Checks whether an agent is actively connected over WebSocket for the given equipment ID, agent instance ID, or slot ID.
+   *
+   * @param identifier - Equipment UUID, agent instance UUID, or slot ID
+   * @returns True if connected and WebSocket is OPEN
+   */
+  isAgentConnected(identifier: string): boolean {
+    const direct = this.activeSockets.get(identifier);
+    if (direct && direct.ws.readyState === WebSocket.OPEN) {
+      return true;
+    }
+    for (const agent of this.activeSockets.values()) {
+      if (
+        (agent.equipmentId === identifier || agent.slotId === identifier) &&
+        agent.ws.readyState === WebSocket.OPEN
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   // ── Agent-Issued Pairing Codes ───────────────────────────────────────────────

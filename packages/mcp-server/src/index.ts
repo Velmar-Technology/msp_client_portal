@@ -157,3 +157,9 @@ main().catch((error) => {
   console.error('[MSP MCP Server Fatal Error]:', error);
   process.exit(1);
 });
+
+export {
+  MspSupportAgent,
+  type TicketTriageReport,
+  type QbrAuditReport,
+} from './agent/MspSupportAgent.js';

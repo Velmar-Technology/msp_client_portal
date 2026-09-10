@@ -11,12 +11,21 @@ vi.mock('@modules/rmm/services/AgentGateway', () => ({
   },
 }));
 
+vi.mock('@modules/equipment', () => ({
+  equipmentService: {
+    resolveAgentIdForSlot: vi.fn().mockImplementation((id: string) => Promise.resolve(id)),
+  },
+}));
+
 describe('AgentGatewayController', () => {
   let controller: AgentGatewayController;
+  const mockEquipmentSvc: any = {
+    resolveAgentIdForSlot: vi.fn().mockImplementation((id: string) => Promise.resolve(id)),
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    controller = new AgentGatewayController();
+    controller = new AgentGatewayController(mockEquipmentSvc);
   });
 
   describe('upgradeAgent', () => {

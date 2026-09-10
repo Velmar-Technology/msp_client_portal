@@ -342,10 +342,14 @@ export class EquipmentService {
     if (!bound) {
       await this.equipmentRepository.update(slot.id, {
         status: 'PENDING_ACTIVATION',
+        device_name: null,
+        device_serial: null,
         agent_instance_id: null,
         agent_hostname: null,
         agent_serial: null,
         agent_token: null,
+        nextcloud_username: null,
+        nextcloud_password: null,
       });
       if (!reuseAccount) {
         await this.cleanupNextcloudUser(username);
@@ -559,7 +563,7 @@ export class EquipmentService {
         try {
           const telemetry = await this.rmmPatchService.triggerPatchScan(dev.id, dev.tenant_id, true);
           if (telemetry) {
-            dev.agent_status = telemetry.agent_status ?? 'ONLINE';
+            dev.agent_status = telemetry.agent_status ?? (process.env.NODE_ENV === 'production' ? 'UNKNOWN' : 'ONLINE');
             dev.cpu_usage = telemetry.cpu_usage;
             dev.memory_usage = telemetry.memory_usage;
             dev.disk_usage = telemetry.disk_usage;
@@ -571,7 +575,7 @@ export class EquipmentService {
         } catch (err) {
           logger.warn('Deferred auto-telemetry scan for device', { id: dev.id, err });
           if (!dev.agent_status) {
-            dev.agent_status = 'ONLINE';
+            dev.agent_status = process.env.NODE_ENV === 'production' ? 'UNKNOWN' : 'ONLINE';
           }
         }
       }
@@ -608,10 +612,33 @@ export class EquipmentService {
   }
 
   /**
-   * Enriches equipment slots with their current month ticket consumption count and plan limit.
+   * Evaluates the real-time operational status of an endpoint.
+   * If live WebSocket is connected, returns 'ONLINE'.
+   * If not connected and latest sync/seen activity was within 15 minutes, returns current telemetry status.
+   * If no activity for > 15 minutes, marks the workstation as 'OFFLINE'.
+   */
+  resolveLiveAgentStatus(device: SubscriptionEquipment): string {
+    if (device.status !== 'ACTIVE') {
+      return (device as any).agent_status || 'UNKNOWN';
+    }
+    if (typeof agentGateway?.isAgentConnected === 'function' && agentGateway.isAgentConnected(device.id)) {
+      return 'ONLINE';
+    }
+    const lastSync = (device as any).last_sync_at ? new Date((device as any).last_sync_at).getTime() : 0;
+    const lastSeen = device.agent_last_seen_at ? new Date(device.agent_last_seen_at).getTime() : 0;
+    const latest = Math.max(lastSync, lastSeen);
+    const fifteenMinutesAgo = Date.now() - 15 * 60 * 1000;
+    if (latest > fifteenMinutesAgo) {
+      return (device as any).agent_status || 'ONLINE';
+    }
+    return 'OFFLINE';
+  }
+
+  /**
+   * Enriches equipment slots with their current month ticket consumption count, plan limit, and reconciled agent status.
    *
    * @param devices - Array of SubscriptionEquipment
-   * @returns Enriched array with monthly_ticket_count and monthly_ticket_limit
+   * @returns Enriched array with monthly_ticket_count, monthly_ticket_limit, and live agent_status
    */
   private async enrichDevicesWithQuota<T extends SubscriptionEquipment>(devices: T[]): Promise<T[]> {
     if (devices.length === 0) return devices;
@@ -622,6 +649,7 @@ export class EquipmentService {
     for (const device of devices) {
       const count = await this.ticketsRepo.countEquipmentTicketsInCurrentMonth(device.id);
       device.monthly_ticket_count = count;
+      (device as any).agent_status = this.resolveLiveAgentStatus(device);
 
       if (device.subscription_id) {
         if (!subPlanLimitMap.has(device.subscription_id)) {
@@ -660,11 +688,52 @@ export class EquipmentService {
   }
 
   /**
+   * Performs automated data integrity reconciliation:
+   * 1. Resets any PENDING_ACTIVATION slots that have duplicate device serials or orphaned Nextcloud accounts.
+   * 2. Cleans up zombie half-bound slots so they can be fresh paired.
+   */
+  async reconcileEquipmentSlots(): Promise<{ cleanedSlots: number }> {
+    const allSlots = await this.equipmentRepository.findAllWithDetails();
+    let cleanedSlots = 0;
+
+    const activeSerials = new Set<string>();
+    for (const slot of allSlots) {
+      if (slot.status === 'ACTIVE' && slot.device_serial) {
+        activeSerials.add(slot.device_serial.toLowerCase());
+      }
+    }
+
+    for (const slot of allSlots) {
+      if (
+        slot.status === 'PENDING_ACTIVATION' &&
+        slot.device_serial &&
+        activeSerials.has(slot.device_serial.toLowerCase())
+      ) {
+        await this.equipmentRepository.update(slot.id, {
+          device_name: null,
+          device_serial: null,
+          agent_instance_id: null,
+          agent_hostname: null,
+          agent_serial: null,
+          agent_token: null,
+          nextcloud_username: null,
+          nextcloud_password: null,
+        });
+        cleanedSlots++;
+        logger.info(`[EquipmentService] Cleaned zombie duplicate slot ${slot.id} (Slot #${slot.slot_index})`);
+      }
+    }
+
+    return { cleanedSlots };
+  }
+
+  /**
    * Gets all client devices across all subscriptions and tenants (for Admin view).
    *
    * @returns Array of all EquipmentWithDetails devices with telemetry
    */
   async getAllDevicesForAdmin(): Promise<EquipmentWithDetails[]> {
+    await this.reconcileEquipmentSlots();
     const activeSubs = await this.subRepo.findAllActive();
     for (const sub of activeSubs) {
       await this.getEquipmentSlots(sub.id, sub.tenant_id, true);
