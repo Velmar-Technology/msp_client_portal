@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.11.5](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.4...v1.11.5) (2026-09-10)
+
+
+### Features
+
+* **tray:** default to production helpdesk domain and auto-discover agent identity ([7177cc6](https://github.com/Velmar-Technology/msp_client_portal/commit/7177cc63045fc730149fdec33a2d8023ebd54ef3))
+
+
+### Bug Fixes
+
+* **core:** reconcile telemetry online status and BL-601 health API ([75bb1db](https://github.com/Velmar-Technology/msp_client_portal/commit/75bb1dba0ea069b6e3175feb5a8200baeb8f4b48))
+* **server:** prevent fallback dummy telemetry in prod ([9196689](https://github.com/Velmar-Technology/msp_client_portal/commit/91966899127575a3a960ebb4d8f096c95268d634))
+* **tray:** enable custom-protocol and relative base for production builds ([68b2d74](https://github.com/Velmar-Technology/msp_client_portal/commit/68b2d74269d541243f87679477a795a670fef83a))
+
 ## [1.11.4](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.3...v1.11.4) (2026-09-09)
 
 ## [1.11.3](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.2...v1.11.3) (2026-09-09)
