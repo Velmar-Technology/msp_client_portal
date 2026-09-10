@@ -559,7 +559,7 @@ export class EquipmentService {
         try {
           const telemetry = await this.rmmPatchService.triggerPatchScan(dev.id, dev.tenant_id, true);
           if (telemetry) {
-            dev.agent_status = telemetry.agent_status ?? 'ONLINE';
+            dev.agent_status = telemetry.agent_status ?? (process.env.NODE_ENV === 'production' ? 'UNKNOWN' : 'ONLINE');
             dev.cpu_usage = telemetry.cpu_usage;
             dev.memory_usage = telemetry.memory_usage;
             dev.disk_usage = telemetry.disk_usage;
@@ -571,7 +571,7 @@ export class EquipmentService {
         } catch (err) {
           logger.warn('Deferred auto-telemetry scan for device', { id: dev.id, err });
           if (!dev.agent_status) {
-            dev.agent_status = 'ONLINE';
+            dev.agent_status = process.env.NODE_ENV === 'production' ? 'UNKNOWN' : 'ONLINE';
           }
         }
       }

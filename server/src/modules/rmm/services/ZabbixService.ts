@@ -380,6 +380,20 @@ export class ZabbixService {
       }
     }
 
+    if (process.env.NODE_ENV === 'production') {
+      logger.warn('Returning empty metrics for equipment due to Zabbix API failure in production', { equipmentId, zabbixHostId });
+      return {
+        zabbixHostId: zabbixHostId || `zbx-${equipmentId.substring(0, 8)}`,
+        agentStatus: 'UNKNOWN',
+        cpuUsage: 0,
+        memoryUsage: 0,
+        diskUsage: 0,
+        diskUsedGb: 0,
+        diskTotalGb: 0,
+        pendingPatchCount: 0,
+      };
+    }
+
     logger.warn('Returning fallback pseudo-random metrics for equipment', { equipmentId, zabbixHostId });
 
     const seed = equipmentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -424,11 +438,24 @@ export class ZabbixService {
         return true;
       }
     } catch (err: any) {
+      if (process.env.NODE_ENV === 'production') {
+        logger.error('Zabbix patch script execution failed in production', {
+          zabbixHostId,
+          patchId,
+          error: err.message,
+        });
+        throw err;
+      }
+
       logger.warn('Zabbix patch script execution failed, simulating success', {
         zabbixHostId,
         patchId,
         error: err.message,
       });
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(`Zabbix patch script execution failed for host ${zabbixHostId}`);
     }
 
     return true;
