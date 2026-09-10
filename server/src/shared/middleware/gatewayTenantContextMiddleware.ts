@@ -24,7 +24,8 @@ export function isPublicOrSystemRoute(path: string, originalUrl?: string): boole
   const isAgentEndpoint = targets.some((target) =>
     target === '/tickets/agent' ||
     target.startsWith('/tickets/agent/') ||
-    target.endsWith('/responses/agent')
+    target.endsWith('/responses/agent') ||
+    target.endsWith('/status/agent')
   );
   if (isAgentEndpoint) {
     return true;

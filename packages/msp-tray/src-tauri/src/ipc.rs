@@ -2,8 +2,12 @@
 
 use chrono::Utc;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::sync::Mutex;
+use std::collections::HashMap;
+use std::sync::{atomic::AtomicBool, Arc, Mutex};
 use sysinfo::{Disks, System};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::windows::named_pipe::ClientOptions;
+use tokio::sync::{mpsc, oneshot, Mutex as TokioMutex};
 use uuid::Uuid;
 
 pub const PIPE_NAME: &str = r"\\.\pipe\msp-agent-ipc";
@@ -41,6 +45,39 @@ pub struct AgentStatusPayload {
     pub tenant_name: Option<String>,
     #[serde(rename = "activeTicketCount")]
     pub active_ticket_count: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ActiveTicketState {
+    pub id: String,
+    pub title: String,
+    #[serde(default)]
+    pub description: Option<String>,
+    pub status: String,
+    #[serde(default)]
+    pub priority: Option<String>,
+    #[serde(default)]
+    pub category: Option<String>,
+    #[serde(rename = "assignedTechName", default)]
+    pub assigned_tech_name: Option<String>,
+    #[serde(rename = "createdAt")]
+    pub created_at: String,
+    #[serde(rename = "updatedAt", default)]
+    pub updated_at: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TicketMessageItem {
+    pub id: String,
+    #[serde(rename = "authorName")]
+    pub author_name: String,
+    #[serde(rename = "authorRole")]
+    pub author_role: String,
+    pub message: String,
+    #[serde(default)]
+    pub attachments: Vec<String>,
+    #[serde(rename = "createdAt")]
+    pub created_at: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -200,4 +237,237 @@ pub fn decode_frame<T: DeserializeOwned>(bytes: &[u8]) -> Result<IpcEnvelope<T>,
     }
     let payload = &bytes[4..];
     serde_json::from_slice(payload).map_err(|e| e.to_string())
+}
+
+// ---------------------------------------------------------------------------
+// IPC Client Implementation
+// ---------------------------------------------------------------------------
+
+struct OutboundRequest {
+    id: String,
+    bytes: Vec<u8>,
+    response_sender: oneshot::Sender<Result<serde_json::Value, String>>,
+}
+
+type PendingMap = Arc<TokioMutex<HashMap<String, oneshot::Sender<Result<serde_json::Value, String>>>>>;
+
+#[derive(Clone)]
+pub struct IpcClient {
+    request_tx: mpsc::Sender<OutboundRequest>,
+    connected: Arc<AtomicBool>,
+}
+
+impl IpcClient {
+    pub fn new(app_handle: tauri::AppHandle) -> Self {
+        let (request_tx, mut request_rx) = mpsc::channel::<OutboundRequest>(64);
+        let connected = Arc::new(AtomicBool::new(false));
+        let connected_flag = connected.clone();
+
+        tauri::async_runtime::spawn(async move {
+            loop {
+                log::info!("[MSP-TRAY IPC] Attempting connection to named pipe: {}", PIPE_NAME);
+                let pipe = match ClientOptions::new().open(PIPE_NAME) {
+                    Ok(p) => {
+                        log::info!("[MSP-TRAY IPC] Connected to named pipe: {}", PIPE_NAME);
+                        connected_flag.store(true, std::sync::atomic::Ordering::SeqCst);
+                        p
+                    }
+                    Err(err) => {
+                        log::debug!("[MSP-TRAY IPC] Pipe connection pending: {}", err);
+                        connected_flag.store(false, std::sync::atomic::Ordering::SeqCst);
+                        tokio::time::sleep(tokio::time::Duration::from_millis(1500)).await;
+                        continue;
+                    }
+                };
+
+                let (mut reader, mut writer) = tokio::io::split(pipe);
+                let pending: PendingMap = Arc::new(TokioMutex::new(HashMap::new()));
+                let pending_for_reader = pending.clone();
+                let app_handle_for_reader = app_handle.clone();
+
+                let (disconnect_tx, mut disconnect_rx) = tokio::sync::broadcast::channel::<()>(1);
+                let disconnect_tx_reader = disconnect_tx.clone();
+
+                // Reader loop task
+                let reader_task = tauri::async_runtime::spawn(async move {
+                    loop {
+                        let mut len_buf = [0u8; 4];
+                        if reader.read_exact(&mut len_buf).await.is_err() {
+                            log::warn!("[MSP-TRAY IPC] Named pipe reader disconnected (read_exact len failed)");
+                            break;
+                        }
+                        let len = u32::from_be_bytes(len_buf) as usize;
+                        if len > 10 * 1024 * 1024 {
+                            log::warn!("[MSP-TRAY IPC] Frame size too large ({} bytes)", len);
+                            break;
+                        }
+
+                        let mut payload_buf = vec![0u8; len];
+                        if reader.read_exact(&mut payload_buf).await.is_err() {
+                            log::warn!("[MSP-TRAY IPC] Named pipe reader disconnected (read_exact payload failed)");
+                            break;
+                        }
+
+                        match serde_json::from_slice::<IpcEnvelope<serde_json::Value>>(&payload_buf) {
+                            Ok(envelope) => {
+                                if envelope.msg_type.eq_ignore_ascii_case("TICKET_CHAT_PUSH") {
+                                    use tauri::Emitter;
+                                    log::info!("[MSP-TRAY IPC] Received TICKET_CHAT_PUSH, broadcasting to webview");
+                                    let _ = app_handle_for_reader.emit("ticket_chat_push", &envelope.payload);
+                                } else {
+                                    let mut p = pending_for_reader.lock().await;
+                                    if let Some(resp_tx) = p.remove(&envelope.id) {
+                                        if envelope.msg_type == "ERROR" {
+                                            let err_msg = envelope
+                                                .payload
+                                                .get("error")
+                                                .and_then(|v| v.as_str())
+                                                .unwrap_or("IPC request returned error")
+                                                .to_string();
+                                            let _ = resp_tx.send(Err(err_msg));
+                                        } else {
+                                            let _ = resp_tx.send(Ok(envelope.payload));
+                                        }
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                log::warn!("[MSP-TRAY IPC] Failed to deserialize envelope: {}", e);
+                            }
+                        }
+                    }
+                    let _ = disconnect_tx_reader.send(());
+                });
+
+                // Writer loop
+                loop {
+                    tokio::select! {
+                        _ = disconnect_rx.recv() => {
+                            log::warn!("[MSP-TRAY IPC] Disconnect notification received from reader");
+                            break;
+                        }
+                        maybe_req = request_rx.recv() => {
+                            match maybe_req {
+                                Some(outbound) => {
+                                    {
+                                        let mut p = pending.lock().await;
+                                        p.insert(outbound.id, outbound.response_sender);
+                                    }
+                                    if let Err(e) = writer.write_all(&outbound.bytes).await {
+                                        log::warn!("[MSP-TRAY IPC] Pipe write error: {}", e);
+                                        break;
+                                    }
+                                    if let Err(e) = writer.flush().await {
+                                        log::warn!("[MSP-TRAY IPC] Pipe flush error: {}", e);
+                                        break;
+                                    }
+                                }
+                                None => {
+                                    log::warn!("[MSP-TRAY IPC] Request channel dropped, shutting down writer");
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Handle pipe tear-down & cleanup
+                connected_flag.store(false, std::sync::atomic::Ordering::SeqCst);
+                reader_task.abort();
+                {
+                    let mut p = pending.lock().await;
+                    for (_, sender) in p.drain() {
+                        let _ = sender.send(Err("Named pipe connection closed".to_string()));
+                    }
+                }
+
+                log::info!("[MSP-TRAY IPC] Pipe session closed, retrying in 1500ms...");
+                tokio::time::sleep(tokio::time::Duration::from_millis(1500)).await;
+            }
+        });
+
+        Self {
+            request_tx,
+            connected,
+        }
+    }
+
+    pub fn is_connected(&self) -> bool {
+        self.connected.load(std::sync::atomic::Ordering::SeqCst)
+    }
+
+    pub async fn send_request<P: Serialize, R: DeserializeOwned>(
+        &self,
+        msg_type: &str,
+        payload: P,
+    ) -> Result<R, String> {
+        if !self.is_connected() {
+            return Err("MSP Agent service is not connected on named pipe".to_string());
+        }
+
+        let envelope = IpcEnvelope::new(msg_type, payload);
+        let id = envelope.id.clone();
+        let bytes = encode_frame(&envelope)?;
+
+        let (resp_tx, resp_rx) = oneshot::channel();
+        let outbound = OutboundRequest {
+            id,
+            bytes,
+            response_sender: resp_tx,
+        };
+
+        self.request_tx
+            .send(outbound)
+            .await
+            .map_err(|_| "Failed to send request: IPC channel closed".to_string())?;
+
+        match tokio::time::timeout(tokio::time::Duration::from_secs(12), resp_rx).await {
+            Ok(Ok(Ok(val))) => {
+                serde_json::from_value(val).map_err(|e| format!("Invalid response schema: {}", e))
+            }
+            Ok(Ok(Err(err_msg))) => Err(err_msg),
+            Ok(Err(_)) => Err("IPC response channel dropped".to_string()),
+            Err(_) => Err("IPC request timed out after 12 seconds".to_string()),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_encode_and_decode_frame() {
+        let envelope = IpcEnvelope::new("TEST_PING", serde_json::json!({ "foo": "bar" }));
+        let encoded = encode_frame(&envelope).expect("Failed to encode");
+        assert!(encoded.len() > 4);
+
+        let len_prefix = u32::from_be_bytes([encoded[0], encoded[1], encoded[2], encoded[3]]) as usize;
+        assert_eq!(len_prefix, encoded.len() - 4);
+
+        let decoded: IpcEnvelope<serde_json::Value> = decode_frame(&encoded).expect("Failed to decode");
+        assert_eq!(decoded.msg_type, "TEST_PING");
+        assert_eq!(decoded.payload["foo"], "bar");
+    }
+
+    #[test]
+    fn test_ticket_chat_push_payload_serialization() {
+        let push = TicketChatPushPayload {
+            ticket_id: "8c79219e-e3be-4971-bf31-0738dca534b1".to_string(),
+            response_id: "resp-123".to_string(),
+            author_name: "John Technician".to_string(),
+            author_role: "ADMIN".to_string(),
+            message: "Looking into your network issue now.".to_string(),
+            attachments: vec![],
+            created_at: Utc::now().to_rfc3339(),
+        };
+
+        let envelope = IpcEnvelope::new("TICKET_CHAT_PUSH", push);
+        let encoded = encode_frame(&envelope).unwrap();
+        let decoded: IpcEnvelope<TicketChatPushPayload> = decode_frame(&encoded).unwrap();
+
+        assert_eq!(decoded.msg_type, "TICKET_CHAT_PUSH");
+        assert_eq!(decoded.payload.ticket_id, "8c79219e-e3be-4971-bf31-0738dca534b1");
+        assert_eq!(decoded.payload.author_name, "John Technician");
+    }
 }

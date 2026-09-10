@@ -1,7 +1,9 @@
 import { ticketRepository, TicketRepository } from '@modules/tickets/repositories/TicketRepository';
 import { ticketAccessPolicy, TicketAccessPolicy } from '@shared/policies/TicketAccessPolicy';
 import { NotFoundError } from '@shared/errors';
-import { Ticket, TicketFilters, UserContext, UserRole } from '@shared/types';
+import { Ticket, TicketFilters, UserContext, UserRole, AgentPayload, TicketStatus } from '@shared/types';
+import { db, tickets } from '@shared/db';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 
 /**
  * Domain service for querying tickets, enforcing tenant isolation, role-based visibility, and status metrics.
@@ -59,6 +61,68 @@ export class TicketQueryService {
     const assignedTechId = ctx.role === UserRole.TECHNICIAN ? ctx.userId : undefined;
     const tenantId = ctx.role === UserRole.CLIENT ? ctx.tenantId : undefined;
     return this.ticketRepo.countByStatus(clientId, assignedTechId, tenantId);
+  }
+
+  /**
+   * Retrieves the currently active (OPEN or IN_PROGRESS) ticket for a machine-authenticated workstation agent.
+   *
+   * @param agent - Machine authentication context
+   * @returns Enriched active Ticket entity or null if none is currently active
+   */
+  async getActiveTicketForAgent(agent: AgentPayload): Promise<Ticket | null> {
+    const activeStatuses: TicketStatus[] = [TicketStatus.OPEN, TicketStatus.IN_PROGRESS];
+    const results = await db
+      .select({ id: tickets.id })
+      .from(tickets)
+      .where(
+        and(
+          eq(tickets.equipment_id, agent.equipmentId),
+          eq(tickets.tenant_id, agent.tenantId),
+          inArray(tickets.status, activeStatuses)
+        )
+      )
+      .orderBy(desc(tickets.created_at))
+      .limit(1);
+
+    if (results.length === 0) {
+      return null;
+    }
+
+    return this.ticketRepo.findById(results[0].id);
+  }
+
+  /**
+   * Retrieves ticket history for a machine-authenticated workstation agent.
+   *
+   * @param agent - Machine authentication context
+   * @param limit - Maximum number of tickets to retrieve (default 20)
+   * @returns Array of enriched Ticket entities
+   */
+  async getTicketsForAgent(agent: AgentPayload, limit = 20): Promise<Ticket[]> {
+    const results = await db
+      .select({ id: tickets.id })
+      .from(tickets)
+      .where(
+        and(
+          eq(tickets.equipment_id, agent.equipmentId),
+          eq(tickets.tenant_id, agent.tenantId)
+        )
+      )
+      .orderBy(desc(tickets.created_at))
+      .limit(limit);
+
+    if (results.length === 0) {
+      return [];
+    }
+
+    const ticketList: Ticket[] = [];
+    for (const row of results) {
+      const t = await this.ticketRepo.findById(row.id);
+      if (t) {
+        ticketList.push(t);
+      }
+    }
+    return ticketList;
   }
 }
 

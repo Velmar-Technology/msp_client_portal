@@ -11,6 +11,7 @@ import {
   TicketIdParamSchema,
   CreateAgentTicketInputSchema,
   AddAgentTicketResponseInputSchema,
+  AgentUpdateTicketStatusInputSchema,
 } from '@shared/contracts';
 import { CreateTicketResponseDTO } from '@shared/dtos/ticket.dto';
 import { upload } from '@shared/middleware/uploadMiddleware';
@@ -29,6 +30,28 @@ router.post(
   (req, res) => ticketController.createFromAgent(req, res)
 );
 
+/** GET /api/v1/tickets/agent/active — Query active open ticket for machine-authenticated endpoint agent */
+router.get(
+  '/agent/active',
+  agentAuthMiddleware,
+  (req, res) => ticketController.getActiveTicketForAgent(req, res)
+);
+
+/** GET /api/v1/tickets/agent/list — Query list of tickets for machine-authenticated endpoint agent */
+router.get(
+  '/agent/list',
+  agentAuthMiddleware,
+  (req, res) => ticketController.getTicketsForAgent(req, res)
+);
+
+/** GET /api/v1/tickets/:id/responses/agent — Get responses for ticket from machine-authenticated endpoint agent */
+router.get(
+  '/:id/responses/agent',
+  agentAuthMiddleware,
+  validate(TicketIdParamSchema, 'params'),
+  (req, res) => ticketController.getResponsesForAgent(req, res)
+);
+
 /** POST /api/v1/tickets/:id/responses/agent — Add response from machine-authenticated endpoint agent */
 router.post(
   '/:id/responses/agent',
@@ -36,6 +59,15 @@ router.post(
   validate(TicketIdParamSchema, 'params'),
   validate(AddAgentTicketResponseInputSchema),
   (req, res) => ticketController.addResponseFromAgent(req, res)
+);
+
+/** PATCH /api/v1/tickets/:id/status/agent — Update ticket status from machine-authenticated endpoint agent */
+router.patch(
+  '/:id/status/agent',
+  agentAuthMiddleware,
+  validate(TicketIdParamSchema, 'params'),
+  validate(AgentUpdateTicketStatusInputSchema),
+  (req, res) => ticketController.updateStatusFromAgent(req, res)
 );
 
 // ── User-Authenticated Endpoints (JWT Session) ──────────────────────────────

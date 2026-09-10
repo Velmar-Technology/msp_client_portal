@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, CheckCircle, Headphones, UserCheck } from 'lucide-react';
-import { ActiveTicket, sendChatMessage, resolveTicket } from '../services/tauri';
+import { Send, CheckCircle, Headphones, UserCheck, ArrowLeft } from 'lucide-react';
+import { ActiveTicket, sendChatMessage, resolveTicket, fetchTicketMessages } from '../services/tauri';
 import { ShiftWorkerAttribution } from '../services/attribution';
 import { playNotificationChime } from '../services/sound';
 
@@ -25,12 +25,14 @@ interface LiveChatDrawerProps {
   activeTicket: ActiveTicket;
   attribution: ShiftWorkerAttribution | null;
   onTicketResolved: () => void;
+  onBack?: () => void;
 }
 
 export const LiveChatDrawer: React.FC<LiveChatDrawerProps> = ({
   activeTicket,
   attribution,
   onTicketResolved,
+  onBack,
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -38,20 +40,45 @@ export const LiveChatDrawer: React.FC<LiveChatDrawerProps> = ({
   const [isResolving, setIsResolving] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Initial welcome/technician acknowledgment
+  // Hydrate message history or initial technician acknowledgment on mount / ticket switch
   useEffect(() => {
-    const initial: ChatMessage[] = [
-      {
-        id: 'msg-init-1',
-        authorName: 'MSP Dispatcher',
-        authorRole: 'TECHNICIAN',
-        message: `Ticket #${activeTicket.id.slice(0, 8)} opened. Assigned to ${
-          activeTicket.assignedTechName || 'On-Duty Support Engineer'
-        }. Hardware telemetry attached.`,
-        createdAt: activeTicket.createdAt || new Date().toISOString(),
-      },
-    ];
-    setMessages(initial);
+    let isCurrent = true;
+
+    const loadHistory = async () => {
+      const history = await fetchTicketMessages(activeTicket.id);
+      if (!isCurrent) return;
+
+      if (history.length > 0) {
+        setMessages(
+          history.map((m) => ({
+            id: m.id,
+            authorName: m.authorName,
+            authorRole: (m.authorRole === 'TECHNICIAN' || m.authorRole === 'ADMIN') ? 'TECHNICIAN' : 'CLIENT',
+            message: m.message,
+            createdAt: m.createdAt,
+          }))
+        );
+      } else {
+        const initial: ChatMessage[] = [
+          {
+            id: 'msg-init-1',
+            authorName: 'MSP Dispatcher',
+            authorRole: 'TECHNICIAN',
+            message: `Ticket #${activeTicket.id.slice(0, 8)} opened. Assigned to ${
+              activeTicket.assignedTechName || 'On-Duty Support Engineer'
+            }. Hardware telemetry attached.`,
+            createdAt: activeTicket.createdAt || new Date().toISOString(),
+          },
+        ];
+        setMessages(initial);
+      }
+    };
+
+    loadHistory();
+
+    return () => {
+      isCurrent = false;
+    };
   }, [activeTicket.id, activeTicket.assignedTechName, activeTicket.createdAt]);
 
   // Listen for real-time WebSocket push frames forwarded from Tauri
@@ -62,16 +89,20 @@ export const LiveChatDrawer: React.FC<LiveChatDrawerProps> = ({
         const { listen } = await import('@tauri-apps/api/event');
         unlisten = await listen<TicketChatPushPayload>('ticket_chat_push', (event) => {
           if (event.payload.ticketId === activeTicket.id) {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: event.payload.responseId || `resp-${Date.now()}`,
-                authorName: event.payload.authorName || 'Technician',
-                authorRole: 'TECHNICIAN',
-                message: event.payload.message,
-                createdAt: event.payload.createdAt || new Date().toISOString(),
-              },
-            ]);
+            const respId = event.payload.responseId || `resp-${Date.now()}`;
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === respId)) return prev;
+              return [
+                ...prev,
+                {
+                  id: respId,
+                  authorName: event.payload.authorName || 'Technician',
+                  authorRole: (event.payload.authorRole === 'TECHNICIAN' || event.payload.authorRole === 'ADMIN') ? 'TECHNICIAN' : 'CLIENT',
+                  message: event.payload.message,
+                  createdAt: event.payload.createdAt || new Date().toISOString(),
+                },
+              ];
+            });
             playNotificationChime();
           }
         });
@@ -135,18 +166,39 @@ export const LiveChatDrawer: React.FC<LiveChatDrawerProps> = ({
     }
   };
 
+  const isTicketActive = activeTicket.status !== 'RESOLVED' && activeTicket.status !== 'CLOSED' && activeTicket.status !== 'CANCELLED';
+
   return (
-    <div className="flex flex-col h-[400px] bg-[#090e1a]/95 border border-[#1b263b] rounded-xl overflow-hidden shadow-2xl">
+    <div className="flex flex-col flex-1 min-h-[380px] bg-[#090e1a]/95 border border-[#1b263b] rounded-xl overflow-hidden shadow-2xl">
       {/* Active Ticket Banner */}
-      <div className="bg-[#0d1526] px-3 py-2 border-b border-[#1b2840] flex items-center justify-between">
+      <div className="bg-[#0d1526] px-2.5 py-2 border-b border-[#1b2840] flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 overflow-hidden">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="p-1 -ml-1 rounded-md hover:bg-[#1b2840] text-slate-400 hover:text-white transition-colors shrink-0"
+              title="Back to ticket list"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {isTicketActive ? (
+            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
+          ) : (
+            <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+          )}
+
           <div className="truncate">
             <div className="flex items-center gap-1.5">
               <span className="text-[11px] font-mono text-[#0084ff] font-semibold">
                 #{activeTicket.id.slice(0, 8)}
               </span>
-              <span className="text-[9px] px-1 py-0.2 rounded bg-[#0084ff]/15 text-[#38bdf8] border border-[#0084ff]/30 font-bold tracking-wider uppercase">
+              <span className={`text-[9px] px-1 py-0.2 rounded font-bold tracking-wider uppercase ${
+                isTicketActive
+                  ? 'bg-[#0084ff]/15 text-[#38bdf8] border border-[#0084ff]/30'
+                  : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+              }`}>
                 {activeTicket.status}
               </span>
             </div>
@@ -156,15 +208,17 @@ export const LiveChatDrawer: React.FC<LiveChatDrawerProps> = ({
           </div>
         </div>
 
-        <button
-          onClick={handleResolve}
-          disabled={isResolving}
-          className="px-2 py-1 rounded bg-[#131d30] hover:bg-emerald-600/20 hover:text-emerald-400 border border-[#22324e] hover:border-emerald-500/40 text-[10px] font-medium text-slate-300 transition-colors flex items-center gap-1 shrink-0"
-          title="Mark ticket as solved"
-        >
-          <CheckCircle className="w-3 h-3 text-emerald-400" />
-          Resolve
-        </button>
+        {isTicketActive && (
+          <button
+            onClick={handleResolve}
+            disabled={isResolving}
+            className="px-2 py-1 rounded bg-[#131d30] hover:bg-emerald-600/20 hover:text-emerald-400 border border-[#22324e] hover:border-emerald-500/40 text-[10px] font-medium text-slate-300 transition-colors flex items-center gap-1 shrink-0"
+            title="Mark ticket as solved"
+          >
+            <CheckCircle className="w-3 h-3 text-emerald-400" />
+            Resolve
+          </button>
+        )}
       </div>
 
       {/* Message List */}

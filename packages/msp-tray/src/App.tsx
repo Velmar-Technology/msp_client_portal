@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { LifeBuoy, MessageSquare, Printer, Wifi, FileWarning, Sparkles, Zap } from "lucide-react";
+import { LifeBuoy, Printer, Wifi, FileWarning, Sparkles, Zap, FolderOpen } from "lucide-react";
 import {
   SystemVitals,
   AgentStatus,
@@ -8,6 +8,7 @@ import {
   fetchSystemVitals,
   fetchAgentStatus,
   fetchActiveTicket,
+  fetchTicketList,
 } from "./services/tauri";
 import { ShiftWorkerAttribution, getCachedAttribution } from "./services/attribution";
 import { Header } from "./components/Header";
@@ -15,12 +16,17 @@ import { VitalsWidget } from "./components/VitalsWidget";
 import { AttributionModal } from "./components/AttributionModal";
 import { QuickTicketModal } from "./components/QuickTicketModal";
 import { LiveChatDrawer } from "./components/LiveChatDrawer";
+import { TicketList } from "./components/TicketList";
 import { playNotificationChime } from "./services/sound";
 
 export const App: React.FC = () => {
   const [vitals, setVitals] = useState<SystemVitals | null>(null);
   const [agentStatus, setAgentStatus] = useState<AgentStatus | null>(null);
   const [activeTicket, setActiveTicket] = useState<ActiveTicket | null>(null);
+  const [ticketList, setTicketList] = useState<ActiveTicket[]>([]);
+  const [selectedTicket, setSelectedTicket] = useState<ActiveTicket | null>(null);
+  const [activeTab, setActiveTab] = useState<'SUPPORT' | 'TICKETS'>('SUPPORT');
+  const [isLoadingTickets, setIsLoadingTickets] = useState(false);
   const [attribution, setAttribution] = useState<ShiftWorkerAttribution | null>(null);
 
   const [isAttributionOpen, setIsAttributionOpen] = useState(false);
@@ -58,33 +64,68 @@ export const App: React.FC = () => {
     }
   }, []);
 
+  const loadTickets = useCallback(async () => {
+    try {
+      setIsLoadingTickets(true);
+      const list = await fetchTicketList();
+      setTicketList(list);
+    } catch (e) {
+      console.error('Failed to load tickets', e);
+    } finally {
+      setIsLoadingTickets(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadVitals();
     loadStatus();
+    loadTickets();
 
     const timer = setInterval(() => {
       loadVitals();
-    }, 5000);
+      loadStatus();
+      loadTickets();
+    }, 6000);
 
     return () => clearInterval(timer);
-  }, [loadVitals, loadStatus]);
+  }, [loadVitals, loadStatus, loadTickets]);
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
-    await Promise.all([loadVitals(), loadStatus()]);
+    await Promise.all([loadVitals(), loadStatus(), loadTickets()]);
     setIsRefreshing(false);
   };
 
   const handleTicketCreated = (res: CreateTicketResult) => {
     playNotificationChime();
-    setActiveTicket({
+    const created: ActiveTicket = {
       id: res.ticketId,
       title: res.title,
       status: res.status,
       assignedTechName: res.assignedTechName,
       createdAt: res.createdAt,
-    });
+    };
+    setActiveTicket(created);
+    setSelectedTicket(created);
+    setActiveTab('SUPPORT');
+    loadTickets();
   };
+
+  const openTicketChat = (ticket: ActiveTicket) => {
+    setSelectedTicket(ticket);
+  };
+
+  const handleTicketResolved = () => {
+    if (selectedTicket?.id === activeTicket?.id) {
+      setActiveTicket(null);
+    }
+    setSelectedTicket(null);
+    loadStatus();
+    loadTickets();
+  };
+
+  // Compute live ticket to display in drawer (either manually selected from list, or machine's active ticket)
+  const currentDrawerTicket = selectedTicket || (activeTab === 'SUPPORT' && activeTicket && activeTicket.status !== 'RESOLVED' ? activeTicket : null);
 
   return (
     <div className="flex flex-col h-screen bg-velmar-bg bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(0,132,255,0.12),rgba(7,10,16,0.98))] text-slate-100 font-sans select-none overflow-hidden">
@@ -100,25 +141,75 @@ export const App: React.FC = () => {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto p-3.5 space-y-3">
+      <div className="flex-1 overflow-y-auto p-3.5 space-y-2.5 flex flex-col min-h-0">
         {/* Hardware Vitals Widget */}
         <VitalsWidget vitals={vitals} />
 
-        {/* Active Ticket or Action Options */}
-        {activeTicket && activeTicket.status !== "RESOLVED" ? (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                <MessageSquare className="w-3.5 h-3.5 text-velmar-blue" /> Live Support Thread
-              </span>
-            </div>
-            <LiveChatDrawer
-              activeTicket={activeTicket}
-              attribution={attribution}
-              onTicketResolved={() => {
-                setActiveTicket(null);
-                loadStatus();
+        {/* Navigation Tabs (Quick Support vs Workstation Tickets) */}
+        {!selectedTicket && (
+          <div className="flex bg-[#0a101d] p-1 rounded-xl border border-[#1b263b] shrink-0 gap-1">
+            <button
+              onClick={() => {
+                setActiveTab('SUPPORT');
+                setSelectedTicket(null);
               }}
+              className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                activeTab === 'SUPPORT'
+                  ? 'bg-gradient-to-r from-[#0070db] to-[#0084ff] text-white shadow-md shadow-[#0084ff]/25'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#121b2d]'
+              }`}
+            >
+              <Zap className="w-3.5 h-3.5" />
+              Quick Support
+              {activeTicket && activeTicket.status !== 'RESOLVED' && (
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-0.5" />
+              )}
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('TICKETS');
+                setSelectedTicket(null);
+              }}
+              className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                activeTab === 'TICKETS'
+                  ? 'bg-gradient-to-r from-[#0070db] to-[#0084ff] text-white shadow-md shadow-[#0084ff]/25'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#121b2d]'
+              }`}
+            >
+              <FolderOpen className="w-3.5 h-3.5" />
+              Tickets
+              {ticketList.length > 0 && (
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                  activeTab === 'TICKETS'
+                    ? 'bg-white/20 text-white'
+                    : 'bg-[#1a263d] text-slate-300'
+                }`}>
+                  {ticketList.length}
+                </span>
+              )}
+            </button>
+          </div>
+        )}
+
+        {/* View Routing */}
+        {currentDrawerTicket ? (
+          <div className="flex-1 flex flex-col min-h-0">
+            <LiveChatDrawer
+              activeTicket={currentDrawerTicket}
+              attribution={attribution}
+              onTicketResolved={handleTicketResolved}
+              onBack={() => setSelectedTicket(null)}
+            />
+          </div>
+        ) : activeTab === 'TICKETS' ? (
+          <div className="flex-1 flex flex-col min-h-0">
+            <TicketList
+              tickets={ticketList}
+              selectedTicketId={undefined}
+              onSelectTicket={openTicketChat}
+              onOpenNewTicketModal={() => setIsTicketModalOpen(true)}
+              isLoading={isLoadingTickets}
             />
           </div>
         ) : (

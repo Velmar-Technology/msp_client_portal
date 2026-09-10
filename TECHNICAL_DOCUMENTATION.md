@@ -356,6 +356,8 @@ Esta capa orquesta las transacciones, valida reglas complejas (como SLAs y lími
 | `deactivateSlot` | `subscriptionId: string, slotIndex: number, tenantId: string, byAdmin = false` | Mapeo o funcionalidad interna |
 | `getActiveDevicesForClient` | `clientId: string, tenantId: string` | Mapeo o funcionalidad interna |
 | `getAllDevicesForAdmin` | `Ninguno` | Mapeo o funcionalidad interna |
+| `resolveLiveAgentStatus` | `device: SubscriptionEquipment` | Determina el estado ONLINE u OFFLINE según socket WebSocket activo o ventana de recencia de 15 minutos. |
+| `reconcileEquipmentSlots` | `Ninguno` | Barre y limpia slots zombis en PENDING_ACTIVATION que duplican seriales ya activos para restaurar invariante 1 a 1. |
 
 
 #### [ExpenseService.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/billing/services/ExpenseService.ts)
@@ -403,6 +405,18 @@ Esta capa orquesta las transacciones, valida reglas complejas (como SLAs y lími
 
 ##### Interfaces definidas:
 - `StorageStatus`
+
+
+#### [ClientHealthService.ts](file:///c:/Users/eapolanco/Workspace/msp_client_portal/server/src/modules/system/services/ClientHealthService.ts)
+*Ruta: `server/src/modules/system/services/ClientHealthService.ts`*
+
+##### Clase: `ClientHealthService`
+| Método / Función | Argumentos | Descripción / Rol |
+| :--- | :--- | :--- |
+| `calculateScore` | `tenantId: string` | Evalúa el puntaje compuesto de salud del inquilino según la regla BL-601 ($H = 0.40 S_{\text{ticket}} + 0.30 S_{\text{hardware}} + 0.30 S_{\text{security}}$), genera recomendaciones operativas y activa revisión QBR si $H < 70\%$. |
+
+##### Interfaces definidas:
+- `ClientHealthReport`
 
 
 #### [TechnicianEarningsService.ts](file:///c:/Users/eapolanco/Workspace/msp_client_portal/server/src/modules/system/services/TechnicianEarningsService.ts)
@@ -679,6 +693,7 @@ Reciben peticiones HTTP de Express, extraen parámetros y llaman a la capa de Se
 | Método / Función | Argumentos | Descripción / Rol |
 | :--- | :--- | :--- |
 | `getStorageStatus` | `_req: Request, res: Response, next: NextFunction` | Mapeo o funcionalidad interna |
+| `getClientHealth` | `req: Request, res: Response` | Consulta el reporte de salud compuesto de un inquilino (BL-601) y retorna `ClientHealthReport`. |
 
 
 #### [TicketController.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/modules/tickets/controllers/TicketController.ts)
@@ -727,6 +742,13 @@ Reciben peticiones HTTP de Express, extraen parámetros y llaman a la capa de Se
 Controles de acceso (RBAC), subida de archivos (Multer), autenticación por JWT y validaciones dinámicas con Zod.
 
 #### Rutas definidoras:
+- **`system.routes.ts` (`/api/v1/system`):** Expone diagnósticos de estado de almacenamiento, APIs del sistema, y el endpoint de puntaje de salud compuesto `GET /health/:tenantId` (BL-601).
+- **`authz.routes.ts` (`/api/v1/authz`):** Expone endpoints REST de Zero Standing Privileges (ZSP) y Policy Decision Point (PDP):
+  - `POST /ephemeral/request` — Solicitud de elevación de privilegios Just-In-Time con justificación y expiración temporal.
+  - `GET /ephemeral/grants` — Listado de concesiones JIT activas por inquilino o global para administradores.
+  - `POST /ephemeral/grants/:id/revoke` — Revocación inmediata de privilegios y retiro de tuplas Zanzibar.
+  - `POST /decision` — Evaluación unificada de políticas ABAC/ReBAC para tuplas `<sujeto>#<relación>@<objeto>`.
+  - `GET /trust-score` — Puntaje de confianza y riesgo contextual adaptable continuo.
 
 #### Middlewares de apoyo:
 #### [authMiddleware.ts](./file:/c:/Users/DELL/Desktop/wordspace/msp_client_portal/server/src/shared/middleware/authMiddleware.ts)
@@ -1940,5 +1962,14 @@ El servicio `NonPaymentSuspensionService` y la tarea programada `SubscriptionSch
 - **Día 15 de Vencimiento**: **Suspensión Total (`SUSPENDED`)**. Se desactiva el acceso a la plataforma (`is_active = false`) y se pausan los servicios de soporte técnico.
 - **Día 30 de Vencimiento**: **Depuración Técnica Permanente (`PURGED`)**. Para liberación de almacenamiento en servidores, se eliminan las cuentas de usuario de almacenamiento en la nube (Nextcloud) vía API y se revocan las credenciales de agentes de hardware, con cero responsabilidad para LA EMPRESA.
 - **Restablecimiento Automático**: La liquidación y pago de las facturas pendientes mediante PayPal o confirmación de transferencia bancaria ejecuta `restoreAccountIfPaid()`, restableciendo inmediatamente el inquilino y los usuarios al estado `ACTIVE`.
+
+### 9.4. Evaluación de Salud de la Cuenta y Revisiones QBR (BL-601)
+El servicio `ClientHealthService` evalúa de forma continua la estabilidad técnica y la postura de seguridad de cada inquilino mediante la fórmula canónica:
+$$H = 0.40 \times S_{\text{ticket}} + 0.30 \times S_{\text{hardware}} + 0.30 \times S_{\text{security}}$$
+
+- **Sub-puntaje de Soporte ($S_{\text{ticket}}$):** Deducciones de 25 puntos por tickets en estado `CRITICAL` sin resolver, 5 puntos por tickets abiertos y 20 puntos adicionales por violaciones a los umbrales de escalación de SLA (BL-104).
+- **Sub-puntaje de Infraestructura ($S_{\text{hardware}}$):** Deducciones de 15 puntos por equipos inactivos (>7 días), 15 puntos por saturación de disco (>85%) y 10 puntos por sobrecarga de memoria (>90%).
+- **Sub-puntaje de Seguridad ($S_{\text{security}}$):** Deducciones de 8 puntos por cada parche de seguridad o actualización crítica pendiente en endpoints monitoreados.
+- **Disparador de Revisión QBR:** Puntuaciones globales inferiores al $70\%$ (`score < 70`) generan automáticamente una advertencia para que el vCIO programe una Revisión Comercial Trimestral (*Quarterly Business Review - QBR*) prioritaria con el cliente.
 
 

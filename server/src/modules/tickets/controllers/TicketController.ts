@@ -7,9 +7,9 @@ import { ticketAssignmentService } from '@modules/tickets/services/TicketAssignm
 import { ticketResponseService } from '@modules/tickets/services/TicketResponseService';
 import { ticketAttachmentService } from '@modules/tickets/services/TicketAttachmentService';
 import { CreateTicketInput, UpdateTicketStatusInput, TicketQueryInput, CreateTicketResponseInput } from '@shared/dtos/ticket.dto';
-import { CreateAgentTicketInput, AddAgentTicketResponseInput } from '@shared/contracts';
+import { CreateAgentTicketInput, AddAgentTicketResponseInput, AgentUpdateTicketStatusInput } from '@shared/contracts';
 import { DEFAULT_LIMIT, DEFAULT_PAGE } from '@shared/config/constants';
-import { UserContext, UserRole } from '@shared/types';
+import { UserContext, UserRole, TicketStatus } from '@shared/types';
 
 /**
  * Controller handling HTTP requests for support ticket creation, listing, status updates,
@@ -241,6 +241,105 @@ export class TicketController {
       req.agent!
     );
     res.status(201).json({ success: true, data: response });
+  }
+
+  /**
+   * Retrieves the currently active (OPEN or IN_PROGRESS) ticket for the calling workstation agent.
+   *
+   * @param req - Express request with req.agent context
+   * @param res - Express response returning active ticket or null
+   */
+  async getActiveTicketForAgent(req: Request, res: Response): Promise<void> {
+    const ticket = await ticketQueryService.getActiveTicketForAgent(req.agent!);
+    if (!ticket) {
+      res.json({ success: true, data: null });
+      return;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        id: ticket.id,
+        title: ticket.title,
+        description: ticket.description,
+        status: ticket.status,
+        priority: ticket.priority,
+        category: ticket.category,
+        assignedTechId: ticket.assigned_tech_id,
+        assignedTechName: ticket.assigned_tech_name,
+        equipmentId: ticket.equipment_id,
+        createdAt: ticket.created_at ? new Date(ticket.created_at).toISOString() : new Date().toISOString(),
+        updatedAt: ticket.updated_at ? new Date(ticket.updated_at).toISOString() : new Date().toISOString(),
+      },
+    });
+  }
+
+  /**
+   * Retrieves ticket history for the calling workstation agent.
+   *
+   * @param req - Express request with req.agent context
+   * @param res - Express response returning array of workstation tickets
+   */
+  async getTicketsForAgent(req: Request, res: Response): Promise<void> {
+    const limit = Number(req.query.limit) || 20;
+    const tickets = await ticketQueryService.getTicketsForAgent(req.agent!, limit);
+    res.json({
+      success: true,
+      data: tickets.map((t) => ({
+        id: t.id,
+        title: t.title,
+        description: t.description,
+        status: t.status,
+        priority: t.priority,
+        category: t.category,
+        assignedTechId: t.assigned_tech_id,
+        assignedTechName: t.assigned_tech_name,
+        equipmentId: t.equipment_id,
+        createdAt: t.created_at ? new Date(t.created_at).toISOString() : new Date().toISOString(),
+        updatedAt: t.updated_at ? new Date(t.updated_at).toISOString() : new Date().toISOString(),
+      })),
+    });
+  }
+
+  /**
+   * Retrieves conversational responses for a ticket requested by the endpoint machine agent.
+   *
+   * @param req - Express request with ticket ID in params and req.agent context
+   * @param res - Express response returning array of messages
+   */
+  async getResponsesForAgent(req: Request, res: Response): Promise<void> {
+    const responses = await ticketResponseService.getTicketResponsesForAgent(
+      req.params.id as string,
+      req.agent!
+    );
+    res.json({
+      success: true,
+      data: responses.map((r) => ({
+        id: r.id,
+        authorName: r.author_name || r.user_name || 'Support Technician',
+        authorRole: r.user_role === 'CLIENT' ? 'CLIENT' : 'TECHNICIAN',
+        message: r.message,
+        isInternal: false,
+        attachments: (r.attachments || []).map((a) => a.filename),
+        createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+      })),
+    });
+  }
+
+  /**
+   * Updates ticket status from a machine-authenticated endpoint workstation agent.
+   *
+   * @param req - Express request with ticket ID in params, status in body, and req.agent context
+   * @param res - Express response returning updated ticket
+   */
+  async updateStatusFromAgent(req: Request, res: Response): Promise<void> {
+    const { status } = req.body as AgentUpdateTicketStatusInput;
+    const updated = await ticketStatusService.updateStatusFromAgent(
+      req.params.id as string,
+      status as TicketStatus.RESOLVED | TicketStatus.CLOSED,
+      req.agent!
+    );
+    res.json({ success: true, data: updated });
   }
 }
 

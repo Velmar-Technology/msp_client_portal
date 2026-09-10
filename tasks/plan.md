@@ -1,48 +1,53 @@
-# Implementation Plan: MSP Agent Autonomous Self-Upgrade Mechanism (OTA Hot-Swap)
+# Implementation Plan: MSP Tray to MSP Agent Named Pipe IPC Bridge
 
 ## Overview
-Decomposition and implementation plan for the autonomous self-upgrade (OTA) mechanism in the Rust endpoint agent (`packages/msp-agent`, Windows Service `MSPEndpointAgent`). This equips MSP technicians and AI agents (via MCP and the Web Portal) to trigger secure, in-place binary upgrades over the existing TLS WebSocket connection (`/agent-ws`) using an in-process atomic move swap with automated rollback protection if the post-restart handshake fails.
+Implement a high-performance local Inter-Process Communication (IPC) bridge over Windows Named Pipes (`\\.\pipe\msp-agent-ipc`) connecting the desktop tray user interface (`msp-tray.exe`, Session 1+) to the background system daemon (`msp-agent.exe`, Windows Service Session 0). This eliminates local authentication management in `msp-tray`, enabling zero-config automatic ticket creation, real-time bidirectional support chat push, and workstation ticket synchronization.
 
 ---
 
 ## Architecture Decisions
 
-1. **Windows File-Lock Avoidance via Atomic Move (`MoveFileExW` / `std::fs::rename`):**
-   - Windows NTFS forbids deleting or overwriting actively running executables (`ERROR_SHARING_VIOLATION`), but permits renaming them within the same volume.
-   - The running service renames its own executing binary `msp-agent.exe` $\rightarrow$ `msp-agent.exe.bak-v<cur>`, moves the staged replacement into `msp-agent.exe`, and restarts the Windows Service.
+1. **Windows Named Pipe IPC (`\\.\pipe\msp-agent-ipc`):**
+   - Direct, low-latency, zero-network kernel IPC between the system daemon and desk user app.
+   - **Security Descriptor (DACL):** Server pipe configured with explicit SDDL `D:(A;;GRGW;;;AU)` (Allow GenericRead + GenericWrite to Authenticated Users) ensuring unprivileged desktop sessions can connect to the Session 0 SYSTEM service.
+   - **Framing:** 4-byte big-endian length prefix + UTF-8 JSON `IpcEnvelope<T>`.
 
-2. **Handshake Sentinel Guard & Automated Rollback (`upgrade_state.json`):**
-   - Before swapping, the agent records an upgrade transaction in `C:\ProgramData\MSP\updates\upgrade_state.json` with a 45-second rollback deadline.
-   - Upon restart, the new binary boots:
-     - **Success:** Once the TLS WebSocket connection to `/agent-ws` is authenticated, the agent commits the upgrade by deleting `upgrade_state.json` and cleaning up the previous `.bak` binary.
-     - **Failure / Crash / Timeout:** If the handshake fails or times out, the service restores `msp-agent.exe.bak-v<cur>` and restarts the stable predecessor.
+2. **Backend Machine-Authenticated Contract Extensions:**
+   - Add `GET /api/v1/tickets/agent/active` to query current open ticket for the authenticated workstation.
+   - Add `GET /api/v1/tickets/:id/responses/agent` to fetch conversational history for the ticket.
+   - Add `PATCH /api/v1/tickets/:id/status/agent` to allow desk user to mark the ticket `RESOLVED` directly from the tray.
+   - All protected by existing `agentAuthMiddleware` validating against `subscription_equipment.agent_token`.
 
-3. **Multi-Channel Orchestration (Web Portal & MCP Tool):**
-   - Upgrades can be commanded visually via the Portal Equipment Detail view or conversationally via Copilot Studio / LLMs using the MCP tool `msp_remote_upgrade_agent`.
-   - The backend validates technician/admin permissions, resolves binary download URLs & SHA-256 integrity hashes, and dispatches the payload via `AgentGateway.sendCommand`.
+3. **Event Push Brokerage:**
+   - When a technician replies in the web portal, `AgentGateway` sends `TICKET_CHAT_PUSH` over the existing WebSocket (`/agent-ws`).
+   - `msp-agent` receives the frame and broadcasts it across active connected named pipe instances.
+   - `msp-tray` receives the frame over the pipe and emits it as a Tauri window event (`ticket_chat_push`), playing the chime and rendering the reply.
 
 ---
 
 ## Task List
 
-### Phase 1: Shared API Contracts & Backend Gateway Orchestration
-- [ ] Task 1.1: Define Agent Upgrade API Contracts in `@shared/contracts`
-- [ ] Task 1.2: Implement Backend Upgrade Endpoint in `rmm.routes.ts` & `AgentGatewayController.ts`
-- [ ] Task 1.3: Add Backend Unit Tests for Agent Upgrade Dispatch in `AgentGateway.test.ts`
-- [ ] Checkpoint 1: Backend Contracts & Endpoint Green
+### Phase 1: Backend Machine-Authenticated Endpoints & Contracts
+- [ ] Task 1.1: Define Agent Active Ticket & History Contracts in `@shared/contracts`
+- [ ] Task 1.2: Implement Backend Routes & Controller Handlers in `ticket.routes.ts` & `TicketController.ts`
+- [ ] Task 1.3: Add Backend Unit Tests in `ticket.routes.test.ts` / `TicketController.test.ts`
+- [ ] Checkpoint 1: Backend Contracts & Endpoints Green
 
-### Phase 2: Rust Endpoint Hot-Swap Engine & Rollback Guard (`packages/msp-agent`)
-- [ ] Task 2.1: Add Upgrade Module with Streaming HTTPS Download & SHA-256 Verification in Rust
-- [ ] Task 2.2: Implement In-Process Atomic Move Swap & Sentinel State (`upgrade_state.json`)
-- [ ] Task 2.3: Implement Windows SCM Self-Restart & Post-Restart Handshake Rollback Watchdog
-- [ ] Task 2.4: Wire `AGENT_UPGRADE` WebSocket Message Handler in `main.rs`
-- [ ] Checkpoint 2: Agent Compilation & Local Rust Test Validation
+### Phase 2: Rust `msp-agent` Named Pipe IPC Server (`packages/msp-agent`)
+- [ ] Task 2.1: Implement Named Pipe Server Module (`ipc_server.rs`) with Session 0 Security DACL
+- [ ] Task 2.2: Implement IPC Request Handlers (`GET_AGENT_STATUS`, `CREATE_TICKET`, `SEND_CHAT_MESSAGE`, `GET_ACTIVE_TICKET`, `RESOLVE_TICKET`)
+- [ ] Task 2.3: Wire Inbound WebSocket `TICKET_CHAT_PUSH` Broadcast to Connected Pipe Clients
+- [ ] Checkpoint 2: `msp-agent` Compiles and Local Tests Pass
 
-### Phase 3: MCP Tooling & Portal Integration
-- [ ] Task 3.1: Add `upgradeAgent` in `MspApiClient.ts` and Register `msp_remote_upgrade_agent` MCP Tool
-- [ ] Task 3.2: Add MCP Tool Unit Tests in `tools.test.ts`
-- [ ] Task 3.3: Web Portal UI Trigger & Version Badging in `client`
-- [ ] Checkpoint 3: Full End-to-End Monorepo Quality Gates (`npm run build:packages`, `server build`, `client build`)
+### Phase 3: Rust `msp-tray` Named Pipe IPC Client (`packages/msp-tray`)
+- [ ] Task 3.1: Implement Resilient Named Pipe Client with Auto-Reconnect in `packages/msp-tray/src-tauri/src/ipc.rs`
+- [ ] Task 3.2: Wire IPC Client to Tauri Commands & Window Push Event Dispatch in `lib.rs`
+- [ ] Checkpoint 3: `msp-tray` Rust Backend Compiles and Connects to Pipe
+
+### Phase 4: Frontend UI Hydration & Real-Time Sync (`packages/msp-tray/src`)
+- [ ] Task 4.1: Hydrate Past Message History on Ticket Mount in `LiveChatDrawer.tsx`
+- [ ] Task 4.2: Auto-Sync Active Ticket and Status Transitions in `App.tsx`
+- [ ] Checkpoint 4: Full End-to-End Verification & Quality Gates
 
 ---
 
@@ -50,12 +55,11 @@ Decomposition and implementation plan for the autonomous self-upgrade (OTA) mech
 
 | Risk | Impact | Mitigation |
 | :--- | :--- | :--- |
-| **Windows NTFS Permission Error:** `SYSTEM` service unable to rename executing binary. | High | Validated: Windows kernel permits renaming open executables on NTFS as long as directory write permissions exist, which Session 0 `NT AUTHORITY\SYSTEM` possesses. |
-| **Post-Upgrade Network Handshake Flapping:** High network latency causing false-positive rollback at 45s. | Medium | Configurable `rollback_timeout_secs` in payload (default 45s, extensible up to 120s for satellite/cellular endpoints). |
-| **Corrupted Binary Download:** Incomplete file download resulting in a non-starting binary. | High | Mandatory SHA-256 checksum verification before initiating any file moves. If hash mismatches, update aborts immediately with an error log. |
-| **Tampered Update URL (MITM):** Insecure download payload injected. | Critical | Download URL must be HTTPS only; binary integrity is verified against expected SHA-256 generated server-side. |
+| **Windows Session 0 Pipe Security (Access Denied):** Standard user unable to open pipe created by SYSTEM service. | Critical | Server pipe explicitly created with SDDL `D:(A;;GRGW;;;AU)` or security descriptor allowing Authenticated Users access. |
+| **Daemon Restart / Disconnect:** Agent service restarts during update, leaving tray disconnected. | Medium | Tray client implements exponential backoff reconnection loop and displays reconnecting badge in Header. |
+| **Pipe Buffer Saturation:** Slow tray app blocking agent WebSocket message loop. | Low | Agent uses asynchronous broadcast channel (`tokio::sync::broadcast`) with bounded buffer and drops for stale clients. |
 
 ---
 
 ## Open Questions
-- None. Requirements, failure modes, and architectural boundaries are fully resolved in [`docs/ideas/msp-agent-self-upgrade.md`](file:///c:/Users/PC/Workspace/msp_client_portal/docs/ideas/msp-agent-self-upgrade.md).
+- None. Requirements and architectural direction validated with user.
