@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.11.8](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.7...v1.11.8) (2026-09-11)
+
+
+### Features
+
+* **tickets:** decouple responses card into responsive odoo chatter overlay with internal notes ([0d3f5b9](https://github.com/Velmar-Technology/msp_client_portal/commit/0d3f5b924da5537a14ed77aadeae3fa182f378ab))
+* **tray:** allow copying ticket id on click ([ccb1758](https://github.com/Velmar-Technology/msp_client_portal/commit/ccb175835c58511dea9f214578e7f9443e49e60f))
+
 ## [1.11.7](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.6...v1.11.7) (2026-09-10)
 
 
