@@ -791,7 +791,36 @@ describe('SubscriptionService', () => {
         true
       );
 
+      expect(mocks.equipmentCreate).toHaveBeenCalledTimes(2); // Pre-provisions 2 additional slots
       expect(mocks.subUpdatePlan).toHaveBeenCalledWith('sub-1', 'BASIC', 4);
+      expect(result).toEqual(mockUpdatedSub);
+    });
+
+    it('should allow admin to update subscription across tenants and generate invoice when createInvoice is true', async () => {
+      const mockUpdatedSub = { ...mockSub, equipment_count: 5 };
+      mocks.subUpdatePlan.mockResolvedValue(mockUpdatedSub);
+      mocks.invoiceCreate.mockResolvedValue({ id: 'inv-admin-upgrade-1' });
+
+      const result = await subscriptionService.updateSubscription(
+        'sub-1',
+        {
+          equipmentCount: 5,
+          createInvoice: true,
+          reason: 'Client requested extra workstations via Sentinel',
+        },
+        'admin-tenant-override',
+        true // byAdmin
+      );
+
+      expect(mocks.invoiceCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: InvoiceStatus.PENDING,
+          client_id: 'client-1',
+          tenant_id: 'tenant-123',
+        })
+      );
+      expect(mocks.equipmentCreate).toHaveBeenCalledTimes(3); // 2 -> 5 (3 slots)
+      expect(mocks.subUpdatePlan).toHaveBeenCalledWith('sub-1', 'BASIC', 5);
       expect(result).toEqual(mockUpdatedSub);
     });
 

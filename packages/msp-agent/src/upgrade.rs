@@ -267,3 +267,86 @@ pub fn trigger_service_restart() {
         std::process::exit(0);
     }
 }
+
+/// Executes a detached Windows Installer upgrade via msiexec.
+/// Spawns msiexec detached from the current process tree so it survives
+/// the stopping/restarting of MSPEndpointAgent service.
+pub fn execute_msi_upgrade(msi_path: &Path) -> Result<(), String> {
+    let msi_path_str = msi_path
+        .to_str()
+        .ok_or_else(|| "Invalid MSI file path".to_string())?;
+
+    let log_path = PathBuf::from(UPDATES_SUBDIR).join("upgrade_msi.log");
+    let log_path_str = log_path.to_string_lossy().to_string();
+
+    info!(
+        "[upgrade] Launching detached MSI upgrade: {:?} (log: {})",
+        msi_path, log_path_str
+    );
+
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const DETACHED_PROCESS: u32 = 0x00000008;
+        const CREATE_NEW_PROCESS_GROUP: u32 = 0x00000200;
+
+        let mut cmd = std::process::Command::new("cmd.exe");
+        cmd.args([
+            "/c",
+            "start",
+            "\"\"",
+            "msiexec.exe",
+            "/i",
+            msi_path_str,
+            "/qn",
+            "/norestart",
+            "/l*v",
+            &log_path_str,
+        ]);
+        cmd.creation_flags(DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP);
+
+        cmd.spawn()
+            .map_err(|e| format!("Failed to spawn detached msiexec process: {e}"))?;
+
+        info!("[upgrade] Detached msiexec launched successfully. Service will now exit to allow installer takeover.");
+        Ok(())
+    }
+
+    #[cfg(not(windows))]
+    {
+        let _ = msi_path_str;
+        let _ = log_path_str;
+        info!("[upgrade] Non-Windows platform: MSI execution simulation succeeded.");
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_upgrade_state_serialization() {
+        let state = UpgradeState {
+            previous_version: "1.8.4".to_string(),
+            target_version: "1.10.2".to_string(),
+            original_exe_path: "C:\\Program Files\\MSP\\msp-agent.exe".to_string(),
+            backup_exe_path: "C:\\Program Files\\MSP\\msp-agent.exe.bak-v1.8.4".to_string(),
+            deadline_secs: 123456789,
+        };
+
+        let json = serde_json::to_string(&state).expect("serialize");
+        let deserialized: UpgradeState = serde_json::from_str(&json).expect("deserialize");
+
+        assert_eq!(deserialized.previous_version, "1.8.4");
+        assert_eq!(deserialized.target_version, "1.10.2");
+        assert_eq!(deserialized.deadline_secs, 123456789);
+    }
+
+    #[test]
+    fn test_execute_msi_upgrade_valid_path() {
+        let dummy_msi = Path::new("C:\\ProgramData\\MSP\\updates\\test.msi");
+        let result = execute_msi_upgrade(dummy_msi);
+        assert!(result.is_ok());
+    }
+}

@@ -29,7 +29,7 @@ describe('AgentGatewayController', () => {
   });
 
   describe('upgradeAgent', () => {
-    it('should successfully dispatch AGENT_UPGRADE and return confirmation', async () => {
+    it('should successfully dispatch AGENT_UPGRADE with default MSI package and return confirmation', async () => {
       const mockResult = { success: true, status: 'UPGRADE_PREPARED' };
       vi.mocked(agentGateway.sendCommand).mockResolvedValueOnce(mockResult);
 
@@ -52,8 +52,9 @@ describe('AgentGatewayController', () => {
         'AGENT_UPGRADE',
         expect.objectContaining({
           target_version: '1.10.2',
+          installer_type: 'msi',
           rollback_timeout_secs: 60,
-          download_url: 'https://helpdesk.velmartech.com.do/dl/msp-agent-1.10.2.exe',
+          download_url: 'https://helpdesk.velmartech.com.do/dl/msp-endpoint-suite-1.10.2.msi',
         }),
         30000
       );
@@ -64,9 +65,42 @@ describe('AgentGatewayController', () => {
           message: 'Agent upgrade initiated successfully',
           equipmentId: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
           targetVersion: '1.10.2',
+          installerType: 'msi',
           rollbackTimeoutSecs: 60,
           agentResponse: mockResult,
         })
+      );
+    });
+
+    it('should dispatch AGENT_UPGRADE with binary when installerType is binary', async () => {
+      const mockResult = { success: true, status: 'UPGRADE_PREPARED' };
+      vi.mocked(agentGateway.sendCommand).mockResolvedValueOnce(mockResult);
+
+      const req: any = {
+        params: { equipmentId: '3fa85f64-5717-4562-b3fc-2c963f66afa6' },
+        body: {
+          targetVersion: '1.10.2',
+          installerType: 'binary',
+          rollbackTimeoutSecs: 45,
+        },
+      };
+
+      const res: any = {
+        json: vi.fn(),
+      };
+
+      await controller.upgradeAgent(req, res);
+
+      expect(agentGateway.sendCommand).toHaveBeenCalledWith(
+        '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+        'AGENT_UPGRADE',
+        expect.objectContaining({
+          target_version: '1.10.2',
+          installer_type: 'binary',
+          rollback_timeout_secs: 45,
+          download_url: 'https://helpdesk.velmartech.com.do/dl/msp-agent-1.10.2.exe',
+        }),
+        30000
       );
     });
 

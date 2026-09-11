@@ -141,6 +141,7 @@ export class AgentGatewayController {
     const rawInput = {
       equipmentId: req.params.equipmentId,
       targetVersion: req.body?.targetVersion,
+      installerType: req.body?.installerType,
       downloadUrl: req.body?.downloadUrl,
       sha256Checksum: req.body?.sha256Checksum,
       rollbackTimeoutSecs: req.body?.rollbackTimeoutSecs,
@@ -156,9 +157,14 @@ export class AgentGatewayController {
 
     const input = parseResult.data;
     const targetVersion = (input.targetVersion || '1.10.2').replace(/^v/, '');
+    const installerType = input.installerType || 'msi';
     const baseUrl =
       process.env.MSP_AGENT_DOWNLOAD_BASE_URL || 'https://helpdesk.velmartech.com.do/dl';
-    const downloadUrl = input.downloadUrl || `${baseUrl}/msp-agent-${targetVersion}.exe`;
+    const defaultFilename =
+      installerType === 'msi'
+        ? `msp-endpoint-suite-${targetVersion}.msi`
+        : `msp-agent-${targetVersion}.exe`;
+    const downloadUrl = input.downloadUrl || `${baseUrl}/${defaultFilename}`;
 
     // Known release checksum table fallback if not supplied explicitly
     const KNOWN_CHECKSUMS: Record<string, string> = {
@@ -173,6 +179,7 @@ export class AgentGatewayController {
 
     const payload = {
       target_version: targetVersion,
+      installer_type: installerType,
       download_url: downloadUrl,
       sha256_checksum: sha256Checksum,
       rollback_timeout_secs: input.rollbackTimeoutSecs ?? 45,
@@ -185,6 +192,7 @@ export class AgentGatewayController {
       message: 'Agent upgrade initiated successfully',
       equipmentId: input.equipmentId,
       targetVersion,
+      installerType,
       rollbackTimeoutSecs: payload.rollback_timeout_secs,
       initiatedAt: new Date().toISOString(),
       agentResponse: result,

@@ -88,5 +88,12 @@ router.put(
   (req, res) => technicianEarningsController.updateRates(req, res),
 );
 
+/** POST /api/v1/system/sentinel/audit — Execute on-demand SequenceSentinel integrity audit (Admin & Tech) */
+router.post(
+  '/sentinel/audit',
+  rbacMiddleware(UserRole.ADMIN, UserRole.TECHNICIAN),
+  (req, res) => systemController.runSentinelAudit(req, res),
+);
+
 export default router;
 

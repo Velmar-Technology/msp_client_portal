@@ -86,7 +86,7 @@ export class TicketStatusService {
     // Trigger technician closure earnings or void if reopened
     if (data.status === TicketStatus.RESOLVED || data.status === TicketStatus.CLOSED) {
       const closingTechId = updated.assigned_tech_id || ctx.userId;
-      if (closingTechId && ctx.role === 'TECHNICIAN' || ctx.role === 'ADMIN') {
+      if (closingTechId && (ctx.role === 'TECHNICIAN' || ctx.role === 'ADMIN')) {
         this.earningsSvc.calculateAndRecordEarnings(updated, closingTechId, ticket.tenant_id).catch((err) => {
           logger.error('Failed to calculate technician earnings for ticket closure', { error: err, ticketId });
         });

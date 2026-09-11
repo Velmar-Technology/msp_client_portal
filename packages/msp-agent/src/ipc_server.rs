@@ -227,13 +227,30 @@ async fn handle_pipe_client(
                             }
                         };
 
-                        let state = AgentState::load();
+                        let mut state = AgentState::load();
                         let token = resolve_active_token(&config, &state);
 
                         let response_env = match envelope.msg_type.as_str() {
                             "GET_AGENT_STATUS" => {
                                 let hostname = sysinfo::System::host_name().unwrap_or_else(|| "WORKSTATION".to_string());
                                 let eq_id = state.slot_id.clone().or(Some(state.instance_id.clone()));
+                                let is_bound = state.is_bound();
+                                let (pairing_code, pairing_code_expires_at) = if !is_bound {
+                                    let code = match state.active_pairing_code() {
+                                        Some(c) => c.to_string(),
+                                        None => {
+                                            let fresh = state.issue_pairing_code();
+                                            if let Err(e) = state.save() {
+                                                warn!("[IPC Server] Failed to save fresh pairing code: {}", e);
+                                            }
+                                            fresh
+                                        }
+                                    };
+                                    (Some(code), state.pairing_code_expires_at.clone())
+                                } else {
+                                    (None, None)
+                                };
+
                                 IpcEnvelope::response(
                                     &envelope.id,
                                     "GET_AGENT_STATUS_RESP",
@@ -243,9 +260,34 @@ async fn handle_pipe_client(
                                         "equipmentId": eq_id,
                                         "hostname": hostname,
                                         "tenantName": "Managed Workstation",
-                                        "activeTicketCount": 0
+                                        "activeTicketCount": 0,
+                                        "isBound": is_bound,
+                                        "pairingCode": pairing_code,
+                                        "pairingCodeExpiresAt": pairing_code_expires_at
                                     }),
                                 )
+                            }
+
+                            "REFRESH_PAIRING_CODE" => {
+                                if state.is_bound() {
+                                    IpcEnvelope::error(&envelope.id, "Agent is already bound to a slot; pairing is disabled")
+                                } else {
+                                    let code = state.issue_pairing_code();
+                                    if let Err(e) = state.save() {
+                                        IpcEnvelope::error(&envelope.id, &format!("Failed to persist refreshed code: {}", e))
+                                    } else {
+                                        let exp = state.pairing_code_expires_at.clone();
+                                        IpcEnvelope::response(
+                                            &envelope.id,
+                                            "REFRESH_PAIRING_CODE_RESP",
+                                            json!({
+                                                "success": true,
+                                                "pairingCode": code,
+                                                "pairingCodeExpiresAt": exp
+                                            }),
+                                        )
+                                    }
+                                }
                             }
 
                             "GET_ACTIVE_TICKET" => {

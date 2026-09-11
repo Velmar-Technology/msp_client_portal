@@ -446,65 +446,71 @@ export class SubscriptionLifecycleService {
   async updateSubscription(id: string, data: UpdateSubscriptionInput, tenantId: string, byAdmin = false): Promise<Subscription> {
     const sub = await this.subscriptionRepo.findById(id);
     if (!sub) throw new NotFoundError('Subscription not found');
-    if (sub.tenant_id !== tenantId) throw new ForbiddenError('Access denied');
+    if (sub.tenant_id !== tenantId && !byAdmin) throw new ForbiddenError('Access denied');
 
+    const targetTenantId = sub.tenant_id;
     let updated = sub;
 
     if (data.plan || data.equipmentCount !== undefined) {
       const newPlan = data.plan || sub.plan;
       const newCount = data.equipmentCount !== undefined ? data.equipmentCount : sub.equipment_count;
 
-      if (!byAdmin && newCount !== sub.equipment_count) {
+      if (newCount !== sub.equipment_count) {
         if (sub.paypal_order_id && (sub.paypal_order_id.startsWith('I-') || sub.paypal_order_id.startsWith('MOCK-SUB-'))) {
           await this.paypalSvc.updateSubscriptionQuantity(sub.paypal_order_id, newCount);
-        } else if (newCount > sub.equipment_count) {
+        }
+
+        if (newCount > sub.equipment_count) {
           const planDetails = await this.planRepo.findById(newPlan);
           if (!planDetails) throw new NotFoundError('Plan not found');
 
           const billingCycle = (sub.service_name.includes('Annual') || sub.service_name.includes('Anual')) ? 'annual' : 'monthly';
           const additionalCount = newCount - sub.equipment_count;
-          const upgradePricing = this.pricingSvc.calculateUpgradePricing(planDetails.price, additionalCount, billingCycle);
+          const shouldCreateInvoice = !byAdmin || data.createInvoice === true;
 
-          const client = await this.userRepo.findById(sub.client_id);
-          const tenant = await this.tenantRepo.findById(tenantId);
-          const effectiveRnc = client?.rnc || tenant?.rnc || null;
-          const ncf = await this.ncfSvc.assignNcfIfEligible(effectiveRnc);
+          if (shouldCreateInvoice) {
+            const upgradePricing = this.pricingSvc.calculateUpgradePricing(planDetails.price, additionalCount, billingCycle);
+            const client = await this.userRepo.findById(sub.client_id);
+            const tenant = await this.tenantRepo.findById(targetTenantId);
+            const effectiveRnc = client?.rnc || tenant?.rnc || null;
+            const ncf = await this.ncfSvc.assignNcfIfEligible(effectiveRnc);
 
-          if (data.paypalOrderId) {
-            await this.subPaymentSvc.verifyPaypalUpgradePayment(data.paypalOrderId, upgradePricing.total);
-            const invoiceNumber = await this.pricingSvc.generateInvoiceNumber();
-            await this.invoiceRepo.create({
-              invoice_number: invoiceNumber,
-              client_id: sub.client_id,
-              amount: upgradePricing.subtotal,
-              tax_amount: upgradePricing.tax,
-              total: upgradePricing.total,
-              currency: 'USD',
-              ncf,
-              rnc: effectiveRnc,
-              due_date: new Date(),
-              tenant_id: tenantId,
-              status: InvoiceStatus.PAID,
-            });
-          } else {
-            // Wire Transfer / Bank Transfer intent
-            const invoiceNumber = await this.pricingSvc.generateInvoiceNumber();
-            const dueDate = new Date();
-            dueDate.setDate(dueDate.getDate() + 30);
-            await this.invoiceRepo.create({
-              invoice_number: invoiceNumber,
-              client_id: sub.client_id,
-              amount: upgradePricing.subtotal,
-              tax_amount: upgradePricing.tax,
-              total: upgradePricing.total,
-              currency: 'USD',
-              ncf,
-              rnc: effectiveRnc,
-              due_date: dueDate,
-              tenant_id: tenantId,
-              status: InvoiceStatus.PENDING,
-            });
-            await this.notifyUpgradeIntent(sub.client_id, tenantId, sub.service_name, additionalCount, invoiceNumber);
+            if (data.paypalOrderId) {
+              await this.subPaymentSvc.verifyPaypalUpgradePayment(data.paypalOrderId, upgradePricing.total);
+              const invoiceNumber = await this.pricingSvc.generateInvoiceNumber();
+              await this.invoiceRepo.create({
+                invoice_number: invoiceNumber,
+                client_id: sub.client_id,
+                amount: upgradePricing.subtotal,
+                tax_amount: upgradePricing.tax,
+                total: upgradePricing.total,
+                currency: 'USD',
+                ncf,
+                rnc: effectiveRnc,
+                due_date: new Date(),
+                tenant_id: targetTenantId,
+                status: InvoiceStatus.PAID,
+              });
+            } else {
+              // Wire Transfer / Bank Transfer intent
+              const invoiceNumber = await this.pricingSvc.generateInvoiceNumber();
+              const dueDate = new Date();
+              dueDate.setDate(dueDate.getDate() + 30);
+              await this.invoiceRepo.create({
+                invoice_number: invoiceNumber,
+                client_id: sub.client_id,
+                amount: upgradePricing.subtotal,
+                tax_amount: upgradePricing.tax,
+                total: upgradePricing.total,
+                currency: 'USD',
+                ncf,
+                rnc: effectiveRnc,
+                due_date: dueDate,
+                tenant_id: targetTenantId,
+                status: InvoiceStatus.PENDING,
+              });
+              await this.notifyUpgradeIntent(sub.client_id, targetTenantId, sub.service_name, additionalCount, invoiceNumber);
+            }
           }
 
           // Pre-provision additional equipment slots in PENDING_ACTIVATION state
@@ -513,7 +519,7 @@ export class SubscriptionLifecycleService {
               subscription_id: sub.id,
               slot_index: i,
               status: 'PENDING_ACTIVATION',
-              tenant_id: tenantId,
+              tenant_id: targetTenantId,
             });
           }
         }

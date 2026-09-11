@@ -1,9 +1,13 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import {
   isTauriEnvironment,
   fetchSystemVitals,
   fetchAgentStatus,
+  refreshPairingCode,
+  listenAgentBound,
+  listenAgentUnbound,
   fetchActiveTicket,
   fetchTicketList,
   fetchTicketMessages,
@@ -14,8 +18,10 @@ import {
 } from './tauri';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
+vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
 
 const mockInvoke = vi.mocked(invoke);
+const mockListen = vi.mocked(listen);
 
 const FALLBACK_VITALS = {
   cpuPercent: 14.5,
@@ -37,6 +43,7 @@ const FALLBACK_STATUS = {
   hostname: 'DEV-WORKSTATION-01',
   tenantName: 'Acme Logistics SRL',
   activeTicketCount: 0,
+  isBound: true,
 };
 
 afterEach(() => {
@@ -249,5 +256,57 @@ describe('hideWindow', () => {
     (window as unknown as Record<string, unknown>).__TAURI__ = { core: {} };
     mockInvoke.mockRejectedValue(new Error('ipc unavailable'));
     await expect(hideWindow()).resolves.toBeUndefined();
+  });
+});
+
+describe('refreshPairingCode', () => {
+  it('returns fallback pairing status outside the Tauri runtime', async () => {
+    const res = await refreshPairingCode();
+    expect(res.isBound).toBe(false);
+    expect(res.pairingCode).toBe('749102');
+  });
+
+  it('invokes refresh_pairing_code inside Tauri runtime', async () => {
+    (window as unknown as Record<string, unknown>).__TAURI__ = { core: {} };
+    const mockStatus = {
+      agentOnline: true,
+      cloudConnected: true,
+      hostname: 'DEV-WORKSTATION-01',
+      activeTicketCount: 0,
+      isBound: false,
+      pairingCode: '123456',
+      pairingCodeExpiresAt: '2026-09-11T12:00:00Z',
+    };
+    mockInvoke.mockResolvedValue(mockStatus);
+    await expect(refreshPairingCode()).resolves.toEqual(mockStatus);
+    expect(mockInvoke).toHaveBeenCalledWith('refresh_pairing_code');
+  });
+});
+
+describe('listenAgentBound and listenAgentUnbound', () => {
+  it('no-ops outside the Tauri runtime', async () => {
+    const unlisten = await listenAgentBound(vi.fn());
+    expect(typeof unlisten).toBe('function');
+    expect(mockListen).not.toHaveBeenCalled();
+  });
+
+  it('subscribes to agent://bound inside Tauri runtime', async () => {
+    (window as unknown as Record<string, unknown>).__TAURI__ = { core: {} };
+    const dummyUnlisten = vi.fn();
+    mockListen.mockResolvedValue(dummyUnlisten);
+    const cb = vi.fn();
+    const unlisten = await listenAgentBound(cb);
+    expect(mockListen).toHaveBeenCalledWith('agent://bound', expect.any(Function));
+    expect(unlisten).toBe(dummyUnlisten);
+  });
+
+  it('subscribes to agent://unbound inside Tauri runtime', async () => {
+    (window as unknown as Record<string, unknown>).__TAURI__ = { core: {} };
+    const dummyUnlisten = vi.fn();
+    mockListen.mockResolvedValue(dummyUnlisten);
+    const cb = vi.fn();
+    const unlisten = await listenAgentUnbound(cb);
+    expect(mockListen).toHaveBeenCalledWith('agent://unbound', expect.any(Function));
+    expect(unlisten).toBe(dummyUnlisten);
   });
 });

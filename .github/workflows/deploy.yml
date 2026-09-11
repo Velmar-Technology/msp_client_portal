@@ -548,12 +548,67 @@ jobs:
           retention-days: 5
 
   # ------------------------------------------------------------------
-  # 5c. GitHub Release — generated notes & compiled agent/tray binaries
+  # 5c. Build Unified WiX MSI Package (Windows x64)
+  # ------------------------------------------------------------------
+  build-suite-msi:
+    name: Build Suite MSI (Windows x64)
+    if: needs.prepare.outputs.is_release == 'true'
+    needs: [prepare, build-agent-binaries, build-tray-binaries]
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Download Windows Agent Binary
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+        with:
+          name: agent-bin-windows-x64
+          path: staged-agent/
+
+      - name: Download Windows Tray Binary
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+        with:
+          name: tray-bin-windows-x64
+          path: staged-tray/
+
+      - name: Stage Release Binaries
+        shell: bash
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          mkdir -p packages/msp-agent/target/release
+          mkdir -p packages/msp-tray/src-tauri/target/release
+          cp staged-agent/msp-agent-${VERSION}-windows-x86_64.exe packages/msp-agent/target/release/msp-agent.exe
+          cp staged-tray/msp-tray-${VERSION}-windows-x86_64.exe packages/msp-tray/src-tauri/target/release/msp-tray.exe
+
+      - name: Build Unified Suite MSI with WiX
+        shell: pwsh
+        run: |
+          powershell -ExecutionPolicy Bypass -File scripts/build-suite-msi.ps1 -Version "${{ needs.prepare.outputs.version }}" -SkipCompile
+
+      - name: Stage MSI Artifact
+        shell: bash
+        run: |
+          mkdir -p dist-bin
+          cp dist/msp-endpoint-suite-*.msi dist-bin/
+
+      - name: Upload Suite MSI Artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: suite-msi-bin-windows-x64
+          path: dist-bin/*
+          retention-days: 5
+
+  # ------------------------------------------------------------------
+  # 5d. GitHub Release — generated notes, compiled binaries & suite MSI
   # ------------------------------------------------------------------
   create-release:
     name: Create GitHub Release
     if: needs.prepare.outputs.is_release == 'true'
-    needs: [prepare, build-agent-binaries, build-tray-binaries]
+    needs: [prepare, build-agent-binaries, build-tray-binaries, build-suite-msi]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:

@@ -94,6 +94,34 @@ export class SystemController {
       data: result,
     });
   }
+
+  /**
+   * Handles running an on-demand SequenceSentinel passive integrity audit over BL-101 to BL-802.
+   *
+   * @param req - Express request with hours, tenantId, and generateTests in body
+   * @param res - Express response returning AuditReport
+   */
+  async runSentinelAudit(req: Request, res: Response): Promise<void> {
+    const hours = parseInt(req.body?.hours, 10) || 24;
+    const generateTests = Boolean(req.body?.generateTests);
+    const autoHeal = Boolean(req.body?.autoHeal);
+    const tenantId = req.body?.tenantId || (req as any).user?.tenant_id;
+
+    const now = new Date();
+    const startDate = new Date(now.getTime() - hours * 60 * 60 * 1000);
+
+    const { SequenceSentinelService } = await import('../sentinel/services/SequenceSentinelService');
+    const sentinelService = new SequenceSentinelService();
+    const report = await sentinelService.runAudit(
+      { startDate, endDate: now, tenantId },
+      { generateTests, autoHeal, saveReport: true }
+    );
+
+    res.json({
+      success: true,
+      data: report,
+    });
+  }
 }
 
 export const systemController = new SystemController();

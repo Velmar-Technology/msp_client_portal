@@ -98,6 +98,8 @@ export const UpdateSubscriptionInputSchema = z.object({
   equipmentCount: z.coerce.number().int().min(1).max(100).optional(),
   status: z.nativeEnum(SubscriptionStatus).optional(),
   paypalOrderId: z.string().optional(),
+  createInvoice: z.boolean().optional(),
+  reason: z.string().max(255).optional(),
 });
 
 export type UpdateSubscriptionInput = z.infer<typeof UpdateSubscriptionInputSchema>;

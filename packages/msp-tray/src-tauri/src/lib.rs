@@ -17,6 +17,11 @@ pub struct AppState {
     pub last_blurred: Mutex<Instant>,
 }
 
+pub struct TrayMenuState {
+    pub show_item: MenuItem<tauri::Wry>,
+    pub quit_item: MenuItem<tauri::Wry>,
+}
+
 impl Default for AppState {
     fn default() -> Self {
         Self {
@@ -57,7 +62,35 @@ async fn get_agent_status(
         hostname: vitals.hostname,
         tenant_name: None,
         active_ticket_count: active_count,
+        is_bound: true,
+        pairing_code: None,
+        pairing_code_expires_at: None,
     })
+}
+
+#[tauri::command]
+async fn refresh_pairing_code(
+    ipc_client: State<'_, IpcClient>,
+) -> Result<AgentStatusPayload, String> {
+    if ipc_client.is_connected() {
+        let resp: serde_json::Value = ipc_client
+            .send_request("REFRESH_PAIRING_CODE", serde_json::json!({}))
+            .await?;
+
+        let code = resp.get("pairingCode").and_then(|v| v.as_str()).map(|s| s.to_string());
+        let exp = resp.get("pairingCodeExpiresAt").and_then(|v| v.as_str()).map(|s| s.to_string());
+
+        let mut status = ipc_client
+            .send_request::<serde_json::Value, AgentStatusPayload>("GET_AGENT_STATUS", serde_json::json!({}))
+            .await?;
+        if code.is_some() {
+            status.pairing_code = code;
+            status.pairing_code_expires_at = exp;
+        }
+        Ok(status)
+    } else {
+        Err("MSP Agent background service is not connected.".to_string())
+    }
 }
 
 #[tauri::command]
@@ -187,6 +220,30 @@ async fn hide_window(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+fn set_tray_language(
+    app: tauri::AppHandle,
+    state: State<'_, TrayMenuState>,
+    locale: String,
+) -> Result<(), String> {
+    let is_es = locale.to_lowercase().starts_with("es");
+
+    let (show_text, quit_text, tooltip) = if is_es {
+        ("Abrir Asistente", "Salir del Asistente", "Asistente de Soporte MSP")
+    } else {
+        ("Open Support Drawer", "Exit Support Assistant", "MSP Support Assistant")
+    };
+
+    let _ = state.show_item.set_text(show_text);
+    let _ = state.quit_item.set_text(quit_text);
+
+    if let Some(tray) = app.tray_by_id("main-tray") {
+        let _ = tray.set_tooltip(Some(tooltip));
+    }
+
+    Ok(())
+}
+
 fn toggle_main_window(app: &tauri::AppHandle) {
     let window = app
         .get_webview_window("main")
@@ -243,13 +300,15 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_system_vitals,
             get_agent_status,
+            refresh_pairing_code,
             get_active_ticket,
             get_ticket_list,
             get_ticket_responses,
             create_ticket,
             send_chat_message,
             resolve_ticket,
-            hide_window
+            hide_window,
+            set_tray_language
         ])
         .setup(|app| {
             let ipc_client = IpcClient::new(app.handle().clone());
@@ -274,6 +333,11 @@ pub fn run() {
             let quit_i = MenuItem::with_id(app, "quit", "Exit Support Assistant", true, None::<&str>)?;
             let show_i = MenuItem::with_id(app, "show", "Open Support Drawer", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&show_i, &quit_i])?;
+
+            app.manage(TrayMenuState {
+                show_item: show_i.clone(),
+                quit_item: quit_i.clone(),
+            });
 
             let mut builder = TrayIconBuilder::with_id("main-tray")
                 .menu(&menu)

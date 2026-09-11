@@ -44,3 +44,11 @@ target/
 **/*.rs.bk
 *.pdb
 
+# WiX Toolset & Windows Installer
+.tools/
+*.wixobj
+*.wixpdb
+*.msi
+*.msm
+*.msp
+

@@ -82,7 +82,7 @@ export class EscalationService {
       ticket_id: ticketId,
       old_status: ticket.status,
       new_status: ticket.status,
-      changed_by: ticket.client_id,
+      changed_by: technician.id,
       notes: `Escalated to Tier 2 specialist (${technician.name}) after priority SLA threshold`,
       tenant_id: ticket.tenant_id,
     });

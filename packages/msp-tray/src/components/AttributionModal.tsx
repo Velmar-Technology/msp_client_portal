@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { User, ShieldAlert, Check } from "lucide-react";
 import { ShiftWorkerAttribution, saveAttribution } from "../services/attribution";
+import { useI18n } from "../i18n";
 
 interface AttributionModalProps {
   currentAttribution: ShiftWorkerAttribution | null;
@@ -10,6 +11,7 @@ interface AttributionModalProps {
 }
 
 export const AttributionModal: React.FC<AttributionModalProps> = ({ currentAttribution, isOpen, onClose, onSaved }) => {
+  const { t } = useI18n();
   const [name, setName] = useState(currentAttribution?.reporterName || "");
   const [email, setEmail] = useState(currentAttribution?.reporterEmail || "");
   const [error, setError] = useState<string | null>(null);
@@ -19,11 +21,11 @@ export const AttributionModal: React.FC<AttributionModalProps> = ({ currentAttri
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      setError("Please enter your full name.");
+      setError(t('attribution.errorNameRequired'));
       return;
     }
     if (!email.trim() || !email.includes("@") || !email.includes(".")) {
-      setError("Please enter a valid work email address.");
+      setError(t('attribution.errorEmailInvalid'));
       return;
     }
 
@@ -41,14 +43,13 @@ export const AttributionModal: React.FC<AttributionModalProps> = ({ currentAttri
             <User className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-slate-100">Workstation Attribution</h3>
-            <p className="text-[11px] text-slate-400">Velmar MSP Shift Worker Identity</p>
+            <h3 className="text-sm font-semibold text-slate-100">{t('attribution.modalTitle')}</h3>
+            <p className="text-[11px] text-slate-400">{t('attribution.modalSubtitle')}</p>
           </div>
         </div>
 
         <p className="text-xs text-slate-300 mb-3 leading-relaxed">
-          Because this physical computer may be shared across shifts, technician replies and ticket status alerts will
-          be routed directly to you.
+          {t('attribution.modalDescription')}
         </p>
 
         {error && (
@@ -60,13 +61,13 @@ export const AttributionModal: React.FC<AttributionModalProps> = ({ currentAttri
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="block text-[11px] font-medium text-slate-300 mb-1">Full Name</label>
+            <label className="block text-[11px] font-medium text-slate-300 mb-1">{t('attribution.fullNameLabel')}</label>
             <div className="relative">
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Sarah Jenkins"
+                placeholder={t('attribution.fullNamePlaceholder')}
                 className="w-full bg-[#060912] border border-[#1a263d] focus:border-[#0084ff] rounded-lg px-3 py-1.5 text-xs text-slate-100 placeholder:text-slate-600 outline-none transition-colors"
                 autoFocus
               />
@@ -74,13 +75,13 @@ export const AttributionModal: React.FC<AttributionModalProps> = ({ currentAttri
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-slate-300 mb-1">Work Email</label>
+            <label className="block text-[11px] font-medium text-slate-300 mb-1">{t('attribution.emailLabel')}</label>
             <div className="relative">
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="e.g. sarah@acmecorp.com"
+                placeholder={t('attribution.emailPlaceholder')}
                 className="w-full bg-[#060912] border border-[#1a263d] focus:border-[#0084ff] rounded-lg px-3 py-1.5 text-xs text-slate-100 placeholder:text-slate-600 outline-none transition-colors"
               />
             </div>
@@ -93,7 +94,7 @@ export const AttributionModal: React.FC<AttributionModalProps> = ({ currentAttri
                 onClick={onClose}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             )}
             <button
@@ -101,7 +102,7 @@ export const AttributionModal: React.FC<AttributionModalProps> = ({ currentAttri
               className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-[#0070db] via-[#0084ff] to-[#0094ff] hover:from-[#0060c2] hover:to-[#0084ff] text-white shadow-lg shadow-[#0084ff]/30 border border-blue-400/30 flex items-center gap-1.5 transition-all"
             >
               <Check className="w-3.5 h-3.5" />
-              Save Identity
+              {t('attribution.saveIdentity')}
             </button>
           </div>
         </form>

@@ -4,6 +4,7 @@ import { ActiveTicket, sendChatMessage, resolveTicket, fetchTicketMessages } fro
 import { ShiftWorkerAttribution } from '../services/attribution';
 import { playNotificationChime } from '../services/sound';
 import { CopyableTicketId } from './CopyableTicketId';
+import { useI18n } from '../i18n';
 
 export interface ChatMessage {
   id: string;
@@ -35,6 +36,7 @@ export const LiveChatDrawer: React.FC<LiveChatDrawerProps> = ({
   onTicketResolved,
   onBack,
 }) => {
+  const { t } = useI18n();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -283,10 +285,10 @@ export const LiveChatDrawer: React.FC<LiveChatDrawerProps> = ({
             onClick={handleResolve}
             disabled={isResolving}
             className="px-2 py-1 rounded bg-[#131d30] hover:bg-emerald-600/20 hover:text-emerald-400 border border-[#22324e] hover:border-emerald-500/40 text-[10px] font-medium text-slate-300 transition-colors flex items-center gap-1 shrink-0"
-            title="Mark ticket as solved"
+            title={t('chat.markResolvedTooltip')}
           >
             <CheckCircle className="w-3 h-3 text-emerald-400" />
-            Resolve
+            {t('chat.markResolved')}
           </button>
         )}
       </div>
@@ -307,7 +309,7 @@ export const LiveChatDrawer: React.FC<LiveChatDrawerProps> = ({
                   <UserCheck className="w-3 h-3 text-[#ff5e00]" />
                 )}
                 <span className="text-[10px] text-slate-400 font-medium">
-                  {isTech ? m.authorName : (m.authorName ? `${m.authorName} (You)` : 'You')}
+                  {isTech ? m.authorName : (m.authorName ? `${m.authorName} (${t('common.you')})` : t('common.you'))}
                 </span>
                 <span className="text-[9px] text-slate-500 font-mono">
                   {new Date(m.createdAt).toLocaleTimeString([], {
@@ -340,12 +342,13 @@ export const LiveChatDrawer: React.FC<LiveChatDrawerProps> = ({
           type="text"
           value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
-          placeholder="Reply to support engineer..."
+          placeholder={t('chat.replyPlaceholder')}
           className="flex-1 bg-[#060a12] border border-[#1a263d] focus:border-[#0084ff] rounded-lg px-2.5 py-1.5 text-xs text-slate-100 placeholder:text-slate-500 outline-none transition-colors"
         />
         <button
           type="submit"
           disabled={!inputMessage.trim() || isSending}
+          title={t('chat.sendTooltip')}
           className="w-7 h-7 rounded-lg bg-gradient-to-r from-[#0070db] to-[#0084ff] hover:from-[#0060c2] hover:to-[#0070db] text-white flex items-center justify-center transition-all disabled:opacity-40 shadow-sm shadow-[#0084ff]/30 active:scale-95"
         >
           <Send className="w-3.5 h-3.5 text-white" />
