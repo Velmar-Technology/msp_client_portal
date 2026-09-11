@@ -1,4 +1,4 @@
-import { ticketRepository, TicketRepository } from '@modules/tickets/repositories/TicketRepository';
+mport { ticketRepository, TicketRepository } from '@modules/tickets/repositories/TicketRepository';
 import { ticketEventRepository, TicketEventRepository } from '@modules/tickets/repositories/TicketEventRepository';
 import { userRepository, UserRepository } from '@modules/auth';
 import { notificationService, NotificationService } from '@modules/notifications';
@@ -86,7 +86,7 @@ export class TicketStatusService {
     // Trigger technician closure earnings or void if reopened
     if (data.status === TicketStatus.RESOLVED || data.status === TicketStatus.CLOSED) {
       const closingTechId = updated.assigned_tech_id || ctx.userId;
-      if (closingTechId && ctx.role === 'TECHNICIAN' || ctx.role === 'ADMIN') {
+      if (closingTechId && (ctx.role === 'TECHNICIAN' || ctx.role === 'ADMIN')) {
         this.earningsSvc.calculateAndRecordEarnings(updated, closingTechId, ticket.tenant_id).catch((err) => {
           logger.error('Failed to calculate technician earnings for ticket closure', { error: err, ticketId });
         });

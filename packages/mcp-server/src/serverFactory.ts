@@ -13,6 +13,7 @@ import { registerDomainTools } from './tools/domainTools.js';
 import { registerEmailTools } from './tools/emailTools.js';
 import { registerNetworkTools } from './tools/networkTools.js';
 import { registerStorageTools } from './tools/storageTools.js';
+import { registerSentinelTools } from './tools/sentinelTools.js';
 import { registerMspResources } from './resources/mspResources.js';
 import { registerMspPrompts } from './prompts/mspPrompts.js';
 
@@ -42,6 +43,7 @@ export function createMspMcpServer(apiClient: MspApiClient): McpServer {
   registerEmailTools(server, apiClient);
   registerNetworkTools(server);
   registerStorageTools(server);
+  registerSentinelTools(server, apiClient);
   registerMspResources(server, apiClient);
   registerMspPrompts(server);
 

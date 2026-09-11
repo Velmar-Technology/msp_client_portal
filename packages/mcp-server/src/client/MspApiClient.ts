@@ -139,7 +139,7 @@ export class MspApiClient {
       const lastSync = item.last_sync_at ? new Date(item.last_sync_at).getTime() : 0;
       const lastSeen = item.agent_last_seen_at ? new Date(item.agent_last_seen_at).getTime() : 0;
       const latestActivity = Math.max(lastSync, lastSeen);
-      const isRecentlyActive = latestActivity > 0 && (Date.now() - latestActivity) <= 15 * 60 * 1000;
+      const isRecentlyActive = latestActivity > 0 ? (Date.now() - latestActivity) <= 15 * 60 * 1000 : true;
 
       if (agentStatus === 'ONLINE' && isRecentlyActive) {
         client.onlineDevices++;
@@ -941,6 +941,27 @@ ${recommendationList}
     const res = await this.request<any>({
       method: 'GET',
       url: '/notifications',
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Executes a passive SequenceSentinel integrity audit verifying BL-101 to BL-802 business rules.
+   *
+   * @param params - Audit temporal hours, optional tenant filter, and whether to synthesize tests
+   * @returns Comprehensive AuditReport payload
+   * @throws {Error} When sentinel audit execution fails
+   */
+  async runSentinelAudit(params: {
+    hours?: number;
+    tenantId?: string;
+    generateTests?: boolean;
+    autoHeal?: boolean;
+  } = {}): Promise<any> {
+    const res = await this.request<any>({
+      method: 'POST',
+      url: '/system/sentinel/audit',
+      data: params,
     });
     return res.data || res;
   }

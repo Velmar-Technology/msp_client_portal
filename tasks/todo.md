@@ -1,178 +1,372 @@
-# Task List: Full-Stack Lightweight i18n for MSP Tray
+# Task List: SequenceSentinel (Master Business Logic Integrity Agent - Full Coverage BL-101 to BL-802)
 
-## Phase 1: i18n Core Engine & Dictionaries
+## Phase 1: Core Framework & Multi-Domain Event Aggregator
 
-### Task 1.1: Create Type-Safe Translation Schema & Dictionary Tables
-**Description:** Define the strict TypeScript `TranslationDictionary` interface in `packages/msp-tray/src/i18n/types.ts` and create exhaustive `locales/en_US.ts` and `locales/es_DO.ts` dictionaries covering all UI views and tray menus.
+### Task 1.1: Define Sentinel Core Types & Invariant Contracts
+**Description:** Define the strict TypeScript interfaces in `server/src/modules/system/sentinel/types.ts` for temporal audit windows, action sequences, checker contracts, violation severity, audit summaries, and synthesizer payloads.
 **Acceptance criteria:**
-- [x] Define `TranslationDictionary` interface in `packages/msp-tray/src/i18n/types.ts` organized by namespaces (`common`, `header`, `gate`, `tickets`, `quickTicket`, `chat`, `attribution`, `trayMenu`).
-- [x] Implement `locales/en_US.ts` with natural English copy.
-- [x] Implement `locales/es_DO.ts` with standard Dominican Republic technical Spanish copy matching the portal standard.
-- [x] Both dictionaries strictly implement `TranslationDictionary` with zero missing keys.
+- [x] Export `InvariantChecker` interface with standard `evaluate(sequence: ActionSequence): Promise<InvariantCheckResult>`.
+- [x] Export `InvariantViolation` with severity (`CRITICAL`, `HIGH`, `MEDIUM`), `ruleCode` (`BL-101`..`BL-802`), `entityId`, `evidence`, and `rationale`.
+- [x] Export `ActionSequence` supporting entity types: `TICKET`, `INVOICE`, `SUBSCRIPTION`, `DEVICE`, `LEAD`, `TENANT`.
 **Verification:**
-- [x] TypeScript check compiles with zero errors (`npx tsc --noEmit` in `packages/msp-tray`).
+- [x] `npm -w server run build` passes.
 **Dependencies:** None
 **Files touched:**
-- `packages/msp-tray/src/i18n/types.ts`
-- `packages/msp-tray/src/i18n/locales/en_US.ts`
-- `packages/msp-tray/src/i18n/locales/es_DO.ts`
-**Estimated scope:** Medium (3 new files)
+- `server/src/modules/system/sentinel/types.ts`
+**Estimated scope:** Small (1 file)
 
 ---
 
-### Task 1.2: Build `I18nContext.tsx` Engine & `useI18n()` Hook
-**Description:** Implement `I18nContext` provider in `packages/msp-tray/src/i18n/I18nContext.tsx` handling OS locale auto-detection (`navigator.language`), `localStorage` persistence, dot-notation key lookup, string interpolation (`{variable}`), and dynamic language switching.
+### Task 1.2: Implement `SequenceAggregatorService`
+**Description:** Build `SequenceAggregatorService` to read chronological events from PostgreSQL (`ticketEvents`, `technicianEarnings`, `expenses`, `invoices`, `subscriptions`, `rmmAlerts`, `leads`) over a sliding window without taking write locks, grouping events by entity into coherent `ActionSequence` graphs.
 **Acceptance criteria:**
-- [x] Auto-detect initial locale from `localStorage.getItem('msp_tray_locale')` or `navigator.language` (`es*` -> `es_DO`, else `en_US`).
-- [x] Export `I18nProvider` and custom hook `useI18n()`.
-- [x] Implement `t(keyPath, params)` with support for nested keys (e.g. `'gate.expiresIn'`) and parameter interpolation.
-- [x] Persist changes to `localStorage` on `setLocale()`.
-- [x] Wrap top-level `<App />` in `main.tsx` with `<I18nProvider>`.
+- [x] Aggregate ticket lifecycle events (`ticketEvents`, `tickets`, `technicianEarnings`, `expenses`).
+- [x] Aggregate billing & subscription events (`invoices`, `subscriptions`, `tenants`).
+- [x] Aggregate RMM telemetry & alert events (`rmmAlerts`, `subscriptionEquipment`).
+- [x] Aggregate CRM deal progressions (`leads`, `leadActivities`).
+- [x] Unit tests in `SequenceAggregatorService.test.ts` verify correct chronological sorting and multi-tenant grouping.
 **Verification:**
-- [x] TypeScript compilation succeeds.
+- [x] `npm -w server test -- SequenceAggregatorService.test.ts` passes 100%.
 **Dependencies:** Task 1.1
 **Files touched:**
-- `packages/msp-tray/src/i18n/I18nContext.tsx`
-- `packages/msp-tray/src/i18n/index.ts`
-- `packages/msp-tray/src/main.tsx`
-**Estimated scope:** Medium (3 files)
+- `server/src/modules/system/sentinel/services/SequenceAggregatorService.ts`
+- `server/src/modules/system/sentinel/services/SequenceAggregatorService.test.ts`
+**Estimated scope:** Medium (2 files)
 
 ---
 
-## Checkpoint: i18n Engine Tested
-- [x] Dictionaries compile and guarantee complete key parity
-- [x] Provider mounts cleanly in root without breaking rendering
+## Phase 2: Ticketing & SLA Invariant Checkers (BL-101, BL-102, BL-103, BL-104)
 
----
-
-## Phase 2: Native Windows System Tray Synchronization
-
-### Task 2.1: Implement `set_tray_language` in Tauri Backend
-**Description:** In `packages/msp-tray/src-tauri/src/lib.rs`, store references to the tray menu items (`show`, `quit`) and tray tooltip, and implement a Tauri command `set_tray_language(locale: String)` that dynamically updates their labels based on the active locale.
+### Task 2.1: Implement `SlaCancellationChecker` (BL-101)
+**Description:** Asserts that `WARRANTY` and `SERVICE_OUTAGE` tickets were only cancelled within 60 minutes of creation. Flags late cancellations as `CRITICAL` violations.
 **Acceptance criteria:**
-- [x] Store tray `show` and `quit` `MenuItem` handles in a managed `TrayMenuState` struct in `lib.rs`.
-- [x] Add Tauri command `set_tray_language(app: tauri::AppHandle, locale: String)` updating:
-  - `show` menu item: `"Open Support Drawer"` (EN) / `"Abrir Asistente"` (ES)
-  - `quit` menu item: `"Exit Support Assistant"` (EN) / `"Salir del Asistente"` (ES)
-  - Tray icon tooltip: `"MSP Support Assistant"` (EN) / `"Asistente de Soporte MSP"` (ES)
-- [x] Register `set_tray_language` in `tauri::generate_handler!`.
+- [x] Identifies category in `['WARRANTY', 'SERVICE_OUTAGE']` and status `CANCELLED`.
+- [x] Flags any cancellation where `cancelledAt - createdAt > 3,600,000 ms`.
+- [x] Unit tests pass for valid, invalid, and exempt tickets.
 **Verification:**
-- [x] `cargo check --manifest-path packages/msp-tray/src-tauri/Cargo.toml` compiles with zero warnings/errors.
-**Dependencies:** None
+- [x] Tests pass.
+**Dependencies:** Task 1.1, Task 1.2
 **Files touched:**
-- `packages/msp-tray/src-tauri/src/lib.rs`
-**Estimated scope:** Small (1 file)
+- `server/src/modules/system/sentinel/checkers/ticketing/SlaCancellationChecker.ts`
+- `server/src/modules/system/sentinel/checkers/ticketing/SlaCancellationChecker.test.ts`
 
 ---
 
-### Task 2.2: Connect Tauri Service Bridge & Synchronize on Language Change
-**Description:** Expose `setTrayLanguage(locale: Locale)` in `services/tauri.ts` and call it from `I18nContext` whenever the locale is initialized or changed.
+### Task 2.2: Implement `RoundRobinDispatchChecker` (BL-102)
+**Description:** Audits technician dispatch sequence to ensure category specialist rotation is respected before fallback to the general pool.
 **Acceptance criteria:**
-- [x] In `packages/msp-tray/src/services/tauri.ts`, export `setTrayLanguage(locale: string): Promise<void>`.
-- [x] In `I18nContext.tsx`, call `setTrayLanguage(locale)` in an effect whenever `locale` updates.
+- [x] Compares ticket assignment order against active specialist technician availability.
+- [x] Flags unassigned tickets or assignments skipping active specialists without justification.
+- [x] Unit tests pass.
 **Verification:**
-- [x] `npm --prefix packages/msp-tray run build` compiles with code 0.
-**Dependencies:** Task 1.2, Task 2.1
+- [x] Tests pass.
+**Dependencies:** Task 1.1, Task 1.2
 **Files touched:**
-- `packages/msp-tray/src/services/tauri.ts`
-- `packages/msp-tray/src/i18n/I18nContext.tsx`
-**Estimated scope:** Small (2 files)
+- `server/src/modules/system/sentinel/checkers/ticketing/RoundRobinDispatchChecker.ts`
+- `server/src/modules/system/sentinel/checkers/ticketing/RoundRobinDispatchChecker.test.ts`
 
 ---
 
-## Checkpoint: Native Tray Sync Verified
-- [x] Tray menu items change language dynamically when switching in UI
-- [x] Tray tooltip updates to match locale
-
----
-
-## Phase 3: Component Localization & Header Switcher
-
-### Task 3.1: Add Compact Language Switcher & Localize `Header.tsx`
-**Description:** Update `packages/msp-tray/src/components/Header.tsx` to include an unobtrusive `EN` | `ES` segmented toggle button and replace all static strings with `t()`.
+### Task 2.3: Implement `AlertNoiseFlappingChecker` (BL-103)
+**Description:** Asserts that alerts from the same asset are deduplicated within 15 minutes, self-resolving scripts ($\le 300\text{s}$) close as `RESOLVED_AUTOMATED`, and $\ge 3$ triggers in 24h tag `[FLAPPING_ALERT]` routing to Tier 2.
 **Acceptance criteria:**
-- [x] Compact `EN` | `ES` toggle pill button in header next to window control / vitals buttons with smooth active transition styling.
-- [x] Clicking toggle switches locale immediately and persists choice.
-- [x] Localize connection status ("Online", "Offline", "Connecting..."), tooltips, and header titles using `t('header.*')`.
+- [x] Flags unmerged alerts within 15m window.
+- [x] Confirms automated resolutions didn't route to technician queue.
+- [x] Flags flapping alerts lacking the `[FLAPPING_ALERT]` prefix or assigned below Tier 2.
+- [x] Unit tests pass.
 **Verification:**
-- [x] Visual verification of compact layout without overflowing the 420px drawer header.
-**Dependencies:** Task 1.2
+- [x] Tests pass.
+**Dependencies:** Task 1.1, Task 1.2
 **Files touched:**
-- `packages/msp-tray/src/components/Header.tsx`
-**Estimated scope:** Small (1 file)
+- `server/src/modules/system/sentinel/checkers/ticketing/AlertNoiseFlappingChecker.ts`
+- `server/src/modules/system/sentinel/checkers/ticketing/AlertNoiseFlappingChecker.test.ts`
 
 ---
 
-### Task 3.2: Localize `<ActivationGate />`
-**Description:** Refactor `packages/msp-tray/src/components/ActivationGate.tsx` to use `t()` for all title, instruction, countdown timer, copy confirmation, and refresh button text.
+### Task 2.4: Implement `TierEscalationChecker` (BL-104)
+**Description:** Audits open ticket sequences to verify unworked tickets escalated to Tier 2 within priority deadlines (CRITICAL 10m, HIGH 20m, MEDIUM 45m, LOW 120m).
 **Acceptance criteria:**
-- [x] Replace hardcoded English strings with `t('gate.*')`.
-- [x] Countdown timer uses interpolated string `t('gate.expiresIn', { time: formatTtl(timeLeft) })`.
-- [x] Copy button toggles `t('gate.copied')` vs `t('gate.copyPin')`.
-- [x] Refresh button displays `t('gate.newPin')` / `t('gate.generating')`.
+- [x] Validates time delta from creation to first technician activity or `TIER_ESCALATED` event.
+- [x] Flags tickets exceeding SLA threshold without Tier 2 escalation.
+- [x] Unit tests pass.
 **Verification:**
-- [x] Existing `ActivationGate.test.tsx` passes or is updated to assert localized rendering.
-**Dependencies:** Task 1.2
+- [x] Tests pass.
+**Dependencies:** Task 1.1, Task 1.2
 **Files touched:**
-- `packages/msp-tray/src/components/ActivationGate.tsx`
-- `packages/msp-tray/src/components/ActivationGate.test.tsx`
-**Estimated scope:** Small (2 files)
+- `server/src/modules/system/sentinel/checkers/ticketing/TierEscalationChecker.ts`
+- `server/src/modules/system/sentinel/checkers/ticketing/TierEscalationChecker.test.ts`
 
 ---
 
-### Task 3.3: Localize QuickTicket, TicketList, LiveChat & Attribution Modals
-**Description:** Localize remaining components (`QuickTicketModal.tsx`, `TicketList.tsx`, `LiveChatDrawer.tsx`, `AttributionModal.tsx`, `App.tsx`) to achieve 100% string coverage across the application.
+## Phase 3: Subscriptions, Quotas & Equipment Checkers (BL-201, BL-202, BL-204, BL-205)
+
+### Task 3.1: Implement `QuotaEnforcementChecker` (BL-201)
+**Description:** Asserts that monthly ticket volume per tenant did not exceed plan limits (e.g. 5 tickets/device/mo). Flags quota breaches where tickets were created without overage authorization.
 **Acceptance criteria:**
-- [x] In `QuickTicketModal.tsx`: Localize form labels (Subject, Priority, Description), priority values (Low, Medium, High, Critical), buttons, validation errors.
-- [x] In `TicketList.tsx`: Localize empty states, tabs ("All", "Open", "Resolved"), status badges, action buttons.
-- [x] In `LiveChatDrawer.tsx`: Localize chat input placeholder, typing status, banner status messages, send button.
-- [x] In `AttributionModal.tsx`: Localize hardware specs labels (CPU, RAM, Disk, OS, IP, Hostname) and close button.
-- [x] In `App.tsx`: Localize tab navigation labels and error toasts.
+- [x] Counts monthly tickets vs plan allowance.
+- [x] Flags unentitled ticket creations.
+- [x] Unit tests pass.
 **Verification:**
-- [x] `npm --prefix packages/msp-tray run build` compiles with 0 errors.
-**Dependencies:** Task 1.2
+- [x] Tests pass.
+**Dependencies:** Task 1.1, Task 1.2
 **Files touched:**
-- `packages/msp-tray/src/components/QuickTicketModal.tsx`
-- `packages/msp-tray/src/components/TicketList.tsx`
-- `packages/msp-tray/src/components/LiveChatDrawer.tsx`
-- `packages/msp-tray/src/components/AttributionModal.tsx`
-- `packages/msp-tray/src/App.tsx`
-**Estimated scope:** Medium (5 files)
+- `server/src/modules/system/sentinel/checkers/subscriptions/QuotaEnforcementChecker.ts`
+- `server/src/modules/system/sentinel/checkers/subscriptions/QuotaEnforcementChecker.test.ts`
 
 ---
 
-## Checkpoint: Complete UI Localization Verified
-- [x] Every visible string in the desktop drawer is translated in both `en_US` and `es_DO`
-- [x] No hardcoded English strings remain in UI components
-
----
-
-## Phase 4: Automated Testing & Build Validation
-
-### Task 4.1: Write Vitest Unit Tests for i18n
-**Description:** Implement comprehensive test suite in `packages/msp-tray/src/i18n/I18nContext.test.tsx` testing dictionary completeness, fallback, interpolation, and language switching.
+### Task 3.2: Implement `LicenseTrueUpChecker` (BL-202)
+**Description:** Verifies nightly reconciliation between active physical endpoints/cloud seats and baseline contract counts.
 **Acceptance criteria:**
-- [x] Test that `en_US` and `es_DO` dictionary objects have identical keys recursively (zero missing translations).
-- [x] Test `t()` function string interpolation with parameters.
-- [x] Test fallback to `en_US` when key or locale is unrecognized.
-- [x] Test `localStorage` reading and writing.
+- [x] Compares active RMM agents to billed subscription quotas.
+- [x] Flags untracked seats or unbilled devices.
+- [x] Unit tests pass.
 **Verification:**
-- [x] `npm --prefix packages/msp-tray run test:run` passes 100%.
-**Dependencies:** Task 1.2, Task 3.3
+- [x] Tests pass.
+**Dependencies:** Task 1.1, Task 1.2
 **Files touched:**
-- `packages/msp-tray/src/i18n/I18nContext.test.tsx`
-**Estimated scope:** Small (1 new file)
+- `server/src/modules/system/sentinel/checkers/subscriptions/LicenseTrueUpChecker.ts`
+- `server/src/modules/system/sentinel/checkers/subscriptions/LicenseTrueUpChecker.test.ts`
 
 ---
 
-### Task 4.2: Full Workspace Quality Gates & Production Build
-**Description:** Verify `msp-tray` frontend bundle, Tauri release compilation, and existing unit tests pass cleanly.
+### Task 3.3: Implement `FeatureGatingChecker` (BL-204)
+**Description:** Validates that feature codes (`FEATURE_CODES`) are strictly enforced, ensuring unentitled client tiers received HTTP 403 or locked previews.
 **Acceptance criteria:**
-- [x] `npm --prefix packages/msp-tray run test:run` passes with zero regressions.
-- [x] `npm --prefix packages/msp-tray run build` builds Vite distribution cleanly.
-- [x] `cargo check --manifest-path packages/msp-tray/src-tauri/Cargo.toml` finishes with zero errors.
+- [x] Compares accessed features with tenant plan tier.
+- [x] Flags unauthorized feature access events in audit logs.
+- [x] Unit tests pass.
 **Verification:**
-- [x] All automated commands exit with code 0.
-**Dependencies:** Task 4.1
-**Files touched:** None (verification)
-**Estimated scope:** Verification (0 files modified)
+- [x] Tests pass.
+**Dependencies:** Task 1.1, Task 1.2
+**Files touched:**
+- `server/src/modules/system/sentinel/checkers/subscriptions/FeatureGatingChecker.ts`
+- `server/src/modules/system/sentinel/checkers/subscriptions/FeatureGatingChecker.test.ts`
+
+---
+
+### Task 3.4: Implement `DeviceVaultSecurityChecker` (BL-205)
+**Description:** Audits machine credential vault sessions. Ensures `hidePasswords: true` policy holds, machine slot bindings (`device_<slotId>@tenant.local`) are strictly isolated, and revoked endpoints terminate Bitwarden sessions.
+**Acceptance criteria:**
+- [x] Flags any plaintext credential exposure in logs or responses.
+- [x] Asserts locked equipment (`vaultwarden_status = 'LOCKED'`) has no active session tokens.
+- [x] Unit tests pass.
+**Verification:**
+- [x] Tests pass.
+**Dependencies:** Task 1.1, Task 1.2
+**Files touched:**
+- `server/src/modules/system/sentinel/checkers/subscriptions/DeviceVaultSecurityChecker.ts`
+- `server/src/modules/system/sentinel/checkers/subscriptions/DeviceVaultSecurityChecker.test.ts`
+
+---
+
+## Phase 4: Security, RBAC & State Machine Checkers (BL-301, BL-302)
+
+### Task 4.1: Implement `StateMachineChecker` (BL-301)
+**Description:** Validates all status transitions across tickets, leads, and subscriptions against the canonical `STATUS_TRANSITIONS` state machine matrix.
+**Acceptance criteria:**
+- [x] Verifies clients only execute permitted cancellations on owned tickets.
+- [x] Verifies technicians only transition assigned tickets.
+- [x] Flags illegal status skips (e.g. `CLOSED` -> `IN_PROGRESS` without reopening workflow).
+- [x] Unit tests pass.
+**Verification:**
+- [x] Tests pass.
+**Dependencies:** Task 1.1, Task 1.2
+**Files touched:**
+- `server/src/modules/system/sentinel/checkers/security/StateMachineChecker.ts`
+- `server/src/modules/system/sentinel/checkers/security/StateMachineChecker.test.ts`
+
+---
+
+### Task 4.2: Implement `AuthorizationAndJitChecker` (BL-302)
+**Description:** Audits SOTA Hybrid Authorization and Zero Standing Privileges: verifies that JIT ephemeral access grants were strictly temporary, and flags any actions taken after grant expiration.
+**Acceptance criteria:**
+- [x] Cross-references JIT grant timestamps with actions executed by elevated actors.
+- [x] Flags expired or unrevoked standing privileges.
+- [x] Unit tests pass.
+**Verification:**
+- [x] Tests pass.
+**Dependencies:** Task 1.1, Task 1.2
+**Files touched:**
+- `server/src/modules/system/sentinel/checkers/security/AuthorizationAndJitChecker.ts`
+- `server/src/modules/system/sentinel/checkers/security/AuthorizationAndJitChecker.test.ts`
+
+---
+
+## Phase 5: Billing, Tax & Non-Payment Checkers (BL-401, BL-402, BL-701, BL-702)
+
+### Task 5.1: Implement `SubscriptionReactivationChecker` (BL-401)
+**Description:** Verifies that successful invoice payment captures (`PAID`) immediately transition linked `EXPIRED` client subscriptions to `ACTIVE` and broadcast alerts.
+**Acceptance criteria:**
+- [x] Inspects invoice payment sequences.
+- [x] Flags paid invoices where client subscription remained `EXPIRED`.
+- [x] Unit tests pass.
+**Verification:**
+- [x] Tests pass.
+**Dependencies:** Task 1.1, Task 1.2
+**Files touched:**
+- `server/src/modules/system/sentinel/checkers/billing/SubscriptionReactivationChecker.ts`
+- `server/src/modules/system/sentinel/checkers/billing/SubscriptionReactivationChecker.test.ts`
+
+---
+
+### Task 5.2: Implement `RenewalSchedulerChecker` (BL-402)
+**Description:** Asserts that renewal cron evaluated expiry dates, applied hardware multipliers ($M_{\text{equip}}$), created invoices, and dispatched billing emails.
+**Acceptance criteria:**
+- [x] Validates hardware multiplier math on generated renewal invoices.
+- [x] Flags subscriptions reaching expiry without an active renewal invoice.
+- [x] Unit tests pass.
+**Verification:**
+- [x] Tests pass.
+**Dependencies:** Task 1.1, Task 1.2
+**Files touched:**
+- `server/src/modules/system/sentinel/checkers/billing/RenewalSchedulerChecker.ts`
+- `server/src/modules/system/sentinel/checkers/billing/RenewalSchedulerChecker.test.ts`
+
+---
+
+### Task 5.3: Implement `TaxAndNcfChecker` (BL-701)
+**Description:** Audits billing invoices for exact 18% ITBIS tax calculation and valid DGII Series B01 sequential NCF voucher generation for clients with valid RNC/Cédula.
+**Acceptance criteria:**
+- [x] Validates `tax_amount == 0.18 * subtotal` (within 1 cent rounding).
+- [x] Validates Modulo 11/10 RNC compliance and B01 NCF format.
+- [x] Flags unvouchered invoices for eligible tax clients.
+- [x] Unit tests pass.
+**Verification:**
+- [x] Tests pass.
+**Dependencies:** Task 1.1, Task 1.2
+**Files touched:**
+- `server/src/modules/system/sentinel/checkers/billing/TaxAndNcfChecker.ts`
+- `server/src/modules/system/sentinel/checkers/billing/TaxAndNcfChecker.test.ts`
+
+---
+
+### Task 5.4: Implement `NonPaymentEnforcementChecker` (BL-702)
+**Description:** Asserts that overdue invoices strictly triggered the 4-tier non-payment scale: Day 1 (Notice), Day 5 (`READ_ONLY`), Day 15 (`SUSPENDED`), Day 30 (`PURGED`).
+**Acceptance criteria:**
+- [x] Asserts overdue tenants at Day 5 had write mutations blocked.
+- [x] Asserts overdue tenants at Day 15 had portal access halted.
+- [x] Flags overdue tenants maintaining unauthorized active write access.
+- [x] Unit tests pass.
+**Verification:**
+- [x] Tests pass.
+**Dependencies:** Task 1.1, Task 1.2
+**Files touched:**
+- `server/src/modules/system/sentinel/checkers/billing/NonPaymentEnforcementChecker.ts`
+- `server/src/modules/system/sentinel/checkers/billing/NonPaymentEnforcementChecker.test.ts`
+
+---
+
+## Phase 6: Commissions, OpEx & Financial Checkers (BL-801, BL-802)
+
+### Task 6.1: Implement `TechnicianBountyChecker` (BL-801)
+**Description:** Verifies that technician-closed tickets generated exact priority-weighted commissions ($8 base * multiplier + $4 SLA bonus), auto-posted Pre-Split OpEx to `expenses`, held back 48h, voided upon ticket reopen, and paid $0 for automated resolutions.
+**Acceptance criteria:**
+- [x] Verifies commission formulas across all priorities.
+- [x] Flags missing `expenses` OpEx records.
+- [x] Asserts reopened tickets had earnings voided.
+- [x] Asserts `RESOLVED_AUTOMATED` tickets received $0.
+- [x] Unit tests pass.
+**Verification:**
+- [x] Tests pass.
+**Dependencies:** Task 1.1, Task 1.2
+**Files touched:**
+- `server/src/modules/system/sentinel/checkers/financial/TechnicianBountyChecker.ts`
+- `server/src/modules/system/sentinel/checkers/financial/TechnicianBountyChecker.test.ts`
+
+---
+
+### Task 6.2: Implement `ProfitSplitChecker` (BL-802)
+**Description:** Audits net profit calculations: $\text{Net} = \text{Gross Paid Revenue} - \text{Total Deductible OpEx}$ (including technician bounties). Confirms HQ 70% / Lead Engineer 30% distribution math.
+**Acceptance criteria:**
+- [x] Audits periodic financial distributions for exact 70/30 split.
+- [x] Flags OpEx omissions or incorrect dividend mathematics.
+- [x] Unit tests pass.
+**Verification:**
+- [x] Tests pass.
+**Dependencies:** Task 1.1, Task 1.2
+**Files touched:**
+- `server/src/modules/system/sentinel/checkers/financial/ProfitSplitChecker.ts`
+- `server/src/modules/system/sentinel/checkers/financial/ProfitSplitChecker.test.ts`
+
+---
+
+## Phase 7: CRM & Account Health Checkers (BL-501, BL-601)
+
+### Task 7.1: Implement `CrmPipelineChecker` (BL-501)
+**Description:** Audits CRM lead state progressions (`NEW` -> `QUALIFIED` -> `PROPOSAL` -> `NEGOTIATION` -> `WON`/`LOST`) and verifies `WON` status auto-provisioned the client tenant.
+**Acceptance criteria:**
+- [x] Flags leads skipping pipeline stages without activity logs.
+- [x] Confirms `WON` deals triggered tenant creation.
+- [x] Unit tests pass.
+**Verification:**
+- [x] Tests pass.
+**Dependencies:** Task 1.1, Task 1.2
+**Files touched:**
+- `server/src/modules/system/sentinel/checkers/crm_health/CrmPipelineChecker.ts`
+- `server/src/modules/system/sentinel/checkers/crm_health/CrmPipelineChecker.test.ts`
+
+---
+
+### Task 7.2: Implement `AccountHealthChecker` (BL-601)
+**Description:** Audits account health calculations ($H = 0.40 S_{\text{ticket}} + 0.30 S_{\text{hardware}} + 0.30 S_{\text{security}}$) and verifies score $< 70\%$ flagged a QBR review task.
+**Acceptance criteria:**
+- [x] Validates health score formula weighting.
+- [x] Flags unreviewed accounts with health $< 70\%$.
+- [x] Unit tests pass.
+**Verification:**
+- [x] Tests pass.
+**Dependencies:** Task 1.1, Task 1.2
+**Files touched:**
+- `server/src/modules/system/sentinel/checkers/crm_health/AccountHealthChecker.ts`
+- `server/src/modules/system/sentinel/checkers/crm_health/AccountHealthChecker.test.ts`
+
+---
+
+## Phase 8: Vitest Regression Synthesizer, Sentinel Orchestrator & Delivery
+
+### Task 8.1: Implement `VitestRegressionSynthesizer`
+**Description:** Translates any `InvariantViolation` across any of the 18 business rules into an isolated Vitest test file under `server/src/modules/<domain>/services/__tests__/regressions/`.
+**Acceptance criteria:**
+- [x] Supports generating regression tests for all 18 rules.
+- [x] Generates clean, type-safe TypeScript mocking domain repositories and asserting expected domain errors or actions.
+- [x] Synthesizer unit tests verify generated code formatting and compile correctness.
+**Verification:**
+- [x] Unit tests pass.
+**Dependencies:** Phases 2-7
+**Files touched:**
+- `server/src/modules/system/sentinel/services/VitestRegressionSynthesizer.ts`
+- `server/src/modules/system/sentinel/services/VitestRegressionSynthesizer.test.ts`
+
+---
+
+### Task 8.2: Implement `SequenceSentinelService` & Diagnostic Reporter
+**Description:** Orchestrates parallel execution of all 18 checkers over aggregated sequences, produces a comprehensive Markdown diagnostic report in `docs/audits/`, and triggers test synthesis for critical violations.
+**Acceptance criteria:**
+- [x] Registers and coordinates all 18 domain checkers.
+- [x] Generates Markdown report with executive summary, per-rule scorecard, and violation evidence tables.
+- [x] Full unit test suite with mock dependencies.
+**Verification:**
+- [x] Unit tests pass.
+**Dependencies:** Task 8.1
+**Files touched:**
+- `server/src/modules/system/sentinel/services/SequenceSentinelService.ts`
+- `server/src/modules/system/sentinel/services/SequenceSentinelService.test.ts`
+
+---
+
+### Task 8.3: CLI Interface & MCP Tool Integration
+**Description:** Expose SequenceSentinel as a CLI tool (`npm -w server run sentinel:audit`) and as an MCP tool `msp_run_sentinel_audit` on `packages/mcp-server`.
+**Acceptance criteria:**
+- [x] CLI script in `server/src/modules/system/sentinel/cli.ts` with `--hours`, `--generate-tests`, and `--tenant` flags.
+- [x] MCP tool `msp_run_sentinel_audit` registered in `packages/mcp-server/src/serverFactory.ts`.
+- [x] Clean build and passes test verification.
+**Verification:**
+- [x] `npm -w server run build` passes.
+- [x] `npm run build:packages` passes.
+**Dependencies:** Task 8.2
+**Files touched:**
+- `server/src/modules/system/sentinel/cli.ts`
+- `server/package.json`
+- `packages/mcp-server/src/tools/sentinelTools.ts`
+- `packages/mcp-server/src/serverFactory.ts`

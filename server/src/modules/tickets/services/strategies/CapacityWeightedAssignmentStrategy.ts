@@ -62,6 +62,10 @@ export class CapacityWeightedAssignmentStrategy implements IAssignmentStrategy {
         return null;
       }
       candidates = general;
+      const generalLoads = await this.calculateLoads(general);
+      for (const [techId, load] of generalLoads.entries()) {
+        loads.set(techId, load);
+      }
     }
 
     const selected = [...candidates].sort((a, b) => (loads.get(a.id) ?? 0) - (loads.get(b.id) ?? 0))[0];

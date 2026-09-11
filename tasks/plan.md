@@ -1,60 +1,77 @@
-# Implementation Plan: Full-Stack Lightweight i18n for MSP Tray
+# SequenceSentinel Architecture & Master Plan: Full Business Logic Coverage (BL-101 to BL-802)
 
-## Overview
-Equip the MSP Tray Assistant with a zero-dependency, type-safe localization engine supporting both English (`en_US`) and Dominican Spanish (`es_DO`). The implementation covers the complete desktop experience: automatic Windows OS locale detection with persistent override, a sleek language switcher in the drawer header, 100% localized React drawer views (Activation Gate, Tickets, Live Chat, Vitals), and synchronized native Windows system tray context menus and tooltips.
+## Architectural Overview
+SequenceSentinel is a non-invasive, read-only sequence and business logic auditor located in `server/src/modules/system/sentinel/`. It reads production and staging database audit logs (`ticketEvents`, `tickets`, `rmmAlerts`, `technicianEarnings`, `expenses`, `invoices`, `subscriptions`, `tenants`, `users`), chronologically correlates them into multi-step causal action sequences, evaluates every sequence against all 18 Master Business Logic specifications (`BL-101` through `BL-802`), and automatically synthesizes isolated Vitest reproduction specs (`*.spec.ts`) for any detected drift.
 
----
+```
+[ PostgreSQL Audit Tables (ticketEvents, expenses, invoices, subscriptions, etc.) ]
+                                  │
+                                  ▼ (Read-Only Temporal Slice)
+                  [ SequenceAggregatorService ]
+                                  │
+                                  ▼ (Chronological Action Sequences)
+           ┌──────────────────────┴──────────────────────┐
+           ▼                                             ▼
+┌───────────────────────────────┐             ┌───────────────────────────────┐
+│ Ticketing & SLA Suite         │             │ Billing & Tax Suite           │
+│ - BL-101: SlaCancellation     │             │ - BL-401: SubReactivation     │
+│ - BL-102: RoundRobinDispatch  │             │ - BL-402: RenewalScheduler    │
+│ - BL-103: AlertNoiseFlapping  │             │ - BL-701: TaxAndNcf           │
+│ - BL-104: TierEscalation      │             │ - BL-702: NonPaymentScale     │
+└───────────────────────────────┘             └───────────────────────────────┘
+           │                                             │
+           ▼                                             ▼
+┌───────────────────────────────┐             ┌───────────────────────────────┐
+│ Subscriptions & Equipment     │             │ Commissions & Financials      │
+│ - BL-201: QuotaEnforcement    │             │ - BL-801: TechBountyOpEx      │
+│ - BL-202: LicenseTrueUp       │             │ - BL-802: ProfitSplit         │
+│ - BL-204: FeatureGating       │             │                               │
+│ - BL-205: DeviceVaultSecurity │             │ CRM & Health Suite            │
+└───────────────────────────────┘             │ - BL-501: CrmLeadPipeline     │
+           │                                  │ - BL-601: AccountHealthScore  │
+           ▼                                  └───────────────────────────────┘
+┌───────────────────────────────┐                        │
+│ Security & State Machine      │                        │
+│ - BL-301: StateMachine        │                        │
+│ - BL-302: AuthzAndJit         │                        │
+└───────────────────────────────┘                        │
+           │                                             │
+           └──────────────────────┬──────────────────────┘
+                                  ▼
+                   [ SequenceSentinelService ]
+                                  │
+                 ┌────────────────┴────────────────┐
+                 ▼                                 ▼
+   [ Markdown Diagnostic Report ]    [ VitestRegressionSynthesizer ]
+   (`docs/audits/audit-*.md`)        (`services/__tests__/regressions/*.spec.ts`)
+```
 
-## Architecture Decisions
+## Modular Checker Registry
+All checkers implement a unified `InvariantChecker` interface:
+```typescript
+export interface InvariantChecker {
+  readonly ruleCode: string; // e.g. "BL-101"
+  readonly ruleName: string;
+  readonly category: 'TICKETING' | 'SUBSCRIPTIONS' | 'SECURITY' | 'BILLING' | 'FINANCIAL' | 'CRM_HEALTH';
+  evaluate(sequence: ActionSequence): Promise<InvariantCheckResult>;
+}
+```
 
-1. **Zero-Dependency Type-Safe Translation Schema (`types.ts`):**
-   - Define a strictly typed TypeScript interface `TranslationDictionary` for all UI strings.
-   - Implement `en_US.ts` and `es_DO.ts` satisfying `TranslationDictionary`. TypeScript compile-time checking guarantees 100% parity—no missing keys or runtime translation crashes.
-   - Zero external libraries (< 3KB bundle size, 0ms load penalty).
-
-2. **Hierarchical Locale Resolution:**
-   - Priority 1: User selection stored in `localStorage.getItem('msp_tray_locale')`.
-   - Priority 2: Windows OS browser locale via `navigator.language` (`es-*` $\rightarrow$ `es_DO`, otherwise `en_US`).
-   - Default: `en_US`.
-
-3. **String Interpolation Helper (`t(key, params)`):**
-   - Dot-notated string key path lookup (e.g. `t('gate.expiresIn', { time: '04:12' })`) with simple string template replacement (`{time}`).
-
-4. **Dual-Stack Native Synchronization:**
-   - React `I18nContext` calls Tauri command `invoke('set_tray_language', { locale })` on mount and on language change.
-   - Rust Tauri backend dynamically mutates tray menu item texts and tray tooltip via `tauri::menu::MenuItem` handles.
-
----
-
-## Task Breakdown Index
-
-### Phase 1: i18n Core Engine & Dictionaries
-- [ ] Task 1.1: Create type-safe translation schema & dictionary tables (`types.ts`, `locales/en_US.ts`, `locales/es_DO.ts`)
-- [ ] Task 1.2: Build `I18nContext.tsx` with OS detection, interpolation, and `useI18n()` hook
-- **Checkpoint: i18n Engine Tested**
-
-### Phase 2: Native Windows System Tray Synchronization
-- [ ] Task 2.1: Implement `set_tray_language` command in Tauri backend (`src-tauri/src/lib.rs`)
-- [ ] Task 2.2: Connect Tauri service bridge (`services/tauri.ts`) and trigger sync from `I18nContext`
-- **Checkpoint: Native Tray Sync Verified**
-
-### Phase 3: Component Localization & Header Switcher
-- [ ] Task 3.1: Add compact `EN` | `ES` language switcher and localize `Header.tsx`
-- [ ] Task 3.2: Localize `ActivationGate.tsx`
-- [ ] Task 3.3: Localize `QuickTicketModal.tsx`, `TicketList.tsx`, `LiveChatDrawer.tsx`, and `AttributionModal.tsx`
-- **Checkpoint: Complete UI Localization Verified**
-
-### Phase 4: Automated Testing & Build Validation
-- [ ] Task 4.1: Write Vitest tests for dictionary parity, interpolation, and locale switching
-- [ ] Task 4.2: Execute tray test suite and production build quality gates
-- **Checkpoint: Release Ready**
-
----
-
-## Risks and Mitigations
-
-| Risk | Impact | Mitigation |
-| :--- | :---: | :--- |
-| Dynamic Tauri tray menu update not supported on older Webview2 runtimes | Low | Tauri v2 `MenuItem::set_text` modifies the Win32 HMENU directly via Windows API, independent of Webview2. |
-| Incomplete dictionary keys when new features are added | Medium | Strict TypeScript typing (`const enUS: TranslationDictionary = { ... }`) ensures compile error if any key is missing. |
-| Layout breakage due to Spanish text length expansion | Medium | Tailwind text truncation, flexible flexbox headers, and tested drawer layout width (420px). |
+## Dependency Graph
+1. **Core Types & Interfaces** (`server/src/modules/system/sentinel/types.ts`)
+   - Pure domain models (`ActionSequence`, `InvariantViolation`, `AuditReport`).
+2. **Aggregator Engine** (`server/src/modules/system/sentinel/services/SequenceAggregatorService.ts`)
+   - Read-only Drizzle queries grouped by entity IDs (`ticketId`, `tenantId`, `invoiceId`).
+3. **Domain Checker Suites** (`server/src/modules/system/sentinel/checkers/`):
+   - `ticketing/`: `SlaCancellationChecker`, `RoundRobinDispatchChecker`, `AlertNoiseFlappingChecker`, `TierEscalationChecker`.
+   - `subscriptions/`: `QuotaEnforcementChecker`, `LicenseTrueUpChecker`, `FeatureGatingChecker`, `DeviceVaultSecurityChecker`.
+   - `security/`: `StateMachineChecker`, `AuthorizationAndJitChecker`.
+   - `billing/`: `SubscriptionReactivationChecker`, `RenewalSchedulerChecker`, `TaxAndNcfChecker`, `NonPaymentEnforcementChecker`.
+   - `financial/`: `TechnicianBountyChecker`, `ProfitSplitChecker`.
+   - `crm_health/`: `CrmPipelineChecker`, `AccountHealthChecker`.
+4. **Vitest Regression Synthesizer** (`server/src/modules/system/sentinel/services/VitestRegressionSynthesizer.ts`)
+   - Code generator outputting Clean Architecture `*.spec.ts` files with mock dependencies.
+5. **Orchestrator, CLI & MCP Tool**
+   - `SequenceSentinelService.ts`
+   - `cli.ts` (`npm -w server run sentinel:audit`)
+   - MCP tool `msp_run_sentinel_audit` in `packages/mcp-server`

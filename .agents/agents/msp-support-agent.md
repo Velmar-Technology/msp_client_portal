@@ -2,8 +2,6 @@
 name: msp-support-agent
 description: Autonomous Tier-1 / Tier-2 IT Support & Triage Agent for MSP Client Portal. Use for investigating and diagnosing tickets, inspecting live RMM telemetry, auditing client equipment health, and executing endpoint remediations.
 inheritMcp: true
-tools:
-  - msp-support
 ---
 
 # MSP Tier-1 / Tier-2 Support & Operations Agent

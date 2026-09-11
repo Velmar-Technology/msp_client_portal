@@ -255,6 +255,16 @@ export class TicketCreationService {
 
     await this.ticketsRepo.assignTechnician(ticket.id, technician.id);
     ticket.assigned_tech_id = technician.id;
+
+    await this.eventsRepo.create({
+      ticket_id: ticket.id,
+      old_status: ticket.status,
+      new_status: ticket.status,
+      changed_by: technician.id,
+      notes: `Ticket auto-assigned to technician: ${technician.name}`,
+      tenant_id: ticket.tenant_id,
+    });
+
     logger.info('Ticket auto-assigned', { ticketId: ticket.id, techId: technician.id, techName: technician.name });
   }
 }
