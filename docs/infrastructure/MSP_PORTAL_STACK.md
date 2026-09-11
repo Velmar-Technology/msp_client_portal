@@ -295,6 +295,7 @@ node run-in.mjs 3 msp_alloy sh -c "tail -n 50 /var/log/* 2>/dev/null | tail -n 5
 | `ExternalServiceError: Failed to invite ... upstream: 404` on organization invite or vault reset | `VAULTWARDEN_URL` missing `/vault` subpath prefix. When `DOMAIN` includes `/vault`, Rocket mounts all API routes under `/vault/api/*`. Without `/vault`, requests hit Rocket's unmounted root | Set `VAULTWARDEN_URL=http://vaultwarden:80/vault` in Portainer stack env. `docker-compose.prod.yml` now defaults to `http://vaultwarden:80/vault`, and `VaultwardenService.getBaseUrl()` automatically extracts and appends `/vault` from `VAULTWARDEN_EXTERNAL_URL` if omitted |
 | `401 Unauthorized` on `/admin/invite` or `/admin/users` | Calling Vaultwarden Admin API with `Authorization: Bearer <ADMIN_TOKEN>`. Rocket's `AdminToken` request guard strictly requires a session cookie (`Cookie: VW_ADMIN=<jwt>`) | Automated in `VaultwardenService.getAdminHeaders()`. It posts `token=<ADMIN_TOKEN>` to `${baseUrl}/admin` and captures `VW_ADMIN` |
 | `429 Too Many Requests` on `/vault/admin` | Rocket's admin login rate limiter triggered by repeated login attempts in a short burst | `VaultwardenService` caches the `VW_ADMIN` session cookie for 15 minutes (under the 20-minute validity window), eliminating burst login attempts |
+| `401 Unauthorized` / `502 EXTERNAL_SERVICE_ERROR` on `POST /api/v1/equipment/:id/vault/revoke` (`revokeDeviceSession`) | Vaultwarden organization user revoke endpoint `/api/organizations/:orgId/users/:userId/revoke` expects user JWT bearer authentication, rejecting server Admin Token with 401. Or equipment slot contains a simulated ID (`vw_user_...`) from testing | Resolved in `VaultwardenService.revokeDeviceSession`: simulated identifiers are treated as idempotent success; on real IDs, returns from 401/error fallback resiliently to Vaultwarden Admin API session deauthorization (`POST /admin/users/:id/deauth`) with cached `VW_ADMIN` cookie, terminating active sessions immediately (BL-205) |
 
 ### Security notes
 
@@ -307,4 +308,4 @@ node run-in.mjs 3 msp_alloy sh -c "tail -n 50 /var/log/* 2>/dev/null | tail -n 5
 
 ---
 
-_Last updated: 2026-09-11 (v1.2 · Vaultwarden subpath routing 404 & admin session cookie authentication resolved) · Author: Infrastructure Team · Review cycle: Quarterly_
+_Last updated: 2026-09-11 (v1.3 · Vaultwarden device session revocation 401 resolved with Admin API deauth fallback BL-205) · Author: Infrastructure Team · Review cycle: Quarterly_

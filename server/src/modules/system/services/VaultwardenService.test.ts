@@ -543,5 +543,113 @@ describe('VaultwardenService', () => {
 
       (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
     });
+
+    it('handles simulated device user identifier (vw_user_...) gracefully without network call', async () => {
+      const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-admin-token';
+
+      global.fetch = vi.fn();
+
+      const res = await service.revokeDeviceSession('org-1', 'vw_user_rxiufz2t');
+      expect(res).toBe(true);
+      expect(global.fetch).not.toHaveBeenCalled();
+
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
+    });
+
+    it('falls back to Admin API /admin/users/:id/deauth when direct org revoke returns 401', async () => {
+      const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-admin-token';
+
+      global.fetch = vi.fn().mockImplementation(async (url: string, opts: any) => {
+        if (url.includes('/api/organizations/org-1/users/real-user-uuid/revoke')) {
+          return { ok: false, status: 401 };
+        }
+        if (url.endsWith('/admin') && opts?.method === 'POST') {
+          return {
+            ok: true,
+            status: 200,
+            headers: {
+              get: (h: string) => (h.toLowerCase() === 'set-cookie' ? 'VW_ADMIN=test-cookie; Path=/' : null),
+            },
+          };
+        }
+        if (url.includes('/admin/users/real-user-uuid/deauth') && opts?.method === 'POST') {
+          return { ok: true, status: 200 };
+        }
+        if (url.includes('/admin/users/real-user-uuid/disable') && opts?.method === 'POST') {
+          return { ok: true, status: 200 };
+        }
+        return { ok: false, status: 404 };
+      });
+
+      const res = await service.revokeDeviceSession('org-1', 'real-user-uuid');
+      expect(res).toBe(true);
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/admin/users/real-user-uuid/deauth'),
+        expect.objectContaining({ method: 'POST' })
+      );
+
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
+    });
+
+    it('treats 404 on Admin API deauth as idempotent success when user no longer exists', async () => {
+      const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-admin-token';
+
+      global.fetch = vi.fn().mockImplementation(async (url: string, opts: any) => {
+        if (url.includes('/api/organizations/org-1/users/gone-user-uuid/revoke')) {
+          return { ok: false, status: 401 };
+        }
+        if (url.endsWith('/admin') && opts?.method === 'POST') {
+          return {
+            ok: true,
+            status: 200,
+            headers: {
+              get: (h: string) => (h.toLowerCase() === 'set-cookie' ? 'VW_ADMIN=test-cookie; Path=/' : null),
+            },
+          };
+        }
+        if (url.includes('/admin/users/gone-user-uuid/deauth')) {
+          return { ok: false, status: 404 };
+        }
+        return { ok: false, status: 404 };
+      });
+
+      const res = await service.revokeDeviceSession('org-1', 'gone-user-uuid');
+      expect(res).toBe(true);
+
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
+    });
+
+    it('throws ExternalServiceError when both direct revoke and Admin API deauth fail with 500', async () => {
+      const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-admin-token';
+
+      global.fetch = vi.fn().mockImplementation(async (url: string, opts: any) => {
+        if (url.includes('/api/organizations/org-1/users/err-user/revoke')) {
+          return { ok: false, status: 500 };
+        }
+        if (url.endsWith('/admin') && opts?.method === 'POST') {
+          return {
+            ok: true,
+            status: 200,
+            headers: {
+              get: (h: string) => (h.toLowerCase() === 'set-cookie' ? 'VW_ADMIN=test-cookie; Path=/' : null),
+            },
+          };
+        }
+        if (url.includes('/admin/users/err-user/deauth')) {
+          return { ok: false, status: 500, text: async () => 'Internal Server Error' };
+        }
+        return { ok: false, status: 500 };
+      });
+
+      await expect(service.revokeDeviceSession('org-1', 'err-user')).rejects.toThrow(
+        ExternalServiceError
+      );
+
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
+    });
   });
 });
