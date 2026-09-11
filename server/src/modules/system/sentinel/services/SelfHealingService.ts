@@ -11,6 +11,7 @@ import { TechnicianBountyRemediator } from '../remediators/TechnicianBountyRemed
 import { NonPaymentEnforcementRemediator } from '../remediators/NonPaymentEnforcementRemediator';
 import { FlappingAlertRemediator } from '../remediators/FlappingAlertRemediator';
 import { VaultInvitationRemediator } from '../remediators/VaultInvitationRemediator';
+import { DeviceVaultSessionRemediator } from '../remediators/DeviceVaultSessionRemediator';
 
 /** Options for auto-healing invocation */
 export interface AutoHealOptions {
@@ -45,6 +46,7 @@ export class SelfHealingService {
       new NonPaymentEnforcementRemediator(),
       new FlappingAlertRemediator(),
       new VaultInvitationRemediator(),
+      new DeviceVaultSessionRemediator(),
     ];
 
     for (const handler of handlers) {

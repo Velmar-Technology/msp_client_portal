@@ -44,6 +44,9 @@ export class VitestRegressionSynthesizer {
     } else if (violation.ruleCode === 'BL-801') {
       domainSpecificAssertions = `    // BL-801: Bounty calculations and OpEx ledger alignment
     expect(evidence.ticketId).toBeDefined();`;
+    } else if (violation.ruleCode === 'BL-205') {
+      domainSpecificAssertions = `    // BL-205: Device-Bound Password Management & Vault Security
+    expect(evidence.deviceId).toBeDefined();`;
     } else if (violation.ruleCode === 'BL-206') {
       domainSpecificAssertions = `    // BL-206: Vault Provisioning & Invitation Integrity
     expect(evidence.email).toBeDefined();

@@ -66,6 +66,9 @@ When executed with `--auto-heal` or `autoHeal: true`, the agent evaluates detect
 5. **Vault Provisioning & Invitation Remediator (`BL-206`):**
    - **Trigger:** Unresolved `VAULT_INVITATION_FAILED` or dropped organization invitation for password manager user.
    - **Remediation:** Idempotently checks live membership (`checkUserInvitationStatus`), resets stalled accounts (`resetUserVaultAccess`), and dispatches fresh invitations under tenant circuit breaker.
+6. **Device Vault Session Remediator (`BL-205`):**
+   - **Trigger:** Unresolved `VAULT_REVOCATION_FAILED`, `DEVICE_LOCK_FAILED`, or session accessed on a revoked endpoint.
+   - **Remediation:** Executes `VaultwardenService.revokeDeviceSession(targetOrgId, deviceUserId)` (de-authorizing workstation tokens via Rocket admin `/users/:id/deauth`) and sets `vaultwarden_status = 'LOCKED'` in `subscription_equipment`.
 
 ---
 
@@ -175,4 +178,40 @@ An integrity audit or remediation task is considered complete only when:
 2. **Circuit Breaker Compliant:** Total automated fixes per tenant do not exceed 5 in the preceding hour.
 3. **Audit Trail Persisted:** An audit markdown file is saved to `docs/audits/` detailing timestamp, sequences evaluated, and remediation details.
 4. **Tests Remain 100% Green:** `npm -w server test` and `npm -w packages/mcp-server run test` pass with zero regressions.
+
+---
+
+## 7. Vaultwarden & Password Manager Operational Guardrails (BL-205 & BL-206)
+
+When diagnosing, auditing, or remediating Bitwarden/Vaultwarden integrations in the MSP Portal, agents must observe these non-negotiable operational invariants:
+
+### 1. Subpath Route Resolution (`/vault`)
+- When Vaultwarden is configured with a subpath domain (e.g. `DOMAIN=https://helpdesk.velmartech.com.do:9443/vault`), its internal Rocket web framework mounts all routes under `/vault` (e.g. `/vault/api/*`, `/vault/admin/*`, `/vault/identity/*`).
+- Internal container routing (`VAULTWARDEN_URL=http://vaultwarden:80`) must target `/vault` or rely on `getBaseUrl()` in `VaultwardenService.ts`, which inspects `VAULTWARDEN_EXTERNAL_URL` to automatically preserve the `/vault` prefix. Direct raw HTTP requests without this prefix will hit Rocket 404s.
+
+### 2. Strict API vs Admin Route Separation
+- **Public / Client API (`/vault/api/...`):** Strictly reserved for end-user Bitwarden client vault synchronization. These endpoints require a Bitwarden user Bearer JWT (`Authorization: Bearer <user_jwt>`). Passing the server's `VAULTWARDEN_ADMIN_TOKEN` returns HTTP 401 Unauthorized.
+- **Administrative API (`/vault/admin/...`):** Used for MSP system operations: inviting users, retrieving member status, de-authorizing active sessions, disabling accounts, and deleting users.
+- **Authentication Mechanism:** The `/vault/admin` endpoints require a session cookie: `Cookie: VW_ADMIN=<jwt>`. This cookie is obtained by posting `token=<ADMIN_TOKEN>` to `POST /vault/admin`.
+
+### 3. Workstation Session Deauthorization Mechanics (BL-205)
+- Device-bound credentials (`device_<slotId>@tenant.local`) operate under a strict `hidePasswords: true` policy.
+- To execute an emergency lockout or session revocation on a physical endpoint:
+  1. Call `POST /vault/admin/users/:id/deauth` with the device user ID. This resets the user's `security_stamp` upstream, instantly invalidating all issued access tokens and refresh sessions across desktop, browser, and mobile clients.
+  2. Call `POST /vault/admin/users/:id/disable` to prevent subsequent logins until explicitly reprovisioned.
+  3. Update `subscription_equipment.vaultwarden_status = 'LOCKED'` in the local datastore.
+
+### 4. Rate-Limiting & Session Cookie Caching
+- Vaultwarden's Rocket backend enforces built-in IP rate limits on `/admin` login attempts to prevent brute force attacks.
+- `VaultwardenService` caches the acquired `VW_ADMIN` cookie session to prevent re-authenticating on every atomic operation. Do not bypass this cache or hammer `/admin` logins in tight loops.
+
+### 5. Idempotency & Simulated ID Handling
+- Development, staging, and local environments often feature simulated identifiers (e.g. `vw_user_...`, mock UUIDs).
+- Any administrative operation against a simulated ID or any upstream call returning HTTP 404 (indicating the resource is already absent) must be treated as **idempotent success** rather than an exceptional failure.
+- Auto-healing remediators (`VaultInvitationRemediator`, `DeviceVaultSessionRemediator`) must verify live state first and never throw unhandled errors on non-existent endpoints.
+
+### 6. Tenant Safety Circuit Breaker Protection
+- Autonomous vault mutations are strictly throttled by `SelfHealingService`:
+  - Maximum **5 automated actions per tenant per hour**.
+  - Exceeding this threshold trips the circuit breaker, outputs `CIRCUIT_BREAKER_TRIPPED`, and diverts the violation to the Dead-Letter Queue (DLQ) for operator intervention.
 
