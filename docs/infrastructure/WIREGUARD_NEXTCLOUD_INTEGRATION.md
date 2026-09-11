@@ -130,6 +130,7 @@ graph LR
 | **TrueNAS Panel** | User / Password | `velmar-admin` / `Zw9yfJXEZxYWNGItTFKr` |
 | **TrueNAS Panel** | Basic-Auth Hash (APR1) | `$apr1$0aefa95e$cSMSryJpKHZQnRlIuXDQc/` |
 | **Nextcloud App** | User / Password | `msp_client_portal` / `NZP23-BW4kX-F6SK4-qBeRj-TQPg5` |
+| **Vaultwarden** | Admin Token (`VAULTWARDEN_ADMIN_TOKEN` / `ADMIN_TOKEN`) | `dd417777d3da4b7458f1b1d3a6ef5f85e19976aceeb0b7f645bd21253d611965` · regenerated 2026-09-11 (stack 17 incident remediation) |
 | **WireGuard Hub** | Public Key | `BB0xT1mJifO0Yc2MYr1uY+ilZGXntgts1vK7tbJUO1E=` |
 | **WireGuard NAS** | Private Key | `wIdkL1oG876lv+a6xh8P/FCzZ1e28ZAsx1ra1sBxVH4=` |
 | **WireGuard NAS** | Public Key | `ocpKgE7m8PLQoMPmOaGJPP/cf2vIX++pusy9Ewu12Bs=` |

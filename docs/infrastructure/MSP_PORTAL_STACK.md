@@ -1,6 +1,8 @@
 # Infrastructure Specification: MSP Client Portal Production Stack
 
-_Status: Deployed & Active · Last Verified: 2026-08-27 · Version: 1.0_
+_Status: Deployed & Active · Last Verified: 2026-09-11 · Version: 1.1_
+
+> **2026-09-11 Post-Incident Update:** `VAULTWARDEN_ADMIN_TOKEN` was absent from the stack env, so `msp_server_prod` used the offline mock path and *Reset Vault Access* returned a fake success. Token generated, injected into stack 17 env, and compose now fails fast if it is missing (see §6, §8). On 2026-08-27: Zabbix `/zabbix/` subpath fix.
 
 ---
 
@@ -161,6 +163,7 @@ Values are supplied by the **Portainer stack environment** (persisted in the Por
 | Google OAuth | `GOOGLE_CLIENT_ID` (server) / `VITE_GOOGLE_CLIENT_ID` (client build arg) |
 | PayPal | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` (server) / `VITE_PAYPAL_CLIENT_ID` (client build arg) |
 | Nextcloud | `NEXTCLOUD_URL=10.13.13.3:30027`, `NEXTCLOUD_APP_USER`, `NEXTCLOUD_APP_PASS`, `NEXTCLOUD_TOTAL_CAPACITY`, `NEXTCLOUD_EXTERNAL_URL=https://atlas.velmartech.com.do` |
+| Vaultwarden | `VAULTWARDEN_ADMIN_TOKEN` (**REQUIRED**, 64-hex, shared by `server` + `vaultwarden ADMIN_TOKEN`; generate `openssl rand -hex 32`), `VAULTWARDEN_URL=http://vaultwarden:80`, `VAULTWARDEN_EXTERNAL_URL=https://helpdesk.velmartech.com.do/vault` |
 | Zabbix | `ZABBIX_URL=http://zabbix-web:8080/api_jsonrpc.php`, `ZABBIX_USER=Admin`, `ZABBIX_PASSWORD`, `ZABBIX_WEBHOOK_SECRET`, `ZABBIX_DB_USER/PASSWORD/NAME` (defaults `zabbix` / `zabbix_password` / `zabbix`) |
 | Datadog (opt-in) | Server APM only: `DD_API_KEY`, `DD_SITE`, `DD_SERVICE`, `DD_ENV`, `DD_VERSION`, `DD_TRACE_ENABLED`, `DD_AGENT_HOST`. Client RUM is Faro — see the Faro row below. |
 | Grafana | `GRAFANA_ADMIN_USER` (default `admin`), `GRAFANA_ADMIN_EMAIL` (default `admin@velmartech.com.do`), `GRAFANA_ADMIN_PASSWORD` (required from environment, zero inline fallback) |
@@ -222,6 +225,8 @@ node scripts/portainer-stack-update.js "1.6.0"
 
 Portainer UI equivalent: **Stacks → `msp_portal` → Edit stack** (paste updated compose) → **Pull & redeploy**.
 
+> **Required stack env:** `VAULTWARDEN_ADMIN_TOKEN` must be present in the stack environment before any redeploy — the compose spec uses `${VAULTWARDEN_ADMIN_TOKEN:?...}` and the deploy aborts if it is unset/empty. Generate a fresh one with `openssl rand -hex 32` and store it in the §3.4 credentials matrix.
+
 ### Rollback
 
 Manual rollback mirrors a deploy with the previous `VERSION` tag; the CI pipeline performs the same re-pin automatically. Because `prune:true` removes unused stack images/containers, the previously-deployed image may need re-pulling — the updater sets `pullImage:true`, so `ghcr.io/velmar-technology/msp-services-*:<prev>` is fetched on demand.
@@ -275,15 +280,17 @@ node run-in.mjs 3 msp_alloy sh -c "tail -n 50 /var/log/* 2>/dev/null | tail -n 5
 | Prometheus `/prometheus` asset 404 | Missing `--web.route-prefix=/prometheus` / external URL | Already set in the entrypoint; re-verify after image upgrade |
 | Grafana redirects to `https://helpdesk.velmartech.com.do/grafana` + ROOT | URL mismatch | `GF_SERVER_ROOT_URL` includes trailing slash; `SERVE_FROM_SUB_PATH=true` required |
 | Client / `/` doesn't load assets | nginx serving the SPA needs the fallback; image built with wrong `VITE_*` args | Rebuild client with correct build args in CI; nginx `try_files` config lives in the client Dockerfile |
+| *"Simulated reset invitation sent successfully."* on Reset Vault Access / Password Manager | `VAULTWARDEN_ADMIN_TOKEN` unset or empty — `VaultwardenService` silently falls back to a mock path (`logger.warn "...simulating..."`) | Add a 64-hex token via `openssl rand -hex 32` to the stack env (`server` + `vaultwarden ADMIN_TOKEN`) and redeploy. `docker-compose.prod.yml` now fails fast (`${VAULTWARDEN_ADMIN_TOKEN:?...}`) on a missing value. Verify: no `simulating` in `msp_server_prod` logs, real Bitwarden invite email arrives |
 
 ### Security notes
 
 - **Distinct basic-auth credentials:** `zabbix-auth`, `logs-auth` and `prom-auth` now strictly require dedicated, distinct `user:hash` strings via `${ZABBIX_BASIC_AUTH_USERS}`, `${LOGS_BASIC_AUTH_USERS}`, and `${PROM_BASIC_AUTH_USERS}` in the Portainer stack environment. Shared hashes and committed credentials in compose are strictly banned.
 - **Portainer TLS:** self-signed cert currently trusted blindly (`PORTAINER_TLS_INSECURE=true`) in CI — disable once Portainer is fronted by Traefik with a CA-signed cert.
 - **Grafana security:** `GF_SECURITY_ADMIN_PASSWORD` has zero inline default fallback in compose — it MUST be supplied securely via `GRAFANA_ADMIN_PASSWORD` in the Portainer stack env.
+- **Vaultwarden admin token:** `VAULTWARDEN_ADMIN_TOKEN` is **required** (no inline fallback). It authenticates the portal backend against the Vaultwarden Admin API and is consumed by `server` and `vaultwarden ADMIN_TOKEN`. Missing/empty values caused the 2026-09-11 incident where *Reset Vault Access* reported a fake *"Simulated reset invitation sent successfully."* Store it in Portainer stack env and the §3.4 credentials matrix.
 - **Zabbix defaults:** Zabbix API user/password and DB credentials are stack env vars (`zabbix` defaults in compose); keep overridden in Portainer. Zabbix UI admin account is the `admin` basic-auth realm only at the proxy; the Zabbix app itself uses its own (`Admin`) login.
 - **Live credentials** (Portainer key, TruNAS, Nextcloud app, WireGuard keys) are the responsibility of [`WIREGUARD_NEXTCLOUD_INTEGRATION.md`](WIREGUARD_NEXTCLOUD_INTEGRATION.md) §3.4 and the Portainer env — never paste them into issue/discussion channels.
 
 ---
 
-_Last updated: 2026-08-27 (initial release · Zabbix `/zabbix/` subpath fix documented) · Author: Infrastructure Team · Review cycle: Quarterly_
+_Last updated: 2026-09-11 (v1.1 · Vaultwarden admin-token incident remediation documented) · Author: Infrastructure Team · Review cycle: Quarterly_
