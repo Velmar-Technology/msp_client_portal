@@ -22,6 +22,9 @@ export interface VaultwardenInviteResult {
 export class VaultwardenService {
   /**
    * Normalizes the base URL for Vaultwarden.
+   * Ensures any subpath configured in VAULTWARDEN_URL or derived from VAULTWARDEN_EXTERNAL_URL
+   * (e.g., /vault) is preserved so that Rocket's mounted routes (/vault/api, /vault/admin)
+   * are correctly targeted.
    *
    * @returns Clean base URL without trailing slash
    */
@@ -30,7 +33,22 @@ export class VaultwardenService {
     if (!/^https?:\/\//i.test(rawUrl)) {
       rawUrl = `http://${rawUrl}`;
     }
-    return rawUrl.replace(/\/+$/, '');
+    rawUrl = rawUrl.replace(/\/+$/, '');
+
+    // Extract subpath from external URL if available (e.g. /vault) and append if not already present
+    try {
+      if (env.VAULTWARDEN_EXTERNAL_URL) {
+        const extUrl = new URL(env.VAULTWARDEN_EXTERNAL_URL);
+        const subpath = extUrl.pathname.replace(/\/+$/, '');
+        if (subpath && !rawUrl.toLowerCase().endsWith(subpath.toLowerCase())) {
+          rawUrl = `${rawUrl}${subpath}`;
+        }
+      }
+    } catch {
+      // Ignore URL parsing errors
+    }
+
+    return rawUrl;
   }
 
   /**
@@ -164,12 +182,15 @@ export class VaultwardenService {
   /**
    * Invites a user email to an organization.
    * Gracefully handles idempotent duplicate invitations if the user is already present.
+   * Resiliently falls back to Vaultwarden's Admin API (/admin/invite) if the direct org-invite
+   * endpoint returns 404 or 401, ensuring invitation dispatch under BL-206.
    *
    * @param orgId - Target organization identifier
    * @param email - Target user email
    * @param role - Access role (User, Manager, Admin)
    * @returns Result indicating whether invitation succeeded
-   * @throws {ExternalServiceError} When invitation API fails
+   * @throws {ExternalServiceError} When invitation API fails and fallback fails
+   * @see BL-206
    */
   async inviteUserToOrganization(
     orgId: string,
@@ -213,6 +234,35 @@ export class VaultwardenService {
             `User ${email} is already invited or a member of Vaultwarden org ${orgId}; treating as idempotent success.`
           );
           return { invited: true, email, orgId, alreadyEnrolled: true };
+        }
+
+        // Resilient fallback to Vaultwarden Admin API /admin/invite (BL-206)
+        logger.warn(
+          `Vaultwarden organization invite failed (status ${response.status}); attempting Admin API fallback (/admin/invite) for ${email}`
+        );
+
+        try {
+          const adminInviteResp = await fetch(`${baseUrl}/admin/invite`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+            body: JSON.stringify({ email }),
+          });
+
+          if (adminInviteResp.ok) {
+            logger.info(`Dispatched Vaultwarden invitation for ${email} via Admin API (/admin/invite)`);
+            return { invited: true, email, orgId };
+          }
+
+          const adminErrText = typeof adminInviteResp.text === 'function' ? await adminInviteResp.text().catch(() => '') : '';
+          if (
+            adminInviteResp.status === 409 ||
+            /already\s+(exists|in|invited|registered)|duplicate/i.test(adminErrText)
+          ) {
+            logger.info(`User ${email} already exists or is enrolled in Vaultwarden; treating as idempotent success.`);
+            return { invited: true, email, orgId, alreadyEnrolled: true };
+          }
+        } catch (adminFallbackErr) {
+          logger.warn(`Admin API invite fallback failed for ${email}:`, adminFallbackErr);
         }
 
         throw new ExternalServiceError(`Failed to invite ${email} to Vaultwarden organization`, {
@@ -657,8 +707,29 @@ export class VaultwardenService {
         logger.warn(`Could not delete global Vaultwarden user record for ${userEmail}; proceeding to invite`, { adminErr });
       }
 
-      // 3. Re-issue fresh organization invitation
-      await this.inviteUserToOrganization(targetOrgId, userEmail, 'Admin');
+      // 3. Re-issue fresh organization invitation with Admin API fallback
+      try {
+        await this.inviteUserToOrganization(targetOrgId, userEmail, 'Admin');
+      } catch (inviteErr) {
+        logger.warn(
+          `inviteUserToOrganization failed during resetUserVaultAccess; attempting direct /admin/invite fallback for ${userEmail}:`,
+          inviteErr
+        );
+        const adminInviteResp = await fetch(`${baseUrl}/admin/invite`, {
+          method: 'POST',
+          headers: this.getHeaders(),
+          body: JSON.stringify({ email: userEmail }),
+        });
+        const adminErrText = typeof adminInviteResp.text === 'function' ? await adminInviteResp.text().catch(() => '') : '';
+        if (
+          !adminInviteResp.ok &&
+          adminInviteResp.status !== 409 &&
+          !/already\s+(exists|in|invited|registered)|duplicate/i.test(adminErrText)
+        ) {
+          throw inviteErr;
+        }
+        logger.info(`Dispatched fallback admin invitation for ${userEmail} via /admin/invite`);
+      }
 
       logger.info(`Successfully reset vault access and re-invited ${userEmail} to org ${targetOrgId}`);
       return {

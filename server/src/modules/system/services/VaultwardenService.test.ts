@@ -120,6 +120,106 @@ describe('VaultwardenService', () => {
 
       (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
     });
+
+    it('falls back to /admin/invite when organization-scoped invite returns 404 (BL-206)', async () => {
+      const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-admin-token';
+
+      // First call (org invite) returns 404; second call (admin invite) succeeds
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 404,
+          text: async () => JSON.stringify({ error: { code: 404, reason: 'Not Found' } }),
+        } as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ Id: 'user-new', Email: 'epolanco@velmartech.com.do' }),
+        } as any);
+
+      const res = await service.inviteUserToOrganization('org-123', 'epolanco@velmartech.com.do', 'Admin');
+      expect(res.invited).toBe(true);
+      expect(res.email).toBe('epolanco@velmartech.com.do');
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(global.fetch).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining('/admin/invite'),
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ email: 'epolanco@velmartech.com.do' }),
+        })
+      );
+
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
+    });
+
+    it('treats 409 Conflict on /admin/invite fallback as idempotent success (BL-206)', async () => {
+      const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-admin-token';
+
+      // First call (org invite) returns 404; second call (admin invite) returns 409 Conflict (User already exists)
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 404,
+          text: async () => 'Not Found',
+        } as any)
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 409,
+          text: async () => 'User already exists',
+        } as any);
+
+      const res = await service.inviteUserToOrganization('org-123', 'epolanco@velmartech.com.do', 'Admin');
+      expect(res.invited).toBe(true);
+      expect(res.alreadyEnrolled).toBe(true);
+      expect(res.email).toBe('epolanco@velmartech.com.do');
+
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
+    });
+  });
+
+  describe('getBaseUrl subpath resolution', () => {
+    it('appends subpath from VAULTWARDEN_EXTERNAL_URL if not in VAULTWARDEN_URL', async () => {
+      const origUrl = env.VAULTWARDEN_URL;
+      const origExt = env.VAULTWARDEN_EXTERNAL_URL;
+      (env as any).VAULTWARDEN_URL = 'http://vaultwarden:80';
+      (env as any).VAULTWARDEN_EXTERNAL_URL = 'https://helpdesk.velmartech.com.do/vault';
+
+      const url = (service as any).getBaseUrl();
+      expect(url).toBe('http://vaultwarden:80/vault');
+
+      (env as any).VAULTWARDEN_URL = origUrl;
+      (env as any).VAULTWARDEN_EXTERNAL_URL = origExt;
+    });
+
+    it('does not duplicate subpath if VAULTWARDEN_URL already includes /vault', async () => {
+      const origUrl = env.VAULTWARDEN_URL;
+      const origExt = env.VAULTWARDEN_EXTERNAL_URL;
+      (env as any).VAULTWARDEN_URL = 'http://vaultwarden:80/vault';
+      (env as any).VAULTWARDEN_EXTERNAL_URL = 'https://helpdesk.velmartech.com.do/vault';
+
+      const url = (service as any).getBaseUrl();
+      expect(url).toBe('http://vaultwarden:80/vault');
+
+      (env as any).VAULTWARDEN_URL = origUrl;
+      (env as any).VAULTWARDEN_EXTERNAL_URL = origExt;
+    });
+
+    it('retains plain base URL when external URL has no subpath', async () => {
+      const origUrl = env.VAULTWARDEN_URL;
+      const origExt = env.VAULTWARDEN_EXTERNAL_URL;
+      (env as any).VAULTWARDEN_URL = 'http://localhost:8080';
+      (env as any).VAULTWARDEN_EXTERNAL_URL = 'http://localhost:8080';
+
+      const url = (service as any).getBaseUrl();
+      expect(url).toBe('http://localhost:8080');
+
+      (env as any).VAULTWARDEN_URL = origUrl;
+      (env as any).VAULTWARDEN_EXTERNAL_URL = origExt;
+    });
   });
 
   describe('checkUserInvitationStatus', () => {
@@ -324,7 +424,7 @@ describe('VaultwardenService', () => {
       (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-admin-token';
 
       global.fetch = vi.fn().mockImplementation(async (url: string, _?: any) => {
-        if (url.includes('/api/organizations/org-123/users/invite')) {
+        if (url.includes('/users/invite') || url.includes('/admin/invite')) {
           return { ok: false, status: 502 };
         }
         return { ok: true, json: async () => [] };
