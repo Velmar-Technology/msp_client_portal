@@ -85,6 +85,79 @@ describe('VaultwardenService', () => {
 
       (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
     });
+
+    it('handles duplicate / already-invited user idempotently without throwing', async () => {
+      const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-admin-token';
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        text: async () => 'User is already invited to this organization.',
+      } as any);
+
+      const res = await service.inviteUserToOrganization('org-123', 'epolanco@velmartech.com.do', 'Admin');
+      expect(res.invited).toBe(true);
+      expect(res.alreadyEnrolled).toBe(true);
+      expect(res.email).toBe('epolanco@velmartech.com.do');
+
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
+    });
+
+    it('throws ExternalServiceError and preserves upstream error details on real failure', async () => {
+      const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-admin-token';
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        text: async () => 'Internal Vaultwarden Server Error',
+      } as any);
+
+      await expect(
+        service.inviteUserToOrganization('org-123', 'epolanco@velmartech.com.do', 'Admin')
+      ).rejects.toThrow(ExternalServiceError);
+
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
+    });
+  });
+
+  describe('checkUserInvitationStatus', () => {
+    it('returns ACCEPTED in simulated mode when token is absent', async () => {
+      const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = '';
+
+      const status = await service.checkUserInvitationStatus('org-123', 'epolanco@velmartech.com.do');
+      expect(status).toBe('ACCEPTED');
+
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
+    });
+
+    it('identifies INVITED and ACCEPTED status correctly from live payload', async () => {
+      const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-token';
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          Data: [
+            { Id: 'u1', Email: 'epolanco@velmartech.com.do', Status: 1 },
+            { Id: 'u2', Email: 'active@velmartech.com.do', Status: 2 },
+          ],
+        }),
+      } as any);
+
+      const status1 = await service.checkUserInvitationStatus('org-123', 'epolanco@velmartech.com.do');
+      expect(status1).toBe('INVITED');
+
+      const status2 = await service.checkUserInvitationStatus('org-123', 'active@velmartech.com.do');
+      expect(status2).toBe('ACCEPTED');
+
+      const status3 = await service.checkUserInvitationStatus('org-123', 'unknown@velmartech.com.do');
+      expect(status3).toBe('NOT_FOUND');
+
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
+    });
   });
 
   describe('deactivateOrganizationUsers (BL-702 Day 15)', () => {

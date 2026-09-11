@@ -1,6 +1,6 @@
 # SequenceSentinel Integrity Diagnostic Report
-**Generated:** 2026-09-11T19:34:46.881Z
-**Audit Window:** 2026-09-10T19:34:46.744Z to 2026-09-11T19:34:46.744Z
+**Generated:** 2026-09-11T21:16:09.743Z
+**Audit Window:** 2026-09-10T21:16:09.565Z to 2026-09-11T21:16:09.565Z
 **Total Sequences Evaluated:** 0
 **Total Violations Detected:** 0
 
@@ -15,6 +15,7 @@
 | **BL-202** | License True-Up Reconciliation Rule | SUBSCRIPTIONS | 0 | 0 | ✅ PASS |
 | **BL-204** | Feature Gating & Entitlements Rule | SUBSCRIPTIONS | 0 | 0 | ✅ PASS |
 | **BL-205** | Device-Bound Vault Security & Credential Isolation | SUBSCRIPTIONS | 0 | 0 | ✅ PASS |
+| **BL-206** | Vault Provisioning & Invitation Integrity | SUBSCRIPTIONS | 0 | 0 | ✅ PASS |
 | **BL-301** | RBAC & Lifecycle State Machine Invariant Rule | SECURITY | 0 | 0 | ✅ PASS |
 | **BL-302** | Hybrid Authorization, ZSP & Ephemeral Grant Rule | SECURITY | 0 | 0 | ✅ PASS |
 | **BL-401** | Subscription Reactivation on Payment Rule | BILLING | 0 | 0 | ✅ PASS |

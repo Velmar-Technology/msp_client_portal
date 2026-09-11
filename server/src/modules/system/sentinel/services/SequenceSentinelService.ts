@@ -22,6 +22,7 @@ import { QuotaEnforcementChecker } from '../checkers/subscriptions/QuotaEnforcem
 import { LicenseTrueUpChecker } from '../checkers/subscriptions/LicenseTrueUpChecker';
 import { FeatureGatingChecker } from '../checkers/subscriptions/FeatureGatingChecker';
 import { DeviceVaultSecurityChecker } from '../checkers/subscriptions/DeviceVaultSecurityChecker';
+import { VaultProvisioningChecker } from '../checkers/subscriptions/VaultProvisioningChecker';
 
 // Security suite
 import { StateMachineChecker } from '../checkers/security/StateMachineChecker';
@@ -76,6 +77,7 @@ export class SequenceSentinelService {
       new LicenseTrueUpChecker(),
       new FeatureGatingChecker(),
       new DeviceVaultSecurityChecker(),
+      new VaultProvisioningChecker(),
       new StateMachineChecker(),
       new AuthorizationAndJitChecker(),
       new SubscriptionReactivationChecker(),

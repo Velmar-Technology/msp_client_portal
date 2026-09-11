@@ -12,6 +12,7 @@ export interface VaultwardenInviteResult {
   invited: boolean;
   email: string;
   orgId: string;
+  alreadyEnrolled?: boolean;
 }
 
 /**
@@ -84,9 +85,11 @@ export class VaultwardenService {
       });
 
       if (!response.ok) {
+        const errText = typeof response.text === 'function' ? await response.text().catch(() => '') : '';
         throw new ExternalServiceError('Failed to create Vaultwarden organization', {
           service: 'vaultwarden',
           upstream: response.status,
+          details: errText || undefined,
         });
       }
 
@@ -110,7 +113,57 @@ export class VaultwardenService {
   }
 
   /**
+   * Checks the enrollment or invitation status of a user within a Vaultwarden organization.
+   *
+   * @param orgId - Organization UUID
+   * @param email - Target user email address
+   * @returns Status of user membership ('ACCEPTED' | 'INVITED' | 'REVOKED' | 'NOT_FOUND')
+   */
+  async checkUserInvitationStatus(
+    orgId: string,
+    email: string
+  ): Promise<'ACCEPTED' | 'INVITED' | 'REVOKED' | 'NOT_FOUND'> {
+    const token = env.VAULTWARDEN_ADMIN_TOKEN;
+    const baseUrl = this.getBaseUrl();
+
+    if (!token) {
+      return 'ACCEPTED';
+    }
+
+    try {
+      const response = await fetch(`${baseUrl}/api/organizations/${orgId}/users`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+
+      if (!response.ok) {
+        return 'NOT_FOUND';
+      }
+
+      const payload = (await response.json()) as {
+        Data?: Array<{ Id: string; Email?: string; Status?: number }>;
+      };
+      const member = (payload.Data || []).find(
+        (u) => u.Email?.toLowerCase() === email.toLowerCase()
+      );
+
+      if (!member) {
+        return 'NOT_FOUND';
+      }
+
+      // Vaultwarden Status codes: 0 = Revoked, 1 = Invited, 2 = Accepted, 3 = Confirmed
+      if (member.Status === 0) return 'REVOKED';
+      if (member.Status === 1) return 'INVITED';
+      if (member.Status === 2 || member.Status === 3) return 'ACCEPTED';
+      return 'ACCEPTED';
+    } catch {
+      return 'NOT_FOUND';
+    }
+  }
+
+  /**
    * Invites a user email to an organization.
+   * Gracefully handles idempotent duplicate invitations if the user is already present.
    *
    * @param orgId - Target organization identifier
    * @param email - Target user email
@@ -149,9 +202,23 @@ export class VaultwardenService {
       });
 
       if (!response.ok) {
+        const errText = typeof response.text === 'function' ? await response.text().catch(() => '') : '';
+        // Bitwarden / Vaultwarden returns 400 or 409 if the email is already in org or pending invite
+        const isAlreadyEnrolled =
+          (response.status === 400 || response.status === 409) &&
+          /already\s+(in|invited|member|registered)|duplicate/i.test(errText);
+
+        if (isAlreadyEnrolled) {
+          logger.info(
+            `User ${email} is already invited or a member of Vaultwarden org ${orgId}; treating as idempotent success.`
+          );
+          return { invited: true, email, orgId, alreadyEnrolled: true };
+        }
+
         throw new ExternalServiceError(`Failed to invite ${email} to Vaultwarden organization`, {
           service: 'vaultwarden',
           upstream: response.status,
+          details: errText || undefined,
         });
       }
 

@@ -28,7 +28,7 @@ describe('SequenceSentinelService', () => {
     });
 
     expect(report.totalViolations).toBe(0);
-    expect(report.scorecard).toHaveLength(19); // 19 checkers across all 18 master rules evaluated!
+    expect(report.scorecard).toHaveLength(20); // 20 checkers across all master rules evaluated!
     expect(report.scorecard.every((r) => r.status === 'PASS')).toBe(true);
   });
 
