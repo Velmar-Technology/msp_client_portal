@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.11.10](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.9...v1.11.10) (2026-09-11)
+
+
+### Features
+
+* **agent:** implement windows dpapi machine-bound credential encryption ([ba33ea7](https://github.com/Velmar-Technology/msp_client_portal/commit/ba33ea7f5a4b346ebd45b75c540d3bcc093425ca))
+* **sentinel:** add BL-206 vault invitation integrity checker and autonomous remediator ([2bc5657](https://github.com/Velmar-Technology/msp_client_portal/commit/2bc5657ba468594fe33b89c977f0763f645a2bf6))
+* **subscriptions:** add PayPal auto-renew toggle and Sentinel BL-402 agreement checker ([f08687b](https://github.com/Velmar-Technology/msp_client_portal/commit/f08687ba26e281ee36e3ca43c99669bad1d6ee53))
+* **tray:** add persistent rolling endpoint logging with redaction and diagnostics ([049dbf4](https://github.com/Velmar-Technology/msp_client_portal/commit/049dbf49a37d430c525b2985a456073e41b2dbae))
+* **tray:** add seamless service restart, offline state handling, and local timezone logging ([77cccca](https://github.com/Velmar-Technology/msp_client_portal/commit/77ccccad441776dd25d888b87f0bd2f0890a0620))
+* **tray:** configure tauri v2 acl capabilities and add installer shortcuts ([0cad781](https://github.com/Velmar-Technology/msp_client_portal/commit/0cad7812c0b0c5e7860d2a1fd53ea43660337806))
+* **vault:** add organization auto-resolution and msp_remediate_user_vault tool ([219e650](https://github.com/Velmar-Technology/msp_client_portal/commit/219e650cc0d3ca7be58485f6d57808b58c6a6f3a))
+
+
+### Bug Fixes
+
+* **infra:** fail fast on missing vaultwarden admin token and document incident ([18d8a5a](https://github.com/Velmar-Technology/msp_client_portal/commit/18d8a5a6a77e398aa8d3785d0e1eda349405753b))
+* **tray:** extend tauri v2 acl capability with webviews wildcard and explicit event permissions ([2e0a6a3](https://github.com/Velmar-Technology/msp_client_portal/commit/2e0a6a3ad788e51e6db81544d1aaf2e5ac19973e))
+
 ## [1.11.9](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.8...v1.11.9) (2026-09-11)
 
 

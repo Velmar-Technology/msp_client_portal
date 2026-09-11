@@ -1,6 +1,6 @@
 [package]
 name = "msp-tray"
-version = "1.11.9"
+version = "1.11.10"
 description = "MSP Support Assistant - System Tray Companion"
 authors = ["Velmar Technology SRL"]
 edition = "2021"
