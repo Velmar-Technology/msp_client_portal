@@ -51,6 +51,55 @@ export class VaultwardenService {
     return rawUrl;
   }
 
+  private adminCookie: string | null = null;
+  private adminCookieExpiresAt = 0;
+
+  /**
+   * Acquires authentication headers for Vaultwarden Admin API endpoints (/admin/*).
+   * Automatically exchanges VAULTWARDEN_ADMIN_TOKEN for a VW_ADMIN session cookie via
+   * POST /admin and caches it for 15 minutes to respect Vaultwarden admin rate limits.
+   *
+   * @returns Record with Cookie header or Authorization fallback
+   */
+  private async getAdminHeaders(): Promise<Record<string, string>> {
+    const token = env.VAULTWARDEN_ADMIN_TOKEN;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    };
+    if (!token) return headers;
+
+    const now = Date.now();
+    if (this.adminCookie && this.adminCookieExpiresAt > now) {
+      headers['Cookie'] = this.adminCookie;
+      return headers;
+    }
+
+    try {
+      const baseUrl = this.getBaseUrl();
+      const params = new URLSearchParams();
+      params.append('token', token);
+      const res = await fetch(`${baseUrl}/admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString(),
+        redirect: 'manual',
+      });
+      const cookieHeader = res?.headers?.get ? res.headers.get('set-cookie') : null;
+      if (cookieHeader) {
+        this.adminCookie = cookieHeader.split(';')[0];
+        this.adminCookieExpiresAt = now + 15 * 60 * 1000;
+        headers['Cookie'] = this.adminCookie;
+        return headers;
+      }
+    } catch (loginErr) {
+      logger.warn('Vaultwarden admin session login error; falling back to Bearer header:', loginErr);
+    }
+
+    headers['Authorization'] = `Bearer ${token}`;
+    return headers;
+  }
+
   /**
    * Builds the Authorization header for Vaultwarden API calls.
    *
@@ -242,9 +291,10 @@ export class VaultwardenService {
         );
 
         try {
+          const adminHeaders = await this.getAdminHeaders();
           const adminInviteResp = await fetch(`${baseUrl}/admin/invite`, {
             method: 'POST',
-            headers: this.getHeaders(),
+            headers: adminHeaders,
             body: JSON.stringify({ email }),
           });
 
@@ -683,23 +733,25 @@ export class VaultwardenService {
 
       // 2. Locate user in global admin users list to delete the account record
       try {
+        const adminHeaders = await this.getAdminHeaders();
         const adminUsersResp = await fetch(`${baseUrl}/admin/users`, {
           method: 'GET',
-          headers: this.getHeaders(),
+          headers: adminHeaders,
         });
 
         if (adminUsersResp.ok) {
-          const adminUsers = (await adminUsersResp.json()) as Array<{ Id: string; Email: string }>;
+          const adminUsers = (await adminUsersResp.json()) as Array<{ Id?: string; id?: string; Email?: string; email?: string }>;
           if (Array.isArray(adminUsers)) {
             const userRecord = adminUsers.find(
-              (u) => u.Email?.toLowerCase() === userEmail.toLowerCase()
+              (u) => (u.Email || (u as any).email)?.toLowerCase() === userEmail.toLowerCase()
             );
-            if (userRecord) {
-              await fetch(`${baseUrl}/admin/users/${userRecord.Id}/delete`, {
+            const userId = userRecord?.Id || (userRecord as any)?.id;
+            if (userId) {
+              await fetch(`${baseUrl}/admin/users/${userId}/delete`, {
                 method: 'POST',
-                headers: this.getHeaders(),
+                headers: adminHeaders,
               });
-              logger.info(`Purged user account ${userEmail} (${userRecord.Id}) via Vaultwarden Admin API`);
+              logger.info(`Purged user account ${userEmail} (${userId}) via Vaultwarden Admin API`);
             }
           }
         }
@@ -715,9 +767,10 @@ export class VaultwardenService {
           `inviteUserToOrganization failed during resetUserVaultAccess; attempting direct /admin/invite fallback for ${userEmail}:`,
           inviteErr
         );
+        const adminHeaders = await this.getAdminHeaders();
         const adminInviteResp = await fetch(`${baseUrl}/admin/invite`, {
           method: 'POST',
-          headers: this.getHeaders(),
+          headers: adminHeaders,
           body: JSON.stringify({ email: userEmail }),
         });
         const adminErrText = typeof adminInviteResp.text === 'function' ? await adminInviteResp.text().catch(() => '') : '';

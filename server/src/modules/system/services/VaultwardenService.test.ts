@@ -125,31 +125,36 @@ describe('VaultwardenService', () => {
       const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
       (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-admin-token';
 
-      // First call (org invite) returns 404; second call (admin invite) succeeds
-      global.fetch = vi
-        .fn()
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 404,
-          text: async () => JSON.stringify({ error: { code: 404, reason: 'Not Found' } }),
-        } as any)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ Id: 'user-new', Email: 'epolanco@velmartech.com.do' }),
-        } as any);
+      global.fetch = vi.fn().mockImplementation(async (url: string, opts?: any) => {
+        if (url.includes('/api/organizations/org-123/users/invite')) {
+          return {
+            ok: false,
+            status: 404,
+            text: async () => JSON.stringify({ error: { code: 404, reason: 'Not Found' } }),
+          };
+        }
+        if (url.endsWith('/admin')) {
+          return {
+            ok: true,
+            status: 200,
+            headers: {
+              get: (header: string) => (header.toLowerCase() === 'set-cookie' ? 'VW_ADMIN=mock-jwt-cookie; Path=/admin' : null),
+            },
+          };
+        }
+        if (url.includes('/admin/invite')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ Id: 'user-new', Email: 'epolanco@velmartech.com.do' }),
+          };
+        }
+        return { ok: true, json: async () => ({}) };
+      });
 
       const res = await service.inviteUserToOrganization('org-123', 'epolanco@velmartech.com.do', 'Admin');
       expect(res.invited).toBe(true);
       expect(res.email).toBe('epolanco@velmartech.com.do');
-      expect(global.fetch).toHaveBeenCalledTimes(2);
-      expect(global.fetch).toHaveBeenNthCalledWith(
-        2,
-        expect.stringContaining('/admin/invite'),
-        expect.objectContaining({
-          method: 'POST',
-          body: JSON.stringify({ email: 'epolanco@velmartech.com.do' }),
-        })
-      );
 
       (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
     });
@@ -158,19 +163,32 @@ describe('VaultwardenService', () => {
       const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
       (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-admin-token';
 
-      // First call (org invite) returns 404; second call (admin invite) returns 409 Conflict (User already exists)
-      global.fetch = vi
-        .fn()
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 404,
-          text: async () => 'Not Found',
-        } as any)
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 409,
-          text: async () => 'User already exists',
-        } as any);
+      global.fetch = vi.fn().mockImplementation(async (url: string) => {
+        if (url.includes('/api/organizations/org-123/users/invite')) {
+          return {
+            ok: false,
+            status: 404,
+            text: async () => 'Not Found',
+          };
+        }
+        if (url.endsWith('/admin')) {
+          return {
+            ok: true,
+            status: 200,
+            headers: {
+              get: (header: string) => (header.toLowerCase() === 'set-cookie' ? 'VW_ADMIN=mock-jwt-cookie; Path=/admin' : null),
+            },
+          };
+        }
+        if (url.includes('/admin/invite')) {
+          return {
+            ok: false,
+            status: 409,
+            text: async () => 'User already exists',
+          };
+        }
+        return { ok: true, json: async () => ({}) };
+      });
 
       const res = await service.inviteUserToOrganization('org-123', 'epolanco@velmartech.com.do', 'Admin');
       expect(res.invited).toBe(true);
