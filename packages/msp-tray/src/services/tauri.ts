@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import { listen, UnlistenFn } from '@tauri-apps/api/event';
 
 export interface SystemVitals {
   cpuPercent: number;
@@ -20,6 +21,9 @@ export interface AgentStatus {
   hostname: string;
   tenantName?: string;
   activeTicketCount: number;
+  isBound: boolean;
+  pairingCode?: string;
+  pairingCodeExpiresAt?: string;
 }
 
 export interface ActiveTicket {
@@ -118,6 +122,7 @@ export async function fetchAgentStatus(): Promise<AgentStatus> {
       hostname: 'DEV-WORKSTATION-01',
       tenantName: 'Acme Logistics SRL',
       activeTicketCount: 0,
+      isBound: true,
     };
   }
 
@@ -131,8 +136,57 @@ export async function fetchAgentStatus(): Promise<AgentStatus> {
       hostname: 'DEV-WORKSTATION-01',
       tenantName: 'Acme Logistics SRL',
       activeTicketCount: 0,
+      isBound: true,
     };
   }
+}
+
+/**
+ * Triggers re-issuance of a fresh 6-digit OTP pairing code for unbound workstations.
+ * @returns {Promise<AgentStatus>} Updated agent status with new pairing code
+ */
+export async function refreshPairingCode(): Promise<AgentStatus> {
+  if (!isTauriEnvironment()) {
+    return {
+      agentOnline: true,
+      cloudConnected: true,
+      hostname: 'DEV-WORKSTATION-01',
+      activeTicketCount: 0,
+      isBound: false,
+      pairingCode: '749102',
+      pairingCodeExpiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+    };
+  }
+
+  return await invoke<AgentStatus>('refresh_pairing_code');
+}
+
+/**
+ * Listens for the real-time AGENT_BOUND event pushed down the named pipe when an admin links this workstation.
+ * @param {(payload: { slotId: string }) => void} callback - Handler invoked upon binding
+ * @returns {Promise<UnlistenFn>} Cleanup unsubscribe function
+ */
+export async function listenAgentBound(callback: (payload: { slotId: string }) => void): Promise<UnlistenFn> {
+  if (!isTauriEnvironment()) {
+    return () => {};
+  }
+  return await listen<{ slotId: string }>('agent://bound', (event) => {
+    callback(event.payload);
+  });
+}
+
+/**
+ * Listens for AGENT_UNBOUND event pushed down the named pipe if an admin unlinks this workstation.
+ * @param {(payload: { pairingCode?: string; expiresAt?: string }) => void} callback - Handler invoked upon unbinding
+ * @returns {Promise<UnlistenFn>} Cleanup unsubscribe function
+ */
+export async function listenAgentUnbound(callback: (payload: { pairingCode?: string; expiresAt?: string }) => void): Promise<UnlistenFn> {
+  if (!isTauriEnvironment()) {
+    return () => {};
+  }
+  return await listen<{ pairingCode?: string; expiresAt?: string }>('agent://unbound', (event) => {
+    callback(event.payload);
+  });
 }
 
 /**

@@ -501,6 +501,13 @@ fn handle_bind(envelope: &AgentEnvelope) -> Value {
     }
 
     info!("Device linked to slot {slot_id}. Reconnecting as a bound agent.");
+    ipc_server::broadcast_push_event(
+        "AGENT_BOUND",
+        &serde_json::json!({
+            "slotId": slot_id,
+            "boundAt": chrono::Utc::now().to_rfc3339()
+        }),
+    );
     serde_json::json!({
         "success": true,
         "slot_id": slot_id
@@ -522,6 +529,13 @@ fn handle_unbind(_envelope: &AgentEnvelope) -> Value {
 
     info!("Device unlinked from slot by client. Reconnecting in pairing mode.");
     print_pairing_banner(&state);
+    ipc_server::broadcast_push_event(
+        "AGENT_UNBOUND",
+        &serde_json::json!({
+            "pairingCode": new_code,
+            "pairingCodeExpiresAt": state.pairing_code_expires_at
+        }),
+    );
     serde_json::json!({
         "success": true,
         "pairing_code": new_code,
@@ -544,6 +558,13 @@ fn handle_refresh_pairing_code() -> Value {
         return serde_json::json!({ "success": false, "error": format!("Failed to persist pairing code: {err}") });
     }
     print_pairing_banner(&state);
+    ipc_server::broadcast_push_event(
+        "AGENT_UNBOUND",
+        &serde_json::json!({
+            "pairingCode": code,
+            "pairingCodeExpiresAt": state.pairing_code_expires_at
+        }),
+    );
     serde_json::json!({
         "success": true,
         "pairing_code": code,

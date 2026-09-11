@@ -9,6 +9,9 @@ import {
   fetchAgentStatus,
   fetchActiveTicket,
   fetchTicketList,
+  refreshPairingCode,
+  listenAgentBound,
+  listenAgentUnbound,
 } from "./services/tauri";
 import { ShiftWorkerAttribution, getCachedAttribution } from "./services/attribution";
 import { Header } from "./components/Header";
@@ -17,6 +20,7 @@ import { QuickTicketModal } from "./components/QuickTicketModal";
 import { LiveChatDrawer } from "./components/LiveChatDrawer";
 import { TicketList } from "./components/TicketList";
 import { CopyableTicketId } from "./components/CopyableTicketId";
+import { ActivationGate } from "./components/ActivationGate";
 import { playNotificationChime } from "./services/sound";
 
 export const App: React.FC = () => {
@@ -37,6 +41,7 @@ export const App: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const openNewTicketModal = (initial?: { title?: string; category?: string; priority?: string }) => {
+    if (agentStatus && !agentStatus.isBound) return;
     setModalInitialTitle(initial?.title || '');
     setModalInitialCategory(initial?.category || 'HELPDESK');
     setModalInitialPriority(initial?.priority || 'MEDIUM');
@@ -104,10 +109,47 @@ export const App: React.FC = () => {
     return () => clearInterval(timer);
   }, [loadVitals, loadStatus, loadTickets]);
 
+  // Real-time listener for over-the-air binding events from background service
+  useEffect(() => {
+    let unlistenBound: (() => void) | undefined;
+    let unlistenUnbound: (() => void) | undefined;
+
+    listenAgentBound(() => {
+      playNotificationChime();
+      loadStatus();
+      loadTickets(false);
+    }).then((un) => {
+      unlistenBound = un;
+    });
+
+    listenAgentUnbound(() => {
+      loadStatus();
+    }).then((un) => {
+      unlistenUnbound = un;
+    });
+
+    return () => {
+      if (unlistenBound) unlistenBound();
+      if (unlistenUnbound) unlistenUnbound();
+    };
+  }, [loadStatus, loadTickets]);
+
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
     await Promise.all([loadVitals(), loadStatus(), loadTickets(false)]);
     setIsRefreshing(false);
+  };
+
+  const handleRefreshPairingCode = async () => {
+    setIsRefreshing(true);
+    try {
+      const updated = await refreshPairingCode();
+      setAgentStatus(updated);
+    } catch (err) {
+      console.error('Failed to refresh pairing code', err);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const handleTicketCreated = (res: CreateTicketResult) => {
@@ -143,7 +185,7 @@ export const App: React.FC = () => {
       {/* Top Bar Header */}
       <Header
         hostname={vitals?.hostname || "Endpoint"}
-        tenantName={agentStatus?.tenantName || "Managed System"}
+        tenantName={agentStatus && !agentStatus.isBound ? "Unlinked Endpoint" : (agentStatus?.tenantName || "Managed System")}
         isOnline={agentStatus?.agentOnline ?? true}
         attribution={attribution}
         onEditAttribution={() => setIsAttributionOpen(true)}
@@ -153,8 +195,17 @@ export const App: React.FC = () => {
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto p-3.5 space-y-2.5 flex flex-col min-h-0">
-        {/* Navigation Tabs (Quick Support vs Workstation Tickets) */}
-        {!activeChatTicket && (
+        {agentStatus && !agentStatus.isBound ? (
+          <ActivationGate
+            pairingCode={agentStatus.pairingCode}
+            pairingCodeExpiresAt={agentStatus.pairingCodeExpiresAt}
+            onRefreshCode={handleRefreshPairingCode}
+            isRefreshing={isRefreshing}
+          />
+        ) : (
+          <>
+            {/* Navigation Tabs (Quick Support vs Workstation Tickets) */}
+            {!activeChatTicket && (
           <div className="flex bg-[#0a101d] p-1 rounded-xl border border-[#1b263b] shrink-0 gap-1">
             <button
               onClick={() => {
@@ -310,6 +361,8 @@ export const App: React.FC = () => {
               </div>
             </div>
           </div>
+        )}
+          </>
         )}
       </div>
 

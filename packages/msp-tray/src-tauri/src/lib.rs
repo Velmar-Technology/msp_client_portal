@@ -57,7 +57,35 @@ async fn get_agent_status(
         hostname: vitals.hostname,
         tenant_name: None,
         active_ticket_count: active_count,
+        is_bound: true,
+        pairing_code: None,
+        pairing_code_expires_at: None,
     })
+}
+
+#[tauri::command]
+async fn refresh_pairing_code(
+    ipc_client: State<'_, IpcClient>,
+) -> Result<AgentStatusPayload, String> {
+    if ipc_client.is_connected() {
+        let resp: serde_json::Value = ipc_client
+            .send_request("REFRESH_PAIRING_CODE", serde_json::json!({}))
+            .await?;
+
+        let code = resp.get("pairingCode").and_then(|v| v.as_str()).map(|s| s.to_string());
+        let exp = resp.get("pairingCodeExpiresAt").and_then(|v| v.as_str()).map(|s| s.to_string());
+
+        let mut status = ipc_client
+            .send_request::<serde_json::Value, AgentStatusPayload>("GET_AGENT_STATUS", serde_json::json!({}))
+            .await?;
+        if code.is_some() {
+            status.pairing_code = code;
+            status.pairing_code_expires_at = exp;
+        }
+        Ok(status)
+    } else {
+        Err("MSP Agent background service is not connected.".to_string())
+    }
 }
 
 #[tauri::command]
@@ -243,6 +271,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_system_vitals,
             get_agent_status,
+            refresh_pairing_code,
             get_active_ticket,
             get_ticket_list,
             get_ticket_responses,

@@ -1,34 +1,27 @@
-# Implementation Plan: Unified MSI Packaging & Dual-Channel Upgrades for MSP Endpoint Suite
+# Implementation Plan: Workstation Activation Gate for MSP Endpoint Suite
 
 ## Overview
-Package the Rust-based background Windows service (`msp-agent`) and the React/Tauri desktop assistant (`msp-tray`) into an enterprise-standard Windows Installer package (`msp-endpoint-suite.msi`). This enables automated, silent deployment via Microsoft Intune, Active Directory Group Policy (GPO), and enterprise RMM tools, while empowering endpoints to perform dual-channel silent upgrades—either driven centrally by the MSP Web Portal over WebSocket or through enterprise policy distribution.
+Eliminate end-user confusion and silent `403 Forbidden` API errors on freshly installed endpoints by implementing an **Activation Gatekeeper** across `msp-agent` and `msp-tray`. When a newly installed machine is unbound, `msp-tray` clearly displays its live 6-digit pairing PIN, TTL countdown, and copy/refresh controls, while gating ticket creation until an administrator claims the slot in the MSP Portal. Upon claim, the agent broadcasts an `AGENT_BOUND` event over IPC, triggering immediate, seamless unlocking with sound confirmation.
 
 ---
 
 ## Architecture Decisions
 
-1. **Single Unified MSI Topology (`packages/msp-installer`):**
-   - Combines `msp-agent.exe` (Windows Service: `MSPEndpointAgent`, automatic startup) and `msp-tray.exe` (user-session companion) into `%ProgramFiles%\MSP\EndpointSuite\`.
-   - Adds `HKLM\Software\Microsoft\Windows\CurrentVersion\Run` key to ensure `msp-tray.exe` launches automatically for any user logging into the machine.
-   - Preserves `%ProgramData%\MSP\msp-agent.json` across upgrades so machine authentication and device pairing are never lost.
+1. **Named Pipe IPC Contract Enrichment (`packages/msp-agent`):**
+   - Extend `GET_AGENT_STATUS` response payload to include `isBound: bool`, `pairingCode: Option<String>`, and `pairingCodeExpiresAt: Option<String>`.
+   - Add `REFRESH_PAIRING_CODE` IPC request handler so the desktop companion can trigger code re-issuance without restarting the background service.
 
-2. **Self-Contained WiX Toolset Pipeline (`scripts/build-suite-msi.ps1`):**
-   - Uses standard WiX v3/v4 XML authoring (`Product.wxs`).
-   - Automatically bootstraps portable WiX binaries (`candle.exe` & `light.exe`) if WiX is not globally installed in the developer/CI environment.
-   - Integrates with top-level `npm run build:installer` command.
+2. **Real-Time Push Handshake on Binding (`packages/msp-agent` -> `packages/msp-tray`):**
+   - Upon receiving and persisting the server's `BIND` WebSocket frame in `handle_bind()`, `msp-agent` immediately broadcasts an `AGENT_BOUND` event frame down all active named pipe client instances (`\\.\pipe\msp-agent-ipc`).
+   - `msp-tray` listens for this event via Tauri async event bridge, playing `playNotificationChime()` and immediately swapping the gate for the active support workspace.
 
-3. **Graceful File-Lock Prevention on Upgrades:**
-   - Incorporates WiX `<util:CloseApplication>` targeting `msp-tray.exe` with a 5-second graceful termination window before file replacement, preventing MSI Error 1603 (`ERROR_SHARING_VIOLATION`) and suppressing reboot prompts.
+3. **Zero-Trust UI Gating (`packages/msp-tray`):**
+   - When `agentStatus.isBound === false`, `App.tsx` conditionally renders `<ActivationGate />` in place of the normal support and ticket submission interface.
+   - Suppresses shortcut keys / quick-ticket popups while unbound, preventing end users from triggering unauthenticated `403` API failures.
 
-4. **Detached Session 0 OTA Upgrade Engine (`packages/msp-agent`):**
-   - Extends `packages/msp-agent/src/upgrade.rs` to detect `.msi` payloads.
-   - Downloads and verifies SHA-256 integrity into `%ProgramData%\MSP\updates\`.
-   - Executes `msiexec.exe /i "<msi>" /qn /norestart /l*v "%ProgramData%\MSP\updates\upgrade.log"` as a detached, breakaway process in Session 0.
-   - Exits the running agent service cleanly to release service locks and allow Windows Installer to stop and replace the binaries seamlessly.
-
-5. **Shared API Contracts & Backend Gateway Compatibility:**
-   - Updates `AgentUpgradePayloadSchema` in `@shared/contracts` to support package format (`installerType: 'msi' | 'binary'`).
-   - Updates `AgentGateway` and RMM controller to serve MSI release metadata to connected agents.
+4. **Self-Contained Expiration & Refresh Flow:**
+   - `<ActivationGate />` calculates remaining TTL from `pairingCodeExpiresAt` with an animated countdown badge.
+   - When expired or upon user request, the "Refresh Code" button invokes `refreshPairingCode()` over Tauri IPC to retrieve a fresh code seamlessly.
 
 ---
 
@@ -36,31 +29,30 @@ Package the Rust-based background Windows service (`msp-agent`) and the React/Ta
 
 | Risk | Impact | Mitigation |
 | :--- | :---: | :--- |
-| Deadlock if service terminates while parent to `msiexec` | High | Launch `msiexec` detached with `CREATE_BREAKAWAY_FROM_JOB` via `cmd.exe /c start` before service stops. |
-| `msp-tray.exe` running in user session blocks file overwrite | High | WiX `CloseApplication` signals tray to close; fallback installer script checks and stops active processes. |
-| Loss of agent device token/config on MSI major upgrade | Critical | Mark `%ProgramData%\MSP\` components as `Permanent="yes"` and omit them from uninstallation tables. |
-| Missing WiX CLI on build agent | Medium | Build script automatically fetches portable WiX binaries into `.tools/wix/` if absent. |
+| Race condition where agent binds while tray is closed or starting up | Low | `GET_AGENT_STATUS` on startup always reads current `AgentState`, so tray will detect bound state immediately on launch. |
+| Non-admin user permissions on Windows named pipe | Medium | Named pipe security descriptor (`D:(A;;GA;;;WD)`) in `ipc_server.rs` allows Authenticated Users and Everyone to read/write IPC frames. |
+| Timezone discrepancies in TTL countdown | Low | Transmit RFC 3339 UTC timestamps (`expires_at`) from agent and calculate relative delta client-side. |
 
 ---
 
 ## Task Breakdown Index
 
-### Phase 1: Shared Contracts & Backend Upgrade Support
-- [ ] Task 1.1: Shared Contract Updates for MSI Release Payloads
-- [ ] Task 1.2: Server AgentGateway & Equipment Controller Upgrade Resolution
-- **Checkpoint: Contracts & Server Readiness**
+### Phase 1: Agent IPC & Binding Event Bus
+- [x] Task 1.1: Enhance Agent IPC Status & Refresh Protocol (`packages/msp-agent`)
+- [x] Task 1.2: Broadcast `AGENT_BOUND` down IPC Named Pipe (`packages/msp-agent`)
+- **Checkpoint: Agent Protocol Ready**
 
-### Phase 2: Agent Detached MSI Supervisor
-- [ ] Task 2.1: Rust Agent `.msi` Download & Detached Process Execution
-- [ ] Task 2.2: Unit & Integration Tests for Agent Upgrade Dispatcher
-- **Checkpoint: Agent Service Ready for MSI OTA**
+### Phase 2: Tray Tauri IPC Client & Service Types
+- [x] Task 2.1: Update Tauri Rust IPC Models & Refresh Command (`packages/msp-tray`)
+- [x] Task 2.2: TypeScript Service Types & Event Listeners (`packages/msp-tray`)
+- **Checkpoint: Tray IPC Layer Tested**
 
-### Phase 3: WiX Packaging Authoring & Automation
-- [ ] Task 3.1: WiX Manifest Authoring (`Product.wxs`) for Unified Suite
-- [ ] Task 3.2: Portable WiX Automated Build Script (`scripts/build-suite-msi.ps1`)
-- **Checkpoint: Automated MSI Generation Verified**
+### Phase 3: Tray UI Activation Gate & App Integration
+- [x] Task 3.1: Build `<ActivationGate />` Component (`packages/msp-tray`)
+- [x] Task 3.2: Integrate Gate & Dynamic Unlocking in `App.tsx` (`packages/msp-tray`)
+- **Checkpoint: Frontend Integration Complete**
 
 ### Phase 4: Verification & End-to-End Validation
-- [ ] Task 4.1: End-to-End Silent Install & Upgrade Verification (`/qn`)
-- [ ] Task 4.2: Full Monorepo Typecheck & Build Suite Verification
+- [x] Task 4.1: Rust Agent Unit Tests & Compilation
+- [x] Task 4.2: Tray Application Build & Workspace Quality Gates
 - **Checkpoint: Feature Complete**

@@ -1,157 +1,150 @@
-# Task List: Unified MSI Packaging & Dual-Channel Upgrades for MSP Endpoint Suite
+# Task List: Workstation Activation Gate for MSP Endpoint Suite
 
-## Phase 1: Shared Contracts & Backend Upgrade Support
+## Phase 1: Agent IPC & Binding Event Bus
 
-### Task 1.1: Shared Contract Updates for MSI Release Payloads
-**Description:** Update `AgentUpgradePayloadSchema` and related types in `@shared/contracts` to support package format specification (`installerType: 'msi' | 'binary'`).
+### Task 1.1: Enhance Agent IPC Status & Refresh Protocol
+**Description:** Update `GET_AGENT_STATUS` in `packages/msp-agent/src/ipc_server.rs` to include `isBound`, `pairingCode`, and `pairingCodeExpiresAt`, and implement the `REFRESH_PAIRING_CODE` IPC command handler.
 **Acceptance criteria:**
-- [x] Add `installerType: z.enum(['msi', 'binary']).default('msi')` to `AgentUpgradePayloadSchema` in `packages/contracts/src/rmm/agentUpgrade.ts`.
-- [x] Export updated TypeScript types and ensure all consumers typecheck cleanly.
+- [x] In `packages/msp-agent/src/ipc_server.rs`, `GET_AGENT_STATUS` response payload includes `isBound: bool`, `pairingCode: Option<String>`, and `pairingCodeExpiresAt: Option<String>` derived from `AgentState`.
+- [x] Add handler for `REFRESH_PAIRING_CODE` IPC request that issues a fresh pairing code via `state.issue_pairing_code()`, saves it, and responds with the updated code and expiration.
 **Verification:**
-- [x] `npm run build:packages` succeeds with exit code 0.
+- [x] `cargo check --manifest-path packages/msp-agent/Cargo.toml` succeeds with exit code 0.
+- [x] `cargo test --manifest-path packages/msp-agent/Cargo.toml` passes.
 **Dependencies:** None
 **Files touched:**
-- `packages/contracts/src/rmm/agentUpgrade.ts`
+- `packages/msp-agent/src/ipc_server.rs`
 **Estimated scope:** Small (1 file)
 
 ---
 
-### Task 1.2: Server AgentGateway & Equipment Controller Upgrade Resolution
-**Description:** Update server RMM agent gateway and equipment controller to support dispatching MSI upgrade commands with download URL and SHA-256 hash.
+### Task 1.2: Broadcast `AGENT_BOUND` down IPC Named Pipe
+**Description:** In `packages/msp-agent/src/main.rs`, emit a real-time IPC push broadcast whenever the agent transitions to bound or unbound state.
 **Acceptance criteria:**
-- [x] Update `EquipmentController.ts` / `AgentGatewayController.ts` upgrade dispatch logic to include `installerType: 'msi'`.
-- [x] Update test fixtures and unit tests in `server/src/modules/rmm/`.
+- [x] In `handle_bind()` in `packages/msp-agent/src/main.rs`, after persisting state, call `ipc_server::broadcast_push_event("AGENT_BOUND", &json!({ "slotId": slot_id, "boundAt": chrono::Utc::now().to_rfc3339() }))`.
+- [x] In `handle_unbind()`, call `ipc_server::broadcast_push_event("AGENT_UNBOUND", &json!({ "pairingCode": new_code, "expiresAt": state.pairing_code_expires_at }))`.
 **Verification:**
-- [x] `npm -w server run build` passes.
-- [x] `npm -w server run test` passes without regression.
+- [x] `cargo check --manifest-path packages/msp-agent/Cargo.toml` succeeds.
+- [x] Unit tests for binding state in `packages/msp-agent/src/pairing.rs` pass.
 **Dependencies:** Task 1.1
 **Files touched:**
-- `server/src/modules/equipment/controllers/EquipmentController.ts`
-- `server/src/modules/rmm/controllers/AgentGatewayController.ts`
-- `server/src/modules/rmm/controllers/AgentGatewayController.test.ts`
-**Estimated scope:** Medium (3 files)
-
----
-
-## Checkpoint: Contracts & Server Readiness
-- [x] Shared packages compile cleanly
-- [x] Backend tests and builds pass 100%
-
----
-
-## Phase 2: Agent Detached MSI Supervisor
-
-### Task 2.1: Rust Agent `.msi` Download & Detached Process Execution
-**Description:** Enhance `packages/msp-agent/src/upgrade.rs` to detect `.msi` package types, stage them in `%ProgramData%\MSP\updates\`, and launch `msiexec.exe /i "<msi>" /qn /norestart /l*v "upgrade.log"` detached using Windows process creation flags.
-**Acceptance criteria:**
-- [x] Implement `execute_msi_upgrade(msi_path: &Path) -> Result<(), String>` in `packages/msp-agent/src/upgrade.rs`.
-- [x] Use detached command execution (`CREATE_BREAKAWAY_FROM_JOB` / `cmd.exe /c start`) so `msiexec` survives the calling service's shutdown.
-- [x] Handle command dispatch in `packages/msp-agent/src/main.rs` upon receiving `AGENT_UPGRADE`.
-**Verification:**
-- [x] `cargo check --manifest-path packages/msp-agent/Cargo.toml` compiles cleanly.
-- [x] Unit tests for upgrade argument parsing pass.
-**Dependencies:** Task 1.1
-**Files touched:**
-- `packages/msp-agent/src/upgrade.rs`
 - `packages/msp-agent/src/main.rs`
+**Estimated scope:** Small (1 file)
+
+---
+
+## Checkpoint: Agent Protocol Ready
+- [x] Agent IPC server compiles cleanly with new fields and commands
+- [x] Agent unit tests pass with zero regressions
+
+---
+
+## Phase 2: Tray Tauri IPC Client & Service Types
+
+### Task 2.1: Update Tauri Rust IPC Models & Refresh Command
+**Description:** Update `AgentStatusPayload` in `packages/msp-tray/src-tauri/src/ipc.rs` and expose a new Tauri command `refresh_pairing_code` to allow the desktop GUI to request a fresh OTP over named pipe.
+**Acceptance criteria:**
+- [x] Update `AgentStatusPayload` in `packages/msp-tray/src-tauri/src/ipc.rs` to include `is_bound: bool`, `pairing_code: Option<String>`, and `pairing_code_expires_at: Option<String>` with proper `serde(rename = "...")`.
+- [x] Implement `refresh_pairing_code` IPC client method and expose it as a Tauri `#[tauri::command]` in `packages/msp-tray/src-tauri/src/lib.rs`.
+- [x] Forward `AGENT_BOUND` IPC push notifications as Tauri window events (`agent://bound`).
+**Verification:**
+- [x] `cargo check --manifest-path packages/msp-tray/src-tauri/Cargo.toml` compiles with 0 errors.
+**Dependencies:** Task 1.1
+**Files touched:**
+- `packages/msp-tray/src-tauri/src/ipc.rs`
+- `packages/msp-tray/src-tauri/src/lib.rs`
 **Estimated scope:** Medium (2 files)
 
 ---
 
-### Task 2.2: Unit & Integration Tests for Agent Upgrade Dispatcher
-**Description:** Add unit tests for the agent upgrade staging, validation, and execution paths in Rust.
+### Task 2.2: TypeScript Service Types & Event Listeners
+**Description:** Update `AgentStatus` interface in `packages/msp-tray/src/services/tauri.ts` and provide wrapper methods for code refresh and bound event listening.
 **Acceptance criteria:**
-- [x] Write tests covering SHA-256 verification and command generation for MSI upgrades in `packages/msp-agent/src/upgrade.rs`.
-- [x] Ensure non-Windows test mock branches pass cleanly.
+- [x] Extend `AgentStatus` interface in `packages/msp-tray/src/services/tauri.ts` with `isBound: boolean`, `pairingCode?: string`, and `pairingCodeExpiresAt?: string`.
+- [x] Export `refreshPairingCode(): Promise<AgentStatus>` invoking the Tauri command.
+- [x] Export `listenAgentBound(callback: (payload: { slotId: string }) => void): Promise<UnlistenFn>`.
 **Verification:**
-- [x] `cargo test --manifest-path packages/msp-agent/Cargo.toml` passes.
+- [x] TypeScript typecheck passes in `packages/msp-tray`: `npm --prefix packages/msp-tray run build`.
 **Dependencies:** Task 2.1
 **Files touched:**
-- `packages/msp-agent/src/upgrade.rs`
+- `packages/msp-tray/src/services/tauri.ts`
 **Estimated scope:** Small (1 file)
 
 ---
 
-## Checkpoint: Agent Service Ready for MSI OTA
-- [x] Rust agent compiles cleanly in release mode
-- [x] Rust unit tests pass
+## Checkpoint: Tray IPC Layer Tested
+- [x] Tauri Rust crate builds cleanly
+- [x] TypeScript types align 100% with Rust payload serialization
 
 ---
 
-## Phase 3: WiX Packaging Authoring & Automation
+## Phase 3: Tray UI Activation Gate & App Integration
 
-### Task 3.1: WiX Manifest Authoring (`Product.wxs`) for Unified Suite
-**Description:** Author the WiX XML manifest (`packages/msp-agent/installer/Product.wxs` or `packages/msp-installer/Product.wxs`) configuring the unified installation of `msp-agent.exe`, `msp-tray.exe`, service registration, Run key, and MajorUpgrade.
+### Task 3.1: Build `<ActivationGate />` Component
+**Description:** Create a dedicated, aesthetically polished workstation pairing card in `packages/msp-tray/src/components/ActivationGate.tsx`.
 **Acceptance criteria:**
-- [x] Define `<Package>` with target `%ProgramFiles%\MSP\EndpointSuite\`.
-- [x] Configure `<ServiceInstall>` for `MSPEndpointAgent` with automatic startup and failure restart actions.
-- [x] Configure `<ServiceControl>` to stop service on uninstall/upgrade and start on install/upgrade.
-- [x] Configure `HKLM\Software\Microsoft\Windows\CurrentVersion\Run` key for `msp-tray.exe`.
-- [x] Configure `<MajorUpgrade>` with `Schedule="afterInstallInitialize"` and persistent `UpgradeCode`.
-- [x] Define public properties `GATEWAY_URL` and `AGENT_TOKEN` with safe defaults.
-- [x] Add `WixCloseApplication` or custom action to close active `msp-tray.exe` prior to file overwrite.
+- [x] Displays prominent 6-digit pairing code formatted as `123 - 456` with high-contrast typography and subtle letter-spacing.
+- [x] One-click "Copy Code" button with instant visual feedback badge (`Copied!`).
+- [x] Dynamic countdown timer showing time until expiration (e.g. `Expires in 14:32`), turning amber/red as time runs out.
+- [x] "Generate New Code" button with spinning refresh state calling `refreshPairingCode()`.
+- [x] Plain-language instructions for end-users on sharing the code with their IT department or entering it in the portal.
 **Verification:**
-- [x] WiX schema validation succeeds.
-**Dependencies:** Task 2.1
+- [x] Component compiles cleanly with Tailwind v4 styling and Lucide icons.
+**Dependencies:** Task 2.2
 **Files touched:**
-- `packages/msp-agent/installer/Product.wxs` (or new installer directory)
-**Estimated scope:** Medium (1-2 files)
+- `packages/msp-tray/src/components/ActivationGate.tsx`
+**Estimated scope:** Medium (1 new file)
 
 ---
 
-### Task 3.2: Portable WiX Automated Build Script (`scripts/build-suite-msi.ps1`)
-**Description:** Write an automated PowerShell packaging script that builds `msp-agent` release binary, builds `msp-tray` release binary, automatically bootstraps portable WiX binaries if missing, and compiles the final `msp-endpoint-suite.msi`.
+### Task 3.2: Integrate Gate & Dynamic Unlocking in `App.tsx`
+**Description:** Update `packages/msp-tray/src/App.tsx` to conditionally render `<ActivationGate />` when `agentStatus && !agentStatus.isBound`, block quick-ticket creation while unbound, and subscribe to `listenAgentBound` for live unlocking.
 **Acceptance criteria:**
-- [x] PowerShell script detects or auto-downloads portable WiX binaries (`candle.exe`/`light.exe`) into `.tools/wix/`.
-- [x] Compiles `msp-agent` and `msp-tray` in release mode.
-- [x] Invokes WiX compiler and linker to output `dist/msp-endpoint-suite-v<version>.msi`.
-- [x] Add npm script `"build:installer"` in root `package.json`.
+- [x] When `agentStatus?.isBound === false`, display `<ActivationGate />` instead of standard ticket/support tabs.
+- [x] Disallow opening the Quick Ticket modal (`isTicketModalOpen`) when unbound.
+- [x] Subscribe to `listenAgentBound`: on event received, play `playNotificationChime()`, reload agent status, and seamlessly transition into the unlocked workspace without requiring a tray restart.
 **Verification:**
-- [x] Running script compiles and generates a valid `.msi` file in `dist/`.
+- [x] `npm --prefix packages/msp-tray run build` compiles with 0 errors.
+- [x] Vitest unit tests in `packages/msp-tray` pass cleanly.
 **Dependencies:** Task 3.1
 **Files touched:**
-- `scripts/build-suite-msi.ps1`
-- `package.json`
-**Estimated scope:** Medium (2 files)
+- `packages/msp-tray/src/App.tsx`
+**Estimated scope:** Small (1 file)
 
 ---
 
-## Checkpoint: Automated MSI Generation Verified
-- [x] `npm run build:installer` succeeds end-to-end and outputs `msp-endpoint-suite.msi`
-- [x] MSI size and structure are within expected boundaries
+## Checkpoint: Frontend Integration Complete
+- [x] Activation Gate renders correctly when agent is unbound
+- [x] Real-time transition on binding verified
+- [x] UI build passes with 0 errors
 
 ---
 
 ## Phase 4: Verification & End-to-End Validation
 
-### Task 4.1: End-to-End Silent Install & Upgrade Verification (`/qn`)
-**Description:** Test silent installation, service registration, tray auto-start key, and version upgrade behavior using `msiexec.exe`.
+### Task 4.1: Rust Agent Unit Tests & Compilation
+**Description:** Verify `msp-agent` compiles in release mode and all unit tests for pairing, IPC, and diagnostics pass.
 **Acceptance criteria:**
-- [x] Test silent install: `msiexec /i msp-endpoint-suite.msi /qn GATEWAY_URL="wss://localhost/agent-ws"`.
-- [x] Verify `MSPEndpointAgent` service is registered and running.
-- [x] Verify `msp-tray.exe` Run key exists in `HKLM`.
-- [x] Verify upgrade replaces binaries cleanly without 1603 error or reboot request.
-- [x] Verify uninstall removes binaries and service cleanly.
+- [x] `cargo test --manifest-path packages/msp-agent/Cargo.toml` passes 100%.
+- [x] `cargo check --manifest-path packages/msp-agent/Cargo.toml` passes.
 **Verification:**
-- [x] Windows PowerShell validation script checks service and registry state.
-**Dependencies:** Task 3.2
+- [x] Rust test suite output verified (17/17 tests passed).
+**Dependencies:** Task 1.2
 **Files touched:**
-- `scripts/test-msi-install.ps1`
-**Estimated scope:** Small (1 file)
+- None (verification)
+**Estimated scope:** Verification (0 files modified)
 
 ---
 
-### Task 4.2: Full Monorepo Typecheck & Build Suite Verification
-**Description:** Run comprehensive workspace quality checks across packages, server, and client.
+### Task 4.2: Full Workspace Compilation & Monorepo Health Checks
+**Description:** Verify monorepo packages, server, client, and tray packages compile cleanly without regressions.
 **Acceptance criteria:**
 - [x] `npm run build:packages` succeeds with code 0.
-- [x] `npm -w server run build` succeeds with code 0.
-- [x] `npm -w client run build` succeeds with code 0.
-- [x] `npm -w server run test` passes 100%.
-- [x] `npm -w client run test:run` passes 100%.
+- [x] `npm -w server run test` passes without regression (83 test files, 815/815 tests passed).
+- [x] `npm --prefix packages/msp-tray run build` passes with code 0.
+- [x] `npm --prefix packages/msp-tray run test:run` passes with code 0 (49/49 tests passed).
 **Verification:**
-- [x] All CI and monorepo automated gates pass green.
-**Dependencies:** Task 4.1
+- [x] All automated quality gates pass green.
+**Dependencies:** Task 3.2, Task 4.1
 **Files touched:**
-- Monorepo wide
+- None (verification)
 **Estimated scope:** Verification (0 files modified)

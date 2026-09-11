@@ -45,6 +45,16 @@ pub struct AgentStatusPayload {
     pub tenant_name: Option<String>,
     #[serde(rename = "activeTicketCount")]
     pub active_ticket_count: u32,
+    #[serde(rename = "isBound", default = "default_bound_true")]
+    pub is_bound: bool,
+    #[serde(rename = "pairingCode", default)]
+    pub pairing_code: Option<String>,
+    #[serde(rename = "pairingCodeExpiresAt", default)]
+    pub pairing_code_expires_at: Option<String>,
+}
+
+fn default_bound_true() -> bool {
+    true
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -314,6 +324,14 @@ impl IpcClient {
                                     use tauri::Emitter;
                                     log::info!("[MSP-TRAY IPC] Received TICKET_CHAT_PUSH, broadcasting to webview");
                                     let _ = app_handle_for_reader.emit("ticket_chat_push", &envelope.payload);
+                                } else if envelope.msg_type.eq_ignore_ascii_case("AGENT_BOUND") {
+                                    use tauri::Emitter;
+                                    log::info!("[MSP-TRAY IPC] Received AGENT_BOUND push, broadcasting agent://bound");
+                                    let _ = app_handle_for_reader.emit("agent://bound", &envelope.payload);
+                                } else if envelope.msg_type.eq_ignore_ascii_case("AGENT_UNBOUND") {
+                                    use tauri::Emitter;
+                                    log::info!("[MSP-TRAY IPC] Received AGENT_UNBOUND push, broadcasting agent://unbound");
+                                    let _ = app_handle_for_reader.emit("agent://unbound", &envelope.payload);
                                 } else {
                                     let mut p = pending_for_reader.lock().await;
                                     if let Some(resp_tx) = p.remove(&envelope.id) {
