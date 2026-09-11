@@ -49,6 +49,8 @@ export class StateMachineChecker implements InvariantChecker {
         const oldStatus = (step.previousState?.status as string) || currentStatus;
 
         if (newStatus && oldStatus) {
+          if (newStatus === oldStatus) continue; // Not a state transition
+
           const allowed = VALID_STATUS_TRANSITIONS[oldStatus] || [];
 
           if (!allowed.includes(newStatus)) {

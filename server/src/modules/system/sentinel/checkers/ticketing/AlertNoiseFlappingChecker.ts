@@ -48,7 +48,7 @@ export class AlertNoiseFlappingChecker implements InvariantChecker {
         if (deltaMs <= 24 * 60 * 60 * 1000) {
           // Flapping condition met (3 triggers in 24h)
           const title = (latest.metadata?.title as string) || '';
-          const isTagged = title.includes(FLAPPING_TAG);
+          const isTagged = title.includes(FLAPPING_TAG) || title.includes('FLAPPING_ALERT');
 
           if (!isTagged) {
             violations.push({

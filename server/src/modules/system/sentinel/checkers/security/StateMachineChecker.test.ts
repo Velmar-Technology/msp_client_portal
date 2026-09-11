@@ -93,8 +93,30 @@ describe('StateMachineChecker (BL-301)', () => {
         },
       ],
     };
-
     const result = await checker.evaluate([sequence]);
     expect(result.violations.some((v) => v.severity === 'HIGH')).toBe(true);
+  });
+
+  it('should not flag a violation when old and new status are identical (benign update)', async () => {
+    const sequence: ActionSequence = {
+      entityId: 't-same-status',
+      entityType: 'TICKET',
+      tenantId: 'tenant-1',
+      steps: [
+        {
+          id: 's1',
+          entityId: 't-same-status',
+          entityType: 'TICKET',
+          action: 'STATUS_CHANGED_OPEN',
+          timestamp: new Date('2026-09-08T10:00:00Z'),
+          tenantId: 'tenant-1',
+          previousState: { status: 'OPEN' },
+          newState: { status: 'OPEN' },
+        },
+      ],
+    };
+
+    const result = await checker.evaluate([sequence]);
+    expect(result.violations).toHaveLength(0);
   });
 });

@@ -298,7 +298,8 @@ export class SequenceAggregatorService {
 
       // Step 2: Lifecycle events (transitions, assignments)
       for (const ev of events) {
-        let action = ev.new_status ? `STATUS_CHANGED_${ev.new_status}` : 'EVENT_LOGGED';
+        const isStatusChange = ev.new_status && ev.old_status !== ev.new_status;
+        let action = isStatusChange ? `STATUS_CHANGED_${ev.new_status}` : 'EVENT_LOGGED';
         if (ev.notes && (ev.notes.includes('assigned to technician') || ev.notes.includes('auto-assigned'))) {
           action = 'TICKET_ASSIGNED';
         } else if (ev.notes && (ev.notes.includes('Escalated to Tier 2') || ev.notes.includes('Auto-Heal BL-104'))) {

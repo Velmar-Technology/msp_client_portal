@@ -1,4 +1,5 @@
-import { db, technicianEarnings, expenses } from '@shared/db';
+import { db, technicianEarnings, expenses, users, tickets } from '@shared/db';
+import { eq, or } from 'drizzle-orm';
 import { logger } from '@shared/utils/logger';
 import { InvariantViolation, RemediationHandler, RemediationResult } from '../types';
 import {
@@ -30,29 +31,68 @@ export class TechnicianBountyRemediator implements RemediationHandler {
     const totalEarning = baseAmount + bonusAmount;
 
     try {
-      // 1. Ledger missing technician earnings record
+      // 1. Resolve valid technician user UUID
+      const rootTicket = violation.actionSequence?.rootContext?.ticket as any;
+      let technicianId = rootTicket?.assigned_tech_id;
+      if (!technicianId) {
+        technicianId = violation.actionSequence?.steps.find((s) => s.actorRole === 'TECHNICIAN')?.actorId;
+      }
+      if (!technicianId) {
+        const [dbTicket] = await this.database
+          .select({ assigned_tech_id: tickets.assigned_tech_id })
+          .from(tickets)
+          .where(eq(tickets.id, ticketId))
+          .limit(1);
+        technicianId = dbTicket?.assigned_tech_id;
+      }
+      if (!technicianId) {
+        const [techUser] = await this.database
+          .select({ id: users.id })
+          .from(users)
+          .where(or(eq(users.role, 'TECHNICIAN'), eq(users.role, 'ADMIN')))
+          .limit(1);
+        technicianId = techUser?.id;
+      }
+
+      if (!technicianId) {
+        throw new Error(`Unable to resolve technician user for ticket '${ticketId}'`);
+      }
+
+      // 2. Ledger missing Pre-Split OpEx entry
+      const [createdExpense] = await this.database
+        .insert(expenses)
+        .values({
+          tenant_id: violation.tenantId,
+          category: OPEX_COMMISSION_CATEGORY,
+          amount: Number(totalEarning.toFixed(2)),
+          description: `[Auto-Heal BL-801] Labor commission for resolved ticket ${ticketId}`,
+          expense_date: new Date(),
+          expense_identifier: `EARN-${ticketId.substring(0, 8)}`,
+        })
+        .returning();
+
+      // 3. Ledger missing technician earnings record
       const [earning] = await this.database
         .insert(technicianEarnings)
         .values({
           ticket_id: ticketId,
-          technician_id: (violation.actionSequence?.steps.find((s) => s.actorRole === 'TECHNICIAN')?.actorId) || 'tech-autoheal',
-          base_amount: baseAmount.toFixed(2),
-          sla_bonus_amount: bonusAmount.toFixed(2),
-          total_earning: totalEarning.toFixed(2),
-          status: 'HELD',
+          technician_id: technicianId,
+          base_amount: Number(baseAmount.toFixed(2)),
+          sla_bonus_amount: Number(bonusAmount.toFixed(2)),
+          final_amount: Number(totalEarning.toFixed(2)),
+          currency: 'USD',
+          status: 'PENDING',
+          breakdown: {
+            priority,
+            baseRate: BASE_COMMISSION_RATE,
+            multiplier,
+            slaBonus: bonusAmount,
+            autoHealed: true,
+          },
+          expense_id: createdExpense?.id || null,
           tenant_id: violation.tenantId,
         })
         .returning();
-
-      // 2. Ledger missing Pre-Split OpEx entry
-      await this.database.insert(expenses).values({
-        tenant_id: violation.tenantId,
-        category: OPEX_COMMISSION_CATEGORY,
-        amount: totalEarning.toFixed(2),
-        currency: 'USD',
-        description: `[Auto-Heal BL-801] Labor commission for resolved ticket ${ticketId}`,
-        incurred_at: new Date(),
-      });
 
       logger.info(
         `[Sentinel Auto-Heal] Successfully ledged missing bounty ($${totalEarning.toFixed(2)}) for ticket '${ticketId}' (BL-801).`

@@ -1,4 +1,4 @@
-mport { ticketRepository, TicketRepository } from '@modules/tickets/repositories/TicketRepository';
+import { ticketRepository, TicketRepository } from '@modules/tickets/repositories/TicketRepository';
 import { ticketEventRepository, TicketEventRepository } from '@modules/tickets/repositories/TicketEventRepository';
 import { userRepository, UserRepository } from '@modules/auth';
 import { notificationService, NotificationService } from '@modules/notifications';
