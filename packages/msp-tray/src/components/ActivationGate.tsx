@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { KeyRound, Copy, Check, RefreshCw, ShieldAlert, Clock, HelpCircle } from 'lucide-react';
+import { useI18n } from '../i18n';
 
 interface ActivationGateProps {
   pairingCode?: string;
@@ -14,6 +15,7 @@ export const ActivationGate: React.FC<ActivationGateProps> = ({
   onRefreshCode,
   isRefreshing = false,
 }) => {
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const [timeLeftSecs, setTimeLeftSecs] = useState<number | null>(null);
 
@@ -54,7 +56,7 @@ export const ActivationGate: React.FC<ActivationGateProps> = ({
 
   const formatCountdown = (totalSecs: number | null) => {
     if (totalSecs === null) return '--:--';
-    if (totalSecs <= 0) return 'Expired';
+    if (totalSecs <= 0) return t('gate.expired');
     const mins = Math.floor(totalSecs / 60);
     const secs = totalSecs % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
@@ -78,10 +80,10 @@ export const ActivationGate: React.FC<ActivationGateProps> = ({
 
         <div>
           <h2 className="text-sm font-bold tracking-tight text-white flex items-center justify-center gap-1.5">
-            Workstation Activation Required
+            {t('gate.title')}
           </h2>
           <p className="text-[11px] text-slate-400 mt-1 max-w-[280px] leading-relaxed">
-            This endpoint is installed but not yet linked to your company’s support subscription.
+            {t('gate.subtitle')}
           </p>
         </div>
       </div>
@@ -93,7 +95,7 @@ export const ActivationGate: React.FC<ActivationGateProps> = ({
 
         <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1 flex items-center gap-1">
           <ShieldAlert className="w-3 h-3 text-[#0084ff]" />
-          6-Digit Activation PIN
+          {t('gate.pinHeader')}
         </span>
 
         {/* Big Code Display */}
@@ -107,7 +109,7 @@ export const ActivationGate: React.FC<ActivationGateProps> = ({
         <div className="mt-1.5 flex items-center gap-1.5 text-[10px]">
           <Clock className={`w-3 h-3 ${isExpired ? 'text-rose-400' : 'text-amber-400'}`} />
           <span className={isExpired ? 'text-rose-400 font-semibold' : 'text-slate-400'}>
-            {isExpired ? 'Code has expired' : `Expires in ${formatCountdown(timeLeftSecs)}`}
+            {isExpired ? t('gate.expired') : t('gate.expiresIn', { time: formatCountdown(timeLeftSecs) })}
           </span>
         </div>
 
@@ -125,12 +127,12 @@ export const ActivationGate: React.FC<ActivationGateProps> = ({
             {copied ? (
               <>
                 <Check className="w-3.5 h-3.5 text-emerald-400" />
-                Copied!
+                {t('gate.copied')}
               </>
             ) : (
               <>
                 <Copy className="w-3.5 h-3.5 text-slate-400" />
-                Copy PIN
+                {t('gate.copyPin')}
               </>
             )}
           </button>
@@ -138,11 +140,11 @@ export const ActivationGate: React.FC<ActivationGateProps> = ({
           <button
             onClick={onRefreshCode}
             disabled={isRefreshing}
-            title="Generate a fresh pairing code"
+            title={t('gate.newPinTooltip')}
             className="py-1.5 px-2.5 rounded-lg text-[11px] font-medium bg-[#101b2e] hover:bg-[#152540] text-slate-300 border border-[#1e3052] flex items-center gap-1 transition-all disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-[#0084ff]' : 'text-slate-400'}`} />
-            <span>New PIN</span>
+            <span>{t('gate.newPin')}</span>
           </button>
         </div>
       </div>
@@ -152,21 +154,22 @@ export const ActivationGate: React.FC<ActivationGateProps> = ({
         <div className="flex items-start gap-2 text-slate-300">
           <HelpCircle className="w-4 h-4 text-[#0084ff] shrink-0 mt-0.5" />
           <div className="leading-snug">
-            <span className="font-semibold text-white">How to link this device:</span>
+            <span className="font-semibold text-white">{t('gate.howToLinkTitle')}</span>
             <p className="text-[10.5px] text-slate-400 mt-0.5">
-              Provide this code to your IT administrator or enter it directly in the Velmar Client Portal under <strong>Equipment &rarr; Activate Device</strong>.
+              {t('gate.howToLinkText')}
             </p>
           </div>
         </div>
 
         <div className="pt-1.5 border-t border-[#18263d] flex items-center justify-between text-[10px] text-slate-500">
-          <span>Real-time link detection active</span>
+          <span>{t('gate.realTimeDetection')}</span>
           <span className="text-emerald-400/90 font-mono flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Waiting for bind...
+            {t('gate.waitingForBind')}
           </span>
         </div>
       </div>
     </div>
   );
 };
+

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { ActivationGate } from './ActivationGate';
+import { I18nProvider } from '../i18n';
 
 describe('ActivationGate Component', () => {
   const mockWriteText = vi.fn();
@@ -14,8 +15,12 @@ describe('ActivationGate Component', () => {
     });
   });
 
+  const renderWithI18n = (ui: React.ReactElement) => {
+    return render(<I18nProvider initialLocale="en_US">{ui}</I18nProvider>);
+  };
+
   it('renders formatted 6-digit PIN and instructions', () => {
-    render(
+    renderWithI18n(
       <ActivationGate
         pairingCode="839201"
         pairingCodeExpiresAt={new Date(Date.now() + 10 * 60 * 1000).toISOString()}
@@ -29,7 +34,7 @@ describe('ActivationGate Component', () => {
   });
 
   it('copies PIN to clipboard when Copy PIN button is clicked', async () => {
-    render(
+    renderWithI18n(
       <ActivationGate
         pairingCode="123456"
         pairingCodeExpiresAt={new Date(Date.now() + 5 * 60 * 1000).toISOString()}
@@ -48,7 +53,7 @@ describe('ActivationGate Component', () => {
 
   it('calls onRefreshCode when New PIN button is clicked', async () => {
     const onRefreshMock = vi.fn().mockResolvedValue(undefined);
-    render(
+    renderWithI18n(
       <ActivationGate
         pairingCode="654321"
         pairingCodeExpiresAt={new Date(Date.now() + 5 * 60 * 1000).toISOString()}
@@ -65,7 +70,7 @@ describe('ActivationGate Component', () => {
   });
 
   it('indicates code expiration when expiresAt is in the past', () => {
-    render(
+    renderWithI18n(
       <ActivationGate
         pairingCode="999888"
         pairingCodeExpiresAt={new Date(Date.now() - 60 * 1000).toISOString()}

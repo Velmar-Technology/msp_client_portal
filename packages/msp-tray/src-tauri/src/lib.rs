@@ -17,6 +17,11 @@ pub struct AppState {
     pub last_blurred: Mutex<Instant>,
 }
 
+pub struct TrayMenuState {
+    pub show_item: MenuItem<tauri::Wry>,
+    pub quit_item: MenuItem<tauri::Wry>,
+}
+
 impl Default for AppState {
     fn default() -> Self {
         Self {
@@ -215,6 +220,30 @@ async fn hide_window(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+fn set_tray_language(
+    app: tauri::AppHandle,
+    state: State<'_, TrayMenuState>,
+    locale: String,
+) -> Result<(), String> {
+    let is_es = locale.to_lowercase().starts_with("es");
+
+    let (show_text, quit_text, tooltip) = if is_es {
+        ("Abrir Asistente", "Salir del Asistente", "Asistente de Soporte MSP")
+    } else {
+        ("Open Support Drawer", "Exit Support Assistant", "MSP Support Assistant")
+    };
+
+    let _ = state.show_item.set_text(show_text);
+    let _ = state.quit_item.set_text(quit_text);
+
+    if let Some(tray) = app.tray_by_id("main-tray") {
+        let _ = tray.set_tooltip(Some(tooltip));
+    }
+
+    Ok(())
+}
+
 fn toggle_main_window(app: &tauri::AppHandle) {
     let window = app
         .get_webview_window("main")
@@ -278,7 +307,8 @@ pub fn run() {
             create_ticket,
             send_chat_message,
             resolve_ticket,
-            hide_window
+            hide_window,
+            set_tray_language
         ])
         .setup(|app| {
             let ipc_client = IpcClient::new(app.handle().clone());
@@ -303,6 +333,11 @@ pub fn run() {
             let quit_i = MenuItem::with_id(app, "quit", "Exit Support Assistant", true, None::<&str>)?;
             let show_i = MenuItem::with_id(app, "show", "Open Support Drawer", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&show_i, &quit_i])?;
+
+            app.manage(TrayMenuState {
+                show_item: show_i.clone(),
+                quit_item: quit_i.clone(),
+            });
 
             let mut builder = TrayIconBuilder::with_id("main-tray")
                 .menu(&menu)

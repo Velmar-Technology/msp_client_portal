@@ -22,8 +22,10 @@ import { TicketList } from "./components/TicketList";
 import { CopyableTicketId } from "./components/CopyableTicketId";
 import { ActivationGate } from "./components/ActivationGate";
 import { playNotificationChime } from "./services/sound";
+import { useI18n } from "./i18n";
 
 export const App: React.FC = () => {
+  const { t } = useI18n();
   const [vitals, setVitals] = useState<SystemVitals | null>(null);
   const [agentStatus, setAgentStatus] = useState<AgentStatus | null>(null);
   const [activeTicket, setActiveTicket] = useState<ActiveTicket | null>(null);
@@ -185,7 +187,7 @@ export const App: React.FC = () => {
       {/* Top Bar Header */}
       <Header
         hostname={vitals?.hostname || "Endpoint"}
-        tenantName={agentStatus && !agentStatus.isBound ? "Unlinked Endpoint" : (agentStatus?.tenantName || "Managed System")}
+        tenantName={agentStatus && !agentStatus.isBound ? t('header.unlinkedEndpoint') : (agentStatus?.tenantName || t('header.managedSystem'))}
         isOnline={agentStatus?.agentOnline ?? true}
         attribution={attribution}
         onEditAttribution={() => setIsAttributionOpen(true)}
@@ -219,7 +221,7 @@ export const App: React.FC = () => {
               }`}
             >
               <Zap className="w-3.5 h-3.5" />
-              Quick Support
+              {t('navigation.quickSupport')}
               {activeTicket && activeTicket.status !== 'RESOLVED' && (
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-0.5" />
               )}
@@ -237,7 +239,7 @@ export const App: React.FC = () => {
               }`}
             >
               <FolderOpen className="w-3.5 h-3.5" />
-              Tickets
+              {t('navigation.tickets')}
               {ticketList.length > 0 && (
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
                   activeTab === 'TICKETS'
@@ -294,7 +296,7 @@ export const App: React.FC = () => {
                   onClick={() => setActiveChatTicket(activeTicket)}
                   className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-[#0070db] to-[#0084ff] hover:from-[#0060c2] hover:to-[#0070db] text-white text-xs font-semibold shrink-0 flex items-center gap-1 shadow-sm shadow-[#0084ff]/30 transition-all active:scale-95 cursor-pointer"
                 >
-                  Live Chat →
+                  {t('support.activeTicketBannerLiveChat')}
                 </button>
               </div>
             )}
@@ -306,11 +308,10 @@ export const App: React.FC = () => {
               <div className="relative z-10 pt-0.5">
                 <div className="flex items-center gap-2 mb-1.5">
                   <Sparkles className="w-4 h-4 text-velmar-blue" />
-                  <h3 className="text-xs font-bold text-slate-100">Velmar Technical Support</h3>
+                  <h3 className="text-xs font-bold text-slate-100">{t('support.heroTitle')}</h3>
                 </div>
                 <p className="text-[11px] text-slate-300 mb-3 leading-relaxed">
-                  Experiencing slowness, software errors, or access issues? Submit a direct ticket with automated flight
-                  recorder diagnostics.
+                  {t('support.heroSubtitle')}
                 </p>
 
                 <button
@@ -318,45 +319,45 @@ export const App: React.FC = () => {
                   className="w-full py-2 px-3 rounded-lg bg-linear-to-r from-[#0070db] via-velmar-blue to-[#0094ff] hover:from-velmar-blue-dark hover:to-velmar-blue active:scale-[0.99] text-white font-semibold text-xs shadow-lg shadow-velmar-blue/30 border border-blue-400/30 flex items-center justify-center gap-1.5 transition-all"
                 >
                   <LifeBuoy className="w-4 h-4 text-white" />
-                  Report An Issue Now
+                  {t('support.reportIssueBtn')}
                 </button>
               </div>
             </div>
 
             {/* Quick Diagnostic Shortcuts */}
             <div>
-              <span className="text-[11px] font-medium text-slate-400 block mb-2">Common Workstation Issues</span>
+              <span className="text-[11px] font-medium text-slate-400 block mb-2">{t('support.commonIssues')}</span>
               <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => openNewTicketModal({ title: 'Printer Offline / Hardware Issue', category: 'REPAIR', priority: 'MEDIUM' })}
+                  onClick={() => openNewTicketModal({ title: t('support.shortcutPrinterTitle'), category: 'REPAIR', priority: 'MEDIUM' })}
                   className="p-2 rounded-lg bg-[#0c1220]/90 hover:bg-[#121b2d] border border-[#1b263b] hover:border-[#0084ff]/40 text-left transition-all flex items-center gap-2 group shadow-sm"
                 >
                   <Printer className="w-3.5 h-3.5 text-[#0084ff] group-hover:scale-110 transition-transform" />
-                  <span className="text-[11px] text-slate-200">Printer Offline</span>
+                  <span className="text-[11px] text-slate-200">{t('support.shortcutPrinter')}</span>
                 </button>
 
                 <button
-                  onClick={() => openNewTicketModal({ title: 'VPN / Network Connection Failure', category: 'SERVICE_OUTAGE', priority: 'HIGH' })}
+                  onClick={() => openNewTicketModal({ title: t('support.shortcutVpnTitle'), category: 'SERVICE_OUTAGE', priority: 'HIGH' })}
                   className="p-2 rounded-lg bg-[#0c1220]/90 hover:bg-[#121b2d] border border-[#1b263b] hover:border-[#38bdf8]/40 text-left transition-all flex items-center gap-2 group shadow-sm"
                 >
                   <Wifi className="w-3.5 h-3.5 text-[#38bdf8] group-hover:scale-110 transition-transform" />
-                  <span className="text-[11px] text-slate-200">VPN / Network</span>
+                  <span className="text-[11px] text-slate-200">{t('support.shortcutVpn')}</span>
                 </button>
 
                 <button
-                  onClick={() => openNewTicketModal({ title: 'ERP / Software Application Crash', category: 'HELPDESK', priority: 'HIGH' })}
+                  onClick={() => openNewTicketModal({ title: t('support.shortcutErpTitle'), category: 'HELPDESK', priority: 'HIGH' })}
                   className="p-2 rounded-lg bg-[#0c1220]/90 hover:bg-[#121b2d] border border-[#1b263b] hover:border-[#ff5e00]/40 text-left transition-all flex items-center gap-2 group shadow-sm"
                 >
                   <FileWarning className="w-3.5 h-3.5 text-[#ff5e00] group-hover:scale-110 transition-transform" />
-                  <span className="text-[11px] text-slate-200">ERP / App Crash</span>
+                  <span className="text-[11px] text-slate-200">{t('support.shortcutErp')}</span>
                 </button>
 
                 <button
-                  onClick={() => openNewTicketModal({ title: 'Workstation Slowness / High Load', category: 'PREVENTATIVE_MAINTENANCE', priority: 'MEDIUM' })}
+                  onClick={() => openNewTicketModal({ title: t('support.shortcutSlowTitle'), category: 'PREVENTATIVE_MAINTENANCE', priority: 'MEDIUM' })}
                   className="p-2 rounded-lg bg-[#0c1220]/90 hover:bg-[#121b2d] border border-[#1b263b] hover:border-[#ff8533]/40 text-left transition-all flex items-center gap-2 group shadow-sm"
                 >
                   <Zap className="w-3.5 h-3.5 text-[#ff8533] group-hover:scale-110 transition-transform" />
-                  <span className="text-[11px] text-slate-200">Computer Slow</span>
+                  <span className="text-[11px] text-slate-200">{t('support.shortcutSlow')}</span>
                 </button>
               </div>
             </div>

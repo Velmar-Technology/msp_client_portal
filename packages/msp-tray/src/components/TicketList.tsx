@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { ActiveTicket } from '../services/tauri';
 import { CopyableTicketId } from './CopyableTicketId';
+import { useI18n } from '../i18n';
 
 interface TicketListProps {
   tickets: ActiveTicket[];
@@ -29,6 +30,7 @@ export const TicketList: React.FC<TicketListProps> = ({
   onOpenNewTicketModal,
   isLoading = false,
 }) => {
+  const { t } = useI18n();
   const [filter, setFilter] = useState<FilterStatus>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -69,31 +71,31 @@ export const TicketList: React.FC<TicketListProps> = ({
       case 'OPEN':
         return (
           <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#0084ff]/15 text-[#38bdf8] border border-[#0084ff]/30 font-bold tracking-wider uppercase">
-            OPEN
+            {t('common.status.open')}
           </span>
         );
       case 'IN_PROGRESS':
         return (
           <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold tracking-wider uppercase">
-            IN PROGRESS
+            {t('common.status.inProgress')}
           </span>
         );
       case 'RESOLVED':
         return (
           <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold tracking-wider uppercase flex items-center gap-0.5">
-            <CheckCircle2 className="w-2.5 h-2.5" /> RESOLVED
+            <CheckCircle2 className="w-2.5 h-2.5" /> {t('common.status.resolved')}
           </span>
         );
       case 'CLOSED':
         return (
           <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-700/30 text-slate-400 border border-slate-600/30 font-bold tracking-wider uppercase">
-            CLOSED
+            {t('common.status.closed')}
           </span>
         );
       case 'CANCELLED':
         return (
           <span className="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/30 font-bold tracking-wider uppercase">
-            CANCELLED
+            {t('common.status.cancelled')}
           </span>
         );
       default:
@@ -113,29 +115,29 @@ export const TicketList: React.FC<TicketListProps> = ({
 
     switch (cat) {
       case 'HELPDESK':
-        label = 'Helpdesk';
+        label = t('common.category.helpdesk');
         style = 'bg-blue-500/10 text-blue-300 border-blue-500/30';
         break;
       case 'REPAIR':
       case 'HARDWARE':
-        label = 'Repair';
+        label = t('common.category.repair');
         style = 'bg-amber-500/10 text-amber-300 border-amber-500/30';
         break;
       case 'SERVICE_OUTAGE':
       case 'NETWORK':
-        label = 'Outage';
+        label = t('common.category.serviceOutage');
         style = 'bg-rose-500/10 text-rose-300 border-rose-500/30';
         break;
       case 'PREVENTATIVE_MAINTENANCE':
-        label = 'Maintenance';
+        label = t('common.category.preventativeMaintenance');
         style = 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30';
         break;
       case 'WARRANTY':
-        label = 'Warranty';
+        label = t('common.category.warranty');
         style = 'bg-purple-500/10 text-purple-300 border-purple-500/30';
         break;
       case 'AI':
-        label = 'AI';
+        label = t('common.category.ai');
         style = 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30';
         break;
     }
@@ -152,9 +154,10 @@ export const TicketList: React.FC<TicketListProps> = ({
       case 'CRITICAL':
         return <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" title="Critical Priority" />;
       case 'HIGH':
-        return <span className="w-1.5 h-1.5 rounded-full bg-[#ff5e00]" title="High Priority" />;
+        return <span className="w-1.5 h-1.5 rounded-full bg-amber-400" title="High Priority" />;
       case 'MEDIUM':
         return <span className="w-1.5 h-1.5 rounded-full bg-[#0084ff]" title="Medium Priority" />;
+      case 'LOW':
       default:
         return <span className="w-1.5 h-1.5 rounded-full bg-slate-500" title="Low Priority" />;
     }
@@ -171,13 +174,13 @@ export const TicketList: React.FC<TicketListProps> = ({
   };
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 bg-[#090e1a]/95 border border-[#1b263b] rounded-xl overflow-hidden shadow-2xl">
-      {/* Top Controls Header */}
-      <div className="bg-[#0d1526] p-2.5 border-b border-[#1b2840] space-y-2">
+    <div className="flex-1 flex flex-col min-h-0 bg-[#0a0e17] rounded-xl border border-[#1b263b] overflow-hidden">
+      {/* Header with Title & Filter Controls */}
+      <div className="p-2.5 border-b border-[#1b263b] bg-[#0c1322] space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <FolderOpen className="w-3.5 h-3.5 text-[#0084ff]" />
-            <h3 className="text-xs font-bold text-slate-100">Workstation Tickets</h3>
+            <h3 className="text-xs font-bold text-slate-100">{t('navigation.tickets')}</h3>
             <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#0084ff]/20 text-[#38bdf8] font-mono font-semibold">
               {tickets.length}
             </span>
@@ -188,7 +191,7 @@ export const TicketList: React.FC<TicketListProps> = ({
             className="px-2 py-1 rounded-md bg-[#0084ff]/20 hover:bg-[#0084ff]/30 text-[#38bdf8] hover:text-white border border-[#0084ff]/35 text-[10px] font-semibold flex items-center gap-1 transition-all active:scale-95 shadow-xs"
           >
             <Plus className="w-3 h-3" />
-            New Ticket
+            {t('tickets.reportIssueNow')}
           </button>
         </div>
 
@@ -203,7 +206,7 @@ export const TicketList: React.FC<TicketListProps> = ({
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              All ({tickets.length})
+              {t('tickets.allTab', { count: tickets.length })}
             </button>
             <button
               onClick={() => setFilter('ACTIVE')}
@@ -213,7 +216,7 @@ export const TicketList: React.FC<TicketListProps> = ({
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Active ({activeCount})
+              {t('tickets.activeTab', { count: activeCount })}
             </button>
             <button
               onClick={() => setFilter('RESOLVED')}
@@ -223,13 +226,13 @@ export const TicketList: React.FC<TicketListProps> = ({
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Resolved ({tickets.length - activeCount})
+              {t('tickets.resolvedTab', { count: tickets.length - activeCount })}
             </button>
           </div>
 
           <input
             type="text"
-            placeholder="Search tickets..."
+            placeholder={t('tickets.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-1 bg-[#060a12] border border-[#1a263d] focus:border-[#0084ff] rounded-lg px-2 py-0.5 text-[11px] text-slate-200 placeholder:text-slate-500 outline-none transition-colors"
@@ -242,23 +245,23 @@ export const TicketList: React.FC<TicketListProps> = ({
         {isLoading && tickets.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 text-slate-400 text-xs">
             <div className="w-5 h-5 border-2 border-[#0084ff] border-t-transparent rounded-full animate-spin mb-2" />
-            Loading workstation history...
+            {t('tickets.loadingHistory')}
           </div>
         ) : filteredTickets.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
             <AlertCircle className="w-7 h-7 text-slate-600 mb-2" />
-            <p className="text-xs font-medium text-slate-300">No tickets found</p>
+            <p className="text-xs font-medium text-slate-300">{t('tickets.noTicketsFound')}</p>
             <p className="text-[11px] text-slate-500 mt-1 max-w-[240px]">
               {searchQuery
-                ? 'No tickets match your search criteria.'
-                : 'No support requests recorded for this workstation yet.'}
+                ? t('tickets.noTicketsMatchSearch')
+                : t('tickets.noTicketsRecorded')}
             </p>
             <button
               onClick={onOpenNewTicketModal}
               className="mt-3 px-3 py-1.5 rounded-lg bg-[#0084ff]/20 hover:bg-[#0084ff]/30 text-[#38bdf8] border border-[#0084ff]/40 text-xs font-semibold flex items-center gap-1.5 transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
-              Report Issue Now
+              {t('tickets.reportIssueNow')}
             </button>
           </div>
         ) : (

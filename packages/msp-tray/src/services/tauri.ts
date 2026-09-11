@@ -293,3 +293,17 @@ export async function hideWindow(): Promise<void> {
     console.error('[Tauri IPC] hideWindow error:', err);
   }
 }
+
+/**
+ * Synchronizes active locale with the native Windows system tray menu and tooltip.
+ * @param {string} locale - Active language locale ('en_US' | 'es_DO')
+ */
+export async function setTrayLanguage(locale: string): Promise<void> {
+  if (!isTauriEnvironment()) return;
+  try {
+    await invoke('set_tray_language', { locale });
+  } catch (err) {
+    console.error('[Tauri IPC] setTrayLanguage error:', err);
+  }
+}
+
