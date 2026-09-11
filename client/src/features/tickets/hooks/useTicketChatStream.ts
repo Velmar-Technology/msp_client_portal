@@ -82,6 +82,8 @@ export function useTicketChatStream({
                   user_role: p.authorRole || 'CLIENT',
                   author_name: p.isAgentAuthored ? p.authorName : null,
                   authorName: p.isAgentAuthored ? p.authorName : null,
+                  is_internal: Boolean(p.isInternal),
+                  isInternal: Boolean(p.isInternal),
                   attachments: (p.attachments || []).map((a: { id?: string; filename: string; path?: string }) => ({
                     id: a.id || `att-${Date.now()}`,
                     filename: a.filename,

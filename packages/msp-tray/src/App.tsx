@@ -16,6 +16,7 @@ import { AttributionModal } from "./components/AttributionModal";
 import { QuickTicketModal } from "./components/QuickTicketModal";
 import { LiveChatDrawer } from "./components/LiveChatDrawer";
 import { TicketList } from "./components/TicketList";
+import { CopyableTicketId } from "./components/CopyableTicketId";
 import { playNotificationChime } from "./services/sound";
 
 export const App: React.FC = () => {
@@ -228,9 +229,7 @@ export const App: React.FC = () => {
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
                   <div className="truncate">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-mono font-semibold text-[#0084ff]">
-                        #{activeTicket.id.slice(0, 8)}
-                      </span>
+                      <CopyableTicketId id={activeTicket.id} className="text-xs" />
                       <span className="text-[9px] px-1 py-0.2 rounded font-bold uppercase bg-[#0084ff]/20 text-[#38bdf8] border border-[#0084ff]/30">
                         {activeTicket.status}
                       </span>

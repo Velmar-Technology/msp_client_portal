@@ -281,18 +281,16 @@ export function BillingPage() {
               </Button>
 
               <DropdownMenu>
-                <DropdownMenuTrigger
-                  render={
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                      className="h-7 w-7 cursor-pointer"
-                    />
-                  }
-                >
-                  <MoreHorizontal className="h-3.5 w-3.5" />
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                    className="h-7 w-7 cursor-pointer"
+                  >
+                    <MoreHorizontal className="h-3.5 w-3.5" />
+                  </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48 bg-card text-foreground border border-border">
                   <DropdownMenuItem

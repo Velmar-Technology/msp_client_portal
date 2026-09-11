@@ -27,6 +27,7 @@ export interface TicketChatMessagePayload {
 export class TicketStreamGateway {
   private ticketRooms = new Map<string, Set<WebSocket>>();
   private socketToTickets = new Map<WebSocket, Set<string>>();
+  private socketToRole = new Map<WebSocket, UserRole>();
 
   constructor(
     private ticketRepo: TicketRepository = ticketRepository,
@@ -101,6 +102,7 @@ export class TicketStreamGateway {
       }
 
       // Register socket in ticket room
+      this.socketToRole.set(ws, user.role as UserRole);
       this.subscribe(ticketId, ws);
 
       logger.info(`[TicketStreamGateway] Client ${user.userId} (${user.role}) joined ticket room ${ticketId}`, {
@@ -186,6 +188,7 @@ export class TicketStreamGateway {
    * @param ws - WebSocket client
    */
   unsubscribeAll(ws: WebSocket): void {
+    this.socketToRole.delete(ws);
     const tickets = this.socketToTickets.get(ws);
     if (tickets) {
       for (const tId of tickets) {
@@ -203,6 +206,7 @@ export class TicketStreamGateway {
 
   /**
    * Broadcasts a new chat message frame to all clients viewing the specified ticket.
+   * Internal notes are never dispatched to CLIENT role WebSocket sessions.
    *
    * @param ticketId - Target ticket UUID
    * @param payload - Formatted message details
@@ -220,6 +224,10 @@ export class TicketStreamGateway {
 
     for (const ws of room) {
       if (ws.readyState === WebSocket.OPEN) {
+        // Enforce Zero Trust: Never send internal staff notes to client sessions
+        if (payload.isInternal && this.socketToRole.get(ws) === 'CLIENT') {
+          continue;
+        }
         ws.send(frame);
       }
     }

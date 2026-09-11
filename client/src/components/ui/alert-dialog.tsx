@@ -19,13 +19,21 @@ function AlertDialogTrigger({
   render?: React.ReactElement;
 }) {
   if (render) {
+    const renderedElement = React.isValidElement(render)
+      ? React.cloneElement(
+          render as React.ReactElement<{ children?: React.ReactNode }>,
+          undefined,
+          (render.props as { children?: React.ReactNode })?.children ?? children
+        )
+      : render;
+
     return (
       <AlertDialogPrimitive.Trigger
         data-slot="alert-dialog-trigger"
         asChild
         {...props}
       >
-        {render}
+        {renderedElement}
       </AlertDialogPrimitive.Trigger>
     );
   }

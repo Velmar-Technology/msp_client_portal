@@ -304,4 +304,32 @@ export type AgentTicketListItem = z.infer<typeof AgentTicketListItemSchema>;
 export const AgentTicketListResponseSchema = z.array(AgentTicketListItemSchema);
 export type AgentTicketListResponse = z.infer<typeof AgentTicketListResponseSchema>;
 
+// ============================================
+// Ticket Responses / Chatter Contracts
+// ============================================
+
+export const TicketReplyMessageSchema = z.object({
+  id: z.string().uuid(),
+  ticketId: z.string().uuid().optional(),
+  userId: z.string().uuid().optional(),
+  message: z.string(),
+  authorName: z.string().nullable().optional(),
+  authorRole: z.string().optional(),
+  userName: z.string().optional(),
+  userRole: z.string().optional(),
+  isInternal: z.boolean().default(false),
+  tenantId: z.string().uuid().optional(),
+  createdAt: z.string(),
+  attachments: z.array(TicketAttachmentSchema).optional(),
+});
+
+export type TicketReplyMessageContract = z.infer<typeof TicketReplyMessageSchema>;
+
+export const AddTicketReplyInputSchema = z.object({
+  message: z.string().min(1, 'Message cannot be empty'),
+  isInternal: z.boolean().optional().default(false),
+});
+
+export type AddTicketReplyInput = z.infer<typeof AddTicketReplyInputSchema>;
+
 

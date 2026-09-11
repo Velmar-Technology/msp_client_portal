@@ -44,6 +44,7 @@ export function useTicketDetail(ticketId: string | undefined) {
   const [responses, setResponses] = useState<TicketResponse[]>([]);
   const [responseText, setResponseText] = useState('');
   const [responseFiles, setResponseFiles] = useState<File[]>([]);
+  const [isInternalNote, setIsInternalNote] = useState(false);
   const [sendingResponse, setSendingResponse] = useState(false);
   const [responseFeedback, setResponseFeedback] = useState<{ text: string; isError: boolean } | null>(null);
 
@@ -165,7 +166,12 @@ export function useTicketDetail(ticketId: string | undefined) {
     setSendingResponse(true);
     setResponseFeedback(null);
     try {
-      const newResponse = await ticketService.createResponse(ticketId, responseText.trim(), responseFiles);
+      const newResponse = await ticketService.createResponse(
+        ticketId,
+        responseText.trim(),
+        responseFiles,
+        isInternalNote
+      );
       setResponses((prev) => (prev.some((r) => r.id === newResponse.id) ? prev : [...prev, newResponse]));
       setResponseText('');
       setResponseFiles([]);
@@ -300,6 +306,8 @@ export function useTicketDetail(ticketId: string | undefined) {
     setResponseText,
     responseFiles,
     setResponseFiles,
+    isInternalNote,
+    setIsInternalNote,
     sendingResponse,
     responseFeedback,
     previewFile,

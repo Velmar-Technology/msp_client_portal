@@ -61,7 +61,8 @@ export class TicketResponseService {
   async getTicketResponses(ticketId: string, ctx: UserContext): Promise<TicketResponse[]> {
     await this.requireTicket(ticketId, ctx);
 
-    const responses = await this.responseRepo.findByTicket(ticketId);
+    const includeInternal = ctx.role !== 'CLIENT';
+    const responses = await this.responseRepo.findByTicket(ticketId, includeInternal);
     const attachments = await this.ticketRepo.getAttachmentsByResponses(ticketId);
 
     const attachmentsByResponse = this.groupAttachmentsByResponse(attachments);
@@ -74,11 +75,13 @@ export class TicketResponseService {
 
   /**
    * Posts a new reply message and optional file attachments to a ticket, and sends a notification to the counterparty.
+   * If isInternal is true (technician staff note), notification emails and RMM agent pushes are suppressed.
    *
    * @param ticketId - Target ticket UUID
    * @param message - Response body text
    * @param ctx - Authenticated user context of the sender
    * @param files - Optional list of uploaded file attachments
+   * @param isInternal - Optional boolean indicating an internal staff-only note (default false)
    * @returns Newly created TicketResponse entity enriched with sender metadata
    * @throws {ForbiddenError} When the account is in Read-Only, Suspended, or Purged state (Section 9.3)
    * @throws {NotFoundError} When ticket is not found
@@ -89,15 +92,20 @@ export class TicketResponseService {
     message: string,
     ctx: UserContext,
     files: UploadedFile[] = [],
+    isInternal: boolean = false,
   ): Promise<TicketResponse> {
     this.accountPol.assertWriteAllowed(ctx);
     const ticket = await this.requireTicket(ticketId, ctx);
+
+    // Clients cannot create internal notes
+    const effectiveIsInternal = ctx.role !== 'CLIENT' && Boolean(isInternal);
 
     const response = await this.responseRepo.create({
       ticket_id: ticketId,
       user_id: ctx.userId,
       message,
       tenant_id: ticket.tenant_id,
+      is_internal: effectiveIsInternal,
     });
 
     const responseAttachments: TicketAttachment[] = [];
@@ -114,12 +122,15 @@ export class TicketResponseService {
       responseAttachments.push(attachment);
     }
 
-    await this.notifyResponseRecipient(ticket, ctx, message);
+    // Suppress customer email notification for internal staff notes
+    if (!effectiveIsInternal) {
+      await this.notifyResponseRecipient(ticket, ctx, message);
+    }
 
     const user = await this.userRepo.findById(ctx.userId);
 
-    // Push live WebSocket message to endpoint if ticket is bound to an equipment slot
-    if (ticket.equipment_id) {
+    // Push live WebSocket message to endpoint if ticket is bound to an equipment slot (public messages only)
+    if (ticket.equipment_id && !effectiveIsInternal) {
       this.agentGw.pushTicketChatMessage(ticket.equipment_id, {
         ticketId: ticket.id,
         responseId: response.id,
@@ -143,6 +154,7 @@ export class TicketResponseService {
       authorName: user?.name ?? 'MSP Support',
       authorRole: ctx.role,
       isAgentAuthored: false,
+      isInternal: effectiveIsInternal,
       message,
       attachments: responseAttachments.map((a) => ({
         id: a.id,
@@ -156,6 +168,7 @@ export class TicketResponseService {
       ...response,
       user_name: user?.name,
       user_role: user?.role,
+      is_internal: effectiveIsInternal,
       attachments: responseAttachments,
     };
   }

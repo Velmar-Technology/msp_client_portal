@@ -1,15 +1,17 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 import { useTicketDetail } from '../hooks/useTicketDetail';
 import { useSLATimer } from '../hooks/useSLATimer';
 import { useDeferredLoading } from '@/hooks/useDeferredLoading';
+import { useUrlState } from '@/hooks/useUrlState';
 import { Page } from '@/components/Page';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   TicketDetailHeader,
   TicketDescriptionCard,
   TicketFlightRecorderCard,
-  TicketResponses,
+  TicketChatterOverlay,
   TicketTimeline,
   TicketSidebar,
   FilePreviewModal,
@@ -17,6 +19,13 @@ import {
 
 export function TicketDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { getParam, setParam } = useUrlState();
+  const chatParam = getParam('chat');
+  const [isChatOpen, setIsChatOpen] = useState(() => {
+    if (chatParam === 'open') return true;
+    if (chatParam === 'closed') return false;
+    return true; // Default open as docked bottom-right card
+  });
 
   const {
     t,
@@ -37,6 +46,8 @@ export function TicketDetailPage() {
     setResponseText,
     responseFiles,
     setResponseFiles,
+    isInternalNote,
+    setIsInternalNote,
     responseFeedback,
     selectedTechId,
     setSelectedTechId,
@@ -128,6 +139,19 @@ export function TicketDetailPage() {
     );
   }
 
+  const handleToggleChat = () => {
+    setIsChatOpen((prev) => {
+      const next = !prev;
+      setParam('chat', next ? 'open' : 'closed');
+      return next;
+    });
+  };
+
+  const handleChatOpenChange = (open: boolean) => {
+    setIsChatOpen(open);
+    setParam('chat', open ? 'open' : 'closed');
+  };
+
   return (
     <Page>
       <TicketDetailHeader
@@ -136,8 +160,12 @@ export function TicketDetailPage() {
         statusUpdating={statusUpdating}
         getStatusLabel={getStatusLabel}
         onStatusChange={handleStatusChange}
+        responseCount={responses.length}
+        onToggleChat={handleToggleChat}
+        isChatOpen={isChatOpen}
       />
 
+      {/* Primary Ticket Form & Diagnostic Telemetry Pane (Unconstrained Full Layout) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pb-8">
         <div className="lg:col-span-8 flex flex-col gap-6 w-full">
           <TicketDescriptionCard description={ticket.description} />
@@ -149,18 +177,6 @@ export function TicketDetailPage() {
               deviceName={ticket.device_name}
             />
           )}
-          <TicketResponses
-            responses={responses}
-            user={user}
-            responseText={responseText}
-            setResponseText={setResponseText}
-            responseFiles={responseFiles}
-            setResponseFiles={setResponseFiles}
-            responseFeedback={responseFeedback}
-            sendingResponse={sendingResponse}
-            onSendResponse={handleSendResponse}
-            onPreviewFile={setPreviewFile}
-          />
           <TicketTimeline timeline={timeline} getStatusLabel={getStatusLabel} />
         </div>
 
@@ -188,6 +204,26 @@ export function TicketDetailPage() {
           />
         </div>
       </div>
+
+      {/* Floating Bottom-Right Docked Chatter Overlay (Collapsible & Responsive) */}
+      <TicketChatterOverlay
+        isOpen={isChatOpen}
+        onOpenChange={handleChatOpenChange}
+        ticketTitle={ticket.title}
+        ticketId={ticket.id}
+        responses={responses}
+        user={user}
+        responseText={responseText}
+        setResponseText={setResponseText}
+        responseFiles={responseFiles}
+        setResponseFiles={setResponseFiles}
+        isInternalNote={isInternalNote}
+        setIsInternalNote={setIsInternalNote}
+        responseFeedback={responseFeedback}
+        sendingResponse={sendingResponse}
+        onSendResponse={handleSendResponse}
+        onPreviewFile={setPreviewFile}
+      />
 
       <FilePreviewModal
         previewFile={previewFile}

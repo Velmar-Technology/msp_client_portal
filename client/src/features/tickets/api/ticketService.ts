@@ -87,6 +87,8 @@ export interface TicketResponseItem {
   user_role?: string;
   author_name?: string | null;
   authorName?: string | null;
+  is_internal?: boolean;
+  isInternal?: boolean;
   attachments?: TicketAttachmentItem[];
 }
 
@@ -195,10 +197,19 @@ export const ticketService = {
 
   /**
    * Appends a new communication reply to a ticket thread, optionally attaching files.
+   * If isInternal is true, logs as a private staff-only note (technicians/admins only).
    */
-  async createResponse(id: string, message: string, files?: File[]): Promise<TicketResponseItem> {
+  async createResponse(
+    id: string,
+    message: string,
+    files?: File[],
+    isInternal?: boolean,
+  ): Promise<TicketResponseItem> {
     const formData = new FormData();
     formData.append('message', message);
+    if (isInternal) {
+      formData.append('isInternal', 'true');
+    }
     if (files && files.length > 0) {
       files.forEach((file) => {
         formData.append('files', file);

@@ -3,6 +3,7 @@ import { Send, CheckCircle, Headphones, UserCheck, ArrowLeft } from 'lucide-reac
 import { ActiveTicket, sendChatMessage, resolveTicket, fetchTicketMessages } from '../services/tauri';
 import { ShiftWorkerAttribution } from '../services/attribution';
 import { playNotificationChime } from '../services/sound';
+import { CopyableTicketId } from './CopyableTicketId';
 
 export interface ChatMessage {
   id: string;
@@ -262,9 +263,7 @@ export const LiveChatDrawer: React.FC<LiveChatDrawerProps> = ({
 
           <div className="truncate">
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-mono text-[#0084ff] font-semibold">
-                #{activeTicket.id.slice(0, 8)}
-              </span>
+              <CopyableTicketId id={activeTicket.id} className="text-[11px]" />
               <span className={`text-[9px] px-1 py-0.2 rounded font-bold tracking-wider uppercase ${
                 isTicketActive
                   ? 'bg-[#0084ff]/15 text-[#38bdf8] border border-[#0084ff]/30'

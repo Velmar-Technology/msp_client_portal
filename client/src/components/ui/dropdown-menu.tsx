@@ -27,13 +27,21 @@ function DropdownMenuTrigger({
   render?: React.ReactElement;
 }) {
   if (render) {
+    const renderedElement = React.isValidElement(render)
+      ? React.cloneElement(
+          render as React.ReactElement<{ children?: React.ReactNode }>,
+          undefined,
+          (render.props as { children?: React.ReactNode })?.children ?? children
+        )
+      : render;
+
     return (
       <DropdownMenuPrimitive.Trigger
         data-slot="dropdown-menu-trigger"
         asChild
         {...props}
       >
-        {render}
+        {renderedElement}
       </DropdownMenuPrimitive.Trigger>
     );
   }

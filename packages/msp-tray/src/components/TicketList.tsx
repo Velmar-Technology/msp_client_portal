@@ -10,6 +10,7 @@ import {
   FolderOpen,
 } from 'lucide-react';
 import { ActiveTicket } from '../services/tauri';
+import { CopyableTicketId } from './CopyableTicketId';
 
 interface TicketListProps {
   tickets: ActiveTicket[];
@@ -283,9 +284,7 @@ export const TicketList: React.FC<TicketListProps> = ({
                 <div className="flex items-center justify-between gap-1.5 mb-1">
                   <div className="flex items-center gap-1.5">
                     {getPriorityDot(t.priority)}
-                    <span className="text-[10px] font-mono text-[#0084ff] font-semibold">
-                      #{t.id.slice(0, 8)}
-                    </span>
+                    <CopyableTicketId id={t.id} className="text-[10px]" />
                     {getCategoryBadge(t.category)}
                   </div>
                   {getStatusBadge(t.status)}
