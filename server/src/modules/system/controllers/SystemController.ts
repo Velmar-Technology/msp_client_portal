@@ -83,12 +83,15 @@ export class SystemController {
       throw new UnauthorizedError('User authentication required');
     }
 
-    const tenantId = user.tenant_id || user.tenantId;
-    if (!tenantId) {
+    const isAdmin = user.role === 'ADMIN';
+    const targetEmail = (isAdmin && req.body?.email) ? req.body.email : user.email;
+    const targetTenantId = (isAdmin && req.body?.tenantId) ? req.body.tenantId : (user.tenant_id || user.tenantId);
+
+    if (!targetTenantId) {
       throw new ValidationError('Tenant ID missing from user profile');
     }
 
-    const result = await this.vaultwardenSvc.resetUserVaultAccess(tenantId, user.email);
+    const result = await this.vaultwardenSvc.resetUserVaultAccess(targetTenantId, targetEmail);
     res.json({
       success: true,
       data: result,

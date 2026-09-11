@@ -20,6 +20,8 @@ export interface PaymentSectionProps {
   handleProcessSubscription: (e?: SyntheticEvent) => Promise<void>;
   activeSubscriptions: Subscription[];
   getPlanName: (name: string | Record<string, string>) => string;
+  autoRenew?: boolean;
+  setAutoRenew?: (val: boolean) => void;
 }
 
 export function PaymentSection({
@@ -37,6 +39,8 @@ export function PaymentSection({
   handleProcessSubscription,
   activeSubscriptions,
   getPlanName,
+  autoRenew,
+  setAutoRenew,
 }: PaymentSectionProps) {
   const { t } = useTranslation();
 
@@ -72,6 +76,8 @@ export function PaymentSection({
         handleProcessSubscription={handleProcessSubscription}
         activeSubscriptions={activeSubscriptions}
         getPlanName={getPlanName}
+        autoRenew={autoRenew}
+        setAutoRenew={setAutoRenew}
       />
     </div>
   );

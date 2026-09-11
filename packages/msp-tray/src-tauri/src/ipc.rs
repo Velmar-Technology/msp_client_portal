@@ -274,16 +274,27 @@ impl IpcClient {
         let connected_flag = connected.clone();
 
         tauri::async_runtime::spawn(async move {
+            let mut retry_count: u64 = 0;
             loop {
-                log::info!("[MSP-TRAY IPC] Attempting connection to named pipe: {}", PIPE_NAME);
+                if retry_count == 0 {
+                    log::info!("[MSP-TRAY IPC] Attempting connection to named pipe: {}", PIPE_NAME);
+                }
                 let pipe = match ClientOptions::new().open(PIPE_NAME) {
                     Ok(p) => {
                         log::info!("[MSP-TRAY IPC] Connected to named pipe: {}", PIPE_NAME);
+                        retry_count = 0;
                         connected_flag.store(true, std::sync::atomic::Ordering::SeqCst);
                         p
                     }
                     Err(err) => {
-                        log::debug!("[MSP-TRAY IPC] Pipe connection pending: {}", err);
+                        retry_count += 1;
+                        if retry_count == 1 {
+                            log::info!("[MSP-TRAY IPC] Pipe connection pending (background service offline): {}", err);
+                        } else if retry_count % 40 == 0 {
+                            log::info!("[MSP-TRAY IPC] Still waiting for named pipe: {} ({} attempts)", PIPE_NAME, retry_count);
+                        } else {
+                            log::debug!("[MSP-TRAY IPC] Pipe connection pending: {}", err);
+                        }
                         connected_flag.store(false, std::sync::atomic::Ordering::SeqCst);
                         tokio::time::sleep(tokio::time::Duration::from_millis(1500)).await;
                         continue;

@@ -12,6 +12,7 @@ export interface VaultwardenInviteResult {
   invited: boolean;
   email: string;
   orgId: string;
+  alreadyEnrolled?: boolean;
 }
 
 /**
@@ -84,9 +85,11 @@ export class VaultwardenService {
       });
 
       if (!response.ok) {
+        const errText = typeof response.text === 'function' ? await response.text().catch(() => '') : '';
         throw new ExternalServiceError('Failed to create Vaultwarden organization', {
           service: 'vaultwarden',
           upstream: response.status,
+          details: errText || undefined,
         });
       }
 
@@ -110,7 +113,57 @@ export class VaultwardenService {
   }
 
   /**
+   * Checks the enrollment or invitation status of a user within a Vaultwarden organization.
+   *
+   * @param orgId - Organization UUID
+   * @param email - Target user email address
+   * @returns Status of user membership ('ACCEPTED' | 'INVITED' | 'REVOKED' | 'NOT_FOUND')
+   */
+  async checkUserInvitationStatus(
+    orgId: string,
+    email: string
+  ): Promise<'ACCEPTED' | 'INVITED' | 'REVOKED' | 'NOT_FOUND'> {
+    const token = env.VAULTWARDEN_ADMIN_TOKEN;
+    const baseUrl = this.getBaseUrl();
+
+    if (!token) {
+      return 'ACCEPTED';
+    }
+
+    try {
+      const response = await fetch(`${baseUrl}/api/organizations/${orgId}/users`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+
+      if (!response.ok) {
+        return 'NOT_FOUND';
+      }
+
+      const payload = (await response.json()) as {
+        Data?: Array<{ Id: string; Email?: string; Status?: number }>;
+      };
+      const member = (payload.Data || []).find(
+        (u) => u.Email?.toLowerCase() === email.toLowerCase()
+      );
+
+      if (!member) {
+        return 'NOT_FOUND';
+      }
+
+      // Vaultwarden Status codes: 0 = Revoked, 1 = Invited, 2 = Accepted, 3 = Confirmed
+      if (member.Status === 0) return 'REVOKED';
+      if (member.Status === 1) return 'INVITED';
+      if (member.Status === 2 || member.Status === 3) return 'ACCEPTED';
+      return 'ACCEPTED';
+    } catch {
+      return 'NOT_FOUND';
+    }
+  }
+
+  /**
    * Invites a user email to an organization.
+   * Gracefully handles idempotent duplicate invitations if the user is already present.
    *
    * @param orgId - Target organization identifier
    * @param email - Target user email
@@ -149,9 +202,23 @@ export class VaultwardenService {
       });
 
       if (!response.ok) {
+        const errText = typeof response.text === 'function' ? await response.text().catch(() => '') : '';
+        // Bitwarden / Vaultwarden returns 400 or 409 if the email is already in org or pending invite
+        const isAlreadyEnrolled =
+          (response.status === 400 || response.status === 409) &&
+          /already\s+(in|invited|member|registered)|duplicate/i.test(errText);
+
+        if (isAlreadyEnrolled) {
+          logger.info(
+            `User ${email} is already invited or a member of Vaultwarden org ${orgId}; treating as idempotent success.`
+          );
+          return { invited: true, email, orgId, alreadyEnrolled: true };
+        }
+
         throw new ExternalServiceError(`Failed to invite ${email} to Vaultwarden organization`, {
           service: 'vaultwarden',
           upstream: response.status,
+          details: errText || undefined,
         });
       }
 
@@ -418,17 +485,115 @@ export class VaultwardenService {
   }
 
   /**
+   * Resolves the real Vaultwarden organization UUID for a given tenant or user.
+   * If the organization does not exist or tenantId is not recognized upstream,
+   * inspects /admin/organizations and /admin/users or provisions the organization on demand.
+   *
+   * @param tenantId - Tenant UUID or Org ID
+   * @param userEmail - Target user email address
+   * @param orgName - Optional display name for organization
+   * @returns Real Vaultwarden Organization UUID
+   */
+  async resolveOrganizationId(
+    tenantId: string,
+    userEmail?: string,
+    orgName?: string
+  ): Promise<string> {
+    const token = env.VAULTWARDEN_ADMIN_TOKEN;
+    const baseUrl = this.getBaseUrl();
+
+    if (!token) {
+      return tenantId;
+    }
+
+    try {
+      // 1. Direct check: Does this org ID exist?
+      const directResp = await fetch(`${baseUrl}/api/organizations/${tenantId}/users`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+      if (directResp.ok) {
+        return tenantId;
+      }
+
+      // 2. Query /admin/organizations
+      const adminOrgsResp = await fetch(`${baseUrl}/admin/organizations`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+
+      if (adminOrgsResp.ok) {
+        const orgs = (await adminOrgsResp.json()) as Array<{
+          Id?: string;
+          id?: string;
+          Name?: string;
+          name?: string;
+          BillingEmail?: string;
+        }>;
+
+        if (Array.isArray(orgs)) {
+          const match = orgs.find(
+            (o) =>
+              (o.Id || o.id)?.toLowerCase() === tenantId.toLowerCase() ||
+              (orgName && (o.Name || o.name)?.toLowerCase() === orgName.toLowerCase()) ||
+              (userEmail && o.BillingEmail?.toLowerCase() === userEmail.toLowerCase())
+          );
+          if (match && (match.Id || match.id)) {
+            return (match.Id || match.id)!;
+          }
+        }
+      }
+
+      // 3. Query /admin/users to find if the user is already member of an org
+      if (userEmail) {
+        const adminUsersResp = await fetch(`${baseUrl}/admin/users`, {
+          method: 'GET',
+          headers: this.getHeaders(),
+        });
+        if (adminUsersResp.ok) {
+          const users = (await adminUsersResp.json()) as Array<{
+            Id?: string;
+            Email?: string;
+            Organizations?: Array<{ Id?: string; id?: string }>;
+          }>;
+          if (Array.isArray(users)) {
+            const userRecord = users.find(
+              (u) => u.Email?.toLowerCase() === userEmail.toLowerCase()
+            );
+            const firstOrg = userRecord?.Organizations?.[0];
+            if (firstOrg && (firstOrg.Id || firstOrg.id)) {
+              return (firstOrg.Id || firstOrg.id)!;
+            }
+          }
+        }
+      }
+
+      // 4. If no organization exists at all, auto-provision one
+      const newOrg = await this.createOrganization(
+        orgName || `Workspace Vault`,
+        userEmail || 'admin@tenant.local'
+      );
+      return newOrg.id;
+    } catch (err) {
+      logger.warn(`Could not resolve organization for tenant ${tenantId}; using fallback:`, err);
+      return tenantId;
+    }
+  }
+
+  /**
    * Resets a user's vault access by purging their stale/locked account record in Vaultwarden
    * and issuing a fresh organization invitation so they can configure a new Master Password (zero-knowledge).
    *
    * @param tenantId - Tenant UUID identifying the Bitwarden Organization
    * @param userEmail - Target user email address
+   * @param orgName - Optional organization display name
    * @returns Object indicating success status and informative message
    * @throws {ExternalServiceError} When communication with upstream Vaultwarden fails
    */
   async resetUserVaultAccess(
     tenantId: string,
-    userEmail: string
+    userEmail: string,
+    orgName?: string
   ): Promise<{ success: boolean; message: string }> {
     const token = env.VAULTWARDEN_ADMIN_TOKEN;
     const baseUrl = this.getBaseUrl();
@@ -442,8 +607,11 @@ export class VaultwardenService {
     }
 
     try {
+      // 0. Resolve the actual Vaultwarden organization ID
+      const targetOrgId = await this.resolveOrganizationId(tenantId, userEmail, orgName);
+
       // 1. Locate user in tenant organization if already enrolled
-      const orgUsersResp = await fetch(`${baseUrl}/api/organizations/${tenantId}/users`, {
+      const orgUsersResp = await fetch(`${baseUrl}/api/organizations/${targetOrgId}/users`, {
         method: 'GET',
         headers: this.getHeaders(),
       });
@@ -456,7 +624,7 @@ export class VaultwardenService {
 
         if (matchingMember) {
           // Remove from organization
-          await fetch(`${baseUrl}/api/organizations/${tenantId}/users/${matchingMember.Id}`, {
+          await fetch(`${baseUrl}/api/organizations/${targetOrgId}/users/${matchingMember.Id}`, {
             method: 'DELETE',
             headers: this.getHeaders(),
           });
@@ -490,9 +658,9 @@ export class VaultwardenService {
       }
 
       // 3. Re-issue fresh organization invitation
-      await this.inviteUserToOrganization(tenantId, userEmail, 'User');
+      await this.inviteUserToOrganization(targetOrgId, userEmail, 'Admin');
 
-      logger.info(`Successfully reset vault access and re-invited ${userEmail} to org ${tenantId}`);
+      logger.info(`Successfully reset vault access and re-invited ${userEmail} to org ${targetOrgId}`);
       return {
         success: true,
         message: 'A fresh invitation has been dispatched. Please check your email to set a new Master Password.',

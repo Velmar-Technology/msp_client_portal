@@ -560,6 +560,36 @@ describe('PlansPage', () => {
         );
       });
     });
+
+    test('renders auto-billing toggle and submits recurring PayPal subscription when enabled', async () => {
+      renderPage();
+
+      const checkoutBtn = screen.getByRole('button', { name: /Proceed to Checkout/i });
+      fireEvent.click(checkoutBtn);
+
+      const tosCheckbox = screen.getByLabelText(/Terms of Service/i);
+      fireEvent.click(tosCheckbox);
+
+      expect(screen.getByText('Automated PayPal Renewal')).toBeInTheDocument();
+      expect(screen.getByText('Auto-Renew Active')).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(paypalButtonsOptions).not.toBeNull();
+      });
+
+      const subscriptionId = await paypalButtonsOptions.createSubscription();
+      expect(subscriptionId).toBe('MOCK-PAYPAL-SUB');
+
+      await paypalButtonsOptions.onApprove({ subscriptionID: 'MOCK-PAYPAL-SUB' });
+
+      await waitFor(() => {
+        expect(subscriptionService.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            paypalOrderId: 'MOCK-PAYPAL-SUB',
+          })
+        );
+      });
+    });
   });
 
   describe('Admin Flow', () => {

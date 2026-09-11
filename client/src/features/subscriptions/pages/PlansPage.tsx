@@ -55,6 +55,8 @@ export function PlansPage() {
     reference,
     billingCycle,
     setBillingCycle,
+    autoRenew,
+    setAutoRenew,
     activeTab,
     setActiveTab,
     subscribeLoading,
@@ -167,6 +169,28 @@ export function PlansPage() {
                 month: "short",
                 year: "numeric",
               })}
+            </span>
+          );
+        },
+      },
+      {
+        id: "auto_billing",
+        header: t("plans.autoRenewBadge") || "Auto-Renew",
+        cell: ({ row }) => {
+          const sub = row.original;
+          const isAutoBilling = Boolean(
+            sub.paypal_order_id &&
+              (sub.paypal_order_id.startsWith("I-") || sub.paypal_order_id.startsWith("MOCK-SUB-"))
+          );
+          return (
+            <span
+              className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold tracking-wider uppercase border ${
+                isAutoBilling
+                  ? "bg-primary/10 text-primary border-primary/20 dark:bg-primary/20 dark:border-primary/40"
+                  : "bg-muted text-muted-foreground border-border"
+              }`}
+            >
+              {isAutoBilling ? (t("plans.autoRenewActive") || "Auto-Renew Active") : (t("plans.autoRenewManual") || "Manual Invoicing")}
             </span>
           );
         },
@@ -490,6 +514,8 @@ export function PlansPage() {
                   handleProcessSubscription={handleProcessSubscription}
                   activeSubscriptions={activeSubscriptions}
                   getPlanName={getPlanName}
+                  autoRenew={autoRenew}
+                  setAutoRenew={setAutoRenew}
                 />
               )}
             </div>
@@ -570,6 +596,8 @@ export function PlansPage() {
           activeSubscriptions={activeSubscriptions}
           getPlanName={getPlanName}
           existingSubscription={checkoutSubscription}
+          autoRenew={autoRenew}
+          setAutoRenew={setAutoRenew}
           open={checkoutOpen}
           onOpenChange={(open) => { if (!open) closeCheckout(); }}
           deviceDelta={checkoutDeviceDelta}

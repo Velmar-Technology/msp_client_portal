@@ -15,6 +15,10 @@ import {
   sendChatMessage,
   resolveTicket,
   hideWindow,
+  logClientEvent,
+  getTrayLogInfo,
+  openTrayLogDir,
+  restartAgentService,
 } from './tauri';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
@@ -101,10 +105,18 @@ describe('fetchAgentStatus', () => {
     expect(mockInvoke).toHaveBeenCalledWith('get_agent_status');
   });
 
-  it('falls back to default status when invoke rejects', async () => {
+  it('falls back to offline status when invoke rejects in Tauri', async () => {
     (window as unknown as Record<string, unknown>).__TAURI__ = { core: {} };
     mockInvoke.mockRejectedValue(new Error('ipc unavailable'));
-    await expect(fetchAgentStatus()).resolves.toEqual(FALLBACK_STATUS);
+    await expect(fetchAgentStatus()).resolves.toEqual({
+      agentOnline: false,
+      cloudConnected: false,
+      equipmentId: undefined,
+      hostname: 'WORKSTATION',
+      tenantName: undefined,
+      activeTicketCount: 0,
+      isBound: true,
+    });
   });
 });
 
@@ -308,5 +320,80 @@ describe('listenAgentBound and listenAgentUnbound', () => {
     const unlisten = await listenAgentUnbound(cb);
     expect(mockListen).toHaveBeenCalledWith('agent://unbound', expect.any(Function));
     expect(unlisten).toBe(dummyUnlisten);
+  });
+});
+
+describe('logClientEvent', () => {
+  it('handles client logging gracefully outside Tauri runtime', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    await logClientEvent('error', 'Test render failure', 'Error: at App.tsx:10');
+    expect(consoleSpy).toHaveBeenCalledWith('[WEBVIEW MOCK] Test render failure', 'Error: at App.tsx:10');
+    consoleSpy.mockRestore();
+  });
+
+  it('invokes log_client_event inside Tauri runtime', async () => {
+    (window as unknown as Record<string, unknown>).__TAURI__ = { core: {} };
+    mockInvoke.mockResolvedValue(undefined);
+    await logClientEvent('warn', 'IPC warning message');
+    expect(mockInvoke).toHaveBeenCalledWith('log_client_event', {
+      level: 'warn',
+      message: 'IPC warning message',
+      stack: undefined,
+    });
+  });
+});
+
+describe('getTrayLogInfo', () => {
+  it('returns fallback info outside Tauri runtime', async () => {
+    const res = await getTrayLogInfo();
+    expect(res.path).toContain('msp-tray.log');
+    expect(res.exists).toBe(false);
+  });
+
+  it('invokes get_tray_log_info inside Tauri runtime', async () => {
+    (window as unknown as Record<string, unknown>).__TAURI__ = { core: {} };
+    const mockInfo = {
+      path: 'C:\\Users\\User\\AppData\\Local\\MSP\\logs\\msp-tray.log',
+      exists: true,
+      sizeBytes: 1024,
+      directory: 'C:\\Users\\User\\AppData\\Local\\MSP\\logs',
+    };
+    mockInvoke.mockResolvedValue(mockInfo);
+    await expect(getTrayLogInfo()).resolves.toEqual(mockInfo);
+    expect(mockInvoke).toHaveBeenCalledWith('get_tray_log_info');
+  });
+});
+
+describe('openTrayLogDir', () => {
+  it('no-ops outside Tauri runtime', async () => {
+    await openTrayLogDir();
+    expect(mockInvoke).not.toHaveBeenCalled();
+  });
+
+  it('invokes open_tray_log_dir inside Tauri runtime', async () => {
+    (window as unknown as Record<string, unknown>).__TAURI__ = { core: {} };
+    mockInvoke.mockResolvedValue(undefined);
+    await openTrayLogDir();
+    expect(mockInvoke).toHaveBeenCalledWith('open_tray_log_dir');
+  });
+});
+
+describe('restartAgentService', () => {
+  it('returns true outside Tauri runtime', async () => {
+    await expect(restartAgentService()).resolves.toBe(true);
+    expect(mockInvoke).not.toHaveBeenCalled();
+  });
+
+  it('invokes restart_agent_service inside Tauri runtime', async () => {
+    (window as unknown as Record<string, unknown>).__TAURI__ = { core: {} };
+    mockInvoke.mockResolvedValue(true);
+    await expect(restartAgentService()).resolves.toBe(true);
+    expect(mockInvoke).toHaveBeenCalledWith('restart_agent_service');
+  });
+
+  it('propagates error when restart_agent_service rejects', async () => {
+    (window as unknown as Record<string, unknown>).__TAURI__ = { core: {} };
+    mockInvoke.mockRejectedValue(new Error('Access is denied'));
+    await expect(restartAgentService()).rejects.toThrow('Access is denied');
   });
 });

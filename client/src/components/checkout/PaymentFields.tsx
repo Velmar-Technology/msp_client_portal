@@ -1,8 +1,10 @@
 import { useState, type SyntheticEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Copy, Check, Building2, Shield, Loader2 } from "lucide-react";
+import { Copy, Check, Building2, Shield, Loader2, RefreshCw } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import { BANK_ACCOUNTS } from "@/constants/bankAccounts";
+import { cn } from "@/lib/utils";
 
 export interface PaymentFieldsProps {
   isAdmin: boolean;
@@ -15,6 +17,8 @@ export interface PaymentFieldsProps {
   subscribeLoading: boolean;
   handleProcessSubscription: (e?: SyntheticEvent) => void;
   paypalContainerId?: string;
+  autoRenew?: boolean;
+  setAutoRenew?: (val: boolean) => void;
 }
 
 export function PaymentFields({
@@ -28,6 +32,8 @@ export function PaymentFields({
   subscribeLoading,
   handleProcessSubscription,
   paypalContainerId = "paypal-button-container",
+  autoRenew = true,
+  setAutoRenew,
 }: PaymentFieldsProps) {
   const { t } = useTranslation();
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -104,6 +110,34 @@ export function PaymentFields({
                   {t("plans.paypalPaymentNotice") ||
                     "Please complete your checkout payment securely using PayPal. Once approved, your subscription will activate immediately."}
                 </p>
+
+                {/* Auto-Billing / Auto-Renew Toggle */}
+                <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/40">
+                  <div className="flex items-start gap-2.5 pr-2">
+                    <RefreshCw className={cn("h-4 w-4 mt-0.5 shrink-0", autoRenew ? "text-primary" : "text-muted-foreground")} />
+                    <div className="text-left">
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-xs font-semibold text-foreground font-heading">
+                          {t("plans.autoBillingTitle") || "Automated PayPal Renewal"}
+                        </p>
+                        <span className="text-[9px] font-mono px-1 py-0.2 rounded border border-border bg-card text-muted-foreground font-medium">
+                          {autoRenew ? (t("plans.autoRenewActive") || "Auto-Renew Active") : (t("plans.autoRenewManual") || "Manual Invoicing")}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground leading-normal mt-0.5">
+                        {autoRenew
+                          ? (t("plans.autoBillingEnabledDesc") || "Your subscription will automatically renew each billing cycle via PayPal. You can cancel anytime.")
+                          : (t("plans.autoBillingDisabledDesc") || "Manual invoicing: You will receive an invoice at the end of each cycle to pay on demand.")}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={autoRenew}
+                    onCheckedChange={(checked) => setAutoRenew?.(checked)}
+                    aria-label={t("plans.autoBillingTitle") || "Automated PayPal Renewal"}
+                    className="shrink-0 cursor-pointer"
+                  />
+                </div>
 
                 {paymentMessage && (
                   <div

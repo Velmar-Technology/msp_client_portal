@@ -1,77 +1,49 @@
-# SequenceSentinel Architecture & Master Plan: Full Business Logic Coverage (BL-101 to BL-802)
+# Implementation Plan: msp-tray Endpoint Logging Architecture
 
-## Architectural Overview
-SequenceSentinel is a non-invasive, read-only sequence and business logic auditor located in `server/src/modules/system/sentinel/`. It reads production and staging database audit logs (`ticketEvents`, `tickets`, `rmmAlerts`, `technicianEarnings`, `expenses`, `invoices`, `subscriptions`, `tenants`, `users`), chronologically correlates them into multi-step causal action sequences, evaluates every sequence against all 18 Master Business Logic specifications (`BL-101` through `BL-802`), and automatically synthesizes isolated Vitest reproduction specs (`*.spec.ts`) for any detected drift.
+## Overview
+Implement persistent, size-capped rolling endpoint logging for `msp-tray` on Windows desktop endpoints. The logger records Rust backend lifecycle, Named Pipe IPC connection/retry events, and React Webview unhandled errors into `%LOCALAPPDATA%\MSP\logs\msp-tray.log` (capped at 5 MB, with 3 rotated backups), featuring sensitive credential redaction and a diagnostics menu option for support.
 
-```
-[ PostgreSQL Audit Tables (ticketEvents, expenses, invoices, subscriptions, etc.) ]
-                                  │
-                                  ▼ (Read-Only Temporal Slice)
-                  [ SequenceAggregatorService ]
-                                  │
-                                  ▼ (Chronological Action Sequences)
-           ┌──────────────────────┴──────────────────────┐
-           ▼                                             ▼
-┌───────────────────────────────┐             ┌───────────────────────────────┐
-│ Ticketing & SLA Suite         │             │ Billing & Tax Suite           │
-│ - BL-101: SlaCancellation     │             │ - BL-401: SubReactivation     │
-│ - BL-102: RoundRobinDispatch  │             │ - BL-402: RenewalScheduler    │
-│ - BL-103: AlertNoiseFlapping  │             │ - BL-701: TaxAndNcf           │
-│ - BL-104: TierEscalation      │             │ - BL-702: NonPaymentScale     │
-└───────────────────────────────┘             └───────────────────────────────┘
-           │                                             │
-           ▼                                             ▼
-┌───────────────────────────────┐             ┌───────────────────────────────┐
-│ Subscriptions & Equipment     │             │ Commissions & Financials      │
-│ - BL-201: QuotaEnforcement    │             │ - BL-801: TechBountyOpEx      │
-│ - BL-202: LicenseTrueUp       │             │ - BL-802: ProfitSplit         │
-│ - BL-204: FeatureGating       │             │                               │
-│ - BL-205: DeviceVaultSecurity │             │ CRM & Health Suite            │
-└───────────────────────────────┘             │ - BL-501: CrmLeadPipeline     │
-           │                                  │ - BL-601: AccountHealthScore  │
-           ▼                                  └───────────────────────────────┘
-┌───────────────────────────────┐                        │
-│ Security & State Machine      │                        │
-│ - BL-301: StateMachine        │                        │
-│ - BL-302: AuthzAndJit         │                        │
-└───────────────────────────────┘                        │
-           │                                             │
-           └──────────────────────┬──────────────────────┘
-                                  ▼
-                   [ SequenceSentinelService ]
-                                  │
-                 ┌────────────────┴────────────────┐
-                 ▼                                 ▼
-   [ Markdown Diagnostic Report ]    [ VitestRegressionSynthesizer ]
-   (`docs/audits/audit-*.md`)        (`services/__tests__/regressions/*.spec.ts`)
-```
+## Architecture Decisions
+- **Storage Location:** `%LOCALAPPDATA%\MSP\logs\msp-tray.log` (creates parent directory automatically). Overridable via `MSP_TRAY_LOG` env var for testing. This avoids Windows UAC permissions issues when running as a standard desktop user.
+- **Rotation Strategy:** Custom rolling file writer checking file size upon write. When exceeding 5 MB ($\approx 5 \times 10^6$ bytes), rotates `msp-tray.log.2` (delete), `msp-tray.log.1 -> msp-tray.log.2`, `msp-tray.log -> msp-tray.log.1`, and re-opens fresh `msp-tray.log`.
+- **Sensitive Data Redaction:** Substring/regex masks pairing codes (e.g. `[A-Z0-9]{6}`), Bearer/JWT tokens, and passwords prior to disk persistence.
+- **Frontend Error Forwarding:** Tauri command `log_client_event` bridges React Webview unhandled errors and `ErrorBoundary` crashes into the same rolling log tagged `[WEBVIEW]`.
+- **Supportability:** Exposes `open_tray_log_dir` and `get_tray_log_info` to allow the user or on-site technician to inspect logs directly from the tray drawer.
 
-## Modular Checker Registry
-All checkers implement a unified `InvariantChecker` interface:
-```typescript
-export interface InvariantChecker {
-  readonly ruleCode: string; // e.g. "BL-101"
-  readonly ruleName: string;
-  readonly category: 'TICKETING' | 'SUBSCRIPTIONS' | 'SECURITY' | 'BILLING' | 'FINANCIAL' | 'CRM_HEALTH';
-  evaluate(sequence: ActionSequence): Promise<InvariantCheckResult>;
-}
-```
+## Task List
 
-## Dependency Graph
-1. **Core Types & Interfaces** (`server/src/modules/system/sentinel/types.ts`)
-   - Pure domain models (`ActionSequence`, `InvariantViolation`, `AuditReport`).
-2. **Aggregator Engine** (`server/src/modules/system/sentinel/services/SequenceAggregatorService.ts`)
-   - Read-only Drizzle queries grouped by entity IDs (`ticketId`, `tenantId`, `invoiceId`).
-3. **Domain Checker Suites** (`server/src/modules/system/sentinel/checkers/`):
-   - `ticketing/`: `SlaCancellationChecker`, `RoundRobinDispatchChecker`, `AlertNoiseFlappingChecker`, `TierEscalationChecker`.
-   - `subscriptions/`: `QuotaEnforcementChecker`, `LicenseTrueUpChecker`, `FeatureGatingChecker`, `DeviceVaultSecurityChecker`.
-   - `security/`: `StateMachineChecker`, `AuthorizationAndJitChecker`.
-   - `billing/`: `SubscriptionReactivationChecker`, `RenewalSchedulerChecker`, `TaxAndNcfChecker`, `NonPaymentEnforcementChecker`.
-   - `financial/`: `TechnicianBountyChecker`, `ProfitSplitChecker`.
-   - `crm_health/`: `CrmPipelineChecker`, `AccountHealthChecker`.
-4. **Vitest Regression Synthesizer** (`server/src/modules/system/sentinel/services/VitestRegressionSynthesizer.ts`)
-   - Code generator outputting Clean Architecture `*.spec.ts` files with mock dependencies.
-5. **Orchestrator, CLI & MCP Tool**
-   - `SequenceSentinelService.ts`
-   - `cli.ts` (`npm -w server run sentinel:audit`)
-   - MCP tool `msp_run_sentinel_audit` in `packages/mcp-server`
+### Phase 1: Rust Core Rolling Logger & Sanitizer
+- [ ] Task 1.1: Implement `logger.rs` with rolling file writer, size checks, and sensitive data redaction.
+- [ ] Task 1.2: Integrate logger bootstrap in `lib.rs` and instrument IPC lifecycle in `ipc.rs`.
+- [ ] Task 1.3: Unit tests for path resolution, rotation mechanics, and data redaction.
+
+### Checkpoint: Rust Core
+- [ ] Rust code builds cleanly.
+- [ ] Unit tests pass for rotation and redaction.
+
+### Phase 2: Tauri IPC Command Bridge & Client Service
+- [ ] Task 2.1: Add Tauri commands `log_client_event`, `get_tray_log_info`, and `open_tray_log_dir` in `lib.rs`.
+- [ ] Task 2.2: Add TypeScript bindings and unit tests in `packages/msp-tray/src/services/tauri.ts` and `tauri.test.ts`.
+
+### Checkpoint: Bridge
+- [ ] TypeScript types and mocks verified.
+- [ ] Frontend can invoke logging commands without errors.
+
+### Phase 3: Frontend Error Trapping & Drawer Diagnostics UI
+- [ ] Task 3.1: Create `ErrorBoundary.tsx` and global unhandled error handlers in `packages/msp-tray/src/`.
+- [ ] Task 3.2: Add "Open Logs" action / diagnostic info in tray drawer UI.
+- [ ] Task 3.3: Vitest tests for `ErrorBoundary` and error capture.
+
+### Checkpoint: Complete Verification
+- [ ] All tests pass (`npm -w @packages/msp-tray run test:run`).
+- [ ] Build succeeds (`npm -w @packages/msp-tray run build`).
+
+## Risks and Mitigations
+| Risk | Impact | Mitigation |
+| :--- | :---: | :--- |
+| Disk I/O blocking UI thread | Medium | Use synchronous write behind a mutex or buffered writer with short flush duration; disk writes are minimal outside errors. |
+| High IPC retry log spam during agent service downtime | High | Throttle repeated reconnect warning logs after first 3 attempts until next state change. |
+| Chat message PII leaked to disk | Critical | Ticket chat payloads are excluded from log statements; regex filter strips credentials. |
+
+## Open Questions
+- None. (Sharpened in Phase 1: LocalAppData directory, Rust+IPC+Webview scope, 5MB rolling cap).

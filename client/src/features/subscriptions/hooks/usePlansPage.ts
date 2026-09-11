@@ -118,6 +118,7 @@ export function usePlansPage() {
     () => `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9999)).padStart(4, '0')}`
   );
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
+  const [autoRenew, setAutoRenew] = useState<boolean>(true);
 
   // Tab Selector State (synced with the ?tab= URL search parameter)
   const { getParam, setParam, setParams } = useUrlState();
@@ -356,12 +357,22 @@ export function usePlansPage() {
     async function initializePaypal() {
       const scriptId = 'paypal-js-sdk-script';
       const existingScript = document.getElementById(scriptId) as HTMLScriptElement;
+      const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID || 'test';
+      const targetSrc = autoRenew
+        ? `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&vault=true&intent=subscription`
+        : `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD`;
 
-      if (!existingScript) {
+      if (existingScript && existingScript.src !== targetSrc) {
+        existingScript.remove();
+        if (typeof window !== 'undefined') {
+          delete (window as any).paypal;
+        }
+      }
+
+      if (!document.getElementById(scriptId)) {
         scriptElement = document.createElement('script');
         scriptElement.id = scriptId;
-        const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID || 'test';
-        scriptElement.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD`;
+        scriptElement.src = targetSrc;
         scriptElement.async = true;
         document.body.appendChild(scriptElement);
 
@@ -372,7 +383,7 @@ export function usePlansPage() {
           }
         });
       } else {
-        scriptElement = existingScript;
+        scriptElement = document.getElementById(scriptId) as HTMLScriptElement;
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -458,6 +469,34 @@ export function usePlansPage() {
                 throw err;
               }
             },
+            ...(autoRenew
+              ? {
+                  createSubscription: async () => {
+                    if (!acceptedTosRef.current) {
+                      addToast({
+                        title: t('plans.toasts.tosWarningTitle'),
+                        message: t('plans.toasts.tosWarningMsg'),
+                        type: 'warning',
+                      });
+                      throw new Error('Terms of Service not accepted');
+                    }
+                    setPaymentMessage(t('plans.preparingCheckout'));
+                    try {
+                      const response = await subscriptionService.createPaypalSubscription({
+                        plan: currentPlan.id,
+                        equipmentCount: currentEquipmentCount,
+                        billingCycle,
+                      });
+                      setPaymentMessage(t('plans.toasts.orderCreatedApprove'));
+                      return response.subscriptionId;
+                    } catch (err) {
+                      console.error(err);
+                      setPaymentMessage(t('plans.toasts.prepareCheckoutFailed'));
+                      throw err;
+                    }
+                  },
+                }
+              : {}),
           };
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -584,6 +623,7 @@ export function usePlansPage() {
     currentPlan,
     currentEquipmentCount,
     billingCycle,
+    autoRenew,
     tierChangeSubId,
     selectedPlan,
     activeSubscriptions,
@@ -1360,6 +1400,8 @@ export function usePlansPage() {
     cancelDeletePlan,
     fetchActiveSubscriptions,
     addToast,
+    autoRenew,
+    setAutoRenew,
   };
 }
 

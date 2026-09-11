@@ -130,11 +130,11 @@ export async function fetchAgentStatus(): Promise<AgentStatus> {
     return await invoke<AgentStatus>('get_agent_status');
   } catch {
     return {
-      agentOnline: true,
-      cloudConnected: true,
-      equipmentId: 'workstation-demo',
-      hostname: 'DEV-WORKSTATION-01',
-      tenantName: 'Acme Logistics SRL',
+      agentOnline: false,
+      cloudConnected: false,
+      equipmentId: undefined,
+      hostname: 'WORKSTATION',
+      tenantName: undefined,
       activeTicketCount: 0,
       isBound: true,
     };
@@ -306,4 +306,94 @@ export async function setTrayLanguage(locale: string): Promise<void> {
     console.error('[Tauri IPC] setTrayLanguage error:', err);
   }
 }
+
+export interface TrayLogInfo {
+  path: string;
+  exists: boolean;
+  sizeBytes: number;
+  directory: string;
+}
+
+/**
+ * Forwards an unhandled client error or diagnostic log event to the persistent rolling log file.
+ * @param {'info' | 'warn' | 'error' | 'debug'} level - Log severity level
+ * @param {string} message - Error description or log message
+ * @param {string} [stack] - Optional stack trace
+ * @returns {Promise<void>}
+ */
+export async function logClientEvent(
+  level: 'info' | 'warn' | 'error' | 'debug',
+  message: string,
+  stack?: string
+): Promise<void> {
+  if (!isTauriEnvironment()) {
+    if (level === 'error') {
+      console.error(`[WEBVIEW MOCK] ${message}`, stack ?? '');
+    } else if (level === 'warn') {
+      console.warn(`[WEBVIEW MOCK] ${message}`, stack ?? '');
+    } else {
+      console.info(`[WEBVIEW MOCK] ${message}`);
+    }
+    return;
+  }
+  try {
+    await invoke('log_client_event', { level, message, stack });
+  } catch (err) {
+    console.error('[Tauri IPC] logClientEvent error:', err);
+  }
+}
+
+/**
+ * Retrieves file path, existence, and size metadata of the persistent endpoint tray log.
+ * @returns {Promise<TrayLogInfo>}
+ */
+export async function getTrayLogInfo(): Promise<TrayLogInfo> {
+  if (!isTauriEnvironment()) {
+    return {
+      path: '%LOCALAPPDATA%\\MSP\\logs\\msp-tray.log',
+      exists: false,
+      sizeBytes: 0,
+      directory: '%LOCALAPPDATA%\\MSP\\logs',
+    };
+  }
+  try {
+    return await invoke<TrayLogInfo>('get_tray_log_info');
+  } catch {
+    return {
+      path: '',
+      exists: false,
+      sizeBytes: 0,
+      directory: '',
+    };
+  }
+}
+
+/**
+ * Opens the local directory containing the persistent log files in Windows File Explorer.
+ * @returns {Promise<void>}
+ */
+export async function openTrayLogDir(): Promise<void> {
+  if (!isTauriEnvironment()) return;
+  try {
+    await invoke('open_tray_log_dir');
+  } catch (err) {
+    console.error('[Tauri IPC] openTrayLogDir error:', err);
+  }
+}
+
+/**
+ * Triggers starting or restarting the background MSPEndpointAgent Windows Service.
+ * @returns {Promise<boolean>} True if service started successfully
+ */
+export async function restartAgentService(): Promise<boolean> {
+  if (!isTauriEnvironment()) return true;
+  try {
+    return await invoke<boolean>('restart_agent_service');
+  } catch (err) {
+    console.error('[Tauri IPC] restartAgentService error:', err);
+    throw err;
+  }
+}
+
+
 

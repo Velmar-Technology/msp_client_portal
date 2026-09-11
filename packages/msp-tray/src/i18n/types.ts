@@ -43,6 +43,15 @@ export interface TranslationDictionary {
     identify: string;
     hideToTray: string;
     langToggle: string;
+    openLogsTooltip: string;
+  };
+  service: {
+    offlineTitle: string;
+    offlineDesc: string;
+    restartBtn: string;
+    restarting: string;
+    restartSuccess: string;
+    restartFailed: string;
   };
   gate: {
     title: string;

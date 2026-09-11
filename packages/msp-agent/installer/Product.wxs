@@ -74,11 +74,26 @@
                               Wait="yes" />
             </Component>
 
-            <!-- Tray Assistant Executable -->
+            <!-- Tray Assistant Executable & Shortcuts -->
             <Component Id="MspTrayComponent" Guid="C4697F8A-28B9-450F-A16A-D1515E8D6BF4" Win64="yes">
               <File Id="MspTrayExe"
                     Source="$(var.TraySourceExe)"
-                    KeyPath="yes" />
+                    KeyPath="yes">
+                <!-- Start Menu Shortcut -->
+                <Shortcut Id="StartMenuShortcut"
+                          Directory="ProgramMenuFolder"
+                          Name="Velmar MSP Support Assistant"
+                          Description="Launch Velmar MSP Support Assistant and Live Chat"
+                          WorkingDirectory="INSTALLFOLDER"
+                          Advertise="no" />
+                <!-- Desktop Shortcut -->
+                <Shortcut Id="DesktopShortcut"
+                          Directory="DesktopFolder"
+                          Name="Velmar MSP Support Assistant"
+                          Description="Launch Velmar MSP Support Assistant and Live Chat"
+                          WorkingDirectory="INSTALLFOLDER"
+                          Advertise="no" />
+              </File>
             </Component>
 
             <!-- HKLM Run Key to auto-start Tray Assistant in interactive user sessions -->
@@ -94,6 +109,10 @@
           </Directory>
         </Directory>
       </Directory>
+
+      <!-- Standard Shell Folders for Per-Machine Shortcuts -->
+      <Directory Id="ProgramMenuFolder" />
+      <Directory Id="DesktopFolder" />
 
       <!-- %ProgramData%\MSP for persistent tokens and local audit logs (Never uninstalled) -->
       <Directory Id="CommonAppDataFolder">

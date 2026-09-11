@@ -33,6 +33,7 @@ The **SequenceSentinel Agent** acts as an autonomous integrity auditor and self-
 | **BL-202** | License True-Up | SUBSCRIPTIONS | Nightly reconciliation between active RMM agents/cloud seats and billed subscription contract quotas. |
 | **BL-204** | Feature Gating | SUBSCRIPTIONS | Enforces plan codes (`FEATURE_CODES`); unentitled tiers receive HTTP 403 or `<FeatureLockedPreview>`. |
 | **BL-205** | Device Vault Security | SUBSCRIPTIONS | Workstation passwords bound to machine slots (`hidePasswords: true`); revoked endpoints lock sessions. |
+| **BL-206** | Vault Provisioning & Invitation | SUBSCRIPTIONS | Guarantees organizations and zero-knowledge invites exist for PASSWORD_MANAGER plans; heals orphaned/stalled invites. |
 | **BL-301** | State Machine Matrix | SECURITY | Validates all transitions against `STATUS_TRANSITIONS`; enforces client tenant isolation and tech assignment. |
 | **BL-302** | Hybrid Authz & ZSP | SECURITY | SOTA PDP authorization: ReBAC, vector ACLs, and JIT ephemeral grants must strictly respect expiration. |
 | **BL-401** | Sub Reactivation | BILLING | Capturing invoice payment immediately transitions linked `EXPIRED` client subscriptions to `ACTIVE`. |
@@ -62,6 +63,9 @@ When executed with `--auto-heal` or `autoHeal: true`, the agent evaluates detect
 4. **Non-Payment Enforcement Remediator (`BL-702`):**
    - **Trigger:** Overdue invoice exceeds 5-day grace period while tenant account status remains `ACTIVE`.
    - **Remediation:** Updates tenant `account_status = 'READ_ONLY'` and records `read_only_at = new Date()`.
+5. **Vault Provisioning & Invitation Remediator (`BL-206`):**
+   - **Trigger:** Unresolved `VAULT_INVITATION_FAILED` or dropped organization invitation for password manager user.
+   - **Remediation:** Idempotently checks live membership (`checkUserInvitationStatus`), resets stalled accounts (`resetUserVaultAccess`), and dispatches fresh invitations under tenant circuit breaker.
 
 ---
 

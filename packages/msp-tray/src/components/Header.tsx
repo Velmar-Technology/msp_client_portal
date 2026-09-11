@@ -1,7 +1,7 @@
 import React from 'react';
-import { User, X, RefreshCw, Globe } from 'lucide-react';
+import { User, X, RefreshCw, Globe, FileText } from 'lucide-react';
 import { ShiftWorkerAttribution } from '../services/attribution';
-import { hideWindow } from '../services/tauri';
+import { hideWindow, openTrayLogDir } from '../services/tauri';
 import { useI18n } from '../i18n';
 import logoUrl from '../assets/logo.png';
 
@@ -86,6 +86,17 @@ export const Header: React.FC<HeaderProps> = ({
           title={t('header.refreshVitalsTooltip')}
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-[#0084ff]' : ''}`} />
+        </button>
+
+        {/* Diagnostic logs */}
+        <button
+          onClick={() => {
+            openTrayLogDir().catch(() => {});
+          }}
+          className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 border border-transparent hover:border-cyan-500/20 transition-all"
+          title={t('header.openLogsTooltip')}
+        >
+          <FileText className="w-3.5 h-3.5" />
         </button>
 
         {/* Worker Attribution Button */}

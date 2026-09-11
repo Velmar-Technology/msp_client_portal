@@ -81,10 +81,30 @@ impl AgentState {
     }
 
     pub fn load_from(path: &Path) -> Self {
-        std::fs::read(path)
+        let mut state: Self = std::fs::read(path)
             .ok()
             .and_then(|raw| serde_json::from_slice(&raw).ok())
-            .unwrap_or_default()
+            .unwrap_or_default();
+
+        if let Some(ref enc) = state.agent_token {
+            if !enc.trim().is_empty() {
+                match crate::crypto::unprotect_machine_secret(enc) {
+                    Ok(dec) => {
+                        state.agent_token = Some(dec);
+                    }
+                    Err(e) => {
+                        log::error!(
+                            "[SECURITY ALERT] Failed to unprotect agent_token: {}. Config cannot be authenticated on this hardware.",
+                            e
+                        );
+                        state.agent_token = None;
+                        state.slot_id = None;
+                    }
+                }
+            }
+        }
+
+        state
     }
 
     pub fn save(&self) -> std::io::Result<()> {
@@ -95,7 +115,20 @@ impl AgentState {
         if let Some(parent) = path.parent() {
             let _ = std::fs::create_dir_all(parent);
         }
-        let raw = serde_json::to_vec_pretty(self)?;
+
+        let mut disk_state = self.clone();
+        if let Some(ref tok) = disk_state.agent_token {
+            if !tok.trim().is_empty() {
+                match crate::crypto::protect_machine_secret(tok) {
+                    Ok(enc) => disk_state.agent_token = Some(enc),
+                    Err(e) => {
+                        log::warn!("[AgentState] Failed to DPAPI protect agent token: {}", e);
+                    }
+                }
+            }
+        }
+
+        let raw = serde_json::to_vec_pretty(&disk_state)?;
         std::fs::write(path, raw)
     }
 
@@ -236,9 +269,33 @@ mod tests {
         state.bind("slot-1", "tok-1");
         state.save_to(&path).unwrap();
 
+        let disk_content = std::fs::read_to_string(&path).unwrap();
+        assert!(disk_content.contains("dpapi:"));
+        assert!(!disk_content.contains("\"tok-1\""));
+
         let loaded = AgentState::load_from(&path);
         assert_eq!(loaded, state);
+        assert_eq!(loaded.agent_token.as_deref(), Some("tok-1"));
         assert!(loaded.is_bound());
+
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn load_from_corrupted_or_stolen_token_fails_safely() {
+        let path = unique_temp_path();
+        let mut state = AgentState::default();
+        state.bind("slot-1", "tok-1");
+        state.save_to(&path).unwrap();
+
+        let disk_content = std::fs::read_to_string(&path).unwrap();
+        let tampered = disk_content.replace("dpapi:", "dpapi:forgedalienkeybadpayload");
+        std::fs::write(&path, tampered).unwrap();
+
+        let loaded = AgentState::load_from(&path);
+        assert_eq!(loaded.agent_token, None);
+        assert_eq!(loaded.slot_id, None);
+        assert!(!loaded.is_bound());
 
         let _ = std::fs::remove_file(path);
     }

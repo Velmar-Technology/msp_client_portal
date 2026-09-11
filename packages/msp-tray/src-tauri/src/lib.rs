@@ -1,4 +1,5 @@
 mod ipc;
+mod logger;
 
 use ipc::{
     ActiveTicketState, AgentStatusPayload, CreateTicketPayload, CreateTicketResponsePayload,
@@ -244,6 +245,113 @@ fn set_tray_language(
     Ok(())
 }
 
+#[tauri::command]
+fn log_client_event(level: String, message: String, stack: Option<String>) -> Result<(), String> {
+    let lvl = level.to_uppercase();
+    let stack_suffix = match stack {
+        Some(s) if !s.trim().is_empty() => format!(" | Stack: {}", s.trim()),
+        _ => String::new(),
+    };
+    match lvl.as_str() {
+        "ERROR" | "FATAL" => {
+            log::error!("[WEBVIEW] {}{}", message, stack_suffix);
+        }
+        "WARN" | "WARNING" => {
+            log::warn!("[WEBVIEW] {}{}", message, stack_suffix);
+        }
+        "DEBUG" => {
+            log::debug!("[WEBVIEW] {}{}", message, stack_suffix);
+        }
+        _ => {
+            log::info!("[WEBVIEW] {}{}", message, stack_suffix);
+        }
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn get_tray_log_info() -> logger::TrayLogInfo {
+    logger::get_tray_log_info()
+}
+
+#[tauri::command]
+fn open_tray_log_dir() -> Result<(), String> {
+    let info = logger::get_tray_log_info();
+    if info.directory.is_empty() {
+        return Err("Log directory could not be resolved".to_string());
+    }
+
+    let _ = std::fs::create_dir_all(&info.directory);
+
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .arg(&info.directory)
+            .spawn()
+            .map_err(|e| format!("Failed to open explorer: {}", e))?;
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        std::process::Command::new("xdg-open")
+            .arg(&info.directory)
+            .spawn()
+            .map_err(|e| format!("Failed to open directory: {}", e))?;
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn restart_agent_service() -> Result<bool, String> {
+    log::info!("[MSP-TRAY] User initiated restart/start of MSPEndpointAgent service");
+    #[cfg(target_os = "windows")]
+    {
+        // 1. Direct sc.exe start attempt
+        if let Ok(out) = std::process::Command::new("sc")
+            .args(&["start", "MSPEndpointAgent"])
+            .output()
+        {
+            let stdout = String::from_utf8_lossy(&out.stdout);
+            let stderr = String::from_utf8_lossy(&out.stderr);
+            if out.status.success() || stdout.contains("1056") || stderr.contains("1056") {
+                log::info!("[MSP-TRAY] MSPEndpointAgent service started directly via sc.exe");
+                tokio::time::sleep(tokio::time::Duration::from_millis(1500)).await;
+                return Ok(true);
+            }
+        }
+
+        // 2. Fall back to elevated UAC prompt
+        log::info!("[MSP-TRAY] Requesting elevation via PowerShell RunAs to start MSPEndpointAgent");
+        let elevated = std::process::Command::new("powershell")
+            .args(&[
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "Start-Process -FilePath 'sc.exe' -ArgumentList 'start MSPEndpointAgent' -Verb RunAs -Wait -WindowStyle Hidden",
+            ])
+            .output()
+            .map_err(|e| format!("Failed to spawn elevation prompt: {}", e))?;
+
+        if elevated.status.success() {
+            log::info!("[MSP-TRAY] Elevated start completed, waiting for IPC pipe...");
+            tokio::time::sleep(tokio::time::Duration::from_millis(1500)).await;
+            Ok(true)
+        } else {
+            let err_msg = String::from_utf8_lossy(&elevated.stderr).to_string();
+            Err(if err_msg.trim().is_empty() {
+                "Service start was cancelled or declined".to_string()
+            } else {
+                err_msg
+            })
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        Err("Service restart is only supported on Windows".to_string())
+    }
+}
+
 fn toggle_main_window(app: &tauri::AppHandle) {
     let window = app
         .get_webview_window("main")
@@ -290,6 +398,7 @@ fn toggle_main_window(app: &tauri::AppHandle) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    logger::init_logger();
     let app_state = AppState::default();
     let sampler = SystemSampler::new();
 
@@ -308,7 +417,11 @@ pub fn run() {
             send_chat_message,
             resolve_ticket,
             hide_window,
-            set_tray_language
+            set_tray_language,
+            log_client_event,
+            get_tray_log_info,
+            open_tray_log_dir,
+            restart_agent_service
         ])
         .setup(|app| {
             let ipc_client = IpcClient::new(app.handle().clone());

@@ -43,6 +43,15 @@ export const en_US: TranslationDictionary = {
     identify: 'Identify',
     hideToTray: 'Hide to tray',
     langToggle: 'Switch to Spanish (es_DO)',
+    openLogsTooltip: 'Open diagnostic logs folder',
+  },
+  service: {
+    offlineTitle: 'MSP Agent Service Stopped',
+    offlineDesc: 'The background telemetry & tunnel service (MSPEndpointAgent) is not running.',
+    restartBtn: 'Start Agent Service',
+    restarting: 'Starting Service...',
+    restartSuccess: 'Service started successfully! Reconnecting...',
+    restartFailed: 'Failed to start service. Elevated permissions may be required.',
   },
   gate: {
     title: 'Workstation Activation Required',

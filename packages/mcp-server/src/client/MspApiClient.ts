@@ -969,6 +969,21 @@ ${recommendationList}
   }
 
   /**
+   * Resets and heals a user's vault access and organization invitation.
+   *
+   * @param params - Target email and tenantId
+   * @returns Reset status and result message
+   */
+  async resetVaultAccess(params: { email?: string; tenantId?: string } = {}): Promise<{ success: boolean; message: string }> {
+    const res = await this.request<any>({
+      method: 'POST',
+      url: '/system/vault/reset-user-access',
+      data: params,
+    });
+    return res.data || res;
+  }
+
+  /**
    * Retrieves subscriptions for a specific tenant or current user context.
    *
    * @param params - Optional tenant filter

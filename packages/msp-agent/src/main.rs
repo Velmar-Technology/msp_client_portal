@@ -1,3 +1,4 @@
+mod crypto;
 mod diagnostics;
 mod ipc_server;
 mod pairing;
@@ -852,7 +853,19 @@ fn init_logger() {
         file: file_handle.map(std::sync::Mutex::new),
     };
 
+    use std::io::Write;
     let _ = env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
+        .format(|buf, record| {
+            let local_time = chrono::Local::now().format("%Y-%m-%dT%H:%M:%S%:z");
+            writeln!(
+                buf,
+                "[{} {:5} {}] {}",
+                local_time,
+                record.level(),
+                record.target(),
+                record.args()
+            )
+        })
         .target(env_logger::Target::Pipe(Box::new(writer)))
         .try_init();
 }

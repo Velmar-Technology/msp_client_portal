@@ -100,7 +100,9 @@ services:
       - NEXTCLOUD_TOTAL_CAPACITY=${NEXTCLOUD_TOTAL_CAPACITY}
       - NEXTCLOUD_EXTERNAL_URL=${NEXTCLOUD_EXTERNAL_URL:-https://atlas.velmartech.com.do}
       - VAULTWARDEN_URL=${VAULTWARDEN_URL:-http://vaultwarden:80}
-      - VAULTWARDEN_ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN:-}
+      # REQUIRED — shared by msp_vaultwarden (ADMIN_TOKEN). Generate via: openssl rand -hex 32.
+      # No fallback: an unset/empty value previously triggered a silent offline "simulation" in the backend.
+      - VAULTWARDEN_ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN:?VAULTWARDEN_ADMIN_TOKEN is required}
       - VAULTWARDEN_EXTERNAL_URL=${VAULTWARDEN_EXTERNAL_URL:-https://helpdesk.velmartech.com.do/vault}
       - ZABBIX_URL=${ZABBIX_URL}
       - ZABBIX_USER=${ZABBIX_USER}
@@ -466,7 +468,8 @@ services:
       - SIGNUPS_ALLOWED=false
       - INVITATIONS_ALLOWED=true
       - SHOW_PASSWORD_HINT=false
-      - ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN}
+      # Admin API key for Bitwarden server; must match server's VAULTWARDEN_ADMIN_TOKEN.
+      - ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN:?VAULTWARDEN_ADMIN_TOKEN is required}
       - WEBSOCKET_ENABLED=true
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_FROM=${SMTP_USER}
