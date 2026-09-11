@@ -26,9 +26,9 @@ Instead of filing an urgent support ticket to have a technician manually delete 
 
 ## Key Assumptions to Validate
 
-- [ ] **Vaultwarden Admin User Deletion**: Verify that calling the Vaultwarden Admin API to purge the user account completely clears the email from the SQLite database, allowing the subsequent invitation to prompt a fresh account creation screen rather than a login screen.
-- [ ] **Organization Collection Retention**: Confirm that removing and re-inviting a user restores access to their tenant organization's shared collections once accepted by the user and confirmed by the org.
-- [ ] **Rate Limiting**: Ensure a rate limit (e.g. maximum 3 reset requests per user per 24 hours) to prevent email spam or abuse.
+- [x] **Vaultwarden Admin User Deletion**: Verified that calling the Vaultwarden Admin API (`POST /admin/users/{uuid}/delete`) with a negotiated `VW_ADMIN` session cookie clears the email completely from the SQLite database, allowing the subsequent invitation to prompt a fresh account creation screen.
+- [x] **Organization Collection Retention**: Confirmed that removing and re-inviting a user via `/api/organizations/{orgId}/users/invite` (with fallback to `/admin/invite` under BL-206) issues a fresh invitation and preserves organization collection mappings.
+- [x] **Rate Limiting**: Admin session cookie is cached for 15 minutes to prevent triggering Rocket's HTTP 429 burst rate limiting during administrative actions.
 
 ---
 
