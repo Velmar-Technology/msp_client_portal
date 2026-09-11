@@ -142,4 +142,51 @@ export function registerEquipmentTools(server: McpServer, apiClient: MspApiClien
       }
     }
   );
+
+  // 5. Tool: msp_update_client_equipment_quota
+  server.tool(
+    'msp_update_client_equipment_quota',
+    'Update or expand the equipment quota (device slots) for a client tenant with an active subscription. Pre-provisions new device slots and optionally issues a prorated true-up invoice.',
+    {
+      tenantId: z.string().uuid().describe('Target client tenant UUID'),
+      equipmentCount: z
+        .number()
+        .int()
+        .min(1)
+        .max(100)
+        .describe('New total equipment count (slots) for the subscription'),
+      createInvoice: z
+        .boolean()
+        .default(true)
+        .describe('Whether to generate a prorated invoice for newly added slots (default: true)'),
+      reason: z
+        .string()
+        .optional()
+        .describe('Operational reason or audit note for expanding equipment quota'),
+    },
+    async ({ tenantId, equipmentCount, createInvoice = true, reason }) => {
+      try {
+        const result = await apiClient.updateClientEquipmentQuota({
+          tenantId,
+          equipmentCount,
+          createInvoice,
+          reason,
+        });
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      } catch (err: any) {
+        return {
+          isError: true,
+          content: [{ type: 'text', text: `Failed to update client equipment quota: ${err.message}` }],
+        };
+      }
+    }
+  );
 }
+

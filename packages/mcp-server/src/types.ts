@@ -358,6 +358,27 @@ export interface NotificationListResult {
   unreadCount: number;
 }
 
+export interface SubscriptionSummary {
+  id: string;
+  client_id: string;
+  service_name: string;
+  plan: string;
+  status: string;
+  renewal_date: string;
+  equipment_count: number;
+  tenant_id?: string;
+  created_at: string;
+}
 
-
-
+export interface EquipmentQuotaUpdateResult {
+  success: boolean;
+  subscriptionId: string;
+  tenantId: string;
+  previousCount: number;
+  newCount: number;
+  slotsAdded: number;
+  plan: string;
+  status: string;
+  invoiceIssued: boolean;
+  message: string;
+}

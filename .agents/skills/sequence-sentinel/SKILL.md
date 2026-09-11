@@ -96,10 +96,19 @@ npm -w server run sentinel:audit -- --hours=48 --generate-tests
 ### Workflow 4: Agent Tool Execution via MCP
 When operating as an AI assistant via MCP, invoke:
 ```typescript
+// 1. Routine Sentinel Audit
 await call_mcp_tool('msp-support', 'msp_run_sentinel_audit', {
   hours: 24,
   autoHeal: true,
   generateTests: false,
+});
+
+// 2. On-Demand Client Equipment Quota Expansion (BL-202)
+await call_mcp_tool('msp-support', 'msp_update_client_equipment_quota', {
+  tenantId: 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33',
+  equipmentCount: 15,
+  createInvoice: true, // Auto-generates prorated true-up invoice with 18% ITBIS
+  reason: 'Client requested expansion to onboard new engineering workstations',
 });
 ```
 

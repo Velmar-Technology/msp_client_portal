@@ -652,6 +652,58 @@ describe('MSP MCP Server Tools Registration and Execution', () => {
       expect(result.content[0].text).toContain('Agent for equipment is offline');
     });
   });
+
+  describe('Equipment Quota Management Tool', () => {
+    it('should handle msp_update_client_equipment_quota successfully', async () => {
+      vi.spyOn(mockApiClient, 'updateClientEquipmentQuota').mockResolvedValueOnce({
+        success: true,
+        subscriptionId: 'sub-uuid-123',
+        tenantId: 'tenant-uuid-456',
+        previousCount: 2,
+        newCount: 5,
+        slotsAdded: 3,
+        plan: 'ENTERPRISE',
+        status: 'ACTIVE',
+        invoiceIssued: true,
+        message: "Equipment quota successfully updated from 2 to 5 slot(s) for tenant 'tenant-uuid-456'. 3 new slot(s) pre-provisioned in PENDING_ACTIVATION.",
+      });
+
+      registerEquipmentTools(server, mockApiClient);
+      const tools = (server as any)._registeredTools;
+      const quotaTool = tools['msp_update_client_equipment_quota'];
+      expect(quotaTool).toBeDefined();
+
+      const result = await quotaTool.handler({
+        tenantId: 'tenant-uuid-456',
+        equipmentCount: 5,
+        createInvoice: true,
+        reason: 'Client requested extra developer workstations via Sentinel',
+      });
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].text).toContain('Equipment quota successfully updated from 2 to 5');
+      expect(result.content[0].text).toContain('3 new slot(s) pre-provisioned');
+    });
+
+    it('should return isError when updateClientEquipmentQuota fails', async () => {
+      vi.spyOn(mockApiClient, 'updateClientEquipmentQuota').mockRejectedValueOnce(
+        new Error('No subscription found for tenant')
+      );
+
+      registerEquipmentTools(server, mockApiClient);
+      const tools = (server as any)._registeredTools;
+      const quotaTool = tools['msp_update_client_equipment_quota'];
+
+      const result = await quotaTool.handler({
+        tenantId: 'tenant-uuid-999',
+        equipmentCount: 10,
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Failed to update client equipment quota: No subscription found for tenant');
+    });
+  });
 });
+
 
 

@@ -23,6 +23,8 @@ import type {
   ExpenseSummary,
   SystemApiStatusResponse,
   NotificationListResult,
+  SubscriptionSummary,
+  EquipmentQuotaUpdateResult,
 } from '../types.js';
 
 export class MspApiClient {
@@ -964,6 +966,92 @@ ${recommendationList}
       data: params,
     });
     return res.data || res;
+  }
+
+  /**
+   * Retrieves subscriptions for a specific tenant or current user context.
+   *
+   * @param params - Optional tenant filter
+   * @returns Array of SubscriptionSummary records
+   */
+  async getSubscriptions(params?: { tenantId?: string }): Promise<SubscriptionSummary[]> {
+    const res = await this.request<any>({
+      method: 'GET',
+      url: '/subscriptions',
+      params: params?.tenantId ? { tenantId: params.tenantId } : undefined,
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Updates an existing subscription contract.
+   *
+   * @param subscriptionId - Target subscription UUID
+   * @param data - Modification payload (plan, equipmentCount, status, createInvoice, reason)
+   * @returns Updated subscription details
+   */
+  async updateSubscription(
+    subscriptionId: string,
+    data: {
+      equipmentCount?: number;
+      plan?: string;
+      status?: string;
+      createInvoice?: boolean;
+      reason?: string;
+    }
+  ): Promise<SubscriptionSummary> {
+    const res = await this.request<any>({
+      method: 'PATCH',
+      url: `/subscriptions/${subscriptionId}`,
+      data,
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Adjusts and expands equipment quota for a client tenant, pre-provisions device slots,
+   * and optionally issues a prorated true-up invoice.
+   *
+   * @param params - Target tenantId, equipmentCount, createInvoice flag, and audit reason
+   * @returns EquipmentQuotaUpdateResult summary
+   */
+  async updateClientEquipmentQuota(params: {
+    tenantId: string;
+    equipmentCount: number;
+    createInvoice?: boolean;
+    reason?: string;
+  }): Promise<EquipmentQuotaUpdateResult> {
+    const subscriptions = await this.getSubscriptions({ tenantId: params.tenantId });
+    const subList = Array.isArray(subscriptions) ? subscriptions : (subscriptions as any).data || [];
+    const activeSub = subList.find((s: SubscriptionSummary) => s.status === 'ACTIVE') || subList[0];
+
+    if (!activeSub) {
+      throw new Error(`No subscription found for tenant '${params.tenantId}'`);
+    }
+
+    const previousCount = activeSub.equipment_count;
+    const slotsAdded = Math.max(0, params.equipmentCount - previousCount);
+
+    const updated = await this.updateSubscription(activeSub.id, {
+      equipmentCount: params.equipmentCount,
+      createInvoice: params.createInvoice ?? true,
+      reason: params.reason,
+    });
+
+    const isInvoiceIssued = params.createInvoice ?? true;
+
+    return {
+      success: true,
+      subscriptionId: activeSub.id,
+      tenantId: params.tenantId,
+      previousCount,
+      newCount: params.equipmentCount,
+      slotsAdded,
+      plan: updated.plan || activeSub.plan,
+      status: updated.status || activeSub.status,
+      invoiceIssued: isInvoiceIssued && slotsAdded > 0,
+      message: `Equipment quota successfully updated from ${previousCount} to ${params.equipmentCount} slot(s) for tenant '${params.tenantId}'. ${slotsAdded > 0 ? `${slotsAdded} new slot(s) pre-provisioned in PENDING_ACTIVATION.` : ''}`,
+    };
   }
 }
 
