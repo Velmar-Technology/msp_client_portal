@@ -793,6 +793,7 @@ dependencies = [
 name = "msp-agent"
 version = "1.11.5"
 dependencies = [
+ "base64",
  "chrono",
  "env_logger",
  "futures-util",

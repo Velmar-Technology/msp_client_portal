@@ -1,3 +1,4 @@
+mod crypto;
 mod diagnostics;
 mod ipc_server;
 mod pairing;
