@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.11.9](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.8...v1.11.9) (2026-09-11)
+
+
+### Features
+
+* **rmm:** add unified WiX MSI installer with dual-channel silent upgrade capability ([664d7ca](https://github.com/Velmar-Technology/msp_client_portal/commit/664d7ca8347bfd25469c52912d13e9378fbbde86))
+* **sentinel:** add flapping remediator, dry-run simulation, DLQ, and smart regression synthesis ([d257547](https://github.com/Velmar-Technology/msp_client_portal/commit/d257547d149f2256a3c3be27ba788a832d6bf331))
+* **sentinel:** implement business logic integrity auditor and self-healing ([260d18b](https://github.com/Velmar-Technology/msp_client_portal/commit/260d18b5394b167e15530b2304b91a5db8336c6b))
+* **subscriptions:** add on-demand equipment quota expansion mcp tool for sentinel ([2947051](https://github.com/Velmar-Technology/msp_client_portal/commit/294705125607417133c63509861b37c08321a793))
+* **tray:** add full-stack lightweight i18n support for en_US and es_DO ([56f38c1](https://github.com/Velmar-Technology/msp_client_portal/commit/56f38c18af2b7213e8d5fcfc69cae2d5ec5282e0))
+* **tray:** implement workstation activation gate for unbound endpoints ([9c3a50d](https://github.com/Velmar-Technology/msp_client_portal/commit/9c3a50d49a054cb193cfd084df28277a8a006864))
+
+
+### Bug Fixes
+
+* **installer:** resolve SCM service start timeout and running process conflicts ([5f20a71](https://github.com/Velmar-Technology/msp_client_portal/commit/5f20a71162cd27548beb4d45e7c59c9887a00fc4))
+* **sentinel:** resolve import typo, refine state machine checks, and align bounty remediator schema ([f58afd4](https://github.com/Velmar-Technology/msp_client_portal/commit/f58afd475c663cc7d5764a1ed9a997bcbd303fb8))
+
 ## [1.11.8](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.7...v1.11.8) (2026-09-11)
 
 
