@@ -302,6 +302,56 @@ fn open_tray_log_dir() -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+async fn restart_agent_service() -> Result<bool, String> {
+    log::info!("[MSP-TRAY] User initiated restart/start of MSPEndpointAgent service");
+    #[cfg(target_os = "windows")]
+    {
+        // 1. Direct sc.exe start attempt
+        if let Ok(out) = std::process::Command::new("sc")
+            .args(&["start", "MSPEndpointAgent"])
+            .output()
+        {
+            let stdout = String::from_utf8_lossy(&out.stdout);
+            let stderr = String::from_utf8_lossy(&out.stderr);
+            if out.status.success() || stdout.contains("1056") || stderr.contains("1056") {
+                log::info!("[MSP-TRAY] MSPEndpointAgent service started directly via sc.exe");
+                tokio::time::sleep(tokio::time::Duration::from_millis(1500)).await;
+                return Ok(true);
+            }
+        }
+
+        // 2. Fall back to elevated UAC prompt
+        log::info!("[MSP-TRAY] Requesting elevation via PowerShell RunAs to start MSPEndpointAgent");
+        let elevated = std::process::Command::new("powershell")
+            .args(&[
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "Start-Process -FilePath 'sc.exe' -ArgumentList 'start MSPEndpointAgent' -Verb RunAs -Wait -WindowStyle Hidden",
+            ])
+            .output()
+            .map_err(|e| format!("Failed to spawn elevation prompt: {}", e))?;
+
+        if elevated.status.success() {
+            log::info!("[MSP-TRAY] Elevated start completed, waiting for IPC pipe...");
+            tokio::time::sleep(tokio::time::Duration::from_millis(1500)).await;
+            Ok(true)
+        } else {
+            let err_msg = String::from_utf8_lossy(&elevated.stderr).to_string();
+            Err(if err_msg.trim().is_empty() {
+                "Service start was cancelled or declined".to_string()
+            } else {
+                err_msg
+            })
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        Err("Service restart is only supported on Windows".to_string())
+    }
+}
+
 fn toggle_main_window(app: &tauri::AppHandle) {
     let window = app
         .get_webview_window("main")
@@ -370,7 +420,8 @@ pub fn run() {
             set_tray_language,
             log_client_event,
             get_tray_log_info,
-            open_tray_log_dir
+            open_tray_log_dir,
+            restart_agent_service
         ])
         .setup(|app| {
             let ipc_client = IpcClient::new(app.handle().clone());

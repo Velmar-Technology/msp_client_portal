@@ -18,6 +18,7 @@ import {
   logClientEvent,
   getTrayLogInfo,
   openTrayLogDir,
+  restartAgentService,
 } from './tauri';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
@@ -104,10 +105,18 @@ describe('fetchAgentStatus', () => {
     expect(mockInvoke).toHaveBeenCalledWith('get_agent_status');
   });
 
-  it('falls back to default status when invoke rejects', async () => {
+  it('falls back to offline status when invoke rejects in Tauri', async () => {
     (window as unknown as Record<string, unknown>).__TAURI__ = { core: {} };
     mockInvoke.mockRejectedValue(new Error('ipc unavailable'));
-    await expect(fetchAgentStatus()).resolves.toEqual(FALLBACK_STATUS);
+    await expect(fetchAgentStatus()).resolves.toEqual({
+      agentOnline: false,
+      cloudConnected: false,
+      equipmentId: undefined,
+      hostname: 'WORKSTATION',
+      tenantName: undefined,
+      activeTicketCount: 0,
+      isBound: true,
+    });
   });
 });
 
@@ -366,5 +375,25 @@ describe('openTrayLogDir', () => {
     mockInvoke.mockResolvedValue(undefined);
     await openTrayLogDir();
     expect(mockInvoke).toHaveBeenCalledWith('open_tray_log_dir');
+  });
+});
+
+describe('restartAgentService', () => {
+  it('returns true outside Tauri runtime', async () => {
+    await expect(restartAgentService()).resolves.toBe(true);
+    expect(mockInvoke).not.toHaveBeenCalled();
+  });
+
+  it('invokes restart_agent_service inside Tauri runtime', async () => {
+    (window as unknown as Record<string, unknown>).__TAURI__ = { core: {} };
+    mockInvoke.mockResolvedValue(true);
+    await expect(restartAgentService()).resolves.toBe(true);
+    expect(mockInvoke).toHaveBeenCalledWith('restart_agent_service');
+  });
+
+  it('propagates error when restart_agent_service rejects', async () => {
+    (window as unknown as Record<string, unknown>).__TAURI__ = { core: {} };
+    mockInvoke.mockRejectedValue(new Error('Access is denied'));
+    await expect(restartAgentService()).rejects.toThrow('Access is denied');
   });
 });

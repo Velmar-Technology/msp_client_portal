@@ -45,6 +45,14 @@ export interface TranslationDictionary {
     langToggle: string;
     openLogsTooltip: string;
   };
+  service: {
+    offlineTitle: string;
+    offlineDesc: string;
+    restartBtn: string;
+    restarting: string;
+    restartSuccess: string;
+    restartFailed: string;
+  };
   gate: {
     title: string;
     subtitle: string;

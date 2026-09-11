@@ -130,11 +130,11 @@ export async function fetchAgentStatus(): Promise<AgentStatus> {
     return await invoke<AgentStatus>('get_agent_status');
   } catch {
     return {
-      agentOnline: true,
-      cloudConnected: true,
-      equipmentId: 'workstation-demo',
-      hostname: 'DEV-WORKSTATION-01',
-      tenantName: 'Acme Logistics SRL',
+      agentOnline: false,
+      cloudConnected: false,
+      equipmentId: undefined,
+      hostname: 'WORKSTATION',
+      tenantName: undefined,
       activeTicketCount: 0,
       isBound: true,
     };
@@ -380,5 +380,20 @@ export async function openTrayLogDir(): Promise<void> {
     console.error('[Tauri IPC] openTrayLogDir error:', err);
   }
 }
+
+/**
+ * Triggers starting or restarting the background MSPEndpointAgent Windows Service.
+ * @returns {Promise<boolean>} True if service started successfully
+ */
+export async function restartAgentService(): Promise<boolean> {
+  if (!isTauriEnvironment()) return true;
+  try {
+    return await invoke<boolean>('restart_agent_service');
+  } catch (err) {
+    console.error('[Tauri IPC] restartAgentService error:', err);
+    throw err;
+  }
+}
+
 
 

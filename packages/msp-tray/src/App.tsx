@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { LifeBuoy, Printer, Wifi, FileWarning, Sparkles, Zap, FolderOpen } from "lucide-react";
+import { LifeBuoy, Printer, Wifi, FileWarning, Sparkles, Zap, FolderOpen, AlertTriangle, RotateCcw } from "lucide-react";
 import {
   SystemVitals,
   AgentStatus,
@@ -10,6 +10,7 @@ import {
   fetchActiveTicket,
   fetchTicketList,
   refreshPairingCode,
+  restartAgentService,
   listenAgentBound,
   listenAgentUnbound,
 } from "./services/tauri";
@@ -41,6 +42,30 @@ export const App: React.FC = () => {
   const [modalInitialTitle, setModalInitialTitle] = useState('');
   const [modalInitialPriority, setModalInitialPriority] = useState('MEDIUM');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRestartingService, setIsRestartingService] = useState(false);
+  const [restartMessage, setRestartMessage] = useState<{ text: string; isError: boolean } | null>(null);
+
+  const handleRestartService = async () => {
+    setIsRestartingService(true);
+    setRestartMessage(null);
+    try {
+      const success = await restartAgentService();
+      if (success) {
+        setRestartMessage({ text: t('service.restartSuccess'), isError: false });
+        setTimeout(async () => {
+          await loadStatus();
+          await loadTickets(false);
+        }, 1500);
+      } else {
+        setRestartMessage({ text: t('service.restartFailed'), isError: true });
+      }
+    } catch (err: any) {
+      const msg = typeof err === 'string' ? err : err?.message || t('service.restartFailed');
+      setRestartMessage({ text: msg, isError: true });
+    } finally {
+      setIsRestartingService(false);
+    }
+  };
 
   const openNewTicketModal = (initial?: { title?: string; category?: string; priority?: string }) => {
     if (agentStatus && !agentStatus.isBound) return;
@@ -197,7 +222,42 @@ export const App: React.FC = () => {
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto p-3.5 space-y-2.5 flex flex-col min-h-0">
-        {agentStatus && !agentStatus.isBound ? (
+        {agentStatus && !agentStatus.agentOnline ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-4 text-center my-auto">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mb-3 shadow-lg shadow-amber-500/10">
+              <AlertTriangle className="w-6 h-6 text-amber-400" />
+            </div>
+            <h2 className="text-sm font-bold text-slate-100 mb-1.5">
+              {t('service.offlineTitle')}
+            </h2>
+            <p className="text-xs text-slate-400 leading-relaxed mb-4 max-w-[280px]">
+              {t('service.offlineDesc')}
+            </p>
+
+            {restartMessage && (
+              <div
+                className={`text-[11px] px-3 py-1.5 rounded-lg mb-3.5 max-w-[280px] border ${
+                  restartMessage.isError
+                    ? 'bg-rose-500/15 border-rose-500/30 text-rose-300'
+                    : 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
+                }`}
+              >
+                {restartMessage.text}
+              </div>
+            )}
+
+            <button
+              onClick={handleRestartService}
+              disabled={isRestartingService}
+              className="w-full max-w-[240px] py-2 px-3 rounded-lg bg-gradient-to-r from-[#0070db] via-[#0084ff] to-[#0094ff] hover:from-[#0060c2] hover:to-[#0070db] active:scale-[0.99] text-white font-semibold text-xs shadow-lg shadow-[#0084ff]/30 border border-blue-400/30 flex items-center justify-center gap-2 transition-all disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <RotateCcw className={`w-3.5 h-3.5 ${isRestartingService ? 'animate-spin' : ''}`} />
+              <span>
+                {isRestartingService ? t('service.restarting') : t('service.restartBtn')}
+              </span>
+            </button>
+          </div>
+        ) : agentStatus && !agentStatus.isBound ? (
           <ActivationGate
             pairingCode={agentStatus.pairingCode}
             pairingCodeExpiresAt={agentStatus.pairingCodeExpiresAt}

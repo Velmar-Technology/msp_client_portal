@@ -45,6 +45,14 @@ export const es_DO: TranslationDictionary = {
     langToggle: 'Cambiar a Inglés (en_US)',
     openLogsTooltip: 'Abrir carpeta de registros de diagnóstico',
   },
+  service: {
+    offlineTitle: 'Servicio de Agente MSP Detenido',
+    offlineDesc: 'El servicio en segundo plano (MSPEndpointAgent) no se está ejecutando.',
+    restartBtn: 'Iniciar Servicio de Agente',
+    restarting: 'Iniciando Servicio...',
+    restartSuccess: '¡Servicio iniciado con éxito! Reconectando...',
+    restartFailed: 'Error al iniciar el servicio. Se pueden requerir permisos elevados.',
+  },
   gate: {
     title: 'Activación de Estación Requerida',
     subtitle: 'Este equipo está instalado pero aún no está vinculado a la suscripción de soporte de su empresa.',
