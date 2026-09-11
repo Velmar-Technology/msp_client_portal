@@ -105,10 +105,61 @@ await call_mcp_tool('msp-support', 'msp_run_sentinel_audit', {
 
 ---
 
-## 5. Definition of Done for Integrity Operations
+## 5. Procedure for Adding New Rules, Checkers & Remediators
+
+When extending Sentinel with a new business logic invariant or automated self-healing capability, follow this 5-step recipe:
+
+### Step 1: Define the Invariant Specification
+1. Assign a canonical Rule Code (e.g. `BL-901`) and human-readable Name.
+2. Assign a Category: `TICKETING`, `SUBSCRIPTIONS`, `SECURITY`, `BILLING`, `FINANCIAL`, or `CRM_HEALTH`.
+3. Formulate the exact deterministic condition (e.g. *"Daily backup jobs must complete within 4 hours"*).
+
+### Step 2: Ensure Data Ingestion (`SequenceAggregatorService.ts`)
+- If checking new audit logs or entity events, add read-only temporal queries bounded by `startDate` and `endDate` inside `server/src/modules/system/sentinel/services/SequenceAggregatorService.ts`.
+- Attach the entity events to the chronological `ActionSequence`.
+- **Constraint:** All queries must be non-locking `SELECT` statements. Never acquire table or row locks.
+
+### Step 3: Implement the Invariant Checker (`checkers/<category>/`)
+1. Create `server/src/modules/system/sentinel/checkers/<category>/<RuleName>Checker.ts` implementing `InvariantChecker`:
+   ```typescript
+   export class ExampleChecker implements InvariantChecker {
+     readonly ruleCode = 'BL-901';
+     readonly ruleName = 'Example Invariant Rule';
+     readonly category = 'SECURITY';
+
+     async evaluate(sequences: ActionSequence[]): Promise<InvariantCheckResult> {
+       const violations: InvariantViolation[] = [];
+       // Evaluate deterministic sequence logic...
+       return { ruleCode: this.ruleCode, ruleName: this.ruleName, category: this.category, passed: violations.length === 0, violations };
+     }
+   }
+   ```
+2. Register the checker instance in `SequenceSentinelService.ts` constructor (`this.checkers`).
+
+### Step 4: Implement Autonomous Remediator (Optional Self-Healing)
+If the invariant breach can be remediated safely and automatically without human ambiguity:
+1. Create `server/src/modules/system/sentinel/remediators/<RuleName>Remediator.ts` implementing `RemediationHandler`:
+   - Implement `canRemediate(violation: InvariantViolation): boolean`.
+   - Implement `remediate(violation: InvariantViolation, options: { dryRun?: boolean }): Promise<RemediationResult>`.
+   - **Safety Invariant:** Always perform an idempotency state check prior to write; respect `options.dryRun`.
+2. Register the remediator instance in `SelfHealingService.ts` constructor (`this.remediators`). The sliding 1-hour tenant circuit breaker ($\le 5$ fixes/tenant/hour) and Dead-Letter Queue (DLQ) will automatically protect it.
+
+### Step 5: Regression Test Synthesizer & Verification
+1. Add a test template branch in `VitestRegressionSynthesizer.ts` to allow auto-generation of `*.spec.ts` regression suites.
+2. Add colocated unit tests for the checker (`<RuleName>Checker.test.ts`) and remediator (`<RuleName>Remediator.test.ts`).
+3. Verify test suite and audit execution:
+   ```bash
+   npm -w server test server/src/modules/system/sentinel
+   npm -w server run sentinel:audit -- --hours=24 --dry-run
+   ```
+
+---
+
+## 6. Definition of Done for Integrity Operations
 
 An integrity audit or remediation task is considered complete only when:
-1. **Zero Unaccounted Failures:** All 18 checkers produce a definitive `PASS`, `WARN`, or `FAIL` scorecard entry.
+1. **Zero Unaccounted Failures:** All checkers produce a definitive `PASS`, `WARN`, or `FAIL` scorecard entry.
 2. **Circuit Breaker Compliant:** Total automated fixes per tenant do not exceed 5 in the preceding hour.
 3. **Audit Trail Persisted:** An audit markdown file is saved to `docs/audits/` detailing timestamp, sequences evaluated, and remediation details.
 4. **Tests Remain 100% Green:** `npm -w server test` and `npm -w packages/mcp-server run test` pass with zero regressions.
+

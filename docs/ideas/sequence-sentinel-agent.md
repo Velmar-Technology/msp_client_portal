@@ -42,3 +42,9 @@ The agent operates across three distinct modes:
 
 ## Open Questions & Future Extensions
 - **Distributed Circuit Breaker:** Migrate from the in-memory `Map` to Redis (`CachePort`) when transitioning to multi-instance horizontal backend clusters.
+
+---
+
+## Canonical Engineering Guide
+For step-by-step instructions on implementing new invariant checkers, self-healing remediators, and synthesized regression tests, see [sentinel-rule-recipe.md](../architecture/sentinel-rule-recipe.md).
+
