@@ -485,17 +485,115 @@ export class VaultwardenService {
   }
 
   /**
+   * Resolves the real Vaultwarden organization UUID for a given tenant or user.
+   * If the organization does not exist or tenantId is not recognized upstream,
+   * inspects /admin/organizations and /admin/users or provisions the organization on demand.
+   *
+   * @param tenantId - Tenant UUID or Org ID
+   * @param userEmail - Target user email address
+   * @param orgName - Optional display name for organization
+   * @returns Real Vaultwarden Organization UUID
+   */
+  async resolveOrganizationId(
+    tenantId: string,
+    userEmail?: string,
+    orgName?: string
+  ): Promise<string> {
+    const token = env.VAULTWARDEN_ADMIN_TOKEN;
+    const baseUrl = this.getBaseUrl();
+
+    if (!token) {
+      return tenantId;
+    }
+
+    try {
+      // 1. Direct check: Does this org ID exist?
+      const directResp = await fetch(`${baseUrl}/api/organizations/${tenantId}/users`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+      if (directResp.ok) {
+        return tenantId;
+      }
+
+      // 2. Query /admin/organizations
+      const adminOrgsResp = await fetch(`${baseUrl}/admin/organizations`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+
+      if (adminOrgsResp.ok) {
+        const orgs = (await adminOrgsResp.json()) as Array<{
+          Id?: string;
+          id?: string;
+          Name?: string;
+          name?: string;
+          BillingEmail?: string;
+        }>;
+
+        if (Array.isArray(orgs)) {
+          const match = orgs.find(
+            (o) =>
+              (o.Id || o.id)?.toLowerCase() === tenantId.toLowerCase() ||
+              (orgName && (o.Name || o.name)?.toLowerCase() === orgName.toLowerCase()) ||
+              (userEmail && o.BillingEmail?.toLowerCase() === userEmail.toLowerCase())
+          );
+          if (match && (match.Id || match.id)) {
+            return (match.Id || match.id)!;
+          }
+        }
+      }
+
+      // 3. Query /admin/users to find if the user is already member of an org
+      if (userEmail) {
+        const adminUsersResp = await fetch(`${baseUrl}/admin/users`, {
+          method: 'GET',
+          headers: this.getHeaders(),
+        });
+        if (adminUsersResp.ok) {
+          const users = (await adminUsersResp.json()) as Array<{
+            Id?: string;
+            Email?: string;
+            Organizations?: Array<{ Id?: string; id?: string }>;
+          }>;
+          if (Array.isArray(users)) {
+            const userRecord = users.find(
+              (u) => u.Email?.toLowerCase() === userEmail.toLowerCase()
+            );
+            const firstOrg = userRecord?.Organizations?.[0];
+            if (firstOrg && (firstOrg.Id || firstOrg.id)) {
+              return (firstOrg.Id || firstOrg.id)!;
+            }
+          }
+        }
+      }
+
+      // 4. If no organization exists at all, auto-provision one
+      const newOrg = await this.createOrganization(
+        orgName || `Workspace Vault`,
+        userEmail || 'admin@tenant.local'
+      );
+      return newOrg.id;
+    } catch (err) {
+      logger.warn(`Could not resolve organization for tenant ${tenantId}; using fallback:`, err);
+      return tenantId;
+    }
+  }
+
+  /**
    * Resets a user's vault access by purging their stale/locked account record in Vaultwarden
    * and issuing a fresh organization invitation so they can configure a new Master Password (zero-knowledge).
    *
    * @param tenantId - Tenant UUID identifying the Bitwarden Organization
    * @param userEmail - Target user email address
+   * @param orgName - Optional organization display name
    * @returns Object indicating success status and informative message
    * @throws {ExternalServiceError} When communication with upstream Vaultwarden fails
    */
   async resetUserVaultAccess(
     tenantId: string,
-    userEmail: string
+    userEmail: string,
+    orgName?: string
   ): Promise<{ success: boolean; message: string }> {
     const token = env.VAULTWARDEN_ADMIN_TOKEN;
     const baseUrl = this.getBaseUrl();
@@ -509,8 +607,11 @@ export class VaultwardenService {
     }
 
     try {
+      // 0. Resolve the actual Vaultwarden organization ID
+      const targetOrgId = await this.resolveOrganizationId(tenantId, userEmail, orgName);
+
       // 1. Locate user in tenant organization if already enrolled
-      const orgUsersResp = await fetch(`${baseUrl}/api/organizations/${tenantId}/users`, {
+      const orgUsersResp = await fetch(`${baseUrl}/api/organizations/${targetOrgId}/users`, {
         method: 'GET',
         headers: this.getHeaders(),
       });
@@ -523,7 +624,7 @@ export class VaultwardenService {
 
         if (matchingMember) {
           // Remove from organization
-          await fetch(`${baseUrl}/api/organizations/${tenantId}/users/${matchingMember.Id}`, {
+          await fetch(`${baseUrl}/api/organizations/${targetOrgId}/users/${matchingMember.Id}`, {
             method: 'DELETE',
             headers: this.getHeaders(),
           });
@@ -557,9 +658,9 @@ export class VaultwardenService {
       }
 
       // 3. Re-issue fresh organization invitation
-      await this.inviteUserToOrganization(tenantId, userEmail, 'User');
+      await this.inviteUserToOrganization(targetOrgId, userEmail, 'Admin');
 
-      logger.info(`Successfully reset vault access and re-invited ${userEmail} to org ${tenantId}`);
+      logger.info(`Successfully reset vault access and re-invited ${userEmail} to org ${targetOrgId}`);
       return {
         success: true,
         message: 'A fresh invitation has been dispatched. Please check your email to set a new Master Password.',

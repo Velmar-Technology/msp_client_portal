@@ -99,4 +99,32 @@ export function registerUserTools(server: McpServer, apiClient: MspApiClient): v
       }
     }
   );
+
+  // 4. Tool: msp_remediate_user_vault
+  server.tool(
+    'msp_remediate_user_vault',
+    'Heal, reset, and re-issue a fresh zero-knowledge Bitwarden/Vaultwarden organization invitation for a client or admin user (BL-206)',
+    {
+      email: z.string().email().describe('Target user email address (e.g. epolanco@velmartech.com.do)'),
+      tenantId: z.string().uuid().optional().describe('Target tenant UUID'),
+    },
+    async ({ email, tenantId }) => {
+      try {
+        const result = await apiClient.resetVaultAccess({ email, tenantId });
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      } catch (err: any) {
+        return {
+          isError: true,
+          content: [{ type: 'text', text: `Failed to remediate user vault access: ${err.message}` }],
+        };
+      }
+    }
+  );
 }
