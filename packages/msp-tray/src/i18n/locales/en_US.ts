@@ -43,6 +43,7 @@ export const en_US: TranslationDictionary = {
     identify: 'Identify',
     hideToTray: 'Hide to tray',
     langToggle: 'Switch to Spanish (es_DO)',
+    openLogsTooltip: 'Open diagnostic logs folder',
   },
   gate: {
     title: 'Workstation Activation Required',

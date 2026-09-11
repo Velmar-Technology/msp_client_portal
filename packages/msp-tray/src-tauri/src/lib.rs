@@ -1,4 +1,5 @@
 mod ipc;
+mod logger;
 
 use ipc::{
     ActiveTicketState, AgentStatusPayload, CreateTicketPayload, CreateTicketResponsePayload,
@@ -244,6 +245,63 @@ fn set_tray_language(
     Ok(())
 }
 
+#[tauri::command]
+fn log_client_event(level: String, message: String, stack: Option<String>) -> Result<(), String> {
+    let lvl = level.to_uppercase();
+    let stack_suffix = match stack {
+        Some(s) if !s.trim().is_empty() => format!(" | Stack: {}", s.trim()),
+        _ => String::new(),
+    };
+    match lvl.as_str() {
+        "ERROR" | "FATAL" => {
+            log::error!("[WEBVIEW] {}{}", message, stack_suffix);
+        }
+        "WARN" | "WARNING" => {
+            log::warn!("[WEBVIEW] {}{}", message, stack_suffix);
+        }
+        "DEBUG" => {
+            log::debug!("[WEBVIEW] {}{}", message, stack_suffix);
+        }
+        _ => {
+            log::info!("[WEBVIEW] {}{}", message, stack_suffix);
+        }
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn get_tray_log_info() -> logger::TrayLogInfo {
+    logger::get_tray_log_info()
+}
+
+#[tauri::command]
+fn open_tray_log_dir() -> Result<(), String> {
+    let info = logger::get_tray_log_info();
+    if info.directory.is_empty() {
+        return Err("Log directory could not be resolved".to_string());
+    }
+
+    let _ = std::fs::create_dir_all(&info.directory);
+
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .arg(&info.directory)
+            .spawn()
+            .map_err(|e| format!("Failed to open explorer: {}", e))?;
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        std::process::Command::new("xdg-open")
+            .arg(&info.directory)
+            .spawn()
+            .map_err(|e| format!("Failed to open directory: {}", e))?;
+    }
+
+    Ok(())
+}
+
 fn toggle_main_window(app: &tauri::AppHandle) {
     let window = app
         .get_webview_window("main")
@@ -290,6 +348,7 @@ fn toggle_main_window(app: &tauri::AppHandle) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    logger::init_logger();
     let app_state = AppState::default();
     let sampler = SystemSampler::new();
 
@@ -308,7 +367,10 @@ pub fn run() {
             send_chat_message,
             resolve_ticket,
             hide_window,
-            set_tray_language
+            set_tray_language,
+            log_client_event,
+            get_tray_log_info,
+            open_tray_log_dir
         ])
         .setup(|app| {
             let ipc_client = IpcClient::new(app.handle().clone());

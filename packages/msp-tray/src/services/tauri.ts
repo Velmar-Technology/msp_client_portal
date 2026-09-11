@@ -307,3 +307,78 @@ export async function setTrayLanguage(locale: string): Promise<void> {
   }
 }
 
+export interface TrayLogInfo {
+  path: string;
+  exists: boolean;
+  sizeBytes: number;
+  directory: string;
+}
+
+/**
+ * Forwards an unhandled client error or diagnostic log event to the persistent rolling log file.
+ * @param {'info' | 'warn' | 'error' | 'debug'} level - Log severity level
+ * @param {string} message - Error description or log message
+ * @param {string} [stack] - Optional stack trace
+ * @returns {Promise<void>}
+ */
+export async function logClientEvent(
+  level: 'info' | 'warn' | 'error' | 'debug',
+  message: string,
+  stack?: string
+): Promise<void> {
+  if (!isTauriEnvironment()) {
+    if (level === 'error') {
+      console.error(`[WEBVIEW MOCK] ${message}`, stack ?? '');
+    } else if (level === 'warn') {
+      console.warn(`[WEBVIEW MOCK] ${message}`, stack ?? '');
+    } else {
+      console.info(`[WEBVIEW MOCK] ${message}`);
+    }
+    return;
+  }
+  try {
+    await invoke('log_client_event', { level, message, stack });
+  } catch (err) {
+    console.error('[Tauri IPC] logClientEvent error:', err);
+  }
+}
+
+/**
+ * Retrieves file path, existence, and size metadata of the persistent endpoint tray log.
+ * @returns {Promise<TrayLogInfo>}
+ */
+export async function getTrayLogInfo(): Promise<TrayLogInfo> {
+  if (!isTauriEnvironment()) {
+    return {
+      path: '%LOCALAPPDATA%\\MSP\\logs\\msp-tray.log',
+      exists: false,
+      sizeBytes: 0,
+      directory: '%LOCALAPPDATA%\\MSP\\logs',
+    };
+  }
+  try {
+    return await invoke<TrayLogInfo>('get_tray_log_info');
+  } catch {
+    return {
+      path: '',
+      exists: false,
+      sizeBytes: 0,
+      directory: '',
+    };
+  }
+}
+
+/**
+ * Opens the local directory containing the persistent log files in Windows File Explorer.
+ * @returns {Promise<void>}
+ */
+export async function openTrayLogDir(): Promise<void> {
+  if (!isTauriEnvironment()) return;
+  try {
+    await invoke('open_tray_log_dir');
+  } catch (err) {
+    console.error('[Tauri IPC] openTrayLogDir error:', err);
+  }
+}
+
+

@@ -43,6 +43,7 @@ export interface TranslationDictionary {
     identify: string;
     hideToTray: string;
     langToggle: string;
+    openLogsTooltip: string;
   };
   gate: {
     title: string;

@@ -43,6 +43,7 @@ export const es_DO: TranslationDictionary = {
     identify: 'Identificar',
     hideToTray: 'Minimizar al área de notificación',
     langToggle: 'Cambiar a Inglés (en_US)',
+    openLogsTooltip: 'Abrir carpeta de registros de diagnóstico',
   },
   gate: {
     title: 'Activación de Estación Requerida',
