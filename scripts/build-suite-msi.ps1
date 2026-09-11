@@ -159,6 +159,7 @@ $outputMsi = Join-Path $distDir "msp-endpoint-suite-v$Version.msi"
 # Run Candle
 Write-Host "Executing candle.exe..."
 & $candlePath -nologo `
+    -arch x64 `
     -dVersion="$Version" `
     -dAgentSourceExe="$agentExe" `
     -dTraySourceExe="$foundTray" `

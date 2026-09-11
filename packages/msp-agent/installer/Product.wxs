@@ -24,10 +24,20 @@
     <Property Id="AGENT_TOKEN" Secure="yes" />
     <Property Id="PAIRING_CODE" Secure="yes" />
 
-    <!-- Close msp-tray.exe gracefully before file replacement during upgrades -->
+    <!-- Close running instances before file replacement during upgrades/re-installs -->
     <util:CloseApplication Id="CloseMspTray"
                            Target="msp-tray.exe"
                            CloseMessage="yes"
+                           ElevatedCloseMessage="yes"
+                           TerminateProcess="1"
+                           RebootPrompt="no"
+                           Timeout="5" />
+
+    <util:CloseApplication Id="CloseMspAgent"
+                           Target="msp-agent.exe"
+                           CloseMessage="yes"
+                           ElevatedCloseMessage="yes"
+                           TerminateProcess="1"
                            RebootPrompt="no"
                            Timeout="5" />
 
@@ -53,6 +63,7 @@
                               Start="auto"
                               Account="LocalSystem"
                               ErrorControl="normal"
+                              Arguments="--service"
                               Vital="yes" />
 
               <ServiceControl Id="ServiceControl"

@@ -99,7 +99,7 @@ Write-Host "  PASS: Package properties verified." -ForegroundColor Green
 
 # 2. Verify ServiceInstall Table
 Write-Host "`n[Check 2/4] Verifying Windows Service Registration..." -ForegroundColor Yellow
-$services = Query-MsiTable $database "SELECT ServiceInstall, Name, DisplayName, ServiceType, StartType FROM ServiceInstall"
+$services = Query-MsiTable $database "SELECT ServiceInstall, Name, DisplayName, ServiceType, StartType, Arguments FROM ServiceInstall"
 if ($services.Count -eq 0) {
     Write-Error "FAIL: No service registrations found in ServiceInstall table!"
     exit 1
@@ -112,6 +112,11 @@ if (-not $agentSvc) {
 Write-Host "  Service Name: $($agentSvc[1])"
 Write-Host "  Display Name: $($agentSvc[2])"
 Write-Host "  Start Type:   $($agentSvc[4]) (Auto=2)"
+Write-Host "  Arguments:    $($agentSvc[5])"
+if ($agentSvc[5] -ne '--service') {
+    Write-Error "FAIL: Expected Service Arguments '--service', got '$($agentSvc[5])'"
+    exit 1
+}
 Write-Host "  PASS: Windows Service registration verified." -ForegroundColor Green
 
 # 3. Verify Run Registry Key for Tray Assistant

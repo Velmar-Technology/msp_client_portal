@@ -744,12 +744,35 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Inspect sentinel state for any pending rollback check
     upgrade::check_and_handle_rollback();
 
-    // If spawned by Windows Service Control Manager (SCM) or with --service flag
-    if args.iter().any(|a| a == "--service") {
-        if let Err(e) = service::windows_service_impl::dispatch() {
-            eprintln!("Failed to start Windows service dispatcher: {:?}", e);
+    // Windows Service Control Manager (SCM) dispatch handling
+    #[cfg(windows)]
+    {
+        // 1. Explicit --service argument (registered in SCM binary path)
+        if args.iter().any(|a| a == "--service") {
+            if let Err(e) = service::windows_service_impl::dispatch() {
+                eprintln!("Failed to start Windows service dispatcher: {:?}", e);
+            }
+            return Ok(());
         }
-        return Ok(());
+
+        // 2. SCM auto-detection fallback:
+        // If spawned directly by SCM without arguments, dispatch() connects to SCM and runs.
+        // If launched interactively in a console, StartServiceCtrlDispatcher immediately
+        // fails with ERROR_FAILED_SERVICE_CONTROLLER_CONNECT, so we safely fall through to console mode.
+        if let Err(err) = service::windows_service_impl::dispatch() {
+            log::debug!("SCM dispatch skipped (interactive console mode): {:?}", err);
+        } else {
+            return Ok(());
+        }
+    }
+    #[cfg(not(windows))]
+    {
+        if args.iter().any(|a| a == "--service") {
+            if let Err(e) = service::windows_service_impl::dispatch() {
+                eprintln!("Failed to start service dispatcher: {:?}", e);
+            }
+            return Ok(());
+        }
     }
 
     let config = AgentConfig::from_args_and_env(&args);
