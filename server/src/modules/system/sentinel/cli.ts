@@ -12,6 +12,7 @@ async function runCli(): Promise<void> {
   let hours = 24;
   let generateTests = false;
   let autoHeal = false;
+  let dryRun = false;
   let tenantId: string | undefined;
 
   for (const arg of args) {
@@ -21,6 +22,8 @@ async function runCli(): Promise<void> {
       generateTests = true;
     } else if (arg === '--auto-heal') {
       autoHeal = true;
+    } else if (arg === '--dry-run') {
+      dryRun = true;
     } else if (arg.startsWith('--tenant=')) {
       tenantId = arg.replace('--tenant=', '').trim() || undefined;
     }
@@ -42,7 +45,15 @@ async function runCli(): Promise<void> {
   console.log(`Range: ${startDate.toISOString()} -> ${now.toISOString()}`);
   if (tenantId) console.log(`Tenant Scoped: ${tenantId}`);
   console.log(`Synthesize Vitest Specs: ${generateTests ? 'ENABLED' : 'DISABLED'}`);
-  console.log(`Autonomous Self-Healing: ${autoHeal ? '🔥 ENABLED (Active Remediation)' : 'DISABLED (Advisory Only)'}`);
+  console.log(
+    `Autonomous Self-Healing: ${
+      autoHeal
+        ? '🔥 ENABLED (Active Remediation)'
+        : dryRun
+        ? '🔍 DRY-RUN (Simulation Mode)'
+        : 'DISABLED (Advisory Only)'
+    }`
+  );
   console.log(`Evaluating 18 Master Business Logic Invariants (BL-101 to BL-802)...\n`);
 
   const sentinel = new SequenceSentinelService();
@@ -51,6 +62,7 @@ async function runCli(): Promise<void> {
     const report = await sentinel.runAudit(window, {
       generateTests,
       autoHeal,
+      dryRun,
       saveReport: true,
     });
 

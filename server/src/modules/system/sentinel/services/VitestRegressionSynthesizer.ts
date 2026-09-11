@@ -28,6 +28,24 @@ export class VitestRegressionSynthesizer {
    * @returns Formatted TypeScript code string
    */
   synthesizeTestCode(violation: InvariantViolation): string {
+    let domainSpecificAssertions = `    const ruleCode = '${violation.ruleCode}';
+    expect(ruleCode).toBe('${violation.ruleCode}');`;
+
+    if (violation.ruleCode === 'BL-103') {
+      domainSpecificAssertions = `    // BL-103: Device flapping condition should have been tagged and handled
+    expect(evidence.triggerCount).toBeGreaterThanOrEqual(3);
+    expect(evidence.deviceId).toBeDefined();`;
+    } else if (violation.ruleCode === 'BL-401') {
+      domainSpecificAssertions = `    // BL-401: Subscription linked to paid invoice must be reactivated
+    expect(evidence.subscriptionId).toBeDefined();`;
+    } else if (violation.ruleCode === 'BL-702') {
+      domainSpecificAssertions = `    // BL-702: Delinquent overdue accounts must enforce non-payment mode
+    expect(evidence.overdueDays).toBeGreaterThanOrEqual(5);`;
+    } else if (violation.ruleCode === 'BL-801') {
+      domainSpecificAssertions = `    // BL-801: Bounty calculations and OpEx ledger alignment
+    expect(evidence.ticketId).toBeDefined();`;
+    }
+
     return `import { describe, it, expect, vi } from 'vitest';
 
 /**
@@ -48,10 +66,8 @@ describe('Regression Suite: ${violation.ruleCode} - ${violation.ruleName}', () =
     expect(evidence).toBeDefined();
     expect(evidence).not.toBeNull();
 
-    // Invariant condition assertion:
-    // This generated test documents the exact operational state at violation time.
-    const ruleCode = '${violation.ruleCode}';
-    expect(ruleCode).toBe('${violation.ruleCode}');
+    // Domain invariant condition assertion:
+${domainSpecificAssertions}
   });
 });
 `;

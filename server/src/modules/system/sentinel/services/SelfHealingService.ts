@@ -1,9 +1,21 @@
 import { logger } from '@shared/utils/logger';
-import { InvariantViolation, RemediationHandler, RemediationResult } from '../types';
+import {
+  DeadLetterRecord,
+  InvariantViolation,
+  RemediationHandler,
+  RemediationResult,
+} from '../types';
 import { SubscriptionReactivationRemediator } from '../remediators/SubscriptionReactivationRemediator';
 import { TierEscalationRemediator } from '../remediators/TierEscalationRemediator';
 import { TechnicianBountyRemediator } from '../remediators/TechnicianBountyRemediator';
 import { NonPaymentEnforcementRemediator } from '../remediators/NonPaymentEnforcementRemediator';
+import { FlappingAlertRemediator } from '../remediators/FlappingAlertRemediator';
+
+/** Options for auto-healing invocation */
+export interface AutoHealOptions {
+  /** When true, simulates remediation actions without persisting database mutations */
+  dryRun?: boolean;
+}
 
 /**
  * Service that coordinates autonomous self-healing and restorative actions for detected
@@ -13,6 +25,8 @@ export class SelfHealingService {
   private readonly remediators: Map<string, RemediationHandler> = new Map();
   /** Track remediation attempts per tenant for circuit breaking (sliding 1-hour window) */
   private readonly tenantRemediationLog: Map<string, number[]> = new Map();
+  /** In-memory Dead-Letter Queue (DLQ) for failed or circuit-tripped remediations */
+  private readonly deadLetterQueue: DeadLetterRecord[] = [];
 
   /** Max allowed auto-remediations per tenant within an hour */
   private readonly maxRemediationsPerHour = 5;
@@ -28,6 +42,7 @@ export class SelfHealingService {
       new TierEscalationRemediator(),
       new TechnicianBountyRemediator(),
       new NonPaymentEnforcementRemediator(),
+      new FlappingAlertRemediator(),
     ];
 
     for (const handler of handlers) {
@@ -40,9 +55,13 @@ export class SelfHealingService {
    * while respecting tenant safety circuit breakers.
    *
    * @param violations - List of detected invariant breaches
+   * @param options - Execution options (e.g. dryRun)
    * @returns List of executed remediation results
    */
-  async autoHealViolations(violations: InvariantViolation[]): Promise<RemediationResult[]> {
+  async autoHealViolations(
+    violations: InvariantViolation[],
+    options: AutoHealOptions = {}
+  ): Promise<RemediationResult[]> {
     const results: RemediationResult[] = [];
 
     for (const violation of violations) {
@@ -53,17 +72,48 @@ export class SelfHealingService {
 
       // Check tenant circuit breaker
       if (!this.checkCircuitBreaker(violation.tenantId)) {
+        const errorMsg = `Circuit breaker active: exceeded ${this.maxRemediationsPerHour} auto-remediations per hour`;
         logger.warn(
           `[Sentinel Circuit Breaker Tripped] Exceeded max auto-remediations (${this.maxRemediationsPerHour}/hr) for tenant '${violation.tenantId}'. Skipping rule '${violation.ruleCode}'.`
         );
+
+        this.enqueueDeadLetter(
+          violation,
+          'CIRCUIT_BREAKER_TRIPPED',
+          errorMsg
+        );
+
         results.push({
           ruleCode: violation.ruleCode,
           entityId: violation.entityId,
           tenantId: violation.tenantId,
           success: false,
           actionTaken: 'CIRCUIT_BREAKER_TRIPPED',
-          error: `Circuit breaker active: exceeded ${this.maxRemediationsPerHour} auto-remediations per hour`,
+          error: errorMsg,
           remediatedAt: new Date(),
+          simulated: options.dryRun,
+        });
+        continue;
+      }
+
+      // If dry-run mode, simulate remediation without executing mutations
+      if (options.dryRun) {
+        logger.info(
+          `[Sentinel Dry-Run Simulation] Would execute remediator '${remediator.name}' for rule '${violation.ruleCode}' on entity '${violation.entityId}' (Tenant: '${violation.tenantId}').`
+        );
+        results.push({
+          ruleCode: violation.ruleCode,
+          entityId: violation.entityId,
+          tenantId: violation.tenantId,
+          success: true,
+          actionTaken: 'SIMULATED_REMEDIATION',
+          details: {
+            intendedRemediator: remediator.name,
+            ruleCode: violation.ruleCode,
+            evidence: violation.evidence,
+          },
+          remediatedAt: new Date(),
+          simulated: true,
         });
         continue;
       }
@@ -73,11 +123,23 @@ export class SelfHealingService {
 
       try {
         const result = await remediator.remediate(violation);
+        if (!result.success) {
+          this.enqueueDeadLetter(
+            violation,
+            'REMEDIATOR_ERROR',
+            result.error || 'Remediator returned failure status'
+          );
+        }
         results.push(result);
       } catch (err: any) {
         logger.error(
           `[Sentinel Self-Healing Crash] Unexpected failure in remediator '${remediator.name}':`,
           err
+        );
+        this.enqueueDeadLetter(
+          violation,
+          'UNHANDLED_EXCEPTION',
+          err.message || 'Unknown exception'
         );
         results.push({
           ruleCode: violation.ruleCode,
@@ -92,6 +154,39 @@ export class SelfHealingService {
     }
 
     return results;
+  }
+
+  /**
+   * Retrieves all dead-letter records captured during this process lifecycle.
+   *
+   * @returns Array of DeadLetterRecord
+   */
+  getDeadLetterQueue(): DeadLetterRecord[] {
+    return [...this.deadLetterQueue];
+  }
+
+  /**
+   * Enqueues a failed or rejected remediation event into the Dead-Letter Queue.
+   */
+  private enqueueDeadLetter(
+    violation: InvariantViolation,
+    reason: DeadLetterRecord['reason'],
+    errorDetails: string
+  ): void {
+    const record: DeadLetterRecord = {
+      id: `dlq-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      ruleCode: violation.ruleCode,
+      entityId: violation.entityId,
+      tenantId: violation.tenantId,
+      reason,
+      errorDetails,
+      timestamp: new Date(),
+      violationSnapshot: {
+        rationale: violation.rationale,
+        evidence: violation.evidence,
+      },
+    };
+    this.deadLetterQueue.push(record);
   }
 
   /**

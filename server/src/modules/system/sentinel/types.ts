@@ -126,6 +126,21 @@ export interface RemediationResult {
   readonly details?: Record<string, unknown>;
   readonly error?: string;
   readonly remediatedAt: Date;
+  readonly simulated?: boolean;
+}
+
+/**
+ * Record of a remediation failure or circuit breaker trip captured in the Dead-Letter Queue (DLQ).
+ */
+export interface DeadLetterRecord {
+  readonly id: string;
+  readonly ruleCode: string;
+  readonly entityId: string;
+  readonly tenantId: string;
+  readonly reason: 'CIRCUIT_BREAKER_TRIPPED' | 'REMEDIATOR_ERROR' | 'UNHANDLED_EXCEPTION';
+  readonly errorDetails: string;
+  readonly timestamp: Date;
+  readonly violationSnapshot: Record<string, unknown>;
 }
 
 /**
@@ -149,4 +164,6 @@ export interface AuditReport {
   readonly violations: InvariantViolation[];
   readonly synthesizedTestPaths?: string[];
   readonly remediations?: RemediationResult[];
+  readonly deadLetterQueue?: DeadLetterRecord[];
 }
+

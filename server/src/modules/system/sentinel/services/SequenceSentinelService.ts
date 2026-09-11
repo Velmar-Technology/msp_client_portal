@@ -100,6 +100,7 @@ export class SequenceSentinelService {
     options: {
       generateTests?: boolean;
       autoHeal?: boolean;
+      dryRun?: boolean;
       saveReport?: boolean;
       reportOutputDir?: string;
     } = {}
@@ -145,11 +146,18 @@ export class SequenceSentinelService {
       }
     }
 
-    // 5. Execute autonomous self-healing remediation if enabled
+    // 5. Execute autonomous self-healing remediation if enabled or dry-run requested
     let remediations;
-    if (options.autoHeal && allViolations.length > 0) {
-      remediations = await this.selfHealing.autoHealViolations(allViolations);
+    if ((options.autoHeal || options.dryRun) && allViolations.length > 0) {
+      remediations = await this.selfHealing.autoHealViolations(allViolations, {
+        dryRun: options.dryRun,
+      });
     }
+
+    const deadLetterQueue =
+      typeof this.selfHealing.getDeadLetterQueue === 'function'
+        ? this.selfHealing.getDeadLetterQueue()
+        : [];
 
     const report: AuditReport = {
       generatedAt: new Date(),
@@ -160,6 +168,7 @@ export class SequenceSentinelService {
       violations: allViolations,
       synthesizedTestPaths,
       remediations,
+      deadLetterQueue: deadLetterQueue.length > 0 ? deadLetterQueue : undefined,
     };
 
     // 6. Optionally save Markdown report to disk
@@ -245,9 +254,19 @@ export class SequenceSentinelService {
       lines.push('| Rule | Entity | Status | Action Taken | Details / Error |');
       lines.push('| :--- | :--- | :---: | :--- | :--- |');
       for (const r of report.remediations) {
-        const icon = r.success ? '✅ REPAIRED' : '❌ FAILED';
+        const icon = r.simulated ? '🔍 SIMULATED' : r.success ? '✅ REPAIRED' : '❌ FAILED';
         const info = r.success ? JSON.stringify(r.details || {}) : r.error || 'Unknown';
         lines.push(`| **${r.ruleCode}** | \`${r.entityId}\` | ${icon} | \`${r.actionTaken}\` | ${info} |`);
+      }
+      lines.push('');
+    }
+
+    if (report.deadLetterQueue && report.deadLetterQueue.length > 0) {
+      lines.push(`## ⚠️ Dead-Letter Queue (DLQ) Incidents`);
+      lines.push('| Rule | Tenant | Entity | Reason | Error Details |');
+      lines.push('| :--- | :--- | :--- | :--- | :--- |');
+      for (const item of report.deadLetterQueue) {
+        lines.push(`| **${item.ruleCode}** | \`${item.tenantId}\` | \`${item.entityId}\` | \`${item.reason}\` | ${item.errorDetails} |`);
       }
       lines.push('');
     }

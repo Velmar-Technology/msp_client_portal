@@ -62,6 +62,7 @@ export class AlertNoiseFlappingChecker implements InvariantChecker {
               rationale: `Device '${seq.entityId}' triggered 3 alert instances within 24h but was not tagged with '${FLAPPING_TAG}' (BL-103).`,
               evidence: {
                 deviceId: seq.entityId,
+                alertId: latest.metadata?.alertId || latest.id,
                 triggerCount: 3,
                 timeWindowHours: Math.round(deltaMs / (60 * 60 * 1000)),
                 lastAlertTitle: title,
