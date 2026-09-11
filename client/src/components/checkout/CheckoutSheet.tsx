@@ -15,6 +15,8 @@ export interface CheckoutStateProps {
   reference: string;
   subscribeLoading: boolean;
   handleProcessSubscription: (e?: SyntheticEvent) => void;
+  autoRenew?: boolean;
+  setAutoRenew?: (val: boolean) => void;
 }
 
 export interface CheckoutSheetProps extends CheckoutStateProps {
@@ -250,6 +252,8 @@ export function CheckoutSheet(props: CheckoutSheetProps) {
               subscribeLoading={subscribeLoading}
               handleProcessSubscription={handleProcessSubscription}
               paypalContainerId={paypalContainerId}
+              autoRenew={props.autoRenew}
+              setAutoRenew={props.setAutoRenew}
             />
           </div>
         )}

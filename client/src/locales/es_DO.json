@@ -971,6 +971,13 @@
     "readyToActivate": "¿Listo para activar su suscripción {{name}}?",
     "proceedToCheckout": "Proceder al Pago (${{total}})",
     "secureCheckout": "Pago Seguro e Inmediato",
+    "autoBillingTitle": "Renovación Automática con PayPal",
+    "autoBillingSubtitle": "Débito recurrente de suscripción",
+    "autoBillingEnabledDesc": "Su suscripción se renovará automáticamente cada ciclo mediante PayPal. Puede cancelar en cualquier momento.",
+    "autoBillingDisabledDesc": "Facturación manual: Recibirá una factura al final de cada ciclo para pagar a demanda.",
+    "autoRenewBadge": "Auto-Renovación",
+    "autoRenewActive": "Auto-Renovación Activa",
+    "autoRenewManual": "Facturación Manual",
     "paypalPaymentNotice": "Complete su pago de forma segura con PayPal. Una vez aprobado, su suscripción se activará de inmediato.",
     "loadingPayPalCheckout": "Cargando Checkout de PayPal...",
     "dialogAddDeviceTitle": "Agregar Licencia de Dispositivo",
@@ -1207,18 +1214,6 @@
       "bulkExportSuccess": "Exportados {{count}} dispositivo(s) a CSV.",
       "addAdminDeviceSuccessDesc": "El dispositivo {{name}} ha sido registrado y aprovisionado.",
       "fetchFailed": "No se pudieron recuperar las suscripciones activas para la gestión de dispositivos."
-  },
-  "equipment": {
-    "vault": {
-      "actionMenu": "Bóveda de Contraseñas del Dispositivo",
-      "title": "Bóveda de Contraseñas del Dispositivo",
-      "status": "Estado de la Bóveda",
-      "active": "Activa y Sincronizada",
-      "unprovisioned": "No Aprovisionada",
-      "locked": "Sesión Bloqueada / Revocada",
-      "provision": "Aprovisionar Bóveda de Dispositivo",
-      "revoke": "Revocar / Bloquear Sesión"
-    }
   },
   "resources": {
     "title": "Recursos",

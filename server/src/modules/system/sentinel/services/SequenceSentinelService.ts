@@ -30,6 +30,7 @@ import { AuthorizationAndJitChecker } from '../checkers/security/AuthorizationAn
 // Billing & tax suite
 import { SubscriptionReactivationChecker } from '../checkers/billing/SubscriptionReactivationChecker';
 import { RenewalSchedulerChecker } from '../checkers/billing/RenewalSchedulerChecker';
+import { AutoRenewSyncChecker } from '../checkers/billing/AutoRenewSyncChecker';
 import { TaxAndNcfChecker } from '../checkers/billing/TaxAndNcfChecker';
 import { NonPaymentEnforcementChecker } from '../checkers/billing/NonPaymentEnforcementChecker';
 
@@ -79,6 +80,7 @@ export class SequenceSentinelService {
       new AuthorizationAndJitChecker(),
       new SubscriptionReactivationChecker(),
       new RenewalSchedulerChecker(),
+      new AutoRenewSyncChecker(),
       new TaxAndNcfChecker(),
       new NonPaymentEnforcementChecker(),
       new TechnicianBountyChecker(),
