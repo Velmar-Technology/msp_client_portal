@@ -10,6 +10,7 @@ export const AgentUpgradeRequestSchema = z.object({
     .trim()
     .regex(/^v?\d+\.\d+\.\d+$/, 'Target version must follow semver format (e.g. 1.10.2 or v1.10.2)')
     .optional(),
+  installerType: z.enum(['msi', 'binary']).optional().default('msi'),
   downloadUrl: z.string().url('Invalid download URL').optional(),
   sha256Checksum: z
     .string()
@@ -31,6 +32,7 @@ export type AgentUpgradeRequest = z.infer<typeof AgentUpgradeRequestSchema>;
  */
 export const AgentUpgradePayloadSchema = z.object({
   target_version: z.string(),
+  installer_type: z.enum(['msi', 'binary']).optional().default('msi'),
   download_url: z.string().url(),
   sha256_checksum: z.string().regex(/^[a-fA-F0-9]{64}$/),
   rollback_timeout_secs: z.number().int().min(10).max(300).default(45),

@@ -1,227 +1,157 @@
-# Task List: Odoo-Style Ticket Chatter & Decoupled Drawer
+# Task List: Unified MSI Packaging & Dual-Channel Upgrades for MSP Endpoint Suite
 
-## Phase 1: Backend Data Model & Internal Notes Protection
+## Phase 1: Shared Contracts & Backend Upgrade Support
 
-### Task 1.1: Database Schema & Migration for `is_internal`
-**Description:** Add `is_internal` boolean column to `ticket_responses` table in Drizzle schema with default `false` and generate/apply migration.
+### Task 1.1: Shared Contract Updates for MSI Release Payloads
+**Description:** Update `AgentUpgradePayloadSchema` and related types in `@shared/contracts` to support package format specification (`installerType: 'msi' | 'binary'`).
 **Acceptance criteria:**
-- [x] Add `is_internal: boolean('is_internal').notNull().default(false)` in `server/src/shared/db/schema.ts`.
-- [x] Create migration SQL file in `server/src/shared/db/migrations/` and verify migration applies cleanly.
-**Verification:**
-- [x] `npm -w server run build` passes.
-- [x] Database schema compiles without error.
-**Dependencies:** None
-**Files touched:**
-- `server/src/shared/db/schema.ts`
-- `server/src/shared/db/migrations/043_add_ticket_response_is_internal.sql`
-**Estimated scope:** Small (2 files)
-
----
-
-### Task 1.2: `@shared/contracts` Updates for Internal Notes
-**Description:** Update ticket response Zod schemas and TypeScript contracts to include optional `isInternal: boolean`.
-**Acceptance criteria:**
-- [x] Update `AgentTicketMessageSchema` and `TicketResponseSchema` in `packages/contracts/src/tickets/tickets.contract.ts` with `isInternal: z.boolean().optional()`.
-- [x] Add `isInternal` to `AddTicketResponseInputSchema` or response payload types.
-- [x] Export updated types from `@shared/contracts`.
+- [x] Add `installerType: z.enum(['msi', 'binary']).default('msi')` to `AgentUpgradePayloadSchema` in `packages/contracts/src/rmm/agentUpgrade.ts`.
+- [x] Export updated TypeScript types and ensure all consumers typecheck cleanly.
 **Verification:**
 - [x] `npm run build:packages` succeeds with exit code 0.
-**Dependencies:** Task 1.1
+**Dependencies:** None
 **Files touched:**
-- `packages/contracts/src/tickets/tickets.contract.ts`
+- `packages/contracts/src/rmm/agentUpgrade.ts`
 **Estimated scope:** Small (1 file)
 
 ---
 
-### Task 1.3: `TicketResponseRepository` & `TicketResponseService` RBAC Filtering & Side-Effect Suppression
-**Description:** Enforce tenant/role isolation in queries (clients never see internal notes) and suppress external notifications for internal notes.
+### Task 1.2: Server AgentGateway & Equipment Controller Upgrade Resolution
+**Description:** Update server RMM agent gateway and equipment controller to support dispatching MSI upgrade commands with download URL and SHA-256 hash.
 **Acceptance criteria:**
-- [x] In `TicketResponseRepository.ts`: update queries to include `is_internal` column and provide role-aware query filtering.
-- [x] In `TicketResponseService.ts`: when `ctx.role === 'CLIENT'`, filter out `is_internal = true` responses.
-- [x] If `isInternal === true`, skip `notifyResponseRecipient` (zero emails sent to client).
-- [x] If `isInternal === true`, skip `agentGw.pushTicketChatMessage` (desktop workstation tray does not receive staff notes).
-- [x] In `streamGw.broadcastToTicket`: include `isInternal` flag so client sockets discard or gateway skips sending to client sessions.
+- [x] Update `EquipmentController.ts` / `AgentGatewayController.ts` upgrade dispatch logic to include `installerType: 'msi'`.
+- [x] Update test fixtures and unit tests in `server/src/modules/rmm/`.
 **Verification:**
 - [x] `npm -w server run build` passes.
-**Dependencies:** Task 1.2
+- [x] `npm -w server run test` passes without regression.
+**Dependencies:** Task 1.1
 **Files touched:**
-- `server/src/modules/tickets/repositories/TicketResponseRepository.ts`
-- `server/src/modules/tickets/services/TicketResponseService.ts`
-- `server/src/modules/tickets/controllers/TicketController.ts`
+- `server/src/modules/equipment/controllers/EquipmentController.ts`
+- `server/src/modules/rmm/controllers/AgentGatewayController.ts`
+- `server/src/modules/rmm/controllers/AgentGatewayController.test.ts`
 **Estimated scope:** Medium (3 files)
 
 ---
 
-### Task 1.4: Backend Unit Tests for Internal Notes Isolation
-**Description:** Implement unit tests verifying that clients cannot query internal notes and that external side-effects are suppressed.
+## Checkpoint: Contracts & Server Readiness
+- [x] Shared packages compile cleanly
+- [x] Backend tests and builds pass 100%
+
+---
+
+## Phase 2: Agent Detached MSI Supervisor
+
+### Task 2.1: Rust Agent `.msi` Download & Detached Process Execution
+**Description:** Enhance `packages/msp-agent/src/upgrade.rs` to detect `.msi` package types, stage them in `%ProgramData%\MSP\updates\`, and launch `msiexec.exe /i "<msi>" /qn /norestart /l*v "upgrade.log"` detached using Windows process creation flags.
 **Acceptance criteria:**
-- [x] Test verifying `getTicketResponses` excludes internal notes when invoked with a `CLIENT` role context.
-- [x] Test verifying `getTicketResponses` includes internal notes when invoked with `TECHNICIAN` or `ADMIN` role context.
-- [x] Test verifying `addTicketResponse` with `isInternal: true` does not trigger email notification or agent tray push.
+- [x] Implement `execute_msi_upgrade(msi_path: &Path) -> Result<(), String>` in `packages/msp-agent/src/upgrade.rs`.
+- [x] Use detached command execution (`CREATE_BREAKAWAY_FROM_JOB` / `cmd.exe /c start`) so `msiexec` survives the calling service's shutdown.
+- [x] Handle command dispatch in `packages/msp-agent/src/main.rs` upon receiving `AGENT_UPGRADE`.
 **Verification:**
-- [x] `npm -w server test -- src/modules/tickets/services/TicketResponseService.test.ts` passes 100%.
-**Dependencies:** Task 1.3
+- [x] `cargo check --manifest-path packages/msp-agent/Cargo.toml` compiles cleanly.
+- [x] Unit tests for upgrade argument parsing pass.
+**Dependencies:** Task 1.1
 **Files touched:**
-- `server/src/modules/tickets/services/TicketResponseService.test.ts`
-**Estimated scope:** Small (1 file)
-
----
-
-## Checkpoint: Backend Foundation
-- [x] `npm run build:packages` passes clean
-- [x] `npm -w server run build` passes clean
-- [x] `npm -w server test -- src/modules/tickets/services/TicketResponseService.test.ts` passes clean
-
----
-
-## Phase 2: Client Service & Real-Time Stream Integration
-
-### Task 2.1: `ticketService.ts` Updates for `isInternal` Flag & Multi-Part Upload
-**Description:** Update `TicketResponseItem` interface and `createResponse` method in `ticketService.ts` to support optional `isInternal` boolean parameter.
-**Acceptance criteria:**
-- [x] `TicketResponseItem` includes `is_internal?: boolean` and `isInternal?: boolean`.
-- [x] `ticketService.createResponse(id, message, files, isInternal)` appends `isInternal` to FormData.
-**Verification:**
-- [x] `npm -w client run build` succeeds without type errors.
-**Dependencies:** Task 1.4
-**Files touched:**
-- `client/src/features/tickets/api/ticketService.ts`
-**Estimated scope:** Small (1 file)
-
----
-
-### Task 2.2: `useTicketDetail.ts` & `useTicketChatStream.ts` Updates for Dual Mode & Real-Time Notes
-**Description:** Update `useTicketDetail` hook to track `isInternalNote` composer mode and integrate with real-time stream.
-**Acceptance criteria:**
-- [x] Add state `isInternalNote` (boolean) to `useTicketDetail`.
-- [x] Update `handleSendResponse` to pass `isInternalNote` to `ticketService.createResponse`.
-- [x] Update `useTicketChatStream` to avoid appending internal notes if the viewer is a `CLIENT`.
-**Verification:**
-- [x] `npm -w client run build` succeeds without type errors.
-**Dependencies:** Task 2.1
-**Files touched:**
-- `client/src/features/tickets/hooks/useTicketDetail.ts`
-- `client/src/features/tickets/hooks/useTicketChatStream.ts`
-**Estimated scope:** Small (2 files)
-
----
-
-## Checkpoint: Client State Ready
-- [x] `npm -w client run build` builds clean
-
----
-
-## Phase 3: Odoo-Style Chatter Components & Dual-Mode Composer
-
-### Task 3.1: Build `TicketChatterComposer` (Message vs Internal Note Tabs)
-**Description:** Create dedicated composer component supporting dual modes ("Send Message" vs "Log Note"), file upload preview, and keyboard submission (`Ctrl+Enter`).
-**Acceptance criteria:**
-- [x] Create `client/src/features/tickets/components/TicketChatterComposer.tsx`.
-- [x] Include tabs: "Send Message" (Blue action) and "Log Note" (Amber action with Lock icon).
-- [x] "Log Note" tab is conditionally rendered only for technicians and admins (`user.role !== 'CLIENT'`).
-- [x] Dynamic placeholder and button label reflecting mode ("Send response to customer..." vs "Log internal note (staff only)...").
-- [x] Support keyboard submit (`Ctrl+Enter` / `Cmd+Enter`).
-**Verification:**
-- [x] `npm -w client run build` succeeds.
-**Dependencies:** Task 2.2
-**Files touched:**
-- `client/src/features/tickets/components/TicketChatterComposer.tsx`
-- `client/src/features/tickets/components/index.ts`
-**Estimated scope:** Small (2 files)
-
----
-
-### Task 3.2: Refactor `TicketResponses` into `TicketChatter` with Internal Note Theming
-**Description:** Update message rendering to support internal note styling (amber border, staff badge, eye-off icon) and auto-scroll.
-**Acceptance criteria:**
-- [x] Internal notes display with amber accent, "Internal Note" badge, and distinct visual treatment.
-- [x] Regular messages maintain clean conversational speech bubbles (Tech on right/left per role, Client on opposite).
-- [x] Component auto-scrolls smoothly to the latest response upon new message receipt.
-**Verification:**
-- [x] `npm -w client run build` succeeds.
-**Dependencies:** Task 3.1
-**Files touched:**
-- `client/src/features/tickets/components/TicketResponses.tsx`
-- `client/src/features/tickets/components/TicketChatter.tsx`
-- `client/src/features/tickets/components/index.ts`
-**Estimated scope:** Medium (3 files)
-
----
-
-## Checkpoint: Chatter Component Ready
-- [x] Composer and chat list render properly with dual-mode tabs and internal note theming
-
----
-
-## Phase 4: Layout Decoupling & Sheet Drawer in `TicketDetailPage`
-
-### Task 4.1: Implement `TicketChatterDrawer` with Radix `Sheet` & `useUrlState`
-**Description:** Build drawer wrapper component using `Sheet` that synchronizes open/closed state with URL query parameter `?chat=open`.
-**Acceptance criteria:**
-- [x] Create `client/src/features/tickets/components/TicketChatterDrawer.tsx` wrapping `Sheet`, `SheetContent`, and `SheetHeader`.
-- [x] Integrate with `useUrlState` or `useSearchParams` so `?chat=open` automatically controls the drawer.
-- [x] Provide smooth opening/closing transitions and clean mobile header with ticket ID.
-**Verification:**
-- [x] `npm -w client run build` succeeds.
-**Dependencies:** Task 3.2
-**Files touched:**
-- `client/src/features/tickets/components/TicketChatterDrawer.tsx`
-- `client/src/features/tickets/components/index.ts`
-**Estimated scope:** Small (2 files)
-
----
-
-### Task 4.2: Refactor `TicketDetailPage.tsx` for Responsive Side-by-Side & Mobile Drawer
-**Description:** Decouple `TicketResponses` from the static left column in `TicketDetailPage.tsx`. On `xl:` viewports, display persistent side-by-side Chatter; on `< xl:`, show slide-over drawer triggered by header button.
-**Acceptance criteria:**
-- [x] On `xl:` (`>= 1280px`), render two-column workspace: left pane (ticket description, telemetry snapshot, timeline) and right pane (`TicketChatter`).
-- [x] On `< xl:`, render single column layout and mount `TicketChatterDrawer`.
-- [x] In `TicketDetailHeader`, add Chatter toggle button with response counter badge (e.g., "💬 5 responses") that opens the drawer or toggles desktop pane.
-- [x] Ensure no duplicate rendering of responses when transitioning breakpoints.
-**Verification:**
-- [x] `npm -w client run build` succeeds.
-- [x] Visual verification of desktop side-by-side and mobile drawer behavior.
-**Dependencies:** Task 4.1
-**Files touched:**
-- `client/src/features/tickets/pages/TicketDetailPage.tsx`
-- `client/src/features/tickets/components/TicketDetailHeader.tsx`
+- `packages/msp-agent/src/upgrade.rs`
+- `packages/msp-agent/src/main.rs`
 **Estimated scope:** Medium (2 files)
 
 ---
 
-## Checkpoint: Responsive UX Complete
-- [x] Layout renders side-by-side on wide screens
-- [x] Mobile/tablet view opens drawer cleanly via header toggle button and `?chat=open`
-
----
-
-## Phase 5: Verification & Full Suite Validation
-
-### Task 5.1: Unit & Component Tests for `TicketChatter` & `TicketDetailPage`
-**Description:** Add/update frontend test coverage for the decoupled chatter and dual-mode composer.
+### Task 2.2: Unit & Integration Tests for Agent Upgrade Dispatcher
+**Description:** Add unit tests for the agent upgrade staging, validation, and execution paths in Rust.
 **Acceptance criteria:**
-- [x] Test verifying `TicketChatterComposer` hides "Log Note" tab for clients.
-- [x] Test verifying `TicketChatterDrawer` toggles based on open prop / state.
+- [x] Write tests covering SHA-256 verification and command generation for MSI upgrades in `packages/msp-agent/src/upgrade.rs`.
+- [x] Ensure non-Windows test mock branches pass cleanly.
 **Verification:**
-- [x] `npm -w client run test:run` passes 100%.
-**Dependencies:** Task 4.2
+- [x] `cargo test --manifest-path packages/msp-agent/Cargo.toml` passes.
+**Dependencies:** Task 2.1
 **Files touched:**
-- `client/src/features/tickets/components/TicketChatter.test.tsx`
-**Estimated scope:** Small (1-2 files)
+- `packages/msp-agent/src/upgrade.rs`
+**Estimated scope:** Small (1 file)
 
 ---
 
-### Task 5.2: Full Monorepo Typecheck & Test Suite Execution
-**Description:** Verify end-to-end repository health across packages, server, and client.
+## Checkpoint: Agent Service Ready for MSI OTA
+- [x] Rust agent compiles cleanly in release mode
+- [x] Rust unit tests pass
+
+---
+
+## Phase 3: WiX Packaging Authoring & Automation
+
+### Task 3.1: WiX Manifest Authoring (`Product.wxs`) for Unified Suite
+**Description:** Author the WiX XML manifest (`packages/msp-agent/installer/Product.wxs` or `packages/msp-installer/Product.wxs`) configuring the unified installation of `msp-agent.exe`, `msp-tray.exe`, service registration, Run key, and MajorUpgrade.
 **Acceptance criteria:**
-- [x] `npm run build:packages` succeeds with exit code 0.
-- [x] `npm -w server run build` succeeds with exit code 0.
-- [x] `npm -w client run build` succeeds with exit code 0.
-- [x] `npm -w server run test` passes without regressions.
-- [x] `npm -w client run test:run` passes without regressions.
+- [x] Define `<Package>` with target `%ProgramFiles%\MSP\EndpointSuite\`.
+- [x] Configure `<ServiceInstall>` for `MSPEndpointAgent` with automatic startup and failure restart actions.
+- [x] Configure `<ServiceControl>` to stop service on uninstall/upgrade and start on install/upgrade.
+- [x] Configure `HKLM\Software\Microsoft\Windows\CurrentVersion\Run` key for `msp-tray.exe`.
+- [x] Configure `<MajorUpgrade>` with `Schedule="afterInstallInitialize"` and persistent `UpgradeCode`.
+- [x] Define public properties `GATEWAY_URL` and `AGENT_TOKEN` with safe defaults.
+- [x] Add `WixCloseApplication` or custom action to close active `msp-tray.exe` prior to file overwrite.
 **Verification:**
-- [x] All automated gates pass green.
-**Dependencies:** Task 5.1
+- [x] WiX schema validation succeeds.
+**Dependencies:** Task 2.1
+**Files touched:**
+- `packages/msp-agent/installer/Product.wxs` (or new installer directory)
+**Estimated scope:** Medium (1-2 files)
+
+---
+
+### Task 3.2: Portable WiX Automated Build Script (`scripts/build-suite-msi.ps1`)
+**Description:** Write an automated PowerShell packaging script that builds `msp-agent` release binary, builds `msp-tray` release binary, automatically bootstraps portable WiX binaries if missing, and compiles the final `msp-endpoint-suite.msi`.
+**Acceptance criteria:**
+- [x] PowerShell script detects or auto-downloads portable WiX binaries (`candle.exe`/`light.exe`) into `.tools/wix/`.
+- [x] Compiles `msp-agent` and `msp-tray` in release mode.
+- [x] Invokes WiX compiler and linker to output `dist/msp-endpoint-suite-v<version>.msi`.
+- [x] Add npm script `"build:installer"` in root `package.json`.
+**Verification:**
+- [x] Running script compiles and generates a valid `.msi` file in `dist/`.
+**Dependencies:** Task 3.1
+**Files touched:**
+- `scripts/build-suite-msi.ps1`
+- `package.json`
+**Estimated scope:** Medium (2 files)
+
+---
+
+## Checkpoint: Automated MSI Generation Verified
+- [x] `npm run build:installer` succeeds end-to-end and outputs `msp-endpoint-suite.msi`
+- [x] MSI size and structure are within expected boundaries
+
+---
+
+## Phase 4: Verification & End-to-End Validation
+
+### Task 4.1: End-to-End Silent Install & Upgrade Verification (`/qn`)
+**Description:** Test silent installation, service registration, tray auto-start key, and version upgrade behavior using `msiexec.exe`.
+**Acceptance criteria:**
+- [x] Test silent install: `msiexec /i msp-endpoint-suite.msi /qn GATEWAY_URL="wss://localhost/agent-ws"`.
+- [x] Verify `MSPEndpointAgent` service is registered and running.
+- [x] Verify `msp-tray.exe` Run key exists in `HKLM`.
+- [x] Verify upgrade replaces binaries cleanly without 1603 error or reboot request.
+- [x] Verify uninstall removes binaries and service cleanly.
+**Verification:**
+- [x] Windows PowerShell validation script checks service and registry state.
+**Dependencies:** Task 3.2
+**Files touched:**
+- `scripts/test-msi-install.ps1`
+**Estimated scope:** Small (1 file)
+
+---
+
+### Task 4.2: Full Monorepo Typecheck & Build Suite Verification
+**Description:** Run comprehensive workspace quality checks across packages, server, and client.
+**Acceptance criteria:**
+- [x] `npm run build:packages` succeeds with code 0.
+- [x] `npm -w server run build` succeeds with code 0.
+- [x] `npm -w client run build` succeeds with code 0.
+- [x] `npm -w server run test` passes 100%.
+- [x] `npm -w client run test:run` passes 100%.
+**Verification:**
+- [x] All CI and monorepo automated gates pass green.
+**Dependencies:** Task 4.1
 **Files touched:**
 - Monorepo wide
 **Estimated scope:** Verification (0 files modified)

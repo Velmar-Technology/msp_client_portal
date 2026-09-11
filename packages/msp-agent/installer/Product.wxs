@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+  <Product Id="*"
+           Name="MSP Endpoint Suite"
+           Language="1033"
+           Version="$(var.Version)"
+           Manufacturer="Velmar Technology"
+           UpgradeCode="B6F3924B-0639-44F4-A0C1-6060F3F197DA">
+
+    <Package InstallerVersion="301"
+             Compressed="yes"
+             InstallScope="perMachine"
+             Description="Velmar MSP Endpoint Agent &amp; Desktop Support Assistant"
+             Comments="Enterprise Windows Endpoint Suite for Velmar MSP Client Portal." />
+
+    <MajorUpgrade Schedule="afterInstallInitialize"
+                  DowngradeErrorMessage="A newer version of MSP Endpoint Suite is already installed." />
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Public Deployment Properties for Silent Mass Provisioning -->
+    <Property Id="GATEWAY_URL" Value="wss://helpdesk.velmartech.com.do/agent-ws" Secure="yes" />
+    <Property Id="AGENT_TOKEN" Secure="yes" />
+    <Property Id="PAIRING_CODE" Secure="yes" />
+
+    <!-- Close msp-tray.exe gracefully before file replacement during upgrades -->
+    <util:CloseApplication Id="CloseMspTray"
+                           Target="msp-tray.exe"
+                           CloseMessage="yes"
+                           RebootPrompt="no"
+                           Timeout="5" />
+
+    <!-- Directory Structure -->
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <!-- %ProgramFiles%\MSP\EndpointSuite -->
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="MSPFolder" Name="MSP">
+          <Directory Id="INSTALLFOLDER" Name="EndpointSuite">
+            
+            <!-- Agent Service Executable & Service Control -->
+            <Component Id="MspAgentComponent" Guid="4D82103B-A878-4384-9D66-3D3C6BC59320" Win64="yes">
+              <File Id="MspAgentExe"
+                    Source="$(var.AgentSourceExe)"
+                    KeyPath="yes" />
+              
+              <!-- Windows Service: MSPEndpointAgent -->
+              <ServiceInstall Id="ServiceInstaller"
+                              Type="ownProcess"
+                              Name="MSPEndpointAgent"
+                              DisplayName="MSP Endpoint Agent"
+                              Description="Autonomous endpoint telemetry, diagnostics, and secure support tunnel for Velmar MSP Client Portal."
+                              Start="auto"
+                              Account="LocalSystem"
+                              ErrorControl="normal"
+                              Vital="yes" />
+
+              <ServiceControl Id="ServiceControl"
+                              Name="MSPEndpointAgent"
+                              Start="install"
+                              Stop="both"
+                              Remove="uninstall"
+                              Wait="yes" />
+            </Component>
+
+            <!-- Tray Assistant Executable -->
+            <Component Id="MspTrayComponent" Guid="C4697F8A-28B9-450F-A16A-D1515E8D6BF4" Win64="yes">
+              <File Id="MspTrayExe"
+                    Source="$(var.TraySourceExe)"
+                    KeyPath="yes" />
+            </Component>
+
+            <!-- HKLM Run Key to auto-start Tray Assistant in interactive user sessions -->
+            <Component Id="MspTrayRunKeyComponent" Guid="84E5F520-2E24-4B7C-A5E5-7A2BB18A9E31" Win64="yes">
+              <RegistryKey Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\Run">
+                <RegistryValue Type="string"
+                               Name="MSPSupportAssistant"
+                               Value="&quot;[INSTALLFOLDER]msp-tray.exe&quot;"
+                               KeyPath="yes" />
+              </RegistryKey>
+            </Component>
+
+          </Directory>
+        </Directory>
+      </Directory>
+
+      <!-- %ProgramData%\MSP for persistent tokens and local audit logs (Never uninstalled) -->
+      <Directory Id="CommonAppDataFolder">
+        <Directory Id="MSPDataFolder" Name="MSP">
+          <Component Id="MspDataFolderComponent" Guid="E2F9E586-B945-42AC-BC4B-4E38E31A7C5D" Permanent="yes">
+            <CreateFolder />
+          </Component>
+        </Directory>
+      </Directory>
+    </Directory>
+
+    <!-- Features -->
+    <Feature Id="Complete" Title="MSP Endpoint Suite" Level="1">
+      <ComponentRef Id="MspAgentComponent" />
+      <ComponentRef Id="MspTrayComponent" />
+      <ComponentRef Id="MspTrayRunKeyComponent" />
+      <ComponentRef Id="MspDataFolderComponent" />
+    </Feature>
+
+  </Product>
+</Wix>

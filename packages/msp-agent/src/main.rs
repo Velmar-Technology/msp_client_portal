@@ -381,6 +381,12 @@ fn handle_upgrade(
         .get("rollback_timeout_secs")
         .and_then(|v| v.as_u64())
         .unwrap_or(45);
+    let installer_type = payload
+        .get("installer_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let is_msi = installer_type.eq_ignore_ascii_case("msi")
+        || download_url.to_lowercase().ends_with(".msi");
 
     if target_version.is_empty() || download_url.is_empty() || sha256_checksum.is_empty() {
         warn!("[agent] Invalid AGENT_UPGRADE payload: target_version, download_url, and sha256_checksum required");
@@ -394,14 +400,18 @@ fn handle_upgrade(
     }
 
     info!(
-        "[agent] Scheduled AGENT_UPGRADE to v{} from {} (rollback deadline: {}s)",
-        target_version, download_url, rollback_timeout_secs
+        "[agent] Scheduled AGENT_UPGRADE ({}) to v{} from {} (rollback deadline: {}s)",
+        if is_msi { "MSI" } else { "binary" },
+        target_version,
+        download_url,
+        rollback_timeout_secs
     );
 
     let ack = serde_json::json!({
         "success": true,
         "status": "UPGRADE_PREPARED",
         "target_version": target_version,
+        "installer_type": if is_msi { "msi" } else { "binary" },
         "rollback_timeout_secs": rollback_timeout_secs
     });
 
@@ -410,10 +420,19 @@ fn handle_upgrade(
         // Yield momentarily to let the WebSocket frame flush
         tokio::time::sleep(Duration::from_millis(1500)).await;
 
-        let staging_path = std::path::PathBuf::from("C:\\ProgramData\\MSP\\updates")
-            .join(format!("msp-agent-v{}.staged", target_version));
+        let staging_path = if is_msi {
+            std::path::PathBuf::from("C:\\ProgramData\\MSP\\updates")
+                .join(format!("msp-endpoint-suite-v{}.msi", target_version))
+        } else {
+            std::path::PathBuf::from("C:\\ProgramData\\MSP\\updates")
+                .join(format!("msp-agent-v{}.staged", target_version))
+        };
 
-        info!("[agent] Commencing OTA download from {}...", download_url);
+        info!(
+            "[agent] Commencing OTA {} download from {}...",
+            if is_msi { "MSI" } else { "binary" },
+            download_url
+        );
         if let Err(e) =
             upgrade::download_and_verify(&download_url, &sha256_checksum, &staging_path).await
         {
@@ -421,19 +440,33 @@ fn handle_upgrade(
             return;
         }
 
-        info!("[agent] Checksum verified. Executing atomic move swap...");
-        match upgrade::execute_atomic_swap(
-            &target_version,
-            &current_version,
-            &staging_path,
-            rollback_timeout_secs,
-        ) {
-            Ok(_) => {
-                info!("[agent] Atomic move swap succeeded! Triggering service restart...");
-                upgrade::trigger_service_restart();
+        if is_msi {
+            info!("[agent] Checksum verified. Executing detached MSI upgrade...");
+            match upgrade::execute_msi_upgrade(&staging_path) {
+                Ok(_) => {
+                    info!("[agent] Detached MSI upgrade launched. Exiting agent cleanly for installer takeover...");
+                    tokio::time::sleep(Duration::from_millis(500)).await;
+                    std::process::exit(0);
+                }
+                Err(e) => {
+                    error!("[agent] Detached MSI upgrade failed: {}", e);
+                }
             }
-            Err(e) => {
-                error!("[agent] Atomic move swap failed: {}", e);
+        } else {
+            info!("[agent] Checksum verified. Executing atomic move swap...");
+            match upgrade::execute_atomic_swap(
+                &target_version,
+                &current_version,
+                &staging_path,
+                rollback_timeout_secs,
+            ) {
+                Ok(_) => {
+                    info!("[agent] Atomic move swap succeeded! Triggering service restart...");
+                    upgrade::trigger_service_restart();
+                }
+                Err(e) => {
+                    error!("[agent] Atomic move swap failed: {}", e);
+                }
             }
         }
     });
