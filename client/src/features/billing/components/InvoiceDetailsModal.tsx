@@ -159,6 +159,14 @@ export const InvoiceDetailsModal = ({
                   : `$${Number(invoice.amount).toFixed(2)}`}
               </span>
             </div>
+            {Number(invoice.total) < Number(invoice.amount) && (
+              <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 font-medium">
+                <span>{t('billing.discount') || 'Discount (100%)'}</span>
+                <span className="font-mono">
+                  -${(Number(invoice.amount) - Number(invoice.total)).toFixed(2)}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between items-center text-muted-foreground">
               <span>{t('billing.itbisTax') || 'ITBIS (18%)'}</span>
               <span className="font-mono font-medium">

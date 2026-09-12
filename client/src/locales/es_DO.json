@@ -1343,6 +1343,7 @@
     "rncLabel": "RNC / Cédula",
     "ncfLabel": "Comprobante Fiscal (NCF)",
     "itbisTax": "ITBIS (18%)",
+    "discount": "Descuento (100%)",
     "readOnlyBannerTitle": "Cuenta en Modo Solo Lectura (Balance Vencido)",
     "readOnlyBannerDesc": "Su cuenta se encuentra en modo de solo lectura por facturas vencidas (Sección 9.3). La creación de tickets y subida de archivos están restringidas hasta regularizar el pago.",
     "viewInvoices": "Ver Facturas",

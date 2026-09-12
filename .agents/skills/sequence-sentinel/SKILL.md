@@ -18,6 +18,7 @@ The **SequenceSentinel Agent** acts as an autonomous integrity auditor and self-
    - If 5 remediations are reached within 60 minutes for a tenant, the circuit breaker immediately trips, halts automated mutations for that tenant, logs a Winston warning, and outputs `CIRCUIT_BREAKER_TRIPPED`.
 4. **Zero Duplicate Writes (Idempotency):** Remediators must verify the target entity's live state immediately before applying an update (e.g. verifying an earning does not already exist before inserting commission).
 5. **No Destructive Automation Without Human Sign-off:** Day 5 `READ_ONLY` mode enforcement (`BL-702`) is automated; Day 30 data purge/permanent deletion is strictly reserved for manual human authorization.
+6. **Zero-Invoice Guarantee for Complimentary & Free Grants (`BL-703`):** Manual administrative plan assignments, trial access, promotional onboarding, and free duration extensions must NEVER generate invoice records. Invoices are strictly reserved for genuine customer financial settlements (PayPal captures or verified wire payments).
 
 ---
 
@@ -40,6 +41,7 @@ The **SequenceSentinel Agent** acts as an autonomous integrity auditor and self-
 | **BL-402** | Renewal Scheduler | BILLING | Cron evaluates expiry, applies hardware multiplier ($M_{\text{equip}}$), creates invoices, sends notice emails. |
 | **BL-701** | 18% ITBIS Tax & NCF | BILLING | Computes exact 18% ITBIS tax ($\pm 0.01$) and assigns Series B01 sequential NCF vouchers for valid tax IDs. |
 | **BL-702** | Non-Payment Scale | BILLING | 4-Tier overdue scale: Day 1 (Notice), Day 5 (`READ_ONLY`), Day 15 (`SUSPENDED`), Day 30 (`PURGED`). |
+| **BL-703** | Complimentary & Free Plans | BILLING | Zero-Invoice Guarantee: Free plans, complimentary assignments, trials, and free extensions must NEVER place invoices in `invoices`. Invoices require genuine customer transactions. |
 | **BL-801** | Technician Bounties | FINANCIAL | Closed tickets generate priority-scaled bounties ($8 base $\times$ mult + $4 SLA); auto-posts Pre-Split OpEx. |
 | **BL-802** | 70/30 Profit Split | FINANCIAL | Net $= \text{Gross Paid} - \text{Total OpEx}$; validates 70% Company / 30% Lead Engineer dividend split. |
 | **BL-501** | CRM Lead Pipeline | CRM_HEALTH | Linear pipeline progression; `WON` deal status auto-provisions client user and tenant. |
@@ -119,36 +121,45 @@ npm run sentinel:op -- feature:manage --plan=PL-001 --add=PASSWORD_MANAGER
 *MCP Alternative:* `msp_manage_features` with `{ user, addFeatures, removeFeatures }`.
 
 #### 2. 1-Shot Subscription Duration Extension
-Extends active subscription contract duration by any interval ("1 year", "6 months", "12 months"). Automatically calculates the new renewal date, generates a renewal invoice with 18% Dominican ITBIS and sequential NCF, marks it paid, and sends in-app notifications:
+Extends active subscription contract duration by any interval ("1 year", "6 months", "12 months"). For paid extensions, it automatically generates a renewal invoice with 18% Dominican ITBIS and sequential NCF; for free/complimentary grants, pass `--free` to avoid generating any invoice:
 ```bash
+npm run sentinel:op -- sub:extend --user="user@example.com" --extension="1 year" --free
 npm run sentinel:op -- sub:extend --user="user@example.com" --extension="1 year" --mark-paid
 npm run sentinel:op -- sub:extend --user="user@example.com" --extension="6 months"
 ```
 *MCP Alternative:* `msp_extend_subscription` with `{ user, extension: "1 year", markPaid: true }`.
 
 #### 3. 1-Shot Subscription Plan Provisioning & Onboarding
-Provisions any catalog plan or tier name (`Basic`, `Standard`, `Corporate`, `PL-001`) for any user, sets equipment quotas, generates the initial invoice with 18% ITBIS tax, and settles payment:
+Provisions any catalog plan or tier name (`Basic`, `Standard`, `Corporate`, `PL-001`) for any user. Pass `--free` for complimentary or trial onboardings to prevent invoice placement:
 ```bash
+npm run sentinel:op -- plan:provision --user="user@example.com" --plan=PL-001 --free
 npm run sentinel:op -- plan:provision --user="user@example.com" --plan=PL-001 --cycle=annual --capacity=1 --mark-paid
 npm run sentinel:op -- plan:provision --user="user@example.com" --plan=Basic --cycle=monthly
 ```
 *MCP Alternative:* `msp_provision_subscription_plan` with `{ user, plan, cycle, equipmentCount, markPaid }`.
 
-#### 4. User Role & Customer Classification Updates
+#### 4. Invoice Void & Removal
+Voids or removes an invoice in case of erroneous placement or complimentary adjustment:
+```bash
+npm run sentinel:op -- invoice:void --invoice=INV-2026-XXXXXX
+npm run sentinel:op -- invoice:void --user="user@example.com"
+```
+
+#### 5. User Role & Customer Classification Updates
 Converts or updates platform roles (`CLIENT`, `TECHNICIAN`, `ADMIN`) and customer classifications (`CLIENT`, `ENTERPRISE`, `STUDENT`) in a single atomic pass:
 ```bash
 npm run sentinel:op -- user:role --user="user@example.com" --role=CLIENT --client-type=CLIENT
 ```
 *MCP Alternative:* `msp_update_user_role` with `{ user, role: "CLIENT", clientType: "CLIENT" }`.
 
-#### 5. Live Infrastructure & Portainer Stack Health Audit
+#### 6. Live Infrastructure & Portainer Stack Health Audit
 Inspects all 15 container services, health checks, restart counters, and ports on Portainer:
 ```bash
 npm run sentinel:op -- infra:audit
 ```
 *MCP Alternative:* `msp_audit_portainer_infrastructure` with `{ endpointId: 3, stackId: 17 }`.
 
-#### 6. Client Equipment Quota Expansion & True-Up (`BL-202`)
+#### 7. Client Equipment Quota Expansion & True-Up (`BL-202`)
 Expands device slots and auto-computes prorated 18% ITBIS hardware true-up invoices:
 ```typescript
 await call_mcp_tool('msp-support', 'msp_update_client_equipment_quota', {
@@ -159,7 +170,7 @@ await call_mcp_tool('msp-support', 'msp_update_client_equipment_quota', {
 });
 ```
 
-#### 7. Passive / Active SequenceSentinel Invariant Audits (`BL-101` to `BL-802`)
+#### 8. Passive / Active SequenceSentinel Invariant Audits (`BL-101` to `BL-802`)
 Audits chronological audit sequences against all 18 business rules with optional self-healing:
 ```typescript
 await call_mcp_tool('msp-support', 'msp_run_sentinel_audit', {

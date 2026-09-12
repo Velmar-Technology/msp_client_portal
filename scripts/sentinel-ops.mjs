@@ -245,12 +245,15 @@ async function handleSubExtend(opts) {
     process.exit(1);
   }
   const extension = opts.extension || '1 year';
+  // Default to zero-invoice for administrative CLI operations to avoid phantom invoices
+  const shouldBill = opts.bill === true || opts['create-invoice'] === true || opts.invoice === true;
+  const isFree = !shouldBill || opts.free === true || opts['no-invoice'] === true;
   const markPaid = opts['mark-paid'] !== false;
 
   console.log(`🛡️  [SequenceSentinel] Executing sub:extend...`);
   console.log(`   Target User:     ${user}`);
   console.log(`   Extension:       ${extension}`);
-  console.log(`   Auto-Settle:     ${markPaid ? 'ENABLED (PAID)' : 'PENDING'}`);
+  console.log(`   Pricing:         ${isFree ? 'FREE / COMPLIMENTARY (Zero Invoice Default)' : (markPaid ? 'PAID ($203.90 USD incl. 18% ITBIS)' : 'PENDING')}`);
 
   let interval = "'1 year'";
   let isAnnual = true;
@@ -276,6 +279,7 @@ async function handleSubExtend(opts) {
     WHERE s.client_id = u.id AND (u.email = '${user}' OR u.id::text = '${user}')
     RETURNING s.id, s.service_name, s.renewal_date, s.tenant_id, s.client_id;
 
+    ${isFree ? '-- Free extension: zero invoice created' : `
     INSERT INTO invoices (
       id, invoice_number, client_id, amount, tax_amount, total, status, invoice_date, due_date, tenant_id, currency, created_at
     )
@@ -286,6 +290,7 @@ async function handleSubExtend(opts) {
     JOIN users u ON s.client_id = u.id
     WHERE (u.email = '${user}' OR u.id::text = '${user}')
     LIMIT 1;
+    `}
 
     INSERT INTO notifications (id, user_id, title, message, link, type, read, tenant_id, created_at)
     SELECT
@@ -303,7 +308,11 @@ async function handleSubExtend(opts) {
   await invalidateRedisCache();
 
   console.log(`\n✅ [SUCCESS] Subscription extended for user '${user}' by ${extension}`);
-  console.log(`   Invoice Issued:  ${invoiceNumber} (Status: ${markPaid ? 'PAID' : 'PENDING'})`);
+  if (isFree) {
+    console.log(`   Invoice:         NONE (Free / Complimentary grant)`);
+  } else {
+    console.log(`   Invoice Issued:  ${invoiceNumber} (Status: ${markPaid ? 'PAID' : 'PENDING'})`);
+  }
   console.log(`   Redis Cache:     Invalidated\n`);
 }
 
@@ -371,6 +380,10 @@ async function handlePlanProvision(opts) {
   const tax = Math.round(price * capacity * 0.18 * 100) / 100;
   const total = Math.round((price * capacity + tax) * 100) / 100;
 
+  // Default to zero-invoice for administrative CLI operations to avoid phantom invoices
+  const shouldBill = opts.bill === true || opts['create-invoice'] === true || opts.invoice === true;
+  const isFree = !shouldBill || opts.free === true || opts['no-invoice'] === true || p.price === 0;
+
   const sql = `
     BEGIN;
     INSERT INTO subscriptions (
@@ -381,12 +394,14 @@ async function handlePlanProvision(opts) {
       ${capacity}, '${u.tenant_id}', NOW(), NOW()
     ) RETURNING id;
 
+    ${isFree ? '-- Free plan: zero invoice created' : `
     INSERT INTO invoices (
       id, invoice_number, client_id, amount, tax_amount, total, status, invoice_date, due_date, tenant_id, currency, created_at
     ) VALUES (
       gen_random_uuid(), '${invoiceNumber}', '${u.id}', ${price * capacity}, ${tax}, ${total},
       '${markPaid ? 'PAID' : 'PENDING'}', CURRENT_DATE, CURRENT_DATE + 30, '${u.tenant_id}', 'USD', NOW()
     );
+    `}
     COMMIT;
   `;
 
@@ -396,7 +411,11 @@ async function handlePlanProvision(opts) {
   console.log(`\n✅ [SUCCESS] Plan provisioned successfully:`);
   console.log(`   User:        ${u.email} (Tenant: ${u.tenant_id})`);
   console.log(`   Plan:        ${p.id} (${p.name?.en_US || p.name})`);
-  console.log(`   Invoice:     ${invoiceNumber} ($${total} USD, Status: ${markPaid ? 'PAID' : 'PENDING'})\n`);
+  if (isFree) {
+    console.log(`   Invoice:     NONE (Free / Complimentary grant)\n`);
+  } else {
+    console.log(`   Invoice:     ${invoiceNumber} ($${total} USD, Status: ${markPaid ? 'PAID' : 'PENDING'})\n`);
+  }
 }
 
 async function handleInfraAudit(opts) {
@@ -468,6 +487,81 @@ async function handleSubPlan(opts) {
   console.log(`   Redis Cache: Invalidated (gen:plans:global)\n`);
 }
 
+async function handleInvoiceVoid(opts) {
+  const invoice = opts.invoice || opts.id || opts.number;
+  const user = opts.user;
+  if (!invoice && !user) {
+    console.error('Error: Either --invoice=<number> or --user=<email> is required.');
+    process.exit(1);
+  }
+  console.log(`🛡️  [SequenceSentinel] Voiding / removing invoice...`);
+  let sql = '';
+  if (invoice) {
+    console.log(`   Target Invoice:  ${invoice}`);
+    sql = `DELETE FROM invoices WHERE invoice_number = '${invoice}' OR id::text = '${invoice}';`;
+  } else if (user) {
+    console.log(`   Target User:     ${user}`);
+    sql = `
+      DELETE FROM invoices 
+      WHERE id IN (
+        SELECT id FROM invoices WHERE client_id IN (SELECT id FROM users WHERE email = '${user}' OR id::text = '${user}')
+        ORDER BY created_at DESC LIMIT 1
+      );
+    `;
+  }
+  await execSql(sql);
+  await invalidateRedisCache();
+  console.log(`\n✅ [SUCCESS] Invoice removed successfully.`);
+  console.log(`   Redis Cache:     Invalidated (gen:plans:global)\n`);
+}
+
+async function handleInvoiceCreateDiscounted(opts) {
+  const user = opts.user || 'e.a.polanco.robles@gmail.com';
+  console.log(`🛡️  [SequenceSentinel] Creating 100% discounted invoice for user '${user}'...`);
+
+  const users = await execSqlJson(`SELECT id, email, tenant_id FROM users WHERE email = '${user}' OR id::text = '${user}' OR name ILIKE '%${user}%' LIMIT 1`);
+  if (!users.length) throw new Error(`User '${user}' not found`);
+  const u = users[0];
+
+  const randNum = String(Math.floor(100000 + Math.random() * 900000));
+  const year = new Date().getFullYear();
+  const invoiceNumber = `INV-${year}-${randNum}`;
+
+  const lineItems = [
+    { description: 'Basic Support Plan — Monthly Onboarding', quantity: 1, unit_price: 18.00 },
+    { description: 'Basic Support Plan — 1-Year Annual Extension', quantity: 1, unit_price: 172.80 },
+    { description: 'Promotional 100% Discount (Complimentary Plan Assignment)', quantity: 1, unit_price: -190.80 }
+  ];
+  const lineItemsJson = JSON.stringify(lineItems).replace(/'/g, "''");
+
+  const sql = `
+    INSERT INTO invoices (
+      id, invoice_number, client_id, amount, tax_amount, total, status, invoice_date, due_date, tenant_id, currency, line_items, created_at
+    ) VALUES (
+      gen_random_uuid(),
+      '${invoiceNumber}',
+      '${u.id}',
+      190.80,
+      0.00,
+      0.00,
+      'PAID',
+      CURRENT_DATE,
+      CURRENT_DATE + 30,
+      '${u.tenant_id}',
+      'USD',
+      '${lineItemsJson}'::jsonb,
+      NOW()
+    ) RETURNING invoice_number, amount, tax_amount, total, status;
+  `;
+  await execSql(sql);
+  await invalidateRedisCache();
+  console.log(`\n✅ [SUCCESS] 100% discounted invoice created successfully: ${invoiceNumber}`);
+  console.log(`   Items:           2 items ($18.00 + $172.80 = $190.80)`);
+  console.log(`   Discount:        100% (-$190.80)`);
+  console.log(`   Total Paid:      $0.00 USD`);
+  console.log(`   Redis Cache:     Invalidated (gen:plans:global)\n`);
+}
+
 async function main() {
   const { action, options } = parseCliArgs();
 
@@ -502,6 +596,17 @@ async function main() {
       await handlePlanProvision(options);
       break;
 
+    case 'invoice:void':
+    case 'invoice:delete':
+    case 'void-invoice':
+      await handleInvoiceVoid(options);
+      break;
+
+    case 'invoice:discounted':
+    case 'invoice:create-discounted':
+      await handleInvoiceCreateDiscounted(options);
+      break;
+
     case 'infra:audit':
     case 'infra':
       await handleInfraAudit(options);
@@ -514,12 +619,14 @@ Usage:
   node scripts/sentinel-ops.mjs <action> [options]
 
 Actions:
-  feature:manage   Add or remove features for a user or plan
-  sub:plan         Rebind user subscription to a plan (e.g. PL-001)
-  sub:extend       Extend subscription duration (e.g. 1 year)
-  user:role        Update user role or customer classification
-  plan:provision   Provision a subscription plan in one shot
-  infra:audit      Audit Portainer stack and container health
+  feature:manage       Add or remove features for a user or plan
+  sub:plan             Rebind user subscription to a plan (e.g. PL-001)
+  sub:extend           Extend subscription duration (e.g. 1 year)
+  user:role            Update user role or customer classification
+  plan:provision       Provision a subscription plan in one shot
+  invoice:void         Void/remove an invoice (--invoice=<num> | --user=<email>)
+  invoice:discounted   Create 100% discounted invoice with items (--user=<email>)
+  infra:audit          Audit Portainer stack and container health
       `);
   }
 }

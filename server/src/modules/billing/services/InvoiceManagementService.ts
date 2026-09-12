@@ -100,6 +100,9 @@ export class InvoiceManagementService {
    * @returns Enriched invoice with line_items
    */
   private async enrichInvoiceWithLineItems(inv: Invoice): Promise<EnrichedInvoice> {
+    if ((inv as any).line_items && Array.isArray((inv as any).line_items) && (inv as any).line_items.length > 0) {
+      return inv as EnrichedInvoice;
+    }
     try {
       const subs = await this.subscriptionRepo.findByClient(inv.client_id, inv.tenant_id);
       const invCreatedAt = new Date(inv.created_at || inv.invoice_date).getTime();

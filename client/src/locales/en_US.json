@@ -1347,6 +1347,7 @@
     "rncLabel": "RNC / Tax ID",
     "ncfLabel": "NCF (Tax Receipt)",
     "itbisTax": "ITBIS (18%)",
+    "discount": "Discount (100%)",
     "readOnlyBannerTitle": "Account in Read-Only Mode (Overdue Balance)",
     "readOnlyBannerDesc": "Your account is in Read-Only mode due to an overdue balance (Section 9.3). Support ticket creation and file uploads are disabled until pending invoices are settled.",
     "viewInvoices": "View Invoices",

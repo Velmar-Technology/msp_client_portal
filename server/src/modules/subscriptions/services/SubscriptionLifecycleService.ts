@@ -143,7 +143,15 @@ export class SubscriptionLifecycleService {
     const planDetails = await this.planRepo.findById(plan);
     if (!planDetails) return;
 
+    // Zero-invoice guard: Never place invoices for free plans or complimentary assignments
+    if (planDetails.price <= 0) {
+      return;
+    }
+
     const pricing = this.pricingSvc.calculatePricing(planDetails.price, equipmentCount, billingCycle);
+    if (pricing.total <= 0) {
+      return;
+    }
     const invoiceNumber = await this.pricingSvc.generateInvoiceNumber();
 
     const client = await this.userRepo.findById(clientId);
@@ -576,7 +584,7 @@ export class SubscriptionLifecycleService {
 
       if (data.createInvoice && data.extendMonths) {
         const planDetails = await this.planRepo.findById(sub.plan);
-        if (planDetails) {
+        if (planDetails && planDetails.price > 0) {
           const isAnnual = data.extendMonths >= 12;
           const cycleMultiplier = isAnnual ? 9.6 : data.extendMonths;
           const subtotal = Math.round(planDetails.price * cycleMultiplier * sub.equipment_count * 100) / 100;
