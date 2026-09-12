@@ -96,6 +96,13 @@
               </File>
             </Component>
 
+            <!-- WebView2 Runtime Loader Component for Desktop Companion -->
+            <Component Id="WebView2LoaderComponent" Guid="DD26F0AD-31DA-4F67-B5C8-32C299F5CD8D" Win64="yes">
+              <File Id="WebView2LoaderDll"
+                    Source="$(var.WebView2LoaderSourceDll)"
+                    KeyPath="yes" />
+            </Component>
+
             <!-- HKLM Run Key to auto-start Tray Assistant in interactive user sessions -->
             <Component Id="MspTrayRunKeyComponent" Guid="84E5F520-2E24-4B7C-A5E5-7A2BB18A9E31" Win64="yes">
               <RegistryKey Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\Run">
@@ -128,6 +135,7 @@
     <Feature Id="Complete" Title="MSP Endpoint Suite" Level="1">
       <ComponentRef Id="MspAgentComponent" />
       <ComponentRef Id="MspTrayComponent" />
+      <ComponentRef Id="WebView2LoaderComponent" />
       <ComponentRef Id="MspTrayRunKeyComponent" />
       <ComponentRef Id="MspDataFolderComponent" />
     </Feature>

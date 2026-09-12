@@ -85,6 +85,13 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
     return `irm "${deployScriptUrl}" | iex`;
   }, [deployScriptUrl, origin, subId, slotIndex]);
 
+  const msiDownloadUrl = '/uploads/binaries/msp-endpoint-suite.msi';
+
+  const msiCommand = useMemo(() => {
+    const baseOrigin = origin || 'https://helpdesk.velmartech.com.do';
+    return `msiexec.exe /i "${baseOrigin}${msiDownloadUrl}" /qn GATEWAY_URL="${defaultGatewayUrl}" AGENT_TOKEN="${token}"`;
+  }, [origin, defaultGatewayUrl, token]);
+
   const rmmCommand = useMemo(() => {
     return `powershell.exe -ExecutionPolicy Bypass -File .\\Install-MspAgent.ps1 -GatewayUrl "${defaultGatewayUrl}" -AgentToken "${token}" -Silent`;
   }, [defaultGatewayUrl, token]);
@@ -92,6 +99,10 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
   const cliCommand = useMemo(() => {
     return `.\\msp-agent.exe --install-service --gateway "${defaultGatewayUrl}" --token "${token}"`;
   }, [defaultGatewayUrl, token]);
+
+  const handleDownloadMsi = () => {
+    window.open(msiDownloadUrl, '_blank');
+  };
 
   const handleCopy = (text: string, tabKey: string) => {
     if (tabKey === "irm" && loading) {
@@ -222,7 +233,7 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
             </TabsContent>
 
             {/* TAB 2: Intune / GPO / RMM Silent */}
-            <TabsContent value="rmm" className="space-y-3 mt-3.5 focus-visible:outline-hidden">
+            <TabsContent value="rmm" className="space-y-3.5 mt-3.5 focus-visible:outline-hidden">
               <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
                 {t(
                   "devices.rmmInstruction",
@@ -230,33 +241,86 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
                 )}
               </p>
 
-              <div className="relative group bg-zinc-950 rounded-lg border border-zinc-800 p-3 font-mono text-xs text-cyan-300 shadow-inner">
-                <code className="block break-all select-all pr-10 text-[11.5px] leading-relaxed text-cyan-300">
-                  {rmmCommand}
-                </code>
+              {/* 1. MSI Package Deployment (Recommended) */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                    {t("devices.msiSilentTitle", "1. Windows Installer MSI (Intune / GPO / Silent)")}
+                  </span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 font-semibold">
+                    .msi
+                  </span>
+                </div>
+                <div className="relative group bg-zinc-950 rounded-lg border border-zinc-800 p-3 font-mono text-xs text-cyan-300 shadow-inner">
+                  <code className="block break-all select-all pr-10 text-[11.5px] leading-relaxed text-cyan-300">
+                    {msiCommand}
+                  </code>
 
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="secondary"
-                  onClick={() => handleCopy(rmmCommand, "rmm")}
-                  className="absolute top-2 right-2 h-7 w-7 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 cursor-pointer shadow-xs"
-                  aria-label={t("common.copy", "Copy Command")}
-                >
-                  {copiedTab === "rmm" ? (
-                    <Check className="h-3.5 w-3.5 text-emerald-400" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5" />
-                  )}
-                </Button>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="secondary"
+                    onClick={() => handleCopy(msiCommand, "msi")}
+                    className="absolute top-2 right-2 h-7 w-7 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 cursor-pointer shadow-xs"
+                    aria-label={t("common.copy", "Copy Command")}
+                  >
+                    {copiedTab === "msi" ? (
+                      <Check className="h-3.5 w-3.5 text-emerald-400" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </div>
               </div>
 
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                {t(
-                  "devices.rmmNote",
-                  "Uses Install-MspAgent.ps1 with -Silent flag to prevent popups and return exit code 0.",
-                )}
-              </p>
+              {/* 2. PowerShell Script (RMM) */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                    {t("devices.psSilentTitle", "2. PowerShell Script (RMM / NinjaOne / Datto)")}
+                  </span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 font-semibold">
+                    .ps1
+                  </span>
+                </div>
+                <div className="relative group bg-zinc-950 rounded-lg border border-zinc-800 p-2.5 font-mono text-xs text-zinc-300 shadow-inner">
+                  <code className="block break-all select-all pr-10 text-[11px] leading-relaxed text-zinc-300">
+                    {rmmCommand}
+                  </code>
+
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="secondary"
+                    onClick={() => handleCopy(rmmCommand, "rmm")}
+                    className="absolute top-2 right-2 h-6 w-6 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 cursor-pointer shadow-xs"
+                    aria-label={t("common.copy", "Copy Command")}
+                  >
+                    {copiedTab === "rmm" ? (
+                      <Check className="h-3 w-3 text-emerald-400" />
+                    ) : (
+                      <Copy className="h-3 w-3" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Direct MSI Download in Tab 2 */}
+              <div className="flex items-center justify-between pt-1 border-t border-zinc-200 dark:border-zinc-800">
+                <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  {t("devices.downloadMsiDirect", "Need the enterprise MSI package for Intune/GPO?")}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadMsi}
+                  className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span>{t("devices.downloadMsiBtn", "Download MSI Bundle (.msi)")}</span>
+                </Button>
+              </div>
             </TabsContent>
 
             {/* TAB 3: Manual Binary CLI */}
@@ -297,7 +361,7 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => window.open("/api/v1/equipment/agent-binary", "_blank")}
+                  onClick={() => window.open("/uploads/binaries/msp-agent.exe", "_blank")}
                   className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900"
                 >
                   <Download className="h-3.5 w-3.5" />
@@ -309,18 +373,31 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
         </div>
 
         {/* Footer with standard buttons and height */}
-        <DialogFooter className="p-3 bg-zinc-50/60 dark:bg-zinc-900/30 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between sm:justify-between">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleDownloadScript}
-            disabled={loading || !deployScriptUrl}
-            className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900"
-          >
-            <Download className="h-3.5 w-3.5" />
-            <span>{t("devices.downloadPs1Btn", "Download Script (.ps1)")}</span>
-          </Button>
+        <DialogFooter className="p-3 bg-zinc-50/60 dark:bg-zinc-900/30 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between sm:justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              onClick={handleDownloadMsi}
+              className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>{t("devices.downloadMsiBtn", "Download MSI Bundle (.msi)")}</span>
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadScript}
+              disabled={loading || !deployScriptUrl}
+              className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>{t("devices.downloadPs1Btn", "Download Script (.ps1)")}</span>
+            </Button>
+          </div>
 
           <Button
             type="button"

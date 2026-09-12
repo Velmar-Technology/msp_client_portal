@@ -24,6 +24,10 @@ vi.mock('../api/useEquipmentQueries', () => ({
     mutateAsync: vi.fn(),
     isPending: false,
   })),
+  useResetDeviceVault: vi.fn(() => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+  })),
 }));
 
 describe('DeviceVaultModal', () => {
@@ -98,5 +102,74 @@ describe('DeviceVaultModal', () => {
     fireEvent.click(upgradeBtn);
     expect(onClose).toHaveBeenCalled();
     expect(mockNavigate).toHaveBeenCalledWith('/plans?highlight=PL-003');
+  });
+
+  it('renders pending activation banner and Set Master Password button when activationUrl is present and isActivated is false', () => {
+    vi.mocked(equipmentQueries.useDeviceVault).mockReturnValue({
+      data: {
+        equipmentId: 'eq-123',
+        status: 'ACTIVE',
+        deviceEmail: 'device_01@tenant.local',
+        collectionId: 'col-456',
+        lastSyncedAt: '2026-09-01T12:00:00.000Z',
+        deviceName: 'Reception-PC',
+        activationUrl: 'https://helpdesk.velmartech.com.do/vault/#/accept-organization/?token=mock',
+        isActivated: false,
+      },
+      isLoading: false,
+      refetch: vi.fn(),
+    } as any);
+
+    render(
+      <MemoryRouter>
+        <DeviceVaultModal
+          isOpen={true}
+          onClose={vi.fn()}
+          equipmentId="eq-123"
+          deviceName="Reception-PC"
+          isLocked={false}
+        />
+      </MemoryRouter>
+    );
+
+    expect(screen.getAllByText('Pending Activation').length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getByText('Setup Required: Set Workstation Master Password')
+    ).toBeInTheDocument();
+    expect(screen.getAllByText('Set Master Password').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Copy Activation Link')).toBeInTheDocument();
+  });
+
+  it('renders enrolled & active confirmation when isActivated is true', () => {
+    vi.mocked(equipmentQueries.useDeviceVault).mockReturnValue({
+      data: {
+        equipmentId: 'eq-123',
+        status: 'ACTIVE',
+        deviceEmail: 'device_01@tenant.local',
+        collectionId: 'col-456',
+        lastSyncedAt: '2026-09-01T12:00:00.000Z',
+        deviceName: 'Reception-PC',
+        isActivated: true,
+      },
+      isLoading: false,
+      refetch: vi.fn(),
+    } as any);
+
+    render(
+      <MemoryRouter>
+        <DeviceVaultModal
+          isOpen={true}
+          onClose={vi.fn()}
+          equipmentId="eq-123"
+          deviceName="Reception-PC"
+          isLocked={false}
+        />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Active & Protected')).toBeInTheDocument();
+    expect(
+      screen.getByText('Workstation Vault Enrolled & Active')
+    ).toBeInTheDocument();
   });
 });

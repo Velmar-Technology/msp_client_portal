@@ -1,8 +1,11 @@
 # Infrastructure Specification: MSP Client Portal Production Stack
 
-_Status: Deployed & Active · Last Verified: 2026-09-11 · Version: 1.1_
+_Status: Deployed & Active · Last Verified: 2026-09-11 · Version: 1.3_
 
-> **2026-09-11 Post-Incident Update:** `VAULTWARDEN_ADMIN_TOKEN` was absent from the stack env, so `msp_server_prod` used the offline mock path and *Reset Vault Access* returned a fake success. Token generated, injected into stack 17 env, and compose now fails fast if it is missing (see §6, §8). On 2026-08-27: Zabbix `/zabbix/` subpath fix.
+> **2026-09-11 Post-Incident Updates:**
+> 1. **Admin Token Missing (v1.1):** `VAULTWARDEN_ADMIN_TOKEN` was absent from the stack env, causing `msp_server_prod` to run the offline mock path. Token was generated, injected into stack 17 env, and compose now fails fast (`${VAULTWARDEN_ADMIN_TOKEN:?...}`).
+> 2. **Subpath Route 404 & Admin Session Auth (v1.2):** Rocket Vaultwarden runs with `DOMAIN=https://helpdesk.velmartech.com.do/vault`, which mounts all routes under `/vault`. `VAULTWARDEN_URL` was updated to default to `http://vaultwarden:80/vault` (with automatic subpath extraction in `VaultwardenService.getBaseUrl()`). Furthermore, Rocket's `/admin/*` routes strictly require session cookie authentication (`VW_ADMIN`), which the backend now automatically negotiates via `POST /vault/admin` and caches for 15 minutes to prevent HTTP 429 rate limiting (see §6, §8).
+> 3. **Workstation Bitwarden Activation Flow & RSA Private Key (v1.3):** Device accounts use internal `.local` workstation identities (`device_<slotId>@<tenantId>.local`) where SMTP delivery is unavailable. Vaultwarden requires invited users to activate through an RS256-signed JWT token on `/#/accept-organization`. The portal backend mounts `/vaultwarden_data/rsa_key.pem` read-only (`vaultwarden_data:/vaultwarden_data:ro`) or resolves `VAULTWARDEN_RSA_KEY` to sign 5-day invitation tokens on the fly. The frontend (`DeviceVaultModal.tsx`) presents a seamless one-click "Set Master Password" button and link copy flow, completely eliminating external email dependencies.
 
 ---
 
@@ -81,7 +84,7 @@ All services restart automatically (`restart: always` unless noted) and share th
 | `prometheus_data` | local | `prometheus` → `/prometheus` |
 | `grafana_data` | local | `grafana` → `/var/lib/grafana` |
 | `alloy_data` | local | `alloy` → `/var/lib/alloy/data` |
-| `vaultwarden_data` | local | `vaultwarden` → `/data` |
+| `vaultwarden_data` | local | `vaultwarden` → `/data`, `server` → `/vaultwarden_data` (RO, for RSA invite signing) |
 
 ---
 
@@ -163,7 +166,7 @@ Values are supplied by the **Portainer stack environment** (persisted in the Por
 | Google OAuth | `GOOGLE_CLIENT_ID` (server) / `VITE_GOOGLE_CLIENT_ID` (client build arg) |
 | PayPal | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` (server) / `VITE_PAYPAL_CLIENT_ID` (client build arg) |
 | Nextcloud | `NEXTCLOUD_URL=10.13.13.3:30027`, `NEXTCLOUD_APP_USER`, `NEXTCLOUD_APP_PASS`, `NEXTCLOUD_TOTAL_CAPACITY`, `NEXTCLOUD_EXTERNAL_URL=https://atlas.velmartech.com.do` |
-| Vaultwarden | `VAULTWARDEN_ADMIN_TOKEN` (**REQUIRED**, 64-hex, shared by `server` + `vaultwarden ADMIN_TOKEN`; generate `openssl rand -hex 32`), `VAULTWARDEN_URL=http://vaultwarden:80`, `VAULTWARDEN_EXTERNAL_URL=https://helpdesk.velmartech.com.do/vault` |
+| Vaultwarden | `VAULTWARDEN_ADMIN_TOKEN` (**REQUIRED**, 64-hex, shared by `server` + `vaultwarden ADMIN_TOKEN`; generate `openssl rand -hex 32`), `VAULTWARDEN_URL=http://vaultwarden:80/vault` (requires `/vault` subpath prefix matching `DOMAIN`; `VaultwardenService.getBaseUrl()` automatically extracts and appends `/vault` from `VAULTWARDEN_EXTERNAL_URL` if omitted), `VAULTWARDEN_EXTERNAL_URL=https://helpdesk.velmartech.com.do/vault` |
 | Zabbix | `ZABBIX_URL=http://zabbix-web:8080/api_jsonrpc.php`, `ZABBIX_USER=Admin`, `ZABBIX_PASSWORD`, `ZABBIX_WEBHOOK_SECRET`, `ZABBIX_DB_USER/PASSWORD/NAME` (defaults `zabbix` / `zabbix_password` / `zabbix`) |
 | Datadog (opt-in) | Server APM only: `DD_API_KEY`, `DD_SITE`, `DD_SERVICE`, `DD_ENV`, `DD_VERSION`, `DD_TRACE_ENABLED`, `DD_AGENT_HOST`. Client RUM is Faro — see the Faro row below. |
 | Grafana | `GRAFANA_ADMIN_USER` (default `admin`), `GRAFANA_ADMIN_EMAIL` (default `admin@velmartech.com.do`), `GRAFANA_ADMIN_PASSWORD` (required from environment, zero inline fallback) |
@@ -241,6 +244,9 @@ Manual rollback mirrors a deploy with the previous `VERSION` tag; the CI pipelin
 |---|---|---|
 | `/` | portal login | Client SPA |
 | `/api/v1/health` | none | Server API liveness |
+| `/vault/` | Bitwarden Master Password | Vaultwarden Web Vault |
+| `/vault/api/alive` | none | Vaultwarden API liveness probe |
+| `/vault/admin` | Admin Token (session cookie) | Vaultwarden Administration Portal |
 | `/zabbix/` | basic-auth | Zabbix frontend |
 | `/logs` | basic-auth | Dozzle container logs (filtered to this stack) |
 | `/prometheus` | basic-auth | Prometheus web UI |
@@ -258,6 +264,12 @@ Set-Location "C:\Users\PC\AppData\Local\Temp\opencode\ptx"
 
 # Stack container list + health state
 node run-in.mjs 3 msp_server_prod node -e "fetch('http://127.0.0.1:3001/api/v1/health').then(r=>console.log(r.status))"
+
+# Vaultwarden API liveness probe (internal)
+node run-in.mjs 3 msp_server_prod node -e "fetch('http://vaultwarden:80/vault/api/alive').then(r=>r.text()).then(t=>console.log('Vaultwarden alive:', t))"
+
+# Vaultwarden Admin session test (verifies ADMIN_TOKEN & cookie negotiation)
+node run-in.mjs 3 msp_server_prod node -e "const p=new URLSearchParams({token:process.env.VAULTWARDEN_ADMIN_TOKEN});fetch('http://vaultwarden:80/vault/admin',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:p.toString(),redirect:'manual'}).then(r=>console.log('Admin login status:', r.status, 'Cookie:', r.headers.get('set-cookie')?.split(';')[0]))"
 
 # Inspect a service's resolved image version
 node -e "import('./papi.mjs').then(async({j})=>{const r=await j('GET','/api/endpoints/3/docker/containers/msp_server_prod/json');console.log(r.json.Config.Image,r.json.Config.Labels['traefik.http.routers.msp-server.rule'])})"
@@ -281,16 +293,21 @@ node run-in.mjs 3 msp_alloy sh -c "tail -n 50 /var/log/* 2>/dev/null | tail -n 5
 | Grafana redirects to `https://helpdesk.velmartech.com.do/grafana` + ROOT | URL mismatch | `GF_SERVER_ROOT_URL` includes trailing slash; `SERVE_FROM_SUB_PATH=true` required |
 | Client / `/` doesn't load assets | nginx serving the SPA needs the fallback; image built with wrong `VITE_*` args | Rebuild client with correct build args in CI; nginx `try_files` config lives in the client Dockerfile |
 | *"Simulated reset invitation sent successfully."* on Reset Vault Access / Password Manager | `VAULTWARDEN_ADMIN_TOKEN` unset or empty — `VaultwardenService` silently falls back to a mock path (`logger.warn "...simulating..."`) | Add a 64-hex token via `openssl rand -hex 32` to the stack env (`server` + `vaultwarden ADMIN_TOKEN`) and redeploy. `docker-compose.prod.yml` now fails fast (`${VAULTWARDEN_ADMIN_TOKEN:?...}`) on a missing value. Verify: no `simulating` in `msp_server_prod` logs, real Bitwarden invite email arrives |
+| `ExternalServiceError: Failed to invite ... upstream: 404` on organization invite or vault reset | `VAULTWARDEN_URL` missing `/vault` subpath prefix. When `DOMAIN` includes `/vault`, Rocket mounts all API routes under `/vault/api/*`. Without `/vault`, requests hit Rocket's unmounted root | Set `VAULTWARDEN_URL=http://vaultwarden:80/vault` in Portainer stack env. `docker-compose.prod.yml` now defaults to `http://vaultwarden:80/vault`, and `VaultwardenService.getBaseUrl()` automatically extracts and appends `/vault` from `VAULTWARDEN_EXTERNAL_URL` if omitted |
+| `401 Unauthorized` on `/admin/invite` or `/admin/users` | Calling Vaultwarden Admin API with `Authorization: Bearer <ADMIN_TOKEN>`. Rocket's `AdminToken` request guard strictly requires a session cookie (`Cookie: VW_ADMIN=<jwt>`) | Automated in `VaultwardenService.getAdminHeaders()`. It posts `token=<ADMIN_TOKEN>` to `${baseUrl}/admin` and captures `VW_ADMIN` |
+| `429 Too Many Requests` on `/vault/admin` | Rocket's admin login rate limiter triggered by repeated login attempts in a short burst | `VaultwardenService` caches the `VW_ADMIN` session cookie for 15 minutes (under the 20-minute validity window), eliminating burst login attempts |
+| `401 Unauthorized` / `502 EXTERNAL_SERVICE_ERROR` on `POST /api/v1/equipment/:id/vault/revoke` (`revokeDeviceSession`) | Vaultwarden organization user revoke endpoint `/api/organizations/:orgId/users/:userId/revoke` expects user JWT bearer authentication, rejecting server Admin Token with 401. Or equipment slot contains a simulated ID (`vw_user_...`) from testing | Resolved in `VaultwardenService.revokeDeviceSession`: simulated identifiers are treated as idempotent success; on real IDs, returns from 401/error fallback resiliently to Vaultwarden Admin API session deauthorization (`POST /admin/users/:id/deauth`) with cached `VW_ADMIN` cookie, terminating active sessions immediately (BL-205) |
+| *"User already exists"* on `/#/register` for workstation `.local` accounts | Vaultwarden provisions device users in status `1` (`Invited`) via `/admin/invite`. Without SMTP for `.local` addresses, users cannot receive registration links and raw sign-up fails because the user row already exists | Fixed in v1.3: `server` mounts `vaultwarden_data:/vaultwarden_data:ro` and generates an RS256-signed Bitwarden invitation URL (`/#/accept-organization/?...&token=<jwt>`). The client portal displays a one-click **"Set Master Password"** button in `DeviceVaultModal`, completing registration seamlessly |
 
 ### Security notes
 
 - **Distinct basic-auth credentials:** `zabbix-auth`, `logs-auth` and `prom-auth` now strictly require dedicated, distinct `user:hash` strings via `${ZABBIX_BASIC_AUTH_USERS}`, `${LOGS_BASIC_AUTH_USERS}`, and `${PROM_BASIC_AUTH_USERS}` in the Portainer stack environment. Shared hashes and committed credentials in compose are strictly banned.
 - **Portainer TLS:** self-signed cert currently trusted blindly (`PORTAINER_TLS_INSECURE=true`) in CI — disable once Portainer is fronted by Traefik with a CA-signed cert.
 - **Grafana security:** `GF_SECURITY_ADMIN_PASSWORD` has zero inline default fallback in compose — it MUST be supplied securely via `GRAFANA_ADMIN_PASSWORD` in the Portainer stack env.
-- **Vaultwarden admin token:** `VAULTWARDEN_ADMIN_TOKEN` is **required** (no inline fallback). It authenticates the portal backend against the Vaultwarden Admin API and is consumed by `server` and `vaultwarden ADMIN_TOKEN`. Missing/empty values caused the 2026-09-11 incident where *Reset Vault Access* reported a fake *"Simulated reset invitation sent successfully."* Store it in Portainer stack env and the §3.4 credentials matrix.
+- **Vaultwarden admin token & cookie session:** `VAULTWARDEN_ADMIN_TOKEN` is **required** (no inline fallback). It authenticates the portal backend against the Vaultwarden Admin API and is consumed by `server` and `vaultwarden ADMIN_TOKEN`. Missing/empty values caused the 2026-09-11 incident where *Reset Vault Access* reported a fake *"Simulated reset invitation sent successfully."* For administrative operations (`/admin/*`), the server automatically negotiates and caches a `VW_ADMIN` session cookie. Store the token in Portainer stack env and the §3.4 credentials matrix. Closed signups (`SIGNUPS_ALLOWED=false`) are strictly enforced; user onboarding occurs via invitation dispatch (`INVITATIONS_ALLOWED=true`).
 - **Zabbix defaults:** Zabbix API user/password and DB credentials are stack env vars (`zabbix` defaults in compose); keep overridden in Portainer. Zabbix UI admin account is the `admin` basic-auth realm only at the proxy; the Zabbix app itself uses its own (`Admin`) login.
 - **Live credentials** (Portainer key, TruNAS, Nextcloud app, WireGuard keys) are the responsibility of [`WIREGUARD_NEXTCLOUD_INTEGRATION.md`](WIREGUARD_NEXTCLOUD_INTEGRATION.md) §3.4 and the Portainer env — never paste them into issue/discussion channels.
 
 ---
 
-_Last updated: 2026-09-11 (v1.1 · Vaultwarden admin-token incident remediation documented) · Author: Infrastructure Team · Review cycle: Quarterly_
+_Last updated: 2026-09-11 (v1.3 · Vaultwarden device session revocation 401 resolved with Admin API deauth fallback BL-205) · Author: Infrastructure Team · Review cycle: Quarterly_

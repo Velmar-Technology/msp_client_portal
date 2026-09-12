@@ -106,4 +106,9 @@ router.post('/:id/vault/revoke', (req, res) =>
   equipmentController.revokeDeviceVault(req, res)
 );
 
+/** POST /api/v1/equipment/:id/vault/reset — Reset master password activation token for equipment slot */
+router.post('/:id/vault/reset', (req, res) =>
+  equipmentController.resetDeviceVault(req, res)
+);
+
 export default router;

@@ -92,4 +92,17 @@ export const RESOURCE_CATALOG: ResourceItem[] = [
     updatedAt: "2026-08-18T00:00:00.000Z",
     os: ["windows"],
   },
+  {
+    id: "msp-endpoint-suite",
+    titleKey: "MSP Endpoint Suite",
+    descriptionKey: "Unified Windows Endpoint Agent & Desktop Assistant (Intune/GPO compatible MSI bundle).",
+    category: "software",
+    plans: [],
+    url: "/uploads/binaries/msp-endpoint-suite.msi",
+    fileName: "msp-endpoint-suite.msi",
+    fileType: "MSI",
+    fileSize: "3.5 MB",
+    updatedAt: "2026-09-12T00:00:00.000Z",
+    os: ["windows"],
+  },
 ];

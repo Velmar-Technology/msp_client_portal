@@ -120,6 +120,124 @@ describe('VaultwardenService', () => {
 
       (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
     });
+
+    it('falls back to /admin/invite when organization-scoped invite returns 404 (BL-206)', async () => {
+      const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-admin-token';
+
+      global.fetch = vi.fn().mockImplementation(async (url: string, _?: any) => {
+        if (url.includes('/api/organizations/org-123/users/invite')) {
+          return {
+            ok: false,
+            status: 404,
+            text: async () => JSON.stringify({ error: { code: 404, reason: 'Not Found' } }),
+          };
+        }
+        if (url.endsWith('/admin')) {
+          return {
+            ok: true,
+            status: 200,
+            headers: {
+              get: (header: string) => (header.toLowerCase() === 'set-cookie' ? 'VW_ADMIN=mock-jwt-cookie; Path=/admin' : null),
+            },
+          };
+        }
+        if (url.includes('/admin/invite')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ Id: 'user-new', Email: 'epolanco@velmartech.com.do' }),
+          };
+        }
+        return { ok: true, json: async () => ({}) };
+      });
+
+      const res = await service.inviteUserToOrganization('org-123', 'epolanco@velmartech.com.do', 'Admin');
+      expect(res.invited).toBe(true);
+      expect(res.email).toBe('epolanco@velmartech.com.do');
+
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
+    });
+
+    it('treats 409 Conflict on /admin/invite fallback as idempotent success (BL-206)', async () => {
+      const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-admin-token';
+
+      global.fetch = vi.fn().mockImplementation(async (url: string) => {
+        if (url.includes('/api/organizations/org-123/users/invite')) {
+          return {
+            ok: false,
+            status: 404,
+            text: async () => 'Not Found',
+          };
+        }
+        if (url.endsWith('/admin')) {
+          return {
+            ok: true,
+            status: 200,
+            headers: {
+              get: (header: string) => (header.toLowerCase() === 'set-cookie' ? 'VW_ADMIN=mock-jwt-cookie; Path=/admin' : null),
+            },
+          };
+        }
+        if (url.includes('/admin/invite')) {
+          return {
+            ok: false,
+            status: 409,
+            text: async () => 'User already exists',
+          };
+        }
+        return { ok: true, json: async () => ({}) };
+      });
+
+      const res = await service.inviteUserToOrganization('org-123', 'epolanco@velmartech.com.do', 'Admin');
+      expect(res.invited).toBe(true);
+      expect(res.alreadyEnrolled).toBe(true);
+      expect(res.email).toBe('epolanco@velmartech.com.do');
+
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
+    });
+  });
+
+  describe('getBaseUrl subpath resolution', () => {
+    it('appends subpath from VAULTWARDEN_EXTERNAL_URL if not in VAULTWARDEN_URL', async () => {
+      const origUrl = env.VAULTWARDEN_URL;
+      const origExt = env.VAULTWARDEN_EXTERNAL_URL;
+      (env as any).VAULTWARDEN_URL = 'http://vaultwarden:80';
+      (env as any).VAULTWARDEN_EXTERNAL_URL = 'https://helpdesk.velmartech.com.do/vault';
+
+      const url = (service as any).getBaseUrl();
+      expect(url).toBe('http://vaultwarden:80/vault');
+
+      (env as any).VAULTWARDEN_URL = origUrl;
+      (env as any).VAULTWARDEN_EXTERNAL_URL = origExt;
+    });
+
+    it('does not duplicate subpath if VAULTWARDEN_URL already includes /vault', async () => {
+      const origUrl = env.VAULTWARDEN_URL;
+      const origExt = env.VAULTWARDEN_EXTERNAL_URL;
+      (env as any).VAULTWARDEN_URL = 'http://vaultwarden:80/vault';
+      (env as any).VAULTWARDEN_EXTERNAL_URL = 'https://helpdesk.velmartech.com.do/vault';
+
+      const url = (service as any).getBaseUrl();
+      expect(url).toBe('http://vaultwarden:80/vault');
+
+      (env as any).VAULTWARDEN_URL = origUrl;
+      (env as any).VAULTWARDEN_EXTERNAL_URL = origExt;
+    });
+
+    it('retains plain base URL when external URL has no subpath', async () => {
+      const origUrl = env.VAULTWARDEN_URL;
+      const origExt = env.VAULTWARDEN_EXTERNAL_URL;
+      (env as any).VAULTWARDEN_URL = 'http://localhost:8080';
+      (env as any).VAULTWARDEN_EXTERNAL_URL = 'http://localhost:8080';
+
+      const url = (service as any).getBaseUrl();
+      expect(url).toBe('http://localhost:8080');
+
+      (env as any).VAULTWARDEN_URL = origUrl;
+      (env as any).VAULTWARDEN_EXTERNAL_URL = origExt;
+    });
   });
 
   describe('checkUserInvitationStatus', () => {
@@ -324,7 +442,7 @@ describe('VaultwardenService', () => {
       (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-admin-token';
 
       global.fetch = vi.fn().mockImplementation(async (url: string, _?: any) => {
-        if (url.includes('/api/organizations/org-123/users/invite')) {
+        if (url.includes('/users/invite') || url.includes('/admin/invite')) {
           return { ok: false, status: 502 };
         }
         return { ok: true, json: async () => [] };
@@ -364,6 +482,26 @@ describe('VaultwardenService', () => {
         expect.stringContaining('/api/organizations/org-1/collections'),
         expect.objectContaining({ method: 'POST' })
       );
+
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
+    });
+
+    it('reuses existing collection ID when provided during re-enrollment', async () => {
+      const colId = await service.createDeviceCollection('org-1', 'Front-Desk-PC', 'col-existing-123');
+      expect(colId).toBe('col-existing-123');
+    });
+
+    it('falls back resiliently when direct org collection API returns 401 Unauthorized', async () => {
+      const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-admin-token';
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 401,
+      } as any);
+
+      const colId = await service.createDeviceCollection('org-1', 'Front-Desk-PC');
+      expect(colId).toMatch(/^vw_col_/);
 
       (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
     });
@@ -421,6 +559,114 @@ describe('VaultwardenService', () => {
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/organizations/org-1/users/dev-user-1/revoke'),
         expect.objectContaining({ method: 'PUT' })
+      );
+
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
+    });
+
+    it('handles simulated device user identifier (vw_user_...) gracefully without network call', async () => {
+      const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-admin-token';
+
+      global.fetch = vi.fn();
+
+      const res = await service.revokeDeviceSession('org-1', 'vw_user_rxiufz2t');
+      expect(res).toBe(true);
+      expect(global.fetch).not.toHaveBeenCalled();
+
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
+    });
+
+    it('falls back to Admin API /admin/users/:id/deauth when direct org revoke returns 401', async () => {
+      const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-admin-token';
+
+      global.fetch = vi.fn().mockImplementation(async (url: string, opts: any) => {
+        if (url.includes('/api/organizations/org-1/users/real-user-uuid/revoke')) {
+          return { ok: false, status: 401 };
+        }
+        if (url.endsWith('/admin') && opts?.method === 'POST') {
+          return {
+            ok: true,
+            status: 200,
+            headers: {
+              get: (h: string) => (h.toLowerCase() === 'set-cookie' ? 'VW_ADMIN=test-cookie; Path=/' : null),
+            },
+          };
+        }
+        if (url.includes('/admin/users/real-user-uuid/deauth') && opts?.method === 'POST') {
+          return { ok: true, status: 200 };
+        }
+        if (url.includes('/admin/users/real-user-uuid/disable') && opts?.method === 'POST') {
+          return { ok: true, status: 200 };
+        }
+        return { ok: false, status: 404 };
+      });
+
+      const res = await service.revokeDeviceSession('org-1', 'real-user-uuid');
+      expect(res).toBe(true);
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/admin/users/real-user-uuid/deauth'),
+        expect.objectContaining({ method: 'POST' })
+      );
+
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
+    });
+
+    it('treats 404 on Admin API deauth as idempotent success when user no longer exists', async () => {
+      const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-admin-token';
+
+      global.fetch = vi.fn().mockImplementation(async (url: string, opts: any) => {
+        if (url.includes('/api/organizations/org-1/users/gone-user-uuid/revoke')) {
+          return { ok: false, status: 401 };
+        }
+        if (url.endsWith('/admin') && opts?.method === 'POST') {
+          return {
+            ok: true,
+            status: 200,
+            headers: {
+              get: (h: string) => (h.toLowerCase() === 'set-cookie' ? 'VW_ADMIN=test-cookie; Path=/' : null),
+            },
+          };
+        }
+        if (url.includes('/admin/users/gone-user-uuid/deauth')) {
+          return { ok: false, status: 404 };
+        }
+        return { ok: false, status: 404 };
+      });
+
+      const res = await service.revokeDeviceSession('org-1', 'gone-user-uuid');
+      expect(res).toBe(true);
+
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
+    });
+
+    it('throws ExternalServiceError when both direct revoke and Admin API deauth fail with 500', async () => {
+      const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-admin-token';
+
+      global.fetch = vi.fn().mockImplementation(async (url: string, opts: any) => {
+        if (url.includes('/api/organizations/org-1/users/err-user/revoke')) {
+          return { ok: false, status: 500 };
+        }
+        if (url.endsWith('/admin') && opts?.method === 'POST') {
+          return {
+            ok: true,
+            status: 200,
+            headers: {
+              get: (h: string) => (h.toLowerCase() === 'set-cookie' ? 'VW_ADMIN=test-cookie; Path=/' : null),
+            },
+          };
+        }
+        if (url.includes('/admin/users/err-user/deauth')) {
+          return { ok: false, status: 500, text: async () => 'Internal Server Error' };
+        }
+        return { ok: false, status: 500 };
+      });
+
+      await expect(service.revokeDeviceSession('org-1', 'err-user')).rejects.toThrow(
+        ExternalServiceError
       );
 
       (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;

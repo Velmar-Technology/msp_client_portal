@@ -58,6 +58,19 @@ We adopt a **Device-Bound Workstation Vault** architecture integrated directly i
    - **User Vault (`/password-manager` / `PasswordManagerPage`):** Scoped to human employee accounts (`user@tenant.com`). Provides browser extension download links, web vault access, and self-service master password reset invitations.
    - **Device Vault (`DeviceVaultModal` / `BL-205`):** Scoped to physical machine inventory (`device_<slotId>@tenant.local`). Enables workers to autofill machine credentials without seeing plaintext secrets (`hidePasswords: true`), while giving client administrators an emergency 1-click remote killswitch per machine slot.
 
+8. **Seamless Workstation Onboarding & Cryptographic Activation Links (2026-09-11 Amendment):**
+   - **The `.local` Domain Challenge:** Machine identities use unroutable `.local` email addresses (`device_<slotId>@<tenantId>.local`). Calling `/admin/invite` provisions the user into Vaultwarden's `users` datastore in status `1` (`Invited`), but standard SMTP delivery cannot reach `.local` addresses. Direct navigation to the web vault registration page (`/#/register`) fails with *"User already exists"*.
+   - **Cryptographic RS256 Signing:** Vaultwarden strictly requires invited users to activate through its organization invitation endpoint (`/#/accept-organization/?...&token=<jwt>`). The JWT token must be signed with RS256 using Vaultwarden's RSA private key (`/data/rsa_key.pem`) under issuer `${domainOrigin}|invite` and fake organization UUIDs (`00000000-0000-0000-0000-000000000000`).
+   - **Shared Volume Key Resolution:** The Docker Compose production stack mounts `vaultwarden_data:/vaultwarden_data:ro` into `msp_server_prod`. `VaultwardenService` reads `rsa_key.pem` and dynamically constructs a 5-day RS256 invitation token on demand.
+   - **Account Activation Introspection:** `VaultwardenService.checkUserAccountStatus` queries Vaultwarden's Rocket admin API `/admin/users` (using the cached `VW_ADMIN` cookie) to inspect `_status`, distinguishing between pending password creation (`_status: 1`) and active protection (`_status: 0`).
+   - **Zero-Friction Client UX:** `DeviceVaultModal.tsx` surfaces a **Pending Activation** amber badge, a 2-step setup walkthrough, a primary **"Set Master Password"** one-click launch button (pre-populating the machine email), and a **"Copy Activation Link"** action, completely eliminating email delivery friction and administrative manual steps.
+
+9. **Maximum Administrative Access & Organization Owner Escrow (2026-09-12 Amendment):**
+   - **Organization Owner Hierarchy:** Workstation collections (`Device: <DeviceName>`) and identities are bound under the tenant's Vaultwarden Organization where the portal administrator operates as **Organization Owner (`atype: 0`, `access_all: true`)**.
+   - **Full Vault Oversight:** Administrators view, create, edit, and escrow all passwords and ciphers assigned to device collections directly inside the Bitwarden Web Vault (`/#/vault`).
+   - **Master Password Re-keying & Reset (`POST /api/v1/equipment/:id/vault/reset`):** Administrators can re-key or change workstation master passwords at any time directly from `DeviceVaultModal`, which issues a freshly signed RS256 activation token on demand.
+   - **Deep Web Vault Integration:** `DeviceVaultModal` provides direct 1-click links to `https://helpdesk.velmartech.com.do/vault/#/vault` and displays transparent access roles (`Organization Owner (Full Access)` vs `Machine User with hidePasswords: true`).
+
 ---
 
 ## Alternatives Considered

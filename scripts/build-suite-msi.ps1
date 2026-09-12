@@ -99,6 +99,21 @@ if (-not $foundTray) {
 $traySizeMb = [math]::Round(((Get-Item $foundTray).Length / 1MB), 2)
 Write-Host "Found tray binary: $foundTray ($traySizeMb MB)" -ForegroundColor Green
 
+# Locate WebView2Loader.dll companion
+$loaderCandidates = @(
+    (Join-Path $trayDir "src-tauri\target\release\WebView2Loader.dll"),
+    (Join-Path $trayDir "src-tauri\target\x86_64-pc-windows-gnu\release\WebView2Loader.dll"),
+    (Join-Path $rootDir "packages\msp-agent\dist\msp-agent-installer\WebView2Loader.dll")
+)
+$foundLoader = $loaderCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+if (-not $foundLoader) {
+    Write-Error "WebView2Loader.dll not found. msp-tray requires WebView2Loader.dll runtime companion."
+    exit 1
+}
+$loaderSizeKb = [math]::Round(((Get-Item $foundLoader).Length / 1KB), 1)
+Write-Host "Found WebView2Loader: $foundLoader ($loaderSizeKb KB)" -ForegroundColor Green
+
 # 3. Bootstrap Portable WiX Toolset
 Write-Host "`n[3/4] Resolving WiX Toolset compiler & linker..." -ForegroundColor Yellow
 
@@ -163,6 +178,7 @@ Write-Host "Executing candle.exe..."
     -dVersion="$Version" `
     -dAgentSourceExe="$agentExe" `
     -dTraySourceExe="$foundTray" `
+    -dWebView2LoaderSourceDll="$foundLoader" `
     -ext WixUtilExtension `
     -out "$wixObj" `
     "$wxsFile"

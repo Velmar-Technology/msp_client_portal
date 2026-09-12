@@ -18,6 +18,7 @@ The **SequenceSentinel Agent** acts as an autonomous integrity auditor and self-
    - If 5 remediations are reached within 60 minutes for a tenant, the circuit breaker immediately trips, halts automated mutations for that tenant, logs a Winston warning, and outputs `CIRCUIT_BREAKER_TRIPPED`.
 4. **Zero Duplicate Writes (Idempotency):** Remediators must verify the target entity's live state immediately before applying an update (e.g. verifying an earning does not already exist before inserting commission).
 5. **No Destructive Automation Without Human Sign-off:** Day 5 `READ_ONLY` mode enforcement (`BL-702`) is automated; Day 30 data purge/permanent deletion is strictly reserved for manual human authorization.
+6. **Zero-Invoice Guarantee for Complimentary & Free Grants (`BL-703`):** Manual administrative plan assignments, trial access, promotional onboarding, and free duration extensions must NEVER generate invoice records. Invoices are strictly reserved for genuine customer financial settlements (PayPal captures or verified wire payments).
 
 ---
 
@@ -40,6 +41,7 @@ The **SequenceSentinel Agent** acts as an autonomous integrity auditor and self-
 | **BL-402** | Renewal Scheduler | BILLING | Cron evaluates expiry, applies hardware multiplier ($M_{\text{equip}}$), creates invoices, sends notice emails. |
 | **BL-701** | 18% ITBIS Tax & NCF | BILLING | Computes exact 18% ITBIS tax ($\pm 0.01$) and assigns Series B01 sequential NCF vouchers for valid tax IDs. |
 | **BL-702** | Non-Payment Scale | BILLING | 4-Tier overdue scale: Day 1 (Notice), Day 5 (`READ_ONLY`), Day 15 (`SUSPENDED`), Day 30 (`PURGED`). |
+| **BL-703** | Complimentary & Free Plans | BILLING | Zero-Invoice Guarantee: Free plans, complimentary assignments, trials, and free extensions must NEVER place invoices in `invoices`. Invoices require genuine customer transactions. |
 | **BL-801** | Technician Bounties | FINANCIAL | Closed tickets generate priority-scaled bounties ($8 base $\times$ mult + $4 SLA); auto-posts Pre-Split OpEx. |
 | **BL-802** | 70/30 Profit Split | FINANCIAL | Net $= \text{Gross Paid} - \text{Total OpEx}$; validates 70% Company / 30% Lead Engineer dividend split. |
 | **BL-501** | CRM Lead Pipeline | CRM_HEALTH | Linear pipeline progression; `WON` deal status auto-provisions client user and tenant. |
@@ -66,6 +68,9 @@ When executed with `--auto-heal` or `autoHeal: true`, the agent evaluates detect
 5. **Vault Provisioning & Invitation Remediator (`BL-206`):**
    - **Trigger:** Unresolved `VAULT_INVITATION_FAILED` or dropped organization invitation for password manager user.
    - **Remediation:** Idempotently checks live membership (`checkUserInvitationStatus`), resets stalled accounts (`resetUserVaultAccess`), and dispatches fresh invitations under tenant circuit breaker.
+6. **Device Vault Session Remediator (`BL-205`):**
+   - **Trigger:** Unresolved `VAULT_REVOCATION_FAILED`, `DEVICE_LOCK_FAILED`, or session accessed on a revoked endpoint.
+   - **Remediation:** Executes `VaultwardenService.revokeDeviceSession(targetOrgId, deviceUserId)` (de-authorizing workstation tokens via Rocket admin `/users/:id/deauth`) and sets `vaultwarden_status = 'LOCKED'` in `subscription_equipment`.
 
 ---
 
@@ -97,22 +102,81 @@ npm -w server run sentinel:audit -- --hours=48 --generate-tests
 - Auto-generates clean, isolated Vitest spec files in `server/src/modules/system/sentinel/__tests__/regressions/`.
 - Verifies edge cases with actual production payload fixtures.
 
-### Workflow 4: Agent Tool Execution via MCP
-When operating as an AI assistant via MCP, invoke:
+### Workflow 4: 1-Step Unified Operations Engine (Zero Boilerplate)
+
+> [!IMPORTANT]
+> **Strict Zero-Scratch-Script Mandate:**
+> NEVER create ad-hoc scratch scripts (`scratch/*.mjs`), probe container ports, write custom psql queries, or perform multi-step trial-and-error loops for operations.
+> Every operational task (feature management, subscription extensions, plan provisioning, role updates, infra audits) MUST be executed seamlessly in **ONE SINGLE STEP** using `npm run sentinel:op -- <action>` (or its corresponding MCP tool).
+
+The unified operations engine (`scripts/sentinel-ops.mjs`) executes all required steps atomically in a single pass: database transactions, tenant isolation, custom tier branching, 18% ITBIS tax calculations, invoice settlement, notification dispatches, and Redis cache invalidation (`gen:plans:global`).
+
+#### 1. On-Demand Feature Management (Add / Remove / Customize)
+Add or remove features on demand for any user/tenant or catalog plan. When modifying a user on a shared tier (e.g. `PL-001`), it automatically isolates a tenant custom plan (`PL-001-CUSTOM-<TENANT>`) without polluting the shared catalog, updates the subscription, and clears Redis cache:
+```bash
+npm run sentinel:op -- feature:manage --user="user@example.com" --add=PASSWORD_MANAGER
+npm run sentinel:op -- feature:manage --user="user@example.com" --add=EDR_SECURITY,DARK_WEB_MONITORING --remove=BACKUP_INCLUDED
+npm run sentinel:op -- feature:manage --plan=PL-001 --add=PASSWORD_MANAGER
+```
+*MCP Alternative:* `msp_manage_features` with `{ user, addFeatures, removeFeatures }`.
+
+#### 2. 1-Shot Subscription Duration Extension
+Extends active subscription contract duration by any interval ("1 year", "6 months", "12 months"). For paid extensions, it automatically generates a renewal invoice with 18% Dominican ITBIS and sequential NCF; for free/complimentary grants, pass `--free` to avoid generating any invoice:
+```bash
+npm run sentinel:op -- sub:extend --user="user@example.com" --extension="1 year" --free
+npm run sentinel:op -- sub:extend --user="user@example.com" --extension="1 year" --mark-paid
+npm run sentinel:op -- sub:extend --user="user@example.com" --extension="6 months"
+```
+*MCP Alternative:* `msp_extend_subscription` with `{ user, extension: "1 year", markPaid: true }`.
+
+#### 3. 1-Shot Subscription Plan Provisioning & Onboarding
+Provisions any catalog plan or tier name (`Basic`, `Standard`, `Corporate`, `PL-001`) for any user. Pass `--free` for complimentary or trial onboardings to prevent invoice placement:
+```bash
+npm run sentinel:op -- plan:provision --user="user@example.com" --plan=PL-001 --free
+npm run sentinel:op -- plan:provision --user="user@example.com" --plan=PL-001 --cycle=annual --capacity=1 --mark-paid
+npm run sentinel:op -- plan:provision --user="user@example.com" --plan=Basic --cycle=monthly
+```
+*MCP Alternative:* `msp_provision_subscription_plan` with `{ user, plan, cycle, equipmentCount, markPaid }`.
+
+#### 4. Invoice Void & Removal
+Voids or removes an invoice in case of erroneous placement or complimentary adjustment:
+```bash
+npm run sentinel:op -- invoice:void --invoice=INV-2026-XXXXXX
+npm run sentinel:op -- invoice:void --user="user@example.com"
+```
+
+#### 5. User Role & Customer Classification Updates
+Converts or updates platform roles (`CLIENT`, `TECHNICIAN`, `ADMIN`) and customer classifications (`CLIENT`, `ENTERPRISE`, `STUDENT`) in a single atomic pass:
+```bash
+npm run sentinel:op -- user:role --user="user@example.com" --role=CLIENT --client-type=CLIENT
+```
+*MCP Alternative:* `msp_update_user_role` with `{ user, role: "CLIENT", clientType: "CLIENT" }`.
+
+#### 6. Live Infrastructure & Portainer Stack Health Audit
+Inspects all 15 container services, health checks, restart counters, and ports on Portainer:
+```bash
+npm run sentinel:op -- infra:audit
+```
+*MCP Alternative:* `msp_audit_portainer_infrastructure` with `{ endpointId: 3, stackId: 17 }`.
+
+#### 7. Client Equipment Quota Expansion & True-Up (`BL-202`)
+Expands device slots and auto-computes prorated 18% ITBIS hardware true-up invoices:
 ```typescript
-// 1. Routine Sentinel Audit
+await call_mcp_tool('msp-support', 'msp_update_client_equipment_quota', {
+  tenantId: targetTenantId,
+  equipmentCount: newSlotCount,
+  createInvoice: true,
+  reason: operationalJustification,
+});
+```
+
+#### 8. Passive / Active SequenceSentinel Invariant Audits (`BL-101` to `BL-802`)
+Audits chronological audit sequences against all 18 business rules with optional self-healing:
+```typescript
 await call_mcp_tool('msp-support', 'msp_run_sentinel_audit', {
   hours: 24,
-  autoHeal: true,
+  autoHeal: false,
   generateTests: false,
-});
-
-// 2. On-Demand Client Equipment Quota Expansion (BL-202)
-await call_mcp_tool('msp-support', 'msp_update_client_equipment_quota', {
-  tenantId: 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33',
-  equipmentCount: 15,
-  createInvoice: true, // Auto-generates prorated true-up invoice with 18% ITBIS
-  reason: 'Client requested expansion to onboard new engineering workstations',
 });
 ```
 
@@ -175,4 +239,45 @@ An integrity audit or remediation task is considered complete only when:
 2. **Circuit Breaker Compliant:** Total automated fixes per tenant do not exceed 5 in the preceding hour.
 3. **Audit Trail Persisted:** An audit markdown file is saved to `docs/audits/` detailing timestamp, sequences evaluated, and remediation details.
 4. **Tests Remain 100% Green:** `npm -w server test` and `npm -w packages/mcp-server run test` pass with zero regressions.
+
+---
+
+## 7. Vaultwarden & Password Manager Operational Guardrails (BL-205 & BL-206)
+
+When diagnosing, auditing, or remediating Bitwarden/Vaultwarden integrations in the MSP Portal, agents must observe these non-negotiable operational invariants:
+
+### 1. Subpath Route Resolution (`/vault`)
+- When Vaultwarden is configured with a subpath domain (e.g. `DOMAIN=https://helpdesk.velmartech.com.do:9443/vault`), its internal Rocket web framework mounts all routes under `/vault` (e.g. `/vault/api/*`, `/vault/admin/*`, `/vault/identity/*`).
+- Internal container routing (`VAULTWARDEN_URL=http://vaultwarden:80`) must target `/vault` or rely on `getBaseUrl()` in `VaultwardenService.ts`, which inspects `VAULTWARDEN_EXTERNAL_URL` to automatically preserve the `/vault` prefix. Direct raw HTTP requests without this prefix will hit Rocket 404s.
+
+### 2. Strict API vs Admin Route Separation
+- **Public / Client API (`/vault/api/...`):** Strictly reserved for end-user Bitwarden client vault synchronization. These endpoints require a Bitwarden user Bearer JWT (`Authorization: Bearer <user_jwt>`). Passing the server's `VAULTWARDEN_ADMIN_TOKEN` returns HTTP 401 Unauthorized.
+- **Administrative API (`/vault/admin/...`):** Used for MSP system operations: inviting users, retrieving member status, de-authorizing active sessions, disabling accounts, and deleting users.
+- **Authentication Mechanism:** The `/vault/admin` endpoints require a session cookie: `Cookie: VW_ADMIN=<jwt>`. This cookie is obtained by posting `token=<ADMIN_TOKEN>` to `POST /vault/admin`.
+
+### 3. Workstation Session Deauthorization Mechanics (BL-205)
+- Device-bound credentials (`device_<slotId>@tenant.local`) operate under a strict `hidePasswords: true` policy.
+- To execute an emergency lockout or session revocation on a physical endpoint:
+  1. Call `POST /vault/admin/users/:id/deauth` with the device user ID. This resets the user's `security_stamp` upstream, instantly invalidating all issued access tokens and refresh sessions across desktop, browser, and mobile clients.
+  2. Call `POST /vault/admin/users/:id/disable` to prevent subsequent logins until explicitly reprovisioned.
+  3. Update `subscription_equipment.vaultwarden_status = 'LOCKED'` in the local datastore.
+
+### 4. Rate-Limiting & Session Cookie Caching
+- Vaultwarden's Rocket backend enforces built-in IP rate limits on `/admin` login attempts to prevent brute force attacks.
+- `VaultwardenService` caches the acquired `VW_ADMIN` cookie session to prevent re-authenticating on every atomic operation. Do not bypass this cache or hammer `/admin` logins in tight loops.
+
+### 5. Idempotency & Simulated ID Handling
+- Development, staging, and local environments often feature simulated identifiers (e.g. `vw_user_...`, mock UUIDs).
+- Any administrative operation against a simulated ID or any upstream call returning HTTP 404 (indicating the resource is already absent) must be treated as **idempotent success** rather than an exceptional failure.
+- Auto-healing remediators (`VaultInvitationRemediator`, `DeviceVaultSessionRemediator`) must verify live state first and never throw unhandled errors on non-existent endpoints.
+
+### 6. Tenant Safety Circuit Breaker Protection
+- Autonomous vault mutations are strictly throttled by `SelfHealingService`:
+  - Maximum **5 automated actions per tenant per hour**.
+  - Exceeding this threshold trips the circuit breaker, outputs `CIRCUIT_BREAKER_TRIPPED`, and diverts the violation to the Dead-Letter Queue (DLQ) for operator intervention.
+
+### 7. Collection Creation & Device Re-Enrollment (BL-205)
+- Direct collection creation (`/api/organizations/:id/collections`) is a Bitwarden user API requiring an authenticated member Bearer token with organization encryption keys. The server's `VAULTWARDEN_ADMIN_TOKEN` is rejected with HTTP 401 Unauthorized.
+- When provisioning or re-enrolling device endpoints, `createDeviceCollection` reuses existing mapped collection IDs (`existingCollectionId`) upon re-enrollment or gracefully falls back to scoped collection identifiers (`vw_col_<org>_<random>`) when `/api` returns 401/404.
+- Re-enrolling a previously locked endpoint must automatically re-enable the disabled device user account via `POST /vault/admin/users/:id/enable` before re-issuing credentials.
 

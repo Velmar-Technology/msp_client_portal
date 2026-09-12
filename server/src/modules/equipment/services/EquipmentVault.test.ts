@@ -50,8 +50,15 @@ describe('EquipmentService - Device-Bound Vaultwarden Management', () => {
 
     mockVaultwardenSvc = {
       createDeviceCollection: vi.fn().mockResolvedValue('vw_col_123'),
-      provisionDeviceAccount: vi.fn().mockResolvedValue({ userId: 'vw_user_456' }),
+      provisionDeviceAccount: vi.fn().mockResolvedValue({
+        userId: 'vw_user_456',
+        activationUrl: 'https://helpdesk.velmartech.com.do/vault/#/accept-organization/?token=mock',
+      }),
       revokeDeviceSession: vi.fn().mockResolvedValue(true),
+      checkUserAccountStatus: vi.fn().mockResolvedValue({ isActivated: false, status: 1 }),
+      generateDeviceActivationUrl: vi.fn().mockReturnValue(
+        'https://helpdesk.velmartech.com.do/vault/#/accept-organization/?token=mock'
+      ),
     };
 
     equipmentService = new EquipmentService(
@@ -135,6 +142,33 @@ describe('EquipmentService - Device-Bound Vaultwarden Management', () => {
       expect(res.itemCount).toBe(1);
     });
 
+    it('re-enrolls a previously locked device slot by passing existing collection and user ID', async () => {
+      mockEquipmentRepo.findById.mockResolvedValueOnce({
+        ...mockEquipment,
+        vaultwarden_status: 'LOCKED',
+        vaultwarden_collection_id: 'existing-col-uuid',
+        vaultwarden_device_user_id: 'existing-user-uuid',
+      });
+
+      const res = await equipmentService.provisionDeviceVault(
+        mockEquipment.id,
+        mockEquipment.tenant_id
+      );
+
+      expect(mockVaultwardenSvc.createDeviceCollection).toHaveBeenCalledWith(
+        mockEquipment.tenant_id,
+        'POS-Terminal-01',
+        'existing-col-uuid'
+      );
+      expect(mockVaultwardenSvc.provisionDeviceAccount).toHaveBeenCalledWith(
+        mockEquipment.tenant_id,
+        'vw_col_123',
+        expect.stringContaining('device_'),
+        'existing-user-uuid'
+      );
+      expect(res.status).toBe('ACTIVE');
+    });
+
     it('throws ForbiddenError if non-admin tries to provision another tenant device', async () => {
       await expect(
         equipmentService.provisionDeviceVault(mockEquipment.id, 'alien-tenant-id')
@@ -169,6 +203,33 @@ describe('EquipmentService - Device-Bound Vaultwarden Management', () => {
       );
       expect(res.status).toBe('LOCKED');
       expect(res.message).toContain('revoked successfully');
+    });
+  });
+
+  describe('resetDeviceVault', () => {
+    it('generates a fresh activation token for master password reset', async () => {
+      mockEquipmentRepo.findById.mockResolvedValueOnce({
+        ...mockEquipment,
+        vaultwarden_status: 'ACTIVE',
+        vaultwarden_device_user_id: 'vw_user_456',
+        vaultwarden_collection_id: 'vw_col_123',
+      });
+
+      const res = await equipmentService.resetDeviceVault(
+        mockEquipment.id,
+        mockEquipment.tenant_id,
+        true,
+        'admin@company.com'
+      );
+
+      expect(mockVaultwardenSvc.generateDeviceActivationUrl).toHaveBeenCalledWith(
+        'vw_user_456',
+        expect.stringContaining('device_')
+      );
+      expect(res.status).toBe('ACTIVE');
+      expect(res.isActivated).toBe(false);
+      expect(res.activationUrl).toBeTruthy();
+      expect(res.accessLevel).toBe('Organization Owner (Full Access)');
     });
   });
 

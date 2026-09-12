@@ -99,7 +99,7 @@ services:
       - NEXTCLOUD_APP_PASS=${NEXTCLOUD_APP_PASS}
       - NEXTCLOUD_TOTAL_CAPACITY=${NEXTCLOUD_TOTAL_CAPACITY}
       - NEXTCLOUD_EXTERNAL_URL=${NEXTCLOUD_EXTERNAL_URL:-https://atlas.velmartech.com.do}
-      - VAULTWARDEN_URL=${VAULTWARDEN_URL:-http://vaultwarden:80}
+      - VAULTWARDEN_URL=${VAULTWARDEN_URL:-http://vaultwarden:80/vault}
       # REQUIRED — shared by msp_vaultwarden (ADMIN_TOKEN). Generate via: openssl rand -hex 32.
       # No fallback: an unset/empty value previously triggered a silent offline "simulation" in the backend.
       - VAULTWARDEN_ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN:?VAULTWARDEN_ADMIN_TOKEN is required}
@@ -117,6 +117,7 @@ services:
       - DD_AGENT_HOST=${DD_AGENT_HOST:-}
     volumes:
       - uploads_data:/app/server/uploads
+      - vaultwarden_data:/vaultwarden_data:ro
     deploy:
       resources:
         limits:

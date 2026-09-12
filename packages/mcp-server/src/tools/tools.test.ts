@@ -14,6 +14,7 @@ import { registerDomainTools } from './domainTools.js';
 import { registerEmailTools } from './emailTools.js';
 import { registerNetworkTools } from './networkTools.js';
 import { registerStorageTools } from './storageTools.js';
+import { registerSentinelTools } from './sentinelTools.js';
 import { timingSafeCompare, validateInboundApiKey } from '../authUtils.js';
 import type { SystemApiStatusResponse, NotificationListResult } from '../types.js';
 
@@ -48,6 +49,7 @@ describe('MSP MCP Server Tools Registration and Execution', () => {
       registerEmailTools(server, mockApiClient);
       registerNetworkTools(server);
       registerStorageTools(server);
+      registerSentinelTools(server, mockApiClient);
     }).not.toThrow();
   });
 
@@ -701,6 +703,252 @@ describe('MSP MCP Server Tools Registration and Execution', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Failed to update client equipment quota: No subscription found for tenant');
+    });
+  });
+
+  describe('SequenceSentinel Tools (BL-101 to BL-802)', () => {
+    it('should successfully execute msp_provision_subscription_plan', async () => {
+      vi.spyOn(mockApiClient, 'provisionSubscriptionPlan').mockResolvedValueOnce({
+        success: true,
+        subscription: {
+          id: 'sub-created-123',
+          client_id: 'user-uuid-1',
+          service_name: 'Basic Support Plan (Monthly)',
+          plan: 'PL-001',
+          status: 'ACTIVE',
+          renewal_date: '2026-10-12T00:00:00.000Z',
+          equipment_count: 1,
+          tenant_id: 'tenant-uuid-1',
+          created_at: '2026-09-12T00:00:00.000Z',
+        },
+        client: {
+          id: 'user-uuid-1',
+          email: 'e.a.polanco.robles@gmail.com',
+          name: 'Estiven Antonio Polanco Robles',
+          tenantId: 'tenant-uuid-1',
+        },
+        plan: {
+          id: 'PL-001',
+          name: 'Basic',
+          price: 18,
+          features: ['HELPDESK_SUPPORT', 'CLOUD_STORAGE'],
+        },
+        invoice: {
+          amount: 18,
+          tax_amount: 3.24,
+          total: 21.24,
+          status: 'PAID',
+        },
+        slotsInitialized: 1,
+        sentinelVerification: {
+          passed: true,
+          violationsCount: 0,
+        },
+        message: 'Successfully provisioned Basic Plan (PL-001) for user e.a.polanco.robles@gmail.com',
+      });
+
+      registerSentinelTools(server, mockApiClient);
+      const tools = (server as any)._registeredTools;
+      const provisionTool = tools['msp_provision_subscription_plan'];
+      expect(provisionTool).toBeDefined();
+
+      const result = await provisionTool.handler({
+        user: 'e.a.polanco.robles@gmail.com',
+        plan: 'PL-001',
+        equipmentCount: 1,
+        billingCycle: 'monthly',
+        markPaid: true,
+      });
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].text).toContain('sub-created-123');
+      expect(result.content[0].text).toContain('PL-001');
+      expect(result.content[0].text).toContain('21.24');
+    });
+
+    it('should return isError when msp_provision_subscription_plan fails', async () => {
+      vi.spyOn(mockApiClient, 'provisionSubscriptionPlan').mockRejectedValueOnce(
+        new Error("Plan 'NonExistent' not found in catalog")
+      );
+
+      registerSentinelTools(server, mockApiClient);
+      const tools = (server as any)._registeredTools;
+      const provisionTool = tools['msp_provision_subscription_plan'];
+
+      const result = await provisionTool.handler({
+        user: 'unknown@velmartech.com.do',
+        plan: 'NonExistent',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain("Failed to provision subscription plan: Plan 'NonExistent' not found in catalog");
+    });
+
+    it('should successfully execute msp_extend_subscription', async () => {
+      vi.spyOn(mockApiClient, 'extendSubscription').mockResolvedValueOnce({
+        success: true,
+        subscriptionId: 'sub-created-123',
+        previousRenewalDate: '2026-10-12T00:00:00.000Z',
+        newRenewalDate: '2027-10-12T00:00:00.000Z',
+        extendedMonths: 12,
+        serviceName: 'Basic Support Plan (Annual)',
+        invoiceIssued: true,
+        invoice: {
+          id: 'inv-ext-1',
+          invoice_number: 'INV-2026-0002',
+          amount: 172.8,
+          tax_amount: 31.1,
+          total: 203.9,
+          status: 'PAID',
+        },
+        message: 'Successfully extended subscription for user e.a.polanco.robles@gmail.com by 12 month(s).',
+      });
+
+      registerSentinelTools(server, mockApiClient);
+      const tools = (server as any)._registeredTools;
+      const extendTool = tools['msp_extend_subscription'];
+      expect(extendTool).toBeDefined();
+
+      const result = await extendTool.handler({
+        user: 'e.a.polanco.robles@gmail.com',
+        extension: '1 year',
+        markPaid: true,
+      });
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].text).toContain('sub-created-123');
+      expect(result.content[0].text).toContain('2027-10-12');
+      expect(result.content[0].text).toContain('203.9');
+    });
+
+    it('should successfully execute msp_audit_portainer_infrastructure', async () => {
+      vi.spyOn(mockApiClient, 'auditPortainerInfrastructure').mockResolvedValueOnce({
+        success: true,
+        endpointId: 3,
+        stackId: 17,
+        stackName: 'msp_portal',
+        totalContainers: 14,
+        runningContainers: 14,
+        unhealthyContainers: 0,
+        overallStatus: 'HEALTHY',
+        containers: [
+          {
+            name: 'msp_portal_server_1',
+            state: 'running',
+            status: 'Up 4 hours (healthy)',
+            image: 'msp-portal-server:latest',
+          },
+        ],
+        composeServices: ['server', 'client', 'postgres', 'redis'],
+        verifiedAt: new Date().toISOString(),
+        message: "Infrastructure audit completed for stack 'msp_portal' on endpoint 3: 14/14 containers running healthy (Status: HEALTHY).",
+      });
+
+      registerSentinelTools(server, mockApiClient);
+      const tools = (server as any)._registeredTools;
+      const auditTool = tools['msp_audit_portainer_infrastructure'];
+      expect(auditTool).toBeDefined();
+
+      const result = await auditTool.handler({
+        endpointId: 3,
+        stackId: 17,
+      });
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].text).toContain('msp_portal');
+      expect(result.content[0].text).toContain('HEALTHY');
+      expect(result.content[0].text).toContain('14');
+    });
+
+    it('should successfully execute msp_update_user_role tool', async () => {
+      vi.spyOn(mockApiClient, 'manageUserAccount').mockResolvedValueOnce({
+        success: true,
+        user: {
+          id: 'user-uuid-1',
+          email: 'e.a.polanco.robles@gmail.com',
+          name: 'Estiven Antonio Polanco Robles',
+          role: 'CLIENT',
+          clientType: 'CLIENT',
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        previousRole: 'TECHNICIAN',
+        previousClientType: null,
+        message: 'Successfully updated account for e.a.polanco.robles@gmail.com (role: TECHNICIAN -> CLIENT, clientType: NONE -> CLIENT).',
+      });
+
+      registerUserTools(server, mockApiClient);
+      const tools = (server as any)._registeredTools;
+      const roleTool = tools['msp_update_user_role'];
+      expect(roleTool).toBeDefined();
+
+      const result = await roleTool.handler({
+        user: 'e.a.polanco.robles@gmail.com',
+        role: 'CLIENT',
+        clientType: 'CLIENT',
+      });
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].text).toContain('CLIENT');
+      expect(result.content[0].text).toContain('e.a.polanco.robles@gmail.com');
+    });
+
+    it('should successfully execute msp_manage_features to add and remove features on demand', async () => {
+      vi.spyOn(mockApiClient, 'manageFeatures').mockResolvedValueOnce({
+        success: true,
+        targetType: 'USER_SUBSCRIPTION',
+        targetId: 'e.a.polanco.robles@gmail.com',
+        planId: 'PL-001-CUSTOM-ABC12345',
+        planName: 'Basic (Custom)',
+        previousFeatures: ['HELPDESK_SUPPORT', 'CLOUD_STORAGE', 'BACKUP_INCLUDED'],
+        currentFeatures: ['HELPDESK_SUPPORT', 'CLOUD_STORAGE', 'PASSWORD_MANAGER'],
+        addedFeatures: ['PASSWORD_MANAGER'],
+        removedFeatures: ['BACKUP_INCLUDED'],
+        expandedCapabilities: ['HELPDESK_SUPPORT', 'CLOUD_STORAGE', 'PASSWORD_MANAGER'],
+        message: "Features successfully updated for user 'e.a.polanco.robles@gmail.com' (Plan: PL-001-CUSTOM-ABC12345). Added: [PASSWORD_MANAGER], Removed: [BACKUP_INCLUDED]. Total active features: 3 (3 capabilities expanded).",
+      });
+
+      registerSentinelTools(server, mockApiClient);
+      const tools = (server as any)._registeredTools;
+      const featTool = tools['msp_manage_features'];
+      expect(featTool).toBeDefined();
+
+      const result = await featTool.handler({
+        user: 'e.a.polanco.robles@gmail.com',
+        addFeatures: ['PASSWORD_MANAGER'],
+        removeFeatures: ['BACKUP_INCLUDED'],
+      });
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].text).toContain('PL-001-CUSTOM-ABC12345');
+      expect(result.content[0].text).toContain('PASSWORD_MANAGER');
+      expect(result.content[0].text).toContain('BACKUP_INCLUDED');
+    });
+
+    it('should return catalog list when msp_manage_features is called without arguments', async () => {
+      vi.spyOn(mockApiClient, 'manageFeatures').mockResolvedValueOnce({
+        success: true,
+        targetType: 'CATALOG_LIST',
+        targetId: 'ALL',
+        previousFeatures: [],
+        currentFeatures: ['HELPDESK_SUPPORT', 'PASSWORD_MANAGER'],
+        addedFeatures: [],
+        removedFeatures: [],
+        expandedCapabilities: ['HELPDESK_SUPPORT', 'PASSWORD_MANAGER'],
+        message: 'Catalog of 2 available feature codes and composite bundles retrieved.',
+      });
+
+      registerSentinelTools(server, mockApiClient);
+      const tools = (server as any)._registeredTools;
+      const featTool = tools['msp_manage_features'];
+      expect(featTool).toBeDefined();
+
+      const result = await featTool.handler({});
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].text).toContain('CATALOG_LIST');
+      expect(result.content[0].text).toContain('PASSWORD_MANAGER');
     });
   });
 });

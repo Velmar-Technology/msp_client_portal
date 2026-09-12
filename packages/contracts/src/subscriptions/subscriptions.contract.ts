@@ -100,6 +100,9 @@ export const UpdateSubscriptionInputSchema = z.object({
   paypalOrderId: z.string().optional(),
   createInvoice: z.boolean().optional(),
   reason: z.string().max(255).optional(),
+  renewalDate: z.string().optional(),
+  extendMonths: z.coerce.number().int().positive().optional(),
+  serviceName: z.string().max(255).optional(),
 });
 
 export type UpdateSubscriptionInput = z.infer<typeof UpdateSubscriptionInputSchema>;

@@ -5,6 +5,7 @@ import { nextcloudService, NextcloudService, vaultwardenService, VaultwardenServ
 import { rmmPatchService, RmmPatchService, AgentHelloPayload, agentGateway } from '@modules/rmm';
 import { ticketRepository, TicketRepository } from '@modules/tickets';
 import { HELPDESK_SUPPORT_FEATURE_CODE } from '@shared/config/constants';
+import { env } from '@shared/config/env';
 import { DeviceVaultDetails } from '@shared/contracts';
 import {
   NotFoundError,
@@ -978,6 +979,30 @@ export class EquipmentService {
     const deviceEmail = `device_${equipment.id.slice(0, 8)}@${tenantId.slice(0, 8)}.local`;
     const status = (equipment.vaultwarden_status as any) || 'UNPROVISIONED';
 
+    let isActivated = false;
+    let activationUrl: string | null = null;
+
+    if (equipment.vaultwarden_device_user_id && status === 'ACTIVE') {
+      try {
+        if (typeof this.vaultwardenService.checkUserAccountStatus === 'function') {
+          const userStatus = await this.vaultwardenService.checkUserAccountStatus(
+            equipment.vaultwarden_device_user_id
+          );
+          isActivated = userStatus.isActivated;
+        }
+        if (!isActivated && typeof this.vaultwardenService.generateDeviceActivationUrl === 'function') {
+          activationUrl = this.vaultwardenService.generateDeviceActivationUrl(
+            equipment.vaultwarden_device_user_id,
+            deviceEmail
+          );
+        }
+      } catch (checkErr) {
+        logger.warn(`Failed checking activation status for equipment ${equipment.id}:`, checkErr);
+      }
+    }
+
+    const adminVaultUrl = `${env.VAULTWARDEN_EXTERNAL_URL || 'https://helpdesk.velmartech.com.do/vault'}/#/vault`;
+
     return {
       equipmentId: equipment.id,
       deviceName,
@@ -987,6 +1012,10 @@ export class EquipmentService {
       deviceEmail,
       lastSyncedAt: equipment.vaultwarden_last_synced_at ? equipment.vaultwarden_last_synced_at.toISOString() : null,
       itemCount: status === 'ACTIVE' ? 1 : 0,
+      activationUrl,
+      isActivated,
+      adminVaultUrl,
+      accessLevel: 'Organization Owner (Full Access)',
     };
   }
 
@@ -996,6 +1025,7 @@ export class EquipmentService {
    * @param equipmentId - Equipment slot UUID
    * @param tenantId - Tenant UUID
    * @param byAdmin - True if administrator
+   * @param adminEmail - Optional administrator or user email address
    * @returns Updated DeviceVaultDetails
    * @throws {NotFoundError} When equipment does not exist
    * @throws {ForbiddenError} When tenant boundary is violated
@@ -1003,7 +1033,8 @@ export class EquipmentService {
   async provisionDeviceVault(
     equipmentId: string,
     tenantId: string,
-    byAdmin = false
+    byAdmin = false,
+    adminEmail?: string
   ): Promise<DeviceVaultDetails> {
     const equipment = await this.equipmentRepository.findById(equipmentId);
     if (!equipment) {
@@ -1016,15 +1047,24 @@ export class EquipmentService {
       await this.enforceDevicePasswordManagerEntitlement(equipment.subscription_id);
     }
 
-    const targetOrgId = equipment.vaultwarden_org_id || equipment.tenant_id;
+    const targetOrgId =
+      equipment.vaultwarden_org_id ||
+      (typeof this.vaultwardenService.resolveOrganizationId === 'function'
+        ? await this.vaultwardenService.resolveOrganizationId(equipment.tenant_id, adminEmail)
+        : equipment.tenant_id);
+
     const deviceName = equipment.device_name || equipment.agent_hostname || `Device-${equipment.slot_index + 1}`;
     const deviceEmail = `device_${equipment.id.slice(0, 8)}@${tenantId.slice(0, 8)}.local`;
 
-    // 1. Create or ensure Bitwarden Collection
-    const collectionId = await this.vaultwardenService.createDeviceCollection(targetOrgId, deviceName);
+    // 1. Create or ensure Bitwarden Collection (reuses existing collection upon re-enrollment)
+    const collectionId = equipment.vaultwarden_collection_id
+      ? await this.vaultwardenService.createDeviceCollection(targetOrgId, deviceName, equipment.vaultwarden_collection_id)
+      : await this.vaultwardenService.createDeviceCollection(targetOrgId, deviceName);
 
-    // 2. Provision device account scoped to this collection
-    const provisionResult = await this.vaultwardenService.provisionDeviceAccount(targetOrgId, collectionId, deviceEmail);
+    // 2. Provision device account scoped to this collection (re-enabling account if previously locked)
+    const provisionResult = equipment.vaultwarden_device_user_id
+      ? await this.vaultwardenService.provisionDeviceAccount(targetOrgId, collectionId, deviceEmail, equipment.vaultwarden_device_user_id)
+      : await this.vaultwardenService.provisionDeviceAccount(targetOrgId, collectionId, deviceEmail);
 
     // 3. Update database entity
     const updated = await this.equipmentRepository.update(equipment.id, {
@@ -1034,6 +1074,8 @@ export class EquipmentService {
       vaultwarden_status: 'ACTIVE',
       vaultwarden_last_synced_at: new Date(),
     });
+
+    const adminVaultUrl = `${env.VAULTWARDEN_EXTERNAL_URL || 'https://helpdesk.velmartech.com.do/vault'}/#/vault`;
 
     logger.info(`Provisioned Vaultwarden device vault for equipment ${equipment.id} (Tenant: ${tenantId})`);
 
@@ -1047,6 +1089,89 @@ export class EquipmentService {
       lastSyncedAt: updated?.vaultwarden_last_synced_at ? updated.vaultwarden_last_synced_at.toISOString() : new Date().toISOString(),
       itemCount: 1,
       message: 'Device vault provisioned successfully with Bitwarden collection',
+      activationUrl: provisionResult.activationUrl || null,
+      isActivated: false,
+      adminVaultUrl,
+      accessLevel: 'Organization Owner (Full Access)',
+    };
+  }
+
+  /**
+   * Resets and re-keys the master password for a device-bound password vault.
+   * Generates a fresh cryptographic RS256 activation URL so administrators can change or set
+   * the master password at any time.
+   *
+   * @param equipmentId - Equipment slot UUID
+   * @param tenantId - Tenant UUID
+   * @param byAdmin - True if administrator
+   * @param adminEmail - Caller email address
+   * @returns Updated DeviceVaultDetails with new activation URL
+   * @throws {NotFoundError} When equipment does not exist
+   * @throws {ForbiddenError} When tenant boundary is violated
+   */
+  async resetDeviceVault(
+    equipmentId: string,
+    tenantId: string,
+    byAdmin = false,
+    adminEmail?: string
+  ): Promise<DeviceVaultDetails> {
+    const equipment = await this.equipmentRepository.findById(equipmentId);
+    if (!equipment) {
+      throw new NotFoundError('Equipment slot not found');
+    }
+    if (!byAdmin && equipment.tenant_id !== tenantId) {
+      throw new ForbiddenError('Access denied: Equipment belongs to another tenant');
+    }
+    if (!byAdmin) {
+      await this.enforceDevicePasswordManagerEntitlement(equipment.subscription_id);
+    }
+
+    const deviceName = equipment.device_name || equipment.agent_hostname || `Device-${equipment.slot_index + 1}`;
+    const deviceEmail = `device_${equipment.id.slice(0, 8)}@${tenantId.slice(0, 8)}.local`;
+    const targetOrgId =
+      equipment.vaultwarden_org_id ||
+      (typeof this.vaultwardenService.resolveOrganizationId === 'function'
+        ? await this.vaultwardenService.resolveOrganizationId(equipment.tenant_id, adminEmail)
+        : equipment.tenant_id);
+
+    let userId = equipment.vaultwarden_device_user_id;
+    let activationUrl: string | null = null;
+
+    if (!userId) {
+      const colId = equipment.vaultwarden_collection_id || (await this.vaultwardenService.createDeviceCollection(targetOrgId, deviceName));
+      const provisionRes = await this.vaultwardenService.provisionDeviceAccount(targetOrgId, colId, deviceEmail);
+      userId = provisionRes.userId;
+      activationUrl = provisionRes.activationUrl || null;
+    } else {
+      if (typeof this.vaultwardenService.generateDeviceActivationUrl === 'function') {
+        activationUrl = this.vaultwardenService.generateDeviceActivationUrl(userId, deviceEmail);
+      }
+    }
+
+    const updated = await this.equipmentRepository.update(equipment.id, {
+      vaultwarden_org_id: targetOrgId,
+      vaultwarden_status: 'ACTIVE',
+      vaultwarden_last_synced_at: new Date(),
+    });
+
+    const adminVaultUrl = `${env.VAULTWARDEN_EXTERNAL_URL || 'https://helpdesk.velmartech.com.do/vault'}/#/vault`;
+
+    logger.info(`Generated master password reset token for equipment ${equipment.id} (Tenant: ${tenantId})`);
+
+    return {
+      equipmentId: equipment.id,
+      deviceName,
+      status: 'ACTIVE',
+      orgId: targetOrgId,
+      collectionId: equipment.vaultwarden_collection_id,
+      deviceEmail,
+      lastSyncedAt: updated?.vaultwarden_last_synced_at ? updated.vaultwarden_last_synced_at.toISOString() : new Date().toISOString(),
+      itemCount: 1,
+      message: 'Master password reset link generated successfully',
+      activationUrl,
+      isActivated: false,
+      adminVaultUrl,
+      accessLevel: 'Organization Owner (Full Access)',
     };
   }
 

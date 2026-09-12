@@ -33,7 +33,7 @@ describe('PlanQueryService', () => {
 
       const result = await planQueryService.listPlans({ page: 1, limit: 20 }, clientCtx);
 
-      expect(mocks.findWithFilters).toHaveBeenCalledWith({ page: 1, limit: 20, includeInactive: false });
+      expect(mocks.findWithFilters).toHaveBeenCalledWith({ page: 1, limit: 20, includeInactive: false, tenantId: 't1' });
       expect(result).toEqual({ plans: [], total: 0 });
     });
 
@@ -42,7 +42,7 @@ describe('PlanQueryService', () => {
 
       await planQueryService.listPlans({}, adminCtx);
 
-      expect(mocks.findWithFilters).toHaveBeenCalledWith({ includeInactive: true });
+      expect(mocks.findWithFilters).toHaveBeenCalledWith({ includeInactive: true, tenantId: 't1' });
     });
   });
 

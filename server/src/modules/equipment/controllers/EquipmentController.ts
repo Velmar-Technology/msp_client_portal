@@ -521,8 +521,34 @@ Write-Host "==================================================" -ForegroundColor
   async provisionDeviceVault(req: Request, res: Response): Promise<void> {
     const equipmentId = req.params.id as string;
     const byAdmin = req.user!.role === 'ADMIN';
-    const vault = await this.equipmentSvc.provisionDeviceVault(equipmentId, req.user!.tenantId, byAdmin);
+    const vault = await this.equipmentSvc.provisionDeviceVault(
+      equipmentId,
+      req.user!.tenantId,
+      byAdmin,
+      req.user?.email
+    );
     res.status(201).json({
+      success: true,
+      data: vault,
+    });
+  }
+
+  /**
+   * Handles resetting the master password activation token for an equipment slot.
+   *
+   * @param req - Express request with equipment ID in params
+   * @param res - Express response returning updated DeviceVaultDetails with activation URL
+   */
+  async resetDeviceVault(req: Request, res: Response): Promise<void> {
+    const equipmentId = req.params.id as string;
+    const byAdmin = req.user!.role === 'ADMIN';
+    const vault = await this.equipmentSvc.resetDeviceVault(
+      equipmentId,
+      req.user!.tenantId,
+      byAdmin,
+      req.user?.email
+    );
+    res.json({
       success: true,
       data: vault,
     });

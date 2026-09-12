@@ -382,3 +382,100 @@ export interface EquipmentQuotaUpdateResult {
   invoiceIssued: boolean;
   message: string;
 }
+
+export interface ProvisionSubscriptionResult {
+  success: boolean;
+  subscription: SubscriptionSummary;
+  client: {
+    id: string;
+    email: string;
+    name: string;
+    tenantId: string;
+  };
+  plan: {
+    id: string;
+    name: string;
+    price: number;
+    features: string[];
+  };
+  invoice?: {
+    id?: string;
+    invoice_number?: string;
+    amount?: number;
+    tax_amount?: number;
+    total?: number;
+    status?: string;
+  };
+  slotsInitialized: number;
+  sentinelVerification?: {
+    passed: boolean;
+    violationsCount: number;
+  };
+  message: string;
+}
+
+export interface SubscriptionExtensionResult {
+  success: boolean;
+  subscriptionId: string;
+  previousRenewalDate: string;
+  newRenewalDate: string;
+  extendedMonths: number;
+  serviceName: string;
+  invoiceIssued: boolean;
+  invoice?: {
+    id: string;
+    invoice_number: string;
+    amount: number;
+    tax_amount: number;
+    total: number;
+    status: string;
+  };
+  message: string;
+}
+
+export interface UserAccountUpdateResult {
+  success: boolean;
+  user: UserSummary;
+  previousRole?: string;
+  previousClientType?: string | null;
+  message: string;
+}
+
+export interface InfrastructureContainerSummary {
+  name: string;
+  state: string;
+  status: string;
+  image?: string;
+  ports?: Array<{ hostPort?: number; containerPort?: number; protocol?: string }>;
+}
+
+export interface InfrastructureAuditResult {
+  success: boolean;
+  endpointId: number | string;
+  stackId: number | string;
+  stackName?: string;
+  totalContainers: number;
+  runningContainers: number;
+  unhealthyContainers: number;
+  overallStatus: 'HEALTHY' | 'DEGRADED' | 'DOWN';
+  containers: InfrastructureContainerSummary[];
+  composeServices?: string[];
+  publicEndpoints?: Array<{ name: string; url: string; status: number | string }>;
+  verifiedAt: string;
+  message: string;
+}
+
+export interface ManageFeaturesResult {
+  success: boolean;
+  targetType: 'USER_SUBSCRIPTION' | 'PLAN_CATALOG' | 'CATALOG_LIST';
+  targetId: string;
+  planId?: string;
+  planName?: string;
+  previousFeatures: string[];
+  currentFeatures: string[];
+  addedFeatures: string[];
+  removedFeatures: string[];
+  expandedCapabilities: string[];
+  message: string;
+}
+

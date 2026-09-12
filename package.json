@@ -12,6 +12,7 @@
     "build:tray": "npm --prefix packages/msp-tray run build",
     "build:tray:app": "npm --prefix packages/msp-tray run tauri build -- --no-bundle",
     "dev:tray": "npm --prefix packages/msp-tray run tauri dev",
+    "sentinel:op": "node scripts/sentinel-ops.mjs",
     "release": "commit-and-tag-version",
     "prepare": "node -e \"if (process.env.NODE_ENV !== 'production') { try { require('child_process').execSync('npx --no husky', { stdio: 'inherit' }); } catch (e) {} }\""
   },

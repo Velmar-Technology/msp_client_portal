@@ -24,6 +24,10 @@ export const DeviceVaultDetailsSchema = z.object({
   lastSyncedAt: z.string().nullable().optional(),
   itemCount: z.number().int().nonnegative().default(0),
   message: z.string().optional(),
+  activationUrl: z.string().nullable().optional(),
+  isActivated: z.boolean().optional(),
+  adminVaultUrl: z.string().nullable().optional(),
+  accessLevel: z.string().optional(),
 });
 export type DeviceVaultDetails = z.infer<typeof DeviceVaultDetailsSchema>;
 
