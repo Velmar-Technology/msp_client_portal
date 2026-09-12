@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.11.11](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.10...v1.11.11) (2026-09-12)
+
+
+### Features
+
+* **billing:** support 100% discounted invoices and free plan zero-charge invariant ([089d64b](https://github.com/Velmar-Technology/msp_client_portal/commit/089d64b228b68be8d03891103744d16c855f1460))
+* **equipment:** add MSI suite installer packaging and deployment UI ([8eda38b](https://github.com/Velmar-Technology/msp_client_portal/commit/8eda38b744e3c059f7c61d35ae452f1cbde82b3d))
+* **equipment:** admin organization owner access and vault reset (BL-205) ([a4b34cd](https://github.com/Velmar-Technology/msp_client_portal/commit/a4b34cdd37fe8522eb42a01a715f406204c09de8))
+* **equipment:** seamless workstation vault activation flow (BL-205) ([50d7680](https://github.com/Velmar-Technology/msp_client_portal/commit/50d768072e4ca3b5595c0300f01d61f974794bc7))
+* **rmm:** add msp_remote_battery_report tool to mcp-server ([5cce4e6](https://github.com/Velmar-Technology/msp_client_portal/commit/5cce4e6d9f36b2a9bda5c5974af83fa703e9093c))
+* **rmm:** add msp_remote_get_hardware_components tool to mcp-server ([4e4dcf3](https://github.com/Velmar-Technology/msp_client_portal/commit/4e4dcf30e58e6ef83361f165a57c755f06a1a931))
+* **rmm:** bump default remote agent upgrade target version to 1.11.5 ([39c8f42](https://github.com/Velmar-Technology/msp_client_portal/commit/39c8f42543a015fd9ab45128107cbb790dd00c7d))
+* **sentinel:** add BL-205 device vault session remediator and vault guardrails ([3d6582f](https://github.com/Velmar-Technology/msp_client_portal/commit/3d6582f836fca959d4a91febe63a69ae7148399a))
+* **sentinel:** streamline 1-step ops and support tenant plans ([4fadafb](https://github.com/Velmar-Technology/msp_client_portal/commit/4fadafbdb8c428068045ec1a1a0baf8541fcf2c1))
+
+
+### Bug Fixes
+
+* **server:** resolve Vaultwarden 404 invite error with subpath sync and admin fallback ([769f07c](https://github.com/Velmar-Technology/msp_client_portal/commit/769f07c2fab20c4e7f3be45ff8ccd3ae997f69ca))
+* **system:** implement Vaultwarden admin session cookie authentication and caching (BL-206) ([0839853](https://github.com/Velmar-Technology/msp_client_portal/commit/08398532459c5d4a01e87c58ff6938fcf3812f07))
+* **vault:** resolve 401 in createDeviceCollection and support slot re-enrollment (BL-205) ([102016f](https://github.com/Velmar-Technology/msp_client_portal/commit/102016f975acf05bb9cbe680ddf28e25d25ac97e))
+* **vault:** resolve 401 in revokeDeviceSession with admin session fallback (BL-205) ([159cf8d](https://github.com/Velmar-Technology/msp_client_portal/commit/159cf8de1b9e084747266052e93df105969da03e))
+
 ## [1.11.10](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.9...v1.11.10) (2026-09-11)
 
 
