@@ -978,6 +978,28 @@ export class EquipmentService {
     const deviceEmail = `device_${equipment.id.slice(0, 8)}@${tenantId.slice(0, 8)}.local`;
     const status = (equipment.vaultwarden_status as any) || 'UNPROVISIONED';
 
+    let isActivated = false;
+    let activationUrl: string | null = null;
+
+    if (equipment.vaultwarden_device_user_id && status === 'ACTIVE') {
+      try {
+        if (typeof this.vaultwardenService.checkUserAccountStatus === 'function') {
+          const userStatus = await this.vaultwardenService.checkUserAccountStatus(
+            equipment.vaultwarden_device_user_id
+          );
+          isActivated = userStatus.isActivated;
+        }
+        if (!isActivated && typeof this.vaultwardenService.generateDeviceActivationUrl === 'function') {
+          activationUrl = this.vaultwardenService.generateDeviceActivationUrl(
+            equipment.vaultwarden_device_user_id,
+            deviceEmail
+          );
+        }
+      } catch (checkErr) {
+        logger.warn(`Failed checking activation status for equipment ${equipment.id}:`, checkErr);
+      }
+    }
+
     return {
       equipmentId: equipment.id,
       deviceName,
@@ -987,6 +1009,8 @@ export class EquipmentService {
       deviceEmail,
       lastSyncedAt: equipment.vaultwarden_last_synced_at ? equipment.vaultwarden_last_synced_at.toISOString() : null,
       itemCount: status === 'ACTIVE' ? 1 : 0,
+      activationUrl,
+      isActivated,
     };
   }
 
@@ -1051,6 +1075,8 @@ export class EquipmentService {
       lastSyncedAt: updated?.vaultwarden_last_synced_at ? updated.vaultwarden_last_synced_at.toISOString() : new Date().toISOString(),
       itemCount: 1,
       message: 'Device vault provisioned successfully with Bitwarden collection',
+      activationUrl: provisionResult.activationUrl || null,
+      isActivated: false,
     };
   }
 

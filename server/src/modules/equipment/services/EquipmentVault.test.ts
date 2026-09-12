@@ -50,8 +50,15 @@ describe('EquipmentService - Device-Bound Vaultwarden Management', () => {
 
     mockVaultwardenSvc = {
       createDeviceCollection: vi.fn().mockResolvedValue('vw_col_123'),
-      provisionDeviceAccount: vi.fn().mockResolvedValue({ userId: 'vw_user_456' }),
+      provisionDeviceAccount: vi.fn().mockResolvedValue({
+        userId: 'vw_user_456',
+        activationUrl: 'https://helpdesk.velmartech.com.do/vault/#/accept-organization/?token=mock',
+      }),
       revokeDeviceSession: vi.fn().mockResolvedValue(true),
+      checkUserAccountStatus: vi.fn().mockResolvedValue({ isActivated: false, status: 1 }),
+      generateDeviceActivationUrl: vi.fn().mockReturnValue(
+        'https://helpdesk.velmartech.com.do/vault/#/accept-organization/?token=mock'
+      ),
     };
 
     equipmentService = new EquipmentService(

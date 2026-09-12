@@ -14,6 +14,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -86,6 +87,14 @@ export function DeviceVaultModal({
     const status = vault?.status || 'UNPROVISIONED';
     switch (status) {
       case 'ACTIVE':
+        if (vault?.activationUrl && !vault?.isActivated) {
+          return (
+            <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 gap-1.5 py-0.5 px-2.5">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              {t('equipment.vault.statusPendingActivation', 'Pending Activation')}
+            </Badge>
+          );
+        }
         return (
           <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 gap-1.5 py-0.5 px-2.5">
             <ShieldCheck className="h-3.5 w-3.5" />
@@ -119,7 +128,7 @@ export function DeviceVaultModal({
         }
       }}
     >
-      <DialogContent className="sm:max-w-[540px] p-0 overflow-hidden border border-border/60 bg-background shadow-2xl">
+      <DialogContent className="sm:max-w-135 p-0 overflow-hidden border border-border/60 bg-background shadow-2xl">
         <DialogHeader className="p-6 pb-4 border-b border-border/40 bg-muted/20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -208,6 +217,83 @@ export function DeviceVaultModal({
                     )}
                   </p>
                 </div>
+
+                {/* Setup Required: Set Master Password */}
+                {vault?.status === 'ACTIVE' && vault?.activationUrl && !vault?.isActivated && (
+                  <div className="p-3.5 rounded-lg border border-amber-500/40 bg-amber-500/10 dark:bg-amber-950/20 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-semibold text-xs">
+                        <AlertTriangle className="h-4 w-4 shrink-0" />
+                        <span>{t('equipment.vault.activationRequiredTitle', 'Setup Required: Set Workstation Master Password')}</span>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-amber-500/40 text-amber-600 dark:text-amber-400 bg-amber-500/10 shrink-0">
+                        {t('equipment.vault.statusPendingActivation', 'Pending Activation')}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {t(
+                        'equipment.vault.activationRequiredDesc',
+                        'This machine account needs an initial master password before workstation login. Click below to set the master password and activate the vault on this endpoint.'
+                      )}
+                    </p>
+
+                    <div className="rounded-md bg-background/70 border border-border/50 p-2.5 text-[11px] text-muted-foreground space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-[10px] font-bold text-amber-600 dark:text-amber-400">1</span>
+                        <span>{t('equipment.vault.step1', 'Open activation link & set the master password.')}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-[10px] font-bold text-amber-600 dark:text-amber-400">2</span>
+                        <span>{t('equipment.vault.step2', 'On the PC, sign in to Bitwarden with this machine user and your password.')}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="h-7 text-xs gap-1.5 bg-amber-600 hover:bg-amber-700 text-white font-medium cursor-pointer shadow-xs"
+                        onClick={() => window.open(vault.activationUrl!, '_blank')}
+                      >
+                        <KeyRound className="h-3.5 w-3.5" />
+                        {t('equipment.vault.btnSetPassword', 'Set Master Password')}
+                        <ExternalLink className="h-3 w-3 opacity-70" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs gap-1.5 cursor-pointer"
+                        onClick={() => {
+                          handleCopy(vault.activationUrl!, 'activationUrl');
+                          toast.success(t('equipment.vault.linkCopied', 'Activation link copied to clipboard!'));
+                        }}
+                      >
+                        {copiedField === 'activationUrl' ? (
+                          <Check className="h-3 w-3 text-emerald-500" />
+                        ) : (
+                          <Copy className="h-3 w-3" />
+                        )}
+                        {t('equipment.vault.btnCopyActivationLink', 'Copy Activation Link')}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Already Activated Confirmation */}
+                {vault?.status === 'ACTIVE' && vault?.isActivated && (
+                  <div className="p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5 text-xs text-muted-foreground space-y-1">
+                    <p className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                      <ShieldCheck className="h-4 w-4" />
+                      {t('equipment.vault.statusActivatedTitle', 'Workstation Vault Enrolled & Active')}
+                    </p>
+                    <p>
+                      {t(
+                        'equipment.vault.statusActivatedDesc',
+                        'The machine identity is registered. Workers can unlock Bitwarden on this PC using the assigned email and master password.'
+                      )}
+                    </p>
+                  </div>
+                )}
 
                 {/* Identity & Collection Details */}
                 <div className="space-y-3">
@@ -370,6 +456,19 @@ export function DeviceVaultModal({
                   {t('common.close', 'Close')}
                 </Button>
               </DialogClose>
+
+              {vault?.status === 'ACTIVE' && !confirmingRevoke && vault?.activationUrl && !vault?.isActivated && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="h-7 text-xs gap-1.5 bg-amber-600 hover:bg-amber-700 text-white font-medium cursor-pointer shadow-xs"
+                  onClick={() => window.open(vault.activationUrl!, '_blank')}
+                >
+                  <KeyRound className="h-3.5 w-3.5" />
+                  {t('equipment.vault.btnSetPassword', 'Set Master Password')}
+                  <ExternalLink className="h-3 w-3 opacity-70" />
+                </Button>
+              )}
 
               {vault?.status === 'ACTIVE' && !confirmingRevoke && (
                 <Button

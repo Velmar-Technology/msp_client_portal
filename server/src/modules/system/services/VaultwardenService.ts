@@ -1,3 +1,5 @@
+import fs from 'fs';
+import crypto from 'crypto';
 import { env } from '@shared/config/env';
 import { logger } from '@shared/utils/logger';
 import { ExternalServiceError } from '@shared/errors';
@@ -127,6 +129,203 @@ export class VaultwardenService {
       headers['Authorization'] = `Bearer ${token}`;
     }
     return headers;
+  }
+
+  /**
+   * Retrieves the RSA private key used by Vaultwarden for signing invitation tokens.
+   * Checks VAULTWARDEN_RSA_KEY environment variable (PEM or base64), or reads from file system
+   * (/vaultwarden_data/rsa_key.pem, /data/rsa_key.pem, or custom path).
+   *
+   * @returns PEM formatted RSA private key or null if unavailable
+   */
+  private getRsaPrivateKey(): string | null {
+    if (process.env.VAULTWARDEN_RSA_KEY) {
+      let raw = process.env.VAULTWARDEN_RSA_KEY.trim();
+      if (!raw.includes('BEGIN RSA PRIVATE KEY') && !raw.includes('BEGIN PRIVATE KEY')) {
+        try {
+          raw = Buffer.from(raw, 'base64').toString('utf8');
+        } catch {
+          // Fallback to raw
+        }
+      }
+      return raw;
+    }
+
+    const candidatePaths = [
+      process.env.VAULTWARDEN_KEY_PATH,
+      '/vaultwarden_data/rsa_key.pem',
+      '/data/rsa_key.pem',
+      './rsa_key.pem',
+    ].filter(Boolean) as string[];
+
+    for (const p of candidatePaths) {
+      try {
+        if (fs.existsSync(p)) {
+          return fs.readFileSync(p, 'utf8');
+        }
+      } catch {
+        // Ignore file read error
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Generates a cryptographically signed Bitwarden invitation URL for a device slot account.
+   * Signs an RS256 JWT using Vaultwarden's RSA private key matching Vaultwarden's internal
+   * mail::send_invite claims and FAKE_ADMIN_UUID format.
+   *
+   * @param userId - Vaultwarden user UUID
+   * @param email - Device machine identity email (e.g. device_xyz@tenant.local)
+   * @returns Complete web vault URL to accept organization / create master password, or null if key unavailable
+   */
+  generateDeviceActivationUrl(userId: string, email: string): string | null {
+    const pem = this.getRsaPrivateKey();
+    const externalUrl = env.VAULTWARDEN_EXTERNAL_URL || 'https://helpdesk.velmartech.com.do/vault';
+
+    if (!pem) {
+      if (!env.VAULTWARDEN_ADMIN_TOKEN) {
+        // Offline mock support for tests and dev environments
+        return `${externalUrl.replace(/\/+$/, '')}/#/accept-organization/?mock=true&email=${encodeURIComponent(email)}`;
+      }
+      logger.warn(`Vaultwarden RSA private key not found; cannot sign device activation link for ${email}`);
+      return null;
+    }
+
+    try {
+      let domainOrigin = 'https://helpdesk.velmartech.com.do';
+      try {
+        const u = new URL(externalUrl);
+        domainOrigin = u.origin;
+      } catch {
+        // Fallback
+      }
+
+      const now = Math.floor(Date.now() / 1000);
+      const exp = now + 5 * 24 * 3600; // 5 days validity
+      const fakeUuid = '00000000-0000-0000-0000-000000000000';
+
+      const claims = {
+        nbf: now - 60,
+        exp,
+        iss: `${domainOrigin}|invite`,
+        sub: userId,
+        email,
+        org_id: fakeUuid,
+        member_id: fakeUuid,
+        invited_by_email: null,
+      };
+
+      const header = { alg: 'RS256', typ: 'JWT' };
+      const base64url = (buf: Buffer) =>
+        buf.toString('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+
+      const h64 = base64url(Buffer.from(JSON.stringify(header)));
+      const p64 = base64url(Buffer.from(JSON.stringify(claims)));
+      const toSign = `${h64}.${p64}`;
+
+      const signer = crypto.createSign('RSA-SHA256');
+      signer.update(toSign);
+      const sig64 = base64url(
+        signer.sign({
+          key: pem.trim(),
+          format: 'pem',
+          type: 'pkcs1',
+        })
+      );
+
+      const token = `${toSign}.${sig64}`;
+      const cleanBase = externalUrl.replace(/\/+$/, '');
+      const query = new URLSearchParams({
+        email,
+        organizationName: 'Vaultwarden',
+        organizationId: fakeUuid,
+        organizationUserId: fakeUuid,
+        token,
+        initOrganization: 'false',
+        orgUserHasExistingUser: 'false',
+      });
+
+      return `${cleanBase}/#/accept-organization/?${query.toString()}`;
+    } catch (signErr) {
+      logger.error(`Failed to sign device activation token for ${email}:`, signErr);
+      return null;
+    }
+  }
+
+  /**
+   * Lists all users registered in the Vaultwarden instance via the Admin API.
+   *
+   * @returns Array of user records from Vaultwarden Admin API
+   */
+  async listAdminUsers(): Promise<
+    Array<{
+      Id?: string;
+      id?: string;
+      Email?: string;
+      email?: string;
+      _status?: number;
+      status?: number;
+    }>
+  > {
+    const token = env.VAULTWARDEN_ADMIN_TOKEN;
+    if (!token) return [];
+
+    try {
+      const baseUrl = this.getBaseUrl();
+      const adminHeaders = await this.getAdminHeaders();
+      const res = await fetch(`${baseUrl}/admin/users`, {
+        method: 'GET',
+        headers: adminHeaders,
+      });
+
+      if (!res.ok) return [];
+      return (await res.json()) as Array<{
+        Id?: string;
+        id?: string;
+        Email?: string;
+        email?: string;
+        _status?: number;
+        status?: number;
+      }>;
+    } catch (err) {
+      logger.warn('Failed to list Vaultwarden admin users:', err);
+      return [];
+    }
+  }
+
+  /**
+   * Inspects user account status directly from Vaultwarden Admin API (/admin/users).
+   * Vaultwarden Status codes: 0 = Active/Registered, 1 = Invited/Pending Setup.
+   *
+   * @param userId - Target user UUID
+   * @returns Object indicating whether account is activated and raw status
+   */
+  async checkUserAccountStatus(
+    userId: string
+  ): Promise<{ isActivated: boolean; status: number | null }> {
+    const token = env.VAULTWARDEN_ADMIN_TOKEN;
+    if (!token || userId.startsWith('vw_user_')) {
+      return { isActivated: false, status: 1 };
+    }
+
+    try {
+      const users = await this.listAdminUsers();
+      const found = users.find((u) => (u.Id || u.id)?.toLowerCase() === userId.toLowerCase());
+      if (!found) {
+        return { isActivated: false, status: null };
+      }
+
+      const statusCode = found._status ?? found.status ?? 1;
+      return {
+        isActivated: statusCode === 0,
+        status: statusCode,
+      };
+    } catch (err) {
+      logger.warn(`Failed to inspect user account status for ${userId}:`, err);
+      return { isActivated: false, status: null };
+    }
   }
 
   /**
@@ -909,7 +1108,7 @@ export class VaultwardenService {
     collectionId: string,
     deviceEmail: string,
     existingUserId?: string | null
-  ): Promise<{ userId: string; deviceToken?: string }> {
+  ): Promise<{ userId: string; deviceToken?: string; activationUrl?: string | null }> {
     const token = env.VAULTWARDEN_ADMIN_TOKEN;
     const baseUrl = this.getBaseUrl();
 
@@ -919,6 +1118,7 @@ export class VaultwardenService {
       return {
         userId: mockUserId,
         deviceToken: `vw_tok_${Math.random().toString(36).substring(2, 12)}`,
+        activationUrl: this.generateDeviceActivationUrl(mockUserId, deviceEmail),
       };
     }
 
@@ -968,9 +1168,16 @@ export class VaultwardenService {
               body: JSON.stringify({ email: deviceEmail }),
             });
             if (adminInviteResp.ok || adminInviteResp.status === 409) {
-              const fallbackUserId = existingUserId || `vw_user_${Math.random().toString(36).substring(2, 10)}`;
+              let fallbackUserId = existingUserId;
+              if (!fallbackUserId) {
+                const users = await this.listAdminUsers();
+                const found = users.find((u) => (u.Email || u.email)?.toLowerCase() === deviceEmail.toLowerCase());
+                fallbackUserId = found ? (found.Id || found.id || null) : null;
+              }
+              const finalUserId = fallbackUserId || `vw_user_${Math.random().toString(36).substring(2, 10)}`;
+              const activationUrl = this.generateDeviceActivationUrl(finalUserId, deviceEmail);
               logger.info(`Dispatched fallback admin invitation for device ${deviceEmail} via /admin/invite`);
-              return { userId: fallbackUserId };
+              return { userId: finalUserId, activationUrl };
             }
           } catch (adminFallbackErr) {
             logger.warn(`Admin API invite fallback failed for ${deviceEmail}:`, adminFallbackErr);
@@ -985,8 +1192,9 @@ export class VaultwardenService {
 
       const data = (await response.json()) as { Id?: string; id?: string };
       const userId = data.Id || data.id || existingUserId || `vw_user_${Math.random().toString(36).substring(2, 10)}`;
+      const activationUrl = this.generateDeviceActivationUrl(userId, deviceEmail);
       logger.info(`Provisioned device account ${deviceEmail} (${userId}) in org ${orgId}`);
-      return { userId };
+      return { userId, activationUrl };
     } catch (err: unknown) {
       if (err instanceof ExternalServiceError) throw err;
       logger.error(`Error provisioning device account ${deviceEmail} in org ${orgId}`, { err });

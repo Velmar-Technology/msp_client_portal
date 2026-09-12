@@ -2087,7 +2087,17 @@
       "revokeError": "Error al revocar la bóveda del dispositivo.",
       "perk1": "Autocompletado de credenciales en estaciones de trabajo sin exposición de texto plano",
       "perk2": "Colecciones de Bitwarden vinculadas al equipo y custodia de identidad de máquina",
-      "perk3": "Bloqueo remoto de emergencia y revocación de sesión en 1 clic"
+      "perk3": "Bloqueo remoto de emergencia y revocación de sesión en 1 clic",
+      "activationRequiredTitle": "Configuración Requerida: Crear Contraseña Maestra",
+      "activationRequiredDesc": "Esta cuenta de máquina necesita una contraseña maestra inicial antes de iniciar sesión. Haz clic abajo para crear la contraseña maestra y activar la bóveda en este equipo.",
+      "statusPendingActivation": "Pendiente de Activación",
+      "statusActivatedTitle": "Bóveda de Equipo Enrolada y Activa",
+      "statusActivatedDesc": "La identidad de la máquina está registrada. Los usuarios pueden desbloquear Bitwarden en esta PC usando el correo asignado y la contraseña maestra.",
+      "btnSetPassword": "Crear Contraseña Maestra",
+      "btnCopyActivationLink": "Copiar Enlace de Activación",
+      "linkCopied": "¡Enlace de activación copiado al portapapeles!",
+      "step1": "Abre el enlace de activación y establece la contraseña maestra.",
+      "step2": "En la PC, inicia sesión en Bitwarden con este usuario de máquina y tu contraseña."
     }
   }
 }

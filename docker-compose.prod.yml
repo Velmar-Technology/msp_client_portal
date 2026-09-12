@@ -117,6 +117,7 @@ services:
       - DD_AGENT_HOST=${DD_AGENT_HOST:-}
     volumes:
       - uploads_data:/app/server/uploads
+      - vaultwarden_data:/vaultwarden_data:ro
     deploy:
       resources:
         limits:

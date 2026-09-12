@@ -2093,7 +2093,17 @@
       "revokeError": "Failed to revoke device vault.",
       "perk1": "Workstation credential autofill with zero plaintext exposure",
       "perk2": "Device-scoped Bitwarden collections & machine identity escrow",
-      "perk3": "1-click remote emergency session revocation killswitch"
+      "perk3": "1-click remote emergency session revocation killswitch",
+      "activationRequiredTitle": "Setup Required: Set Workstation Master Password",
+      "activationRequiredDesc": "This machine account needs an initial master password before workstation login. Click below to set the master password and activate the vault on this endpoint.",
+      "statusPendingActivation": "Pending Activation",
+      "statusActivatedTitle": "Workstation Vault Enrolled & Active",
+      "statusActivatedDesc": "The machine identity is registered. Workers can unlock Bitwarden on this PC using the assigned email and master password.",
+      "btnSetPassword": "Set Master Password",
+      "btnCopyActivationLink": "Copy Activation Link",
+      "linkCopied": "Activation link copied to clipboard!",
+      "step1": "Open activation link & set the master password.",
+      "step2": "On the PC, sign in to Bitwarden with this machine user and your password."
     }
   }
 }

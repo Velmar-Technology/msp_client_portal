@@ -1,10 +1,11 @@
 # Infrastructure Specification: MSP Client Portal Production Stack
 
-_Status: Deployed & Active · Last Verified: 2026-09-11 · Version: 1.2_
+_Status: Deployed & Active · Last Verified: 2026-09-11 · Version: 1.3_
 
 > **2026-09-11 Post-Incident Updates:**
 > 1. **Admin Token Missing (v1.1):** `VAULTWARDEN_ADMIN_TOKEN` was absent from the stack env, causing `msp_server_prod` to run the offline mock path. Token was generated, injected into stack 17 env, and compose now fails fast (`${VAULTWARDEN_ADMIN_TOKEN:?...}`).
 > 2. **Subpath Route 404 & Admin Session Auth (v1.2):** Rocket Vaultwarden runs with `DOMAIN=https://helpdesk.velmartech.com.do/vault`, which mounts all routes under `/vault`. `VAULTWARDEN_URL` was updated to default to `http://vaultwarden:80/vault` (with automatic subpath extraction in `VaultwardenService.getBaseUrl()`). Furthermore, Rocket's `/admin/*` routes strictly require session cookie authentication (`VW_ADMIN`), which the backend now automatically negotiates via `POST /vault/admin` and caches for 15 minutes to prevent HTTP 429 rate limiting (see §6, §8).
+> 3. **Workstation Bitwarden Activation Flow & RSA Private Key (v1.3):** Device accounts use internal `.local` workstation identities (`device_<slotId>@<tenantId>.local`) where SMTP delivery is unavailable. Vaultwarden requires invited users to activate through an RS256-signed JWT token on `/#/accept-organization`. The portal backend mounts `/vaultwarden_data/rsa_key.pem` read-only (`vaultwarden_data:/vaultwarden_data:ro`) or resolves `VAULTWARDEN_RSA_KEY` to sign 5-day invitation tokens on the fly. The frontend (`DeviceVaultModal.tsx`) presents a seamless one-click "Set Master Password" button and link copy flow, completely eliminating external email dependencies.
 
 ---
 
@@ -83,7 +84,7 @@ All services restart automatically (`restart: always` unless noted) and share th
 | `prometheus_data` | local | `prometheus` → `/prometheus` |
 | `grafana_data` | local | `grafana` → `/var/lib/grafana` |
 | `alloy_data` | local | `alloy` → `/var/lib/alloy/data` |
-| `vaultwarden_data` | local | `vaultwarden` → `/data` |
+| `vaultwarden_data` | local | `vaultwarden` → `/data`, `server` → `/vaultwarden_data` (RO, for RSA invite signing) |
 
 ---
 
