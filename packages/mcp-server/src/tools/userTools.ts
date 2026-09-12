@@ -127,4 +127,42 @@ export function registerUserTools(server: McpServer, apiClient: MspApiClient): v
       }
     }
   );
+
+  // 5. Tool: msp_update_user_role (manage user account)
+  server.tool(
+    'msp_update_user_role',
+    'Seamlessly update a user role (CLIENT, TECHNICIAN, ADMIN), client category/type, or active status (Admin only)',
+    {
+      user: z.string().describe('Target user email (e.g. e.a.polanco.robles@gmail.com), UUID, or full name'),
+      role: z.enum(['ADMIN', 'TECHNICIAN', 'CLIENT']).optional().describe('New platform role (ADMIN, TECHNICIAN, CLIENT)'),
+      clientType: z.enum(['CLIENT', 'ENTERPRISE', 'STUDENT', 'OTHER']).optional().describe('Customer client type / classification'),
+      isActive: z.boolean().optional().describe('User account active state'),
+      reason: z.string().optional().describe('Administrative reason for modification'),
+    },
+    async ({ user, role, clientType, isActive, reason }) => {
+      try {
+        const result = await apiClient.manageUserAccount({
+          user,
+          role,
+          clientType,
+          isActive,
+          reason,
+        });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      } catch (err: any) {
+        return {
+          isError: true,
+          content: [{ type: 'text', text: `Failed to update user account: ${err.message}` }],
+        };
+      }
+    }
+  );
 }

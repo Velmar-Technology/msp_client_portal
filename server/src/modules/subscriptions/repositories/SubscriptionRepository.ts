@@ -214,6 +214,28 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
   }
 
   /**
+   * Updates partial subscription details such as renewal date or service display title.
+   *
+   * @param id - Subscription UUID
+   * @param data - Partial update payload
+   * @returns Updated Subscription entity or null
+   */
+  async updateSubscriptionDetails(
+    id: string,
+    data: Partial<Pick<Subscription, 'renewal_date' | 'service_name' | 'status' | 'plan' | 'equipment_count'>>
+  ): Promise<Subscription | null> {
+    const results = await db
+      .update(subscriptions)
+      .set({
+        ...data,
+        updated_at: new Date(),
+      })
+      .where(eq(subscriptions.id, id))
+      .returning();
+    return (results[0] as Subscription) || null;
+  }
+
+  /**
    * Retrieves all currently active and expiring subscriptions.
    *
    * @returns Array of active/expiring Subscription entities

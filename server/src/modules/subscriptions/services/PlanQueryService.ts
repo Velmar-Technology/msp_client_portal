@@ -27,7 +27,7 @@ export class PlanQueryService {
    */
   async listPlans(filters: PlanFilters, ctx: UserContext): Promise<{ plans: Plan[]; total: number }> {
     const includeInactive = this.accessPol.canViewInactive(ctx);
-    return this.planRepo.findWithFilters({ ...filters, includeInactive });
+    return this.planRepo.findWithFilters({ ...filters, includeInactive, tenantId: ctx.tenantId });
   }
 
   /**

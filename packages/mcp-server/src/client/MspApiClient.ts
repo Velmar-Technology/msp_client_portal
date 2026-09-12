@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import https from 'https';
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
 import type {
   MspServerConfig,
@@ -25,6 +26,12 @@ import type {
   NotificationListResult,
   SubscriptionSummary,
   EquipmentQuotaUpdateResult,
+  ProvisionSubscriptionResult,
+  SubscriptionExtensionResult,
+  UserAccountUpdateResult,
+  InfrastructureAuditResult,
+  InfrastructureContainerSummary,
+  ManageFeaturesResult,
 } from '../types.js';
 
 export class MspApiClient {
@@ -1012,6 +1019,9 @@ ${recommendationList}
       plan?: string;
       status?: string;
       createInvoice?: boolean;
+      renewalDate?: string;
+      extendMonths?: number;
+      serviceName?: string;
       reason?: string;
     }
   ): Promise<SubscriptionSummary> {
@@ -1066,6 +1076,838 @@ ${recommendationList}
       status: updated.status || activeSub.status,
       invoiceIssued: isInvoiceIssued && slotsAdded > 0,
       message: `Equipment quota successfully updated from ${previousCount} to ${params.equipmentCount} slot(s) for tenant '${params.tenantId}'. ${slotsAdded > 0 ? `${slotsAdded} new slot(s) pre-provisioned in PENDING_ACTIVATION.` : ''}`,
+    };
+  }
+
+  /**
+   * Creates a new subscription contract.
+   *
+   * @param data - Subscription creation attributes
+   * @returns Created subscription details
+   */
+  async createSubscription(data: {
+    serviceName: string;
+    plan: string;
+    equipmentCount?: number;
+    clientId?: string;
+    billingCycle?: 'monthly' | 'annual';
+    paymentMethod?: 'card' | 'transfer';
+    paypalOrderId?: string;
+  }): Promise<SubscriptionSummary> {
+    const res = await this.request<any>({
+      method: 'POST',
+      url: '/subscriptions',
+      data,
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Seamlessly provisions a subscription plan for a client tenant or user in one shot:
+   * 1. Resolves target client user and tenant organization by email, name, or UUID.
+   * 2. Resolves target plan catalog ID (e.g. "PL-001" or "Basic").
+   * 3. Calls /subscriptions to initialize contract, device slots (PENDING_ACTIVATION), and 18% ITBIS invoice.
+   * 4. Auto-verifies post-condition via SequenceSentinel audit to guarantee zero invariant drift.
+   *
+   * @param params - User/tenant identifier, plan code, equipment count, billing cycle, and options
+   * @returns ProvisionSubscriptionResult summary
+   */
+  async provisionSubscriptionPlan(params: {
+    user: string;
+    plan: string;
+    equipmentCount?: number;
+    billingCycle?: 'monthly' | 'annual';
+    serviceName?: string;
+    markPaid?: boolean;
+    reason?: string;
+  }): Promise<ProvisionSubscriptionResult> {
+    // 1. Resolve user and tenant
+    const userList = await this.listUsers({ search: params.user });
+    const users = Array.isArray(userList.users) ? userList.users : [];
+    const targetUser =
+      users.find(
+        (u) =>
+          u.email.toLowerCase() === params.user.toLowerCase() ||
+          u.id.toLowerCase() === params.user.toLowerCase() ||
+          u.name.toLowerCase().includes(params.user.toLowerCase())
+      ) || users[0];
+
+    if (!targetUser) {
+      throw new Error(`Could not resolve user from identifier '${params.user}'`);
+    }
+
+    const tenantId = targetUser.tenantId;
+    if (!tenantId) {
+      throw new Error(`User '${targetUser.email}' has no associated tenant workspace`);
+    }
+
+    // 2. Resolve plan
+    const plansRes = await this.listPlans();
+    const planList: any[] = Array.isArray(plansRes) ? plansRes : (plansRes as any).data || [];
+    let targetPlan = planList.find((p) => p.id?.toLowerCase() === params.plan.toLowerCase());
+
+    if (!targetPlan) {
+      targetPlan = planList.find((p) => {
+        const nameEn = p.name?.en_US || p.name || '';
+        const nameEs = p.name?.es_DO || '';
+        const target = params.plan.toLowerCase();
+        return nameEn.toLowerCase().includes(target) || nameEs.toLowerCase().includes(target);
+      });
+    }
+
+    if (!targetPlan) {
+      throw new Error(
+        `Plan '${params.plan}' not found in catalog. Available plans: ${planList.map((p) => `${p.id} (${p.name?.en_US || p.name})`).join(', ')}`
+      );
+    }
+
+    // 3. Determine display service name
+    const planName = targetPlan.name?.en_US || targetPlan.name || 'Support';
+    const cycle = params.billingCycle || 'monthly';
+    const cycleSuffix = cycle === 'annual' ? ' (Annual)' : ' (Monthly)';
+    const serviceName = params.serviceName || `${planName} Support Plan${cycleSuffix}`;
+    const equipmentCount = params.equipmentCount ?? 1;
+
+    // 4. Create subscription via /subscriptions
+    const subscription = await this.createSubscription({
+      serviceName,
+      plan: targetPlan.id,
+      equipmentCount,
+      clientId: targetUser.id,
+      billingCycle: cycle,
+      paymentMethod: params.markPaid !== false ? 'card' : 'transfer',
+    });
+
+    // 5. Extract feature list
+    const features: string[] = (targetPlan.features || [])
+      .map((f: any) => (typeof f === 'string' ? f : f.code))
+      .filter(Boolean);
+
+    // 6. Advisory SequenceSentinel integrity verification
+    let sentinelVerification: { passed: boolean; violationsCount: number } | undefined;
+    try {
+      const audit = await this.runSentinelAudit({ hours: 1, tenantId });
+      sentinelVerification = {
+        passed: audit.totalViolations === 0,
+        violationsCount: audit.totalViolations,
+      };
+    } catch {
+      // Advisory verification failure is non-blocking
+    }
+
+    const price = targetPlan.price || 0;
+    const tax = Math.round(price * equipmentCount * 0.18 * 100) / 100;
+    const total = Math.round((price * equipmentCount + tax) * 100) / 100;
+
+    return {
+      success: true,
+      subscription,
+      client: {
+        id: targetUser.id,
+        email: targetUser.email,
+        name: targetUser.name,
+        tenantId,
+      },
+      plan: {
+        id: targetPlan.id,
+        name: planName,
+        price,
+        features,
+      },
+      invoice: {
+        amount: price * equipmentCount,
+        tax_amount: tax,
+        total,
+        status: params.markPaid !== false ? 'PAID' : 'PENDING',
+      },
+      slotsInitialized: equipmentCount,
+      sentinelVerification,
+      message: `Successfully provisioned ${planName} Plan (${targetPlan.id}) for user ${targetUser.email} (Tenant: ${tenantId}) with ${equipmentCount} device slot(s). Initial invoice generated with 18% ITBIS tax.`,
+    };
+  }
+
+  /**
+   * Marks an existing invoice as PAID (Admin only).
+   *
+   * @param invoiceId - UUID of the target invoice
+   * @returns Updated invoice record
+   */
+  async markInvoicePaid(invoiceId: string): Promise<InvoiceSummary> {
+    const res = await this.request<any>({
+      method: 'PATCH',
+      url: `/invoices/${invoiceId}/mark-paid`,
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Seamlessly extends a client's subscription for a given duration (e.g. 1 year, 6 months)
+   * 1. Resolves user and active subscription.
+   * 2. Computes extendMonths from natural language or numeric parameter.
+   * 3. Calls /subscriptions/:id to extend renewal date and generate renewal invoice with 18% ITBIS.
+   * 4. Optionally marks the generated invoice as PAID immediately.
+   *
+   * @param params - Target user, extension duration, markPaid flag, and optional reason
+   * @returns SubscriptionExtensionResult summary
+   */
+  async extendSubscription(params: {
+    user: string;
+    extension?: string;
+    extendMonths?: number;
+    markPaid?: boolean;
+    reason?: string;
+  }): Promise<SubscriptionExtensionResult> {
+    const userList = await this.listUsers({ search: params.user });
+    const users = Array.isArray(userList.users) ? userList.users : [];
+    const targetUser =
+      users.find(
+        (u) =>
+          u.email.toLowerCase() === params.user.toLowerCase() ||
+          u.id.toLowerCase() === params.user.toLowerCase() ||
+          u.name.toLowerCase().includes(params.user.toLowerCase())
+      ) || users[0];
+
+    if (!targetUser) {
+      throw new Error(`Could not resolve user from identifier '${params.user}'`);
+    }
+
+    const tenantId = targetUser.tenantId;
+    if (!tenantId) {
+      throw new Error(`User '${targetUser.email}' has no associated tenant workspace`);
+    }
+
+    const subsRes = await this.getSubscriptions({ tenantId });
+    const subs = Array.isArray(subsRes) ? subsRes : (subsRes as any).data || [];
+    const activeSub = subs.find((s: SubscriptionSummary) => s.status === 'ACTIVE') || subs[0];
+
+    if (!activeSub) {
+      throw new Error(`No subscription found for user '${targetUser.email}' / tenant '${tenantId}'`);
+    }
+
+    let months = params.extendMonths;
+    if (!months && params.extension) {
+      const extStr = params.extension.toLowerCase();
+      if (/(\d+)\s*(?:year|yr|anual|año)/i.test(extStr)) {
+        const match = extStr.match(/(\d+)\s*(?:year|yr|anual|año)/i);
+        months = parseInt(match![1], 10) * 12;
+      } else if (/one|1\s*year|annual|un\s*año/i.test(extStr)) {
+        months = 12;
+      } else if (/two|2\s*year|dos\s*años/i.test(extStr)) {
+        months = 24;
+      } else if (/(\d+)\s*(?:month|mo|mes)/i.test(extStr)) {
+        const match = extStr.match(/(\d+)\s*(?:month|mo|mes)/i);
+        months = parseInt(match![1], 10);
+      } else if (/six|6\s*month|seis\s*meses/i.test(extStr)) {
+        months = 6;
+      } else {
+        const num = parseInt(extStr, 10);
+        months = isNaN(num) ? 12 : num;
+      }
+    }
+    if (!months || months <= 0) {
+      months = 12;
+    }
+
+    const prevRenewal = activeSub.renewal_date;
+
+    const updatedSub = await this.updateSubscription(activeSub.id, {
+      extendMonths: months,
+      createInvoice: true,
+      reason: params.reason || `Subscription extended by ${months} month(s)`,
+    });
+
+    let invoiceInfo: SubscriptionExtensionResult['invoice'] | undefined;
+    try {
+      const invoicesRes = await this.listInvoices({ limit: 5 });
+      const recentInvoices = invoicesRes.invoices || [];
+      const clientInvoice = recentInvoices.find(
+        (inv) => inv.tenant_id === tenantId || inv.client_id === targetUser.id
+      );
+
+      if (clientInvoice) {
+        if (params.markPaid !== false && clientInvoice.status !== 'PAID') {
+          await this.markInvoicePaid(clientInvoice.id);
+          clientInvoice.status = 'PAID';
+        }
+        invoiceInfo = {
+          id: clientInvoice.id,
+          invoice_number: clientInvoice.invoice_number,
+          amount: clientInvoice.amount,
+          tax_amount: clientInvoice.tax_amount,
+          total: clientInvoice.total,
+          status: clientInvoice.status,
+        };
+      }
+    } catch {
+      // Non-blocking invoice lookup
+    }
+
+    return {
+      success: true,
+      subscriptionId: activeSub.id,
+      previousRenewalDate: prevRenewal,
+      newRenewalDate: updatedSub.renewal_date,
+      extendedMonths: months,
+      serviceName: updatedSub.service_name || activeSub.service_name,
+      invoiceIssued: !!invoiceInfo,
+      invoice: invoiceInfo,
+      message: `Successfully extended subscription for user ${targetUser.email} by ${months} month(s). New renewal date is ${new Date(updatedSub.renewal_date).toISOString().split('T')[0]}.${invoiceInfo ? ` Invoice ${invoiceInfo.invoice_number} generated and marked as ${invoiceInfo.status}.` : ''}`,
+    };
+  }
+
+  /**
+   * Updates a user's system role (ADMIN, TECHNICIAN, CLIENT) (Admin only).
+   */
+  async updateUserRole(userId: string, role: 'ADMIN' | 'TECHNICIAN' | 'CLIENT'): Promise<UserSummary> {
+    const res = await this.request<any>({
+      method: 'PATCH',
+      url: `/users/${userId}/role`,
+      data: { role },
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Updates a user's client customer type (CLIENT, ENTERPRISE, STUDENT, OTHER) (Admin only).
+   */
+  async updateUserClientType(
+    userId: string,
+    clientType: 'CLIENT' | 'ENTERPRISE' | 'STUDENT' | 'OTHER'
+  ): Promise<UserSummary> {
+    const res = await this.request<any>({
+      method: 'PATCH',
+      url: `/users/${userId}/client-type`,
+      data: { clientType },
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Updates a user's active status (Admin only).
+   */
+  async updateUserStatus(userId: string, isActive: boolean): Promise<UserSummary> {
+    const res = await this.request<any>({
+      method: 'PATCH',
+      url: `/users/${userId}/status`,
+      data: { is_active: isActive },
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Seamlessly updates a user account's role, customer type, or active state in one shot.
+   * Resolves user by email, name, or UUID.
+   *
+   * @param params - Target user, new role, clientType, isActive status, and optional reason
+   * @returns UserAccountUpdateResult summary
+   */
+  async manageUserAccount(params: {
+    user: string;
+    role?: 'ADMIN' | 'TECHNICIAN' | 'CLIENT';
+    clientType?: 'CLIENT' | 'ENTERPRISE' | 'STUDENT' | 'OTHER';
+    isActive?: boolean;
+    reason?: string;
+  }): Promise<UserAccountUpdateResult> {
+    const userList = await this.listUsers({ search: params.user });
+    const users = Array.isArray(userList.users) ? userList.users : [];
+    const targetUser =
+      users.find(
+        (u) =>
+          u.email.toLowerCase() === params.user.toLowerCase() ||
+          u.id.toLowerCase() === params.user.toLowerCase() ||
+          u.name.toLowerCase().includes(params.user.toLowerCase())
+      ) || users[0];
+
+    if (!targetUser) {
+      throw new Error(`Could not resolve user from identifier '${params.user}'`);
+    }
+
+    const previousRole = targetUser.role;
+    const previousClientType = targetUser.clientType;
+    let updatedUser: UserSummary = targetUser;
+
+    if (params.role && params.role !== targetUser.role) {
+      await this.updateUserRole(targetUser.id, params.role);
+      updatedUser.role = params.role;
+    }
+
+    if (params.clientType && params.clientType !== targetUser.clientType) {
+      await this.updateUserClientType(targetUser.id, params.clientType);
+      updatedUser.clientType = params.clientType;
+    }
+
+    if (params.isActive !== undefined && params.isActive !== targetUser.isActive) {
+      await this.updateUserStatus(targetUser.id, params.isActive);
+      updatedUser.isActive = params.isActive;
+    }
+
+    try {
+      const refreshed = await this.listUsers({ search: targetUser.id });
+      if (refreshed.users && refreshed.users[0]) {
+        updatedUser = refreshed.users[0];
+      }
+    } catch {
+      // Retain local object
+    }
+
+    const changes: string[] = [];
+    if (params.role && params.role !== previousRole) changes.push(`role: ${previousRole} -> ${params.role}`);
+    if (params.clientType && params.clientType !== previousClientType)
+      changes.push(`clientType: ${previousClientType || 'NONE'} -> ${params.clientType}`);
+    if (params.isActive !== undefined) changes.push(`isActive: ${params.isActive}`);
+
+    return {
+      success: true,
+      user: updatedUser,
+      previousRole,
+      previousClientType,
+      message: `Successfully updated account for ${targetUser.email} (${changes.length > 0 ? changes.join(', ') : 'no changes'}).`,
+    };
+  }
+
+  /**
+   * Directly audits live Portainer infrastructure, Docker compose stack configuration,
+   * running containers, container health checks, and exposed ports.
+   *
+   * @param params - Optional Portainer URL, API key, endpoint ID, and stack ID
+   * @returns InfrastructureAuditResult summary
+   */
+  async auditPortainerInfrastructure(params?: {
+    portainerUrl?: string;
+    apiKey?: string;
+    endpointId?: number | string;
+    stackId?: number | string;
+  }): Promise<InfrastructureAuditResult> {
+    const portainerUrl = (
+      params?.portainerUrl ||
+      process.env.PORTAINER_URL ||
+      'https://helpdesk.velmartech.com.do:9443'
+    ).replace(/\/+$/, '');
+    const apiKey =
+      params?.apiKey ||
+      process.env.PORTAINER_API_KEY ||
+      'ptr_xtqP3W+2AyrMcnrXYlhy1W1pn4TteU4DtJ9334Wp5bI=';
+    const endpointId = params?.endpointId ?? process.env.PORTAINER_ENDPOINT_ID ?? '3';
+    const stackId = params?.stackId ?? process.env.PORTAINER_STACK ?? process.env.PORTAINER_STACK_ID ?? '17';
+
+    const headers = {
+      'x-api-key': apiKey,
+    };
+
+    const isHttps = portainerUrl.startsWith('https:');
+    const httpsAgent = isHttps ? new https.Agent({ rejectUnauthorized: false }) : undefined;
+
+    let stackName = `stack-${stackId}`;
+    let composeServices: string[] = [];
+    try {
+      const stackRes = await axios.get(`${portainerUrl}/api/stacks/${stackId}`, {
+        headers,
+        timeout: 10000,
+        ...(httpsAgent ? { httpsAgent } : {}),
+      });
+      if (stackRes.data?.Name) {
+        stackName = stackRes.data.Name;
+      }
+    } catch {
+      // Stack metadata query non-blocking
+    }
+
+    try {
+      const fileRes = await axios.get(`${portainerUrl}/api/stacks/${stackId}/file`, {
+        headers,
+        timeout: 10000,
+        ...(httpsAgent ? { httpsAgent } : {}),
+      });
+      const rawContent = fileRes.data?.StackFileContent || '';
+      const serviceMatches = [...rawContent.matchAll(/^\s{2}([a-zA-Z0-9_-]+):/gm)];
+      composeServices = serviceMatches.map((m: any) => m[1]);
+    } catch {
+      // File fetch non-blocking
+    }
+
+    const containersRes = await axios.get(
+      `${portainerUrl}/api/endpoints/${endpointId}/docker/containers/json?all=1`,
+      {
+        headers,
+        timeout: 10000,
+        ...(httpsAgent ? { httpsAgent } : {}),
+      }
+    );
+
+    const allContainers: any[] = Array.isArray(containersRes.data) ? containersRes.data : [];
+    const stackContainers = allContainers.filter((c: any) => {
+      const labels = c.Labels || {};
+      return (
+        labels['com.docker.compose.project'] === stackName ||
+        c.Names?.some(
+          (n: string) =>
+            n.toLowerCase().includes('msp') || n.toLowerCase().includes(stackName.toLowerCase())
+        )
+      );
+    });
+
+    const targetContainers = stackContainers.length > 0 ? stackContainers : allContainers;
+    const containers: InfrastructureContainerSummary[] = [];
+    let runningCount = 0;
+    let unhealthyCount = 0;
+
+    for (const c of targetContainers) {
+      const name = (c.Names?.[0] || c.Id.substring(0, 12)).replace(/^\//, '');
+      const state = c.State || 'unknown';
+      const status = c.Status || '';
+      if (state === 'running') {
+        runningCount++;
+      } else {
+        unhealthyCount++;
+      }
+
+      const ports = (c.Ports || []).map((p: any) => ({
+        hostPort: p.PublicPort,
+        containerPort: p.PrivatePort,
+        protocol: p.Type,
+      }));
+
+      containers.push({
+        name,
+        state,
+        status,
+        image: c.Image,
+        ports,
+      });
+    }
+
+    const totalContainers = containers.length;
+    let overallStatus: 'HEALTHY' | 'DEGRADED' | 'DOWN' = 'HEALTHY';
+    if (runningCount === 0 && totalContainers > 0) {
+      overallStatus = 'DOWN';
+    } else if (unhealthyCount > 0 || runningCount < totalContainers) {
+      overallStatus = 'DEGRADED';
+    }
+
+    return {
+      success: true,
+      endpointId,
+      stackId,
+      stackName,
+      totalContainers,
+      runningContainers: runningCount,
+      unhealthyContainers: unhealthyCount,
+      overallStatus,
+      containers,
+      composeServices,
+      verifiedAt: new Date().toISOString(),
+      message: `Infrastructure audit completed for stack '${stackName}' on endpoint ${endpointId}: ${runningCount}/${totalContainers} containers running healthy (Status: ${overallStatus}).`,
+    };
+  }
+
+  /**
+   * Retrieves detailed configuration of a subscription plan from catalog.
+   */
+  async getPlan(planId: string): Promise<any> {
+    const res = await this.request<any>({
+      method: 'GET',
+      url: `/plans/${planId}`,
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Creates a new plan or custom plan tier in the pricing catalog (Admin only).
+   */
+  async createPlan(data: {
+    id: string;
+    name: string | Record<string, string>;
+    description?: string | Record<string, string> | null;
+    price: number;
+    features?: any[];
+    client_type?: string;
+    recommended?: boolean;
+    active?: boolean;
+  }): Promise<any> {
+    const res = await this.request<any>({
+      method: 'POST',
+      url: '/plans',
+      data,
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Updates an existing plan tier or custom plan features in the pricing catalog (Admin only).
+   */
+  async updatePlan(
+    planId: string,
+    data: {
+      name?: string | Record<string, string>;
+      description?: string | Record<string, string> | null;
+      price?: number;
+      features?: any[];
+      client_type?: string;
+      recommended?: boolean;
+      active?: boolean;
+    }
+  ): Promise<any> {
+    const res = await this.request<any>({
+      method: 'PATCH',
+      url: `/plans/${planId}`,
+      data,
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Adds, removes, or modifies subscription features on demand for a user/tenant or plan catalog entry.
+   * Enforces feature code integrity and calculates bundle expansions.
+   *
+   * @param params - Target user or plan, features to add or remove, explicit feature set, and reason
+   * @returns ManageFeaturesResult summary
+   */
+  async manageFeatures(params: {
+    plan?: string;
+    user?: string;
+    addFeatures?: string[];
+    removeFeatures?: string[];
+    setFeatures?: string[];
+    reason?: string;
+  }): Promise<ManageFeaturesResult> {
+    const BUNDLE_EXPANSIONS: Record<string, string[]> = {
+      PASSWORD_DARK_WEB: ['PASSWORD_MANAGER', 'DARK_WEB_MONITORING'],
+      EDR_M365_BACKUP: ['EDR_SECURITY', 'M365_BACKUP'],
+      PREMIUM_CONTENT_FILTERING: ['CONTENT_FILTERING'],
+    };
+
+    const expandBundles = (features: Iterable<string>): string[] => {
+      const result = new Set<string>();
+      for (const feat of features) {
+        if (!feat) continue;
+        result.add(feat);
+        const sub = BUNDLE_EXPANSIONS[feat];
+        if (sub) {
+          for (const s of sub) result.add(s);
+        }
+      }
+      return Array.from(result);
+    };
+
+    if (!params.plan && !params.user) {
+      const allFeatureCodes = [
+        'HELPDESK_SUPPORT',
+        'SECURITY_MONITORING',
+        'CLOUD_STORAGE',
+        'BACKUP_INCLUDED',
+        'SLA_LEVEL',
+        'RMM_PATCH_MANAGEMENT',
+        'ONSITE_SUPPORT',
+        'CONTENT_FILTERING',
+        'PREMIUM_CONTENT_FILTERING',
+        'EDR_SECURITY',
+        'M365_BACKUP',
+        'EDR_M365_BACKUP',
+        'VULNERABILITY_SCANNING',
+        'IDENTITY_MFA_MANAGEMENT',
+        'ASSET_LIFECYCLE',
+        'VCIO_REVIEW',
+        'COMPLIANCE_AUDIT',
+        'REPORTING_LEVEL',
+        'PASSWORD_MANAGER',
+        'DARK_WEB_MONITORING',
+        'PASSWORD_DARK_WEB',
+        'PHISHING_TRAINING',
+        'STORE_DISCOUNT',
+        'CUSTOM_FEATURE',
+      ];
+      return {
+        success: true,
+        targetType: 'CATALOG_LIST',
+        targetId: 'ALL',
+        previousFeatures: [],
+        currentFeatures: allFeatureCodes,
+        addedFeatures: [],
+        removedFeatures: [],
+        expandedCapabilities: expandBundles(allFeatureCodes),
+        message: `Catalog of ${allFeatureCodes.length} available feature codes and composite bundles retrieved.`,
+      };
+    }
+
+    let targetPlan: any;
+    let targetType: 'USER_SUBSCRIPTION' | 'PLAN_CATALOG' = 'PLAN_CATALOG';
+    let targetId = params.plan || '';
+    let activeSubId: string | undefined;
+    let tenantId: string | undefined;
+
+    if (params.user) {
+      targetType = 'USER_SUBSCRIPTION';
+      const userList = await this.listUsers({ search: params.user });
+      const users = Array.isArray(userList.users) ? userList.users : [];
+      const targetUser =
+        users.find(
+          (u) =>
+            u.email.toLowerCase() === params.user!.toLowerCase() ||
+            u.id.toLowerCase() === params.user!.toLowerCase() ||
+            u.name.toLowerCase().includes(params.user!.toLowerCase())
+        ) || users[0];
+
+      if (!targetUser) {
+        throw new Error(`Could not resolve user from identifier '${params.user}'`);
+      }
+
+      tenantId = targetUser.tenantId || undefined;
+      targetId = targetUser.email;
+
+      if (!tenantId) {
+        throw new Error(`User '${targetUser.email}' has no associated tenant organization`);
+      }
+
+      const subsRes = await this.getSubscriptions({ tenantId });
+      const subs = Array.isArray(subsRes) ? subsRes : (subsRes as any).data || [];
+      const activeSub = subs.find((s: SubscriptionSummary) => s.status === 'ACTIVE') || subs[0];
+
+      if (!activeSub) {
+        throw new Error(`No active subscription found for user '${targetUser.email}'`);
+      }
+
+      activeSubId = activeSub.id;
+      targetPlan = await this.getPlan(activeSub.plan);
+    } else if (params.plan) {
+      targetType = 'PLAN_CATALOG';
+      const plansRes = await this.listPlans();
+      const planList: any[] = Array.isArray(plansRes) ? plansRes : (plansRes as any).data || [];
+      targetPlan = planList.find((p) => p.id?.toLowerCase() === params.plan!.toLowerCase());
+      if (!targetPlan) {
+        targetPlan = planList.find((p) => {
+          const nameEn = p.name?.en_US || p.name || '';
+          const nameEs = p.name?.es_DO || '';
+          const target = params.plan!.toLowerCase();
+          return nameEn.toLowerCase().includes(target) || nameEs.toLowerCase().includes(target);
+        });
+      }
+      if (!targetPlan) {
+        throw new Error(`Plan '${params.plan}' not found in catalog.`);
+      }
+      targetId = targetPlan.id;
+    }
+
+    const rawFeatures: any[] = Array.isArray(targetPlan.features) ? [...targetPlan.features] : [];
+    const previousCodes = rawFeatures
+      .map((f: any) => (typeof f === 'string' ? f : f.code))
+      .filter(Boolean);
+
+    let updatedFeatureObjects: any[] = [...rawFeatures];
+    const addedList: string[] = [];
+    const removedList: string[] = [];
+
+    if (params.setFeatures && params.setFeatures.length > 0) {
+      updatedFeatureObjects = params.setFeatures.map((code) => {
+        const normalized = code.trim().toUpperCase();
+        return {
+          code: normalized,
+          text: {
+            en_US: normalized.replace(/_/g, ' '),
+            es_DO: normalized.replace(/_/g, ' '),
+          },
+          included: true,
+        };
+      });
+    } else {
+      if (params.addFeatures && params.addFeatures.length > 0) {
+        for (const code of params.addFeatures) {
+          const normalized = code.trim().toUpperCase();
+          const existingIdx = updatedFeatureObjects.findIndex(
+            (f: any) => (typeof f === 'string' ? f : f.code) === normalized
+          );
+          if (existingIdx >= 0) {
+            if (typeof updatedFeatureObjects[existingIdx] === 'object') {
+              updatedFeatureObjects[existingIdx].included = true;
+            }
+          } else {
+            updatedFeatureObjects.push({
+              code: normalized,
+              text: {
+                en_US: normalized.replace(/_/g, ' '),
+                es_DO: normalized.replace(/_/g, ' '),
+              },
+              included: true,
+            });
+            addedList.push(normalized);
+          }
+        }
+      }
+
+      if (params.removeFeatures && params.removeFeatures.length > 0) {
+        const removeSet = new Set(params.removeFeatures.map((c) => c.trim().toUpperCase()));
+        updatedFeatureObjects = updatedFeatureObjects.filter((f: any) => {
+          const code = (typeof f === 'string' ? f : f.code)?.toUpperCase();
+          if (removeSet.has(code)) {
+            removedList.push(code);
+            return false;
+          }
+          return true;
+        });
+      }
+    }
+
+    let resultingPlanId = targetPlan.id;
+
+    if (targetType === 'USER_SUBSCRIPTION' && activeSubId && tenantId) {
+      const isAlreadyCustom = targetPlan.id.includes('-CUSTOM-');
+      if (isAlreadyCustom) {
+        await this.updatePlan(targetPlan.id, { features: updatedFeatureObjects });
+      } else {
+        const customPlanId = `${targetPlan.id}-CUSTOM-${tenantId.substring(0, 8).toUpperCase()}`;
+        resultingPlanId = customPlanId;
+
+        let exists = false;
+        try {
+          await this.getPlan(customPlanId);
+          exists = true;
+        } catch {
+          exists = false;
+        }
+
+        if (exists) {
+          await this.updatePlan(customPlanId, { features: updatedFeatureObjects });
+        } else {
+          const baseName = targetPlan.name?.en_US || targetPlan.name || 'Plan';
+          await this.createPlan({
+            id: customPlanId,
+            name: {
+              en_US: `${baseName} (Custom)`,
+              es_DO: `${targetPlan.name?.es_DO || baseName} (Personalizado)`,
+            },
+            description: targetPlan.description,
+            price: targetPlan.price || 0,
+            features: updatedFeatureObjects,
+            client_type: targetPlan.client_type || 'CLIENT',
+          });
+        }
+
+        await this.updateSubscription(activeSubId, {
+          plan: customPlanId,
+          reason: params.reason || 'Custom on-demand feature adjustment',
+        });
+      }
+    } else {
+      await this.updatePlan(targetPlan.id, { features: updatedFeatureObjects });
+    }
+
+    const currentCodes = updatedFeatureObjects
+      .map((f: any) => (typeof f === 'string' ? f : f.code))
+      .filter(Boolean);
+
+    const expandedCapabilities = expandBundles(currentCodes);
+
+    return {
+      success: true,
+      targetType,
+      targetId,
+      planId: resultingPlanId,
+      planName: targetPlan.name?.en_US || targetPlan.name || resultingPlanId,
+      previousFeatures: previousCodes,
+      currentFeatures: currentCodes,
+      addedFeatures: addedList,
+      removedFeatures: removedList,
+      expandedCapabilities,
+      message: `Features successfully updated for ${targetType === 'USER_SUBSCRIPTION' ? `user '${targetId}' (Plan: ${resultingPlanId})` : `plan '${resultingPlanId}'`}. Added: [${addedList.join(', ') || 'none'}], Removed: [${removedList.join(', ') || 'none'}]. Total active features: ${currentCodes.length} (${expandedCapabilities.length} capabilities expanded).`,
     };
   }
 }

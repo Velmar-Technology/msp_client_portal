@@ -60,11 +60,13 @@ export class SubscriptionLifecycleService {
    * @throws {ForbiddenError} When user belongs to another tenant
    * @throws {ValidationError} When user role is not CLIENT
    */
-  private async validateClientUser(clientId: string, tenantId: string): Promise<void> {
+  private async validateClientUser(clientId: string, tenantId: string, byAdmin = false): Promise<void> {
     const clientUser = await this.userRepo.findById(clientId);
     if (!clientUser) throw new NotFoundError('Client user not found');
     if (clientUser.tenant_id !== tenantId) throw new ForbiddenError('Client does not belong to this tenant');
-    if (clientUser.role !== 'CLIENT') throw new ValidationError('Target user must have CLIENT role');
+    if (!byAdmin && clientUser.role !== 'CLIENT' && clientUser.client_type !== 'CLIENT') {
+      throw new ValidationError('Target user must have CLIENT role');
+    }
   }
 
   /**
@@ -135,7 +137,8 @@ export class SubscriptionLifecycleService {
     clientId: string,
     tenantId: string,
     isBankTransfer: boolean,
-    byAdmin: boolean
+    byAdmin: boolean,
+    isPaid = false
   ): Promise<void> {
     const planDetails = await this.planRepo.findById(plan);
     if (!planDetails) return;
@@ -149,11 +152,11 @@ export class SubscriptionLifecycleService {
     const ncf = await this.ncfSvc.assignNcfIfEligible(effectiveRnc);
 
     const dueDate = new Date();
-    if (isBankTransfer || byAdmin) {
+    if (isBankTransfer || (byAdmin && !isPaid)) {
       dueDate.setDate(dueDate.getDate() + 30);
     }
 
-    const invoiceStatus = (byAdmin || isBankTransfer) ? InvoiceStatus.PENDING : InvoiceStatus.PAID;
+    const invoiceStatus = (isBankTransfer || (byAdmin && !isPaid)) ? InvoiceStatus.PENDING : InvoiceStatus.PAID;
 
     await this.invoiceRepo.create({
       invoice_number: invoiceNumber,
@@ -240,7 +243,7 @@ export class SubscriptionLifecycleService {
    * @throws {ValidationError} When PayPal payment verification fails or duplicate plan active
    */
   async createSubscription(data: CreateSubscriptionInput, clientId: string, tenantId: string, byAdmin = false): Promise<Subscription> {
-    await this.validateClientUser(clientId, tenantId);
+    await this.validateClientUser(clientId, tenantId, byAdmin);
 
     if (data.paypalOrderId) {
       const existingSub = await this.subscriptionRepo.findByPaypalOrderId(data.paypalOrderId);
@@ -294,8 +297,9 @@ export class SubscriptionLifecycleService {
       status: isBankTransfer ? SubscriptionStatus.EXPIRED : SubscriptionStatus.ACTIVE,
     });
 
+    const isPaid = !isBankTransfer && (byAdmin ? data.paymentMethod !== 'transfer' : true);
     await this.initializeEquipmentSlots(subscription.id, data.equipmentCount, tenantId);
-    await this.createInitialInvoice(data.plan, data.equipmentCount, billingCycle, clientId, tenantId, isBankTransfer, byAdmin);
+    await this.createInitialInvoice(data.plan, data.equipmentCount, billingCycle, clientId, tenantId, isBankTransfer, byAdmin, isPaid);
     await this.notifySubscriptionCreation(clientId, tenantId, formattedServiceName, isBankTransfer, byAdmin);
 
     // Auto-provision Vaultwarden Password Manager organization & dispatch invite if included in plan
@@ -557,6 +561,58 @@ export class SubscriptionLifecycleService {
       const res = await this.subscriptionRepo.updateStatus(sub.id, targetStatus);
       if (!res) throw new InternalServerError('Failed to update subscription status');
       updated = res;
+    }
+
+    if (data.renewalDate || data.extendMonths || data.serviceName) {
+      let targetRenewal = sub.renewal_date ? new Date(sub.renewal_date) : new Date();
+      if (data.renewalDate) {
+        targetRenewal = new Date(data.renewalDate);
+      } else if (data.extendMonths) {
+        targetRenewal = new Date(targetRenewal);
+        targetRenewal.setMonth(targetRenewal.getMonth() + data.extendMonths);
+      }
+
+      const newServiceName = data.serviceName || sub.service_name;
+
+      if (data.createInvoice && data.extendMonths) {
+        const planDetails = await this.planRepo.findById(sub.plan);
+        if (planDetails) {
+          const isAnnual = data.extendMonths >= 12;
+          const cycleMultiplier = isAnnual ? 9.6 : data.extendMonths;
+          const subtotal = Math.round(planDetails.price * cycleMultiplier * sub.equipment_count * 100) / 100;
+          const tax = Math.round(subtotal * 0.18 * 100) / 100;
+          const total = Math.round((subtotal + tax) * 100) / 100;
+
+          const client = await this.userRepo.findById(sub.client_id);
+          const tenant = await this.tenantRepo.findById(targetTenantId);
+          const effectiveRnc = client?.rnc || tenant?.rnc || null;
+          const ncf = await this.ncfSvc.assignNcfIfEligible(effectiveRnc);
+
+          const invoiceNumber = await this.pricingSvc.generateInvoiceNumber();
+          const dueDate = new Date();
+          dueDate.setDate(dueDate.getDate() + 30);
+
+          await this.invoiceRepo.create({
+            invoice_number: invoiceNumber,
+            client_id: sub.client_id,
+            amount: subtotal,
+            tax_amount: tax,
+            total,
+            currency: 'USD',
+            ncf,
+            rnc: effectiveRnc,
+            due_date: dueDate,
+            tenant_id: targetTenantId,
+            status: byAdmin ? InvoiceStatus.PAID : InvoiceStatus.PENDING,
+          });
+        }
+      }
+
+      const res = await this.subscriptionRepo.updateSubscriptionDetails(sub.id, {
+        renewal_date: targetRenewal,
+        service_name: newServiceName,
+      });
+      if (res) updated = res;
     }
 
     return updated;

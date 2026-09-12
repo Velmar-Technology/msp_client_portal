@@ -1,7 +1,7 @@
 import { BaseRepository } from '@shared/repositories/BaseRepository';
 import { Plan, PlanFilters, CachePort } from '@shared/types';
 import { db, plans } from '@shared/db';
-import { eq, and, ilike, asc, count, SQL } from 'drizzle-orm';
+import { eq, and, or, ilike, asc, count, SQL } from 'drizzle-orm';
 import { cacheManager } from '@shared/utils/cache';
 
 /**
@@ -24,59 +24,54 @@ export class PlanRepository extends BaseRepository<Plan> {
    * @returns Plan entity or null
    */
   async findById(id: string): Promise<Plan | null> {
-    if (!id) return null;
-
-    return this.cache.wrapVersioned<Plan | null>(
+    return this.cache.wrapVersioned(
       'plans',
       'global',
       `id:${id}`,
-      3600,
+      300,
       async () => {
-        const result = await db.select().from(plans).where(eq(plans.id, id));
-        return (result[0] as Plan) || null;
+        const results = await db
+          .select()
+          .from(plans)
+          .where(eq(plans.id, id))
+          .limit(1);
+
+        return (results[0] as Plan) || null;
       }
     );
   }
 
   /**
-   * Inserts a new plan record and invalidates the cached plans scope.
+   * Creates a new plan and increments global plans generation counter to purge cache.
    *
-   * @param data - Plan record properties
+   * @param data - Plan insertion attributes
    * @returns Created Plan entity
    */
-  async create(data: Omit<Plan, 'created_at' | 'updated_at'>): Promise<Plan> {
+  async create(data: Partial<Plan>): Promise<Plan> {
     const results = await db
       .insert(plans)
-      .values(data)
+      .values(data as any)
       .returning();
 
-    // Atomic generation invalidation
     await this.cache.invalidateScope('plans', 'global');
 
-    return (results as any[])[0] as Plan;
+    return (results[0] as Plan) || null;
   }
 
   /**
-   * Updates an existing plan and atomically invalidates all cached plan queries.
+   * Updates an existing plan and purges plan caches globally.
    *
-   * @param id - Plan ID
-   * @param data - Updated plan properties
+   * @param id - Plan string ID or UUID
+   * @param data - Attributes to update
    * @returns Updated Plan entity or null
    */
-  async update(
-    id: string,
-    data: Partial<Omit<Plan, 'id' | 'created_at' | 'updated_at'>>
-  ): Promise<Plan | null> {
+  async update(id: string, data: Partial<Plan>): Promise<Plan | null> {
     const results = await db
       .update(plans)
-      .set({
-        ...data,
-        updated_at: new Date(),
-      })
+      .set({ ...data, updated_at: new Date() } as any)
       .where(eq(plans.id, id))
       .returning();
 
-    // Atomic generation invalidation across all nodes
     await this.cache.invalidateScope('plans', 'global');
 
     return ((results as any[])[0] as Plan) || null;
@@ -102,10 +97,17 @@ export class PlanRepository extends BaseRepository<Plan> {
         if (filters.includeInactive === false) {
           conditions.push(eq(plans.active, true));
         }
-        if (filters.includeCustom !== true) {
-          conditions.push(eq(plans.is_custom, false));
+        if (filters.includeCustom === true && !filters.tenantId) {
+          // Admin viewing custom plans across system
         } else if (filters.tenantId) {
-          conditions.push(eq(plans.tenant_id, filters.tenantId));
+          conditions.push(
+            or(
+              eq(plans.is_custom, false),
+              and(eq(plans.is_custom, true), eq(plans.tenant_id, filters.tenantId))
+            )
+          );
+        } else {
+          conditions.push(eq(plans.is_custom, false));
         }
         if (filters.leadId) {
           conditions.push(eq(plans.lead_id, filters.leadId));

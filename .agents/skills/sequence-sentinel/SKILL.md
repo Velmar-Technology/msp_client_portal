@@ -100,22 +100,72 @@ npm -w server run sentinel:audit -- --hours=48 --generate-tests
 - Auto-generates clean, isolated Vitest spec files in `server/src/modules/system/sentinel/__tests__/regressions/`.
 - Verifies edge cases with actual production payload fixtures.
 
-### Workflow 4: Agent Tool Execution via MCP
-When operating as an AI assistant via MCP, invoke:
+### Workflow 4: 1-Step Unified Operations Engine (Zero Boilerplate)
+
+> [!IMPORTANT]
+> **Strict Zero-Scratch-Script Mandate:**
+> NEVER create ad-hoc scratch scripts (`scratch/*.mjs`), probe container ports, write custom psql queries, or perform multi-step trial-and-error loops for operations.
+> Every operational task (feature management, subscription extensions, plan provisioning, role updates, infra audits) MUST be executed seamlessly in **ONE SINGLE STEP** using `npm run sentinel:op -- <action>` (or its corresponding MCP tool).
+
+The unified operations engine (`scripts/sentinel-ops.mjs`) executes all required steps atomically in a single pass: database transactions, tenant isolation, custom tier branching, 18% ITBIS tax calculations, invoice settlement, notification dispatches, and Redis cache invalidation (`gen:plans:global`).
+
+#### 1. On-Demand Feature Management (Add / Remove / Customize)
+Add or remove features on demand for any user/tenant or catalog plan. When modifying a user on a shared tier (e.g. `PL-001`), it automatically isolates a tenant custom plan (`PL-001-CUSTOM-<TENANT>`) without polluting the shared catalog, updates the subscription, and clears Redis cache:
+```bash
+npm run sentinel:op -- feature:manage --user="user@example.com" --add=PASSWORD_MANAGER
+npm run sentinel:op -- feature:manage --user="user@example.com" --add=EDR_SECURITY,DARK_WEB_MONITORING --remove=BACKUP_INCLUDED
+npm run sentinel:op -- feature:manage --plan=PL-001 --add=PASSWORD_MANAGER
+```
+*MCP Alternative:* `msp_manage_features` with `{ user, addFeatures, removeFeatures }`.
+
+#### 2. 1-Shot Subscription Duration Extension
+Extends active subscription contract duration by any interval ("1 year", "6 months", "12 months"). Automatically calculates the new renewal date, generates a renewal invoice with 18% Dominican ITBIS and sequential NCF, marks it paid, and sends in-app notifications:
+```bash
+npm run sentinel:op -- sub:extend --user="user@example.com" --extension="1 year" --mark-paid
+npm run sentinel:op -- sub:extend --user="user@example.com" --extension="6 months"
+```
+*MCP Alternative:* `msp_extend_subscription` with `{ user, extension: "1 year", markPaid: true }`.
+
+#### 3. 1-Shot Subscription Plan Provisioning & Onboarding
+Provisions any catalog plan or tier name (`Basic`, `Standard`, `Corporate`, `PL-001`) for any user, sets equipment quotas, generates the initial invoice with 18% ITBIS tax, and settles payment:
+```bash
+npm run sentinel:op -- plan:provision --user="user@example.com" --plan=PL-001 --cycle=annual --capacity=1 --mark-paid
+npm run sentinel:op -- plan:provision --user="user@example.com" --plan=Basic --cycle=monthly
+```
+*MCP Alternative:* `msp_provision_subscription_plan` with `{ user, plan, cycle, equipmentCount, markPaid }`.
+
+#### 4. User Role & Customer Classification Updates
+Converts or updates platform roles (`CLIENT`, `TECHNICIAN`, `ADMIN`) and customer classifications (`CLIENT`, `ENTERPRISE`, `STUDENT`) in a single atomic pass:
+```bash
+npm run sentinel:op -- user:role --user="user@example.com" --role=CLIENT --client-type=CLIENT
+```
+*MCP Alternative:* `msp_update_user_role` with `{ user, role: "CLIENT", clientType: "CLIENT" }`.
+
+#### 5. Live Infrastructure & Portainer Stack Health Audit
+Inspects all 15 container services, health checks, restart counters, and ports on Portainer:
+```bash
+npm run sentinel:op -- infra:audit
+```
+*MCP Alternative:* `msp_audit_portainer_infrastructure` with `{ endpointId: 3, stackId: 17 }`.
+
+#### 6. Client Equipment Quota Expansion & True-Up (`BL-202`)
+Expands device slots and auto-computes prorated 18% ITBIS hardware true-up invoices:
 ```typescript
-// 1. Routine Sentinel Audit
+await call_mcp_tool('msp-support', 'msp_update_client_equipment_quota', {
+  tenantId: targetTenantId,
+  equipmentCount: newSlotCount,
+  createInvoice: true,
+  reason: operationalJustification,
+});
+```
+
+#### 7. Passive / Active SequenceSentinel Invariant Audits (`BL-101` to `BL-802`)
+Audits chronological audit sequences against all 18 business rules with optional self-healing:
+```typescript
 await call_mcp_tool('msp-support', 'msp_run_sentinel_audit', {
   hours: 24,
-  autoHeal: true,
+  autoHeal: false,
   generateTests: false,
-});
-
-// 2. On-Demand Client Equipment Quota Expansion (BL-202)
-await call_mcp_tool('msp-support', 'msp_update_client_equipment_quota', {
-  tenantId: 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33',
-  equipmentCount: 15,
-  createInvoice: true, // Auto-generates prorated true-up invoice with 18% ITBIS
-  reason: 'Client requested expansion to onboard new engineering workstations',
 });
 ```
 
