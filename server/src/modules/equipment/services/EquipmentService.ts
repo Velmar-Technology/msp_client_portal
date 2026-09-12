@@ -1020,11 +1020,15 @@ export class EquipmentService {
     const deviceName = equipment.device_name || equipment.agent_hostname || `Device-${equipment.slot_index + 1}`;
     const deviceEmail = `device_${equipment.id.slice(0, 8)}@${tenantId.slice(0, 8)}.local`;
 
-    // 1. Create or ensure Bitwarden Collection
-    const collectionId = await this.vaultwardenService.createDeviceCollection(targetOrgId, deviceName);
+    // 1. Create or ensure Bitwarden Collection (reuses existing collection upon re-enrollment)
+    const collectionId = equipment.vaultwarden_collection_id
+      ? await this.vaultwardenService.createDeviceCollection(targetOrgId, deviceName, equipment.vaultwarden_collection_id)
+      : await this.vaultwardenService.createDeviceCollection(targetOrgId, deviceName);
 
-    // 2. Provision device account scoped to this collection
-    const provisionResult = await this.vaultwardenService.provisionDeviceAccount(targetOrgId, collectionId, deviceEmail);
+    // 2. Provision device account scoped to this collection (re-enabling account if previously locked)
+    const provisionResult = equipment.vaultwarden_device_user_id
+      ? await this.vaultwardenService.provisionDeviceAccount(targetOrgId, collectionId, deviceEmail, equipment.vaultwarden_device_user_id)
+      : await this.vaultwardenService.provisionDeviceAccount(targetOrgId, collectionId, deviceEmail);
 
     // 3. Update database entity
     const updated = await this.equipmentRepository.update(equipment.id, {

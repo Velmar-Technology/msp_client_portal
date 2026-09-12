@@ -135,6 +135,33 @@ describe('EquipmentService - Device-Bound Vaultwarden Management', () => {
       expect(res.itemCount).toBe(1);
     });
 
+    it('re-enrolls a previously locked device slot by passing existing collection and user ID', async () => {
+      mockEquipmentRepo.findById.mockResolvedValueOnce({
+        ...mockEquipment,
+        vaultwarden_status: 'LOCKED',
+        vaultwarden_collection_id: 'existing-col-uuid',
+        vaultwarden_device_user_id: 'existing-user-uuid',
+      });
+
+      const res = await equipmentService.provisionDeviceVault(
+        mockEquipment.id,
+        mockEquipment.tenant_id
+      );
+
+      expect(mockVaultwardenSvc.createDeviceCollection).toHaveBeenCalledWith(
+        mockEquipment.tenant_id,
+        'POS-Terminal-01',
+        'existing-col-uuid'
+      );
+      expect(mockVaultwardenSvc.provisionDeviceAccount).toHaveBeenCalledWith(
+        mockEquipment.tenant_id,
+        'vw_col_123',
+        expect.stringContaining('device_'),
+        'existing-user-uuid'
+      );
+      expect(res.status).toBe('ACTIVE');
+    });
+
     it('throws ForbiddenError if non-admin tries to provision another tenant device', async () => {
       await expect(
         equipmentService.provisionDeviceVault(mockEquipment.id, 'alien-tenant-id')

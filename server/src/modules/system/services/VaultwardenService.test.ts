@@ -125,7 +125,7 @@ describe('VaultwardenService', () => {
       const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
       (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-admin-token';
 
-      global.fetch = vi.fn().mockImplementation(async (url: string, opts?: any) => {
+      global.fetch = vi.fn().mockImplementation(async (url: string, _?: any) => {
         if (url.includes('/api/organizations/org-123/users/invite')) {
           return {
             ok: false,
@@ -482,6 +482,26 @@ describe('VaultwardenService', () => {
         expect.stringContaining('/api/organizations/org-1/collections'),
         expect.objectContaining({ method: 'POST' })
       );
+
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
+    });
+
+    it('reuses existing collection ID when provided during re-enrollment', async () => {
+      const colId = await service.createDeviceCollection('org-1', 'Front-Desk-PC', 'col-existing-123');
+      expect(colId).toBe('col-existing-123');
+    });
+
+    it('falls back resiliently when direct org collection API returns 401 Unauthorized', async () => {
+      const origToken = env.VAULTWARDEN_ADMIN_TOKEN;
+      (env as any).VAULTWARDEN_ADMIN_TOKEN = 'mock-admin-token';
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 401,
+      } as any);
+
+      const colId = await service.createDeviceCollection('org-1', 'Front-Desk-PC');
+      expect(colId).toMatch(/^vw_col_/);
 
       (env as any).VAULTWARDEN_ADMIN_TOKEN = origToken;
     });

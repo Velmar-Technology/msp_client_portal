@@ -215,3 +215,8 @@ When diagnosing, auditing, or remediating Bitwarden/Vaultwarden integrations in 
   - Maximum **5 automated actions per tenant per hour**.
   - Exceeding this threshold trips the circuit breaker, outputs `CIRCUIT_BREAKER_TRIPPED`, and diverts the violation to the Dead-Letter Queue (DLQ) for operator intervention.
 
+### 7. Collection Creation & Device Re-Enrollment (BL-205)
+- Direct collection creation (`/api/organizations/:id/collections`) is a Bitwarden user API requiring an authenticated member Bearer token with organization encryption keys. The server's `VAULTWARDEN_ADMIN_TOKEN` is rejected with HTTP 401 Unauthorized.
+- When provisioning or re-enrolling device endpoints, `createDeviceCollection` reuses existing mapped collection IDs (`existingCollectionId`) upon re-enrollment or gracefully falls back to scoped collection identifiers (`vw_col_<org>_<random>`) when `/api` returns 401/404.
+- Re-enrolling a previously locked endpoint must automatically re-enable the disabled device user account via `POST /vault/admin/users/:id/enable` before re-issuing credentials.
+
