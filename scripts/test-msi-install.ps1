@@ -132,7 +132,7 @@ Write-Host "  Registry Value: $($runKey[3]) = $($runKey[4])"
 Write-Host "  PASS: Tray auto-launch key verified." -ForegroundColor Green
 
 # 4. Verify MajorUpgrade Table
-Write-Host "`n[Check 4/4] Verifying MajorUpgrade Configuration..." -ForegroundColor Yellow
+Write-Host "`n[Check 4/5] Verifying MajorUpgrade Configuration..." -ForegroundColor Yellow
 $upgrades = Query-MsiTable $database "SELECT * FROM Upgrade"
 if ($upgrades.Count -eq 0) {
     Write-Error "FAIL: Upgrade table is empty. MajorUpgrade not configured!"
@@ -141,7 +141,41 @@ if ($upgrades.Count -eq 0) {
 Write-Host "  Upgrade Action Property: $($upgrades[0][4])"
 Write-Host "  PASS: MajorUpgrade table verified." -ForegroundColor Green
 
+# 5. Verify File Table and Critical Binaries
+Write-Host "`n[Check 5/5] Verifying Bundled Binaries & WebView2Loader..." -ForegroundColor Yellow
+$files = Query-MsiTable $database "SELECT File, FileName, FileSize FROM File"
+$fileMap = @{}
+foreach ($f in $files) {
+    $fileMap[$f[0]] = @{ Name = $f[1]; Size = [int64]$f[2] }
+    Write-Host "  File: $($f[0]) -> $($f[1]) ($([math]::Round([int64]$f[2] / 1KB, 1)) KB)"
+}
+
+if (-not $fileMap.ContainsKey("MspAgentExe")) {
+    Write-Error "FAIL: MspAgentExe missing from MSI File table!"
+    exit 1
+}
+if (-not $fileMap.ContainsKey("MspTrayExe")) {
+    Write-Error "FAIL: MspTrayExe missing from MSI File table!"
+    exit 1
+}
+if (-not $fileMap.ContainsKey("WebView2LoaderDll")) {
+    Write-Error "FAIL: WebView2LoaderDll missing from MSI File table! msp-tray will fail with 'WebView2Loader.dll not found'."
+    exit 1
+}
+
+# Verify distinct sizes (ensure msp-tray is real Tauri companion > 5MB, not agent copy)
+if ($fileMap["MspTrayExe"].Size -lt 3000000) {
+    Write-Error "FAIL: MspTrayExe size is suspiciously small ($($fileMap['MspTrayExe'].Size) bytes). Ensure real Tauri release binary is compiled!"
+    exit 1
+}
+if ($fileMap["WebView2LoaderDll"].Size -lt 100000) {
+    Write-Error "FAIL: WebView2LoaderDll size is suspiciously small ($($fileMap['WebView2LoaderDll'].Size) bytes)!"
+    exit 1
+}
+
+Write-Host "  PASS: All 3 components (msp-agent, msp-tray, WebView2Loader.dll) verified in MSI." -ForegroundColor Green
+
 Write-Host ""
 Write-Host "==================================================" -ForegroundColor Green
-Write-Host "  ALL MSI INTEGRITY CHECKS PASSED (4/4)" -ForegroundColor Green
+Write-Host "  ALL MSI INTEGRITY CHECKS PASSED (5/5)" -ForegroundColor Green
 Write-Host "==================================================" -ForegroundColor Green
