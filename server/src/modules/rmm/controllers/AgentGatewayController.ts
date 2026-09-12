@@ -225,7 +225,7 @@ if (Test-Path $temp) {
     }
 
     const input = parseResult.data;
-    const targetVersion = (input.targetVersion || '1.10.2').replace(/^v/, '');
+    const targetVersion = (input.targetVersion || '1.11.5').replace(/^v/, '');
     const installerType = input.installerType || 'msi';
     const baseUrl =
       process.env.MSP_AGENT_DOWNLOAD_BASE_URL || 'https://helpdesk.velmartech.com.do/dl';

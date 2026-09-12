@@ -413,10 +413,10 @@ export function registerRmmTools(server: McpServer, apiClient: MspApiClient) {
             {
               type: 'text',
               text: [
-                '### 🚀 Agent Self-Upgrade Initiated',
+                '### Agent Self-Upgrade Initiated',
                 '',
                 `* **Equipment ID:** \`${equipmentId}\``,
-                `* **Target Version:** \`v${result.targetVersion || targetVersion || '1.10.2'}\``,
+                `* **Target Version:** \`v${result.targetVersion || targetVersion || '1.11.5'}\``,
                 `* **Rollback Timeout:** \`${result.rollbackTimeoutSecs || rollbackTimeoutSecs}s\``,
                 `* **Status:** \`${result.message || 'Initiated'}\``,
                 '',
