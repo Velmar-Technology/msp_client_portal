@@ -206,6 +206,33 @@ describe('EquipmentService - Device-Bound Vaultwarden Management', () => {
     });
   });
 
+  describe('resetDeviceVault', () => {
+    it('generates a fresh activation token for master password reset', async () => {
+      mockEquipmentRepo.findById.mockResolvedValueOnce({
+        ...mockEquipment,
+        vaultwarden_status: 'ACTIVE',
+        vaultwarden_device_user_id: 'vw_user_456',
+        vaultwarden_collection_id: 'vw_col_123',
+      });
+
+      const res = await equipmentService.resetDeviceVault(
+        mockEquipment.id,
+        mockEquipment.tenant_id,
+        true,
+        'admin@company.com'
+      );
+
+      expect(mockVaultwardenSvc.generateDeviceActivationUrl).toHaveBeenCalledWith(
+        'vw_user_456',
+        expect.stringContaining('device_')
+      );
+      expect(res.status).toBe('ACTIVE');
+      expect(res.isActivated).toBe(false);
+      expect(res.activationUrl).toBeTruthy();
+      expect(res.accessLevel).toBe('Organization Owner (Full Access)');
+    });
+  });
+
   describe('Plan Entitlement Gating (BL-204)', () => {
     it('throws ForbiddenError when non-admin client attempts vault actions on a device with non-entitled plan', async () => {
       mockPlanRepo.findById.mockResolvedValue({

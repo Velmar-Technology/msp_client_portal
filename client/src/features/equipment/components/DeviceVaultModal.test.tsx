@@ -24,6 +24,10 @@ vi.mock('../api/useEquipmentQueries', () => ({
     mutateAsync: vi.fn(),
     isPending: false,
   })),
+  useResetDeviceVault: vi.fn(() => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+  })),
 }));
 
 describe('DeviceVaultModal', () => {

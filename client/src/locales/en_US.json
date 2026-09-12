@@ -2103,7 +2103,15 @@
       "btnCopyActivationLink": "Copy Activation Link",
       "linkCopied": "Activation link copied to clipboard!",
       "step1": "Open activation link & set the master password.",
-      "step2": "On the PC, sign in to Bitwarden with this machine user and your password."
+      "step2": "On the PC, sign in to Bitwarden with this machine user and your password.",
+      "adminControlTitle": "Administrative Oversight & Escrow",
+      "adminControlDesc": "As Organization Owner in Bitwarden, you have full view, edit, and escrow access over this machine's collection and credentials. Workers autofill without seeing raw passwords.",
+      "roleOwner": "Organization Owner (Full Access)",
+      "btnOpenWebVault": "Manage in Bitwarden Web Vault",
+      "btnResetPassword": "Reset Master Password",
+      "resetSuccessTitle": "Reset Link Generated",
+      "resetSuccessDesc": "Fresh master password activation token generated. You can now set a new password for this workstation.",
+      "resetError": "Failed to reset device vault."
     }
   }
 }

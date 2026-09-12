@@ -431,6 +431,34 @@ export function useRevokeDeviceVault() {
 }
 
 /**
+ * Mutation hook to reset the master password activation token for an equipment slot.
+ */
+export function useResetDeviceVault() {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (equipmentId: string) => equipmentService.resetDeviceVault(equipmentId),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: EQUIPMENT_QUERY_KEYS.vault(data.equipmentId) });
+      queryClient.invalidateQueries({ queryKey: EQUIPMENT_QUERY_KEYS.all });
+      toast.success(t('equipment.vault.resetSuccessTitle', 'Reset Link Generated'), {
+        description: t(
+          'equipment.vault.resetSuccessDesc',
+          'Fresh master password activation token generated. You can now set a new password for this workstation.'
+        ),
+      });
+    },
+    onError: (err: Error) => {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(t('common.error', 'Error'), {
+        description: error.response?.data?.message || error.message || t('equipment.vault.resetError', 'Failed to reset device vault.'),
+      });
+    },
+  });
+}
+
+/**
  * Mutation hook to trigger an autonomous self-upgrade on a remote endpoint agent.
  */
 export function useUpgradeAgent() {

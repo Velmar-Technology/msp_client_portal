@@ -26,6 +26,8 @@ export const DeviceVaultDetailsSchema = z.object({
   message: z.string().optional(),
   activationUrl: z.string().nullable().optional(),
   isActivated: z.boolean().optional(),
+  adminVaultUrl: z.string().nullable().optional(),
+  accessLevel: z.string().optional(),
 });
 export type DeviceVaultDetails = z.infer<typeof DeviceVaultDetailsSchema>;
 

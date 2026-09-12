@@ -65,6 +65,12 @@ We adopt a **Device-Bound Workstation Vault** architecture integrated directly i
    - **Account Activation Introspection:** `VaultwardenService.checkUserAccountStatus` queries Vaultwarden's Rocket admin API `/admin/users` (using the cached `VW_ADMIN` cookie) to inspect `_status`, distinguishing between pending password creation (`_status: 1`) and active protection (`_status: 0`).
    - **Zero-Friction Client UX:** `DeviceVaultModal.tsx` surfaces a **Pending Activation** amber badge, a 2-step setup walkthrough, a primary **"Set Master Password"** one-click launch button (pre-populating the machine email), and a **"Copy Activation Link"** action, completely eliminating email delivery friction and administrative manual steps.
 
+9. **Maximum Administrative Access & Organization Owner Escrow (2026-09-12 Amendment):**
+   - **Organization Owner Hierarchy:** Workstation collections (`Device: <DeviceName>`) and identities are bound under the tenant's Vaultwarden Organization where the portal administrator operates as **Organization Owner (`atype: 0`, `access_all: true`)**.
+   - **Full Vault Oversight:** Administrators view, create, edit, and escrow all passwords and ciphers assigned to device collections directly inside the Bitwarden Web Vault (`/#/vault`).
+   - **Master Password Re-keying & Reset (`POST /api/v1/equipment/:id/vault/reset`):** Administrators can re-key or change workstation master passwords at any time directly from `DeviceVaultModal`, which issues a freshly signed RS256 activation token on demand.
+   - **Deep Web Vault Integration:** `DeviceVaultModal` provides direct 1-click links to `https://helpdesk.velmartech.com.do/vault/#/vault` and displays transparent access roles (`Organization Owner (Full Access)` vs `Machine User with hidePasswords: true`).
+
 ---
 
 ## Alternatives Considered

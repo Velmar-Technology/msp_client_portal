@@ -857,24 +857,15 @@ export class VaultwardenService {
 
       // 3. Query /admin/users to find if the user is already member of an org
       if (userEmail) {
-        const adminUsersResp = await fetch(`${baseUrl}/admin/users`, {
-          method: 'GET',
-          headers: this.getHeaders(),
-        });
-        if (adminUsersResp.ok) {
-          const users = (await adminUsersResp.json()) as Array<{
-            Id?: string;
-            Email?: string;
-            Organizations?: Array<{ Id?: string; id?: string }>;
-          }>;
-          if (Array.isArray(users)) {
-            const userRecord = users.find(
-              (u) => u.Email?.toLowerCase() === userEmail.toLowerCase()
-            );
-            const firstOrg = userRecord?.Organizations?.[0];
-            if (firstOrg && (firstOrg.Id || firstOrg.id)) {
-              return (firstOrg.Id || firstOrg.id)!;
-            }
+        const users = await this.listAdminUsers();
+        if (Array.isArray(users)) {
+          const userRecord = users.find(
+            (u) => (u.Email || u.email)?.toLowerCase() === userEmail.toLowerCase()
+          );
+          const orgs = (userRecord as any)?.Organizations || (userRecord as any)?.organizations;
+          const firstOrg = Array.isArray(orgs) ? orgs[0] : null;
+          if (firstOrg && (firstOrg.Id || firstOrg.id)) {
+            return (firstOrg.Id || firstOrg.id)!;
           }
         }
       }

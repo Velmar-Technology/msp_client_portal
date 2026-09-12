@@ -240,6 +240,17 @@ export const equipmentService = {
   },
 
   /**
+   * Resets the master password activation token for an equipment slot.
+   *
+   * @param equipmentId - Equipment slot UUID.
+   * @returns Promise resolving to updated DeviceVaultDetails with fresh activationUrl.
+   */
+  async resetDeviceVault(equipmentId: string): Promise<DeviceVaultDetails> {
+    const response = await api.post(`/equipment/${equipmentId}/vault/reset`);
+    return response.data.data;
+  },
+
+  /**
    * Triggers an autonomous self-upgrade on a remote endpoint agent.
    *
    * @param equipmentId - Equipment slot UUID.

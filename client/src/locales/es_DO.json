@@ -2097,7 +2097,15 @@
       "btnCopyActivationLink": "Copiar Enlace de Activación",
       "linkCopied": "¡Enlace de activación copiado al portapapeles!",
       "step1": "Abre el enlace de activación y establece la contraseña maestra.",
-      "step2": "En la PC, inicia sesión en Bitwarden con este usuario de máquina y tu contraseña."
+      "step2": "En la PC, inicia sesión en Bitwarden con este usuario de máquina y tu contraseña.",
+      "adminControlTitle": "Supervisión Administrativa y Custodia",
+      "adminControlDesc": "Como Propietario de la Organización en Bitwarden, tienes acceso completo para ver, editar y custodiar las contraseñas de esta máquina. Los trabajadores autocompletan sin ver las credenciales en texto plano.",
+      "roleOwner": "Propietario de Organización (Control Total)",
+      "btnOpenWebVault": "Gestionar en Bóveda Web Bitwarden",
+      "btnResetPassword": "Restablecer Contraseña Maestra",
+      "resetSuccessTitle": "Enlace de Restablecimiento Generado",
+      "resetSuccessDesc": "Se ha generado un nuevo token criptográfico. Ahora puedes asignar una nueva contraseña para esta estación de trabajo.",
+      "resetError": "Error al restablecer la bóveda del dispositivo."
     }
   }
 }

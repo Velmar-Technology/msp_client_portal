@@ -12,6 +12,8 @@ import {
   RefreshCw,
   Lock,
   ExternalLink,
+  Building2,
+  RotateCcw,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -30,6 +32,7 @@ import {
   useDeviceVault,
   useProvisionDeviceVault,
   useRevokeDeviceVault,
+  useResetDeviceVault,
 } from '../api/useEquipmentQueries';
 
 export interface DeviceVaultModalProps {
@@ -62,6 +65,7 @@ export function DeviceVaultModal({
 
   const provisionMutation = useProvisionDeviceVault();
   const revokeMutation = useRevokeDeviceVault();
+  const resetMutation = useResetDeviceVault();
 
   const handleCopy = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -72,6 +76,11 @@ export function DeviceVaultModal({
   const handleProvision = async () => {
     if (!equipmentId) return;
     await provisionMutation.mutateAsync(equipmentId);
+  };
+
+  const handleReset = async () => {
+    if (!equipmentId) return;
+    await resetMutation.mutateAsync(equipmentId);
   };
 
   const handleRevoke = async () => {
@@ -295,6 +304,52 @@ export function DeviceVaultModal({
                   </div>
                 )}
 
+                {/* Administrative Oversight & Master Escrow */}
+                {vault?.status === 'ACTIVE' && (
+                  <div className="p-3.5 rounded-lg border border-primary/30 bg-primary/5 space-y-2.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 font-semibold text-foreground">
+                        <Building2 className="h-4 w-4 text-primary" />
+                        <span>{t('equipment.vault.adminControlTitle', 'Administrative Oversight & Escrow')}</span>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/40 text-primary bg-primary/10">
+                        {vault.accessLevel || t('equipment.vault.roleOwner', 'Organization Owner (Full Access)')}
+                      </Badge>
+                    </div>
+                    <p className="text-muted-foreground leading-relaxed">
+                      {t(
+                        'equipment.vault.adminControlDesc',
+                        'As Organization Owner in Bitwarden, you have full view, edit, and escrow access over this machine\'s collection and credentials. Workers autofill without seeing raw passwords.'
+                      )}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs gap-1.5 cursor-pointer font-medium border-primary/40 text-primary hover:bg-primary/10"
+                        onClick={() => window.open(vault?.adminVaultUrl || 'https://helpdesk.velmartech.com.do/vault/#/vault', '_blank')}
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        {t('equipment.vault.btnOpenWebVault', 'Manage in Bitwarden Web Vault')}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground cursor-pointer"
+                        onClick={handleReset}
+                        disabled={resetMutation.isPending}
+                      >
+                        {resetMutation.isPending ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <RotateCcw className="h-3 w-3" />
+                        )}
+                        {t('equipment.vault.btnResetPassword', 'Reset Master Password')}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Identity & Collection Details */}
                 <div className="space-y-3">
                   <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1">
@@ -467,6 +522,18 @@ export function DeviceVaultModal({
                   <KeyRound className="h-3.5 w-3.5" />
                   {t('equipment.vault.btnSetPassword', 'Set Master Password')}
                   <ExternalLink className="h-3 w-3 opacity-70" />
+                </Button>
+              )}
+
+              {vault?.status === 'ACTIVE' && !confirmingRevoke && vault?.isActivated && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs gap-1.5 cursor-pointer border-primary/40 text-primary hover:bg-primary/10"
+                  onClick={() => window.open(vault?.adminVaultUrl || 'https://helpdesk.velmartech.com.do/vault/#/vault', '_blank')}
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  {t('equipment.vault.btnOpenWebVault', 'Manage in Web Vault')}
                 </Button>
               )}
 
