@@ -36,6 +36,9 @@ router.post('/agent/:equipmentId/diagnostics', (req, res) => agentGatewayControl
 /** POST /api/rmm/agent/:equipmentId/hardware — Deep physical hardware components on remote endpoint */
 router.post('/agent/:equipmentId/hardware', (req, res) => agentGatewayController.getHardwareComponents(req, res));
 
+/** POST /api/rmm/agent/:equipmentId/battery-report — Battery health analysis via powercfg on remote endpoint */
+router.post('/agent/:equipmentId/battery-report', (req, res) => agentGatewayController.getBatteryReport(req, res));
+
 /** POST /api/rmm/agent/:equipmentId/event-logs — Query Windows Event Logs on remote endpoint */
 router.post('/agent/:equipmentId/event-logs', (req, res) => agentGatewayController.getEventLogs(req, res));
 

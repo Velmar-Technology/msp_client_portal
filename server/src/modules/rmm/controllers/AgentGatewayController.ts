@@ -114,6 +114,63 @@ export class AgentGatewayController {
   }
 
   /**
+   * Generates a detailed battery health analysis report via powercfg on the remote endpoint.
+   *
+   * @param req - Express request with equipmentId in params
+   * @param res - Express response returning battery report metrics
+   */
+  async getBatteryReport(req: Request, res: Response): Promise<void> {
+    const target = await this.resolveTarget(String(req.params.equipmentId));
+    const script = `
+$ErrorActionPreference = 'SilentlyContinue'
+$temp = [System.IO.Path]::Combine($env:TEMP, "battery_report_$(Get-Random).xml")
+$null = powercfg /batteryreport /xml /output $temp
+if (Test-Path $temp) {
+    [xml]$xml = Get-Content $temp
+    Remove-Item $temp -Force -ErrorAction SilentlyContinue
+    $b = $xml.BatteryReport.Batteries.Battery
+    $design = 0
+    $full = 0
+    if ($b.DesignCapacity) { [double]::TryParse($b.DesignCapacity, [ref]$design) | Out-Null }
+    if ($b.FullChargeCapacity) { [double]::TryParse($b.FullChargeCapacity, [ref]$full) | Out-Null }
+    $healthPct = if ($design -gt 0) { [math]::Round(($full / $design) * 100, 1) } else { $null }
+    [PSCustomObject]@{
+        has_battery = $true
+        battery_id = if ($b.Id) { $b.Id.Trim() } else { "Unknown" }
+        manufacturer = if ($b.Manufacturer) { $b.Manufacturer.Trim() } else { "Unknown" }
+        serial_number = if ($b.SerialNumber) { $b.SerialNumber.Trim() } else { "Unknown" }
+        chemistry = if ($b.Chemistry) { $b.Chemistry.Trim() } else { "Unknown" }
+        design_capacity_mwh = $design
+        full_charge_capacity_mwh = $full
+        cycle_count = if ($b.CycleCount) { [int]$b.CycleCount } else { 0 }
+        health_percentage = $healthPct
+        report_scan_time = $xml.BatteryReport.ScanTime
+    } | ConvertTo-Json -Compress
+} else {
+    $batt = Get-CimInstance Win32_Battery -ErrorAction SilentlyContinue
+    if ($batt) {
+        [PSCustomObject]@{
+            has_battery = $true
+            name = $batt.Name
+            estimated_charge_remaining = $batt.EstimatedChargeRemaining
+            device_id = $batt.DeviceID
+            status = $batt.Status
+            note = "powercfg XML report unavailable; fallback to Win32_Battery telemetry."
+        } | ConvertTo-Json -Compress
+    } else {
+        [PSCustomObject]@{
+            has_battery = $false
+            message = "No battery detected (desktop/server system or AC-only power)."
+        } | ConvertTo-Json -Compress
+    }
+}
+`.trim();
+
+    const result = await agentGateway.sendCommand(target, 'EXEC_POWERSHELL', { script });
+    res.json({ success: true, data: result });
+  }
+
+  /**
    * Queries Windows Event Logs on the remote endpoint.
    *
    * @param req - Express request with equipmentId in params and log filters in body

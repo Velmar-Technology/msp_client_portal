@@ -192,6 +192,33 @@ export function registerRmmTools(server: McpServer, apiClient: MspApiClient) {
     }
   );
 
+  // 5c. Tool: msp_remote_battery_report
+  server.tool(
+    'msp_remote_battery_report',
+    'Generate and inspect a detailed battery health analysis report (Design Capacity, Full Charge Capacity, Cycle Count, Health %, Chemistry, Manufacturer) on a remote laptop or tablet via powercfg /batteryreport on msp-agent.',
+    {
+      equipmentId: z.string().uuid().describe('The UUID of the remote client device'),
+    },
+    async ({ equipmentId }) => {
+      try {
+        const result = await apiClient.getRemoteBatteryReport(equipmentId);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      } catch (err: any) {
+        return {
+          isError: true,
+          content: [{ type: 'text', text: `Remote battery report failed: ${err.message}` }],
+        };
+      }
+    }
+  );
+
   // 6. Tool: msp_remote_get_event_logs
   server.tool(
     'msp_remote_get_event_logs',
