@@ -950,6 +950,71 @@ describe('MSP MCP Server Tools Registration and Execution', () => {
       expect(result.content[0].text).toContain('CATALOG_LIST');
       expect(result.content[0].text).toContain('PASSWORD_MANAGER');
     });
+
+    it('should register and execute msp_remote_get_hardware_components via MspApiClient', async () => {
+      const mockHwData = {
+        platform: 'windows',
+        system_serial: 'SN-B3MMEG9BRE',
+        manufacturer: 'Dell Inc.',
+        system_model: 'Latitude 5590',
+        baseboard: { Manufacturer: 'Dell Inc.', Product: '0VYDFF' },
+        processor: { Name: 'Intel(R) Core(TM) i5-8350U CPU @ 1.70GHz', NumberOfCores: 4 },
+        physical_memory: [{ BankLabel: 'BANK 0', Capacity: 8589934592, Speed: 2400 }],
+        disk_drives: [{ Model: 'SAMSUNG SSD PM871b M.2 2280 256GB' }],
+        video_controllers: [{ Name: 'Intel(R) UHD Graphics 620' }],
+      };
+
+      vi.spyOn(mockApiClient, 'getRemoteHardwareComponents').mockResolvedValueOnce(mockHwData);
+
+      registerRmmTools(server, mockApiClient);
+      const tools = (server as any)._registeredTools;
+      const hwTool = tools['msp_remote_get_hardware_components'];
+      expect(hwTool).toBeDefined();
+
+      const result = await hwTool.handler({
+        equipmentId: 'a0000000-0000-0000-0000-000000000001',
+      });
+
+      expect(result.isError).toBeUndefined();
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.system_model).toBe('Latitude 5590');
+      expect(parsed.baseboard.Product).toBe('0VYDFF');
+      expect(parsed.processor.NumberOfCores).toBe(4);
+    });
+
+    it('should register and execute msp_remote_battery_report via MspApiClient', async () => {
+      const mockBatteryData = {
+        has_battery: true,
+        battery_id: 'DELL DV9NT83',
+        manufacturer: 'LGC-LGC8.820',
+        serial_number: '3778',
+        chemistry: 'Li-I',
+        design_capacity_mwh: 51000,
+        full_charge_capacity_mwh: 41929,
+        cycle_count: 142,
+        health_percentage: 82.2,
+        report_scan_time: '2026-09-12T22:15:00Z',
+      };
+
+      vi.spyOn(mockApiClient, 'getRemoteBatteryReport').mockResolvedValueOnce(mockBatteryData);
+
+      registerRmmTools(server, mockApiClient);
+      const tools = (server as any)._registeredTools;
+      const batteryTool = tools['msp_remote_battery_report'];
+      expect(batteryTool).toBeDefined();
+
+      const result = await batteryTool.handler({
+        equipmentId: 'a0000000-0000-0000-0000-000000000001',
+      });
+
+      expect(result.isError).toBeUndefined();
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.has_battery).toBe(true);
+      expect(parsed.battery_id).toBe('DELL DV9NT83');
+      expect(parsed.health_percentage).toBe(82.2);
+      expect(parsed.cycle_count).toBe(142);
+      expect(parsed.full_charge_capacity_mwh).toBe(41929);
+    });
   });
 });
 

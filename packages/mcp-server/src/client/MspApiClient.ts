@@ -673,6 +673,87 @@ ${recommendationList}
   }
 
   /**
+   * Queries deep physical hardware components (Motherboard, CPU cores/IDs, RAM DIMMs,
+   * Storage drives, GPU, Battery) from the remote agent via SMBIOS / WMI.
+   */
+  async getRemoteHardwareComponents(equipmentId: string): Promise<any> {
+    try {
+      const res = await this.request<any>({
+        method: 'POST',
+        url: `/rmm/agent/${equipmentId}/hardware`,
+      });
+      return res.data || res;
+    } catch (err: any) {
+      // Graceful fallback to generic exec endpoint if running against a gateway route without /hardware
+      if (err?.response?.status === 404) {
+        return this.execAgentCommand(equipmentId, 'GET_HARDWARE_COMPONENTS');
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * Generates and retrieves a detailed battery health analysis report via powercfg
+   * on a remote client workstation.
+   */
+  async getRemoteBatteryReport(equipmentId: string): Promise<any> {
+    try {
+      const res = await this.request<any>({
+        method: 'POST',
+        url: `/rmm/agent/${equipmentId}/battery-report`,
+      });
+      return res.data || res;
+    } catch (err: any) {
+      // Graceful fallback to generic exec endpoint if running against older gateway route
+      if (err?.response?.status === 404) {
+        const script = `
+$temp = [System.IO.Path]::Combine($env:TEMP, "battery_report_$(Get-Random).xml")
+$null = powercfg /batteryreport /xml /output $temp
+if (Test-Path $temp) {
+    [xml]$xml = Get-Content $temp
+    Remove-Item $temp -Force -ErrorAction SilentlyContinue
+    $b = $xml.BatteryReport.Batteries.Battery
+    $design = 0
+    $full = 0
+    if ($b.DesignCapacity) { [double]::TryParse($b.DesignCapacity, [ref]$design) | Out-Null }
+    if ($b.FullChargeCapacity) { [double]::TryParse($b.FullChargeCapacity, [ref]$full) | Out-Null }
+    $healthPct = if ($design -gt 0) { [math]::Round(($full / $design) * 100, 1) } else { $null }
+    [PSCustomObject]@{
+        has_battery = $true
+        battery_id = if ($b.Id) { $b.Id.Trim() } else { "Unknown" }
+        manufacturer = if ($b.Manufacturer) { $b.Manufacturer.Trim() } else { "Unknown" }
+        serial_number = if ($b.SerialNumber) { $b.SerialNumber.Trim() } else { "Unknown" }
+        chemistry = if ($b.Chemistry) { $b.Chemistry.Trim() } else { "Unknown" }
+        design_capacity_mwh = $design
+        full_charge_capacity_mwh = $full
+        cycle_count = if ($b.CycleCount) { [int]$b.CycleCount } else { 0 }
+        health_percentage = $healthPct
+        report_scan_time = $xml.BatteryReport.ScanTime
+    } | ConvertTo-Json -Compress
+} else {
+    $batt = Get-CimInstance Win32_Battery -ErrorAction SilentlyContinue
+    if ($batt) {
+        [PSCustomObject]@{
+            has_battery = $true
+            name = $batt.Name
+            estimated_charge_remaining = $batt.EstimatedChargeRemaining
+            device_id = $batt.DeviceID
+            status = $batt.Status
+        } | ConvertTo-Json -Compress
+    } else {
+        [PSCustomObject]@{
+            has_battery = $false
+            message = "No battery detected (desktop/server system or AC-only power)."
+        } | ConvertTo-Json -Compress
+    }
+}`.trim();
+        return this.execAgentCommand(equipmentId, 'EXEC_POWERSHELL', { script });
+      }
+      throw err;
+    }
+  }
+
+  /**
    * Queries Windows Event Logs on the remote endpoint.
    */
   async getRemoteEventLogs(equipmentId: string, logName?: string, level?: string, maxEvents?: number): Promise<any> {
