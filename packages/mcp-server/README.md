@@ -30,6 +30,7 @@ Model Context Protocol (MCP) server engineered according to the **MCP 2026-07-28
 - **`msp_list_device_patches`**: Lists pending and installed OS patches with severity ratings.
 - **`msp_get_device_maintenances`**: Inspects scheduled and past maintenance records.
 - **`msp_remote_diagnose_pc`**: Executes live hardware diagnostics on a remote client endpoint via the agent tunnel.
+- **`msp_remote_get_hardware_components`**: Retrieves exhaustive physical hardware components (Motherboard, CPU cores, RAM modules, physical SSD/HDD drives, GPU adapters, Battery) directly from a remote workstation running `msp-agent` via SMBIOS/WMI.
 - **`msp_remote_get_event_logs`**: Queries Windows Event Logs (Application / System) on a remote client endpoint.
 - **`msp_remote_security_audit`**: Audits BitLocker, Defender, and Firewall posture on a remote endpoint.
 - **`msp_remote_upgrade_agent`**: Triggers an autonomous, in-place Over-The-Air (OTA) self-upgrade on a remote endpoint running `msp-agent.exe` with atomic move swap, SHA-256 integrity verification, and automated 45-second rollback protection.

@@ -165,6 +165,33 @@ export function registerRmmTools(server: McpServer, apiClient: MspApiClient) {
     }
   );
 
+  // 5b. Tool: msp_remote_get_hardware_components
+  server.tool(
+    'msp_remote_get_hardware_components',
+    'Retrieve exhaustive physical hardware components (Motherboard, CPU cores/IDs, RAM DIMM modules & part numbers, physical SSD/HDD drives, GPU adapters, Battery) directly from a remote workstation running msp-agent via SMBIOS/WMI.',
+    {
+      equipmentId: z.string().uuid().describe('The UUID of the remote client device'),
+    },
+    async ({ equipmentId }) => {
+      try {
+        const result = await apiClient.getRemoteHardwareComponents(equipmentId);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      } catch (err: any) {
+        return {
+          isError: true,
+          content: [{ type: 'text', text: `Remote hardware component query failed: ${err.message}` }],
+        };
+      }
+    }
+  );
+
   // 6. Tool: msp_remote_get_event_logs
   server.tool(
     'msp_remote_get_event_logs',

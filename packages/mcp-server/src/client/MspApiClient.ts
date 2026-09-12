@@ -673,6 +673,26 @@ ${recommendationList}
   }
 
   /**
+   * Queries deep physical hardware components (Motherboard, CPU cores/IDs, RAM DIMMs,
+   * Storage drives, GPU, Battery) from the remote agent via SMBIOS / WMI.
+   */
+  async getRemoteHardwareComponents(equipmentId: string): Promise<any> {
+    try {
+      const res = await this.request<any>({
+        method: 'POST',
+        url: `/rmm/agent/${equipmentId}/hardware`,
+      });
+      return res.data || res;
+    } catch (err: any) {
+      // Graceful fallback to generic exec endpoint if running against a gateway route without /hardware
+      if (err?.response?.status === 404) {
+        return this.execAgentCommand(equipmentId, 'GET_HARDWARE_COMPONENTS');
+      }
+      throw err;
+    }
+  }
+
+  /**
    * Queries Windows Event Logs on the remote endpoint.
    */
   async getRemoteEventLogs(equipmentId: string, logName?: string, level?: string, maxEvents?: number): Promise<any> {

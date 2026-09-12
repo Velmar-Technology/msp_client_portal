@@ -102,6 +102,18 @@ export class AgentGatewayController {
   }
 
   /**
+   * Shorthand endpoint to query deep physical hardware components on the remote agent.
+   *
+   * @param req - Express request with equipmentId in params
+   * @param res - Express response returning hardware components data
+   */
+  async getHardwareComponents(req: Request, res: Response): Promise<void> {
+    const target = await this.resolveTarget(String(req.params.equipmentId));
+    const result = await agentGateway.sendCommand(target, 'GET_HARDWARE_COMPONENTS');
+    res.json({ success: true, data: result });
+  }
+
+  /**
    * Queries Windows Event Logs on the remote endpoint.
    *
    * @param req - Express request with equipmentId in params and log filters in body

@@ -33,6 +33,9 @@ router.post('/agent/:equipmentId/exec', (req, res) => agentGatewayController.exe
 /** POST /api/rmm/agent/:equipmentId/diagnostics — Full system diagnostics on remote endpoint */
 router.post('/agent/:equipmentId/diagnostics', (req, res) => agentGatewayController.getDiagnostics(req, res));
 
+/** POST /api/rmm/agent/:equipmentId/hardware — Deep physical hardware components on remote endpoint */
+router.post('/agent/:equipmentId/hardware', (req, res) => agentGatewayController.getHardwareComponents(req, res));
+
 /** POST /api/rmm/agent/:equipmentId/event-logs — Query Windows Event Logs on remote endpoint */
 router.post('/agent/:equipmentId/event-logs', (req, res) => agentGatewayController.getEventLogs(req, res));
 
