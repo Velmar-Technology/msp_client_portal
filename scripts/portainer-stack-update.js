@@ -52,7 +52,7 @@ async function request(urlStr, options = {}, postData = null) {
 async function main() {
   const version = process.argv[2];
   if (!version) {
-    error('Usage: portainer-stack-update <VERSION>');
+    error('Usage: portainer-stack-update <VERSION> [COMPOSE_FILE]');
     process.exit(1);
   }
 
@@ -71,13 +71,15 @@ async function main() {
   }
 
   const repoRoot = path.resolve(__dirname, '..');
-  const composePath = path.join(repoRoot, 'docker-compose.prod.yml');
+  const composeFilename = (process.env.COMPOSE_FILE || process.argv[3] || 'docker-compose.prod.yml').trim();
+  const composePath = path.isAbsolute(composeFilename) ? composeFilename : path.join(repoRoot, composeFilename);
 
   if (!fs.existsSync(composePath)) {
-    error(`docker-compose.prod.yml not found at: ${composePath}`);
+    error(`Compose file not found at: ${composePath}`);
     process.exit(1);
   }
 
+  log(`Using compose specification: ${path.basename(composePath)}`);
   const composeContent = fs.readFileSync(composePath, 'utf8');
 
   // Normalize and detect authentication type (API Key vs JWT)

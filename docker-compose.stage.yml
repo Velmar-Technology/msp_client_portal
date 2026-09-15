@@ -1,0 +1,229 @@
+version: '3.8'
+
+# MSP Client Portal — Staging Stack Specification
+# Deployed independently on Portainer (e.g. stage.velmartech.com.do)
+# Completely isolated container names, volumes, and Traefik ingress routers from prod.
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: msp_postgres_db_stage
+    restart: always
+    networks:
+      - default
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-msp_helpdesk_stage}
+      TZ: ${TZ:-America/Santo_Domingo}
+    volumes:
+      - pgdata_stage:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-msp_helpdesk_stage}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.40'
+          memory: 250M
+        reservations:
+          cpus: '0.05'
+          memory: 64M
+
+  redis:
+    image: redis:7-alpine
+    container_name: msp_redis_stage
+    restart: always
+    command: ["redis-server", "--appendonly", "yes"]
+    networks:
+      - default
+    volumes:
+      - redisdata_stage:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.20'
+          memory: 128M
+        reservations:
+          cpus: '0.01'
+          memory: 16M
+
+  server:
+    image: ghcr.io/${REPOSITORY_OWNER:-velmar-technology}/msp-services-server:${VERSION:-latest}
+    container_name: msp_server_stage
+    restart: always
+    networks:
+      - default
+      - reverse-proxy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/v1/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      - TZ=${TZ:-America/Santo_Domingo}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-msp_helpdesk_stage}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - PORT=3001
+      - NODE_ENV=production
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_ENABLED=${REDIS_ENABLED:-true}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - CORS_ORIGIN=${STAGE_CORS_ORIGIN:-https://stage.velmartech.com.do}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - WHATSAPP_API_URL=${WHATSAPP_API_URL}
+      - WHATSAPP_API_KEY=${WHATSAPP_API_KEY}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID}
+      - PAYPAL_CLIENT_SECRET=${PAYPAL_CLIENT_SECRET}
+      - UPLOAD_DIR=/app/server/uploads
+      - NEXTCLOUD_URL=${NEXTCLOUD_URL}
+      - NEXTCLOUD_APP_USER=${NEXTCLOUD_APP_USER}
+      - NEXTCLOUD_APP_PASS=${NEXTCLOUD_APP_PASS}
+      - NEXTCLOUD_TOTAL_CAPACITY=${NEXTCLOUD_TOTAL_CAPACITY}
+      - NEXTCLOUD_EXTERNAL_URL=${NEXTCLOUD_EXTERNAL_URL:-https://atlas.velmartech.com.do}
+      - VAULTWARDEN_URL=${VAULTWARDEN_URL:-http://vaultwarden:80/vault}
+      - VAULTWARDEN_ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN:-stage_mock_token}
+      - VAULTWARDEN_EXTERNAL_URL=${VAULTWARDEN_EXTERNAL_URL:-https://stage.velmartech.com.do/vault}
+      - ZABBIX_URL=${ZABBIX_URL}
+      - ZABBIX_USER=${ZABBIX_USER}
+      - ZABBIX_PASSWORD=${ZABBIX_PASSWORD}
+      - ZABBIX_WEBHOOK_SECRET=${ZABBIX_WEBHOOK_SECRET}
+      - DD_API_KEY=${DD_API_KEY:-}
+      - DD_SITE=${DD_SITE:-datadoghq.com}
+      - DD_SERVICE=${DD_SERVICE:-msp-services-server}
+      - DD_ENV=staging
+      - DD_VERSION=${VERSION:-latest}
+      - DD_TRACE_ENABLED=false
+    volumes:
+      - uploads_data_stage:/app/server/uploads
+      - vaultwarden_data_stage:/vaultwarden_data:ro
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 300M
+        reservations:
+          cpus: '0.05'
+          memory: 64M
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.msp-server-stage.rule=Host(`${STAGE_DOMAIN:-stage.velmartech.com.do}`) && (PathPrefix(`/api`) || PathPrefix(`/uploads`) || PathPrefix(`/agent-ws`))"
+      - "traefik.http.routers.msp-server-stage.entrypoints=websecure"
+      - "traefik.http.routers.msp-server-stage.tls=true"
+      - "traefik.http.routers.msp-server-stage.tls.certresolver=myresolver"
+      - "traefik.http.routers.msp-server-stage.priority=100"
+      - "traefik.http.routers.msp-server-stage.middlewares=msp-compress-stage"
+      - "traefik.http.services.msp-server-stage-svc.loadbalancer.server.port=3001"
+
+  client:
+    image: ghcr.io/${REPOSITORY_OWNER:-velmar-technology}/msp-services-client:${VERSION:-latest}
+    container_name: msp_client_stage
+    restart: always
+    networks:
+      - default
+      - reverse-proxy
+    depends_on:
+      server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.15'
+          memory: 64M
+        reservations:
+          cpus: '0.01'
+          memory: 16M
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.msp-client-stage.rule=Host(`${STAGE_DOMAIN:-stage.velmartech.com.do}`)"
+      - "traefik.http.routers.msp-client-stage.entrypoints=websecure"
+      - "traefik.http.routers.msp-client-stage.tls=true"
+      - "traefik.http.routers.msp-client-stage.tls.certresolver=myresolver"
+      - "traefik.http.routers.msp-client-stage.priority=1"
+      - "traefik.http.middlewares.msp-compress-stage.compress=true"
+      - "traefik.http.routers.msp-client-stage.middlewares=msp-compress-stage"
+      - "traefik.http.services.msp-client-stage-svc.loadbalancer.server.port=80"
+
+  mcp-server:
+    image: ghcr.io/${REPOSITORY_OWNER:-velmar-technology}/msp-mcp-server:${VERSION:-latest}
+    container_name: msp_mcp_stage
+    restart: always
+    networks:
+      - default
+      - reverse-proxy
+    depends_on:
+      server:
+        condition: service_healthy
+    environment:
+      - TZ=${TZ:-America/Santo_Domingo}
+      - NODE_ENV=production
+      - MCP_TRANSPORT=http
+      - MCP_HTTP_PORT=3005
+      - MSP_SERVER_URL=${MSP_SERVER_URL:-stage.velmartech.com.do}
+      - MSP_API_KEY=${MSP_API_KEY}
+      - MCP_SERVER_API_KEY=${MCP_SERVER_API_KEY:-}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3005/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.20'
+          memory: 120M
+        reservations:
+          cpus: '0.01'
+          memory: 32M
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.msp-mcp-stage.rule=Host(`${STAGE_DOMAIN:-stage.velmartech.com.do}`) && (PathPrefix(`/mcp`))"
+      - "traefik.http.routers.msp-mcp-stage.entrypoints=websecure"
+      - "traefik.http.routers.msp-mcp-stage.tls=true"
+      - "traefik.http.routers.msp-mcp-stage.tls.certresolver=myresolver"
+      - "traefik.http.routers.msp-mcp-stage.priority=100"
+      - "traefik.http.services.msp-mcp-stage-svc.loadbalancer.server.port=3005"
+
+volumes:
+  pgdata_stage:
+    driver: local
+  redisdata_stage:
+    driver: local
+  uploads_data_stage:
+    driver: local
+  vaultwarden_data_stage:
+    driver: local
+
+networks:
+  default:
+  reverse-proxy:
+    external: true

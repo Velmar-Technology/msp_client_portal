@@ -324,7 +324,8 @@ Continuous Integration and Deployment is automated via GitHub Actions ([.github/
 - **Versioning Strategy:** Generates nightly semver identifier: `<base_version>-nightly.<YYYYMMDD>.<short_sha>` (e.g. `1.7.0-nightly.20260916.e224326`).
 - **Container Tags:** Pushes `nightly`, `nightly-<YYYYMMDD>`, and commit SHA tags to GHCR for `server`, `client`, and `mcp` images.
 - **Automated Validation:** Enforces the shared quality gates (`quality.yml`) and Trivy vulnerability scan prior to deployment.
-- **Portainer Stack Deployment:** Updates target staging/nightly stack (`PORTAINER_STAGE_STACK_ID` or fallback to `PORTAINER_STACK_ID`), verifies endpoint health over SSH, triggers automatic rollback if health check fails, and dispatches webhook status notifications.
+- **Independent Staging Stack Deployment:** Deploys exclusively to an isolated Portainer staging stack via [`docker-compose.stage.yml`](../../docker-compose.stage.yml) (`PORTAINER_STAGE_STACK_ID` / `PORTAINER_NIGHTLY_STACK_ID`). Containers (`msp_server_stage`, `msp_client_stage`, `msp_mcp_stage`), volumes (`*_stage`), and Traefik ingress (`stage.velmartech.com.do`) are 100% decoupled from the production stack (Stack 17).
+- **Production Isolation Guard:** If `PORTAINER_STAGE_STACK_ID` is unset, the deployment step skips gracefully, ensuring the nightly workflow will NEVER touch or mutate production.
 
 ---
 

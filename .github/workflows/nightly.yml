@@ -382,7 +382,8 @@ jobs:
       PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
       PORTAINER_API_KEY: ${{ secrets.PORTAINER_API_KEY }}
       PORTAINER_ENDPOINT_ID: ${{ secrets.PORTAINER_STAGE_ENDPOINT_ID || secrets.PORTAINER_ENDPOINT_ID }}
-      PORTAINER_STACK_ID: ${{ secrets.PORTAINER_STAGE_STACK_ID || secrets.PORTAINER_NIGHTLY_STACK_ID || secrets.PORTAINER_STACK_ID }}
+      PORTAINER_STACK_ID: ${{ secrets.PORTAINER_STAGE_STACK_ID || secrets.PORTAINER_NIGHTLY_STACK_ID }}
+      COMPOSE_FILE: docker-compose.stage.yml
       PORTAINER_TLS_INSECURE: "true"
     steps:
       - name: Checkout Code
@@ -390,7 +391,20 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Validate Staging Target Configuration
+        id: validate_target
+        run: |
+          if [ -z "${PORTAINER_STACK_ID}" ]; then
+            echo "::warning::Neither PORTAINER_STAGE_STACK_ID nor PORTAINER_NIGHTLY_STACK_ID secret is defined. Staging deployment skipped to prevent modifying production stack (Stack 17)."
+            echo "> ⚠️ **Staging Deployment Skipped:** Staging stack ID not configured in repository secrets. Production stack was untouched." >> "${GITHUB_STEP_SUMMARY}"
+            echo "skip_deploy=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "Targeting Staging Portainer Stack: ${PORTAINER_STACK_ID}"
+            echo "skip_deploy=false" >> "${GITHUB_OUTPUT}"
+          fi
+
       - name: Capture Rollback Point
+        if: steps.validate_target.outputs.skip_deploy != 'true'
         run: |
           set -euo pipefail
           CURL_OPTS=(-sfS --max-time 30)
@@ -399,7 +413,7 @@ jobs:
           fi
           RESP="$(curl "${CURL_OPTS[@]}" \
             -H "X-API-Key: ${PORTAINER_API_KEY}" \
-            "${PORTAINER_URL%/}/api/endpoints/${PORTAINER_ENDPOINT_ID}/docker/containers/msp_server_prod/json" || true)"
+            "${PORTAINER_URL%/}/api/endpoints/${PORTAINER_ENDPOINT_ID}/docker/containers/msp_server_stage/json" || true)"
           IMG="$(jq -r '.Config.Image // ""' <<<"${RESP}" 2>/dev/null || true)"
           TAG="${IMG##*:}"
           if [ -n "${TAG}" ] && [ "${TAG}" != "${IMG}" ]; then
@@ -407,10 +421,11 @@ jobs:
             echo "Rollback point recorded: ${TAG}"
           else
             echo "PREVIOUS_VERSION=" >> "${GITHUB_ENV}"
-            echo "::warning::No running server container found — automatic rollback disabled for this run."
+            echo "::warning::No running msp_server_stage container found — automatic rollback disabled for this run."
           fi
 
       - name: Pre-warm Image Pulls on VPS
+        if: steps.validate_target.outputs.skip_deploy != 'true'
         uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
         env:
           VERSION: ${{ needs.prepare.outputs.version }}
@@ -430,11 +445,13 @@ jobs:
               fi
             done
 
-      - name: Update Stack via Portainer API
+      - name: Update Staging Stack via Portainer API
+        if: steps.validate_target.outputs.skip_deploy != 'true'
         id: deploy_stack
-        run: bash scripts/portainer-stack-update.sh "${VERSION}"
+        run: bash scripts/portainer-stack-update.sh "${VERSION}" "docker-compose.stage.yml"
 
-      - name: Verify Application Health
+      - name: Verify Staging Application Health
+        if: steps.validate_target.outputs.skip_deploy != 'true'
         id: health
         uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
         with:
@@ -445,44 +462,44 @@ jobs:
           script: |
             SERVER_HEALTHY=false
             for attempt in $(seq 1 12); do
-              if docker exec msp_server_prod node -e \
+              if docker exec msp_server_stage node -e \
                 "fetch('http://127.0.0.1:3001/api/v1/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))" >/dev/null 2>&1; then
-                echo "[health] Server API healthy (attempt ${attempt}/12)"
+                echo "[health] Staging Server API healthy (attempt ${attempt}/12)"
                 SERVER_HEALTHY=true
                 break
               fi
-              echo "[health] Waiting for API health... (${attempt}/12)"
+              echo "[health] Waiting for Staging API health... (${attempt}/12)"
               sleep 5
             done
 
             if [ "${SERVER_HEALTHY}" != "true" ]; then
-              echo "[health] ERROR: server failed health verification after 12 attempts"
+              echo "[health] ERROR: staging server failed health verification after 12 attempts"
               exit 1
             fi
 
             for attempt in $(seq 1 12); do
-              if docker exec msp_mcp_prod wget -q --spider http://127.0.0.1:3005/health >/dev/null 2>&1; then
-                echo "[health] MCP Server healthy (attempt ${attempt}/12)"
+              if docker exec msp_mcp_stage wget -q --spider http://127.0.0.1:3005/health >/dev/null 2>&1; then
+                echo "[health] Staging MCP Server healthy (attempt ${attempt}/12)"
                 exit 0
               fi
-              echo "[health] Waiting for MCP Server health... (${attempt}/12)"
+              echo "[health] Waiting for Staging MCP Server health... (${attempt}/12)"
               sleep 5
             done
-            echo "[health] WARNING: MCP server container health check timed out"
+            echo "[health] WARNING: Staging MCP server container health check timed out"
             exit 0
 
-      - name: Rollback to Previous Version
-        if: steps.deploy_stack.outcome == 'failure' || steps.health.outcome == 'failure'
+      - name: Rollback to Previous Staging Version
+        if: steps.validate_target.outputs.skip_deploy != 'true' && (steps.deploy_stack.outcome == 'failure' || steps.health.outcome == 'failure')
         run: |
           if [ -z "${PREVIOUS_VERSION:-}" ]; then
-            echo "::error::Nightly deployment failed and no rollback point exists — manual intervention required."
+            echo "::error::Staging deployment failed and no rollback point exists — manual intervention required."
             exit 1
           fi
-          echo "::warning::Nightly deployment failed — rolling back to ${PREVIOUS_VERSION}"
-          bash scripts/portainer-stack-update.sh "${PREVIOUS_VERSION}"
+          echo "::warning::Staging deployment failed — rolling back to ${PREVIOUS_VERSION}"
+          bash scripts/portainer-stack-update.sh "${PREVIOUS_VERSION}" "docker-compose.stage.yml"
 
       - name: Verify Rollback Health
-        if: steps.deploy_stack.outcome == 'failure' || steps.health.outcome == 'failure'
+        if: steps.validate_target.outputs.skip_deploy != 'true' && (steps.deploy_stack.outcome == 'failure' || steps.health.outcome == 'failure')
         uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -491,27 +508,29 @@ jobs:
           port: ${{ secrets.VPS_PORT || 22 }}
           script: |
             for attempt in $(seq 1 12); do
-              if docker exec msp_server_prod node -e \
+              if docker exec msp_server_stage node -e \
                 "fetch('http://127.0.0.1:3001/api/v1/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))" >/dev/null 2>&1; then
-                echo "[health] Rollback healthy (attempt ${attempt}/12)"
+                echo "[health] Staging rollback healthy (attempt ${attempt}/12)"
                 exit 0
               fi
-              echo "[health] Waiting for rollback health... (${attempt}/12)"
+              echo "[health] Waiting for staging rollback health... (${attempt}/12)"
               sleep 5
             done
-            echo "[health] ERROR: rollback failed health verification"
+            echo "[health] ERROR: staging rollback failed health verification"
             exit 1
 
       - name: Write Deployment Summary
+        if: steps.validate_target.outputs.skip_deploy != 'true'
         run: |
           {
-            echo "### 🌙 ✅ Nightly Deployment Successful"
+            echo "### 🌙 ✅ Nightly Staging Deployment Successful"
             echo ""
             echo "| Component | Image | Digest |"
             echo "| --------- | ----- | ------ |"
             echo "| Server | \`${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner_lc }}/${{ env.SERVER_IMAGE }}:${{ needs.prepare.outputs.version }}\` | \`${{ needs.build-server.outputs.digest }}\` |"
             echo "| Client | \`${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner_lc }}/${{ env.CLIENT_IMAGE }}:${{ needs.prepare.outputs.version }}\` | \`${{ needs.build-client.outputs.digest }}\` |"
             echo "| MCP Server | \`${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner_lc }}/${{ env.MCP_IMAGE }}:${{ needs.prepare.outputs.version }}\` | \`${{ needs.build-mcp.outputs.digest }}\` |"
+            echo "| Staging Stack ID | \`${PORTAINER_STACK_ID}\` | |"
             echo "| Rollback Point | \`${PREVIOUS_VERSION:-n/a}\` | |"
           } >> "${GITHUB_STEP_SUMMARY}"
 
