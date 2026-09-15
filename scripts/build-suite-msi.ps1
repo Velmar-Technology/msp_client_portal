@@ -108,6 +108,16 @@ $loaderCandidates = @(
 $foundLoader = $loaderCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 
 if (-not $foundLoader) {
+    $discovered = Get-ChildItem -Path (Join-Path $trayDir "src-tauri\target") -Filter "WebView2Loader.dll" -Recurse -ErrorAction SilentlyContinue |
+        Where-Object { $_.FullName -match 'x64' } | Select-Object -First 1
+    if ($discovered) {
+        $destPath = Join-Path $trayDir "src-tauri\target\release\WebView2Loader.dll"
+        Copy-Item -Path $discovered.FullName -Destination $destPath -Force
+        $foundLoader = $destPath
+    }
+}
+
+if (-not $foundLoader) {
     Write-Error "WebView2Loader.dll not found. msp-tray requires WebView2Loader.dll runtime companion."
     exit 1
 }

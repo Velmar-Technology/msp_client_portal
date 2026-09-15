@@ -138,7 +138,15 @@ npm run sentinel:op -- plan:provision --user="user@example.com" --plan=Basic --c
 ```
 *MCP Alternative:* `msp_provision_subscription_plan` with `{ user, plan, cycle, equipmentCount, markPaid }`.
 
-#### 4. Invoice Void & Removal
+#### 4. Device Relocation Between Workspaces
+Moves active registered endpoints, device tokens, telemetry bindings, and associated tickets between user workspaces/tenants atomically:
+```bash
+npm run sentinel:op -- device:move --from="user1@example.com" --to="user2@example.com"
+npm run sentinel:op -- device:move --from="user1@example.com" --to="user2@example.com" --dry-run
+npm run sentinel:op -- workspace:inspect --search="user@example.com"
+```
+
+#### 5. Invoice Void & Removal
 Voids or removes an invoice in case of erroneous placement or complimentary adjustment:
 ```bash
 npm run sentinel:op -- invoice:void --invoice=INV-2026-XXXXXX
@@ -230,9 +238,92 @@ If the invariant breach can be remediated safely and automatically without human
    npm -w server run sentinel:audit -- --hours=24 --dry-run
    ```
 
+## 6. Standardized Output Format (5-Tier Idempotent Response Standard)
+
+All integrity audits, sequence reviews, and autonomous remediation outputs MUST adhere strictly to the following 5-tier idempotent response contract.
+Consecutive invocations on the same temporal window, tenant, or sequence state MUST yield identical, idempotent results without generating duplicate mutations, duplicate test specs, or redundant OpEx postings.
+
+### Tier 1: 🔍 Executive Header & Idempotency Envelope
+- **Audit Scope & Target:** `[SCOPE: GLOBAL | TENANT: <TENANT_UUID>]`
+- **Idempotency Key:** `sentinel:audit:<TENANT_UUID|GLOBAL>:<WINDOW_HOURS>:<MAX_EVENT_TIMESTAMP_OR_HASH>`
+- **Execution State:** `[FRESH_EVALUATION | IDEMPOTENT_NOOP | ALREADY_REMEDIATED]`
+  - Use `IDEMPOTENT_NOOP` if no new sequences or audit events have occurred within the window since the last audit.
+  - Use `ALREADY_REMEDIATED` if previously flagged violations were already healed and invariant state is verified `PASS`.
+- **System Integrity Status:** `[STATUS: PASS | WARN | FAIL]`
+- **Temporal Inspection Window:** `<START_DATE>` to `<END_DATE>` (`<HOURS>h` window)
+- **Sequence Volume:** `<COUNT>` total causal action sequences evaluated across all domains.
+- **Violation Tally:** `<COUNT>` business logic violations detected across `BL-101` to `BL-802`.
+- **Circuit Breaker Health:** `HEALTHY (<N>/5 fixes used for tenant in window)` or `TRIPPED` (@see BL-302).
+
+### Tier 2: 📊 Business Logic Scorecard Table (BL-101 to BL-802)
+Present rule evaluation results in a structured markdown scorecard deterministically sorted by Rule Code:
+
+| Rule Code | Invariant / Rule Name | Category | Evaluated | Violations | Status |
+| :--- | :--- | :--- | :---: | :---: | :---: |
+| **BL-101** | 1-Hour SLA Cancellation | TICKETING | 24 | 0 | ✅ PASS |
+| **BL-104** | Capacity Tier Escalation | TICKETING | 18 | 1 | ❌ FAIL |
+| **BL-202** | License True-Up | SUBSCRIPTIONS | 42 | 0 | ✅ PASS |
+| **BL-401** | Subscription Reactivation | BILLING | 6 | 1 | ❌ FAIL |
+| **BL-701** | 18% ITBIS Tax & NCF | BILLING | 15 | 0 | ✅ PASS |
+| **BL-702** | Non-Payment Scale | BILLING | 12 | 0 | ✅ PASS |
+| **BL-801** | Technician Bounties & OpEx | FINANCIAL | 30 | 1 | ⚠️ WARN |
+| **BL-802** | 70/30 Net Profit Split | FINANCIAL | 1 | 0 | ✅ PASS |
+
+### Tier 3: 🛠️ Action Log & Idempotent Remediation Pipeline
+Detail all self-healing actions executed or skipped, strictly enforcing pre-mutation state verification (Idempotency Guards):
+
+| Rule Code | Target Entity | Execution Status | Action Taken | Operational Details / Result |
+| :--- | :--- | :---: | :--- | :--- |
+| **BL-401** | `sub_9a8b7c` | ✅ REPAIRED | `SubscriptionRepository.updateStatus` | Re-activated linked subscription for paid invoice `INV-2026-0042` |
+| **BL-104** | `tkt_3f2e1d` | ✅ REPAIRED | `TicketEventRepository.create` | Emitted `TIER_ESCALATED`; routed P1 ticket to Tier 2 specialist queue |
+| **BL-801** | `tkt_5a4b3c` | 🔄 IDEMPOTENT_NOOP | `TechnicianEarningsService.postOpEx` | Bounty ($18.00) and OpEx already exist in ledger; duplicate insertion skipped |
+| **BL-801** | `tkt_9x8y7z` | 🔍 SIMULATED | `TechnicianEarningsService.postOpEx` | Dry-run: would credit $18.00 bounty and log Pre-Split OpEx in `expenses` |
+
+- **Pre-Mutation State Verification (Idempotency Guard):** Every remediator checks live entity state prior to write. If entity is already in desired state, emit `🔄 IDEMPOTENT_NOOP`.
+- **Circuit Breaker Consumption:** 2 of 5 automated actions consumed for tenant `<TENANT_UUID>` in current 60m window (Idempotent No-Ops do NOT consume quota).
+- **Dead-Letter Queue (DLQ):** 0 unresolved items.
+
+### Tier 4: 📑 Causal Violation Evidence & Synthesized Vitest Specs
+Every audit with violations or generated tests MUST include exact causal evidence and regression test locations.
+**Test Synthesis Deduplication Rule:** If a test spec file `bl-<rule>-<entityId>.spec.ts` already exists on disk, emit `> [IDEMPOTENT NO-OP] Vitest regression spec for 'bl-<rule>-<entityId>' already exists at 'server/src/modules/system/sentinel/__tests__/regressions/bl-<rule>-<entityId>.spec.ts'. Duplicate file synthesis skipped.` instead of re-generating.
+
+#### 📋 Causal Violation Evidence & Audit Trail
+```json
+{
+  "idempotencyKey": "sentinel:evidence:bl401:sub_9a8b7c:2026-09-14",
+  "ruleCode": "BL-401",
+  "ruleName": "Subscription Reactivation",
+  "severity": "CRITICAL",
+  "entityType": "subscription",
+  "entityId": "sub_9a8b7c",
+  "tenantId": "c1f7a40b-...",
+  "violatedAt": "2026-09-14T15:30:00.000Z",
+  "rationale": "Invoice INV-2026-0042 was marked PAID at 14:00, but subscription sub_9a8b7c remained EXPIRED for >90m.",
+  "evidence": {
+    "invoiceId": "INV-2026-0042",
+    "invoiceStatus": "PAID",
+    "subscriptionStatus": "EXPIRED",
+    "paidAt": "2026-09-14T14:00:00.000Z"
+  }
+}
+```
+
+#### 🧪 Auto-Generated Vitest Regression Specs
+- `server/src/modules/system/sentinel/__tests__/regressions/bl-401-sub-reactivation-sub_9a8b7c.spec.ts`
+- `server/src/modules/system/sentinel/__tests__/regressions/bl-104-tier-escalation-tkt_3f2e1d.spec.ts`
+
+### Tier 5: 🎯 Actionable Next Steps & Idempotency Verification
+- Provide 2-3 prioritized operational recommendations.
+- Explicitly prompt for human authorization if destructive actions (e.g. Day 30 data purge under `BL-702`) are pending:
+  - *"⚠️ Day 30 Non-Payment Purge (`BL-702`): Tenant `<TENANT_NAME>` has been suspended for 30+ days. Permanent Nextcloud and device credential purging requires explicit human confirmation. Run: `npm run sentinel:op -- tenant:purge --tenant=<UUID>`"*
+- Provide exact CLI verification commands to re-run and confirm that subsequent audit produces `IDEMPOTENT_NOOP` with 0 new mutations:
+  ```bash
+  npm -w server run sentinel:audit -- --hours=24 --tenant=<TENANT_UUID>
+  ```
+
 ---
 
-## 6. Definition of Done for Integrity Operations
+## 7. Definition of Done for Integrity Operations
 
 An integrity audit or remediation task is considered complete only when:
 1. **Zero Unaccounted Failures:** All checkers produce a definitive `PASS`, `WARN`, or `FAIL` scorecard entry.
@@ -242,7 +333,7 @@ An integrity audit or remediation task is considered complete only when:
 
 ---
 
-## 7. Vaultwarden & Password Manager Operational Guardrails (BL-205 & BL-206)
+## 8. Vaultwarden & Password Manager Operational Guardrails (BL-205 & BL-206)
 
 When diagnosing, auditing, or remediating Bitwarden/Vaultwarden integrations in the MSP Portal, agents must observe these non-negotiable operational invariants:
 

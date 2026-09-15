@@ -101,24 +101,76 @@ Use when administrative tasks require elevated privileges (@see BL-302):
 
 ---
 
-## 5. Output Format Standard
+## 5. Output Format Standard (5-Tier Idempotent Response Standard)
 
-### Telemetry Table Format
+All diagnostic, triage, and remediation outputs MUST adhere strictly to the following 5-tier idempotent response contract.
+Consecutive invocations on the same ticket, endpoint, or state MUST yield identical, idempotent results without generating duplicate mutations, duplicate notes, or redundant remediation attempts.
+
+### Tier 1: 🔍 Executive Header & Idempotency Envelope
+- **Incident / Target:** `#<TICKET_ID>` — `<Brief Title or Symptom>`
+- **Idempotency Key:** `msp:triage:<TICKET_ID>:<STATE_FINGERPRINT>` (hash of status + priority + last_event_id + endpoint_id)
+- **Execution State:** `[FRESH_EVALUATION | IDEMPOTENT_NOOP | ALREADY_RESOLVED]`
+  - Use `IDEMPOTENT_NOOP` if ticket and endpoint state are unchanged since previous triage run.
+  - Use `ALREADY_RESOLVED` if verified telemetry indicates issue is resolved.
+- **Health & Posture Status:** `[STATUS: HEALTHY | DEGRADED | CRITICAL]`
+- **Priority & SLA Tier:** `<PRIORITY>` (`<CATEGORY>`) — Urgency validation (@see BL-104), SLA deadline countdown.
+- **Affected Endpoint:** `<HOSTNAME>` (Slot ID: `<SLOT_ID>`, OS: `<OS_VERSION>`, Rust Agent: `ONLINE` / `OFFLINE`)
+- **Deterministic Hypothesis:** 1-2 sentence deterministic root cause analysis separating symptoms from underlying faults.
+
+### Tier 2: 📊 Structured Telemetry & Metric Assessment Table
+Present live RMM and host diagnostic readings in a structured markdown table comparing metrics against defined thresholds, including delta from previous assessment when available:
+
+| Metric / Component | Observed Value | Baseline / Threshold | Assessment / Impact | Status |
+| :--- | :--- | :--- | :--- | :---: |
+| **CPU Usage** | `92% (svchost.exe)` | `< 80% (Warning)` | Sustained thread saturation in background | ⚠️ WARN |
+| **Memory Footprint** | `15.1 GB / 16.0 GB (94%)` | `< 85% (Critical)` | Severe pagefile thrashing, working set bloated | ❌ CRIT |
+| **Disk Free (C:)** | `3.8 GB / 256 GB (1.5%)` | `> 10% (Critical)` | Critical storage crunch, crash dumps in temp | ❌ CRIT |
+| **Network Latency** | `18ms (Gateway)` | `< 50ms` | Normal gateway latency, zero packet loss | ✅ OK |
+| **Pending Patches** | `3 updates (1 Critical)` | `0 unpatched` | Security update KB5034441 pending install | ⚠️ WARN |
+
+### Tier 3: 🛠️ Action Log & Idempotent Remediation Pipeline
+Enforce pre-mutation live state verification. Actions must be idempotent; if an entity is already in the target state, emit `NO_OP`:
+
+- **Pre-Mutation State Verification (Idempotency Guard):**
+  - Live check confirms whether target service/storage was already remediated prior to executing write commands.
+- **Executed Actions (Non-Disruptive / Safe):**
+  - Queried live telemetry and patch catalogue via `msp_get_device_telemetry` and `msp_list_device_patches`.
+  - Analyzed disk hotspots via `msp_analyze_disk_storage`; identified 11.4 GB in `C:\Windows\Temp`.
+- **Idempotent No-Ops (Skipped Repetitions):**
+  - `[IDEMPOTENT NO-OP]` Service `Spooler` is already running (`state: RUNNING`); restart skipped.
+- **Pending Human Confirmation (Disruptive / Modifying):**
+  - **Proposed Action:** Clear Windows temporary caches (`msp_clean_temp_storage`).
+  - **Expected Impact:** Reclaims ~11 GB storage on `C:`; zero system disruption.
+  - **Idempotency Token:** `msp:remediate:clean_temp:<HOSTNAME>:<DATE>`
+  - **Confirmation Prompt:** *"Technician approval required to execute `msp_clean_temp_storage` on endpoint `<HOSTNAME>`. Proceed? [Y/N]"*
+
+### Tier 4: 📑 Dual-Note Deliverables (with Deduplication Tokens)
+Every triage conclusion MUST generate both deliverables tagged with the deterministic idempotency token.
+**Deduplication Rule:** If a note containing the current `Idempotency Key` already exists in ticket replies or event history, output `> [IDEMPOTENT NO-OP] Triage note matching key 'msp:triage:<TICKET_ID>:<STATE_FINGERPRINT>' already recorded in ticket history. Duplicate note generation suppressed.` instead of re-posting.
+
+#### 📝 Proposed Internal Technician Note
 ```markdown
-| Metric | Current Value | Threshold / Status | Assessment |
-| :--- | :--- | :--- | :--- |
-| CPU Usage | 92% | > 80% (Warning) | High load caused by svchost |
-| Memory Used | 14.8 GB / 16.0 GB (92%) | > 85% (Critical) | High memory pressure |
-| Disk Free (C:) | 8.2 GB / 256 GB (3.2%) | < 10% (Critical) | Immediate temp cleanup needed |
+<!-- IDEMPOTENCY_KEY: msp:triage:<TICKET_ID>:<STATE_FINGERPRINT> -->
+> [Triage Summary] Diagnosed memory exhaustion (94%) and disk capacity crunch (<4GB free on C:) caused by runaway crash dump accumulation.
+> [Telemetry] CPU: 92% | RAM: 15.1/16GB | C: Free: 3.8GB | Agent: Online.
+> [Action Taken] Isolated disk hotspots via msp_analyze_disk_storage.
+> [Next Steps] Requesting operator sign-off to purge temp storage (msp_clean_temp_storage).
 ```
 
-### Note Drafting Template
+#### ✉️ Proposed Client-Facing Message
 ```markdown
-### 📝 Proposed Internal Technician Note
-> [Triage Summary] Diagnosed memory exhaustion (92%) and storage crunch (<4GB free on C:).
-> [Action Taken] Analyzed disk hotspots via msp_analyze_disk_storage; found 12GB of stale crash dumps.
-> [Next Steps] Requesting approval to purge temp directory and restart print spooler.
-
-### ✉️ Proposed Client-Facing Message
-> Hello, our automated support copilot has completed an initial diagnostic of your system. We identified low available disk space on drive C: which is causing sluggish performance. Our engineering team is reviewing this to clear unnecessary temporary files and restore normal operation shortly.
+<!-- IDEMPOTENCY_KEY: msp:client_msg:<TICKET_ID>:<STATE_FINGERPRINT> -->
+> Hello [Client Name],
+> 
+> Our automated support copilot has completed an initial diagnostic of your workstation ([Hostname]). We identified that low available disk space on your primary drive is contributing to system sluggishness.
+> 
+> Our engineering team is clearing unnecessary temporary files to restore peak performance shortly. No action is required on your part, and we will update you as soon as this is resolved.
 ```
+
+### Tier 5: 🎯 Actionable Next Steps & Idempotency Verification
+- Provide 2-3 prioritized operational recommendations.
+- Include verification command confirming that re-running the diagnostic yields `IDEMPOTENT_NOOP`:
+  ```powershell
+  # Idempotent verification check after temp clean:
+  Get-PSDrive C | Select-Object Used,Free
+  ```

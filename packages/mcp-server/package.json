@@ -10,10 +10,15 @@
   "scripts": {
     "dev": "tsx src/index.ts",
     "dev:http": "tsx src/index.ts --http",
+    "dev:caf": "tsx src/index.ts --caf",
+    "dev:caf:http": "tsx src/index.ts --http --caf",
     "build": "tsc",
     "start": "node dist/index.js",
     "start:http": "node dist/index.js --http",
+    "start:caf": "node dist/index.js --caf",
+    "start:caf:http": "node dist/index.js --http --caf",
     "agent": "tsx scripts/runMspSupportAgent.ts",
+    "agent:caf": "tsx scripts/runCafQualityAgent.ts",
     "test": "vitest run"
   },
   "dependencies": {
