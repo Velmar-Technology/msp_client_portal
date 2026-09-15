@@ -4,11 +4,34 @@ import dotenv from 'dotenv';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { MspApiClient } from './client/MspApiClient.js';
-import { createMspMcpServer } from './serverFactory.js';
+import { createMspMcpServer, type McpServerProfile } from './serverFactory.js';
 import { validateInboundApiKey } from './authUtils.js';
 
 // Load environment variables (.env)
 dotenv.config();
+
+/**
+ * Resolves the active server profile.
+ * Precedence: CLI args (--caf, --msp) > MCP_PROFILE env var > 'all'
+ */
+function resolveServerProfile(): McpServerProfile {
+  if (process.argv.includes('--caf') || process.argv.includes('--caf-only')) {
+    return 'caf-education';
+  }
+  if (process.argv.includes('--msp') || process.argv.includes('--msp-only')) {
+    return 'msp-support';
+  }
+  const envProfile = process.env.MCP_PROFILE?.trim().toLowerCase();
+  if (envProfile === 'caf-education' || envProfile === 'caf') {
+    return 'caf-education';
+  }
+  if (envProfile === 'msp-support' || envProfile === 'msp') {
+    return 'msp-support';
+  }
+  return 'all';
+}
+
+const activeProfile = resolveServerProfile();
 
 /**
  * Resolves the backend API base URL.
@@ -36,22 +59,23 @@ const apiUrl = resolveApiUrl();
 const apiToken = (process.env.MSP_API_KEY || process.env.MSP_API_TOKEN || '').trim();
 const tenantId = process.env.MSP_TENANT_ID;
 
-if (!apiUrl) {
-  console.error('[MSP MCP Server Configuration Error]: MSP_API_URL is required. Please configure MSP_API_URL in mcp_config.json or your environment.');
+// If we are strictly in 'caf-education' profile, connection to MSP IT backend is optional
+const requiresMspBackend = activeProfile !== 'caf-education';
+
+if (requiresMspBackend && !apiUrl) {
+  console.error('[MSP MCP Server Configuration Error]: MSP_API_URL is required for MSP IT profiles. Please configure MSP_API_URL in mcp_config.json or your environment.');
   process.exit(1);
 }
 
-if (!apiToken) {
-  console.error('[MSP MCP Server Configuration Error]: MSP_API_KEY is required to authenticate requests. Please configure MSP_API_KEY in mcp_config.json or your environment.');
+if (requiresMspBackend && !apiToken) {
+  console.error('[MSP MCP Server Configuration Error]: MSP_API_KEY is required for MSP IT profiles. Please configure MSP_API_KEY in mcp_config.json or your environment.');
   process.exit(1);
 }
 
-// Initialize the API client adapter
-const apiClient = new MspApiClient({
-  apiUrl,
-  apiToken,
-  tenantId,
-});
+// Initialize the API client adapter (optional for standalone CAF mode)
+const apiClient = apiUrl && apiToken
+  ? new MspApiClient({ apiUrl, apiToken, tenantId })
+  : undefined;
 
 const isHttpMode = process.argv.includes('--http') || process.env.MCP_TRANSPORT === 'http';
 
@@ -68,7 +92,10 @@ async function main(): Promise<void> {
       // CORS & standard headers
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key, X-Tenant-Id, X-User-Id, X-BYOK-Api-Key, X-BYOK-Provider, X-BYOK-Model');
+      res.setHeader(
+        'Access-Control-Allow-Headers',
+        'Content-Type, Authorization, X-API-Key, X-Tenant-Id, X-User-Id, X-BYOK-Api-Key, X-BYOK-Provider, X-BYOK-Model'
+      );
 
       if (req.method === 'OPTIONS') {
         res.writeHead(204);
@@ -78,28 +105,55 @@ async function main(): Promise<void> {
 
       const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
 
+      // 1. Health check & Capabilities Discovery
       if (
         url.pathname === '/health' ||
         url.pathname === '/' ||
         url.pathname === '/mcp/health' ||
-        (req.method === 'GET' && (url.pathname === '/mcp' || url.pathname === '/api/v1/mcp'))
+        url.pathname === '/mcp/caf/health' ||
+        (req.method === 'GET' && (url.pathname === '/mcp' || url.pathname === '/mcp/caf' || url.pathname === '/api/v1/mcp'))
       ) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(
           JSON.stringify({
             status: 'UP',
-            server: 'msp-support-server',
-            version: '1.10.2',
+            server: activeProfile === 'caf-education' ? 'caf-education-server' : 'msp-unified-server',
+            version: '1.12.0',
             spec: 'MCP 2026-07-28 (Stateless Streamable HTTP)',
             transport: 'streamable-http',
+            activeProfile,
+            availableEndpoints: {
+              cafIsolated: '/mcp/caf (Academic CAF 9 Criteria & PII Privacy Only)',
+              supportAdmin: '/mcp (Configured Profile / Administrative)',
+            },
             timestamp: new Date().toISOString(),
           })
         );
         return;
       }
 
+      // 2. Route: /mcp/caf -> STRICTLY ISOLATED CAF EDUCATIONAL TOOLS ONLY
+      if (url.pathname === '/mcp/caf' || url.pathname === '/api/v1/mcp/caf') {
+        try {
+          const transport = new StreamableHTTPServerTransport({
+            sessionIdGenerator: undefined,
+          });
+          // Explicitly instantiate server strictly with 'caf-education' profile (zero IT tools)
+          const mcpServer = createMspMcpServer(undefined, 'caf-education');
+          await mcpServer.connect(transport);
+          await transport.handleRequest(req, res);
+        } catch (err: any) {
+          console.error('[CAF MCP HTTP Transport Error]:', err);
+          if (!res.headersSent) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: err?.message || 'Internal CAF MCP Server Error' }));
+          }
+        }
+        return;
+      }
+
+      // 3. Route: /mcp (Standard / Admin Endpoint)
       if (url.pathname === '/mcp' || url.pathname === '/api/v1/mcp') {
-        // Inbound Authentication for Copilot Studio / HTTP Clients (Option B)
         const expectedInboundKey = (process.env.MCP_SERVER_API_KEY || apiToken).trim();
         const requireAuth = process.env.MCP_REQUIRE_AUTH !== 'false';
 
@@ -122,7 +176,7 @@ async function main(): Promise<void> {
           const transport = new StreamableHTTPServerTransport({
             sessionIdGenerator: undefined,
           });
-          const mcpServer = createMspMcpServer(apiClient);
+          const mcpServer = createMspMcpServer(apiClient, activeProfile);
           await mcpServer.connect(transport);
           await transport.handleRequest(req, res);
         } catch (err: any) {
@@ -140,16 +194,17 @@ async function main(): Promise<void> {
     });
 
     httpServer.listen(port, () => {
-      console.log(`[MSP MCP Server] Stateless Streamable HTTP Server (2026-07-28 Spec) listening on http://0.0.0.0:${port}/mcp`);
-      console.log(`[MSP MCP Server] Inbound Authentication: ${process.env.MCP_REQUIRE_AUTH !== 'false' ? 'ENABLED (X-API-Key / Authorization)' : 'DISABLED'}`);
-      console.log(`[MSP MCP Server] Connected to Backend API: ${apiUrl}`);
+      console.log(`[MSP MCP Server] Stateless Streamable HTTP Server listening on port ${port}`);
+      console.log(`  🎓 Isolated CAF Education Endpoint: http://0.0.0.0:${port}/mcp/caf`);
+      console.log(`  🛡️  General/Administrative Endpoint: http://0.0.0.0:${port}/mcp`);
+      console.log(`  ⚙️  Active Server Profile: ${activeProfile.toUpperCase()}`);
     });
   } else {
     // Default Stdio Mode for Desktop & IDE Subagents
-    const mcpServer = createMspMcpServer(apiClient);
+    const mcpServer = createMspMcpServer(apiClient, activeProfile);
     const transport = new StdioServerTransport();
     await mcpServer.connect(transport);
-    console.error(`[MSP MCP Server] Started and listening on stdio transport. Backend API: ${apiUrl}`);
+    console.error(`[MSP MCP Server] Started in stdio transport. Profile: ${activeProfile.toUpperCase()}`);
   }
 }
 
@@ -157,6 +212,12 @@ main().catch((error) => {
   console.error('[MSP MCP Server Fatal Error]:', error);
   process.exit(1);
 });
+
+export {
+  createMspMcpServer,
+  type McpServerProfile,
+  type CreateMcpServerOptions,
+} from './serverFactory.js';
 
 export {
   MspSupportAgent,

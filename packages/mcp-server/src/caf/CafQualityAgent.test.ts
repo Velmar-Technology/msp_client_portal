@@ -3,6 +3,7 @@ import { CafPrivacyFilter } from './CafPrivacyFilter.js';
 import { CafQualityAgent, CAF_CRITERIA } from './CafQualityAgent.js';
 import { ByokLlmClient, ByokKeyMissingError } from '../byok/ByokLlmClient.js';
 import { TenantByokManager } from '../byok/TenantByokManager.js';
+import { createMspMcpServer } from '../serverFactory.js';
 
 describe('CafPrivacyFilter (Dominican Law 172-13 Data Protection)', () => {
   const filter = new CafPrivacyFilter();
@@ -302,6 +303,25 @@ describe('TenantByokManager (Multi-Tenant BYOK & Privacy Isolation)', () => {
 
     expect(res1.mapping['[CEDULA_01]']).toBe('001-1111111-1');
     expect(res2.mapping['[CEDULA_01]']).toBe('001-2222222-2');
+  });
+});
+
+describe('McpServerProfile Tool Isolation', () => {
+  it('instantiates caf-education profile cleanly without requiring apiClient', () => {
+    const server = createMspMcpServer(undefined, 'caf-education');
+    expect(server).toBeDefined();
+  });
+
+  it('instantiates msp-support profile with administrative tools', () => {
+    const mockApiClient: any = {};
+    const server = createMspMcpServer(mockApiClient, 'msp-support');
+    expect(server).toBeDefined();
+  });
+
+  it('instantiates unified all profile', () => {
+    const mockApiClient: any = {};
+    const server = createMspMcpServer(mockApiClient, 'all');
+    expect(server).toBeDefined();
   });
 });
 

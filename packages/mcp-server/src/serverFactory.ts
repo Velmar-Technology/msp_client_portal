@@ -19,35 +19,80 @@ import { registerMspResources } from './resources/mspResources.js';
 import { registerMspPrompts } from './prompts/mspPrompts.js';
 
 /**
- * Creates and initializes a fully configured McpServer instance with all
- * tools, resources, and prompts registered.
+ * Server profile modes for least-privilege tool isolation.
+ * - 'caf-education': Isolated profile exposing ONLY educational CAF & privacy tools. Zero access to IT/RMM/PowerShell.
+ * - 'msp-support': Traditional MSP IT operations, ticketing, RMM, and device management.
+ * - 'all': Unified profile for administrator oversight and debugging.
+ */
+export type McpServerProfile = 'all' | 'msp-support' | 'caf-education';
+
+/**
+ * Options for configuring McpServer instance creation.
+ */
+export interface CreateMcpServerOptions {
+  profile?: McpServerProfile;
+}
+
+/**
+ * Creates and initializes a fully configured McpServer instance according to
+ * the selected profile, strictly isolating administrative MSP tools from academic CAF tools.
  *
- * @param apiClient - Configured MspApiClient instance
+ * @param apiClient - Configured MspApiClient instance (optional if in 'caf-education' profile)
+ * @param options - Server profile and configuration options
  * @returns Initialized McpServer instance
  */
-export function createMspMcpServer(apiClient: MspApiClient): McpServer {
+export function createMspMcpServer(
+  apiClient?: MspApiClient,
+  options: CreateMcpServerOptions | McpServerProfile = 'all'
+): McpServer {
+  const profile: McpServerProfile =
+    typeof options === 'string'
+      ? options
+      : options.profile ||
+        (process.env.MCP_PROFILE as McpServerProfile) ||
+        'all';
+
+  const isCaf = profile === 'caf-education' || profile === 'all';
+  const isMsp = profile === 'msp-support' || profile === 'all';
+
+  const serverName =
+    profile === 'caf-education'
+      ? 'caf-education-server'
+      : profile === 'msp-support'
+      ? 'msp-support-server'
+      : 'msp-unified-server';
+
   const server = new McpServer({
-    name: 'msp-support-server',
-    version: '1.8.4',
+    name: serverName,
+    version: '1.12.0',
   });
 
-  registerTicketTools(server, apiClient);
-  registerRmmTools(server, apiClient);
-  registerEquipmentTools(server, apiClient);
-  registerSecurityTools(server);
-  registerRemediationTools(server);
-  registerLocalHostTools(server);
-  registerAuthzTools(server, apiClient);
-  registerUserTools(server, apiClient);
-  registerBillingTools(server, apiClient);
-  registerDomainTools(server, apiClient);
-  registerEmailTools(server, apiClient);
-  registerNetworkTools(server);
-  registerStorageTools(server);
-  registerSentinelTools(server, apiClient);
-  registerCafTools(server);
-  registerMspResources(server, apiClient);
-  registerMspPrompts(server);
+  // 1. Register CAF Educational Tools (Least Privilege Isolation)
+  if (isCaf) {
+    registerCafTools(server);
+  }
+
+  // 2. Register MSP Administrative & IT Support Tools
+  if (isMsp) {
+    if (apiClient) {
+      registerTicketTools(server, apiClient);
+      registerRmmTools(server, apiClient);
+      registerEquipmentTools(server, apiClient);
+      registerAuthzTools(server, apiClient);
+      registerUserTools(server, apiClient);
+      registerBillingTools(server, apiClient);
+      registerDomainTools(server, apiClient);
+      registerEmailTools(server, apiClient);
+      registerSentinelTools(server, apiClient);
+      registerMspResources(server, apiClient);
+    }
+    registerSecurityTools(server);
+    registerRemediationTools(server);
+    registerLocalHostTools(server);
+    registerNetworkTools(server);
+    registerStorageTools(server);
+    registerMspPrompts(server);
+  }
 
   return server;
 }

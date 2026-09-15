@@ -163,11 +163,17 @@ Registradas sobre la instancia de `McpServer`:
    MSP_API_URL=https://api.velmartech.com.do/api/v1
    MSP_API_KEY=velmar-system-token
    ```
-2. Iniciar el servicio en el servidor de Velmar:
+2. Iniciar el microservicio con aislamiento de rutas:
    ```bash
+   # Iniciar servidor con ruta aislada /mcp/caf y /mcp
    npm -w packages/mcp-server run start:http
+
+   # O iniciar en modo 100% exclusivo CAF (sin herramientas de IT de Velmar)
+   npm -w packages/mcp-server run start:caf:http
    ```
-3. Endpoint expuesto: `https://mcp.velmartech.com.do/mcp` (con autenticación por encabezado `X-API-Key`).
+3. Endpoints expuestos:
+   * `https://mcp.velmartech.com.do/mcp/caf`: **Aislamiento Total.** Expone exclusivamente las 7 herramientas pedagógicas del modelo CAF y filtro de privacidad. No expone ni ejecuta herramientas de infraestructura IT (PowerShell, tickets, facturación).
+   * `https://mcp.velmartech.com.do/mcp`: Endpoint administrativo de soporte IT para uso del equipo de Velmar (requiere `MCP_SERVER_API_KEY`).
 
 ### Opción B: Integración con Clientes de Escritorio (Claude Desktop / Cursor / IDE)
 En el archivo de configuración MCP (`claude_desktop_config.json`):
@@ -177,17 +183,17 @@ En el archivo de configuración MCP (`claude_desktop_config.json`):
     "caf-quality-agent": {
       "command": "node",
       "args": [
-        "C:/Users/PC/Workspace/msp_client_portal/packages/mcp-server/dist/index.js"
+        "C:/Users/PC/Workspace/msp_client_portal/packages/mcp-server/dist/index.js",
+        "--caf"
       ],
       "env": {
-        "MSP_API_URL": "http://localhost:3000/api/v1",
-        "MSP_API_KEY": "velmar-api-token",
         "BYOK_DEFAULT_API_KEY": "sk-proj-tu-llave-openai-o-anthropic"
       }
     }
   }
 }
 ```
+*Nota: Al incluir el argumento `--caf`, el servidor no requiere credenciales de la API de IT (`MSP_API_KEY`) y corre completamente aislado.*
 
 ### Opción C: Despliegue con Docker (Portainer)
 ```bash
