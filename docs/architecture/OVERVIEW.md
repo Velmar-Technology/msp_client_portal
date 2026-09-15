@@ -318,6 +318,14 @@ Continuous Integration and Deployment is automated via GitHub Actions ([.github/
 
 > **Manual redeploy & rollback:** [`docs/infrastructure/MSP_PORTAL_STACK.md`](docs/infrastructure/MSP_PORTAL_STACK.md) §7 (`scripts/portainer-stack-update.js <version>` or the Portainer UI → Stacks → `msp_portal` → Pull & redeploy).
 
+### 4. Automated Nightly Deployment (`nightly.yml`)
+
+- **Schedule & Trigger:** Runs daily at `04:00 UTC` (`00:00 AST` Dominican Republic time) via GitHub Actions cron, plus on-demand manual dispatch (`workflow_dispatch`).
+- **Versioning Strategy:** Generates nightly semver identifier: `<base_version>-nightly.<YYYYMMDD>.<short_sha>` (e.g. `1.7.0-nightly.20260916.e224326`).
+- **Container Tags:** Pushes `nightly`, `nightly-<YYYYMMDD>`, and commit SHA tags to GHCR for `server`, `client`, and `mcp` images.
+- **Automated Validation:** Enforces the shared quality gates (`quality.yml`) and Trivy vulnerability scan prior to deployment.
+- **Portainer Stack Deployment:** Updates target staging/nightly stack (`PORTAINER_STAGE_STACK_ID` or fallback to `PORTAINER_STACK_ID`), verifies endpoint health over SSH, triggers automatic rollback if health check fails, and dispatches webhook status notifications.
+
 ---
 
 ## Local Setup & Development

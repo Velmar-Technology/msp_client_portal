@@ -1,0 +1,555 @@
+name: Nightly Deployment
+
+# Automated Nightly CD Pipeline:
+#   Schedule: 04:00 UTC (00:00 AST) daily
+#   Flow: prepare -> quality gates -> build & push (parallel) -> security scan
+#         -> [deploy to staging/nightly stack w/ auto-rollback] -> notify
+#
+# Required repository secrets:
+#   VPS_HOST / VPS_USER / VPS_SSH_KEY / VPS_PORT   - Target VPS SSH access (health checks)
+#   PORTAINER_URL                                  - Portainer base URL (e.g. https://host:9443)
+#   PORTAINER_API_KEY                              - Portainer API key (X-API-Key)
+#   PORTAINER_ENDPOINT_ID / PORTAINER_STACK_ID     - Default target environment & stack IDs
+#   PORTAINER_STAGE_STACK_ID (optional)            - Staging stack ID (falls back to PORTAINER_STACK_ID)
+#   PORTAINER_STAGE_ENDPOINT_ID (optional)         - Staging endpoint ID (falls back to PORTAINER_ENDPOINT_ID)
+#   VITE_GOOGLE_CLIENT_ID or GOOGLE_CLIENT_ID      - Google OAuth client ID (Vite build arg)
+#   VITE_PAYPAL_CLIENT_ID                          - PayPal client ID (Vite build arg)
+#   VITE_FARO_URL                                  - Grafana Faro RUM collector URL
+#   VITE_FARO_APP_NAME                             - Optional Faro app name (defaults to msp-client-portal)
+#   DEPLOY_WEBHOOK_URL                             - Optional Slack/Discord/Teams notification webhook
+
+on:
+  schedule:
+    # Runs at 04:00 UTC (00:00 AST Dominican Republic time) every night
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Deploy stack after build & scan"
+        required: false
+        default: true
+        type: boolean
+      targetEnvironment:
+        description: "Target deployment environment"
+        required: false
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - production
+      skipSecurityGate:
+        description: "Report-only security scan — HIGH/CRITICAL CVEs won't block deployment"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  SERVER_IMAGE: msp-services-server
+  CLIENT_IMAGE: msp-services-client
+  MCP_IMAGE: msp-mcp-server
+
+jobs:
+  # ------------------------------------------------------------------
+  # 1. Prepare — compute nightly version, date tag and image namespace
+  # ------------------------------------------------------------------
+  prepare:
+    name: Prepare Nightly Metadata
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      date_tag: ${{ steps.meta.outputs.date_tag }}
+      owner_lc: ${{ steps.meta.outputs.owner_lc }}
+      commit_sha: ${{ steps.meta.outputs.commit_sha }}
+      trigger: ${{ steps.meta.outputs.trigger }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Resolve Nightly Metadata
+        id: meta
+        env:
+          REPO_OWNER: ${{ github.repository_owner }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          OWNER_LC="${REPO_OWNER,,}"
+          BASE_VERSION="$(node -p "require('./client/package.json').version")"
+          DATE_TAG="$(date +'%Y%m%d')"
+          SHORT_SHA="${GITHUB_SHA::7}"
+          VERSION="${BASE_VERSION}-nightly.${DATE_TAG}.${SHORT_SHA}"
+
+          {
+            echo "version=${VERSION}"
+            echo "date_tag=${DATE_TAG}"
+            echo "owner_lc=${OWNER_LC}"
+            echo "commit_sha=${GITHUB_SHA}"
+            echo "trigger=${EVENT_NAME}"
+          } >> "${GITHUB_OUTPUT}"
+
+          {
+            echo "### 🌙 Nightly Build \`${VERSION}\`"
+            echo ""
+            echo "| Field | Value |"
+            echo "| ----- | ----- |"
+            echo "| Nightly Version | \`${VERSION}\` |"
+            echo "| Base Semver | \`${BASE_VERSION}\` |"
+            echo "| Date Tag | \`${DATE_TAG}\` |"
+            echo "| Image Namespace | \`${OWNER_LC}\` |"
+            echo "| Commit | \`${GITHUB_SHA}\` |"
+            echo "| Trigger | \`${EVENT_NAME}\` |"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+  # ------------------------------------------------------------------
+  # 2. Quality gates — lint, typecheck & tests across all workspaces
+  # ------------------------------------------------------------------
+  quality-gates:
+    name: Quality Gates
+    uses: ./.github/workflows/quality.yml
+    permissions:
+      contents: read
+
+  # ------------------------------------------------------------------
+  # 3a. Build & push server container image
+  # ------------------------------------------------------------------
+  build-server:
+    name: Build & Push Server
+    needs: [prepare, quality-gates]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.11.1
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.4.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker Metadata
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.7.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner_lc }}/${{ env.SERVER_IMAGE }}
+          tags: |
+            type=raw,value=${{ needs.prepare.outputs.version }}
+            type=raw,value=nightly
+            type=raw,value=nightly-${{ needs.prepare.outputs.date_tag }}
+            type=sha,format=long,prefix=
+
+      - name: Build & Push Server Image
+        id: push
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.18.0
+        with:
+          context: .
+          file: server/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha,scope=build-server
+          cache-to: type=gha,mode=max,scope=build-server
+
+  # ------------------------------------------------------------------
+  # 3b. Build & push client container image
+  # ------------------------------------------------------------------
+  build-client:
+    name: Build & Push Client
+    needs: [prepare, quality-gates]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.11.1
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.4.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker Metadata
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.7.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner_lc }}/${{ env.CLIENT_IMAGE }}
+          tags: |
+            type=raw,value=${{ needs.prepare.outputs.version }}
+            type=raw,value=nightly
+            type=raw,value=nightly-${{ needs.prepare.outputs.date_tag }}
+            type=sha,format=long,prefix=
+
+      - name: Build & Push Client Image
+        id: push
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.18.0
+        with:
+          context: .
+          file: client/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID || secrets.GOOGLE_CLIENT_ID }}
+            VITE_APP_VERSION=${{ needs.prepare.outputs.version }}
+            VITE_PAYPAL_CLIENT_ID=${{ secrets.VITE_PAYPAL_CLIENT_ID }}
+            VITE_FARO_URL=${{ secrets.VITE_FARO_URL }}
+            VITE_FARO_APP_NAME=${{ secrets.VITE_FARO_APP_NAME || 'msp-client-portal' }}
+            VITE_FARO_APP_ENV=${{ inputs.targetEnvironment || 'staging' }}
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha,scope=build-client
+          cache-to: type=gha,mode=max,scope=build-client
+
+  # ------------------------------------------------------------------
+  # 3c. Build & push MCP server container image
+  # ------------------------------------------------------------------
+  build-mcp:
+    name: Build & Push MCP Server
+    needs: [prepare, quality-gates]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.11.1
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.4.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker Metadata
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.7.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner_lc }}/${{ env.MCP_IMAGE }}
+          tags: |
+            type=raw,value=${{ needs.prepare.outputs.version }}
+            type=raw,value=nightly
+            type=raw,value=nightly-${{ needs.prepare.outputs.date_tag }}
+            type=sha,format=long,prefix=
+
+      - name: Build & Push MCP Server Image
+        id: push
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.18.0
+        with:
+          context: .
+          file: packages/mcp-server/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha,scope=build-mcp
+          cache-to: type=gha,mode=max,scope=build-mcp
+
+  # ------------------------------------------------------------------
+  # 4. Security scan — Trivy container vulnerability analysis
+  # ------------------------------------------------------------------
+  security-scan:
+    name: Security Scan (${{ matrix.image }})
+    needs: [prepare, build-server, build-client, build-mcp]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: read
+    env:
+      SECURITY_GATE_BYPASSED: ${{ inputs.skipSecurityGate == true || vars.DISABLE_SECURITY_GATE == 'true' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: msp-services-server
+            digest: ${{ needs.build-server.outputs.digest }}
+            sarif: trivy-server.sarif
+          - image: msp-services-client
+            digest: ${{ needs.build-client.outputs.digest }}
+            sarif: trivy-client.sarif
+          - image: msp-mcp-server
+            digest: ${{ needs.build-mcp.outputs.digest }}
+            sarif: trivy-mcp.sarif
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.4.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trivy Vulnerability Scan
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner_lc }}/${{ matrix.image }}@${{ matrix.digest }}
+          trivy-config: .trivy.yaml
+          format: sarif
+          output: ${{ matrix.sarif }}
+          severity: HIGH,CRITICAL
+          limit-severities-for-sarif: true
+          exit-code: ${{ env.SECURITY_GATE_BYPASSED == 'true' && '0' || '1' }}
+          ignore-unfixed: true
+
+      - name: Record Gate Status
+        if: always()
+        run: |
+          if [ "${SECURITY_GATE_BYPASSED}" = "true" ]; then
+            echo "::warning::Security gate BYPASSED for nightly run — findings are report-only."
+            echo "> Security gate bypassed — HIGH/CRITICAL findings did not block nightly deployment." >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "Security gate enforced (HIGH/CRITICAL blocking)."
+          fi
+
+      - name: Upload Scan Results as Artifact
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: trivy-sarif-${{ matrix.image }}
+          path: ${{ matrix.sarif }}
+          retention-days: 14
+
+  # ------------------------------------------------------------------
+  # 5. Deploy to target environment (Portainer stack update + health check)
+  # ------------------------------------------------------------------
+  deploy:
+    name: Deploy Stack (Portainer)
+    if: inputs.deploy != false
+    needs: [prepare, security-scan, build-server, build-client, build-mcp]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment:
+      name: ${{ inputs.targetEnvironment || 'staging' }}
+      url: ${{ (inputs.targetEnvironment == 'production') && 'https://helpdesk.velmartech.com.do' || 'https://stage.velmartech.com.do' }}
+    permissions:
+      contents: read
+      packages: read
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
+      PORTAINER_API_KEY: ${{ secrets.PORTAINER_API_KEY }}
+      PORTAINER_ENDPOINT_ID: ${{ secrets.PORTAINER_STAGE_ENDPOINT_ID || secrets.PORTAINER_ENDPOINT_ID }}
+      PORTAINER_STACK_ID: ${{ secrets.PORTAINER_STAGE_STACK_ID || secrets.PORTAINER_NIGHTLY_STACK_ID || secrets.PORTAINER_STACK_ID }}
+      PORTAINER_TLS_INSECURE: "true"
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Capture Rollback Point
+        run: |
+          set -euo pipefail
+          CURL_OPTS=(-sfS --max-time 30)
+          if [ "${PORTAINER_TLS_INSECURE}" = "true" ]; then
+            CURL_OPTS+=(-k)
+          fi
+          RESP="$(curl "${CURL_OPTS[@]}" \
+            -H "X-API-Key: ${PORTAINER_API_KEY}" \
+            "${PORTAINER_URL%/}/api/endpoints/${PORTAINER_ENDPOINT_ID}/docker/containers/msp_server_prod/json" || true)"
+          IMG="$(jq -r '.Config.Image // ""' <<<"${RESP}" 2>/dev/null || true)"
+          TAG="${IMG##*:}"
+          if [ -n "${TAG}" ] && [ "${TAG}" != "${IMG}" ]; then
+            echo "PREVIOUS_VERSION=${TAG}" >> "${GITHUB_ENV}"
+            echo "Rollback point recorded: ${TAG}"
+          else
+            echo "PREVIOUS_VERSION=" >> "${GITHUB_ENV}"
+            echo "::warning::No running server container found — automatic rollback disabled for this run."
+          fi
+
+      - name: Pre-warm Image Pulls on VPS
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          OWNER_LC: ${{ needs.prepare.outputs.owner_lc }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          envs: VERSION,OWNER_LC
+          script: |
+            for image in msp-services-server msp-services-client msp-mcp-server; do
+              if docker pull "ghcr.io/${OWNER_LC}/${image}:${VERSION}"; then
+                echo "[prewarm] Pulled ${image}:${VERSION}"
+              else
+                echo "[prewarm] WARNING: could not pre-pull ${image}:${VERSION} — Portainer will pull during update"
+              fi
+            done
+
+      - name: Update Stack via Portainer API
+        id: deploy_stack
+        run: bash scripts/portainer-stack-update.sh "${VERSION}"
+
+      - name: Verify Application Health
+        id: health
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            SERVER_HEALTHY=false
+            for attempt in $(seq 1 12); do
+              if docker exec msp_server_prod node -e \
+                "fetch('http://127.0.0.1:3001/api/v1/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))" >/dev/null 2>&1; then
+                echo "[health] Server API healthy (attempt ${attempt}/12)"
+                SERVER_HEALTHY=true
+                break
+              fi
+              echo "[health] Waiting for API health... (${attempt}/12)"
+              sleep 5
+            done
+
+            if [ "${SERVER_HEALTHY}" != "true" ]; then
+              echo "[health] ERROR: server failed health verification after 12 attempts"
+              exit 1
+            fi
+
+            for attempt in $(seq 1 12); do
+              if docker exec msp_mcp_prod wget -q --spider http://127.0.0.1:3005/health >/dev/null 2>&1; then
+                echo "[health] MCP Server healthy (attempt ${attempt}/12)"
+                exit 0
+              fi
+              echo "[health] Waiting for MCP Server health... (${attempt}/12)"
+              sleep 5
+            done
+            echo "[health] WARNING: MCP server container health check timed out"
+            exit 0
+
+      - name: Rollback to Previous Version
+        if: steps.deploy_stack.outcome == 'failure' || steps.health.outcome == 'failure'
+        run: |
+          if [ -z "${PREVIOUS_VERSION:-}" ]; then
+            echo "::error::Nightly deployment failed and no rollback point exists — manual intervention required."
+            exit 1
+          fi
+          echo "::warning::Nightly deployment failed — rolling back to ${PREVIOUS_VERSION}"
+          bash scripts/portainer-stack-update.sh "${PREVIOUS_VERSION}"
+
+      - name: Verify Rollback Health
+        if: steps.deploy_stack.outcome == 'failure' || steps.health.outcome == 'failure'
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            for attempt in $(seq 1 12); do
+              if docker exec msp_server_prod node -e \
+                "fetch('http://127.0.0.1:3001/api/v1/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))" >/dev/null 2>&1; then
+                echo "[health] Rollback healthy (attempt ${attempt}/12)"
+                exit 0
+              fi
+              echo "[health] Waiting for rollback health... (${attempt}/12)"
+              sleep 5
+            done
+            echo "[health] ERROR: rollback failed health verification"
+            exit 1
+
+      - name: Write Deployment Summary
+        run: |
+          {
+            echo "### 🌙 ✅ Nightly Deployment Successful"
+            echo ""
+            echo "| Component | Image | Digest |"
+            echo "| --------- | ----- | ------ |"
+            echo "| Server | \`${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner_lc }}/${{ env.SERVER_IMAGE }}:${{ needs.prepare.outputs.version }}\` | \`${{ needs.build-server.outputs.digest }}\` |"
+            echo "| Client | \`${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner_lc }}/${{ env.CLIENT_IMAGE }}:${{ needs.prepare.outputs.version }}\` | \`${{ needs.build-client.outputs.digest }}\` |"
+            echo "| MCP Server | \`${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner_lc }}/${{ env.MCP_IMAGE }}:${{ needs.prepare.outputs.version }}\` | \`${{ needs.build-mcp.outputs.digest }}\` |"
+            echo "| Rollback Point | \`${PREVIOUS_VERSION:-n/a}\` | |"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+  # ------------------------------------------------------------------
+  # 6. Notify — Slack/Discord/Teams webhook for success or failure
+  # ------------------------------------------------------------------
+  notify:
+    name: Deployment Notification
+    if: always() && needs.prepare.result == 'success'
+    needs: [prepare, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Send Webhook Notification
+        env:
+          WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+          STATUS: ${{ needs.deploy.result }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          TRIGGER: ${{ needs.prepare.outputs.trigger }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "${WEBHOOK_URL}" ]; then
+            echo "::notice::DEPLOY_WEBHOOK_URL secret not configured — skipping notification."
+            exit 0
+          fi
+
+          if [ "${STATUS}" = "success" ]; then
+            EMOJI="🌙 ✅"
+          elif [ "${STATUS}" = "skipped" ]; then
+            EMOJI="🌙 ⏸️"
+          else
+            EMOJI="🌙 ❌"
+          fi
+
+          MESSAGE="${EMOJI} MSP Portal Nightly **${VERSION}** deployment ${STATUS} (trigger: ${TRIGGER})"
+
+          jq -n --arg text "${MESSAGE} ${RUN_URL}" '{text: $text, content: $text}' > payload.json
+          curl -sf --max-time 10 \
+            -H "Content-Type: application/json" \
+            -d @payload.json \
+            "${WEBHOOK_URL}" || echo "::warning::Webhook delivery failed — check DEPLOY_WEBHOOK_URL."
