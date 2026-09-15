@@ -562,10 +562,316 @@ async function handleInvoiceCreateDiscounted(opts) {
   console.log(`   Redis Cache:     Invalidated (gen:plans:global)\n`);
 }
 
+async function handleWorkspaceInspect(opts) {
+  const q = opts.search || opts.user || '';
+  console.log(`🛡️  [SequenceSentinel] Inspecting workspaces / users matching '${q}'...`);
+
+  const users = await execSqlJson(`
+    SELECT u.id as user_id, u.email, u.name as user_name, u.role, u.tenant_id,
+           t.name as tenant_name, t.subdomain, t.account_status
+    FROM users u
+    LEFT JOIN tenants t ON u.tenant_id = t.id
+    ${q ? `WHERE u.name ILIKE '%${q}%' OR u.email ILIKE '%${q}%' OR t.name ILIKE '%${q}%'` : ''}
+    ORDER BY u.created_at ASC
+  `);
+  console.log(`\nFound ${users.length} user(s)/tenant(s):`);
+  for (const u of users) {
+    console.log(`---`);
+    console.log(`User:     ${u.user_name} (${u.email}) [ID: ${u.user_id}] Role: ${u.role}`);
+    console.log(`Tenant:   ${u.tenant_name} (Subdomain: ${u.subdomain}) [ID: ${u.tenant_id}] Status: ${u.account_status}`);
+
+    const subs = await execSqlJson(`
+      SELECT id, service_name, plan, status, equipment_count, renewal_date
+      FROM subscriptions
+      WHERE tenant_id = '${u.tenant_id}'
+      ORDER BY created_at DESC
+    `);
+    console.log(`Subscriptions (${subs.length}):`);
+    for (const s of subs) {
+      console.log(`  - [${s.status}] ${s.service_name} (Plan: ${s.plan}, Cap: ${s.equipment_count}, ID: ${s.id})`);
+    }
+
+    const equips = await execSqlJson(`
+      SELECT id, subscription_id, slot_index, status, device_name, device_serial,
+             agent_hostname, agent_last_seen_at, vaultwarden_status
+      FROM subscription_equipment
+      WHERE tenant_id = '${u.tenant_id}'
+      ORDER BY slot_index ASC
+    `);
+    console.log(`Equipment / Devices (${equips.length}):`);
+    for (const e of equips) {
+      if (e.status === 'ACTIVE' || e.device_name) {
+        const [telem, patches, maints, tkts] = await Promise.all([
+          execSqlJson(`SELECT id, zabbix_host_id, agent_status FROM rmm_device_telemetry WHERE equipment_id = '${e.id}'`),
+          execSqlJson(`SELECT count(*) as count FROM rmm_patches WHERE equipment_id = '${e.id}'`),
+          execSqlJson(`SELECT count(*) as count FROM device_maintenances WHERE equipment_id = '${e.id}'`),
+          execSqlJson(`SELECT id, title, status, priority, client_id, tenant_id FROM tickets WHERE equipment_id = '${e.id}'`),
+        ]);
+        console.log(`  - Slot #${e.slot_index}: ${e.device_name || e.agent_hostname || 'Unnamed'} (Serial: ${e.device_serial || 'N/A'}, Status: ${e.status}, ID: ${e.id}, VW: ${e.vaultwarden_status})`);
+        const fullEquip = await execSqlJson(`SELECT * FROM subscription_equipment WHERE id = '${e.id}'`);
+        console.log(`    ↳ Full fields: ${JSON.stringify(fullEquip[0])}`);
+        console.log(`    ↳ Telemetry: ${telem.length ? JSON.stringify(telem[0]) : 'None'}, Patches: ${patches[0]?.count || 0}, Maints: ${maints[0]?.count || 0}, Tickets: ${tkts.length}`);
+        for (const t of tkts) {
+          console.log(`      * Ticket: [${t.status}] ${t.title} (ID: ${t.id}, Tenant: ${t.tenant_id})`);
+        }
+      }
+    }
+
+  }
+}
+
+async function handleDeviceMove(opts) {
+  const from = opts.from || opts['from-user'] || opts['from-workspace'] || 'epolanco@velmartech.com.do';
+  const to = opts.to || opts['to-user'] || opts['to-workspace'] || 'vmaldonado@velmartech.com.do';
+  const dryRun = opts['dry-run'] === true;
+
+  console.log(`🛡️  [SequenceSentinel] Executing device:move...`);
+  console.log(`   Source:          ${from}`);
+  console.log(`   Destination:     ${to}`);
+  console.log(`   Dry Run:         ${dryRun ? 'YES (No mutations will be made)' : 'NO (Live Execution)'}`);
+
+  // 1. Locate Source User & Tenant
+  const sourceUsers = await execSqlJson(`
+    SELECT u.id as user_id, u.email, u.name as user_name, u.tenant_id, t.name as tenant_name
+    FROM users u
+    JOIN tenants t ON u.tenant_id = t.id
+    WHERE u.email = '${from}' OR u.id::text = '${from}' OR u.name ILIKE '%${from}%' OR t.name ILIKE '%${from}%'
+    LIMIT 1
+  `);
+  if (!sourceUsers.length) throw new Error(`Source user/workspace '${from}' not found`);
+  const srcUser = sourceUsers[0];
+
+  // 2. Locate Destination User & Tenant
+  const destUsers = await execSqlJson(`
+    SELECT u.id as user_id, u.email, u.name as user_name, u.tenant_id, t.name as tenant_name
+    FROM users u
+    JOIN tenants t ON u.tenant_id = t.id
+    WHERE u.email = '${to}' OR u.id::text = '${to}' OR u.name ILIKE '%${to}%' OR t.name ILIKE '%${to}%'
+    LIMIT 1
+  `);
+  if (!destUsers.length) throw new Error(`Destination user/workspace '${to}' not found`);
+  const dstUser = destUsers[0];
+
+  if (srcUser.tenant_id === dstUser.tenant_id) {
+    throw new Error(`Source and destination tenants are identical (${srcUser.tenant_id})`);
+  }
+
+  // 3. Find active equipment in source workspace
+  const activeDevices = await execSqlJson(`
+    SELECT * FROM subscription_equipment
+    WHERE tenant_id = '${srcUser.tenant_id}'
+      AND (status = 'ACTIVE' OR device_name IS NOT NULL OR agent_hostname IS NOT NULL)
+    ORDER BY slot_index ASC
+  `);
+
+  if (!activeDevices.length) {
+    console.log(`⚠️  No active devices found in source workspace '${srcUser.tenant_name}' (${srcUser.user_name}).`);
+    return;
+  }
+
+  console.log(`\nFound ${activeDevices.length} active device(s) to move:`);
+  for (const d of activeDevices) {
+    console.log(`  - Slot #${d.slot_index}: ${d.device_name || d.agent_hostname} (Serial: ${d.device_serial || 'N/A'}, ID: ${d.id})`);
+  }
+
+  // 4. Ensure Destination Workspace has an Active Subscription
+  const destSubs = await execSqlJson(`
+    SELECT id, service_name, plan, status, equipment_count
+    FROM subscriptions
+    WHERE tenant_id = '${dstUser.tenant_id}' AND status = 'ACTIVE'
+    ORDER BY created_at DESC LIMIT 1
+  `);
+
+  const isNewSub = !destSubs.length;
+  const capacity = 50; // Admin workspace standard capacity
+  let destSubId = destSubs[0]?.id || crypto.randomUUID();
+
+  if (isNewSub) {
+    console.log(`\n⚙️  Destination workspace has no active subscription. Auto-provisioning 'Admin Infrastructure' (PL-003, Cap: ${capacity}, ID: ${destSubId})...`);
+  } else {
+    console.log(`\nFound destination subscription: ${destSubs[0].service_name} (ID: ${destSubId})`);
+  }
+
+  if (dryRun) {
+    console.log(`\n[DRY RUN] Would execute atomic transaction moving ${activeDevices.length} devices from tenant '${srcUser.tenant_id}' to '${dstUser.tenant_id}'.`);
+    return;
+  }
+
+  // 5. Execute Atomic Relocation Transaction
+  console.log(`\n🚀 Executing atomic database transaction...`);
+
+  const deviceIds = activeDevices.map(d => `'${d.id}'`).join(', ');
+  const movedOldSlots = activeDevices.map(d => d.slot_index);
+  const srcSubId = activeDevices[0].subscription_id;
+
+  const existingDestSlots = await execSqlJson(`
+    SELECT slot_index FROM subscription_equipment WHERE tenant_id = '${dstUser.tenant_id}'
+  `);
+  const occupiedDestSlots = new Set(existingDestSlots.map(s => s.slot_index));
+
+  const slotMappings = [];
+  let nextSlot = 0;
+  for (const dev of activeDevices) {
+    while (occupiedDestSlots.has(nextSlot)) {
+      nextSlot++;
+    }
+    slotMappings.push({ id: dev.id, name: dev.device_name || dev.agent_hostname, oldSlot: dev.slot_index, newSlot: nextSlot });
+    occupiedDestSlots.add(nextSlot);
+    nextSlot++;
+  }
+
+  const sqlStatements = [
+    'BEGIN;'
+  ];
+
+  // If new subscription, create it in the transaction
+  if (isNewSub) {
+    sqlStatements.push(`
+      INSERT INTO subscriptions (
+        id, client_id, service_name, plan, status, renewal_date, equipment_count, tenant_id, created_at, updated_at
+      ) VALUES (
+        '${destSubId}', '${dstUser.user_id}', 'Admin Infrastructure', 'PL-003', 'ACTIVE',
+        CURRENT_DATE + INTERVAL '10 years', ${capacity}, '${dstUser.tenant_id}', NOW(), NOW()
+      );
+    `);
+  }
+
+  // A. Move each device to destination tenant and destination subscription with new slot_index
+  for (const map of slotMappings) {
+    sqlStatements.push(`
+      UPDATE subscription_equipment
+      SET subscription_id = '${destSubId}',
+          tenant_id = '${dstUser.tenant_id}',
+          slot_index = ${map.newSlot},
+          vaultwarden_org_id = CASE WHEN vaultwarden_org_id IS NOT NULL THEN '${dstUser.tenant_id}'::uuid ELSE NULL END,
+          updated_at = NOW()
+      WHERE id = '${map.id}';
+    `);
+  }
+
+  // B. Backfill clean empty placeholder slots in source subscription for the vacated slots
+  for (const oldSlot of movedOldSlots) {
+    sqlStatements.push(`
+      INSERT INTO subscription_equipment (
+        id, subscription_id, slot_index, status, tenant_id, created_at, updated_at
+      ) VALUES (
+        gen_random_uuid(), '${srcSubId}', ${oldSlot}, 'PENDING_ACTIVATION', '${srcUser.tenant_id}', NOW(), NOW()
+      );
+    `);
+  }
+
+  // C. Ensure remaining empty slots up to capacity exist in destination subscription
+  for (let slot = 0; slot < capacity; slot++) {
+    if (!occupiedDestSlots.has(slot)) {
+      sqlStatements.push(`
+        INSERT INTO subscription_equipment (
+          id, subscription_id, slot_index, status, tenant_id, created_at, updated_at
+        ) VALUES (
+          gen_random_uuid(), '${destSubId}', ${slot}, 'PENDING_ACTIVATION', '${dstUser.tenant_id}', NOW(), NOW()
+        );
+      `);
+      occupiedDestSlots.add(slot);
+    }
+  }
+
+  // D. Update associated RMM Telemetry
+  sqlStatements.push(`
+    UPDATE rmm_device_telemetry
+    SET tenant_id = '${dstUser.tenant_id}', updated_at = NOW()
+    WHERE equipment_id IN (${deviceIds});
+  `);
+
+  // E. Update associated RMM Patches
+  sqlStatements.push(`
+    UPDATE rmm_patches
+    SET tenant_id = '${dstUser.tenant_id}', updated_at = NOW()
+    WHERE equipment_id IN (${deviceIds});
+  `);
+
+  // F. Update associated Device Maintenances
+  sqlStatements.push(`
+    UPDATE device_maintenances
+    SET subscription_id = '${destSubId}',
+        client_id = '${dstUser.user_id}',
+        tenant_id = '${dstUser.tenant_id}',
+        updated_at = NOW()
+    WHERE equipment_id IN (${deviceIds});
+  `);
+
+  // G. Update associated Tickets and sub-entities
+  sqlStatements.push(`
+    UPDATE tickets
+    SET client_id = '${dstUser.user_id}',
+        tenant_id = '${dstUser.tenant_id}',
+        updated_at = NOW()
+    WHERE equipment_id IN (${deviceIds});
+
+    UPDATE ticket_events
+    SET tenant_id = '${dstUser.tenant_id}'
+    WHERE ticket_id IN (SELECT id FROM tickets WHERE equipment_id IN (${deviceIds}));
+
+    UPDATE ticket_responses
+    SET tenant_id = '${dstUser.tenant_id}'
+    WHERE ticket_id IN (SELECT id FROM tickets WHERE equipment_id IN (${deviceIds}));
+
+    UPDATE ticket_attachments
+    SET tenant_id = '${dstUser.tenant_id}'
+    WHERE ticket_id IN (SELECT id FROM tickets WHERE equipment_id IN (${deviceIds}));
+  `);
+
+  // H. Notifications
+  const devNames = activeDevices.map(d => d.device_name || d.agent_hostname).join(', ');
+  sqlStatements.push(`
+    INSERT INTO notifications (id, user_id, title, message, link, type, read, tenant_id, created_at)
+    VALUES (
+      gen_random_uuid(), '${dstUser.user_id}', 'Equipment Transferred to Workspace',
+      'The following devices have been transferred to your workspace: ${devNames}.',
+      '/equipment', 'EQUIPMENT_ACTIVATED', false, '${dstUser.tenant_id}', NOW()
+    );
+
+    INSERT INTO notifications (id, user_id, title, message, link, type, read, tenant_id, created_at)
+    VALUES (
+      gen_random_uuid(), '${srcUser.user_id}', 'Equipment Transferred from Workspace',
+      'The following devices have been transferred from your workspace to ${dstUser.user_name}: ${devNames}.',
+      '/equipment', 'EQUIPMENT_ACTIVATED', false, '${srcUser.tenant_id}', NOW()
+    );
+  `);
+
+  sqlStatements.push('COMMIT;');
+
+  const fullSql = sqlStatements.join('\n');
+  await execSql(fullSql);
+  await invalidateRedisCache();
+
+  console.log(`\n✅ [SUCCESS] Devices successfully transferred:`);
+  console.log(`   Source Workspace:      ${srcUser.tenant_name} (${srcUser.user_name})`);
+  console.log(`   Destination Workspace: ${dstUser.tenant_name} (${dstUser.user_name})`);
+  console.log(`   Subscription Assigned: ${destSubId}`);
+  console.log(`   Transferred Devices:`);
+  for (const m of slotMappings) {
+    console.log(`     - ${m.name}: Slot #${m.oldSlot} (Source) -> Slot #${m.newSlot} (Destination) [ID: ${m.id}]`);
+  }
+  console.log(`   Source Vacated Slots:  Replaced with PENDING_ACTIVATION placeholders`);
+  console.log(`   Destination Capacity:  50 total slots initialized`);
+  console.log(`   Telemetry & Tickets:   Updated to tenant ${dstUser.tenant_id}`);
+  console.log(`   Redis Cache:           Invalidated\n`);
+}
+
 async function main() {
   const { action, options } = parseCliArgs();
 
   switch (action) {
+    case 'device:move':
+    case 'device:transfer':
+    case 'equipment:move':
+      await handleDeviceMove(options);
+      break;
+
+    case 'workspace:inspect':
+    case 'inspect':
+      await handleWorkspaceInspect(options);
+      break;
+
     case 'feature:manage':
     case 'features':
     case 'manage-features':
@@ -619,6 +925,8 @@ Usage:
   node scripts/sentinel-ops.mjs <action> [options]
 
 Actions:
+  device:move          Move all active devices between workspaces/tenants (--from="epolanco..." --to="vmaldonado...")
+  workspace:inspect    Inspect workspaces, users, subscriptions, and equipment (--search="...")
   feature:manage       Add or remove features for a user or plan
   sub:plan             Rebind user subscription to a plan (e.g. PL-001)
   sub:extend           Extend subscription duration (e.g. 1 year)
