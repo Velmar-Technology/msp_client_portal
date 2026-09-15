@@ -31,7 +31,7 @@ A production **MSP client portal** that gives clients a self-service window into
 - **Account health & non-payment scale** — composite health scoring (BL-601) and a 4-tier suspension scale with automated restoration.
 - **Finance for MSP owners** — technician commissions with 48-hour holdback, OpEx ledger, and a 70/30 net-profit split.
 - **Security** — RBAC + Zanzibar ReBAC + policy-as-code ABAC, zero standing privileges (JIT/ephemeral access), workload identity (SPIFFE), and step-up MFA.
-- **AI-ready** — an MCP server exposing 44+ live diagnostics, telemetry, and remediation tools to AI assistants.
+- **AI-ready & AIaaS** — an isolated Model Context Protocol (MCP) server exposing 66+ tools across dual profiles: IT support diagnostics/remediation (`/mcp`) and CAF Educational Quality evaluation with Dominican Law 172-13 PII sanitization and multi-tenant BYOK LLM routing (`/mcp/caf`).
 
 ## Architecture
 

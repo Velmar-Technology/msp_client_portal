@@ -437,12 +437,13 @@ The platform implements a distributed background job orchestration pattern desig
 
 ## AI Agents & Model Context Protocol (MCP)
 
-The repository provides a first-class Model Context Protocol server ([`packages/mcp-server/`](packages/mcp-server/)) exposing **44+ real-time diagnostic, telemetry, and remediation tools** to Microsoft Copilot Studio, Antigravity, Claude Desktop, and autonomous agents:
+The repository provides a first-class Model Context Protocol server ([`packages/mcp-server/`](packages/mcp-server/)) exposing **66+ specialized tools across dual isolated profiles** to Microsoft Copilot Studio, Antigravity, Claude Desktop, and autonomous agents:
 
-- **Dual-Mode Transport:** Supports local Stdio (CLI/IDE) and Stateless Streamable HTTP over `POST /mcp` (2026-07-28 Spec Revision).
-- **Inbound Security:** Authenticates incoming AI agent requests using timing-safe API key verification via `X-API-Key` or `Authorization: Bearer <token>`.
-- **Production Deployment:** Deployed as container `msp_mcp_prod` on the helpdesk VPS under `https://helpdesk.velmartech.com.do/mcp`.
-- **Documentation & Setup:** Full setup guides, tool catalogs, and Copilot Studio prompt templates are available in [`packages/mcp-server/README.md`](packages/mcp-server/README.md) and [`docs/infrastructure/COPILOT_STUDIO_AGENT_DEPLOYMENT.md`](docs/infrastructure/COPILOT_STUDIO_AGENT_DEPLOYMENT.md).
+- **Dual-Mode Transport & Isolation:** Supports local Stdio (CLI/IDE) and Stateless Streamable HTTP over `POST /mcp` (IT Support profile) and `POST /mcp/caf` (isolated CAF Educational Quality profile).
+- **Inbound Security & Zero Token Liability:** Authenticates administrative requests using timing-safe API key verification (`X-API-Key` or Bearer token), while educational requests run on a multi-tenant Bring-Your-Own-Key (BYOK) architecture (`TenantByokManager`) with zero token liability for the platform.
+- **Dominican Law 172-13 Privacy Protection:** Built-in in-memory sanitization (`CafPrivacyFilter`) stripping names, cédulas, emails, and phone numbers before LLM egress.
+- **Production Deployment:** Deployed as container `msp_mcp_prod` on the helpdesk VPS under `https://helpdesk.velmartech.com.do/mcp` and `/mcp/caf`.
+- **Documentation & Setup:** Full setup guides, tool catalogs, and Copilot Studio prompt templates are available in [`packages/mcp-server/README.md`](packages/mcp-server/README.md), [`docs/infrastructure/COPILOT_STUDIO_AGENT_DEPLOYMENT.md`](docs/infrastructure/COPILOT_STUDIO_AGENT_DEPLOYMENT.md), [`docs/infrastructure/COPILOT_STUDIO_CAF_AGENT_DEPLOYMENT.md`](docs/infrastructure/COPILOT_STUDIO_CAF_AGENT_DEPLOYMENT.md), and [`docs/ideas/caf-education-aiaas-mcp-byok.md`](docs/ideas/caf-education-aiaas-mcp-byok.md).
 
 ---
 
