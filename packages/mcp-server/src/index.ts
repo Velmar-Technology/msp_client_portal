@@ -68,7 +68,7 @@ async function main(): Promise<void> {
       // CORS & standard headers
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key, X-Tenant-Id, X-User-Id');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key, X-Tenant-Id, X-User-Id, X-BYOK-Api-Key, X-BYOK-Provider, X-BYOK-Model');
 
       if (req.method === 'OPTIONS') {
         res.writeHead(204);
@@ -163,3 +163,33 @@ export {
   type TicketTriageReport,
   type QbrAuditReport,
 } from './agent/MspSupportAgent.js';
+
+export {
+  CafQualityAgent,
+  CAF_CRITERIA,
+  type CafAuditReport,
+  type CafCriterionScore,
+  type CafSurveyAnalysisReport,
+  type CafImprovementPlan,
+  type PmiActionItem,
+} from './caf/CafQualityAgent.js';
+
+export {
+  CafPrivacyFilter,
+  type AnonymizationResult,
+} from './caf/CafPrivacyFilter.js';
+
+export {
+  ByokLlmClient,
+  ByokKeyMissingError,
+  type ByokProvider,
+  type ByokLlmConfig,
+  type ByokGenerateOptions,
+  type ByokLlmResponse,
+} from './byok/ByokLlmClient.js';
+
+export {
+  TenantByokManager,
+  type TenantByokProfile,
+  type TenantByokStatus,
+} from './byok/TenantByokManager.js';
