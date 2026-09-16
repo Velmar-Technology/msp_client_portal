@@ -560,12 +560,14 @@ export const FEATURE_CATALOG: FeatureCatalogItem[] = [
           'SOC 2 Type II': { baseMonthly: 120 },
           'ISO 27001': { baseMonthly: 140 },
           'NIST CSF': { baseMonthly: 90 },
+          'CAF (Marco Común de Evaluación)': { baseMonthly: 100 },
+          'Ley 172-13 (Protección de Datos RD)': { baseMonthly: 80 },
         },
       },
     },
     paramSchema: [
       { key: 'tier', label: 'Audit Scope', type: 'select', options: ['Basic', 'Standard', 'Full Framework'], defaultValue: 'Basic' },
-      { key: 'framework', label: 'Compliance Standard', type: 'select', options: ['General Best Practices', 'HIPAA', 'PCI-DSS', 'SOC 2 Type II', 'ISO 27001', 'NIST CSF'], defaultValue: 'General Best Practices' },
+      { key: 'framework', label: 'Compliance Standard', type: 'select', options: ['General Best Practices', 'HIPAA', 'PCI-DSS', 'SOC 2 Type II', 'ISO 27001', 'NIST CSF', 'CAF (Marco Común de Evaluación)', 'Ley 172-13 (Protección de Datos RD)'], defaultValue: 'General Best Practices' },
     ],
   },
   {
@@ -706,6 +708,65 @@ export const FEATURE_CATALOG: FeatureCatalogItem[] = [
         type: 'select',
         options: ['Interactive Micro-Modules (2-3 min)', 'Video Simulations', 'Gamified Security Quizzes'],
         defaultValue: 'Interactive Micro-Modules (2-3 min)',
+      },
+    ],
+  },
+  {
+    code: 'CAF_EDUCATION_AGENT',
+    labelKey: 'plans.features.CAF_EDUCATION_AGENT',
+    defaultParams: {
+      tier: 'Pro (Continuous CAF + PMI Engine)',
+      byokProvider: 'OpenAI',
+      hosting: 'Managed Velmar MCP Cloud',
+      privacyCompliance: 'Ley 172-13 In-Memory Sanitization',
+    },
+    pricingRule: {
+      baseMonthly: 200,
+      perDeviceMonthly: 0,
+      paramPricing: {
+        tier: {
+          'Standard (Periodic Self-Audit)': { baseMonthly: 120 },
+          'Pro (Continuous CAF + PMI Engine)': { baseMonthly: 200 },
+          'Enterprise (Multi-Campus + Dedicated MCP)': { baseMonthly: 350 },
+        },
+        hosting: {
+          'Managed Velmar MCP Cloud': { baseMonthly: 50 },
+          'On-Premises Dedicated Proxy': { baseMonthly: 120 },
+        },
+      },
+    },
+    paramSchema: [
+      {
+        key: 'tier',
+        label: 'Evaluation Tier',
+        type: 'select',
+        options: [
+          'Standard (Periodic Self-Audit)',
+          'Pro (Continuous CAF + PMI Engine)',
+          'Enterprise (Multi-Campus + Dedicated MCP)',
+        ],
+        defaultValue: 'Pro (Continuous CAF + PMI Engine)',
+      },
+      {
+        key: 'byokProvider',
+        label: 'LLM Provider',
+        type: 'select',
+        options: ['OpenAI', 'Anthropic', 'Custom / Private vLLM'],
+        defaultValue: 'OpenAI',
+      },
+      {
+        key: 'hosting',
+        label: 'MCP Hosting & Gateway',
+        type: 'select',
+        options: ['Managed Velmar MCP Cloud', 'On-Premises Dedicated Proxy'],
+        defaultValue: 'Managed Velmar MCP Cloud',
+      },
+      {
+        key: 'privacyCompliance',
+        label: 'Privacy Standard',
+        type: 'select',
+        options: ['Ley 172-13 In-Memory Sanitization', 'Strict Zero-Retention Egress'],
+        defaultValue: 'Ley 172-13 In-Memory Sanitization',
       },
     ],
   },

@@ -15,6 +15,7 @@ import { registerNetworkTools } from './tools/networkTools.js';
 import { registerStorageTools } from './tools/storageTools.js';
 import { registerSentinelTools } from './tools/sentinelTools.js';
 import { registerCafTools } from './tools/cafTools.js';
+import { TenantByokManager } from './byok/TenantByokManager.js';
 import { registerMspResources } from './resources/mspResources.js';
 import { registerMspPrompts } from './prompts/mspPrompts.js';
 
@@ -59,8 +60,8 @@ export function createMspMcpServer(
     profile === 'caf-education'
       ? 'caf-education-server'
       : profile === 'msp-support'
-      ? 'msp-support-server'
-      : 'msp-unified-server';
+        ? 'msp-support-server'
+        : 'msp-unified-server';
 
   const server = new McpServer({
     name: serverName,
@@ -69,6 +70,9 @@ export function createMspMcpServer(
 
   // 1. Register CAF Educational Tools (Least Privilege Isolation)
   if (isCaf) {
+    if (apiClient) {
+      TenantByokManager.getInstance().setApiClient(apiClient);
+    }
     registerCafTools(server);
   }
 

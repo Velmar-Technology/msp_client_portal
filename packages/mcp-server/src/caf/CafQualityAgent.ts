@@ -123,7 +123,7 @@ export interface CafImprovementPlan {
  * Autonomous CAF Educational Quality & Audit Agent.
  *
  * Specializes in automating the Common Assessment Framework (Marco Común de Evaluación)
- * for private and public educational institutions. Operates on a Bring Your Own Key (BYOK)
+ * for private and public educational institutions. Operates on a Bring Your Own Key
  * architecture, protecting student privacy via local PII sanitization (Dominican Law 172-13).
  */
 export class CafQualityAgent {
@@ -139,7 +139,7 @@ export class CafQualityAgent {
   /**
    * Evaluates institutional documentary evidence against the 9 CAF criteria.
    *
-   * @param params - Document text, optional criteria subset, and BYOK overrides
+   * @param params - Document text, optional criteria subset, and overrides
    * @returns Structured CAF Audit Report with criteria scores, SWOT, and citations
    */
   async auditEvidence(params: {
@@ -172,7 +172,7 @@ export class CafQualityAgent {
       );
     }
 
-    // 4. Construct System & User prompts for BYOK LLM
+    // 4. Construct System & User prompts for LLM
     const systemPrompt = [
       'Eres el Agente Auditor Senior especializado en el Marco Común de Evaluación (CAF) para Centros Educativos.',
       'Tu misión es evaluar evidencias documentales (PEI, POA, actas de reuniones, reglamentos, informes académicos) según los 9 Criterios del modelo CAF.',

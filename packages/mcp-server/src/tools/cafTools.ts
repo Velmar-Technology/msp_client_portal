@@ -10,7 +10,7 @@ export function registerCafTools(server: McpServer) {
   /**
    * Helper to resolve tenant-isolated privacy filter, BYOK LLM client, and agent.
    */
-  function resolveTenantAgent(
+  async function resolveTenantAgent(
     tenantId?: string,
     overrides?: {
       apiKey?: string;
@@ -19,6 +19,10 @@ export function registerCafTools(server: McpServer) {
       baseUrl?: string;
     }
   ) {
+    if (tenantId && !overrides?.apiKey) {
+      await tenantManager.ensureTenantProfile(tenantId);
+    }
+
     const resolvedConfig = tenantManager.resolveConfig(tenantId, overrides);
     const privacyFilter = tenantId
       ? tenantManager.getTenantPrivacyFilter(tenantId)
@@ -72,6 +76,7 @@ export function registerCafTools(server: McpServer) {
       tenantId: z.string().min(1).describe('The UUID or identifier of the tenant/school'),
     },
     async ({ tenantId }) => {
+      await tenantManager.ensureTenantProfile(tenantId);
       const status = tenantManager.getTenantStatus(tenantId);
       return {
         content: [
@@ -101,7 +106,7 @@ export function registerCafTools(server: McpServer) {
     },
     async (params) => {
       try {
-        const { agent, resolvedConfig } = resolveTenantAgent(params.tenantId, {
+        const { agent, resolvedConfig } = await resolveTenantAgent(params.tenantId, {
           apiKey: params.apiKey,
           provider: params.provider,
           model: params.model,
@@ -165,7 +170,7 @@ export function registerCafTools(server: McpServer) {
     },
     async (params) => {
       try {
-        const { agent, resolvedConfig } = resolveTenantAgent(params.tenantId, {
+        const { agent, resolvedConfig } = await resolveTenantAgent(params.tenantId, {
           apiKey: params.apiKey,
           provider: params.provider,
         });
@@ -208,7 +213,7 @@ export function registerCafTools(server: McpServer) {
     },
     async (params) => {
       try {
-        const { agent, resolvedConfig } = resolveTenantAgent(params.tenantId, {
+        const { agent, resolvedConfig } = await resolveTenantAgent(params.tenantId, {
           apiKey: params.apiKey,
           provider: params.provider,
         });
@@ -277,7 +282,7 @@ export function registerCafTools(server: McpServer) {
           auditReport = JSON.parse(auditReport);
         }
 
-        const { agent, resolvedConfig } = resolveTenantAgent(params.tenantId, {
+        const { agent, resolvedConfig } = await resolveTenantAgent(params.tenantId, {
           apiKey: params.apiKey,
           provider: params.provider,
         });

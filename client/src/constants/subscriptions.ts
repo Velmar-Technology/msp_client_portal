@@ -14,7 +14,7 @@ export const SUBSCRIPTION_STATUS_COLORS: Record<string, string> = {
   CANCELLED: "bg-muted text-muted-foreground border-border",
 };
 
-/** Canonical 24 feature codes matching FEATURE_CATALOG */
+/** Canonical 25 feature codes matching FEATURE_CATALOG */
 export const FEATURE_CODES = {
   HELPDESK_SUPPORT: "HELPDESK_SUPPORT",
   SECURITY_MONITORING: "SECURITY_MONITORING",
@@ -38,6 +38,7 @@ export const FEATURE_CODES = {
   DARK_WEB_MONITORING: "DARK_WEB_MONITORING",
   PASSWORD_DARK_WEB: "PASSWORD_DARK_WEB",
   PHISHING_TRAINING: "PHISHING_TRAINING",
+  CAF_EDUCATION_AGENT: "CAF_EDUCATION_AGENT",
   STORE_DISCOUNT: "STORE_DISCOUNT",
   CUSTOM_FEATURE: "CUSTOM_FEATURE",
 } as const;

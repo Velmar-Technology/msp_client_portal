@@ -139,7 +139,7 @@ async function main(): Promise<void> {
             sessionIdGenerator: undefined,
           });
           // Explicitly instantiate server strictly with 'caf-education' profile (zero IT tools)
-          const mcpServer = createMspMcpServer(undefined, 'caf-education');
+          const mcpServer = createMspMcpServer(apiClient, 'caf-education');
           await mcpServer.connect(transport);
           await transport.handleRequest(req, res);
         } catch (err: any) {

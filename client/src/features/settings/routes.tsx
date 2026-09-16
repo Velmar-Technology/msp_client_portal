@@ -14,6 +14,9 @@ const NotificationPreferencesPage = lazyWithRetry(() =>
 const PasswordManagerPage = lazyWithRetry(() =>
   import("./pages/PasswordManagerPage").then((m) => ({ default: m.PasswordManagerPage }))
 );
+const ByokSettingsPage = lazyWithRetry(() =>
+  import("./pages/ByokSettingsPage").then((m) => ({ default: m.ByokSettingsPage }))
+);
 const HelpPage = lazyWithRetry(() =>
   import("@/routes/_app/help").then((m) => ({ default: m.HelpPage || m.default }))
 );
@@ -61,6 +64,19 @@ export const settingsRoutes: AppRouteObject[] = [
       crumb: (t) => ({ label: t("nav.passwordManager", { defaultValue: "Password Manager" }), to: "/password-manager" }),
       allowedRoles: ["CLIENT", "ADMIN"],
       requiredFeature: FEATURE_CODES.PASSWORD_MANAGER,
+    },
+  },
+  {
+    path: "/settings/ai",
+    element: (
+      <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+        <ByokSettingsPage />
+      </RouteSuspenseWrapper>
+    ),
+    handle: {
+      crumb: (t) => ({ label: t("nav.cafAiSettings", { defaultValue: "IA & Calidad CAF" }), to: "/settings/ai" }),
+      allowedRoles: ["CLIENT", "ADMIN"],
+      requiredFeature: FEATURE_CODES.CAF_EDUCATION_AGENT,
     },
   },
   {

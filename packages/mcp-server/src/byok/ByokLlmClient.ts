@@ -1,12 +1,12 @@
 import axios from 'axios';
 
 /**
- * Supported LLM Providers for Bring Your Own Key (BYOK) architecture.
+ * Supported LLM Providers for Bring Your Own Key architecture.
  */
 export type ByokProvider = 'openai' | 'anthropic' | 'custom';
 
 /**
- * Options for instantiating or executing a BYOK LLM request.
+ * Options for instantiating or executing a LLM request.
  */
 export interface ByokLlmConfig {
   provider?: ByokProvider;
@@ -46,7 +46,7 @@ export interface ByokLlmResponse {
 }
 
 /**
- * Domain error thrown when a user or tenant invokes an AI workflow without providing a BYOK API key.
+ * Domain error thrown when a user or tenant invokes an AI workflow without providing a API key.
  * Guarantees zero token liability for Velmar Technology / provider.
  */
 export class ByokKeyMissingError extends Error {
@@ -55,7 +55,7 @@ export class ByokKeyMissingError extends Error {
 
   constructor(provider: ByokProvider = 'openai') {
     super(
-      `[BYOK Zero-Liability Error]: No API key provided for LLM provider "${provider}". ` +
+      `[Zero-Liability Error]: No API key provided for LLM provider "${provider}". ` +
         `Under the BYOK policy, institutions must supply their own API key via request parameters, ` +
         `the "X-BYOK-Api-Key" header, or the "BYOK_DEFAULT_API_KEY" environment variable.`
     );
@@ -64,7 +64,7 @@ export class ByokKeyMissingError extends Error {
 }
 
 /**
- * Bring Your Own Key (BYOK) LLM Client.
+ * Bring Your Own Key LLM Client.
  *
  * Connects directly to customer-funded external LLM accounts (OpenAI, Anthropic, DeepSeek/Custom).
  * Enforces zero token cost liability for the MSP infrastructure provider.
@@ -103,7 +103,7 @@ export class ByokLlmClient {
   }
 
   /**
-   * Sends a completion request to the selected LLM provider using the caller's BYOK credentials.
+   * Sends a completion request to the selected LLM provider using the caller's credentials.
    *
    * @param options - Prompt, system instructions, and provider overrides
    * @returns Standardized LLM response with token usage metadata

@@ -1794,6 +1794,7 @@ if (Test-Path $temp) {
         'DARK_WEB_MONITORING',
         'PASSWORD_DARK_WEB',
         'PHISHING_TRAINING',
+        'CAF_EDUCATION_AGENT',
         'STORE_DISCOUNT',
         'CUSTOM_FEATURE',
       ];
@@ -1990,6 +1991,34 @@ if (Test-Path $temp) {
       expandedCapabilities,
       message: `Features successfully updated for ${targetType === 'USER_SUBSCRIPTION' ? `user '${targetId}' (Plan: ${resultingPlanId})` : `plan '${resultingPlanId}'`}. Added: [${addedList.join(', ') || 'none'}], Removed: [${removedList.join(', ') || 'none'}]. Total active features: ${currentCodes.length} (${expandedCapabilities.length} capabilities expanded).`,
     };
+  }
+
+  /**
+   * Resolves decrypted BYOK credentials for a tenant from the portal backend.
+   *
+   * @param tenantId - The target tenant UUID
+   */
+  async getTenantByokProfile(tenantId: string): Promise<{
+    tenantId: string;
+    provider: 'openai' | 'anthropic' | 'custom';
+    apiKey: string;
+    model?: string | null;
+    baseUrl?: string | null;
+  } | null> {
+    const response = await this.request<{
+      success: boolean;
+      data: {
+        tenantId: string;
+        provider: 'openai' | 'anthropic' | 'custom';
+        apiKey: string;
+        model?: string | null;
+        baseUrl?: string | null;
+      } | null;
+    }>({
+      method: 'GET',
+      url: `/system/internal/byok/${encodeURIComponent(tenantId)}`,
+    });
+    return response?.data || null;
   }
 }
 

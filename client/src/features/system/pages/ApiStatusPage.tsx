@@ -113,7 +113,7 @@ export function ApiStatusPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 font-semibold gap-1 text-[10px] uppercase tracking-wider"
+            className="border-emerald-500/40 dark:border-emerald-500/50 text-emerald-600 dark:text-emerald-400 font-semibold gap-1 text-[10px] uppercase tracking-wider"
           >
             <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
             {t("apiStatus.statusOperational")}
@@ -123,7 +123,7 @@ export function ApiStatusPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800 font-semibold gap-1 text-[10px] uppercase tracking-wider"
+            className="border-amber-500/40 dark:border-amber-500/50 text-amber-600 dark:text-amber-400 font-semibold gap-1 text-[10px] uppercase tracking-wider"
           >
             <AlertTriangle className="h-3 w-3 text-amber-600 dark:text-amber-400" />
             {t("apiStatus.statusDegraded")}
@@ -133,7 +133,7 @@ export function ApiStatusPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800 font-semibold gap-1 text-[10px] uppercase tracking-wider"
+            className="border-red-500/40 dark:border-red-500/50 text-red-600 dark:text-red-400 font-semibold gap-1 text-[10px] uppercase tracking-wider"
           >
             <XCircle className="h-3 w-3 text-red-600 dark:text-red-400" />
             {t("apiStatus.statusDown")}
@@ -148,7 +148,7 @@ export function ApiStatusPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 font-semibold gap-1 text-[10px] uppercase tracking-wider"
+            className="border-emerald-500/40 dark:border-emerald-500/50 text-emerald-600 dark:text-emerald-400 font-semibold gap-1 text-[10px] uppercase tracking-wider"
           >
             <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
             {t("apiStatus.statusConfigured")}
@@ -158,7 +158,7 @@ export function ApiStatusPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800 font-semibold gap-1 text-[10px] uppercase tracking-wider"
+            className="border-amber-500/40 dark:border-amber-500/50 text-amber-600 dark:text-amber-400 font-semibold gap-1 text-[10px] uppercase tracking-wider"
           >
             <AlertTriangle className="h-3 w-3 text-amber-600 dark:text-amber-400" />
             {t("apiStatus.statusPlaceholder")}
@@ -168,7 +168,7 @@ export function ApiStatusPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800 font-semibold gap-1 text-[10px] uppercase tracking-wider"
+            className="border-red-500/40 dark:border-red-500/50 text-red-600 dark:text-red-400 font-semibold gap-1 text-[10px] uppercase tracking-wider"
           >
             <XCircle className="h-3 w-3 text-red-600 dark:text-red-400" />
             {t("apiStatus.statusMissing")}
@@ -387,7 +387,7 @@ export function ApiStatusPage() {
                 <span>{t("apiStatus.sectionServices")}</span>
                 <Badge
                   variant="secondary"
-                  className="ml-1 text-[10px] font-mono px-1.5 py-0 min-w-[20px] inline-flex justify-center"
+                  className="ml-1 text-[10px] font-mono px-1.5 py-0 min-w-5 inline-flex justify-center"
                 >
                   {isLoading ? <Skeleton className="h-3 w-4" /> : data?.totalServices || 0}
                 </Badge>
@@ -401,7 +401,7 @@ export function ApiStatusPage() {
                 <span>{t("apiStatus.sectionEnvVars")}</span>
                 <Badge
                   variant="secondary"
-                  className="ml-1 text-[10px] font-mono px-1.5 py-0 min-w-[20px] inline-flex justify-center"
+                  className="ml-1 text-[10px] font-mono px-1.5 py-0 min-w-5 inline-flex justify-center"
                 >
                   {isLoading ? <Skeleton className="h-3 w-4" /> : data?.envTotal || 0}
                 </Badge>
