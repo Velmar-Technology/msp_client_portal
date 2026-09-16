@@ -27,22 +27,30 @@ export class SubscriptionScheduler {
    * Initializes SubscriptionScheduler with subscription, billing, notification, user repositories, and distributed lock.
    *
    * @param subscriptionRepo - Subscription repository
-   * @param notifSvc - Invoice notification service
+   * @param notifSvc - Invoice notification service (optional, falls back to singleton)
    * @param renewalSvc - Subscription renewal execution service
    * @param notificationSvc - In-app and event notification service
    * @param userRepo - User repository
-   * @param nonPaymentSvc - Non-payment suspension service
+   * @param nonPaymentSvc - Non-payment suspension service (optional, falls back to singleton)
    * @param lock - Distributed concurrency lock manager
    */
   constructor(
     private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
-    private notifSvc: InvoiceNotificationService = invoiceNotificationService,
+    private notifSvc?: InvoiceNotificationService,
     private renewalSvc: SubscriptionRenewalService = subscriptionRenewalService,
     private notificationSvc: NotificationService = notificationService,
     private userRepo: UserRepository = userRepository,
-    private nonPaymentSvc: NonPaymentSuspensionService = nonPaymentSuspensionService,
+    private nonPaymentSvc?: NonPaymentSuspensionService,
     private lock: DistributedLock = distributedLock,
   ) {}
+
+  private get invoiceNotifSvc(): InvoiceNotificationService {
+    return this.notifSvc || invoiceNotificationService;
+  }
+
+  private get nonPaymentService(): NonPaymentSuspensionService {
+    return this.nonPaymentSvc || nonPaymentSuspensionService;
+  }
 
   /**
    * Starts the recurring background subscription sweep timer loop.
@@ -108,13 +116,13 @@ export class SubscriptionScheduler {
       const now = new Date();
 
       try {
-        await this.notifSvc.checkAndSendDueInvoiceNotifications(now);
+        await this.invoiceNotifSvc.checkAndSendDueInvoiceNotifications(now);
       } catch (err) {
         logger.error('Error checking and sending due invoice email notifications', { err });
       }
 
       try {
-        await this.nonPaymentSvc.evaluateOverdueAccounts(now);
+        await this.nonPaymentService.evaluateOverdueAccounts(now);
       } catch (err) {
         logger.error('Error evaluating Section 9.3 overdue non-payment scale', { err });
       }

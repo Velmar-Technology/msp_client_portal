@@ -24,7 +24,7 @@ export class InvoicePaymentService {
    * @param paypalSvc - PayPal integration service
    * @param notifService - Invoice notification service
    * @param accessPolicy - Invoice access policy
-   * @param nonPaymentSvc - Non-payment suspension service
+   * @param nonPaymentSvc - Non-payment suspension service (optional, falls back to singleton)
    */
   constructor(
     private invoiceRepo: InvoiceRepository = invoiceRepository,
@@ -32,11 +32,15 @@ export class InvoicePaymentService {
     private paypalSvc: PaypalService = paypalService,
     private notifService: InvoiceNotificationService = invoiceNotificationService,
     private accessPolicy: InvoiceAccessPolicy = invoiceAccessPolicy,
-    private nonPaymentSvc: NonPaymentSuspensionService = nonPaymentSuspensionService
+    private nonPaymentSvc?: NonPaymentSuspensionService
   ) {}
 
   private get subRepo(): SubscriptionRepository {
     return this.subscriptionRepo || subscriptionRepository;
+  }
+
+  private get nonPaymentService(): NonPaymentSuspensionService {
+    return this.nonPaymentSvc || nonPaymentSuspensionService;
   }
 
   /**
@@ -100,7 +104,7 @@ export class InvoicePaymentService {
     }
 
     await this.activateExpiredSubscriptionsForClient(invoice.client_id, invoice.tenant_id);
-    await this.nonPaymentSvc.restoreAccountIfPaid(invoice.client_id, invoice.tenant_id);
+    await this.nonPaymentService.restoreAccountIfPaid(invoice.client_id, invoice.tenant_id);
     await this.notifService.notifyPaymentReceived(invoice);
 
     return updatedInvoice;
@@ -129,7 +133,7 @@ export class InvoicePaymentService {
     }
 
     await this.activateExpiredSubscriptionsForClient(invoice.client_id, invoice.tenant_id);
-    await this.nonPaymentSvc.restoreAccountIfPaid(invoice.client_id, invoice.tenant_id);
+    await this.nonPaymentService.restoreAccountIfPaid(invoice.client_id, invoice.tenant_id);
     await this.notifService.notifyManualPaymentConfirmed(invoice);
 
     return updatedInvoice;
