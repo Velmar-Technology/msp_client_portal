@@ -518,12 +518,12 @@ export function CRMCustomPlanPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
+                <Label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                   <Copy className="h-3.5 w-3.5 text-primary" />
                   {t("crm.customPlan.cloneTemplate", "Clone from Standard Plan")}
                 </Label>
                 <Select onValueChange={handleCloneFromPlan}>
-                  <SelectTrigger className="h-7 text-xs bg-background border-zinc-200 dark:border-zinc-800">
+                  <SelectTrigger className="h-7 text-xs bg-background border-border">
                     <SelectValue placeholder={t("crm.customPlan.chooseTemplate", "Quick-fill from catalog...")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -549,53 +549,53 @@ export function CRMCustomPlanPage() {
             {/* Main Configuration Column (2 cols) */}
             <div className="lg:col-span-2 flex flex-col gap-4">
               {/* 1. Plan Overview */}
-              <Card className="rounded-lg border border-zinc-200 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
+              <Card className="rounded-lg border border-border bg-card shadow-xs">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
+                  <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
                     <FileSpreadsheet className="h-4 w-4 text-primary" />
                     {t("crm.customPlan.sectionBasic", "Plan Overview")}
                   </CardTitle>
-                  <CardDescription className="text-xs text-zinc-500 dark:text-zinc-400">
+                  <CardDescription className="text-xs text-muted-foreground">
                     {t("crm.customPlan.sectionBasicDesc", "Identify the custom tier and add negotiation terms.")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                    <Label className="text-xs font-medium text-foreground">
                       {t("crm.customPlan.planName", "Custom Plan Title")}
                     </Label>
                     <Input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="e.g. Enterprise VIP Multi-Site Package"
-                      className="h-7 text-xs mt-1 bg-background border-zinc-200 dark:border-zinc-800"
+                      className="h-7 text-xs mt-1 bg-background border-border"
                     />
                     {errors.name && <p className="text-[11px] text-destructive mt-0.5">{t(errors.name)}</p>}
                   </div>
 
                   <div>
-                    <Label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                    <Label className="text-xs font-medium text-foreground">
                       {t("crm.customPlan.description", "Scope / Internal Notes")}
                     </Label>
                     <Textarea
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="Negotiated conditions, contract term exclusions, or special clauses..."
-                      className="text-xs min-h-17.5 resize-none mt-1 bg-background border-zinc-200 dark:border-zinc-800"
+                      className="text-xs min-h-17.5 resize-none mt-1 bg-background border-border"
                     />
                   </div>
                 </CardContent>
               </Card>
 
               {/* 2. Pricing & Hardware Rates */}
-              <Card className="rounded-lg border border-zinc-200 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
+              <Card className="rounded-lg border border-border bg-card shadow-xs">
                 <CardHeader className="pb-3 flex flex-row items-center justify-between flex-wrap gap-2">
                   <div className="space-y-0.5">
-                    <CardTitle className="text-sm font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
+                    <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
                       <DollarSign className="h-4 w-4 text-emerald-500" />
                       {t("crm.customPlan.sectionPricing", "Pricing & Hardware Multipliers")}
                     </CardTitle>
-                    <CardDescription className="text-xs text-zinc-500 dark:text-zinc-400">
+                    <CardDescription className="text-xs text-muted-foreground">
                       {t("crm.customPlan.sectionPricingDesc", "Set base rates, per-seat rates, and tax exemptions.")}
                     </CardDescription>
                   </div>
@@ -626,7 +626,7 @@ export function CRMCustomPlanPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div>
                       <div className="flex items-center justify-between">
-                        <Label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                        <Label className="text-xs font-medium text-foreground">
                           {t("crm.customPlan.basePrice", "Base Rate ($/mo)")}
                         </Label>
                         {isPriceOverridden && (
@@ -645,7 +645,7 @@ export function CRMCustomPlanPage() {
                           setManualBasePrice(Number(e.target.value));
                           setIsPriceOverridden(true);
                         }}
-                        className={`h-7 text-xs mt-1 font-semibold bg-background border-zinc-200 dark:border-zinc-800 ${
+                        className={`h-7 text-xs mt-1 font-semibold bg-background border-border ${
                           isPriceOverridden ? "border-amber-500/50" : ""
                         }`}
                       />
@@ -653,7 +653,7 @@ export function CRMCustomPlanPage() {
 
                     <div>
                       <div className="flex items-center justify-between">
-                        <Label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                        <Label className="text-xs font-medium text-foreground">
                           {t("crm.customPlan.perDevice", "Per-Device ($/pc)")}
                         </Label>
                         {isPerDevicePriceOverridden && (
@@ -672,18 +672,18 @@ export function CRMCustomPlanPage() {
                           setManualPerDevicePrice(Number(e.target.value));
                           setIsPerDevicePriceOverridden(true);
                         }}
-                        className={`h-7 text-xs mt-1 font-semibold bg-background border-zinc-200 dark:border-zinc-800 ${
+                        className={`h-7 text-xs mt-1 font-semibold bg-background border-border ${
                           isPerDevicePriceOverridden ? "border-amber-500/50" : ""
                         }`}
                       />
                     </div>
 
                     <div>
-                      <Label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                      <Label className="text-xs font-medium text-foreground">
                         {t("crm.customPlan.currency", "Currency")}
                       </Label>
                       <Select value={currency} onValueChange={(val: any) => setCurrency(val)}>
-                        <SelectTrigger className="h-7 text-xs mt-1 bg-background border-zinc-200 dark:border-zinc-800">
+                        <SelectTrigger className="h-7 text-xs mt-1 bg-background border-border">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -698,11 +698,11 @@ export function CRMCustomPlanPage() {
                     </div>
 
                     <div>
-                      <Label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                      <Label className="text-xs font-medium text-foreground">
                         {t("crm.customPlan.billingCycle", "Billing Cycle")}
                       </Label>
                       <Select value={billingCycle} onValueChange={(val: any) => setBillingCycle(val)}>
-                        <SelectTrigger className="h-7 text-xs mt-1 bg-background border-zinc-200 dark:border-zinc-800">
+                        <SelectTrigger className="h-7 text-xs mt-1 bg-background border-border">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -718,13 +718,13 @@ export function CRMCustomPlanPage() {
                   </div>
 
                   {/* Tax Exemption */}
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border">
                     <div className="space-y-0.5">
-                      <Label className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                      <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                         <Receipt className="h-3.5 w-3.5 text-amber-500" />
                         {t("crm.customPlan.taxExemptLabel", "DGII ITBIS 18% Tax Exemption")}
                       </Label>
-                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                      <p className="text-[11px] text-muted-foreground">
                         {t(
                           "crm.customPlan.taxExemptHint",
                           "Exempt free zones or diplomatic accounts from standard Dominican 18% ITBIS.",
@@ -741,13 +741,13 @@ export function CRMCustomPlanPage() {
               </Card>
 
               {/* 3. SLA & Quota Guarantees */}
-              <Card className="rounded-lg border border-zinc-200 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
+              <Card className="rounded-lg border border-border bg-card shadow-xs">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
+                  <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
                     <Clock className="h-4 w-4 text-indigo-500" />
                     {t("crm.customPlan.sectionSla", "SLA Guarantees & Ticket Quota (BL-101 / BL-201)")}
                   </CardTitle>
-                  <CardDescription className="text-xs text-zinc-500 dark:text-zinc-400">
+                  <CardDescription className="text-xs text-muted-foreground">
                     {t(
                       "crm.customPlan.sectionSlaDesc",
                       "Configure contractual response targets and monthly ticket limits.",
@@ -756,13 +756,13 @@ export function CRMCustomPlanPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Monthly Quota */}
-                  <div className="p-3 rounded-lg bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 space-y-2">
+                  <div className="p-3 rounded-lg bg-muted/40 border border-border space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                      <Label className="text-xs font-semibold text-foreground">
                         {t("crm.customPlan.quotaMode", "Monthly Ticket Cap")}
                       </Label>
                       <div className="flex items-center gap-2">
-                        <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                        <span className="text-[11px] text-muted-foreground">
                           {isUnlimitedQuota
                             ? t("crm.customPlan.unlimited", "Unlimited Quota")
                             : `${ticketQuota} Tickets/mo`}
@@ -781,9 +781,9 @@ export function CRMCustomPlanPage() {
                           min="1"
                           value={ticketQuota}
                           onChange={(e) => setTicketQuota(Number(e.target.value))}
-                          className="h-7 text-xs w-32 font-semibold bg-background border-zinc-200 dark:border-zinc-800"
+                          className="h-7 text-xs w-32 font-semibold bg-background border-border"
                         />
-                        <span className="text-xs text-zinc-500 dark:text-zinc-400">tickets / month allowed</span>
+                        <span className="text-xs text-muted-foreground">tickets / month allowed</span>
                       </div>
                     )}
                   </div>
@@ -802,7 +802,7 @@ export function CRMCustomPlanPage() {
                         onChange={(e) => setCriticalMins(Number(e.target.value))}
                         className="h-7 text-xs font-mono font-bold bg-background border-rose-200 dark:border-rose-900/50"
                       />
-                      <span className="text-[10px] text-zinc-500 dark:text-zinc-400">minutes response</span>
+                      <span className="text-[10px] text-muted-foreground">minutes response</span>
                     </div>
 
                     <div className="p-3 rounded-lg bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 space-y-1.5">
@@ -817,7 +817,7 @@ export function CRMCustomPlanPage() {
                         onChange={(e) => setHighMins(Number(e.target.value))}
                         className="h-7 text-xs font-mono font-bold bg-background border-amber-200 dark:border-amber-900/50"
                       />
-                      <span className="text-[10px] text-zinc-500 dark:text-zinc-400">minutes response</span>
+                      <span className="text-[10px] text-muted-foreground">minutes response</span>
                     </div>
 
                     <div className="p-3 rounded-lg bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/50 space-y-1.5">
@@ -832,36 +832,36 @@ export function CRMCustomPlanPage() {
                         onChange={(e) => setMedMins(Number(e.target.value))}
                         className="h-7 text-xs font-mono font-bold bg-background border-blue-200 dark:border-blue-900/50"
                       />
-                      <span className="text-[10px] text-zinc-500 dark:text-zinc-400">minutes response</span>
+                      <span className="text-[10px] text-muted-foreground">minutes response</span>
                     </div>
 
-                    <div className="p-3 rounded-lg bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 space-y-1.5">
+                    <div className="p-3 rounded-lg bg-muted/40 border border-border space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-zinc-600 dark:text-zinc-400">P4 Low</span>
-                        <ShieldCheck className="h-3.5 w-3.5 text-zinc-400" />
+                        <span className="text-[11px] font-bold text-muted-foreground">P4 Low</span>
+                        <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground" />
                       </div>
                       <Input
                         type="number"
                         min="1"
                         value={lowMins}
                         onChange={(e) => setLowMins(Number(e.target.value))}
-                        className="h-7 text-xs font-mono font-bold bg-background border-zinc-200 dark:border-zinc-800"
+                        className="h-7 text-xs font-mono font-bold bg-background border-border"
                       />
-                      <span className="text-[10px] text-zinc-500 dark:text-zinc-400">minutes response</span>
+                      <span className="text-[10px] text-muted-foreground">minutes response</span>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               {/* 4. Full Feature Catalog & Deliverables Editor */}
-              <Card className="rounded-lg border border-zinc-200 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
+              <Card className="rounded-lg border border-border bg-card shadow-xs">
                 <CardHeader className="pb-3 flex flex-row items-center justify-between flex-wrap gap-2">
                   <div className="space-y-0.5">
-                    <CardTitle className="text-sm font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
+                    <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
                       <SlidersHorizontal className="h-4 w-4 text-primary" />
                       {t("crm.customPlan.sectionFeatures", "Service Capabilities & Feature Catalog")}
                     </CardTitle>
-                    <CardDescription className="text-xs text-zinc-500 dark:text-zinc-400">
+                    <CardDescription className="text-xs text-muted-foreground">
                       {t(
                         "crm.customPlan.sectionFeaturesDesc",
                         "Select catalog capabilities, tune parameters, or add bespoke custom deliverables.",
@@ -870,7 +870,7 @@ export function CRMCustomPlanPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Tabs value={featureLangTab} onValueChange={(val) => setFeatureLangTab(val as "en_US" | "es_DO")}>
-                      <TabsList className="h-6 p-0.5 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                      <TabsList className="h-6 p-0.5 bg-muted border border-border">
                         <TabsTrigger value="en_US" className="text-[11px] h-5 px-2 gap-1 cursor-pointer">
                           <Globe className="h-3 w-3" />
                           <span>EN</span>
@@ -886,7 +886,7 @@ export function CRMCustomPlanPage() {
                       variant="outline"
                       size="xs"
                       onClick={handleAddFeature}
-                      className="h-6 text-xs gap-1 cursor-pointer border-dashed border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+                      className="h-6 text-xs gap-1 cursor-pointer border-dashed border-border bg-card"
                     >
                       <Plus className="h-3 w-3" />
                       <span>{t("plans.addFeature") || "Add Feature"}</span>
@@ -895,14 +895,14 @@ export function CRMCustomPlanPage() {
                 </CardHeader>
                 <CardContent className="space-y-3 pt-0">
                   {editFeatures.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-8 px-4 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-lg text-center bg-zinc-50/50 dark:bg-zinc-900/20">
-                      <div className="p-2 rounded-full bg-zinc-100 dark:bg-zinc-800 mb-2 text-zinc-500">
+                    <div className="flex flex-col items-center justify-center py-8 px-4 border border-dashed border-border rounded-lg text-center bg-muted/30">
+                      <div className="p-2 rounded-full bg-muted mb-2 text-muted-foreground">
                         <Layers className="size-4" />
                       </div>
-                      <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 mb-0.5">
+                      <p className="text-xs font-semibold text-foreground mb-0.5">
                         {t("plans.noFeatures", "No Features Configured")}
                       </p>
-                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 max-w-xs mb-3">
+                      <p className="text-[11px] text-muted-foreground max-w-xs mb-3">
                         {t("plans.noFeaturesHint", "Add capabilities from the catalog or write custom deliverables.")}
                       </p>
                       <Button
@@ -942,15 +942,15 @@ export function CRMCustomPlanPage() {
                               draggedIndex === index
                                 ? "opacity-40 border-dashed border-primary bg-primary/5"
                                 : dragOverIndex === index
-                                  ? "border-primary shadow-xs bg-zinc-50 dark:bg-zinc-900/60 scale-[1.01]"
-                                  : "border-zinc-200 bg-white hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700 hover:shadow-xs"
+                                  ? "border-primary shadow-xs bg-muted/50/60 scale-[1.01]"
+                                  : "border-border bg-card hover:border-primary/40 hover:shadow-xs"
                             }`}
                           >
                             {/* Feature Row Content */}
                             <div className="flex items-center gap-2">
                               {/* Drag Handle */}
                               <div
-                                className="cursor-grab active:cursor-grabbing text-zinc-400 group-hover:text-zinc-600 dark:text-zinc-500 dark:group-hover:text-zinc-300 p-0.5"
+                                className="cursor-grab active:cursor-grabbing text-muted-foreground group-hover:text-foreground p-0.5"
                                 title="Drag to reorder"
                               >
                                 <GripVertical className="h-4 w-4" />
@@ -986,11 +986,11 @@ export function CRMCustomPlanPage() {
                                           ? "p.ej. Consultoría y auditoría trimestral..."
                                           : "e.g. Quarterly Executive Security Review..."
                                       }
-                                      className="h-7 text-xs bg-background border-zinc-200 dark:border-zinc-800"
+                                      className="h-7 text-xs bg-background border-border"
                                     />
                                     <Badge
                                       variant="outline"
-                                      className="text-[10px] h-5 shrink-0 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700"
+                                      className="text-[10px] h-5 shrink-0 bg-muted text-muted-foreground border-border"
                                     >
                                       Custom
                                     </Badge>
@@ -1000,7 +1000,7 @@ export function CRMCustomPlanPage() {
                                     value={feat.code}
                                     onValueChange={(code) => handleUpdateFeatureCode(index, code)}
                                   >
-                                    <SelectTrigger className="h-7 text-xs bg-background font-medium border-zinc-200 dark:border-zinc-800">
+                                    <SelectTrigger className="h-7 text-xs bg-background font-medium border-border">
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent className="max-h-72">
@@ -1031,7 +1031,7 @@ export function CRMCustomPlanPage() {
                                   size="xs"
                                   onClick={() => handleMoveFeature(index, -1)}
                                   disabled={index === 0}
-                                  className="h-6 w-6 p-0 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 disabled:opacity-30 cursor-pointer"
+                                  className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer"
                                   title="Move Up"
                                 >
                                   <ChevronUp className="h-3.5 w-3.5" />
@@ -1042,7 +1042,7 @@ export function CRMCustomPlanPage() {
                                   size="xs"
                                   onClick={() => handleMoveFeature(index, 1)}
                                   disabled={index === editFeatures.length - 1}
-                                  className="h-6 w-6 p-0 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 disabled:opacity-30 cursor-pointer"
+                                  className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer"
                                   title="Move Down"
                                 >
                                   <ChevronDown className="h-3.5 w-3.5" />
@@ -1052,7 +1052,7 @@ export function CRMCustomPlanPage() {
                                   variant="ghost"
                                   size="xs"
                                   onClick={() => handleDeleteFeature(index)}
-                                  className="h-6 w-6 p-0 text-zinc-400 hover:text-destructive cursor-pointer"
+                                  className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive cursor-pointer"
                                   title="Remove Feature"
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
@@ -1072,9 +1072,9 @@ export function CRMCustomPlanPage() {
                                   return (
                                     <div
                                       key={schemaParamKey}
-                                      className="flex items-center gap-1 rounded-md bg-zinc-100 dark:bg-zinc-800/70 border border-zinc-200/80 dark:border-zinc-700/80 px-1.5 py-0.5 text-xs"
+                                      className="flex items-center gap-1 rounded-md bg-muted/70 border border-border px-1.5 py-0.5 text-xs"
                                     >
-                                      <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 pl-0.5">
+                                      <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground pl-0.5">
                                         {label}:
                                       </span>
                                       {schemaItem?.type === "select" && schemaItem.options ? (
@@ -1084,7 +1084,7 @@ export function CRMCustomPlanPage() {
                                         >
                                           <SelectTrigger
                                             aria-label={label}
-                                            className="h-5 text-[11px] px-1.5 bg-background border-zinc-200 dark:border-zinc-700"
+                                            className="h-5 text-[11px] px-1.5 bg-background border-border"
                                           >
                                             <SelectValue />
                                           </SelectTrigger>
@@ -1108,7 +1108,7 @@ export function CRMCustomPlanPage() {
                                               schemaItem?.type === "number" ? Number(e.target.value) : e.target.value,
                                             )
                                           }
-                                          className="h-5 w-16 text-[11px] px-1 bg-background border-zinc-200 dark:border-zinc-700"
+                                          className="h-5 w-16 text-[11px] px-1 bg-background border-border"
                                         />
                                       )}
                                       {!isPredefinedSchema && (
@@ -1117,7 +1117,7 @@ export function CRMCustomPlanPage() {
                                           variant="ghost"
                                           size="xs"
                                           onClick={() => handleDeleteFeatureParam(index, schemaParamKey)}
-                                          className="h-4 w-4 p-0 text-zinc-400 hover:text-destructive cursor-pointer ml-0.5"
+                                          className="h-4 w-4 p-0 text-muted-foreground hover:text-destructive cursor-pointer ml-0.5"
                                         >
                                           <X className="h-2.5 w-2.5" />
                                         </Button>
@@ -1143,30 +1143,30 @@ export function CRMCustomPlanPage() {
                                         setParamKey("");
                                         setParamValue("");
                                       }}
-                                      className="h-5 text-[10px] px-1.5 gap-1 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 cursor-pointer border border-dashed border-zinc-300 dark:border-zinc-700"
+                                      className="h-5 text-[10px] px-1.5 gap-1 text-muted-foreground hover:text-foreground cursor-pointer border border-dashed border-border"
                                     >
                                       <Plus className="h-2.5 w-2.5" />
                                       <span>Add Parameter</span>
                                     </Button>
                                   </PopoverTrigger>
                                   <PopoverContent
-                                    className="w-56 p-3 space-y-2 border-zinc-200 dark:border-zinc-800"
+                                    className="w-56 p-3 space-y-2 border-border"
                                     align="start"
                                   >
-                                    <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                                    <p className="text-xs font-semibold text-foreground">
                                       Add Parameter
                                     </p>
                                     <Input
                                       placeholder="Key (e.g. seats, target)"
                                       value={paramKey}
                                       onChange={(e) => setParamKey(e.target.value)}
-                                      className="h-7 text-xs bg-background border-zinc-200 dark:border-zinc-800"
+                                      className="h-7 text-xs bg-background border-border"
                                     />
                                     <Input
                                       placeholder="Value (e.g. 50, On-Premise)"
                                       value={paramValue}
                                       onChange={(e) => setParamValue(e.target.value)}
-                                      className="h-7 text-xs bg-background border-zinc-200 dark:border-zinc-800"
+                                      className="h-7 text-xs bg-background border-border"
                                     />
                                     <div className="flex justify-end gap-1.5 pt-1">
                                       <Button
@@ -1212,28 +1212,28 @@ export function CRMCustomPlanPage() {
                     </CardTitle>
                     <Badge className="bg-primary text-primary-foreground text-[10px] font-mono">{currency}</Badge>
                   </div>
-                  <CardDescription className="text-xs text-zinc-500 dark:text-zinc-400">
+                  <CardDescription className="text-xs text-muted-foreground">
                     {billingCycle === "annual"
                       ? t("crm.customPlan.annualDiscount", "Annual Contract (-10% Discount)")
                       : t("crm.customPlan.monthly", "Monthly Recurring Contract")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2 text-xs divide-y divide-zinc-200/80 dark:divide-zinc-800/80">
+                  <div className="space-y-2 text-xs divide-y divide-border">
                     <div className="flex items-center justify-between pt-1">
-                      <span className="text-zinc-500 dark:text-zinc-400">
+                      <span className="text-muted-foreground">
                         {t("crm.customPlan.baseSubtotal", "Base Monthly Rate")}
                       </span>
-                      <span className="font-mono font-bold text-zinc-900 dark:text-zinc-50">
+                      <span className="font-mono font-bold text-foreground">
                         ${effectiveBasePrice.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between pt-2">
-                      <span className="text-zinc-500 dark:text-zinc-400">
+                      <span className="text-muted-foreground">
                         {t("crm.customPlan.perDeviceSubtotal", "Hardware Multiplier")} ({equipmentCount} PCs @ $
                         {effectivePerDevicePrice.toFixed(2)}/pc)
                       </span>
-                      <span className="font-mono font-bold text-zinc-900 dark:text-zinc-50">
+                      <span className="font-mono font-bold text-foreground">
                         ${calculatedCostSummary.hardwareSubtotal.toFixed(2)}
                       </span>
                     </div>
@@ -1262,7 +1262,7 @@ export function CRMCustomPlanPage() {
                       </div>
                     )}
                     <div className="flex items-center justify-between pt-2">
-                      <span className="text-zinc-500 dark:text-zinc-400">DGII ITBIS (18%)</span>
+                      <span className="text-muted-foreground">DGII ITBIS (18%)</span>
                       <span className="font-mono font-bold text-amber-500">
                         {taxExempt ? "EXEMPT ($0.00)" : `$${calculatedCostSummary.taxAmount.toFixed(2)}`}
                       </span>
@@ -1275,16 +1275,16 @@ export function CRMCustomPlanPage() {
                         ${calculatedCostSummary.monthlyGrandTotal.toFixed(2)}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between pt-2 text-[11px] text-zinc-400 dark:text-zinc-500 font-mono">
+                    <div className="flex items-center justify-between pt-2 text-[11px] text-muted-foreground font-mono">
                       <span>{t("crm.customPlan.annualContractValue", "Estimated Annual Value")}</span>
-                      <span className="font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+                      <span className="font-mono font-semibold text-foreground">
                         ${calculatedCostSummary.annualContractValue.toFixed(2)}
                       </span>
                     </div>
                   </div>
 
                   {/* Expandable Itemized Feature Breakdown */}
-                  <div className="pt-2 border-t border-zinc-200/80 dark:border-zinc-800/80">
+                  <div className="pt-2 border-t border-border">
                     <Button
                       type="button"
                       variant="ghost"
@@ -1292,13 +1292,13 @@ export function CRMCustomPlanPage() {
                       onClick={() => setShowItemizedBreakdown((prev) => !prev)}
                       className="w-full h-7 px-1 flex items-center justify-between mb-2 text-left cursor-pointer hover:bg-transparent"
                     >
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1 group-hover:text-foreground">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1 group-hover:text-foreground">
                         <ChevronRight
-                          className={`h-3.5 w-3.5 transition-transform duration-150 ${showItemizedBreakdown ? "rotate-90 text-primary" : "text-zinc-400"}`}
+                          className={`h-3.5 w-3.5 transition-transform duration-150 ${showItemizedBreakdown ? "rotate-90 text-primary" : "text-muted-foreground"}`}
                         />
                         {t("crm.customPlan.itemizedLineItems", "Itemized Feature Pricing")}
                       </span>
-                      <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">
+                      <span className="text-[10px] text-muted-foreground font-mono">
                         {calculatedCostSummary.lineItems.length} Features
                       </span>
                     </Button>
@@ -1308,17 +1308,17 @@ export function CRMCustomPlanPage() {
                         {calculatedCostSummary.lineItems.map((item, i) => (
                           <div
                             key={i}
-                            className="p-1.5 rounded-md bg-white/70 dark:bg-zinc-900/60 border border-zinc-200/70 dark:border-zinc-800/70 text-[11px] flex items-center justify-between"
+                            className="p-1.5 rounded-md bg-card/70 border border-border text-[11px] flex items-center justify-between"
                           >
                             <span
-                              className="text-zinc-600 dark:text-zinc-300 truncate max-w-35 font-medium"
+                              className="text-foreground truncate max-w-35 font-medium"
                               title={item.name}
                             >
                               {t(item.name, item.name)}
                             </span>
                             <div className="flex items-center gap-1.5 font-mono text-[10px] shrink-0">
                               {item.baseMonthly > 0 && (
-                                <span className="text-zinc-900 dark:text-zinc-100 font-semibold">
+                                <span className="text-foreground font-semibold">
                                   ${item.baseMonthly.toFixed(0)}/mo
                                 </span>
                               )}
@@ -1328,7 +1328,7 @@ export function CRMCustomPlanPage() {
                                 </span>
                               )}
                               {item.baseMonthly === 0 && item.perDeviceMonthly === 0 && (
-                                <span className="text-zinc-400 dark:text-zinc-500">Included</span>
+                                <span className="text-muted-foreground">Included</span>
                               )}
                             </div>
                           </div>
@@ -1340,11 +1340,11 @@ export function CRMCustomPlanPage() {
                   {/* Included Deliverables Summary */}
                   <div className="pt-2">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
+                      <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-1">
                         <CheckCircle2 className="h-3 w-3 text-emerald-500" />
                         Enabled Deliverables
                       </span>
-                      <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">
+                      <span className="text-[10px] text-muted-foreground font-mono">
                         {editFeatures.filter((f) => f.included).length} Active
                       </span>
                     </div>
@@ -1363,7 +1363,7 @@ export function CRMCustomPlanPage() {
                             <Badge
                               key={i}
                               variant="secondary"
-                              className="text-[10px] py-0 px-1.5 font-normal truncate max-w-50 bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                              className="text-[10px] py-0 px-1.5 font-normal truncate max-w-50 bg-muted text-foreground"
                             >
                               {label}
                             </Badge>
@@ -1372,7 +1372,7 @@ export function CRMCustomPlanPage() {
                       {editFeatures.filter((f) => f.included).length > 6 && (
                         <Badge
                           variant="outline"
-                          className="text-[10px] py-0 px-1.5 font-mono border-zinc-300 dark:border-zinc-700"
+                          className="text-[10px] py-0 px-1.5 font-mono border-border"
                         >
                           +{editFeatures.filter((f) => f.included).length - 6} more
                         </Badge>
@@ -1382,9 +1382,9 @@ export function CRMCustomPlanPage() {
 
                   {/* Target Lead Overview in Sidebar */}
                   {activeLead && (
-                    <div className="p-3 rounded-lg border border-zinc-200 bg-white/80 dark:border-zinc-800 dark:bg-zinc-900/50 space-y-1.5 mt-2">
+                    <div className="p-3 rounded-lg border border-border bg-card/80 space-y-1.5 mt-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                           Selected Client
                         </span>
                         <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-medium text-blue-700 border border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400">
@@ -1392,10 +1392,10 @@ export function CRMCustomPlanPage() {
                           {activeLead.stage}
                         </span>
                       </div>
-                      <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                      <p className="text-xs font-bold text-foreground">
                         {activeLead.company_name || activeLead.contact_name}
                       </p>
-                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
+                      <p className="text-[11px] text-muted-foreground truncate">
                         {activeLead.contact_email}
                       </p>
                     </div>

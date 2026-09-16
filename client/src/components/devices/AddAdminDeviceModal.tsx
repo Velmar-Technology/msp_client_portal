@@ -122,18 +122,18 @@ export function AddAdminDeviceModal({
         if (!open && !loading) onClose();
       }}
     >
-      <DialogContent className="max-w-md w-full bg-card border border-zinc-200 dark:border-zinc-800 rounded-lg p-0 text-zinc-900 dark:text-zinc-100 flex flex-col overflow-hidden">
+      <DialogContent className="max-w-md w-full bg-card border border-border rounded-lg p-0 text-foreground flex flex-col overflow-hidden">
         {/* Modal Header */}
-        <DialogHeader className="px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-800 flex flex-row justify-between items-center bg-white dark:bg-card space-y-0 text-left">
+        <DialogHeader className="px-5 py-3.5 border-b border-border flex flex-row justify-between items-center bg-card space-y-0 text-left">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-primary/10 text-primary rounded-md border border-primary/20">
               <Laptop className="h-4 w-4" />
             </div>
             <div>
-              <DialogTitle className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
+              <DialogTitle className="text-sm font-bold text-foreground">
                 {t("devices.addAdminDeviceTitle", "Add New Hardware Asset")}
               </DialogTitle>
-              <DialogDescription className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              <DialogDescription className="text-[11px] text-muted-foreground">
                 {t("devices.addAdminDeviceDesc", "Provision hardware on behalf of a tenant or general inventory")}
               </DialogDescription>
             </div>
@@ -142,7 +142,7 @@ export function AddAdminDeviceModal({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors disabled:opacity-50"
+            className="p-1 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors disabled:opacity-50"
           >
             <X className="h-4 w-4" />
           </button>
@@ -151,7 +151,7 @@ export function AddAdminDeviceModal({
         {/* Modal Form Body */}
         <form onSubmit={handleSubmit}>
           <div className="p-5 space-y-4">
-            <p className="text-xs text-zinc-500 leading-normal">
+            <p className="text-xs text-muted-foreground leading-normal">
               {t(
                 "devices.addAdminDeviceDesc",
                 "This device will be immediately provisioned with cloud backup storage and integrated into automated RMM telemetry.",
@@ -159,13 +159,13 @@ export function AddAdminDeviceModal({
             </p>
 
             {/* 6-digit OTP pairing code section */}
-            <div className="p-3 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-md space-y-2">
+            <div className="p-3 bg-muted/40 border border-border rounded-md space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <KeyRound className="h-3.5 w-3.5 text-zinc-400" />
+                  <KeyRound className="h-3.5 w-3.5 text-muted-foreground" />
                   <label
                     htmlFor="admin-dev-otp"
-                    className="text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400"
+                    className="text-[10px] uppercase font-bold text-muted-foreground"
                   >
                     {t("devices.otpInputLabel", "Pairing Code (OTP)")} *
                   </label>
@@ -200,7 +200,7 @@ export function AddAdminDeviceModal({
                   </p>
                 )}
                 {identityChecking && (
-                  <div className="flex items-center gap-1.5 text-[10px] font-medium text-zinc-500 mt-1.5">
+                  <div className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground mt-1.5">
                     <Loader2 className="w-3 h-3 animate-spin" />
                     {t("devices.detectedIdentityChecking", "Detecting agent identity…")}
                   </div>
@@ -216,7 +216,7 @@ export function AddAdminDeviceModal({
 
             <div className="space-y-3.5">
               <div>
-                <label htmlFor="admin-dev-name" className="block text-[10px] uppercase font-bold text-zinc-400 mb-1">
+                <label htmlFor="admin-dev-name" className="block text-[10px] uppercase font-bold text-muted-foreground mb-1">
                   {t("devices.deviceNameLabel", "Device Name / Label")} *
                 </label>
                 <Input
@@ -232,7 +232,7 @@ export function AddAdminDeviceModal({
               </div>
 
               <div>
-                <label htmlFor="admin-dev-serial" className="block text-[10px] uppercase font-bold text-zinc-400 mb-1">
+                <label htmlFor="admin-dev-serial" className="block text-[10px] uppercase font-bold text-muted-foreground mb-1">
                   {t("devices.deviceSerialLabel", "Device Serial Number")}
                 </label>
                 <Input
@@ -249,7 +249,7 @@ export function AddAdminDeviceModal({
                 <div>
                   <label
                     htmlFor="admin-dev-tenant"
-                    className="block text-[10px] uppercase font-bold text-zinc-400 mb-1"
+                    className="block text-[10px] uppercase font-bold text-muted-foreground mb-1"
                   >
                     {t("devices.tenantLabel", "Target Workspace / Client")}
                   </label>
@@ -260,10 +260,10 @@ export function AddAdminDeviceModal({
                         variant="outline"
                         role="combobox"
                         aria-expanded={openTenantCombobox}
-                        className="w-full justify-between text-xs h-8 bg-card px-3 font-normal border border-border hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                        className="w-full justify-between text-xs h-8 bg-card px-3 font-normal border border-border hover:bg-muted"
                       >
                         <div className="flex items-center gap-2 truncate">
-                          <Building2 className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+                          <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <span className="truncate">
                             {selectedTenantId
                               ? sortedTenantOptions.find((opt) => opt.id === selectedTenantId)?.name
@@ -312,12 +312,12 @@ export function AddAdminDeviceModal({
           </div>
 
           {/* Modal Footer */}
-          <DialogFooter className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex flex-row justify-end gap-2 bg-zinc-50/50 dark:bg-card">
+          <DialogFooter className="p-4 border-t border-border flex flex-row justify-end gap-2 bg-muted/30">
             <DialogClose
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="h-8 px-3 text-xs font-semibold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md transition-colors cursor-pointer disabled:opacity-50 mt-0"
+              className="h-8 px-3 text-xs font-semibold text-muted-foreground hover:bg-muted border border-border rounded-md transition-colors cursor-pointer disabled:opacity-50 mt-0"
             >
               {t("devices.cancel", "Cancel")}
             </DialogClose>

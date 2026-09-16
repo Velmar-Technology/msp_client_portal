@@ -425,7 +425,7 @@ export function ByokSettingsPage() {
               </div>
 
               <div className="relative">
-                <pre className="p-3 bg-zinc-950 text-zinc-100 rounded-md text-xs font-mono overflow-x-auto border border-zinc-800">
+                <pre className="p-3 bg-muted text-foreground rounded-md text-xs font-mono overflow-x-auto border border-border">
                   {desktopConfigJson}
                 </pre>
                 <Button

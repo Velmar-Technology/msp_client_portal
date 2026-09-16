@@ -208,7 +208,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-velmar-bg bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(0,132,255,0.12),rgba(7,10,16,0.98))] text-slate-100 font-sans select-none overflow-hidden">
+    <div className="flex flex-col h-screen bg-velmar-bg bg-velmar-mesh text-slate-100 font-sans select-none overflow-hidden">
       {/* Top Bar Header */}
       <Header
         hostname={vitals?.hostname || "Endpoint"}

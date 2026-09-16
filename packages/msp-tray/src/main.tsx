@@ -4,7 +4,10 @@ import App from './App';
 import { I18nProvider } from './i18n';
 import { setTrayLanguage, logClientEvent } from './services/tauri';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { initTheme } from './services/theme';
 import './index.css';
+
+initTheme();
 
 if (typeof window !== 'undefined') {
   window.addEventListener('error', (event) => {

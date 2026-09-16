@@ -187,7 +187,7 @@ export function TechnicianPayrollTable() {
       header: () => (
         <input
           type="checkbox"
-          className="rounded border-zinc-300 dark:border-zinc-700 cursor-pointer"
+          className="rounded border-border cursor-pointer"
           checked={
             selectedIds.length > 0 &&
             selectedIds.length === filteredEarnings.filter((e) => e.status !== 'PAID' && e.status !== 'VOIDED').length
@@ -211,7 +211,7 @@ export function TechnicianPayrollTable() {
         return (
           <input
             type="checkbox"
-            className="rounded border-zinc-300 dark:border-zinc-700 cursor-pointer"
+            className="rounded border-border cursor-pointer"
             checked={selectedIds.includes(item.id)}
             onChange={(e) => {
               e.stopPropagation();
@@ -227,7 +227,7 @@ export function TechnicianPayrollTable() {
     },
     {
       accessorKey: 'technician_name',
-      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">Technician</span>,
+      header: () => <span className="uppercase text-[10px] text-muted-foreground font-bold tracking-wider">Technician</span>,
       cell: ({ row }) => (
         <div className="flex flex-col">
           <span className="text-xs font-semibold text-foreground">{row.original.technician_name || 'Technician'}</span>
@@ -237,7 +237,7 @@ export function TechnicianPayrollTable() {
     },
     {
       accessorKey: 'ticket_title',
-      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">Ticket</span>,
+      header: () => <span className="uppercase text-[10px] text-muted-foreground font-bold tracking-wider">Ticket</span>,
       cell: ({ row }) => (
         <div className="flex flex-col max-w-44">
           <span className="text-xs font-medium text-foreground truncate">{row.original.ticket_title || 'Support Ticket'}</span>
@@ -247,16 +247,16 @@ export function TechnicianPayrollTable() {
     },
     {
       accessorKey: 'breakdown.priorityMultiplier',
-      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">Priority / Mult.</span>,
+      header: () => <span className="uppercase text-[10px] text-muted-foreground font-bold tracking-wider">Priority / Mult.</span>,
       cell: ({ row }) => (
-        <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-foreground">
+        <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-muted text-foreground">
           {row.original.breakdown?.priority || 'NORMAL'} ({row.original.breakdown?.priorityMultiplier || 1.0}x)
         </span>
       ),
     },
     {
       accessorKey: 'sla_bonus_amount',
-      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">SLA Bonus</span>,
+      header: () => <span className="uppercase text-[10px] text-muted-foreground font-bold tracking-wider">SLA Bonus</span>,
       cell: ({ row }) => {
         const isMet = row.original.breakdown?.slaMet;
         return (
@@ -264,7 +264,7 @@ export function TechnicianPayrollTable() {
             className={`inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded ${
               isMet
                 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                : 'bg-zinc-500/10 text-muted-foreground'
+                : 'bg-muted text-muted-foreground'
             }`}
           >
             {isMet ? <Zap className="h-3 w-3" /> : null}
@@ -275,7 +275,7 @@ export function TechnicianPayrollTable() {
     },
     {
       accessorKey: 'final_amount',
-      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">Bounty (OpEx)</span>,
+      header: () => <span className="uppercase text-[10px] text-muted-foreground font-bold tracking-wider">Bounty (OpEx)</span>,
       cell: ({ row }) => (
         <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono">
           ${Number(row.original.final_amount).toFixed(2)} {row.original.currency}
@@ -284,7 +284,7 @@ export function TechnicianPayrollTable() {
     },
     {
       accessorKey: 'status',
-      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">Status</span>,
+      header: () => <span className="uppercase text-[10px] text-muted-foreground font-bold tracking-wider">Status</span>,
       cell: ({ row }) => {
         const st = row.original.status;
         const colorMap: Record<string, string> = {
@@ -302,7 +302,7 @@ export function TechnicianPayrollTable() {
     },
     {
       accessorKey: 'earned_at',
-      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">Date</span>,
+      header: () => <span className="uppercase text-[10px] text-muted-foreground font-bold tracking-wider">Date</span>,
       cell: ({ row }) => (
         <span className="text-[11px] text-muted-foreground">
           {new Date(row.original.earned_at).toLocaleDateString()}

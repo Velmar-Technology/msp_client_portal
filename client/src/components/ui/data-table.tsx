@@ -35,7 +35,7 @@ export function DataTableColumnHeader<TData, TValue>({
   if (!canSort) {
     return (
       <span
-        className={cn("text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-wider", className)}
+        className={cn("text-[10px] uppercase font-bold text-muted-foreground tracking-wider", className)}
       >
         {title}
       </span>
@@ -49,15 +49,15 @@ export function DataTableColumnHeader<TData, TValue>({
       type="button"
       onClick={column.getToggleSortingHandler()}
       className={cn(
-        "inline-flex items-center gap-1 text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-wider cursor-pointer hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors select-none group",
+        "inline-flex items-center gap-1 text-[10px] uppercase font-bold text-muted-foreground tracking-wider cursor-pointer hover:text-foreground transition-colors select-none group",
         className,
       )}
     >
       {title}
       {isSorted === "asc" ? (
-        <ArrowUp className="h-3 w-3 text-zinc-800 dark:text-zinc-100" />
+        <ArrowUp className="h-3 w-3 text-foreground" />
       ) : isSorted === "desc" ? (
-        <ArrowDown className="h-3 w-3 text-zinc-800 dark:text-zinc-100" />
+        <ArrowDown className="h-3 w-3 text-foreground" />
       ) : (
         <ArrowUpDown className="h-3 w-3 opacity-40 group-hover:opacity-70" />
       )}
@@ -326,8 +326,8 @@ export function DataTable<TData, TValue>({
 
       {/* 2. Selection Bulk Action Bar */}
       {enableRowSelection && bulkActions && hasSelectedRows && (
-        <div className="px-3 py-1.5 bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2 animate-fade-in min-w-0">
-          <span className="text-xs font-mono font-bold text-zinc-900 dark:text-zinc-100">
+        <div className="px-3 py-1.5 bg-muted/60 border border-border rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2 animate-fade-in min-w-0">
+          <span className="text-xs font-mono font-bold text-foreground">
             {Object.keys(rowSelection).length} selected
           </span>
           <div className="flex flex-wrap gap-2">
@@ -350,7 +350,7 @@ export function DataTable<TData, TValue>({
       )}
 
       {/* 3. Main Data Table */}
-      <div className="w-full max-w-full min-w-0 rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-950 shadow-xs">
+      <div className="w-full max-w-full min-w-0 rounded-lg border border-border overflow-hidden bg-card shadow-xs">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -417,8 +417,8 @@ export function DataTable<TData, TValue>({
 
         {/* Footer Pagination controls */}
         {pagination && (
-          <div className="flex items-center justify-between pt-2.5 pb-2.5 px-3.5 border-t border-zinc-100 dark:border-zinc-900 bg-zinc-50/20 dark:bg-zinc-900/10">
-            <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 font-mono">
+          <div className="flex items-center justify-between pt-2.5 pb-2.5 px-3.5 border-t border-border bg-muted/30">
+            <span className="text-[10px] font-medium text-muted-foreground font-mono">
               {pagination.showingText || defaultShowingText}
             </span>
             <div className="flex items-center gap-2">
@@ -448,7 +448,7 @@ export function DataTable<TData, TValue>({
                   variant="ghost"
                   size="icon"
                   aria-label={t("common.table.prevPage", "Previous page")}
-                  className="h-6 w-6 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-30 cursor-pointer"
+                  className="h-6 w-6 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 cursor-pointer"
                   disabled={pagination.page <= 1}
                   onClick={() => pagination.onPageChange(Math.max(1, pagination.page - 1))}
                 >
@@ -458,7 +458,7 @@ export function DataTable<TData, TValue>({
                   variant="ghost"
                   size="icon"
                   aria-label={t("common.table.nextPage", "Next page")}
-                  className="h-6 w-6 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-30 cursor-pointer"
+                  className="h-6 w-6 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 cursor-pointer"
                   disabled={pagination.page >= pagination.totalPages}
                   onClick={() => pagination.onPageChange(Math.min(pagination.totalPages, pagination.page + 1))}
                 >

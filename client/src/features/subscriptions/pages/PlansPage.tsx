@@ -383,13 +383,13 @@ export function PlansPage() {
     >
       {/* Navigation Section Switcher: Browse Plans vs Active Subscriptions */}
       {showTabs && (
-        <div className="border-b border-zinc-200 dark:border-zinc-800 pb-2 mb-5">
+        <div className="border-b border-border pb-2 mb-5">
           <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as "browse" | "manage")} className="w-full">
-            <TabsList className="bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg">
+            <TabsList className="bg-muted p-1 rounded-lg">
               <TabsTrigger
                 value="browse"
                 onClick={() => setActiveTab("browse")}
-                className="gap-2 text-xs font-medium px-4 py-1.5 cursor-pointer data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-xs"
+                className="gap-2 text-xs font-medium px-4 py-1.5 cursor-pointer data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs"
               >
                 <ShoppingBag className="h-3.5 w-3.5" />
                 <span>{t("plans.browseTab")}</span>
@@ -398,7 +398,7 @@ export function PlansPage() {
               <TabsTrigger
                 value="manage"
                 onClick={() => setActiveTab("manage")}
-                className="gap-2 text-xs font-medium px-4 py-1.5 cursor-pointer data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-xs"
+                className="gap-2 text-xs font-medium px-4 py-1.5 cursor-pointer data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs"
               >
                 <CreditCard className="h-3.5 w-3.5 text-blue-500" />
                 <span>{t("plans.manageTab")}</span>

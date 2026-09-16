@@ -231,7 +231,7 @@ export function BillingPage() {
               ? 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border-amber-500/20'
               : isOverdue || isCancelled
                 ? 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400 border-red-500/20'
-                : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800/80 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700';
+                : 'bg-muted text-muted-foreground border-border';
 
           const dotClass = isPaid
             ? 'bg-emerald-500'
@@ -239,7 +239,7 @@ export function BillingPage() {
               ? 'bg-amber-500'
               : isOverdue || isCancelled
                 ? 'bg-red-500'
-                : 'bg-zinc-400';
+                : 'bg-muted-foreground';
 
           return (
             <span

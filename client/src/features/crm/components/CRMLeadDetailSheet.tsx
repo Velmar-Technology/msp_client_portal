@@ -508,7 +508,7 @@ export function CRMLeadDetailSheet({
                               ? isWon
                                 ? "bg-emerald-600 text-white shadow-xs hover:bg-emerald-600 hover:text-white"
                                 : isLost
-                                  ? "bg-zinc-600 text-white shadow-xs hover:bg-zinc-600 hover:text-white"
+                                  ? "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80"
                                   : "bg-primary text-primary-foreground shadow-xs hover:bg-primary hover:text-primary-foreground"
                               : "text-muted-foreground hover:text-foreground hover:bg-background/60"
                           }`}

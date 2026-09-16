@@ -125,21 +125,21 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-2xl bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-800 shadow-xl p-0 gap-0 overflow-hidden rounded-xl">
+      <DialogContent className="sm:max-w-2xl bg-card text-foreground border border-border shadow-xl p-0 gap-0 overflow-hidden rounded-xl">
         {/* Header with Subtle Tonal Contrast */}
-        <div className="p-4 sm:p-5 bg-zinc-50/70 dark:bg-zinc-900/40 border-b border-zinc-200 dark:border-zinc-800">
+        <div className="p-4 sm:p-5 bg-muted/40 border-b border-border">
           <DialogHeader className="space-y-1.5 text-left">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <div className="rounded-md bg-cyan-50 dark:bg-cyan-500/10 p-1.5 text-cyan-600 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-500/20">
                   <Terminal className="h-4 w-4" />
                 </div>
-                <DialogTitle className="text-sm sm:text-base font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
+                <DialogTitle className="text-sm sm:text-base font-bold text-foreground tracking-tight">
                   {t("devices.deployAgentTitle", "Deploy MSP Endpoint Agent")}
                 </DialogTitle>
               </div>
             </div>
-            <DialogDescription className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+            <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
               {t(
                 "devices.deployAgentDesc",
                 "Seamless 1-line installation for background telemetry, SMBIOS hardware audit, and remote remediation.",
@@ -147,29 +147,29 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
             </DialogDescription>
           </DialogHeader>
 
-          {/* Slot Metadata Panel (Tonal Shift without Nested Drop-Shadow) */}
-          <div className="mt-3.5 grid grid-cols-6 gap-2.5 p-2.5 bg-white dark:bg-zinc-950/80 rounded-md border border-zinc-200 dark:border-zinc-800/80 text-[11px]">
+          {/* Slot Metadata Panel */}
+          <div className="mt-3.5 grid grid-cols-6 gap-2.5 p-2.5 bg-card rounded-md border border-border text-[11px]">
             <div className="min-w-0 col-span-1">
-              <span className="text-zinc-500 dark:text-zinc-400 block text-[10px] uppercase font-semibold tracking-wider">
+              <span className="text-muted-foreground block text-[10px] uppercase font-semibold tracking-wider">
                 {t("devices.tableSlot", "Slot")}
               </span>
-              <span className="font-bold text-zinc-900 dark:text-zinc-100">
+              <span className="font-bold text-foreground">
                 #{equip?.slot_index !== undefined ? equip.slot_index + 1 : 1}
               </span>
             </div>
             <div className="min-w-0 col-span-3">
-              <span className="text-zinc-500 dark:text-zinc-400 block text-[10px] uppercase font-semibold tracking-wider">
+              <span className="text-muted-foreground block text-[10px] uppercase font-semibold tracking-wider">
                 {t("devices.deviceName", "Device")}
               </span>
-              <span className="font-medium text-zinc-900 dark:text-zinc-100 truncate block">
+              <span className="font-medium text-foreground truncate block">
                 {equip?.device_name || equip?.agent_hostname || "Auto-detected"}
               </span>
             </div>
             <div className="min-w-0 col-span-2">
-              <span className="text-zinc-500 dark:text-zinc-400 block text-[10px] uppercase font-semibold tracking-wider">
+              <span className="text-muted-foreground block text-[10px] uppercase font-semibold tracking-wider">
                 {t("devices.serialNumber", "Serial Number")}
               </span>
-              <span className="font-medium text-zinc-900 dark:text-zinc-100 truncate block">
+              <span className="font-medium text-foreground truncate block">
                 {equip?.device_serial || equip?.agent_serial || "Auto-detected"}
               </span>
             </div>
@@ -179,7 +179,7 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
         {/* Content Body */}
         <div className="p-4 sm:p-5 space-y-4">
           <Tabs defaultValue="irm" className="w-full">
-            <TabsList className="grid grid-cols-3 w-full h-8 bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-800">
+            <TabsList className="grid grid-cols-3 w-full h-8 bg-muted p-0.5 rounded-lg border border-border">
               <TabsTrigger value="irm" className="text-xs font-semibold h-7 cursor-pointer">
                 {t("devices.tabIrmOneLiner", "PowerShell 1-Liner")}
               </TabsTrigger>
@@ -193,23 +193,23 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
 
             {/* TAB 1: IRM / IEX One-Liner */}
             <TabsContent value="irm" className="space-y-3 mt-3.5 focus-visible:outline-hidden">
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 {t(
                   "devices.irmInstruction",
                   "Open an elevated Administrator PowerShell prompt on the target machine and run:",
                 )}
               </p>
 
-              <div className="relative group bg-zinc-950 rounded-lg border border-zinc-800 p-3 font-mono text-xs text-emerald-400 shadow-inner">
+              <div className="relative group bg-muted/80 rounded-lg border border-border p-3 font-mono text-xs text-foreground shadow-xs">
                 {loading ? (
-                  <div className="flex items-center gap-2 text-zinc-400 py-1">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-cyan-400" />
+                  <div className="flex items-center gap-2 text-muted-foreground py-1">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
                     <span className="text-xs">
                       {t("common.loading", "Generating secure one-time deployment URL...")}
                     </span>
                   </div>
                 ) : (
-                  <code className="block break-all select-all pr-10 text-[11.5px] leading-relaxed text-emerald-400 dark:text-emerald-300">
+                  <code className="block break-all select-all pr-10 text-[11.5px] leading-relaxed text-foreground font-mono">
                     {irmCommand}
                   </code>
                 )}
@@ -220,11 +220,11 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
                   variant="secondary"
                   disabled={loading}
                   onClick={() => handleCopy(irmCommand, "irm")}
-                  className="absolute top-2 right-2 h-7 w-7 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 cursor-pointer shadow-xs"
+                  className="absolute top-2 right-2 h-7 w-7 border border-border cursor-pointer shadow-xs"
                   aria-label={t("common.copy", "Copy Command")}
                 >
                   {copiedTab === "irm" ? (
-                    <Check className="h-3.5 w-3.5 text-emerald-400" />
+                    <Check className="h-3.5 w-3.5 text-emerald-500" />
                   ) : (
                     <Copy className="h-3.5 w-3.5" />
                   )}
@@ -234,7 +234,7 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
 
             {/* TAB 2: Intune / GPO / RMM Silent */}
             <TabsContent value="rmm" className="space-y-3.5 mt-3.5 focus-visible:outline-hidden">
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 {t(
                   "devices.rmmInstruction",
                   "For silent mass rollouts via Microsoft Intune, Group Policy, NinjaOne, or Datto RMM:",
@@ -244,15 +244,15 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
               {/* 1. MSI Package Deployment (Recommended) */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                  <span className="text-xs font-semibold text-foreground">
                     {t("devices.msiSilentTitle", "1. Windows Installer MSI (Intune / GPO / Silent)")}
                   </span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 font-semibold">
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted border border-border text-muted-foreground font-semibold">
                     .msi
                   </span>
                 </div>
-                <div className="relative group bg-zinc-950 rounded-lg border border-zinc-800 p-3 font-mono text-xs text-cyan-300 shadow-inner">
-                  <code className="block break-all select-all pr-10 text-[11.5px] leading-relaxed text-cyan-300">
+                <div className="relative group bg-muted/80 rounded-lg border border-border p-3 font-mono text-xs text-foreground shadow-xs">
+                  <code className="block break-all select-all pr-10 text-[11.5px] leading-relaxed text-foreground font-mono">
                     {msiCommand}
                   </code>
 
@@ -261,11 +261,11 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
                     size="icon"
                     variant="secondary"
                     onClick={() => handleCopy(msiCommand, "msi")}
-                    className="absolute top-2 right-2 h-7 w-7 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 cursor-pointer shadow-xs"
+                    className="absolute top-2 right-2 h-7 w-7 border border-border cursor-pointer shadow-xs"
                     aria-label={t("common.copy", "Copy Command")}
                   >
                     {copiedTab === "msi" ? (
-                      <Check className="h-3.5 w-3.5 text-emerald-400" />
+                      <Check className="h-3.5 w-3.5 text-emerald-500" />
                     ) : (
                       <Copy className="h-3.5 w-3.5" />
                     )}
@@ -276,15 +276,15 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
               {/* 2. PowerShell Script (RMM) */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                  <span className="text-xs font-semibold text-muted-foreground">
                     {t("devices.psSilentTitle", "2. PowerShell Script (RMM / NinjaOne / Datto)")}
                   </span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 font-semibold">
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted border border-border text-muted-foreground font-semibold">
                     .ps1
                   </span>
                 </div>
-                <div className="relative group bg-zinc-950 rounded-lg border border-zinc-800 p-2.5 font-mono text-xs text-zinc-300 shadow-inner">
-                  <code className="block break-all select-all pr-10 text-[11px] leading-relaxed text-zinc-300">
+                <div className="relative group bg-muted/80 rounded-lg border border-border p-2.5 font-mono text-xs text-foreground shadow-xs">
+                  <code className="block break-all select-all pr-10 text-[11px] leading-relaxed text-foreground font-mono">
                     {rmmCommand}
                   </code>
 
@@ -293,11 +293,11 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
                     size="icon"
                     variant="secondary"
                     onClick={() => handleCopy(rmmCommand, "rmm")}
-                    className="absolute top-2 right-2 h-6 w-6 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 cursor-pointer shadow-xs"
+                    className="absolute top-2 right-2 h-6 w-6 border border-border cursor-pointer shadow-xs"
                     aria-label={t("common.copy", "Copy Command")}
                   >
                     {copiedTab === "rmm" ? (
-                      <Check className="h-3 w-3 text-emerald-400" />
+                      <Check className="h-3 w-3 text-emerald-500" />
                     ) : (
                       <Copy className="h-3 w-3" />
                     )}
@@ -306,8 +306,8 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
               </div>
 
               {/* Direct MSI Download in Tab 2 */}
-              <div className="flex items-center justify-between pt-1 border-t border-zinc-200 dark:border-zinc-800">
-                <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              <div className="flex items-center justify-between pt-1 border-t border-border">
+                <span className="text-[11px] text-muted-foreground">
                   {t("devices.downloadMsiDirect", "Need the enterprise MSI package for Intune/GPO?")}
                 </span>
                 <Button
@@ -315,7 +315,7 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
                   variant="outline"
                   size="sm"
                   onClick={handleDownloadMsi}
-                  className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                  className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer hover:bg-muted"
                 >
                   <Download className="h-3.5 w-3.5" />
                   <span>{t("devices.downloadMsiBtn", "Download MSI Bundle (.msi)")}</span>
@@ -325,15 +325,15 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
 
             {/* TAB 3: Manual Binary CLI */}
             <TabsContent value="cli" className="space-y-3 mt-3.5 focus-visible:outline-hidden">
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 {t(
                   "devices.cliInstruction",
                   "If running the standalone executable directly from command line (Command Prompt / PowerShell):",
                 )}
               </p>
 
-              <div className="relative group bg-zinc-950 rounded-lg border border-zinc-800 p-3 font-mono text-xs text-zinc-200 shadow-inner">
-                <code className="block break-all select-all pr-10 text-[11.5px] leading-relaxed text-zinc-200">
+              <div className="relative group bg-muted/80 rounded-lg border border-border p-3 font-mono text-xs text-foreground shadow-xs">
+                <code className="block break-all select-all pr-10 text-[11.5px] leading-relaxed text-foreground font-mono">
                   {cliCommand}
                 </code>
 
@@ -342,11 +342,11 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
                   size="icon"
                   variant="secondary"
                   onClick={() => handleCopy(cliCommand, "cli")}
-                  className="absolute top-2 right-2 h-7 w-7 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 cursor-pointer shadow-xs"
+                  className="absolute top-2 right-2 h-7 w-7 border border-border cursor-pointer shadow-xs"
                   aria-label={t("common.copy", "Copy Command")}
                 >
                   {copiedTab === "cli" ? (
-                    <Check className="h-3.5 w-3.5 text-emerald-400" />
+                    <Check className="h-3.5 w-3.5 text-emerald-500" />
                   ) : (
                     <Copy className="h-3.5 w-3.5" />
                   )}
@@ -354,7 +354,7 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
               </div>
 
               <div className="flex items-center justify-between pt-1">
-                <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                <span className="text-[11px] text-muted-foreground">
                   {t("devices.downloadBinaryDirect", "Need the standalone msp-agent.exe?")}
                 </span>
                 <Button
@@ -362,7 +362,7 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
                   variant="outline"
                   size="sm"
                   onClick={() => window.open("/uploads/binaries/msp-agent.exe", "_blank")}
-                  className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                  className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer hover:bg-muted"
                 >
                   <Download className="h-3.5 w-3.5" />
                   <span>{t("devices.downloadBinaryBtn", "Download msp-agent.exe")}</span>
@@ -373,7 +373,7 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
         </div>
 
         {/* Footer with standard buttons and height */}
-        <DialogFooter className="p-3 bg-zinc-50/60 dark:bg-zinc-900/30 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between sm:justify-between flex-wrap gap-2">
+        <DialogFooter className="p-3 bg-muted/40 border-t border-border flex items-center justify-between sm:justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2 flex-wrap">
             <Button
               type="button"
@@ -392,7 +392,7 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
               size="sm"
               onClick={handleDownloadScript}
               disabled={loading || !deployScriptUrl}
-              className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+              className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer hover:bg-muted"
             >
               <Download className="h-3.5 w-3.5" />
               <span>{t("devices.downloadPs1Btn", "Download Script (.ps1)")}</span>

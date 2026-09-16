@@ -142,20 +142,20 @@ export function RevenueChart({ data, hoveredIndex, setHoveredIndex }: RevenueCha
   const tooltipX = hoveredIndex !== null ? getX(hoveredIndex) : 0;
 
   return (
-    <div className="h-full flex flex-col justify-between rounded-lg border border-zinc-200 bg-white p-3.5 shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
-      <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5 dark:border-zinc-900">
+    <div className="h-full flex flex-col justify-between rounded-lg border border-border bg-card p-3.5 shadow-xs">
+      <div className="flex items-center justify-between border-b border-border pb-2.5">
         <div>
-          <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-50">{t("financial.revenueVsExpenses")}</h3>
-          <p className="text-[10px] text-zinc-400 dark:text-zinc-500">{t("financial.analysisPeriodDesc")}</p>
+          <h3 className="text-xs font-semibold text-foreground">{t("financial.revenueVsExpenses")}</h3>
+          <p className="text-[10px] text-muted-foreground">{t("financial.analysisPeriodDesc")}</p>
         </div>
         <div className="flex items-center gap-3 text-[10px] font-medium">
           <div className="flex items-center gap-1">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            <span className="text-zinc-600 dark:text-zinc-400">{t("financial.revenue")}</span>
+            <span className="text-muted-foreground">{t("financial.revenue")}</span>
           </div>
           <div className="flex items-center gap-1">
             <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-            <span className="text-zinc-600 dark:text-zinc-400">{t("financial.expenses")}</span>
+            <span className="text-muted-foreground">{t("financial.expenses")}</span>
           </div>
         </div>
       </div>
@@ -287,27 +287,27 @@ export function RevenueChart({ data, hoveredIndex, setHoveredIndex }: RevenueCha
         {/* Float html Tooltip */}
         {hoveredIndex !== null && activeItem && (
           <div
-            className="pointer-events-none absolute z-20 flex flex-col gap-1 rounded-md border border-zinc-200 bg-white/95 p-2 text-[10px] shadow-md backdrop-blur-xs transition-all duration-75 dark:border-zinc-800 dark:bg-zinc-950/95"
+            className="pointer-events-none absolute z-20 flex flex-col gap-1 rounded-md border border-border bg-popover/95 p-2 text-[10px] shadow-md backdrop-blur-xs transition-all duration-75 text-popover-foreground"
             style={{
               left: `${Math.min(width - 130, Math.max(paddingLeft + 10, tooltipX - 60))}px`,
               top: `${paddingTop + 10}px`,
               width: "120px",
             }}
           >
-            <div className="font-semibold text-zinc-900 dark:text-zinc-200">{activeItem.month} 2026</div>
-            <div className="flex justify-between border-t border-zinc-100 pt-1 mt-0.5 dark:border-zinc-800">
-              <span className="text-zinc-400">{t("financial.revTooltip")}:</span>
+            <div className="font-semibold text-foreground">{activeItem.month} 2026</div>
+            <div className="flex justify-between border-t border-border pt-1 mt-0.5">
+              <span className="text-muted-foreground">{t("financial.revTooltip")}:</span>
               <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
                 ${activeItem.revenue.toLocaleString()}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-zinc-400">{t("financial.expTooltip")}:</span>
-              <span className="font-mono font-bold text-red-500 dark:text-red-400">
+              <span className="text-muted-foreground">{t("financial.expTooltip")}:</span>
+              <span className="font-mono font-bold text-destructive">
                 ${activeItem.expenses.toLocaleString()}
               </span>
             </div>
-            <div className="flex justify-between border-t border-dashed border-zinc-100 pt-1 mt-0.5 dark:border-zinc-800">
+            <div className="flex justify-between border-t border-dashed border-border pt-1 mt-0.5">
               <span className="text-zinc-400">{t("financial.profitTooltip")}:</span>
               <span className="font-mono font-bold text-zinc-700 dark:text-zinc-300">
                 ${(activeItem.revenue - activeItem.expenses).toLocaleString()}

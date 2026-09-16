@@ -140,8 +140,8 @@ const privacyEn: PrivacySection[] = [
         <p>
           If you have questions about this Privacy Policy or wish to request data correction/deletion, please reach out to us:
         </p>
-        <div className="p-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md">
-          <p className="font-semibold text-zinc-900 dark:text-zinc-100">{APP_METADATA.company}</p>
+        <div className="p-3 bg-muted border border-border rounded-md">
+          <p className="font-semibold text-foreground">{APP_METADATA.company}</p>
           <p>Attn: Data Privacy Officer</p>
           <p>Email: {APP_METADATA.privacyEmail}</p>
           <p>Phone: {APP_METADATA.phone}</p>
@@ -284,8 +284,8 @@ const privacyEs: PrivacySection[] = [
         <p>
           Si tiene preguntas sobre esta Política de Privacidad o desea solicitar la corrección/eliminación de datos, comuníquese con nosotros:
         </p>
-        <div className="p-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md">
-          <p className="font-semibold text-zinc-900 dark:text-zinc-100">{APP_METADATA.company}</p>
+        <div className="p-3 bg-muted border border-border rounded-md">
+          <p className="font-semibold text-foreground">{APP_METADATA.company}</p>
           <p>Atn: Oficial de Privacidad de Datos</p>
           <p>Correo: {APP_METADATA.privacyEmail}</p>
           <p>Teléfono: {APP_METADATA.phone}</p>

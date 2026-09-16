@@ -13,7 +13,7 @@ export function Footer() {
   const { t } = useTranslation();
 
   return (
-    <footer className="w-full mt-auto bg-card border-t border-border py-3">
+    <footer className="w-full mt-auto bg-background border-t border-border py-3">
       <MaxWidthWrapper className="flex flex-col md:flex-row justify-between items-center gap-2 text-[10px] md:text-xs">
         <span className="text-muted-foreground">{t("footer.copyright", { company: "Velmar Technology SRL" })}</span>
         <div className="flex gap-4">

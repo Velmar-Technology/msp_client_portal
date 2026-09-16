@@ -12,16 +12,16 @@ export function NotFoundPage() {
     <Page showBreadcrumbs={false}>
       <div className="relative min-h-[80vh] w-full flex flex-col items-center justify-center overflow-hidden transition-colors duration-300">
         {/* Visual background ambient blobs */}
-        <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-zinc-400/10 dark:bg-zinc-800/10 rounded-full blur-3xl animate-pulse pointer-events-none" />
+        <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse pointer-events-none" />
         <div
-          className="absolute bottom-1/4 right-1/4 w-72 h-72 bg-zinc-400/10 dark:bg-zinc-800/10 rounded-full blur-3xl animate-pulse pointer-events-none"
+          className="absolute bottom-1/4 right-1/4 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse pointer-events-none"
         />
 
-        <div className="relative z-10 w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/80 rounded-2xl shadow-xl p-8 md:p-12 text-center transition-all duration-300">
+        <div className="relative z-10 w-full max-w-md bg-card border border-border rounded-2xl shadow-xl p-8 md:p-12 text-center transition-all duration-300">
           {/* Floating Animated 404 Visual Icon */}
-          <div className="mx-auto w-20 h-20 bg-zinc-100 dark:bg-zinc-800/50 rounded-2xl flex items-center justify-center text-zinc-600 dark:text-zinc-400 shadow-inner mb-6 relative group">
+          <div className="mx-auto w-20 h-20 bg-muted rounded-2xl flex items-center justify-center text-muted-foreground shadow-inner mb-6 relative group">
             <FileQuestion className="h-10 w-10 animate-pulse group-hover:scale-110 transition-transform duration-300" />
-            <div className="absolute -top-1.5 -right-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full border border-white dark:border-zinc-900 tracking-wider">
+            <div className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[9px] font-extrabold px-1.5 py-0.5 rounded-full border border-background tracking-wider">
               {t("notFound.errorCode")}
             </div>
           </div>
@@ -34,8 +34,8 @@ export function NotFoundPage() {
           </h1>
 
           {/* Text descriptions */}
-          <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mt-4">{t("notFound.title")}</h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2 max-w-xs mx-auto">{t("notFound.description")}</p>
+          <h2 className="text-xl font-bold text-foreground mt-4">{t("notFound.title")}</h2>
+          <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto">{t("notFound.description")}</p>
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 mt-8">

@@ -114,7 +114,7 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
                     ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50"
                     : isOffline
                       ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/50"
-                      : "bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:border-zinc-800"
+                      : "bg-muted text-muted-foreground border-border"
                 }`}
               >
                 {isOnline ? (
@@ -137,15 +137,15 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
             const equip = row.original;
             const dateStr = equip.last_sync_at || equip.updated_at || equip.created_at;
             if (!dateStr) {
-              return <span className="font-mono text-[10px] text-zinc-400">{t("rmm.telemetryNA")}</span>;
+              return <span className="font-mono text-[10px] text-muted-foreground">{t("rmm.telemetryNA")}</span>;
             }
             const dateObj = new Date(dateStr);
             const isValid = !isNaN(dateObj.getTime());
             const relative = isValid ? formatRelativeTime(dateObj) : dateStr;
 
             return (
-              <span className="font-mono text-[11px] font-medium text-zinc-700 dark:text-zinc-300 inline-flex items-center gap-1">
-                <Clock className="h-3 w-3 text-zinc-400 shrink-0" />
+              <span className="font-mono text-[11px] font-medium text-foreground inline-flex items-center gap-1">
+                <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
                 {relative}
               </span>
             );
@@ -155,7 +155,7 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
           id: "telemetry",
           enableSorting: false,
           header: () => (
-            <span className="text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">
+            <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
               {t("rmm.tableTelemetry")}
             </span>
           ),
@@ -214,18 +214,18 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
             return (
               <div className="space-y-1">
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs">
-                  <span className="flex items-center gap-1 font-mono text-[11px] text-zinc-700 dark:text-zinc-300">
+                  <span className="flex items-center gap-1 font-mono text-[11px] text-foreground">
                     <Cpu className="h-3 w-3 text-blue-500 shrink-0" /> {cpu}
                   </span>
-                  <span className="flex items-center gap-1 font-mono text-[11px] text-zinc-700 dark:text-zinc-300">
+                  <span className="flex items-center gap-1 font-mono text-[11px] text-foreground">
                     <Activity className="h-3 w-3 text-emerald-500 shrink-0" /> {mem}
                   </span>
-                  <span className="flex items-center gap-1 font-mono text-[11px] text-zinc-700 dark:text-zinc-300">
+                  <span className="flex items-center gap-1 font-mono text-[11px] text-foreground">
                     <HardDrive className="h-3 w-3 text-amber-500 shrink-0" /> {disk}
                   </span>
                 </div>
-                <div className="flex items-center gap-1 font-mono text-[10px] text-zinc-500 dark:text-zinc-400">
-                  <Clock className="h-3 w-3 text-zinc-400 shrink-0" />
+                <div className="flex items-center gap-1 font-mono text-[10px] text-muted-foreground">
+                  <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
                   <span>{t("rmm.uptime", { time: uptimeDisplay })}</span>
                 </div>
               </div>
@@ -236,7 +236,7 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
           id: "patch_advisory",
           enableSorting: false,
           header: () => (
-            <span className="text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">
+            <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
               {t("rmm.tablePatchAdvisory")}
             </span>
           ),
@@ -254,7 +254,7 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
           enableSorting: false,
           header: () => (
             <div className="text-right">
-              <span className="text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">
+              <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
                 {t("rmm.tableActions")}
               </span>
             </div>

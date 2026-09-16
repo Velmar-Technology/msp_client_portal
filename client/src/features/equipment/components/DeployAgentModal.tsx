@@ -200,16 +200,16 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
                 )}
               </p>
 
-              <div className="relative group bg-zinc-950 rounded-lg border border-zinc-800 p-3 font-mono text-xs text-emerald-400 shadow-inner">
+              <div className="relative group bg-muted/80 rounded-lg border border-border p-3 font-mono text-xs text-foreground shadow-xs">
                 {loading ? (
-                  <div className="flex items-center gap-2 text-zinc-400 py-1">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-cyan-400" />
+                  <div className="flex items-center gap-2 text-muted-foreground py-1">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
                     <span className="text-xs">
                       {t('common.loading', 'Generating secure one-time deployment URL...')}
                     </span>
                   </div>
                 ) : (
-                  <code className="block break-all select-all pr-10 text-[11.5px] leading-relaxed text-emerald-400 dark:text-emerald-300">
+                  <code className="block break-all select-all pr-10 text-[11.5px] leading-relaxed text-foreground font-mono">
                     {irmCommand}
                   </code>
                 )}
@@ -220,11 +220,11 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
                   variant="secondary"
                   disabled={loading}
                   onClick={() => handleCopy(irmCommand, 'irm')}
-                  className="absolute top-2 right-2 h-7 w-7 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 cursor-pointer shadow-xs"
+                  className="absolute top-2 right-2 h-7 w-7 border border-border cursor-pointer shadow-xs"
                   aria-label={t('common.copy', 'Copy Command')}
                 >
                   {copiedTab === 'irm' ? (
-                    <Check className="h-3.5 w-3.5 text-emerald-400" />
+                    <Check className="h-3.5 w-3.5 text-emerald-500" />
                   ) : (
                     <Copy className="h-3.5 w-3.5" />
                   )}
@@ -251,8 +251,8 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
                     .msi
                   </span>
                 </div>
-                <div className="relative group bg-zinc-950 rounded-lg border border-zinc-800 p-3 font-mono text-xs text-cyan-300 shadow-inner">
-                  <code className="block break-all select-all pr-10 text-[11.5px] leading-relaxed text-cyan-300">
+                <div className="relative group bg-muted/80 rounded-lg border border-border p-3 font-mono text-xs text-foreground shadow-xs">
+                  <code className="block break-all select-all pr-10 text-[11.5px] leading-relaxed text-foreground font-mono">
                     {msiCommand}
                   </code>
 
@@ -261,11 +261,11 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
                     size="icon"
                     variant="secondary"
                     onClick={() => handleCopy(msiCommand, 'msi')}
-                    className="absolute top-2 right-2 h-7 w-7 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 cursor-pointer shadow-xs"
+                    className="absolute top-2 right-2 h-7 w-7 border border-border cursor-pointer shadow-xs"
                     aria-label={t('common.copy', 'Copy Command')}
                   >
                     {copiedTab === 'msi' ? (
-                      <Check className="h-3.5 w-3.5 text-emerald-400" />
+                      <Check className="h-3.5 w-3.5 text-emerald-500" />
                     ) : (
                       <Copy className="h-3.5 w-3.5" />
                     )}
@@ -283,8 +283,8 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
                     .ps1
                   </span>
                 </div>
-                <div className="relative group bg-zinc-950 rounded-lg border border-zinc-800 p-2.5 font-mono text-xs text-zinc-300 shadow-inner">
-                  <code className="block break-all select-all pr-10 text-[11px] leading-relaxed text-zinc-300">
+                <div className="relative group bg-muted/80 rounded-lg border border-border p-2.5 font-mono text-xs text-foreground shadow-xs">
+                  <code className="block break-all select-all pr-10 text-[11px] leading-relaxed text-foreground font-mono">
                     {rmmCommand}
                   </code>
 
@@ -293,11 +293,11 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
                     size="icon"
                     variant="secondary"
                     onClick={() => handleCopy(rmmCommand, 'rmm')}
-                    className="absolute top-2 right-2 h-6 w-6 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 cursor-pointer shadow-xs"
+                    className="absolute top-2 right-2 h-6 w-6 border border-border cursor-pointer shadow-xs"
                     aria-label={t('common.copy', 'Copy Command')}
                   >
                     {copiedTab === 'rmm' ? (
-                      <Check className="h-3 w-3 text-emerald-400" />
+                      <Check className="h-3 w-3 text-emerald-500" />
                     ) : (
                       <Copy className="h-3 w-3" />
                     )}
@@ -332,8 +332,8 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
                 )}
               </p>
 
-              <div className="relative group bg-zinc-950 rounded-lg border border-zinc-800 p-3 font-mono text-xs text-zinc-200 shadow-inner">
-                <code className="block break-all select-all pr-10 text-[11.5px] leading-relaxed text-zinc-200">
+              <div className="relative group bg-muted/80 rounded-lg border border-border p-3 font-mono text-xs text-foreground shadow-xs">
+                <code className="block break-all select-all pr-10 text-[11.5px] leading-relaxed text-foreground font-mono">
                   {cliCommand}
                 </code>
 
@@ -342,11 +342,11 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
                   size="icon"
                   variant="secondary"
                   onClick={() => handleCopy(cliCommand, 'cli')}
-                  className="absolute top-2 right-2 h-7 w-7 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 cursor-pointer shadow-xs"
+                  className="absolute top-2 right-2 h-7 w-7 border border-border cursor-pointer shadow-xs"
                   aria-label={t('common.copy', 'Copy Command')}
                 >
                   {copiedTab === 'cli' ? (
-                    <Check className="h-3.5 w-3.5 text-emerald-400" />
+                    <Check className="h-3.5 w-3.5 text-emerald-500" />
                   ) : (
                     <Copy className="h-3.5 w-3.5" />
                   )}

@@ -199,7 +199,7 @@ export function ApiStatusPage() {
         cell: ({ row }) => (
           <Badge
             variant="secondary"
-            className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300"
+            className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5"
           >
             {getCategoryLabel(row.original.category)}
           </Badge>
@@ -209,7 +209,7 @@ export function ApiStatusPage() {
         accessorKey: "endpoint",
         header: ({ column }) => <DataTableColumnHeader column={column} title={t("apiStatus.tableEndpoint")} />,
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] text-zinc-600 dark:text-zinc-400">{row.original.endpoint}</span>
+          <span className="font-mono text-[11px] text-muted-foreground">{row.original.endpoint}</span>
         ),
       },
       {
@@ -278,7 +278,7 @@ export function ApiStatusPage() {
         cell: ({ row }) => (
           <Badge
             variant="secondary"
-            className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300"
+            className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5"
           >
             {getEnvCategoryLabel(row.original.category)}
           </Badge>
@@ -301,7 +301,7 @@ export function ApiStatusPage() {
                   "px-2 py-0.5 rounded font-mono",
                   item.isSecret
                     ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20"
-                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200",
+                    : "bg-muted text-foreground",
                 )}
               >
                 {item.valueDisplay}
@@ -479,9 +479,9 @@ export function ApiStatusPage() {
             </div>
 
             {/* Status Tabs Filter Bar */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-zinc-50/50 dark:bg-zinc-900/40 p-3 rounded-lg border border-zinc-200/80 dark:border-zinc-800/80">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-card p-3 rounded-lg border border-border">
               <Tabs value={statusTab} onValueChange={(val) => setStatusTab(val as any)} className="w-full sm:w-auto">
-                <TabsList className="h-8 bg-zinc-200/60 dark:bg-zinc-800/60 p-0.5">
+                <TabsList className="h-8 bg-muted p-0.5">
                   <TabsTrigger value="ALL" className="text-xs h-7 px-3 cursor-pointer">
                     {t("apiStatus.tabAll")} (
                     {isLoading ? <Skeleton className="h-3 w-4 inline-block align-middle" /> : data?.totalServices || 0})
@@ -586,13 +586,13 @@ export function ApiStatusPage() {
             </div>
 
             {/* Environment Status Filter Bar */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-zinc-50/50 dark:bg-zinc-900/40 p-3 rounded-lg border border-zinc-200/80 dark:border-zinc-800/80">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-card p-3 rounded-lg border border-border">
               <Tabs
                 value={envStatusTab}
                 onValueChange={(val) => setEnvStatusTab(val as any)}
                 className="w-full sm:w-auto"
               >
-                <TabsList className="h-8 bg-zinc-200/60 dark:bg-zinc-800/60 p-0.5">
+                <TabsList className="h-8 bg-muted p-0.5">
                   <TabsTrigger value="ALL" className="text-xs h-7 px-3 cursor-pointer">
                     {t("apiStatus.tabEnvAll")} (
                     {isLoading ? <Skeleton className="h-3 w-4 inline-block align-middle" /> : data?.envTotal || 0})

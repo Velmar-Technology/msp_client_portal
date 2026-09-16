@@ -174,7 +174,7 @@ export function TechDashboardPage() {
   const columns = useMemo<ColumnDef<Ticket>[]>(() => [
     {
       accessorKey: 'title',
-      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t('tickets.tableTitle')}</span>,
+      header: () => <span className="uppercase text-[10px] text-muted-foreground font-bold tracking-wider">{t('tickets.tableTitle')}</span>,
       cell: ({ row }) => (
         <span className="text-xs font-semibold text-foreground truncate max-w-50 block">
           {row.original.title}
@@ -183,12 +183,12 @@ export function TechDashboardPage() {
     },
     {
       accessorKey: 'category',
-      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t('tickets.tableCategory')}</span>,
-      cell: ({ row }) => <span className="text-xs text-zinc-500 dark:text-zinc-400">{getCategoryLabel(row.original.category)}</span>,
+      header: () => <span className="uppercase text-[10px] text-muted-foreground font-bold tracking-wider">{t('tickets.tableCategory')}</span>,
+      cell: ({ row }) => <span className="text-xs text-muted-foreground">{getCategoryLabel(row.original.category)}</span>,
     },
     {
       accessorKey: 'priority',
-      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t('tickets.tablePriority')}</span>,
+      header: () => <span className="uppercase text-[10px] text-muted-foreground font-bold tracking-wider">{t('tickets.tablePriority')}</span>,
       cell: ({ row }) => (
         <span className={`text-[11px] font-medium ${priorityColor[row.original.priority]}`}>
           {getPriorityLabel(row.original.priority)}
@@ -197,7 +197,7 @@ export function TechDashboardPage() {
     },
     {
       accessorKey: 'status',
-      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t('tickets.tableStatus')}</span>,
+      header: () => <span className="uppercase text-[10px] text-muted-foreground font-bold tracking-wider">{t('tickets.tableStatus')}</span>,
       cell: ({ row }) => (
         <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${statusColor[row.original.status]}`}>
           {getStatusLabel(row.original.status)}
@@ -208,7 +208,7 @@ export function TechDashboardPage() {
       id: 'actions',
       header: () => (
         <div className="text-right">
-          <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
+          <span className="uppercase text-[10px] text-muted-foreground font-bold tracking-wider">
             {t('common.actions')}
           </span>
         </div>
@@ -326,7 +326,7 @@ export function TechDashboardPage() {
   const earningsColumns = useMemo<ColumnDef<TechnicianEarning>[]>(() => [
     {
       accessorKey: 'ticket_title',
-      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t('tickets.tableTitle')}</span>,
+      header: () => <span className="uppercase text-[10px] text-muted-foreground font-bold tracking-wider">{t('tickets.tableTitle')}</span>,
       cell: ({ row }) => (
         <div className="flex flex-col max-w-50 cursor-pointer" onClick={() => navigate(`/tickets/${row.original.ticket_id}`)}>
           <span className="text-xs font-semibold text-foreground truncate hover:text-primary">{row.original.ticket_title || 'Support Ticket'}</span>
@@ -336,25 +336,25 @@ export function TechDashboardPage() {
     },
     {
       accessorKey: 'breakdown.priorityMultiplier',
-      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t('techDashboard.multiplier')}</span>,
+      header: () => <span className="uppercase text-[10px] text-muted-foreground font-bold tracking-wider">{t('techDashboard.multiplier')}</span>,
       cell: ({ row }) => (
-        <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-foreground">
+        <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-muted text-foreground">
           {row.original.breakdown?.priority || 'NORMAL'} ({row.original.breakdown?.priorityMultiplier || 1.0}x)
         </span>
       ),
     },
     {
       accessorKey: 'base_amount',
-      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t('techDashboard.baseRate')}</span>,
+      header: () => <span className="uppercase text-[10px] text-muted-foreground font-bold tracking-wider">{t('techDashboard.baseRate')}</span>,
       cell: ({ row }) => <span className="text-xs text-muted-foreground">${Number(row.original.base_amount).toFixed(2)}</span>,
     },
     {
       accessorKey: 'sla_bonus_amount',
-      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t('techDashboard.slaBonus')}</span>,
+      header: () => <span className="uppercase text-[10px] text-muted-foreground font-bold tracking-wider">{t('techDashboard.slaBonus')}</span>,
       cell: ({ row }) => {
         const isMet = row.original.breakdown?.slaMet;
         return (
-          <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded ${isMet ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-zinc-500/10 text-muted-foreground'}`}>
+          <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded ${isMet ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground'}`}>
             {isMet ? <Zap className="h-3 w-3" /> : null}
             {isMet ? `+$${Number(row.original.sla_bonus_amount).toFixed(2)}` : '$0.00'}
           </span>
@@ -363,7 +363,7 @@ export function TechDashboardPage() {
     },
     {
       accessorKey: 'final_amount',
-      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t('techDashboard.ticketBounty')}</span>,
+      header: () => <span className="uppercase text-[10px] text-muted-foreground font-bold tracking-wider">{t('techDashboard.ticketBounty')}</span>,
       cell: ({ row }) => (
         <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono">
           ${Number(row.original.final_amount).toFixed(2)} {row.original.currency}
@@ -372,7 +372,7 @@ export function TechDashboardPage() {
     },
     {
       accessorKey: 'status',
-      header: () => <span className="uppercase text-[10px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">{t('tickets.tableStatus')}</span>,
+      header: () => <span className="uppercase text-[10px] text-muted-foreground font-bold tracking-wider">{t('tickets.tableStatus')}</span>,
       cell: ({ row }) => {
         const st = row.original.status;
         const colorMap: Record<string, string> = {
@@ -447,14 +447,14 @@ export function TechDashboardPage() {
       title={`${t('login.welcome')}, ${user?.name}`}
       subtitle={t('techDashboard.subtitle')}
       actions={
-        <div className="flex items-center gap-2.5 bg-white dark:bg-zinc-950 p-2 px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-xs">
-          <div className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center text-zinc-600 dark:text-zinc-400">
+        <div className="flex items-center gap-2.5 bg-card p-2 px-3 rounded-lg border border-border shadow-xs">
+          <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
             <User className="h-3.5 w-3.5" />
           </div>
           <div>
-            <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 leading-tight">{user?.email}</h4>
-            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">
-              {t('techDashboard.mySpecialty')}: <strong className="text-zinc-700 dark:text-zinc-300">{specialty || (i18n.language === 'es_DO' ? 'Generalista' : 'Generalist')}</strong>
+            <h4 className="text-xs font-semibold text-foreground leading-tight">{user?.email}</h4>
+            <span className="text-[10px] text-muted-foreground font-medium">
+              {t('techDashboard.mySpecialty')}: <strong className="text-foreground">{specialty || (i18n.language === 'es_DO' ? 'Generalista' : 'Generalist')}</strong>
             </span>
           </div>
         </div>

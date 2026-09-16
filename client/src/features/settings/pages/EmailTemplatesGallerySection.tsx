@@ -105,7 +105,7 @@ export const EmailTemplatesGallerySection: React.FC = () => {
 
       {/* Rendered Email Preview Container */}
       <div className="overflow-hidden rounded-xl border border-border bg-muted/40 p-4 sm:p-6 shadow-sm">
-        <div className="mx-auto max-w-2xl overflow-hidden rounded-xl shadow-md border border-border/80 bg-white dark:bg-slate-900">
+        <div className="mx-auto max-w-2xl overflow-hidden rounded-xl shadow-md border border-border bg-card">
           {selectedTemplate === 'password-reset' && (
             <PasswordResetTemplate
               recipientName="Estiven Polanco"

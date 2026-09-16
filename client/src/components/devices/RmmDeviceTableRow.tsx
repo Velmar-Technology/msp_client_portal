@@ -54,19 +54,19 @@ export const RmmDeviceTableRow: React.FC<RmmDeviceTableRowProps> = memo(({
   const pendingPatches = device.pending_patch_count ?? 0;
 
   return (
-    <TableRow className="border-b border-zinc-200 dark:border-zinc-800/80 hover:bg-zinc-50/60 dark:hover:bg-zinc-900/40 transition-colors">
+    <TableRow className="border-b border-border hover:bg-muted/50 transition-colors">
       <TableCell className="py-3 px-4">
         <div className="space-y-0.5">
-          <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+          <p className="text-xs font-semibold text-foreground">
             {deviceName}
           </p>
-          <p className="text-[10px] text-zinc-400 font-mono">
+          <p className="text-[10px] text-muted-foreground font-mono">
             {t('rmm.tableSlotNum', { num: device.slot_index + 1 })}
           </p>
         </div>
       </TableCell>
 
-      <TableCell className="py-3 px-4 font-mono text-[10px] text-zinc-500 dark:text-zinc-400">
+      <TableCell className="py-3 px-4 font-mono text-[10px] text-muted-foreground">
         {deviceSerial}
       </TableCell>
 
@@ -78,7 +78,7 @@ export const RmmDeviceTableRow: React.FC<RmmDeviceTableRowProps> = memo(({
                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50'
                 : isOffline
                   ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/50'
-                  : 'bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:border-zinc-800'
+                  : 'bg-muted text-muted-foreground border-border'
             }`}
           >
             {isOnline ? (
@@ -91,19 +91,19 @@ export const RmmDeviceTableRow: React.FC<RmmDeviceTableRowProps> = memo(({
             {t(isOnline ? 'rmm.agentOnline' : isOffline ? 'rmm.agentOffline' : 'rmm.agentUnknown')}
           </span>
         ) : (
-          <span className="font-mono text-[10px] text-zinc-400">{t('rmm.telemetryNA')}</span>
+          <span className="font-mono text-[10px] text-muted-foreground">{t('rmm.telemetryNA')}</span>
         )}
       </TableCell>
 
       <TableCell className="py-3 px-4">
         <div className="flex items-center gap-3 text-xs">
-          <span className="flex items-center gap-1 font-mono text-[11px] text-zinc-700 dark:text-zinc-300">
+          <span className="flex items-center gap-1 font-mono text-[11px] text-foreground">
             <Cpu className="h-3 w-3 text-blue-500" /> {cpu}
           </span>
-          <span className="flex items-center gap-1 font-mono text-[11px] text-zinc-700 dark:text-zinc-300">
+          <span className="flex items-center gap-1 font-mono text-[11px] text-foreground">
             <Activity className="h-3 w-3 text-emerald-500" /> {mem}
           </span>
-          <span className="flex items-center gap-1 font-mono text-[11px] text-zinc-700 dark:text-zinc-300">
+          <span className="flex items-center gap-1 font-mono text-[11px] text-foreground">
             <HardDrive className="h-3 w-3 text-amber-500" /> {disk}
           </span>
         </div>

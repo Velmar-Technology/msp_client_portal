@@ -31,7 +31,7 @@ export const PatchSeverityBadge: React.FC<PatchSeverityBadgeProps> = ({ severity
       );
     default:
       return (
-        <Badge className="bg-zinc-100 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700/60 font-semibold text-[11px] px-2 py-0.5 shadow-2xs">
+        <Badge className="bg-muted text-muted-foreground border border-border font-semibold text-[11px] px-2 py-0.5 shadow-2xs">
           {t("rmm.severityLow")}
         </Badge>
       );

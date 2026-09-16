@@ -71,7 +71,7 @@ export function CRMKanbanBoard({ leads, stats, onSelectLead, onUpdateStage }: CR
               className={`flex-1 min-w-55 rounded-xl p-3 flex flex-col gap-3 shadow-xs transition-colors ${
                 isDropTarget
                   ? "bg-primary/5 border-2 border-dashed border-primary/50"
-                  : "bg-muted/40 dark:bg-zinc-900/40 border border-border"
+                  : "bg-muted/40 border border-border"
               }`}
             >
               {/* Column Header */}

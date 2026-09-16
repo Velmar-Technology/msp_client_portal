@@ -29,12 +29,12 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast:
-            "group toast group-[.toaster]:bg-white dark:group-[.toaster]:bg-zinc-900 group-[.toaster]:text-zinc-900 dark:group-[.toaster]:text-zinc-100 group-[.toaster]:border-zinc-200 dark:group-[.toaster]:border-zinc-800/80 group-[.toaster]:shadow-xl group-[.toaster]:rounded-xl font-sans border p-4",
-          description: "group-[.toast]:text-zinc-600 dark:group-[.toast]:text-zinc-300 text-xs leading-relaxed font-normal",
+            "group toast group-[.toaster]:bg-card group-[.toaster]:text-card-foreground group-[.toaster]:border-border group-[.toaster]:shadow-xl group-[.toaster]:rounded-xl font-sans border p-4",
+          description: "group-[.toast]:text-muted-foreground text-xs leading-relaxed font-normal",
           actionButton:
-            "group-[.toast]:bg-zinc-900 group-[.toast]:text-white dark:group-[.toast]:bg-zinc-100 dark:group-[.toast]:text-zinc-900 font-medium text-xs px-3 py-1.5 rounded-lg",
+            "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground font-medium text-xs px-3 py-1.5 rounded-lg",
           cancelButton:
-            "group-[.toast]:bg-zinc-100 group-[.toast]:text-zinc-600 dark:group-[.toast]:bg-zinc-800 dark:group-[.toast]:text-zinc-300 text-xs px-3 py-1.5 rounded-lg",
+            "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground text-xs px-3 py-1.5 rounded-lg",
         },
       }}
       {...props}

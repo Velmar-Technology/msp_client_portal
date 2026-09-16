@@ -107,7 +107,7 @@ export function useAdminDashboard() {
       PAID: "bg-emerald-50 text-emerald-800 border border-emerald-200/60 dark:bg-emerald-950/20 dark:text-emerald-300 dark:border-emerald-900/40",
       OVERDUE: "bg-red-50 text-red-800 border border-red-200/60 dark:bg-red-950/20 dark:text-red-300 dark:border-red-900/40",
     };
-    return colors[status] || "bg-zinc-50 text-zinc-800 border border-zinc-200/60 dark:bg-zinc-900/80 dark:text-zinc-300 dark:border-zinc-800/60";
+    return colors[status] || "bg-muted text-muted-foreground border border-border";
   }, []);
 
   return {

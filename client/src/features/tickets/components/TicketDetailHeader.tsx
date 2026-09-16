@@ -204,7 +204,7 @@ export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
         ? 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400 border-red-500/20'
         : isOpen
           ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border-blue-500/20'
-          : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800/80 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700';
+          : 'bg-muted text-muted-foreground border-border';
 
   const dotClass = isResolved
     ? 'bg-emerald-500'
@@ -214,7 +214,7 @@ export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
         ? 'bg-red-500'
         : isOpen
           ? 'bg-blue-500'
-          : 'bg-zinc-400';
+          : 'bg-muted-foreground';
 
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
