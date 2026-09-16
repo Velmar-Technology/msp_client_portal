@@ -56,8 +56,8 @@ describe('TenantByokController', () => {
       const req: any = {
         user: { tenantId: '11111111-2222-3333-4444-555555555555' },
         body: {
-          provider: 'openai',
-          apiKey: '   ', // empty trimmed key
+          provider: 'unsupported-provider', // invalid enum value
+          apiKey: 'sk-proj-key',
         },
       };
       const res: any = { json: vi.fn() };

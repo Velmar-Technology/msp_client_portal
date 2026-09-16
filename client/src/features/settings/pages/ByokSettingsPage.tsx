@@ -90,11 +90,6 @@ export function ByokSettingsPage() {
     setParam("tab", val);
   };
 
-  // Entitlement guard per BL-204
-  if (isLocked) {
-    return <FeatureLockedPreview requiredFeature={FEATURE_CODES.CAF_EDUCATION_AGENT} />;
-  }
-
   const modelOptions = useMemo(() => {
     const list = [...(PROVIDER_MODELS[provider] || [])];
     if (model && !list.some((opt) => opt.value === model)) {
@@ -105,6 +100,12 @@ export function ByokSettingsPage() {
     }
     return list;
   }, [provider, model]);
+
+  // Entitlement guard per BL-204
+  if (isLocked) {
+    return <FeatureLockedPreview requiredFeature={FEATURE_CODES.CAF_EDUCATION_AGENT} />;
+  }
+
 
   const handleProviderChange = (val: ByokProvider) => {
     setProvider(val);
