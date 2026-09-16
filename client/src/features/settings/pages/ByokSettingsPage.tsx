@@ -155,9 +155,11 @@ export function ByokSettingsPage() {
     }
   };
 
+  const isAlreadyConfigured = byokStatus?.isConfigured ?? false;
+
   const handleSaveConfig = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!apiKey.trim()) {
+    if (!apiKey.trim() && !isAlreadyConfigured) {
       toast.error(t("byok.keyRequired", "API key is required"));
       return;
     }
@@ -165,7 +167,7 @@ export function ByokSettingsPage() {
     try {
       await saveMutation.mutateAsync({
         provider,
-        apiKey: apiKey.trim(),
+        apiKey: apiKey.trim() || undefined,
         model: model.trim() || undefined,
         baseUrl: baseUrl.trim() || undefined,
       });
@@ -412,7 +414,7 @@ export function ByokSettingsPage() {
                 <Button
                   type="submit"
                   size="sm"
-                  disabled={saveMutation.isPending || !apiKey.trim()}
+                  disabled={saveMutation.isPending || (!apiKey.trim() && !isAlreadyConfigured)}
                   className="h-7 text-xs"
                 >
                   {saveMutation.isPending
