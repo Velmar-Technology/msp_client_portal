@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.12.0](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.12...v1.12.0) (2026-09-16)
+
 ## [1.11.12](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.11...v1.11.12) (2026-09-16)
 
 
