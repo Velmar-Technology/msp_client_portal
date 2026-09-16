@@ -75,7 +75,9 @@ packages/
 ```
 
 ### Contract-First Monolith & Colocated Features
+
 To eliminate cross-workspace rework and pass-through boilerplate, new implementations follow our modern architecture standards:
+
 - **Single Source of Truth:** API contracts, query parameters, and Zod validation schemas are maintained in `@shared/contracts` ([ADR-001](docs/decisions/ADR-001-contract-first-monolith-and-tanstack-query.md)).
 - **Colocated Feature Architecture:** Frontend domains are grouped in self-contained vertical feature modules (`client/src/features/<domain>/`) with colocated query hooks, UI blocks, and route pages ([ADR-002](docs/decisions/ADR-002-frontend-colocated-feature-architecture.md)).
 - **Server State Delegation:** Asynchronous server state and cache invalidation are handled by **TanStack Query** (`@tanstack/react-query`). Zustand is restricted strictly to client UI state.
@@ -168,13 +170,13 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
   - Admins can mark bank/wire transfers as `PAID` without PayPal API dependencies, automatically reactivating expired subscriptions.
 
 ### Module 5: CRM Lead Pipeline & Onboarding
- 
+
 - **BL-501: CRM Lead Pipeline Lifecycle** (`CrmService.advanceDealStage`)
   - Deals progress through standardized stages: `NEW` $\rightarrow$ `QUALIFIED` $\rightarrow$ `PROPOSAL` $\rightarrow$ `NEGOTIATION` $\rightarrow$ `WON`/`LOST`.
   - Closing as `WON` automatically provisions the client tenant and queues account onboarding.
 
 ### Module 6: Account Health & QBR Logic
- 
+
 - **BL-601: Composite Client Health Scoring** (`ClientHealthService.calculateScore`, `GET /api/v1/system/health/:tenantId`)
   - Health Formula:
     $$H = 0.40 \times S_{\text{ticket}} + 0.30 \times S_{\text{hardware}} + 0.30 \times S_{\text{security}}$$
@@ -406,11 +408,13 @@ The portal integrates with **Nextcloud** running on **TrueNAS SCALE** (`cloud-st
 The platform includes a State-of-the-Art (SOTA) Authorization subsystem (`server/src/shared/authz/`) combining **RBAC**, **Google Zanzibar ReBAC**, **Policy-as-Code ABAC**, **AI/RAG Vector ACLs**, and **Continuous Adaptive Trust**.
 
 To run the interactive live demonstration in your terminal:
+
 ```bash
 npm -w server exec tsx src/shared/scripts/demoAuthz.ts
 ```
 
 To run all authorization unit tests:
+
 ```bash
 npm -w server exec vitest run src/shared/authz/ src/shared/middleware/authzMiddleware.test.ts
 ```
@@ -447,6 +451,27 @@ The repository provides a first-class Model Context Protocol server ([`packages/
 
 ---
 
+## High-Throughput Telemetry Ingestion & Clustered WebSocket Mesh (@see ADR-011)
+
+To support enterprise-scale RMM monitoring (500 to 5,000 active endpoints, ~300 telemetry pings/sec) without database connection pool exhaustion or framework rewrites, the backend implements a three-tier hybrid architecture:
+
+1. **Database Fortification & Atomic Upserts (`RmmTelemetryRepository`):**
+   - Single atomic SQL query replaces legacy two-step read-then-write via Drizzle ORM `.onConflictDoUpdate({ target: rmmDeviceTelemetry.equipment_id, set: ... })`.
+   - Chunked batch upsert (`upsertTelemetryBatch`) using PostgreSQL `EXCLUDED` column mappings for bulk persistence of up to 500 records in one database roundtrip.
+   - Compound index `idx_rmm_telemetry_status_sync` on `(agent_status, last_sync_at)` in `rmm_device_telemetry` eliminating sequential scans during stale-workstation sweeps.
+
+2. **Redis In-Memory Write-Behind Micro-Batch Buffer (`TelemetryBufferService`):**
+   - Inbound workstation heartbeats write directly to Redis Hash `telemetry:device:<id>` in `< 2ms` with 24h TTL and dirty-set tracking in `telemetry:dirty_devices`.
+   - A background flusher runs every 3,000ms, draining up to 500 records via Redis pipelines (`spop` + `hgetall`) to PostgreSQL, achieving a 99% write load reduction on the database.
+   - Built-in in-memory fallback protects local development and graceful shutdown drains remaining dirty keys.
+
+3. **Clustered WebSocket Mesh & Horizontal Scalability (`AgentClusterBroker` & `cluster.ts`):**
+   - Redis Pub/Sub channels `agent:cmd:<equipmentId>` and `agent:res:<correlationId>` broker interactive commands (e.g. `DIAGNOSE_PC`, `RESTART_SERVICE`) transparently across multi-worker Node.js processes.
+   - Cluster presence tracked via Redis Set `agent:cluster:online` (`isAgentConnectedInCluster`).
+   - Native Node.js `node:cluster` runner in [`server/src/cluster.ts`](../../server/src/cluster.ts) pools workers sharing HTTP/WS port 3001 with automatic worker recycling.
+
+---
+
 ## API Documentation
 
 Interactive Swagger API documentation is available when the server is running:
@@ -462,6 +487,7 @@ Interactive Swagger API documentation is available when the server is running:
 The repository strictly enforces **[Conventional Commits](https://www.conventionalcommits.org/)** specifications locally via **Husky** and **Commitlint** to ensure clean git histories and automated semantic release tagging (`commit-and-tag-version`).
 
 ### Commit Format
+
 ```text
 <type>(<scope>): <short description in imperative mood>
 
@@ -471,6 +497,7 @@ The repository strictly enforces **[Conventional Commits](https://www.convention
 ```
 
 ### Allowed Types
+
 - `feat`: New feature or capability
 - `fix`: Bug fix
 - `docs`: Documentation updates
@@ -484,9 +511,9 @@ The repository strictly enforces **[Conventional Commits](https://www.convention
 - `revert`: Reverting a previous commit
 
 ### Common Domain Scopes
+
 `rmm`, `client`, `server`, `equipment`, `system`, `tickets`, `billing`, `subscriptions`, `crm`, `notifications`, `auth`, `ui`, `i18n`, `web`, `infra`, `shared`, `deps`
 
 ### Pre-Commit / Commit-Msg Validation
+
 Hooks are automatically installed via `npm run prepare` (configured in root `package.json`). Whenever you run `git commit`, Husky invokes Commitlint to validate your commit message before it is accepted.
-
-

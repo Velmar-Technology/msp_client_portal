@@ -143,6 +143,21 @@ export class RedisClientService {
   }
 
   /**
+   * Creates a duplicate Redis connection configured for Pub/Sub subscriptions.
+   *
+   * @returns Dedicated Redis subscriber instance or null if Redis is disabled/not initialized
+   */
+  createSubscriberClient(): Redis | null {
+    if (!this.client) return null;
+    try {
+      return this.client.duplicate();
+    } catch (err: any) {
+      logger.error('Failed to create Redis subscriber client duplicate', { error: err?.message || String(err) });
+      return null;
+    }
+  }
+
+  /**
    * Returns current Redis health status, readiness, error, and total command count.
    *
    * @returns RedisHealth snapshot

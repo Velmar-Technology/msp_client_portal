@@ -6,7 +6,7 @@ Security is a core tenant of this platform. We take vulnerability reports seriou
 and will respond as quickly as possible.
 
 **Please do NOT open a public issue for security problems.** Report privately to
-the maintainers at `security@velmartech.com.do`.
+the maintainers at `seguridad@velmartech.com.do`.
 
 ### What to include
 
@@ -18,12 +18,12 @@ the maintainers at `security@velmartech.com.do`.
 
 ## Response Timeline
 
-| Stage | Target time |
-| :--- | :--- |
-| Acknowledgment | Within 48 hours |
-| Triage & severity assessment | Within 5 business days |
-| Fix landed on `stage` | Critical/High: ASAP; Medium/Low: next release |
-| Public disclosure | After a fix is deployed and users are updated |
+| Stage                        | Target time                                   |
+| :--------------------------- | :-------------------------------------------- |
+| Acknowledgment               | Within 48 hours                               |
+| Triage & severity assessment | Within 5 business days                        |
+| Fix landed on `stage`        | Critical/High: ASAP; Medium/Low: next release |
+| Public disclosure            | After a fix is deployed and users are updated |
 
 ## Scope
 

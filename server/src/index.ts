@@ -191,7 +191,12 @@ async function startServer(): Promise<void> {
         const { escalationScheduler } = require('@modules/tickets/services/EscalationScheduler');
         escalationScheduler.stop();
 
-        wss.close();
+        const { telemetryBufferService, agentClusterBroker } = require('@modules/rmm');
+        await telemetryBufferService.stop();
+        await agentClusterBroker.stop();
+
+        agentWss.close();
+        portalWss.close();
         server.close(() => {
           logger.info('HTTP/WebSocket server closed.');
           process.exit(0);

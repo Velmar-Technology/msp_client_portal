@@ -3,6 +3,8 @@ import { IncomingMessage } from 'http';
 import crypto from 'crypto';
 import { logger } from '@shared/utils/logger';
 import { metricsService } from '@shared/metrics/metricsService';
+import { TelemetryBufferService, telemetryBufferService } from './TelemetryBufferService';
+import { AgentClusterBroker, agentClusterBroker } from './AgentClusterBroker';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -99,6 +101,30 @@ export class AgentGateway {
   private onAgentHelloHandler: AgentHelloHandler | null = null;
 
   /**
+   * Initializes AgentGateway with TelemetryBufferService and AgentClusterBroker dependencies.
+   *
+   * @param telemetryBuffer - Buffered telemetry ingestion service
+   * @param clusterBroker - Clustered WebSocket Pub/Sub broker
+   */
+  constructor(
+    private readonly telemetryBuffer: TelemetryBufferService = telemetryBufferService,
+    private readonly clusterBroker: AgentClusterBroker = agentClusterBroker
+  ) {
+    this.registerClusterHandlers();
+  }
+
+  /**
+   * Registers local execution handler with the cluster broker to service remote commands.
+   */
+  private registerClusterHandlers(): void {
+    this.clusterBroker.registerLocalExecutor(
+      async (equipmentId, command, payload, correlationId) => {
+        return this.dispatchLocalCommand(equipmentId, command, payload, correlationId);
+      }
+    );
+  }
+
+  /**
    * Registers a listener that is invoked (fire-and-forget) whenever an agent
    * completes its registration handshake. Used by the equipment module to
    * reconcile agent-discovered identity against the stored device record.
@@ -148,6 +174,11 @@ export class AgentGateway {
     // Garbage-collect expired agent-issued pairing codes.
     const sweep = setInterval(() => this.sweepExpiredPairings(), 60_000);
     sweep.unref?.();
+
+    // Start cluster broker for cross-worker WebSocket mesh
+    this.clusterBroker.start().catch((err) => {
+      logger.warn('[AgentGateway] Failed to start cluster broker:', err);
+    });
 
     logger.info('[AgentGateway] Initialized and listening for agent connections.');
   }
@@ -204,6 +235,9 @@ export class AgentGateway {
     };
 
     this.activeSockets.set(equipmentId, agent);
+    this.clusterBroker.registerAgentPresence(equipmentId).catch((err) => {
+      logger.debug(`[AgentGateway] Failed to register presence for ${equipmentId}:`, err);
+    });
     metricsService.incWsConnection('agent-ws');
     logger.info(
       `[AgentGateway] Agent connected over ${transport.toUpperCase()}: ${equipmentId}. Total active: ${this.activeSockets.size}`
@@ -231,6 +265,28 @@ export class AgentGateway {
           return;
         }
 
+        // Handle TELEMETRY_PING / HEARTBEAT with metrics
+        if ((data.command === 'TELEMETRY_PING' || data.command === 'HEARTBEAT') && data.payload) {
+          agent.lastHeartbeat = new Date();
+          this.telemetryBuffer
+            .bufferPing({
+              equipment_id: equipmentId,
+              tenant_id: data.payload.tenant_id || agent.token || 'unknown',
+              agent_status: 'ONLINE',
+              cpu_usage: data.payload.cpu_usage,
+              memory_usage: data.payload.memory_usage,
+              disk_usage: data.payload.disk_usage,
+              disk_used_gb: data.payload.disk_used_gb,
+              disk_total_gb: data.payload.disk_total_gb,
+              pending_patch_count: data.payload.pending_patch_count,
+              last_sync_at: new Date(),
+            })
+            .catch((err) => {
+              logger.warn(`[AgentGateway] Failed to buffer telemetry for ${equipmentId}:`, err);
+            });
+          return;
+        }
+
         // Handle RESPONSE correlation
         if (data.correlation_id && this.pendingRequests.has(data.correlation_id)) {
           const pending = this.pendingRequests.get(data.correlation_id)!;
@@ -247,6 +303,9 @@ export class AgentGateway {
     // ── Disconnect Handler ──
     ws.on('close', (code: number, reason: Buffer) => {
       this.activeSockets.delete(equipmentId);
+      this.clusterBroker.unregisterAgentPresence(equipmentId).catch((err) => {
+        logger.debug(`[AgentGateway] Failed to unregister presence for ${equipmentId}:`, err);
+      });
       this.purgePairingForAgent(equipmentId);
       metricsService.decWsConnection('agent-ws');
       logger.info(
@@ -275,6 +334,8 @@ export class AgentGateway {
 
   /**
    * Dispatches a command to a remote agent and waits for the correlated response.
+   * Checks local active sockets first; if not present locally, routes across the
+   * Redis Pub/Sub cluster mesh to the worker holding the active connection.
    *
    * @param equipmentId - Target equipment UUID
    * @param command     - Command name (DIAGNOSE_PC, GET_EVENT_LOGS, etc.)
@@ -289,17 +350,53 @@ export class AgentGateway {
     payload?: any,
     timeoutMs: number = AgentGateway.DEFAULT_TIMEOUT_MS
   ): Promise<AgentCommandResult> {
-    const agent = this.activeSockets.get(equipmentId);
-    if (!agent || agent.ws.readyState !== WebSocket.OPEN) {
-      throw new Error(`Agent for equipment '${equipmentId}' is not connected (OFFLINE).`);
+    const localAgent = this.activeSockets.get(equipmentId);
+    if (localAgent && localAgent.ws.readyState === WebSocket.OPEN) {
+      const result = await this.dispatchLocalCommand(
+        equipmentId,
+        command,
+        payload,
+        undefined,
+        timeoutMs
+      );
+      if (!result) {
+        throw new Error(`Agent for equipment '${equipmentId}' is not connected (OFFLINE).`);
+      }
+      return result;
     }
 
-    const correlationId = crypto.randomUUID();
+    // Agent is not connected to this worker instance; forward via cluster broker
+    return this.clusterBroker.publishCommand(equipmentId, command, payload, timeoutMs);
+  }
+
+  /**
+   * Dispatches a command directly to a locally connected agent over its WebSocket.
+   *
+   * @param equipmentId - Target equipment UUID
+   * @param command - Command name
+   * @param payload - Optional command parameters
+   * @param correlationId - Optional pre-allocated correlation ID (e.g. from cluster broker)
+   * @param timeoutMs - Command timeout in milliseconds
+   * @returns AgentCommandResult or null if agent is not locally connected/open
+   */
+  private async dispatchLocalCommand(
+    equipmentId: string,
+    command: string,
+    payload?: any,
+    correlationId?: string,
+    timeoutMs: number = AgentGateway.DEFAULT_TIMEOUT_MS
+  ): Promise<AgentCommandResult | null> {
+    const agent = this.activeSockets.get(equipmentId);
+    if (!agent || agent.ws.readyState !== WebSocket.OPEN) {
+      return null;
+    }
+
+    const effectiveCorrelationId = correlationId || crypto.randomUUID();
     const startTime = Date.now();
 
     return new Promise<AgentCommandResult>((resolve, reject) => {
       const timer = setTimeout(() => {
-        this.pendingRequests.delete(correlationId);
+        this.pendingRequests.delete(effectiveCorrelationId);
         reject(
           new Error(
             `Command '${command}' to agent '${equipmentId}' timed out after ${timeoutMs}ms.`
@@ -307,7 +404,7 @@ export class AgentGateway {
         );
       }, timeoutMs);
 
-      this.pendingRequests.set(correlationId, {
+      this.pendingRequests.set(effectiveCorrelationId, {
         resolve: (data: any) => {
           resolve({
             equipmentId,
@@ -321,7 +418,7 @@ export class AgentGateway {
       });
 
       const envelope = JSON.stringify({
-        correlation_id: correlationId,
+        correlation_id: effectiveCorrelationId,
         command,
         payload: payload || null,
       });
@@ -329,7 +426,7 @@ export class AgentGateway {
       agent.ws.send(envelope, (err) => {
         if (err) {
           clearTimeout(timer);
-          this.pendingRequests.delete(correlationId);
+          this.pendingRequests.delete(effectiveCorrelationId);
           reject(new Error(`Failed to send command to agent: ${err.message}`));
         }
       });
@@ -489,6 +586,19 @@ export class AgentGateway {
       }
     }
     return false;
+  }
+
+  /**
+   * Checks whether an agent is actively connected locally or across the cluster.
+   *
+   * @param identifier - Equipment UUID or slot ID
+   * @returns True if connected locally or present in Redis cluster presence set
+   */
+  async isAgentConnectedInCluster(identifier: string): Promise<boolean> {
+    if (this.isAgentConnected(identifier)) {
+      return true;
+    }
+    return this.clusterBroker.isAgentPresent(identifier);
   }
 
   // ── Agent-Issued Pairing Codes ───────────────────────────────────────────────
