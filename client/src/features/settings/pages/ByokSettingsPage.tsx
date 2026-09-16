@@ -1,18 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import {
-  Key,
-  Eye,
-  EyeOff,
-  CheckCircle2,
-  XCircle,
-  ShieldCheck,
-  Cpu,
-  Copy,
-  Check,
-  Terminal,
-} from "lucide-react";
+import { Key, Eye, EyeOff, CheckCircle2, XCircle, ShieldCheck, Cpu, Copy, Check, Terminal } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +16,32 @@ import { useEntitlements } from "@/hooks/useEntitlements";
 import { useUrlState } from "@/hooks/useUrlState";
 import { useTenantByokStatus, useSaveTenantByok, useTestByokConnection } from "../api/byok";
 import type { ByokProvider } from "@shared/contracts";
+
+const PROVIDER_MODELS: Record<ByokProvider, { value: string; label: string }[]> = {
+  openai: [
+    { value: "gpt-6-astra", label: "gpt-6-astra (Frontier Multi-Step Reasoning & Agents)" },
+    { value: "gpt-5.6-sol", label: "gpt-5.6-sol (Flagship Heavy Knowledge & Coding)" },
+    { value: "gpt-5.6-terra", label: "gpt-5.6-terra (Balanced Midrange Tier)" },
+    { value: "gpt-5.6-luna", label: "gpt-5.6-luna (High-Volume Speed & Utility)" },
+    { value: "gpt-live-1", label: "gpt-live-1 (Realtime Voice & Streaming)" },
+    { value: "gpt-realtime-2.1", label: "gpt-realtime-2.1 (Low-Latency Tool-Use)" },
+    { value: "gpt-realtime-2.1-mini", label: "gpt-realtime-2.1-mini (Low-Latency Mini)" },
+    { value: "gpt-transcribe", label: "gpt-transcribe (Accurate Speech-to-Text)" },
+  ],
+  anthropic: [
+    { value: "claude-fable-5.1", label: "claude-fable-5.1 (Frontier Reasoning & Complex Agents)" },
+    { value: "claude-opus-5", label: "claude-opus-5 (Enterprise Coding & Complex RAG)" },
+    { value: "claude-sonnet-5", label: "claude-sonnet-5 (Balanced Developer Powerhouse)" },
+    { value: "claude-haiku-4.5", label: "claude-haiku-4.5 (Ultra-Fast Operational String)" },
+  ],
+  custom: [
+    { value: "llama3.3:70b", label: "llama3.3:70b (Llama 3.3 70B Local)" },
+    { value: "llama3.1:8b", label: "llama3.1:8b (Llama 3.1 8B Local)" },
+    { value: "qwen2.5-coder:32b", label: "qwen2.5-coder:32b (Qwen 2.5 Coder)" },
+    { value: "deepseek-r1:14b", label: "deepseek-r1:14b (DeepSeek R1 Reasoning)" },
+    { value: "mistral:latest", label: "mistral:latest (Mistral 7B Local)" },
+  ],
+};
 
 export function ByokSettingsPage() {
   const { t } = useTranslation();
@@ -44,7 +59,7 @@ export function ByokSettingsPage() {
 
   const [provider, setProvider] = useState<ByokProvider>("openai");
   const [apiKey, setApiKey] = useState("");
-  const [model, setModel] = useState("gpt-4o");
+  const [model, setModel] = useState("gpt-6-astra");
   const [baseUrl, setBaseUrl] = useState("");
   const [showKey, setShowKey] = useState(false);
   const [testResult, setTestResult] = useState<{
@@ -80,17 +95,28 @@ export function ByokSettingsPage() {
     return <FeatureLockedPreview requiredFeature={FEATURE_CODES.CAF_EDUCATION_AGENT} />;
   }
 
+  const modelOptions = useMemo(() => {
+    const list = [...(PROVIDER_MODELS[provider] || [])];
+    if (model && !list.some((opt) => opt.value === model)) {
+      list.unshift({
+        value: model,
+        label: model,
+      });
+    }
+    return list;
+  }, [provider, model]);
+
   const handleProviderChange = (val: ByokProvider) => {
     setProvider(val);
     setTestResult(null);
     if (val === "openai") {
-      setModel("gpt-4o");
+      setModel("gpt-6-astra");
       setBaseUrl("");
     } else if (val === "anthropic") {
-      setModel("claude-3-5-sonnet-20241022");
+      setModel("claude-fable-5.1");
       setBaseUrl("");
     } else if (val === "custom") {
-      setModel("");
+      setModel("llama3.3:70b");
       setBaseUrl("http://localhost:11434/v1");
     }
   };
@@ -249,7 +275,7 @@ export function ByokSettingsPage() {
                       {t("byok.providerLabel", "Proveedor de Inteligencia Artificial")}
                     </Label>
                     <Select value={provider} onValueChange={(val) => handleProviderChange(val as ByokProvider)}>
-                      <SelectTrigger id="byok-provider" className="h-7 text-xs">
+                      <SelectTrigger id="byok-provider" className="w-full h-7 text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -263,15 +289,20 @@ export function ByokSettingsPage() {
                   {/* Model Selector */}
                   <div className="space-y-1.5">
                     <Label htmlFor="byok-model" className="text-xs font-medium">
-                      {t("byok.modelLabel", "Modelo a Ejecutar")}
+                      {t("byok.modelLabel", "Modelo")}
                     </Label>
-                    <Input
-                      id="byok-model"
-                      value={model}
-                      onChange={(e) => setModel(e.target.value)}
-                      placeholder="e.g. gpt-4o"
-                      className="h-7 text-xs font-mono"
-                    />
+                    <Select value={model} onValueChange={(val) => setModel(val)}>
+                      <SelectTrigger id="byok-model" className="w-full h-7 text-xs">
+                        <SelectValue placeholder={t("byok.selectModel", "Seleccionar modelo...")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {modelOptions.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 

@@ -213,6 +213,14 @@
   body {
     @apply bg-background text-foreground min-h-screen;
   }
+  /* Enforces typographic best practices globally across the SaaS app */
+  p, li, blockquote {
+    @apply text-pretty leading-relaxed;
+  }
+  /* Automatically balances all headings up to h4 to keep them symmetrical */
+  h1, h2, h3, h4 {
+    @apply text-balance font-bold tracking-tight text-foreground font-heading;
+  }
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;

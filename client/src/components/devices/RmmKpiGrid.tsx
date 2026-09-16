@@ -1,8 +1,8 @@
-import React, { memo } from 'react';
-import { useTranslation } from 'react-i18next';
-import type { RmmOverviewStats } from '@/features/rmm';
-import { SummaryCard } from '@/components/shared';
-import { Server, ShieldCheck, TrendingUp, Zap, CheckCircle2 } from 'lucide-react';
+import React, { memo } from "react";
+import { useTranslation } from "react-i18next";
+import type { RmmOverviewStats } from "@/features/rmm";
+import { SummaryCard } from "@/components/shared";
+import { Server, ShieldCheck, TrendingUp, Zap, CheckCircle2 } from "lucide-react";
 
 export interface RmmKpiGridProps {
   stats: RmmOverviewStats | null;
@@ -24,7 +24,9 @@ export const RmmKpiGrid: React.FC<RmmKpiGridProps> = memo(({ stats, totalDevices
       <SummaryCard
         icon={<Server className="h-4 w-4 text-zinc-600 dark:text-zinc-400 shrink-0" />}
         title={t("rmm.kpiMonitoredDevices")}
-        value={<span className="font-mono text-2xl font-extrabold text-zinc-900 dark:text-zinc-100">{monitoredTotal}</span>}
+        value={
+          <span className="font-mono text-2xl font-extrabold text-zinc-900 dark:text-zinc-100">{monitoredTotal}</span>
+        }
         subtitle={
           <div className="flex flex-wrap items-center gap-1.5 pt-0.5 text-[10px]">
             <span className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50 px-1.5 py-0.5 rounded font-mono font-bold uppercase inline-flex items-center gap-1 shrink-0">
@@ -42,7 +44,9 @@ export const RmmKpiGrid: React.FC<RmmKpiGridProps> = memo(({ stats, totalDevices
       <SummaryCard
         icon={<ShieldCheck className="h-4 w-4 text-amber-500 shrink-0" />}
         title={t("rmm.kpiPendingPatches")}
-        value={<span className="font-mono text-2xl font-extrabold text-amber-600 dark:text-amber-400">{pendingPatches}</span>}
+        value={
+          <span className="font-mono text-2xl font-extrabold text-amber-600 dark:text-amber-400">{pendingPatches}</span>
+        }
         subtitle={<span className="text-[10px] text-zinc-400 font-medium">{t("rmm.kpiAdvisoriesReady")}</span>}
       />
 
@@ -50,7 +54,9 @@ export const RmmKpiGrid: React.FC<RmmKpiGridProps> = memo(({ stats, totalDevices
       <SummaryCard
         icon={<TrendingUp className="h-4 w-4 text-blue-500 shrink-0" />}
         title={t("rmm.kpiAlertNrr")}
-        value={<span className="font-mono text-2xl font-extrabold text-blue-600 dark:text-blue-400">{nrrFormatted}%</span>}
+        value={
+          <span className="font-mono text-2xl font-extrabold text-blue-600 dark:text-blue-400">{nrrFormatted}%</span>
+        }
         subtitle={<span className="text-[10px] text-zinc-400 font-medium">{t("rmm.kpiDeduplicatedAlerts")}</span>}
       />
 
@@ -58,11 +64,15 @@ export const RmmKpiGrid: React.FC<RmmKpiGridProps> = memo(({ stats, totalDevices
       <SummaryCard
         icon={<Zap className="h-4 w-4 text-emerald-500 shrink-0" />}
         title={t("rmm.kpiSelfHealing")}
-        value={<span className="font-mono text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">{sheFormatted}%</span>}
+        value={
+          <span className="font-mono text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
+            {sheFormatted}%
+          </span>
+        }
         subtitle={<span className="text-[10px] text-zinc-400 font-medium">{t("rmm.kpiAutoClosed")}</span>}
       />
     </div>
   );
 });
 
-RmmKpiGrid.displayName = 'RmmKpiGrid';
+RmmKpiGrid.displayName = "RmmKpiGrid";

@@ -28,13 +28,13 @@ describe('BYOK Contract Validation Suite', () => {
     }
   });
 
-  it('rejects empty API keys', () => {
-    const invalid = {
-      apiKey: '   ',
+  it('allows optional API key when updating configuration', () => {
+    const validWithoutKey = {
       provider: 'openai',
+      model: 'gpt-6-astra',
     };
-    const result = TenantByokConfigInputSchema.safeParse(invalid);
-    expect(result.success).toBe(false);
+    const result = TenantByokConfigInputSchema.safeParse(validWithoutKey);
+    expect(result.success).toBe(true);
   });
 
   it('validates TenantByokStatusSchema with masked keys and UUIDs', () => {

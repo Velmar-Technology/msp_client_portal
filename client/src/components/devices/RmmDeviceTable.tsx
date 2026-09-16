@@ -9,7 +9,17 @@ import {
   type DataTableBulkAction,
 } from "@/components/ui/data-table";
 import type { SubscriptionEquipment } from "@shared/contracts";
-import { Activity, CheckCircle2, Cpu, HardDrive, RefreshCw, ShieldCheck, Clock, Power, MoreHorizontal } from "lucide-react";
+import {
+  Activity,
+  CheckCircle2,
+  Cpu,
+  HardDrive,
+  RefreshCw,
+  ShieldCheck,
+  Clock,
+  Power,
+  MoreHorizontal,
+} from "lucide-react";
 import { formatRelativeTime } from "@/lib/formatRelativeTime";
 import {
   DropdownMenu,
@@ -80,7 +90,9 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
             return (
               <div className="space-y-0.5">
                 <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">{deviceName}</p>
-                <p className="text-[10px] text-zinc-400 font-mono">{t("rmm.tableSlotNum", { num: equip.slot_index + 1 })}</p>
+                <p className="text-[10px] text-zinc-400 font-mono">
+                  {t("rmm.tableSlotNum", { num: equip.slot_index + 1 })}
+                </p>
               </div>
             );
           },
@@ -244,7 +256,7 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
             const count = row.original.pending_patch_count ?? 0;
             return (
               <span className="bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/50 px-2 py-0.5 rounded text-[10px] font-mono font-bold inline-flex items-center gap-1 shrink-0">
-                <ShieldCheck className="h-3 w-3" /> {t("rmm.tablePendingPatchesBadge", { count })}
+                <ShieldCheck className="h-3 w-3" /> {count}
               </span>
             );
           },
@@ -274,7 +286,6 @@ export const RmmDeviceTable: React.FC<RmmDeviceTableProps> = memo(
                   disabled={isScanning}
                   className="h-7 px-2 text-xs font-semibold gap-1 cursor-pointer"
                 >
-                  <span>{t("rmm.tableScanTooltip") || "Scan"}</span>
                   <RefreshCw className={`h-3 w-3 ${isScanning ? "animate-spin" : ""}`} />
                 </Button>
 

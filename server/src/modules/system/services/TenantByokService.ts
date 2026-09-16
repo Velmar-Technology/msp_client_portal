@@ -111,8 +111,31 @@ export class TenantByokService {
       throw new ValidationError('Tenant ID is required for BYOK credential registration');
     }
 
-    const { encryptedApiKey, keyIv, keyAuthTag } = this.encrypt(input.apiKey);
-    const keyMasked = this.maskKey(input.apiKey);
+    const existing = await db
+      .select()
+      .from(tenantByokCredentials)
+      .where(eq(tenantByokCredentials.tenant_id, tenantId))
+      .limit(1);
+
+    const existingRow = existing && existing.length > 0 ? existing[0] : null;
+    const trimmedKey = input.apiKey?.trim();
+
+    if (!trimmedKey && !existingRow) {
+      throw new ValidationError('API key is required for initial BYOK credential registration');
+    }
+
+    let encryptedApiKey = existingRow?.encrypted_api_key ?? '';
+    let keyIv = existingRow?.key_iv ?? '';
+    let keyAuthTag = existingRow?.key_auth_tag ?? '';
+    let keyMasked = existingRow?.key_masked ?? '';
+
+    if (trimmedKey) {
+      const encrypted = this.encrypt(trimmedKey);
+      encryptedApiKey = encrypted.encryptedApiKey;
+      keyIv = encrypted.keyIv;
+      keyAuthTag = encrypted.keyAuthTag;
+      keyMasked = this.maskKey(trimmedKey);
+    }
 
     await db
       .insert(tenantByokCredentials)

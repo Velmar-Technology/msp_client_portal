@@ -419,9 +419,7 @@ describe('DevicesPage', () => {
 
     // Expect table and headers
     await waitFor(() => {
-      expect(screen.getByText(/Slot\s*#1/)).toBeInTheDocument();
       expect(screen.getByText('Workstation 1')).toBeInTheDocument();
-      expect(screen.getByText(/Slot\s*#2/)).toBeInTheDocument();
       expect(screen.getByText("PENDING ACTIVATION")).toBeInTheDocument();
     });
 

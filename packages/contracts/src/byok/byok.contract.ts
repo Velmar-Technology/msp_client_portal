@@ -14,8 +14,9 @@ export const TenantByokConfigInputSchema = z.object({
   apiKey: z
     .string()
     .trim()
-    .min(1, 'API key is required')
-    .max(512, 'API key cannot exceed 512 characters'),
+    .max(512, 'API key cannot exceed 512 characters')
+    .optional()
+    .or(z.literal('')),
   model: z.string().max(128).optional(),
   baseUrl: z.string().url().max(255).optional().or(z.literal('')),
 });
@@ -46,8 +47,9 @@ export const TestByokConnectionInputSchema = z.object({
   apiKey: z
     .string()
     .trim()
-    .min(1, 'API key is required')
-    .max(512, 'API key cannot exceed 512 characters'),
+    .max(512, 'API key cannot exceed 512 characters')
+    .optional()
+    .or(z.literal('')),
   model: z.string().max(128).optional(),
   baseUrl: z.string().url().max(255).optional().or(z.literal('')),
 });
