@@ -546,4 +546,142 @@ describe('AgentGateway', () => {
       ).rejects.toThrow(/not connected \(OFFLINE\)/);
     });
   });
+
+  describe('TELEMETRY_PING buffering', () => {
+    it('should forward inbound TELEMETRY_PING messages to TelemetryBufferService', async () => {
+      const mockBufferService = {
+        bufferPing: vi.fn().mockResolvedValue(undefined),
+      };
+      const customGateway = new AgentGateway(mockBufferService as any);
+      customGateway.init(wss as any);
+
+      const ws = new MockWebSocket();
+      const req = createMockReq('eq-telemetry-01', 'tok-abc');
+      wss.emit('connection', ws, req);
+
+      ws.emit(
+        'message',
+        JSON.stringify({
+          command: 'TELEMETRY_PING',
+          payload: {
+            tenant_id: 'tenant-123',
+            cpu_usage: 44.5,
+            memory_usage: 62.0,
+            disk_usage: 50.1,
+          },
+        })
+      );
+
+      expect(mockBufferService.bufferPing).toHaveBeenCalledWith(
+        expect.objectContaining({
+          equipment_id: 'eq-telemetry-01',
+          tenant_id: 'tenant-123',
+          agent_status: 'ONLINE',
+          cpu_usage: 44.5,
+          memory_usage: 62.0,
+          disk_usage: 50.1,
+        })
+      );
+    });
+  });
+
+  describe('Cluster Mesh integration', () => {
+    let mockClusterBroker: any;
+    let clusterGateway: AgentGateway;
+    let localExecutorCaptured: any;
+
+    beforeEach(() => {
+      mockClusterBroker = {
+        start: vi.fn().mockResolvedValue(undefined),
+        registerLocalExecutor: vi.fn((executor) => {
+          localExecutorCaptured = executor;
+        }),
+        publishCommand: vi.fn().mockResolvedValue({
+          equipmentId: 'remote-agent-01',
+          command: 'DIAGNOSE_PC',
+          data: { status: 'remote_success' },
+          durationMs: 45,
+        }),
+        registerAgentPresence: vi.fn().mockResolvedValue(undefined),
+        unregisterAgentPresence: vi.fn().mockResolvedValue(undefined),
+        isAgentPresent: vi.fn().mockResolvedValue(true),
+      };
+
+      clusterGateway = new AgentGateway(
+        { bufferPing: vi.fn() } as any,
+        mockClusterBroker
+      );
+      clusterGateway.init(wss as any);
+    });
+
+    it('forwards command to cluster broker when agent is not connected locally', async () => {
+      const result = await clusterGateway.sendCommand('remote-agent-01', 'DIAGNOSE_PC');
+
+      expect(mockClusterBroker.publishCommand).toHaveBeenCalledWith(
+        'remote-agent-01',
+        'DIAGNOSE_PC',
+        undefined,
+        15000
+      );
+      expect(result.data).toEqual({ status: 'remote_success' });
+    });
+
+    it('executes command locally and returns result when invoked by cluster broker executor', async () => {
+      const ws = new MockWebSocket();
+      wss.emit('connection', ws, createMockReq('local-eq-99'));
+
+      // Simulate agent response to the WebSocket
+      ws.send = vi.fn((data: string, cb?: (err?: Error) => void) => {
+        if (cb) cb();
+        const envelope = JSON.parse(data);
+        setTimeout(() => {
+          ws.emit(
+            'message',
+            JSON.stringify({
+              correlation_id: envelope.correlation_id,
+              payload: { battery: 95 },
+            })
+          );
+        }, 5);
+      });
+
+      const executorResult = await localExecutorCaptured(
+        'local-eq-99',
+        'BATTERY_REPORT',
+        null,
+        'test-corr-id'
+      );
+
+      expect(executorResult).toBeDefined();
+      expect(executorResult.equipmentId).toBe('local-eq-99');
+      expect(executorResult.command).toBe('BATTERY_REPORT');
+      expect(executorResult.data).toEqual({ battery: 95 });
+    });
+
+    it('returns null from cluster broker executor when agent is not found locally', async () => {
+      const executorResult = await localExecutorCaptured(
+        'unknown-local-eq',
+        'BATTERY_REPORT',
+        null,
+        'test-corr-id'
+      );
+
+      expect(executorResult).toBeNull();
+    });
+
+    it('registers and unregisters presence on connect and disconnect', () => {
+      const ws = new MockWebSocket();
+      wss.emit('connection', ws, createMockReq('presence-eq-01'));
+      expect(mockClusterBroker.registerAgentPresence).toHaveBeenCalledWith('presence-eq-01');
+
+      ws.emit('close', 1000, Buffer.from('normal'));
+      expect(mockClusterBroker.unregisterAgentPresence).toHaveBeenCalledWith('presence-eq-01');
+    });
+
+    it('checks cluster presence with isAgentConnectedInCluster', async () => {
+      const isConnected = await clusterGateway.isAgentConnectedInCluster('remote-agent-01');
+      expect(isConnected).toBe(true);
+      expect(mockClusterBroker.isAgentPresent).toHaveBeenCalledWith('remote-agent-01');
+    });
+  });
 });

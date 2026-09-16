@@ -30,7 +30,7 @@ export const CRM_STAGES: CRMStageConfig[] = [
     border: "border-emerald-500/30",
     headerBg: "bg-emerald-500/10",
   },
-  { key: "LOST", color: "text-zinc-500 dark:text-zinc-400", border: "border-zinc-500/30", headerBg: "bg-zinc-500/10" },
+  { key: "LOST", color: "text-muted-foreground", border: "border-border", headerBg: "bg-muted/40" },
 ];
 
 export const CRM_NEXT_STAGE: Partial<Record<LeadStage, LeadStage>> = {

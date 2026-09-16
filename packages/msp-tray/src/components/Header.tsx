@@ -1,7 +1,8 @@
-import React from 'react';
-import { User, X, RefreshCw, Globe, FileText } from 'lucide-react';
+import React, { useState } from 'react';
+import { User, X, RefreshCw, Globe, FileText, Sun, Moon } from 'lucide-react';
 import { ShiftWorkerAttribution } from '../services/attribution';
 import { hideWindow, openTrayLogDir } from '../services/tauri';
+import { getSavedTheme, applyTheme, getSystemPrefersLight } from '../services/theme';
 import { useI18n } from '../i18n';
 import logoUrl from '../assets/logo.png';
 
@@ -25,6 +26,14 @@ export const Header: React.FC<HeaderProps> = ({
   isRefreshing,
 }) => {
   const { t, locale, toggleLocale } = useI18n();
+  const [theme, setThemeState] = useState(() => getSavedTheme());
+  const isLight = theme === 'light' || (theme === 'system' && getSystemPrefersLight());
+
+  const handleToggleTheme = () => {
+    const next = isLight ? 'dark' : 'light';
+    applyTheme(next);
+    setThemeState(next);
+  };
 
   const handleClose = async () => {
     await hideWindow();
@@ -76,6 +85,15 @@ export const Header: React.FC<HeaderProps> = ({
           <span className={locale === 'en_US' ? 'text-[#0084ff] font-extrabold' : 'text-slate-500'}>EN</span>
           <span className="text-slate-600">/</span>
           <span className={locale === 'es_DO' ? 'text-[#ff5e00] font-extrabold' : 'text-slate-500'}>ES</span>
+        </button>
+
+        {/* Theme Toggle (Light #d6d8df / Dark) */}
+        <button
+          onClick={handleToggleTheme}
+          className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-[#ff5e00] hover:bg-[#ff5e00]/10 border border-transparent hover:border-[#ff5e00]/20 transition-all cursor-pointer"
+          title={isLight ? 'Modo Oscuro / Dark Mode' : 'Modo Claro / Light Mode (#d6d8df)'}
+        >
+          {isLight ? <Moon className="w-3.5 h-3.5 text-slate-700" /> : <Sun className="w-3.5 h-3.5 text-amber-400" />}
         </button>
 
         {/* Refresh button */}

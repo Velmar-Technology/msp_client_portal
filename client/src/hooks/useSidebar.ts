@@ -15,6 +15,7 @@ import {
   Activity,
   Target,
   KeyRound,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -41,6 +42,7 @@ const clientNavItems: NavItem[] = [
   { to: "/devices", icon: Laptop, labelKey: "devices", requiredFeature: FEATURE_CODES.RMM_PATCH_MANAGEMENT },
   { to: "/resources", icon: Download, labelKey: "resources", requiredFeature: FEATURE_CODES.CLOUD_STORAGE },
   { to: "/password-manager", icon: KeyRound, labelKey: "passwordManager", requiredFeature: FEATURE_CODES.PASSWORD_MANAGER },
+  { to: "/settings/ai", icon: Sparkles, labelKey: "cafAiSettings", requiredFeature: FEATURE_CODES.CAF_EDUCATION_AGENT },
   { to: "/maintenance", icon: Calendar, labelKey: "maintenance", requiredFeature: FEATURE_CODES.RMM_PATCH_MANAGEMENT },
   { to: "/tickets", icon: Ticket, labelKey: "myTickets" },
   {
@@ -82,6 +84,7 @@ const adminNavItems: NavItem[] = [
   { to: "/devices", icon: Laptop, labelKey: "devices", groupLabelKey: "sidebar.groups.operations" },
   { to: "/resources", icon: Download, labelKey: "resources" },
   { to: "/password-manager", icon: KeyRound, labelKey: "passwordManager" },
+  { to: "/settings/ai", icon: Sparkles, labelKey: "cafAiSettings" },
   { to: "/maintenance", icon: Calendar, labelKey: "maintenance" },
   { to: "/tickets", icon: Ticket, labelKey: "allTickets" },
   {

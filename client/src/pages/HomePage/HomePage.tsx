@@ -35,7 +35,7 @@ export function HomePage() {
       )}
 
       {/* Hero Section */}
-      <section className="relative pt-12 pb-16 md:pt-20 md:pb-24 overflow-hidden border-b border-zinc-200 dark:border-zinc-900">
+      <section className="relative pt-12 pb-16 md:pt-20 md:pb-24 overflow-hidden border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <Badge
             variant="outline"
@@ -48,7 +48,7 @@ export function HomePage() {
           >
             {t("home.title")}
           </h1>
-          <p className="text-base sm:text-xl text-zinc-600 dark:text-zinc-300 max-w-3xl mx-auto mb-8 font-normal leading-relaxed">
+          <p className="text-base sm:text-xl text-muted-foreground max-w-3xl mx-auto mb-8 font-normal leading-relaxed">
             {t("home.tagline")}
           </p>
 
@@ -63,7 +63,7 @@ export function HomePage() {
               asChild
               variant="outline"
               size="lg"
-              className="rounded-full px-6 font-semibold border-zinc-300 dark:border-zinc-700 text-sm"
+              className="rounded-full px-6 font-semibold border-border text-sm"
             >
               <Link to="/plans">{t("home.explorePlans")}</Link>
             </Button>
@@ -72,10 +72,10 @@ export function HomePage() {
       </section>
 
       {/* Application Purpose Section - Directly addressing Google Verification Requirements */}
-      <section className="py-14 md:py-20 bg-white dark:bg-zinc-900/60 border-b border-zinc-200 dark:border-zinc-800">
+      <section className="py-14 md:py-20 bg-card border-b border-border">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10">
-            <Badge className="mb-3 px-3 py-0.5 text-[11px] uppercase tracking-wider font-bold bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900">
+            <Badge className="mb-3 px-3 py-0.5 text-[11px] uppercase tracking-wider font-bold bg-primary text-primary-foreground">
               {t("home.purposeBadge")}
             </Badge>
             <h2
@@ -85,39 +85,39 @@ export function HomePage() {
             </h2>
           </div>
 
-          <Card className="border-zinc-200 dark:border-zinc-800 shadow-xl bg-zinc-50/50 dark:bg-zinc-950/50 rounded-2xl overflow-hidden">
+          <Card className="border-border shadow-xl bg-card rounded-2xl overflow-hidden">
             <CardContent className="p-6 sm:p-8 md:p-10 space-y-6">
-              <p className="text-base sm:text-lg text-zinc-700 dark:text-zinc-300 leading-relaxed font-normal">
+              <p className="text-base sm:text-lg text-foreground leading-relaxed font-normal">
                 {t("home.purposeDescription")}
               </p>
 
-              <Separator className="bg-zinc-200 dark:bg-zinc-800" />
+              <Separator className="bg-border" />
 
               <div className="grid sm:grid-cols-2 gap-4 text-xs sm:text-sm">
                 <div className="flex items-start gap-2.5">
                   <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
-                  <span className="text-zinc-600 dark:text-zinc-400">
+                  <span className="text-muted-foreground">
                     <strong>Multi-Tenant Client Portal</strong>: Isolated corporate accounts for clients, technicians,
                     and administrators.
                   </span>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
-                  <span className="text-zinc-600 dark:text-zinc-400">
+                  <span className="text-muted-foreground">
                     <strong>1-Hour SLA Guarantee</strong>: Automated escalation logic for high-priority warranty and
                     outage tickets.
                   </span>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
-                  <span className="text-zinc-600 dark:text-zinc-400">
+                  <span className="text-muted-foreground">
                     <strong>Automated Billing & Invoicing</strong>: Integrated PayPal REST capture and offline wire
                     transfer verification.
                   </span>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
-                  <span className="text-zinc-600 dark:text-zinc-400">
+                  <span className="text-muted-foreground">
                     <strong>Security Standard</strong>: Encrypted communications with {APP_METADATA.securityStandard}.
                   </span>
                 </div>
@@ -196,12 +196,12 @@ export function HomePage() {
           >
             {t("home.ctaTitle")}
           </h2>
-          <p className="text-zinc-400 text-sm sm:text-base max-w-xl mx-auto mb-6">{t("home.ctaSubtitle")}</p>
+          <p className="text-muted-foreground text-sm sm:text-base max-w-xl mx-auto mb-6">{t("home.ctaSubtitle")}</p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Button
               asChild
               size="lg"
-              className="rounded-full bg-white text-zinc-900 hover:bg-zinc-100 font-bold px-6 text-sm"
+              className="rounded-full font-bold px-6 text-sm"
             >
               <Link to="/login">{t("home.signIn")}</Link>
             </Button>
@@ -209,7 +209,7 @@ export function HomePage() {
               asChild
               variant="outline"
               size="lg"
-              className="rounded-full border-zinc-700 text-white hover:bg-zinc-800 font-semibold px-6 text-sm"
+              className="rounded-full border-border font-semibold px-6 text-sm"
             >
               <Link to="/plans">{t("home.explorePlans")}</Link>
             </Button>

@@ -22,7 +22,7 @@ export class NonPaymentEnforcementRemediator implements RemediationHandler {
       await this.database
         .update(tenants)
         .set({
-          status: 'READ_ONLY',
+          account_status: 'READ_ONLY',
           updated_at: new Date(),
         })
         .where(eq(tenants.id, tenantId));

@@ -148,7 +148,7 @@ export function CRMNewLeadModal({
         className="w-full sm:max-w-lg md:max-w-xl h-full p-0 flex flex-col bg-background text-foreground border-l border-border shadow-2xl overflow-hidden data-[side=right]:w-full data-[side=right]:sm:max-w-lg data-[side=right]:md:max-w-xl"
       >
         {/* Header */}
-        <SheetHeader className="px-6 py-4 border-b border-border flex flex-row justify-between items-center bg-zinc-50/70 dark:bg-zinc-900/40 space-y-0 text-left shrink-0">
+        <SheetHeader className="px-6 py-4 border-b border-border flex flex-row justify-between items-center bg-muted/40 space-y-0 text-left shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="flex size-7 items-center justify-center rounded-md bg-primary/10 text-primary border border-primary/20">
               <UserPlus className="size-3.5" />
@@ -382,7 +382,7 @@ export function CRMNewLeadModal({
           </div>
 
           {/* Footer */}
-          <SheetFooter className="px-6 py-3.5 border-t border-border flex flex-row justify-end items-center gap-2 bg-zinc-50/70 dark:bg-zinc-900/40 shrink-0 mt-auto">
+          <SheetFooter className="px-6 py-3.5 border-t border-border flex flex-row justify-end items-center gap-2 bg-muted/40 shrink-0 mt-auto">
             <Button
               type="button"
               variant="outline"

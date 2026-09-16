@@ -12,8 +12,8 @@ export const USER_ROLE_CONFIG: Record<UserRole, { badge: string; dot: string }> 
     dot: "bg-amber-500",
   },
   CLIENT: {
-    badge: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800/80 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700",
-    dot: "bg-zinc-400",
+    badge: "bg-muted text-muted-foreground border border-border",
+    dot: "bg-muted-foreground",
   },
 };
 

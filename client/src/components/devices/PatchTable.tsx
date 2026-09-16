@@ -40,10 +40,10 @@ export const PatchTable: React.FC<PatchTableProps> = ({
   }
 
   return (
-    <div className="rounded-md border border-zinc-200 dark:border-zinc-800 max-h-[360px] overflow-y-auto bg-white dark:bg-zinc-950">
+    <div className="rounded-md border border-border max-h-[360px] overflow-y-auto bg-card">
       <Table>
-        <TableHeader className="bg-zinc-50 dark:bg-zinc-900/90 sticky top-0 z-10 border-b border-zinc-200 dark:border-zinc-800">
-          <TableRow className="hover:bg-transparent border-b border-zinc-200 dark:border-zinc-800">
+        <TableHeader className="bg-muted/80 sticky top-0 z-10 border-b border-border">
+          <TableRow className="hover:bg-transparent border-b border-border">
             <TableHead className="w-[36px] py-2 px-3">
               <Checkbox
                 checked={isAllPendingSelected}
@@ -52,16 +52,16 @@ export const PatchTable: React.FC<PatchTableProps> = ({
                 className="translate-y-[1px]"
               />
             </TableHead>
-            <TableHead className="py-2 px-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+            <TableHead className="py-2 px-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
               {t("rmm.tableAdvisoryId")}
             </TableHead>
-            <TableHead className="py-2 px-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+            <TableHead className="py-2 px-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
               {t("rmm.tableTitleDesc")}
             </TableHead>
-            <TableHead className="py-2 px-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+            <TableHead className="py-2 px-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
               {t("rmm.tableSeverity")}
             </TableHead>
-            <TableHead className="py-2 px-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+            <TableHead className="py-2 px-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
               {t("rmm.tableStatus")}
             </TableHead>
           </TableRow>
@@ -69,7 +69,7 @@ export const PatchTable: React.FC<PatchTableProps> = ({
         <TableBody>
           {patches.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center py-10 text-xs text-zinc-500 dark:text-zinc-400">
+              <TableCell colSpan={5} className="text-center py-10 text-xs text-muted-foreground">
                 {t("rmm.modalNoAdvisories")}
               </TableCell>
             </TableRow>
@@ -81,7 +81,7 @@ export const PatchTable: React.FC<PatchTableProps> = ({
               return (
                 <TableRow
                   key={patch.id}
-                  className="hover:bg-zinc-50/80 dark:hover:bg-zinc-900/50 border-b border-zinc-100 dark:border-zinc-800/60 transition-colors"
+                  className="hover:bg-muted/50 border-b border-border transition-colors"
                 >
                   <TableCell className="py-2 px-3">
                     <Checkbox
@@ -91,12 +91,12 @@ export const PatchTable: React.FC<PatchTableProps> = ({
                       className="translate-y-[1px]"
                     />
                   </TableCell>
-                  <TableCell className="py-2 px-3 font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100 whitespace-nowrap">
+                  <TableCell className="py-2 px-3 font-mono text-xs font-semibold text-foreground whitespace-nowrap">
                     {patch.patch_id}
                   </TableCell>
                   <TableCell className="py-2 px-3 max-w-[280px]">
-                    <p className="font-medium text-xs text-zinc-900 dark:text-zinc-100 truncate">{patch.title}</p>
-                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    <p className="font-medium text-xs text-foreground truncate">{patch.title}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
                       {patch.installed_at
                         ? t("rmm.installedOn", { date: new Date(patch.installed_at).toLocaleDateString() })
                         : t("rmm.readyForDeployment")}

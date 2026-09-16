@@ -75,7 +75,9 @@ packages/
 ```
 
 ### Contract-First Monolith & Colocated Features
+
 To eliminate cross-workspace rework and pass-through boilerplate, new implementations follow our modern architecture standards:
+
 - **Single Source of Truth:** API contracts, query parameters, and Zod validation schemas are maintained in `@shared/contracts` ([ADR-001](docs/decisions/ADR-001-contract-first-monolith-and-tanstack-query.md)).
 - **Colocated Feature Architecture:** Frontend domains are grouped in self-contained vertical feature modules (`client/src/features/<domain>/`) with colocated query hooks, UI blocks, and route pages ([ADR-002](docs/decisions/ADR-002-frontend-colocated-feature-architecture.md)).
 - **Server State Delegation:** Asynchronous server state and cache invalidation are handled by **TanStack Query** (`@tanstack/react-query`). Zustand is restricted strictly to client UI state.
@@ -168,13 +170,13 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
   - Admins can mark bank/wire transfers as `PAID` without PayPal API dependencies, automatically reactivating expired subscriptions.
 
 ### Module 5: CRM Lead Pipeline & Onboarding
- 
+
 - **BL-501: CRM Lead Pipeline Lifecycle** (`CrmService.advanceDealStage`)
   - Deals progress through standardized stages: `NEW` $\rightarrow$ `QUALIFIED` $\rightarrow$ `PROPOSAL` $\rightarrow$ `NEGOTIATION` $\rightarrow$ `WON`/`LOST`.
   - Closing as `WON` automatically provisions the client tenant and queues account onboarding.
 
 ### Module 6: Account Health & QBR Logic
- 
+
 - **BL-601: Composite Client Health Scoring** (`ClientHealthService.calculateScore`, `GET /api/v1/system/health/:tenantId`)
   - Health Formula:
     $$H = 0.40 \times S_{\text{ticket}} + 0.30 \times S_{\text{hardware}} + 0.30 \times S_{\text{security}}$$
@@ -318,13 +320,13 @@ Continuous Integration and Deployment is automated via GitHub Actions ([.github/
 
 > **Manual redeploy & rollback:** [`docs/infrastructure/MSP_PORTAL_STACK.md`](docs/infrastructure/MSP_PORTAL_STACK.md) §7 (`scripts/portainer-stack-update.js <version>` or the Portainer UI → Stacks → `msp_portal` → Pull & redeploy).
 
-### 4. Automated Nightly Deployment (`nightly.yml`)
+### 4. Automated Nightly Build & Publish (`nightly.yml`)
 
 - **Schedule & Trigger:** Runs daily at `04:00 UTC` (`00:00 AST` Dominican Republic time) via GitHub Actions cron, plus on-demand manual dispatch (`workflow_dispatch`).
 - **Versioning Strategy:** Generates nightly semver identifier: `<base_version>-nightly.<YYYYMMDD>.<short_sha>` (e.g. `1.7.0-nightly.20260916.e224326`).
-- **Container Tags:** Pushes `nightly`, `nightly-<YYYYMMDD>`, and commit SHA tags to GHCR for `server`, `client`, and `mcp` images.
-- **Automated Validation:** Enforces the shared quality gates (`quality.yml`) and Trivy vulnerability scan prior to deployment.
-- **Portainer Stack Deployment:** Updates target staging/nightly stack (`PORTAINER_STAGE_STACK_ID` or fallback to `PORTAINER_STACK_ID`), verifies endpoint health over SSH, triggers automatic rollback if health check fails, and dispatches webhook status notifications.
+- **Container Publishing:** Pushes `nightly`, `nightly-<YYYYMMDD>`, and commit SHA tags to GHCR for `server`, `client`, and `mcp` images.
+- **Automated Validation:** Enforces the shared quality gates (`quality.yml`) and Trivy vulnerability scan prior to publishing.
+- **Production Isolation:** Safe by design — operates purely as an image artifact build, validation, and publishing pipeline. Does not mutate Portainer stacks or touch production. Production deployment remains strictly governed by `deploy.yml` on release tags or manual approval.
 
 ---
 
@@ -406,11 +408,13 @@ The portal integrates with **Nextcloud** running on **TrueNAS SCALE** (`cloud-st
 The platform includes a State-of-the-Art (SOTA) Authorization subsystem (`server/src/shared/authz/`) combining **RBAC**, **Google Zanzibar ReBAC**, **Policy-as-Code ABAC**, **AI/RAG Vector ACLs**, and **Continuous Adaptive Trust**.
 
 To run the interactive live demonstration in your terminal:
+
 ```bash
 npm -w server exec tsx src/shared/scripts/demoAuthz.ts
 ```
 
 To run all authorization unit tests:
+
 ```bash
 npm -w server exec vitest run src/shared/authz/ src/shared/middleware/authzMiddleware.test.ts
 ```
@@ -437,12 +441,34 @@ The platform implements a distributed background job orchestration pattern desig
 
 ## AI Agents & Model Context Protocol (MCP)
 
-The repository provides a first-class Model Context Protocol server ([`packages/mcp-server/`](packages/mcp-server/)) exposing **44+ real-time diagnostic, telemetry, and remediation tools** to Microsoft Copilot Studio, Antigravity, Claude Desktop, and autonomous agents:
+The repository provides a first-class Model Context Protocol server ([`packages/mcp-server/`](packages/mcp-server/)) exposing **66+ specialized tools across dual isolated profiles** to Microsoft Copilot Studio, Antigravity, Claude Desktop, and autonomous agents:
 
-- **Dual-Mode Transport:** Supports local Stdio (CLI/IDE) and Stateless Streamable HTTP over `POST /mcp` (2026-07-28 Spec Revision).
-- **Inbound Security:** Authenticates incoming AI agent requests using timing-safe API key verification via `X-API-Key` or `Authorization: Bearer <token>`.
-- **Production Deployment:** Deployed as container `msp_mcp_prod` on the helpdesk VPS under `https://helpdesk.velmartech.com.do/mcp`.
-- **Documentation & Setup:** Full setup guides, tool catalogs, and Copilot Studio prompt templates are available in [`packages/mcp-server/README.md`](packages/mcp-server/README.md) and [`docs/infrastructure/COPILOT_STUDIO_AGENT_DEPLOYMENT.md`](docs/infrastructure/COPILOT_STUDIO_AGENT_DEPLOYMENT.md).
+- **Dual-Mode Transport & Isolation:** Supports local Stdio (CLI/IDE) and Stateless Streamable HTTP over `POST /mcp` (IT Support profile) and `POST /mcp/caf` (isolated CAF Educational Quality profile).
+- **Inbound Security & Zero Token Liability:** Authenticates administrative requests using timing-safe API key verification (`X-API-Key` or Bearer token), while educational requests run on a multi-tenant Bring-Your-Own-Key (BYOK) architecture (`TenantByokManager`) with zero token liability for the platform.
+- **Dominican Law 172-13 Privacy Protection:** Built-in in-memory sanitization (`CafPrivacyFilter`) stripping names, cédulas, emails, and phone numbers before LLM egress.
+- **Production Deployment:** Deployed as container `msp_mcp_prod` on the helpdesk VPS under `https://helpdesk.velmartech.com.do/mcp` and `/mcp/caf`.
+- **Documentation & Setup:** Full setup guides, tool catalogs, and Copilot Studio prompt templates are available in [`packages/mcp-server/README.md`](packages/mcp-server/README.md), [`docs/infrastructure/COPILOT_STUDIO_AGENT_DEPLOYMENT.md`](docs/infrastructure/COPILOT_STUDIO_AGENT_DEPLOYMENT.md), [`docs/infrastructure/COPILOT_STUDIO_CAF_AGENT_DEPLOYMENT.md`](docs/infrastructure/COPILOT_STUDIO_CAF_AGENT_DEPLOYMENT.md), and [`docs/ideas/caf-education-aiaas-mcp-byok.md`](docs/ideas/caf-education-aiaas-mcp-byok.md).
+
+---
+
+## High-Throughput Telemetry Ingestion & Clustered WebSocket Mesh (@see ADR-011)
+
+To support enterprise-scale RMM monitoring (500 to 5,000 active endpoints, ~300 telemetry pings/sec) without database connection pool exhaustion or framework rewrites, the backend implements a three-tier hybrid architecture:
+
+1. **Database Fortification & Atomic Upserts (`RmmTelemetryRepository`):**
+   - Single atomic SQL query replaces legacy two-step read-then-write via Drizzle ORM `.onConflictDoUpdate({ target: rmmDeviceTelemetry.equipment_id, set: ... })`.
+   - Chunked batch upsert (`upsertTelemetryBatch`) using PostgreSQL `EXCLUDED` column mappings for bulk persistence of up to 500 records in one database roundtrip.
+   - Compound index `idx_rmm_telemetry_status_sync` on `(agent_status, last_sync_at)` in `rmm_device_telemetry` eliminating sequential scans during stale-workstation sweeps.
+
+2. **Redis In-Memory Write-Behind Micro-Batch Buffer (`TelemetryBufferService`):**
+   - Inbound workstation heartbeats write directly to Redis Hash `telemetry:device:<id>` in `< 2ms` with 24h TTL and dirty-set tracking in `telemetry:dirty_devices`.
+   - A background flusher runs every 3,000ms, draining up to 500 records via Redis pipelines (`spop` + `hgetall`) to PostgreSQL, achieving a 99% write load reduction on the database.
+   - Built-in in-memory fallback protects local development and graceful shutdown drains remaining dirty keys.
+
+3. **Clustered WebSocket Mesh & Horizontal Scalability (`AgentClusterBroker` & `cluster.ts`):**
+   - Redis Pub/Sub channels `agent:cmd:<equipmentId>` and `agent:res:<correlationId>` broker interactive commands (e.g. `DIAGNOSE_PC`, `RESTART_SERVICE`) transparently across multi-worker Node.js processes.
+   - Cluster presence tracked via Redis Set `agent:cluster:online` (`isAgentConnectedInCluster`).
+   - Native Node.js `node:cluster` runner in [`server/src/cluster.ts`](../../server/src/cluster.ts) pools workers sharing HTTP/WS port 3001 with automatic worker recycling.
 
 ---
 
@@ -461,6 +487,7 @@ Interactive Swagger API documentation is available when the server is running:
 The repository strictly enforces **[Conventional Commits](https://www.conventionalcommits.org/)** specifications locally via **Husky** and **Commitlint** to ensure clean git histories and automated semantic release tagging (`commit-and-tag-version`).
 
 ### Commit Format
+
 ```text
 <type>(<scope>): <short description in imperative mood>
 
@@ -470,6 +497,7 @@ The repository strictly enforces **[Conventional Commits](https://www.convention
 ```
 
 ### Allowed Types
+
 - `feat`: New feature or capability
 - `fix`: Bug fix
 - `docs`: Documentation updates
@@ -483,9 +511,9 @@ The repository strictly enforces **[Conventional Commits](https://www.convention
 - `revert`: Reverting a previous commit
 
 ### Common Domain Scopes
+
 `rmm`, `client`, `server`, `equipment`, `system`, `tickets`, `billing`, `subscriptions`, `crm`, `notifications`, `auth`, `ui`, `i18n`, `web`, `infra`, `shared`, `deps`
 
 ### Pre-Commit / Commit-Msg Validation
+
 Hooks are automatically installed via `npm run prepare` (configured in root `package.json`). Whenever you run `git commit`, Husky invokes Commitlint to validate your commit message before it is accepted.
-
-

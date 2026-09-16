@@ -53,16 +53,16 @@ export function TransactionsTable({ transactions }: TransactionsTableProps) {
   };
 
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
-      <div className="border-b border-zinc-100 px-3.5 py-3 dark:border-zinc-900">
-        <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-50">{t("financial.transactions")}</h3>
-        <p className="text-[10px] text-zinc-400 dark:text-zinc-500">{t("financial.transactionsDesc")}</p>
+    <div className="rounded-lg border border-border bg-card shadow-xs">
+      <div className="border-b border-border px-3.5 py-3">
+        <h3 className="text-xs font-semibold text-foreground">{t("financial.transactions")}</h3>
+        <p className="text-[10px] text-muted-foreground">{t("financial.transactionsDesc")}</p>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-left text-[11px] leading-normal">
           <thead>
-            <tr className="border-b border-zinc-100 bg-zinc-50/50 text-[10px] font-semibold uppercase tracking-wider text-zinc-400 dark:border-zinc-900 dark:bg-zinc-900/10">
+            <tr className="border-b border-border bg-muted/30 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               <th className="px-3.5 py-2">{t("financial.date")}</th>
               <th className="px-3.5 py-2">{t("financial.description")}</th>
               <th className="px-3.5 py-2">{t("financial.category")}</th>
@@ -70,7 +70,7 @@ export function TransactionsTable({ transactions }: TransactionsTableProps) {
               <th className="px-3.5 py-2 text-right">{t("financial.amount")}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-900">
+          <tbody className="divide-y divide-border">
             {paginatedTransactions.map((txn) => {
               const isPositive = txn.amount > 0;
               const formattedAmount = isPositive
@@ -80,26 +80,26 @@ export function TransactionsTable({ transactions }: TransactionsTableProps) {
               return (
                 <tr
                   key={txn.id}
-                  className="transition-colors duration-150 hover:bg-zinc-50/60 dark:hover:bg-zinc-900/30"
+                  className="transition-colors duration-150 hover:bg-muted/50"
                 >
-                  <td className="whitespace-nowrap px-3.5 py-2 font-mono text-zinc-500 dark:text-zinc-400">
+                  <td className="whitespace-nowrap px-3.5 py-2 font-mono text-muted-foreground">
                     {txn.date}
                   </td>
-                  <td className="px-3.5 py-2 font-medium text-zinc-900 dark:text-zinc-100">
+                  <td className="px-3.5 py-2 font-medium text-foreground">
                     <div>{txn.description}</div>
                     {txn.expense_identifier && (
-                      <div className="text-[9px] text-zinc-400 dark:text-zinc-500 font-mono mt-0.5">
+                      <div className="text-[9px] text-muted-foreground font-mono mt-0.5">
                         Ref: {txn.expense_identifier}
                       </div>
                     )}
                   </td>
-                  <td className="px-3.5 py-2 text-zinc-500 dark:text-zinc-400">
+                  <td className="px-3.5 py-2 text-muted-foreground">
                     {t(`financial.${txn.categoryKey}`) || txn.categoryKey}
                   </td>
                   <td className="whitespace-nowrap px-3.5 py-2">{getStatusBadge(txn.status)}</td>
                   <td
                     className={`whitespace-nowrap px-3.5 py-2 text-right font-mono font-bold ${
-                      isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-800 dark:text-zinc-300"
+                      isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"
                     }`}
                   >
                     {formattedAmount}
@@ -112,15 +112,15 @@ export function TransactionsTable({ transactions }: TransactionsTableProps) {
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2.5 border-t border-zinc-100 dark:border-zinc-900 bg-zinc-50/20 dark:bg-zinc-900/10 px-3.5 pb-2.5 rounded-b-lg">
-          <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 font-mono">
+        <div className="flex items-center justify-between pt-2.5 border-t border-border bg-muted/30 px-3.5 pb-2.5 rounded-b-lg">
+          <span className="text-[10px] font-medium text-muted-foreground font-mono">
             {t("financial.pageOf").replace("{page}", String(currentPage)).replace("{total}", String(totalPages))}
           </span>
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-30 cursor-pointer"
+              className="h-6 w-6 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 cursor-pointer"
               disabled={currentPage <= 1}
               onClick={() => setCurrentPage(currentPage - 1)}
             >
@@ -129,7 +129,7 @@ export function TransactionsTable({ transactions }: TransactionsTableProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-30 cursor-pointer"
+              className="h-6 w-6 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 cursor-pointer"
               disabled={currentPage >= totalPages}
               onClick={() => setCurrentPage(currentPage + 1)}
             >

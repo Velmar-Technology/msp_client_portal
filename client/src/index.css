@@ -31,6 +31,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-skeleton: var(--skeleton);
 
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
@@ -63,41 +64,42 @@
 
 :root {
   color-scheme: light;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.52 0.105 223.128);
-  --primary-foreground: oklch(0.984 0.019 200.873);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.019 200.873);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --background: #d6d8df;
+  --foreground: #343b58;
+  --card: #E6E7ED;
+  --card-foreground: #343b58;
+  --popover: #E6E7ED;
+  --popover-foreground: #343b58;
+  --primary: #2959aa;
+  --primary-foreground: #ffffff;
+  --secondary: #e6e7ed;
+  --secondary-foreground: #343b58;
+  --muted: #e6e7ed;
+  --muted-foreground: #70728C;
+  --accent: #e1e2e8;
+  --accent-foreground: #2959aa;
+  --destructive: #8c4351;
+  --destructive-foreground: #ffffff;
+  --border: #C1C2C7;
+  --input: #C1C2C7;
+  --ring: #2959aa;
+  --chart-1: #2959aa;
+  --chart-2: #33635c;
+  --chart-3: #8f5e15;
+  --chart-4: #5a3e8e;
+  --chart-5: #965027;
   --radius: 0.45rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.609 0.126 221.723);
-  --sidebar-primary-foreground: oklch(0.984 0.019 200.873);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  --scrollbar-thumb: oklch(0 0 / 0.25);
-  --scrollbar-thumb-hover: oklch(0 0 / 0.4);
+  --sidebar: #d6d8df;
+  --sidebar-foreground: #343b58;
+  --sidebar-primary: #2959aa;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e1e2e8;
+  --sidebar-accent-foreground: #343b58;
+  --sidebar-border: #C1C2C7;
+  --sidebar-ring: #2959aa;
+  --skeleton: #CCCFD5;
+  --scrollbar-thumb: rgba(112, 114, 140, 0.25);
+  --scrollbar-thumb-hover: rgba(112, 114, 140, 0.45);
 }
 
 .dark {
@@ -134,6 +136,7 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --skeleton: oklch(0.269 0 0);
   --scrollbar-thumb: oklch(1 0 0 / 0.18);
   --scrollbar-thumb-hover: oklch(1 0 0 / 0.32);
 }
@@ -209,6 +212,14 @@
   }
   body {
     @apply bg-background text-foreground min-h-screen;
+  }
+  /* Enforces typographic best practices globally across the SaaS app */
+  p, li, blockquote {
+    @apply text-pretty leading-relaxed;
+  }
+  /* Automatically balances all headings up to h4 to keep them symmetrical */
+  h1, h2, h3, h4 {
+    @apply text-balance font-bold tracking-tight text-foreground font-heading;
   }
   ::-webkit-scrollbar {
     width: 8px;

@@ -282,13 +282,13 @@ export function CRMPage() {
           </div>
         </section>
 
-        {/* 2. Due Follow-ups Driven by GET /crm/activities (Styled in zinc container) */}
+        {/* 2. Due Follow-ups Driven by GET /crm/activities */}
         {upcomingActivities.length > 0 && (
           <section aria-label="Due Follow-ups">
-            <div className="rounded-lg border border-zinc-200 bg-white p-3.5 shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
+            <div className="rounded-lg border border-border bg-card p-3.5 shadow-xs">
               <div className="flex items-center gap-1.5 mb-3">
                 <CalendarClock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-50">{t("crm.followUps.title")}</h3>
+                <h3 className="text-xs font-semibold text-foreground">{t("crm.followUps.title")}</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
                 {upcomingActivities.slice(0, 6).map((act) => {
@@ -307,17 +307,17 @@ export function CRMPage() {
                           setParams({ lead: act.lead_id });
                         }
                       }}
-                      className="h-auto w-full p-2.5 text-left justify-start flex-col items-start rounded-md border border-zinc-200 bg-zinc-50/50 hover:bg-zinc-100/80 dark:border-zinc-800 dark:bg-zinc-900/40 dark:hover:bg-zinc-900/80 cursor-pointer group transition-all"
+                      className="h-auto w-full p-2.5 text-left justify-start flex-col items-start rounded-md border border-border bg-muted/30 hover:bg-muted cursor-pointer group transition-all"
                     >
                       <div className="flex items-center justify-between gap-2 w-full">
-                        <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate group-hover:text-primary transition-colors">
+                        <span className="text-xs font-semibold text-foreground truncate group-hover:text-primary transition-colors">
                           {act.title}
                         </span>
                         <span
                           className={`text-[10px] font-mono shrink-0 ${
                             isOverdue
                               ? "text-red-600 dark:text-red-400 font-semibold"
-                              : "text-zinc-500 dark:text-zinc-400"
+                              : "text-muted-foreground"
                           }`}
                         >
                           {act.due_date &&
@@ -327,7 +327,7 @@ export function CRMPage() {
                             })}
                         </span>
                       </div>
-                      <span className="text-[10px] text-zinc-400 dark:text-zinc-500 block mt-0.5 truncate font-normal">
+                      <span className="text-[10px] text-muted-foreground block mt-0.5 truncate font-normal">
                         {act.lead_contact_name}
                         {act.lead_company_name ? ` • ${act.lead_company_name}` : ""}
                       </span>

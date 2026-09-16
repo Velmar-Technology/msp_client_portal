@@ -3,6 +3,7 @@ import { defineConfig } from 'tsup';
 export default defineConfig({
   entry: {
     index: 'src/index.ts',
+    cluster: 'src/cluster.ts',
     'shared/db/migrate': 'src/shared/db/migrate.ts',
   },
   outDir: 'dist',

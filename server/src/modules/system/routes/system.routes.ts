@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { systemController } from '@modules/system/controllers/SystemController';
 import { technicianEarningsController } from '@modules/system/controllers/TechnicianEarningsController';
+import { tenantByokController } from '@modules/system/controllers/TenantByokController';
 import { authMiddleware } from '@shared/middleware/authMiddleware';
 import { rbacMiddleware } from '@shared/middleware/rbacMiddleware';
 import { requireSubscriptionFeature } from '@shared/middleware/requireSubscriptionFeature';
@@ -9,7 +10,34 @@ import { UserRole, FEATURE_CODES } from '@shared/types';
 
 const router = Router();
 
+/** GET /api/v1/system/internal/byok/:tenantId — Internal resolution of tenant credentials for MCP Server */
+router.get(
+  '/internal/byok/:tenantId',
+  (req, res) => tenantByokController.getInternalTenantCredentials(req, res)
+);
+
 router.use(authMiddleware);
+
+/** PUT /api/v1/system/byok — Save or update tenant BYOK credentials (BL-204) */
+router.put(
+  '/byok',
+  requireSubscriptionFeature(FEATURE_CODES.CAF_EDUCATION_AGENT),
+  (req, res) => tenantByokController.saveConfig(req, res)
+);
+
+/** GET /api/v1/system/byok/status — Query sanitized BYOK status for tenant (BL-204) */
+router.get(
+  '/byok/status',
+  requireSubscriptionFeature(FEATURE_CODES.CAF_EDUCATION_AGENT),
+  (req, res) => tenantByokController.getStatus(req, res)
+);
+
+/** POST /api/v1/system/byok/test — In-memory validation test of AI key (BL-204) */
+router.post(
+  '/byok/test',
+  requireSubscriptionFeature(FEATURE_CODES.CAF_EDUCATION_AGENT),
+  (req, res) => tenantByokController.testConnection(req, res)
+);
 
 const vaultResetLimiter = createGatewayRateLimiter({
   windowMs: 15 * 60 * 1000,

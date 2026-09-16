@@ -10,6 +10,10 @@ export * from './routes';
 export * from './api/notificationService';
 export * from './api/notificationPreferenceService';
 export * from './api/useSettingsQueries';
+export * from './api/byok';
+
+// Pages
+export * from './pages/ByokSettingsPage';
 
 // Hooks
 export * from './hooks/useProfile';

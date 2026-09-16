@@ -3,7 +3,6 @@ import { ephemeralAccessService } from '@shared/authz/EphemeralAccessService';
 import { hybridPolicyEngine } from '@shared/authz/HybridPolicyEngine';
 import { continuousAdaptiveTrustService } from '@shared/authz/ContinuousAdaptiveTrustService';
 import { authMiddleware } from '@shared/middleware/authMiddleware';
-import { rbacMiddleware } from '@shared/middleware/rbacMiddleware';
 import { UserRole } from '@shared/types';
 import { ValidationError, NotFoundError } from '@shared/errors';
 
@@ -33,7 +32,6 @@ router.post('/ephemeral/request', async (req: Request, res: Response) => {
     requestedRole,
     durationMinutes: Number(durationMinutes) || 60,
     justification: justification.length >= 20 ? justification : `${justification} - verified elevation request`,
-    isEmergencyBreakGlass: Boolean(emergencyBreakGlass),
     requestedRelations: [
       {
         subject: `user:${user.userId}`,
@@ -78,7 +76,6 @@ router.get('/ephemeral/grants', (req: Request, res: Response) => {
 router.post('/ephemeral/grants/:id/revoke', (req: Request, res: Response) => {
   const user = req.user!;
   const grantId = req.params.id as string;
-  const { reason } = req.body;
 
   const grant = ephemeralAccessService.getGrant(grantId);
   if (!grant) {
@@ -148,9 +145,9 @@ router.get('/trust-score', (req: Request, res: Response) => {
   const targetUserId = (req.query.userId as string) || user.userId;
 
   const assessment = continuousAdaptiveTrustService.evaluateSessionRisk({
-    sessionId: `session-${targetUserId}`,
     userId: targetUserId,
-    ipAddress: req.ip || '127.0.0.1',
+    tenantId: user.tenantId,
+    clientIp: req.ip || '127.0.0.1',
     userAgent: req.get('User-Agent') || 'Portal Client',
     action: 'TRUST_AUDIT',
     timestamp: new Date(),

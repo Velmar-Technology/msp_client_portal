@@ -763,15 +763,31 @@ jobs:
               exit 1
             fi
 
+            MCP_HEALTHY=false
             for attempt in $(seq 1 12); do
               if docker exec msp_mcp_prod wget -q --spider http://127.0.0.1:3005/health >/dev/null 2>&1; then
                 echo "[health] MCP Server healthy (attempt ${attempt}/12)"
-                exit 0
+                MCP_HEALTHY=true
+                break
               fi
               echo "[health] Waiting for MCP Server health... (${attempt}/12)"
               sleep 5
             done
-            echo "[health] WARNING: MCP server container health check timed out"
+
+            CAF_HEALTHY=false
+            for attempt in $(seq 1 12); do
+              if docker exec msp_mcp_prod wget -q --spider http://127.0.0.1:3005/mcp/caf/health >/dev/null 2>&1; then
+                echo "[health] CAF Educational Agent MCP endpoint healthy (attempt ${attempt}/12)"
+                CAF_HEALTHY=true
+                break
+              fi
+              echo "[health] Waiting for CAF MCP endpoint health... (${attempt}/12)"
+              sleep 5
+            done
+
+            if [ "${MCP_HEALTHY}" != "true" ] || [ "${CAF_HEALTHY}" != "true" ]; then
+              echo "[health] WARNING: MCP server container health check timed out (MCP: ${MCP_HEALTHY}, CAF: ${CAF_HEALTHY})"
+            fi
             exit 0
 
       - name: Rollback to Previous Version
@@ -814,7 +830,13 @@ jobs:
             echo "| --------- | ----- | ------ |"
             echo "| Server | \`${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner_lc }}/${{ env.SERVER_IMAGE }}:${{ needs.prepare.outputs.version }}\` | \`${{ needs.build-server.outputs.digest }}\` |"
             echo "| Client | \`${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner_lc }}/${{ env.CLIENT_IMAGE }}:${{ needs.prepare.outputs.version }}\` | \`${{ needs.build-client.outputs.digest }}\` |"
+            echo "| MCP Server | \`${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner_lc }}/${{ env.MCP_IMAGE }}:${{ needs.prepare.outputs.version }}\` | \`${{ needs.build-mcp.outputs.digest }}\` |"
             echo "| Rollback point | \`${PREVIOUS_VERSION:-n/a}\` | |"
+            echo ""
+            echo "#### Endpoints Verified"
+            echo "- **Helpdesk Portal:** https://helpdesk.velmartech.com.do"
+            echo "- **MCP IT Endpoint:** https://helpdesk.velmartech.com.do/mcp"
+            echo "- **CAF Educational Agent Endpoint:** https://helpdesk.velmartech.com.do/mcp/caf"
           } >> "${GITHUB_STEP_SUMMARY}"
 
   # ------------------------------------------------------------------

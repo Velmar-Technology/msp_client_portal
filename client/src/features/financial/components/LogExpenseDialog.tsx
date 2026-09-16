@@ -104,9 +104,9 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
         <Button
           variant="outline"
           size="sm"
-          className="h-7 flex items-center gap-1 px-3 text-xs font-medium bg-white hover:bg-zinc-50 text-zinc-700 hover:text-zinc-900 border-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800/80 dark:border-zinc-800 dark:text-zinc-300 dark:hover:text-zinc-100 cursor-pointer shadow-xs"
+          className="h-7 flex items-center gap-1 px-3 text-xs font-medium cursor-pointer shadow-xs"
         >
-          <Plus className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
+          <Plus className="h-3 w-3 text-muted-foreground" />
           {t("financial.addExpense")}
         </Button>
       </DialogTrigger>

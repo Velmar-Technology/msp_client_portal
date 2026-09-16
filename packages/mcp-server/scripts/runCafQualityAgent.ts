@@ -9,14 +9,14 @@ dotenv.config();
 
 async function main() {
   console.log('='.repeat(80));
-  console.log('  🏛️  AGENTE CAF DE CALIDAD EDUCATIVA & SERVICIO PRIVADO MCP (BYOK)');
+  console.log('  🏛️  AGENTE CAF DE CALIDAD EDUCATIVA & SERVICIO PRIVADO MCP');
   console.log('  Powered by Velmar Technology — AIaaS para Centros Educativos');
   console.log('='.repeat(80));
 
   const hasApiKey = Boolean(process.env.BYOK_DEFAULT_API_KEY || process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY);
   const isDryRun = !hasApiKey;
 
-  console.log(`\n🔑 Modo de Ejecución BYOK: ${hasApiKey ? 'ONLINE (Llave de API detectada)' : 'SIMULADO / DRY-RUN (Sin costo de tokens)'}`);
+  console.log(`\n🔑 Modo de Ejecución: ${hasApiKey ? 'ONLINE (Llave de API detectada)' : 'SIMULADO / DRY-RUN (Sin costo de tokens)'}`);
   if (!hasApiKey) {
     console.log('   * Nota: Para ejecutar inferencia real con LLM externo, define BYOK_DEFAULT_API_KEY o OPENAI_API_KEY en tu entorno.');
   }

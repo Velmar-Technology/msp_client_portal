@@ -43,7 +43,7 @@ export function ActivityTimelineTab({ activities }: ActivityTimelineTabProps) {
                         ? "bg-emerald-500"
                         : act.activity_type.includes("QUOTE")
                           ? "bg-blue-500"
-                          : "bg-zinc-400"
+                          : "bg-muted-foreground"
                   }`}
                 />
 

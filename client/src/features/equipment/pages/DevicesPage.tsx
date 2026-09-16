@@ -17,6 +17,8 @@ import {
   BadgeCheck,
   KeyRound,
   Lock,
+  Copy,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -77,6 +79,102 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+// 0. Copyable Value Badge
+interface CopyableBadgeProps {
+  value?: string | null;
+  labelPrefix?: string;
+  tooltip?: string;
+  toastMessage?: string;
+  className?: string;
+  fallback?: string;
+}
+
+export const CopyableBadge = memo(function CopyableBadge({
+  value,
+  labelPrefix,
+  tooltip,
+  toastMessage,
+  className,
+  fallback,
+}: CopyableBadgeProps) {
+  const [copied, setCopied] = useState(false);
+  const { t } = useTranslation();
+
+  if (!value) {
+    return fallback ? <span className="font-mono text-muted-foreground">{fallback}</span> : null;
+  }
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    navigator.clipboard.writeText(value);
+    setCopied(true);
+    toast.success(toastMessage || t("common.copiedToClipboard", "Copied to clipboard"));
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      title={tooltip || t("common.clickToCopy", "Click to copy")}
+      className={cn(
+        "inline-flex items-center gap-1 font-mono text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer group/copy select-all px-1.5 py-0.5 rounded text-[10px]",
+        className
+      )}
+    >
+      <span>
+        {labelPrefix ? `${labelPrefix} ` : ""}{value}
+      </span>
+      {copied ? (
+        <Check className="w-2.5 h-2.5 text-emerald-500 shrink-0" />
+      ) : (
+        <Copy className="w-2.5 h-2.5 opacity-40 group-hover/copy:opacity-100 shrink-0" />
+      )}
+    </button>
+  );
+});
+
+export const CopyableDeviceId = memo(function CopyableDeviceId({
+  id,
+  labelPrefix,
+  className,
+}: {
+  id?: string | null;
+  labelPrefix?: string;
+  className?: string;
+}) {
+  const { t } = useTranslation();
+  return (
+    <CopyableBadge
+      value={id}
+      labelPrefix={labelPrefix}
+      tooltip={t("devices.copyDeviceIdTooltip", "Click to copy Device ID")}
+      toastMessage={t("devices.copiedDeviceId", "Device ID copied to clipboard")}
+      className={className}
+    />
+  );
+});
+
+export const CopyableSerial = memo(function CopyableSerial({
+  serial,
+  className,
+}: {
+  serial?: string | null;
+  className?: string;
+}) {
+  const { t } = useTranslation();
+  return (
+    <CopyableBadge
+      value={serial}
+      fallback={t("devices.noSerial")}
+      tooltip={t("devices.copySerialTooltip", "Click to copy serial number")}
+      toastMessage={t("devices.copiedSerial", "Serial number copied to clipboard")}
+      className={cn("text-foreground font-semibold", className)}
+    />
+  );
+});
 
 // 1. High-Density Empty Subscriptions Card Sub-component
 interface EmptySubscriptionsCardProps {
@@ -401,9 +499,7 @@ function DeviceCard({
           <>
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-muted-foreground font-medium">{t("devices.tableDeviceDetails")}:</span>
-              <span className="font-mono text-foreground font-semibold">
-                {equip.device_serial || t("devices.noSerial")}
-              </span>
+              <CopyableSerial serial={equip.device_serial} />
             </div>
             {equip.nextcloud_username && (
               <div className="flex items-center justify-between text-[11px]">
@@ -427,9 +523,11 @@ function DeviceCard({
       </div>
 
       <CardFooter className="p-0 border-none flex items-center justify-between gap-2 pt-2 border-t border-border text-[10px] text-muted-foreground mt-auto">
-        <span className="font-mono truncate max-w-28 text-muted-foreground">
-          {equip.id ? `${t("devices.idLabel")} ${equip.id.slice(0, 8)}...` : ""}
-        </span>
+        <CopyableDeviceId
+          id={equip.id}
+          labelPrefix={t("devices.idLabel")}
+          className="text-[10px] break-all max-w-[calc(100%-70px)]"
+        />
         <DeviceActionsCell
           equip={equip}
           onOpenNcModal={onOpenNcModal}
@@ -664,30 +762,6 @@ export function DevicesPage() {
       });
     }
 
-    // Add Slot number
-    cols.push({
-      id: "slotNumber",
-      accessorFn: (row) => (row.slot_index !== undefined ? row.slot_index + 1 : 0),
-      header: ({ column }) => <DataTableColumnHeader column={column} title={t("devices.tableSlot")} />,
-      cell: ({ row }) => {
-        const equip = row.original;
-        return (
-          <div className="space-y-0.5">
-            <span className="text-xs font-bold text-foreground">
-              {t("devices.slotNumber", {
-                num: equip.slot_index !== undefined ? equip.slot_index + 1 : row.index + 1,
-              })}
-            </span>
-            {equip.id && (
-              <p className="text-[9px] text-muted-foreground font-mono truncate max-w-25" title={equip.id}>
-                {t("devices.idLabel")} {equip.id}
-              </p>
-            )}
-          </div>
-        );
-      },
-    });
-
     // Add Plan column if Admin
     if (isAdmin) {
       cols.push({
@@ -749,13 +823,31 @@ export function DevicesPage() {
                   </span>
                 )}
               </div>
-              <p className="text-[10px] text-muted-foreground font-mono">
-                {equip.device_serial || t("devices.noSerial")}
-              </p>
+              <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-mono flex-wrap">
+                <CopyableSerial serial={equip.device_serial} />
+                {equip.id && (
+                  <CopyableDeviceId
+                    id={equip.id}
+                    labelPrefix={t("devices.idLabel")}
+                    className="border border-border/50 bg-muted/30"
+                  />
+                )}
+              </div>
             </div>
           );
         }
-        return <p className="text-xs text-muted-foreground italic">{t("devices.pendingUnboundSlot")}</p>;
+        return (
+          <div className="space-y-0.5">
+            <p className="text-xs text-muted-foreground italic">{t("devices.pendingUnboundSlot")}</p>
+            {equip.id && (
+              <CopyableDeviceId
+                id={equip.id}
+                labelPrefix={t("devices.idLabel")}
+                className="border border-border/50 bg-muted/30"
+              />
+            )}
+          </div>
+        );
       },
     });
 

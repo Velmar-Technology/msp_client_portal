@@ -355,16 +355,16 @@ export function MaintenancePage() {
     <Page title={t("nav.maintenance")} subtitle={t("maintenance.subtitle")} isLoading={loading}>
       <div className="space-y-4">
         {/* Top Control Bar */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white dark:bg-zinc-950 p-3.5 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-xs">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-card p-3.5 border border-border rounded-lg shadow-xs">
           {/* Calendar Month Navigation */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden bg-zinc-50 dark:bg-zinc-900">
+            <div className="flex items-center border border-border rounded-lg overflow-hidden bg-muted">
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
                 onClick={handlePrevMonth}
-                className="h-7 w-7 p-0 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                className="h-7 w-7 p-0 hover:bg-muted/80 cursor-pointer text-muted-foreground hover:text-foreground"
                 title={t("maintenance.prevMonth")}
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
@@ -374,7 +374,7 @@ export function MaintenancePage() {
                 variant="ghost"
                 size="sm"
                 onClick={handleToday}
-                className="h-7 px-3 text-xs font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer border-x border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
+                className="h-7 px-3 text-xs font-semibold hover:bg-muted/80 cursor-pointer border-x border-border text-foreground"
               >
                 {t("maintenance.today")}
               </Button>
@@ -383,13 +383,13 @@ export function MaintenancePage() {
                 variant="ghost"
                 size="icon"
                 onClick={handleNextMonth}
-                className="h-7 w-7 p-0 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                className="h-7 w-7 p-0 hover:bg-muted/80 cursor-pointer text-muted-foreground hover:text-foreground"
                 title={t("maintenance.nextMonth")}
               >
                 <ChevronRight className="h-3.5 w-3.5" />
               </Button>
             </div>
-            <h2 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-zinc-100 capitalize font-heading">
+            <h2 className="text-sm sm:text-base font-bold text-foreground capitalize font-heading">
               {monthYearTitle}
             </h2>
           </div>

@@ -23,9 +23,9 @@ export function PublicLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors">
+    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans transition-colors">
       {/* Standalone Public Header Navbar */}
-      <header className="sticky top-0 z-50 w-full border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md">
+      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-3 group focus:outline-none">
             <img
@@ -39,7 +39,7 @@ export function PublicLayout() {
               >
                 {t("home.title")}
               </span>
-              <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-semibold uppercase tracking-wider hidden sm:block">
+              <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider hidden sm:block">
                 {t("home.badge")}
               </span>
             </div>
@@ -55,9 +55,9 @@ export function PublicLayout() {
               <SelectTrigger
                 aria-label="Select Language"
                 size="lg"
-                className="rounded-full border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 px-3 text-xs font-semibold gap-1.5 cursor-pointer"
+                className="rounded-full border-border bg-muted px-3 text-xs font-semibold gap-1.5 cursor-pointer"
               >
-                <Globe className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
+                <Globe className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border">
@@ -96,15 +96,15 @@ export function PublicLayout() {
       </main>
 
       {/* Standalone Public Footer */}
-      <footer className="border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 py-8 text-xs text-zinc-500 dark:text-zinc-400">
+      <footer className="border-t border-border bg-background py-8 text-xs text-muted-foreground">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
           <div className="space-y-1">
-            <p className="font-bold text-zinc-800 dark:text-zinc-200">{APP_METADATA.appName}</p>
+            <p className="font-bold text-foreground">{APP_METADATA.appName}</p>
             <p>© 2026 {APP_METADATA.company}. All rights reserved.</p>
-            <p className="text-[11px] text-zinc-400">{APP_METADATA.address} | Support: {APP_METADATA.email}</p>
+            <p className="text-[11px] text-muted-foreground">{APP_METADATA.address} | Support: {APP_METADATA.email}</p>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-4 font-semibold text-zinc-600 dark:text-zinc-400">
+          <div className="flex flex-wrap justify-center gap-4 font-semibold text-muted-foreground">
             <Link to="/plans" className="hover:underline flex items-center gap-1">
               <CreditCard className="h-3.5 w-3.5" />
               <span>{t("home.navPlans")}</span>

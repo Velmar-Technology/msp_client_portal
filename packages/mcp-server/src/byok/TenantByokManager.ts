@@ -2,7 +2,7 @@ import { ByokProvider, type ByokLlmConfig } from './ByokLlmClient.js';
 import { CafPrivacyFilter } from '../caf/CafPrivacyFilter.js';
 
 /**
- * Tenant-specific BYOK credentials and preferences.
+ * Tenant-specific credentials and preferences.
  */
 export interface TenantByokProfile {
   tenantId: string;
@@ -30,7 +30,7 @@ export interface TenantByokStatus {
 }
 
 /**
- * Multi-Tenant BYOK and Privacy Isolation Manager.
+ * Multi-Tenant and Privacy Isolation Manager.
  *
  * Enforces strict tenant boundaries:
  * 1. Isolates BYOK API keys so each educational institution funds their own token usage.
@@ -50,6 +50,11 @@ export class TenantByokManager {
    */
   private readonly tenantPrivacyFilters = new Map<string, CafPrivacyFilter>();
 
+  /**
+   * Optional MspApiClient instance to query backend API for tenant credentials
+   */
+  private apiClient?: any;
+
   private constructor() {}
 
   /**
@@ -60,6 +65,42 @@ export class TenantByokManager {
       TenantByokManager.instance = new TenantByokManager();
     }
     return TenantByokManager.instance;
+  }
+
+  /**
+   * Injects the backend API client adapter for remote tenant credential resolution.
+   */
+  public setApiClient(client: any): void {
+    this.apiClient = client;
+  }
+
+  /**
+   * Ensures tenant profile is present in memory, fetching from portal backend if necessary.
+   */
+  public async ensureTenantProfile(tenantId: string): Promise<TenantByokProfile | undefined> {
+    if (this.tenantProfiles.has(tenantId)) {
+      return this.tenantProfiles.get(tenantId);
+    }
+
+    if (this.apiClient && typeof this.apiClient.getTenantByokProfile === 'function') {
+      try {
+        const remoteProfile = await this.apiClient.getTenantByokProfile(tenantId);
+        if (remoteProfile && remoteProfile.apiKey) {
+          this.setTenantProfile({
+            tenantId: remoteProfile.tenantId,
+            provider: remoteProfile.provider,
+            apiKey: remoteProfile.apiKey,
+            model: remoteProfile.model || undefined,
+            baseUrl: remoteProfile.baseUrl || undefined,
+          });
+          return this.tenantProfiles.get(tenantId);
+        }
+      } catch (err: any) {
+        console.error(`[TenantByokManager] Remote profile lookup failed for ${tenantId}:`, err?.message);
+      }
+    }
+
+    return undefined;
   }
 
   /**

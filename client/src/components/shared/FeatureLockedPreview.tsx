@@ -9,6 +9,7 @@ import {
   HardDrive,
   ShieldCheck,
   CheckCircle2,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -30,6 +31,22 @@ interface FeatureMetadata {
 }
 
 const FEATURE_METADATA_MAP: Record<string, FeatureMetadata> = {
+  [FEATURE_CODES.CAF_EDUCATION_AGENT]: {
+    icon: Sparkles,
+    titleKey: "featureLocked.cafEducation.title",
+    defaultTitle: "Agente de Calidad Educativa CAF & AIaaS",
+    descKey: "featureLocked.cafEducation.desc",
+    defaultDesc:
+      "Autoevaluación continua bajo los 9 criterios del modelo CAF, filtro de privacidad en memoria Ley 172-13 y generación automática del Plan de Mejora Institucional (PMI).",
+    tierKey: "featureLocked.cafEducation.tier",
+    defaultTier: "Plan Pro CAF o Enterprise",
+    perks: [
+      { key: "featureLocked.cafEducation.perk1", defaultText: "Auditoría autónoma de los 9 criterios CAF con matriz FODA" },
+      { key: "featureLocked.cafEducation.perk2", defaultText: "Sanitización en memoria de PII bajo Ley 172-13 (Cédula, RNC, Matrícula)" },
+      { key: "featureLocked.cafEducation.perk3", defaultText: "Bring-Your-Own-Key para OpenAI, Anthropic o modelos locales" },
+      { key: "featureLocked.cafEducation.perk4", defaultText: "Conexión remota cero-secreto para Claude Desktop y Cursor" },
+    ],
+  },
   [FEATURE_CODES.PASSWORD_MANAGER]: {
     icon: KeyRound,
     titleKey: "featureLocked.passwordManager.title",

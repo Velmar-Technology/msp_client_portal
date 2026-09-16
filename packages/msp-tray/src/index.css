@@ -8,16 +8,80 @@
   --color-velmar-orange-dark: #cc4b00;
   --color-velmar-orange-light: #ff8533;
   --color-velmar-pink: #ff007a;
-  --color-velmar-bg: #070a10;
-  --color-velmar-card: #0d131f;
-  --color-velmar-card-hover: #121a2b;
+
+  --color-velmar-bg: var(--velmar-bg);
+  --color-velmar-card: var(--velmar-card);
+  --color-velmar-card-hover: var(--velmar-card-hover);
+  --color-velmar-border: var(--velmar-border);
+  --color-velmar-subtle: var(--velmar-subtle);
+  --color-velmar-header: var(--velmar-header);
+  --color-velmar-text: var(--velmar-text);
+  --color-velmar-text-muted: var(--velmar-text-muted);
 }
 
 @layer base {
   :root {
     color-scheme: dark;
+    --velmar-bg: #070a10;
+    --velmar-card: #0d131f;
+    --velmar-card-hover: #121a2b;
+    --velmar-border: #1c2942;
+    --velmar-subtle: #0a101d;
+    --velmar-header: rgba(11, 16, 28, 0.95);
+    --velmar-text: #f1f5f9;
+    --velmar-text-muted: #94a3b8;
+    --velmar-btn-bg: #131c30;
+    --velmar-btn-border: #233554;
+    --velmar-radial-glow: rgba(0, 132, 255, 0.12);
+    --velmar-radial-fade: rgba(7, 10, 16, 0.98);
   }
-  
+
+  :root.light {
+    color-scheme: light;
+    --velmar-bg: #d6d8df;
+    --velmar-card: #E6E7ED;
+    --velmar-card-hover: #dcdde3;
+    --velmar-border: #C1C2C7;
+    --velmar-subtle: #e6e7ed;
+    --velmar-header: rgba(214, 216, 223, 0.95);
+    --velmar-text: #343b58;
+    --velmar-text-muted: #70728C;
+    --velmar-btn-bg: #e6e7ed;
+    --velmar-btn-border: #C1C2C7;
+    --velmar-radial-glow: rgba(41, 89, 170, 0.08);
+    --velmar-radial-fade: rgba(214, 216, 223, 0.98);
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not(.dark) {
+      color-scheme: light;
+      --velmar-bg: #d6d8df;
+      --velmar-card: #E6E7ED;
+      --velmar-card-hover: #dcdde3;
+      --velmar-border: #C1C2C7;
+      --velmar-subtle: #e6e7ed;
+      --velmar-header: rgba(214, 216, 223, 0.95);
+      --velmar-text: #343b58;
+      --velmar-text-muted: #70728C;
+      --velmar-btn-bg: #e6e7ed;
+      --velmar-btn-border: #C1C2C7;
+      --velmar-radial-glow: rgba(41, 89, 170, 0.08);
+      --velmar-radial-fade: rgba(214, 216, 223, 0.98);
+    }
+  }
+
+  :root.light body {
+    background-color: var(--velmar-bg);
+    color: var(--velmar-text);
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not(.dark) body {
+      background-color: var(--velmar-bg);
+      color: var(--velmar-text);
+    }
+  }
+
   /* Custom thin scrollbars for compact desktop assistant */
   ::-webkit-scrollbar {
     width: 5px;
@@ -33,5 +97,85 @@
   ::-webkit-scrollbar-thumb:hover {
     background: rgba(0, 132, 255, 0.4);
   }
+
+  .bg-velmar-mesh {
+    background-image: radial-gradient(ellipse 80% 80% at 50% -20%, var(--velmar-radial-glow), var(--velmar-radial-fade));
+  }
 }
 
+/* Light mode dynamic surface adaptation */
+:root.light .bg-velmar-bg {
+  background-color: var(--velmar-bg);
+}
+
+:root.light [class*="bg-[#0b101c]"],
+:root.light [class*="bg-[#0d131f]"],
+:root.light [class*="bg-[#0c1220]"],
+:root.light [class*="bg-[#0a0e17]"],
+:root.light [class*="bg-[#060a12]"] {
+  background-color: var(--velmar-card) !important;
+}
+
+:root.light [class*="bg-[#0a101d]"] {
+  background-color: var(--velmar-subtle) !important;
+}
+
+:root.light [class*="bg-[#131c30]"] {
+  background-color: var(--velmar-btn-bg) !important;
+}
+
+:root.light [class*="border-[#1b263b]"],
+:root.light [class*="border-[#1c2942]"],
+:root.light [class*="border-[#1c2940]"],
+:root.light [class*="border-[#233554]"] {
+  border-color: var(--velmar-border) !important;
+}
+
+:root.light [class*="text-slate-100"],
+:root.light [class*="text-slate-200"] {
+  color: var(--velmar-text) !important;
+}
+
+:root.light [class*="text-slate-300"],
+:root.light [class*="text-slate-400"] {
+  color: var(--velmar-text-muted) !important;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not(.dark) .bg-velmar-bg {
+    background-color: var(--velmar-bg);
+  }
+
+  :root:not(.dark) [class*="bg-[#0b101c]"],
+  :root:not(.dark) [class*="bg-[#0d131f]"],
+  :root:not(.dark) [class*="bg-[#0c1220]"],
+  :root:not(.dark) [class*="bg-[#0a0e17]"],
+  :root:not(.dark) [class*="bg-[#060a12]"] {
+    background-color: var(--velmar-card) !important;
+  }
+
+  :root:not(.dark) [class*="bg-[#0a101d]"] {
+    background-color: var(--velmar-subtle) !important;
+  }
+
+  :root:not(.dark) [class*="bg-[#131c30]"] {
+    background-color: var(--velmar-btn-bg) !important;
+  }
+
+  :root:not(.dark) [class*="border-[#1b263b]"],
+  :root:not(.dark) [class*="border-[#1c2942]"],
+  :root:not(.dark) [class*="border-[#1c2940]"],
+  :root:not(.dark) [class*="border-[#233554]"] {
+    border-color: var(--velmar-border) !important;
+  }
+
+  :root:not(.dark) [class*="text-slate-100"],
+  :root:not(.dark) [class*="text-slate-200"] {
+    color: var(--velmar-text) !important;
+  }
+
+  :root:not(.dark) [class*="text-slate-300"],
+  :root:not(.dark) [class*="text-slate-400"] {
+    color: var(--velmar-text-muted) !important;
+  }
+}

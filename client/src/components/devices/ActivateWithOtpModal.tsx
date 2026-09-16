@@ -98,22 +98,22 @@ export function ActivateWithOtpModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="max-w-md w-full bg-card border border-zinc-200 dark:border-zinc-800 rounded-lg p-0 text-zinc-900 dark:text-zinc-100 flex flex-col overflow-hidden">
+      <DialogContent className="max-w-md w-full bg-card border border-border rounded-lg p-0 text-foreground flex flex-col overflow-hidden">
         {/* Modal Header */}
-        <DialogHeader className="px-5 py-3.5 border-b border-zinc-200 flex flex-row justify-between dark:border-zinc-800 items-center bg-white dark:bg-card space-y-0 text-left">
+        <DialogHeader className="px-5 py-3.5 border-b border-border flex flex-row justify-between items-center bg-card space-y-0 text-left">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 rounded-md border border-zinc-200 dark:border-zinc-800">
+            <div className="p-1.5 bg-muted text-muted-foreground rounded-md border border-border">
               <KeyRound className="h-4 w-4" />
             </div>
             <div>
-              <DialogTitle className="text-sm font-bold text-zinc-900 dark:text-zinc-50">{t("devices.activateWithCodeTitle")}</DialogTitle>
-              <DialogDescription className="text-[10px] text-zinc-500 font-medium">{t("devices.activateWithCodeSubtitle")}</DialogDescription>
+              <DialogTitle className="text-sm font-bold text-foreground">{t("devices.activateWithCodeTitle")}</DialogTitle>
+              <DialogDescription className="text-[10px] text-muted-foreground font-medium">{t("devices.activateWithCodeSubtitle")}</DialogDescription>
             </div>
           </div>
           <button
             onClick={onClose}
             disabled={loading}
-            className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-md transition-colors cursor-pointer text-zinc-400 disabled:opacity-50"
+            className="p-1 hover:bg-muted rounded-md transition-colors cursor-pointer text-muted-foreground hover:text-foreground disabled:opacity-50"
           >
             <X className="h-4 w-4" />
           </button>
@@ -122,15 +122,15 @@ export function ActivateWithOtpModal({
         {/* Modal Body */}
         <div className="p-5 space-y-4">
           {subscriptionId && slotIndex !== null && slotIndex !== undefined && (
-            <div className="flex items-center gap-1.5 text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-900/30 border border-zinc-200 dark:border-zinc-800 rounded-md px-2.5 py-1.5 self-start">
-              <Laptop className="w-3 h-3 text-zinc-400" />
+            <div className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground bg-muted/40 border border-border rounded-md px-2.5 py-1.5 self-start">
+              <Laptop className="w-3 h-3 text-muted-foreground" />
               {t("devices.bindingSlotContext", { slot: slotIndex + 1 })}
             </div>
           )}
-          <p className="text-xs text-zinc-500 leading-normal">{t("devices.activateWithCodeDesc")}</p>
+          <p className="text-xs text-muted-foreground leading-normal">{t("devices.activateWithCodeDesc")}</p>
 
           <div className="flex flex-col items-center">
-            <label htmlFor="activate-otp-code" className="block text-[10px] uppercase font-bold text-zinc-400 mb-2 self-start">
+            <label htmlFor="activate-otp-code" className="block text-[10px] uppercase font-bold text-muted-foreground mb-2 self-start">
               {t("devices.otpInputLabel")}
             </label>
             <InputOTP
@@ -160,7 +160,7 @@ export function ActivateWithOtpModal({
 
           <div className="space-y-3.5">
             {identityChecking && (
-              <div className="flex items-center gap-1.5 text-[10px] font-medium text-zinc-500">
+              <div className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground">
                 <Loader2 className="w-3 h-3 animate-spin" />
                 {t("devices.detectedIdentityChecking")}
               </div>
@@ -173,7 +173,7 @@ export function ActivateWithOtpModal({
             )}
 
             <div>
-              <label htmlFor="activate-otp-dev-name" className="block text-[10px] uppercase font-bold text-zinc-400 mb-1">
+              <label htmlFor="activate-otp-dev-name" className="block text-[10px] uppercase font-bold text-muted-foreground mb-1">
                 {t("devices.deviceNameLabel")}
               </label>
               <Input
@@ -187,7 +187,7 @@ export function ActivateWithOtpModal({
             </div>
 
             <div>
-              <label htmlFor="activate-otp-dev-serial" className="block text-[10px] uppercase font-bold text-zinc-400 mb-1">
+              <label htmlFor="activate-otp-dev-serial" className="block text-[10px] uppercase font-bold text-muted-foreground mb-1">
                 {t("devices.deviceSerialLabel")}
               </label>
               <Input
@@ -203,12 +203,12 @@ export function ActivateWithOtpModal({
         </div>
 
         {/* Modal Footer */}
-        <DialogFooter className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex flex-row justify-end gap-2 bg-zinc-50/50 dark:bg-card">
+        <DialogFooter className="p-4 border-t border-border flex flex-row justify-end gap-2 bg-muted/30">
           <DialogClose
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="h-8 px-3 text-xs font-semibold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md transition-colors cursor-pointer disabled:opacity-50 mt-0"
+            className="h-8 px-3 text-xs font-semibold text-muted-foreground hover:bg-muted border border-border rounded-md transition-colors cursor-pointer disabled:opacity-50 mt-0"
           >
             {t("devices.cancel")}
           </DialogClose>
@@ -216,7 +216,7 @@ export function ActivateWithOtpModal({
             type="button"
             onClick={() => onActivate(otp, deviceName.trim(), deviceSerial.trim())}
             disabled={!canSubmit}
-            className="h-8 px-4 text-xs font-semibold bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 rounded-md transition-opacity cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+            className="h-8 px-4 text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 rounded-md transition-opacity cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
           >
             {loading ? (
               <>

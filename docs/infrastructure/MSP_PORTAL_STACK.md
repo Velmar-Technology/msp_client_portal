@@ -1,8 +1,14 @@
 # Infrastructure Specification: MSP Client Portal Production Stack
 
-_Status: Deployed & Active · Last Verified: 2026-09-11 · Version: 1.3_
+_Status: Deployed & Active · Last Verified: 2026-09-15 · Version: 1.4_
 
-> **2026-09-11 Post-Incident Updates:**
+> **2026-09-15 Updates (v1.4 - CAF Educational Agent & Multi-Profile MCP Isolation):**
+> 1. **CAF Educational Quality AI Agent (`/mcp/caf`):** Integrated the CAF (Marco Común de Evaluación) 9-criteria self-evaluation engine, documentary gap detector, and institutional improvement plan (PMI) generator into `@msp/mcp-server`.
+> 2. **Least-Privilege Tool Isolation:** Architected strict profile-based isolation (`McpServerProfile`: `all`, `msp-support`, `caf-education`). The `/mcp/caf` endpoint strictly serves the `caf-education` profile, guaranteeing zero access to IT operations, RMM diagnostics, PowerShell commands, or billing data.
+> 3. **Dominican Law 172-13 Privacy & BYOK Runtime:** Built-in in-memory PII sanitization (names, cédulas, emails, phone numbers) before LLM egress and multi-tenant Bring-Your-Own-Key (BYOK) routing (`TenantByokManager`), ensuring zero token liability for Velmar.
+> 4. **Dual Health & Verification Gates:** Traefik exposes both `/mcp` and `/mcp/caf`. CI/CD deployment verification (`deploy.yml` and `quality.yml`) validates both `/health` and `/mcp/caf/health` along with the 54-test CAF unit suite.
+
+> **2026-09-11 Post-Incident Updates (v1.1 - v1.3):**
 > 1. **Admin Token Missing (v1.1):** `VAULTWARDEN_ADMIN_TOKEN` was absent from the stack env, causing `msp_server_prod` to run the offline mock path. Token was generated, injected into stack 17 env, and compose now fails fast (`${VAULTWARDEN_ADMIN_TOKEN:?...}`).
 > 2. **Subpath Route 404 & Admin Session Auth (v1.2):** Rocket Vaultwarden runs with `DOMAIN=https://helpdesk.velmartech.com.do/vault`, which mounts all routes under `/vault`. `VAULTWARDEN_URL` was updated to default to `http://vaultwarden:80/vault` (with automatic subpath extraction in `VaultwardenService.getBaseUrl()`). Furthermore, Rocket's `/admin/*` routes strictly require session cookie authentication (`VW_ADMIN`), which the backend now automatically negotiates via `POST /vault/admin` and caches for 15 minutes to prevent HTTP 429 rate limiting (see §6, §8).
 > 3. **Workstation Bitwarden Activation Flow & RSA Private Key (v1.3):** Device accounts use internal `.local` workstation identities (`device_<slotId>@<tenantId>.local`) where SMTP delivery is unavailable. Vaultwarden requires invited users to activate through an RS256-signed JWT token on `/#/accept-organization`. The portal backend mounts `/vaultwarden_data/rsa_key.pem` read-only (`vaultwarden_data:/vaultwarden_data:ro`) or resolves `VAULTWARDEN_RSA_KEY` to sign 5-day invitation tokens on the fly. The frontend (`DeviceVaultModal.tsx`) presents a seamless one-click "Set Master Password" button and link copy flow, completely eliminating external email dependencies.
@@ -17,7 +23,7 @@ The **MSP Client Portal** runs as a single Docker Compose stack on the helpdesk 
 - **Public ingress:** Traefik v3.6.4 (Portainer stack **3 `traefik`**) terminates TLS via Let's Encrypt (`myresolver`) for `helpdesk.velmartech.com.do` and reverse-proxies path prefixes to the internal containers over the shared `reverse-proxy` network.
 - **App images:** `ghcr.io/velmar-technology/msp-services-server:<VERSION>` and `ghcr.io/velmar-technology/msp-services-client:<VERSION>` (reference tags are `:latest` + long SHA, built by GitHub Actions).
 - **Stack lifecycle:** Portainer owns the stack. Deploys pin `VERSION` into the stack environment and re-submit the repo compose spec via the Portainer REST API (see §7).
-- **Related infra:** WireGuard hub / TrueNAS / Nextcloud routing and the credentials matrix live in [`WIREGUARD_NEXTCLOUD_INTEGRATION.md`](WIREGUARD_NEXTCLOUD_INTEGRATION.md). Copilot Studio autonomous AI agent deployment and MCP operations are documented in [`COPILOT_STUDIO_AGENT_DEPLOYMENT.md`](COPILOT_STUDIO_AGENT_DEPLOYMENT.md). Live secrets are **not** duplicated here — see that document's §3.4 credentials reference and Portainer → stack environment.
+- **Related infra:** WireGuard hub / TrueNAS / Nextcloud routing and the credentials matrix live in [`WIREGUARD_NEXTCLOUD_INTEGRATION.md`](WIREGUARD_NEXTCLOUD_INTEGRATION.md). Copilot Studio autonomous AI agent deployment and MCP operations are documented in [`COPILOT_STUDIO_AGENT_DEPLOYMENT.md`](COPILOT_STUDIO_AGENT_DEPLOYMENT.md). The CAF Educational Quality Agent (AIaaS multi-tenant BYOK deployment) is documented in [`COPILOT_STUDIO_CAF_AGENT_DEPLOYMENT.md`](COPILOT_STUDIO_CAF_AGENT_DEPLOYMENT.md) and [`docs/ideas/caf-education-aiaas-mcp-byok.md`](../ideas/caf-education-aiaas-mcp-byok.md). Live secrets are **not** duplicated here — see that document's §3.4 credentials reference and Portainer → stack environment.
 
 ---
 
@@ -39,7 +45,7 @@ All services restart automatically (`restart: always` unless noted) and share th
 | `alloy` | `msp_alloy` | `grafana/alloy:v1.2.0` | Faro frontend-telemetry receiver: `faro.receiver` on **12347** (payload limit 10MiB, CORS origin `https://helpdesk.velmartech.com.do`), HTTP metrics on **12345**; ingress `/collect` | 0.15 / 100M | — |
 | `grafana` | `msp_grafana` | `grafana/grafana-oss:latest` | Dashboards; `GF_SERVER_ROOT_URL=https://helpdesk.velmartech.com.do/grafana/`, `SERVE_FROM_SUB_PATH=true`; preinstalls `alexanderzobnin-zabbix-app`; SMTP from shared SMTP vars | 0.25 / 180M | — |
 | `vaultwarden` | `msp_vaultwarden` | `vaultwarden/server:alpine` | Multi-tenant Bitwarden password manager; zero-knowledge encryption; subpath `/vault`; attached to `reverse-proxy` | 0.20 / 120M | — |
-| `mcp-server` | `msp_mcp_prod` | `msp_mcp_prod:latest` | Model Context Protocol (MCP) Streamable HTTP Server (`/mcp`); internal port **3005**; attached to `reverse-proxy` | 0.20 / 120M | `wget --spider http://127.0.0.1:3005/health` |
+| `mcp-server` | `msp_mcp_prod` | `msp_mcp_prod:latest` | Model Context Protocol (MCP) Streamable HTTP Server (`/mcp` and `/mcp/caf`); internal port **3005**; attached to `reverse-proxy` | 0.25 / 150M | `wget --spider http://127.0.0.1:3005/health && wget --spider http://127.0.0.1:3005/mcp/caf/health` |
 | _(traefik)_ | — | `traefik:v3.6.4` | **External stack 3** — TLS termination + routing (not part of this stack) | — | — |
 
 > Note: `db` and `zabbix-db` use the same `postgres:16-alpine` image but separate encrypted volumes (see §3) — no data overlap.
@@ -53,7 +59,7 @@ All services restart automatically (`restart: always` unless noted) and share th
 | Name | Type | Scope | Used by |
 |---|---|---|---|
 | `default` | bridge | this stack | all 12 services |
-| `reverse-proxy` | bridge, **external** | managed by Traefik stack 3 | `server`, `zabbix-web`, `client`, `logs`, `prometheus`, `alloy`, `grafana` |
+| `reverse-proxy` | bridge, **external** | managed by Traefik stack 3 | `server`, `zabbix-web`, `client`, `logs`, `prometheus`, `alloy`, `grafana`, `mcp-server` |
 
 ### Topology
 
@@ -69,6 +75,8 @@ All services restart automatically (`restart: always` unless noted) and share th
                       │   │  /prometheus (auth)       → msp-prometheus-svc :9090  msp_prometheus           │
                       │   │  /collect                 → msp-faro-svc       :12347 msp_alloy                │
                       │   │  /grafana                 → msp-grafana-svc    :3000  msp_grafana              │
+                      │   │  /vault                   → msp-vault-svc      :80    msp_vaultwarden          │
+                      │   │  /mcp, /mcp/caf           → msp-mcp-svc        :3005  msp_mcp_prod             │
                       │   │                                                                                │
                       │   │  zabbix-server publishes :10051 → agent ingress (WAN)                          │
                       └───┴─────────────────────────────────────────────────────────────────────────────┘
@@ -103,6 +111,8 @@ All routers use `entrypoints=websecure`, `tls=true`, `certresolver=myresolver` (
 | `msp-grafana` | `` Host(`helpdesk.velmartech.com.do`) && PathPrefix(`/grafana`) `` | 100 | — | 3000 |
 | `msp-vault` | `` Host(`helpdesk.velmartech.com.do`) && PathPrefix(`/vault`) `` | 100 | — | 80 |
 | `msp-mcp` | `` Host(`helpdesk.velmartech.com.do`) && PathPrefix(`/mcp`) `` | 100 | — | 3005 |
+
+> **Note on MCP Routing:** Traefik's `PathPrefix('/mcp')` rule routes both administrative operations (`/mcp`) and the strictly isolated CAF Educational Quality Agent endpoint (`/mcp/caf`) directly to the `mcp-server` container on port 3005 without requiring additional Traefik routers.
 
 ### Middlewares
 
@@ -171,7 +181,7 @@ Values are supplied by the **Portainer stack environment** (persisted in the Por
 | Datadog (opt-in) | Server APM only: `DD_API_KEY`, `DD_SITE`, `DD_SERVICE`, `DD_ENV`, `DD_VERSION`, `DD_TRACE_ENABLED`, `DD_AGENT_HOST`. Client RUM is Faro — see the Faro row below. |
 | Grafana | `GRAFANA_ADMIN_USER` (default `admin`), `GRAFANA_ADMIN_EMAIL` (default `admin@velmartech.com.do`), `GRAFANA_ADMIN_PASSWORD` (required from environment, zero inline fallback) |
 | Faro / Telemetry (client build) | `VITE_FARO_URL`, `VITE_FARO_APP_NAME`, `VITE_FARO_APP_ENV` (baked at build time) |
-| MCP Server | `MSP_SERVER_URL=helpdesk.velmartech.com.do`, `MSP_API_KEY` (Outbound backend JWT token), `MCP_SERVER_API_KEY` (Inbound auth key for AI agents / Copilot Studio), `MCP_TRANSPORT=http`, `MCP_HTTP_PORT=3005` |
+| MCP Server | `MSP_SERVER_URL=helpdesk.velmartech.com.do`, `MSP_API_KEY` (Outbound backend JWT token), `MCP_SERVER_API_KEY` (Inbound auth key for AI agents / Copilot Studio), `MCP_TRANSPORT=http`, `MCP_HTTP_PORT=3005`, `MCP_PROFILE=all` (or `msp-support`, `caf-education`), `OPENAI_API_KEY`/`ANTHROPIC_API_KEY` (Optional server fallback for CAF agent when BYOK is not specified per-tenant) |
 | Timezones | `TZ` (OS/Server/Postgres) and `PHP_TZ` (Zabbix Web) (`America/Santo_Domingo`) |
 
 ---
@@ -183,7 +193,7 @@ Values are supplied by the **Portainer stack environment** (persisted in the Por
 `.github/workflows/deploy.yml` — triggered by tag `v*` push or `workflow_dispatch`:
 
 ```
-prepare → quality-gates (lint/typecheck/test)
+prepare → quality-gates (lint/typecheck/test/mcp-server unit tests)
         → build-server + build-client (ghcr :<version>/:<sha>/:latest, SBOM)
         → security-scan (Trivy HIGH/CRITICAL gate, SARIF)
         → build-agent-binaries + create-release (tags only)
@@ -195,7 +205,7 @@ prepare → quality-gates (lint/typecheck/test)
 1. **Capture rollback point** — reads the running `msp_server_prod` tag via the Portainer Docker API.
 2. **Pre-warm GHCR pulls** on the VPS over SSH (best-effort; requires one-time `docker login ghcr.io` with a `read:packages` PAT).
 3. **Update stack** — `bash scripts/portainer-stack-update.sh "${VERSION}"`.
-4. **Health verify** — `docker exec msp_server_prod node -e "fetch('http://127.0.0.1:3001/api/v1/health')…"` (12×5s).
+4. **Health verify** — `docker exec msp_server_prod node -e "fetch('http://127.0.0.1:3001/api/v1/health')…"` (12×5s) and verifies MCP dual endpoints: `http://127.0.0.1:3005/health` and `http://127.0.0.1:3005/mcp/caf/health`.
 5. **Auto-rollback** — on update or health failure, re-runs the updater with `PREVIOUS_VERSION`.
 
 Required secrets: `PORTAINER_URL`, `PORTAINER_API_KEY` (`ptr_…`), `PORTAINER_ENDPOINT_ID=3`, `PORTAINER_STACK_ID=17`, `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_PORT`, `VITE_GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_ID`, `VITE_PAYPAL_CLIENT_ID`, `DEPLOY_WEBHOOK_URL`. `PORTAINER_TLS_INSECURE=true` tolerates Portainer's self-signed cert (flip to `false` once CA-signed).
@@ -252,8 +262,10 @@ Manual rollback mirrors a deploy with the previous `VERSION` tag; the CI pipelin
 | `/prometheus` | basic-auth | Prometheus web UI |
 | `/grafana/` | Grafana login | Grafana dashboards (Zabbix plugin preinstalled) |
 | `/collect` | none | Faro telemetry ingest (POST) — no UI |
-| `/mcp` | API key (`X-API-Key` / `Authorization`) | Model Context Protocol Streamable HTTP JSON-RPC endpoint (Copilot Studio & AI agents) |
+| `/mcp` | API key (`X-API-Key` / `Authorization`) | Model Context Protocol Streamable HTTP JSON-RPC endpoint (Copilot Studio & AI agents - IT Support) |
 | `/mcp/health` | none | MCP server liveness & spec compliance probe (`GET /mcp` also returns health status) |
+| `/mcp/caf` | none / Optional BYOK Key | Isolated CAF Educational Quality Agent endpoint (7 academic & privacy tools; zero IT/PowerShell tools) |
+| `/mcp/caf/health` | none | CAF endpoint health & readiness probe (`GET /mcp/caf` also returns health status) |
 
 ### Quick diagnostics (Portainer-backed exec)
 
@@ -264,6 +276,10 @@ Set-Location "C:\Users\PC\AppData\Local\Temp\opencode\ptx"
 
 # Stack container list + health state
 node run-in.mjs 3 msp_server_prod node -e "fetch('http://127.0.0.1:3001/api/v1/health').then(r=>console.log(r.status))"
+
+# MCP Server & CAF Endpoint Health (internal container verification)
+node run-in.mjs 3 msp_mcp_prod node -e "fetch('http://127.0.0.1:3005/health').then(r=>r.json()).then(console.log)"
+node run-in.mjs 3 msp_mcp_prod node -e "fetch('http://127.0.0.1:3005/mcp/caf/health').then(r=>r.json()).then(console.log)"
 
 # Vaultwarden API liveness probe (internal)
 node run-in.mjs 3 msp_server_prod node -e "fetch('http://vaultwarden:80/vault/api/alive').then(r=>r.text()).then(t=>console.log('Vaultwarden alive:', t))"
@@ -298,6 +314,8 @@ node run-in.mjs 3 msp_alloy sh -c "tail -n 50 /var/log/* 2>/dev/null | tail -n 5
 | `429 Too Many Requests` on `/vault/admin` | Rocket's admin login rate limiter triggered by repeated login attempts in a short burst | `VaultwardenService` caches the `VW_ADMIN` session cookie for 15 minutes (under the 20-minute validity window), eliminating burst login attempts |
 | `401 Unauthorized` / `502 EXTERNAL_SERVICE_ERROR` on `POST /api/v1/equipment/:id/vault/revoke` (`revokeDeviceSession`) | Vaultwarden organization user revoke endpoint `/api/organizations/:orgId/users/:userId/revoke` expects user JWT bearer authentication, rejecting server Admin Token with 401. Or equipment slot contains a simulated ID (`vw_user_...`) from testing | Resolved in `VaultwardenService.revokeDeviceSession`: simulated identifiers are treated as idempotent success; on real IDs, returns from 401/error fallback resiliently to Vaultwarden Admin API session deauthorization (`POST /admin/users/:id/deauth`) with cached `VW_ADMIN` cookie, terminating active sessions immediately (BL-205) |
 | *"User already exists"* on `/#/register` for workstation `.local` accounts | Vaultwarden provisions device users in status `1` (`Invited`) via `/admin/invite`. Without SMTP for `.local` addresses, users cannot receive registration links and raw sign-up fails because the user row already exists | Fixed in v1.3: `server` mounts `vaultwarden_data:/vaultwarden_data:ro` and generates an RS256-signed Bitwarden invitation URL (`/#/accept-organization/?...&token=<jwt>`). The client portal displays a one-click **"Set Master Password"** button in `DeviceVaultModal`, completing registration seamlessly |
+| `[BYOK Authorization Required]` on `caf_audit_evidence` or `caf_generate_improvement_plan` | Tenant has not registered their private OpenAI/Anthropic API key, or no key was supplied in request | Call `caf_configure_tenant_byok` with tenant credentials, pass direct `apiKey` parameter, or set fallback `OPENAI_API_KEY` in stack environment |
+| IT support tools (tickets, PowerShell) visible on educational Copilot | Copilot Studio Action pointed to `/mcp` instead of isolated `/mcp/caf` | Reconfigure Copilot Studio server URL to `https://helpdesk.velmartech.com.do/mcp/caf`. That route enforces `caf-education` profile (zero IT tools) |
 
 ### Security notes
 
@@ -306,8 +324,9 @@ node run-in.mjs 3 msp_alloy sh -c "tail -n 50 /var/log/* 2>/dev/null | tail -n 5
 - **Grafana security:** `GF_SECURITY_ADMIN_PASSWORD` has zero inline default fallback in compose — it MUST be supplied securely via `GRAFANA_ADMIN_PASSWORD` in the Portainer stack env.
 - **Vaultwarden admin token & cookie session:** `VAULTWARDEN_ADMIN_TOKEN` is **required** (no inline fallback). It authenticates the portal backend against the Vaultwarden Admin API and is consumed by `server` and `vaultwarden ADMIN_TOKEN`. Missing/empty values caused the 2026-09-11 incident where *Reset Vault Access* reported a fake *"Simulated reset invitation sent successfully."* For administrative operations (`/admin/*`), the server automatically negotiates and caches a `VW_ADMIN` session cookie. Store the token in Portainer stack env and the §3.4 credentials matrix. Closed signups (`SIGNUPS_ALLOWED=false`) are strictly enforced; user onboarding occurs via invitation dispatch (`INVITATIONS_ALLOWED=true`).
 - **Zabbix defaults:** Zabbix API user/password and DB credentials are stack env vars (`zabbix` defaults in compose); keep overridden in Portainer. Zabbix UI admin account is the `admin` basic-auth realm only at the proxy; the Zabbix app itself uses its own (`Admin`) login.
+- **MCP Server Isolation & BYOK Security:** `/mcp/caf` is strictly isolated to academic evaluation and student/teacher privacy. Educational clients cannot execute host PowerShell or access IT ticketing. All PII (cédulas, names, phone numbers) is redacted in-memory prior to any upstream LLM call under Dominican Law 172-13. Multi-tenant BYOK credentials are kept isolated per tenant in `TenantByokManager`.
 - **Live credentials** (Portainer key, TruNAS, Nextcloud app, WireGuard keys) are the responsibility of [`WIREGUARD_NEXTCLOUD_INTEGRATION.md`](WIREGUARD_NEXTCLOUD_INTEGRATION.md) §3.4 and the Portainer env — never paste them into issue/discussion channels.
 
 ---
 
-_Last updated: 2026-09-11 (v1.3 · Vaultwarden device session revocation 401 resolved with Admin API deauth fallback BL-205) · Author: Infrastructure Team · Review cycle: Quarterly_
+_Last updated: 2026-09-15 (v1.4 · CAF Educational Quality Agent & Isolated MCP Profile Routing /mcp/caf) · Author: Infrastructure Team · Review cycle: Quarterly_

@@ -8,6 +8,7 @@
     "build": "tsup",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "start": "node dist/index.js",
+    "start:cluster": "node dist/cluster.js",
     "lint": "eslint src/",
     "test": "vitest run --passWithNoTests",
     "test:coverage": "vitest run --coverage",

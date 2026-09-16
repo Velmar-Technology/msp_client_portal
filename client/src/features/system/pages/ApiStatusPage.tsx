@@ -113,7 +113,7 @@ export function ApiStatusPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 font-semibold gap-1 text-[10px] uppercase tracking-wider"
+            className="border-emerald-500/40 dark:border-emerald-500/50 text-emerald-600 dark:text-emerald-400 font-semibold gap-1 text-[10px] uppercase tracking-wider"
           >
             <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
             {t("apiStatus.statusOperational")}
@@ -123,7 +123,7 @@ export function ApiStatusPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800 font-semibold gap-1 text-[10px] uppercase tracking-wider"
+            className="border-amber-500/40 dark:border-amber-500/50 text-amber-600 dark:text-amber-400 font-semibold gap-1 text-[10px] uppercase tracking-wider"
           >
             <AlertTriangle className="h-3 w-3 text-amber-600 dark:text-amber-400" />
             {t("apiStatus.statusDegraded")}
@@ -133,7 +133,7 @@ export function ApiStatusPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800 font-semibold gap-1 text-[10px] uppercase tracking-wider"
+            className="border-red-500/40 dark:border-red-500/50 text-red-600 dark:text-red-400 font-semibold gap-1 text-[10px] uppercase tracking-wider"
           >
             <XCircle className="h-3 w-3 text-red-600 dark:text-red-400" />
             {t("apiStatus.statusDown")}
@@ -148,7 +148,7 @@ export function ApiStatusPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 font-semibold gap-1 text-[10px] uppercase tracking-wider"
+            className="border-emerald-500/40 dark:border-emerald-500/50 text-emerald-600 dark:text-emerald-400 font-semibold gap-1 text-[10px] uppercase tracking-wider"
           >
             <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
             {t("apiStatus.statusConfigured")}
@@ -158,7 +158,7 @@ export function ApiStatusPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800 font-semibold gap-1 text-[10px] uppercase tracking-wider"
+            className="border-amber-500/40 dark:border-amber-500/50 text-amber-600 dark:text-amber-400 font-semibold gap-1 text-[10px] uppercase tracking-wider"
           >
             <AlertTriangle className="h-3 w-3 text-amber-600 dark:text-amber-400" />
             {t("apiStatus.statusPlaceholder")}
@@ -168,7 +168,7 @@ export function ApiStatusPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800 font-semibold gap-1 text-[10px] uppercase tracking-wider"
+            className="border-red-500/40 dark:border-red-500/50 text-red-600 dark:text-red-400 font-semibold gap-1 text-[10px] uppercase tracking-wider"
           >
             <XCircle className="h-3 w-3 text-red-600 dark:text-red-400" />
             {t("apiStatus.statusMissing")}
@@ -199,7 +199,7 @@ export function ApiStatusPage() {
         cell: ({ row }) => (
           <Badge
             variant="secondary"
-            className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300"
+            className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5"
           >
             {getCategoryLabel(row.original.category)}
           </Badge>
@@ -209,7 +209,7 @@ export function ApiStatusPage() {
         accessorKey: "endpoint",
         header: ({ column }) => <DataTableColumnHeader column={column} title={t("apiStatus.tableEndpoint")} />,
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] text-zinc-600 dark:text-zinc-400">{row.original.endpoint}</span>
+          <span className="font-mono text-[11px] text-muted-foreground">{row.original.endpoint}</span>
         ),
       },
       {
@@ -278,7 +278,7 @@ export function ApiStatusPage() {
         cell: ({ row }) => (
           <Badge
             variant="secondary"
-            className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300"
+            className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5"
           >
             {getEnvCategoryLabel(row.original.category)}
           </Badge>
@@ -301,7 +301,7 @@ export function ApiStatusPage() {
                   "px-2 py-0.5 rounded font-mono",
                   item.isSecret
                     ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20"
-                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200",
+                    : "bg-muted text-foreground",
                 )}
               >
                 {item.valueDisplay}
@@ -387,7 +387,7 @@ export function ApiStatusPage() {
                 <span>{t("apiStatus.sectionServices")}</span>
                 <Badge
                   variant="secondary"
-                  className="ml-1 text-[10px] font-mono px-1.5 py-0 min-w-[20px] inline-flex justify-center"
+                  className="ml-1 text-[10px] font-mono px-1.5 py-0 min-w-5 inline-flex justify-center"
                 >
                   {isLoading ? <Skeleton className="h-3 w-4" /> : data?.totalServices || 0}
                 </Badge>
@@ -401,7 +401,7 @@ export function ApiStatusPage() {
                 <span>{t("apiStatus.sectionEnvVars")}</span>
                 <Badge
                   variant="secondary"
-                  className="ml-1 text-[10px] font-mono px-1.5 py-0 min-w-[20px] inline-flex justify-center"
+                  className="ml-1 text-[10px] font-mono px-1.5 py-0 min-w-5 inline-flex justify-center"
                 >
                   {isLoading ? <Skeleton className="h-3 w-4" /> : data?.envTotal || 0}
                 </Badge>
@@ -479,9 +479,9 @@ export function ApiStatusPage() {
             </div>
 
             {/* Status Tabs Filter Bar */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-zinc-50/50 dark:bg-zinc-900/40 p-3 rounded-lg border border-zinc-200/80 dark:border-zinc-800/80">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-card p-3 rounded-lg border border-border">
               <Tabs value={statusTab} onValueChange={(val) => setStatusTab(val as any)} className="w-full sm:w-auto">
-                <TabsList className="h-8 bg-zinc-200/60 dark:bg-zinc-800/60 p-0.5">
+                <TabsList className="h-8 bg-muted p-0.5">
                   <TabsTrigger value="ALL" className="text-xs h-7 px-3 cursor-pointer">
                     {t("apiStatus.tabAll")} (
                     {isLoading ? <Skeleton className="h-3 w-4 inline-block align-middle" /> : data?.totalServices || 0})
@@ -586,13 +586,13 @@ export function ApiStatusPage() {
             </div>
 
             {/* Environment Status Filter Bar */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-zinc-50/50 dark:bg-zinc-900/40 p-3 rounded-lg border border-zinc-200/80 dark:border-zinc-800/80">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-card p-3 rounded-lg border border-border">
               <Tabs
                 value={envStatusTab}
                 onValueChange={(val) => setEnvStatusTab(val as any)}
                 className="w-full sm:w-auto"
               >
-                <TabsList className="h-8 bg-zinc-200/60 dark:bg-zinc-800/60 p-0.5">
+                <TabsList className="h-8 bg-muted p-0.5">
                   <TabsTrigger value="ALL" className="text-xs h-7 px-3 cursor-pointer">
                     {t("apiStatus.tabEnvAll")} (
                     {isLoading ? <Skeleton className="h-3 w-4 inline-block align-middle" /> : data?.envTotal || 0})

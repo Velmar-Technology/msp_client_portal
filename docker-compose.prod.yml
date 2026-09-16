@@ -515,11 +515,15 @@ services:
       - NODE_ENV=production
       - MCP_TRANSPORT=http
       - MCP_HTTP_PORT=3005
+      - MCP_PROFILE=${MCP_PROFILE:-all}
       - MSP_SERVER_URL=${MSP_SERVER_URL:-helpdesk.velmartech.com.do}
       - MSP_API_KEY=${MSP_API_KEY}
       - MCP_SERVER_API_KEY=${MCP_SERVER_API_KEY:-}
+      # Optional external LLM fallback keys for CAF Educational Quality Agent (when BYOK is not provided per-tenant)
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3005/health || exit 1"]
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3005/health && wget -q --spider http://127.0.0.1:3005/mcp/caf/health || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -527,13 +531,14 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.20'
-          memory: 120M
+          cpus: '0.25'
+          memory: 150M
         reservations:
           cpus: '0.01'
           memory: 32M
     labels:
       - "traefik.enable=true"
+      # PathPrefix('/mcp') routes both standard IT (/mcp) and isolated CAF educational (/mcp/caf) endpoints
       - "traefik.http.routers.msp-mcp.rule=Host(`helpdesk.velmartech.com.do`) && (PathPrefix(`/mcp`))"
       - "traefik.http.routers.msp-mcp.entrypoints=websecure"
       - "traefik.http.routers.msp-mcp.tls=true"

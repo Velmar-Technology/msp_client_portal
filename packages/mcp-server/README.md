@@ -1,6 +1,10 @@
-# MSP Support MCP Server (`@msp/mcp-server`)
+# MSP Support & CAF Educational Quality MCP Server (`@msp/mcp-server`)
 
-Model Context Protocol (MCP) server engineered according to the **MCP 2026-07-28 Specification Revision**, providing LLMs (Antigravity, Claude Desktop, Cursor, and autonomous AI agents) with real-time access to ticket diagnostics, live device RMM telemetry, hardware inventory, security posture auditing, automated remediation tools, and pre-packaged AI prompts.
+Model Context Protocol (MCP) server engineered according to the **MCP 2026-07-28 Specification Revision**, providing LLMs (Antigravity, Claude Desktop, Cursor, and Microsoft Copilot Studio autonomous agents) with:
+- **Enterprise MSP IT Support:** 59 diagnostic, telemetry, RMM, security, and remediation tools connected to the MSP Client Portal backend.
+- **Academic CAF Quality AIaaS:** 7 isolated tools for Dominican educational institutions executing Common Assessment Framework (CAF / Marco Común de Evaluación) evaluations, documentary gap detection, and Institutional Improvement Plan (PMI) generation.
+- **Dominican Law 172-13 Privacy Protection:** In-memory PII sanitization (names, cédulas, emails, phone numbers) before LLM egress.
+- **Zero-Liability Multi-Tenant BYOK:** Bring-Your-Own-Key LLM runtime (`TenantByokManager`) supporting OpenAI, Anthropic, and local custom endpoints funded directly by educational institutions.
 
 ---
 
@@ -9,13 +13,28 @@ Model Context Protocol (MCP) server engineered according to the **MCP 2026-07-28
 | Paradigm                       | Spec Requirement                                                                                                | `@msp/mcp-server` Implementation                                                                                                            |
 | :----------------------------- | :-------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Stateless Request-Response** | Pure stateless execution; zero in-memory session persistence between calls; serverless/edge compatibility.      | Fully decoupled stateless architecture. Computes tenant/user context per request; deployable on AWS Lambda, Cloudflare Workers, or Node.js. |
-| **Streamable HTTP**            | Deprecates legacy HTTP+SSE multi-request handshakes in favor of standardized, single-roundtrip Streamable HTTP. | Native `StreamableHTTPServerTransport({ sessionIdGenerator: undefined })` supporting `POST /mcp` streaming and health probes.               |
+| **Streamable HTTP**            | Deprecates legacy HTTP+SSE multi-request handshakes in favor of standardized, single-roundtrip Streamable HTTP. | Native `StreamableHTTPServerTransport({ sessionIdGenerator: undefined })` supporting `POST /mcp` and `POST /mcp/caf` streaming and probes. |
+| **Least-Privilege Isolation**  | Restrict tool catalogs by agent domain; prevent capability bleed or cross-tenant privilege escalation.          | Profile-based isolation (`McpServerProfile`: `all`, `msp-support`, `caf-education`). `/mcp/caf` serves zero IT/PowerShell tools.            |
 | **Enterprise Security & PDP**  | Native OAuth 2.0 / OIDC / API Key authentication with runtime RBAC & Zero Standing Privileges.                  | Strict `MSP_API_KEY` / JWT validation, forwarding through `Authorization: Bearer <token>` and `X-API-Key` to the Unified PDP (BL-302).      |
-| **Extension Primitives**       | Full support for MCP Tools, dynamic Resources, workflow Prompts, background Tasks, and UI Apps.                 | 18 specialized diagnostic/remediation tools, real-time dynamic URI resources, multi-step prompts, and interactive visual schemas.           |
+| **Extension Primitives**       | Full support for MCP Tools, dynamic Resources, workflow Prompts, background Tasks, and UI Apps.                 | 66 specialized tools, real-time dynamic URI resources, multi-step prompts, and interactive visual schemas.                                 |
 
 ---
 
-## Complete MCP Tools Catalog (18 Tools)
+## Least-Privilege Profile Isolation
+
+The server can be run in three profile modes via CLI flags (`--caf`, `--msp`, `--all`) or environment variable (`MCP_PROFILE`):
+
+| Profile Mode | Active Tool Catalog | Intended Use Case / Route |
+| :--- | :--- | :--- |
+| **`caf-education`** | **7 CAF & Privacy tools ONLY** (Zero IT tools) | Public Educational AIaaS Copilots (`POST /mcp/caf`); academic staff self-evaluations. |
+| **`msp-support`** | **59 IT & Operations tools** (Zero CAF tools) | Tier 1/2 IT Support Agents (`POST /mcp`); technician triage, RMM, and host remediation. |
+| **`all`** *(default)* | **66 All tools** | Administrator oversight, unified diagnostics, and full developer testing. |
+
+> **Hard Isolation Guarantee:** In Streamable HTTP mode, requests to `POST /mcp/caf` dynamically instantiate the server strictly in `caf-education` mode, ensuring that educational copilots and academic users have zero capability to execute remote PowerShell commands, query server databases, or view customer support tickets.
+
+---
+
+## Complete MCP Tools Catalog (66 Tools)
 
 ### 1. Ticket Diagnosis & Management
 
@@ -93,6 +112,16 @@ Model Context Protocol (MCP) server engineered according to the **MCP 2026-07-28
 - **`msp_get_financial_stats`**: High-level financial KPIs, revenue performance, and collection analytics.
 - **`msp_list_expenses`**: Operational expenses and technician commission bounties (BL-801/BL-802).
 
+### 13. CAF Educational Quality & PII Privacy (7 Tools - `caf-education` profile)
+
+- **`caf_configure_tenant_byok`**: Registers or updates private BYOK LLM credentials (OpenAI, Anthropic, or custom local endpoints) and model preferences for an educational institution with an isolated privacy partition.
+- **`caf_get_tenant_byok_status`**: Inspects tenant BYOK configuration, active LLM provider, and privacy partition status without exposing secret keys.
+- **`caf_audit_evidence`**: Audits institutional educational documents and records against the 9 CAF criteria with tenant-isolated PII sanitization (Dominican Law 172-13) and BYOK LLM evaluation.
+- **`caf_analyze_survey_sentiment`**: Analyzes stakeholder satisfaction surveys (Students, Teachers, Parents) with tenant-isolated PII redaction and computes quantitative impact scores for CAF Criteria 6 & 7.
+- **`caf_detect_documentary_gaps`**: Identifies documentary non-compliance, missing records, and evidence gaps against the 9 CAF criteria.
+- **`caf_generate_improvement_plan`**: Generates the formal Institutional Improvement Plan (PMI) with SMART actions, indicators, timelines, and roles based on CAF audit findings.
+- **`caf_anonymize_text`**: Demonstrates and verifies local in-memory PII sanitization under Dominican Law 172-13 with optional tenant partition.
+
 ---
 
 ## Dynamic MCP Resources
@@ -114,7 +143,7 @@ Model Context Protocol (MCP) server engineered according to the **MCP 2026-07-28
 
 ### 1. Local Stdio Transport (IDE & Desktop Subagents)
 
-Runs standard input/output JSON-RPC stream for Antigravity, Claude Desktop, Cursor, etc.
+Runs standard input/output JSON-RPC stream for Antigravity, Claude Desktop, Cursor, etc. Supports CLI flags `--caf`, `--msp`, or `--all`.
 
 Configured in `C:\Users\PC\.gemini\config\mcp_config.json`:
 
@@ -123,10 +152,23 @@ Configured in `C:\Users\PC\.gemini\config\mcp_config.json`:
   "mcpServers": {
     "msp-support": {
       "command": "node",
-      "args": ["c:/Users/eapolanco/Workspace/msp_client_portal/packages/mcp-server/dist/index.js"],
+      "args": [
+        "c:/Users/PC/Workspace/msp_client_portal/packages/mcp-server/dist/index.js",
+        "--msp"
+      ],
       "env": {
         "MSP_API_URL": "https://helpdesk.velmartech.com.do",
         "MSP_API_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      }
+    },
+    "caf-quality": {
+      "command": "node",
+      "args": [
+        "c:/Users/PC/Workspace/msp_client_portal/packages/mcp-server/dist/index.js",
+        "--caf"
+      ],
+      "env": {
+        "OPENAI_API_KEY": "sk-..."
       }
     }
   }
@@ -135,7 +177,7 @@ Configured in `C:\Users\PC\.gemini\config\mcp_config.json`:
 
 ### 2. Stateless Streamable HTTP Transport (Serverless, Cloud & Edge)
 
-Runs a standalone HTTP server handling single-roundtrip `POST /mcp` JSON-RPC streams:
+Runs a standalone HTTP server handling single-roundtrip JSON-RPC streams:
 
 ```bash
 # Start in Streamable HTTP Mode (default port 3005)
@@ -147,35 +189,30 @@ npm -w packages/mcp-server run dev:http
 
 **Endpoints:**
 
-- `POST https://helpdesk.velmartech.com.do/mcp`: Streamable HTTP MCP JSON-RPC endpoint.
-- `GET  https://helpdesk.velmartech.com.do/mcp` / `GET /health`: Health and spec compliance diagnostics.
+- `POST https://helpdesk.velmartech.com.do/mcp`: Streamable HTTP MCP endpoint for IT Support (configured profile, timing-safe API key auth).
+- `POST https://helpdesk.velmartech.com.do/mcp/caf`: **Strictly isolated** CAF Educational Quality Agent endpoint (zero IT tools, 7 CAF & privacy tools only).
+- `GET  https://helpdesk.velmartech.com.do/mcp` / `GET /health`: MCP server health and spec compliance diagnostics.
+- `GET  https://helpdesk.velmartech.com.do/mcp/caf/health`: CAF isolated endpoint health probe.
 
 ---
 
-## Microsoft Copilot Studio Agent Integration
+## Microsoft Copilot Studio Agent Integrations
 
-`@msp/mcp-server` is natively compatible with Microsoft Copilot Studio's Model Context Protocol (MCP) tool integration over Streamable HTTP.
+The server supports two distinct Copilot Studio deployment targets:
 
-### Connection Parameters
+### Option A: MSP IT Support Tier-1/Tier-2 Agent (`/mcp`)
 
-| Parameter | Copilot Studio Field | Value |
-| :--- | :--- | :--- |
-| **Server Name** | Server name | `MSPSupportMcp` |
-| **Server Description** | Server description | `Provides access to MSP portal tickets, RMM telemetry, remote endpoint agent commands, client equipment, and security audits.` |
-| **Server URL** | Server URL | `https://helpdesk.velmartech.com.do/mcp` |
-| **Authentication** | Authentication | `API key` |
-| **Parameter Type** | Parameter type | `Header` |
-| **Header Name** | Header name | `X-API-Key` *(or `Authorization`)* |
-| **Key Value** | Key value | Your active `MSP_API_KEY` (JWT token) |
+- **Server URL:** `https://helpdesk.velmartech.com.do/mcp`
+- **Authentication:** `API key` (`Header: X-API-Key`)
+- **Key Value:** Admin JWT token (`MSP_API_KEY`)
+- **Runbook:** See [`docs/infrastructure/COPILOT_STUDIO_AGENT_DEPLOYMENT.md`](../../docs/infrastructure/COPILOT_STUDIO_AGENT_DEPLOYMENT.md).
 
-### Inbound Header Authentication (Option B)
+### Option B: CAF Educational Quality AIaaS Agent (`/mcp/caf`)
 
-Incoming HTTP requests to `POST /mcp` are authenticated via timing-safe comparison (`crypto.timingSafeEqual`):
-- `X-API-Key: <key>` (Direct token)
-- `Authorization: Bearer <key>` (Standard Bearer format)
-- `Authorization: <key>` (Raw header)
-
-Probes (`GET /mcp` and `GET /health`) remain open for orchestrator liveness checks and return `HTTP 200` with server metadata.
+- **Server URL:** `https://helpdesk.velmartech.com.do/mcp/caf`
+- **Authentication:** `None` (Public academic endpoint; institution credentials are provided via BYOK headers or `caf_configure_tenant_byok`)
+- **Tools Available:** Only the 7 educational quality and privacy tools (`caf_*`). IT support tools are completely unreachable.
+- **Runbook:** See [`docs/infrastructure/COPILOT_STUDIO_CAF_AGENT_DEPLOYMENT.md`](../../docs/infrastructure/COPILOT_STUDIO_CAF_AGENT_DEPLOYMENT.md).
 
 ---
 
@@ -185,12 +222,14 @@ The MCP server runs as container `msp_mcp_prod` within the `msp_portal` Docker C
 
 - **Image:** `msp_mcp_prod:latest` (built from `packages/mcp-server/Dockerfile`, Alpine Node.js 22 runtime).
 - **Networks:** `default` (bridge) + `reverse-proxy` (Traefik ingress).
-- **Ingress:** Traefik v3 terminates TLS for `https://helpdesk.velmartech.com.do/mcp` and load balances to internal port `3005`.
+- **Ingress:** Traefik v3 terminates TLS for `https://helpdesk.velmartech.com.do/mcp` and routes all subpaths (including `/mcp/caf`) to internal port `3005`.
 - **Environment:**
   - `MSP_SERVER_URL="helpdesk.velmartech.com.do"` (resolves to `https://helpdesk.velmartech.com.do/api/v1`)
   - `MSP_API_KEY=<JWT Admin Token>`
+  - `MCP_SERVER_API_KEY=<Inbound Key>`
   - `MCP_TRANSPORT="http"`
   - `MCP_HTTP_PORT=3005`
+  - `MCP_PROFILE="all"`
 
 ---
 
@@ -200,7 +239,7 @@ The MCP server runs as container `msp_mcp_prod` within the `msp_portal` Docker C
 # Build TypeScript bundle
 npm -w packages/mcp-server run build
 
-# Run unit and integration tests (24 tests)
+# Run comprehensive test suite (54+ unit & integration tests)
 npm -w packages/mcp-server run test
 ```
 

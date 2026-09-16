@@ -75,18 +75,18 @@ export function ExpenseDoughnut({ categories, hoveredIndex, setHoveredIndex, tot
   const activeCategory = hoveredIndex !== null ? categories[hoveredIndex] : null;
 
   return (
-    <div className="h-full flex flex-col justify-between rounded-lg border border-zinc-200 bg-white p-3.5 shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
+    <div className="h-full flex flex-col justify-between rounded-lg border border-border bg-card p-3.5 shadow-xs">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5 dark:border-zinc-900">
+      <div className="flex items-center justify-between border-b border-border pb-2.5">
         <div>
-          <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-50">{t("financial.expenseBreakdown")}</h3>
-          <p className="text-[10px] text-zinc-400 dark:text-zinc-500">{t("financial.distributionDesc")}</p>
+          <h3 className="text-xs font-semibold text-foreground">{t("financial.expenseBreakdown")}</h3>
+          <p className="text-[10px] text-muted-foreground">{t("financial.distributionDesc")}</p>
         </div>
         <div className="flex flex-col items-end">
-          <span className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+          <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
             {t("financial.expenses")}
           </span>
-          <span className="text-sm font-bold font-mono text-zinc-900 dark:text-zinc-50">{totalExpenses}</span>
+          <span className="text-sm font-bold font-mono text-foreground">{totalExpenses}</span>
         </div>
       </div>
 
@@ -114,7 +114,7 @@ export function ExpenseDoughnut({ categories, hoveredIndex, setHoveredIndex, tot
                   key={seg.nameKey}
                   d={pathD}
                   fill={seg.color}
-                  className="cursor-pointer stroke-white dark:stroke-zinc-950 transition-transform duration-200 hover:opacity-95"
+                  className="cursor-pointer stroke-card transition-transform duration-200 hover:opacity-95"
                   strokeWidth={2}
                   style={{
                     transform: `translate(${translateX}px, ${translateY}px)`,
@@ -132,16 +132,16 @@ export function ExpenseDoughnut({ categories, hoveredIndex, setHoveredIndex, tot
         {/* Legend & Hover Info Panel */}
         <div className="flex flex-col gap-1.5 w-full max-w-[160px] sm:max-w-xs justify-center">
           {activeCategory && (
-            <div className="mb-1 rounded-md bg-zinc-50 dark:bg-zinc-900/40 p-2 text-center transition-all duration-150 animate-fade-in">
+            <div className="mb-1 rounded-md bg-muted/50 p-2 text-center transition-all duration-150 animate-fade-in border border-border">
               <div className="flex items-center justify-center gap-1.5">
                 <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: activeCategory.color }} />
-                <span className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-50 truncate">
+                <span className="text-[11px] font-semibold text-foreground truncate">
                   {t(`financial.${activeCategory.nameKey}`)}
                 </span>
               </div>
               <div className="flex items-center justify-center gap-2 mt-0.5 font-mono">
-                <span className="text-xs font-bold text-zinc-900 dark:text-zinc-50">{activeCategory.percentage}%</span>
-                <span className="text-[10px] text-zinc-400 dark:text-zinc-500">(${activeCategory.value.toLocaleString()})</span>
+                <span className="text-xs font-bold text-foreground">{activeCategory.percentage}%</span>
+                <span className="text-[10px] text-muted-foreground">(${activeCategory.value.toLocaleString()})</span>
               </div>
             </div>
           )}
@@ -154,15 +154,15 @@ export function ExpenseDoughnut({ categories, hoveredIndex, setHoveredIndex, tot
                   key={cat.nameKey}
                   className={`flex items-center justify-between rounded-md p-1.5 transition-colors duration-150 cursor-pointer ${
                     isHovered
-                      ? "bg-zinc-50 dark:bg-zinc-900/60 font-semibold"
-                      : "hover:bg-zinc-50/50 dark:hover:bg-zinc-900/20"
+                      ? "bg-muted font-semibold"
+                      : "hover:bg-muted/40"
                   }`}
                   onMouseEnter={() => setHoveredIndex(idx)}
                   onMouseLeave={() => setHoveredIndex(null)}
                 >
                   <div className="flex items-center gap-2 truncate">
                     <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: cat.color }} />
-                    <span className="text-[10px] font-medium text-zinc-700 dark:text-zinc-300 truncate">
+                    <span className="text-[10px] font-medium text-foreground truncate">
                       {t(`financial.${cat.nameKey}`)}
                     </span>
                   </div>

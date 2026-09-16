@@ -56,6 +56,11 @@ jobs:
             lint_blocking: true
             typecheck_cmd: npm run build -w packages/errors
             test_cmd: npm test -w packages/errors
+          - workspace: packages/mcp-server
+            lint_cmd: ""
+            lint_blocking: true
+            typecheck_cmd: npm run build -w packages/mcp-server
+            test_cmd: npm test -w packages/mcp-server
 
     steps:
       - name: Checkout Code

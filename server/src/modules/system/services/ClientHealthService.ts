@@ -49,7 +49,8 @@ export class ClientHealthService {
     const now = Date.now();
     let slaBreachRisk = false;
     for (const t of openTickets) {
-      const ageMs = now - new Date(t.created_at).getTime();
+      const createdAt = t.created_at ? new Date(t.created_at).getTime() : now;
+      const ageMs = now - createdAt;
       if (t.priority === 'CRITICAL' && ageMs > 10 * 60 * 1000) slaBreachRisk = true;
       if (t.priority === 'HIGH' && ageMs > 20 * 60 * 1000) slaBreachRisk = true;
       if (t.priority === 'MEDIUM' && ageMs > 45 * 60 * 1000) slaBreachRisk = true;
@@ -98,8 +99,8 @@ export class ClientHealthService {
         );
 
         const isInactive = lastActivity === 0 || lastActivity < sevenDaysAgo;
-        const diskUsage = parseFloat(dev.disk_usage || '0');
-        const memUsage = parseFloat(dev.memory_usage || '0');
+        const diskUsage = Number(dev.disk_usage ?? 0);
+        const memUsage = Number(dev.memory_usage ?? 0);
         const patchCount = dev.pending_patch_count || 0;
         totalPendingPatches += patchCount;
 

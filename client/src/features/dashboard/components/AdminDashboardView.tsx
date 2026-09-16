@@ -34,20 +34,20 @@ export function StorageOverview({ storage, loading, t }: StorageOverviewProps) {
 
   if (!storage) {
     return (
-      <div className="flex min-h-30 flex-col rounded-lg border border-zinc-200 bg-white p-3.5 shadow-xs transition-all duration-200 hover:border-zinc-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700">
+      <div className="flex min-h-30 flex-col rounded-lg border border-border bg-card p-3.5 shadow-xs transition-all duration-200 hover:border-primary/40 hover:shadow-sm">
         <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+          <span className="truncate text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
             {t("dashboard.cloudStorage")}
           </span>
-          <div className="shrink-0 rounded-md bg-red-50 p-1.5 text-red-500 dark:bg-red-950/40 dark:text-red-400">
+          <div className="shrink-0 rounded-md bg-destructive/10 p-1.5 text-destructive">
             <CloudOff className="h-3.5 w-3.5" />
           </div>
         </div>
         <div className="flex flex-1 flex-col items-center justify-center gap-1.5 py-2 text-center">
-          <div className="rounded-full bg-red-50 p-2 text-red-500 dark:bg-red-950/40 dark:text-red-400">
+          <div className="rounded-full bg-destructive/10 p-2 text-destructive">
             <CloudOff className="h-4 w-4" />
           </div>
-          <p className="max-w-52.5 text-[11px] leading-snug text-zinc-500 dark:text-zinc-400">
+          <p className="max-w-52.5 text-[11px] leading-snug text-muted-foreground">
             {t("dashboard.storageError")}
           </p>
         </div>
@@ -72,7 +72,7 @@ export function StorageOverview({ storage, loading, t }: StorageOverviewProps) {
     <SummaryCard
       icon={
         isOffline ? (
-          <CloudOff className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />
+          <CloudOff className="h-3.5 w-3.5 text-destructive" />
         ) : (
           <Cloud className="h-3.5 w-3.5" />
         )
@@ -83,14 +83,14 @@ export function StorageOverview({ storage, loading, t }: StorageOverviewProps) {
         <span
           className={`inline-flex shrink-0 self-center items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${
             isOffline
-              ? "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400"
-              : "border border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-400"
+              ? "bg-destructive/10 text-destructive"
+              : "border border-border bg-muted text-muted-foreground"
           }`}
         >
           {isOffline && (
             <span className="relative flex h-1.5 w-1.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-destructive" />
             </span>
           )}
           {isOffline ? t("dashboard.offline") : t("dashboard.online")}
@@ -103,16 +103,16 @@ export function StorageOverview({ storage, loading, t }: StorageOverviewProps) {
             aria-valuenow={usagePercentage}
             aria-valuemin={0}
             aria-valuemax={100}
-            className="w-full bg-zinc-100 dark:bg-zinc-800/60 rounded-full h-1.5 overflow-hidden"
+            className="w-full bg-muted rounded-full h-1.5 overflow-hidden"
           >
             <div
               className={`h-full rounded-full transition-all duration-500 ease-out ${
-                isOffline ? "bg-red-500 dark:bg-red-400" : "bg-zinc-900 dark:bg-zinc-100"
+                isOffline ? "bg-destructive" : "bg-primary"
               }`}
               style={{ width: `${usagePercentage}%` }}
             />
           </div>
-          <div className="flex items-center justify-between text-[10px] text-zinc-500 dark:text-zinc-400">
+          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
             <span>{isOffline ? t("dashboard.unavailable") : formatBytes(storage.used)}</span>
             <span>{totalLabel}</span>
           </div>
@@ -139,23 +139,23 @@ function RecentInvoices({ invoices, t, language, getStatusLabel, getStatusColorC
     {
       accessorKey: "invoice_number",
       header: () => (
-        <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
           {t("dashboard.tableInvoiceNo")}
         </span>
       ),
       cell: ({ row }) => (
-        <span className="text-xs text-zinc-900 dark:text-zinc-100 font-mono">{row.original.invoice_number}</span>
+        <span className="text-xs text-foreground font-mono">{row.original.invoice_number}</span>
       ),
     },
     {
       accessorKey: "invoice_date",
       header: () => (
-        <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
           {t("dashboard.tableDate")}
         </span>
       ),
       cell: ({ row }) => (
-        <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">
+        <span className="text-xs text-muted-foreground font-mono">
           {new Date(row.original.invoice_date).toLocaleDateString(isSpanish ? "es-DO" : "en-US", {
             day: "2-digit",
             month: "short",
@@ -167,12 +167,12 @@ function RecentInvoices({ invoices, t, language, getStatusLabel, getStatusColorC
     {
       accessorKey: "total",
       header: () => (
-        <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
           {t("dashboard.tableAmount")}
         </span>
       ),
       cell: ({ row }) => (
-        <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 font-mono">
+        <span className="text-xs font-semibold text-foreground font-mono">
           ${Number(row.original.total).toFixed(2)}
         </span>
       ),
@@ -180,7 +180,7 @@ function RecentInvoices({ invoices, t, language, getStatusLabel, getStatusColorC
     {
       accessorKey: "status",
       header: () => (
-        <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
           {t("dashboard.tableStatus")}
         </span>
       ),
@@ -197,14 +197,14 @@ function RecentInvoices({ invoices, t, language, getStatusLabel, getStatusColorC
   ];
 
   return (
-    <div className="bg-zinc-50/50 dark:bg-zinc-900/30 rounded-lg border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-      <div className="p-3 border-b border-zinc-200/60 dark:border-zinc-800/60 flex justify-between items-center bg-zinc-50/20 dark:bg-zinc-900/10 mb-3">
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+    <div className="bg-card rounded-lg border border-border overflow-hidden shadow-xs">
+      <div className="p-3 border-b border-border flex justify-between items-center bg-muted/20 mb-3">
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {t("dashboard.recentInvoices")}
         </h4>
         <Link
           to="/billing"
-          className="text-xs font-medium text-zinc-900 dark:text-zinc-300 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors flex items-center gap-1"
+          className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
         >
           {t("dashboard.viewAll")}
           <ArrowRight className="h-3 w-3" />
@@ -268,7 +268,7 @@ export function AdminDashboardView() {
               footer={
                 <Link
                   to="/tickets"
-                  className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium"
+                  className="flex items-center gap-1 text-muted-foreground hover:text-foreground font-medium"
                 >
                   {t("dashboard.viewDetails")}
                   <ArrowRight className="h-3.5 w-3.5" />
@@ -307,7 +307,7 @@ export function AdminDashboardView() {
                 nextMaintenance ? (
                   <Link
                     to="/maintenance"
-                    className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium"
+                    className="flex items-center gap-1 text-muted-foreground hover:text-foreground font-medium"
                   >
                     <span className="truncate max-w-35 block" title={nextMaintenance.title}>
                       {nextMaintenance.title}
@@ -315,7 +315,7 @@ export function AdminDashboardView() {
                     <ArrowRight className="h-3.5 w-3.5 shrink-0" />
                   </Link>
                 ) : (
-                  <span className="text-[9px] text-zinc-400 dark:text-zinc-500 font-mono">
+                  <span className="text-[9px] text-muted-foreground font-mono">
                     {t("dashboard.noUpcomingMaintenance")}
                   </span>
                 )
@@ -329,7 +329,7 @@ export function AdminDashboardView() {
               value={t("dashboard.twoHoursAgo")}
               badge={t("dashboard.successful")}
               footer={
-                <span className="text-[9px] text-zinc-400 dark:text-zinc-500 font-mono">
+                <span className="text-[9px] text-muted-foreground font-mono">
                   {t("dashboard.mainDbServer")}
                 </span>
               }

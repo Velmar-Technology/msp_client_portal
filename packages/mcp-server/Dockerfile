@@ -45,6 +45,6 @@ ENV MCP_HTTP_PORT=3005
 EXPOSE 3005
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD wget -q --spider http://127.0.0.1:3005/health || exit 1
+  CMD wget -q --spider http://127.0.0.1:3005/health && wget -q --spider http://127.0.0.1:3005/mcp/caf/health || exit 1
 
 CMD ["node", "dist/index.js", "--http"]

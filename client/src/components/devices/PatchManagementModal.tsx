@@ -51,13 +51,13 @@ export const PatchManagementModal: React.FC<PatchManagementModalProps> = ({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="sm:max-w-3xl w-full bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 p-5 shadow-xl sm:rounded-lg">
+      <AlertDialogContent className="sm:max-w-3xl w-full bg-card border-border p-5 shadow-xl sm:rounded-lg">
         <AlertDialogHeader className="space-y-1 pb-1">
-          <AlertDialogTitle className="flex items-center gap-2 text-base font-semibold text-zinc-900 dark:text-zinc-100">
+          <AlertDialogTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
             <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span>{t("rmm.modalTitle", { deviceName: displayDeviceName })}</span>
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-xs text-zinc-500 dark:text-zinc-400">
+          <AlertDialogDescription className="text-xs text-muted-foreground">
             {t("rmm.modalSubtitle")}
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -75,11 +75,11 @@ export const PatchManagementModal: React.FC<PatchManagementModalProps> = ({
           />
         </div>
 
-        <AlertDialogFooter className="flex items-center justify-between gap-3 pt-2 border-t border-zinc-100 dark:border-zinc-800/80">
+        <AlertDialogFooter className="flex items-center justify-between gap-3 pt-2 border-t border-border">
           <AlertDialogCancel
             size="sm"
             onClick={() => onOpenChange(false)}
-            className="h-8 text-xs font-medium border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-700 dark:text-zinc-300 mt-0"
+            className="h-8 text-xs font-medium border-border hover:bg-muted text-foreground mt-0"
           >
             {t("rmm.modalClose")}
           </AlertDialogCancel>
@@ -88,7 +88,7 @@ export const PatchManagementModal: React.FC<PatchManagementModalProps> = ({
             size="sm"
             onClick={handleApplySelected}
             disabled={selectedCount === 0 || applying}
-            className="h-8 text-xs font-medium gap-1.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-50 dark:hover:bg-zinc-200 dark:text-zinc-900 text-white transition-colors"
+            className="h-8 text-xs font-medium gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground transition-colors"
           >
             {applying ? (
               <RefreshCw className="w-3.5 h-3.5 animate-spin" />
