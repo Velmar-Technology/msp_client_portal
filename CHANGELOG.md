@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.11.12](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.11...v1.11.12) (2026-09-16)
+
+
+### Features
+
+* **byok:** add web-native BYOK management, Law 172-13 privacy and MCP zero-secret sync ([c802f28](https://github.com/Velmar-Technology/msp_client_portal/commit/c802f285033ecde9e40f731823787fa36ffe4c8a))
+* **client:** byok model select, copy-to-clipboard, typography ([7151eb0](https://github.com/Velmar-Technology/msp_client_portal/commit/7151eb06623211160a110b486e920ecd0e87fba2))
+* **infra:** add CAF agent deployment, isolated MCP routing and docs ([cc9c87b](https://github.com/Velmar-Technology/msp_client_portal/commit/cc9c87b428023d8f0630f47b8aa9ecdbd274eced))
+* **mcp:** add CAF quality agent and multi-tenant BYOK private service ([f667e3d](https://github.com/Velmar-Technology/msp_client_portal/commit/f667e3dc8c01b13dd3b7010d1443f73e6fedda24))
+* **mcp:** implement tool profile isolation and dedicated /mcp/caf endpoint ([e224326](https://github.com/Velmar-Technology/msp_client_portal/commit/e2243262c564f350cf4dfa91d1bb0bf58c841992))
+* **opencode:** add strategy-architect business model ideation agent ([17421b5](https://github.com/Velmar-Technology/msp_client_portal/commit/17421b5f56ef61f845a9e725df2c88b59d5a4356))
+* **rmm:** implement high-throughput telemetry write-behind buffer and clustered mesh ([f4b7ef9](https://github.com/Velmar-Technology/msp_client_portal/commit/f4b7ef9984bdec80be6d636c7da5227eb75ba983))
+* **sentinel:** add device relocation operations and update agent skill definitions ([b2cb3f3](https://github.com/Velmar-Technology/msp_client_portal/commit/b2cb3f3f39e7ff635cf097e3a0a33d5589f4c714))
+* **ui:** implement Tokyo Night Light palette and unify semantic tokens ([5154367](https://github.com/Velmar-Technology/msp_client_portal/commit/5154367697f548a799f573e423a784d7fc5956a3))
+
+
+### Bug Fixes
+
+* **billing:** add line_items migration and resolve scheduler cycle ([965a5c7](https://github.com/Velmar-Technology/msp_client_portal/commit/965a5c7033145c813d685552409246c51f87af8c))
+* **byok:** allow saving provider/model without re-entering api key ([ffd5b5b](https://github.com/Velmar-Technology/msp_client_portal/commit/ffd5b5b154d765c044624828422499274dbb9a42))
+* **byok:** move useMemo above conditional return, fix test for optional apiKey ([d8b81fd](https://github.com/Velmar-Technology/msp_client_portal/commit/d8b81fdd0f2c9fbcaac947260f81a9cf44ccff02))
+* **client:** comply with react hook rules in ByokSettingsPage ([30f1de3](https://github.com/Velmar-Technology/msp_client_portal/commit/30f1de3992912a83b435a8fffd9fdb49f8109248))
+
 ## [1.11.11](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.10...v1.11.11) (2026-09-12)
 
 
