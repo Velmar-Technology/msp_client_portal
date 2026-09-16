@@ -34,24 +34,11 @@ export function ByokSettingsPage() {
   const { getParam, setParam } = useUrlState();
   const [activeTab, setActiveTab] = useState(() => getParam("tab") || "web-config");
 
-  useEffect(() => {
-    const urlTab = getParam("tab");
-    if (urlTab && urlTab !== activeTab) {
-      setActiveTab(urlTab);
-    }
-  }, [getParam, activeTab]);
+  const isLocked = isFeatureLocked(FEATURE_CODES.CAF_EDUCATION_AGENT);
 
-  const handleTabChange = (val: string) => {
-    setActiveTab(val);
-    setParam("tab", val);
-  };
-
-  // Entitlement guard per BL-204
-  if (isFeatureLocked(FEATURE_CODES.CAF_EDUCATION_AGENT)) {
-    return <FeatureLockedPreview requiredFeature={FEATURE_CODES.CAF_EDUCATION_AGENT} />;
-  }
-
-  const { data: byokStatus, isLoading: isStatusLoading } = useTenantByokStatus();
+  const { data: byokStatus, isLoading: isStatusLoading } = useTenantByokStatus({
+    enabled: !isLocked,
+  });
   const saveMutation = useSaveTenantByok();
   const testMutation = useTestByokConnection();
 
@@ -67,6 +54,13 @@ export function ByokSettingsPage() {
   } | null>(null);
   const [copied, setCopied] = useState(false);
 
+  useEffect(() => {
+    const urlTab = getParam("tab");
+    if (urlTab && urlTab !== activeTab) {
+      setActiveTab(urlTab);
+    }
+  }, [getParam, activeTab]);
+
   // Initialize form from current status
   useEffect(() => {
     if (byokStatus?.isConfigured) {
@@ -75,6 +69,16 @@ export function ByokSettingsPage() {
       if (byokStatus.baseUrl) setBaseUrl(byokStatus.baseUrl);
     }
   }, [byokStatus]);
+
+  const handleTabChange = (val: string) => {
+    setActiveTab(val);
+    setParam("tab", val);
+  };
+
+  // Entitlement guard per BL-204
+  if (isLocked) {
+    return <FeatureLockedPreview requiredFeature={FEATURE_CODES.CAF_EDUCATION_AGENT} />;
+  }
 
   const handleProviderChange = (val: ByokProvider) => {
     setProvider(val);

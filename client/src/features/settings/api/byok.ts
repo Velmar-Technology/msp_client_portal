@@ -57,10 +57,11 @@ export const byokService = {
 /**
  * Hook to query sanitized BYOK status for the authenticated tenant.
  */
-export function useTenantByokStatus() {
+export function useTenantByokStatus(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: BYOK_QUERY_KEYS.status(),
     queryFn: () => byokService.getStatus(),
+    enabled: options?.enabled ?? true,
   });
 }
 
