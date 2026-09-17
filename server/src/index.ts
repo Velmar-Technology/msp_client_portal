@@ -17,9 +17,9 @@ import { logger } from '@shared/utils/logger';
 import { createExpressErrorMiddleware } from '@shared/errors';
 import routes from './routes';
 import { swaggerSpec } from '@shared/swagger/swagger.config';
-import { agentGateway } from '@modules/rmm/services/AgentGateway';
+import { agentGateway } from '@modules/rmm';
 import { ticketStreamGateway } from '@modules/tickets';
-import { equipmentService } from '@modules/equipment/services/EquipmentService';
+import { equipmentService } from '@modules/equipment';
 import { metricsMiddleware } from '@shared/middleware/metricsMiddleware';
 import { metricsService } from '@shared/metrics/metricsService';
 

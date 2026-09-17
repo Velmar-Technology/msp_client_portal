@@ -11,7 +11,7 @@ export * from './services/ExpenseService';
 export * from './services/PaypalService';
 export * from './services/NcfService';
 export * from './services/NonPaymentSuspensionService';
-export * from './routes/invoice.routes';
-export * from './routes/expense.routes';
+export { default as invoiceRoutes } from './routes/invoice.routes';
+export { default as expenseRoutes } from './routes/expense.routes';
 
 
