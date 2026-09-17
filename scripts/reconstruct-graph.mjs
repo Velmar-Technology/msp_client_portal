@@ -34,13 +34,16 @@ const rawArgs = process.argv.slice(2);
 const isForce = rawArgs.includes('--force') || rawArgs.includes('-f');
 const isCodeOnly = rawArgs.includes('--code-only');
 const isHelp = rawArgs.includes('--help') || rawArgs.includes('-h');
+const isGraphifyHelp = rawArgs.includes('--graphify-help');
+const modeIdx = rawArgs.indexOf('--mode');
+const mode = modeIdx !== -1 && rawArgs[modeIdx + 1] ? rawArgs[modeIdx + 1] : (rawArgs.includes('--deep') ? 'deep' : null);
 
 // Extract query argument if supplied
 let queryQuestion = null;
 const queryIdx = rawArgs.findIndex(a => a === '--query' || a === '-q');
 if (queryIdx !== -1 && rawArgs[queryIdx + 1]) {
   queryQuestion = rawArgs.slice(queryIdx + 1).filter(a => !a.startsWith('-')).join(' ');
-} else if (rawArgs[0] && !rawArgs[0].startsWith('-') && !rawArgs.includes('--force')) {
+} else if (rawArgs[0] && !rawArgs[0].startsWith('-') && !rawArgs.includes('--force') && !rawArgs.includes('--deep') && modeIdx === -1) {
   queryQuestion = rawArgs.join(' ');
 }
 
@@ -52,6 +55,7 @@ Commands:
   npm run graph:build                   Ensure graph artifacts exist (rebuilds if missing)
   npm run graph:reconstruct             Reconstruct missing files (graph.json, report, html)
   npm run graph:reconstruct -- --force  Force re-scan and full re-clustering from scratch
+  npm run graph:reconstruct -- --force --mode deep  Force full extraction with deep inferred relationships
   npm run graph:reconstruct -- --code-only Skip semantic LLM extraction and index code only
   npm run graph:query -- "<question>"   Query the knowledge graph (reconstructs first if missing)
 
@@ -61,6 +65,13 @@ Artifacts Managed:
   - graphify-out/graph.html             Interactive web visualization
   - graphify-out/.graphify_python       Resolved Python interpreter pointer
 `);
+  process.exit(0);
+}
+
+if (isGraphifyHelp) {
+  const py = resolvePython();
+  runPythonModule(py, ['graphify', '--help']);
+  runPythonModule(py, ['graphify', 'extract', '--help']);
   process.exit(0);
 }
 
@@ -308,8 +319,8 @@ async function main() {
     process.exit(code);
   }
 
-  // If nothing is missing and not forced, report healthy status
-  if (!anyMissing && !isForce) {
+  // If nothing is missing, not forced, and no custom extraction mode requested, report healthy status
+  if (!anyMissing && !isForce && !mode) {
     try {
       const graphData = JSON.parse(fs.readFileSync(GRAPH_JSON, 'utf8'));
       const nodeCount = graphData.nodes ? graphData.nodes.length : 0;
@@ -347,10 +358,11 @@ async function main() {
     console.log(`   - graph.html:         ${fs.existsSync(GRAPH_HTML) ? '✅ Present' : '❌ Missing'}`);
   }
 
-  // Step 1: Reconstruct graph.json if missing or forced
-  if (missingGraph || isForce) {
+  // Step 1: Reconstruct graph.json if missing, forced, or custom extraction mode requested
+  const isDeepMode = mode === 'deep';
+  if (missingGraph || isForce || isDeepMode) {
     let fastRestored = false;
-    if (!isForce && fs.existsSync(EXTRACT_JSON)) {
+    if (!isForce && !isDeepMode && fs.existsSync(EXTRACT_JSON)) {
       fastRestored = rebuildFromExtraction(py);
     }
 
@@ -365,6 +377,11 @@ async function main() {
       );
 
       const extractArgs = ['graphify', 'extract', '.'];
+      if (mode) {
+        console.log(`🧠 Extraction mode set to: ${mode}`);
+        extractArgs.push('--mode', mode);
+      }
+
       if (!hasLlmKey || isCodeOnly) {
         console.log('⚙️ Running code AST extraction (--code-only)...');
         extractArgs.push('--code-only');
@@ -372,7 +389,7 @@ async function main() {
         console.log('🤖 Running full extraction (AST + Semantic LLM)...');
       }
 
-      if (isForce) {
+      if (isForce || isDeepMode) {
         extractArgs.push('--force');
       }
 
@@ -385,7 +402,7 @@ async function main() {
   }
 
   // Step 2: Re-cluster and generate GRAPH_REPORT.md & updated graph.json
-  if (!fs.existsSync(GRAPH_REPORT) || isForce || missingGraph) {
+  if (!fs.existsSync(GRAPH_REPORT) || isForce || isDeepMode || missingGraph) {
     console.log('\n📊 Re-clustering graph and generating GRAPH_REPORT.md...');
     const clusterCode = runPythonModule(py, ['graphify', 'cluster-only', '.']);
     if (clusterCode !== 0) {
@@ -394,7 +411,7 @@ async function main() {
   }
 
   // Step 3: Ensure graph.html exists
-  if (!fs.existsSync(GRAPH_HTML) || isForce) {
+  if (!fs.existsSync(GRAPH_HTML) || isForce || isDeepMode) {
     console.log('\n🌐 Exporting interactive visualization (graph.html)...');
     runPythonModule(py, ['graphify', 'export', 'html']);
   }
