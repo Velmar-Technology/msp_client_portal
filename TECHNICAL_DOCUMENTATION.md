@@ -2213,3 +2213,25 @@ Para satisfacer una carga operativa de 500 a 5,000 estaciones de trabajo conecta
 - El proceso maestro supervisa la salud de los workers y reinicia automáticamente cualquier worker que falle (`cluster.on('exit')`), retransmitiendo las señales `SIGTERM`/`SIGINT` para un apagado ordenado.
 - Compilación integrada en `server/tsup.config.ts` produciendo `dist/cluster.js` y script en `server/package.json` (`npm run start:cluster`).
 
+---
+
+## 12. Grafo de Conocimiento GraphRAG Fuera de Línea y Flujo de Desarrollo con Antigravity (@see ADR-012)
+
+### 12.1. Arquitectura Híbrida de Extracción sin Claves de API Externas
+Para resolver la orientación arquitectónica en un monorepo de más de 1,000 archivos sin incurrir en costes de API ni depender de proveedores externos:
+- **Pase Estructural AST Determinista:** Analiza código TypeScript, Rust y SQL mediante `tree-sitter`, extrayendo 6,148 nodos y 17,686 aristas con coste cero y tiempo de ejecución inferior a 5 segundos.
+- **Extracción Semántica Asistida por el Agente Host:** En ausencia de `GEMINI_API_KEY` o `GOOGLE_API_KEY`, el agente de Antigravity asume el rol del modelo extractor LLM. Los 77 documentos de arquitectura, ADRs y especificaciones se procesan por subagentes en lotes discretos bajo el contrato `extraction-spec.md`.
+- **Identificadores Normalizados y Puntuación de Confianza:** Identificadores deterministas `{stem}_{entity}` y clasificación estricta de aristas (`EXTRACTED` = 1.0; `INFERRED` $\in \{0.95, 0.85, 0.75, 0.65, 0.55\}$; `AMBIGUOUS` $\in [0.1, 0.3]$).
+
+### 12.2. Detección de Comunidades y Agregación Meta-Grafo (>5,000 Nodos)
+- **Clustering Leiden:** Agrupa 6,845 nodos y 17,516 aristas en **321 comunidades funcionales**, identificando nodos centrales (_God Nodes_) y puentes no obvios entre subsistemas.
+- **Visualización HTML Agregada:** Al superar el límite de 5,000 nodos (`node_limit=5000`), el exportador genera automáticamente un meta-grafo visual en [`graphify-out/graph.html`](file:///c:/Users/PC/Workspace/msp_client_portal/graphify-out/graph.html) compuesto por 321 meta-nodos de comunidad y 999 puentes ponderados entre módulos, evitando sobrecargas en el navegador.
+
+### 12.3. Integración con Antigravity CLI (`agy`) y Ciclo de Vida ("Orient First, Grep Second")
+- **Consultas Directas al Grafo:** Los desarrolladores y agentes de IA consultan el grafo antes de realizar búsquedas textuales directas en el código:
+  `python -m graphify query "<pregunta>" --budget 6000`
+  `python -m graphify explain "<entidad>"`
+  `python -m graphify path "<origen>" "<destino>"`
+- **Actualización Diferencial Ultrarrápida (`graphify update`):** El manifiesto `.graphify_manifest.json` rastrea hashes de archivo; las modificaciones de código se re-indexan en menos de 3 segundos sin consumo de tokens.
+- **Modo Vigilante en Segundo Plano:** Sincronización continua de cambios de código con `python -m graphify watch`.
+
