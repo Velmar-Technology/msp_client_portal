@@ -73,13 +73,14 @@ export function TicketsPage() {
 
 ---
 
-## 2. Record Detail / Form Page with StatusBar
+## 2. Record Detail / Form View (`<Page.Sheet>`, `<Page.FormHeader>`, `<Page.Notebook>`)
 
 ```tsx
 import { Page } from "@/components/Page";
 import { Button } from "@/components/ui/button";
+import { MessageSquare, Laptop, Clock } from "lucide-react";
 
-export function TicketDetailPage({ ticket }) {
+export function TicketDetailPage({ ticket, responses, sla }) {
   const stages = [
     { id: "OPEN", label: "Open" },
     { id: "IN_PROGRESS", label: "In Progress" },
@@ -89,26 +90,62 @@ export function TicketDetailPage({ ticket }) {
 
   return (
     <Page>
-      <Page.ControlPanel
-        title={`Ticket #${ticket.ticket_number}`}
-        subtitle={ticket.title}
-      />
-
-      {/* Odoo-style Status Bar */}
+      {/* Odoo-style Workflow Status Bar: Actions on Left, Stages on Right */}
       <Page.StatusBar
         currentStageId={ticket.status}
         stages={stages}
         actions={
-          <Button size="sm" variant="outline" className="h-7">
-            Assign to Me
+          <Button size="sm" className="h-7 px-3 text-xs font-semibold">
+            Resolve Ticket
           </Button>
         }
-        onStageSelect={(stageId) => updateTicketStatus(stageId)}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main record details & activity chatter */}
-      </div>
+      {/* Elevated Record Document Sheet (<sheet>) */}
+      <Page.Sheet maxWidth="full" elevation="xs">
+        {/* Form Title block with top-right smart buttons */}
+        <Page.FormHeader
+          title={ticket.title}
+          subtitle={`Ticket #${ticket.id.slice(0, 8)} • Opened by ${ticket.reporter_name}`}
+          badges={<span className="px-2 py-0.5 text-[9px] rounded-full border">{ticket.status}</span>}
+          buttonBox={
+            <Page.StatBox>
+              <Page.StatButton
+                icon={MessageSquare}
+                value={responses.length}
+                label="Chatter"
+                onClick={() => toggleChat()}
+              />
+              <Page.StatButton
+                icon={Laptop}
+                value={ticket.device_name}
+                label="Device"
+              />
+              {sla && (
+                <Page.StatButton
+                  icon={Clock}
+                  value={sla.timeLeft}
+                  label="SLA"
+                />
+              )}
+            </Page.StatBox>
+          }
+        />
+
+        {/* Tabbed Sub-Sheets (<notebook>) */}
+        <Page.Notebook defaultTab="details">
+          <Page.NotebookTab id="details" label="Details">
+            <Page.FieldGroup cols={2} title="Record Overview">
+              <Page.Field label="Priority">{ticket.priority}</Page.Field>
+              <Page.Field label="Category">{ticket.category}</Page.Field>
+            </Page.FieldGroup>
+          </Page.NotebookTab>
+
+          <Page.NotebookTab id="telemetry" label="Diagnostic Telemetry" icon={Laptop}>
+            {/* Flight recorder diagnostics */}
+          </Page.NotebookTab>
+        </Page.Notebook>
+      </Page.Sheet>
     </Page>
   );
 }

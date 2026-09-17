@@ -106,3 +106,23 @@
 - [x] Full client test suite passes: `npm -w client run test:run` (301 passed)
 - [x] Client builds cleanly: `npm -w client run build` (0 type errors)
 - [x] Conforms to CONSTRAINTS.md and AGENTS.md rules
+
+---
+
+## Phase 3: Introduce Odoo View System to TicketsPage
+- [x] Task 6: Implement `TicketKanbanBoard.tsx` component with columns for Open, In Progress, Resolved, and Closed
+- [x] Task 7: Refactor `TicketsPage.tsx` with `<Page.ControlPanel>`, `<Page.ViewSwitcher>`, `<Page.View type="list">`, and `<Page.View type="kanban">`
+- [x] Task 8: Update `TicketsPage.test.tsx` with view switching test coverage
+- [x] Checkpoint: Full test suite and typecheck pass cleanly
+
+---
+
+## Phase 4: Introduce Odoo Form View Architecture
+- [x] Task 9: Implement `<Page.Sheet>` (elevated paper container) and `<Page.FormHeader>` (title block with stat buttons slot)
+- [x] Task 10: Implement `<Page.StatBox>` and `<Page.StatButton>` (smart metric counters with icons, labels, badges)
+- [x] Task 11: Implement `<Page.Notebook>` and `<Page.NotebookTab>` (sub-sheet tabs with Radix UI tabs, badge counters, and URL synchronization)
+- [x] Task 12: Implement `<Page.FieldGroup>` and `<Page.Field>` (labeled multi-column key-value attribute layouts)
+- [x] Task 13: Attach Form View subcomponents to `Page` compound component in `Page.tsx` and re-export in `page/index.ts`
+- [x] Task 14: Add unit tests in `Page.test.tsx` covering all Form View components (11/11 passed)
+- [x] Task 15: Pilot Form View in `TicketDetailPage.tsx` using `<TicketStatusBar>` (stage pipeline & actions) and `<Page.Sheet>` with `<TicketDetailHeader>` (FormHeader with smart stat buttons for Chatter, Device, and SLA)
+- [x] Checkpoint: Full client test suite (47/47 passed, 306/306 tests passed) and client build (0 type errors) pass cleanly

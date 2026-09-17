@@ -51,6 +51,8 @@ export interface PageContextValue<T extends string = string> {
  * Configuration options for the usePageView hook.
  */
 export interface UsePageViewOptions<T extends string = string> {
+  activeView?: T;
+  onViewChange?: (view: T) => void;
   defaultView?: T;
   availableViews?: PageViewOption<T>[];
   syncUrl?: boolean;
@@ -156,4 +158,89 @@ export interface PageStatusBarProps extends React.ComponentPropsWithoutRef<"div"
   currentStageId?: string;
   onStageSelect?: (stageId: string) => void;
   actions?: React.ReactNode;
+}
+
+/**
+ * Max width variants for PageSheet / PageForm.
+ */
+export type PageSheetMaxWidth = "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "5xl" | "6xl" | "7xl" | "full";
+
+/**
+ * Props for PageSheet (Odoo-style <sheet> container).
+ */
+export interface PageSheetProps extends React.ComponentPropsWithoutRef<"div"> {
+  maxWidth?: PageSheetMaxWidth;
+  elevation?: "none" | "xs" | "sm" | "md" | "lg";
+  headerSlot?: React.ReactNode;
+}
+
+/**
+ * Props for PageFormHeader.
+ */
+export interface PageFormHeaderProps extends Omit<React.ComponentPropsWithoutRef<"div">, "title"> {
+  title?: React.ReactNode;
+  subtitle?: React.ReactNode;
+  badges?: React.ReactNode;
+  avatar?: React.ReactNode;
+  buttonBox?: React.ReactNode;
+}
+
+/**
+ * Props for PageStatBox (Odoo oe_button_box).
+ */
+export interface PageStatBoxProps extends React.ComponentPropsWithoutRef<"div"> {}
+
+/**
+ * Props for PageStatButton.
+ */
+export interface PageStatButtonProps extends Omit<React.ComponentPropsWithoutRef<"button">, "value"> {
+  icon?: React.ComponentType<{ className?: string }> | React.ReactNode;
+  value?: React.ReactNode;
+  label: React.ReactNode;
+  badge?: React.ReactNode;
+  active?: boolean;
+  href?: string;
+}
+
+/**
+ * Props for PageNotebook (Odoo <notebook>).
+ */
+export interface PageNotebookProps extends Omit<React.ComponentPropsWithoutRef<"div">, "onChange"> {
+  defaultTab?: string;
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
+  syncUrl?: boolean;
+  paramKey?: string;
+  variant?: "default" | "line";
+  children: React.ReactNode;
+}
+
+/**
+ * Props for PageNotebookTab (Odoo <page> inside <notebook>).
+ */
+export interface PageNotebookTabProps extends React.ComponentPropsWithoutRef<"div"> {
+  id: string;
+  label: React.ReactNode;
+  icon?: React.ComponentType<{ className?: string }> | React.ReactNode;
+  badge?: React.ReactNode;
+  disabled?: boolean;
+  children: React.ReactNode;
+}
+
+/**
+ * Props for PageFieldGroup (Odoo <group>).
+ */
+export interface PageFieldGroupProps extends Omit<React.ComponentPropsWithoutRef<"div">, "title"> {
+  title?: React.ReactNode;
+  cols?: 1 | 2 | 3 | 4;
+}
+
+/**
+ * Props for PageField (Odoo <field>).
+ */
+export interface PageFieldProps extends React.ComponentPropsWithoutRef<"div"> {
+  label?: React.ReactNode;
+  icon?: React.ComponentType<{ className?: string }> | React.ReactNode;
+  help?: React.ReactNode;
+  orientation?: "horizontal" | "vertical";
 }

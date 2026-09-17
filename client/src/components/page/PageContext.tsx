@@ -35,6 +35,8 @@ export function usePageView<T extends string = string>(
   options: UsePageViewOptions<T> = {}
 ): PageContextValue<T> {
   const {
+    activeView: controlledActiveView,
+    onViewChange,
     defaultView = "list" as T,
     availableViews = DEFAULT_VIEWS as PageViewOption<T>[],
     defaultPage = 1,
@@ -43,12 +45,22 @@ export function usePageView<T extends string = string>(
     isLoading = false,
   } = options;
 
-  const [activeView, setActiveView] = React.useState<T>(defaultView);
+  const [uncontrolledActiveView, setUncontrolledActiveView] = React.useState<T>(defaultView);
   const [views, setViews] = React.useState<PageViewOption<T>[]>(availableViews);
   const [searchQuery, setSearchQuery] = React.useState<string>("");
   const [page, setPage] = React.useState<number>(defaultPage);
   const [pageSize, setPageSize] = React.useState<number>(defaultPageSize);
   const [totalCount, setTotalCount] = React.useState<number | undefined>(initialTotalCount);
+
+  const activeView = controlledActiveView !== undefined ? controlledActiveView : uncontrolledActiveView;
+
+  const setActiveView = React.useCallback(
+    (view: T) => {
+      setUncontrolledActiveView(view);
+      onViewChange?.(view);
+    },
+    [onViewChange]
+  );
 
   // Sync availableViews if prop changes
   React.useEffect(() => {
@@ -73,7 +85,7 @@ export function usePageView<T extends string = string>(
       setTotalCount,
       isLoading,
     }),
-    [activeView, views, searchQuery, page, pageSize, totalCount, isLoading]
+    [activeView, setActiveView, views, searchQuery, page, pageSize, totalCount, isLoading]
   );
 }
 
@@ -183,6 +195,8 @@ function PageUrlBridge<T extends string = string>(props: ActiveUrlBridgeProps<T>
 export function PageProvider<T extends string = string>({
   children,
   controller,
+  activeView,
+  onViewChange,
   defaultView = "list" as T,
   availableViews = DEFAULT_VIEWS as PageViewOption<T>[],
   syncUrl = true,
@@ -196,6 +210,8 @@ export function PageProvider<T extends string = string>({
   isLoading,
 }: PageProviderProps<T>) {
   const localController = usePageView<T>({
+    activeView,
+    onViewChange,
     defaultView,
     availableViews,
     defaultPage,

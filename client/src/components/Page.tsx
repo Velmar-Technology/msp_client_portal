@@ -14,6 +14,11 @@ import { PageSearch } from "./page/PageSearch";
 import { PagePager } from "./page/PagePager";
 import { PageView } from "./page/PageView";
 import { PageStatusBar } from "./page/PageStatusBar";
+import { PageSheet, PageForm } from "./page/PageSheet";
+import { PageFormHeader } from "./page/PageFormHeader";
+import { PageStatBox, PageStatButton } from "./page/PageStatButton";
+import { PageNotebook, PageNotebookTab } from "./page/PageNotebook";
+import { PageFieldGroup, PageField } from "./page/PageField";
 import type {
   PageContextValue,
   UsePageViewOptions,
@@ -44,6 +49,8 @@ export function PageRoot<T extends string = string>({
   className,
   isLoading,
   controller,
+  activeView,
+  onViewChange,
   defaultView,
   availableViews,
   syncUrl,
@@ -90,11 +97,13 @@ export function PageRoot<T extends string = string>({
     </MaxWidthWrapper>
   );
 
-  const shouldSyncUrl = syncUrl ?? Boolean(controller || defaultView || availableViews);
+  const shouldSyncUrl = syncUrl ?? Boolean(controller || activeView || defaultView || availableViews);
 
   return (
     <PageProvider
       controller={controller}
+      activeView={activeView}
+      onViewChange={onViewChange}
       defaultView={defaultView}
       availableViews={availableViews}
       syncUrl={shouldSyncUrl}
@@ -120,6 +129,15 @@ export const Page = Object.assign(PageRoot, {
   Pager: PagePager,
   View: PageView,
   StatusBar: PageStatusBar,
+  Sheet: PageSheet,
+  Form: PageForm,
+  FormHeader: PageFormHeader,
+  StatBox: PageStatBox,
+  StatButton: PageStatButton,
+  Notebook: PageNotebook,
+  NotebookTab: PageNotebookTab,
+  FieldGroup: PageFieldGroup,
+  Field: PageField,
   Provider: PageProvider,
   usePageContext,
   usePageView,

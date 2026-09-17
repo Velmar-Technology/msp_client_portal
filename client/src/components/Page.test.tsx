@@ -193,4 +193,104 @@ describe("Page component (Enterprise Odoo View System)", () => {
       expect(handleStageSelect).toHaveBeenCalledWith("resolved");
     });
   });
+
+  describe("Odoo Form View Architecture", () => {
+    it("renders Page.Sheet and Page.Form with elevation and content", () => {
+      render(
+        <Page.Sheet maxWidth="5xl" elevation="sm" data-testid="form-sheet">
+          <div>Sheet Content Inside Record</div>
+        </Page.Sheet>
+      );
+
+      const sheet = screen.getByTestId("form-sheet");
+      expect(sheet).toBeInTheDocument();
+      expect(sheet).toHaveTextContent("Sheet Content Inside Record");
+      expect(sheet).toHaveClass("max-w-5xl");
+    });
+
+    it("renders Page.FormHeader with title, subtitle, badges, and StatBox", () => {
+      const handleStatClick = vi.fn();
+
+      render(
+        <MemoryRouter>
+          <Page.FormHeader
+            title="Ticket #1042 - Network Failure"
+            subtitle="Opened by Acme Corp • 2 hours ago"
+            badges={<span data-testid="badge-open">OPEN</span>}
+            buttonBox={
+              <Page.StatBox>
+                <Page.StatButton
+                  value={4}
+                  label="Replies"
+                  onClick={handleStatClick}
+                  data-testid="stat-replies"
+                />
+              </Page.StatBox>
+            }
+          />
+        </MemoryRouter>
+      );
+
+      expect(screen.getByText("Ticket #1042 - Network Failure")).toBeInTheDocument();
+      expect(screen.getByText("Opened by Acme Corp • 2 hours ago")).toBeInTheDocument();
+      expect(screen.getByTestId("badge-open")).toBeInTheDocument();
+
+      const statBtn = screen.getByTestId("stat-replies");
+      expect(statBtn).toBeInTheDocument();
+      expect(statBtn).toHaveTextContent("4");
+      expect(statBtn).toHaveTextContent("Replies");
+
+      fireEvent.click(statBtn);
+      expect(handleStatClick).toHaveBeenCalledTimes(1);
+    });
+
+    it("renders Page.Notebook and switches between tabs", () => {
+      const handleTabChange = vi.fn();
+
+      render(
+        <MemoryRouter>
+          <Page.Notebook defaultTab="tab1" onTabChange={handleTabChange}>
+            <Page.NotebookTab id="tab1" label="Overview" badge="1">
+              <div data-testid="tab1-content">Overview Content</div>
+            </Page.NotebookTab>
+            <Page.NotebookTab id="tab2" label="Diagnostics" badge="3">
+              <div data-testid="tab2-content">Diagnostics Telemetry</div>
+            </Page.NotebookTab>
+          </Page.Notebook>
+        </MemoryRouter>
+      );
+
+      expect(screen.getByRole("tab", { name: /overview/i })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: /diagnostics/i })).toBeInTheDocument();
+      expect(screen.getByTestId("tab1-content")).toBeInTheDocument();
+      expect(screen.queryByTestId("tab2-content")).not.toBeInTheDocument();
+
+      // Click second tab
+      const tab2Trigger = screen.getByRole("tab", { name: /diagnostics/i });
+      fireEvent.click(tab2Trigger);
+
+      expect(handleTabChange).toHaveBeenCalledWith("tab2");
+      expect(screen.queryByTestId("tab1-content")).not.toBeInTheDocument();
+      expect(screen.getByTestId("tab2-content")).toBeInTheDocument();
+    });
+
+    it("renders Page.FieldGroup and Page.Field in multi-column layout", () => {
+      render(
+        <Page.FieldGroup title="General Information" cols={2}>
+          <Page.Field label="Customer" data-testid="field-customer">
+            <span>Acme Industries</span>
+          </Page.Field>
+          <Page.Field label="Priority" data-testid="field-priority">
+            <span>High</span>
+          </Page.Field>
+        </Page.FieldGroup>
+      );
+
+      expect(screen.getByText("General Information")).toBeInTheDocument();
+      expect(screen.getByText("Customer")).toBeInTheDocument();
+      expect(screen.getByText("Acme Industries")).toBeInTheDocument();
+      expect(screen.getByText("Priority")).toBeInTheDocument();
+      expect(screen.getByText("High")).toBeInTheDocument();
+    });
+  });
 });
