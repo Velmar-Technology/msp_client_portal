@@ -65,6 +65,8 @@ Generate the extraction JSON matching this schema exactly:
 
 source_file RULE (every node, edge, and hyperedge): set source_file to the path of the originating file EXACTLY as it appears in FILE_LIST — verbatim and absolute. Do NOT shorten to a basename, do NOT re-relativize, do NOT strip any directory prefix, and do NOT change separators (the engine canonicalizes separators and relativizes against the build root downstream). Copy the FILE_LIST entry character-for-character. This keeps the full build and incremental --update on the same base, so build_merge's replace-on-re-extract matches the existing node instead of accumulating a duplicate.
 
-Then write the JSON to disk using the Write tool at this exact absolute path (no relative paths — Write resolves relative paths against an undefined cwd and the file will be silently lost):
+Delivery instructions:
+- In Antigravity (AGY) with `TypeName: "self"`: Write the JSON directly to disk using the `write_to_file` tool at this exact absolute path (no relative paths — `write_to_file` requires an absolute path):
 CHUNK_PATH
+- In Antigravity (AGY) with `TypeName: "research"` (read-only): Output ONLY the raw JSON object starting with `{` and ending with `}` in your final response message (no markdown code blocks, no preamble, no trailing text). The parent agent will write it to `CHUNK_PATH` using `write_to_file`.
 ```

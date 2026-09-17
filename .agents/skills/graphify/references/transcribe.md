@@ -23,24 +23,24 @@ Read the top god node labels from detect output or analysis, then compose a shor
 
 **Step 2 - Transcribe:**
 
-```bash
-export GRAPHIFY_WHISPER_MODEL=base  # or whatever --whisper-model the user passed (must be exported)
-export GRAPHIFY_WHISPER_PROMPT="<the one-sentence domain hint you composed in Step 1>"
-$(cat graphify-out/.graphify_python) -c "
+```powershell
+$env:GRAPHIFY_WHISPER_MODEL = "base"  # or whatever --whisper-model the user passed
+$env:GRAPHIFY_WHISPER_PROMPT = "<the one-sentence domain hint you composed in Step 1>"
+@'
 import json, os, sys
 from pathlib import Path
 from graphify.transcribe import transcribe_all
 
-detect = json.loads(Path('graphify-out/.graphify_detect.json').read_text(encoding=\"utf-8\"))
+detect = json.loads(Path('graphify-out/.graphify_detect.json').read_text(encoding="utf-8"))
 video_files = detect.get('files', {}).get('video', [])
 prompt = os.environ.get('GRAPHIFY_WHISPER_PROMPT', 'Use proper punctuation and paragraph breaks.')
 
 transcript_paths = transcribe_all(video_files, initial_prompt=prompt)
 # Write the JSON from Python (NOT a shell '>' redirect): transcribe_all/Whisper
 # print progress to stdout, which would otherwise corrupt the JSON file (#1392).
-Path('graphify-out/.graphify_transcripts.json').write_text(json.dumps(transcript_paths, ensure_ascii=False), encoding=\"utf-8\")
+Path('graphify-out/.graphify_transcripts.json').write_text(json.dumps(transcript_paths, ensure_ascii=False), encoding="utf-8")
 print(f'Transcribed {len(transcript_paths)} file(s)', file=sys.stderr)
-"
+'@ | & (Get-Content graphify-out\.graphify_python) -
 ```
 
 After transcription:

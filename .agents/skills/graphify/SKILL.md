@@ -50,7 +50,7 @@ Drop any folder of code, docs, papers, images, or video into graphify and get a 
 
 If the user invoked `/graphify --help` or `/graphify -h` (with no other arguments), print the contents of the `## Usage` section above verbatim and stop. Do not run any commands, do not detect files, do not default the path to `.`. Just print the Usage block and return.
 
-**Fast path — existing graph:** Before doing anything else, check whether `graphify-out/graph.json` exists. The expected location is `graphify-out/graph.json` relative to the **current working directory** (i.e. the project root where you are running commands). If it exists AND the user's request is a natural-language question about the codebase (e.g. "How does X work?", "What calls Y?", "Trace the data flow through Z") and NOT an explicit rebuild command (`--update`, `--cluster-only`, or a bare path/URL that implies fresh extraction): **skip Steps 1–5 entirely and jump straight to `## For /graphify query`.** Run `graphify query "<question>"` immediately. Do not run detect. Do not check corpus size. Do not ask the user to narrow. The graph is already built — use it.
+**Fast path — existing graph:** Before doing anything else, check whether `graphify-out/graph.json` exists. The expected location is `graphify-out/graph.json` relative to the **current working directory** (i.e. the project root where you are running commands). If it exists AND the user's request is a natural-language question about the codebase (e.g. "How does X work?", "What calls Y?", "Trace the data flow through Z") and NOT an explicit rebuild command (`--update`, `--cluster-only`, or a bare path/URL that implies fresh extraction): **skip Steps 1–5 entirely and jump straight to `## For /graphify query`.** Run `& (Get-Content graphify-out\.graphify_python) -m graphify query "<question>"` (or `python -m graphify query "<question>"`) via `run_command` immediately. Do not run detect. Do not check corpus size. Do not ask the user to narrow. The graph is already built — use it.
 
 If no path was given, use `.` (current directory). Do not ask the user for a path.
 
@@ -188,7 +188,7 @@ This step has two parts: **structural extraction** (deterministic, free) and **s
 
 Print it once, then continue — do not wait for the user to supply a key. If `GEMINI_API_KEY` or `GOOGLE_API_KEY` IS set, use `graphify.llm.extract_corpus_parallel(files, backend="gemini")` for semantic extraction instead of dispatching subagents. The default Gemini model is `gemini-3-flash-preview`; set `GRAPHIFY_GEMINI_MODEL` or pass `--model` in headless CLI flows to override it.
 
-> **No other API keys are read.** When `GEMINI_API_KEY`/`GOOGLE_API_KEY` are unset, semantic extraction falls to the host agent itself — the running session is the LLM. On a host that dispatches subagents (e.g. Claude Code), dispatch them as written in Part B. On a host that runs the CLI directly in a terminal and cannot dispatch subagents, do not stall: a code-only corpus has no semantic work, so write the empty semantic file (Part B "Fast path") and continue to Part C; for a corpus with docs/papers/images, either set a Gemini key or extract those inline yourself, but in no case prompt for `ANTHROPIC_API_KEY` — that prompt is a misread of this skill.
+> **No other API keys are read.** When `GEMINI_API_KEY`/`GOOGLE_API_KEY` are unset, semantic extraction falls to the host agent itself — the running session is the LLM. In Google Antigravity (AGY), dispatch parallel subagents using the `invoke_subagent` tool as specified in Part B. A code-only corpus has no semantic work, so write the empty semantic file (Part B "Fast path") and continue to Part C; for a corpus with docs/papers/images, extract them concurrently using `invoke_subagent`. In no case prompt for `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` — that prompt is a misread of this skill.
 
 **Run Part A (AST) and Part B (semantic) in parallel. Dispatch all semantic subagents AND start AST extraction in the same message. Both can run simultaneously since they operate on different file types. Merge results in Part C as before.**
 
@@ -232,7 +232,7 @@ Path('graphify-out/.graphify_semantic.json').write_text(json.dumps({'nodes':[],'
 '@ | & (Get-Content graphify-out\.graphify_python) -
 ```
 
-**MANDATORY: You MUST use the Agent tool here. Reading files yourself one-by-one is forbidden - it is 5-10x slower. If you do not use the Agent tool you are doing this wrong.**
+**MANDATORY: In Antigravity (AGY), you MUST use the `invoke_subagent` tool here. Reading files yourself one-by-one is forbidden — it is 5-10x slower. Call `invoke_subagent` with the `Subagents` array to dispatch all chunks concurrently in a single tool call.**
 
 Before dispatching subagents, print a timing estimate:
 - Load `total_words` and file counts from `graphify-out/.graphify_detect.json`
@@ -277,21 +277,52 @@ Only dispatch subagents for files listed in `graphify-out/.graphify_uncached.txt
 
 Load files from `graphify-out/.graphify_uncached.txt`. Split into chunks of 20-25 files each. Each image gets its own chunk (vision needs separate context). When splitting, group files from the same directory together so related artifacts land in the same chunk and cross-file relationships are more likely to be extracted.
 
-**Step B2 - Dispatch ALL subagents in a single message**
+**Step B2 - Dispatch ALL subagents in a single tool call via `invoke_subagent`**
 
-Call the Agent tool multiple times IN THE SAME RESPONSE - one call per chunk. This is the only way they run in parallel. If you make one Agent call, wait, then make another, you are doing it sequentially and defeating the purpose.
+In Antigravity (AGY), dispatch all chunks concurrently in a **single** `invoke_subagent` tool call by populating the `Subagents` array.
 
-**IMPORTANT - subagent type:** Always use `subagent_type="general-purpose"`. Do NOT use `Explore` - it is read-only and cannot write chunk files to disk, which silently drops extraction results. General-purpose has Write and Bash access which the subagent needs.
+AGY supports two subagent execution workflows for extraction:
 
-Concrete example for 3 chunks:
+1. **Option A: `TypeName: "research"` with `Model: "flash"` (Fastest & Recommended)**
+   - Subagents are given read access (`view_file`).
+   - The subagent prompt instructs: *"Output your ENTIRE final response as ONLY valid JSON starting with { and ending with } — no explanation, no markdown code fences, no preamble."*
+   - When each subagent finishes, AGY automatically delivers the response message into your context. The parent agent then writes the JSON to `CHUNK_PATH` using `write_to_file`.
+
+2. **Option B: `TypeName: "self"`**
+   - Subagents inherit full parent capabilities, including `write_to_file`.
+   - The subagent prompt instructs each subagent to write its result directly to `CHUNK_PATH` using `write_to_file`.
+
+> [!NOTE]
+> Do NOT use `subagent_type="general-purpose"` or `Explore` — those are from other AI assistants. In Antigravity (AGY), use `TypeName: "research"` (or `"self"`).
+
+**Concrete AGY `invoke_subagent` tool call example for 3 chunks:**
+```json
+invoke_subagent({
+  "Subagents": [
+    {
+      "TypeName": "research",
+      "Role": "Chunk 1 Extraction Agent",
+      "Prompt": "<Subagent prompt with files 1-15 substituted>",
+      "Model": "flash"
+    },
+    {
+      "TypeName": "research",
+      "Role": "Chunk 2 Extraction Agent",
+      "Prompt": "<Subagent prompt with files 16-30 substituted>",
+      "Model": "flash"
+    },
+    {
+      "TypeName": "research",
+      "Role": "Chunk 3 Extraction Agent",
+      "Prompt": "<Subagent prompt with files 31-45 substituted>",
+      "Model": "flash"
+    }
+  ],
+  "toolAction": "Dispatching extraction subagents",
+  "toolSummary": "Run parallel semantic extraction"
+})
 ```
-[Agent tool call 1: files 1-15, subagent_type="general-purpose"]
-[Agent tool call 2: files 16-30, subagent_type="general-purpose"]
-[Agent tool call 3: files 31-45, subagent_type="general-purpose"]
-```
-All three in one message. Not three separate messages.
-
-Each subagent receives this exact prompt (substitute FILE_LIST, CHUNK_NUM, TOTAL_CHUNKS, DEEP_MODE, and CHUNK_PATH).
+All subagents are launched in one tool call. After launching, stop calling tools to end your turn — AGY's reactive wakeup resumes execution automatically when subagent messages arrive.
 
 CHUNK_PATH must be an **absolute** path — derive it before dispatching:
 ```powershell
@@ -301,19 +332,19 @@ $PROJECT_ROOT = (Get-Location).Path  # cwd — where Part C globs graphify-out\ 
 
 Subagent prompt template:
 
-See `references/extraction-spec.md` for the exact subagent prompt (JSON schema, node-ID rules, confidence rubric, frontmatter, hyperedge, and vision rules). Load it only here, only when at least one chunk holds a doc, paper, or image; a pure-code corpus has skipped Part B and never reads it. Pass each subagent that prompt verbatim with FILE_LIST, CHUNK_NUM, TOTAL_CHUNKS, DEEP_MODE, and CHUNK_PATH substituted, and have it write the result to CHUNK_PATH.
+See `references/extraction-spec.md` for the exact subagent prompt (JSON schema, node-ID rules, confidence rubric, frontmatter, hyperedge, and vision rules). Load it only here, only when at least one chunk holds a doc, paper, or image; a pure-code corpus has skipped Part B and never reads it. Pass each subagent that prompt verbatim with FILE_LIST, CHUNK_NUM, TOTAL_CHUNKS, DEEP_MODE, and CHUNK_PATH substituted.
 
 **Step B3 - Collect, cache, and merge**
 
-Wait for all subagents. For each result:
-- Check that `graphify-out/.graphify_chunk_NN.json` exists on disk — this is the success signal
-- If the file exists and contains valid JSON with `nodes` and `edges`, include it and save to cache
-- If the file is missing, the subagent was likely dispatched as read-only (Explore type) — print a warning: "chunk N missing from disk — subagent may have been read-only. Re-run with general-purpose agent." Do not silently skip.
-- If a subagent failed or returned invalid JSON, print a warning and skip that chunk - do not abort
+Wait for subagent completion notifications. For each chunk:
+- If using `TypeName: "research"`: parse the JSON from the subagent's message content and write it to `graphify-out/.graphify_chunk_NN.json` using `write_to_file`.
+- If using `TypeName: "self"`: verify that `graphify-out/.graphify_chunk_NN.json` exists on disk.
+- If the file exists and contains valid JSON with `nodes` and `edges`, include it and save to cache.
+- If a subagent failed or returned invalid JSON, print a warning and skip that chunk — do not abort.
 
-If more than half the chunks failed or are missing, stop and tell the user to re-run and ensure `subagent_type="general-purpose"` is used.
+If more than half the chunks failed or are missing, stop and report the issue to the user.
 
-Merge all chunk files into `.graphify_semantic_new.json`. **After each Agent call completes, read the real token counts from the Agent tool result's `usage` field and write them back into the chunk JSON before merging** — the chunk JSON itself always has placeholder zeros. Then run:
+Merge all chunk files into `.graphify_semantic_new.json`. Then run:
 ```powershell
 @'
 import json, glob
@@ -564,15 +595,15 @@ If `--obsidian` was given:
 - If `--obsidian-dir <path>` was also given, pass it via `--dir`. Otherwise defaults to `graphify-out/obsidian`.
 
 ```powershell
-graphify export obsidian
-# or with custom dir: graphify export obsidian --dir ~/vaults/my-project
+& (Get-Content graphify-out\.graphify_python) -m graphify export obsidian
+# or with custom dir: & (Get-Content graphify-out\.graphify_python) -m graphify export obsidian --dir ~/vaults/my-project
 ```
 
 Generate the HTML graph (always, unless `--no-viz`):
 
 ```powershell
-graphify export html  # auto-aggregates to community view if graph > 5000 nodes
-# or: graphify export html --no-viz
+& (Get-Content graphify-out\.graphify_python) -m graphify export html  # auto-aggregates to community view if graph > 5000 nodes
+# or: & (Get-Content graphify-out\.graphify_python) -m graphify export html --no-viz
 ```
 
 ### Steps 6b-8 - Wiki, Neo4j, FalkorDB, SVG, GraphML, MCP, benchmark (only on their flags)
@@ -714,7 +745,7 @@ Both are non-default subcommands. `--update` re-extracts only new or changed fil
 When `graphify-out/graph.json` already exists and the user asks a question about the corpus, answer from the graph rather than rebuilding it:
 
 ```powershell
-graphify query "<question>"
+& (Get-Content graphify-out\.graphify_python) -m graphify query "<question>"
 ```
 
 Before traversal, expand the question against the graph's own vocabulary so a wording mismatch does not collapse the answer to noise. If the `graphify query` CLI is unavailable, fall back to an inline NetworkX traversal of `graphify-out/graph.json`. Answer using only what the graph output contains, and quote `source_location` when citing a specific fact. For that vocab-expansion step, the BFS/DFS traversal modes, the `--budget` cap, the NetworkX fallback, `save-result` feedback, and the `/graphify path` and `/graphify explain` flows, see `references/query.md`.
@@ -727,9 +758,9 @@ Neither is part of the default build. When the user runs `/graphify add <url>` t
 
 ---
 
-## For the commit hook and native CLAUDE.md integration
+## For the commit hook and native AGENTS.md / CLAUDE.md integration
 
-When the user asks to install the post-commit auto-rebuild hook or wire graphify into a project's CLAUDE.md, see `references/hooks.md`.
+When the user asks to install the post-commit auto-rebuild hook or wire graphify into a project's `AGENTS.md` or `CLAUDE.md`, see `references/hooks.md`.
 
 ---
 
