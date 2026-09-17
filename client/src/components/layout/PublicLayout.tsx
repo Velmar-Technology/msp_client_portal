@@ -91,7 +91,7 @@ export function PublicLayout() {
       </header>
 
       {/* Main Page Content */}
-      <main className="flex-1">
+      <main className="flex-1 w-full flex flex-col">
         <Outlet />
       </main>
 

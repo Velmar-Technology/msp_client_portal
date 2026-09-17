@@ -457,7 +457,7 @@ export function PlansPage() {
           </div>
 
           {/* Plan Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4.5 mb-8 mx-auto w-full max-w-5xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4.5 mb-8 w-full">
             {filteredPlans.map((plan) => (
               <PlanCard
                 key={plan.id}
@@ -563,7 +563,7 @@ export function PlansPage() {
       )}
 
       {/* Legal & SLA Disclaimer Footnote */}
-      <div className="mt-8 pt-4 border-t border-border text-muted-foreground text-[11px] leading-relaxed flex items-start gap-2 max-w-4xl mx-auto">
+      <div className="mt-8 pt-4 border-t border-border text-muted-foreground text-[11px] leading-relaxed flex items-start gap-2 w-full">
         <Info className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
         <p>
           {t("plans.footnoteText") ||

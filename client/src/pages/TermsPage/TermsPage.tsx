@@ -116,7 +116,7 @@ export function TermsPage() {
   const isSpanish = i18n.language === "es_DO";
 
   return (
-    <Page showBreadcrumbs={false} className="max-w-5xl mx-auto pt-6 pb-12">
+    <Page showBreadcrumbs={false} className="w-full pt-2 pb-12 px-4 sm:px-6 lg:px-8">
       <div className="border border-border bg-card rounded-xl shadow-xs overflow-hidden">
         <TermsHeader t={t} isSpanish={isSpanish} />
 
