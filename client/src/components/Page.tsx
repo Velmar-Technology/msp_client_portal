@@ -17,7 +17,7 @@ import { PageStatusBar } from "./page/PageStatusBar";
 import { PageSheet, PageForm } from "./page/PageSheet";
 import { PageFormHeader } from "./page/PageFormHeader";
 import { PageStatBox, PageStatButton } from "./page/PageStatButton";
-import { PageNotebook, PageNotebookTab } from "./page/PageNotebook";
+import { PageNotebook, PageNotebookTab, PageTabs, PageTab } from "./page/PageNotebook";
 import { PageFieldGroup, PageField } from "./page/PageField";
 import {
   PageDashboard,
@@ -29,6 +29,7 @@ import { PageGraph } from "./page/PageGraph";
 import type {
   PageContextValue,
   UsePageViewOptions,
+  PageTabItem,
 } from "./page/types";
 
 export interface PageProps<T extends string = string>
@@ -40,6 +41,13 @@ export interface PageProps<T extends string = string>
   showBreadcrumbs?: boolean;
   isLoading?: boolean;
   controller?: PageContextValue<T>;
+  tabs?: PageTabItem[];
+  activeTab?: string;
+  defaultTab?: string;
+  onTabChange?: (tabId: string) => void;
+  tabParamKey?: string;
+  syncTabUrl?: boolean;
+  tabsSlot?: React.ReactNode;
 }
 
 /**
@@ -68,12 +76,19 @@ export function PageRoot<T extends string = string>({
   defaultPage,
   defaultPageSize,
   totalCount,
+  tabs,
+  activeTab,
+  defaultTab,
+  onTabChange,
+  tabParamKey,
+  syncTabUrl,
+  tabsSlot,
   ...props
 }: PageProps<T>) {
   const content = (
     <MaxWidthWrapper className={cn("animate-fade-in text-foreground", className)} {...props}>
-      {/* Backward-compatible legacy header: only rendered if title, subtitle, or actions are passed */}
-      {(title || subtitle || actions) && (
+      {/* Backward-compatible legacy header: rendered if title, subtitle, actions, tabs, or tabsSlot are passed */}
+      {(title || subtitle || actions || tabs || tabsSlot) && (
         <div className="mb-6">
           {showBreadcrumbs && <Breadcrumbs className="mb-4 text-muted-foreground text-xs" />}
           <div className="flex flex-col sm:flex-row min-h-20 justify-between items-start sm:items-center gap-3">
@@ -97,6 +112,23 @@ export function PageRoot<T extends string = string>({
               )
             ) : null}
           </div>
+
+          {/* Render tabs bar under header */}
+          {tabsSlot ? (
+            <div className="mt-4">{tabsSlot}</div>
+          ) : tabs && tabs.length > 0 ? (
+            <div className="mt-4">
+              <PageTabs
+                tabs={tabs}
+                activeTab={activeTab}
+                defaultTab={defaultTab}
+                onTabChange={onTabChange}
+                syncUrl={syncTabUrl}
+                paramKey={tabParamKey}
+                variant="line"
+              />
+            </div>
+          ) : null}
         </div>
       )}
 
@@ -143,6 +175,8 @@ export const Page = Object.assign(PageRoot, {
   StatButton: PageStatButton,
   Notebook: PageNotebook,
   NotebookTab: PageNotebookTab,
+  Tabs: PageTabs,
+  Tab: PageTab,
   FieldGroup: PageFieldGroup,
   Field: PageField,
   Dashboard: PageDashboard,

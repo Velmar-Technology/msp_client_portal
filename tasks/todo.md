@@ -135,3 +135,12 @@
 - [x] Task 18: Implement Date/Calendar View components (`PageCalendar`, `PageCalendarHeader`, `PageCalendarGrid`) using `date-fns` with month navigation and item markers
 - [x] Task 19: Implement Graph View components (`PageGraph`, `PageGraphControls`) with SVG Bar, Line, and Donut charts and compact `h-7` controls
 - [x] Task 20: Assemble compound components in `Page.tsx`, re-export in `page/index.ts`, add unit tests in `Page.test.tsx`, and verify full test suite and build
+
+---
+
+## Phase 6: Tab Navigation Support for Page
+- [x] Task 21: Added `<Page.Tabs>` and `<Page.Tab>` aliases for `<Page.Notebook>` and `<Page.NotebookTab>` with declarative array `tabs?: PageTabItem[]` support, `variant="default" | "line"`, and `tabsListClassName`
+- [x] Task 22: Added top-level `tabs`, `activeTab`, `defaultTab`, `onTabChange`, `tabParamKey`, `syncTabUrl`, and `tabsSlot` to `PageRoot` / `PageProps`
+- [x] Task 23: Added `tabsSlot` support to `PageControlPanel`
+- [x] Task 24: Added comprehensive unit tests in `Page.test.tsx` and documented in `client/src/components/page/README.md`
+- [x] Checkpoint: Full test suite (48/48 suites, 317/317 tests) and client build (0 type errors) pass cleanly

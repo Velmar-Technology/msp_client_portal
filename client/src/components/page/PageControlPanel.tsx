@@ -20,6 +20,7 @@ export function PageControlPanel({
   filtersSlot,
   viewsSlot,
   pagerSlot,
+  tabsSlot,
   showBreadcrumbs = true,
   isLoading = false,
   className,
@@ -77,6 +78,9 @@ export function PageControlPanel({
           </div>
         </div>
       )}
+
+      {/* 4. Sub-Navigation Tabs Bar */}
+      {tabsSlot && <div className="pt-2 border-t border-border/40">{tabsSlot}</div>}
 
       {children}
     </div>

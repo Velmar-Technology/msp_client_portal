@@ -390,4 +390,107 @@ describe("Page component (Enterprise Odoo View System)", () => {
       expect(screen.getByText("100")).toBeInTheDocument();
     });
   });
+
+  describe("Tabs Support", () => {
+    it("renders Page.Tabs and Page.Tab compound components and switches tabs", () => {
+      const handleTabChange = vi.fn();
+
+      render(
+        <MemoryRouter>
+          <Page.Tabs defaultTab="general" onTabChange={handleTabChange}>
+            <Page.Tab id="general" label="General Settings">
+              <div data-testid="tab-general-content">General Settings Content</div>
+            </Page.Tab>
+            <Page.Tab id="security" label="Security Settings">
+              <div data-testid="tab-security-content">Security Settings Content</div>
+            </Page.Tab>
+          </Page.Tabs>
+        </MemoryRouter>
+      );
+
+      // Verify active tab content rendered
+      expect(screen.getByText("General Settings")).toBeInTheDocument();
+      expect(screen.getByTestId("tab-general-content")).toBeInTheDocument();
+      expect(screen.queryByTestId("tab-security-content")).not.toBeInTheDocument();
+
+      // Click on Security tab
+      fireEvent.click(screen.getByRole("tab", { name: "Security Settings" }));
+      expect(handleTabChange).toHaveBeenCalledWith("security");
+      expect(screen.getByTestId("tab-security-content")).toBeInTheDocument();
+      expect(screen.queryByTestId("tab-general-content")).not.toBeInTheDocument();
+    });
+
+    it("renders Page.Tabs using tabs array prop and variant default", () => {
+      const handleTabChange = vi.fn();
+      const tabItems = [
+        { id: "overview", label: "Overview", content: <div data-testid="tab-overview">Overview Data</div> },
+        { id: "telemetry", label: "Telemetry", content: <div data-testid="tab-telemetry">Telemetry Data</div> },
+      ];
+
+      render(
+        <MemoryRouter>
+          <Page.Tabs
+            tabs={tabItems}
+            defaultTab="overview"
+            variant="default"
+            onTabChange={handleTabChange}
+          />
+        </MemoryRouter>
+      );
+
+      expect(screen.getByTestId("tab-overview")).toBeInTheDocument();
+      expect(screen.queryByTestId("tab-telemetry")).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole("tab", { name: "Telemetry" }));
+      expect(handleTabChange).toHaveBeenCalledWith("telemetry");
+      expect(screen.getByTestId("tab-telemetry")).toBeInTheDocument();
+    });
+
+    it("renders Page with top-level tabs prop under the header", () => {
+      const handleTabChange = vi.fn();
+      const tabs = [
+        { id: "active", label: "Active Tickets" },
+        { id: "archived", label: "Archived Tickets" },
+      ];
+
+      render(
+        <MemoryRouter>
+          <Page
+            title="Tickets"
+            subtitle="Client support tickets"
+            tabs={tabs}
+            defaultTab="active"
+            onTabChange={handleTabChange}
+          >
+            <div data-testid="page-child-body">Tickets List Body</div>
+          </Page>
+        </MemoryRouter>
+      );
+
+      expect(screen.getByText("Tickets")).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: "Active Tickets" })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: "Archived Tickets" })).toBeInTheDocument();
+      expect(screen.getByTestId("page-child-body")).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole("tab", { name: "Archived Tickets" }));
+      expect(handleTabChange).toHaveBeenCalledWith("archived");
+    });
+
+    it("renders Page.ControlPanel with tabsSlot", () => {
+      render(
+        <MemoryRouter>
+          <Page>
+            <Page.ControlPanel
+              title="System Preferences"
+              showBreadcrumbs={false}
+              tabsSlot={<div data-testid="custom-tabs-slot">Custom Tab Bar</div>}
+            />
+          </Page>
+        </MemoryRouter>
+      );
+
+      expect(screen.getByText("System Preferences")).toBeInTheDocument();
+      expect(screen.getByTestId("custom-tabs-slot")).toHaveTextContent("Custom Tab Bar");
+    });
+  });
 });

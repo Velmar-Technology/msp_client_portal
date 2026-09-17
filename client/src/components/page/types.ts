@@ -94,6 +94,7 @@ export interface PageControlPanelProps extends Omit<React.ComponentPropsWithoutR
   filtersSlot?: React.ReactNode;
   viewsSlot?: React.ReactNode;
   pagerSlot?: React.ReactNode;
+  tabsSlot?: React.ReactNode;
   showBreadcrumbs?: boolean;
   isLoading?: boolean;
 }
@@ -211,7 +212,19 @@ export interface PageStatButtonProps extends Omit<React.ComponentPropsWithoutRef
 }
 
 /**
- * Props for PageNotebook (Odoo <notebook>).
+ * Item descriptor for tabs in PageNotebook / PageTabs.
+ */
+export interface PageTabItem {
+  id: string;
+  label: React.ReactNode;
+  icon?: React.ComponentType<{ className?: string }> | React.ReactNode;
+  badge?: React.ReactNode;
+  disabled?: boolean;
+  content?: React.ReactNode;
+}
+
+/**
+ * Props for PageNotebook (Odoo <notebook>) and PageTabs.
  */
 export interface PageNotebookProps extends Omit<React.ComponentPropsWithoutRef<"div">, "onChange"> {
   defaultTab?: string;
@@ -220,20 +233,25 @@ export interface PageNotebookProps extends Omit<React.ComponentPropsWithoutRef<"
   syncUrl?: boolean;
   paramKey?: string;
   variant?: "default" | "line";
-  children: React.ReactNode;
+  tabs?: PageTabItem[];
+  tabsListClassName?: string;
+  children?: React.ReactNode;
 }
 
 /**
- * Props for PageNotebookTab (Odoo <page> inside <notebook>).
+ * Props for PageNotebookTab (Odoo <page> inside <notebook>) and PageTab.
  */
 export interface PageNotebookTabProps extends React.ComponentPropsWithoutRef<"div"> {
   id: string;
-  label: React.ReactNode;
+  label?: React.ReactNode;
   icon?: React.ComponentType<{ className?: string }> | React.ReactNode;
   badge?: React.ReactNode;
   disabled?: boolean;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
+
+export type PageTabsProps = PageNotebookProps;
+export type PageTabProps = PageNotebookTabProps;
 
 /**
  * Props for PageFieldGroup (Odoo <group>).

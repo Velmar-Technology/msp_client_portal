@@ -245,7 +245,56 @@ export function TicketDistributionGraph({ data }) {
 
 ---
 
-## 6. Legacy Compatibility Guarantee
+## 6. Tabs Support (`<Page.Tabs>`, `<Page.Tab>`, and `<Page tabs={...}>`)
+
+`<Page>` provides two ergonomic ways to organize page content into tabs:
+
+### A. Compound Tabs (`<Page.Tabs>` / `<Page.Tab>`)
+```tsx
+import { Page } from "@/components/Page";
+import { Settings, Shield } from "lucide-react";
+
+export function AccountSettingsPage() {
+  return (
+    <Page title="Account Settings">
+      <Page.Tabs defaultTab="general" syncUrl paramKey="section">
+        <Page.Tab id="general" label="General" icon={Settings}>
+          <GeneralSettingsForm />
+        </Page.Tab>
+        <Page.Tab id="security" label="Security & 2FA" icon={Shield} badge="Active">
+          <SecuritySettingsForm />
+        </Page.Tab>
+      </Page.Tabs>
+    </Page>
+  );
+}
+```
+
+### B. Header Sub-Navigation (`<Page tabs={...}>` or `<Page.ControlPanel tabsSlot={...}>`)
+```tsx
+import { Page } from "@/components/Page";
+
+export function SystemManagementPage() {
+  return (
+    <Page
+      title="System Status"
+      tabs={[
+        { id: "services", label: "Core Services" },
+        { id: "integrations", label: "External Integrations", badge: 3 },
+        { id: "logs", label: "Audit Logs" },
+      ]}
+      defaultTab="services"
+      syncTabUrl
+    >
+      <PageBody />
+    </Page>
+  );
+}
+```
+
+---
+
+## 7. Legacy Compatibility Guarantee
 
 All existing usages of `<Page>` continue to work without any modifications:
 

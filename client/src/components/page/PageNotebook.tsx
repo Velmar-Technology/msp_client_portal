@@ -50,8 +50,9 @@ function PageNotebookUrlBridge({
 }
 
 /**
- * Enterprise Odoo-inspired Notebook container (`<notebook>`).
+ * Enterprise Odoo-inspired Notebook container (`<notebook>`) and Tabbed Page container.
  * Organizes sub-views, details, logs, and telemetry into tabbed pages.
+ * Also exported as PageTabs.
  *
  * @param props - Configuration for the notebook container.
  * @returns Tabbed notebook component.
@@ -63,36 +64,53 @@ export function PageNotebook({
   syncUrl = false,
   paramKey = "tab",
   variant = "line",
+  tabs: tabsProp,
+  tabsListClassName,
   children,
   className,
   ...props
 }: PageNotebookProps) {
-  // Extract tabs from valid React children
+  // Extract tabs from props.tabs or valid React children
   const tabChildren = React.useMemo(() => {
-    const tabs: Array<{
+    const list: Array<{
       id: string;
       label: React.ReactNode;
       icon?: React.ComponentType<{ className?: string }> | React.ReactNode;
       badge?: React.ReactNode;
       disabled?: boolean;
-      element: React.ReactElement<PageNotebookTabProps>;
+      content?: React.ReactNode;
     }> = [];
 
+    // 1. Process tabs from props array if provided
+    if (tabsProp && tabsProp.length > 0) {
+      tabsProp.forEach((t) => {
+        list.push({
+          id: t.id,
+          label: t.label,
+          icon: t.icon,
+          badge: t.badge,
+          disabled: t.disabled,
+          content: t.content,
+        });
+      });
+    }
+
+    // 2. Process tabs from JSX children
     React.Children.forEach(children, (child) => {
       if (React.isValidElement<PageNotebookTabProps>(child) && child.props.id) {
-        tabs.push({
+        list.push({
           id: child.props.id,
           label: child.props.label,
           icon: child.props.icon,
           badge: child.props.badge,
           disabled: child.props.disabled,
-          element: child,
+          content: child.props.children,
         });
       }
     });
 
-    return tabs;
-  }, [children]);
+    return list;
+  }, [tabsProp, children]);
 
   const initialTab = defaultTab || (tabChildren.length > 0 ? tabChildren[0].id : "");
   const [internalTab, setInternalTab] = React.useState<string>(initialTab);
@@ -123,7 +141,12 @@ export function PageNotebook({
       <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
         <TabsList
           variant={variant}
-          className="border-b border-border/60 w-full justify-start rounded-none bg-transparent p-0 h-9 gap-2"
+          className={cn(
+            variant === "line"
+              ? "border-b border-border/60 w-full justify-start rounded-none bg-transparent p-0 h-9 gap-2"
+              : "h-8 bg-muted p-0.5 rounded-md",
+            tabsListClassName
+          )}
         >
           {tabChildren.map((tab) => {
             const Icon = tab.icon;
@@ -138,9 +161,9 @@ export function PageNotebook({
                 disabled={tab.disabled}
                 onClick={() => handleTabChange(tab.id)}
                 className={cn(
-                  "h-8 px-3 text-xs font-semibold rounded-none border-b-2 border-transparent transition-all",
-                  "data-active:border-primary data-active:text-primary data-active:bg-transparent",
-                  "hover:text-foreground cursor-pointer select-none"
+                  variant === "line"
+                    ? "h-8 px-3 text-xs font-semibold rounded-none border-b-2 border-transparent transition-all data-active:border-primary data-active:text-primary data-active:bg-transparent hover:text-foreground cursor-pointer select-none"
+                    : "h-7 px-3 text-xs font-semibold rounded-sm transition-all cursor-pointer select-none"
                 )}
               >
                 {Icon && (
@@ -165,12 +188,25 @@ export function PageNotebook({
           })}
         </TabsList>
 
-        {tabChildren.map((tab) => (
-          <TabsContent key={tab.id} value={tab.id} className="mt-3 focus-visible:outline-none">
-            {tab.element}
-          </TabsContent>
-        ))}
+        {tabChildren.map((tab) => {
+          if (!tab.content) return null;
+          return (
+            <TabsContent key={tab.id} value={tab.id} className="mt-3 focus-visible:outline-none">
+              {tab.content}
+            </TabsContent>
+          );
+        })}
       </Tabs>
     </div>
   );
 }
+
+/**
+ * Modern alias for PageNotebook.
+ */
+export const PageTabs = PageNotebook;
+
+/**
+ * Modern alias for PageNotebookTab.
+ */
+export const PageTab = PageNotebookTab;
