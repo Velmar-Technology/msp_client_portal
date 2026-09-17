@@ -517,3 +517,20 @@ The repository strictly enforces **[Conventional Commits](https://www.convention
 ### Pre-Commit / Commit-Msg Validation
 
 Hooks are automatically installed via `npm run prepare` (configured in root `package.json`). Whenever you run `git commit`, Husky invokes Commitlint to validate your commit message before it is accepted.
+
+---
+
+## Knowledge Graph & Architectural Navigation (graphify)
+
+The codebase maintains an offline topological knowledge graph in `graphify-out/` representing all 6,800+ nodes and 17,500+ edges across database schemas, server modules, client features, and architectural decisions.
+
+> 📚 For the full developer guide and operational workflows, see [Knowledge Graph Guide](knowledge-graph-guide.md).
+
+### Core npm Workflows
+* **Check or build graph:** `npm run graph:build` (verifies integrity; reconstructs only if missing)
+* **Reconstruct missing files:** `npm run graph:reconstruct` (or `npm run graph:reconstruct -- --force`)
+* **Code-only reconstruction:** `npm run graph:reconstruct -- --code-only` (local AST, zero API keys needed)
+* **Query architecture:** `npm run graph:query -- "<question>"` (answers architectural and dependency queries)
+
+### Do I Need to Rebuild Every Time I Write Code?
+**No.** For day-to-day feature development and bug fixes, the existing graph remains accurate for architectural navigation. Only run `/graphify --update` after completing major structural milestones (e.g. adding new bounded contexts), or `npm run graph:reconstruct` if files in `graphify-out/` were deleted or wiped.

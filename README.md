@@ -86,8 +86,9 @@ docs/              # Architecture, ADRs, infrastructure runbooks
 ## Documentation
 
 - **Architecture & business rules** → [docs/architecture/OVERVIEW.md](docs/architecture/OVERVIEW.md)
+- **Knowledge Graph Guide & Workflows** → [docs/architecture/knowledge-graph-guide.md](docs/architecture/knowledge-graph-guide.md)
 - **Design decisions (ADRs)** → [docs/decisions](docs/decisions)
-- **Knowledge Graph (GraphRAG)** → [docs/decisions/ADR-012-offline-graphrag-knowledge-graph-and-host-agent-extraction.md](docs/decisions/ADR-012-offline-graphrag-knowledge-graph-and-host-agent-extraction.md)
+- **Knowledge Graph (ADR-012 GraphRAG)** → [docs/decisions/ADR-012-offline-graphrag-knowledge-graph-and-host-agent-extraction.md](docs/decisions/ADR-012-offline-graphrag-knowledge-graph-and-host-agent-extraction.md)
 - **Infrastructure & runbooks** → [docs/infrastructure](docs/infrastructure)
 - **Commit conventions & workflow** → [CONTRIBUTING.md](CONTRIBUTING.md)
 
