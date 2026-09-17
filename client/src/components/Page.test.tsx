@@ -493,4 +493,38 @@ describe("Page component (Enterprise Odoo View System)", () => {
       expect(screen.getByTestId("custom-tabs-slot")).toHaveTextContent("Custom Tab Bar");
     });
   });
+
+  describe("Width & Sizing Layout", () => {
+    it("forces content to take the whole width by default", () => {
+      const { container } = render(
+        <MemoryRouter>
+          <Page showBreadcrumbs={false}>
+            <div data-testid="fullwidth-content">Full width content</div>
+          </Page>
+        </MemoryRouter>
+      );
+
+      const root = container.querySelector('[data-slot="page-root"]');
+      expect(root).toBeInTheDocument();
+      expect(root).toHaveClass("w-full");
+      expect(root).toHaveClass("min-h-full");
+      // Should NOT have max-w-7xl by default
+      expect(root).not.toHaveClass("max-w-7xl");
+    });
+
+    it("allows opting out of full width via fullWidth={false}", () => {
+      const { container } = render(
+        <MemoryRouter>
+          <Page fullWidth={false} showBreadcrumbs={false}>
+            <div data-testid="constrained-content">Constrained content</div>
+          </Page>
+        </MemoryRouter>
+      );
+
+      const root = container.querySelector('[data-slot="page-root"]');
+      expect(root).toBeInTheDocument();
+      // When fullWidth is false, it uses MaxWidthWrapper with max-w-7xl
+      expect(root).toHaveClass("max-w-7xl");
+    });
+  });
 });

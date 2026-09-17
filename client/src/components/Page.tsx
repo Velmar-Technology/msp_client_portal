@@ -48,6 +48,7 @@ export interface PageProps<T extends string = string>
   tabParamKey?: string;
   syncTabUrl?: boolean;
   tabsSlot?: React.ReactNode;
+  fullWidth?: boolean;
 }
 
 /**
@@ -83,15 +84,26 @@ export function PageRoot<T extends string = string>({
   tabParamKey,
   syncTabUrl,
   tabsSlot,
+  fullWidth = true,
   ...props
 }: PageProps<T>) {
+  const Container = fullWidth ? "div" : MaxWidthWrapper;
+
   const content = (
-    <MaxWidthWrapper className={cn("animate-fade-in text-foreground", className)} {...props}>
+    <Container
+      data-slot="page-root"
+      className={cn(
+        "w-full animate-fade-in text-foreground",
+        fullWidth && "min-h-full",
+        className
+      )}
+      {...props}
+    >
       {/* Backward-compatible legacy header: rendered if title, subtitle, actions, tabs, or tabsSlot are passed */}
       {(title || subtitle || actions || tabs || tabsSlot) && (
-        <div className="mb-6">
+        <div className="mb-6 w-full">
           {showBreadcrumbs && <Breadcrumbs className="mb-4 text-muted-foreground text-xs" />}
-          <div className="flex flex-col sm:flex-row min-h-20 justify-between items-start sm:items-center gap-3">
+          <div className="flex flex-col sm:flex-row min-h-20 justify-between items-start sm:items-center gap-3 w-full">
             {(title || subtitle) && (
               <div className="space-y-0.5 min-w-0">
                 {title && (
@@ -115,9 +127,9 @@ export function PageRoot<T extends string = string>({
 
           {/* Render tabs bar under header */}
           {tabsSlot ? (
-            <div className="mt-4">{tabsSlot}</div>
+            <div className="mt-4 w-full">{tabsSlot}</div>
           ) : tabs && tabs.length > 0 ? (
-            <div className="mt-4">
+            <div className="mt-4 w-full">
               <PageTabs
                 tabs={tabs}
                 activeTab={activeTab}
@@ -133,7 +145,7 @@ export function PageRoot<T extends string = string>({
       )}
 
       {children}
-    </MaxWidthWrapper>
+    </Container>
   );
 
   const shouldSyncUrl = syncUrl ?? Boolean(controller || activeView || defaultView || availableViews);
