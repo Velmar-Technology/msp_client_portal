@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useInRouterContext } from "react-router-dom";
-import { List, LayoutGrid } from "lucide-react";
+import { List, LayoutGrid, LayoutDashboard, Calendar, BarChart2, FileText } from "lucide-react";
 import { useUrlState } from "@/hooks/useUrlState";
 import type {
   PageContextValue,
@@ -9,9 +9,18 @@ import type {
   UsePageViewOptions,
 } from "./types";
 
+export const STANDARD_VIEW_DEFINITIONS: Record<string, PageViewOption<string>> = {
+  list: { value: "list", label: "List", title: "List view", icon: List },
+  kanban: { value: "kanban", label: "Kanban", title: "Kanban view", icon: LayoutGrid },
+  form: { value: "form", label: "Form", title: "Form view", icon: FileText },
+  dashboard: { value: "dashboard", label: "Dashboard", title: "Dashboard view", icon: LayoutDashboard },
+  calendar: { value: "calendar", label: "Calendar", title: "Calendar view", icon: Calendar },
+  graph: { value: "graph", label: "Graph", title: "Graph view", icon: BarChart2 },
+};
+
 const DEFAULT_VIEWS: PageViewOption<string>[] = [
-  { value: "list", label: "List", title: "List view", icon: List },
-  { value: "kanban", label: "Kanban", title: "Kanban view", icon: LayoutGrid },
+  STANDARD_VIEW_DEFINITIONS.list,
+  STANDARD_VIEW_DEFINITIONS.kanban,
 ];
 
 const PageContext = React.createContext<PageContextValue<any> | null>(null);

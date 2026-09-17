@@ -3,7 +3,15 @@ import * as React from "react";
 /**
  * Standard view modes inspired by Odoo ERP.
  */
-export type StandardPageViewMode = "list" | "kanban" | "form" | "pivot" | "activity" | "calendar";
+export type StandardPageViewMode =
+  | "list"
+  | "kanban"
+  | "form"
+  | "pivot"
+  | "activity"
+  | "calendar"
+  | "dashboard"
+  | "graph";
 export type PageViewMode = StandardPageViewMode | (string & {});
 
 /**
@@ -243,4 +251,110 @@ export interface PageFieldProps extends React.ComponentPropsWithoutRef<"div"> {
   icon?: React.ComponentType<{ className?: string }> | React.ReactNode;
   help?: React.ReactNode;
   orientation?: "horizontal" | "vertical";
+}
+
+/**
+ * Trend definition for PageDashboardKpi.
+ */
+export interface PageDashboardKpiTrend {
+  value: number | string;
+  direction?: "up" | "down" | "neutral";
+  isPositive?: boolean;
+}
+
+/**
+ * Props for PageDashboardKpi metric card.
+ */
+export interface PageDashboardKpiProps extends Omit<React.ComponentPropsWithoutRef<"div">, "title"> {
+  title: React.ReactNode;
+  value: React.ReactNode;
+  subtitle?: React.ReactNode;
+  icon?: React.ComponentType<{ className?: string }> | React.ReactNode;
+  trend?: PageDashboardKpiTrend;
+  badge?: React.ReactNode;
+  onClick?: () => void;
+}
+
+/**
+ * Props for PageDashboard grid container.
+ */
+export interface PageDashboardProps extends React.ComponentPropsWithoutRef<"div"> {
+  cols?: 1 | 2 | 3 | 4 | "auto";
+  gap?: "sm" | "default" | "lg";
+}
+
+/**
+ * Props for PageDashboardSection card group.
+ */
+export interface PageDashboardSectionProps extends Omit<React.ComponentPropsWithoutRef<"div">, "title"> {
+  title?: React.ReactNode;
+  subtitle?: React.ReactNode;
+  actions?: React.ReactNode;
+}
+
+/**
+ * Event item for PageCalendar.
+ */
+export interface PageCalendarEvent {
+  id: string;
+  title: string;
+  date: Date | string;
+  endDate?: Date | string;
+  badge?: React.ReactNode;
+  color?: string;
+  variant?: "default" | "primary" | "success" | "warning" | "destructive" | "info";
+  data?: unknown;
+}
+
+/**
+ * View mode for PageCalendar (month, week, day).
+ */
+export type PageCalendarViewMode = "month" | "week" | "day";
+
+/**
+ * Props for PageCalendar.
+ */
+export interface PageCalendarProps<T extends PageCalendarEvent = PageCalendarEvent>
+  extends Omit<React.ComponentPropsWithoutRef<"div">, "onSelect"> {
+  currentDate?: Date;
+  onDateChange?: (date: Date) => void;
+  events?: T[];
+  onEventClick?: (event: T) => void;
+  onDateClick?: (date: Date) => void;
+  viewMode?: PageCalendarViewMode;
+  onViewModeChange?: (mode: PageCalendarViewMode) => void;
+  renderEvent?: (event: T) => React.ReactNode;
+}
+
+/**
+ * Graph chart display types.
+ */
+export type PageGraphType = "bar" | "line" | "donut";
+
+/**
+ * Data item for PageGraph.
+ */
+export interface PageGraphDataPoint {
+  label: string;
+  value: number;
+  color?: string;
+  secondaryValue?: number;
+  secondaryLabel?: string;
+}
+
+/**
+ * Props for PageGraph.
+ */
+export interface PageGraphProps extends Omit<React.ComponentPropsWithoutRef<"div">, "title"> {
+  data: PageGraphDataPoint[];
+  type?: PageGraphType;
+  defaultType?: PageGraphType;
+  onTypeChange?: (type: PageGraphType) => void;
+  title?: React.ReactNode;
+  subtitle?: React.ReactNode;
+  valuePrefix?: string;
+  valueSuffix?: string;
+  height?: number;
+  allowTypeChange?: boolean;
+  actions?: React.ReactNode;
 }

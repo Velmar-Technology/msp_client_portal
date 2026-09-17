@@ -293,4 +293,101 @@ describe("Page component (Enterprise Odoo View System)", () => {
       expect(screen.getByText("High")).toBeInTheDocument();
     });
   });
+
+  describe("Dashboard, Calendar, and Graph Views", () => {
+    it("renders Page.Dashboard and Page.DashboardKpi with trend and click handler", () => {
+      const handleKpiClick = vi.fn();
+
+      render(
+        <Page.Dashboard cols={2} data-testid="dashboard-grid">
+          <Page.DashboardKpi
+            title="Open Tickets"
+            value={42}
+            subtitle="vs last month"
+            trend={{ value: "+12%", direction: "up", isPositive: true }}
+            onClick={handleKpiClick}
+            data-testid="kpi-open-tickets"
+          />
+          <Page.DashboardKpi
+            title="Average Resolution Time"
+            value="3.2 hrs"
+            trend={{ value: "-15%", direction: "down", isPositive: true }}
+          />
+        </Page.Dashboard>
+      );
+
+      expect(screen.getByTestId("dashboard-grid")).toBeInTheDocument();
+      expect(screen.getByText("Open Tickets")).toBeInTheDocument();
+      expect(screen.getByText("42")).toBeInTheDocument();
+      expect(screen.getByText("+12%")).toBeInTheDocument();
+      expect(screen.getByText("vs last month")).toBeInTheDocument();
+      expect(screen.getByText("Average Resolution Time")).toBeInTheDocument();
+      expect(screen.getByText("3.2 hrs")).toBeInTheDocument();
+
+      const kpiCard = screen.getByTestId("kpi-open-tickets");
+      fireEvent.click(kpiCard);
+      expect(handleKpiClick).toHaveBeenCalledTimes(1);
+    });
+
+    it("renders Page.Calendar and displays days and event markers", () => {
+      const handleEventClick = vi.fn();
+      const testDate = new Date(2026, 8, 15); // Sep 15, 2026
+
+      render(
+        <Page.Calendar
+          currentDate={testDate}
+          events={[
+            {
+              id: "evt-1",
+              title: "Server Patching Window",
+              date: testDate,
+              variant: "warning",
+            },
+          ]}
+          onEventClick={handleEventClick}
+        />
+      );
+
+      expect(screen.getByText("September 2026")).toBeInTheDocument();
+      expect(screen.getByText("Server Patching Window")).toBeInTheDocument();
+
+      const eventBtn = screen.getByRole("button", { name: "Server Patching Window" });
+      fireEvent.click(eventBtn);
+      expect(handleEventClick).toHaveBeenCalledTimes(1);
+    });
+
+    it("renders Page.Graph and switches between Bar, Line, and Donut charts", () => {
+      const graphData = [
+        { label: "Hardware", value: 30 },
+        { label: "Network", value: 45 },
+        { label: "Software", value: 25 },
+      ];
+
+      render(
+        <Page.Graph
+          title="Ticket Distribution by Category"
+          subtitle="Past 30 days"
+          data={graphData}
+          defaultType="bar"
+        />
+      );
+
+      expect(screen.getByText("Ticket Distribution by Category")).toBeInTheDocument();
+      expect(screen.getByText("Past 30 days")).toBeInTheDocument();
+      expect(screen.getAllByText("Hardware")[0]).toBeInTheDocument();
+      expect(screen.getAllByText("Network")[0]).toBeInTheDocument();
+      expect(screen.getAllByText("Software")[0]).toBeInTheDocument();
+
+      // Switch to Line chart
+      const lineBtn = screen.getByRole("button", { name: /line chart/i });
+      fireEvent.click(lineBtn);
+      expect(screen.getByRole("button", { name: /line chart/i })).toBeInTheDocument();
+
+      // Switch to Donut chart
+      const donutBtn = screen.getByRole("button", { name: /donut chart/i });
+      fireEvent.click(donutBtn);
+      expect(screen.getByText("Total")).toBeInTheDocument();
+      expect(screen.getByText("100")).toBeInTheDocument();
+    });
+  });
 });

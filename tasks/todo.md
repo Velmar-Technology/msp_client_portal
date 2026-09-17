@@ -126,3 +126,12 @@
 - [x] Task 14: Add unit tests in `Page.test.tsx` covering all Form View components (11/11 passed)
 - [x] Task 15: Pilot Form View in `TicketDetailPage.tsx` using `<TicketStatusBar>` (stage pipeline & actions) and `<Page.Sheet>` with `<TicketDetailHeader>` (FormHeader with smart stat buttons for Chatter, Device, and SLA)
 - [x] Checkpoint: Full client test suite (47/47 passed, 306/306 tests passed) and client build (0 type errors) pass cleanly
+
+---
+
+## Phase 5: Introduce Dashboard, Date/Calendar, and Graph Views to Page
+- [x] Task 16: Expand type contracts in `types.ts` and register default view switcher icons for `"dashboard"`, `"calendar"`, and `"graph"`
+- [x] Task 17: Implement Dashboard View components (`PageDashboard`, `PageDashboardKpi`, `PageDashboardSection`) with responsive grid and KPI metrics
+- [x] Task 18: Implement Date/Calendar View components (`PageCalendar`, `PageCalendarHeader`, `PageCalendarGrid`) using `date-fns` with month navigation and item markers
+- [x] Task 19: Implement Graph View components (`PageGraph`, `PageGraphControls`) with SVG Bar, Line, and Donut charts and compact `h-7` controls
+- [x] Task 20: Assemble compound components in `Page.tsx`, re-export in `page/index.ts`, add unit tests in `Page.test.tsx`, and verify full test suite and build

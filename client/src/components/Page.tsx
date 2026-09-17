@@ -19,6 +19,13 @@ import { PageFormHeader } from "./page/PageFormHeader";
 import { PageStatBox, PageStatButton } from "./page/PageStatButton";
 import { PageNotebook, PageNotebookTab } from "./page/PageNotebook";
 import { PageFieldGroup, PageField } from "./page/PageField";
+import {
+  PageDashboard,
+  PageDashboardKpi,
+  PageDashboardSection,
+} from "./page/PageDashboard";
+import { PageCalendar } from "./page/PageCalendar";
+import { PageGraph } from "./page/PageGraph";
 import type {
   PageContextValue,
   UsePageViewOptions,
@@ -138,6 +145,12 @@ export const Page = Object.assign(PageRoot, {
   NotebookTab: PageNotebookTab,
   FieldGroup: PageFieldGroup,
   Field: PageField,
+  Dashboard: PageDashboard,
+  DashboardKpi: PageDashboardKpi,
+  DashboardSection: PageDashboardSection,
+  Calendar: PageCalendar,
+  Date: PageCalendar,
+  Graph: PageGraph,
   Provider: PageProvider,
   usePageContext,
   usePageView,

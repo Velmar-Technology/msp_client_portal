@@ -153,7 +153,99 @@ export function TicketDetailPage({ ticket, responses, sla }) {
 
 ---
 
-## 3. Legacy Compatibility Guarantee
+## 3. Dashboard View (`<Page.Dashboard>`, `<Page.DashboardKpi>`, `<Page.DashboardSection>`)
+
+```tsx
+import { Page } from "@/components/Page";
+
+export function TicketAnalyticsDashboard() {
+  return (
+    <Page defaultView="dashboard">
+      <Page.Dashboard cols={4}>
+        <Page.DashboardKpi
+          title="Open Tickets"
+          value={42}
+          subtitle="vs last month"
+          trend={{ value: "+12%", direction: "up", isPositive: true }}
+          onClick={() => {}}
+        />
+        <Page.DashboardKpi
+          title="Avg Resolution Time"
+          value="2.4 hrs"
+          trend={{ value: "-18%", direction: "down", isPositive: true }}
+        />
+        <Page.DashboardKpi
+          title="SLA Compliance"
+          value="99.4%"
+          trend={{ value: "+0.8%", direction: "up", isPositive: true }}
+        />
+        <Page.DashboardKpi
+          title="Critical Incidents"
+          value={1}
+          trend={{ value: "-2", direction: "down", isPositive: true }}
+        />
+      </Page.Dashboard>
+    </Page>
+  );
+}
+```
+
+---
+
+## 4. Date / Calendar View (`<Page.Calendar>`)
+
+```tsx
+import { Page } from "@/components/Page";
+
+export function MaintenanceCalendarPage({ schedules }) {
+  const events = schedules.map(s => ({
+    id: s.id,
+    title: s.title,
+    date: new Date(s.scheduled_for),
+    variant: s.isEmergency ? "destructive" : "primary",
+  }));
+
+  return (
+    <Page defaultView="calendar">
+      <Page.Calendar
+        events={events}
+        onEventClick={(evt) => openModal(evt.id)}
+        onDateClick={(date) => createScheduleForDate(date)}
+      />
+    </Page>
+  );
+}
+```
+
+---
+
+## 5. Graph View (`<Page.Graph>`)
+
+```tsx
+import { Page } from "@/components/Page";
+
+export function TicketDistributionGraph({ data }) {
+  return (
+    <Page defaultView="graph">
+      <Page.Graph
+        title="Tickets by Priority"
+        subtitle="Distribution across current billing cycle"
+        data={[
+          { label: "Low", value: 45 },
+          { label: "Medium", value: 72 },
+          { label: "High", value: 28 },
+          { label: "Critical", value: 6 },
+        ]}
+        defaultType="bar"
+      />
+    </Page>
+  );
+}
+```
+
+---
+
+## 6. Legacy Compatibility Guarantee
 
 All existing usages of `<Page>` continue to work without any modifications:
 
