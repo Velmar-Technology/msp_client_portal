@@ -27,7 +27,8 @@ In Google Antigravity (`agy`), agent rules and orchestrations are governed by `A
 - **Check Graph First:** When investigating codebase architecture, cross-module dependencies, god nodes, or refactoring blast radius, check if `graphify-out/graph.json` exists.
 - **Query via agy:** If present, execute queries using PowerShell:
   `& (Get-Content graphify-out\.graphify_python) -m graphify query "<question>"`
-  or activate the `graphify` skill.
+  or activate the `graphify` skill, or run `npm run graph:query -- "<question>"`.
+- **Reconstruct if missing:** If graph files are missing, run `npm run graph:reconstruct` (or `npm run graph:build`) to automatically restore the graph, report, and HTML visualization.
 - **Update after mutations:** Following major domain structural additions, run `/graphify --update` to refresh graph nodes and community reports.
 ```
 
