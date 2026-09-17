@@ -1,39 +1,43 @@
 import type { KpiCardData } from "../hooks/useFinancialDashboard";
 import { useTranslation } from "react-i18next";
 import { DollarSign, TrendingUp, CreditCard, Percent } from "lucide-react";
-import { SummaryCard } from "@/components/shared";
+import { Page } from "@/components/Page";
 
 interface KpiCardsProps {
   kpis: KpiCardData[];
 }
 
+export const KPI_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  revenue: DollarSign,
+  mrr: TrendingUp,
+  expenses: CreditCard,
+  margin: Percent,
+};
+
 export function KpiCards({ kpis }: KpiCardsProps) {
   const { t } = useTranslation();
 
-  const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-    revenue: DollarSign,
-    mrr: TrendingUp,
-    expenses: CreditCard,
-    margin: Percent,
-  };
-
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <Page.Dashboard cols={4} gap="sm">
       {kpis.map((kpi) => {
-        const IconComponent = iconMap[kpi.key] || DollarSign;
+        const IconComponent = KPI_ICON_MAP[kpi.key] || DollarSign;
 
         return (
-          <SummaryCard
+          <Page.DashboardKpi
             key={kpi.key}
-            icon={<IconComponent className="h-3.5 w-3.5" />}
+            icon={IconComponent}
             title={t(`financial.${kpi.titleKey}`)}
             value={kpi.value}
-            trend={kpi.trend}
-            isPositiveTrend={kpi.isPositiveTrend}
+            trend={{
+              value: kpi.trend,
+              direction: kpi.isNeutralTrend ? "neutral" : kpi.isPositiveTrend ? "up" : "down",
+              isPositive: kpi.isPositiveTrend,
+            }}
             subtitle={t("financial.vsLastMonth")}
           />
         );
       })}
-    </div>
+    </Page.Dashboard>
   );
 }
+
