@@ -197,7 +197,7 @@ export interface PageFormHeaderProps extends Omit<React.ComponentPropsWithoutRef
 /**
  * Props for PageStatBox (Odoo oe_button_box).
  */
-export interface PageStatBoxProps extends React.ComponentPropsWithoutRef<"div"> {}
+export type PageStatBoxProps = React.ComponentPropsWithoutRef<"div">;
 
 /**
  * Props for PageStatButton.
