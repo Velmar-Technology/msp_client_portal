@@ -196,7 +196,7 @@ export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive, is
             <Fragment key={item.to}>
               {showHeading && (
                 <li aria-hidden="true" className="pointer-events-none list-none">
-                  <span className={navGroupHeadingClass}>{t(item.groupLabelKey!)}</span>
+                  <span className={`${navGroupHeadingClass} group-data-[collapsible=icon]:hidden`}>{t(item.groupLabelKey!)}</span>
                 </li>
               )}
               <Collapsible asChild defaultOpen={isGroupActive} className="group/collapsible">
@@ -253,7 +253,7 @@ export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive, is
           <Fragment key={item.to}>
             {showHeading && (
               <li aria-hidden="true" className="pointer-events-none list-none">
-                <span className={navGroupHeadingClass}>{t(item.groupLabelKey!)}</span>
+                <span className={`${navGroupHeadingClass} group-data-[collapsible=icon]:hidden`}>{t(item.groupLabelKey!)}</span>
               </li>
             )}
             <SidebarMenuItem>
@@ -329,7 +329,7 @@ export function AppSidebar() {
   }, []);
 
   return (
-    <ShadcnSidebar className="border-r border-sidebar-border/50 bg-sidebar">
+    <ShadcnSidebar collapsible="icon" className="border-r border-sidebar-border/50 bg-sidebar">
       <SidebarBrand logo={logoUrl} portalTitle={t("topNav.portal")} infraTitle={t("nav.infrastructure")} />
 
       <SidebarContent className="py-1 bg-sidebar">
