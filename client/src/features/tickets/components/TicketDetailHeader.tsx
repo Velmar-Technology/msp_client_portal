@@ -1,32 +1,31 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Laptop, Clock } from 'lucide-react';
+import { Page, type PageStatusStage } from '@/components/Page';
 import type { TicketItem as Ticket } from '../api/ticketService';
 import type { AuthUser } from '@/store/useAuthStore';
 
-export interface TicketDetailHeaderProps {
+export interface TicketStatusBarProps {
   ticket: Ticket;
   user: AuthUser | null;
-  statusUpdating: boolean;
-  getStatusLabel: (status: string) => string;
+  statusUpdating?: boolean;
   onStatusChange: (newStatus: string) => void;
-  responseCount?: number;
-  onToggleChat?: () => void;
-  isChatOpen?: boolean;
+  className?: string;
 }
 
-export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
+/**
+ * Stage pipeline and workflow action bar for Ticket Detail view.
+ * Mimics Odoo ERP's statusbar widget inside form headers.
+ */
+export const TicketStatusBar: React.FC<TicketStatusBarProps> = ({
   ticket,
   user,
-  statusUpdating,
-  getStatusLabel,
+  statusUpdating = false,
   onStatusChange,
-  responseCount,
-  onToggleChat,
-  isChatOpen,
+  className,
 }) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
 
   const renderActionButtons = () => {
     // Terminal states: CANCELLED and CLOSED tickets cannot transition anywhere
@@ -191,6 +190,87 @@ export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
     return null;
   };
 
+  const stages: PageStatusStage[] = [
+    {
+      id: 'OPEN',
+      label: t('tickets.statusOpen', 'Open'),
+      isCurrent: ticket.status === 'OPEN',
+      isCompleted: ticket.status !== 'OPEN' && ticket.status !== 'CANCELLED',
+    },
+    {
+      id: 'IN_PROGRESS',
+      label: t('tickets.statusInProgress', 'In Progress'),
+      isCurrent: ticket.status === 'IN_PROGRESS' || ticket.status === 'AWAITING_PAYMENT',
+      isCompleted: ticket.status === 'RESOLVED' || ticket.status === 'RESOLVED_AUTOMATED' || ticket.status === 'CLOSED',
+    },
+    {
+      id: 'RESOLVED',
+      label: t('tickets.statusResolved', 'Resolved'),
+      isCurrent: ticket.status === 'RESOLVED' || ticket.status === 'RESOLVED_AUTOMATED',
+      isCompleted: ticket.status === 'CLOSED',
+    },
+    {
+      id: 'CLOSED',
+      label: t('tickets.statusClosed', 'Closed'),
+      isCurrent: ticket.status === 'CLOSED',
+      isCompleted: ticket.status === 'CLOSED',
+    },
+  ];
+
+  if (ticket.status === 'CANCELLED') {
+    stages.push({
+      id: 'CANCELLED',
+      label: t('tickets.statusCancelled', 'Cancelled'),
+      isCurrent: true,
+      disabled: true,
+    });
+  }
+
+  return (
+    <Page.StatusBar
+      className={className}
+      actions={renderActionButtons()}
+      stages={stages}
+      currentStageId={ticket.status}
+    />
+  );
+};
+
+export interface TicketDetailHeaderProps {
+  ticket: Ticket;
+  user: AuthUser | null;
+  statusUpdating?: boolean;
+  getStatusLabel: (status: string) => string;
+  onStatusChange?: (newStatus: string) => void;
+  responseCount?: number;
+  onToggleChat?: () => void;
+  isChatOpen?: boolean;
+  sla?: {
+    isApplicable?: boolean;
+    formattedTime?: string;
+    isExpired?: boolean;
+  };
+  showStatusBar?: boolean;
+}
+
+/**
+ * Enterprise Form Header for Ticket detail pages.
+ * Implements Odoo's Form Title block (`oe_title`) with Stat Buttons (`oe_button_box`).
+ */
+export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
+  ticket,
+  user,
+  statusUpdating = false,
+  getStatusLabel,
+  onStatusChange,
+  responseCount,
+  onToggleChat,
+  isChatOpen,
+  sla,
+  showStatusBar = false,
+}) => {
+  const { t, i18n } = useTranslation();
+
   const isResolved = ticket.status === 'RESOLVED' || ticket.status === 'RESOLVED_AUTOMATED';
   const isPendingOrProgress = ticket.status === 'IN_PROGRESS' || ticket.status === 'AWAITING_PAYMENT';
   const isCancelled = ticket.status === 'CANCELLED';
@@ -217,24 +297,36 @@ export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
           : 'bg-muted-foreground';
 
   return (
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-      <div>
-        <h1 className="text-xl font-bold text-foreground mb-1.5 font-heading">
-          {ticket.title}
-        </h1>
-        <div className="flex items-center gap-3 flex-wrap">
-          <span
-            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-medium border ${badgeClasses}`}
-          >
-            <span className={`mr-1 h-1 w-1 rounded-full ${dotClass}`} />
-            {getStatusLabel(ticket.status)}
-          </span>
-          {ticket.source === 'AGENT' && (
-            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-medium border bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 border-indigo-500/20 font-mono">
-              {t('ticketDetail.sourceAgentBadge')}
+    <>
+      {showStatusBar && onStatusChange && (
+        <TicketStatusBar
+          ticket={ticket}
+          user={user}
+          statusUpdating={statusUpdating}
+          onStatusChange={onStatusChange}
+          className="mb-4"
+        />
+      )}
+
+      <Page.FormHeader
+        title={ticket.title}
+        badges={
+          <>
+            <span
+              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-medium border ${badgeClasses}`}
+            >
+              <span className={`mr-1 h-1 w-1 rounded-full ${dotClass}`} />
+              {getStatusLabel(ticket.status)}
             </span>
-          )}
-          <span className="text-xs text-muted-foreground font-medium">
+            {ticket.source === 'AGENT' && (
+              <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-medium border bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 border-indigo-500/20 font-mono">
+                {t('ticketDetail.sourceAgentBadge')}
+              </span>
+            )}
+          </>
+        }
+        subtitle={
+          <span>
             {t('ticketDetail.openedBy')}{' '}
             <strong className="font-semibold text-foreground">
               {ticket.reporter_name
@@ -253,28 +345,36 @@ export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
               }
             )}
           </span>
-        </div>
-      </div>
-      <div className="flex items-center gap-2 flex-wrap self-end md:self-center">
-        {onToggleChat && (
-          <Button
-            type="button"
-            variant={isChatOpen ? 'secondary' : 'outline'}
-            size="sm"
-            onClick={onToggleChat}
-            className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer shadow-2xs"
-          >
-            <MessageSquare className="w-3.5 h-3.5 text-primary" />
-            <span>{t('ticketDetail.toggleChatter')}</span>
-            {typeof responseCount === 'number' && (
-              <span className="ml-0.5 px-1.5 py-0.2 rounded-full bg-primary/10 text-primary text-[10px] font-mono font-bold">
-                {responseCount}
-              </span>
+        }
+        buttonBox={
+          <Page.StatBox>
+            {onToggleChat && (
+              <Page.StatButton
+                icon={MessageSquare}
+                value={typeof responseCount === 'number' ? responseCount : undefined}
+                label={t('ticketDetail.toggleChatter')}
+                onClick={onToggleChat}
+                active={isChatOpen}
+              />
             )}
-          </Button>
-        )}
-        {renderActionButtons()}
-      </div>
-    </div>
+            {ticket.device_name && (
+              <Page.StatButton
+                icon={Laptop}
+                value={ticket.device_name}
+                label="Device"
+              />
+            )}
+            {sla?.isApplicable && (
+              <Page.StatButton
+                icon={Clock}
+                value={sla.formattedTime}
+                label="SLA"
+                active={sla.isExpired}
+              />
+            )}
+          </Page.StatBox>
+        }
+      />
+    </>
   );
 };

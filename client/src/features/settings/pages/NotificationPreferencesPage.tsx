@@ -258,7 +258,6 @@ export function NotificationPreferencesPage() {
     if (!showSkeleton) return null;
     return (
       <Page
-        className="max-w-4xl"
         title={t("notificationPreferences.title", "Notifications & Preferences")}
         subtitle={t("notificationPreferences.subtitle", "Manage delivery channels and view alert history")}
       >
@@ -273,7 +272,6 @@ export function NotificationPreferencesPage() {
 
   return (
     <Page
-      className="max-w-4xl"
       title={t("notificationPreferences.title", "Notifications & Preferences")}
       subtitle={t("notificationPreferences.subtitle", "Manage delivery channels and view alert history")}
     >

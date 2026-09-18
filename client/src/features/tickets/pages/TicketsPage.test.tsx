@@ -204,4 +204,33 @@ describe('TicketsPage Pagination & Filter Synchronization', () => {
       );
     });
   });
+
+  test('switches between List and Kanban views via Page.ViewSwitcher', async () => {
+    renderWithProviders(<TicketsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Support Ticket #1 - Network issue')).toBeInTheDocument();
+    });
+
+    const kanbanBtn = screen.getByRole('button', { name: /kanban/i });
+    expect(kanbanBtn).toBeInTheDocument();
+
+    fireEvent.click(kanbanBtn);
+
+    await waitFor(() => {
+      expect(screen.getByRole('region', { name: /tickets kanban board/i })).toBeInTheDocument();
+    });
+
+    // Verify Kanban column heading exists
+    expect(screen.getByRole('heading', { name: /open/i })).toBeInTheDocument();
+
+    // Switch back to List view
+    const listBtn = screen.getByRole('button', { name: /list/i });
+    fireEvent.click(listBtn);
+
+    await waitFor(() => {
+      expect(screen.queryByRole('region', { name: /tickets kanban board/i })).not.toBeInTheDocument();
+      expect(screen.getByText('Support Ticket #1 - Network issue')).toBeInTheDocument();
+    });
+  });
 });

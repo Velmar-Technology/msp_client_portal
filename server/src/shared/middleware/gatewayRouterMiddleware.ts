@@ -1,20 +1,13 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import invoiceRoutes from '@modules/billing/routes/invoice.routes';
-import expenseRoutes from '@modules/billing/routes/expense.routes';
-import subscriptionRoutes from '@modules/subscriptions/routes/subscription.routes';
-import equipmentRoutes from '@modules/equipment/routes/equipment.routes';
-import ticketRoutes from '@modules/tickets/routes/ticket.routes';
-import authRoutes from '@modules/auth/routes/auth.routes';
-import userRoutes from '@modules/auth/routes/user.routes';
-import alertRoutes from '@modules/rmm/routes/alert.routes';
-import rmmRoutes from '@modules/rmm/routes/rmm.routes';
-import maintenanceRoutes from '@modules/rmm/routes/maintenance.routes';
-import planRoutes from '@modules/subscriptions/routes/plan.routes';
+import { invoiceRoutes, expenseRoutes } from '@modules/billing';
+import { subscriptionRoutes, planRoutes } from '@modules/subscriptions';
+import { equipmentRoutes } from '@modules/equipment';
+import { ticketRoutes } from '@modules/tickets';
+import { authRoutes, userRoutes, authzRoutes } from '@modules/auth';
+import { rmmRoutes, alertRoutes, maintenanceRoutes } from '@modules/rmm';
 import { systemRoutes } from '@modules/system';
-import notificationRoutes from '@modules/notifications/routes/notification.routes';
-import notificationPreferenceRoutes from '@modules/notifications/routes/notificationPreference.routes';
+import { notificationRoutes, notificationPreferenceRoutes } from '@modules/notifications';
 import { crmRoutes } from '@modules/crm';
-import authzRoutes from '@modules/auth/routes/authz.routes';
 
 /**
  * Express router acting as the API Gateway Layer Cluster Dispatcher.

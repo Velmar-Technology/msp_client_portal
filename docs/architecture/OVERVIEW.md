@@ -29,11 +29,17 @@ The codebase strictly adheres to **Uncle Bob’s Clean Architecture & Clean Code
 ```
 server/src/
 ├── shared/                         # Cross-cutting infrastructure & utilities
+│   ├── authz/                      # SOTA PDP: HybridPolicyEngine, Zanzibar ReBAC, ZSP/JIT, ABAC, AI ACLs
+│   ├── config/                     # Typed environment & runtime configuration (env.ts)
+│   ├── constants/                  # Shared cross-module constants & enumerations
 │   ├── db/                         # Drizzle connection pool, schemas & migrations
 │   ├── dtos/                       # Data Transfer Objects
 │   ├── middleware/                 # Express middleware (auth, gateway, rate limiting)
+│   ├── metrics/                    # Prometheus metrics collection & formatting
 │   ├── policies/                   # Access control policy definitions
 │   ├── repositories/               # Shared base repositories (BaseRepository.ts)
+│   ├── scripts/                    # One-off operational scripts (demo, simulation)
+│   ├── swagger/                    # OpenAPI 3.0 specification generator
 │   ├── types/                      # Primitive entity interfaces & enums
 │   └── utils/                      # Shared utility drivers (logger, passwordUtils, pdfGenerator, cache)
 │
@@ -41,6 +47,7 @@ server/src/
     ├── auth/                       # Controllers, Repositories, Routes, Services & Co-located Tests
     ├── tickets/                    # Controllers, Repositories, Routes, Services & Co-located Tests
     ├── billing/                    # Controllers, Repositories, Routes, Services & Co-located Tests
+    ├── crm/                        # Controllers, Repositories, Routes, Services & Co-located Tests
     ├── subscriptions/              # Controllers, Repositories, Routes, Services & Co-located Tests
     ├── rmm/                        # Controllers, Repositories, Routes, Services & Co-located Tests
     ├── equipment/                  # Controllers, Repositories, Routes, Services & Co-located Tests
@@ -71,7 +78,8 @@ packages/
 ├── contracts/      # @shared/contracts: Single source of truth API contracts & Zod schemas
 ├── errors/         # @shared/errors: Standardized domain error primitives
 ├── mcp-server/     # @msp/mcp-server: Model Context Protocol tooling server
-└── msp-agent/      # Local device telemetry & management agent
+├── msp-agent/      # Rust headless endpoint daemon: device telemetry & remote execution (WSS /agent-ws)
+└── msp-tray/       # Tauri v2 desktop system tray companion: no-login ticketing & real-time chat
 ```
 
 ### Contract-First Monolith & Colocated Features
@@ -80,6 +88,7 @@ To eliminate cross-workspace rework and pass-through boilerplate, new implementa
 
 - **Single Source of Truth:** API contracts, query parameters, and Zod validation schemas are maintained in `@shared/contracts` ([ADR-001](docs/decisions/ADR-001-contract-first-monolith-and-tanstack-query.md)).
 - **Colocated Feature Architecture:** Frontend domains are grouped in self-contained vertical feature modules (`client/src/features/<domain>/`) with colocated query hooks, UI blocks, and route pages ([ADR-002](docs/decisions/ADR-002-frontend-colocated-feature-architecture.md)).
+- **React Router v7 Data Mode & Feature Manifests:** Decentralized route manifests (`routes.tsx`) with `lazy` chunk loading, TanStack Query route preloading, and sub-10ms navigation ([ADR-003](docs/decisions/ADR-003-sota-react-router-data-mode-and-feature-manifests.md)).
 - **Server State Delegation:** Asynchronous server state and cache invalidation are handled by **TanStack Query** (`@tanstack/react-query`). Zustand is restricted strictly to client UI state.
 - **Vertical Slice Development:** Standardized in [`docs/architecture/feature-slice-recipe.md`](docs/architecture/feature-slice-recipe.md) (Contract → Express Route & Service → Query Hook → UI Component).
 - **Client Health Scoring & Hardware Telemetry:** Composite health evaluation (BL-601), live socket verification, and ZSP ephemeral access routes ([ADR-007](docs/decisions/ADR-007-client-health-composite-scoring-and-telemetry-reconciliation.md)).
@@ -98,12 +107,33 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
 
 ### Partitioned Tables
 
+All multi-tenant data is logically partitioned via an indexed `tenant_id` foreign key column referencing `tenants(id) ON DELETE CASCADE`. Of the **25** tables in the unified Drizzle schema (`server/src/shared/db/schema.ts`), **23 carry `tenant_id`** and are tenant-isolated:
+
 - `users`
 - `tickets`
-- `subscriptions`
-- `invoices`
 - `ticket_attachments`
 - `ticket_events`
+- `ticket_responses`
+- `plans` (global catalog, plus custom tenant-scoped plans via nullable `tenant_id`)
+- `subscriptions`
+- `invoices`
+- `subscription_equipment` (device slots)
+- `rmm_alerts`
+- `rmm_patches`
+- `rmm_device_telemetry`
+- `notifications`
+- `notification_preferences`
+- `expenses` (OpEx ledger)
+- `device_maintenances`
+- `leads`
+- `quotations`
+- `lead_activities`
+- `technician_rates`
+- `api_keys`
+- `technician_earnings` (bounties ledger)
+- `tenant_byok_credentials` (AES-256-GCM encrypted LLM keys)
+
+The remaining two tables are **not** tenant-partitioned: `tenants` (the root organization table) and `round_robin_state` (the global dispatch pointer).
 
 ---
 
@@ -138,7 +168,7 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
   - **Bidirectional Bundle Decomposition:** Composite tiers (e.g. `PASSWORD_DARK_WEB` $\rightarrow$ `PASSWORD_MANAGER` + `DARK_WEB_MONITORING`, `EDR_M365_BACKUP` $\rightarrow$ `EDR_SECURITY` + `M365_BACKUP`) automatically expand into constituent capabilities via `expandFeatureBundles`.
   - **Backend API Protection:** `requireSubscriptionFeature(code)` middleware blocks unentitled client requests with a typed `ForbiddenError` (403), while granting unconditional operational bypass to `ADMIN` and `TECHNICIAN` roles.
   - **Frontend Route & Navigation Gating:** Protected client routes (`/password-manager`, `/devices`, `/rmm`, `/resources`, `/maintenance`) are wrapped in `FeatureRouteGuard`. Unentitled users see a high-conversion upsell preview (`FeatureLockedPreview`) and sidebar items display compact upgrade badges (`UpgradeBadge`).
-- **BL-205: Device-Bound Password Management & Plan Feature Gating** (`VaultwardenService`, `EquipmentService.getDeviceVault`, `provisionDeviceVault`, `revokeDeviceVault`, `DeviceVaultModal`)
+- **BL-205: Device-Bound Password Management & Plan Feature Gating** (`VaultwardenService`, `EquipmentService.getDeviceVault`, `provisionDeviceVault`, `revokeDeviceVault`, `DeviceVaultModal`) (@see [ADR-004](docs/decisions/ADR-004-device-bound-vaultwarden-password-management.md))
   - Workstation credentials belong to physical machine slots (`device_<slotId>@tenant.local`) with `hidePasswords: true` policy. Workers autofill credentials on shared workstations without viewing or extracting plaintext secrets.
   - Client administrators retain 1-click remote killswitch rights (`revokeDeviceVault`) that immediately invalidate all active Bitwarden sessions on that physical endpoint in the event of hardware loss, theft, or suspected compromise.
   - **Plan Entitlement Gating:** Machine vault capabilities require subscription plans containing `PASSWORD_MANAGER` (or composite bundles). In `DevicesPage`, unentitled devices display the action with an `Upgrade` lock badge, opening an in-modal plan upgrade preview with direct navigation to `/plans`.
@@ -193,6 +223,9 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
   - **Day 15 Overdue:** Full platform access and technical support suspended (`account_status = 'SUSPENDED'`, `is_active = false`).
   - **Day 30 Overdue:** Permanent technical purge and deletion of data from servers for storage liberation with zero liability to the company (`account_status = 'PURGED'`). Purges Nextcloud storage accounts and hardware bindings.
   - **Restoration:** Payment capture automatically restores tenant and all users to `ACTIVE`.
+- **BL-703: Zero-Invoice Guarantee for Complimentary & Free Plans** (`SubscriptionLifecycleService.extendSubscription` zero-invoice guard; `scripts/sentinel-ops.mjs` free-grant default)
+  - Manual administrative plan assignments, promotional onboarding, trials, and duration extensions granted for free must **never** place invoices in the `invoices` table.
+  - Invoices are strictly reserved for genuine customer financial transactions (PayPal captures or verified wire transfers). Creating phantom invoices for complimentary accounts is strictly prohibited.
 
 ### Module 8: Technician Commissions, Pre-Split OpEx & Profit Distribution
 
@@ -370,7 +403,7 @@ Continuous Integration and Deployment is automated via GitHub Actions ([.github/
 
 ## UI Primitives & Skeleton Loaders
 
-The frontend relies on **shadcn/ui** primitives located in `client/src/components/ui/`. Modern structural skeleton loaders replace standard loading spinners for enhanced perceived performance:
+The frontend relies on **shadcn/ui** primitives located in `client/src/components/ui/`. Modern structural skeleton loaders replace standard loading spinners for enhanced perceived performance (@see [ADR-006](docs/decisions/ADR-006-frontend-runtime-performance-and-faro-telemetry.md) for the runtime performance & Grafana Faro telemetry contract):
 
 - **Skeleton Primitive:** [skeleton.tsx](client/src/components/ui/skeleton.tsx)
 - **DataTable Skeleton:** [data-table.tsx](client/src/components/ui/data-table.tsx) displays skeleton rows matching table structure when `loading` is active.
@@ -430,7 +463,7 @@ The platform implements a distributed background job orchestration pattern desig
   - Automatically falls back to local in-memory mutexes if Redis is unreachable, ensuring single-node concurrency is always protected.
 - **Subscription & Invoicing Sweep Daemon ([`SubscriptionScheduler.ts`](server/src/modules/subscriptions/services/SubscriptionScheduler.ts)):**
   - Guarded by distributed lock key `cron:subscriptions:sweep` (TTL: 60s).
-  - Sweeps expiring subscriptions (**BL-402**), calculates hardware multipliers, dispatches advance 7-day expiration warnings, generates automated renewal invoices, and enforces **Section 9.3 Non-Payment Suspension Scale** without duplicate charges or duplicate notification emails across cluster replicas.
+  - Sweeps expiring subscriptions (**BL-402**), calculates hardware multipliers, dispatches advance 7-day expiration warnings, generates automated renewal invoices, and enforces the 4-Tier Non-Payment Scale (**BL-702**) without duplicate charges or duplicate notification emails across cluster replicas.
 - **Ticket Tier Escalation Daemon ([`EscalationScheduler.ts`](server/src/modules/tickets/services/EscalationScheduler.ts)):**
   - Guarded by distributed lock key `cron:tickets:escalation_sweep` (TTL: 50s).
   - Sweeps open unworked tickets and escalates them to Tier 2 based on priority thresholds (**BL-104**), preventing race conditions or conflicting technician assignments across concurrent workers.
@@ -439,15 +472,46 @@ The platform implements a distributed background job orchestration pattern desig
 
 ---
 
+## SequenceSentinel: Business Logic Integrity Auditor & Autonomous Remediation (@see ADR-009)
+
+SequenceSentinel is a dual-mode subsystem ([`server/src/modules/system/sentinel/`](server/src/modules/system/sentinel/)) that passively audits production action sequences against all Master Business Logic invariants (BL-101 to BL-802) and autonomously remediates actionable drift under tenant-isolated circuit breakers.
+
+**Pipeline:**
+- **Aggregation:** [`SequenceAggregatorService.ts`](server/src/modules/system/sentinel/services/SequenceAggregatorService.ts) reconstructs chronological `ActionSequence` graphs from ticket, invoice, alert, and lead event streams.
+- **Invariant Checking:** Co-located `InvariantChecker` implementations under `sentinel/checkers/{ticketing,billing,subscriptions,financial,security,crm_health}/` — e.g. `SlaCancellationChecker`, `RoundRobinDispatchChecker`, `TierEscalationChecker`, `AlertNoiseFlappingChecker`, `NonPaymentEnforcementChecker`, `SubscriptionReactivationChecker`, `TaxAndNcfChecker`, `TechnicianBountyChecker`, `ProfitSplitChecker`, `FeatureGatingChecker`, `StateMachineChecker`, `AuthorizationAndJitChecker`.
+- **Orchestration & Remediation:** [`SequenceSentinelService.ts`](server/src/modules/system/sentinel/services/SequenceSentinelService.ts) runs the audit window; [`SelfHealingService.ts`](server/src/modules/system/sentinel/services/SelfHealingService.ts) dispatches autonomous remediations (`sentinel/remediators/`, e.g. `FlappingAlertRemediator`, `TierEscalationRemediator`, `TechnicianBountyRemediator`, `SubscriptionReactivationRemediator`, `DeviceVaultSessionRemediator`).
+- **Regression Synthesis:** [`VitestRegressionSynthesizer.ts`](server/src/modules/system/sentinel/services/VitestRegressionSynthesizer.ts) generates co-located Vitest regression specs from detected invariant drift.
+- **Typing:** Core contracts (`ActionSequence`, `InvariantCheckResult`, `AuditReport`) are declared in `sentinel/types.ts`.
+
+**Entry Points:**
+- On-demand audit REST endpoint: `GET /api/v1/system/sentinel/audit` (`SystemController`).
+- CLI runner: [`server/src/modules/system/sentinel/cli.ts`](server/src/modules/system/sentinel/cli.ts); ops orchestration script: `npm run sentinel:op` (`scripts/sentinel-ops.mjs`).
+- MCP server tool `msp_run_sentinel_audit` ([`packages/mcp-server/src/tools/sentinelTools.ts`](../../packages/mcp-server/src/tools/sentinelTools.ts)).
+
+Design: [ADR-009](docs/decisions/ADR-009-business-logic-integrity-auditor-and-autonomous-remediation.md).
+
+---
+
 ## AI Agents & Model Context Protocol (MCP)
 
 The repository provides a first-class Model Context Protocol server ([`packages/mcp-server/`](packages/mcp-server/)) exposing **66+ specialized tools across dual isolated profiles** to Microsoft Copilot Studio, Antigravity, Claude Desktop, and autonomous agents:
 
 - **Dual-Mode Transport & Isolation:** Supports local Stdio (CLI/IDE) and Stateless Streamable HTTP over `POST /mcp` (IT Support profile) and `POST /mcp/caf` (isolated CAF Educational Quality profile).
-- **Inbound Security & Zero Token Liability:** Authenticates administrative requests using timing-safe API key verification (`X-API-Key` or Bearer token), while educational requests run on a multi-tenant Bring-Your-Own-Key (BYOK) architecture (`TenantByokManager`) with zero token liability for the platform.
+- **Inbound Security & Zero Token Liability:** Authenticates administrative requests using timing-safe API key verification (`X-API-Key` or Bearer token), while educational requests run on a multi-tenant Bring-Your-Own-Key (BYOK) architecture (`TenantByokManager`) with zero token liability for the platform (@see [ADR-010](docs/decisions/ADR-010-web-native-byok-and-zero-secret-mcp-proxy.md)).
 - **Dominican Law 172-13 Privacy Protection:** Built-in in-memory sanitization (`CafPrivacyFilter`) stripping names, cédulas, emails, and phone numbers before LLM egress.
 - **Production Deployment:** Deployed as container `msp_mcp_prod` on the helpdesk VPS under `https://helpdesk.velmartech.com.do/mcp` and `/mcp/caf`.
 - **Documentation & Setup:** Full setup guides, tool catalogs, and Copilot Studio prompt templates are available in [`packages/mcp-server/README.md`](packages/mcp-server/README.md), [`docs/infrastructure/COPILOT_STUDIO_AGENT_DEPLOYMENT.md`](docs/infrastructure/COPILOT_STUDIO_AGENT_DEPLOYMENT.md), [`docs/infrastructure/COPILOT_STUDIO_CAF_AGENT_DEPLOYMENT.md`](docs/infrastructure/COPILOT_STUDIO_CAF_AGENT_DEPLOYMENT.md), and [`docs/ideas/caf-education-aiaas-mcp-byok.md`](docs/ideas/caf-education-aiaas-mcp-byok.md).
+
+---
+
+## Realtime Ticket Streaming & Dual WebSocket Gateways (@see ADR-008)
+
+The backend multiplexes HTTP/1.1 Upgrade requests on port 3001 into **two isolated WebSocket servers** ([`server/src/index.ts`](../../server/src/index.ts)):
+
+1. **`/agent-ws` → `AgentGateway`** (`server/src/modules/rmm/services/AgentGateway.ts`): machine-token authenticated, connects physical `msp-agent` daemons for hardware telemetry ingestion and remote execution (`DIAGNOSE_PC`, `RESTART_SERVICE`, …). Integrated with the Redis Pub/Sub `AgentClusterBroker` mesh for horizontal multi-worker cluster routing (see next section).
+2. **`/portal-ws` → `TicketStreamGateway`** (`server/src/modules/tickets/services/TicketStreamGateway.ts`): user-JWT authenticated, room-based ticket chat streaming over `ticket:<id>` channels with **non-inverting visual attribution** (`isAgentAuthored`; technician/worker initials on the left, MSP staff initials on the right). Client connectivity is handled by `client/src/features/tickets/hooks/useTicketChatStream.ts`.
+
+Design and identity-sync contract: [ADR-008](docs/decisions/ADR-008-realtime-bidirectional-ticket-streaming-and-identity-sync.md).
 
 ---
 
@@ -517,3 +581,44 @@ The repository strictly enforces **[Conventional Commits](https://www.convention
 ### Pre-Commit / Commit-Msg Validation
 
 Hooks are automatically installed via `npm run prepare` (configured in root `package.json`). Whenever you run `git commit`, Husky invokes Commitlint to validate your commit message before it is accepted.
+
+---
+
+## Knowledge Graph & Architectural Navigation (graphify)
+
+The codebase maintains an offline topological knowledge graph in `graphify-out/` representing all 6,800+ nodes and 17,500+ edges across database schemas, server modules, client features, and architectural decisions.
+
+> 📚 For the full developer guide and operational workflows, see [Knowledge Graph Guide](knowledge-graph-guide.md). Graph builds follow the offline GraphRAG host-agent pipeline described in [ADR-012](docs/decisions/ADR-012-offline-graphrag-knowledge-graph-and-host-agent-extraction.md).
+
+### Core npm Workflows
+* **Check or build graph:** `npm run graph:build` (verifies integrity; reconstructs only if missing)
+* **Reconstruct missing files:** `npm run graph:reconstruct` (or `npm run graph:reconstruct -- --force`)
+* **Code-only reconstruction:** `npm run graph:reconstruct -- --code-only` (local AST, zero API keys needed)
+* **Query architecture:** `npm run graph:query -- "<question>"` (answers architectural and dependency queries)
+
+### Do I Need to Rebuild Every Time I Write Code?
+**No.** For day-to-day feature development and bug fixes, the existing graph remains accurate for architectural navigation. Only run `/graphify --update` after completing major structural milestones (e.g. adding new bounded contexts), or `npm run graph:reconstruct` if files in `graphify-out/` were deleted or wiped.
+
+---
+
+## Known Architectural Debt: Inter-Module Import Cycles
+
+The offline graph analysis (`graphify-out/GRAPH_REPORT.md` → **Import Cycles**) surfaced **20 four-file circular dependencies** between module gateway barrels (`server/src/modules/<domain>/index.ts`) and their service layers. They follow a single mechanical pattern: a service inside module A imports module B's public barrel (`@modules/<b>`), while module B's barrel re-exports a service that in turn (transitively) imports module A's barrel — closing the cycle through the two `index.ts` gateways.
+
+Grouped by domain pair, the affected chains are:
+
+| Domain pair | # | Four-file cycles (via barrels) |
+| :--- | :---: | :--- |
+| `billing ↔ subscriptions` | 12 | `billing → InvoicePaymentService`, `FinancialStatsService`, `InvoiceManagementService`, `InvoicePdfService` ↔ `subscriptions → SubscriptionLifecycleService`, `SubscriptionPaymentService`, `SubscriptionRenewalService`, `SubscriptionScheduler` |
+| `equipment ↔ rmm` | 2 | `equipment → EquipmentService` ↔ `rmm → RmmPatchService`, `MaintenanceService` |
+| `equipment ↔ tickets` | 1 | `equipment → EquipmentService` ↔ `tickets → TicketCreationService` |
+| `equipment ↔ subscriptions` | 2 | `equipment → EquipmentService` ↔ `subscriptions → SubscriptionLifecycleService`, `SubscriptionRenewalService` |
+| `rmm ↔ tickets` | 1 | `rmm → AlertService` ↔ `tickets → TicketResponseService` |
+| `system ↔ tickets` | 1 | `system → TechnicianEarningsService` ↔ `tickets → TicketStatusService` |
+| `billing ↔ system` | 1 | `billing → NonPaymentSuspensionService` ↔ `system → TechnicianEarningsService` |
+
+**Total: 20 four-file cycles**, matching `graphify-out/GRAPH_REPORT.md` § Import Cycles.
+
+**Root cause:** the mandated cross-module import channel (services consume another module's public `index.ts` gateway only — no deep imports) combined with services that legitimately need collaborators from cyclic domains creates these rings across the two gateways.
+
+**Remediation direction (future work):** extract cross-module ports/interfaces (abstract interfaces in `server/src/shared/`) or decouple via domain events, so services depend on contracts rather than foreign barrels. This must be resolved **without** weakening the module-gateway import rule and is tracked as known debt in the Graph Report rather than in this document's canonical architecture.

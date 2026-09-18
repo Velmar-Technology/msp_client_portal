@@ -68,13 +68,13 @@ vi.mock('@/features/rmm', () => ({
 vi.mock('@/components/devices/RmmDashboard', () => ({
   RmmDashboard: () => null,
 }));
-vi.mock('@/components/devices/DeployAgentModal', () => ({
+vi.mock('../components/DeployAgentModal', () => ({
   DeployAgentModal: () => null,
 }));
-vi.mock('@/components/devices/AddAdminDeviceModal', () => ({
+vi.mock('../components/AddAdminDeviceModal', () => ({
   AddAdminDeviceModal: () => null,
 }));
-vi.mock('@/components/devices/ActivateWithOtpModal', () => ({
+vi.mock('../components/ActivateWithOtpModal', () => ({
   ActivateWithOtpModal: ({ isOpen, onClose, onActivate, slotIndex }: any) => {
     if (!isOpen) return null;
     return (
@@ -128,7 +128,7 @@ vi.mock('@/components/devices/ActivateWithOtpModal', () => ({
     );
   },
 }));
-vi.mock('@/components/devices/NextcloudInfoModal', () => ({
+vi.mock('../components/NextcloudInfoModal', () => ({
   NextcloudInfoModal: ({ isOpen, onClose, subId, slotIndex }: any) => {
     const [infoData, setInfoData] = React.useState<any>(null);
     React.useEffect(() => {

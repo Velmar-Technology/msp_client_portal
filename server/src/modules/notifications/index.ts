@@ -1,7 +1,7 @@
 export * from './repositories/NotificationRepository';
 export * from './services/NotificationService';
 export * from './services/NotificationPreferenceService';
-export * from './routes/notification.routes';
-export * from './routes/notificationPreference.routes';
+export { default as notificationRoutes } from './routes/notification.routes';
+export { default as notificationPreferenceRoutes } from './routes/notificationPreference.routes';
 
 

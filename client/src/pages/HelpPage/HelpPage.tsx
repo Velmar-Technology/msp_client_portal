@@ -192,7 +192,7 @@ export function HelpPage() {
   } = useHelpPage();
 
   return (
-    <Page showBreadcrumbs={false} className="max-w-6xl mx-auto pt-6 pb-12">
+    <Page showBreadcrumbs={false} className="w-full pt-2 pb-12">
       <div className="border border-border bg-card rounded-xl overflow-hidden shadow-xs">
         <HelpSearchHeader t={t} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
         

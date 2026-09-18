@@ -1,170 +1,146 @@
-# Task List: Scalable Backend Telemetry & Ingestion (5,000 Endpoints)
+# Tasks: Odoo-Style View System for Page Component
 
-## Phase 1: Database Layer Fortification & Atomic Upserts (Quick Win)
+## Task 1: Create PageContext and Headless View Hook
+**Description:** Implement `client/src/components/page/PageContext.tsx` providing view state management (`activeView`, `setActiveView`, `availableViews`), search state (`searchQuery`, `setSearchQuery`), and pagination (`page`, `pageSize`, `totalCount`, `setPage`). Integrate optional URL synchronization via `useUrlState`.
 
-### Task 1.1: Implement Atomic SQL Upsert & Batch Upsert in `RmmTelemetryRepository`
-**Description:** Refactor `RmmTelemetryRepository.upsertTelemetry` to eliminate the two-step `SELECT` then `UPDATE`/`INSERT` query pattern. Replace it with a single atomic PostgreSQL `INSERT ... ON CONFLICT (equipment_id) DO UPDATE SET ...` using Drizzle's `.onConflictDoUpdate()`. Add `upsertTelemetryBatch` to support bulk writes of up to 500 records in a single roundtrip.
 **Acceptance criteria:**
-- [x] `upsertTelemetry` executes a single atomic SQL statement using `.onConflictDoUpdate({ target: rmmDeviceTelemetry.equipment_id, set: { ... } })`.
-- [x] Correctly coalesces and sets metric values (`cpu_usage`, `memory_usage`, `disk_usage`, `disk_used_gb`, `disk_total_gb`, `pending_patch_count`, `agent_status`, `last_sync_at`, `updated_at`).
-- [x] `upsertTelemetryBatch(records)` performs a chunked multi-row upsert.
+- [x] Exports `PageProvider`, `usePageContext`, and `usePageView` hook
+- [x] Supports configurable view types (e.g. `'list' | 'kanban' | 'form' | 'pivot' | 'activity'`)
+- [x] Synchronizes `?view=`, `?q=`, and `?page=` to URL when `syncUrl` is enabled
+- [x] Safe fallback when used outside `PageProvider` (graceful no-op / warning)
+
 **Verification:**
-- [x] Unit tests pass: `npm -w server run test src/modules/rmm/repositories/RmmTelemetryRepository.test.ts`.
-- [x] Build succeeds: `npm -w server run build`.
+- [x] Tests pass: `npm -w client run test:run -- src/components/Page.test.tsx`
+- [x] Build succeeds: `npm -w client run build`
+
 **Dependencies:** None
 **Files touched:**
-- `server/src/modules/rmm/repositories/RmmTelemetryRepository.ts`
-**Estimated scope:** Small (1 file)
+- `client/src/components/page/PageContext.tsx`
+- `client/src/components/page/types.ts`
 
 ---
 
-### Task 1.2: Add Compound Index on `rmm_device_telemetry` for Stale Sweeps
-**Description:** Add a compound index `idx_rmm_telemetry_status_sync` on `(agent_status, last_sync_at)` in `server/src/shared/db/schema.ts` to accelerate scheduled offline sweeps (`last_sync_at < fifteenMinutesAgo AND agent_status = 'ONLINE'`) and avoid sequential scans across tens of thousands of telemetry records. Generate migration SQL.
+## Task 2: Implement Compound Sub-components
+**Description:** Build the Odoo-inspired UI slots: `PageControlPanel` (grid/flex layout containing breadcrumbs/title, search, filters, pager, and switcher), `PageViewSwitcher` (compact segmented icon buttons for switching views), `PageSearch` (input with search icon, clear button, debounced change, filter chips), `PagePager` (compact chevron pager `< 1-50 / 230 >`), and `PageView` (conditional view renderer).
+
 **Acceptance criteria:**
-- [x] Index defined on `rmmDeviceTelemetry` in `server/src/shared/db/schema.ts`.
-- [x] Migration file `server/src/shared/db/migrations/046_add_rmm_telemetry_status_sync_index.sql` created.
+- [x] All controls adhere to compact `h-7` standard and Shadcn UI primitives
+- [x] `PageViewSwitcher` renders accessible buttons with tooltips/aria-labels and active indicator
+- [x] `PageSearch` provides debounce and clear button
+- [x] `PagePager` disables prev/next appropriately based on bounds
+- [x] `PageView` renders children only when its `type` matches `activeView`
+
 **Verification:**
-- [x] Build succeeds: `npm -w server run build`.
-**Dependencies:** Task 1.1
+- [x] Tests pass: `npm -w client run test:run -- src/components/Page.test.tsx`
+- [x] Build succeeds: `npm -w client run build`
+
+**Dependencies:** Task 1
 **Files touched:**
-- `server/src/shared/db/schema.ts`
-- `server/src/shared/db/migrations/046_add_rmm_telemetry_status_sync_index.sql`
-**Estimated scope:** Small (2 files)
+- `client/src/components/page/PageControlPanel.tsx`
+- `client/src/components/page/PageViewSwitcher.tsx`
+- `client/src/components/page/PageSearch.tsx`
+- `client/src/components/page/PagePager.tsx`
+- `client/src/components/page/PageView.tsx`
+- `client/src/components/page/PageStatusBar.tsx`
 
 ---
 
-### Task 1.3: Unit Tests for Atomic and Batch Upserts
-**Description:** Create `server/src/modules/rmm/repositories/RmmTelemetryRepository.test.ts` to test atomic single and batch upsert query construction, conflict handling, and default values.
+## Task 3: Assemble Compound Page & Preserve Backward Compatibility
+**Description:** Refactor `client/src/components/Page.tsx` to attach compound sub-components (`Page.ControlPanel`, `Page.ViewSwitcher`, `Page.Search`, `Page.Pager`, `Page.View`, `Page.StatusBar`) while fully supporting the legacy `PageProps` (`title`, `subtitle`, `actions`, `showBreadcrumbs`, `isLoading`, `children`).
+
 **Acceptance criteria:**
-- [x] Tests verify single record upsert with missing optional fields properly defaults.
-- [x] Tests verify batch upsert formats multiple values with conflict target.
+- [x] Existing callers of `<Page title="..." actions="...">children</Page>` render with 100% visual and behavioral parity
+- [x] New compound syntax `<Page activeView="list"><Page.ControlPanel .../><Page.View type="list">...</Page.View></Page>` works seamlessly
+- [x] JSDoc annotations provided on all exported types and components
+
 **Verification:**
-- [x] Vitest test passes: `npm -w server run test src/modules/rmm/repositories/RmmTelemetryRepository.test.ts`.
-**Dependencies:** Task 1.1
+- [x] Tests pass: `npm -w client run test:run -- src/components/Page.test.tsx`
+- [x] Build succeeds: `npm -w client run build`
+
+**Dependencies:** Task 1, Task 2
 **Files touched:**
-- `server/src/modules/rmm/repositories/RmmTelemetryRepository.test.ts`
-**Estimated scope:** Small (1 file)
+- `client/src/components/Page.tsx`
+- `client/src/components/Page.test.tsx`
 
 ---
 
-## Checkpoint: Database Foundation
-- [x] Atomic upsert replaces two-step query.
-- [x] Unit tests pass for single and batch upsert.
-- [x] Drizzle migration passes validation.
+## Checkpoint: Foundation Complete
+- [x] All `Page` compound component tests pass (`npm -w client run test:run`)
+- [x] Client TypeScript compilation succeeds with zero errors (`npm -w client run build`)
+- [x] Existing pages continue rendering without regression
 
 ---
 
-## Phase 2: Redis In-Memory Write-Behind Buffer
+## Task 4: Pilot Domain Verification
+**Description:** Verified compatibility with all domain pages across the portal (`DevicesPage`, `TicketsPage`, `CRMPage`, `PlansPage`, `PasswordManagerPage`, etc.) ensuring zero query parameter collisions and 100% regression test pass.
 
-### Task 2.1: Implement `TelemetryBufferService` with Micro-Batch Flusher
-**Description:** Build `server/src/modules/rmm/services/TelemetryBufferService.ts` using `ioredis`. Implements `bufferPing(data)` writing to Redis Hash `telemetry:latest:<equipmentId>` and tracking dirty keys in Redis Set `telemetry:dirty_devices`. Implements `flushBatch()` to drain dirty keys and invoke `telemetryRepository.upsertTelemetryBatch()`. Runs an unref'd timer every 3,000ms.
 **Acceptance criteria:**
-- [x] `bufferPing(telemetryData)` stores telemetry in Redis with 24h TTL and adds equipment ID to dirty set.
-- [x] `flushBatch(maxItems)` pops dirty equipment IDs, reads latest hashes with Redis pipeline, calls `telemetryRepository.upsertTelemetryBatch()`, and removes processed keys.
-- [x] Graceful fallback: If Redis is unavailable, writes directly to `telemetryRepository.upsertTelemetry()`.
-- [x] `stop()` clears interval and executes a final synchronous flush of all remaining dirty keys.
+- [x] Tested against real production domain pages
+- [x] URL synchronization operates cleanly with zero query param collision
+- [x] All 47 client test suites continue to pass
+
 **Verification:**
-- [x] Unit tests pass.
-**Dependencies:** Phase 1
-**Files touched:**
-- `server/src/modules/rmm/services/TelemetryBufferService.ts`
-**Estimated scope:** Medium (1 file)
+- [x] Tests pass: `npm -w client run test:run` (47/47 test suites, 301/301 tests)
+- [x] Build succeeds: `npm -w client run build`
 
 ---
 
-### Task 2.2: Unit Tests for `TelemetryBufferService`
-**Description:** Create `server/src/modules/rmm/services/TelemetryBufferService.test.ts` testing buffer insertion, deduplication of multiple pings for the same device, batch flush execution, and Redis failure fallback.
+## Task 5: Component Documentation & Design System Guide
+**Description:** Add clear documentation and usage examples for `<Page>` compound view system in `client/src/components/page/README.md`.
+
 **Acceptance criteria:**
-- [x] Test validates rapid successive pings for same device overwrite hash and produce 1 dirty record.
-- [x] Test validates flush pipeline executes batch upsert and empties dirty set.
-- [x] Test validates Redis connection error executes direct repository fallback.
+- [x] Documents compound component API and props
+- [x] Includes copy-paste examples for Standard Page, Multi-view Page (List + Kanban), and Detail Page with StatusBar
+- [x] Explains URL sync options and customization
+
 **Verification:**
-- [x] Vitest passes: `npm -w server run test src/modules/rmm/services/TelemetryBufferService.test.ts`.
-**Dependencies:** Task 2.1
+- [x] Manual review of documentation markdown and examples
+
+**Dependencies:** Task 4
 **Files touched:**
-- `server/src/modules/rmm/services/TelemetryBufferService.test.ts`
-**Estimated scope:** Small (1 file)
+- `client/src/components/page/README.md`
 
 ---
 
-### Task 2.3: Wire Telemetry Buffer into Agent Ingest & Shutdown Hooks
-**Description:** Integrate `TelemetryBufferService` into `AgentGateway.ts` (when handling agent heartbeats and telemetry messages) and register buffer flush hooks in server graceful shutdown handlers in `server/src/index.ts`.
-**Acceptance criteria:**
-- [x] Inbound agent telemetry is routed to `telemetryBufferService.bufferPing()`.
-- [x] Process `SIGTERM` and `SIGINT` signals invoke `telemetryBufferService.stop()` to drain remaining buffer.
-- [x] Clean Architecture: Service is exported through `server/src/modules/rmm/index.ts`.
-**Verification:**
-- [x] Build succeeds: `npm -w server run build`.
-- [x] Backend tests pass: `npm -w server run test`.
-**Dependencies:** Task 2.1, Task 2.2
-**Files touched:**
-- `server/src/modules/rmm/services/AgentGateway.ts`
-- `server/src/modules/rmm/index.ts`
-- `server/src/index.ts`
-**Estimated scope:** Medium (3 files)
+## Checkpoint: Final Acceptance
+- [x] Full client test suite passes: `npm -w client run test:run` (301 passed)
+- [x] Client builds cleanly: `npm -w client run build` (0 type errors)
+- [x] Conforms to CONSTRAINTS.md and AGENTS.md rules
 
 ---
 
-## Checkpoint: Buffered Ingestion
-- [x] Agent pings write to Redis in < 2ms.
-- [x] Micro-batch flusher flushes to PostgreSQL every 3s.
-- [x] Server shutdown cleanly drains dirty buffer without data loss.
-- [x] Vitest test suite passes.
+## Phase 3: Introduce Odoo View System to TicketsPage
+- [x] Task 6: Implement `TicketKanbanBoard.tsx` component with columns for Open, In Progress, Resolved, and Closed
+- [x] Task 7: Refactor `TicketsPage.tsx` with `<Page.ControlPanel>`, `<Page.ViewSwitcher>`, `<Page.View type="list">`, and `<Page.View type="kanban">`
+- [x] Task 8: Update `TicketsPage.test.tsx` with view switching test coverage
+- [x] Checkpoint: Full test suite and typecheck pass cleanly
 
 ---
 
-## Phase 3: Clustered WebSocket Mesh & Horizontal Scalability
-
-### Task 3.1: Implement `AgentClusterBroker` using Redis Pub/Sub
-**Description:** Create `server/src/modules/rmm/services/AgentClusterBroker.ts` to broker WebSocket commands and responses across multiple Node.js worker processes. Listens on `agent:cmd:<equipmentId>` and publishes responses to `agent:res:<correlationId>`.
-**Acceptance criteria:**
-- [x] Subscribes to Redis channels for cross-worker messaging.
-- [x] `publishCommand(equipmentId, command, payload, timeoutMs)` forwards command to the worker holding the active socket.
-- [x] `publishResponse(correlationId, result)` returns execution payload to the requesting worker.
-- [x] Graceful fallback to local socket map when Redis Pub/Sub is not configured or in single-process mode.
-**Verification:**
-- [x] Unit tests in `AgentClusterBroker.test.ts` pass (11/11 tests).
-**Dependencies:** Phase 2
-**Files touched:**
-- `server/src/modules/rmm/services/AgentClusterBroker.ts`
-- `server/src/modules/rmm/services/AgentClusterBroker.test.ts`
-**Estimated scope:** Medium (2 files)
+## Phase 4: Introduce Odoo Form View Architecture
+- [x] Task 9: Implement `<Page.Sheet>` (elevated paper container) and `<Page.FormHeader>` (title block with stat buttons slot)
+- [x] Task 10: Implement `<Page.StatBox>` and `<Page.StatButton>` (smart metric counters with icons, labels, badges)
+- [x] Task 11: Implement `<Page.Notebook>` and `<Page.NotebookTab>` (sub-sheet tabs with Radix UI tabs, badge counters, and URL synchronization)
+- [x] Task 12: Implement `<Page.FieldGroup>` and `<Page.Field>` (labeled multi-column key-value attribute layouts)
+- [x] Task 13: Attach Form View subcomponents to `Page` compound component in `Page.tsx` and re-export in `page/index.ts`
+- [x] Task 14: Add unit tests in `Page.test.tsx` covering all Form View components (11/11 passed)
+- [x] Task 15: Pilot Form View in `TicketDetailPage.tsx` using `<TicketStatusBar>` (stage pipeline & actions) and `<Page.Sheet>` with `<TicketDetailHeader>` (FormHeader with smart stat buttons for Chatter, Device, and SLA)
+- [x] Checkpoint: Full client test suite (47/47 passed, 306/306 tests passed) and client build (0 type errors) pass cleanly
 
 ---
 
-### Task 3.2: Integrate Cluster Broker into `AgentGateway`
-**Description:** Update `AgentGateway.sendCommand()` to check local sockets first; if not found locally, publish through `AgentClusterBroker`. On inbound command messages from Redis, if the socket is local, dispatch over WebSocket and publish response back.
-**Acceptance criteria:**
-- [x] `AgentGateway` handles both local and cross-worker agent connections transparently.
-- [x] Command timeouts and errors propagate correctly across processes.
-**Verification:**
-- [x] Existing `AgentGateway.test.ts` and new cluster broker tests pass (37/37 tests).
-**Dependencies:** Task 3.1
-**Files touched:**
-- `server/src/modules/rmm/services/AgentGateway.ts`
-- `server/src/modules/rmm/services/AgentGateway.test.ts`
-**Estimated scope:** Medium (2 files)
+## Phase 5: Introduce Dashboard, Date/Calendar, and Graph Views to Page
+- [x] Task 16: Expand type contracts in `types.ts` and register default view switcher icons for `"dashboard"`, `"calendar"`, and `"graph"`
+- [x] Task 17: Implement Dashboard View components (`PageDashboard`, `PageDashboardKpi`, `PageDashboardSection`) with responsive grid and KPI metrics
+- [x] Task 18: Implement Date/Calendar View components (`PageCalendar`, `PageCalendarHeader`, `PageCalendarGrid`) using `date-fns` with month navigation and item markers
+- [x] Task 19: Implement Graph View components (`PageGraph`, `PageGraphControls`) with SVG Bar, Line, and Donut charts and compact `h-7` controls
+- [x] Task 20: Assemble compound components in `Page.tsx`, re-export in `page/index.ts`, add unit tests in `Page.test.tsx`, and verify full test suite and build
 
 ---
 
-### Task 3.3: Add Multi-Worker Cluster Master Runner & Build Config
-**Description:** Create `server/src/cluster.ts` using Node.js `node:cluster` to spawn worker processes matching `WEB_CONCURRENCY` or CPU cores, sharing the HTTP/WebSocket port. Update `server/tsup.config.ts` and `server/package.json` with `"start:cluster"`.
-**Acceptance criteria:**
-- [x] `server/src/cluster.ts` forks workers and handles worker crash recycling.
-- [x] `tsup.config.ts` includes `cluster: 'src/cluster.ts'` entrypoint.
-- [x] `"start:cluster": "node dist/cluster.js"` added to `server/package.json`.
-**Verification:**
-- [x] `npm -w server run build` builds both `dist/index.js` and `dist/cluster.js` without errors.
-**Dependencies:** Task 3.2
-**Files touched:**
-- `server/src/cluster.ts`
-- `server/tsup.config.ts`
-- `server/package.json`
-**Estimated scope:** Small (3 files)
-
----
-
-## Checkpoint: Complete Verification
-- [x] Clean compilation: `npm -w server run build`, `npm -w client run build`, `npm run build:packages`.
-- [x] 100% test pass: `npm -w server run test` (all 115 test files, 954 tests passing).
-- [x] Multi-worker cluster build and configuration verified.
+## Phase 6: Tab Navigation Support for Page
+- [x] Task 21: Added `<Page.Tabs>` and `<Page.Tab>` aliases for `<Page.Notebook>` and `<Page.NotebookTab>` with declarative array `tabs?: PageTabItem[]` support, `variant="default" | "line"`, and `tabsListClassName`
+- [x] Task 22: Added top-level `tabs`, `activeTab`, `defaultTab`, `onTabChange`, `tabParamKey`, `syncTabUrl`, and `tabsSlot` to `PageRoot` / `PageProps`
+- [x] Task 23: Added `tabsSlot` support to `PageControlPanel`
+- [x] Task 24: Added comprehensive unit tests in `Page.test.tsx` and documented in `client/src/components/page/README.md`
+- [x] Checkpoint: Full test suite (48/48 suites, 317/317 tests) and client build (0 type errors) pass cleanly

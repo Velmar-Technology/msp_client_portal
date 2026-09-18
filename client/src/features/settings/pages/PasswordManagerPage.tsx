@@ -111,7 +111,7 @@ export function PasswordManagerPage() {
       title={t("passwordManager.pageTitle", "Password Manager")}
       subtitle={t("passwordManager.pageDescription", "Enterprise zero-knowledge password vault for your team.")}
     >
-      <div className="space-y-6 max-w-5xl">
+      <div className="space-y-6 w-full">
         {/* BL-702 Read-Only Non-Payment Banner */}
         {isReadOnly && (
           <div

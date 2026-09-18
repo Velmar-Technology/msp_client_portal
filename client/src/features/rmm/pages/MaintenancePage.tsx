@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import {
   Calendar as CalendarIcon,
-  ChevronLeft,
   ChevronRight,
   Plus,
   Search,
@@ -32,7 +31,6 @@ import { Page } from "@/components/Page";
 import { Button } from "@/components/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ViewToggle } from "@/components/ui/view-toggle";
 import { DataTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
@@ -46,15 +44,15 @@ import {
 import { useMaintenance } from "../hooks/useMaintenance";
 import { ScheduleMaintenanceModal } from "../components/ScheduleMaintenanceModal";
 import type { DeviceMaintenance, MaintenanceStatus } from "../api/maintenanceService";
+import { cn } from "@/lib/utils";
+import type { PageCalendarEvent } from "@/components/page/types";
 
 export function MaintenancePage() {
-  const { i18n } = useTranslation();
-  const isSpanish = i18n.language.startsWith("es");
-
+  const { t } = useTranslation();
   const {
-    t,
     isAdminOrTech,
     currentDate,
+    setCurrentDate,
     viewMode,
     setViewMode,
     filteredMaintenances,
@@ -81,63 +79,29 @@ export function MaintenancePage() {
     openScheduleModal,
     closeScheduleModal,
     handleScheduleSuccess,
-    handlePrevMonth,
-    handleNextMonth,
-    handleToday,
     handleStatusChange,
   } = useMaintenance();
 
   const [selectedEventDetails, setSelectedEventDetails] = useState<DeviceMaintenance | null>(null);
 
-  // Month Title string
-  const monthYearTitle = useMemo(() => {
-    return currentDate.toLocaleDateString(isSpanish ? "es-DO" : "en-US", {
-      month: "long",
-      year: "numeric",
+  // Map maintenances to PageCalendarEvent models
+  const calendarEvents: PageCalendarEvent[] = useMemo(() => {
+    return filteredMaintenances.map((m) => {
+      let variant: PageCalendarEvent["variant"] = "primary";
+      if (m.status === "COMPLETED") variant = "success";
+      else if (m.status === "IN_PROGRESS") variant = "warning";
+      else if (m.status === "OVERDUE") variant = "destructive";
+      else if (m.status === "CANCELLED") variant = "default";
+
+      return {
+        id: m.id,
+        title: `${m.device_name || t("devices.unnamedDevice")} - ${m.title}`,
+        date: new Date(m.scheduled_date),
+        variant,
+        data: m,
+      };
     });
-  }, [currentDate, isSpanish]);
-
-  // Calendar Days calculation for Grid View
-  const calendarDays = useMemo(() => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-
-    const firstDayOfMonth = new Date(year, month, 1);
-    const lastDayOfMonth = new Date(year, month + 1, 0);
-
-    const startingDayOfWeek = firstDayOfMonth.getDay();
-    const daysInMonth = lastDayOfMonth.getDate();
-
-    const days: { date: Date; isCurrentMonth: boolean }[] = [];
-
-    // Previous month overflow days
-    const prevMonthLastDay = new Date(year, month, 0).getDate();
-    for (let i = startingDayOfWeek - 1; i >= 0; i--) {
-      days.push({
-        date: new Date(year, month - 1, prevMonthLastDay - i),
-        isCurrentMonth: false,
-      });
-    }
-
-    // Current month days
-    for (let day = 1; day <= daysInMonth; day++) {
-      days.push({
-        date: new Date(year, month, day),
-        isCurrentMonth: true,
-      });
-    }
-
-    // Next month overflow days (to fill 35 or 42 grid cells)
-    const remainingCells = (7 - (days.length % 7)) % 7;
-    for (let i = 1; i <= remainingCells; i++) {
-      days.push({
-        date: new Date(year, month + 1, i),
-        isCurrentMonth: false,
-      });
-    }
-
-    return days;
-  }, [currentDate]);
+  }, [filteredMaintenances, t]);
 
   // Status badge styling helper
   const getStatusBadge = (status: MaintenanceStatus | string) => {
@@ -215,7 +179,10 @@ export function MaintenancePage() {
         const item = row.original;
         return (
           <div className="space-y-0.5">
-            <p className="text-xs font-semibold text-foreground">{item.device_name || t("devices.unnamedDevice")}</p>
+            <p className="text-xs font-semibold text-foreground">{item.title || item.device_name || t("devices.unnamedDevice")}</p>
+            {item.title && item.device_name && (
+              <p className="text-[11px] text-muted-foreground">{item.device_name}</p>
+            )}
             {item.device_serial && <p className="text-[10px] text-muted-foreground font-mono">{item.device_serial}</p>}
             {item.service_name && <p className="text-[9px] text-muted-foreground italic">{item.service_name}</p>}
           </div>
@@ -352,275 +319,177 @@ export function MaintenancePage() {
   ];
 
   return (
-    <Page title={t("nav.maintenance")} subtitle={t("maintenance.subtitle")} isLoading={loading}>
-      <div className="space-y-4">
-        {/* Top Control Bar */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-card p-3.5 border border-border rounded-lg shadow-xs">
-          {/* Calendar Month Navigation */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center border border-border rounded-lg overflow-hidden bg-muted">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={handlePrevMonth}
-                className="h-7 w-7 p-0 hover:bg-muted/80 cursor-pointer text-muted-foreground hover:text-foreground"
-                title={t("maintenance.prevMonth")}
-              >
-                <ChevronLeft className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={handleToday}
-                className="h-7 px-3 text-xs font-semibold hover:bg-muted/80 cursor-pointer border-x border-border text-foreground"
-              >
-                {t("maintenance.today")}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={handleNextMonth}
-                className="h-7 w-7 p-0 hover:bg-muted/80 cursor-pointer text-muted-foreground hover:text-foreground"
-                title={t("maintenance.nextMonth")}
-              >
-                <ChevronRight className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-            <h2 className="text-sm sm:text-base font-bold text-foreground capitalize font-heading">
-              {monthYearTitle}
-            </h2>
-          </div>
+    <Page<"calendar" | "list">
+      defaultView="calendar"
+      activeView={viewMode.toLowerCase() as "calendar" | "list"}
+      onViewChange={(v) => setViewMode(v.toUpperCase() as "CALENDAR" | "LIST")}
+      availableViews={[
+        {
+          value: "calendar",
+          icon: LayoutGrid,
+          title: t("maintenance.viewCalendar"),
+          ariaLabel: t("maintenance.viewCalendar"),
+        },
+        {
+          value: "list",
+          icon: ListIcon,
+          title: t("maintenance.viewList"),
+          ariaLabel: t("maintenance.viewList"),
+        },
+      ]}
+      isLoading={loading}
+    >
+      <Page.ControlPanel
+        title={t("nav.maintenance")}
+        subtitle={t("maintenance.subtitle")}
+        actions={
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => openScheduleModal()}
+            className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span>{t("maintenance.scheduleBtn")}</span>
+          </Button>
+        }
+        viewsSlot={<Page.ViewSwitcher size="sm" />}
+        searchSlot={null}
+        pagerSlot={null}
+      />
 
-          {/* Action & View Controls */}
-          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end">
-            {/* Schedule Maintenance Button */}
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => openScheduleModal()}
-              className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span>{t("maintenance.scheduleBtn")}</span>
-            </Button>
-            {/* View Mode Toggle */}
-            <ViewToggle
-              size="sm"
-              value={viewMode}
-              onChange={setViewMode}
-              options={[
-                {
-                  value: "CALENDAR",
-                  icon: LayoutGrid,
-                  title: t("maintenance.viewCalendar"),
-                  ariaLabel: t("maintenance.viewCalendar"),
-                },
-                {
-                  value: "LIST",
-                  icon: ListIcon,
-                  title: t("maintenance.viewList"),
-                  ariaLabel: t("maintenance.viewList"),
-                },
-              ]}
+      {/* CALENDAR / DATE VIEW */}
+      <Page.View type="calendar" className="space-y-4">
+        {/* Filters Toolbar */}
+        <div className="bg-card p-3 border border-border rounded-lg shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
+          <InputGroup size="sm" className="w-full md:max-w-xs bg-muted/40">
+            <InputGroupInput
+              placeholder={t("maintenance.searchPlaceholder")}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
+            <InputGroupAddon>
+              <Search />
+            </InputGroupAddon>
+          </InputGroup>
+
+          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+            {/* Status Filter */}
+            <div className="flex items-center gap-1.5">
+              <ListFilter className="h-3.5 w-3.5 text-muted-foreground" />
+              <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val)}>
+                <SelectTrigger size="default" className="w-36 text-xs font-medium bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">{t("maintenance.filterAllStatuses")}</SelectItem>
+                  <SelectItem value="SCHEDULED">{t("maintenance.statusScheduled")}</SelectItem>
+                  <SelectItem value="IN_PROGRESS">{t("maintenance.statusInProgress")}</SelectItem>
+                  <SelectItem value="COMPLETED">{t("maintenance.statusCompleted")}</SelectItem>
+                  <SelectItem value="OVERDUE">{t("maintenance.statusOverdue")}</SelectItem>
+                  <SelectItem value="CANCELLED">{t("maintenance.statusCancelled")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Tech Filter (Admin/Tech) */}
+            {isAdminOrTech && uniqueTechnicians.length > 0 && (
+              <Select value={selectedTechFilter} onValueChange={(val) => setSelectedTechFilter(val)}>
+                <SelectTrigger size="default" className="w-36 text-xs font-medium bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">{t("maintenance.filterAllTechs")}</SelectItem>
+                  {uniqueTechnicians.map((tech) => (
+                    <SelectItem key={tech.id} value={tech.id}>
+                      {tech.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </div>
 
-        {/* Filters Toolbar - Calendar view only */}
-        {viewMode === "CALENDAR" && (
-          <div className="bg-card p-3 border border-border rounded-xl shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
-            <InputGroup size="sm" className="w-full md:max-w-xs bg-muted/40">
-              <InputGroupInput
-                placeholder={t("maintenance.searchPlaceholder")}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <InputGroupAddon>
-                <Search />
-              </InputGroupAddon>
-            </InputGroup>
-
-            <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-              {/* Status Filter */}
-              <div className="flex items-center gap-1.5">
-                <ListFilter className="h-3.5 w-3.5 text-muted-foreground" />
-                <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val)}>
-                  <SelectTrigger size="default" className="w-36 text-xs font-medium bg-background">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ALL">{t("maintenance.filterAllStatuses")}</SelectItem>
-                    <SelectItem value="SCHEDULED">{t("maintenance.statusScheduled")}</SelectItem>
-                    <SelectItem value="IN_PROGRESS">{t("maintenance.statusInProgress")}</SelectItem>
-                    <SelectItem value="COMPLETED">{t("maintenance.statusCompleted")}</SelectItem>
-                    <SelectItem value="OVERDUE">{t("maintenance.statusOverdue")}</SelectItem>
-                    <SelectItem value="CANCELLED">{t("maintenance.statusCancelled")}</SelectItem>
-                  </SelectContent>
-                </Select>
+        {/* Page.Date / Page.Calendar Component */}
+        <Page.Date
+          currentDate={currentDate}
+          onDateChange={setCurrentDate}
+          events={calendarEvents}
+          onEventClick={(evt) => setSelectedEventDetails(evt.data as DeviceMaintenance)}
+          onDateClick={() => openScheduleModal()}
+          renderEvent={(event) => {
+            const m = event.data as DeviceMaintenance;
+            return (
+              <div
+                className={cn(
+                  "w-full text-left text-[10px] font-semibold px-1.5 py-0.5 rounded border truncate transition-all flex items-center gap-1 cursor-pointer shadow-2xs",
+                  event.variant === "success" && "bg-primary/10 text-primary border-primary/20",
+                  event.variant === "warning" && "bg-secondary text-secondary-foreground border-border",
+                  event.variant === "destructive" && "bg-destructive/10 text-destructive border-destructive/20",
+                  event.variant === "default" && "bg-muted text-muted-foreground border-border",
+                  (!event.variant || event.variant === "primary") && "bg-primary/15 text-primary border-primary/30"
+                )}
+                title={`${m.title} - ${m.device_name || ""}`}
+              >
+                <Laptop className="h-2.5 w-2.5 shrink-0" />
+                <span className="truncate">{m.device_name || t("devices.unnamedDevice")}</span>
               </div>
+            );
+          }}
+        />
+      </Page.View>
 
-              {/* Tech Filter (Admin/Tech) */}
-              {isAdminOrTech && uniqueTechnicians.length > 0 && (
-                <Select value={selectedTechFilter} onValueChange={(val) => setSelectedTechFilter(val)}>
-                  <SelectTrigger size="default" className="w-36 text-xs font-medium bg-background">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ALL">{t("maintenance.filterAllTechs")}</SelectItem>
-                    {uniqueTechnicians.map((tech) => (
-                      <SelectItem key={tech.id} value={tech.id}>
-                        {tech.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* CALENDAR VIEW GRID */}
-        {viewMode === "CALENDAR" && (
-          <div className="bg-card border border-border rounded-xl shadow-xs overflow-hidden">
-            {/* Day of Week Headers */}
-            <div className="grid grid-cols-7 border-b border-border bg-muted/30 text-center font-bold text-[10px] text-muted-foreground py-1 font-heading">
-              <div>{t("calendar.sun")}</div>
-              <div>{t("calendar.mon")}</div>
-              <div>{t("calendar.tue")}</div>
-              <div>{t("calendar.wed")}</div>
-              <div>{t("calendar.thu")}</div>
-              <div>{t("calendar.fri")}</div>
-              <div>{t("calendar.sat")}</div>
-            </div>
-
-            {/* Days Grid Cells */}
-            <div className="grid grid-cols-7 auto-rows-fr divide-x divide-y divide-border">
-              {calendarDays.map((dayItem, idx) => {
-                const isToday = dayItem.date.toDateString() === new Date().toDateString();
-                const dayMaintenances = filteredMaintenances.filter(
-                  (m) => new Date(m.scheduled_date).toDateString() === dayItem.date.toDateString(),
-                );
-
-                return (
-                  <div
-                    key={idx}
-                    className={`group min-h-18 p-1 flex flex-col justify-start transition-colors ${
-                      !dayItem.isCurrentMonth ? "bg-muted/10 text-muted-foreground/40" : "bg-card text-foreground"
-                    }`}
-                  >
-                    <div className="flex justify-between items-center mb-0.5 px-0.5">
-                      <span
-                        className={`text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center ${
-                          isToday
-                            ? "bg-primary text-primary-foreground font-heading"
-                            : dayItem.isCurrentMonth
-                              ? "text-foreground"
-                              : "text-muted-foreground"
-                        }`}
-                      >
-                        {dayItem.date.getDate()}
-                      </span>
-                      {dayItem.isCurrentMonth && (
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          onClick={() => openScheduleModal()}
-                          className="h-4 w-4 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground p-0 cursor-pointer transition-opacity"
-                          title={t("maintenance.scheduleBtn")}
-                        >
-                          <Plus className="h-2.5 w-2.5" />
-                        </Button>
-                      )}
-                    </div>
-
-                    {/* Events List for Day */}
-                    <div className="space-y-0.5 overflow-y-auto max-h-13.5 pr-0.5">
-                      {dayMaintenances.map((m) => (
-                        <div
-                          key={m.id}
-                          onClick={() => setSelectedEventDetails(m)}
-                          className={`px-1 py-0.5 rounded border text-[9px] cursor-pointer font-medium leading-tight truncate transition-all hover:scale-[1.01] shadow-xs ${
-                            m.status === "COMPLETED"
-                              ? "bg-primary/10 text-primary border-primary/20"
-                              : m.status === "IN_PROGRESS"
-                                ? "bg-secondary text-secondary-foreground border-border"
-                                : m.status === "OVERDUE"
-                                  ? "bg-destructive/10 text-destructive border-destructive/20"
-                                  : "bg-primary/10 text-primary border-primary/20"
-                          }`}
-                          title={`${m.title} - ${m.device_name || ""}`}
-                        >
-                          <div className="flex items-center gap-1 font-bold">
-                            <Laptop className="h-2 w-2 shrink-0" />
-                            <span className="truncate">{m.device_name || t("devices.unnamedDevice")}</span>
-                          </div>
-                          {m.client_name && (
-                            <p className="text-[8px] opacity-75 truncate leading-none mt-0.5">{m.client_name}</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* LIST VIEW TABLE */}
-        {viewMode === "LIST" && (
-          <div className="overflow-hidden">
-            <DataTable
-              columns={listColumns}
-              data={paginatedMaintenances}
-              noDataMessage={t("maintenance.noMaintenancesFound")}
-              loading={loading}
-              search={{
-                value: searchQuery,
-                onChange: handleSearchChange,
-                placeholder: t("maintenance.searchPlaceholder"),
-              }}
-              filters={[
-                {
-                  id: "status",
-                  value: statusFilter === "ALL" ? "" : statusFilter,
-                  onChange: (val) => handleStatusFilterChangeForList(val || "ALL"),
-                  options: [
-                    { value: "SCHEDULED", label: t("maintenance.statusScheduled") },
-                    { value: "IN_PROGRESS", label: t("maintenance.statusInProgress") },
-                    { value: "COMPLETED", label: t("maintenance.statusCompleted") },
-                    { value: "OVERDUE", label: t("maintenance.statusOverdue") },
-                    { value: "CANCELLED", label: t("maintenance.statusCancelled") },
-                  ],
-                  placeholder: t("maintenance.filterAllStatuses"),
-                },
-                ...(isAdminOrTech && uniqueTechnicians.length > 0
-                  ? [
-                      {
-                        id: "tech",
-                        value: selectedTechFilter === "ALL" ? "" : selectedTechFilter,
-                        onChange: (val: string) => handleTechFilterChange(val || "ALL"),
-                        options: uniqueTechnicians.map((tech) => ({ value: tech.id, label: tech.name })),
-                        placeholder: t("maintenance.filterAllTechs"),
-                      },
-                    ]
-                  : []),
-              ]}
-              pagination={{
-                page: listPage,
-                totalPages: listTotalPages,
-                totalItems: filteredMaintenances.length,
-                limit: listLimit,
-                onPageChange: setListPage,
-                onLimitChange: handleListLimitChange,
-              }}
-            />
-          </div>
-        )}
-      </div>
+      {/* LIST VIEW TABLE */}
+      <Page.View type="list">
+        <div className="overflow-hidden">
+          <DataTable
+            columns={listColumns}
+            data={paginatedMaintenances}
+            noDataMessage={t("maintenance.noMaintenancesFound")}
+            loading={loading}
+            search={{
+              value: searchQuery,
+              onChange: handleSearchChange,
+              placeholder: t("maintenance.searchPlaceholder"),
+            }}
+            filters={[
+              {
+                id: "status",
+                value: statusFilter === "ALL" ? "" : statusFilter,
+                onChange: (val) => handleStatusFilterChangeForList(val || "ALL"),
+                options: [
+                  { value: "SCHEDULED", label: t("maintenance.statusScheduled") },
+                  { value: "IN_PROGRESS", label: t("maintenance.statusInProgress") },
+                  { value: "COMPLETED", label: t("maintenance.statusCompleted") },
+                  { value: "OVERDUE", label: t("maintenance.statusOverdue") },
+                  { value: "CANCELLED", label: t("maintenance.statusCancelled") },
+                ],
+                placeholder: t("maintenance.filterAllStatuses"),
+              },
+              ...(isAdminOrTech && uniqueTechnicians.length > 0
+                ? [
+                    {
+                      id: "tech",
+                      value: selectedTechFilter === "ALL" ? "" : selectedTechFilter,
+                      onChange: (val: string) => handleTechFilterChange(val || "ALL"),
+                      options: uniqueTechnicians.map((tech) => ({ value: tech.id, label: tech.name })),
+                      placeholder: t("maintenance.filterAllTechs"),
+                    },
+                  ]
+                : []),
+            ]}
+            pagination={{
+              page: listPage,
+              totalPages: listTotalPages,
+              totalItems: filteredMaintenances.length,
+              limit: listLimit,
+              onPageChange: setListPage,
+              onLimitChange: handleListLimitChange,
+            }}
+          />
+        </div>
+      </Page.View>
 
       {/* Schedule Maintenance Modal */}
       <ScheduleMaintenanceModal

@@ -9,6 +9,7 @@ import { Page } from '@/components/Page';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   TicketDetailHeader,
+  TicketStatusBar,
   TicketDescriptionCard,
   TicketFlightRecorderCard,
   TicketChatterOverlay,
@@ -74,38 +75,45 @@ export function TicketDetailPage() {
     if (!showSkeleton) return null;
     return (
       <Page>
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 animate-fade-in">
-          <div className="space-y-2 w-full md:w-1/2">
-            <Skeleton className="h-8 w-3/4" />
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-5 w-20 rounded" />
-              <Skeleton className="h-4 w-40" />
-            </div>
-          </div>
-          <Skeleton className="h-8 w-28 rounded-lg" />
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 animate-fade-in">
+          <Skeleton className="h-9 w-48 rounded-md" />
+          <Skeleton className="h-8 w-64 rounded-md" />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pb-8">
-          <div className="lg:col-span-8 flex flex-col gap-6 w-full">
-            <div className="bg-card border border-border rounded-xl p-5 shadow-xs space-y-4">
-              <Skeleton className="h-5 w-28" />
-              <div className="bg-muted rounded-lg p-4 space-y-2">
-                <Skeleton className="h-3 w-full" />
-                <Skeleton className="h-3 w-5/6" />
-                <Skeleton className="h-3 w-2/3" />
+        <Page.Sheet maxWidth="full" elevation="xs" className="mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-border/60">
+            <div className="space-y-2 w-full md:w-1/2">
+              <Skeleton className="h-8 w-3/4" />
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-5 w-20 rounded" />
+                <Skeleton className="h-4 w-40" />
+              </div>
+            </div>
+            <Skeleton className="h-10 w-28 rounded-md" />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pt-2">
+            <div className="lg:col-span-8 flex flex-col gap-6 w-full">
+              <div className="bg-card border border-border rounded-xl p-5 shadow-xs space-y-4">
+                <Skeleton className="h-5 w-28" />
+                <div className="bg-muted rounded-lg p-4 space-y-2">
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-5/6" />
+                  <Skeleton className="h-3 w-2/3" />
+                </div>
+              </div>
+            </div>
+            <div className="lg:col-span-4 flex flex-col gap-6 w-full">
+              <div className="bg-card border border-border rounded-xl p-5 shadow-xs space-y-4">
+                <Skeleton className="h-5 w-40" />
+                <div className="space-y-3 pt-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
               </div>
             </div>
           </div>
-          <div className="lg:col-span-4 flex flex-col gap-6 w-full">
-            <div className="bg-card border border-border rounded-xl p-5 shadow-xs space-y-4">
-              <Skeleton className="h-5 w-40" />
-              <div className="space-y-3 pt-2">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full" />
-              </div>
-            </div>
-          </div>
-        </div>
+        </Page.Sheet>
       </Page>
     );
   }
@@ -154,56 +162,67 @@ export function TicketDetailPage() {
 
   return (
     <Page>
-      <TicketDetailHeader
+      {/* Odoo Workflow Stage Pipeline & Action Controls */}
+      <TicketStatusBar
         ticket={ticket}
         user={user}
         statusUpdating={statusUpdating}
-        getStatusLabel={getStatusLabel}
         onStatusChange={handleStatusChange}
-        responseCount={responses.length}
-        onToggleChat={handleToggleChat}
-        isChatOpen={isChatOpen}
+        className="mb-4"
       />
 
-      {/* Primary Ticket Form & Diagnostic Telemetry Pane (Unconstrained Full Layout) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pb-8">
-        <div className="lg:col-span-8 flex flex-col gap-6 w-full">
-          <TicketDescriptionCard description={ticket.description} />
-          {(ticket.device_snapshot || ticket.reporter_name) && (
-            <TicketFlightRecorderCard
-              snapshot={ticket.device_snapshot}
-              reporterName={ticket.reporter_name}
-              reporterEmail={ticket.reporter_email}
-              deviceName={ticket.device_name}
-            />
-          )}
-          <TicketTimeline timeline={timeline} getStatusLabel={getStatusLabel} />
-        </div>
+      {/* Odoo Document Sheet Container (<sheet>) */}
+      <Page.Sheet maxWidth="full" elevation="xs" className="mb-8">
+        <TicketDetailHeader
+          ticket={ticket}
+          user={user}
+          getStatusLabel={getStatusLabel}
+          responseCount={responses.length}
+          onToggleChat={handleToggleChat}
+          isChatOpen={isChatOpen}
+          sla={sla}
+        />
 
-        <div className="lg:col-span-4 flex flex-col gap-6 w-full">
-          <TicketSidebar
-            ticket={ticket}
-            sla={sla}
-            canAssign={canAssign}
-            technicians={technicians}
-            loadingTechs={loadingTechs}
-            selectedTechId={selectedTechId}
-            setSelectedTechId={setSelectedTechId}
-            assigning={assigning}
-            assignMessage={assignMessage}
-            onAssign={handleAssign}
-            attachments={attachments}
-            uploading={uploading}
-            uploadError={uploadError}
-            isDragOver={isDragOver}
-            setIsDragOver={setIsDragOver}
-            onFileUpload={handleFileUpload}
-            onPreviewFile={setPreviewFile}
-            getPriorityLabel={getPriorityLabel}
-            getCategoryLabel={getCategoryLabel}
-          />
+        {/* Primary Ticket Form & Diagnostic Telemetry Pane */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pt-2">
+          <div className="lg:col-span-8 flex flex-col gap-6 w-full">
+            <TicketDescriptionCard description={ticket.description} />
+            {(ticket.device_snapshot || ticket.reporter_name) && (
+              <TicketFlightRecorderCard
+                snapshot={ticket.device_snapshot}
+                reporterName={ticket.reporter_name}
+                reporterEmail={ticket.reporter_email}
+                deviceName={ticket.device_name}
+              />
+            )}
+            <TicketTimeline timeline={timeline} getStatusLabel={getStatusLabel} />
+          </div>
+
+          <div className="lg:col-span-4 flex flex-col gap-6 w-full">
+            <TicketSidebar
+              ticket={ticket}
+              sla={sla}
+              canAssign={canAssign}
+              technicians={technicians}
+              loadingTechs={loadingTechs}
+              selectedTechId={selectedTechId}
+              setSelectedTechId={setSelectedTechId}
+              assigning={assigning}
+              assignMessage={assignMessage}
+              onAssign={handleAssign}
+              attachments={attachments}
+              uploading={uploading}
+              uploadError={uploadError}
+              isDragOver={isDragOver}
+              setIsDragOver={setIsDragOver}
+              onFileUpload={handleFileUpload}
+              onPreviewFile={setPreviewFile}
+              getPriorityLabel={getPriorityLabel}
+              getCategoryLabel={getCategoryLabel}
+            />
+          </div>
         </div>
-      </div>
+      </Page.Sheet>
 
       {/* Floating Bottom-Right Docked Chatter Overlay (Collapsible & Responsive) */}
       <TicketChatterOverlay

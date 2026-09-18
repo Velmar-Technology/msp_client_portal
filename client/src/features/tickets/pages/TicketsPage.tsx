@@ -1,14 +1,15 @@
-import { useState, useMemo } from "react";
-import { Plus, Eye, MoreHorizontal, Ban, ChevronRight } from "lucide-react";
+import { useState, useMemo, useCallback } from "react";
+import { Plus, Eye, MoreHorizontal, Ban, ChevronRight, List, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Page } from "@/components/Page";
 import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
 import type { ColumnDef, Column } from "@tanstack/react-table";
+import { useUrlState } from "@/hooks/useUrlState";
 import { useTicketsPage } from "../hooks/useTicketsPage";
 import type { TicketItem as Ticket, TicketResponseItem as TicketResponse } from "../api/ticketService";
 import { ticketService } from "../api/ticketService";
 import { useTranslation } from "react-i18next";
-import { NewTicketModal } from "../components/NewTicketModal";
+import { NewTicketModal, TicketKanbanBoard } from "../components";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -161,6 +162,18 @@ export function TicketsPage() {
     handleTicketAction,
     setSelectedTickets,
   } = useTicketsPage();
+
+  const { getParam, setParam } = useUrlState();
+  const viewParam = getParam("view", "list") as "list" | "kanban";
+  const [viewMode, setViewMode] = useState<"list" | "kanban">(viewParam === "kanban" ? "kanban" : "list");
+
+  const handleViewChange = useCallback(
+    (mode: "list" | "kanban") => {
+      setViewMode(mode);
+      setParam("view", mode === "list" ? null : mode);
+    },
+    [setParam],
+  );
 
   const markTicketAsRead = useTicketReadStore((state) => state.markAsRead);
 
@@ -324,114 +337,153 @@ export function TicketsPage() {
 
   return (
     <Page
-      title={t("tickets.title")}
-      subtitle={t("tickets.subtitle")}
-      actions={
-        canCreateTicket ? (
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => setShowNewTicket(true)}
-            className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span>{t("tickets.newTicket")}</span>
-          </Button>
-        ) : undefined
-      }
+      activeView={viewMode}
+      onViewChange={handleViewChange}
+      defaultView={viewMode}
+      availableViews={[
+        { value: "list", label: t("resources.viewList", "List"), icon: List, title: t("resources.viewList", "List") },
+        { value: "kanban", label: t("tickets.kanban", "Kanban"), icon: LayoutGrid, title: t("tickets.kanban", "Kanban") },
+      ]}
+      totalCount={total}
+      defaultPage={page}
+      defaultPageSize={limit}
     >
-      <DataTable
-        columns={columns}
-        data={tickets}
-        loading={loading}
-        noDataMessage={t("tickets.noTicketsFound")}
-        onRowClick={(ticket) => {
-          markTicketAsRead(ticket.id, user?.id);
-          navigate(`/tickets/${ticket.id}`);
-        }}
-        sorting={sorting}
-        onSortingChange={handleSortingChange}
-        enableSorting
-        manualSorting
-        search={{
-          value: searchQuery,
-          onChange: setSearchQuery,
-          placeholder: t("tickets.searchPlaceholder"),
-        }}
-        filters={[
-          {
-            id: "status",
-            value: statusFilter,
-            onChange: setStatusFilter,
-            options: [
-              { value: "OPEN", label: t("tickets.filterOpen") },
-              { value: "IN_PROGRESS", label: t("tickets.filterInProgress") },
-              { value: "RESOLVED", label: t("tickets.filterResolved") },
-              { value: "CLOSED", label: t("tickets.filterClosed") },
-              { value: "CANCELLED", label: t("tickets.filterCancelled") },
-            ],
-            placeholder: t("tickets.filterAllStatuses"),
-          },
-          {
-            id: "category",
-            value: categoryFilter,
-            onChange: setCategoryFilter,
-            options: [
-              { value: "REPAIR", label: t("tickets.categories.REPAIR") },
-              { value: "WARRANTY", label: t("tickets.categories.WARRANTY") },
-              { value: "SERVICE_OUTAGE", label: t("tickets.categories.SERVICE_OUTAGE") },
-              {
-                value: "PREVENTATIVE_MAINTENANCE",
-                label: t("tickets.categories.PREVENTATIVE_MAINTENANCE") || "Maintenance",
-              },
-              { value: "HELPDESK", label: t("tickets.categories.HELPDESK") },
-              { value: "AI", label: t("tickets.categories.AI") },
-            ],
-            placeholder: t("tickets.filterAllCategories"),
-          },
-          {
-            id: "priority",
-            value: priorityFilter,
-            onChange: setPriorityFilter,
-            options: [
-              { value: "LOW", label: t("tickets.priorities.LOW") },
-              { value: "MEDIUM", label: t("tickets.priorities.MEDIUM") },
-              { value: "HIGH", label: t("tickets.priorities.HIGH") },
-              { value: "CRITICAL", label: t("tickets.priorities.CRITICAL") },
-            ],
-            placeholder: t("tickets.filterAllPriorities"),
-          },
-          {
-            id: "dateRange",
-            value: dateRangeFilter,
-            onChange: setDateRangeFilter,
-            options: [
-              { value: "all", label: t("tickets.filterAllDates") },
-              { value: "today", label: t("tickets.filterToday") },
-              { value: "7d", label: t("tickets.filterLast7Days") },
-              { value: "30d", label: t("tickets.filterLast30Days") },
-              { value: "month", label: t("tickets.filterThisMonth") },
-            ],
-          },
-        ]}
-        enableRowSelection
-        onSelectedRowsChange={setSelectedTickets}
-        bulkActions={[
-          {
-            label: t("tickets.bulkCancel"),
-            onClick: handleBulkCancelClick,
-            variant: "destructive",
-          },
-        ]}
-        pagination={{
-          page,
-          totalPages,
-          totalItems: total,
-          limit,
-          onPageChange: setPage,
-          onLimitChange: handleLimitChange,
-        }}
+      <Page.ControlPanel
+        title={t("tickets.title")}
+        subtitle={t("tickets.subtitle")}
+        actions={
+          canCreateTicket ? (
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => setShowNewTicket(true)}
+              className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>{t("tickets.newTicket")}</span>
+            </Button>
+          ) : undefined
+        }
+        viewsSlot={
+          <Page.ViewSwitcher
+            value={viewMode}
+            onChange={handleViewChange}
+            options={[
+              { value: "list", label: t("resources.viewList", "List"), icon: List, title: t("resources.viewList", "List") },
+              { value: "kanban", label: t("tickets.kanban", "Kanban"), icon: LayoutGrid, title: t("tickets.kanban", "Kanban") },
+            ]}
+          />
+        }
+        searchSlot={null}
+        pagerSlot={null}
       />
+
+      <Page.View type="list">
+        <DataTable
+          columns={columns}
+          data={tickets}
+          loading={loading}
+          noDataMessage={t("tickets.noTicketsFound")}
+          onRowClick={(ticket) => {
+            markTicketAsRead(ticket.id, user?.id);
+            navigate(`/tickets/${ticket.id}`);
+          }}
+          sorting={sorting}
+          onSortingChange={handleSortingChange}
+          enableSorting
+          manualSorting
+          search={{
+            value: searchQuery,
+            onChange: setSearchQuery,
+            placeholder: t("tickets.searchPlaceholder"),
+          }}
+          filters={[
+            {
+              id: "status",
+              value: statusFilter,
+              onChange: setStatusFilter,
+              options: [
+                { value: "OPEN", label: t("tickets.filterOpen") },
+                { value: "IN_PROGRESS", label: t("tickets.filterInProgress") },
+                { value: "RESOLVED", label: t("tickets.filterResolved") },
+                { value: "CLOSED", label: t("tickets.filterClosed") },
+                { value: "CANCELLED", label: t("tickets.filterCancelled") },
+              ],
+              placeholder: t("tickets.filterAllStatuses"),
+            },
+            {
+              id: "category",
+              value: categoryFilter,
+              onChange: setCategoryFilter,
+              options: [
+                { value: "REPAIR", label: t("tickets.categories.REPAIR") },
+                { value: "WARRANTY", label: t("tickets.categories.WARRANTY") },
+                { value: "SERVICE_OUTAGE", label: t("tickets.categories.SERVICE_OUTAGE") },
+                {
+                  value: "PREVENTATIVE_MAINTENANCE",
+                  label: t("tickets.categories.PREVENTATIVE_MAINTENANCE") || "Maintenance",
+                },
+                { value: "HELPDESK", label: t("tickets.categories.HELPDESK") },
+                { value: "AI", label: t("tickets.categories.AI") },
+              ],
+              placeholder: t("tickets.filterAllCategories"),
+            },
+            {
+              id: "priority",
+              value: priorityFilter,
+              onChange: setPriorityFilter,
+              options: [
+                { value: "LOW", label: t("tickets.priorities.LOW") },
+                { value: "MEDIUM", label: t("tickets.priorities.MEDIUM") },
+                { value: "HIGH", label: t("tickets.priorities.HIGH") },
+                { value: "CRITICAL", label: t("tickets.priorities.CRITICAL") },
+              ],
+              placeholder: t("tickets.filterAllPriorities"),
+            },
+            {
+              id: "dateRange",
+              value: dateRangeFilter,
+              onChange: setDateRangeFilter,
+              options: [
+                { value: "all", label: t("tickets.filterAllDates") },
+                { value: "today", label: t("tickets.filterToday") },
+                { value: "7d", label: t("tickets.filterLast7Days") },
+                { value: "30d", label: t("tickets.filterLast30Days") },
+                { value: "month", label: t("tickets.filterThisMonth") },
+              ],
+            },
+          ]}
+          enableRowSelection
+          onSelectedRowsChange={setSelectedTickets}
+          bulkActions={[
+            {
+              label: t("tickets.bulkCancel"),
+              onClick: handleBulkCancelClick,
+              variant: "destructive",
+            },
+          ]}
+          pagination={{
+            page,
+            totalPages,
+            totalItems: total,
+            limit,
+            onPageChange: setPage,
+            onLimitChange: handleLimitChange,
+          }}
+        />
+      </Page.View>
+
+      <Page.View type="kanban">
+        <TicketKanbanBoard
+          tickets={tickets}
+          loading={loading}
+          userId={user?.id}
+          onTicketClick={(ticket) => {
+            markTicketAsRead(ticket.id, user?.id);
+            navigate(`/tickets/${ticket.id}`);
+          }}
+        />
+      </Page.View>
 
       {/* New Ticket Modal */}
       {showNewTicket && <NewTicketModal onClose={() => setShowNewTicket(false)} onCreated={handleTicketCreated} />}

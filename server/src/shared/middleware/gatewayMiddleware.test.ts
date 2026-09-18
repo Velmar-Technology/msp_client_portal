@@ -5,14 +5,19 @@ import { env } from '@shared/config/env';
 import { gatewayAuthMiddleware } from './gatewayAuthMiddleware';
 import { createGatewayRateLimiter, resetRateLimitStore } from './gatewayRateLimiterMiddleware';
 import { gatewayHeaderPropagatorMiddleware } from './gatewayRouterMiddleware';
-import { userRepository } from '@modules/auth/repositories/UserRepository';
+import { userRepository } from '@modules/auth';
 import { RateLimitError } from '@shared/errors';
 
-vi.mock('@modules/auth/repositories/UserRepository', () => ({
-  userRepository: {
-    findById: vi.fn(),
-  },
-}));
+vi.mock('@modules/auth', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@modules/auth')>();
+  return {
+    ...actual,
+    userRepository: {
+      ...actual.userRepository,
+      findById: vi.fn(),
+    },
+  };
+});
 
 describe('API Gateway Layer Middleware', () => {
   let req: Partial<Request>;

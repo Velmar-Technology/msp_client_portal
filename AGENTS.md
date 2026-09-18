@@ -27,6 +27,7 @@ Use ONLY the exact workspace commands below:
 * **Run Tests:** `npm -w server run test` (Backend) / `npm -w client run test:run` (Frontend)
 * **Database Migrations:** `npm -w server run db:migrate`
 * **Linting:** `npm -w server run lint` / `npm -w client run lint`
+* **Knowledge Graph:** `npm run graph:build` / `npm run graph:reconstruct` (rebuilds graph if files are missing), `npm run graph:query -- "<question>"` (query architecture map)
 
 ## 3. Clean Architecture & Layer Boundary Rules
 

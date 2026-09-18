@@ -305,7 +305,7 @@ export class TenantByokService {
         const res = await fetch(url, {
           method: 'GET',
           headers: {
-            'x-api-key': apiKey,
+            'x-api-key': apiKey || '',
             'anthropic-version': '2023-06-01',
           },
           signal: AbortSignal.timeout(8000),

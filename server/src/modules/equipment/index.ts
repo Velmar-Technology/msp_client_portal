@@ -1,4 +1,4 @@
 export * from './repositories/EquipmentRepository';
 export * from './services/EquipmentService';
-export * from './routes/equipment.routes';
+export { default as equipmentRoutes } from './routes/equipment.routes';
 

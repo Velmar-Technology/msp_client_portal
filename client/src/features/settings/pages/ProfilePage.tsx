@@ -317,7 +317,7 @@ export function ProfilePage() {
   const isAdmin = user?.role === 'ADMIN';
 
   return (
-    <Page className="max-w-4xl" title={t("profile.title")} subtitle={t("profile.subtitle")}>
+    <Page title={t("profile.title")} subtitle={t("profile.subtitle")}>
       <div className="grid gap-6">
         <ProfileIdentityCard
           user={user}

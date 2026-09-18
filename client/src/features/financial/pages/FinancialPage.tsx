@@ -79,14 +79,35 @@ export function FinancialPage() {
     );
   }
 
+  const isPayroll = activeTab === "payroll";
+
   return (
-    <Page
-      title={t("financial.title")}
-      subtitle={t("financial.subtitle")}
-      actions={
-        <>
-          {activeTab === "overview" && (
-            <>
+    <Page<"dashboard" | "payroll">
+      defaultView="dashboard"
+      activeView={isPayroll ? "payroll" : "dashboard"}
+      onViewChange={(view) => setParam("tab", view === "dashboard" ? "overview" : view)}
+      availableViews={[
+        {
+          value: "dashboard",
+          label: "Overview & Charts",
+          icon: BarChart3,
+          title: "Overview & Charts",
+        },
+        {
+          value: "payroll",
+          label: "Technician Commissions",
+          icon: Users,
+          title: "Technician Commissions",
+          className: "text-emerald-600 dark:text-emerald-400",
+        },
+      ]}
+    >
+      <Page.ControlPanel
+        title={t("financial.title")}
+        subtitle={t("financial.subtitle")}
+        actions={
+          !isPayroll ? (
+            <div className="flex items-center gap-2">
               {/* Date Selector */}
               <Select value={dateRange} onValueChange={(val) => setDateRange(val as DateRange)}>
                 <SelectTrigger size="default" className="h-7 w-36 text-xs font-medium bg-background">
@@ -113,80 +134,61 @@ export function FinancialPage() {
 
               {/* Log Expense Button (ADMIN only) */}
               {isAdmin && <LogExpenseDialog onExpenseLogged={refresh} />}
-            </>
-          )}
+            </div>
+          ) : undefined
+        }
+        viewsSlot={<Page.ViewSwitcher size="sm" />}
+        searchSlot={null}
+        pagerSlot={null}
+      />
 
-          {/* Sub-tab Switcher */}
-          <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border mr-1">
-            <Button
-              type="button"
-              variant={activeTab === "overview" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setParam("tab", "overview")}
-              className="h-6.5 text-xs font-semibold gap-1 px-2.5 cursor-pointer"
-            >
-              <BarChart3 className="h-3 w-3" />
-              <span>Overview & Charts</span>
-            </Button>
-            <Button
-              type="button"
-              variant={activeTab === "payroll" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setParam("tab", "payroll")}
-              className="h-6.5 text-xs font-semibold gap-1 px-2.5 cursor-pointer text-emerald-600 dark:text-emerald-400"
-            >
-              <Users className="h-3 w-3" />
-              <span>Technician Commissions</span>
-            </Button>
+      {/* Dashboard Analytical View */}
+      <Page.View type="dashboard" className="space-y-5">
+        {/* KPI Summary Cards (Top Row) */}
+        <section aria-label="KPI Metrics">
+          <KpiCards kpis={kpis} />
+        </section>
+
+        {/* Interactive Charts Section (Middle Grid) */}
+        <section className="grid grid-cols-1 gap-4 lg:grid-cols-3 items-stretch" aria-label="Financial Trends">
+          {/* Left: Revenue vs Expenses (Col-span 2) */}
+          <div className="lg:col-span-2 h-full flex flex-col">
+            <ChunkErrorBoundary fallback={<ChartSkeletonPlaceholder className="h-full min-h-[320px]" />}>
+              <Suspense fallback={<ChartSkeletonPlaceholder className="h-full min-h-[320px]" />}>
+                <RevenueChart
+                  data={monthlyData}
+                  hoveredIndex={hoveredMonthIndex}
+                  setHoveredIndex={setHoveredMonthIndex}
+                />
+              </Suspense>
+            </ChunkErrorBoundary>
           </div>
-        </>
-      }
-    >
-      {activeTab === "payroll" ? (
+
+          {/* Right: Expense Breakdown (Col-span 1) */}
+          <div className="lg:col-span-1 h-full flex flex-col">
+            <ChunkErrorBoundary fallback={<ChartSkeletonPlaceholder className="h-full min-h-[320px]" />}>
+              <Suspense fallback={<ChartSkeletonPlaceholder className="h-full min-h-[320px]" />}>
+                <ExpenseDoughnut
+                  categories={expenseCategories}
+                  hoveredIndex={hoveredCategoryIndex}
+                  setHoveredIndex={setHoveredCategoryIndex}
+                  totalExpenses={totalExpensesFormatted}
+                />
+              </Suspense>
+            </ChunkErrorBoundary>
+          </div>
+        </section>
+
+        {/* Recent Transactions Section (Bottom Table) */}
+        <section aria-label="Ledger Movements" className="mt-1">
+          <TransactionsTable transactions={transactions} />
+        </section>
+      </Page.View>
+
+      {/* Technician Payroll Table View */}
+      <Page.View type="payroll">
         <TechnicianPayrollTable />
-      ) : (
-        <div className="flex flex-col gap-4">
-          {/* KPI Summary Cards (Top Row) */}
-          <section aria-label="KPI Metrics">
-            <KpiCards kpis={kpis} />
-          </section>
-
-          {/* Interactive Charts Section (Middle Grid) */}
-          <section className="grid grid-cols-1 gap-4 lg:grid-cols-3 items-stretch" aria-label="Financial Trends">
-            {/* Left: Revenue vs Expenses (Col-span 2) */}
-            <div className="lg:col-span-2 h-full flex flex-col">
-              <ChunkErrorBoundary fallback={<ChartSkeletonPlaceholder className="h-full min-h-[320px]" />}>
-                <Suspense fallback={<ChartSkeletonPlaceholder className="h-full min-h-[320px]" />}>
-                  <RevenueChart
-                    data={monthlyData}
-                    hoveredIndex={hoveredMonthIndex}
-                    setHoveredIndex={setHoveredMonthIndex}
-                  />
-                </Suspense>
-              </ChunkErrorBoundary>
-            </div>
-
-            {/* Right: Expense Breakdown (Col-span 1) */}
-            <div className="lg:col-span-1 h-full flex flex-col">
-              <ChunkErrorBoundary fallback={<ChartSkeletonPlaceholder className="h-full min-h-[320px]" />}>
-                <Suspense fallback={<ChartSkeletonPlaceholder className="h-full min-h-[320px]" />}>
-                  <ExpenseDoughnut
-                    categories={expenseCategories}
-                    hoveredIndex={hoveredCategoryIndex}
-                    setHoveredIndex={setHoveredCategoryIndex}
-                    totalExpenses={totalExpensesFormatted}
-                  />
-                </Suspense>
-              </ChunkErrorBoundary>
-            </div>
-          </section>
-
-          {/* Recent Transactions Section (Bottom Table) */}
-          <section aria-label="Ledger Movements" className="mt-1">
-            <TransactionsTable transactions={transactions} />
-          </section>
-        </div>
-      )}
+      </Page.View>
     </Page>
   );
 }

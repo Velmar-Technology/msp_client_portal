@@ -11,6 +11,6 @@ export * from './services/AssignmentService';
 export * from './services/EscalationService';
 export * from './services/EscalationScheduler';
 export * from './services/TicketStreamGateway';
-export * from './routes/ticket.routes';
+export { default as ticketRoutes } from './routes/ticket.routes';
 
 

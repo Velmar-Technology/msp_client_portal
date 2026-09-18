@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
  */
 export const StyleGuidePage: React.FC = () => {
   return (
-    <div className="space-y-8 p-6 max-w-6xl mx-auto">
+    <div className="space-y-8 p-6 w-full">
       <PageHeader
         title="Design System Style Guide"
         subtitle="Live reference page showcasing composed layout blocks, semantic color tokens, and UI primitives."
