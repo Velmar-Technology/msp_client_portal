@@ -12,6 +12,7 @@ import {
   Laptop,
   KeyRound,
   Lock,
+  Activity,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useEntitlements } from "@/hooks/useEntitlements";
@@ -38,6 +39,7 @@ export interface DeviceActionsCellProps {
   onDeleteAdminDevice?: (equip: Partial<SubscriptionEquipment>) => void;
   onDeployClient?: (equip: Partial<SubscriptionEquipment>) => void;
   onDeployAgent?: (equip: Partial<SubscriptionEquipment>) => void;
+  onOpenRMMDashboard?: (equip: Partial<SubscriptionEquipment>) => void;
 }
 
 /**
@@ -53,6 +55,7 @@ export const DeviceActionsCell = memo(function DeviceActionsCell({
   onOpenActivateWithOtp,
   onDeployClient,
   onDeployAgent,
+  onOpenRMMDashboard,
 }: DeviceActionsCellProps) {
   const { t } = useTranslation();
   const { hasPlanFeature } = useEntitlements();
@@ -118,6 +121,12 @@ export const DeviceActionsCell = memo(function DeviceActionsCell({
 
           {isActive ? (
             <>
+              {onOpenRMMDashboard && (
+                <DropdownMenuItem onClick={() => onOpenRMMDashboard(equip)} className="text-xs cursor-pointer">
+                  <Activity className="h-3.5 w-3.5 mr-1 text-blue-500" />
+                  {t("devices.actionRmmDashboard", "RMM Telemetry & Health")}
+                </DropdownMenuItem>
+              )}
               {equip.nextcloud_username && (
                 <DropdownMenuItem onClick={() => onOpenNcModal(equip)} className="text-xs cursor-pointer">
                   <Cloud className="h-3.5 w-3.5 mr-1" />

@@ -26,6 +26,18 @@ import {
 } from "./page/PageDashboard";
 import { PageCalendar } from "./page/PageCalendar";
 import { PageGraph } from "./page/PageGraph";
+import {
+  PageHeader,
+  PageHeaderRow,
+  PageTitleGroup,
+  PageTitle,
+  PageDescription,
+  PageBack,
+  PageActions,
+  PageToolbar,
+  PageFilters,
+  PageControls,
+} from "./page/PageHeader";
 import type {
   PageContextValue,
   UsePageViewOptions,
@@ -35,18 +47,24 @@ import type {
 export interface PageProps<T extends string = string>
   extends Omit<React.ComponentPropsWithoutRef<"div">, "title">,
     UsePageViewOptions<T> {
+  /** @deprecated Prefer using compound `<Page.Header><Page.Title>...</Page.Title></Page.Header>` */
   title?: React.ReactNode;
+  /** @deprecated Prefer using compound `<Page.Header><Page.Description>...</Page.Description></Page.Header>` */
   subtitle?: React.ReactNode;
+  /** @deprecated Prefer using compound `<Page.Header><Page.Actions>...</Page.Actions></Page.Header>` */
   actions?: React.ReactNode;
+  /** @deprecated Prefer placing `<Breadcrumbs />` inside `<Page.Header>` */
   showBreadcrumbs?: boolean;
   isLoading?: boolean;
   controller?: PageContextValue<T>;
+  /** @deprecated Prefer using compound `<Page.Tabs>` */
   tabs?: PageTabItem[];
   activeTab?: string;
   defaultTab?: string;
   onTabChange?: (tabId: string) => void;
   tabParamKey?: string;
   syncTabUrl?: boolean;
+  /** @deprecated Prefer placing tabs inside `<Page.Header>` or `<Page.Tabs>` */
   tabsSlot?: React.ReactNode;
   fullWidth?: boolean;
 }
@@ -174,6 +192,17 @@ export function PageRoot<T extends string = string>({
 
 // Compound component assembly
 export const Page = Object.assign(PageRoot, {
+  Header: PageHeader,
+  HeaderRow: PageHeaderRow,
+  TitleGroup: PageTitleGroup,
+  Title: PageTitle,
+  Description: PageDescription,
+  Back: PageBack,
+  Actions: PageActions,
+  Toolbar: PageToolbar,
+  Filters: PageFilters,
+  Controls: PageControls,
+  Breadcrumbs: Breadcrumbs,
   ControlPanel: PageControlPanel,
   ViewSwitcher: PageViewSwitcher,
   Search: PageSearch,
@@ -204,3 +233,4 @@ export const Page = Object.assign(PageRoot, {
 
 export default Page;
 export * from "./page/index";
+

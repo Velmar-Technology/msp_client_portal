@@ -11,30 +11,7 @@ import { Button } from '@/components/ui/button';
 import { useHelpPage } from '@/hooks/useHelpPage';
 import type { FAQ, Category } from '@/hooks/useHelpPage';
 
-interface HeaderProps {
-  t: (key: string) => string;
-  searchQuery: string;
-  setSearchQuery: (val: string) => void;
-}
 
-const HelpSearchHeader: React.FC<HeaderProps> = ({ t, searchQuery, setSearchQuery }) => (
-  <div className="flex flex-col md:flex-row md:items-center justify-between p-4 md:p-5 border-b border-border bg-card gap-4">
-    <div>
-      <h1 className="text-sm font-bold text-foreground leading-none font-heading">{t('help.title')}</h1>
-      <p className="text-xs text-muted-foreground mt-1">{t('help.subtitle')}</p>
-    </div>
-    <InputGroup size="sm" className="w-full md:max-w-xs shrink-0 bg-muted/40">
-      <InputGroupInput
-        placeholder={t('help.searchPlaceholder')}
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-      />
-      <InputGroupAddon>
-        <Search />
-      </InputGroupAddon>
-    </InputGroup>
-  </div>
-);
 
 interface TabsProps {
   categories: Category[];
@@ -192,10 +169,30 @@ export function HelpPage() {
   } = useHelpPage();
 
   return (
-    <Page showBreadcrumbs={false} className="w-full pt-2 pb-12">
-      <div className="border border-border bg-card rounded-xl overflow-hidden shadow-xs">
-        <HelpSearchHeader t={t} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-        
+    <Page className="w-full pb-12">
+      <Page.Header>
+        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
+        <Page.HeaderRow>
+          <Page.TitleGroup>
+            <Page.Title>{t('help.title')}</Page.Title>
+            <Page.Description>{t('help.subtitle')}</Page.Description>
+          </Page.TitleGroup>
+          <Page.Actions>
+            <InputGroup size="sm" className="w-full sm:w-64 bg-muted/40">
+              <InputGroupInput
+                placeholder={t('help.searchPlaceholder')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <InputGroupAddon>
+                <Search />
+              </InputGroupAddon>
+            </InputGroup>
+          </Page.Actions>
+        </Page.HeaderRow>
+      </Page.Header>
+
+      <div className="border border-border bg-card rounded-xl overflow-hidden shadow-xs mt-4">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-0">
           {/* Main FAQ Content */}
           <div className="md:col-span-8 p-4 md:p-5 border-b md:border-b-0 md:border-r border-border bg-muted/20">

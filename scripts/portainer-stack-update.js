@@ -173,7 +173,7 @@ async function main() {
     stackFileContent: composeContent,
     env: envArray,
     prune: true,
-    pullImage: true
+    pullImage: process.env.PORTAINER_PULL_IMAGE !== 'false'
   };
 
   const updateUrl = `${portainerUrl}/api/stacks/${stackId}?endpointId=${endpointId}`;

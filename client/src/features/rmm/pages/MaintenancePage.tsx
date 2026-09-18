@@ -4,7 +4,6 @@ import {
   ChevronRight,
   Plus,
   Search,
-  ListFilter,
   CheckCircle2,
   Clock,
   AlertTriangle,
@@ -60,15 +59,12 @@ export function MaintenancePage() {
     allEquipment,
     loading,
     statusFilter,
-    setStatusFilter,
     searchQuery,
-    setSearchQuery,
     handleSearchChange,
     handleStatusFilterChangeForList,
     handleTechFilterChange,
     handleListLimitChange,
     selectedTechFilter,
-    setSelectedTechFilter,
     uniqueTechnicians,
     listPage,
     setListPage,
@@ -179,10 +175,10 @@ export function MaintenancePage() {
         const item = row.original;
         return (
           <div className="space-y-0.5">
-            <p className="text-xs font-semibold text-foreground">{item.title || item.device_name || t("devices.unnamedDevice")}</p>
-            {item.title && item.device_name && (
-              <p className="text-[11px] text-muted-foreground">{item.device_name}</p>
-            )}
+            <p className="text-xs font-semibold text-foreground">
+              {item.title || item.device_name || t("devices.unnamedDevice")}
+            </p>
+            {item.title && item.device_name && <p className="text-[11px] text-muted-foreground">{item.device_name}</p>}
             {item.device_serial && <p className="text-[10px] text-muted-foreground font-mono">{item.device_serial}</p>}
             {item.service_name && <p className="text-[9px] text-muted-foreground italic">{item.service_name}</p>}
           </div>
@@ -339,78 +335,122 @@ export function MaintenancePage() {
       ]}
       isLoading={loading}
     >
-      <Page.ControlPanel
-        title={t("nav.maintenance")}
-        subtitle={t("maintenance.subtitle")}
-        actions={
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => openScheduleModal()}
-            className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span>{t("maintenance.scheduleBtn")}</span>
-          </Button>
-        }
-        viewsSlot={<Page.ViewSwitcher size="sm" />}
-        searchSlot={null}
-        pagerSlot={null}
-      />
+      <Page.Header>
+        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
+        <Page.HeaderRow>
+          <Page.TitleGroup>
+            <Page.Title>{t("nav.maintenance")}</Page.Title>
+            <Page.Description>{t("maintenance.subtitle")}</Page.Description>
+          </Page.TitleGroup>
+          <Page.Actions maxVisible={3}>
+            <Button
+              type="button"
+              size="default"
+              onClick={() => openScheduleModal()}
+              className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>{t("maintenance.scheduleBtn")}</span>
+            </Button>
+          </Page.Actions>
+        </Page.HeaderRow>
+        <Page.Toolbar>
+          <Page.Filters>
+            <InputGroup className="w-full sm:w-72">
+              <InputGroupInput
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                placeholder={t("maintenance.searchPlaceholder")}
+              />
+              <InputGroupAddon>
+                <Search className="h-3.5 w-3.5 text-muted-foreground" />
+              </InputGroupAddon>
+            </InputGroup>
 
-      {/* CALENDAR / DATE VIEW */}
-      <Page.View type="calendar" className="space-y-4">
-        {/* Filters Toolbar */}
-        <div className="bg-card p-3 border border-border rounded-lg shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
-          <InputGroup size="sm" className="w-full md:max-w-xs bg-muted/40">
-            <InputGroupInput
-              placeholder={t("maintenance.searchPlaceholder")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <InputGroupAddon>
-              <Search />
-            </InputGroupAddon>
-          </InputGroup>
-
-          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
             {/* Status Filter */}
-            <div className="flex items-center gap-1.5">
-              <ListFilter className="h-3.5 w-3.5 text-muted-foreground" />
-              <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val)}>
-                <SelectTrigger size="default" className="w-36 text-xs font-medium bg-background">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">{t("maintenance.filterAllStatuses")}</SelectItem>
-                  <SelectItem value="SCHEDULED">{t("maintenance.statusScheduled")}</SelectItem>
-                  <SelectItem value="IN_PROGRESS">{t("maintenance.statusInProgress")}</SelectItem>
-                  <SelectItem value="COMPLETED">{t("maintenance.statusCompleted")}</SelectItem>
-                  <SelectItem value="OVERDUE">{t("maintenance.statusOverdue")}</SelectItem>
-                  <SelectItem value="CANCELLED">{t("maintenance.statusCancelled")}</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="maintenance-status-filter"
+                className="text-[10px] uppercase font-bold text-muted-foreground select-none"
+              >
+                {t("maintenance.tableStatus")}
+              </label>
+              <div className="flex items-center bg-muted p-0.5 rounded-md border border-border">
+                <Select value={statusFilter} onValueChange={(val) => handleStatusFilterChangeForList(val)}>
+                  <SelectTrigger
+                    id="maintenance-status-filter"
+                    aria-label={t("maintenance.tableStatus")}
+                    size="default"
+                    className="px-2.5 rounded text-xs font-semibold bg-card text-foreground shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5"
+                  >
+                    <SelectValue placeholder={t("maintenance.filterAllStatuses")} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    <SelectItem value="ALL" className="text-xs font-medium cursor-pointer">
+                      {t("maintenance.filterAllStatuses")}
+                    </SelectItem>
+                    <SelectItem value="SCHEDULED" className="text-xs font-medium cursor-pointer">
+                      {t("maintenance.statusScheduled")}
+                    </SelectItem>
+                    <SelectItem value="IN_PROGRESS" className="text-xs font-medium cursor-pointer">
+                      {t("maintenance.statusInProgress")}
+                    </SelectItem>
+                    <SelectItem value="COMPLETED" className="text-xs font-medium cursor-pointer">
+                      {t("maintenance.statusCompleted")}
+                    </SelectItem>
+                    <SelectItem value="OVERDUE" className="text-xs font-medium cursor-pointer">
+                      {t("maintenance.statusOverdue")}
+                    </SelectItem>
+                    <SelectItem value="CANCELLED" className="text-xs font-medium cursor-pointer">
+                      {t("maintenance.statusCancelled")}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {/* Tech Filter (Admin/Tech) */}
             {isAdminOrTech && uniqueTechnicians.length > 0 && (
-              <Select value={selectedTechFilter} onValueChange={(val) => setSelectedTechFilter(val)}>
-                <SelectTrigger size="default" className="w-36 text-xs font-medium bg-background">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">{t("maintenance.filterAllTechs")}</SelectItem>
-                  {uniqueTechnicians.map((tech) => (
-                    <SelectItem key={tech.id} value={tech.id}>
-                      {tech.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <label
+                  htmlFor="maintenance-tech-filter"
+                  className="text-[10px] uppercase font-bold text-muted-foreground select-none"
+                >
+                  {t("maintenance.tableTech")}
+                </label>
+                <div className="flex items-center bg-muted p-0.5 rounded-md border border-border">
+                  <Select value={selectedTechFilter} onValueChange={(val) => handleTechFilterChange(val)}>
+                    <SelectTrigger
+                      id="maintenance-tech-filter"
+                      aria-label={t("maintenance.tableTech")}
+                      size="default"
+                      className="px-2.5 rounded text-xs font-semibold bg-card text-foreground shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5"
+                    >
+                      <SelectValue placeholder={t("maintenance.filterAllTechs")} />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border">
+                      <SelectItem value="ALL" className="text-xs font-medium cursor-pointer">
+                        {t("maintenance.filterAllTechs")}
+                      </SelectItem>
+                      {uniqueTechnicians.map((tech) => (
+                        <SelectItem key={tech.id} value={tech.id} className="text-xs font-medium cursor-pointer">
+                          {tech.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             )}
-          </div>
-        </div>
+          </Page.Filters>
+          <Page.Controls>
+            <Page.ViewSwitcher size="sm" />
+          </Page.Controls>
+        </Page.Toolbar>
+      </Page.Header>
 
+      {/* CALENDAR / DATE VIEW */}
+      <Page.View type="calendar" className="space-y-4">
         {/* Page.Date / Page.Calendar Component */}
         <Page.Date
           currentDate={currentDate}
@@ -428,7 +468,7 @@ export function MaintenancePage() {
                   event.variant === "warning" && "bg-secondary text-secondary-foreground border-border",
                   event.variant === "destructive" && "bg-destructive/10 text-destructive border-destructive/20",
                   event.variant === "default" && "bg-muted text-muted-foreground border-border",
-                  (!event.variant || event.variant === "primary") && "bg-primary/15 text-primary border-primary/30"
+                  (!event.variant || event.variant === "primary") && "bg-primary/15 text-primary border-primary/30",
                 )}
                 title={`${m.title} - ${m.device_name || ""}`}
               >
@@ -448,37 +488,6 @@ export function MaintenancePage() {
             data={paginatedMaintenances}
             noDataMessage={t("maintenance.noMaintenancesFound")}
             loading={loading}
-            search={{
-              value: searchQuery,
-              onChange: handleSearchChange,
-              placeholder: t("maintenance.searchPlaceholder"),
-            }}
-            filters={[
-              {
-                id: "status",
-                value: statusFilter === "ALL" ? "" : statusFilter,
-                onChange: (val) => handleStatusFilterChangeForList(val || "ALL"),
-                options: [
-                  { value: "SCHEDULED", label: t("maintenance.statusScheduled") },
-                  { value: "IN_PROGRESS", label: t("maintenance.statusInProgress") },
-                  { value: "COMPLETED", label: t("maintenance.statusCompleted") },
-                  { value: "OVERDUE", label: t("maintenance.statusOverdue") },
-                  { value: "CANCELLED", label: t("maintenance.statusCancelled") },
-                ],
-                placeholder: t("maintenance.filterAllStatuses"),
-              },
-              ...(isAdminOrTech && uniqueTechnicians.length > 0
-                ? [
-                    {
-                      id: "tech",
-                      value: selectedTechFilter === "ALL" ? "" : selectedTechFilter,
-                      onChange: (val: string) => handleTechFilterChange(val || "ALL"),
-                      options: uniqueTechnicians.map((tech) => ({ value: tech.id, label: tech.name })),
-                      placeholder: t("maintenance.filterAllTechs"),
-                    },
-                  ]
-                : []),
-            ]}
             pagination={{
               page: listPage,
               totalPages: listTotalPages,

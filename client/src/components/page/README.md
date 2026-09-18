@@ -294,7 +294,93 @@ export function SystemManagementPage() {
 
 ---
 
-## 7. Legacy Compatibility Guarantee
+## 7. Unified Compound Slot Architecture (`<Page.Header>`)
+
+For maximum granularity, responsive action overflow, and sticky headers, use the compound `<Page.Header>` suite:
+
+```tsx
+import { Page } from "@/components/Page";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Download, Filter } from "lucide-react";
+
+export function TicketsPage() {
+  return (
+    <Page defaultView="list">
+      {/* Sticky header with glassmorphism backdrop */}
+      <Page.Header sticky>
+        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
+
+        {/* Identity & Action Row */}
+        <Page.HeaderRow>
+          <Page.TitleGroup>
+            <Page.Back to="/dashboard" />
+            <Page.Title>Tickets</Page.Title>
+            <Badge variant="secondary">Active (24)</Badge>
+            <Page.Description>Manage client support issues and SLA assignments</Page.Description>
+          </Page.TitleGroup>
+
+          {/* Action buttons with responsive overflow into a MoreHorizontal dropdown */}
+          <Page.Actions maxVisible={2}>
+            <Button size="sm" className="h-7 gap-1">
+              <Plus className="size-3.5" />
+              <span>New Ticket</span>
+            </Button>
+            <Button variant="outline" size="sm" className="h-7 gap-1">
+              <Download className="size-3.5" />
+              <span>Export</span>
+            </Button>
+            <Button variant="outline" size="sm" className="h-7 gap-1">
+              <Filter className="size-3.5" />
+              <span>Advanced Filter</span>
+            </Button>
+          </Page.Actions>
+        </Page.HeaderRow>
+
+        {/* Unified Search & Control Toolbar */}
+        <Page.Toolbar>
+          <Page.Filters>
+            <Page.Search placeholder="Search tickets..." />
+          </Page.Filters>
+          <Page.Controls>
+            <Page.Pager />
+            <Page.ViewSwitcher />
+          </Page.Controls>
+        </Page.Toolbar>
+
+        {/* Optional Header Tabs */}
+        <Page.Tabs defaultTab="open" syncUrl>
+          <Page.Tab id="open" label="Open Tickets" badge={18} />
+          <Page.Tab id="assigned" label="My Tickets" badge={6} />
+          <Page.Tab id="resolved" label="Resolved" />
+        </Page.Tabs>
+      </Page.Header>
+
+      {/* Page Content */}
+      <Page.View type="list">
+        <DataTable ... />
+      </Page.View>
+    </Page>
+  );
+}
+```
+
+### Slots Summary
+
+| Compound Slot | Purpose |
+| :--- | :--- |
+| `<Page.Header sticky={bool} bordered={bool}>` | Top coordinator container. `sticky` adds `sticky top-0 z-20 backdrop-blur-md bg-background/85`. |
+| `<Page.HeaderRow>` | Primary flex row containing TitleGroup on left and Actions on right. |
+| `<Page.TitleGroup>` | Encapsulates `<Page.Back>`, `<Page.Title>`, badges, and `<Page.Description>`. |
+| `<Page.Back to={path} onClick={fn}>` | Compact `h-7 w-7` icon button with automatic back navigation. |
+| `<Page.Actions maxVisible={n}>` | Primary action button container. Automatically collapses items beyond `n` into a `MoreHorizontal` dropdown. |
+| `<Page.Toolbar>` | Unified flex bar combining search/filters on left and pager/views on right. |
+| `<Page.Filters>` & `<Page.Controls>` | Modular layout zones inside `<Page.Toolbar>`. |
+
+---
+
+## 8. Legacy Compatibility Guarantee
+
 
 All existing usages of `<Page>` continue to work without any modifications:
 

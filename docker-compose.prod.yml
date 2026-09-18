@@ -498,6 +498,9 @@ services:
       - "traefik.http.routers.msp-vault.tls=true"
       - "traefik.http.routers.msp-vault.tls.certresolver=myresolver"
       - "traefik.http.routers.msp-vault.priority=100"
+      - "traefik.http.middlewares.msp-vault-redirect.redirectregex.regex=^(https?://[^/]+)/vault([?#].*)?$$"
+      - "traefik.http.middlewares.msp-vault-redirect.redirectregex.replacement=$${1}/vault/$${2}"
+      - "traefik.http.routers.msp-vault.middlewares=msp-vault-redirect"
       - "traefik.http.services.msp-vault-svc.loadbalancer.server.port=80"
 
   mcp-server:

@@ -520,6 +520,7 @@
     "colCategory": "Categoría",
     "colPriority": "Prioridad",
     "colStatus": "Estado",
+    "colDateRange": "Rango de Fechas",
     "colCreated": "Creado",
     "colActions": "Acciones",
     "tableTitle": "Título",
@@ -1180,6 +1181,8 @@
     "deleteDeviceConfirmDesc": "¿Está seguro de que desea eliminar permanentemente este dispositivo? Se eliminará el almacenamiento de respaldo y la telemetría asociada.",
     "deleteSuccess": "Dispositivo eliminado con éxito.",
     "activateDevice": "Activar Dispositivo",
+    "actionRmmDashboard": "Telemetría y Salud RMM",
+    "upToDate": "Actualizado",
     "actionNextcloudInfo": "Info de Backup Nextcloud",
     "nextcloudModalTitle": "Detalles del Backup en la Nube",
     "nextcloudLoading": "Cargando detalles del respaldo...",
@@ -1259,7 +1262,19 @@
       "repairFailed": "No se pudo re-vincular el dispositivo.",
       "bulkExportSuccess": "Exportados {{count}} dispositivo(s) a CSV.",
       "addAdminDeviceSuccessDesc": "El dispositivo {{name}} ha sido registrado y aprovisionado.",
-      "fetchFailed": "No se pudieron recuperar las suscripciones activas para la gestión de dispositivos."
+      "fetchFailed": "No se pudieron recuperar las suscripciones activas para la gestión de dispositivos.",
+    "views": {
+      "list": "Tabla de Inventario",
+      "tiled": "Tarjetas de Equipos",
+      "rmm": "Telemetría RMM",
+      "graph": "Analítica de Flota"
+    },
+    "analytics": {
+      "statusAllocation": "Distribución de Estado de Equipos",
+      "statusSubtitle": "Desglose de terminales activos, pendientes y bloqueados",
+      "osDistribution": "Distribución por Sistema Operativo",
+      "osSubtitle": "Distribución de plataformas de estaciones de trabajo y servidores"
+    }
   },
   "resources": {
     "title": "Recursos",
@@ -1277,6 +1292,7 @@
     "viewTiled": "Mosaico",
     "viewList": "Lista",
     "download": "Descargar",
+    "upload": "Subir Recurso",
     "downloadStartedTitle": "Descarga Iniciada",
     "downloadStartedDesc": "Descargando {{fileName}}",
     "emptyTitle": "No se encontraron recursos",
@@ -1548,6 +1564,18 @@
   "financial": {
     "title": "Resumen Financiero",
     "subtitle": "Ingresos recurrentes mensuales, libro de caja y costos de infraestructura en tiempo real.",
+    "views": {
+      "dashboard": "Resumen y Gráficos",
+      "ledger": "Libro de Transacciones",
+      "payroll": "Comisiones de Técnicos",
+      "graph": "Analítica Financiera"
+    },
+    "analytics": {
+      "expenseByCategory": "Distribución de Gastos por Categoría",
+      "categorySubtitle": "Distribución de costos operativos en el período actual",
+      "monthlyTrends": "Ingresos vs Gastos Mensuales",
+      "trendsSubtitle": "Tendencias comparativas del flujo de caja mensual"
+    },
     "export": "Exportar Reporte",
     "exporting": "Exportando...",
     "exportSuccess": "Reporte financiero exportado exitosamente",
@@ -1835,6 +1863,18 @@
   "crm": {
     "title": "CRM y Pipeline de Ventas",
     "subtitle": "Gestión de prospectos comerciales, etapas del embudo, cotizaciones y asignación de planes",
+    "views": {
+      "list": "Lista",
+      "kanban": "Kanban",
+      "calendar": "Actividades",
+      "graph": "Analítica"
+    },
+    "analytics": {
+      "pipelineByStage": "Pipeline por Etapa",
+      "stageDistribution": "Distribución del valor a través de las etapas comerciales",
+      "leadCountByStage": "Prospectos por Etapa",
+      "noData": "No hay datos de pipeline disponibles para visualizar."
+    },
     "newLead": "Nueva Oportunidad",
     "newLeadTitle": "Crear Nueva Oportunidad Comercial",
     "newLeadSubtitle": "Registre un nuevo prospecto de ventas, asigne suscripciones de destino y rastree el estado del pipeline",
@@ -1923,10 +1963,6 @@
     "unassigned": "Sin Asignar",
     "emptyStage": "No hay prospectos en esta etapa",
     "totalLeads": "prospectos totales",
-    "views": {
-      "table": "Tabla",
-      "kanban": "Kanban"
-    },
     "tabs": {
       "quote": "Cotización",
       "subscription": "Suscripción",

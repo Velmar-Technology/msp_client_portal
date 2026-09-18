@@ -376,3 +376,103 @@ export interface PageGraphProps extends Omit<React.ComponentPropsWithoutRef<"div
   allowTypeChange?: boolean;
   actions?: React.ReactNode;
 }
+
+// ==========================================
+// UNIFIED PAGE HEADER & COMPOUND SLOTS TYPES
+// ==========================================
+
+/**
+ * Props for PageHeader container.
+ */
+export interface PageHeaderProps extends React.ComponentPropsWithoutRef<"header"> {
+  /** Enables sticky top-0 pinning with glassmorphic backdrop blur */
+  sticky?: boolean;
+  /** Whether to render bottom border separator (default: true) */
+  bordered?: boolean;
+  /** Additional custom class names */
+  className?: string;
+  /** Header slot contents (Page.HeaderRow, Page.Toolbar, Page.Tabs, etc.) */
+  children?: React.ReactNode;
+}
+
+/**
+ * Primary identity & actions horizontal row within PageHeader.
+ */
+export interface PageHeaderRowProps extends React.ComponentPropsWithoutRef<"div"> {
+  className?: string;
+  children?: React.ReactNode;
+}
+
+/**
+ * Container for back button, title, badges, and subtitle.
+ */
+export interface PageTitleGroupProps extends React.ComponentPropsWithoutRef<"div"> {
+  className?: string;
+  children?: React.ReactNode;
+}
+
+/**
+ * Main page title element (`<h1>`).
+ */
+export interface PageTitleProps extends React.ComponentPropsWithoutRef<"h1"> {
+  className?: string;
+  children?: React.ReactNode;
+}
+
+/**
+ * Subtitle / description element under page title.
+ */
+export interface PageDescriptionProps extends React.ComponentPropsWithoutRef<"p"> {
+  className?: string;
+  children?: React.ReactNode;
+}
+
+/**
+ * Contextual back button component for navigation.
+ */
+export interface PageBackProps extends React.ComponentPropsWithoutRef<"button"> {
+  /** Optional target path to navigate to using React Router or window history */
+  to?: string;
+  /** Optional custom click handler */
+  onClick?: () => void;
+  /** Accessible label / tooltip (default: "Back") */
+  label?: string;
+  className?: string;
+}
+
+/**
+ * Action button group with responsive overflow collapsing.
+ */
+export interface PageActionsProps extends React.ComponentPropsWithoutRef<"div"> {
+  /** Maximum number of primary action buttons to show before collapsing into a dropdown menu (default: unbounded if undefined) */
+  maxVisible?: number;
+  /** Accessible label for the overflow dropdown trigger (default: "More actions") */
+  overflowLabel?: string;
+  className?: string;
+  children?: React.ReactNode;
+}
+
+/**
+ * Data control toolbar row for search, filters, pagination, and view switchers.
+ */
+export interface PageToolbarProps extends React.ComponentPropsWithoutRef<"div"> {
+  className?: string;
+  children?: React.ReactNode;
+}
+
+/**
+ * Container for search and filter controls inside PageToolbar.
+ */
+export interface PageFiltersProps extends React.ComponentPropsWithoutRef<"div"> {
+  className?: string;
+  children?: React.ReactNode;
+}
+
+/**
+ * Right-aligned container for pagination and view switcher controls inside PageToolbar.
+ */
+export interface PageControlsProps extends React.ComponentPropsWithoutRef<"div"> {
+  className?: string;
+  children?: React.ReactNode;
+}
+

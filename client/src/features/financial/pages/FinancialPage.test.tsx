@@ -143,4 +143,78 @@ describe('FinancialPage - Dashboard View Architecture', () => {
     expect(screen.getByTestId('mock-technician-payroll-table')).toBeInTheDocument();
     expect(screen.queryByTestId('mock-revenue-chart')).not.toBeInTheDocument();
   });
+
+  test('renders directly in ledger view when view=ledger in URL', async () => {
+    render(
+      <MemoryRouter initialEntries={['/financial?view=ledger']}>
+        <FinancialPage />
+      </MemoryRouter>,
+    );
+
+    // Should display Transactions Ledger heading & items
+    expect(screen.getByRole('heading', { name: /Transactions Ledger/i })).toBeInTheDocument();
+    expect(screen.getByText('AWS Cloud Services')).toBeInTheDocument();
+    expect(screen.getByText('Google Workspace')).toBeInTheDocument();
+
+    // Dashboard charts should not be rendered
+    expect(screen.queryByTestId('mock-revenue-chart')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('mock-technician-payroll-table')).not.toBeInTheDocument();
+  });
+
+  test('renders directly in graph view when view=graph in URL', async () => {
+    render(
+      <MemoryRouter initialEntries={['/financial?view=graph']}>
+        <FinancialPage />
+      </MemoryRouter>,
+    );
+
+    // Visual analytics graphs should be rendered
+    expect(screen.getByText('Expense Allocation by Category')).toBeInTheDocument();
+    expect(screen.getByText('Monthly Revenue Trends')).toBeInTheDocument();
+
+    // Dashboard charts should not be rendered
+    expect(screen.queryByTestId('mock-revenue-chart')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('mock-technician-payroll-table')).not.toBeInTheDocument();
+  });
+
+  test('switches dynamically between views using ViewSwitcher', async () => {
+    render(
+      <MemoryRouter initialEntries={['/financial']}>
+        <FinancialPage />
+      </MemoryRouter>,
+    );
+
+    // Initial state: dashboard view
+    expect(screen.getByTestId('mock-revenue-chart')).toBeInTheDocument();
+
+    // Switch to Ledger view
+    const ledgerBtn = screen.getByRole('button', { name: /Transactions Ledger/i });
+    fireEvent.click(ledgerBtn);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /Transactions Ledger/i })).toBeInTheDocument();
+      expect(screen.getByText('AWS Cloud Services')).toBeInTheDocument();
+      expect(screen.queryByTestId('mock-revenue-chart')).not.toBeInTheDocument();
+    });
+
+    // Switch to Graph view
+    const graphBtn = screen.getByRole('button', { name: /Financial Analytics/i });
+    fireEvent.click(graphBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText('Expense Allocation by Category')).toBeInTheDocument();
+      expect(screen.getByText('Monthly Revenue Trends')).toBeInTheDocument();
+      expect(screen.queryByTestId('mock-revenue-chart')).not.toBeInTheDocument();
+    });
+
+    // Switch back to Dashboard view
+    const dashboardBtn = screen.getByRole('button', { name: /Overview & Charts/i });
+    fireEvent.click(dashboardBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-revenue-chart')).toBeInTheDocument();
+      expect(screen.getByText('financial.grossRevenue')).toBeInTheDocument();
+    });
+  });
 });
+

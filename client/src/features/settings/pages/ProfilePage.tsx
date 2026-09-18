@@ -317,8 +317,18 @@ export function ProfilePage() {
   const isAdmin = user?.role === 'ADMIN';
 
   return (
-    <Page title={t("profile.title")} subtitle={t("profile.subtitle")}>
+    <Page>
+      <Page.Header>
+        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
+        <Page.HeaderRow>
+          <Page.TitleGroup>
+            <Page.Title>{t("profile.title")}</Page.Title>
+            <Page.Description>{t("profile.subtitle")}</Page.Description>
+          </Page.TitleGroup>
+        </Page.HeaderRow>
+      </Page.Header>
       <div className="grid gap-6">
+
         <ProfileIdentityCard
           user={user}
           lastLoginText={lastLoginText}

@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => {
     ticketFindById: vi.fn(),
     ticketAssignTech: vi.fn(),
     eventCreate: vi.fn(),
+    hasEscalationEvent: vi.fn(),
     userFindById: vi.fn(),
     responseFindByTicket: vi.fn(),
     findPendingEscalations: vi.fn(),
@@ -35,6 +36,7 @@ vi.mock('@modules/tickets/repositories/TicketEventRepository', () => {
   return {
     ticketEventRepository: {
       create: mocks.eventCreate,
+      hasEscalationEvent: mocks.hasEscalationEvent,
     },
   };
 });
@@ -93,6 +95,7 @@ describe('EscalationService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.hasEscalationEvent.mockResolvedValue(false);
   });
 
   describe('enforceEscalation', () => {
@@ -115,6 +118,32 @@ describe('EscalationService', () => {
       );
       expect(mocks.onTicketAssigned).toHaveBeenCalled();
       expect(result?.assigned_tech_id).toBe('tech-tier2');
+    });
+
+    it('skips escalation when ticket has already been escalated (hasEscalationEvent is true)', async () => {
+      mocks.ticketFindById.mockResolvedValue(buildTicket());
+      mocks.hasEscalationEvent.mockResolvedValue(true);
+
+      const result = await escalationService.enforceEscalation('ticket-escal-1');
+
+      expect(result).toBeNull();
+      expect(mocks.assignNext).not.toHaveBeenCalled();
+      expect(mocks.ticketAssignTech).not.toHaveBeenCalled();
+      expect(mocks.eventCreate).not.toHaveBeenCalled();
+    });
+
+    it('skips escalation when candidate technician is already assigned to the ticket', async () => {
+      mocks.ticketFindById.mockResolvedValue(buildTicket({ assigned_tech_id: 'tech-1' }));
+      mocks.userFindById.mockResolvedValue({ id: 'tech-1', name: 'Angel Luis', specialty: null });
+      mocks.responseFindByTicket.mockResolvedValue([]);
+      mocks.assignNext.mockResolvedValue({ id: 'tech-1', name: 'Angel Luis', specialty: null });
+
+      const result = await escalationService.enforceEscalation('ticket-escal-1');
+
+      expect(result).toBeNull();
+      expect(mocks.ticketAssignTech).not.toHaveBeenCalled();
+      expect(mocks.eventCreate).not.toHaveBeenCalled();
+      expect(mocks.onTicketAssigned).not.toHaveBeenCalled();
     });
 
     it('does not escalate a ticket still within its priority SLA threshold', async () => {

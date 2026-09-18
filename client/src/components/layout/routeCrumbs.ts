@@ -75,6 +75,17 @@ export const routeCrumbs: RouteCrumbConfig[] = [
     crumb: (t) => ({ label: t("nav.apiStatus"), to: "/admin/api-status" }),
   },
   {
+    path: "/crm",
+    crumb: (t) => ({ label: t("nav.crm"), to: "/crm" }),
+  },
+  {
+    path: "/crm/custom-plans",
+    crumb: (t) => [
+      { label: t("nav.crm"), to: "/crm" },
+      { label: t("crm.customPlan.btnTitle", { defaultValue: "Custom Plan Studio" }) },
+    ],
+  },
+  {
     path: "/tickets",
     crumb: (t, _params, user) => ({
       label: user?.role === "ADMIN" ? t("nav.allTickets") : t("nav.myTickets"),
@@ -106,6 +117,14 @@ export const routeCrumbs: RouteCrumbConfig[] = [
       { label: user?.role === "ADMIN" ? t("nav.settings") : t("nav.account") },
       { label: t("nav.notificationPreferences") },
     ],
+  },
+  {
+    path: "/password-manager",
+    crumb: (t) => ({ label: t("nav.passwordManager", { defaultValue: "Password Manager" }), to: "/password-manager" }),
+  },
+  {
+    path: "/settings/ai",
+    crumb: (t) => ({ label: t("nav.cafAiSettings", { defaultValue: "AI & CAF Quality" }), to: "/settings/ai" }),
   },
   {
     path: "/help",

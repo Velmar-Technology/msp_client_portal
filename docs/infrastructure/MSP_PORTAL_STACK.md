@@ -109,7 +109,7 @@ All routers use `entrypoints=websecure`, `tls=true`, `certresolver=myresolver` (
 | `msp-prometheus` | `` Host(`helpdesk.velmartech.com.do`) && PathPrefix(`/prometheus`) `` | 100 | `prom-auth` | 9090 |
 | `msp-faro` | `` Host(`helpdesk.velmartech.com.do`) && PathPrefix(`/collect`) `` | 100 | — | 12347 |
 | `msp-grafana` | `` Host(`helpdesk.velmartech.com.do`) && PathPrefix(`/grafana`) `` | 100 | — | 3000 |
-| `msp-vault` | `` Host(`helpdesk.velmartech.com.do`) && PathPrefix(`/vault`) `` | 100 | — | 80 |
+| `msp-vault` | `` Host(`helpdesk.velmartech.com.do`) && PathPrefix(`/vault`) `` | 100 | `msp-vault-redirect` | 80 |
 | `msp-mcp` | `` Host(`helpdesk.velmartech.com.do`) && PathPrefix(`/mcp`) `` | 100 | — | 3005 |
 
 > **Note on MCP Routing:** Traefik's `PathPrefix('/mcp')` rule routes both administrative operations (`/mcp`) and the strictly isolated CAF Educational Quality Agent endpoint (`/mcp/caf`) directly to the `mcp-server` container on port 3005 without requiring additional Traefik routers.
@@ -119,6 +119,7 @@ All routers use `entrypoints=websecure`, `tls=true`, `certresolver=myresolver` (
 | Middleware | Type | Definition |
 |---|---|---|
 | `msp-compress` | `compress` | `true` (used by `msp-server` and `msp-client`) |
+| `msp-vault-redirect` | `redirectregex` | RegEx `^(https?://[^/]+)/vault([?#].*)?$` → replacement `${1}/vault/${2}` (307) |
 | `msp-zabbix-redirect` | `redirectregex` | RegEx `^(https?://[^/]+)/zabbix([?#].*)?$` → replacement `${1}/zabbix/${2}` (307) |
 | `msp-zabbix-strip` | `stripprefix` | `prefixes=/zabbix` |
 | `zabbix-auth` / `logs-auth` / `prom-auth` | `basicauth` | `admin:<bcrypt>` **— the same bcrypt hash is shared across Zabbix, Dozzle and Prometheus** (see §8 security notes) |
@@ -314,6 +315,7 @@ node run-in.mjs 3 msp_alloy sh -c "tail -n 50 /var/log/* 2>/dev/null | tail -n 5
 | `429 Too Many Requests` on `/vault/admin` | Rocket's admin login rate limiter triggered by repeated login attempts in a short burst | `VaultwardenService` caches the `VW_ADMIN` session cookie for 15 minutes (under the 20-minute validity window), eliminating burst login attempts |
 | `401 Unauthorized` / `502 EXTERNAL_SERVICE_ERROR` on `POST /api/v1/equipment/:id/vault/revoke` (`revokeDeviceSession`) | Vaultwarden organization user revoke endpoint `/api/organizations/:orgId/users/:userId/revoke` expects user JWT bearer authentication, rejecting server Admin Token with 401. Or equipment slot contains a simulated ID (`vw_user_...`) from testing | Resolved in `VaultwardenService.revokeDeviceSession`: simulated identifiers are treated as idempotent success; on real IDs, returns from 401/error fallback resiliently to Vaultwarden Admin API session deauthorization (`POST /admin/users/:id/deauth`) with cached `VW_ADMIN` cookie, terminating active sessions immediately (BL-205) |
 | *"User already exists"* on `/#/register` for workstation `.local` accounts | Vaultwarden provisions device users in status `1` (`Invited`) via `/admin/invite`. Without SMTP for `.local` addresses, users cannot receive registration links and raw sign-up fails because the user row already exists | Fixed in v1.3: `server` mounts `vaultwarden_data:/vaultwarden_data:ro` and generates an RS256-signed Bitwarden invitation URL (`/#/accept-organization/?...&token=<jwt>`). The client portal displays a one-click **"Set Master Password"** button in `DeviceVaultModal`, completing registration seamlessly |
+| Vaultwarden Web Vault stuck on loading spinner; assets (`app/main.*.js`, `theme_head.*.js`, `styles.*.css`) return 404 | Accessing `/vault` without a trailing slash. HTML contains relative paths without leading slash (`app/main.js`); browser resolves them against root `/` instead of `/vault/`, hitting Portal React app Nginx (`msp-client`) | Enforced in `docker-compose.prod.yml` via Traefik middleware `msp-vault-redirect` (`redirectregex` appending trailing slash `/vault/`). Client Nginx also configured with `json` in static asset regex (`try_files $uri =404`) to prevent SPA fallback hijacking Web Vault manifest |
 | `[BYOK Authorization Required]` on `caf_audit_evidence` or `caf_generate_improvement_plan` | Tenant has not registered their private OpenAI/Anthropic API key, or no key was supplied in request | Call `caf_configure_tenant_byok` with tenant credentials, pass direct `apiKey` parameter, or set fallback `OPENAI_API_KEY` in stack environment |
 | IT support tools (tickets, PowerShell) visible on educational Copilot | Copilot Studio Action pointed to `/mcp` instead of isolated `/mcp/caf` | Reconfigure Copilot Studio server URL to `https://helpdesk.velmartech.com.do/mcp/caf`. That route enforces `caf-education` profile (zero IT tools) |
 

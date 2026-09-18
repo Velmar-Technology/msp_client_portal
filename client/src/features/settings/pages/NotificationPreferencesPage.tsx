@@ -257,10 +257,16 @@ export function NotificationPreferencesPage() {
   if (isLoading) {
     if (!showSkeleton) return null;
     return (
-      <Page
-        title={t("notificationPreferences.title", "Notifications & Preferences")}
-        subtitle={t("notificationPreferences.subtitle", "Manage delivery channels and view alert history")}
-      >
+      <Page>
+        <Page.Header>
+          <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
+          <Page.HeaderRow>
+            <Page.TitleGroup>
+              <Page.Title>{t("notificationPreferences.title", "Notifications & Preferences")}</Page.Title>
+              <Page.Description>{t("notificationPreferences.subtitle", "Manage delivery channels and view alert history")}</Page.Description>
+            </Page.TitleGroup>
+          </Page.HeaderRow>
+        </Page.Header>
         <div className="flex min-h-100 items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
@@ -271,11 +277,18 @@ export function NotificationPreferencesPage() {
   const effectiveActiveTab = !isAdmin && activeTab === "templates" ? "channels" : activeTab;
 
   return (
-    <Page
-      title={t("notificationPreferences.title", "Notifications & Preferences")}
-      subtitle={t("notificationPreferences.subtitle", "Manage delivery channels and view alert history")}
-    >
+    <Page>
+      <Page.Header>
+        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
+        <Page.HeaderRow>
+          <Page.TitleGroup>
+            <Page.Title>{t("notificationPreferences.title", "Notifications & Preferences")}</Page.Title>
+            <Page.Description>{t("notificationPreferences.subtitle", "Manage delivery channels and view alert history")}</Page.Description>
+          </Page.TitleGroup>
+        </Page.HeaderRow>
+      </Page.Header>
       <Tabs value={effectiveActiveTab} onValueChange={setActiveTab} className="w-full">
+
         <TabsList className="mb-4">
           <TabsTrigger value="channels" className="gap-2">
             <Sliders className="h-3.5 w-3.5" />

@@ -40,8 +40,15 @@ export class TechnicianEarningsService {
     private earningsRepo: TechnicianEarningsRepository = technicianEarningsRepository,
     private expenseRepo: ExpenseRepository = expenseRepository,
     private userRepo: UserRepository = userRepository,
-    private ticketRepo: TicketRepository = ticketRepository
+    private ticketRepo?: TicketRepository
   ) {}
+
+  /**
+   * Lazily resolves TicketRepository to guard against circular module initialization edge-cases.
+   */
+  private get tickets(): TicketRepository {
+    return this.ticketRepo ?? ticketRepository;
+  }
 
   /**
    * Calculates and records earnings when a ticket is closed or resolved by a technician.
@@ -312,7 +319,7 @@ export class TechnicianEarningsService {
       throw new ForbiddenError('Only administrators can recalculate technician commissions');
     }
 
-    const closedTickets = await this.ticketRepo.findClosedTicketsForTenant();
+    const closedTickets = await this.tickets.findClosedTicketsForTenant();
     let createdCount = 0;
     let updatedCount = 0;
 

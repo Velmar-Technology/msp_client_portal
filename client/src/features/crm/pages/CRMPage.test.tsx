@@ -310,15 +310,70 @@ describe("CRMPage", () => {
     });
   });
 
-  test("renders due follow-ups card from GET /crm/activities", async () => {
+  test("renders list view by default with data table", async () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={["/crm"]}>
         <CRMPage />
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText("Due Follow-ups & Scheduled Activities")).toBeInTheDocument();
-    expect(screen.getByText("Introductory Discovery Call")).toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: /CRM Lead List/i })).toBeInTheDocument();
+  });
+
+  test("renders kanban view when view is kanban", async () => {
+    render(
+      <MemoryRouter initialEntries={["/crm?view=kanban"]}>
+        <CRMPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole("region", { name: /CRM Kanban Pipeline/i })).toBeInTheDocument();
+  });
+
+  test("renders due follow-ups in calendar view from GET /crm/activities", async () => {
+    const todayIso = new Date().toISOString();
+    useCRMStore.setState({
+      upcomingActivities: [
+        {
+          ...mockActivities[0],
+          due_date: todayIso,
+        },
+      ],
+    });
+    vi.mocked(crmService.getUpcomingActivities).mockResolvedValue([
+      {
+        ...mockActivities[0],
+        due_date: todayIso,
+      },
+    ]);
+
+    render(
+      <MemoryRouter initialEntries={["/crm?view=calendar"]}>
+        <CRMPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText(/Introductory Discovery Call/i)).toBeInTheDocument();
+  });
+
+  test("renders pipeline analytics graph view when view is graph", async () => {
+    render(
+      <MemoryRouter initialEntries={["/crm?view=graph"]}>
+        <CRMPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole("region", { name: /CRM Pipeline Analytics/i })).toBeInTheDocument();
+  });
+
+  test("normalizes legacy ?view=table to list view", async () => {
+    render(
+      <MemoryRouter initialEntries={["/crm?view=table"]}>
+        <CRMPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole("region", { name: /CRM Lead List/i })).toBeInTheDocument();
   });
 
   test("renders quotation in detail sheet and triggers accept status update", async () => {

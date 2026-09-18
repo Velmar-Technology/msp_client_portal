@@ -33,8 +33,16 @@ export class TicketStatusService {
     private userRepo: UserRepository = userRepository,
     private notifSvc: NotificationService = notificationService,
     private accessPol: TicketAccessPolicy = ticketAccessPolicy,
-    private earningsSvc: TechnicianEarningsService = technicianEarningsService,
+    private earningsSvc?: TechnicianEarningsService,
   ) {}
+
+  /**
+   * Lazily resolves the TechnicianEarningsService dependency to guard against
+   * circular module initialization edge-cases.
+   */
+  private get earnings(): TechnicianEarningsService {
+    return this.earningsSvc ?? technicianEarningsService;
+  }
 
   /**
    * Updates the lifecycle status of a ticket, enforcing RBAC permissions, state machine transitions,
@@ -87,7 +95,7 @@ export class TicketStatusService {
     if (data.status === TicketStatus.RESOLVED || data.status === TicketStatus.CLOSED) {
       const closingTechId = updated.assigned_tech_id || ctx.userId;
       if (closingTechId && (ctx.role === 'TECHNICIAN' || ctx.role === 'ADMIN')) {
-        this.earningsSvc.calculateAndRecordEarnings(updated, closingTechId, ticket.tenant_id).catch((err) => {
+        this.earnings.calculateAndRecordEarnings(updated, closingTechId, ticket.tenant_id).catch((err) => {
           logger.error('Failed to calculate technician earnings for ticket closure', { error: err, ticketId });
         });
       }
@@ -95,7 +103,7 @@ export class TicketStatusService {
       (ticket.status === TicketStatus.RESOLVED || ticket.status === TicketStatus.CLOSED) &&
       (data.status === TicketStatus.OPEN || data.status === TicketStatus.IN_PROGRESS || data.status === TicketStatus.CANCELLED)
     ) {
-      this.earningsSvc.voidEarningsForReopenedTicket(ticketId, ticket.tenant_id).catch((err) => {
+      this.earnings.voidEarningsForReopenedTicket(ticketId, ticket.tenant_id).catch((err) => {
         logger.error('Failed to void technician earnings on ticket reopen', { error: err, ticketId });
       });
     }
@@ -152,7 +160,7 @@ export class TicketStatusService {
 
     // Trigger technician closure earnings if applicable
     if (updated.assigned_tech_id) {
-      this.earningsSvc.calculateAndRecordEarnings(updated, updated.assigned_tech_id, ticket.tenant_id).catch((err) => {
+      this.earnings.calculateAndRecordEarnings(updated, updated.assigned_tech_id, ticket.tenant_id).catch((err) => {
         logger.error('Failed to calculate technician earnings for agent ticket closure', { error: err, ticketId });
       });
     }

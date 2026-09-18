@@ -243,8 +243,18 @@ export function AdminDashboardView() {
   }
 
   return (
-    <Page title={t("dashboard.systemOverview")} subtitle={t("dashboard.systemStatus")}>
+    <Page>
+      <Page.Header>
+        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
+        <Page.HeaderRow>
+          <Page.TitleGroup>
+            <Page.Title>{t("dashboard.systemOverview")}</Page.Title>
+            <Page.Description>{t("dashboard.systemStatus")}</Page.Description>
+          </Page.TitleGroup>
+        </Page.HeaderRow>
+      </Page.Header>
       <div className="flex flex-col gap-4">
+
         {/* Support Status, Maintenance, Backup Status, and Cloud Storage Card grid */}
         <section aria-label="System Metrics">
           <StatsGrid className="w-full">

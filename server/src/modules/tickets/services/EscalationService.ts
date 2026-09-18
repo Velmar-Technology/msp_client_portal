@@ -67,9 +67,22 @@ export class EscalationService {
       return null;
     }
 
+    if (await this.isAlreadyEscalated(ticket.id)) {
+      logger.info('Ticket has already undergone Tier 2 escalation, skipping duplicate escalation', { ticketId: ticket.id });
+      return null;
+    }
+
     const technician = await this.assignmentSvc.assignNext(ticket.category, TIER_2_SPECIALTY, ticket.priority);
     if (!technician) {
       logger.warn('No Tier 2 specialist available for escalation', { ticketId });
+      return null;
+    }
+
+    if (technician.id === ticket.assigned_tech_id) {
+      logger.info('Candidate technician for escalation is already assigned to this ticket, skipping duplicate assignment', {
+        ticketId,
+        techId: technician.id,
+      });
       return null;
     }
 
@@ -166,6 +179,18 @@ export class EscalationService {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Determines if a ticket has already undergone Tier 2 escalation in its audit history.
+   * Prevents repeated sweeps from spamming assignment events and notifications (BL-104).
+   *
+   * @param ticketId - Unique ticket UUID
+   * @returns True if already escalated
+   * @see BL-104
+   */
+  private async isAlreadyEscalated(ticketId: string): Promise<boolean> {
+    return this.eventRepo.hasEscalationEvent(ticketId);
   }
 }
 

@@ -1,8 +1,9 @@
-import { createBrowserRouter, type RouteObject } from "react-router-dom";
+import { createBrowserRouter, Outlet, type RouteObject } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { RouteSuspenseWrapper, ContentPageSkeleton } from "@/components/skeletons";
 import { RouteGuard } from "./routeUtils";
+import { DocumentTitle } from "./useDocumentTitle";
 import { publicRoutes } from "./publicRoutes";
 import { authRoutes } from "@/features/auth";
 import { dashboardRoutes } from "@/features/dashboard";
@@ -67,28 +68,39 @@ const protectedFeatureRoutes: RouteObject[] = applyGuards([
 ]);
 
 /**
- * SOTA Application Data Router (createBrowserRouter)
+ * SOTA Application Data Router (createBrowserRouter).
+ * Root pathless layout keeps the dynamic document title applied on every route.
  */
 export const router = createBrowserRouter([
-  // Standalone Public Informational Pages
-  ...publicRoutes,
-
-  // Public Authentication Routes
-  ...authRoutes,
-
-  // Authenticated App Shell & Protected Feature Routes
   {
-    element: <AppLayout />,
-    children: protectedFeatureRoutes,
-  },
-
-  // Catch-all 404
-  {
-    path: "*",
     element: (
-      <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
-        <NotFoundPage />
-      </RouteSuspenseWrapper>
+      <>
+        <DocumentTitle />
+        <Outlet />
+      </>
     ),
+    children: [
+      // Standalone Public Informational Pages
+      ...publicRoutes,
+
+      // Public Authentication Routes
+      ...authRoutes,
+
+      // Authenticated App Shell & Protected Feature Routes
+      {
+        element: <AppLayout />,
+        children: protectedFeatureRoutes,
+      },
+
+      // Catch-all 404
+      {
+        path: "*",
+        element: (
+          <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+            <NotFoundPage />
+          </RouteSuspenseWrapper>
+        ),
+      },
+    ],
   },
 ]);

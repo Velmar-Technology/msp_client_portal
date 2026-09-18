@@ -16,23 +16,19 @@ export function ClientDashboardView() {
   if (loading) {
     if (!showSkeleton) return null;
     return (
-      <Page
-        title={
-          <div>
-            <Skeleton className="w-60 h-8" />
-          </div>
-        }
-        subtitle={
-          <div>
-            <Skeleton className="w-28 h-8" />
-          </div>
-        }
-        actions={
-          <div>
-            <Skeleton className="w-32 h-7" />
-          </div>
-        }
-      >
+      <Page>
+        <Page.Header>
+          <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
+          <Page.HeaderRow>
+            <Page.TitleGroup>
+              <Skeleton className="w-60 h-7" />
+              <Skeleton className="w-28 h-4 mt-1" />
+            </Page.TitleGroup>
+            <Page.Actions maxVisible={3}>
+              <Skeleton className="w-32 h-7" />
+            </Page.Actions>
+          </Page.HeaderRow>
+        </Page.Header>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3 w-full">
             <Skeleton className="w-60 h-36" />
@@ -49,22 +45,29 @@ export function ClientDashboardView() {
   }
 
   return (
-    <Page
-      title={t("dashboard.systemOverview")}
-      subtitle={t("dashboard.systemStatus")}
-      actions={
-        <Button
-          type="button"
-          size="sm"
-          onClick={handleNewTicket}
-          className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          <span>{t("dashboard.newTicket")}</span>
-        </Button>
-      }
-    >
+    <Page>
+      <Page.Header>
+        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
+        <Page.HeaderRow>
+          <Page.TitleGroup>
+            <Page.Title>{t("dashboard.systemOverview")}</Page.Title>
+            <Page.Description>{t("dashboard.systemStatus")}</Page.Description>
+          </Page.TitleGroup>
+          <Page.Actions maxVisible={3}>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleNewTicket}
+              className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>{t("dashboard.newTicket")}</span>
+            </Button>
+          </Page.Actions>
+        </Page.HeaderRow>
+      </Page.Header>
       <div className="flex flex-col gap-4">
+
         {/* 1. Summary Metrics */}
         <section aria-label="Support & System Overview">
           <DashboardSummaryStats />

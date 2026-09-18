@@ -341,39 +341,43 @@ export function ApiStatusPage() {
   );
 
   return (
-    <Page
-      title={t("apiStatus.title")}
-      subtitle={t("apiStatus.subtitle")}
-      isLoading={isLoading}
-      actions={
-        <div className="flex items-center gap-3">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="auto-refresh"
-              checked={isAutoRefresh}
-              onCheckedChange={(checked) => setIsAutoRefresh(!!checked)}
-            />
-            <Label
-              htmlFor="auto-refresh"
-              className="text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer font-medium select-none"
-            >
-              {t("apiStatus.autoRefresh")}
-            </Label>
-          </div>
+    <Page isLoading={isLoading}>
+      <Page.Header>
+        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
+        <Page.HeaderRow>
+          <Page.TitleGroup>
+            <Page.Title>{t("apiStatus.title")}</Page.Title>
+            <Page.Description>{t("apiStatus.subtitle")}</Page.Description>
+          </Page.TitleGroup>
+          <Page.Actions maxVisible={3}>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="auto-refresh"
+                checked={isAutoRefresh}
+                onCheckedChange={(checked) => setIsAutoRefresh(!!checked)}
+              />
+              <Label
+                htmlFor="auto-refresh"
+                className="text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer font-medium select-none"
+              >
+                {t("apiStatus.autoRefresh")}
+              </Label>
+            </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={refresh}
-            disabled={isRefreshing}
-            className="h-7 px-3 gap-1 text-xs font-semibold cursor-pointer"
-          >
-            <RotateCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
-            <span>{isRefreshing ? t("apiStatus.refreshing") : t("apiStatus.refresh")}</span>
-          </Button>
-        </div>
-      }
-    >
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={refresh}
+              disabled={isRefreshing}
+              className="h-7 px-3 gap-1 text-xs font-semibold cursor-pointer"
+            >
+              <RotateCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+              <span>{isRefreshing ? t("apiStatus.refreshing") : t("apiStatus.refresh")}</span>
+            </Button>
+          </Page.Actions>
+        </Page.HeaderRow>
+      </Page.Header>
+
       <div className="space-y-6">
         {/* Navigation Section Switcher: Microservices vs Environment Variables */}
         <div className="border-b border-border pb-2">

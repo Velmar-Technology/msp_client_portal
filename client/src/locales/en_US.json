@@ -520,6 +520,7 @@
     "colCategory": "Category",
     "colPriority": "Priority",
     "colStatus": "Status",
+    "colDateRange": "Date Range",
     "colCreated": "Created",
     "colActions": "Actions",
     "tableTitle": "Title",
@@ -1180,6 +1181,8 @@
     "deleteDeviceConfirmDesc": "Are you sure you want to permanently delete this device? Associated cloud backup storage and telemetry monitoring will be removed.",
     "deleteSuccess": "Device deleted successfully.",
     "activateDevice": "Activate Device",
+    "actionRmmDashboard": "RMM Telemetry & Health",
+    "upToDate": "Up to Date",
     "actionNextcloudInfo": "Nextcloud Backup Info",
     "nextcloudModalTitle": "Cloud Backup Details",
     "nextcloudLoading": "Loading backup details...",
@@ -1263,7 +1266,19 @@
       "repairFailed": "Failed to re-pair device.",
       "bulkExportSuccess": "Exported {{count}} device(s) to CSV.",
       "addAdminDeviceSuccessDesc": "Device {{name}} has been registered and provisioned.",
-      "fetchFailed": "Failed to retrieve active subscriptions for device management."
+      "fetchFailed": "Failed to retrieve active subscriptions for device management.",
+    "views": {
+      "list": "Inventory Table",
+      "tiled": "Equipment Cards",
+      "rmm": "RMM Telemetry",
+      "graph": "Fleet Analytics"
+    },
+    "analytics": {
+      "statusAllocation": "Device Status Distribution",
+      "statusSubtitle": "Active, pending activation, and locked endpoint breakdown",
+      "osDistribution": "Operating System Distribution",
+      "osSubtitle": "Workstation and server platform distribution across fleet"
+    }
   },
   "resources": {
     "title": "Resources",
@@ -1281,6 +1296,7 @@
     "viewTiled": "Tiled",
     "viewList": "List",
     "download": "Download",
+    "upload": "Upload Resource",
     "downloadStartedTitle": "Download Started",
     "downloadStartedDesc": "Downloading {{fileName}}",
     "emptyTitle": "No resources found",
@@ -1553,6 +1569,18 @@
   "financial": {
     "title": "Financial Overview",
     "subtitle": "Real-time monthly recurring income, cashflow ledger, and infrastructure overhead.",
+    "views": {
+      "dashboard": "Overview & Charts",
+      "ledger": "Transactions Ledger",
+      "payroll": "Technician Commissions",
+      "graph": "Financial Analytics"
+    },
+    "analytics": {
+      "expenseByCategory": "Expense Allocation by Category",
+      "categorySubtitle": "Operational cost distribution across current period",
+      "monthlyTrends": "Monthly Revenue vs Expenses",
+      "trendsSubtitle": "Comparative monthly cashflow ledger trends"
+    },
     "export": "Export Report",
     "exporting": "Exporting...",
     "exportSuccess": "Financial report exported successfully",
@@ -1841,6 +1869,18 @@
   "crm": {
     "title": "CRM & Sales Pipeline",
     "subtitle": "Manage sales leads, pipeline stages, quotations, and subscription assignments",
+    "views": {
+      "list": "List",
+      "kanban": "Kanban",
+      "calendar": "Activities",
+      "graph": "Analytics"
+    },
+    "analytics": {
+      "pipelineByStage": "Pipeline by Stage",
+      "stageDistribution": "Value distribution across active sales stages",
+      "leadCountByStage": "Leads by Stage",
+      "noData": "No pipeline data available to visualize."
+    },
     "newLead": "New Lead",
     "newLeadTitle": "Create New Sales Lead",
     "newLeadSubtitle": "Register a new sales prospect, assign target subscriptions, and track pipeline status",
@@ -1929,10 +1969,6 @@
     "unassigned": "Unassigned",
     "emptyStage": "No leads in this stage",
     "totalLeads": "total prospects",
-    "views": {
-      "table": "Table",
-      "kanban": "Kanban"
-    },
     "tabs": {
       "quote": "Quotation",
       "subscription": "Subscribe",
