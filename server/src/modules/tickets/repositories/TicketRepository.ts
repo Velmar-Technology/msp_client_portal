@@ -1,6 +1,6 @@
 import { BaseRepository } from '@shared/repositories/BaseRepository';
 import { Ticket, TicketAttachment, TicketFilters, TicketStatus, TicketCategory, TicketPriority, EscalationCandidate } from '@shared/types';
-import { db, tickets, users, ticketAttachments, ticketResponses, subscriptionEquipment } from '@shared/db';
+import { db, tickets, users, ticketEvents, ticketAttachments, ticketResponses, subscriptionEquipment } from '@shared/db';
 import { eq, ne, gte, lte, and, or, ilike, desc, asc, count, lt, inArray, SQL, isNull, isNotNull, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { isUuid } from '@shared/utils/validation';
@@ -206,7 +206,17 @@ export class TicketRepository extends BaseRepository<Ticket> {
       })
       .from(tickets)
       .leftJoin(ticketResponses, eq(ticketResponses.ticket_id, tickets.id))
-      .where(and(eq(tickets.status, TicketStatus.OPEN), lt(tickets.created_at, cutoff)))
+      .where(
+        and(
+          eq(tickets.status, TicketStatus.OPEN),
+          lt(tickets.created_at, cutoff),
+          sql`NOT EXISTS (
+            SELECT 1 FROM ${ticketEvents}
+            WHERE ${ticketEvents.ticket_id} = ${tickets.id}
+              AND (${ticketEvents.notes} ILIKE '%Tier 2%' OR ${ticketEvents.notes} ILIKE '%Auto-Heal BL-104%')
+          )`
+        )
+      )
       .groupBy(tickets.id);
 
     return results as unknown as EscalationCandidate[];

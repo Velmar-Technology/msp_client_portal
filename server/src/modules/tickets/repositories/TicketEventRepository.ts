@@ -1,7 +1,7 @@
 import { BaseRepository } from '@shared/repositories/BaseRepository';
 import { TicketEvent, TicketStatus } from '@shared/types';
 import { db, ticketEvents, users } from '@shared/db';
-import { eq, asc } from 'drizzle-orm';
+import { eq, asc, and, or, ilike } from 'drizzle-orm';
 
 /**
  * Data repository for ticket lifecycle event audit trails and status timeline history.
@@ -68,6 +68,33 @@ export class TicketEventRepository extends BaseRepository<TicketEvent> {
       .orderBy(asc(ticketEvents.created_at));
 
     return results as unknown as TicketEvent[];
+  }
+
+  /**
+   * Checks whether a ticket has already undergone Tier 2 escalation in its audit timeline.
+   * Prevents repeated escalation sweeps from spamming assignment events and notifications (BL-104).
+   *
+   * @param ticketId - Unique ticket UUID
+   * @returns True if an escalation audit event already exists for this ticket
+   * @see BL-104
+   */
+  async hasEscalationEvent(ticketId: string): Promise<boolean> {
+    const results = await db
+      .select({ id: ticketEvents.id })
+      .from(ticketEvents)
+      .where(
+        and(
+          eq(ticketEvents.ticket_id, ticketId),
+          or(
+            ilike(ticketEvents.notes, '%Escalated to Tier 2%'),
+            ilike(ticketEvents.notes, '%Tier 2%'),
+            ilike(ticketEvents.notes, '%Auto-Heal BL-104%')
+          )
+        )
+      )
+      .limit(1);
+
+    return results.length > 0;
   }
 }
 
