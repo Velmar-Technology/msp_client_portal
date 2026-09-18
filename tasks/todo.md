@@ -307,4 +307,316 @@
 - [x] Client builds cleanly: `npm -w client run build`
 - [x] Conforms to CONSTRAINTS.md and AGENTS.md rules
 
+---
+
+## Phase 8: Homogeneous Compound Slot Architecture Across All Pages
+
+### Phase 8.1: Core Data Collection Pages
+
+#### Task 33: Migrate DevicesPage to Page.Header
+**Description:** Refactor `client/src/features/equipment/pages/DevicesPage.tsx` from legacy `Page` props to `<Page.Header>`, `<Page.HeaderRow>`, `<Page.TitleGroup>`, and `<Page.Actions maxVisible={3}>`.
+
+**Acceptance criteria:**
+- [ ] Title, subtitle, and primary actions are wrapped in `<Page.Header>` compound slots
+- [ ] Preserves quota info badges and device action buttons with responsive overflow
+- [ ] All equipment tests continue to pass
+
+**Verification:**
+- [ ] Tests pass: `npm -w client run test:run -- src/features/equipment/pages/DevicesPage.test.tsx`
+- [ ] Build succeeds: `npm -w client run build`
+
+**Dependencies:** Task 32
+**Files touched:**
+- `client/src/features/equipment/pages/DevicesPage.tsx`
+**Estimated scope:** Small (1 file)
+
+---
+
+#### Task 34: Migrate CRMPage to Page.Header & Page.Toolbar
+**Description:** Refactor `client/src/features/crm/pages/CRMPage.tsx` to `<Page.Header>`, `<Page.TitleGroup>`, `<Page.Actions maxVisible={3}>`, and `<Page.Toolbar>` (embedding view switcher).
+
+**Acceptance criteria:**
+- [ ] Title and actions use `<Page.HeaderRow>`
+- [ ] View switcher (Table / Kanban) is hosted cleanly in `<Page.Toolbar><Page.Controls>`
+- [ ] All CRM tests continue to pass
+
+**Verification:**
+- [ ] Tests pass: `npm -w client run test:run -- src/features/crm/pages/CRMPage.test.tsx`
+- [ ] Build succeeds: `npm -w client run build`
+
+**Dependencies:** Task 33
+**Files touched:**
+- `client/src/features/crm/pages/CRMPage.tsx`
+**Estimated scope:** Small (1 file)
+
+---
+
+#### Task 35: Migrate FinancialPage to Page.Header & Page.Toolbar
+**Description:** Refactor `client/src/features/financial/pages/FinancialPage.tsx` from `Page.ControlPanel` to `<Page.Header>`, `<Page.TitleGroup>`, `<Page.Actions>`, and `<Page.Toolbar>`.
+
+**Acceptance criteria:**
+- [ ] Replaces `Page.ControlPanel` with `<Page.Header>`
+- [ ] Hosts date range picker and export actions in `<Page.Actions maxVisible={3}>`
+- [ ] Financial tests pass without regressions
+
+**Verification:**
+- [ ] Tests pass: `npm -w client run test:run -- src/features/financial/pages/FinancialPage.test.tsx`
+- [ ] Build succeeds: `npm -w client run build`
+
+**Dependencies:** Task 34
+**Files touched:**
+- `client/src/features/financial/pages/FinancialPage.tsx`
+**Estimated scope:** Small (1 file)
+
+---
+
+#### Task 36: Migrate MaintenancePage to Page.Header & Page.Toolbar
+**Description:** Refactor `client/src/features/rmm/pages/MaintenancePage.tsx` from `Page.ControlPanel` to `<Page.Header>`, `<Page.TitleGroup>`, `<Page.Actions>`, and `<Page.Toolbar>`.
+
+**Acceptance criteria:**
+- [ ] Replaces `Page.ControlPanel` with `<Page.Header>`
+- [ ] View switcher (Calendar / List) hosted in `<Page.Toolbar><Page.Controls>`
+- [ ] RMM maintenance tests pass cleanly
+
+**Verification:**
+- [ ] Tests pass: `npm -w client run test:run -- src/features/rmm/pages/MaintenancePage.test.tsx`
+- [ ] Build succeeds: `npm -w client run build`
+
+**Dependencies:** Task 35
+**Files touched:**
+- `client/src/features/rmm/pages/MaintenancePage.tsx`
+**Estimated scope:** Small (1 file)
+
+---
+
+### Checkpoint: Core Data Pages Green
+- [ ] Targeted tests pass: `DevicesPage.test.tsx`, `CRMPage.test.tsx`, `FinancialPage.test.tsx`, `MaintenancePage.test.tsx`
+- [ ] Client builds cleanly: `npm -w client run build`
+
+---
+
+### Phase 8.2: Operations & Admin Pages
+
+#### Task 37: Migrate BillingPage to Page.Header
+**Description:** Refactor `client/src/features/billing/pages/BillingPage.tsx` to `<Page.Header>`, `<Page.HeaderRow>`, and `<Page.Actions>`.
+
+**Acceptance criteria:**
+- [ ] Replaces legacy `Page` title/subtitle/actions props with `<Page.Header>`
+- [ ] All billing tests pass without regression
+
+**Verification:**
+- [ ] Tests pass: `npm -w client run test:run -- src/features/billing/pages/BillingPage.test.tsx`
+- [ ] Build succeeds: `npm -w client run build`
+
+**Dependencies:** Task 36
+**Files touched:**
+- `client/src/features/billing/pages/BillingPage.tsx`
+**Estimated scope:** Small (1 file)
+
+---
+
+#### Task 38: Migrate UserManagementPage to Page.Header
+**Description:** Refactor `client/src/features/users/pages/UserManagementPage.tsx` to `<Page.Header>` and `<Page.Actions maxVisible={3}>`.
+
+**Acceptance criteria:**
+- [x] Replaces legacy `Page` props with `<Page.Header>`
+- [x] Add User and Invite actions placed in `<Page.Actions>`
+- [x] User management tests pass cleanly
+
+**Verification:**
+- [x] Tests pass: `npm -w client run test:run -- src/features/users/pages/UserManagementPage.test.tsx`
+- [x] Build succeeds: `npm -w client run build`
+
+**Dependencies:** Task 37
+**Files touched:**
+- `client/src/features/users/pages/UserManagementPage.tsx`
+**Estimated scope:** Small (1 file)
+
+---
+
+#### Task 39: Migrate PlansPage & PlanEditorPage to Page.Header
+**Description:** Refactor `client/src/features/subscriptions/pages/PlansPage.tsx` and `PlanEditorPage.tsx` to `<Page.Header>` with `<Page.Back>` and `<Page.Actions>`.
+
+**Acceptance criteria:**
+- [x] `PlansPage.tsx` and `PlanEditorPage.tsx` use `<Page.Header>`
+- [x] `PlanEditorPage.tsx` leverages `<Page.Back to="/plans" />` for navigation
+- [x] Subscriptions test suites pass cleanly
+
+**Verification:**
+- [x] Tests pass: `npm -w client run test:run -- src/features/subscriptions/pages/PlansPage.test.tsx src/features/subscriptions/pages/PlanEditorPage.test.tsx`
+- [x] Build succeeds: `npm -w client run build`
+
+**Dependencies:** Task 38
+**Files touched:**
+- `client/src/features/subscriptions/pages/PlansPage.tsx`
+- `client/src/features/subscriptions/pages/PlanEditorPage.tsx`
+**Estimated scope:** Small (2 files)
+
+---
+
+#### Task 40: Migrate ApiStatusPage to Page.Header
+**Description:** Refactor `client/src/features/system/pages/ApiStatusPage.tsx` to `<Page.Header>` and `<Page.Actions>`.
+
+**Acceptance criteria:**
+- [x] System status page uses `<Page.Header>` with refresh action in `<Page.Actions>`
+- [x] Api status tests pass cleanly
+
+**Verification:**
+- [x] Tests pass: `npm -w client run test:run -- src/features/system/pages/ApiStatusPage.test.tsx`
+- [x] Build succeeds: `npm -w client run build`
+
+**Dependencies:** Task 39
+**Files touched:**
+- `client/src/features/system/pages/ApiStatusPage.tsx`
+**Estimated scope:** Small (1 file)
+
+---
+
+### Checkpoint: Operations Pages Green
+- [x] Targeted tests pass: `BillingPage`, `UserManagementPage`, `PlansPage`, `PlanEditorPage`, `ApiStatusPage`
+- [x] Client builds cleanly: `npm -w client run build`
+
+---
+
+### Phase 8.3: Dashboard & Detail Views
+
+#### Task 41: Migrate Dashboards to Page.Header
+**Description:** Refactor `AdminDashboardView.tsx`, `ClientDashboardView.tsx`, and `TechDashboardPage.tsx` to `<Page.Header>` and `<Page.Actions>`.
+
+**Acceptance criteria:**
+- [x] All three dashboard views use `<Page.Header>`, `<Page.TitleGroup>`, and `<Page.Actions>`
+- [x] Dashboard tests pass without regression
+
+**Verification:**
+- [x] Tests pass: `npm -w client run test:run -- src/features/dashboard/pages/TechDashboardPage.test.tsx`
+- [x] Build succeeds: `npm -w client run build`
+
+**Dependencies:** Task 40
+**Files touched:**
+- `client/src/features/dashboard/components/AdminDashboardView.tsx`
+- `client/src/features/dashboard/components/ClientDashboardView.tsx`
+- `client/src/features/dashboard/pages/TechDashboardPage.tsx`
+**Estimated scope:** Medium (3 files)
+
+---
+
+#### Task 42: Migrate TicketDetailPage & CRMCustomPlanPage to Page.Header
+**Description:** Refactor `TicketDetailPage.tsx` and `CRMCustomPlanPage.tsx` to `<Page.Header>` with `<Page.Back>` and contextual actions.
+
+**Acceptance criteria:**
+- [x] Uses `<Page.Header>` with `<Page.Back>`
+- [x] Detail tests pass cleanly
+
+**Verification:**
+- [x] Tests pass: `npm -w client run test:run -- src/features/tickets/pages/TicketDetailPage.test.tsx`
+- [x] Build succeeds: `npm -w client run build`
+
+**Dependencies:** Task 41
+**Files touched:**
+- `client/src/features/tickets/pages/TicketDetailPage.tsx`
+- `client/src/features/crm/pages/CRMCustomPlanPage.tsx`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Checkpoint: Dashboards & Detail Views Green
+- [x] Targeted tests pass
+- [x] Client builds cleanly: `npm -w client run build`
+
+---
+
+### Phase 8.4: Settings & Configuration Pages
+
+#### Task 43: Migrate ProfilePage & PasswordManagerPage to Page.Header
+**Description:** Refactor `ProfilePage.tsx` and `PasswordManagerPage.tsx` to `<Page.Header>`.
+
+**Acceptance criteria:**
+- [x] Settings pages use `<Page.Header>` with TitleGroup and Actions
+- [x] Profile and Password Manager tests pass cleanly
+
+**Verification:**
+- [x] Tests pass: `npm -w client run test:run -- src/features/settings/pages/PasswordManagerPage.test.tsx`
+- [x] Build succeeds: `npm -w client run build`
+
+**Dependencies:** Task 42
+**Files touched:**
+- `client/src/features/settings/pages/ProfilePage.tsx`
+- `client/src/features/settings/pages/PasswordManagerPage.tsx`
+**Estimated scope:** Small (2 files)
+
+---
+
+#### Task 44: Migrate NotificationPreferencesPage & ByokSettingsPage to Page.Header
+**Description:** Refactor `NotificationPreferencesPage.tsx` and `ByokSettingsPage.tsx` to `<Page.Header>` and `<Page.Tabs>`.
+
+**Acceptance criteria:**
+- [x] Sub-navigation tabs render attached to `<Page.Header>`
+- [x] Settings test suites pass cleanly
+
+**Verification:**
+- [x] Tests pass: `npm -w client run test:run -- src/features/settings/pages/NotificationPreferencesPage.test.tsx src/features/settings/pages/ByokSettingsPage.test.tsx`
+- [x] Build succeeds: `npm -w client run build`
+
+**Dependencies:** Task 43
+**Files touched:**
+- `client/src/features/settings/pages/NotificationPreferencesPage.tsx`
+- `client/src/features/settings/pages/ByokSettingsPage.tsx`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Checkpoint: Settings Pages Green
+- [x] Targeted tests pass: `PasswordManagerPage`, `NotificationPreferencesPage`, `ByokSettingsPage`
+- [x] Client builds cleanly: `npm -w client run build`
+
+---
+
+### Phase 8.5: Informational, Shared & Legal Pages
+
+#### Task 45: Migrate ResourcesPage, HelpPage & StyleGuidePage to Page.Header
+**Description:** Refactor `ResourcesPage.tsx`, `HelpPage.tsx`, and `StyleGuidePage.tsx` to `<Page.Header>`.
+
+**Acceptance criteria:**
+- [x] Informational and documentation pages use `<Page.Header>`
+- [x] Tests pass cleanly
+
+**Verification:**
+- [x] Tests pass: `npm -w client run test:run -- src/components/shared/StyleGuidePage.test.tsx`
+- [x] Build succeeds: `npm -w client run build`
+
+**Dependencies:** Task 44
+**Files touched:**
+- `client/src/pages/ResourcesPage/ResourcesPage.tsx`
+- `client/src/pages/HelpPage/HelpPage.tsx`
+- `client/src/components/shared/StyleGuidePage.tsx`
+**Estimated scope:** Medium (3 files)
+
+---
+
+#### Task 46: Migrate TermsPage, PrivacyPage & NotFoundPage to Page.Header
+**Description:** Refactor `TermsPage.tsx`, `PrivacyPage.tsx`, and `NotFoundPage.tsx` to `<Page.Header>`.
+
+**Acceptance criteria:**
+- [x] Legal and 404 pages use `<Page.Header>` without breadcrumbs
+- [x] Public routes and terms tests pass cleanly
+
+**Verification:**
+- [x] Tests pass: `npm -w client run test:run -- src/pages/TermsPage/TermsPage.test.tsx src/public-routes.test.tsx`
+- [x] Build succeeds: `npm -w client run build`
+
+**Dependencies:** Task 45
+**Files touched:**
+- `client/src/pages/TermsPage/TermsPage.tsx`
+- `client/src/pages/PrivacyPage/PrivacyPage.tsx`
+- `client/src/pages/NotFoundPage/NotFoundPage.tsx`
+**Estimated scope:** Medium (3 files)
+
+---
+
+### Checkpoint: Final Full System Verification
+- [x] Full client test suite passes: `npm -w client run test:run` (50/50 test files, 329+ tests)
+- [x] Client builds clean with zero type errors: `npm -w client run build`
+- [x] 100% of pages in the portal utilize the homogeneous compound slot architecture
+
+
 

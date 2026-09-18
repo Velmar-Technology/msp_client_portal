@@ -71,7 +71,16 @@ export function FinancialPage() {
   if (isLoading) {
     if (!showSkeleton) return null;
     return (
-      <Page title={t("financial.title")} subtitle={t("financial.subtitle")} isLoading={true}>
+      <Page>
+        <Page.Header>
+          <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
+          <Page.HeaderRow>
+            <Page.TitleGroup>
+              <Page.Title>{t("financial.title")}</Page.Title>
+              <Page.Description>{t("financial.subtitle")}</Page.Description>
+            </Page.TitleGroup>
+          </Page.HeaderRow>
+        </Page.Header>
         <div className="flex items-center justify-center min-h-[50vh]">
           <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
         </div>
@@ -102,12 +111,15 @@ export function FinancialPage() {
         },
       ]}
     >
-      <Page.ControlPanel
-        title={t("financial.title")}
-        subtitle={t("financial.subtitle")}
-        actions={
-          !isPayroll ? (
-            <div className="flex items-center gap-2">
+      <Page.Header>
+        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
+        <Page.HeaderRow>
+          <Page.TitleGroup>
+            <Page.Title>{t("financial.title")}</Page.Title>
+            <Page.Description>{t("financial.subtitle")}</Page.Description>
+          </Page.TitleGroup>
+          {!isPayroll && (
+            <Page.Actions maxVisible={3}>
               {/* Date Selector */}
               <Select value={dateRange} onValueChange={(val) => setDateRange(val as DateRange)}>
                 <SelectTrigger size="default" className="h-7 w-36 text-xs font-medium bg-background">
@@ -134,13 +146,17 @@ export function FinancialPage() {
 
               {/* Log Expense Button (ADMIN only) */}
               {isAdmin && <LogExpenseDialog onExpenseLogged={refresh} />}
-            </div>
-          ) : undefined
-        }
-        viewsSlot={<Page.ViewSwitcher size="sm" />}
-        searchSlot={null}
-        pagerSlot={null}
-      />
+            </Page.Actions>
+          )}
+        </Page.HeaderRow>
+        <Page.Toolbar>
+          <Page.Filters />
+          <Page.Controls>
+            <Page.ViewSwitcher size="sm" />
+          </Page.Controls>
+        </Page.Toolbar>
+      </Page.Header>
+
 
       {/* Dashboard Analytical View */}
       <Page.View type="dashboard" className="space-y-5">

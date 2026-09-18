@@ -207,42 +207,47 @@ export function CRMPage() {
   const isDetailSheetOpen = Boolean(paramLeadId && selectedLead);
 
   return (
-    <Page
-      title={t("crm.title")}
-      subtitle={t("crm.subtitle")}
-      actions={
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => navigate(selectedLead ? `/crm/custom-plans?lead=${selectedLead.id}` : "/crm/custom-plans")}
-            className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer border-primary/30 text-primary hover:bg-primary/5 shadow-xs"
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>{t("crm.customPlan.btnTitle", "Custom Plan Studio")}</span>
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => setParams({ openModal: "new-lead" })}
-            className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span>{t("crm.newLead")}</span>
-          </Button>
-          <ViewToggle
-            size="sm"
-            value={paramView}
-            onChange={handleViewChange}
-            options={[
-              { value: "table", icon: LayoutList },
-              { value: "kanban", icon: Kanban },
-            ]}
-          />
-        </div>
-      }
-    >
+    <Page>
+      <Page.Header>
+        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
+        <Page.HeaderRow>
+          <Page.TitleGroup>
+            <Page.Title>{t("crm.title")}</Page.Title>
+            <Page.Description>{t("crm.subtitle")}</Page.Description>
+          </Page.TitleGroup>
+          <Page.Actions maxVisible={3}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(selectedLead ? `/crm/custom-plans?lead=${selectedLead.id}` : "/crm/custom-plans")}
+              className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer border-primary/30 text-primary hover:bg-primary/5 shadow-xs"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>{t("crm.customPlan.btnTitle", "Custom Plan Studio")}</span>
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => setParams({ openModal: "new-lead" })}
+              className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>{t("crm.newLead")}</span>
+            </Button>
+            <ViewToggle
+              size="sm"
+              value={paramView}
+              onChange={handleViewChange}
+              options={[
+                { value: "table", icon: LayoutList },
+                { value: "kanban", icon: Kanban },
+              ]}
+            />
+          </Page.Actions>
+        </Page.HeaderRow>
+      </Page.Header>
+
       <div className="flex flex-col gap-4">
         <section aria-label="CRM Metrics">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">

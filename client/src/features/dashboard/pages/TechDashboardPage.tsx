@@ -443,24 +443,31 @@ export function TechDashboardPage() {
   }
 
   return (
-    <Page
-      title={`${t('login.welcome')}, ${user?.name}`}
-      subtitle={t('techDashboard.subtitle')}
-      actions={
-        <div className="flex items-center gap-2.5 bg-card p-2 px-3 rounded-lg border border-border shadow-xs">
-          <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-            <User className="h-3.5 w-3.5" />
-          </div>
-          <div>
-            <h4 className="text-xs font-semibold text-foreground leading-tight">{user?.email}</h4>
-            <span className="text-[10px] text-muted-foreground font-medium">
-              {t('techDashboard.mySpecialty')}: <strong className="text-foreground">{specialty || (i18n.language === 'es_DO' ? 'Generalista' : 'Generalist')}</strong>
-            </span>
-          </div>
-        </div>
-      }
-    >
+    <Page>
+      <Page.Header>
+        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
+        <Page.HeaderRow>
+          <Page.TitleGroup>
+            <Page.Title>{`${t('login.welcome')}, ${user?.name}`}</Page.Title>
+            <Page.Description>{t('techDashboard.subtitle')}</Page.Description>
+          </Page.TitleGroup>
+          <Page.Actions maxVisible={3}>
+            <div className="flex items-center gap-2.5 bg-card p-2 px-3 rounded-lg border border-border shadow-xs">
+              <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+                <User className="h-3.5 w-3.5" />
+              </div>
+              <div>
+                <h4 className="text-xs font-semibold text-foreground leading-tight">{user?.email}</h4>
+                <span className="text-[10px] text-muted-foreground font-medium">
+                  {t('techDashboard.mySpecialty')}: <strong className="text-foreground">{specialty || (i18n.language === 'es_DO' ? 'Generalista' : 'Generalist')}</strong>
+                </span>
+              </div>
+            </div>
+          </Page.Actions>
+        </Page.HeaderRow>
+      </Page.Header>
       <div className="flex flex-col gap-4">
+
         {/* Metrics Row */}
         <section aria-label="Technician Metrics">
           <StatsGrid className="w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5">

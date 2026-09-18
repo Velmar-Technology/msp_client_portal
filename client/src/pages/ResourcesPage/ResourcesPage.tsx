@@ -278,7 +278,16 @@ export function ResourcesPage() {
   ]);
 
   return (
-    <Page title={t("resources.title")} subtitle={t("resources.subtitle")} isLoading={false}>
+    <Page isLoading={false}>
+      <Page.Header>
+        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
+        <Page.HeaderRow>
+          <Page.TitleGroup>
+            <Page.Title>{t("resources.title")}</Page.Title>
+            <Page.Description>{t("resources.subtitle")}</Page.Description>
+          </Page.TitleGroup>
+        </Page.HeaderRow>
+      </Page.Header>
       {body}
     </Page>
   );

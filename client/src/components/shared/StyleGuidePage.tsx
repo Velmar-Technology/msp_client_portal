@@ -1,5 +1,5 @@
 import React from 'react';
-import { PageHeader } from './PageHeader';
+import { Page } from '@/components/Page';
 import { StatCard } from './StatCard';
 import { EmptyState } from './EmptyState';
 import { TableToolbar } from './TableToolbar';
@@ -14,17 +14,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
  */
 export const StyleGuidePage: React.FC = () => {
   return (
-    <div className="space-y-8 p-6 w-full">
-      <PageHeader
-        title="Design System Style Guide"
-        subtitle="Live reference page showcasing composed layout blocks, semantic color tokens, and UI primitives."
-        badge={<Badge variant="outline">Dev Only</Badge>}
-        actions={
-          <Button size="sm">
-            Primary Action
-          </Button>
-        }
-      />
+    <Page className="space-y-8 p-6 w-full">
+      <Page.Header>
+        <Page.HeaderRow>
+          <Page.TitleGroup>
+            <div className="flex items-center gap-2">
+              <Page.Title>Design System Style Guide</Page.Title>
+              <Badge variant="outline">Dev Only</Badge>
+            </div>
+            <Page.Description>
+              Live reference page showcasing composed layout blocks, semantic color tokens, and UI primitives.
+            </Page.Description>
+          </Page.TitleGroup>
+          <Page.Actions>
+            <Button size="sm">
+              Primary Action
+            </Button>
+          </Page.Actions>
+        </Page.HeaderRow>
+      </Page.Header>
 
       <section className="space-y-4">
         <h2 className="text-xl font-semibold text-foreground">Composed Stat Cards</h2>
@@ -81,6 +89,6 @@ export const StyleGuidePage: React.FC = () => {
           </ModalFooter>
         </Card>
       </section>
-    </div>
+    </Page>
   );
 };

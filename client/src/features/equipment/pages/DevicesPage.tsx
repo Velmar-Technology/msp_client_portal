@@ -267,17 +267,23 @@ export function DevicesPage() {
   );
 
   return (
-    <Page
-      title={t("nav.devices")}
-      subtitle={t("devices.subtitle")}
-      isLoading={false}
-      actions={
-        <ViewToggle<"list" | "tiled">
-          value={viewMode}
-          onChange={(mode) => setViewMode(mode)}
-        />
-      }
-    >
+    <Page>
+      <Page.Header>
+        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
+        <Page.HeaderRow>
+          <Page.TitleGroup>
+            <Page.Title>{t("nav.devices")}</Page.Title>
+            <Page.Description>{t("devices.subtitle")}</Page.Description>
+          </Page.TitleGroup>
+          <Page.Actions maxVisible={3}>
+            <ViewToggle<"list" | "tiled">
+              value={viewMode}
+              onChange={(mode) => setViewMode(mode)}
+            />
+          </Page.Actions>
+        </Page.HeaderRow>
+      </Page.Header>
+
       {loading ? (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row justify-between gap-3">

@@ -362,25 +362,29 @@ export function PlansPage() {
   );
 
   return (
-    <Page
-      title={t("plans.title")}
-      subtitle={t("plans.subtitle")}
-      isLoading={loading && filteredPlans.length === 0}
-      actions={
-        isAdmin && (
-          <div className="flex justify-end w-full sm:w-auto">
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleCreateClick}
-              className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
-            >
-              <span>+ {t("plans.addPlan") || "Add Plan"}</span>
-            </Button>
-          </div>
-        )
-      }
-    >
+    <Page isLoading={loading && filteredPlans.length === 0}>
+      <Page.Header>
+        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
+        <Page.HeaderRow>
+          <Page.TitleGroup>
+            <Page.Title>{t("plans.title")}</Page.Title>
+            <Page.Description>{t("plans.subtitle")}</Page.Description>
+          </Page.TitleGroup>
+          {isAdmin && (
+            <Page.Actions maxVisible={3}>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleCreateClick}
+                className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
+              >
+                <span>+ {t("plans.addPlan") || "Add Plan"}</span>
+              </Button>
+            </Page.Actions>
+          )}
+        </Page.HeaderRow>
+      </Page.Header>
+
       {/* Navigation Section Switcher: Browse Plans vs Active Subscriptions */}
       {showTabs && (
         <div className="border-b border-border pb-2 mb-5">

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Key, Eye, EyeOff, CheckCircle2, XCircle, ShieldCheck, Cpu, Copy, Check, Terminal } from "lucide-react";
+import { Page } from "@/components/Page";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -204,44 +205,43 @@ export function ByokSettingsPage() {
   };
 
   return (
-    <div className="space-y-6 w-full">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b pb-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold tracking-tight">
+    <Page>
+      <Page.Header>
+        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
+        <Page.HeaderRow>
+          <Page.TitleGroup>
+            <Page.Title>
               {t("byok.pageTitle", "Inteligencia Artificial & Calidad CAF")}
-            </h1>
-          </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            {t(
-              "byok.pageDesc",
-              "Configure su propia clave de API (OpenAI o Anthropic). Sus datos están protegidos bajo la Ley 172-13 con anonimización en memoria.",
+            </Page.Title>
+            <Page.Description>
+              {t(
+                "byok.pageDesc",
+                "Configure su propia clave de API (OpenAI o Anthropic). Sus datos están protegidos bajo la Ley 172-13 con anonimización en memoria.",
+              )}
+            </Page.Description>
+          </Page.TitleGroup>
+          <Page.Actions>
+            {isStatusLoading ? (
+              <Badge variant="secondary" className="h-7">
+                {t("common.loading", "Cargando...")}
+              </Badge>
+            ) : byokStatus?.isConfigured ? (
+              <Badge variant="default" className="h-7 gap-1 bg-emerald-600 hover:bg-emerald-700">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                {t("byok.statusConfigured", "Configurado:")}
+              </Badge>
+            ) : (
+              <Badge
+                variant="outline"
+                className="h-7 gap-1 text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-950/20"
+              >
+                <XCircle className="h-3.5 w-3.5" />
+                {t("byok.statusPending", "Sin Configurar")}
+              </Badge>
             )}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {isStatusLoading ? (
-            <Badge variant="secondary" className="h-7">
-              {t("common.loading", "Cargando...")}
-            </Badge>
-          ) : byokStatus?.isConfigured ? (
-            <Badge variant="default" className="h-7 gap-1 bg-emerald-600 hover:bg-emerald-700">
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              {t("byok.statusConfigured", "Configurado:")}
-            </Badge>
-          ) : (
-            <Badge
-              variant="outline"
-              className="h-7 gap-1 text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-950/20"
-            >
-              <XCircle className="h-3.5 w-3.5" />
-              {t("byok.statusPending", "Sin Configurar")}
-            </Badge>
-          )}
-        </div>
-      </div>
+          </Page.Actions>
+        </Page.HeaderRow>
+      </Page.Header>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-2 max-w-md h-9">
@@ -488,6 +488,6 @@ export function ByokSettingsPage() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </Page>
   );
 }
