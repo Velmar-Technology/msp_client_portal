@@ -20,6 +20,10 @@ const translations: Record<string, string> = {
   "nav.notificationPreferences": "Notifications",
   "nav.userManagement": "Users",
   "nav.apiStatus": "API Status",
+  "nav.crm": "CRM Pipeline",
+  "nav.passwordManager": "Password Manager",
+  "nav.cafAiSettings": "AI & CAF Quality",
+  "crm.customPlan.btnTitle": "Custom Plan Studio",
   "ticketDetail.ticketId": "Ticket ID",
   "plans.addNewPlan": "New Plan",
   "footer.terms": "Terms",
@@ -61,6 +65,13 @@ describe("resolvePageName", () => {
   it("resolves nested breadcrumb leaves for multi-level routes", () => {
     expect(resolvePageName("/plans/new", t, { role: "ADMIN" })).toBe("New Plan");
     expect(resolvePageName("/profile", t, user)).toBe("Profile");
+  });
+
+  it("resolves vaultwarden and crm routes", () => {
+    expect(resolvePageName("/password-manager", t, user)).toBe("Password Manager");
+    expect(resolvePageName("/crm", t, user)).toBe("CRM Pipeline");
+    expect(resolvePageName("/crm/custom-plans", t, user)).toBe("Custom Plan Studio");
+    expect(resolvePageName("/settings/ai", t, user)).toBe("AI & CAF Quality");
   });
 
   it("returns null for unmatched routes", () => {
