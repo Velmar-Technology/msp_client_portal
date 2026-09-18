@@ -1548,6 +1548,18 @@
   "financial": {
     "title": "Resumen Financiero",
     "subtitle": "Ingresos recurrentes mensuales, libro de caja y costos de infraestructura en tiempo real.",
+    "views": {
+      "dashboard": "Resumen y Gráficos",
+      "ledger": "Libro de Transacciones",
+      "payroll": "Comisiones de Técnicos",
+      "graph": "Analítica Financiera"
+    },
+    "analytics": {
+      "expenseByCategory": "Distribución de Gastos por Categoría",
+      "categorySubtitle": "Distribución de costos operativos en el período actual",
+      "monthlyTrends": "Ingresos vs Gastos Mensuales",
+      "trendsSubtitle": "Tendencias comparativas del flujo de caja mensual"
+    },
     "export": "Exportar Reporte",
     "exporting": "Exportando...",
     "exportSuccess": "Reporte financiero exportado exitosamente",
@@ -1935,10 +1947,6 @@
     "unassigned": "Sin Asignar",
     "emptyStage": "No hay prospectos en esta etapa",
     "totalLeads": "prospectos totales",
-    "views": {
-      "table": "Tabla",
-      "kanban": "Kanban"
-    },
     "tabs": {
       "quote": "Cotización",
       "subscription": "Suscripción",

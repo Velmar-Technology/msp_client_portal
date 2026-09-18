@@ -1,55 +1,55 @@
-# Implementation Plan: CRM Migration to `<Page />` View Modes Architecture
+# Implementation Plan: Financial Migration to `<Page />` View Modes Architecture
 
 ## Overview
-Migrate the CRM pipeline (`CRMPage.tsx`) from bespoke, fragmented view toggling and stacked widget layouts to the enterprise `<Page>` view architecture (`Page.ViewSwitcher`, `Page.View`, `Page.Toolbar`). This unifies sales operations into four first-class view modes: **List** (`list`), **Kanban** (`kanban`), **Activity Calendar** (`calendar`), and **Pipeline Analytics Graph** (`graph`), while keeping executive KPIs persistently visible and ensuring backwards compatibility for legacy `?view=table` links.
+Migrate `FinancialPage.tsx` from ad-hoc URL tab parameters and mixed layouts to the enterprise `<Page>` view architecture (`Page.ViewSwitcher`, `Page.View`, `Page.Toolbar`). Elevate financial operations into four unified first-class view modes: **Overview & Charts** (`dashboard`), **Transactions Ledger** (`ledger`), **Technician Commissions** (`payroll`), and **Financial Analytics** (`graph`), while preserving 100% backwards compatibility with legacy `?tab=` query parameters.
 
 ## Architecture Decisions
 1. **First-Class View Modes via `<Page availableViews={[...]}>`**:
-   - `list`: The existing high-density `CRMDataTable` with sorting, search, stage filters, and bulk actions.
-   - `kanban`: Visual stage pipeline board (`CRMKanbanBoard`).
-   - `calendar`: Interactive temporal schedule of follow-ups, demo calls, and quotation deadlines using `<Page.Calendar>`.
-   - `graph`: Stage-by-stage sales funnel and conversion analytics using `<Page.Graph>`.
-2. **Control Height Uniformity & Toolbar Integration**:
-   - Remove custom `<ViewToggle>` in `Page.Actions`.
-   - Place `<Page.ViewSwitcher>` inside `<Page.Controls>` within `<Page.Toolbar>`, conforming strictly to standard `h-7` (28px).
-3. **Executive KPI Persistence**:
-   - Keep the top 4 `StatCard` metrics (`Pipeline Value`, `Won Revenue`, `Proposals`, `Win Rate`) pinned below `<Page.Header>` across all views.
-   - Relocate the vertical "Due Follow-ups" list block from the main flow into the interactive **Calendar view**, eliminating clutter.
-4. **URL Normalization & Backwards Compatibility**:
-   - Canonical view modes are `list` and `kanban` (plus `calendar` and `graph`).
-   - Any incoming URL with `?view=table` automatically normalizes to `list` without infinite loops or lost search/stage query filters.
+   - `dashboard`: Executive Overview with KPI cards, Revenue Chart, Expense Doughnut, and recent ledger movements.
+   - `ledger`: Dedicated full-width Transactions Ledger (`TransactionsTable`) with date filtering and CSV export.
+   - `payroll`: Dedicated Technician Payroll and labor bounty accounting (`TechnicianPayrollTable`).
+   - `graph`: Native SVG Expense Category allocation and Net Profit split visualization powered by `<Page.Graph>`.
+2. **Standardized View Switching & Toolbar Placement**:
+   - Relocate `<Page.ViewSwitcher>` inside `<Page.Controls>` within `<Page.Toolbar>`.
+   - All buttons, date selectors, and view switchers adhere to compact `h-7` (28px).
+3. **Dual Parameter Synchronization (URL Normalization & Backwards Compatibility)**:
+   - Canonical view state uses `?view=`.
+   - If legacy `?tab=payroll` is present, it transparently maps to `payroll` view mode.
+   - Updates to `view` synchronize both `view` and legacy `tab` to prevent breaking existing bookmarks or test suites.
+4. **i18n Localization**:
+   - Replace hardcoded view labels with i18n keys (`financial.views.dashboard`, `financial.views.ledger`, `financial.views.payroll`, `financial.views.graph`, and analytics chart subtitles) in `en_US.json` and `es_DO.json`.
 
 ## Task List
 
 ### Phase 1: Foundations & Translations
-- [x] Task 1: Add CRM View Mode i18n Localization Keys in `en_US.json` and `es_DO.json`
+- [ ] Task 1: Add Financial View Mode i18n Localization Keys in `en_US.json` and `es_DO.json`
 
 ### Checkpoint: Foundations
-- [x] Locale files compile cleanly with valid JSON syntax
+- [ ] Locale files compile cleanly with valid JSON syntax
 
-### Phase 2: CRM View Modes Migration
-- [x] Task 2: Refactor `CRMPage.tsx` to `<Page.ViewSwitcher>` and URL Normalization (`table` $\rightarrow$ `list`)
-- [x] Task 3: Integrate Activity Calendar View via `<Page.View type="calendar">` and `<Page.Calendar>`
-- [x] Task 4: Integrate Pipeline Analytics Graph View via `<Page.View type="graph">` and `<Page.Graph>`
+### Phase 2: Financial View Modes Migration
+- [ ] Task 2: Refactor `FinancialPage.tsx` root container, `availableViews`, and URL normalization
+- [ ] Task 3: Implement Dedicated Transactions Ledger View (`<Page.View type="ledger">`)
+- [ ] Task 4: Implement Financial Analytics View (`<Page.View type="graph">` via `<Page.Graph>`)
 
 ### Checkpoint: View Modes Migration Green
-- [x] All four views switch smoothly without page reload
-- [x] Client builds clean with zero type errors (`npm -w client run build`)
+- [ ] All four views (`dashboard`, `ledger`, `payroll`, `graph`) switch smoothly without page reload
+- [ ] Client builds clean with zero type errors (`npm -w client run build`)
 
 ### Phase 3: Verification & Regression Testing
-- [x] Task 5: Expand `CRMPage.test.tsx` for All View Modes and Legacy Fallback
+- [ ] Task 5: Expand `FinancialPage.test.tsx` for All View Modes and Legacy Fallback
 
 ### Checkpoint: Complete Verification
-- [x] Targeted tests pass: `npm -w client run test:run -- src/features/crm/pages/CRMPage.test.tsx`
-- [x] Full client test suite passes: `npm -w client run test:run`
-- [x] Client compiles cleanly: `npm -w client run build`
+- [ ] Targeted tests pass: `npm -w client run test:run -- src/features/financial/pages/FinancialPage.test.tsx`
+- [ ] Full client test suite passes: `npm -w client run test:run`
+- [ ] Client compiles cleanly: `npm -w client run build`
 
 ## Risks and Mitigations
 | Risk | Impact | Mitigation |
 | :--- | :---: | :--- |
-| Empty activity or lead datasets render broken SVG in `Page.Graph` | Medium | Guard with fallback empty states and default zero-value data structures. |
-| Incompatible `due_date` format in `Page.Calendar` | Low | Parse ISO strings through `new Date(...)` and filter out invalid/null dates before memoizing events. |
-| Legacy bookmark disruption (`?view=table`) | High | Explicit normalization in URL state hook to treat `table` as `list` seamlessly. |
+| Existing tests or bookmarks relying on `?tab=payroll` break | High | Read both `?view` and `?tab`, prioritizing `?view` while aliasing `?tab=payroll` to `payroll` mode. |
+| Heavy charts causing unnecessary re-renders in ledger or payroll views | Low | `RevenueChart` and `ExpenseDoughnut` remain code-split behind `lazyWithRetry` and only render in `dashboard` mode. |
+| Empty expense categories in `Page.Graph` | Medium | Guard data mapping with default zero values and fallback empty states. |
 
 ## Open Questions
-- None. Requirements and scope confirmed via `/idea-refine` dialogue.
+- None. Requirements follow the established `<Page>` view architecture recipe.

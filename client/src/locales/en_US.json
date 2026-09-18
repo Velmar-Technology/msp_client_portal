@@ -1553,6 +1553,18 @@
   "financial": {
     "title": "Financial Overview",
     "subtitle": "Real-time monthly recurring income, cashflow ledger, and infrastructure overhead.",
+    "views": {
+      "dashboard": "Overview & Charts",
+      "ledger": "Transactions Ledger",
+      "payroll": "Technician Commissions",
+      "graph": "Financial Analytics"
+    },
+    "analytics": {
+      "expenseByCategory": "Expense Allocation by Category",
+      "categorySubtitle": "Operational cost distribution across current period",
+      "monthlyTrends": "Monthly Revenue vs Expenses",
+      "trendsSubtitle": "Comparative monthly cashflow ledger trends"
+    },
     "export": "Export Report",
     "exporting": "Exporting...",
     "exportSuccess": "Financial report exported successfully",
@@ -1941,10 +1953,6 @@
     "unassigned": "Unassigned",
     "emptyStage": "No leads in this stage",
     "totalLeads": "total prospects",
-    "views": {
-      "table": "Table",
-      "kanban": "Kanban"
-    },
     "tabs": {
       "quote": "Quotation",
       "subscription": "Subscribe",
