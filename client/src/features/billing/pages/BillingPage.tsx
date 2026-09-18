@@ -359,7 +359,17 @@ export function BillingPage() {
   );
 
   return (
-    <Page title={t('billing.title')} subtitle={t('billing.subtitle')}>
+    <Page>
+      <Page.Header>
+        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
+        <Page.HeaderRow>
+          <Page.TitleGroup>
+            <Page.Title>{t('billing.title')}</Page.Title>
+            <Page.Description>{t('billing.subtitle')}</Page.Description>
+          </Page.TitleGroup>
+        </Page.HeaderRow>
+      </Page.Header>
+
       {/* BL-702 Non-Payment Scale & Emergency Grace Alert Card */}
       {isDelinquent && (
         <div

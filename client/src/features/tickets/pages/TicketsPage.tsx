@@ -348,35 +348,41 @@ export function TicketsPage() {
       defaultPage={page}
       defaultPageSize={limit}
     >
-      <Page.ControlPanel
-        title={t("tickets.title")}
-        subtitle={t("tickets.subtitle")}
-        actions={
-          canCreateTicket ? (
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => setShowNewTicket(true)}
-              className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span>{t("tickets.newTicket")}</span>
-            </Button>
-          ) : undefined
-        }
-        viewsSlot={
-          <Page.ViewSwitcher
-            value={viewMode}
-            onChange={handleViewChange}
-            options={[
-              { value: "list", label: t("resources.viewList", "List"), icon: List, title: t("resources.viewList", "List") },
-              { value: "kanban", label: t("tickets.kanban", "Kanban"), icon: LayoutGrid, title: t("tickets.kanban", "Kanban") },
-            ]}
-          />
-        }
-        searchSlot={null}
-        pagerSlot={null}
-      />
+      <Page.Header>
+        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
+        <Page.HeaderRow>
+          <Page.TitleGroup>
+            <Page.Title>{t("tickets.title")}</Page.Title>
+            <Page.Description>{t("tickets.subtitle")}</Page.Description>
+          </Page.TitleGroup>
+          {canCreateTicket && (
+            <Page.Actions maxVisible={3}>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setShowNewTicket(true)}
+                className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>{t("tickets.newTicket")}</span>
+              </Button>
+            </Page.Actions>
+          )}
+        </Page.HeaderRow>
+        <Page.Toolbar>
+          <Page.Filters />
+          <Page.Controls>
+            <Page.ViewSwitcher
+              value={viewMode}
+              onChange={handleViewChange}
+              options={[
+                { value: "list", label: t("resources.viewList", "List"), icon: List, title: t("resources.viewList", "List") },
+                { value: "kanban", label: t("tickets.kanban", "Kanban"), icon: LayoutGrid, title: t("tickets.kanban", "Kanban") },
+              ]}
+            />
+          </Page.Controls>
+        </Page.Toolbar>
+      </Page.Header>
 
       <Page.View type="list">
         <DataTable

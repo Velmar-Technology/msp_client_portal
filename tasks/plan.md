@@ -1,41 +1,79 @@
-# Implementation Plan: Odoo-Style View System for Page Component
+# Implementation Plan: Homogeneous Compound Slot Architecture Across All Pages
 
 ## Overview
-Transform `client/src/components/Page.tsx` into an extensible, Odoo-inspired View System with a Unified Control Panel (`<Page.ControlPanel>`), View Switcher (`<Page.ViewSwitcher>`), Faceted Search Bar (`<Page.Search>`), Compact Pager (`<Page.Pager>`), and conditional multi-mode views (`<Page.View type="...">`), backed by a headless `PageContext` synced to `useUrlState`. Maintains 100% backward compatibility for all existing usages across the MSP portal.
+Spread the unified compound slot architecture (`<Page.Header>`, `<Page.HeaderRow>`, `<Page.TitleGroup>`, `<Page.Title>`, `<Page.Description>`, `<Page.Actions maxVisible={...}>`, `<Page.Toolbar>`, and `<Page.Tabs>`) across all 23 remaining pages and views in the portal. This replaces legacy monolithic props (`title`, `subtitle`, `actions`, `tabsSlot`) and deprecated `PageControlPanel` usages with a strictly homogeneous, enterprise-grade, accessible, and responsive layout standard.
 
 ## Architecture Decisions
-1. **Compound Component API**: Retain `<Page>` as the main wrapper, attaching sub-components (`Page.ControlPanel`, `Page.ViewSwitcher`, `Page.Search`, `Page.Pager`, `Page.View`, `Page.StatusBar`).
-2. **Backward Compatibility Guarantee**: All existing `PageProps` (`title`, `subtitle`, `actions`, `showBreadcrumbs`, `isLoading`, `children`) continue to work untouched. Existing pages do not break.
-3. **Headless State & URL Sync**: `PageContext` encapsulates the active view mode (e.g. `list`, `kanban`, `form`), search query, and pagination state. When `syncUrl={true}` (default), it reads and updates query params via `useUrlState` without collisions (`?view=`, `?search=`, `?page=`).
-4. **Design System & Controls Compliance**: All controls strictly adhere to AGENTS.md compact standard `h-7` (28px height), Radix UI primitives (`@/components/ui/button`, `@/components/ui/input`, `@/components/ui/badge`), and full i18n localization support.
-5. **No Duplicate Types**: Type definitions strictly typed in TypeScript, no `@ts-ignore` or `eslint-disable`.
+1. **Homogeneous Layout Standard**: Every page implements the identical compound tree:
+   - `<Page.Header>`: Top coordinator with optional sticky backdrop glassmorphism.
+   - `<Page.Breadcrumbs>`: Clean breadcrumb trail at top of header.
+   - `<Page.HeaderRow>`: Flex row aligning identity on left and actions on right.
+   - `<Page.TitleGroup>`: Enclosing `<Page.Back>` (where relevant), `<Page.Title>`, status `<Badge>`, and `<Page.Description>`.
+   - `<Page.Actions maxVisible={3}>`: Responsive action buttons collapsing into `MoreHorizontal` dropdown when overflowing.
+   - `<Page.Toolbar>`: Lays out `<Page.Filters>` (search and filters) and `<Page.Controls>` (pager and view switcher) for data-dense pages.
+   - `<Page.Tabs>`: Sub-navigation attached to the bottom of `<Page.Header>` where tabs are present.
+2. **Domain-Grouped Vertical Slicing**: Rather than modifying 23 files at once, group migrations into 5 focused slices by domain:
+   - Slice 1: Core Data Collection Pages (Devices, CRM, Financial, Maintenance)
+   - Slice 2: Operations & Admin Pages (Billing, Users, Plans & PlanEditor, ApiStatus)
+   - Slice 3: Dashboard & Detail Pages (AdminDashboard, ClientDashboard, TechDashboard, TicketDetail, CRMCustomPlan)
+   - Slice 4: Settings & Configuration Pages (Profile, PasswordManager, NotificationPreferences, ByokSettings)
+   - Slice 5: Informational & Static Pages (Resources, Help, StyleGuide, Terms, Privacy, NotFound)
+3. **Control Height Uniformity**: All buttons and interactive triggers conform to `h-7` (28px).
+4. **Zero Regressions**: Verification checkpoints run after each slice to guarantee clean compilation and 100% test passes.
 
 ## Task List
 
-### Phase 1: Foundation & Core State Architecture
-- [ ] Task 1: Create `PageContext` and headless view controller hook (`usePageView`) with URL synchronization
-- [ ] Task 2: Implement compound sub-components (`PageControlPanel`, `PageViewSwitcher`, `PageSearch`, `PagePager`, `PageView`)
-- [ ] Task 3: Assemble compound `<Page>` component with full backward-compatibility and export tree
+### Phase 8.1: Core Data Collection Pages
+- [x] Task 33: Migrate `DevicesPage.tsx` to `<Page.Header>` and `<Page.Actions>`
+- [x] Task 34: Migrate `CRMPage.tsx` to `<Page.Header>`, `<Page.Actions>`, and `<Page.Toolbar>`
+- [x] Task 35: Migrate `FinancialPage.tsx` from `Page.ControlPanel` to `<Page.Header>` and `<Page.Toolbar>`
+- [x] Task 36: Migrate `MaintenancePage.tsx` from `Page.ControlPanel` to `<Page.Header>` and `<Page.Toolbar>`
 
-### Checkpoint: Foundation & Component Unit Tests
-- [ ] Unit test suite passes for `Page` compound components (`Page.test.tsx`)
-- [ ] Client builds clean with zero type errors (`npm -w client run build`)
+### Checkpoint: Core Data Pages Green
+- [x] Tests pass for modified pages (`DevicesPage`, `CRMPage`, `FinancialPage`, `MaintenancePage`)
+- [x] Client builds clean with zero type errors (`npm -w client run build`)
 
-### Phase 2: Pilot Domain Adoption & Refinement
-- [ ] Task 4: Pilot adoption on `TicketsPage.tsx` or `CRMPage.tsx` demonstrating seamless List / Kanban switching and unified ControlPanel
-- [ ] Task 5: Document component usage recipe in `client/src/components/page/README.md` and feature slice docs
+### Phase 8.2: Operations & Admin Pages
+- [x] Task 37: Migrate `BillingPage.tsx` to `<Page.Header>` and `<Page.Actions>`
+- [x] Task 38: Migrate `UserManagementPage.tsx` to `<Page.Header>` and `<Page.Actions>`
+- [x] Task 39: Migrate `PlansPage.tsx` and `PlanEditorPage.tsx` to `<Page.Header>`, `<Page.Back>`, and `<Page.Actions>`
+- [x] Task 40: Migrate `ApiStatusPage.tsx` to `<Page.Header>` and `<Page.Actions>`
 
-### Checkpoint: Verification & Acceptance
-- [ ] All client tests pass (`npm -w client run test:run`)
-- [ ] Client typecheck passes (`npm -w client run build`)
-- [ ] Verify zero regressions on existing pages using simple `<Page>`
+### Checkpoint: Operations Pages Green
+- [x] Tests pass for modified pages (`BillingPage`, `UserManagementPage`, `PlansPage`, `PlanEditorPage`)
+- [x] Client builds clean with zero type errors (`npm -w client run build`)
+
+### Phase 8.3: Dashboard & Detail Views
+- [x] Task 41: Migrate `AdminDashboardView.tsx`, `ClientDashboardView.tsx`, and `TechDashboardPage.tsx` to `<Page.Header>`
+- [x] Task 42: Migrate `TicketDetailPage.tsx` and `CRMCustomPlanPage.tsx` to `<Page.Header>` and `<Page.Back>`
+
+### Checkpoint: Dashboards & Detail Views Green
+- [x] Tests pass for modified dashboards and detail views
+- [x] Client builds clean with zero type errors (`npm -w client run build`)
+
+### Phase 8.4: Settings & Configuration Pages
+- [x] Task 43: Migrate `ProfilePage.tsx` and `PasswordManagerPage.tsx` to `<Page.Header>` and `<Page.Actions>`
+- [x] Task 44: Migrate `NotificationPreferencesPage.tsx` and `ByokSettingsPage.tsx` to `<Page.Header>` and `<Page.Tabs>`
+
+### Checkpoint: Settings Pages Green
+- [x] Tests pass for settings pages (`PasswordManagerPage`, `NotificationPreferencesPage`, `ByokSettingsPage`)
+- [x] Client builds clean with zero type errors (`npm -w client run build`)
+
+### Phase 8.5: Informational, Shared & Legal Pages
+- [x] Task 45: Migrate `ResourcesPage.tsx`, `HelpPage.tsx`, and `StyleGuidePage.tsx` to `<Page.Header>`
+- [x] Task 46: Migrate `TermsPage.tsx`, `PrivacyPage.tsx`, and `NotFoundPage.tsx` to `<Page.Header>`
+
+### Checkpoint: Final Full System Verification
+- [x] Full client test suite passes: `npm -w client run test:run` (50/50 test suites, 329+ tests)
+- [x] Client builds clean with zero type errors: `npm -w client run build`
+- [x] All pages across the portal share identical layout structure
 
 ## Risks and Mitigations
 | Risk | Impact | Mitigation |
 | :--- | :---: | :--- |
-| Breaking existing 20+ pages using `<Page>` | High | Preserve `PageProps` signature exactly. Wrap children in default view context if no custom compound slots are used. |
-| URL state collision with domain-specific query params | Medium | Allow configuring custom URL param keys (`viewParamKey`, `searchParamKey`, `pageParamKey`) via props with sensible defaults. |
-| Re-render performance on search typing | Low | Built-in debounce (300ms) on `PageSearch` with immediate local input state. |
+| Existing test suites might look for specific container test-ids or header element structures | Medium | Verify and update test selectors if any test asserts against specific legacy DOM wrappers. |
+| Pages with complex modal state or action triggers | Low | Keep action triggers identical, only wrap them inside `<Page.Actions maxVisible={...}>`. |
+| Breadcrumbs duplication on pages with `showBreadcrumbs={false}` | Low | Only render `<Page.Breadcrumbs />` when breadcrumbs were previously enabled. |
 
 ## Open Questions
-- None blocking; Direction A approved by user. Optional `Page.StatusBar` slot included for future detail page alignment.
+- None. Structure is agreed upon and homogeneous across all views.

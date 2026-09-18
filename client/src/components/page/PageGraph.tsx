@@ -382,25 +382,16 @@ function LineChartRenderer({
   );
 }
 
-function DonutChartRenderer({
-  data,
-  totalValue,
-  height,
-  valuePrefix,
-  valueSuffix,
-  hoveredIndex,
-  setHoveredIndex,
-}: RendererProps & { totalValue: number }) {
-  const chartHeight = Math.max(180, height - 40);
-  const size = 180;
-  const cx = size / 2;
-  const cy = size / 2;
-  const radius = 70;
-  const innerRadius = 45;
-
-  // Compute SVG arcs
+function computeDonutSegments(
+  data: PageGraphDataPoint[],
+  totalValue: number,
+  cx: number,
+  cy: number,
+  radius: number,
+  innerRadius: number
+) {
   let accumulatedAngle = 0;
-  const segments = data.map((item, idx) => {
+  return data.map((item, idx) => {
     const ratio = totalValue > 0 ? item.value / totalValue : 0;
     const sweepAngle = ratio * 360;
     const startAngle = accumulatedAngle;
@@ -436,6 +427,29 @@ function DonutChartRenderer({
       percent: Math.round(ratio * 100),
     };
   });
+}
+
+function DonutChartRenderer({
+  data,
+  totalValue,
+  height,
+  valuePrefix,
+  valueSuffix,
+  hoveredIndex,
+  setHoveredIndex,
+}: RendererProps & { totalValue: number }) {
+  const chartHeight = Math.max(180, height - 40);
+  const size = 180;
+  const cx = size / 2;
+  const cy = size / 2;
+  const radius = 70;
+  const innerRadius = 45;
+
+  // Compute SVG arcs
+  const segments = React.useMemo(
+    () => computeDonutSegments(data, totalValue, cx, cy, radius, innerRadius),
+    [data, totalValue, cx, cy, radius, innerRadius]
+  );
 
   return (
     <div

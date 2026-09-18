@@ -2,6 +2,122 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.12.0](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.12...v1.12.0) (2026-09-16)
+
+## [1.11.12](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.11...v1.11.12) (2026-09-16)
+
+
+### Features
+
+* **byok:** add web-native BYOK management, Law 172-13 privacy and MCP zero-secret sync ([c802f28](https://github.com/Velmar-Technology/msp_client_portal/commit/c802f285033ecde9e40f731823787fa36ffe4c8a))
+* **client:** byok model select, copy-to-clipboard, typography ([7151eb0](https://github.com/Velmar-Technology/msp_client_portal/commit/7151eb06623211160a110b486e920ecd0e87fba2))
+* **infra:** add CAF agent deployment, isolated MCP routing and docs ([cc9c87b](https://github.com/Velmar-Technology/msp_client_portal/commit/cc9c87b428023d8f0630f47b8aa9ecdbd274eced))
+* **mcp:** add CAF quality agent and multi-tenant BYOK private service ([f667e3d](https://github.com/Velmar-Technology/msp_client_portal/commit/f667e3dc8c01b13dd3b7010d1443f73e6fedda24))
+* **mcp:** implement tool profile isolation and dedicated /mcp/caf endpoint ([e224326](https://github.com/Velmar-Technology/msp_client_portal/commit/e2243262c564f350cf4dfa91d1bb0bf58c841992))
+* **opencode:** add strategy-architect business model ideation agent ([17421b5](https://github.com/Velmar-Technology/msp_client_portal/commit/17421b5f56ef61f845a9e725df2c88b59d5a4356))
+* **rmm:** implement high-throughput telemetry write-behind buffer and clustered mesh ([f4b7ef9](https://github.com/Velmar-Technology/msp_client_portal/commit/f4b7ef9984bdec80be6d636c7da5227eb75ba983))
+* **sentinel:** add device relocation operations and update agent skill definitions ([b2cb3f3](https://github.com/Velmar-Technology/msp_client_portal/commit/b2cb3f3f39e7ff635cf097e3a0a33d5589f4c714))
+* **ui:** implement Tokyo Night Light palette and unify semantic tokens ([5154367](https://github.com/Velmar-Technology/msp_client_portal/commit/5154367697f548a799f573e423a784d7fc5956a3))
+
+
+### Bug Fixes
+
+* **billing:** add line_items migration and resolve scheduler cycle ([965a5c7](https://github.com/Velmar-Technology/msp_client_portal/commit/965a5c7033145c813d685552409246c51f87af8c))
+* **byok:** allow saving provider/model without re-entering api key ([ffd5b5b](https://github.com/Velmar-Technology/msp_client_portal/commit/ffd5b5b154d765c044624828422499274dbb9a42))
+* **byok:** move useMemo above conditional return, fix test for optional apiKey ([d8b81fd](https://github.com/Velmar-Technology/msp_client_portal/commit/d8b81fdd0f2c9fbcaac947260f81a9cf44ccff02))
+* **client:** comply with react hook rules in ByokSettingsPage ([30f1de3](https://github.com/Velmar-Technology/msp_client_portal/commit/30f1de3992912a83b435a8fffd9fdb49f8109248))
+
+## [1.11.11](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.10...v1.11.11) (2026-09-12)
+
+
+### Features
+
+* **billing:** support 100% discounted invoices and free plan zero-charge invariant ([089d64b](https://github.com/Velmar-Technology/msp_client_portal/commit/089d64b228b68be8d03891103744d16c855f1460))
+* **equipment:** add MSI suite installer packaging and deployment UI ([8eda38b](https://github.com/Velmar-Technology/msp_client_portal/commit/8eda38b744e3c059f7c61d35ae452f1cbde82b3d))
+* **equipment:** admin organization owner access and vault reset (BL-205) ([a4b34cd](https://github.com/Velmar-Technology/msp_client_portal/commit/a4b34cdd37fe8522eb42a01a715f406204c09de8))
+* **equipment:** seamless workstation vault activation flow (BL-205) ([50d7680](https://github.com/Velmar-Technology/msp_client_portal/commit/50d768072e4ca3b5595c0300f01d61f974794bc7))
+* **rmm:** add msp_remote_battery_report tool to mcp-server ([5cce4e6](https://github.com/Velmar-Technology/msp_client_portal/commit/5cce4e6d9f36b2a9bda5c5974af83fa703e9093c))
+* **rmm:** add msp_remote_get_hardware_components tool to mcp-server ([4e4dcf3](https://github.com/Velmar-Technology/msp_client_portal/commit/4e4dcf30e58e6ef83361f165a57c755f06a1a931))
+* **rmm:** bump default remote agent upgrade target version to 1.11.5 ([39c8f42](https://github.com/Velmar-Technology/msp_client_portal/commit/39c8f42543a015fd9ab45128107cbb790dd00c7d))
+* **sentinel:** add BL-205 device vault session remediator and vault guardrails ([3d6582f](https://github.com/Velmar-Technology/msp_client_portal/commit/3d6582f836fca959d4a91febe63a69ae7148399a))
+* **sentinel:** streamline 1-step ops and support tenant plans ([4fadafb](https://github.com/Velmar-Technology/msp_client_portal/commit/4fadafbdb8c428068045ec1a1a0baf8541fcf2c1))
+
+
+### Bug Fixes
+
+* **server:** resolve Vaultwarden 404 invite error with subpath sync and admin fallback ([769f07c](https://github.com/Velmar-Technology/msp_client_portal/commit/769f07c2fab20c4e7f3be45ff8ccd3ae997f69ca))
+* **system:** implement Vaultwarden admin session cookie authentication and caching (BL-206) ([0839853](https://github.com/Velmar-Technology/msp_client_portal/commit/08398532459c5d4a01e87c58ff6938fcf3812f07))
+* **vault:** resolve 401 in createDeviceCollection and support slot re-enrollment (BL-205) ([102016f](https://github.com/Velmar-Technology/msp_client_portal/commit/102016f975acf05bb9cbe680ddf28e25d25ac97e))
+* **vault:** resolve 401 in revokeDeviceSession with admin session fallback (BL-205) ([159cf8d](https://github.com/Velmar-Technology/msp_client_portal/commit/159cf8de1b9e084747266052e93df105969da03e))
+
+## [1.11.10](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.9...v1.11.10) (2026-09-11)
+
+
+### Features
+
+* **agent:** implement windows dpapi machine-bound credential encryption ([ba33ea7](https://github.com/Velmar-Technology/msp_client_portal/commit/ba33ea7f5a4b346ebd45b75c540d3bcc093425ca))
+* **sentinel:** add BL-206 vault invitation integrity checker and autonomous remediator ([2bc5657](https://github.com/Velmar-Technology/msp_client_portal/commit/2bc5657ba468594fe33b89c977f0763f645a2bf6))
+* **subscriptions:** add PayPal auto-renew toggle and Sentinel BL-402 agreement checker ([f08687b](https://github.com/Velmar-Technology/msp_client_portal/commit/f08687ba26e281ee36e3ca43c99669bad1d6ee53))
+* **tray:** add persistent rolling endpoint logging with redaction and diagnostics ([049dbf4](https://github.com/Velmar-Technology/msp_client_portal/commit/049dbf49a37d430c525b2985a456073e41b2dbae))
+* **tray:** add seamless service restart, offline state handling, and local timezone logging ([77cccca](https://github.com/Velmar-Technology/msp_client_portal/commit/77ccccad441776dd25d888b87f0bd2f0890a0620))
+* **tray:** configure tauri v2 acl capabilities and add installer shortcuts ([0cad781](https://github.com/Velmar-Technology/msp_client_portal/commit/0cad7812c0b0c5e7860d2a1fd53ea43660337806))
+* **vault:** add organization auto-resolution and msp_remediate_user_vault tool ([219e650](https://github.com/Velmar-Technology/msp_client_portal/commit/219e650cc0d3ca7be58485f6d57808b58c6a6f3a))
+
+
+### Bug Fixes
+
+* **infra:** fail fast on missing vaultwarden admin token and document incident ([18d8a5a](https://github.com/Velmar-Technology/msp_client_portal/commit/18d8a5a6a77e398aa8d3785d0e1eda349405753b))
+* **tray:** extend tauri v2 acl capability with webviews wildcard and explicit event permissions ([2e0a6a3](https://github.com/Velmar-Technology/msp_client_portal/commit/2e0a6a3ad788e51e6db81544d1aaf2e5ac19973e))
+
+## [1.11.9](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.8...v1.11.9) (2026-09-11)
+
+
+### Features
+
+* **rmm:** add unified WiX MSI installer with dual-channel silent upgrade capability ([664d7ca](https://github.com/Velmar-Technology/msp_client_portal/commit/664d7ca8347bfd25469c52912d13e9378fbbde86))
+* **sentinel:** add flapping remediator, dry-run simulation, DLQ, and smart regression synthesis ([d257547](https://github.com/Velmar-Technology/msp_client_portal/commit/d257547d149f2256a3c3be27ba788a832d6bf331))
+* **sentinel:** implement business logic integrity auditor and self-healing ([260d18b](https://github.com/Velmar-Technology/msp_client_portal/commit/260d18b5394b167e15530b2304b91a5db8336c6b))
+* **subscriptions:** add on-demand equipment quota expansion mcp tool for sentinel ([2947051](https://github.com/Velmar-Technology/msp_client_portal/commit/294705125607417133c63509861b37c08321a793))
+* **tray:** add full-stack lightweight i18n support for en_US and es_DO ([56f38c1](https://github.com/Velmar-Technology/msp_client_portal/commit/56f38c18af2b7213e8d5fcfc69cae2d5ec5282e0))
+* **tray:** implement workstation activation gate for unbound endpoints ([9c3a50d](https://github.com/Velmar-Technology/msp_client_portal/commit/9c3a50d49a054cb193cfd084df28277a8a006864))
+
+
+### Bug Fixes
+
+* **installer:** resolve SCM service start timeout and running process conflicts ([5f20a71](https://github.com/Velmar-Technology/msp_client_portal/commit/5f20a71162cd27548beb4d45e7c59c9887a00fc4))
+* **sentinel:** resolve import typo, refine state machine checks, and align bounty remediator schema ([f58afd4](https://github.com/Velmar-Technology/msp_client_portal/commit/f58afd475c663cc7d5764a1ed9a997bcbd303fb8))
+
+## [1.11.8](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.7...v1.11.8) (2026-09-11)
+
+
+### Features
+
+* **tickets:** decouple responses card into responsive odoo chatter overlay with internal notes ([0d3f5b9](https://github.com/Velmar-Technology/msp_client_portal/commit/0d3f5b924da5537a14ed77aadeae3fa182f378ab))
+* **tray:** allow copying ticket id on click ([ccb1758](https://github.com/Velmar-Technology/msp_client_portal/commit/ccb175835c58511dea9f214578e7f9443e49e60f))
+
+## [1.11.7](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.6...v1.11.7) (2026-09-10)
+
+
+### Features
+
+* **tickets:** align categories with backend and optimize tray UX ([e245a4c](https://github.com/Velmar-Technology/msp_client_portal/commit/e245a4c673bee0cb3f89af6a523e0e7e69e5575d))
+* **tickets:** implement realtime bidirectional chat streaming and identity sync ([39b287c](https://github.com/Velmar-Technology/msp_client_portal/commit/39b287c036e1300e3b45ece3bcdebbd5212782e9))
+* **tray:** centralize hide-window IPC and add dev mock data ([aad66c0](https://github.com/Velmar-Technology/msp_client_portal/commit/aad66c07bcdff7d8efebd4f7ffa8331c859567c2))
+
+## [1.11.6](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.5...v1.11.6) (2026-09-10)
+
+
+### Features
+
+* **tickets:** add named pipe IPC bridge linking msp-tray to msp-agent ([ba47aa0](https://github.com/Velmar-Technology/msp_client_portal/commit/ba47aa0067a1e990404d5018e9320e321ac0cfa4))
+* **tickets:** add workstation ticket list and thread navigation to msp-tray ([97577a8](https://github.com/Velmar-Technology/msp_client_portal/commit/97577a8c2350bad739b66d95882ae2111cfc121c))
+
+
+### Bug Fixes
+
+* **tray:** automatically show drawer window on manual launch ([c696f45](https://github.com/Velmar-Technology/msp_client_portal/commit/c696f453d6abcb6ef4d92fb97cbe6c90a55a66b7))
+* **tray:** use tauri async runtime for background named pipe task ([00f0d2e](https://github.com/Velmar-Technology/msp_client_portal/commit/00f0d2e72d350e51793675570cb59839740dc681))
+
 ## [1.11.5](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.4...v1.11.5) (2026-09-10)
 
 

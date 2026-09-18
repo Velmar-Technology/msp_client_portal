@@ -350,10 +350,17 @@ export function UserManagementPage() {
   }, [confirmation, t, getRoleLabel, getClientTypeLabel]);
 
   return (
-    <Page
-      title={t("userManagement.pageTitle")}
-      subtitle={t("userManagement.pageSubtitle")}
-    >
+    <Page>
+      <Page.Header>
+        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
+        <Page.HeaderRow>
+          <Page.TitleGroup>
+            <Page.Title>{t("userManagement.pageTitle")}</Page.Title>
+            <Page.Description>{t("userManagement.pageSubtitle")}</Page.Description>
+          </Page.TitleGroup>
+        </Page.HeaderRow>
+      </Page.Header>
+
       <div className="flex flex-col gap-4">
         {/* Metrics Header Bar */}
         <section aria-label="User Statistics">

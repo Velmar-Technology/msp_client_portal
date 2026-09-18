@@ -10,7 +10,34 @@ export function NotFoundPage() {
 
   return (
     <Page showBreadcrumbs={false}>
-      <div className="relative min-h-[80vh] w-full flex flex-col items-center justify-center overflow-hidden transition-colors duration-300">
+      <Page.Header>
+        <Page.HeaderRow>
+          <Page.TitleGroup>
+            <Page.Title>{t("notFound.title")}</Page.Title>
+            <Page.Description>{t("notFound.description")}</Page.Description>
+          </Page.TitleGroup>
+          <Page.Actions>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(-1)}
+              className="h-7 text-xs font-bold gap-1.5 cursor-pointer shadow-xs"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              {t("notFound.goBack")}
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => navigate("/")}
+              className="h-7 text-xs font-bold gap-1.5 cursor-pointer shadow-xs"
+            >
+              <Home className="h-3.5 w-3.5" />
+              {t("notFound.backHome")}
+            </Button>
+          </Page.Actions>
+        </Page.HeaderRow>
+      </Page.Header>
+      <div className="relative min-h-[70vh] w-full flex flex-col items-center justify-center overflow-hidden transition-colors duration-300">
         {/* Visual background ambient blobs */}
         <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse pointer-events-none" />
         <div

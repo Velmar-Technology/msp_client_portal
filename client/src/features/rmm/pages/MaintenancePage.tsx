@@ -339,24 +339,32 @@ export function MaintenancePage() {
       ]}
       isLoading={loading}
     >
-      <Page.ControlPanel
-        title={t("nav.maintenance")}
-        subtitle={t("maintenance.subtitle")}
-        actions={
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => openScheduleModal()}
-            className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span>{t("maintenance.scheduleBtn")}</span>
-          </Button>
-        }
-        viewsSlot={<Page.ViewSwitcher size="sm" />}
-        searchSlot={null}
-        pagerSlot={null}
-      />
+      <Page.Header>
+        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
+        <Page.HeaderRow>
+          <Page.TitleGroup>
+            <Page.Title>{t("nav.maintenance")}</Page.Title>
+            <Page.Description>{t("maintenance.subtitle")}</Page.Description>
+          </Page.TitleGroup>
+          <Page.Actions maxVisible={3}>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => openScheduleModal()}
+              className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>{t("maintenance.scheduleBtn")}</span>
+            </Button>
+          </Page.Actions>
+        </Page.HeaderRow>
+        <Page.Toolbar>
+          <Page.Filters />
+          <Page.Controls>
+            <Page.ViewSwitcher size="sm" />
+          </Page.Controls>
+        </Page.Toolbar>
+      </Page.Header>
 
       {/* CALENDAR / DATE VIEW */}
       <Page.View type="calendar" className="space-y-4">

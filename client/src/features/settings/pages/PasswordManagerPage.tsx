@@ -107,11 +107,18 @@ export function PasswordManagerPage() {
   ];
 
   return (
-    <Page
-      title={t("passwordManager.pageTitle", "Password Manager")}
-      subtitle={t("passwordManager.pageDescription", "Enterprise zero-knowledge password vault for your team.")}
-    >
+    <Page>
+      <Page.Header>
+        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
+        <Page.HeaderRow>
+          <Page.TitleGroup>
+            <Page.Title>{t("passwordManager.pageTitle", "Password Manager")}</Page.Title>
+            <Page.Description>{t("passwordManager.pageDescription", "Enterprise zero-knowledge password vault for your team.")}</Page.Description>
+          </Page.TitleGroup>
+        </Page.HeaderRow>
+      </Page.Header>
       <div className="space-y-6 w-full">
+
         {/* BL-702 Read-Only Non-Payment Banner */}
         {isReadOnly && (
           <div

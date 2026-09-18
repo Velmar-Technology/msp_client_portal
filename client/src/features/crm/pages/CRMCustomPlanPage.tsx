@@ -16,7 +16,6 @@ import {
   CheckCircle2,
   Cpu,
   Users,
-  Save,
   GripVertical,
   ChevronUp,
   ChevronDown,
@@ -79,6 +78,7 @@ export function CRMCustomPlanPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const targetLeadIdParam = searchParams.get("lead");
+  const isDirectLeadMode = Boolean(targetLeadIdParam);
 
   const leads = useCRMStore((state) => state.leads);
   const fetchLeads = useCRMStore((state) => state.fetchLeads);
@@ -458,41 +458,51 @@ export function CRMCustomPlanPage() {
 
   return (
     <TooltipProvider>
-      <Page
-        title={t("crm.customPlan.modalTitle", "Bespoke Custom Plan Studio")}
-        subtitle={t(
-          "crm.customPlan.modalSubtitle",
-          "Design private negotiated pricing, custom SLAs, and device quotas.",
-        )}
-        actions={
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => navigate("/crm")}
-              className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              <span>{t("common.back", "Back to CRM")}</span>
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              disabled={actionLoading}
-              onClick={handleSubmit}
-              className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
-            >
-              <Save className="h-3.5 w-3.5" />
-              <span>
-                {actionLoading
-                  ? t("common.saving", "Saving...")
-                  : t("crm.customPlan.createAndBind", "Create & Apply Custom Plan")}
-              </span>
-            </Button>
-          </div>
-        }
-      >
+      <Page>
+        <Page.Header>
+          <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
+          <Page.HeaderRow>
+            <Page.TitleGroup>
+              <div className="flex items-center gap-2">
+                <Page.Back to="/crm" />
+                <Page.Title>{t("crm.customPlan.modalTitle", "Bespoke Custom Plan Studio")}</Page.Title>
+              </div>
+              <Page.Description>
+                {t(
+                  "crm.customPlan.modalSubtitle",
+                  "Design private negotiated pricing, custom SLAs, and device quotas.",
+                )}
+              </Page.Description>
+            </Page.TitleGroup>
+            <Page.Actions maxVisible={3}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/crm")}
+                className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                <span>{t("common.back", "Back to CRM")}</span>
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={actionLoading}
+                onClick={handleSubmit}
+                className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>
+                  {isDirectLeadMode
+                    ? t("crm.customPlan.applyToLead", "Attach to Lead")
+                    : t("crm.customPlan.savePlan", "Create Custom Plan")}
+                </span>
+              </Button>
+            </Page.Actions>
+          </Page.HeaderRow>
+        </Page.Header>
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {/* Top Control Bar: Target Lead & Clone Template */}
           <section aria-label="Lead Selection and Template Quick-Fill">
