@@ -32,17 +32,14 @@ function ResourceCard({ item, onDownload }: { item: ResourceItem; onDownload: (i
               <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
                 {t(`resources.cat.${item.category}`)}
               </p>
-              {item.os && item.os.length > 0 && (
-                <span className="text-[9px] font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border">
-                  {item.os.map((os) => t(`resources.os.${os}`)).join(", ")}
-                </span>
-              )}
             </div>
           </div>
         </div>
-        <span className="shrink-0 text-[10px] font-mono font-semibold text-muted-foreground uppercase bg-muted border border-border rounded px-1.5 py-0.5">
-          {item.fileType}
-        </span>
+        {item.os && item.os.length > 0 && (
+          <span className="text-[9px] font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border">
+            {item.os.map((os) => t(`resources.os.${os}`)).join(", ")}
+          </span>
+        )}
       </div>
 
       <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 flex-1">{t(item.descriptionKey)}</p>
@@ -141,15 +138,11 @@ export function ResourcesPage() {
         ariaLabel: t("resources.viewList", "List"),
       },
     ],
-    [t]
+    [t],
   );
 
   return (
-    <Page<ResourceViewMode>
-      defaultView="tiled"
-      availableViews={availableViews}
-      isLoading={loading}
-    >
+    <Page<ResourceViewMode> defaultView="tiled" availableViews={availableViews} isLoading={loading}>
       <Page.Header>
         <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
         <Page.HeaderRow>
