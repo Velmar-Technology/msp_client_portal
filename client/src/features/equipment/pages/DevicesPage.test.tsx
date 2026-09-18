@@ -68,6 +68,10 @@ vi.mock('@/features/rmm', () => ({
 vi.mock('@/components/devices/RmmDashboard', () => ({
   RmmDashboard: () => <div data-testid="mock-rmm-dashboard">Mock RMM Dashboard</div>,
 }));
+vi.mock('../components/DeviceRmmModal', () => ({
+  DeviceRmmModal: ({ isOpen, equip }: any) =>
+    isOpen ? <div data-testid="mock-device-rmm-modal">Mock Device RMM Modal: {equip?.device_name}</div> : null,
+}));
 vi.mock('../components/DeployAgentModal', () => ({
   DeployAgentModal: () => null,
 }));
@@ -1442,29 +1446,38 @@ describe('DevicesPage', () => {
       // View switcher buttons should be visible in toolbar
       expect(screen.getByRole('button', { name: 'Inventory Table' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Equipment Cards' })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'RMM Telemetry' })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Fleet Analytics' })).toBeInTheDocument();
     });
 
-    test('renders directly in RMM telemetry view when tab=rmm in URL', async () => {
+    test('opens device RMM telemetry modal via onOpenRMMDashboard from device actions', async () => {
       const client = new QueryClient({
         defaultOptions: { queries: { retry: false, staleTime: 0, gcTime: 0 } },
       });
 
       render(
         <QueryClientProvider client={client}>
-          <MemoryRouter initialEntries={['/devices?tab=rmm']}>
+          <MemoryRouter initialEntries={['/devices']}>
             <DevicesPage />
           </MemoryRouter>
         </QueryClientProvider>,
       );
 
       await waitFor(() => {
-        expect(screen.getByTestId('mock-rmm-dashboard')).toBeInTheDocument();
+        expect(screen.getByText('Workstation-Alpha')).toBeInTheDocument();
       });
 
-      // Devices table should not be present
-      expect(screen.queryByText('Workstation-Alpha')).not.toBeInTheDocument();
+      // Find the actions dropdown button for Workstation-Alpha
+      const actionButtons = screen.getAllByRole('button', { name: 'Actions' });
+      fireEvent.click(actionButtons[0]);
+
+      // Click the RMM Telemetry & Health action
+      const rmmMenuItem = await screen.findByText('RMM Telemetry & Health');
+      fireEvent.click(rmmMenuItem);
+
+      // Verify device RMM modal opens for Workstation-Alpha
+      await waitFor(() => {
+        expect(screen.getByTestId('mock-device-rmm-modal')).toBeInTheDocument();
+        expect(screen.getByText(/Mock Device RMM Modal: Workstation-Alpha/)).toBeInTheDocument();
+      });
     });
 
     test('renders directly in tiled cards view when view=tiled in URL', async () => {
@@ -1527,23 +1540,12 @@ describe('DevicesPage', () => {
         expect(screen.getByText('Workstation-Alpha')).toBeInTheDocument();
       });
 
-      // Switch to RMM Telemetry
-      const rmmBtn = screen.getByRole('button', { name: 'RMM Telemetry' });
-      fireEvent.click(rmmBtn);
+      // Switch to Equipment Cards (tiled)
+      const tiledBtn = screen.getByRole('button', { name: 'Equipment Cards' });
+      fireEvent.click(tiledBtn);
 
       await waitFor(() => {
-        expect(screen.getByTestId('mock-rmm-dashboard')).toBeInTheDocument();
-        expect(screen.queryByText('Workstation-Alpha')).not.toBeInTheDocument();
-      });
-
-      // Switch to Fleet Analytics
-      const graphBtn = screen.getByRole('button', { name: 'Fleet Analytics' });
-      fireEvent.click(graphBtn);
-
-      await waitFor(() => {
-        expect(screen.getByText('Device Status Distribution')).toBeInTheDocument();
-        expect(screen.getByText('Operating System Distribution')).toBeInTheDocument();
-        expect(screen.queryByTestId('mock-rmm-dashboard')).not.toBeInTheDocument();
+        expect(screen.getByText('Workstation-Alpha')).toBeInTheDocument();
       });
 
       // Switch back to Inventory Table
@@ -1552,7 +1554,6 @@ describe('DevicesPage', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Workstation-Alpha')).toBeInTheDocument();
-        expect(screen.queryByTestId('mock-rmm-dashboard')).not.toBeInTheDocument();
       });
     });
   });

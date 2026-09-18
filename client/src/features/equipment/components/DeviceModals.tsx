@@ -18,9 +18,19 @@ const ScheduleMaintenanceModal = lazyWithRetry(() =>
   })),
 );
 
+const DeviceRmmModal = lazyWithRetry(() =>
+  import("./DeviceRmmModal").then((m) => ({
+    default: m.DeviceRmmModal,
+  })),
+);
+
 export interface DeviceModalsProps {
   isAdmin: boolean;
   hasPlanFeature: (plan?: string | null, feature?: string) => boolean;
+  // Device RMM Modal
+  isRmmModalOpen?: boolean;
+  rmmModalEquip?: Partial<SubscriptionEquipment> | null;
+  onCloseRmmModal?: () => void;
   // Schedule Maintenance
   isMaintModalOpen: boolean;
   maintModalEquip: Partial<SubscriptionEquipment> | null;
@@ -62,6 +72,9 @@ export interface DeviceModalsProps {
 export const DeviceModals = memo(function DeviceModals({
   isAdmin,
   hasPlanFeature,
+  isRmmModalOpen,
+  rmmModalEquip,
+  onCloseRmmModal,
   isMaintModalOpen,
   maintModalEquip,
   onCloseMaintModal,
@@ -173,6 +186,19 @@ export const DeviceModals = memo(function DeviceModals({
         <ChunkErrorBoundary>
           <Suspense fallback={null}>
             <DeployAgentModal isOpen={isDeployAgentOpen} onClose={onCloseDeployAgent} equip={deployAgentEquip} />
+          </Suspense>
+        </ChunkErrorBoundary>
+      )}
+
+      {/* Device RMM Dashboard Modal */}
+      {isRmmModalOpen && onCloseRmmModal && (
+        <ChunkErrorBoundary>
+          <Suspense fallback={null}>
+            <DeviceRmmModal
+              isOpen={isRmmModalOpen}
+              onClose={onCloseRmmModal}
+              equip={rmmModalEquip || null}
+            />
           </Suspense>
         </ChunkErrorBoundary>
       )}

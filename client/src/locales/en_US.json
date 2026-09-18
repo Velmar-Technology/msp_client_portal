@@ -1181,6 +1181,8 @@
     "deleteDeviceConfirmDesc": "Are you sure you want to permanently delete this device? Associated cloud backup storage and telemetry monitoring will be removed.",
     "deleteSuccess": "Device deleted successfully.",
     "activateDevice": "Activate Device",
+    "actionRmmDashboard": "RMM Telemetry & Health",
+    "upToDate": "Up to Date",
     "actionNextcloudInfo": "Nextcloud Backup Info",
     "nextcloudModalTitle": "Cloud Backup Details",
     "nextcloudLoading": "Loading backup details...",

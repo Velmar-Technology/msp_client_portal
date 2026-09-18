@@ -17,6 +17,7 @@ export interface DeviceCardProps {
   onOpenActivateWithOtp: (subId: string, slotIndex: number) => void;
   onDeployClient?: (equip: Partial<SubscriptionEquipment>) => void;
   onDeployAgent?: (equip: Partial<SubscriptionEquipment>) => void;
+  onOpenRMMDashboard?: (equip: Partial<SubscriptionEquipment>) => void;
 }
 
 /**
@@ -32,6 +33,7 @@ export const DeviceCard = memo(function DeviceCard({
   onOpenActivateWithOtp,
   onDeployClient,
   onDeployAgent,
+  onOpenRMMDashboard,
 }: DeviceCardProps) {
   const { t } = useTranslation();
   const isActive = equip.status === "ACTIVE";
@@ -132,6 +134,7 @@ export const DeviceCard = memo(function DeviceCard({
           onOpenActivateWithOtp={onOpenActivateWithOtp}
           onDeployClient={onDeployClient}
           onDeployAgent={onDeployAgent}
+          onOpenRMMDashboard={onOpenRMMDashboard}
         />
       </CardFooter>
     </Card>

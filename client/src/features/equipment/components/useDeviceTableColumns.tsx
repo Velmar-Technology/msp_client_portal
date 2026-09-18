@@ -17,6 +17,7 @@ export interface DeviceTableColumnsOptions {
   onOpenActivateWithOtp: (subId: string, slotIndex: number) => void;
   onDeployClient: (equip: Partial<SubscriptionEquipment>) => void;
   onDeployAgent: (equip: Partial<SubscriptionEquipment>) => void;
+  onOpenRMMDashboard?: (equip: Partial<SubscriptionEquipment>) => void;
   setDeviceToDelete: (equip: Partial<SubscriptionEquipment> | null) => void;
 }
 
@@ -33,6 +34,7 @@ export function useDeviceTableColumns({
   onOpenActivateWithOtp,
   onDeployClient,
   onDeployAgent,
+  onOpenRMMDashboard,
   setDeviceToDelete,
 }: DeviceTableColumnsOptions): ColumnDef<Partial<SubscriptionEquipment>>[] {
   const { t } = useTranslation();
@@ -201,6 +203,7 @@ export function useDeviceTableColumns({
             onOpenActivateWithOtp={onOpenActivateWithOtp}
             onDeployClient={onDeployClient}
             onDeployAgent={onDeployAgent}
+            onOpenRMMDashboard={onOpenRMMDashboard}
           />
         );
       },
@@ -218,6 +221,7 @@ export function useDeviceTableColumns({
     onOpenActivateWithOtp,
     onDeployClient,
     onDeployAgent,
+    onOpenRMMDashboard,
     setDeviceToDelete,
   ]);
 }

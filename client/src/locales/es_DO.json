@@ -1181,6 +1181,8 @@
     "deleteDeviceConfirmDesc": "¿Está seguro de que desea eliminar permanentemente este dispositivo? Se eliminará el almacenamiento de respaldo y la telemetría asociada.",
     "deleteSuccess": "Dispositivo eliminado con éxito.",
     "activateDevice": "Activar Dispositivo",
+    "actionRmmDashboard": "Telemetría y Salud RMM",
+    "upToDate": "Actualizado",
     "actionNextcloudInfo": "Info de Backup Nextcloud",
     "nextcloudModalTitle": "Detalles del Backup en la Nube",
     "nextcloudLoading": "Cargando detalles del respaldo...",
