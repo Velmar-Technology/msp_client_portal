@@ -1,6 +1,8 @@
 import { useState, useMemo, useCallback } from "react";
-import { Plus, Eye, MoreHorizontal, Ban, ChevronRight, List, LayoutGrid } from "lucide-react";
+import { Plus, Eye, MoreHorizontal, Ban, ChevronRight, List, LayoutGrid, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Page } from "@/components/Page";
 import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
 import type { ColumnDef, Column } from "@tanstack/react-table";
@@ -370,7 +372,192 @@ export function TicketsPage() {
           )}
         </Page.HeaderRow>
         <Page.Toolbar>
-          <Page.Filters />
+          <Page.Filters>
+            <InputGroup className="w-full sm:w-72">
+              <InputGroupInput
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t("tickets.searchPlaceholder")}
+              />
+              <InputGroupAddon>
+                <Search className="h-3.5 w-3.5 text-muted-foreground" />
+              </InputGroupAddon>
+            </InputGroup>
+
+            {/* Status Filter */}
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="tickets-status-filter"
+                className="text-[10px] uppercase font-bold text-muted-foreground select-none"
+              >
+                {t("tickets.colStatus")}
+              </label>
+              <div className="flex items-center bg-muted p-0.5 rounded-md border border-border">
+                <Select
+                  value={statusFilter || "all"}
+                  onValueChange={(val) => setStatusFilter(val === "all" ? "" : val)}
+                >
+                  <SelectTrigger
+                    id="tickets-status-filter"
+                    aria-label={t("tickets.colStatus")}
+                    size="default"
+                    className="px-2.5 rounded text-xs font-semibold bg-card text-foreground shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5"
+                  >
+                    <SelectValue placeholder={t("tickets.filterAllStatuses")} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    <SelectItem value="all" className="text-xs font-medium cursor-pointer">
+                      {t("tickets.filterAllStatuses")}
+                    </SelectItem>
+                    <SelectItem value="OPEN" className="text-xs font-medium cursor-pointer">
+                      {t("tickets.filterOpen")}
+                    </SelectItem>
+                    <SelectItem value="IN_PROGRESS" className="text-xs font-medium cursor-pointer">
+                      {t("tickets.filterInProgress")}
+                    </SelectItem>
+                    <SelectItem value="RESOLVED" className="text-xs font-medium cursor-pointer">
+                      {t("tickets.filterResolved")}
+                    </SelectItem>
+                    <SelectItem value="CLOSED" className="text-xs font-medium cursor-pointer">
+                      {t("tickets.filterClosed")}
+                    </SelectItem>
+                    <SelectItem value="CANCELLED" className="text-xs font-medium cursor-pointer">
+                      {t("tickets.filterCancelled")}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Category Filter */}
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="tickets-category-filter"
+                className="text-[10px] uppercase font-bold text-muted-foreground select-none"
+              >
+                {t("tickets.colCategory")}
+              </label>
+              <div className="flex items-center bg-muted p-0.5 rounded-md border border-border">
+                <Select
+                  value={categoryFilter || "all"}
+                  onValueChange={(val) => setCategoryFilter(val === "all" ? "" : val)}
+                >
+                  <SelectTrigger
+                    id="tickets-category-filter"
+                    aria-label={t("tickets.colCategory")}
+                    size="default"
+                    className="px-2.5 rounded text-xs font-semibold bg-card text-foreground shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5"
+                  >
+                    <SelectValue placeholder={t("tickets.filterAllCategories")} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    <SelectItem value="all" className="text-xs font-medium cursor-pointer">
+                      {t("tickets.filterAllCategories")}
+                    </SelectItem>
+                    <SelectItem value="REPAIR" className="text-xs font-medium cursor-pointer">
+                      {t("tickets.categories.REPAIR")}
+                    </SelectItem>
+                    <SelectItem value="WARRANTY" className="text-xs font-medium cursor-pointer">
+                      {t("tickets.categories.WARRANTY")}
+                    </SelectItem>
+                    <SelectItem value="SERVICE_OUTAGE" className="text-xs font-medium cursor-pointer">
+                      {t("tickets.categories.SERVICE_OUTAGE")}
+                    </SelectItem>
+                    <SelectItem value="PREVENTATIVE_MAINTENANCE" className="text-xs font-medium cursor-pointer">
+                      {t("tickets.categories.PREVENTATIVE_MAINTENANCE") || "Maintenance"}
+                    </SelectItem>
+                    <SelectItem value="HELPDESK" className="text-xs font-medium cursor-pointer">
+                      {t("tickets.categories.HELPDESK")}
+                    </SelectItem>
+                    <SelectItem value="AI" className="text-xs font-medium cursor-pointer">
+                      {t("tickets.categories.AI")}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Priority Filter */}
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="tickets-priority-filter"
+                className="text-[10px] uppercase font-bold text-muted-foreground select-none"
+              >
+                {t("tickets.colPriority")}
+              </label>
+              <div className="flex items-center bg-muted p-0.5 rounded-md border border-border">
+                <Select
+                  value={priorityFilter || "all"}
+                  onValueChange={(val) => setPriorityFilter(val === "all" ? "" : val)}
+                >
+                  <SelectTrigger
+                    id="tickets-priority-filter"
+                    aria-label={t("tickets.colPriority")}
+                    size="default"
+                    className="px-2.5 rounded text-xs font-semibold bg-card text-foreground shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5"
+                  >
+                    <SelectValue placeholder={t("tickets.filterAllPriorities")} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    <SelectItem value="all" className="text-xs font-medium cursor-pointer">
+                      {t("tickets.filterAllPriorities")}
+                    </SelectItem>
+                    <SelectItem value="LOW" className="text-xs font-medium cursor-pointer">
+                      {t("tickets.priorities.LOW")}
+                    </SelectItem>
+                    <SelectItem value="MEDIUM" className="text-xs font-medium cursor-pointer">
+                      {t("tickets.priorities.MEDIUM")}
+                    </SelectItem>
+                    <SelectItem value="HIGH" className="text-xs font-medium cursor-pointer">
+                      {t("tickets.priorities.HIGH")}
+                    </SelectItem>
+                    <SelectItem value="CRITICAL" className="text-xs font-medium cursor-pointer">
+                      {t("tickets.priorities.CRITICAL")}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Date Range Filter */}
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="tickets-daterange-filter"
+                className="text-[10px] uppercase font-bold text-muted-foreground select-none"
+              >
+                {t("tickets.colDateRange")}
+              </label>
+              <div className="flex items-center bg-muted p-0.5 rounded-md border border-border">
+                <Select value={dateRangeFilter || "all"} onValueChange={setDateRangeFilter}>
+                  <SelectTrigger
+                    id="tickets-daterange-filter"
+                    aria-label={t("tickets.colDateRange")}
+                    size="default"
+                    className="px-2.5 rounded text-xs font-semibold bg-card text-foreground shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5"
+                  >
+                    <SelectValue placeholder={t("tickets.filterAllDates")} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    <SelectItem value="all" className="text-xs font-medium cursor-pointer">
+                      {t("tickets.filterAllDates")}
+                    </SelectItem>
+                    <SelectItem value="today" className="text-xs font-medium cursor-pointer">
+                      {t("tickets.filterToday")}
+                    </SelectItem>
+                    <SelectItem value="7d" className="text-xs font-medium cursor-pointer">
+                      {t("tickets.filterLast7Days")}
+                    </SelectItem>
+                    <SelectItem value="30d" className="text-xs font-medium cursor-pointer">
+                      {t("tickets.filterLast30Days")}
+                    </SelectItem>
+                    <SelectItem value="month" className="text-xs font-medium cursor-pointer">
+                      {t("tickets.filterThisMonth")}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </Page.Filters>
           <Page.Controls>
             <Page.ViewSwitcher
               value={viewMode}
@@ -398,67 +585,6 @@ export function TicketsPage() {
           onSortingChange={handleSortingChange}
           enableSorting
           manualSorting
-          search={{
-            value: searchQuery,
-            onChange: setSearchQuery,
-            placeholder: t("tickets.searchPlaceholder"),
-          }}
-          filters={[
-            {
-              id: "status",
-              value: statusFilter,
-              onChange: setStatusFilter,
-              options: [
-                { value: "OPEN", label: t("tickets.filterOpen") },
-                { value: "IN_PROGRESS", label: t("tickets.filterInProgress") },
-                { value: "RESOLVED", label: t("tickets.filterResolved") },
-                { value: "CLOSED", label: t("tickets.filterClosed") },
-                { value: "CANCELLED", label: t("tickets.filterCancelled") },
-              ],
-              placeholder: t("tickets.filterAllStatuses"),
-            },
-            {
-              id: "category",
-              value: categoryFilter,
-              onChange: setCategoryFilter,
-              options: [
-                { value: "REPAIR", label: t("tickets.categories.REPAIR") },
-                { value: "WARRANTY", label: t("tickets.categories.WARRANTY") },
-                { value: "SERVICE_OUTAGE", label: t("tickets.categories.SERVICE_OUTAGE") },
-                {
-                  value: "PREVENTATIVE_MAINTENANCE",
-                  label: t("tickets.categories.PREVENTATIVE_MAINTENANCE") || "Maintenance",
-                },
-                { value: "HELPDESK", label: t("tickets.categories.HELPDESK") },
-                { value: "AI", label: t("tickets.categories.AI") },
-              ],
-              placeholder: t("tickets.filterAllCategories"),
-            },
-            {
-              id: "priority",
-              value: priorityFilter,
-              onChange: setPriorityFilter,
-              options: [
-                { value: "LOW", label: t("tickets.priorities.LOW") },
-                { value: "MEDIUM", label: t("tickets.priorities.MEDIUM") },
-                { value: "HIGH", label: t("tickets.priorities.HIGH") },
-                { value: "CRITICAL", label: t("tickets.priorities.CRITICAL") },
-              ],
-              placeholder: t("tickets.filterAllPriorities"),
-            },
-            {
-              id: "dateRange",
-              value: dateRangeFilter,
-              onChange: setDateRangeFilter,
-              options: [
-                { value: "all", label: t("tickets.filterAllDates") },
-                { value: "today", label: t("tickets.filterToday") },
-                { value: "7d", label: t("tickets.filterLast7Days") },
-                { value: "30d", label: t("tickets.filterLast30Days") },
-                { value: "month", label: t("tickets.filterThisMonth") },
-              ],
-            },
-          ]}
           enableRowSelection
           onSelectedRowsChange={setSelectedTickets}
           bulkActions={[

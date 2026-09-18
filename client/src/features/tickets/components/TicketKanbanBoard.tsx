@@ -128,7 +128,7 @@ export function TicketKanbanBoard({
             </div>
 
             {/* Column Cards List */}
-            <div className="flex flex-col gap-2 overflow-y-auto max-h-[calc(100vh-280px)] pr-0.5">
+            <div className="flex flex-col gap-1.5 overflow-y-auto max-h-[calc(100vh-280px)] pr-0.5">
               {columnTickets.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center px-2">
                   <p className="text-xs text-muted-foreground italic">
@@ -144,7 +144,7 @@ export function TicketKanbanBoard({
                       key={ticket.id}
                       onClick={() => onTicketClick(ticket)}
                       className={cn(
-                        "p-3 cursor-pointer hover:border-primary/50 hover:shadow-xs transition-all bg-card border-border/70 space-y-2 text-left select-none",
+                        "p-2.5 cursor-pointer hover:border-primary/50 hover:shadow-xs transition-all bg-card border-border/70 space-y-1.5 text-left select-none",
                         !read && "border-l-4 border-l-primary"
                       )}
                     >
@@ -182,21 +182,23 @@ export function TicketKanbanBoard({
                         </h4>
                       </div>
 
-                      {/* Metadata: Client / Assigned Tech / Relative Time */}
-                      <div className="pt-1.5 border-t border-border/40 flex flex-col gap-1 text-[11px] text-muted-foreground">
-                        {ticket.client_name && (
-                          <div className="flex items-center gap-1 truncate">
-                            <Building className="size-3 shrink-0 text-muted-foreground/70" />
-                            <span className="truncate">{ticket.client_name}</span>
-                          </div>
-                        )}
-                        {ticket.assigned_tech_name && (
-                          <div className="flex items-center gap-1 truncate">
-                            <User className="size-3 shrink-0 text-muted-foreground/70" />
-                            <span className="truncate">{ticket.assigned_tech_name}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground/80 mt-0.5">
+                      {/* Metadata: Client / Assigned Tech / Relative Time (single row) */}
+                      <div className="pt-1 border-t border-border/40 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                        <div className="flex items-center gap-2 min-w-0">
+                          {ticket.client_name && (
+                            <div className="flex items-center gap-1 truncate">
+                              <Building className="size-3 shrink-0 text-muted-foreground/70" />
+                              <span className="truncate">{ticket.client_name}</span>
+                            </div>
+                          )}
+                          {ticket.assigned_tech_name && (
+                            <div className="flex items-center gap-1 truncate">
+                              <User className="size-3 shrink-0 text-muted-foreground/70" />
+                              <span className="truncate">{ticket.assigned_tech_name}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground/80 shrink-0">
                           <Clock className="size-2.5 shrink-0" />
                           <span>{formatRelativeTime(ticket.created_at, i18n.language)}</span>
                         </div>

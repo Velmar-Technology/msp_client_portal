@@ -520,6 +520,7 @@
     "colCategory": "Category",
     "colPriority": "Priority",
     "colStatus": "Status",
+    "colDateRange": "Date Range",
     "colCreated": "Created",
     "colActions": "Actions",
     "tableTitle": "Title",
