@@ -1,79 +1,55 @@
-# Implementation Plan: Homogeneous Compound Slot Architecture Across All Pages
+# Implementation Plan: CRM Migration to `<Page />` View Modes Architecture
 
 ## Overview
-Spread the unified compound slot architecture (`<Page.Header>`, `<Page.HeaderRow>`, `<Page.TitleGroup>`, `<Page.Title>`, `<Page.Description>`, `<Page.Actions maxVisible={...}>`, `<Page.Toolbar>`, and `<Page.Tabs>`) across all 23 remaining pages and views in the portal. This replaces legacy monolithic props (`title`, `subtitle`, `actions`, `tabsSlot`) and deprecated `PageControlPanel` usages with a strictly homogeneous, enterprise-grade, accessible, and responsive layout standard.
+Migrate the CRM pipeline (`CRMPage.tsx`) from bespoke, fragmented view toggling and stacked widget layouts to the enterprise `<Page>` view architecture (`Page.ViewSwitcher`, `Page.View`, `Page.Toolbar`). This unifies sales operations into four first-class view modes: **List** (`list`), **Kanban** (`kanban`), **Activity Calendar** (`calendar`), and **Pipeline Analytics Graph** (`graph`), while keeping executive KPIs persistently visible and ensuring backwards compatibility for legacy `?view=table` links.
 
 ## Architecture Decisions
-1. **Homogeneous Layout Standard**: Every page implements the identical compound tree:
-   - `<Page.Header>`: Top coordinator with optional sticky backdrop glassmorphism.
-   - `<Page.Breadcrumbs>`: Clean breadcrumb trail at top of header.
-   - `<Page.HeaderRow>`: Flex row aligning identity on left and actions on right.
-   - `<Page.TitleGroup>`: Enclosing `<Page.Back>` (where relevant), `<Page.Title>`, status `<Badge>`, and `<Page.Description>`.
-   - `<Page.Actions maxVisible={3}>`: Responsive action buttons collapsing into `MoreHorizontal` dropdown when overflowing.
-   - `<Page.Toolbar>`: Lays out `<Page.Filters>` (search and filters) and `<Page.Controls>` (pager and view switcher) for data-dense pages.
-   - `<Page.Tabs>`: Sub-navigation attached to the bottom of `<Page.Header>` where tabs are present.
-2. **Domain-Grouped Vertical Slicing**: Rather than modifying 23 files at once, group migrations into 5 focused slices by domain:
-   - Slice 1: Core Data Collection Pages (Devices, CRM, Financial, Maintenance)
-   - Slice 2: Operations & Admin Pages (Billing, Users, Plans & PlanEditor, ApiStatus)
-   - Slice 3: Dashboard & Detail Pages (AdminDashboard, ClientDashboard, TechDashboard, TicketDetail, CRMCustomPlan)
-   - Slice 4: Settings & Configuration Pages (Profile, PasswordManager, NotificationPreferences, ByokSettings)
-   - Slice 5: Informational & Static Pages (Resources, Help, StyleGuide, Terms, Privacy, NotFound)
-3. **Control Height Uniformity**: All buttons and interactive triggers conform to `h-7` (28px).
-4. **Zero Regressions**: Verification checkpoints run after each slice to guarantee clean compilation and 100% test passes.
+1. **First-Class View Modes via `<Page availableViews={[...]}>`**:
+   - `list`: The existing high-density `CRMDataTable` with sorting, search, stage filters, and bulk actions.
+   - `kanban`: Visual stage pipeline board (`CRMKanbanBoard`).
+   - `calendar`: Interactive temporal schedule of follow-ups, demo calls, and quotation deadlines using `<Page.Calendar>`.
+   - `graph`: Stage-by-stage sales funnel and conversion analytics using `<Page.Graph>`.
+2. **Control Height Uniformity & Toolbar Integration**:
+   - Remove custom `<ViewToggle>` in `Page.Actions`.
+   - Place `<Page.ViewSwitcher>` inside `<Page.Controls>` within `<Page.Toolbar>`, conforming strictly to standard `h-7` (28px).
+3. **Executive KPI Persistence**:
+   - Keep the top 4 `StatCard` metrics (`Pipeline Value`, `Won Revenue`, `Proposals`, `Win Rate`) pinned below `<Page.Header>` across all views.
+   - Relocate the vertical "Due Follow-ups" list block from the main flow into the interactive **Calendar view**, eliminating clutter.
+4. **URL Normalization & Backwards Compatibility**:
+   - Canonical view modes are `list` and `kanban` (plus `calendar` and `graph`).
+   - Any incoming URL with `?view=table` automatically normalizes to `list` without infinite loops or lost search/stage query filters.
 
 ## Task List
 
-### Phase 8.1: Core Data Collection Pages
-- [x] Task 33: Migrate `DevicesPage.tsx` to `<Page.Header>` and `<Page.Actions>`
-- [x] Task 34: Migrate `CRMPage.tsx` to `<Page.Header>`, `<Page.Actions>`, and `<Page.Toolbar>`
-- [x] Task 35: Migrate `FinancialPage.tsx` from `Page.ControlPanel` to `<Page.Header>` and `<Page.Toolbar>`
-- [x] Task 36: Migrate `MaintenancePage.tsx` from `Page.ControlPanel` to `<Page.Header>` and `<Page.Toolbar>`
+### Phase 1: Foundations & Translations
+- [x] Task 1: Add CRM View Mode i18n Localization Keys in `en_US.json` and `es_DO.json`
 
-### Checkpoint: Core Data Pages Green
-- [x] Tests pass for modified pages (`DevicesPage`, `CRMPage`, `FinancialPage`, `MaintenancePage`)
+### Checkpoint: Foundations
+- [x] Locale files compile cleanly with valid JSON syntax
+
+### Phase 2: CRM View Modes Migration
+- [x] Task 2: Refactor `CRMPage.tsx` to `<Page.ViewSwitcher>` and URL Normalization (`table` $\rightarrow$ `list`)
+- [x] Task 3: Integrate Activity Calendar View via `<Page.View type="calendar">` and `<Page.Calendar>`
+- [x] Task 4: Integrate Pipeline Analytics Graph View via `<Page.View type="graph">` and `<Page.Graph>`
+
+### Checkpoint: View Modes Migration Green
+- [x] All four views switch smoothly without page reload
 - [x] Client builds clean with zero type errors (`npm -w client run build`)
 
-### Phase 8.2: Operations & Admin Pages
-- [x] Task 37: Migrate `BillingPage.tsx` to `<Page.Header>` and `<Page.Actions>`
-- [x] Task 38: Migrate `UserManagementPage.tsx` to `<Page.Header>` and `<Page.Actions>`
-- [x] Task 39: Migrate `PlansPage.tsx` and `PlanEditorPage.tsx` to `<Page.Header>`, `<Page.Back>`, and `<Page.Actions>`
-- [x] Task 40: Migrate `ApiStatusPage.tsx` to `<Page.Header>` and `<Page.Actions>`
+### Phase 3: Verification & Regression Testing
+- [x] Task 5: Expand `CRMPage.test.tsx` for All View Modes and Legacy Fallback
 
-### Checkpoint: Operations Pages Green
-- [x] Tests pass for modified pages (`BillingPage`, `UserManagementPage`, `PlansPage`, `PlanEditorPage`)
-- [x] Client builds clean with zero type errors (`npm -w client run build`)
-
-### Phase 8.3: Dashboard & Detail Views
-- [x] Task 41: Migrate `AdminDashboardView.tsx`, `ClientDashboardView.tsx`, and `TechDashboardPage.tsx` to `<Page.Header>`
-- [x] Task 42: Migrate `TicketDetailPage.tsx` and `CRMCustomPlanPage.tsx` to `<Page.Header>` and `<Page.Back>`
-
-### Checkpoint: Dashboards & Detail Views Green
-- [x] Tests pass for modified dashboards and detail views
-- [x] Client builds clean with zero type errors (`npm -w client run build`)
-
-### Phase 8.4: Settings & Configuration Pages
-- [x] Task 43: Migrate `ProfilePage.tsx` and `PasswordManagerPage.tsx` to `<Page.Header>` and `<Page.Actions>`
-- [x] Task 44: Migrate `NotificationPreferencesPage.tsx` and `ByokSettingsPage.tsx` to `<Page.Header>` and `<Page.Tabs>`
-
-### Checkpoint: Settings Pages Green
-- [x] Tests pass for settings pages (`PasswordManagerPage`, `NotificationPreferencesPage`, `ByokSettingsPage`)
-- [x] Client builds clean with zero type errors (`npm -w client run build`)
-
-### Phase 8.5: Informational, Shared & Legal Pages
-- [x] Task 45: Migrate `ResourcesPage.tsx`, `HelpPage.tsx`, and `StyleGuidePage.tsx` to `<Page.Header>`
-- [x] Task 46: Migrate `TermsPage.tsx`, `PrivacyPage.tsx`, and `NotFoundPage.tsx` to `<Page.Header>`
-
-### Checkpoint: Final Full System Verification
-- [x] Full client test suite passes: `npm -w client run test:run` (50/50 test suites, 329+ tests)
-- [x] Client builds clean with zero type errors: `npm -w client run build`
-- [x] All pages across the portal share identical layout structure
+### Checkpoint: Complete Verification
+- [x] Targeted tests pass: `npm -w client run test:run -- src/features/crm/pages/CRMPage.test.tsx`
+- [x] Full client test suite passes: `npm -w client run test:run`
+- [x] Client compiles cleanly: `npm -w client run build`
 
 ## Risks and Mitigations
 | Risk | Impact | Mitigation |
 | :--- | :---: | :--- |
-| Existing test suites might look for specific container test-ids or header element structures | Medium | Verify and update test selectors if any test asserts against specific legacy DOM wrappers. |
-| Pages with complex modal state or action triggers | Low | Keep action triggers identical, only wrap them inside `<Page.Actions maxVisible={...}>`. |
-| Breadcrumbs duplication on pages with `showBreadcrumbs={false}` | Low | Only render `<Page.Breadcrumbs />` when breadcrumbs were previously enabled. |
+| Empty activity or lead datasets render broken SVG in `Page.Graph` | Medium | Guard with fallback empty states and default zero-value data structures. |
+| Incompatible `due_date` format in `Page.Calendar` | Low | Parse ISO strings through `new Date(...)` and filter out invalid/null dates before memoizing events. |
+| Legacy bookmark disruption (`?view=table`) | High | Explicit normalization in URL state hook to treat `table` as `list` seamlessly. |
 
 ## Open Questions
-- None. Structure is agreed upon and homogeneous across all views.
+- None. Requirements and scope confirmed via `/idea-refine` dialogue.

@@ -1835,6 +1835,18 @@
   "crm": {
     "title": "CRM y Pipeline de Ventas",
     "subtitle": "Gestión de prospectos comerciales, etapas del embudo, cotizaciones y asignación de planes",
+    "views": {
+      "list": "Lista",
+      "kanban": "Kanban",
+      "calendar": "Actividades",
+      "graph": "Analítica"
+    },
+    "analytics": {
+      "pipelineByStage": "Pipeline por Etapa",
+      "stageDistribution": "Distribución del valor a través de las etapas comerciales",
+      "leadCountByStage": "Prospectos por Etapa",
+      "noData": "No hay datos de pipeline disponibles para visualizar."
+    },
     "newLead": "Nueva Oportunidad",
     "newLeadTitle": "Crear Nueva Oportunidad Comercial",
     "newLeadSubtitle": "Registre un nuevo prospecto de ventas, asigne suscripciones de destino y rastree el estado del pipeline",

@@ -1841,6 +1841,18 @@
   "crm": {
     "title": "CRM & Sales Pipeline",
     "subtitle": "Manage sales leads, pipeline stages, quotations, and subscription assignments",
+    "views": {
+      "list": "List",
+      "kanban": "Kanban",
+      "calendar": "Activities",
+      "graph": "Analytics"
+    },
+    "analytics": {
+      "pipelineByStage": "Pipeline by Stage",
+      "stageDistribution": "Value distribution across active sales stages",
+      "leadCountByStage": "Leads by Stage",
+      "noData": "No pipeline data available to visualize."
+    },
     "newLead": "New Lead",
     "newLeadTitle": "Create New Sales Lead",
     "newLeadSubtitle": "Register a new sales prospect, assign target subscriptions, and track pipeline status",

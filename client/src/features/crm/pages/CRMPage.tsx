@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -23,13 +23,25 @@ import { CRMDataTable } from "../components/CRMDataTable";
 import { CRMKanbanBoard } from "../components/CRMKanbanBoard";
 import { CRMLeadDetailSheet } from "../components/CRMLeadDetailSheet";
 import { CRMNewLeadModal } from "../components/CRMNewLeadModal";
-import { ViewToggle } from "@/components/ui/view-toggle";
 import type { Lead, LeadStage, QuotationStatus } from "../api/crmService";
-import { LayoutList, Kanban, Plus, Sparkles, TrendingUp, DollarSign, Briefcase, Target, CalendarClock } from "lucide-react";
+import type { PageCalendarEvent, PageGraphDataPoint } from "@/components/page/types";
+import {
+  LayoutList,
+  Kanban,
+  Calendar as CalendarIcon,
+  BarChart3,
+  Plus,
+  Sparkles,
+  TrendingUp,
+  DollarSign,
+  Briefcase,
+  Target,
+} from "lucide-react";
 
 import { CRM_VALID_STAGES as VALID_STAGES, CRM_VALID_PRIORITIES as VALID_PRIORITIES } from "@/constants/crm";
 
 type LeadPriorityAlias = "LOW" | "MEDIUM" | "HIGH";
+type CrmViewMode = "list" | "kanban" | "calendar" | "graph";
 
 function getErrorMessage(err: unknown): string | undefined {
   return err instanceof Error && err.message ? err.message : undefined;
@@ -78,7 +90,12 @@ export function CRMPage() {
 
   const { getParam, setParams, removeParam } = useUrlState();
 
-  const paramView = getParam("view") === "kanban" ? "kanban" : "table";
+  const rawView = getParam("view");
+  const currentView: CrmViewMode =
+    rawView === "kanban" || rawView === "calendar" || rawView === "graph"
+      ? rawView
+      : "list";
+
   const paramSearch = getParam("search");
   const paramStage = VALID_STAGES.includes(getParam("stage") as any) ? getParam("stage") : "";
   const paramPriority = (VALID_PRIORITIES as readonly string[]).includes(getParam("priority"))
@@ -90,6 +107,13 @@ export function CRMPage() {
   const isNewLeadModalOpen = getParam("openModal") === "new-lead";
 
   const [cancelSubId, setCancelSubId] = useState<string | null>(null);
+
+  // Normalize legacy ?view=table to standard list
+  useEffect(() => {
+    if (rawView === "table") {
+      setParams({ view: null });
+    }
+  }, [rawView, setParams]);
 
   useEffect(() => {
     fetchPlans();
@@ -116,10 +140,20 @@ export function CRMPage() {
   }, [paramLeadId, fetchLeadDetail]);
 
   const handleViewChange = useCallback(
-    (mode: "table" | "kanban") => {
-      setParams({ view: mode === "table" ? null : mode });
+    (mode: string) => {
+      setParams({ view: mode === "list" ? null : mode });
     },
     [setParams],
+  );
+
+  const crmViews = useMemo(
+    () => [
+      { value: "list", label: t("crm.views.list", "List"), icon: LayoutList, title: t("crm.views.list", "List") },
+      { value: "kanban", label: t("crm.views.kanban", "Kanban"), icon: Kanban, title: t("crm.views.kanban", "Kanban") },
+      { value: "calendar", label: t("crm.views.calendar", "Activities"), icon: CalendarIcon, title: t("crm.views.calendar", "Activities") },
+      { value: "graph", label: t("crm.views.graph", "Analytics"), icon: BarChart3, title: t("crm.views.graph", "Analytics") },
+    ],
+    [t],
   );
 
   const handleSearchChange = useCallback((val: string) => setParams({ search: val || null, page: null }), [setParams]);
@@ -200,6 +234,113 @@ export function CRMPage() {
     [bulkDeleteLeads, paramLeadId, closeLeadSheet, t],
   );
 
+  const handleCalendarEventClick = useCallback(
+    (evt: PageCalendarEvent) => {
+      const leadId = (evt.data as { leadId?: string } | undefined)?.leadId;
+      if (!leadId) return;
+      const existingLead = leads.find((l) => l.id === leadId);
+      if (existingLead) {
+        openLeadSheet(existingLead);
+      } else {
+        fetchLeadDetail(leadId);
+        setParams({ lead: leadId });
+      }
+    },
+    [leads, openLeadSheet, fetchLeadDetail, setParams],
+  );
+
+  const calendarEvents: PageCalendarEvent[] = useMemo(() => {
+    return upcomingActivities
+      .filter((act) => Boolean(act.due_date))
+      .map((act) => {
+        const dueDate = new Date(act.due_date!);
+        const isOverdue = dueDate.getTime() < now;
+        let variant: "default" | "primary" | "success" | "warning" | "destructive" | "info" = "primary";
+        if (isOverdue) {
+          variant = "destructive";
+        } else if (act.activity_type === "CALL") {
+          variant = "info";
+        } else if (act.activity_type === "MEETING") {
+          variant = "warning";
+        } else if (act.activity_type === "EMAIL_SENT") {
+          variant = "success";
+        }
+
+        return {
+          id: act.id,
+          title: `${act.title}${act.lead_company_name ? ` • ${act.lead_company_name}` : ""}`,
+          date: dueDate,
+          time: dueDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          variant,
+          data: {
+            leadId: act.lead_id,
+            activity: act,
+          },
+        };
+      });
+  }, [upcomingActivities, now]);
+
+  const stagePipelineData: PageGraphDataPoint[] = useMemo(() => {
+    const breakdown = (stats?.stageBreakdown || {}) as Record<string, { count: number; value: number } | undefined>;
+    const stageLabels: Record<string, string> = {
+      NEW: t("crm.stages.new", "New"),
+      QUALIFIED: t("crm.stages.qualified", "Qualified"),
+      PROPOSITION: t("crm.stages.proposition", "Proposition"),
+      NEGOTIATION: t("crm.stages.negotiation", "Negotiation"),
+      WON: t("crm.stages.won", "Won"),
+      LOST: t("crm.stages.lost", "Lost"),
+    };
+    const stageColors: Record<string, string> = {
+      NEW: "#3b82f6",
+      QUALIFIED: "#06b6d4",
+      PROPOSITION: "#f59e0b",
+      NEGOTIATION: "#8b5cf6",
+      WON: "#10b981",
+      LOST: "#ef4444",
+    };
+
+    return VALID_STAGES.map((stg) => {
+      const stageData = breakdown[stg] || { count: 0, value: 0 };
+      const numVal = Number(stageData.value || 0);
+      return {
+        label: stageLabels[stg] || stg,
+        value: numVal,
+        color: stageColors[stg],
+        formattedValue: `$${numVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${stageData.count} leads)`,
+      };
+    });
+  }, [stats?.stageBreakdown, t]);
+
+  const stageLeadCountData: PageGraphDataPoint[] = useMemo(() => {
+    const breakdown = (stats?.stageBreakdown || {}) as Record<string, { count: number; value: number } | undefined>;
+    const stageLabels: Record<string, string> = {
+      NEW: t("crm.stages.new", "New"),
+      QUALIFIED: t("crm.stages.qualified", "Qualified"),
+      PROPOSITION: t("crm.stages.proposition", "Proposition"),
+      NEGOTIATION: t("crm.stages.negotiation", "Negotiation"),
+      WON: t("crm.stages.won", "Won"),
+      LOST: t("crm.stages.lost", "Lost"),
+    };
+    const stageColors: Record<string, string> = {
+      NEW: "#3b82f6",
+      QUALIFIED: "#06b6d4",
+      PROPOSITION: "#f59e0b",
+      NEGOTIATION: "#8b5cf6",
+      WON: "#10b981",
+      LOST: "#ef4444",
+    };
+
+    return VALID_STAGES.map((stg) => {
+      const stageData = breakdown[stg] || { count: 0, value: 0 };
+      return {
+        label: stageLabels[stg] || stg,
+        value: Number(stageData.count || 0),
+        color: stageColors[stg],
+        formattedValue: `${stageData.count} leads`,
+      };
+    });
+  }, [stats?.stageBreakdown, t]);
+
   const customerSubsForSelectedLead = selectedLead?.client_id
     ? activeSubscriptions.filter((s) => s.client_id === selectedLead.client_id)
     : [];
@@ -207,7 +348,15 @@ export function CRMPage() {
   const isDetailSheetOpen = Boolean(paramLeadId && selectedLead);
 
   return (
-    <Page>
+    <Page
+      activeView={currentView}
+      onViewChange={handleViewChange}
+      defaultView="list"
+      availableViews={crmViews}
+      totalCount={totalLeads}
+      defaultPage={paramPage}
+      defaultPageSize={filters.limit || 10}
+    >
       <Page.Header>
         <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
         <Page.HeaderRow>
@@ -235,20 +384,18 @@ export function CRMPage() {
               <Plus className="h-3.5 w-3.5" />
               <span>{t("crm.newLead")}</span>
             </Button>
-            <ViewToggle
-              size="sm"
-              value={paramView}
-              onChange={handleViewChange}
-              options={[
-                { value: "table", icon: LayoutList },
-                { value: "kanban", icon: Kanban },
-              ]}
-            />
           </Page.Actions>
         </Page.HeaderRow>
+        <Page.Toolbar>
+          <Page.Filters />
+          <Page.Controls>
+            <Page.ViewSwitcher />
+          </Page.Controls>
+        </Page.Toolbar>
       </Page.Header>
 
       <div className="flex flex-col gap-4">
+        {/* 1. Persistent CRM Metrics Strip */}
         <section aria-label="CRM Metrics">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
@@ -287,66 +434,9 @@ export function CRMPage() {
           </div>
         </section>
 
-        {/* 2. Due Follow-ups Driven by GET /crm/activities */}
-        {upcomingActivities.length > 0 && (
-          <section aria-label="Due Follow-ups">
-            <div className="rounded-lg border border-border bg-card p-3.5 shadow-xs">
-              <div className="flex items-center gap-1.5 mb-3">
-                <CalendarClock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                <h3 className="text-xs font-semibold text-foreground">{t("crm.followUps.title")}</h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
-                {upcomingActivities.slice(0, 6).map((act) => {
-                  const isOverdue = act.due_date ? new Date(act.due_date).getTime() < now : false;
-                  return (
-                    <Button
-                      key={act.id}
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        const existingLead = leads.find((l) => l.id === act.lead_id);
-                        if (existingLead) {
-                          openLeadSheet(existingLead);
-                        } else {
-                          fetchLeadDetail(act.lead_id);
-                          setParams({ lead: act.lead_id });
-                        }
-                      }}
-                      className="h-auto w-full p-2.5 text-left justify-start flex-col items-start rounded-md border border-border bg-muted/30 hover:bg-muted cursor-pointer group transition-all"
-                    >
-                      <div className="flex items-center justify-between gap-2 w-full">
-                        <span className="text-xs font-semibold text-foreground truncate group-hover:text-primary transition-colors">
-                          {act.title}
-                        </span>
-                        <span
-                          className={`text-[10px] font-mono shrink-0 ${
-                            isOverdue
-                              ? "text-red-600 dark:text-red-400 font-semibold"
-                              : "text-muted-foreground"
-                          }`}
-                        >
-                          {act.due_date &&
-                            new Date(act.due_date).toLocaleDateString(undefined, {
-                              month: "short",
-                              day: "numeric",
-                            })}
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-muted-foreground block mt-0.5 truncate font-normal">
-                        {act.lead_contact_name}
-                        {act.lead_company_name ? ` • ${act.lead_company_name}` : ""}
-                      </span>
-                    </Button>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* 3. Main View (DataTable vs Kanban) */}
-        <section aria-label="CRM Pipeline View">
-          {paramView === "table" ? (
+        {/* 2. List / Table View */}
+        <Page.View type="list">
+          <section aria-label="CRM Lead List">
             <CRMDataTable
               leads={leads}
               total={totalLeads}
@@ -366,15 +456,49 @@ export function CRMPage() {
               limit={filters.limit || 10}
               onPageChange={handlePageChange}
             />
-          ) : (
+          </section>
+        </Page.View>
+
+        {/* 3. Kanban Pipeline View */}
+        <Page.View type="kanban">
+          <section aria-label="CRM Kanban Pipeline">
             <CRMKanbanBoard
               leads={leads}
               stats={stats}
               onSelectLead={openLeadSheet}
               onUpdateStage={handleQuickUpdateStage}
             />
-          )}
-        </section>
+          </section>
+        </Page.View>
+
+        {/* 4. Activity Calendar View */}
+        <Page.View type="calendar">
+          <section aria-label="CRM Activity Calendar">
+            <Page.Calendar
+              events={calendarEvents}
+              onEventClick={handleCalendarEventClick}
+            />
+          </section>
+        </Page.View>
+
+        {/* 5. Pipeline Analytics Graph View */}
+        <Page.View type="graph">
+          <section aria-label="CRM Pipeline Analytics" className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Page.Graph
+              title={t("crm.analytics.pipelineByStage", "Pipeline Value by Stage")}
+              subtitle={t("crm.analytics.stageDistribution", "Value distribution across active sales stages")}
+              data={stagePipelineData}
+              valuePrefix="$"
+              defaultType="bar"
+            />
+            <Page.Graph
+              title={t("crm.analytics.leadCountByStage", "Lead Volume by Stage")}
+              subtitle={t("crm.totalLeads", "Total lead counts per stage")}
+              data={stageLeadCountData}
+              defaultType="donut"
+            />
+          </section>
+        </Page.View>
       </div>
 
       {/* 4. Lead Detail Sheet / Drawer */}
