@@ -151,12 +151,7 @@ export function PageBack({
   className,
   ...props
 }: PageBackProps) {
-  let navigate: ReturnType<typeof useNavigate> | null = null;
-  try {
-    navigate = useNavigate();
-  } catch {
-    // Outside react-router context (e.g. isolated test)
-  }
+  const navigate = useNavigate();
 
   const handleClick = () => {
     if (onClick) {
@@ -167,11 +162,7 @@ export function PageBack({
       navigate(to);
       return;
     }
-    if (navigate) {
-      navigate(-1);
-    } else if (typeof window !== "undefined" && window.history) {
-      window.history.back();
-    }
+    navigate(-1);
   };
 
   return (
