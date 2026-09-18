@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.12.1](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.12.0...v1.12.1) (2026-09-18)
+
+
+### Features
+
+* **client:** add first-class tab navigation support to Page component ([ba62d19](https://github.com/Velmar-Technology/msp_client_portal/commit/ba62d19045cf6a11d310e64ee24df4e978da8215))
+* **client:** force Page content to take whole width by default ([3624823](https://github.com/Velmar-Technology/msp_client_portal/commit/362482366d91ae5fb2a5eeaa88b64cda0b74ee10))
+* **client:** introduce dashboard, calendar, and graph views to Page ([ed07e14](https://github.com/Velmar-Technology/msp_client_portal/commit/ed07e145b5e75e9dead90340077bda2388eed1e6))
+* **client:** introduce odoo-style form view and kanban board architecture ([65eaf50](https://github.com/Velmar-Technology/msp_client_portal/commit/65eaf50123d72a1ce451597a3824aac8f32dbea6))
+* **client:** introduce odoo-style view architecture to Page component ([93cbd99](https://github.com/Velmar-Technology/msp_client_portal/commit/93cbd99aa4761b511f98db2010ca0b61a334bfd3))
+* **financial:** migrate FinancialPage to use Page.Dashboard view architecture ([e8677b0](https://github.com/Velmar-Technology/msp_client_portal/commit/e8677b054ec91fc63cc3dad1fcdb971a902635d1))
+* **rmm:** migrate MaintenancePage to Page Date view architecture ([167d909](https://github.com/Velmar-Technology/msp_client_portal/commit/167d909f01eb76bf2f96500465205bf42f45c403))
+* **scripts:** add npm commands to reconstruct and query knowledge graph ([7a7f72d](https://github.com/Velmar-Technology/msp_client_portal/commit/7a7f72dafd38938aa749df934c56c321a0632340))
+* **sentinel:** integrate graphify topological intelligence and blast radius workflows ([da04b1a](https://github.com/Velmar-Technology/msp_client_portal/commit/da04b1a54e2c248c4291704ceae17f229cfa11a8))
+* **ui:** ensure all pages and layouts span full container width ([47e61c8](https://github.com/Velmar-Technology/msp_client_portal/commit/47e61c85953566e528f2ed5c1f4698f9a4c1c429))
+
+
+### Bug Fixes
+
+* **client:** resolve PageStatBoxProps empty interface and PageGraph render lint errors ([1dad647](https://github.com/Velmar-Technology/msp_client_portal/commit/1dad6472e4f02733f58e7535a9296ad0435b73f2))
+
 ## [1.12.0](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.12...v1.12.0) (2026-09-16)
 
 ## [1.11.12](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.11...v1.11.12) (2026-09-16)

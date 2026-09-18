@@ -1,6 +1,6 @@
 [package]
 name = "msp-agent"
-version = "1.12.0"
+version = "1.12.1"
 edition = "2021"
 description = "MSP Endpoint Agent — Lightweight Rust background agent for remote diagnostics, event log queries, security audits, and service remediation via WebSocket tunnel."
 authors = ["Velmar Technology SRL"]
