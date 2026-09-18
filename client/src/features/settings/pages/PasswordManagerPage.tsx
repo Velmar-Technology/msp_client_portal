@@ -381,6 +381,19 @@ export function PasswordManagerPage() {
               </AlertDialog>
             </div>
           </CardHeader>
+          <CardContent className="text-xs text-muted-foreground pt-0">
+            <div className="rounded-md bg-muted/50 border border-border p-3 space-y-1">
+              <span className="font-semibold text-foreground text-[11px] block">
+                {t("passwordManager.zeroKnowledgeNoticeTitle", "Zero-Knowledge Security Policy")}
+              </span>
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                {t(
+                  "passwordManager.zeroKnowledgeNoticeDesc",
+                  "Because your vault is end-to-end encrypted, administrators cannot view or recover your Master Password. If you are locked out, resetting your vault will permanently delete your unshared private items, but all shared company collections (IT, Finance, Operations) will remain safe.",
+                )}
+              </p>
+            </div>
+          </CardContent>
         </Card>
       </div>
     </Page>
