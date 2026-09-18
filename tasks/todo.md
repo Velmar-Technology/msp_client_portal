@@ -144,3 +144,167 @@
 - [x] Task 23: Added `tabsSlot` support to `PageControlPanel`
 - [x] Task 24: Added comprehensive unit tests in `Page.test.tsx` and documented in `client/src/components/page/README.md`
 - [x] Checkpoint: Full test suite (48/48 suites, 317/317 tests) and client build (0 type errors) pass cleanly
+
+---
+
+## Phase 7: Unified Compound Slot Architecture for `<Page />`
+
+### Task 25: Define TypeScript Contracts for Header Slots
+**Description:** Define props and interfaces for `<Page.Header>` and all compound subcomponents in `client/src/components/page/types.ts`.
+
+**Acceptance criteria:**
+- [x] Defines `PageHeaderProps` (`sticky?: boolean`, `bordered?: boolean`, `className?: string`, `children?: React.ReactNode`)
+- [x] Defines `PageHeaderRowProps`, `PageTitleGroupProps`, `PageTitleProps`, `PageDescriptionProps`, `PageBackProps`
+- [x] Defines `PageActionsProps` (`maxVisible?: number`, `overflowLabel?: string`)
+- [x] Defines `PageToolbarProps`, `PageFiltersProps`, `PageControlsProps`
+
+**Verification:**
+- [x] Build succeeds: `npm -w client run build`
+
+**Dependencies:** None
+**Files touched:**
+- `client/src/components/page/types.ts`
+**Estimated scope:** Small (1 file)
+
+---
+
+### Task 26: Implement Core Header Layout Slots
+**Description:** Implement `PageHeader`, `PageHeaderRow`, `PageTitleGroup`, `PageTitle`, `PageDescription`, and `PageBack` in `client/src/components/page/PageHeader.tsx`.
+
+**Acceptance criteria:**
+- [x] `PageHeader` supports `sticky` with glassmorphic blur `sticky top-0 z-20 backdrop-blur-md bg-background/85`
+- [x] `PageHeaderRow` aligns title group on left and actions on right with responsive wrapping
+- [x] `PageTitleGroup` supports title, subtitle, badges, and back button
+- [x] `PageBack` renders compact `h-7 w-7` icon button with navigation or `onClick`
+
+**Verification:**
+- [x] Build succeeds: `npm -w client run build`
+
+**Dependencies:** Task 25
+**Files touched:**
+- `client/src/components/page/PageHeader.tsx`
+**Estimated scope:** Small (1 file)
+
+---
+
+### Task 27: Implement Responsive Action Overflow (`PageActions`)
+**Description:** Build `PageActions` with automatic overflow dropdown handling when action count exceeds `maxVisible`.
+
+**Acceptance criteria:**
+- [x] Renders primary actions directly when count <= `maxVisible`
+- [x] Slices actions beyond `maxVisible` into a compact `MoreHorizontal` dropdown menu (`h-7 px-2`)
+- [x] Preserves action click handlers, labels, icons, and disabled states in dropdown items
+- [x] Adheres to `h-7` compact button standards
+
+**Verification:**
+- [x] Build succeeds: `npm -w client run build`
+
+**Dependencies:** Task 26
+**Files touched:**
+- `client/src/components/page/PageHeader.tsx`
+**Estimated scope:** Small (1 file)
+
+---
+
+### Task 28: Implement Unified Toolbar Slots (`PageToolbar`)
+**Description:** Implement `PageToolbar`, `PageFilters`, and `PageControls` inside `client/src/components/page/PageHeader.tsx` to unify search, filters, pagination, and view switcher.
+
+**Acceptance criteria:**
+- [x] `PageToolbar` lays out search and filters on the left/center, controls on the right
+- [x] Integrates seamlessly with existing `PageSearch`, `PagePager`, and `PageViewSwitcher`
+- [x] Fully responsive on mobile (flex-col on small screens, flex-row on desktop)
+
+**Verification:**
+- [x] Build succeeds: `npm -w client run build`
+
+**Dependencies:** Task 27
+**Files touched:**
+- `client/src/components/page/PageHeader.tsx`
+**Estimated scope:** Small (1 file)
+
+---
+
+### Checkpoint: Slot Primitives Implemented
+- [x] TypeScript compilation passes cleanly (`npm -w client run build`)
+
+---
+
+### Task 29: Compound Assembly in Page.tsx & Backward Compatibility Adapter
+**Description:** Attach all header subcomponents to `Page` compound component in `client/src/components/Page.tsx`, export them in `client/src/components/page/index.ts`, and adapt legacy props (`title`, `subtitle`, `actions`, `tabs`, `tabsSlot`) with `@deprecated` annotations.
+
+**Acceptance criteria:**
+- [x] `Page.Header`, `Page.HeaderRow`, `Page.TitleGroup`, `Page.Title`, `Page.Description`, `Page.Actions`, `Page.Toolbar`, `Page.Filters`, `Page.Controls`, and `Page.Back` are accessible on `Page`
+- [x] Legacy pages using `<Page title="..." actions={...}>` render identically with zero regressions
+- [x] All new components are exported in `client/src/components/page/index.ts`
+
+**Verification:**
+- [x] Build succeeds: `npm -w client run build`
+
+**Dependencies:** Task 28
+**Files touched:**
+- `client/src/components/Page.tsx`
+- `client/src/components/page/index.ts`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Task 30: Comprehensive Unit Test Suite
+**Description:** Write unit tests in `client/src/components/page/PageHeader.test.tsx` verifying sticky header styling, action overflow behavior, and compound slot composition.
+
+**Acceptance criteria:**
+- [x] Tests verify sticky header class injection and border rendering
+- [x] Tests verify action overflow when children count > `maxVisible`
+- [x] Tests verify legacy props continue to render properly
+
+**Verification:**
+- [x] Tests pass: `npm -w client run test:run -- src/components/page/PageHeader.test.tsx`
+- [x] Full test suite passes: `npm -w client run test:run`
+
+**Dependencies:** Task 29
+**Files touched:**
+- `client/src/components/page/PageHeader.test.tsx`
+**Estimated scope:** Small (1 file)
+
+---
+
+### Task 31: Pilot Migration on TicketsPage
+**Description:** Adopt the new `<Page.Header>`, `<Page.Actions maxVisible={3}>`, and `<Page.Toolbar>` on `client/src/features/tickets/pages/TicketsPage.tsx` to validate real-world developer ergonomics.
+
+**Acceptance criteria:**
+- [x] `TicketsPage.tsx` uses `<Page.Header>`, `<Page.Actions>`, `<Page.Toolbar>` seamlessly
+- [x] All tickets tests pass without regression
+
+**Verification:**
+- [x] Tests pass: `npm -w client run test:run -- src/features/tickets/pages/TicketsPage.test.tsx`
+- [x] Build succeeds: `npm -w client run build`
+
+**Dependencies:** Task 30
+**Files touched:**
+- `client/src/features/tickets/pages/TicketsPage.tsx`
+**Estimated scope:** Small (1-2 files)
+
+---
+
+### Task 32: Design System Guide & Documentation
+**Description:** Update `client/src/components/page/README.md` with complete usage guides, props reference, and code examples for the new compound header architecture.
+
+**Acceptance criteria:**
+- [x] Documents all new slots, props, and overflow configuration
+- [x] Provides copy-paste examples for standard, sticky, and data list headers
+
+**Verification:**
+- [x] Manual review of documentation
+
+**Dependencies:** Task 31
+**Files touched:**
+- `client/src/components/page/README.md`
+**Estimated scope:** Small (1 file)
+
+---
+
+### Checkpoint: Final Acceptance
+- [x] Full client test suite passes: `npm -w client run test:run`
+- [x] Client builds cleanly: `npm -w client run build`
+- [x] Conforms to CONSTRAINTS.md and AGENTS.md rules
+
+

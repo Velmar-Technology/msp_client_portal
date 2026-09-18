@@ -14,3 +14,5 @@ export * from "./PageField";
 export * from "./PageDashboard";
 export * from "./PageCalendar";
 export * from "./PageGraph";
+export * from "./PageHeader";
+

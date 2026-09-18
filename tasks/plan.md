@@ -1,41 +1,44 @@
-# Implementation Plan: Odoo-Style View System for Page Component
+# Implementation Plan: Unified Compound Slot Architecture for `<Page />`
 
 ## Overview
-Transform `client/src/components/Page.tsx` into an extensible, Odoo-inspired View System with a Unified Control Panel (`<Page.ControlPanel>`), View Switcher (`<Page.ViewSwitcher>`), Faceted Search Bar (`<Page.Search>`), Compact Pager (`<Page.Pager>`), and conditional multi-mode views (`<Page.View type="...">`), backed by a headless `PageContext` synced to `useUrlState`. Maintains 100% backward compatibility for all existing usages across the MSP portal.
+Transform `client/src/components/Page.tsx` by replacing monolithic header props (`title`, `subtitle`, `actions`, `tabsSlot`) and separate `PageControlPanel` with a composable, strict compound slot system (`Page.Header`, `Page.Actions`, `Page.Toolbar`, `Page.Tabs`). It natively handles responsive action overflow with `maxVisible`, sticky glassmorphism headers (`sticky top-0 z-20 backdrop-blur-md bg-background/85`), and unifies layout across all portal views while retaining 100% backward compatibility for legacy pages.
 
 ## Architecture Decisions
-1. **Compound Component API**: Retain `<Page>` as the main wrapper, attaching sub-components (`Page.ControlPanel`, `Page.ViewSwitcher`, `Page.Search`, `Page.Pager`, `Page.View`, `Page.StatusBar`).
-2. **Backward Compatibility Guarantee**: All existing `PageProps` (`title`, `subtitle`, `actions`, `showBreadcrumbs`, `isLoading`, `children`) continue to work untouched. Existing pages do not break.
-3. **Headless State & URL Sync**: `PageContext` encapsulates the active view mode (e.g. `list`, `kanban`, `form`), search query, and pagination state. When `syncUrl={true}` (default), it reads and updates query params via `useUrlState` without collisions (`?view=`, `?search=`, `?page=`).
-4. **Design System & Controls Compliance**: All controls strictly adhere to AGENTS.md compact standard `h-7` (28px height), Radix UI primitives (`@/components/ui/button`, `@/components/ui/input`, `@/components/ui/badge`), and full i18n localization support.
-5. **No Duplicate Types**: Type definitions strictly typed in TypeScript, no `@ts-ignore` or `eslint-disable`.
+1. **Strict Compound Slots**: Introduce `<Page.Header>` as the primary layout coordinator for page tops, containing `<Page.HeaderRow>`, `<Page.TitleGroup>`, `<Page.Title>`, `<Page.Description>`, `<Page.Actions>`, `<Page.Toolbar>`, and `<Page.Tabs>`.
+2. **Sticky Glassmorphism**: `<Page.Header sticky>` adds `sticky top-0 z-20 backdrop-blur-md bg-background/85 transition-all` with a subtle bottom border shadow, ensuring action buttons and tab navigation stay accessible without breaking page scrolling.
+3. **Responsive Action Overflow**: `<Page.Actions maxVisible={n}>` automatically slices actions beyond `n` into a compact `MoreHorizontal` dropdown menu (`DropdownMenu`), preserving click handlers, tooltips, and disabled states.
+4. **ControlPanel Unification**: Merge `PageControlPanel` capabilities directly into `<Page.Toolbar>` (`Page.Search`, `Page.Filters`, `Page.Controls` with `Page.Pager` and `Page.ViewSwitcher`), providing a single layout structure for both data-dense CRUD lists and standard pages.
+5. **Non-Breaking Backward Compatibility**: Maintain existing `PageProps` (`title`, `subtitle`, `actions`, `tabs`, `tabsSlot`) in `PageRoot` using an internal adapter with `@deprecated` notices so no existing pages break.
+6. **Design System & Heights Standard**: All buttons, inputs, and dropdown triggers strictly adhere to the `h-7` (28px) standard from `AGENTS.md` and `CONSTRAINTS.md`.
 
 ## Task List
 
-### Phase 1: Foundation & Core State Architecture
-- [ ] Task 1: Create `PageContext` and headless view controller hook (`usePageView`) with URL synchronization
-- [ ] Task 2: Implement compound sub-components (`PageControlPanel`, `PageViewSwitcher`, `PageSearch`, `PagePager`, `PageView`)
-- [ ] Task 3: Assemble compound `<Page>` component with full backward-compatibility and export tree
+### Phase 7: Unified Compound Slot Architecture for Page
+- [ ] Task 25: Define TypeScript interfaces and contracts for `PageHeader` slot components in `client/src/components/page/types.ts`
+- [ ] Task 26: Implement `PageHeader`, `PageHeaderRow`, `PageTitleGroup`, `PageTitle`, `PageDescription`, and `PageBack` in `client/src/components/page/PageHeader.tsx`
+- [ ] Task 27: Implement responsive `PageActions` with `maxVisible` overflow dropdown in `client/src/components/page/PageHeader.tsx`
+- [ ] Task 28: Implement `PageToolbar`, `PageFilters`, and `PageControls` in `client/src/components/page/PageHeader.tsx`
 
-### Checkpoint: Foundation & Component Unit Tests
-- [ ] Unit test suite passes for `Page` compound components (`Page.test.tsx`)
-- [ ] Client builds clean with zero type errors (`npm -w client run build`)
+### Checkpoint: Slot Primitives Implemented
+- [ ] TypeScript compilation passes cleanly (`npm -w client run build`)
 
-### Phase 2: Pilot Domain Adoption & Refinement
-- [ ] Task 4: Pilot adoption on `TicketsPage.tsx` or `CRMPage.tsx` demonstrating seamless List / Kanban switching and unified ControlPanel
-- [ ] Task 5: Document component usage recipe in `client/src/components/page/README.md` and feature slice docs
+### Phase 7.2: Assembly, Backward Compatibility & Testing
+- [ ] Task 29: Assemble compound components in `client/src/components/Page.tsx`, export via `client/src/components/page/index.ts`, and adapt legacy props
+- [ ] Task 30: Create comprehensive unit tests in `client/src/components/page/PageHeader.test.tsx` verifying sticky styling, action overflow, and compound composition
+- [ ] Task 31: Pilot adoption on `client/src/features/tickets/pages/TicketsPage.tsx` using new `<Page.Header>`, `<Page.Actions maxVisible={...}>`, and `<Page.Toolbar>`
+- [ ] Task 32: Update design system documentation in `client/src/components/page/README.md`
 
 ### Checkpoint: Verification & Acceptance
 - [ ] All client tests pass (`npm -w client run test:run`)
-- [ ] Client typecheck passes (`npm -w client run build`)
-- [ ] Verify zero regressions on existing pages using simple `<Page>`
+- [ ] Client builds clean with zero type errors (`npm -w client run build`)
+- [ ] Zero regressions across existing portal pages
 
 ## Risks and Mitigations
 | Risk | Impact | Mitigation |
 | :--- | :---: | :--- |
-| Breaking existing 20+ pages using `<Page>` | High | Preserve `PageProps` signature exactly. Wrap children in default view context if no custom compound slots are used. |
-| URL state collision with domain-specific query params | Medium | Allow configuring custom URL param keys (`viewParamKey`, `searchParamKey`, `pageParamKey`) via props with sensible defaults. |
-| Re-render performance on search typing | Low | Built-in debounce (300ms) on `PageSearch` with immediate local input state. |
+| Action child elements inside `PageActions` may have varied structures (e.g. `TooltipTrigger`, fragments, conditional falsy values) | Medium | Filter children with `React.Children.toArray` and filter out falsy/null items before applying `slice` and wrapping in dropdown menu items. |
+| Sticky header z-index collision with modals, sheet drawers, or tooltips | Medium | Use standard `z-20` for sticky headers (well below dialog/modal `z-50` and popover `z-40`). |
+| Existing 40+ pages regressing due to changes in `PageRoot` | High | Wrap legacy props in an internal adapter that renders the existing layout markup verbatim when legacy props are present. |
 
 ## Open Questions
-- None blocking; Direction A approved by user. Optional `Page.StatusBar` slot included for future detail page alignment.
+- None. User confirmed sticky glassmorphism support, strict compound architecture, and responsive action overflow.
