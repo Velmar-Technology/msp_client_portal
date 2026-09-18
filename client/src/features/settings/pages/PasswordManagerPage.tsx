@@ -37,7 +37,7 @@ export function PasswordManagerPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const isReadOnly = user?.accountStatus === 'READ_ONLY' || user?.accountStatus === 'SUSPENDED';
+  const isReadOnly = user?.accountStatus === "READ_ONLY" || user?.accountStatus === "SUSPENDED";
   const [copied, setCopied] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -61,7 +61,7 @@ export function PasswordManagerPage() {
           res.message ||
           t(
             "passwordManager.resetSuccessDesc",
-            "A fresh Bitwarden invitation email has been sent. Please check your inbox to set a new Master Password."
+            "A fresh Bitwarden invitation email has been sent. Please check your inbox to set a new Master Password.",
           ),
       });
       setIsDialogOpen(false);
@@ -113,12 +113,13 @@ export function PasswordManagerPage() {
         <Page.HeaderRow>
           <Page.TitleGroup>
             <Page.Title>{t("passwordManager.pageTitle", "Password Manager")}</Page.Title>
-            <Page.Description>{t("passwordManager.pageDescription", "Enterprise zero-knowledge password vault for your team.")}</Page.Description>
+            <Page.Description>
+              {t("passwordManager.pageDescription", "Enterprise zero-knowledge password vault for your team.")}
+            </Page.Description>
           </Page.TitleGroup>
         </Page.HeaderRow>
       </Page.Header>
       <div className="space-y-6 w-full">
-
         {/* BL-702 Read-Only Non-Payment Banner */}
         {isReadOnly && (
           <div
@@ -136,7 +137,7 @@ export function PasswordManagerPage() {
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   {t(
                     "passwordManager.readOnlyAlertDesc",
-                    "Existing passwords can be autofilled and searched, but new credential creation and editing are locked due to pending invoices."
+                    "Existing passwords can be autofilled and searched, but new credential creation and editing are locked due to pending invoices.",
                   )}
                 </p>
               </div>
@@ -164,7 +165,10 @@ export function PasswordManagerPage() {
                   <h2 className="text-base font-bold font-heading text-foreground">
                     {t("passwordManager.vaultTitle", "Hosted Vaultwarden Enterprise")}
                   </h2>
-                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[11px]">
+                  <Badge
+                    variant="outline"
+                    className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[11px]"
+                  >
                     <ShieldCheck className="h-3 w-3 mr-1" />
                     {t("passwordManager.activeStatus", "Active & Zero-Knowledge")}
                   </Badge>
@@ -172,16 +176,13 @@ export function PasswordManagerPage() {
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   {t(
                     "passwordManager.vaultSubtitle",
-                    "Your organization's encrypted vault is active. Master passwords are never shared or stored on our servers."
+                    "Your organization's encrypted vault is active. Master passwords are never shared or stored on our servers.",
                   )}
                 </p>
               </div>
             </div>
 
-            <Button
-              asChild
-              className="h-8 gap-1.5 px-4 font-semibold text-xs shrink-0"
-            >
+            <Button asChild className="h-8 gap-1.5 px-4 font-semibold text-xs shrink-0">
               <a href={vaultUrl} target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="h-3.5 w-3.5" />
                 {t("passwordManager.launchVault", "Open Web Vault")}
@@ -192,7 +193,9 @@ export function PasswordManagerPage() {
           {/* Quick Copy Server URL */}
           <div className="mt-5 pt-4 border-t border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="text-xs text-muted-foreground">
-              <span className="font-semibold text-foreground">{t("passwordManager.serverUrlLabel", "Custom Server URL:")}</span>{" "}
+              <span className="font-semibold text-foreground">
+                {t("passwordManager.serverUrlLabel", "Custom Server URL:")}
+              </span>{" "}
               <code className="bg-muted px-2 py-0.5 rounded font-mono text-[11px] text-foreground border border-border">
                 {vaultUrl}
               </code>
@@ -219,7 +222,10 @@ export function PasswordManagerPage() {
                 {t("passwordManager.setupGuideTitle", "How to Connect Your Apps")}
               </CardTitle>
               <CardDescription className="text-xs">
-                {t("passwordManager.setupGuideDesc", "Configure official Bitwarden browser extensions and mobile apps in 3 steps.")}
+                {t(
+                  "passwordManager.setupGuideDesc",
+                  "Configure official Bitwarden browser extensions and mobile apps in 3 steps.",
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 text-xs">
@@ -228,7 +234,9 @@ export function PasswordManagerPage() {
                   1
                 </div>
                 <p className="text-muted-foreground leading-relaxed">
-                  <strong className="text-foreground">{t("passwordManager.step1Title", "Install Extension or App:")}</strong>{" "}
+                  <strong className="text-foreground">
+                    {t("passwordManager.step1Title", "Install Extension or App:")}
+                  </strong>{" "}
                   {t("passwordManager.step1Text", "Download the official Bitwarden extension or app for your devices.")}
                 </p>
               </div>
@@ -241,7 +249,7 @@ export function PasswordManagerPage() {
                   <strong className="text-foreground">{t("passwordManager.step2Title", "Set Custom Server:")}</strong>{" "}
                   {t(
                     "passwordManager.step2Text",
-                    "On the login screen, click the Settings Gear icon and set Server URL to:"
+                    "On the login screen, click the Settings Gear icon and set Server URL to:",
                   )}{" "}
                   <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-[11px] text-foreground">
                     {vaultUrl}
@@ -254,8 +262,13 @@ export function PasswordManagerPage() {
                   3
                 </div>
                 <p className="text-muted-foreground leading-relaxed">
-                  <strong className="text-foreground">{t("passwordManager.step3Title", "Accept Invite & Login:")}</strong>{" "}
-                  {t("passwordManager.step3Text", "Click the invitation link sent to your email to create your Master Password and join your company vault.")}
+                  <strong className="text-foreground">
+                    {t("passwordManager.step3Title", "Accept Invite & Login:")}
+                  </strong>{" "}
+                  {t(
+                    "passwordManager.step3Text",
+                    "Click the invitation link sent to your email to create your Master Password and join your company vault.",
+                  )}
                 </p>
               </div>
             </CardContent>
@@ -268,7 +281,10 @@ export function PasswordManagerPage() {
                 {t("passwordManager.clientsTitle", "Official Bitwarden Clients")}
               </CardTitle>
               <CardDescription className="text-xs">
-                {t("passwordManager.clientsDesc", "Compatible with all official Bitwarden extensions, mobile, and desktop apps.")}
+                {t(
+                  "passwordManager.clientsDesc",
+                  "Compatible with all official Bitwarden extensions, mobile, and desktop apps.",
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -305,11 +321,10 @@ export function PasswordManagerPage() {
                 <CardDescription className="text-xs">
                   {t(
                     "passwordManager.troubleDesc",
-                    "Lost your Master Password? Learn how recovery works in a zero-knowledge architecture."
+                    "Lost your Master Password? Learn how recovery works in a zero-knowledge architecture.",
                   )}
                 </CardDescription>
               </div>
-
               <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <AlertDialogTrigger asChild>
                   <Button
@@ -337,13 +352,13 @@ export function PasswordManagerPage() {
                         <p>
                           {t(
                             "passwordManager.resetDialogDesc",
-                            "Are you sure you want to reset your vault access? Your current locked account will be purged and a fresh invitation email will be dispatched immediately."
+                            "Are you sure you want to reset your vault access? Your current locked account will be purged and a fresh invitation email will be dispatched immediately.",
                           )}
                         </p>
                         <div className="mt-2 rounded-md bg-destructive/10 border border-destructive/20 p-2.5 text-destructive font-medium text-[11px] leading-relaxed">
                           {t(
                             "passwordManager.resetDialogWarning",
-                            "Warning: Any personal, unshared passwords stored in your locked vault will be permanently lost. All company organization collections will remain unaffected."
+                            "Warning: Any personal, unshared passwords stored in your locked vault will be permanently lost. All company organization collections will remain unaffected.",
                           )}
                         </div>
                       </div>
@@ -366,19 +381,6 @@ export function PasswordManagerPage() {
               </AlertDialog>
             </div>
           </CardHeader>
-          <CardContent className="text-xs text-muted-foreground pt-0">
-            <div className="rounded-md bg-muted/50 border border-border p-3 space-y-1">
-              <span className="font-semibold text-foreground text-[11px] block">
-                {t("passwordManager.zeroKnowledgeNoticeTitle", "Zero-Knowledge Security Policy")}
-              </span>
-              <p className="text-[11px] leading-relaxed text-muted-foreground">
-                {t(
-                  "passwordManager.zeroKnowledgeNoticeDesc",
-                  "Because your vault is end-to-end encrypted, administrators cannot view or recover your Master Password. If you are locked out, resetting your vault will permanently delete your unshared private items, but all shared company collections (IT, Finance, Operations) will remain safe."
-                )}
-              </p>
-            </div>
-          </CardContent>
         </Card>
       </div>
     </Page>
@@ -386,4 +388,3 @@ export function PasswordManagerPage() {
 }
 
 export default PasswordManagerPage;
-

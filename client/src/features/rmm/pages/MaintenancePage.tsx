@@ -179,10 +179,10 @@ export function MaintenancePage() {
         const item = row.original;
         return (
           <div className="space-y-0.5">
-            <p className="text-xs font-semibold text-foreground">{item.title || item.device_name || t("devices.unnamedDevice")}</p>
-            {item.title && item.device_name && (
-              <p className="text-[11px] text-muted-foreground">{item.device_name}</p>
-            )}
+            <p className="text-xs font-semibold text-foreground">
+              {item.title || item.device_name || t("devices.unnamedDevice")}
+            </p>
+            {item.title && item.device_name && <p className="text-[11px] text-muted-foreground">{item.device_name}</p>}
             {item.device_serial && <p className="text-[10px] text-muted-foreground font-mono">{item.device_serial}</p>}
             {item.service_name && <p className="text-[9px] text-muted-foreground italic">{item.service_name}</p>}
           </div>
@@ -349,7 +349,7 @@ export function MaintenancePage() {
           <Page.Actions maxVisible={3}>
             <Button
               type="button"
-              size="sm"
+              size="default"
               onClick={() => openScheduleModal()}
               className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
             >
@@ -436,7 +436,7 @@ export function MaintenancePage() {
                   event.variant === "warning" && "bg-secondary text-secondary-foreground border-border",
                   event.variant === "destructive" && "bg-destructive/10 text-destructive border-destructive/20",
                   event.variant === "default" && "bg-muted text-muted-foreground border-border",
-                  (!event.variant || event.variant === "primary") && "bg-primary/15 text-primary border-primary/30"
+                  (!event.variant || event.variant === "primary") && "bg-primary/15 text-primary border-primary/30",
                 )}
                 title={`${m.title} - ${m.device_name || ""}`}
               >

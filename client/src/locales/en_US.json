@@ -1263,7 +1263,19 @@
       "repairFailed": "Failed to re-pair device.",
       "bulkExportSuccess": "Exported {{count}} device(s) to CSV.",
       "addAdminDeviceSuccessDesc": "Device {{name}} has been registered and provisioned.",
-      "fetchFailed": "Failed to retrieve active subscriptions for device management."
+      "fetchFailed": "Failed to retrieve active subscriptions for device management.",
+    "views": {
+      "list": "Inventory Table",
+      "tiled": "Equipment Cards",
+      "rmm": "RMM Telemetry",
+      "graph": "Fleet Analytics"
+    },
+    "analytics": {
+      "statusAllocation": "Device Status Distribution",
+      "statusSubtitle": "Active, pending activation, and locked endpoint breakdown",
+      "osDistribution": "Operating System Distribution",
+      "osSubtitle": "Workstation and server platform distribution across fleet"
+    }
   },
   "resources": {
     "title": "Resources",
@@ -1281,6 +1293,7 @@
     "viewTiled": "Tiled",
     "viewList": "List",
     "download": "Download",
+    "upload": "Upload Resource",
     "downloadStartedTitle": "Download Started",
     "downloadStartedDesc": "Downloading {{fileName}}",
     "emptyTitle": "No resources found",

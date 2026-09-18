@@ -15,7 +15,7 @@ export interface ViewToggleOption<T extends string = string> {
 
 export interface ViewToggleProps<T extends string> {
   value: T;
-  onChange: (value: T) => void;
+  onChange: (value: NoInfer<T>) => void;
   options?: ViewToggleOption<T>[];
   size?: "sm" | "default" | "lg";
   className?: string;

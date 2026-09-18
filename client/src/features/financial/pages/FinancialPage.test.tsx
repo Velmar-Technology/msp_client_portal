@@ -151,8 +151,8 @@ describe('FinancialPage - Dashboard View Architecture', () => {
       </MemoryRouter>,
     );
 
-    // Should display Transactions Ledger
-    expect(screen.getByText('Transactions Ledger')).toBeInTheDocument();
+    // Should display Transactions Ledger heading & items
+    expect(screen.getByRole('heading', { name: /Transactions Ledger/i })).toBeInTheDocument();
     expect(screen.getByText('AWS Cloud Services')).toBeInTheDocument();
     expect(screen.getByText('Google Workspace')).toBeInTheDocument();
 
@@ -192,12 +192,13 @@ describe('FinancialPage - Dashboard View Architecture', () => {
     fireEvent.click(ledgerBtn);
 
     await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /Transactions Ledger/i })).toBeInTheDocument();
       expect(screen.getByText('AWS Cloud Services')).toBeInTheDocument();
       expect(screen.queryByTestId('mock-revenue-chart')).not.toBeInTheDocument();
     });
 
     // Switch to Graph view
-    const graphBtn = screen.getByRole('button', { name: /Visual Analytics/i });
+    const graphBtn = screen.getByRole('button', { name: /Financial Analytics/i });
     fireEvent.click(graphBtn);
 
     await waitFor(() => {

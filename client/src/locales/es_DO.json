@@ -1259,7 +1259,19 @@
       "repairFailed": "No se pudo re-vincular el dispositivo.",
       "bulkExportSuccess": "Exportados {{count}} dispositivo(s) a CSV.",
       "addAdminDeviceSuccessDesc": "El dispositivo {{name}} ha sido registrado y aprovisionado.",
-      "fetchFailed": "No se pudieron recuperar las suscripciones activas para la gestión de dispositivos."
+      "fetchFailed": "No se pudieron recuperar las suscripciones activas para la gestión de dispositivos.",
+    "views": {
+      "list": "Tabla de Inventario",
+      "tiled": "Tarjetas de Equipos",
+      "rmm": "Telemetría RMM",
+      "graph": "Analítica de Flota"
+    },
+    "analytics": {
+      "statusAllocation": "Distribución de Estado de Equipos",
+      "statusSubtitle": "Desglose de terminales activos, pendientes y bloqueados",
+      "osDistribution": "Distribución por Sistema Operativo",
+      "osSubtitle": "Distribución de plataformas de estaciones de trabajo y servidores"
+    }
   },
   "resources": {
     "title": "Recursos",
@@ -1277,6 +1289,7 @@
     "viewTiled": "Mosaico",
     "viewList": "Lista",
     "download": "Descargar",
+    "upload": "Subir Recurso",
     "downloadStartedTitle": "Descarga Iniciada",
     "downloadStartedDesc": "Descargando {{fileName}}",
     "emptyTitle": "No se encontraron recursos",

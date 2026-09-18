@@ -66,7 +66,7 @@ vi.mock('@/features/rmm', () => ({
   ScheduleMaintenanceModal: () => null,
 }));
 vi.mock('@/components/devices/RmmDashboard', () => ({
-  RmmDashboard: () => null,
+  RmmDashboard: () => <div data-testid="mock-rmm-dashboard">Mock RMM Dashboard</div>,
 }));
 vi.mock('../components/DeployAgentModal', () => ({
   DeployAgentModal: () => null,
@@ -1371,5 +1371,191 @@ describe('DevicesPage', () => {
       expect(screen.getByTestId('vault-upgrade-lock')).toBeInTheDocument();
     });
   });
+
+  describe('DevicesPage - View Modes Architecture', () => {
+    const mockSubs = [
+      {
+        id: 'sub-test',
+        client_id: 'user-client',
+        service_name: 'Premium Support',
+        plan: 'PL-003' as const,
+        status: 'ACTIVE' as const,
+        renewal_date: '2026-07-22T00:00:00.000Z',
+        equipment_count: 2,
+        tenant_id: 'tenant-1',
+        created_at: '2026-06-22',
+        updated_at: '2026-06-22',
+      },
+    ];
+
+    const mockSlots: SubscriptionEquipment[] = [
+      {
+        id: 'slot-1',
+        subscription_id: 'sub-test',
+        slot_index: 0,
+        status: 'ACTIVE',
+        device_name: 'Workstation-Alpha',
+        device_serial: 'SN-ALP-001',
+        agent_status: 'ONLINE',
+        plan: 'PL-003',
+        tenant_id: 'tenant-1',
+        created_at: '2026-06-22',
+        updated_at: '2026-06-22',
+      },
+      {
+        id: 'slot-2',
+        subscription_id: 'sub-test',
+        slot_index: 1,
+        status: 'PENDING_ACTIVATION',
+        device_name: null,
+        device_serial: null,
+        agent_status: null,
+        plan: 'PL-003',
+        tenant_id: 'tenant-1',
+        created_at: '2026-06-22',
+        updated_at: '2026-06-22',
+      },
+    ];
+
+    beforeEach(() => {
+      vi.mocked(subscriptionService.getAll).mockResolvedValue(mockSubs);
+      vi.mocked(equipmentService.getMyDevices).mockResolvedValue([...mockSlots]);
+    });
+
+    test('renders default list view with devices table and Page.ViewSwitcher', async () => {
+      const client = new QueryClient({
+        defaultOptions: { queries: { retry: false, staleTime: 0, gcTime: 0 } },
+      });
+
+      render(
+        <QueryClientProvider client={client}>
+          <MemoryRouter initialEntries={['/devices']}>
+            <DevicesPage />
+          </MemoryRouter>
+        </QueryClientProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Workstation-Alpha')).toBeInTheDocument();
+      });
+
+      // View switcher buttons should be visible in toolbar
+      expect(screen.getByRole('button', { name: 'Inventory Table' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Equipment Cards' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'RMM Telemetry' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Fleet Analytics' })).toBeInTheDocument();
+    });
+
+    test('renders directly in RMM telemetry view when tab=rmm in URL', async () => {
+      const client = new QueryClient({
+        defaultOptions: { queries: { retry: false, staleTime: 0, gcTime: 0 } },
+      });
+
+      render(
+        <QueryClientProvider client={client}>
+          <MemoryRouter initialEntries={['/devices?tab=rmm']}>
+            <DevicesPage />
+          </MemoryRouter>
+        </QueryClientProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mock-rmm-dashboard')).toBeInTheDocument();
+      });
+
+      // Devices table should not be present
+      expect(screen.queryByText('Workstation-Alpha')).not.toBeInTheDocument();
+    });
+
+    test('renders directly in tiled cards view when view=tiled in URL', async () => {
+      const client = new QueryClient({
+        defaultOptions: { queries: { retry: false, staleTime: 0, gcTime: 0 } },
+      });
+
+      render(
+        <QueryClientProvider client={client}>
+          <MemoryRouter initialEntries={['/devices?view=tiled']}>
+            <DevicesPage />
+          </MemoryRouter>
+        </QueryClientProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Workstation-Alpha')).toBeInTheDocument();
+      });
+
+      // Should display device cards
+      expect(screen.queryByTestId('mock-rmm-dashboard')).not.toBeInTheDocument();
+    });
+
+    test('renders directly in fleet analytics view when view=graph in URL', async () => {
+      const client = new QueryClient({
+        defaultOptions: { queries: { retry: false, staleTime: 0, gcTime: 0 } },
+      });
+
+      render(
+        <QueryClientProvider client={client}>
+          <MemoryRouter initialEntries={['/devices?view=graph']}>
+            <DevicesPage />
+          </MemoryRouter>
+        </QueryClientProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Device Status Distribution')).toBeInTheDocument();
+        expect(screen.getByText('Operating System Distribution')).toBeInTheDocument();
+      });
+
+      expect(screen.queryByTestId('mock-rmm-dashboard')).not.toBeInTheDocument();
+    });
+
+    test('switches dynamically between views using Page.ViewSwitcher', async () => {
+      const client = new QueryClient({
+        defaultOptions: { queries: { retry: false, staleTime: 0, gcTime: 0 } },
+      });
+
+      render(
+        <QueryClientProvider client={client}>
+          <MemoryRouter initialEntries={['/devices']}>
+            <DevicesPage />
+          </MemoryRouter>
+        </QueryClientProvider>,
+      );
+
+      // Default: List view
+      await waitFor(() => {
+        expect(screen.getByText('Workstation-Alpha')).toBeInTheDocument();
+      });
+
+      // Switch to RMM Telemetry
+      const rmmBtn = screen.getByRole('button', { name: 'RMM Telemetry' });
+      fireEvent.click(rmmBtn);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mock-rmm-dashboard')).toBeInTheDocument();
+        expect(screen.queryByText('Workstation-Alpha')).not.toBeInTheDocument();
+      });
+
+      // Switch to Fleet Analytics
+      const graphBtn = screen.getByRole('button', { name: 'Fleet Analytics' });
+      fireEvent.click(graphBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText('Device Status Distribution')).toBeInTheDocument();
+        expect(screen.getByText('Operating System Distribution')).toBeInTheDocument();
+        expect(screen.queryByTestId('mock-rmm-dashboard')).not.toBeInTheDocument();
+      });
+
+      // Switch back to Inventory Table
+      const listBtn = screen.getByRole('button', { name: 'Inventory Table' });
+      fireEvent.click(listBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText('Workstation-Alpha')).toBeInTheDocument();
+        expect(screen.queryByTestId('mock-rmm-dashboard')).not.toBeInTheDocument();
+      });
+    });
+  });
 });
+
 
