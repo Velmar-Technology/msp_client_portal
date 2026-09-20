@@ -1,55 +1,41 @@
-# Implementation Plan: Financial Migration to `<Page />` View Modes Architecture
+# Implementation Plan: Pull Request Protocol & Template Standard
 
 ## Overview
-Migrate `FinancialPage.tsx` from ad-hoc URL tab parameters and mixed layouts to the enterprise `<Page>` view architecture (`Page.ViewSwitcher`, `Page.View`, `Page.Toolbar`). Elevate financial operations into four unified first-class view modes: **Overview & Charts** (`dashboard`), **Transactions Ledger** (`ledger`), **Technician Commissions** (`payroll`), and **Financial Analytics** (`graph`), while preserving 100% backwards compatibility with legacy `?tab=` query parameters.
+Standardize the Pull Request authoring, verification, and AI/bot review workflow across `msp_client_portal` based on the visual reference image. This establishes a high-fidelity GitHub PR template, review etiquette guidelines, and updates repository agent rules (`AGENTS.md` and `CONTRIBUTING.md`).
 
 ## Architecture Decisions
-1. **First-Class View Modes via `<Page availableViews={[...]}>`**:
-   - `dashboard`: Executive Overview with KPI cards, Revenue Chart, Expense Doughnut, and recent ledger movements.
-   - `ledger`: Dedicated full-width Transactions Ledger (`TransactionsTable`) with date filtering and CSV export.
-   - `payroll`: Dedicated Technician Payroll and labor bounty accounting (`TechnicianPayrollTable`).
-   - `graph`: Native SVG Expense Category allocation and Net Profit split visualization powered by `<Page.Graph>`.
-2. **Standardized View Switching & Toolbar Placement**:
-   - Relocate `<Page.ViewSwitcher>` inside `<Page.Controls>` within `<Page.Toolbar>`.
-   - All buttons, date selectors, and view switchers adhere to compact `h-7` (28px).
-3. **Dual Parameter Synchronization (URL Normalization & Backwards Compatibility)**:
-   - Canonical view state uses `?view=`.
-   - If legacy `?tab=payroll` is present, it transparently maps to `payroll` view mode.
-   - Updates to `view` synchronize both `view` and legacy `tab` to prevent breaking existing bookmarks or test suites.
-4. **i18n Localization**:
-   - Replace hardcoded view labels with i18n keys (`financial.views.dashboard`, `financial.views.ledger`, `financial.views.payroll`, `financial.views.graph`, and analytics chart subtitles) in `en_US.json` and `es_DO.json`.
+1. **Visual Reference Parity**:
+   - Mirror the structure in the provided PR image: Conventional commit title, structured Context ("why"), Screenshots/Visual Evidence block, numbered "Steps to verify the change", Type checkboxes, and Pre-flight Checklist.
+2. **Hybrid Workflow (Human + AI Agent)**:
+   - Designed for human developers and autonomous AI agents alike.
+   - Enforces the non-decreasing test threshold and zero-suppression policy defined in `CONSTRAINTS.md`.
+3. **AI Bot Review Etiquette**:
+   - Establish a clear convention for triaging automated bot reviews (CodeRabbit, Copilot, GitHub Actions), applying unified diff suggestions, and resolving review threads.
+4. **Lightweight Gating**:
+   - Prescriptive template and clear cultural/agent expectations without fragile CI regex scripts that fail PRs when screenshots are omitted.
 
 ## Task List
 
-### Phase 1: Foundations & Translations
-- [ ] Task 1: Add Financial View Mode i18n Localization Keys in `en_US.json` and `es_DO.json`
+### Phase 1: GitHub Template & Protocol Documentation
+- [ ] Task 1: Create `.github/pull_request_template.md` with visual proof, verification recipe, and constraint checklist
+- [ ] Task 2: Create `docs/guidelines/pull-request-protocol.md` with AI bot review etiquette and 90-second review guidelines
 
-### Checkpoint: Foundations
-- [ ] Locale files compile cleanly with valid JSON syntax
+### Checkpoint: Templates and Docs
+- [ ] Markdown files parse cleanly with valid links and formatting
 
-### Phase 2: Financial View Modes Migration
-- [ ] Task 2: Refactor `FinancialPage.tsx` root container, `availableViews`, and URL normalization
-- [ ] Task 3: Implement Dedicated Transactions Ledger View (`<Page.View type="ledger">`)
-- [ ] Task 4: Implement Financial Analytics View (`<Page.View type="graph">` via `<Page.Graph>`)
+### Phase 2: Repository Guidelines & Agent Integration
+- [ ] Task 3: Update `CONTRIBUTING.md` with PR standards and link to the PR template
+- [ ] Task 4: Update `AGENTS.md` Section 9 & 10 to formalize PR and walkthrough formatting for AI agents
 
-### Checkpoint: View Modes Migration Green
-- [ ] All four views (`dashboard`, `ledger`, `payroll`, `graph`) switch smoothly without page reload
-- [ ] Client builds clean with zero type errors (`npm -w client run build`)
-
-### Phase 3: Verification & Regression Testing
-- [ ] Task 5: Expand `FinancialPage.test.tsx` for All View Modes and Legacy Fallback
-
-### Checkpoint: Complete Verification
-- [ ] Targeted tests pass: `npm -w client run test:run -- src/features/financial/pages/FinancialPage.test.tsx`
-- [ ] Full client test suite passes: `npm -w client run test:run`
-- [ ] Client compiles cleanly: `npm -w client run build`
+### Checkpoint: Complete
+- [ ] All tasks completed and verified
+- [ ] Definition of Done satisfied
 
 ## Risks and Mitigations
 | Risk | Impact | Mitigation |
 | :--- | :---: | :--- |
-| Existing tests or bookmarks relying on `?tab=payroll` break | High | Read both `?view` and `?tab`, prioritizing `?view` while aliasing `?tab=payroll` to `payroll` mode. |
-| Heavy charts causing unnecessary re-renders in ledger or payroll views | Low | `RevenueChart` and `ExpenseDoughnut` remain code-split behind `lazyWithRetry` and only render in `dashboard` mode. |
-| Empty expense categories in `Page.Graph` | Medium | Guard data mapping with default zero values and fallback empty states. |
+| Overly complex template ignored by developers | Medium | Keep sections compact with helpful placeholder comments and clear examples. |
+| Incompatible markdown rendering on GitHub | Low | Use standard GitHub-Flavored Markdown (GFM) tables, checkboxes, and collapsibles. |
 
 ## Open Questions
-- None. Requirements follow the established `<Page>` view architecture recipe.
+- None. Requirements agreed upon during idea refinement.

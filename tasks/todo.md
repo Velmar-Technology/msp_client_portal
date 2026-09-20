@@ -1,87 +1,83 @@
-# Tasks: DevicesPage Migration to `<Page />` View Modes Architecture
+# Tasks: Pull Request Protocol & Template Standard
 
-## Task 1: Add Devices View Mode i18n Localization Keys
-**Description:** Add localization strings for devices view modes (`devices.views.list`, `devices.views.tiled`, `devices.views.rmm`, `devices.views.graph`) and fleet analytics in `client/src/locales/en_US.json` and `client/src/locales/es_DO.json`.
+## Task 1: Create `.github/pull_request_template.md`
+**Description:** Create the official GitHub Pull Request template matching the structure from the reference image, including Context, Screenshots/Visual Evidence, Steps to verify the change, Type matrix, and Constraints checklist.
 
 **Acceptance criteria:**
-- [x] Added translations for all 4 view mode labels in `en_US.json`
-- [x] Added translations for all 4 view mode labels in `es_DO.json`
-- [x] Added translations for analytics chart titles and subtitles
-- [x] Both JSON files parse without syntax errors
+- [x] PR title format guide included (`<type>(<scope>): <summary>`)
+- [x] Context section with problem background and linked issue
+- [x] Visual Proof / Screenshots section (supporting images/videos/terminal output)
+- [x] Numbered "Steps to verify the change" reproduction recipe
+- [x] Type of change checkbox matrix (`Fix`, `Feature`, `Improvement`, `Refactor`, `Docs`, `Other`)
+- [x] Checklist enforcing `CONSTRAINTS.md` (no `@ts-ignore`/`eslint-disable`, tests pass, no deleted tests, local check)
 
 **Verification:**
-- [x] Build succeeds: `npm -w client run build`
+- [x] File exists at `.github/pull_request_template.md`
+- [x] Markdown renders properly with GFM syntax
 
 **Dependencies:** None
 **Files likely touched:**
-- `client/src/locales/en_US.json`
-- `client/src/locales/es_DO.json`
+- `.github/pull_request_template.md`
+**Estimated scope:** Small (1 file)
 
 ---
 
-## Task 2: Refactor DevicesPage.tsx Root Container & View Modes
-**Description:** Refactor `DevicesPage.tsx` root container to pass `activeView`, `onViewChange`, `defaultView="list"`, and `availableViews` to `<Page>`. Position `<Page.ViewSwitcher>` inside `<Page.Controls>` within `<Page.Toolbar>`. Map legacy `?tab=rmm` to `rmm` and `?tab=devices` to `list`, while maintaining dual sync for legacy compatibility.
+## Task 2: Create `docs/guidelines/pull-request-protocol.md`
+**Description:** Author comprehensive PR guidelines covering the 90-second reviewer scannability rule, screenshot/evidence guidelines, step-by-step verification crafting, and AI bot review etiquette (how to review, apply diff suggestions, and resolve threads with bots like CodeRabbit).
 
 **Acceptance criteria:**
-- [x] `<Page>` is configured with `availableViews` covering `list`, `tiled`, `rmm`, and `graph`
-- [x] `<Page.ViewSwitcher>` is placed in `<Page.Controls>` inside `<Page.Toolbar>`
-- [x] Legacy `?tab=rmm` activates the `rmm` view
-- [x] Default view is `list`
-- [x] Consolidated duplicate `ViewToggle` and middle `Tabs` bar
+- [x] Principles of reviewer ergonomics and the 90-second scan explained
+- [x] Guidelines on taking and embedding screenshots/recordings
+- [x] Verification steps format specification (preconditions, steps, expected result)
+- [x] Protocol for interacting with AI reviewer bots and applying 1-click diff suggestions
+- [x] PR label lifecycle and confidence score interpretation
 
 **Verification:**
-- [x] Build succeeds: `npm -w client run build`
-- [x] Tests pass: `npm -w client run test:run -- src/features/equipment/pages/DevicesPage.test.tsx`
+- [x] File exists at `docs/guidelines/pull-request-protocol.md`
+- [x] Internal file and documentation links valid
 
 **Dependencies:** Task 1
 **Files likely touched:**
-- `client/src/features/equipment/pages/DevicesPage.tsx`
+- `docs/guidelines/pull-request-protocol.md`
+**Estimated scope:** Small (1 file)
 
 ---
 
-## Task 3: Implement Dedicated View Slots (list, tiled, rmm, graph)
-**Description:** Add `<Page.View>` slots for all 4 views in `DevicesPage.tsx`, with `list` rendering `DataTable`, `tiled` rendering responsive `DeviceCard` grid with pagination, `rmm` rendering `RmmDashboard`, and `graph` rendering `<Page.Graph>` fleet analytics.
+## Task 3: Update `CONTRIBUTING.md`
+**Description:** Update `CONTRIBUTING.md` to reference `.github/pull_request_template.md` and link to `docs/guidelines/pull-request-protocol.md`.
 
 **Acceptance criteria:**
-- [x] `<Page.View type="list">` contains `DeviceToolbar` and `DataTable`
-- [x] `<Page.View type="tiled">` contains `DeviceToolbar`, `DeviceCard` grid, and pagination
-- [x] `<Page.View type="rmm">` contains `RmmDashboard`
-- [x] `<Page.View type="graph">` contains `<Page.Graph>` components showing status & OS allocation
-- [x] Modals and confirmation dialogs remain accessible across all views
+- [x] Workflow section references the PR template
+- [x] Contributor guidance on visual proof and verification steps added
 
 **Verification:**
-- [x] Build succeeds: `npm -w client run build`
-- [x] Tests pass: `npm -w client run test:run -- src/features/equipment/pages/DevicesPage.test.tsx`
+- [x] Links in `CONTRIBUTING.md` resolve correctly
 
 **Dependencies:** Task 2
 **Files likely touched:**
-- `client/src/features/equipment/pages/DevicesPage.tsx`
+- `CONTRIBUTING.md`
+**Estimated scope:** Small (1 file)
 
 ---
 
-## Task 4: Expand DevicesPage.test.tsx for All View Modes and Legacy Fallback
-**Description:** Update `DevicesPage.test.tsx` with unit tests validating that all four views render when selected, that the view switcher operates properly, and that legacy `?tab=rmm` correctly defaults to the RMM telemetry view.
+## Task 4: Update `AGENTS.md` for AI Agent PR & Walkthrough Formatting
+**Description:** Update `AGENTS.md` Sections 9 and 10 to instruct AI coding agents to follow the PR description and walkthrough standard whenever presenting completed work or drafting PRs.
 
 **Acceptance criteria:**
-- [x] Test verifies that default view is `list`
-- [x] Test verifies switching to `tiled` renders cards grid
-- [x] Test verifies switching to `rmm` renders RMM dashboard
-- [x] Test verifies switching to `graph` renders fleet analytics
-- [x] Test verifies that providing `?tab=rmm` directly renders the RMM view
+- [x] Section 9 updated with PR formatting and verification evidence standard
+- [x] Section 10 (Definition of Done) reinforces reproducible verification steps
 
 **Verification:**
-- [x] Tests pass: `npm -w client run test:run -- src/features/equipment/pages/DevicesPage.test.tsx`
-- [x] Full client test suite passes: `npm -w client run test:run`
-- [x] Build succeeds: `npm -w client run build`
+- [x] `AGENTS.md` formatting intact and clean
 
 **Dependencies:** Task 3
 **Files likely touched:**
-- `client/src/features/equipment/pages/DevicesPage.test.tsx`
+- `AGENTS.md`
+**Estimated scope:** Small (1 file)
 
 ---
 
 ### Checkpoint: Complete Verification
-- [x] Full client test suite passes: `npm -w client run test:run` (all test suites green)
-- [x] Zero TypeScript compile errors: `npm -w client run build`
-- [x] Definition of Done satisfied per `AGENTS.md`
-
+- [x] All 4 tasks completed and verified
+- [x] Git status clean and consistent
+- [x] DoD satisfied
