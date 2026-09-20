@@ -31,6 +31,16 @@ via Husky + commitlint on every commit.
    - `npm -w server run lint` and `npm -w client run lint`
 4. Open a PR from your branch → `stage`. PRs to `main` go through the release process.
 
+## Pull Request Standards & Protocol
+
+All pull requests automatically load our standard template [`.github/pull_request_template.md`](.github/pull_request_template.md). Authors must follow the guidelines detailed in [Pull Request Protocol](docs/guidelines/pull-request-protocol.md):
+
+- **Visual Evidence:** UI modifications require screenshots or screen recordings (supporting light and dark theme); backend/API changes require terminal logs or curl responses.
+- **Reproducible Verification Steps:** Explicit, numbered test instructions specifying roles, preconditions, actions, and expected results.
+- **AI & Bot Review Etiquette:** Triage automated bot suggestions (e.g. CodeRabbit, static analysis); apply validated 1-click diffs or provide technical counter-arguments before resolving comments.
+- **Constraints Compliance:** Zero new `@ts-ignore` / `eslint-disable` suppressions, zero deleted tests without explicit commit justification, and holding or growing test baselines per [CONSTRAINTS.md](CONSTRAINTS.md).
+
+
 ## Definition of Done
 
 - Clean compilation (zero TypeScript errors).
