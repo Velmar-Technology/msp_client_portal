@@ -1,41 +1,55 @@
-# Implementation Plan: Pull Request Protocol & Template Standard
+# Implementation Plan: Unified L2 Metric Card Primitive (`<MetricCard />`)
 
 ## Overview
-Standardize the Pull Request authoring, verification, and AI/bot review workflow across `msp_client_portal` based on the visual reference image. This establishes a high-fidelity GitHub PR template, review etiquette guidelines, and updates repository agent rules (`AGENTS.md` and `CONTRIBUTING.md`).
+Unify `StatCard`, `SummaryCard`, and `PageDashboardKpi` into a single canonical Level 2 primitive (`<MetricCard />`) located at `client/src/components/shared/MetricCard.tsx`. The primitive provides a hybrid API (direct flat props for standard metrics + optional compound subcomponents for custom slots), single unified density (`min-h-[120px]`, `p-3.5`, `text-xl` font), built-in skeleton states, keyboard accessibility, and standard semantic trend pills. All existing call-sites across the entire codebase will be directly refactored to eliminate duplicate card components.
 
 ## Architecture Decisions
-1. **Visual Reference Parity**:
-   - Mirror the structure in the provided PR image: Conventional commit title, structured Context ("why"), Screenshots/Visual Evidence block, numbered "Steps to verify the change", Type checkboxes, and Pre-flight Checklist.
-2. **Hybrid Workflow (Human + AI Agent)**:
-   - Designed for human developers and autonomous AI agents alike.
-   - Enforces the non-decreasing test threshold and zero-suppression policy defined in `CONSTRAINTS.md`.
-3. **AI Bot Review Etiquette**:
-   - Establish a clear convention for triaging automated bot reviews (CodeRabbit, Copilot, GitHub Actions), applying unified diff suggestions, and resolving review threads.
-4. **Lightweight Gating**:
-   - Prescriptive template and clear cultural/agent expectations without fragile CI regex scripts that fail PRs when screenshots are omitted.
+- **L1/L2 Layering Compliance**: Built on top of Radix UI L1 primitive `Card` (`@/components/ui/card`) with zero ad-hoc raw container styles.
+- **Hybrid Ergonomics**: Flat props (`title`, `value`, `trend`, `icon`, `badge`, `subtitle`, `footer`, `isLoading`, `onClick`) cover 95% of use-cases with minimal JSX; compound subcomponents (`MetricCard.Header`, `MetricCard.Value`, etc.) allow embedding custom controls (e.g. progress bars).
+- **Single Unified Density**: Consistent compact height (`min-h-[120px]`), padding (`p-3.5`), title typography (`text-[11px] font-medium uppercase tracking-wider text-muted-foreground`), and metric value typography (`text-xl font-bold tracking-tight text-foreground font-heading`).
+- **Zero Legacy Aliases**: Complete migration of all ~35 call-sites and deletion of `StatCard.tsx`, `SummaryCard.tsx`, and `components/dashboard/summary-card.tsx`.
 
 ## Task List
 
-### Phase 1: GitHub Template & Protocol Documentation
-- [ ] Task 1: Create `.github/pull_request_template.md` with visual proof, verification recipe, and constraint checklist
-- [ ] Task 2: Create `docs/guidelines/pull-request-protocol.md` with AI bot review etiquette and 90-second review guidelines
+### Phase 1: L2 Primitive Foundation & Test Suite
+- [ ] Task 1: Create `MetricCard.tsx` in `client/src/components/shared/` with hybrid props and compound slots
+- [ ] Task 2: Create unit tests in `client/src/components/shared/MetricCard.test.tsx` and export from `components/shared/index.ts`
 
-### Checkpoint: Templates and Docs
-- [ ] Markdown files parse cleanly with valid links and formatting
+### Checkpoint: Foundation
+- [ ] MetricCard unit test suite passes: `npm -w client run test:run client/src/components/shared/MetricCard.test.tsx`
 
-### Phase 2: Repository Guidelines & Agent Integration
-- [ ] Task 3: Update `CONTRIBUTING.md` with PR standards and link to the PR template
-- [ ] Task 4: Update `AGENTS.md` Section 9 & 10 to formalize PR and walkthrough formatting for AI agents
+### Phase 2: Direct Refactor of `StatCard` Call-Sites
+- [ ] Task 3: Migrate `UserStatsBar.tsx`, `CRMPage.tsx`, and `StyleGuidePage.tsx` to `MetricCard`, and remove `StatCard.tsx`
+
+### Checkpoint: StatCard Migration
+- [ ] StyleGuide and CRM tests pass
+
+### Phase 3: Direct Refactor of `SummaryCard` Call-Sites
+- [ ] Task 4: Migrate `ApiStatusPage.tsx`, `TechDashboardPage.tsx`, `DashboardSummaryStats.tsx`, `StorageQuota.tsx`, `AdminDashboardView.tsx`, and `RmmKpiGrid.tsx` to `MetricCard`
+- [ ] Task 5: Remove `SummaryCard.tsx`, `SummaryCard.test.tsx`, and `components/dashboard/summary-card.tsx`
+
+### Checkpoint: SummaryCard Migration
+- [ ] Dashboard and System tests pass
+
+### Phase 4: Direct Refactor of `PageDashboardKpi` & Financials
+- [ ] Task 6: Refactor `PageDashboard.tsx` (`PageDashboardKpi`) and `KpiCards.tsx` to use `MetricCard`, updating test assertions
+
+### Checkpoint: Financials & Page Component
+- [ ] `FinancialPage.test.tsx` and `Page.test.tsx` pass
+
+### Phase 5: Global Verification & DoD Audit
+- [ ] Task 7: Full client test suite and production build verification (`npm -w client run build`, `npm -w client run test:run`)
 
 ### Checkpoint: Complete
-- [ ] All tasks completed and verified
-- [ ] Definition of Done satisfied
+- [ ] All acceptance criteria met
+- [ ] Zero TypeScript errors, zero test regressions, clean Git tree
 
 ## Risks and Mitigations
 | Risk | Impact | Mitigation |
 | :--- | :---: | :--- |
-| Overly complex template ignored by developers | Medium | Keep sections compact with helpful placeholder comments and clear examples. |
-| Incompatible markdown rendering on GitHub | Low | Use standard GitHub-Flavored Markdown (GFM) tables, checkboxes, and collapsibles. |
+| `FinancialPage` visual downgrade with `text-xl` vs `text-2xl sm:text-3xl` | Low | Unified `text-xl font-bold tracking-tight font-heading` balances perfectly with standard 4-column KPI grids. |
+| Custom children in `StorageQuota` breaking | Medium | Compound layout `<MetricCard>` with subcomponents explicitly supports custom children and progress bars. |
+| Breaking unknown external imports of `SummaryCard` or `StatCard` | Low | Ripgrep confirms all references are strictly internal to `client/src`. All call sites are refactored in this plan. |
 
 ## Open Questions
-- None. Requirements agreed upon during idea refinement.
+- None. Design requirements, density, and API style were resolved during `/idea-refine`.

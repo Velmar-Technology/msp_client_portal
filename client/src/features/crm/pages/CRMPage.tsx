@@ -8,7 +8,7 @@ import { usePlanStore } from "@/store/usePlanStore";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 import { useUrlState } from "@/hooks/useUrlState";
 import { Button } from "@/components/ui/button";
-import { StatCard } from "@/components/shared";
+import { MetricCard } from "@/components/shared";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -398,7 +398,7 @@ export function CRMPage() {
         {/* 1. Persistent CRM Metrics Strip */}
         <section aria-label="CRM Metrics">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard
+            <MetricCard
               title={t("crm.stats.pipelineValue")}
               value={`$${(stats?.pipelineValue || 0).toLocaleString(undefined, {
                 minimumFractionDigits: 2,
@@ -408,7 +408,7 @@ export function CRMPage() {
               icon={<DollarSign className="h-4 w-4" />}
             />
 
-            <StatCard
+            <MetricCard
               title={t("crm.stats.wonRevenue")}
               value={`$${(stats?.wonRevenue || 0).toLocaleString(undefined, {
                 minimumFractionDigits: 2,
@@ -418,14 +418,14 @@ export function CRMPage() {
               icon={<TrendingUp className="h-4 w-4" />}
             />
 
-            <StatCard
+            <MetricCard
               title={t("crm.stats.proposals")}
               value={stats?.leadsInProposition || 0}
               description={`$${Number(stats?.stageBreakdown?.PROPOSITION?.value || 0).toFixed(2)} ${t("crm.inQuotes")}`}
               icon={<Briefcase className="h-4 w-4" />}
             />
 
-            <StatCard
+            <MetricCard
               title={t("crm.stats.winRate")}
               value={`${(stats?.conversionRate || 0).toFixed(1)}%`}
               description={t("crm.stats.conversionDesc")}

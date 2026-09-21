@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Cloud, CloudOff, ArrowRight } from "lucide-react";
 import { formatBytes } from "../hooks/useClientDashboard";
-import SummaryCard from "@/components/dashboard/summary-card";
+import { MetricCard } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 
 interface StorageQuotaProps {
@@ -56,7 +56,7 @@ export function StorageQuota({
   }
 
   return (
-    <SummaryCard
+    <MetricCard
       icon={<Cloud className="h-3.5 w-3.5" />}
       title={t("dashboard.cloudStorage")}
       value={`${usagePercentage}%`}

@@ -6,7 +6,7 @@ import type { Invoice } from "@/features/billing";
 import type { StorageStatus } from "@/features/system";
 import { DataTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
-import SummaryCard from "@/components/dashboard/summary-card";
+import { MetricCard } from "@/components/shared";
 import { StatsGrid } from "@/components/stats-grid";
 import DashboardSkeleton from "@/components/dashboard/dashboard-skeleton";
 import { useDeferredLoading } from "@/hooks/useDeferredLoading";
@@ -29,7 +29,7 @@ interface StorageOverviewProps {
 
 export function StorageOverview({ storage, loading, t }: StorageOverviewProps) {
   if (loading) {
-    return <SummaryCard isLoading title={t("dashboard.cloudStorage")} value={null} />;
+    return <MetricCard isLoading title={t("dashboard.cloudStorage")} value={null} />;
   }
 
   if (!storage) {
@@ -69,7 +69,7 @@ export function StorageOverview({ storage, loading, t }: StorageOverviewProps) {
         : formatBytes(storage.total as number);
 
   return (
-    <SummaryCard
+    <MetricCard
       icon={
         isOffline ? (
           <CloudOff className="h-3.5 w-3.5 text-destructive" />
@@ -259,7 +259,7 @@ export function AdminDashboardView() {
         <section aria-label="System Metrics">
           <StatsGrid className="w-full">
             {/* Support Status */}
-            <SummaryCard
+            <MetricCard
               icon={<Headphones className="h-3.5 w-3.5" />}
               title={t("dashboard.technicalSupport")}
               value={openTickets}
@@ -287,7 +287,7 @@ export function AdminDashboardView() {
             />
 
             {/* Maintenance */}
-            <SummaryCard
+            <MetricCard
               icon={<Wrench className="h-3.5 w-3.5" />}
               title={t("dashboard.maintenance")}
               value={
@@ -333,7 +333,7 @@ export function AdminDashboardView() {
             />
 
             {/* Backups */}
-            <SummaryCard
+            <MetricCard
               icon={<CloudUpload className="h-3.5 w-3.5" />}
               title={t("dashboard.lastBackup")}
               value={t("dashboard.twoHoursAgo")}

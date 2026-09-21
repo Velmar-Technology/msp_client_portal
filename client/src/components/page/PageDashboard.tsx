@@ -1,6 +1,5 @@
-import * as React from "react";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MetricCard } from "@/components/shared/MetricCard";
 import type {
   PageDashboardProps,
   PageDashboardKpiProps,
@@ -46,8 +45,8 @@ export function PageDashboard({
 }
 
 /**
- * Enterprise Dashboard KPI metric tile.
  * Displays a high-level aggregate value, title, trend badge, and optional subtitle.
+ * Delegated to the canonical L2 MetricCard primitive for unified density and design tokens.
  *
  * @param props - Metric card data and callbacks.
  * @returns Metric card element.
@@ -56,7 +55,7 @@ export function PageDashboardKpi({
   title,
   value,
   subtitle,
-  icon: Icon,
+  icon,
   trend,
   badge,
   onClick,
@@ -64,91 +63,21 @@ export function PageDashboardKpi({
   children,
   ...props
 }: PageDashboardKpiProps) {
-  const isIconComponent =
-    typeof Icon === "function" ||
-    (typeof Icon === "object" && Icon !== null && !React.isValidElement(Icon));
-
-  const isClickable = Boolean(onClick);
-
-  // Determine trend badge appearance
-  const isPositive = trend?.isPositive ?? (trend?.direction === "up");
-  const isNegative = trend ? !isPositive && trend.direction !== "neutral" : false;
-
   return (
-    <div
+    <MetricCard
       data-slot="page-dashboard-kpi"
-      role={isClickable ? "button" : undefined}
-      tabIndex={isClickable ? 0 : undefined}
+      title={title}
+      value={value}
+      subtitle={subtitle}
+      icon={icon}
+      trend={trend}
+      badge={badge}
       onClick={onClick}
-      onKeyDown={(e) => {
-        if (isClickable && (e.key === "Enter" || e.key === " ")) {
-          e.preventDefault();
-          onClick?.();
-        }
-      }}
-      className={cn(
-        "bg-card text-card-foreground border border-border/80 rounded-lg p-4 sm:p-5 shadow-2xs transition-all flex flex-col justify-between select-none min-w-0",
-        isClickable &&
-          "cursor-pointer hover:border-primary/50 hover:shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-        className
-      )}
+      className={className}
       {...props}
     >
-      {/* Top row: Title and Icon/Badge */}
-      <div className="flex items-center justify-between gap-2 pb-2">
-        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider truncate">
-          {title}
-        </span>
-        <div className="flex items-center gap-1.5 shrink-0">
-          {badge && <div>{badge}</div>}
-          {Icon && (
-            <div className="text-muted-foreground/80">
-              {isIconComponent ? (
-                React.createElement(Icon as React.ComponentType<{ className?: string }>, {
-                  className: "size-4 text-primary",
-                })
-              ) : (
-                Icon
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Middle row: Big Metric Value */}
-      <div className="py-1">
-        <div className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-heading truncate">
-          {value}
-        </div>
-      </div>
-
-      {/* Bottom row: Trend badge & subtitle */}
-      {(trend || subtitle) && (
-        <div className="flex items-center gap-2 pt-2 text-xs text-muted-foreground flex-wrap">
-          {trend && (
-            <span
-              className={cn(
-                "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[11px] font-semibold font-mono tracking-tight shrink-0",
-                isPositive &&
-                  "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
-                isNegative &&
-                  "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20",
-                trend.direction === "neutral" &&
-                  "bg-muted text-muted-foreground border border-border/60"
-              )}
-            >
-              {isPositive && <TrendingUp className="size-3" />}
-              {isNegative && <TrendingDown className="size-3" />}
-              {trend.direction === "neutral" && <Minus className="size-3" />}
-              <span>{trend.value}</span>
-            </span>
-          )}
-          {subtitle && <span className="truncate">{subtitle}</span>}
-        </div>
-      )}
-
       {children}
-    </div>
+    </MetricCard>
   );
 }
 

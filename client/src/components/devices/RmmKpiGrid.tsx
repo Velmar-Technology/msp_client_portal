@@ -1,7 +1,7 @@
 import React, { memo } from "react";
 import { useTranslation } from "react-i18next";
 import type { RmmOverviewStats } from "@/features/rmm";
-import { SummaryCard } from "@/components/shared";
+import { MetricCard } from "@/components/shared";
 import { Server, ShieldCheck, TrendingUp, Zap, CheckCircle2 } from "lucide-react";
 
 export interface RmmKpiGridProps {
@@ -21,11 +21,11 @@ export const RmmKpiGrid: React.FC<RmmKpiGridProps> = memo(({ stats, totalDevices
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full max-w-full min-w-0">
       {/* 1. Monitored Devices */}
-      <SummaryCard
+      <MetricCard
         icon={<Server className="h-4 w-4 text-zinc-600 dark:text-zinc-400 shrink-0" />}
         title={t("rmm.kpiMonitoredDevices")}
         value={
-          <span className="font-mono text-2xl font-extrabold text-zinc-900 dark:text-zinc-100">{monitoredTotal}</span>
+          <span className="font-mono text-xl font-extrabold text-zinc-900 dark:text-zinc-100">{monitoredTotal}</span>
         }
         subtitle={
           <div className="flex flex-wrap items-center gap-1.5 pt-0.5 text-[10px]">
@@ -41,31 +41,31 @@ export const RmmKpiGrid: React.FC<RmmKpiGridProps> = memo(({ stats, totalDevices
       />
 
       {/* 2. Pending Security Patches */}
-      <SummaryCard
+      <MetricCard
         icon={<ShieldCheck className="h-4 w-4 text-amber-500 shrink-0" />}
         title={t("rmm.kpiPendingPatches")}
         value={
-          <span className="font-mono text-2xl font-extrabold text-amber-600 dark:text-amber-400">{pendingPatches}</span>
+          <span className="font-mono text-xl font-extrabold text-amber-600 dark:text-amber-400">{pendingPatches}</span>
         }
         subtitle={<span className="text-[10px] text-zinc-400 font-medium">{t("rmm.kpiAdvisoriesReady")}</span>}
       />
 
       {/* 3. Noise Reduction Ratio (NRR) */}
-      <SummaryCard
+      <MetricCard
         icon={<TrendingUp className="h-4 w-4 text-blue-500 shrink-0" />}
         title={t("rmm.kpiAlertNrr")}
         value={
-          <span className="font-mono text-2xl font-extrabold text-blue-600 dark:text-blue-400">{nrrFormatted}%</span>
+          <span className="font-mono text-xl font-extrabold text-blue-600 dark:text-blue-400">{nrrFormatted}%</span>
         }
         subtitle={<span className="text-[10px] text-zinc-400 font-medium">{t("rmm.kpiDeduplicatedAlerts")}</span>}
       />
 
       {/* 4. Self-Healing Efficiency (SHE) */}
-      <SummaryCard
+      <MetricCard
         icon={<Zap className="h-4 w-4 text-emerald-500 shrink-0" />}
         title={t("rmm.kpiSelfHealing")}
         value={
-          <span className="font-mono text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
+          <span className="font-mono text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
             {sheFormatted}%
           </span>
         }
