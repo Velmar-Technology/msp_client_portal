@@ -113,7 +113,6 @@ export function ByokSettingsPage() {
     return <FeatureLockedPreview requiredFeature={FEATURE_CODES.CAF_EDUCATION_AGENT} />;
   }
 
-
   const handleProviderChange = (val: ByokProvider) => {
     setProvider(val);
     setTestResult(null);
@@ -219,9 +218,7 @@ export function ByokSettingsPage() {
         <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
         <Page.HeaderRow>
           <Page.TitleGroup>
-            <Page.Title>
-              {t("byok.pageTitle", "Inteligencia Artificial & Calidad CAF")}
-            </Page.Title>
+            <Page.Title>{t("byok.pageTitle", "Inteligencia Artificial & Calidad CAF")}</Page.Title>
             <Page.Description>
               {t(
                 "byok.pageDesc",
@@ -235,9 +232,9 @@ export function ByokSettingsPage() {
                 {t("common.loading", "Cargando...")}
               </Badge>
             ) : byokStatus?.isConfigured ? (
-              <Badge variant="default" className="h-7 gap-1 bg-emerald-600 hover:bg-emerald-700">
+              <Badge variant="outline" className="h-7 gap-1">
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                {t("byok.statusConfigured", "Configurado:")}
+                {t("byok.statusConfigured", "Configurado")}
               </Badge>
             ) : (
               <Badge

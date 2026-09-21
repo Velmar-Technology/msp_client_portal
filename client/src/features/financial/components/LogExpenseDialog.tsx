@@ -17,13 +17,7 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface LogExpenseDialogProps {
   onExpenseLogged: () => void;
@@ -137,9 +131,7 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
               placeholder={t("financial.descriptionPlaceholder")}
               className={`h-8 text-xs ${errors.description ? "border-destructive focus-visible:ring-destructive/20" : ""}`}
             />
-            {errors.description && (
-              <span className="text-[10px] text-destructive">{errors.description}</span>
-            )}
+            {errors.description && <span className="text-[10px] text-destructive">{errors.description}</span>}
           </div>
 
           {/* Amount */}
@@ -160,9 +152,7 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
               placeholder="0.00"
               className={`h-8 text-xs ${errors.amount ? "border-destructive focus-visible:ring-destructive/20" : ""}`}
             />
-            {errors.amount && (
-              <span className="text-[10px] text-destructive">{errors.amount}</span>
-            )}
+            {errors.amount && <span className="text-[10px] text-destructive">{errors.amount}</span>}
           </div>
 
           {/* Category */}
@@ -175,11 +165,21 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
                 <SelectValue placeholder={t("financial.categoryLabel")} />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border">
-                <SelectItem value={ExpenseCategory.CLOUD_INFRA} className="text-xs">{t("financial.cloudInfra")}</SelectItem>
-                <SelectItem value={ExpenseCategory.SALARIES} className="text-xs">{t("financial.salaries")}</SelectItem>
-                <SelectItem value={ExpenseCategory.MARKETING} className="text-xs">{t("financial.marketing")}</SelectItem>
-                <SelectItem value={ExpenseCategory.OFFICE_SPACE} className="text-xs">{t("financial.officeSpace")}</SelectItem>
-                <SelectItem value={ExpenseCategory.OTHER} className="text-xs">{t("financial.other")}</SelectItem>
+                <SelectItem value={ExpenseCategory.CLOUD_INFRA} className="text-xs">
+                  {t("financial.cloudInfra")}
+                </SelectItem>
+                <SelectItem value={ExpenseCategory.SALARIES} className="text-xs">
+                  {t("financial.salaries")}
+                </SelectItem>
+                <SelectItem value={ExpenseCategory.MARKETING} className="text-xs">
+                  {t("financial.marketing")}
+                </SelectItem>
+                <SelectItem value={ExpenseCategory.OFFICE_SPACE} className="text-xs">
+                  {t("financial.officeSpace")}
+                </SelectItem>
+                <SelectItem value={ExpenseCategory.OTHER} className="text-xs">
+                  {t("financial.other")}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -204,12 +204,7 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
             <label htmlFor="expense-date" className="text-[10px] uppercase font-bold text-muted-foreground">
               {t("financial.dateLabel")}
             </label>
-            <DatePicker
-              id="expense-date"
-              value={expenseDate}
-              onChange={setExpenseDate}
-              className="w-full"
-            />
+            <DatePicker id="expense-date" value={expenseDate} onChange={setExpenseDate} className="w-full" />
           </div>
 
           <DialogFooter className="mt-4 flex items-center justify-end gap-2">
@@ -226,7 +221,7 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
             </DialogClose>
             <Button
               type="submit"
-              size="sm"
+              size="default"
               disabled={isSaving}
               className="h-7 text-xs font-medium flex items-center gap-1 cursor-pointer"
             >
