@@ -96,8 +96,10 @@ export function deriveAdminFilterOptions(adminDevices: SubscriptionEquipment[], 
   const clientFilterOptions = Array.from(clientsMap.entries()).map(([id, name]) => ({ value: id, label: name }));
   const planFilterOptions = Array.from(plansSet).map((p) => ({ value: p, label: p }));
   const statusFilterOptions = [
-    { value: 'ACTIVE', label: t('devices.statusActive') },
+    { value: 'ONLINE', label: t('devices.statusOnline') },
+    { value: 'OFFLINE', label: t('devices.statusOffline') },
     { value: 'PENDING_ACTIVATION', label: t('devices.statusPending') },
+    { value: 'ACTIVE', label: t('devices.statusActive') },
   ];
 
   return { clientFilterOptions, planFilterOptions, statusFilterOptions };
@@ -130,9 +132,29 @@ export function filterEquipment(
 
     if (hasStatusFilter) {
       const isPending = device.status === 'PENDING_ACTIVATION' || !device.status || device.status !== 'ACTIVE';
+      const isOnline =
+        device.status === 'ACTIVE' &&
+        (device.agent_status === 'ONLINE' ||
+          (device.agent_status !== 'OFFLINE' &&
+            Boolean(
+              device.agent_last_seen_at &&
+                Date.now() - new Date(device.agent_last_seen_at).getTime() <= 15 * 60 * 1000,
+            )));
+      const isOffline = device.status === 'ACTIVE' && !isOnline;
+
+      if (opts.selectedStatus === 'ONLINE' && !isOnline) return false;
+      if (opts.selectedStatus === 'OFFLINE' && !isOffline) return false;
       if (opts.selectedStatus === 'ACTIVE' && device.status !== 'ACTIVE') return false;
       if (opts.selectedStatus === 'PENDING_ACTIVATION' && !isPending) return false;
-      if (opts.selectedStatus !== 'ACTIVE' && opts.selectedStatus !== 'PENDING_ACTIVATION' && device.status !== opts.selectedStatus) return false;
+      if (
+        opts.selectedStatus !== 'ONLINE' &&
+        opts.selectedStatus !== 'OFFLINE' &&
+        opts.selectedStatus !== 'ACTIVE' &&
+        opts.selectedStatus !== 'PENDING_ACTIVATION' &&
+        device.status !== opts.selectedStatus
+      ) {
+        return false;
+      }
     }
 
     if (hasSearch) {
@@ -183,9 +205,20 @@ export function sortEquipment(equipment: SubscriptionEquipment[], sorting: Sorti
       valA = a.plan || '';
       valB = b.plan || '';
     } else if (id === 'status') {
-      const aActive = a.status === 'ACTIVE' ? 1 : 0;
-      const bActive = b.status === 'ACTIVE' ? 1 : 0;
-      return desc ? aActive - bActive : bActive - aActive;
+      const getStatusWeight = (dev: SubscriptionEquipment) => {
+        if (dev.status !== 'ACTIVE') return 0;
+        const isOnline =
+          dev.agent_status === 'ONLINE' ||
+          (dev.agent_status !== 'OFFLINE' &&
+            Boolean(
+              dev.agent_last_seen_at &&
+                Date.now() - new Date(dev.agent_last_seen_at).getTime() <= 15 * 60 * 1000,
+            ));
+        return isOnline ? 2 : 1;
+      };
+      const aWeight = getStatusWeight(a);
+      const bWeight = getStatusWeight(b);
+      return desc ? aWeight - bWeight : bWeight - aWeight;
     } else if (id === 'deviceDetails') {
       valA = a.device_name || a.otp || '';
       valB = b.device_name || b.otp || '';
