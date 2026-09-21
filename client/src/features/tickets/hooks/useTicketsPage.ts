@@ -219,7 +219,7 @@ export function useTicketsPage() {
     refetch: loadTickets,
   } = useTicketsQuery(queryFilters as any);
 
-  const tickets = (ticketData?.tickets as Ticket[]) || [];
+  const tickets = useMemo(() => (ticketData?.tickets as Ticket[]) || [], [ticketData?.tickets]);
   const total = ticketData?.total ?? 0;
   const loading = queryLoading || actionLoading;
 

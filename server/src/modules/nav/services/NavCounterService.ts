@@ -2,8 +2,7 @@ import { db, userNavViews, tickets, ticketResponses, rmmAlerts, deviceMaintenanc
 import { eq, and, gt, count, sql, notInArray, or, isNull, ne } from 'drizzle-orm';
 import { UserContext, UserRole } from '@shared/types';
 import type { NavKey } from '@shared/contracts';
-
-const EPOCH = new Date(0);
+import { NavCounterRepository, navCounterRepository } from '../repositories/NavCounterRepository';
 
 const ROLE_NAV_KEYS: Record<UserRole, NavKey[]> = {
   [UserRole.CLIENT]: ['tickets', 'devices', 'resources', 'passwordManager', 'billing', 'maintenance'],
@@ -11,13 +10,25 @@ const ROLE_NAV_KEYS: Record<UserRole, NavKey[]> = {
   [UserRole.ADMIN]: ['crm', 'tickets', 'billing', 'devices', 'maintenance'],
 };
 
+/**
+ * Domain service managing navigation counters and seen states for sidebar destinations.
+ * Adheres to Clean Architecture: constructor-injected repository, zero direct DB pool imports.
+ */
 export class NavCounterService {
+  constructor(private repo: NavCounterRepository = navCounterRepository) {}
+
+  /**
+   * Retrieves navigation counters for all destinations accessible to the user role.
+   *
+   * @param ctx - User context containing userId, role, and tenantId
+   * @returns Map of nav keys to their count and latest activity timestamp
+   */
   async getCounters(ctx: UserContext): Promise<Record<NavKey, { count: number; latestAt: string | null }>> {
     const keys = ROLE_NAV_KEYS[ctx.role] ?? [];
     const result: Record<string, { count: number; latestAt: string | null }> = {};
 
     for (const navKey of keys) {
-      const since = await this.getSeenAt(ctx.userId, navKey);
+      const since = await this.repo.getSeenAt(ctx.userId, navKey);
       const { count: c, latestAt } = await this.querySourceCount(ctx, navKey, since);
       result[navKey] = { count: c, latestAt };
     }
@@ -25,37 +36,14 @@ export class NavCounterService {
     return result as Record<NavKey, { count: number; latestAt: string | null }>;
   }
 
+  /**
+   * Marks a navigation destination as seen for the user at current timestamp.
+   *
+   * @param ctx - User context
+   * @param navKey - Navigation destination key
+   */
   async markSeen(ctx: UserContext, navKey: NavKey): Promise<void> {
-    const now = new Date();
-    const existing = await db
-      .select({ id: userNavViews.id })
-      .from(userNavViews)
-      .where(and(eq(userNavViews.user_id, ctx.userId), eq(userNavViews.nav_key, navKey)))
-      .limit(1);
-
-    if (existing.length > 0) {
-      await db
-        .update(userNavViews)
-        .set({ last_seen_at: now, updated_at: now })
-        .where(eq(userNavViews.id, existing[0].id));
-    } else {
-      await db.insert(userNavViews).values({
-        user_id: ctx.userId,
-        nav_key: navKey,
-        last_seen_at: now,
-        tenant_id: ctx.tenantId,
-      });
-    }
-  }
-
-  private async getSeenAt(userId: string, navKey: NavKey): Promise<Date> {
-    const rows = await db
-      .select({ last_seen_at: userNavViews.last_seen_at })
-      .from(userNavViews)
-      .where(and(eq(userNavViews.user_id, userId), eq(userNavViews.nav_key, navKey)))
-      .limit(1);
-
-    return rows.length > 0 ? rows[0].last_seen_at ?? EPOCH : EPOCH;
+    await this.repo.upsertSeen(ctx, navKey);
   }
 
   private async querySourceCount(
@@ -65,17 +53,17 @@ export class NavCounterService {
   ): Promise<{ count: number; latestAt: string | null }> {
     switch (navKey) {
       case 'tickets':
-        return this.countTickets(ctx, since);
+        return this.repo.countTickets(ctx, since);
       case 'devices':
-        return this.countDeviceAlerts(ctx, since);
+        return this.repo.countDeviceAlerts(ctx, since);
       case 'maintenance':
-        return this.countMaintenance(ctx, since);
+        return this.repo.countMaintenance(ctx, since);
       case 'billing':
-        return this.countInvoices(ctx, since);
+        return this.repo.countInvoices(ctx, since);
       case 'crm':
-        return this.countLeads(ctx, since);
+        return this.repo.countLeads(ctx, since);
       case 'notifications':
-        return this.countNotifications(ctx, since);
+        return this.repo.countNotifications(ctx, since);
       default:
         return { count: 0, latestAt: null };
     }

@@ -115,7 +115,7 @@ export function useTicketDetail(ticketId: string | undefined) {
     } finally {
       setLoading(false);
     }
-  }, [ticketId, t, user]);
+  }, [ticketId, t, user, queryClient]);
 
   useEffect(() => {
     loadTicketData();
