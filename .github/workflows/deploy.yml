@@ -531,11 +531,19 @@ jobs:
           TARGET: ${{ matrix.target }}
           BINARY_NAME: ${{ matrix.binary_name }}
         run: |
+          set -euo pipefail
           mkdir -p dist-bin
           SRC_BIN="packages/msp-tray/src-tauri/target/${TARGET}/release/${BINARY_NAME}"
 
           if [ "${PLATFORM}" = "windows-x64" ]; then
             cp "${SRC_BIN}" "dist-bin/msp-tray-${VERSION}-windows-x86_64.exe"
+            LOADER_SRC="$(find packages/msp-tray/src-tauri/target/x86_64-pc-windows-msvc/release \
+              -type f -path '*/webview2-com-sys-*/out/x64/WebView2Loader.dll' | head -n1)"
+            if [ -z "${LOADER_SRC}" ]; then
+              echo "::error::WebView2Loader.dll not produced by tray build for windows-x64"
+              exit 1
+            fi
+            cp "${LOADER_SRC}" "dist-bin/WebView2Loader.dll"
           elif [ "${PLATFORM}" = "windows-x86" ]; then
             cp "${SRC_BIN}" "dist-bin/msp-tray-${VERSION}-windows-i686.exe"
           fi
@@ -583,6 +591,7 @@ jobs:
           mkdir -p packages/msp-tray/src-tauri/target/release
           cp staged-agent/msp-agent-${VERSION}-windows-x86_64.exe packages/msp-agent/target/release/msp-agent.exe
           cp staged-tray/msp-tray-${VERSION}-windows-x86_64.exe packages/msp-tray/src-tauri/target/release/msp-tray.exe
+          cp staged-tray/WebView2Loader.dll packages/msp-tray/src-tauri/target/release/WebView2Loader.dll
 
       - name: Build Unified Suite MSI with WiX
         shell: pwsh

@@ -93,15 +93,45 @@ export function useDeviceTableColumns({
       accessorKey: "status",
       header: ({ column }) => <DataTableColumnHeader column={column} title={t("devices.tableStatus")} />,
       cell: ({ row }) => {
-        const status = row.getValue("status") as string;
-        return status === "ACTIVE" ? (
-          <span className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded px-1.5 py-0.5 text-[10px] font-mono uppercase font-semibold">
-            ACTIVE
-          </span>
-        ) : (
-          <span className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded px-1.5 py-0.5 text-[10px] font-mono uppercase font-semibold">
-            {t("devices.statusPendingActivation")}
-          </span>
+        const equip = row.original;
+        const isActive = equip.status === "ACTIVE";
+
+        if (!isActive) {
+          return (
+            <span className="inline-flex items-center gap-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded px-1.5 py-0.5 text-[10px] font-mono uppercase font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+              {t("devices.statusPendingActivation")}
+            </span>
+          );
+        }
+
+        const isOnline =
+          equip.agent_status === "ONLINE" ||
+          (equip.agent_status !== "OFFLINE" &&
+            Boolean(
+              equip.agent_last_seen_at &&
+                Date.now() - new Date(equip.agent_last_seen_at).getTime() <= 15 * 60 * 1000,
+            ));
+        const isOffline = equip.agent_status === "OFFLINE" || (!isOnline && Boolean(equip.agent_last_seen_at));
+
+        return (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded px-1.5 py-0.5 text-[10px] font-mono uppercase font-semibold">
+              ACTIVE
+            </span>
+            {isOnline && (
+              <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded px-1.5 py-0.5 text-[10px] font-mono uppercase font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                {t("devices.statusOnline", "ONLINE")}
+              </span>
+            )}
+            {isOffline && (
+              <span className="inline-flex items-center gap-1 bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 rounded px-1.5 py-0.5 text-[10px] font-mono uppercase font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                {t("devices.statusOffline", "OFFLINE")}
+              </span>
+            )}
+          </div>
         );
       },
     });
@@ -114,6 +144,14 @@ export function useDeviceTableColumns({
       cell: ({ row }) => {
         const equip = row.original;
         if (equip.status === "ACTIVE") {
+          const isOnline =
+            equip.agent_status === "ONLINE" ||
+            (equip.agent_status !== "OFFLINE" &&
+              Boolean(
+                equip.agent_last_seen_at &&
+                  Date.now() - new Date(equip.agent_last_seen_at).getTime() <= 15 * 60 * 1000,
+              ));
+
           return (
             <div className="space-y-0.5">
               <div className="flex items-center gap-1.5">
@@ -122,11 +160,17 @@ export function useDeviceTableColumns({
                 </p>
                 {equip.agent_last_seen_at && (
                   <span
-                    title={t("devices.agentVerifiedTooltip")}
-                    className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide"
+                    title={
+                      isOnline
+                        ? t("devices.agentVerifiedTooltip")
+                        : t("devices.agentOfflineTooltip", "Agent paired but currently offline")
+                    }
+                    className={`inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide ${
+                      isOnline ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"
+                    }`}
                   >
                     <BadgeCheck className="w-3 h-3" />
-                    {t("devices.agentVerified")}
+                    {isOnline ? t("devices.agentVerified") : t("devices.agentOffline", "Agent Offline")}
                   </span>
                 )}
               </div>

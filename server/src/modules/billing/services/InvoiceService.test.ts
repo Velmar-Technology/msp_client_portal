@@ -245,7 +245,7 @@ describe('InvoiceService', () => {
       mocks.getAllForStats.mockResolvedValue(invoices);
 
       const activeSubs = [
-        { id: 'sub-1', planId: 'PL-001', equipmentCount: 2, status: SubscriptionStatus.ACTIVE, created_at: refDate, price: 30 },
+        { id: 'sub-1', planId: 'PL-001', equipmentCount: 2, status: SubscriptionStatus.ACTIVE, created_at: refDate, price: 30, hasPaidRevenue: true },
       ];
       mocks.getActiveSubscriptionsWithPlan.mockResolvedValue(activeSubs);
       const mockExpenses = [

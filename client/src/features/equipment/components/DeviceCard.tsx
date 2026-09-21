@@ -37,6 +37,15 @@ export const DeviceCard = memo(function DeviceCard({
 }: DeviceCardProps) {
   const { t } = useTranslation();
   const isActive = equip.status === "ACTIVE";
+  const isOnline =
+    isActive &&
+    (equip.agent_status === "ONLINE" ||
+      (equip.agent_status !== "OFFLINE" &&
+        Boolean(
+          equip.agent_last_seen_at &&
+            Date.now() - new Date(equip.agent_last_seen_at).getTime() <= 15 * 60 * 1000,
+        )));
+  const isOffline = isActive && !isOnline;
   const slotNum = equip.slot_index !== undefined ? equip.slot_index + 1 : 1;
 
   return (
@@ -53,10 +62,20 @@ export const DeviceCard = memo(function DeviceCard({
               </h3>
               {isActive && equip.agent_last_seen_at && (
                 <span
-                  title={t("devices.agentVerifiedTooltip")}
-                  className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0"
+                  title={
+                    isOnline
+                      ? t("devices.agentVerifiedTooltip")
+                      : t("devices.agentOfflineTooltip", "Agent paired but currently offline")
+                  }
+                  className={cn(
+                    "inline-flex items-center gap-1 text-[9px] font-bold shrink-0",
+                    isOnline ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground",
+                  )}
                 >
                   <BadgeCheck className="w-3.5 h-3.5" />
+                  <span className="sr-only sm:not-sr-only">
+                    {isOnline ? t("devices.agentVerified") : t("devices.agentOffline", "Offline")}
+                  </span>
                 </span>
               )}
             </div>
@@ -78,16 +97,30 @@ export const DeviceCard = memo(function DeviceCard({
           </div>
         </div>
 
-        <span
-          className={cn(
-            "shrink-0 text-[10px] font-mono font-semibold uppercase px-1.5 py-0.5 rounded border",
-            isActive
-              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-              : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+        <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+          <span
+            className={cn(
+              "text-[10px] font-mono font-semibold uppercase px-1.5 py-0.5 rounded border",
+              isActive
+                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+            )}
+          >
+            {isActive ? "ACTIVE" : t("devices.statusPendingActivation")}
+          </span>
+          {isActive && isOnline && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-mono font-semibold uppercase px-1.5 py-0.5 rounded border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              {t("devices.statusOnline", "ONLINE")}
+            </span>
           )}
-        >
-          {isActive ? "ACTIVE" : t("devices.statusPendingActivation")}
-        </span>
+          {isActive && isOffline && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-mono font-semibold uppercase px-1.5 py-0.5 rounded border bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+              {t("devices.statusOffline", "OFFLINE")}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="text-xs text-muted-foreground space-y-1.5 flex-1">

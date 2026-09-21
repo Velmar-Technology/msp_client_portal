@@ -1,6 +1,7 @@
 import { BaseRepository } from '@shared/repositories/BaseRepository';
 import { Subscription, SubscriptionStatus } from '@shared/types';
-import { db, subscriptions, plans, users, tenants } from '@shared/db';
+import { db, subscriptions, plans, users, tenants, invoices } from '@shared/db';
+import { sql } from 'drizzle-orm';
 import { eq, desc, and, or, lt, lte, gt, isNull, ne } from 'drizzle-orm';
 
 /**
@@ -256,8 +257,12 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
   /**
    * Retrieves active subscriptions joined with plan pricing details for MRR calculations.
    *
+   * Exposes `hasPaidRevenue` — `true` only when the subscription's tenant has at least one
+   * PAID invoice with a positive `total`. Complimentary or 100%-discounted subscriptions
+   * will have `hasPaidRevenue = false` and must be excluded from MRR computation (`@see BL-703`).
+   *
    * @param tenantId - Optional tenant UUID filter
-   * @returns Array of subscription records with plan price
+   * @returns Array of subscription records with plan price and paid-revenue indicator
    */
   async getActiveSubscriptionsWithPlan(tenantId?: string): Promise<any[]> {
     const conditions = [
@@ -271,6 +276,20 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     if (tenantId) {
       conditions.push(eq(subscriptions.tenant_id, tenantId));
     }
+
+    // Scalar subquery: true when tenant has ≥1 PAID invoice with total > 0.
+    // Complimentary grants produce total = 0 invoices (or no invoices after voiding),
+    // so they correctly resolve to false and are excluded from MRR.
+    const hasPaidRevenueSq = sql<boolean>`
+      EXISTS (
+        SELECT 1
+        FROM ${invoices} inv
+        WHERE inv.tenant_id = ${subscriptions.tenant_id}
+          AND inv.status = 'PAID'
+          AND inv.total::numeric > 0
+      )
+    `;
+
     const results = await db
       .select({
         id: subscriptions.id,
@@ -280,6 +299,7 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
         created_at: subscriptions.created_at,
         price: plans.price,
         tenant_id: subscriptions.tenant_id,
+        hasPaidRevenue: hasPaidRevenueSq,
       })
       .from(subscriptions)
       .innerJoin(plans, eq(subscriptions.plan, plans.id))

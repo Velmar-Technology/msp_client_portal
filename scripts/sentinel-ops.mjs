@@ -515,6 +515,67 @@ async function handleInvoiceVoid(opts) {
   console.log(`   Redis Cache:     Invalidated (gen:plans:global)\n`);
 }
 
+async function handleTicketPurge(opts) {
+  const isAll = opts.all;
+  const ticketId = opts.id || opts.ticket;
+  const tenantId = opts.tenant;
+
+  if (!isAll && !ticketId && !tenantId) {
+    console.error('Error: Specify --all, --id=<ticketId>, or --tenant=<tenantId>.');
+    process.exit(1);
+  }
+
+  console.log(`🛡️  [SequenceSentinel] Purging production tickets...`);
+
+  let filter = '';
+  if (ticketId) {
+    filter = `WHERE t.id = '${ticketId}'`;
+  } else if (tenantId) {
+    filter = `WHERE t.tenant_id = '${tenantId}'`;
+  }
+
+  const query = `
+    SELECT t.id, t.title, t.status, t.priority, t.category, t.tenant_id, t.created_at,
+           u.name as client_name, u.email as client_email
+    FROM tickets t
+    LEFT JOIN users u ON t.client_id = u.id
+    ${filter}
+    ORDER BY t.created_at DESC
+  `;
+
+  const tickets = await execSqlJson(query);
+  if (!tickets || !tickets.length) {
+    console.log(`ℹ️  No tickets found matching the criteria.`);
+    return;
+  }
+
+  console.log(`Found ${tickets.length} ticket(s) to eliminate:`);
+  for (const t of tickets) {
+    console.log(`  - [${t.status}] ${t.title} (ID: ${t.id}, Client: ${t.client_name || t.client_email}, Created: ${t.created_at})`);
+  }
+
+  const ids = tickets.map(t => `'${t.id}'`).join(', ');
+  const idPrefixes = tickets.map(t => `'EARN-${t.id.substring(0, 8)}'`).join(', ');
+
+  const sql = `
+    BEGIN;
+    -- Remove technician commission expenses linked to these tickets
+    DELETE FROM expenses WHERE expense_identifier IN (${idPrefixes}) OR category = 'Labor & Technician Commissions';
+    -- Remove notifications linked to these tickets
+    DELETE FROM notifications WHERE ticket_id IN (${ids}) OR link ~* 'tickets/(${tickets.map(t => t.id).join('|')})';
+    -- Cascade deletion handles ticket_events, ticket_attachments, ticket_responses, technician_earnings
+    DELETE FROM tickets WHERE id IN (${ids});
+    COMMIT;
+  `;
+
+  await execSql(sql);
+  await invalidateRedisCache();
+
+  console.log(`\n✅ [SUCCESS] Successfully eliminated ${tickets.length} ticket(s) and their cascading records.`);
+  console.log(`   Expenses Cleaned: Commission records removed.`);
+  console.log(`   Redis Cache:      Invalidated (gen:plans:global)\n`);
+}
+
 async function handleInvoiceCreateDiscounted(opts) {
   const user = opts.user || 'e.a.polanco.robles@gmail.com';
   console.log(`🛡️  [SequenceSentinel] Creating 100% discounted invoice for user '${user}'...`);
@@ -913,6 +974,13 @@ async function main() {
       await handleInvoiceCreateDiscounted(options);
       break;
 
+    case 'ticket:purge':
+    case 'ticket:delete':
+    case 'tickets:delete':
+    case 'tickets:purge':
+      await handleTicketPurge(options);
+      break;
+
     case 'infra:audit':
     case 'infra':
       await handleInfraAudit(options);
@@ -934,6 +1002,7 @@ Actions:
   plan:provision       Provision a subscription plan in one shot
   invoice:void         Void/remove an invoice (--invoice=<num> | --user=<email>)
   invoice:discounted   Create 100% discounted invoice with items (--user=<email>)
+  ticket:purge         Purge test tickets (--all | --id=<uuid> | --tenant=<uuid>)
   infra:audit          Audit Portainer stack and container health
       `);
   }
