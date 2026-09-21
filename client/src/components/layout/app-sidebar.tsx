@@ -151,7 +151,7 @@ export function ActiveSubCard({ subs, planNameMap }: ActiveSubCardProps) {
               aria-label={displayName}
               className="flex h-5 w-5 items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer"
             >
-              <ChevronDown className="h-3.5 w-3.5" strokeWidth={1.5} />
+              <ChevronDown width={32} height={32} viewBox="0 0 24 24" strokeWidth={1.5} />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent side="right" align="start" className="w-56">
@@ -218,11 +218,14 @@ export function SidebarNavList({
                       isActive={isGroupActive}
                       className={navItemButtonClass}
                     >
-                      <item.icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+                      <item.icon width={32} height={32} viewBox="0 0 24 24" className="shrink-0" strokeWidth={1.5} />
                       <span className="truncate group-data-[collapsible=icon]:hidden">{translatedLabel}</span>
                       <ChevronRight
+                        width={32}
+                        height={32}
+                        viewBox="0 0 24 24"
                         strokeWidth={1.5}
-                        className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground/50 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden"
+                        className="ml-auto shrink-0 text-muted-foreground/50 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden"
                       />
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
@@ -280,7 +283,7 @@ export function SidebarNavList({
                   onMouseEnter={() => preloadRoute(item.to)}
                   onFocus={() => preloadRoute(item.to)}
                 >
-                  <item.icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+                  <item.icon width={32} height={32} viewBox="0 0 24 24" className="shrink-0" strokeWidth={1.5} />
                   <span className="truncate group-data-[collapsible=icon]:hidden flex-1">{translatedLabel}</span>
                   {item.counterKey && counters?.[item.counterKey]?.count ? (
                     <NavCounterBadge count={counters[item.counterKey].count} />
@@ -290,7 +293,7 @@ export function SidebarNavList({
                       data-testid="sidebar-item-lock"
                       className="ml-auto inline-flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400 border border-amber-500/20 group-data-[collapsible=icon]:hidden shrink-0"
                     >
-                      <Lock className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
+                      <Lock width={32} height={32} viewBox="0 0 24 24" className="shrink-0" aria-hidden="true" />
                       <span>{t("nav.upgradeBadge", "Upgrade")}</span>
                     </span>
                   )}
@@ -414,8 +417,11 @@ export function AppSidebar() {
                         {groupedSubs.length}
                       </span>
                       <ChevronRight
+                        width={32}
+                        height={32}
+                        viewBox="0 0 24 24"
                         strokeWidth={1.5}
-                        className="h-3 w-3 text-muted-foreground/50 transition-transform duration-200 group-data-[state=open]/collapsible-sub:rotate-90"
+                        className="text-muted-foreground/50 transition-transform duration-200 group-data-[state=open]/collapsible-sub:rotate-90"
                       />
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
@@ -447,7 +453,7 @@ export function AppSidebar() {
                   onMouseEnter={() => preloadRoute("/help")}
                   onFocus={() => preloadRoute("/help")}
                 >
-                  <HelpCircle className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+                  <HelpCircle width={32} height={32} viewBox="0 0 24 24" className="shrink-0" strokeWidth={1.5} />
                   <span className="truncate group-data-[collapsible=icon]:hidden">{t("nav.help")}</span>
                 </NavLink>
               </SidebarMenuButton>

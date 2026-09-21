@@ -35,7 +35,7 @@ describe('FinancialStatsService', () => {
     mockInvoiceRepo.getAllForStats.mockResolvedValue(invoices);
 
     const activeSubs = [
-      { id: 'sub-1', planId: 'PL-001', equipmentCount: 2, status: SubscriptionStatus.ACTIVE, created_at: refDate, price: 30 },
+      { id: 'sub-1', planId: 'PL-001', equipmentCount: 2, status: SubscriptionStatus.ACTIVE, created_at: refDate, price: 30, hasPaidRevenue: true },
     ];
     mockSubscriptionRepo.getActiveSubscriptionsWithPlan.mockResolvedValue(activeSubs);
 
@@ -60,5 +60,38 @@ describe('FinancialStatsService', () => {
     expect(result.monthlyData.length).toBe(12);
     expect(result.expenseCategories.length).toBeGreaterThan(0);
     expect(result.transactions.length).toBe(3);
+  });
+
+  /**
+   * BL-703 Regression: Complimentary subscriptions must NEVER contribute to MRR.
+   * A subscription with `hasPaidRevenue = false` (no genuine PAID invoice with total > 0)
+   * must be excluded from the MRR KPI regardless of the plan's catalog price.
+   * @see BL-703
+   */
+  it('BL-703: excludes complimentary subscriptions from MRR calculation', async () => {
+    const refDate = new Date('2026-09-12T05:00:00Z');
+    // Zero-value PAID invoice — what a voided complimentary plan looks like after sentinel:op invoice:void
+    const invoices = [
+      { id: 'inv-void', invoice_number: 'INV-2026-446273', client_id: 'c1', amount: 190.80, tax_amount: 0, total: 0, status: InvoiceStatus.PAID, invoice_date: refDate },
+    ];
+    mockInvoiceRepo.getAllForStats.mockResolvedValue(invoices);
+
+    // Subscription is ACTIVE on PL-001 ($18/mo) but hasPaidRevenue = false
+    // because the only invoice had total = 0 (complimentary 100% discount).
+    const activeSubs = [
+      { id: 'sub-complimentary', planId: 'PL-001', equipmentCount: 1, status: SubscriptionStatus.ACTIVE, created_at: refDate, price: 18, hasPaidRevenue: false },
+    ];
+    mockSubscriptionRepo.getActiveSubscriptionsWithPlan.mockResolvedValue(activeSubs);
+    mockExpenseRepo.getAllForStats.mockResolvedValue([]);
+
+    const result = await statsService.getFinancialStats('tenant-complimentary', UserRole.CLIENT, '30_days');
+
+    const mrrKpi = result.kpis.find(k => k.key === 'mrr');
+    const revKpi = result.kpis.find(k => k.key === 'revenue');
+
+    // MRR must be $0 — complimentary subs contribute nothing
+    expect(mrrKpi?.value).toBe('$0.00');
+    // Revenue also $0 — no genuine paid cash
+    expect(revKpi?.value).toBe('$0.00');
   });
 });

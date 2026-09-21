@@ -112,6 +112,11 @@ export class FinancialStatsService {
     let currentMrr = 0;
     let previousMrr = 0;
     for (const sub of activeSubs) {
+      // BL-703: Exclude complimentary/free subscriptions from MRR.
+      // Only count subscriptions whose tenant has at least one genuinely PAID
+      // invoice with total > 0. Zero-value or voided invoices yield hasPaidRevenue = false.
+      if (!sub.hasPaidRevenue) continue;
+
       const price = Number(sub.price) || 0;
       const count = sub.equipmentCount || 1;
       const subMrr = price * count;
