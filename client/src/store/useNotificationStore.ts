@@ -23,6 +23,7 @@ export interface NotificationState {
   isLoading: boolean;
   eventSource: EventSource | null;
   bellClearedAt: number | null;
+  navInvalidationAt: number;
 
   fetchNotifications: () => Promise<void>;
   markAsRead: (id: string) => Promise<void>;
@@ -46,6 +47,7 @@ export const useNotificationStore = create<NotificationState>()(
       isLoading: false,
       eventSource: null,
       bellClearedAt: getStoredBellClearedAt(),
+      navInvalidationAt: 0,
 
       fetchNotifications: async () => {
         set({ isLoading: true }, false, 'notifications/fetch_request');
@@ -193,6 +195,15 @@ export const useNotificationStore = create<NotificationState>()(
 
           } catch (err) {
             console.error('Error parsing SSE event data:', err);
+          }
+        });
+
+        es.addEventListener('nav:invalidate', (e: MessageEvent) => {
+          try {
+            JSON.parse(e.data);
+            set({ navInvalidationAt: Date.now() }, false, 'notifications/nav_invalidation');
+          } catch {
+            set({ navInvalidationAt: Date.now() }, false, 'notifications/nav_invalidation');
           }
         });
 

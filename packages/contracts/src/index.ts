@@ -5,3 +5,4 @@ export * from './subscriptions/subscriptions.contract';
 export * from './billing/billing.contract';
 export * from './rmm';
 export * from './byok/byok.contract';
+export * from './nav/nav.contract';

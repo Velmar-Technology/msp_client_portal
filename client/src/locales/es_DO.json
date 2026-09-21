@@ -54,7 +54,10 @@
     "crm": "Pipeline CRM",
     "passwordManager": "Gestor de Contraseñas",
     "cafAiSettings": "IA & Calidad CAF",
-    "upgradeBadge": "Mejorar"
+    "upgradeBadge": "Mejorar",
+    "counters": {
+      "ariaLabel": "{{count}} elementos nuevos"
+    }
   },
   "byok": {
     "pageTitle": "Inteligencia Artificial & Calidad CAF",

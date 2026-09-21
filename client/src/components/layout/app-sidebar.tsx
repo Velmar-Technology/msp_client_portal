@@ -1,5 +1,5 @@
-import { useMemo, useEffect, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { useMemo, useEffect, useState, useCallback, useRef } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import { Fragment } from "react";
 import { ChevronDown, ChevronRight, HelpCircle, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -7,6 +7,8 @@ import logoUrl from "@/assets/logo.png";
 import { useSidebar, type NavItem, type NavSubItem } from "@/hooks/useSidebar";
 import { preloadRoute, routePreloaders } from "@/lib/preloadRoute";
 import { preloadOnIdle } from "@/lib/lazyWithRetry";
+import { useNavCounters, useMarkNavSeen, useNavCounterStream, NavCounterBadge } from "@/features/nav";
+import type { NavKey } from "@shared/contracts";
 import {
   Sidebar as ShadcnSidebar,
   SidebarContent,
@@ -178,9 +180,10 @@ interface SidebarNavListProps {
   checkIsActive: (to: string) => boolean;
   checkIsGroupActive: (items?: NavSubItem[]) => boolean;
   isFeatureLocked?: (featureCode?: string) => boolean;
+  counters?: Record<string, { count: number; latestAt: string | null }>;
 }
 
-export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive, isFeatureLocked }: SidebarNavListProps) {
+export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive, isFeatureLocked, counters }: SidebarNavListProps) {
   const { t } = useTranslation();
 
   return (
@@ -228,11 +231,14 @@ export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive, is
                             >
                               <NavLink
                                 to={sub.to}
-                                className="w-full truncate"
+                                className="w-full truncate flex items-center"
                                 onMouseEnter={() => preloadRoute(sub.to)}
                                 onFocus={() => preloadRoute(sub.to)}
                               >
                                 {t(`nav.${sub.labelKey}`)}
+                                {sub.counterKey && counters?.[sub.counterKey]?.count ? (
+                                  <NavCounterBadge count={counters[sub.counterKey].count} />
+                                ) : null}
                               </NavLink>
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>
@@ -266,6 +272,9 @@ export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive, is
                 >
                   <item.icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
                   <span className="truncate group-data-[collapsible=icon]:hidden flex-1">{translatedLabel}</span>
+                  {item.counterKey && counters?.[item.counterKey]?.count ? (
+                    <NavCounterBadge count={counters[item.counterKey].count} />
+                  ) : null}
                   {isLocked && (
                     <span
                       data-testid="sidebar-item-lock"
@@ -287,6 +296,7 @@ export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive, is
 
 export function AppSidebar() {
   const { t } = useTranslation();
+  const loc = useLocation();
   const {
     user,
     location,
@@ -297,6 +307,35 @@ export function AppSidebar() {
     checkIsGroupActive,
     isFeatureLocked,
   } = useSidebar();
+
+  const { data: counters } = useNavCounters();
+  const markSeenMutation = useMarkNavSeen();
+  useNavCounterStream();
+
+  const markSeenForRoute = useCallback(
+    (pathname: string) => {
+      if (!user || !navItems.length) return;
+      const flatItems = navItems.flatMap((item) => [
+        ...(item.counterKey ? [{ to: item.to, counterKey: item.counterKey }] : []),
+        ...(item.items ?? []).map((sub) => ({ to: sub.to, counterKey: sub.counterKey })).filter((s) => s.counterKey),
+      ]);
+      for (const { to, counterKey } of flatItems) {
+        if (pathname === to || (to !== "/dashboard" && pathname.startsWith(to))) {
+          markSeenMutation.mutate(counterKey as NavKey);
+          break;
+        }
+      }
+    },
+    [user, navItems, markSeenMutation],
+  );
+
+  const hasMarkedRef = useRef(false);
+  useEffect(() => {
+    if (!hasMarkedRef.current) {
+      hasMarkedRef.current = true;
+      markSeenForRoute(loc.pathname);
+    }
+  }, [loc.pathname, markSeenForRoute]);
 
   const isPublicLegalPage =
     location.pathname === "/" || location.pathname === "/terms" || location.pathname === "/privacy";
@@ -340,6 +379,7 @@ export function AppSidebar() {
               checkIsActive={checkIsActive}
               checkIsGroupActive={checkIsGroupActive}
               isFeatureLocked={isFeatureLocked}
+              counters={counters}
             />
           </SidebarGroupContent>
         </SidebarGroup>

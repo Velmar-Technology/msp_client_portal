@@ -22,10 +22,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEntitlements } from "@/hooks/useEntitlements";
 import { subscriptionService, planService, type Plan, type Subscription } from "@/features/subscriptions";
 import { FEATURE_CODES } from "@/constants/subscriptions";
+import type { NavKey } from "@shared/contracts";
 
 export interface NavSubItem {
   to: string;
   labelKey: string;
+  counterKey?: NavKey;
 }
 
 export interface NavItem {
@@ -35,16 +37,17 @@ export interface NavItem {
   groupLabelKey?: string;
   items?: NavSubItem[];
   requiredFeature?: string;
+  counterKey?: NavKey;
 }
 
 const clientNavItems: NavItem[] = [
   { to: "/dashboard", icon: LayoutDashboard, labelKey: "dashboard", groupLabelKey: "sidebar.groups.operations" },
-  { to: "/devices", icon: Laptop, labelKey: "devices", requiredFeature: FEATURE_CODES.RMM_PATCH_MANAGEMENT },
+  { to: "/devices", icon: Laptop, labelKey: "devices", requiredFeature: FEATURE_CODES.RMM_PATCH_MANAGEMENT, counterKey: "devices" },
   { to: "/resources", icon: Download, labelKey: "resources", requiredFeature: FEATURE_CODES.CLOUD_STORAGE },
   { to: "/password-manager", icon: KeyRound, labelKey: "passwordManager", requiredFeature: FEATURE_CODES.PASSWORD_MANAGER },
   { to: "/settings/ai", icon: Sparkles, labelKey: "cafAiSettings", requiredFeature: FEATURE_CODES.CAF_EDUCATION_AGENT },
-  { to: "/maintenance", icon: Calendar, labelKey: "maintenance", requiredFeature: FEATURE_CODES.RMM_PATCH_MANAGEMENT },
-  { to: "/tickets", icon: Ticket, labelKey: "myTickets" },
+  { to: "/maintenance", icon: Calendar, labelKey: "maintenance", requiredFeature: FEATURE_CODES.RMM_PATCH_MANAGEMENT, counterKey: "maintenance" },
+  { to: "/tickets", icon: Ticket, labelKey: "myTickets", counterKey: "tickets" },
   {
     to: "/account-group",
     icon: User,
@@ -54,15 +57,15 @@ const clientNavItems: NavItem[] = [
       { to: "/profile", labelKey: "profile" },
       { to: "/notifications/preferences", labelKey: "notificationPreferences" },
       { to: "/plans", labelKey: "plans" },
-      { to: "/billing", labelKey: "billing" },
+      { to: "/billing", labelKey: "billing", counterKey: "billing" },
     ],
   },
 ];
 
 const techNavItems: NavItem[] = [
   { to: "/tech/dashboard", icon: LayoutDashboard, labelKey: "dashboard", groupLabelKey: "sidebar.groups.operations" },
-  { to: "/maintenance", icon: Calendar, labelKey: "maintenance" },
-  { to: "/tickets", icon: Ticket, labelKey: "myTickets" },
+  { to: "/maintenance", icon: Calendar, labelKey: "maintenance", counterKey: "maintenance" },
+  { to: "/tickets", icon: Ticket, labelKey: "myTickets", counterKey: "tickets" },
   {
     to: "/account-group",
     icon: User,
@@ -77,16 +80,16 @@ const techNavItems: NavItem[] = [
 
 const adminNavItems: NavItem[] = [
   { to: "/dashboard", icon: Shield, labelKey: "adminDashboard", groupLabelKey: "sidebar.groups.management" },
-  { to: "/crm", icon: Target, labelKey: "crm" },
+  { to: "/crm", icon: Target, labelKey: "crm", counterKey: "crm" },
   { to: "/financial", icon: Landmark, labelKey: "financial" },
   { to: "/admin/users", icon: Users, labelKey: "userManagement" },
   { to: "/admin/api-status", icon: Activity, labelKey: "apiStatus" },
-  { to: "/devices", icon: Laptop, labelKey: "devices", groupLabelKey: "sidebar.groups.operations" },
+  { to: "/devices", icon: Laptop, labelKey: "devices", groupLabelKey: "sidebar.groups.operations", counterKey: "devices" },
   { to: "/resources", icon: Download, labelKey: "resources" },
   { to: "/password-manager", icon: KeyRound, labelKey: "passwordManager" },
   { to: "/settings/ai", icon: Sparkles, labelKey: "cafAiSettings" },
-  { to: "/maintenance", icon: Calendar, labelKey: "maintenance" },
-  { to: "/tickets", icon: Ticket, labelKey: "allTickets" },
+  { to: "/maintenance", icon: Calendar, labelKey: "maintenance", counterKey: "maintenance" },
+  { to: "/tickets", icon: Ticket, labelKey: "allTickets", counterKey: "tickets" },
   {
     to: "/settings-group",
     icon: Settings,
@@ -96,7 +99,7 @@ const adminNavItems: NavItem[] = [
       { to: "/profile", labelKey: "profile" },
       { to: "/notifications/preferences", labelKey: "notificationPreferences" },
       { to: "/plans", labelKey: "plans" },
-      { to: "/billing", labelKey: "billing" },
+      { to: "/billing", labelKey: "billing", counterKey: "billing" },
     ],
   },
 ];

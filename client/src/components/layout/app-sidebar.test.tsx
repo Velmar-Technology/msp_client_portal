@@ -73,6 +73,13 @@ vi.mock('../ui/collapsible', () => ({
   CollapsibleContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
+vi.mock('@/features/nav', () => ({
+  useNavCounters: () => ({ data: {} }),
+  useMarkNavSeen: () => ({ mutate: vi.fn() }),
+  useNavCounterStream: () => {},
+  NavCounterBadge: () => null,
+}));
+
 vi.mock('../ui/dropdown-menu', () => ({
   DropdownMenu: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,

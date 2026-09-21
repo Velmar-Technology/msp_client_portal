@@ -54,7 +54,10 @@
     "crm": "CRM Pipeline",
     "passwordManager": "Password Manager",
     "cafAiSettings": "AI & CAF Quality",
-    "upgradeBadge": "Upgrade"
+    "upgradeBadge": "Upgrade",
+    "counters": {
+      "ariaLabel": "{{count}} new items"
+    }
   },
   "byok": {
     "pageTitle": "Artificial Intelligence & CAF Quality",

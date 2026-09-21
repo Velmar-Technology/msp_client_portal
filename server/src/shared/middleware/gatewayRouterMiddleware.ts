@@ -8,6 +8,7 @@ import { rmmRoutes, alertRoutes, maintenanceRoutes } from '@modules/rmm';
 import { systemRoutes } from '@modules/system';
 import { notificationRoutes, notificationPreferenceRoutes } from '@modules/notifications';
 import { crmRoutes } from '@modules/crm';
+import { navRoutes } from '@modules/nav';
 
 /**
  * Express router acting as the API Gateway Layer Cluster Dispatcher.
@@ -42,6 +43,7 @@ gatewayClusterRouter.use('/maintenance', maintenanceRoutes);
 gatewayClusterRouter.use('/alerts', alertRoutes);
 gatewayClusterRouter.use('/rmm', rmmRoutes);
 gatewayClusterRouter.use('/crm', crmRoutes);
+gatewayClusterRouter.use('/nav', navRoutes);
 gatewayClusterRouter.use('/authz', authzRoutes);
 
 /**
